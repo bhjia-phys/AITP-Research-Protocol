@@ -1,0 +1,62 @@
+{
+  "result_id": "example-result-id",
+  "task_id": "example-task-id",
+  "status": "partial",
+  "research_mode": "first_principles",
+  "executor_kind": "codex_cli",
+  "reasoning_profile": "high",
+  "artifacts": [
+    "validation/topics/example/runs/2026-03-15-example/results/example-output.txt"
+  ],
+  "metrics": {
+    "example_metric": 0.0
+  },
+  "logs": [
+    "validation/topics/example/runs/2026-03-15-example/logs/example.log"
+  ],
+  "produced_by": "codex",
+  "created_at": "2026-03-15T00:00:00+08:00",
+  "what_was_attempted": "Describe the declared execution objective here.",
+  "what_actually_ran": "Describe what really ran here, including any deviations.",
+  "summary": "Short one-paragraph result summary.",
+  "limitations": [
+    "List the main limitations honestly."
+  ],
+  "failure_signals_triggered": [
+    "Example failure signal triggered during execution."
+  ],
+  "trajectory_events": [
+    {
+      "event_type": "executor_report",
+      "status": "partial",
+      "message": "Describe the main execution step here.",
+      "recorded_at": "2026-03-15T00:00:00+08:00",
+      "artifacts": [
+        "validation/topics/example/runs/2026-03-15-example/results/example-output.txt"
+      ]
+    }
+  ],
+  "non_conclusions": [
+    "State what this result does not justify concluding."
+  ],
+  "notes": "Optional operator note.",
+  "fixture_backed": true,
+  "non_scientific": true,
+  "inconclusive": true,
+  "contradiction_detected": false,
+  "missing_baseline_support": false,
+  "recommended_decision": "defer",
+  "decision_reason": "Why the runtime should keep, revise, discard, or defer after ingesting this result.",
+  "needs_literature_followup": true,
+  "literature_followup_queries": [
+    {
+      "query": "example bounded follow-up query",
+      "reason": "Why this query is needed.",
+      "priority": "medium",
+      "target_source_type": "paper"
+    }
+  ],
+  "next_actions": [
+    "Optional next action written back into feedback/next_actions.md"
+  ]
+}

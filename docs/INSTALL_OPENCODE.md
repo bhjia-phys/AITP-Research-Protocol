@@ -2,34 +2,55 @@
 
 ## Prerequisites
 
-- an `aitp` executable on `PATH`
-- optional `aitp-mcp`
-- a local OpenCode installation
+- Python 3.10+
+- OpenCode installed locally
 
-## Install command harness
+## Install the AITP runtime
+
+From the repository root:
 
 ```bash
-mkdir -p ~/.config/opencode/commands
-cp adapters/opencode/AITP_COMMAND_HARNESS.md ~/.config/opencode/commands/AITP_COMMAND_HARNESS.md
-cp adapters/opencode/commands/aitp.md ~/.config/opencode/commands/aitp.md
-cp adapters/opencode/commands/aitp-loop.md ~/.config/opencode/commands/aitp-loop.md
-cp adapters/opencode/commands/aitp-audit.md ~/.config/opencode/commands/aitp-audit.md
+python -m pip install -e research/knowledge-hub
+aitp doctor
 ```
 
-## Optional MCP registration
+## Install the OpenCode wrapper
 
-Add a local MCP server entry that points to:
+```bash
+aitp install-agent --agent opencode --scope user
+```
 
-- server name: `aitp`
-- command: `aitp-mcp`
+This installs:
+
+- the AITP command harness
+- `/aitp`, `/aitp-resume`, `/aitp-loop`, and `/aitp-audit` command files
+- an `mcp.aitp` local server entry when config mutation is allowed
+
+## Recommended entrypoint
+
+Use the loop-oriented path:
+
+```bash
+aitp loop --topic-slug <topic_slug> --human-request "<task>"
+```
+
+The installed OpenCode command bundle is designed to route existing topics
+through `aitp loop` by default rather than through free-form browsing.
 
 ## Verify
 
-OpenCode should be able to:
+OpenCode should now be able to:
 
 - enter the AITP runtime through the installed commands
 - read `runtime_protocol.generated.md` before doing deeper work
 - refresh conformance on exit
+
+## Manual fallback
+
+If you want command files only, the reference assets still live at:
+
+- `adapters/opencode/AITP_COMMAND_HARNESS.md`
+- `adapters/opencode/commands/`
 
 ## Remove
 

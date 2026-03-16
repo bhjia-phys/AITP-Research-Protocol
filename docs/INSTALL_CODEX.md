@@ -2,27 +2,57 @@
 
 ## Prerequisites
 
-- an `aitp` executable on `PATH`
-- optional `aitp-mcp` executable
-- a local Codex CLI installation
+- Python 3.10+
+- Codex CLI installed locally
 
-## Install skill
+## Install the AITP runtime
+
+From the repository root:
 
 ```bash
-mkdir -p ~/.codex/skills/aitp-runtime
-cp adapters/codex/SKILL.md ~/.codex/skills/aitp-runtime/SKILL.md
+python -m pip install -e research/knowledge-hub
+aitp doctor
 ```
 
-If your setup uses `~/.codex-home/skills/`, copy the same directory there as
-well.
+## Install the Codex wrapper
+
+```bash
+aitp install-agent --agent codex --scope user
+```
+
+This installs:
+
+- the `aitp-runtime` skill into your active Codex skill roots
+- the `aitp` MCP registration when supported
+
+## Recommended entrypoints
+
+For normal topic work:
+
+```bash
+aitp loop --topic "<topic>" --human-request "<task>"
+```
+
+For Codex-driven implementation or execution:
+
+```bash
+aitp-codex --topic-slug <topic_slug> "<task>"
+```
 
 ## Verify
 
-Codex should be able to:
+Codex should now be able to:
 
 - enter topic work through the AITP runtime surface
 - read `runtime_protocol.generated.md`
 - treat missing conformance as a hard failure for AITP work
+- use `aitp-codex` as the stronger wrapper path for coding tasks
+
+## Manual fallback
+
+If you do not want config mutation, the reference skill still lives at:
+
+- `adapters/codex/SKILL.md`
 
 ## Remove
 

@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aitp.local/schemas/execution-task.schema.json",
+  "title": "L4ExecutionTask",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task_id",
+    "validation_note",
+    "candidate_id",
+    "surface",
+    "status",
+    "input_artifacts",
+    "planned_outputs",
+    "pass_conditions",
+    "failure_signals",
+    "assigned_runtime",
+    "result_artifacts",
+    "summary"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "validation_note": {
+      "type": "string",
+      "minLength": 1
+    },
+    "candidate_id": {
+      "type": "string",
+      "pattern": "^candidate:[a-z0-9][a-z0-9-]*$"
+    },
+    "research_mode": {
+      "type": "string",
+      "enum": [
+        "exploratory_general",
+        "first_principles",
+        "toy_model",
+        "formal_derivation"
+      ]
+    },
+    "research_mode_profile_path": {
+      "type": "string"
+    },
+    "closed_loop_policy_path": {
+      "type": "string"
+    },
+    "surface": {
+      "type": "string",
+      "enum": [
+        "numerical",
+        "symbolic",
+        "formal",
+        "coding",
+        "human_review"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "planned",
+        "running",
+        "blocked",
+        "completed",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "input_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "planned_outputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "pass_conditions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "failure_signals": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assigned_runtime": {
+      "type": "string",
+      "minLength": 1
+    },
+    "executor_kind": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reasoning_profile": {
+      "type": "string"
+    },
+    "reproducibility_requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "required_human_notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "result_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "summary": {
+      "type": "string"
+    },
+    "completion_note": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "route_id": {
+      "type": "string"
+    },
+    "source_action_id": {
+      "type": "string"
+    },
+    "source_execution_task_path": {
+      "type": "string"
+    },
+    "workspace_root": {
+      "type": "string"
+    },
+    "where_to_run": {
+      "type": "string"
+    },
+    "allowed_input_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "result_writeback_path": {
+      "type": "string"
+    },
+    "result_template_path": {
+      "type": "string"
+    },
+    "execution_notes_dir": {
+      "type": "string"
+    },
+    "trajectory_log_path": {
+      "type": "string"
+    },
+    "trajectory_note_path": {
+      "type": "string"
+    },
+    "failure_classification_path": {
+      "type": "string"
+    },
+    "failure_classification_note_path": {
+      "type": "string"
+    },
+    "needs_human_confirm": {
+      "type": "boolean"
+    },
+    "auto_dispatch_allowed": {
+      "type": "boolean"
+    },
+    "allow_web_search": {
+      "type": "boolean"
+    },
+    "materialized_at": {
+      "type": "string"
+    },
+    "materialized_by": {
+      "type": "string"
+    },
+    "human_summary": {
+      "type": "string"
+    },
+    "codex_session_timeout_seconds": {
+      "type": "integer"
+    },
+    "codex_session_poll_interval_seconds": {
+      "type": "number"
+    }
+  }
+}

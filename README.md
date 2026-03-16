@@ -1,26 +1,29 @@
 # AITP Research Charter and Protocol
 
-> A protocol-first public repository for building an AI Theoretical Physicist as a disciplined research participant rather than a free-form chat agent.
+> A protocol-first and now minimally installable public repository for building
+> an AI Theoretical Physicist as a disciplined research participant rather than
+> a free-form chat agent.
 
-## What this repository is
+## What This Repository Is
 
 AITP stands for **AI Theoretical Physicist**.
 
-This repository is not the claim that AI already is a serious autonomous
-theoretical physicist. It is the public home for the **research charter** and
-the **executable protocol surface** that an AI system should follow if it wants
-to count as working inside AITP.
+This repository now has four public layers:
 
-The core idea is simple:
-
-- the charter defines what serious theoretical-physics research participation
+- the **charter** that defines what serious AI-assisted theoretical-physics work
   should respect;
-- the protocol defines what artifacts, gates, and decisions must exist on disk;
-- the runtime only materializes state, runs audits, and executes explicit tools;
-- agents such as OpenClaw, Codex, Claude Code, and OpenCode act as adapters or
-  executors, not as the source of truth.
+- the **protocol contracts** that define the durable artifacts and gates;
+- a **minimal installable runtime** that materializes state, runs audits, and
+  executes explicit handlers;
+- **reference adapters** for Codex, OpenClaw, Claude Code, and OpenCode.
 
-## Why charter and protocol
+The intended rule is:
+
+- the charter is above the runtime;
+- the protocol is above agent heuristics;
+- agents are executors and adapters, not the source of truth.
+
+## Why This Exists
 
 Large models can produce fluent research language. That is not enough.
 
@@ -33,10 +36,7 @@ AITP is built to preserve the things that matter for real research:
 - visible validation and rejection paths;
 - human-readable state that later agents and humans can audit.
 
-This repository therefore treats the **charter** as the upper constraint and the
-**protocol** as the executable contract.
-
-## Core model
+## Core Research Model
 
 AITP currently works through an L0-L4 research structure:
 
@@ -53,43 +53,152 @@ The default non-trivial route remains:
 What matters is not only the layer map, but the rule that an agent may not
 silently decide its own research workflow. It must follow durable contracts.
 
-## What lives in this repository
+## Quick Start
 
-This repository is the public **AITP protocol repository plus reference
-adapter surface**.
+Clone the repository, install the minimal runtime, then install the wrapper for
+the runtime you actually want to use:
 
-It contains:
+```bash
+git clone git@github.com:bhjia-phys/AITP-Research-Protocol.git
+cd AITP-Research-Protocol
 
-- the top-level charter and design principles;
-- protocol object definitions and schemas;
-- reference installation and uninstall guidance;
-- adapter assets for OpenClaw, Codex, Claude Code, and OpenCode;
-- a minimal reference-runtime boundary document.
+python -m pip install -e research/knowledge-hub
+aitp doctor
 
-It does not pretend to contain the full internal working environment.
+# choose one, or install them all
+aitp install-agent --agent codex --scope user
+aitp install-agent --agent openclaw --scope user
+aitp install-agent --agent claude-code --scope user
+aitp install-agent --agent opencode --scope user
+```
 
-## Relationship to the integration workspace
+Then start AITP work through the runtime instead of through free-form prompting:
 
-The current integration-heavy working environment still lives outside this
-repository. In practice, a larger workspace may host:
+```bash
+aitp loop --topic "Haldane-Shastry chaos transition" --human-request "do a bounded literature and route check"
+```
 
-- human theory notes,
-- topic-local runtime state,
-- validation runs,
-- source registries,
-- and experimental adapters.
+For Codex-driven coding or execution work, use the wrapper that forces a loop
+refresh before `codex exec`:
 
-This repository defines the public contract that such an environment should obey.
+```bash
+aitp-codex --topic-slug haldane-shastry-chaos-transition "continue the bounded task"
+```
 
-## Install paths
+The public runtime now defaults to the repo-local kernel root:
+
+- `research/knowledge-hub`
+
+So a fresh clone no longer depends on the original private integration
+workspace just to get `aitp` running.
+
+## Installation Flow
+
+```mermaid
+flowchart TD
+    A[Clone AITP-Research-Protocol] --> B[pip install -e research/knowledge-hub]
+    B --> C[aitp doctor]
+    C --> D{Choose runtime}
+    D --> E[aitp install-agent --agent codex]
+    D --> F[aitp install-agent --agent openclaw]
+    D --> G[aitp install-agent --agent claude-code]
+    D --> H[aitp install-agent --agent opencode]
+    E --> I[Open runtime normally]
+    F --> I
+    G --> I
+    H --> I
+    I --> J[Enter through aitp loop or aitp-codex]
+    J --> K[Read runtime_protocol.generated.md]
+    K --> L[Do bounded research work]
+    L --> M[Run audits and trust gates]
+```
+
+## Runtime Flow
+
+```mermaid
+flowchart TD
+    A[Human research request] --> B[aitp bootstrap or aitp loop]
+    B --> C[Materialize topic state and queue]
+    C --> D[Generate runtime protocol bundle]
+    D --> E[Agent reads protocol bundle and runtime artifacts]
+    E --> F{Bounded next action}
+    F --> G[L0 or L1 source/intake work]
+    F --> H[L3 candidate or exploratory work]
+    F --> I[L4 validation or execution]
+    G --> J[aitp audit]
+    H --> J
+    I --> K[baseline / atomize / trust-audit when required]
+    K --> J
+    J --> L{Passes conformance?}
+    L -->|yes| M[Persist reproducible artifacts and notes]
+    L -->|no| N[Run does not count as AITP work]
+    M --> O[L2 promote or reject]
+```
+
+## Agent Support Matrix
+
+| Runtime | Public install path | Enforcement surface |
+|---------|----------------------|---------------------|
+| Codex | `aitp install-agent --agent codex` | Skill + MCP + `aitp-codex` wrapper |
+| OpenClaw | `aitp install-agent --agent openclaw` | Skill + MCP bridge setup note |
+| Claude Code | `aitp install-agent --agent claude-code` | Skill + command bundle |
+| OpenCode | `aitp install-agent --agent opencode` | Command harness + MCP config |
+
+Current strength differs by runtime:
+
+- `Codex` is the strongest path right now because `aitp-codex` hard-wraps the
+  loop before it launches `codex exec`.
+- `OpenCode`, `Claude Code`, and `OpenClaw` are currently constrained through
+  installed command/skill surfaces plus conformance requirements, not through an
+  equally strong native wrapper binary yet.
+
+## What Python Still Does
+
+AITP is protocol-first, not “Python decides the science”.
+
+The runtime is only trusted to do the following:
+
+- materialize protocol and state artifacts;
+- build deterministic projections;
+- run conformance, capability, and trust audits;
+- execute explicit tool handlers;
+- expose a thin `aitp` CLI and optional `aitp-mcp` surface.
+
+It should not become the hidden source of scientific judgment.
+
+## Repository Map
+
+```text
+AITP-Research-Protocol/
+  README.md
+  AGENTS.md
+  docs/
+  contracts/
+  schemas/
+  adapters/
+  research/
+    adapters/
+      openclaw/
+    knowledge-hub/
+      setup.py
+      knowledge_hub/
+      runtime/
+      source-layer/
+      consultation/
+      validation/
+```
+
+## Public Docs
 
 Start here:
 
-- read the charter: [`docs/CHARTER.md`](docs/CHARTER.md)
-- understand the agent boundary: [`docs/AGENT_MODEL.md`](docs/AGENT_MODEL.md)
-- avoid context bloat: [`docs/CONTEXT_LOADING.md`](docs/CONTEXT_LOADING.md)
+- charter: [`docs/CHARTER.md`](docs/CHARTER.md)
+- agent boundary: [`docs/AGENT_MODEL.md`](docs/AGENT_MODEL.md)
+- context loading: [`docs/CONTEXT_LOADING.md`](docs/CONTEXT_LOADING.md)
+- architecture: [`docs/architecture.md`](docs/architecture.md)
+- lessons from `get-physics-done`: [`docs/LESSONS_FROM_GET_PHYSICS_DONE.md`](docs/LESSONS_FROM_GET_PHYSICS_DONE.md)
 
-Adapter install guides:
+Install guides:
 
 - OpenClaw: [`docs/INSTALL_OPENCLAW.md`](docs/INSTALL_OPENCLAW.md)
 - Codex: [`docs/INSTALL_CODEX.md`](docs/INSTALL_CODEX.md)
@@ -97,9 +206,7 @@ Adapter install guides:
 - OpenCode: [`docs/INSTALL_OPENCODE.md`](docs/INSTALL_OPENCODE.md)
 - Uninstall: [`docs/UNINSTALL.md`](docs/UNINSTALL.md)
 
-## Protocol objects
-
-The first public contract family includes:
+Protocol objects:
 
 - [`contracts/research-question.md`](contracts/research-question.md)
 - [`contracts/candidate-claim.md`](contracts/candidate-claim.md)
@@ -108,44 +215,24 @@ The first public contract family includes:
 - [`contracts/operation.md`](contracts/operation.md)
 - [`contracts/promotion-or-reject.md`](contracts/promotion-or-reject.md)
 
-Matching schemas live under [`schemas/`](schemas/).
+## Current Status
 
-## Reference adapters
+The repository is now more than a pure protocol archive:
 
-Reference adapter assets live under [`adapters/`](adapters/):
+- it remains charter-and-protocol first;
+- it now ships a minimal installable runtime under `research/knowledge-hub`;
+- it can install user-side wrappers for the main target runtimes;
+- it still keeps stronger private integration claims honest.
 
-- `adapters/openclaw/`
-- `adapters/codex/`
-- `adapters/claude-code/`
-- `adapters/opencode/`
+What is still incomplete:
 
-These are reference plugin surfaces. They are intentionally lightweight and
-assume an available `aitp` executable on `PATH`.
+- OpenClaw and OpenCode do not yet have a wrapper as hard as `aitp-codex`;
+- the reference OpenClaw plugin assets are present, but the standalone
+  workspace-seeding path is still less mature than the CLI-based wrapper path;
+- full multi-runtime smoke testing should continue to expand.
 
-## Current status
+## See Also
 
-This repository is still early, but its public identity is now explicit:
-
-- it is a charter-and-protocol repository first;
-- it provides reference adapter assets second;
-- it keeps implementation claims honest;
-- it does not hide research logic in undocumented code.
-
-## Repository map
-
-```text
-AITP-Research-Protocol/
-  README.md
-  contracts/
-  schemas/
-  adapters/
-  docs/
-  reference-runtime/
-```
-
-## See also
-
-- [`docs/architecture.md`](docs/architecture.md)
 - [`docs/design-principles.md`](docs/design-principles.md)
 - [`docs/roadmap.md`](docs/roadmap.md)
 - [`docs/benchmark-cases.md`](docs/benchmark-cases.md)

@@ -1,0 +1,107 @@
+{
+  "profile_version": "2026-03-16",
+  "plugin": {
+    "id": "aitp-openclaw-runtime",
+    "source_path": "research/adapters/openclaw/plugin/aitp-openclaw-runtime"
+  },
+  "copy_files": [
+    { "source": "AGENTS.md", "target": "AGENTS.md" },
+    { "source": "BOOTSTRAP.md", "target": "BOOTSTRAP.md" },
+    { "source": "SOUL.md", "target": "SOUL.md" },
+    { "source": "IDENTITY.md", "target": "IDENTITY.md" },
+    { "source": "MEMORY.md", "target": "MEMORY.md" },
+    { "source": "USER.md", "target": "USER.md" },
+    { "source": "TOOLS.md", "target": "TOOLS.md" },
+    { "source": "HEARTBEAT.md", "target": "HEARTBEAT.md" },
+    { "source": "HEARTBEAT_AITP.md", "target": "HEARTBEAT_AITP.md" },
+    { "source": "research-bot/state/README.md", "target": "research-bot/state/README.md" },
+    { "source": "research-bot/state/agenda.md", "target": "research-bot/state/agenda.md" },
+    { "source": "research-bot/state/budgets.json", "target": "research-bot/state/budgets.json" },
+    { "source": "research-bot/state/mission.md", "target": "research-bot/state/mission.md" },
+    { "source": "research-bot/state/interests.md", "target": "research-bot/state/interests.md" },
+    { "source": "research-bot/notes/digest-template.md", "target": "research-bot/notes/digest-template.md" },
+    { "source": "research-bot/notes/paper-template.md", "target": "research-bot/notes/paper-template.md" },
+    { "source": "research-bot/notes/research-brief-template.md", "target": "research-bot/notes/research-brief-template.md" },
+    { "source": "research-bot/notes/weekly-review-template.md", "target": "research-bot/notes/weekly-review-template.md" }
+  ],
+  "copy_trees": [
+    {
+      "source": "research/adapters/openclaw",
+      "target": "research/adapters/openclaw",
+      "exclude": [
+        "state/**",
+        "scripts/__pycache__/**",
+        "**/.venv/**",
+        "**/.bootstrap/**",
+        "**/__pycache__/**",
+        "**/*.pyc"
+      ]
+    },
+    {
+      "source": "research/knowledge-hub",
+      "target": "research/knowledge-hub",
+      "exclude": [
+        "runtime/topics/**",
+        "runtime/topic_index.jsonl",
+        "validation/topics/**",
+        "feedback/topics/**",
+        "consultation/topics/**",
+        "intake/topics/**",
+        "source-layer/topics/**",
+        "data/topics/**",
+        "data/queries/**",
+        "**/.venv/**",
+        "**/.bootstrap/**",
+        "**/__pycache__/**",
+        "**/*.pyc"
+      ]
+    }
+  ],
+  "seed_files": [
+    {
+      "source": "research/adapters/openclaw/plugin/aitp-openclaw-runtime/seeds/research-bot/state/briefing-status.json",
+      "target": "research-bot/state/briefing-status.json"
+    },
+    {
+      "source": "research/adapters/openclaw/plugin/aitp-openclaw-runtime/seeds/research-bot/state/inbox.jsonl",
+      "target": "research-bot/state/inbox.jsonl"
+    },
+    {
+      "source": "research/adapters/openclaw/plugin/aitp-openclaw-runtime/seeds/research-bot/state/action-queue.jsonl",
+      "target": "research-bot/state/action-queue.jsonl"
+    },
+    {
+      "source": "research/adapters/openclaw/plugin/aitp-openclaw-runtime/seeds/research-bot/state/research-leads.jsonl",
+      "target": "research-bot/state/research-leads.jsonl"
+    },
+    {
+      "source": "research/adapters/openclaw/plugin/aitp-openclaw-runtime/seeds/research-bot/state/seen.json",
+      "target": "research-bot/state/seen.json"
+    },
+    {
+      "source": "research/adapters/openclaw/plugin/aitp-openclaw-runtime/seeds/research/knowledge-hub/runtime/topic_index.jsonl",
+      "target": "research/knowledge-hub/runtime/topic_index.jsonl"
+    }
+  ],
+  "optional_files": [
+    {
+      "flag": "copy_mcporter",
+      "source": "config/mcporter.json",
+      "target": "config/mcporter.json"
+    }
+  ],
+  "ensure_directories": [
+    ".openclaw",
+    "research-bot/state",
+    "research-bot/notes/digests",
+    "research/adapters/openclaw/state",
+    "research/knowledge-hub/runtime/topics",
+    "research/knowledge-hub/validation/topics",
+    "research/knowledge-hub/feedback/topics",
+    "research/knowledge-hub/consultation/topics",
+    "research/knowledge-hub/intake/topics",
+    "research/knowledge-hub/source-layer/topics",
+    "research/knowledge-hub/data/topics",
+    "research/knowledge-hub/data/queries"
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aitp.local/schemas/consult-request.schema.json",
+  "title": "L2ConsultRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "consultation_id",
+    "topic_slug",
+    "stage",
+    "context_ref",
+    "purpose",
+    "query_text",
+    "requested_unit_types",
+    "requested_by",
+    "requested_at"
+  ],
+  "properties": {
+    "consultation_id": {
+      "type": "string",
+      "pattern": "^consult:[a-z0-9][a-z0-9-]*$"
+    },
+    "topic_slug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "L1",
+        "L3",
+        "L4"
+      ]
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "context_ref": {
+      "$ref": "https://aitp.local/schemas/object-ref.schema.json"
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1
+    },
+    "query_text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "requested_unit_types": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "atomic_note",
+          "concept",
+          "claim_card",
+          "derivation_object",
+          "method",
+          "workflow",
+          "bridge",
+          "validation_pattern",
+          "warning_note"
+        ]
+      }
+    },
+    "constraints": {
+      "type": "object"
+    },
+    "requested_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "requested_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

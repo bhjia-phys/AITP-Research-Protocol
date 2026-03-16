@@ -1,0 +1,45 @@
+{
+  "id": "aitp-openclaw-runtime",
+  "name": "AITP OpenClaw Runtime",
+  "description": "Expose typed AITP kernel entrypoints to OpenClaw and bundle the runtime skill surface.",
+  "skills": ["./skills"],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "aitpCommand": {
+        "type": "string"
+      },
+      "workspaceRoot": {
+        "type": "string"
+      },
+      "kernelRoot": {
+        "type": "string"
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "minimum": 1000,
+        "maximum": 600000,
+        "default": 120000
+      }
+    }
+  },
+  "uiHints": {
+    "aitpCommand": {
+      "label": "AITP Command",
+      "help": "Optional override for the aitp executable path. Leave unset to use `aitp` from PATH."
+    },
+    "workspaceRoot": {
+      "label": "Workspace Root",
+      "help": "Optional override for the target OpenClaw workspace root."
+    },
+    "kernelRoot": {
+      "label": "Kernel Root",
+      "help": "Optional override for the AITP kernel root. Default: <workspace>/research/knowledge-hub."
+    },
+    "timeoutMs": {
+      "label": "Command Timeout (ms)",
+      "help": "Timeout for one bounded AITP command execution."
+    }
+  }
+}

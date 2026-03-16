@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aitp.local/schemas/consult-result.schema.json",
+  "title": "L2ConsultResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "consultation_id",
+    "topic_slug",
+    "stage",
+    "retrieval_profile",
+    "query_text",
+    "retrieved_refs",
+    "result_summary",
+    "produced_by",
+    "produced_at"
+  ],
+  "properties": {
+    "consultation_id": {
+      "type": "string",
+      "pattern": "^consult:[a-z0-9][a-z0-9-]*$"
+    },
+    "topic_slug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "L1",
+        "L3",
+        "L4"
+      ]
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "retrieval_profile": {
+      "type": "string",
+      "minLength": 1
+    },
+    "query_text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "retrieved_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "https://aitp.local/schemas/object-ref.schema.json"
+      }
+    },
+    "expanded_edge_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "result_summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "produced_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "produced_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

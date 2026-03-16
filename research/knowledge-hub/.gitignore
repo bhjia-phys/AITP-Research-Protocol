@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+
+data/documents.json
+data/queries/*.json
+
+# paper-run artifacts are local state (do not version)
+data/paper-runs/
+
+# PDF caches are local artifacts (do not version)
+data/queries/pdf_cache*/
+data/queries/**/*.pdf
+!data/.gitkeep
+!data/queries/.gitkeep

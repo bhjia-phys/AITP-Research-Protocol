@@ -1,0 +1,56 @@
+{
+  "task_id": "example-task-id",
+  "validation_note": "obsidian-markdown/11 L4 Validation/active/YYYY-MM-DD_example-validation.md",
+  "candidate_id": "candidate:example-candidate",
+  "research_mode": "first_principles",
+  "research_mode_profile_path": "runtime/research_mode_profiles.json",
+  "closed_loop_policy_path": "runtime/closed_loop_policies.json",
+  "surface": "numerical",
+  "status": "planned",
+  "input_artifacts": [
+    "feedback/topics/example/runs/2026-03-11-example/result_summary.md"
+  ],
+  "planned_outputs": [
+    "validation/topics/example/runs/2026-03-11-example/results/example-output.txt"
+  ],
+  "pass_conditions": [
+    "Numerical check matches the predicted trend in the declared regime."
+  ],
+  "failure_signals": [
+    "Computed result contradicts the candidate inside the declared regime."
+  ],
+  "assigned_runtime": "codex",
+  "executor_kind": "codex_cli",
+  "reasoning_profile": "high",
+  "reproducibility_requirements": [
+    "Persist configs, environment assumptions, and emitted artifacts for this run."
+  ],
+  "required_human_notes": [
+    "L3 note: explain the active experimental setup and parameter choices.",
+    "L4 note: summarize what was run and what remains unvalidated."
+  ],
+  "result_artifacts": [],
+  "summary": "",
+  "run_id": "2026-03-15-example",
+  "route_id": "route:example:validation-lane",
+  "source_action_id": "action:example:validate",
+  "source_execution_task_path": "validation/topics/example/runs/2026-03-15-example/execution-tasks/example-task-id.json",
+  "workspace_root": "research",
+  "where_to_run": "research",
+  "allowed_input_artifacts": [
+    "feedback/topics/example/runs/2026-03-11-example/result_summary.md"
+  ],
+  "result_writeback_path": "validation/topics/example/runs/2026-03-15-example/returned_execution_result.json",
+  "result_template_path": "validation/templates/execution-result.template.json",
+  "execution_notes_dir": "validation/topics/example/runs/2026-03-15-example/execution_notes",
+  "trajectory_log_path": "validation/topics/example/runs/2026-03-15-example/results/trajectory_log.jsonl",
+  "trajectory_note_path": "validation/topics/example/runs/2026-03-15-example/results/trajectory_log.md",
+  "failure_classification_path": "validation/topics/example/runs/2026-03-15-example/results/failure_classification.json",
+  "failure_classification_note_path": "validation/topics/example/runs/2026-03-15-example/results/failure_classification.md",
+  "needs_human_confirm": false,
+  "auto_dispatch_allowed": true,
+  "allow_web_search": false,
+  "materialized_at": "2026-03-15T00:00:00+08:00",
+  "materialized_by": "codex",
+  "human_summary": "Describe the bounded execution objective here."
+}

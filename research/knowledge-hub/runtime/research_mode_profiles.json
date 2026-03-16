@@ -1,0 +1,77 @@
+{
+  "default_research_mode": "exploratory_general",
+  "profiles": {
+    "exploratory_general": {
+      "label": "General exploratory research",
+      "description": "Fallback profile for topic work that does not yet fit a tighter numerical, toy-model, or formal lane.",
+      "default_surface": "coding",
+      "default_executor_kind": "codex_cli",
+      "default_runtime_lane": "codex",
+      "reasoning_profile": "medium",
+      "reproducibility_expectations": [
+        "Persist all claimed intermediate artifacts under the topic run directory.",
+        "Keep the task/result contract honest about what actually ran and what remained manual.",
+        "Record the next bounded follow-up step before escalating a claim."
+      ],
+      "note_expectations": [
+        "L2 note: promote only reusable conclusions with explicit scope.",
+        "L3 note: keep a human-readable exploratory note explaining the active uncertainty.",
+        "L4 note: keep a validation summary that separates evidence from non-conclusions."
+      ]
+    },
+    "first_principles": {
+      "label": "First-principles / numerical",
+      "description": "For ab initio, GW/QSGW, exact-diagonalization-with-fixtures, or other backend-heavy validations that depend on configs, baselines, and reproducible outputs.",
+      "default_surface": "numerical",
+      "default_executor_kind": "codex_cli",
+      "default_runtime_lane": "codex",
+      "reasoning_profile": "high",
+      "reproducibility_expectations": [
+        "Persist exact configs, input decks, and environment assumptions with the run.",
+        "Keep baseline references and validation criteria auditable before treating a backend result as trusted.",
+        "Write summaries that name numerical limitations, convergence gaps, and missing controls explicitly."
+      ],
+      "note_expectations": [
+        "L2 note: state the reusable numerical pattern, trusted regime, and baseline gate.",
+        "L3 note: document planned parameter ranges, observables, and backend assumptions.",
+        "L4 note: summarize what was run, what artifacts were produced, and what remains unvalidated."
+      ]
+    },
+    "toy_model": {
+      "label": "Spin-chain / toy-model",
+      "description": "For reduced models, spin chains, lattice toy problems, and rapid-but-auditable exploratory calculations where tractability matters more than large-scale infrastructure.",
+      "default_surface": "numerical",
+      "default_executor_kind": "codex_cli",
+      "default_runtime_lane": "codex",
+      "reasoning_profile": "medium",
+      "reproducibility_expectations": [
+        "Persist the exact model definition, symmetry sector, and parameter choices used for each result.",
+        "Keep toy-model conclusions explicitly scoped so they are not over-transferred to the full theory.",
+        "Record small-size and observable-choice limitations in the durable result summary."
+      ],
+      "note_expectations": [
+        "L2 note: state which toy-model mechanism is believed reusable and where it stops applying.",
+        "L3 note: explain the active toy model, symmetry sector, and why it is the right reduction.",
+        "L4 note: write a limitation-aware validation note that distinguishes mechanism evidence from final theory claims."
+      ]
+    },
+    "formal_derivation": {
+      "label": "Formal derivation",
+      "description": "For proof-like, algebraic, bootstrap, or analytic derivation work where the key outputs are assumptions, logical dependencies, and human-checkable derivation notes.",
+      "default_surface": "formal",
+      "default_executor_kind": "codex_cli",
+      "default_runtime_lane": "codex",
+      "reasoning_profile": "high",
+      "reproducibility_expectations": [
+        "Persist the assumption set, notation choices, and dependency chain used by the derivation.",
+        "Separate proved statements, conjectural steps, and heuristic intuition in the durable artifacts.",
+        "Record the exact obstruction when a derivation fails or remains incomplete."
+      ],
+      "note_expectations": [
+        "L2 note: promote only derivation fragments that are reusable with explicit assumptions.",
+        "L3 note: maintain a human-readable derivation notebook with named lemmas or checkpoints.",
+        "L4 note: summarize what was established, what was only sketched, and what requires further proof."
+      ]
+    }
+  }
+}
