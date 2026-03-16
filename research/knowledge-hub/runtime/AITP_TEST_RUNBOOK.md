@@ -87,6 +87,16 @@ Pass condition:
 Pick one real note from a backend that you have already registered under
 `canonical/backends/`.
 
+For the public formal-theory example route, you can run:
+
+```bash
+research/knowledge-hub/runtime/scripts/run_formal_theory_backend_smoke.sh
+```
+
+That script creates one temporary external formal-theory note backend, realizes
+the public example backend card against it, registers one note into `L0`, and
+runs one bounded `aitp loop`.
+
 Register it into `L0`:
 
 ```bash

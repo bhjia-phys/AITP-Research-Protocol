@@ -11,12 +11,18 @@
     "status",
     "root_paths",
     "purpose",
+    "artifact_granularity",
     "source_policy",
+    "l0_registration",
     "canonical_targets",
     "retrieval_hints",
     "notes"
   ],
   "properties": {
+    "$schema": {
+      "type": "string",
+      "minLength": 1
+    },
     "backend_id": {
       "type": "string",
       "pattern": "^backend:[a-z0-9][a-z0-9-]*$"
@@ -59,6 +65,10 @@
         "minLength": 1
       }
     },
+    "artifact_granularity": {
+      "type": "string",
+      "minLength": 1
+    },
     "source_policy": {
       "type": "object",
       "additionalProperties": false,
@@ -86,6 +96,37 @@
             "conversation",
             "local_note"
           ]
+        }
+      }
+    },
+    "l0_registration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "script",
+        "required_provenance_fields",
+        "required_locator_fields"
+      ],
+      "properties": {
+        "script": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required_provenance_fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required_locator_fields": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },

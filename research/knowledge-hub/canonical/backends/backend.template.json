@@ -10,10 +10,22 @@
   "purpose": [
     "What this backend is for"
   ],
+  "artifact_granularity": "State the atomic reusable unit, for example: single local note, single derivation note, single code module, or single benchmark result.",
   "source_policy": {
     "requires_l0_registration": true,
     "allows_direct_canonical_promotion": false,
     "default_source_type": "local_note"
+  },
+  "l0_registration": {
+    "script": "source-layer/scripts/register_local_note_source.py",
+    "required_provenance_fields": [
+      "provenance.backend_id",
+      "provenance.backend_root",
+      "provenance.backend_artifact_kind"
+    ],
+    "required_locator_fields": [
+      "locator.backend_relative_path"
+    ]
   },
   "canonical_targets": [
     "concept"

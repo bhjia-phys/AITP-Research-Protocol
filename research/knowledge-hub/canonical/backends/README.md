@@ -12,6 +12,13 @@ It is an internal bridge surface for:
 Use:
 - `backend_index.jsonl` as the compact registry
 - one `*.json` file per backend as the detailed card
+- `backend.template.json` as the generic authoring template
+- `examples/` for public example cards that demonstrate recommended patterns
+
+Public starter pack for formal-theory backends:
+- `FORMAL_THEORY_BACKEND_STARTER.md`
+- `examples/formal-theory-note-library.example.json`
+- `../../runtime/scripts/run_formal_theory_backend_smoke.sh`
 
 Do not store promoted canonical units here.
 Store only backend descriptions and routing rules.

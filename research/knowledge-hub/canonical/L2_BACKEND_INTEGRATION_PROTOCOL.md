@@ -60,7 +60,9 @@ Required fields:
 - `status`
 - `root_paths`
 - `purpose`
+- `artifact_granularity`
 - `source_policy`
+- `l0_registration`
 - `canonical_targets`
 - `retrieval_hints`
 - `notes`
@@ -88,6 +90,7 @@ State what the atomic reusable input is:
 - single derivation note.
 
 Do not leave this implicit.
+Record it directly in the backend card through `artifact_granularity`.
 
 ### Step 3. Register concrete artifacts into `L0`
 
@@ -100,6 +103,8 @@ For `source-layer` registration, include backend-aware provenance fields such as
 - `locator.backend_relative_path`
 
 This is the bridge from backend storage into AITP's source substrate.
+Record the expected registration helper and minimum required fields directly in the
+backend card through `l0_registration`.
 
 ### Step 4. Use `L2 consultation` explicitly when needed
 
@@ -191,3 +196,14 @@ Before a backend counts as integrated, confirm:
 - no folder-level canonicalization is implied
 
 If any of these is missing, the backend is only partially integrated.
+
+## 10. Public formal-theory starter pack
+
+The public repository ships a formal-theory starter example here:
+
+- `canonical/backends/examples/formal-theory-note-library.example.json`
+- `canonical/backends/FORMAL_THEORY_BACKEND_STARTER.md`
+- `runtime/scripts/run_formal_theory_backend_smoke.sh`
+
+Use that starter pack when you want to bridge an external theory-note library
+into `L2` without turning the backend root itself into canonical memory.
