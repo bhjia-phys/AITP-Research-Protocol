@@ -122,6 +122,33 @@ That writes `.agents/skills/aitp-runtime/` under the target workspace so a
 normal `codex` session there sees an AITP-first research rule instead of
 starting from ad hoc browsing.
 
+## How You Actually Use It
+
+For most users there are only four recurring operations:
+
+```bash
+# 1. create or refresh a topic shell
+aitp bootstrap --topic "<topic>" --human-request "<task>"
+
+# 2. do one bounded unit of topic work
+aitp loop --topic-slug <topic_slug> --human-request "<task>" --max-auto-steps 1
+
+# 3. continue an existing topic without re-bootstrap
+aitp resume --topic-slug <topic_slug> --human-request "<task>"
+
+# 4. move a mature candidate into L2 only after human approval
+aitp request-promotion --topic-slug <topic_slug> --candidate-id <candidate_id> --backend-id <backend_id>
+aitp approve-promotion --topic-slug <topic_slug> --candidate-id <candidate_id>
+aitp promote --topic-slug <topic_slug> --candidate-id <candidate_id> --target-backend-root <backend_root>
+```
+
+The practical rule is:
+
+- use `bootstrap` to open a topic;
+- use `loop` or `resume` for actual bounded progress;
+- keep exploratory or not-yet-approved material in `L3` or `L4`;
+- only move into `L2` after an explicit human approval artifact exists.
+
 ## Installation Flow
 
 ```mermaid
@@ -166,6 +193,117 @@ flowchart TD
     O --> P{Human approves?}
     P -->|yes| Q[promote into L2 backend]
     P -->|no| R[stay in L3 or reject]
+```
+
+## Application Scenarios
+
+AITP is designed so different runtimes and different research lanes can share
+the same `L0-L4` contract instead of inventing different hidden workflows.
+
+### 1. Bare Codex Inside a Theory Workspace
+
+Use this when you want a normal `codex` conversation inside a project folder,
+but you want research work to enter through AITP instead of direct browsing.
+
+```mermaid
+flowchart TD
+    A[Human opens bare codex in theory workspace] --> B[Codex reads .agents/skills/aitp-runtime/SKILL.md]
+    B --> C[First action must be aitp bootstrap or aitp loop]
+    C --> D[AITP materializes runtime bundle]
+    D --> E[Codex reads runtime_protocol.generated.md and agent_brief.md]
+    E --> F[Codex surveys current L0 or L1 or L2 state]
+    F --> G[Codex performs one bounded research or coding step]
+    G --> H[Artifacts land in L1 or L3 or L4]
+    H --> I{Candidate ready for L2?}
+    I -->|no| J[Stay in L3 or L4 and continue]
+    I -->|yes| K[request-promotion]
+    K --> L{Human approval}
+    L -->|approved| M[promote into L2 backend]
+    L -->|rejected| J
+```
+
+### 2. OpenClaw Plus Heartbeat Autonomous Research
+
+Use this when you want OpenClaw to keep advancing a topic in bounded steps,
+while a human still controls direction changes and `L2` admission.
+
+```mermaid
+flowchart TD
+    A[Human sets topic plus heartbeat or control note] --> B[OpenClaw wakes up]
+    B --> C[OpenClaw enters through aitp loop]
+    C --> D[Runtime bundle and decision surfaces refresh]
+    D --> E[OpenClaw reads action queue and protocol bundle]
+    E --> F[Execute one bounded next step]
+    F --> G[Write human-readable artifacts into runtime or L3 or L4]
+    G --> H[Run conformance or trust audits when needed]
+    H --> I{More bounded work remains?}
+    I -->|yes| B
+    I -->|no| J[Wait for next heartbeat or human instruction]
+    G --> K{Candidate should enter L2?}
+    K -->|yes| L[request-promotion and wait for human approval]
+    K -->|no| J
+```
+
+### 3. Three Research Lanes Under One Protocol
+
+The same layer protocol can support three different categories of theoretical
+physics work.
+
+```mermaid
+flowchart TD
+    A[New topic or idea] --> B{Research lane}
+    B --> C[Formal theory and derivation]
+    B --> D[Toy-model theoretical-physics numerics]
+    B --> E[Code-backed theoretical-physics algorithm development]
+    C --> C1[L0 papers, notes, definitions, prior claims]
+    C1 --> C2[L1 derivation analysis and concept structure]
+    C2 --> C3[L3 candidate theorem or explanatory note]
+    C3 --> C4[L2 formal-theory backend such as TPKN after approval]
+    D --> D1[L0 references, model specs, baseline papers]
+    D1 --> D2[L1 assumptions, observables, finite-size plan]
+    D2 --> D3[L4 controlled runs and validation artifacts]
+    D3 --> D4[L2 reusable workflow or benchmark note after approval]
+    E --> E1[L0 upstream codebases, papers, existing methods]
+    E1 --> E2[L1 method analysis and implementation plan]
+    E2 --> E3[L4 baseline reproduction, trust audit, code validation]
+    E3 --> E4[L2 reusable operation or method note after approval]
+```
+
+## Runtime Workflows At A Glance
+
+### Workflow A: Start a New Topic
+
+```mermaid
+flowchart LR
+    A[Research idea] --> B[aitp bootstrap]
+    B --> C[topic_state.json]
+    B --> D[agent_brief.md]
+    B --> E[operator_console.md]
+    B --> F[runtime_protocol.generated.md]
+    F --> G[bounded loop or resume]
+```
+
+### Workflow B: Continue an Existing Topic
+
+```mermaid
+flowchart LR
+    A[Existing topic_slug] --> B[aitp resume or aitp loop]
+    B --> C[read runtime bundle]
+    C --> D[do one bounded action]
+    D --> E[aitp audit]
+    E --> F[stay in L1 or L3 or L4, or request L2 promotion]
+```
+
+### Workflow C: L2 Admission Gate
+
+```mermaid
+flowchart LR
+    A[L3 or L4 candidate] --> B[request-promotion]
+    B --> C[promotion_gate.json and promotion_gate.md]
+    C --> D{Human approves?}
+    D -->|no| E[reject or keep exploratory]
+    D -->|yes| F[promote]
+    F --> G[L2 backend writeback]
 ```
 
 ## Agent Support Matrix
