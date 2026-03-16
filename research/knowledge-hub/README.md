@@ -11,6 +11,10 @@ It is the repo-local source-of-truth behind:
 
 The repository remains protocol-first, but a fresh clone is now both readable
 and runnable.
+The fixed directories are public governance surfaces.
+The scientific content inside them is expected to remain user-extensible so one
+clone can emphasize formal theory while another emphasizes toy-model numerics or
+code-backed method development.
 
 ## Quick Start
 
@@ -84,6 +88,17 @@ Formal roots:
 - `L3` -> `feedback/`
 - `L4` -> `validation/`
 
+Public layer semantics:
+
+- `L0`: source entry, survey, and acquisition
+- `L1`: analysis and provisional understanding
+- `L2`: long-term reusable knowledge
+- `L3`: exploratory conclusions and candidate reusable material
+- `L4`: planning, execution, validation, and adjudication
+
+The current filesystem keeps the `validation/` directory name for continuity,
+but the public `L4` role is broader than a narrow pass/fail checker.
+
 Cross-layer protocol surfaces:
 
 - `consultation/`
@@ -104,6 +119,9 @@ contract file is sufficient.
 Agents should read that runtime bundle before acting on heuristic queue rows.
 
 The layer contracts above remain the higher-priority governance surface.
+External backends such as a separate formal-theory knowledge network, a
+software repository, or a result store should enter through the documented
+`L2` backend bridge rather than through hidden path assumptions.
 
 ## Validation
 

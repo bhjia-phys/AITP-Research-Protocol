@@ -37,7 +37,7 @@ class AITPCLITests(unittest.TestCase):
                 "--topic-slug",
                 "demo-topic",
                 "--title",
-                "OTOC backend",
+                "Small-system validation backend",
                 "--kind",
                 "numerical",
                 "--baseline-required",

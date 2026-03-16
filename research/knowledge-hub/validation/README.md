@@ -1,14 +1,23 @@
-# Layer 4 — Validation / Adjudication Log
+# Layer 4 — Planning / Execution / Validation / Adjudication Log
 
-This layer stores explicit checks that decide whether Layer 3 candidate
+This layer stores explicit `L4` artifacts that decide whether Layer 3 candidate
 material is ready to enter the canonical layer.
+That includes bounded planning, executable handoff tasks, returned results,
+validation records, and promotion / reject / defer decisions.
 
 The standalone public kernel treats this repository-local validation surface as
 the source-of-truth. Teams may optionally mirror human-readable adjudication
 notes elsewhere, but that external note surface is supplemental rather than
 normative.
 
+The public layer role is broader than the directory name alone:
+
+- the directory stays `validation/` for continuity,
+- but the `L4` contract is the general plan / execute / validate / adjudicate surface.
+
 Use it for:
+- bounded execution plans,
+- execution handoff contracts,
 - validation plans,
 - cross-checks against existing workflows and concepts,
 - contradiction checks,
@@ -38,14 +47,10 @@ Numerical and symbolic execution helpers may live under:
 
 `research/knowledge-hub/validation/tools/`
 
-The first domain-specific pilot now includes a small-system exact-diagonalization toolkit for:
-- OTOC,
-- Krylov complexity,
-- gap-ratio sanity checks,
-
-documented in:
-- `CHAOS_DIAGNOSTICS_EXECUTION.md`
-- `tools/README.md`
+This public repository deliberately does not ship a personal topic-specific
+numerical pilot as part of the default kernel.
+Teams should add their own auditable `L4` executors, templates, and baseline
+gates when they need domain-specific numerics or formal tooling.
 
 This layer is the main gate between Layer 3 exploratory material and Layer 2 canonical knowledge.
 Direct `L1 -> L4 -> L2` is not allowed: Layer 4 must come after Layer 3.

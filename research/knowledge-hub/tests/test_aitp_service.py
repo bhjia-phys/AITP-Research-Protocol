@@ -45,7 +45,7 @@ class _LoopStubService(AITPService):
                     "status": "pending",
                     "auto_runnable": True,
                     "action_type": "skill_discovery",
-                    "handler_args": {"queries": ["otoc baseline"]},
+                    "handler_args": {"queries": ["finite-size benchmark"]},
                 },
                 ensure_ascii=True,
                 separators=(",", ":"),
@@ -162,7 +162,7 @@ class AITPServiceTests(unittest.TestCase):
         payload = self.service.scaffold_baseline(
             topic_slug="demo-topic",
             run_id="2026-03-13-demo",
-            title="Public OTOC toy baseline",
+            title="Public finite-size benchmark baseline",
             reference="arXiv:0000.00000",
             agreement_criterion="curves agree qualitatively and peak order matches",
         )
@@ -182,7 +182,7 @@ class AITPServiceTests(unittest.TestCase):
         payload = self.service.scaffold_atomic_understanding(
             topic_slug="demo-topic",
             run_id="2026-03-13-demo",
-            method_title="Krylov complexity",
+            method_title="Finite-size spectral diagnostic",
         )
 
         concept_map = Path(payload["paths"]["atomic_concept_map"])
@@ -202,7 +202,7 @@ class AITPServiceTests(unittest.TestCase):
         (runtime_root / "interaction_state.json").write_text(
             json.dumps(
                 {
-                    "human_request": "run a bounded HS protocol check",
+                    "human_request": "run a bounded public protocol check",
                     "delivery_contract": {
                         "rule": "Outputs must cite exact artifact paths and justify the chosen layer."
                     },
@@ -257,7 +257,7 @@ class AITPServiceTests(unittest.TestCase):
         result = self.service._materialize_runtime_protocol_bundle(
             topic_slug="demo-topic",
             updated_by="aitp-cli",
-            human_request="run a bounded HS protocol check",
+            human_request="run a bounded public protocol check",
         )
 
         protocol_json = Path(result["runtime_protocol_path"])
@@ -265,7 +265,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue(protocol_json.exists())
         self.assertTrue(protocol_note.exists())
         payload = json.loads(protocol_json.read_text(encoding="utf-8"))
-        self.assertEqual(payload["human_request"], "run a bounded HS protocol check")
+        self.assertEqual(payload["human_request"], "run a bounded public protocol check")
         self.assertEqual(payload["priority_rules"][0]["source"], "control_note_or_decision_contract")
         self.assertEqual(payload["action_queue_surface"]["queue_source"], "heuristic")
         self.assertIn("Prefer durable `next_actions.contract.json`", protocol_note.read_text(encoding="utf-8"))
@@ -275,7 +275,7 @@ class AITPServiceTests(unittest.TestCase):
         payload = self.service.scaffold_operation(
             topic_slug="demo-topic",
             run_id="2026-03-13-demo",
-            title="OTOC diagonalization backend",
+            title="Small-system validation backend",
             kind="numerical",
         )
         manifest = Path(payload["manifest_path"])
@@ -292,9 +292,9 @@ class AITPServiceTests(unittest.TestCase):
         self.service.update_operation(
             topic_slug="demo-topic",
             run_id="2026-03-13-demo",
-            operation="OTOC diagonalization backend",
+            operation="Small-system validation backend",
             baseline_status="passed",
-            artifact_paths=["validation/topics/demo-topic/runs/2026-03-13-demo/results/otoc.json"],
+            artifact_paths=["validation/topics/demo-topic/runs/2026-03-13-demo/results/benchmark.json"],
         )
         passed = self.service.audit_operation_trust(
             topic_slug="demo-topic",
@@ -308,13 +308,13 @@ class AITPServiceTests(unittest.TestCase):
         self.service.scaffold_operation(
             topic_slug="demo-topic",
             run_id="2026-03-13-demo",
-            title="Krylov toy baseline",
+            title="Finite-size validation baseline",
             kind="numerical",
         )
         self.service.update_operation(
             topic_slug="demo-topic",
             run_id="2026-03-13-demo",
-            operation="Krylov toy baseline",
+            operation="Finite-size validation baseline",
             baseline_status="passed",
         )
         self.service.audit_operation_trust(

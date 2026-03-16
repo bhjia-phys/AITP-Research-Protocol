@@ -45,8 +45,8 @@ Register a new arXiv-backed source into Layer 0 and create the Layer 1 projectio
 
 ```bash
 python3 source-layer/scripts/register_arxiv_source.py \
-  --topic-slug haldane-shastry-chaos-transition \
-  --arxiv-id 2104.09514 \
+  --topic-slug <topic_slug> \
+  --arxiv-id <arxiv_id> \
   --download-source
 ```
 
@@ -54,7 +54,7 @@ Backfill an existing topic that still stores sources only inside intake:
 
 ```bash
 python3 source-layer/scripts/backfill_topic_sources.py \
-  --topic-slug haldane-shastry-chaos-transition
+  --topic-slug <topic_slug>
 ```
 
 ## Current limitation

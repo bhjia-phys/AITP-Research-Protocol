@@ -87,8 +87,8 @@ Read in this order before doing substantial work:
 23. `research/knowledge-hub/validation/EXECUTION_PROTOCOL.md` when the task requires execution-backed validation.
    Use this to understand how task records and promotion decisions are serialized.
 
-24. `research/knowledge-hub/validation/CHAOS_DIAGNOSTICS_EXECUTION.md` when the task is OTOC / Krylov / spin-chain chaos work.
-   Use this to understand the numerical pilot toolchain and its current limitations.
+24. `research/knowledge-hub/canonical/L2_BACKEND_INTEGRATION_PROTOCOL.md` when the task is to connect a formal-theory note library, software repository, or result store to `L2`.
+   Use this to keep backend registration explicit and avoid treating an external folder as canonical knowledge by path alone.
 
 25. The active Share_work handoff note for the current thread.
    Use this to pick up the latest local decisions, blockers, and next steps.

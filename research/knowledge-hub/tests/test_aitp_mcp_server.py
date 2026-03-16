@@ -120,14 +120,14 @@ class AITPMCPServerTests(unittest.TestCase):
                 aitp_mcp_server.aitp_scaffold_atomic_understanding(
                     "demo-topic",
                     "2026-03-13-demo",
-                    "Krylov complexity",
+                    "Finite-size spectral diagnostic",
                 )
             )
             operation = _parse(
                 aitp_mcp_server.aitp_scaffold_operation(
                     "demo-topic",
                     "2026-03-13-demo",
-                    "OTOC backend",
+                    "Small-system validation backend",
                     "numerical",
                 )
             )
@@ -135,7 +135,7 @@ class AITPMCPServerTests(unittest.TestCase):
                 aitp_mcp_server.aitp_update_operation(
                     "demo-topic",
                     "2026-03-13-demo",
-                    "OTOC backend",
+                    "Small-system validation backend",
                     baseline_status="passed",
                 )
             )
@@ -178,14 +178,14 @@ class AITPMCPServerTests(unittest.TestCase):
                     aitp_mcp_server.aitp_scaffold_atomic_understanding(
                         "demo-topic",
                         "2026-03-13-demo",
-                        "Krylov complexity",
+                        "Finite-size spectral diagnostic",
                     )
                 ),
                 _parse(
                     aitp_mcp_server.aitp_scaffold_operation(
                         "demo-topic",
                         "2026-03-13-demo",
-                        "OTOC backend",
+                        "Small-system validation backend",
                         "numerical",
                     )
                 ),
@@ -193,7 +193,7 @@ class AITPMCPServerTests(unittest.TestCase):
                     aitp_mcp_server.aitp_update_operation(
                         "demo-topic",
                         "2026-03-13-demo",
-                        "OTOC backend",
+                        "Small-system validation backend",
                     )
                 ),
                 _parse(aitp_mcp_server.aitp_audit_operation_trust("demo-topic")),

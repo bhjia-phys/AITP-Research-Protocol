@@ -29,11 +29,8 @@ TOY_MODEL_MARKERS = (
     "spin chain",
     "heisenberg",
     "ising",
-    "haldane-shastry",
     "j1-j2",
     "exact diagonalization",
-    "otoc",
-    "krylov",
     "finite-size",
 )
 FORMAL_DERIVATION_MARKERS = (

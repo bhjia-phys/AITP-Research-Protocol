@@ -23,9 +23,9 @@ Typical resume usage by slug:
 
 ```bash
 python3 research/adapters/openclaw/scripts/aitp_loop.py \
-  --topic-slug haldane-shastry-chaos-transition \
-  --run-id 2026-03-12-otoc-krylov-extension \
-  --control-note /home/bhj/projects/repos/Theoretical-Physics/obsidian-markdown/11\ L4\ Validation/active/2026-03-12_hs-chaos-otoc-krylov-validation.md \
+  --topic-slug <topic_slug> \
+  --run-id <run_id> \
+  --control-note /abs/path/to/control-note.md \
   --human-request "Continue the current topic and keep the runtime state operator-visible." \
   --max-steps 1
 ```
@@ -42,15 +42,22 @@ Typical bootstrap usage with sources:
 
 ```bash
 python3 research/adapters/openclaw/scripts/aitp_loop.py \
-  --topic "Haldane-Shastry chaos transition" \
-  --statement "Extend the current note with OTOC and Krylov diagnostics." \
-  --local-note-path /home/bhj/Theoretical-Physics/obsidian-markdown/04\ 平时的记录/可积与混沌/Haldane-Shastry\ SU\(N\)\ Chain/Haldane-Shastry\ SU\(N\)\ Chain.md \
-  --arxiv-id 2104.09514 \
-  --skill-query "scientific problem selection" \
+  --topic "Formal-theory bridge smoke topic" \
+  --statement "Register one source and materialize one bounded loop step without scientific conclusions." \
+  --local-note-path /abs/path/to/local-note.md \
+  --arxiv-id <arxiv_id> \
+  --skill-query "formal theory source bridging" \
   --max-steps 1
 ```
 
 `python3 research/adapters/openclaw/scripts/aitp_topic_runner.py ...` remains as a compatibility wrapper and now delegates to the same loop surface.
+
+For a repo-local plugin smoke test that does not expose a personal research
+topic, use:
+
+```bash
+research/adapters/openclaw/scripts/run_openclaw_plugin_smoke.sh
+```
 
 ## Outputs
 

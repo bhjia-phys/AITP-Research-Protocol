@@ -23,8 +23,8 @@ Check that the kernel itself is healthy:
 
 ```bash
 aitp doctor
-aitp state --topic-slug haldane-shastry-chaos-transition
-aitp capability-audit --topic-slug haldane-shastry-chaos-transition
+aitp state --topic-slug <topic_slug>
+aitp capability-audit --topic-slug <topic_slug>
 ```
 
 Pass condition:
@@ -38,7 +38,7 @@ Run one bounded step only:
 
 ```bash
 aitp loop \
-  --topic-slug haldane-shastry-chaos-transition \
+  --topic-slug <topic_slug> \
   --updated-by manual-smoke \
   --max-auto-steps 1 \
   --json
@@ -74,12 +74,13 @@ From Feishu DM, ask for:
 
 Suggested checks:
 - read `loop_state`
-- run the existing bounded HS smoke test
+- run the generic OpenClaw plugin smoke script:
+  - `research/adapters/openclaw/scripts/run_openclaw_plugin_smoke.sh`
 
 Pass condition:
 - transport works
 - runtime state is readable
-- bounded Codex/AITP handoff is truthful
+- bounded OpenClaw/AITP handoff is truthful
 
 ## 6. L2 backend bridge test: note-library backend
 

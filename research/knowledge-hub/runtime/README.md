@@ -4,6 +4,8 @@ This directory is the cross-layer runtime registry for AITP topics.
 
 It is not a new epistemic layer.
 It is a durable control surface that summarizes where a topic currently stands across `L1`, `L3`, `L4`, and `consultation`, so the next agent can resume from disk without reconstructing state by hand.
+The same runtime surface should remain usable whether a clone is doing formal
+theory work, toy-model numerics, or code-backed algorithm development.
 
 ## Purpose
 
@@ -117,7 +119,7 @@ For internal runtime work, the lower-level orchestrator still exists:
 
 ```bash
 python3 runtime/scripts/orchestrate_topic.py \
-  --topic-slug haldane-shastry-chaos-transition
+  --topic-slug <topic_slug>
 ```
 
 For the minimal closed-loop v1, the external executor returns one JSON artifact at:
@@ -153,8 +155,8 @@ When a capability gap needs external skill discovery, add one or more queries:
 
 ```bash
 python3 research/adapters/openclaw/scripts/aitp_loop.py \
-  --topic-slug haldane-shastry-chaos-transition \
-  --skill-query "scientific problem selection" \
+  --topic-slug <topic_slug> \
+  --skill-query "formal theory source bridging" \
   --max-steps 1
 ```
 

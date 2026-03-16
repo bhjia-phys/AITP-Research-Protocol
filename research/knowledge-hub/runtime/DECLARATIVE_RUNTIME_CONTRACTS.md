@@ -26,7 +26,7 @@ Minimal shape:
   "actions": [
     {
       "action_id": "action:my-topic:01",
-      "summary": "Prepare the larger-size OTOC comparison.",
+      "summary": "Prepare the larger-size finite-size benchmark comparison.",
       "action_type": "manual_followup",
       "resume_stage": "L3",
       "auto_runnable": false
