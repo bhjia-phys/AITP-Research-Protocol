@@ -1,0 +1,158 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">AITP README Hero</title>
+  <desc id="desc">A wide banner for the AITP repository showing the AITP mark, the title, key principles, and the L0 to L4 protocol flow.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#071827"/>
+      <stop offset="0.45" stop-color="#0B2438"/>
+      <stop offset="1" stop-color="#08121E"/>
+    </linearGradient>
+    <linearGradient id="line" x1="130" y1="0" x2="1160" y2="640" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#39BEE7" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#39BEE7" stop-opacity="0.02"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(270 220) rotate(90) scale(180)">
+      <stop stop-color="#24D1C5" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#24D1C5" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1010 182) rotate(90) scale(220)">
+      <stop stop-color="#FFC857" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#FFC857" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="pill" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#143049"/>
+      <stop offset="1" stop-color="#0D2235"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#24D1C5"/>
+      <stop offset="1" stop-color="#7EE8F2"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1280" height="640" rx="36" fill="url(#bg)"/>
+  <rect x="1" y="1" width="1278" height="638" rx="35" stroke="#4EDAF0" stroke-opacity="0.16"/>
+
+  <circle cx="270" cy="220" r="180" fill="url(#glowA)"/>
+  <circle cx="1010" cy="182" r="220" fill="url(#glowB)"/>
+
+  <g opacity="0.18">
+    <path d="M72 100H1208" stroke="url(#line)" stroke-width="1"/>
+    <path d="M72 160H1208" stroke="url(#line)" stroke-width="1"/>
+    <path d="M72 220H1208" stroke="url(#line)" stroke-width="1"/>
+    <path d="M72 280H1208" stroke="url(#line)" stroke-width="1"/>
+    <path d="M72 340H1208" stroke="url(#line)" stroke-width="1"/>
+    <path d="M72 400H1208" stroke="url(#line)" stroke-width="1"/>
+    <path d="M72 460H1208" stroke="url(#line)" stroke-width="1"/>
+    <path d="M72 520H1208" stroke="url(#line)" stroke-width="1"/>
+    <path d="M132 70V570" stroke="url(#line)" stroke-width="1"/>
+    <path d="M232 70V570" stroke="url(#line)" stroke-width="1"/>
+    <path d="M332 70V570" stroke="url(#line)" stroke-width="1"/>
+    <path d="M432 70V570" stroke="url(#line)" stroke-width="1"/>
+    <path d="M532 70V570" stroke="url(#line)" stroke-width="1"/>
+    <path d="M632 70V570" stroke="url(#line)" stroke-width="1"/>
+    <path d="M732 70V570" stroke="url(#line)" stroke-width="1"/>
+    <path d="M832 70V570" stroke="url(#line)" stroke-width="1"/>
+    <path d="M932 70V570" stroke="url(#line)" stroke-width="1"/>
+    <path d="M1032 70V570" stroke="url(#line)" stroke-width="1"/>
+    <path d="M1132 70V570" stroke="url(#line)" stroke-width="1"/>
+  </g>
+
+  <g transform="translate(94 110)">
+    <rect x="0" y="0" width="352" height="352" rx="72" fill="#07131F" fill-opacity="0.62"/>
+    <rect x="0.5" y="0.5" width="351" height="351" rx="71.5" stroke="#5AE2F5" stroke-opacity="0.16"/>
+    <circle cx="176" cy="176" r="120" fill="#23D0C4" fill-opacity="0.09"/>
+    <circle cx="176" cy="176" r="36" fill="#FFC857"/>
+    <circle cx="176" cy="176" r="12" fill="#FFF5D7"/>
+    <g stroke="#7EE8F2" stroke-width="10" stroke-linecap="round">
+      <path d="M89 86H60V266H89"/>
+      <path d="M263 86H292V266H263"/>
+      <ellipse cx="176" cy="176" rx="124" ry="76" transform="rotate(-24 176 176)"/>
+      <ellipse cx="176" cy="176" rx="124" ry="76" transform="rotate(24 176 176)"/>
+    </g>
+    <g fill="#9CF6EC">
+      <circle cx="94" cy="95" r="10"/>
+      <circle cx="258" cy="96" r="10"/>
+      <circle cx="64" cy="176" r="9"/>
+      <circle cx="288" cy="176" r="9"/>
+      <circle cx="97" cy="258" r="10"/>
+      <circle cx="259" cy="257" r="10"/>
+    </g>
+  </g>
+
+  <g font-family="Segoe UI, Arial, sans-serif">
+    <text x="498" y="182" fill="#8BEFF7" font-size="24" font-weight="700" letter-spacing="4">PROTOCOL-FIRST RESEARCH KERNEL</text>
+    <text x="498" y="266" fill="#F5FBFF" font-size="78" font-weight="800" letter-spacing="2">AITP</text>
+    <text x="498" y="320" fill="#D2E7F1" font-size="34" font-weight="700">AI Theoretical Physicist</text>
+    <text x="498" y="372" fill="#C1D7E3" font-size="24">Charter above runtime. Protocol above heuristics.</text>
+    <text x="498" y="408" fill="#C1D7E3" font-size="24">Agents execute bounded research instead of improvising hidden workflows.</text>
+  </g>
+
+  <g transform="translate(498 450)" font-family="Segoe UI, Arial, sans-serif">
+    <rect x="0" y="0" width="184" height="48" rx="24" fill="url(#pill)"/>
+    <rect x="0.5" y="0.5" width="183" height="47" rx="23.5" stroke="#5AE2F5" stroke-opacity="0.16"/>
+    <text x="92" y="31" text-anchor="middle" fill="#DDF6FB" font-size="18" font-weight="700">Evidence Before Speculation</text>
+
+    <rect x="196" y="0" width="174" height="48" rx="24" fill="url(#pill)"/>
+    <rect x="196.5" y="0.5" width="173" height="47" rx="23.5" stroke="#5AE2F5" stroke-opacity="0.16"/>
+    <text x="283" y="31" text-anchor="middle" fill="#DDF6FB" font-size="18" font-weight="700">Human-Gated L2</text>
+
+    <rect x="382" y="0" width="188" height="48" rx="24" fill="url(#pill)"/>
+    <rect x="382.5" y="0.5" width="187" height="47" rx="23.5" stroke="#5AE2F5" stroke-opacity="0.16"/>
+    <text x="476" y="31" text-anchor="middle" fill="#DDF6FB" font-size="18" font-weight="700">Codex / OpenClaw / OpenCode</text>
+  </g>
+
+  <g transform="translate(760 96)" font-family="Segoe UI, Arial, sans-serif">
+    <text x="0" y="0" fill="#8BEFF7" font-size="18" font-weight="700" letter-spacing="3">LAYER ROUTE</text>
+
+    <g transform="translate(0 38)">
+      <line x1="58" y1="39" x2="136" y2="39" stroke="url(#accent)" stroke-width="4" stroke-linecap="round"/>
+      <line x1="186" y1="39" x2="264" y2="39" stroke="url(#accent)" stroke-width="4" stroke-linecap="round"/>
+      <line x1="314" y1="39" x2="392" y2="39" stroke="url(#accent)" stroke-width="4" stroke-linecap="round"/>
+      <line x1="442" y1="39" x2="520" y2="39" stroke="url(#accent)" stroke-width="4" stroke-linecap="round"/>
+
+      <g>
+        <circle cx="28" cy="39" r="28" fill="#143049"/>
+        <circle cx="28" cy="39" r="27.5" stroke="#7EE8F2" stroke-opacity="0.22"/>
+        <text x="28" y="46" text-anchor="middle" fill="#FFFFFF" font-size="22" font-weight="800">L0</text>
+        <text x="28" y="82" text-anchor="middle" fill="#BFD7E3" font-size="14">Sources</text>
+      </g>
+
+      <g transform="translate(128 0)">
+        <circle cx="28" cy="39" r="28" fill="#143049"/>
+        <circle cx="28" cy="39" r="27.5" stroke="#7EE8F2" stroke-opacity="0.22"/>
+        <text x="28" y="46" text-anchor="middle" fill="#FFFFFF" font-size="22" font-weight="800">L1</text>
+        <text x="28" y="82" text-anchor="middle" fill="#BFD7E3" font-size="14">Analysis</text>
+      </g>
+
+      <g transform="translate(256 0)">
+        <circle cx="28" cy="39" r="28" fill="#2A2233"/>
+        <circle cx="28" cy="39" r="27.5" stroke="#FFB575" stroke-opacity="0.24"/>
+        <text x="28" y="46" text-anchor="middle" fill="#FFFFFF" font-size="22" font-weight="800">L3</text>
+        <text x="28" y="82" text-anchor="middle" fill="#BFD7E3" font-size="14">Candidates</text>
+      </g>
+
+      <g transform="translate(384 0)">
+        <circle cx="28" cy="39" r="28" fill="#2A2233"/>
+        <circle cx="28" cy="39" r="27.5" stroke="#FFB575" stroke-opacity="0.24"/>
+        <text x="28" y="46" text-anchor="middle" fill="#FFFFFF" font-size="22" font-weight="800">L4</text>
+        <text x="28" y="82" text-anchor="middle" fill="#BFD7E3" font-size="14">Validation</text>
+      </g>
+
+      <g transform="translate(512 0)">
+        <circle cx="28" cy="39" r="28" fill="#17362E"/>
+        <circle cx="28" cy="39" r="27.5" stroke="#9CF6EC" stroke-opacity="0.3"/>
+        <text x="28" y="46" text-anchor="middle" fill="#FFFFFF" font-size="22" font-weight="800">L2</text>
+        <text x="28" y="82" text-anchor="middle" fill="#BFD7E3" font-size="14">Trusted Memory</text>
+      </g>
+    </g>
+
+    <g transform="translate(0 176)">
+      <rect x="0" y="0" width="548" height="140" rx="24" fill="#0D2235" fill-opacity="0.86"/>
+      <rect x="0.5" y="0.5" width="547" height="139" rx="23.5" stroke="#5AE2F5" stroke-opacity="0.16"/>
+      <text x="28" y="40" fill="#F5FBFF" font-size="24" font-weight="700">Kernel Rules</text>
+      <text x="28" y="76" fill="#CEE4EE" font-size="20">1. Materialize durable artifacts before synthesis.</text>
+      <text x="28" y="106" fill="#CEE4EE" font-size="20">2. Keep exploratory work in L3/L4 until trust is earned.</text>
+      <text x="28" y="136" fill="#CEE4EE" font-size="20">3. Promote to L2 only with explicit human approval.</text>
+    </g>
+  </g>
+</svg>

@@ -1,8 +1,38 @@
-# AITP Research Charter and Kernel
+<div align="center">
+  <img src="./.github/assets/aitp-mark.svg" width="116" alt="AITP logo" />
+  <h1>AITP Research Charter and Kernel</h1>
+  <p><strong>Protocol-first infrastructure for building an AI Theoretical Physicist that behaves like a disciplined research participant rather than a free-form chat agent.</strong></p>
+  <p>
+    <a href="#quick-start">Quick Start</a> ·
+    <a href="#core-research-model">Research Model</a> ·
+    <a href="#how-you-actually-use-it">Usage</a> ·
+    <a href="#agent-support-matrix">Runtime Support</a> ·
+    <a href="#public-docs">Docs</a>
+  </p>
+</div>
 
-> A protocol-first and now minimally installable public repository for building
-> an AI Theoretical Physicist as a disciplined research participant rather than
-> a free-form chat agent.
+<p align="center">
+  <img src="./.github/assets/aitp-hero.svg" width="100%" alt="AITP protocol-first research kernel hero" />
+</p>
+
+<p align="center">
+  <a href="https://github.com/bhjia-phys/AITP-Research-Protocol/stargazers"><img src="https://img.shields.io/github/stars/bhjia-phys/AITP-Research-Protocol?style=flat-square&labelColor=0B1220&color=FFC857" alt="GitHub stars" /></a>
+  <a href="https://github.com/bhjia-phys/AITP-Research-Protocol/network/members"><img src="https://img.shields.io/github/forks/bhjia-phys/AITP-Research-Protocol?style=flat-square&labelColor=0B1220&color=7EE8F2" alt="GitHub forks" /></a>
+  <a href="https://github.com/bhjia-phys/AITP-Research-Protocol/issues"><img src="https://img.shields.io/github/issues/bhjia-phys/AITP-Research-Protocol?style=flat-square&labelColor=0B1220&color=FF9B71" alt="GitHub issues" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-EAF4FF?style=flat-square&labelColor=0B1220" alt="MIT License" /></a>
+  <img src="https://img.shields.io/badge/kernel-L0--L4-9CF6EC?style=flat-square&labelColor=0B1220" alt="L0 to L4 kernel" />
+  <img src="https://img.shields.io/badge/research-protocol--first-8BEFF7?style=flat-square&labelColor=0B1220" alt="Protocol-first" />
+</p>
+
+> Charter above runtime. Protocol above heuristics. Agents are executors, not the source of truth.
+
+## At A Glance
+
+| Surface | Role | Current public shape |
+| --- | --- | --- |
+| Charter | Defines what serious AI-assisted theoretical-physics work should respect | `docs/CHARTER.md`, `docs/AGENT_MODEL.md` |
+| Kernel | Provides stable `L0-L4` layer boundaries, audits, and promotion gates | `research/knowledge-hub/` |
+| Adapters | Forces concrete runtimes to enter through the protocol instead of ad hoc behavior | Codex, OpenClaw, Claude Code, OpenCode |
 
 ## What This Repository Is
 

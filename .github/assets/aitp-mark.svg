@@ -1,0 +1,68 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">AITP Mark</title>
+  <desc id="desc">A dark rounded-square logo with a luminous core, orbital curves, and bracket-like protocol rails representing the AI Theoretical Physicist research kernel.</desc>
+  <defs>
+    <linearGradient id="bg" x1="56" y1="48" x2="456" y2="464" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B2840"/>
+      <stop offset="0.55" stop-color="#081B2E"/>
+      <stop offset="1" stop-color="#040D18"/>
+    </linearGradient>
+    <radialGradient id="core" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 256) rotate(90) scale(112)">
+      <stop stop-color="#FFE39A"/>
+      <stop offset="0.45" stop-color="#FFC857"/>
+      <stop offset="1" stop-color="#FF8C42"/>
+    </radialGradient>
+    <radialGradient id="halo" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 256) rotate(90) scale(180)">
+      <stop stop-color="#24D1C5" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#24D1C5" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="92" y="92" width="328" height="328" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="url(#bg)"/>
+  <rect x="24.5" y="24.5" width="463" height="463" rx="95.5" stroke="#3AB8E7" stroke-opacity="0.16"/>
+
+  <g opacity="0.18">
+    <path d="M96 144H416" stroke="#8FC7FF" stroke-width="1"/>
+    <path d="M96 208H416" stroke="#8FC7FF" stroke-width="1"/>
+    <path d="M96 304H416" stroke="#8FC7FF" stroke-width="1"/>
+    <path d="M96 368H416" stroke="#8FC7FF" stroke-width="1"/>
+    <path d="M144 96V416" stroke="#8FC7FF" stroke-width="1"/>
+    <path d="M208 96V416" stroke="#8FC7FF" stroke-width="1"/>
+    <path d="M304 96V416" stroke="#8FC7FF" stroke-width="1"/>
+    <path d="M368 96V416" stroke="#8FC7FF" stroke-width="1"/>
+  </g>
+
+  <circle cx="256" cy="256" r="116" fill="url(#halo)"/>
+  <circle cx="256" cy="256" r="88" fill="#24D1C5" fill-opacity="0.16" filter="url(#glow)"/>
+  <circle cx="256" cy="256" r="34" fill="url(#core)"/>
+  <circle cx="256" cy="256" r="12" fill="#FFF7DE"/>
+
+  <g stroke="#7EE8F2" stroke-width="11" stroke-linecap="round">
+    <path d="M155 150H126V362H155"/>
+    <path d="M357 150H386V362H357"/>
+  </g>
+
+  <g stroke="#7EE8F2" stroke-width="9" stroke-linecap="round" opacity="0.95">
+    <ellipse cx="256" cy="256" rx="128" ry="76" transform="rotate(-24 256 256)"/>
+    <ellipse cx="256" cy="256" rx="128" ry="76" transform="rotate(24 256 256)"/>
+  </g>
+
+  <g fill="#9CF6EC">
+    <circle cx="170" cy="168" r="10"/>
+    <circle cx="339" cy="173" r="10"/>
+    <circle cx="128" cy="256" r="9"/>
+    <circle cx="386" cy="256" r="9"/>
+    <circle cx="173" cy="343" r="10"/>
+    <circle cx="342" cy="339" r="10"/>
+  </g>
+
+  <g fill="#FFC857">
+    <circle cx="208" cy="110" r="6"/>
+    <circle cx="304" cy="110" r="6"/>
+    <circle cx="208" cy="402" r="6"/>
+    <circle cx="304" cy="402" r="6"/>
+  </g>
+</svg>
