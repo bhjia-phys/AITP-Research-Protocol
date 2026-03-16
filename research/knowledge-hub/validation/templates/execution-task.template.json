@@ -1,6 +1,6 @@
 {
   "task_id": "example-task-id",
-  "validation_note": "obsidian-markdown/11 L4 Validation/active/YYYY-MM-DD_example-validation.md",
+  "validation_note": "validation/topics/example/runs/2026-03-15-example/validation_note.md",
   "candidate_id": "candidate:example-candidate",
   "research_mode": "first_principles",
   "research_mode_profile_path": "runtime/research_mode_profiles.json",

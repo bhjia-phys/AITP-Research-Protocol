@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aitp.local/schemas/source-item.schema.json",
+  "title": "SourceItem",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_id",
+    "source_type",
+    "title",
+    "topic_slug",
+    "provenance",
+    "locator",
+    "acquired_at",
+    "registered_by",
+    "summary"
+  ],
+  "properties": {
+    "source_id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*:[a-z0-9][a-z0-9-]*$"
+    },
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "paper",
+        "pdf",
+        "url",
+        "web_page",
+        "video",
+        "transcript",
+        "conversation",
+        "local_note"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "topic_slug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "provenance": {
+      "type": "object"
+    },
+    "locator": {
+      "type": "object"
+    },
+    "acquired_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "registered_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

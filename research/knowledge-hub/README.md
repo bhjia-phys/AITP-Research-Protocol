@@ -1,16 +1,16 @@
-# AITP Runtime Package
+# AITP Kernel
 
-This folder contains the minimal installable runtime for the public AITP
-repository.
+This folder contains the installable public AITP kernel.
 
-It is the runtime layer behind:
+It is the repo-local source-of-truth behind:
 
 - `aitp`
 - `aitp-mcp`
 - `aitp-codex`
+- the fixed `L0-L4` protocol surfaces shipped in this repository
 
-The repository remains protocol-first, but this package now makes a fresh clone
-actually runnable.
+The repository remains protocol-first, but a fresh clone is now both readable
+and runnable.
 
 ## Quick Start
 
@@ -30,6 +30,9 @@ The public runtime defaults to the repo-local kernel root:
 So a normal standalone clone does not need the original private integration
 workspace just to run `aitp`.
 
+`aitp doctor` should also report the fixed layer roots and key contract files so
+you can verify that the standalone install is structurally complete.
+
 ## Core Commands
 
 ```bash
@@ -48,23 +51,44 @@ aitp capability-audit --topic-slug <topic_slug>
 aitp install-agent --agent all --scope user
 ```
 
-## Package Layout
+## Fixed Layout
 
 ```text
 research/knowledge-hub/
+  LAYER_MAP.md
+  ROUTING_POLICY.md
+  COMMUNICATION_CONTRACT.md
+  AUTONOMY_AND_OPERATOR_MODEL.md
+  L2_CONSULTATION_PROTOCOL.md
+  INDEXING_RULES.md
+  L0_SOURCE_LAYER.md
   setup.py
   requirements.txt
+  schemas/
   knowledge_hub/
-    aitp_cli.py
-    aitp_codex.py
-    aitp_mcp_server.py
-    aitp_service.py
-  runtime/
   source-layer/
+  intake/
+  canonical/
+  feedback/
   consultation/
+  runtime/
   validation/
   tests/
 ```
+
+Formal roots:
+
+- `L0` -> `source-layer/`
+- `L1` -> `intake/`
+- `L2` -> `canonical/`
+- `L3` -> `feedback/`
+- `L4` -> `validation/`
+
+Cross-layer protocol surfaces:
+
+- `consultation/`
+- `runtime/`
+- `schemas/`
 
 ## Runtime Rule
 
@@ -78,6 +102,8 @@ contract file is sufficient.
   - `runtime/topics/<topic_slug>/runtime_protocol.generated.md`
 
 Agents should read that runtime bundle before acting on heuristic queue rows.
+
+The layer contracts above remain the higher-priority governance surface.
 
 ## Validation
 

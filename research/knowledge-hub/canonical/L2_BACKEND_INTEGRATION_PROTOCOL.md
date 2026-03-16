@@ -1,0 +1,193 @@
+# L2 backend integration protocol
+
+This file is the unified protocol for connecting new content sources to `L2`.
+
+It does not create a new layer.
+It defines how an external human/software knowledge store becomes a disciplined `L2` backend instead of an opaque side channel.
+
+## 1. Goal
+
+Use this protocol when adding any new backend such as:
+- a human note vault,
+- a software repository,
+- a local documentation corpus,
+- a result store,
+- a mixed theory-plus-code workspace.
+
+The goal is to ensure:
+- the backend is explicit,
+- downstream use is auditable,
+- `L2` remains schema-first,
+- future integrations reuse one contract instead of inventing new ad hoc rules.
+
+## 2. Required surfaces
+
+Every new backend must provide:
+
+1. a backend card
+   - `canonical/backends/<backend_slug>.json`
+2. a compact registry row
+   - `canonical/backends/backend_index.jsonl`
+3. at least one declared intended `L2` target family
+4. a retrieval policy statement
+5. a source registration rule
+
+Optional but recommended:
+
+6. one onboarding note or bridge note
+7. one smoke-test example showing how a concrete artifact enters `L0`
+
+## 3. Hard rules
+
+1. A backend root is never itself a live `L2` store.
+2. A backend card is metadata, not promotion.
+3. Concrete backend artifacts should usually be registered into `L0` before strong reuse.
+4. `L2` promotion still follows normal `L1->L2` or `L3->L4->L2` gates.
+5. Do not promote a whole folder tree as one canonical object.
+6. If the backend is software-heavy, do not treat raw source code as self-justifying knowledge.
+7. If the backend is human-note-heavy, do not treat folder structure as canonical ontology.
+
+## 4. Minimal backend card contract
+
+Use the schema:
+
+- `schemas/l2-backend.schema.json`
+
+Required fields:
+- `backend_id`
+- `title`
+- `backend_type`
+- `status`
+- `root_paths`
+- `purpose`
+- `source_policy`
+- `canonical_targets`
+- `retrieval_hints`
+- `notes`
+
+## 5. Standard write protocol
+
+When adding a new backend, write in this order:
+
+### Step 1. Register the backend
+
+Create:
+- one backend card JSON
+- one backend index row
+
+This says the backend exists and what it is for.
+
+### Step 2. Declare artifact granularity
+
+State what the atomic reusable input is:
+- single note,
+- single doc,
+- single test,
+- single benchmark result,
+- single code module,
+- single derivation note.
+
+Do not leave this implicit.
+
+### Step 3. Register concrete artifacts into `L0`
+
+When an artifact from the backend materially affects research work, register it into `L0`.
+
+For `source-layer` registration, include backend-aware provenance fields such as:
+- `provenance.backend_id`
+- `provenance.backend_root`
+- `provenance.backend_artifact_kind`
+- `locator.backend_relative_path`
+
+This is the bridge from backend storage into AITP's source substrate.
+
+### Step 4. Use `L2 consultation` explicitly when needed
+
+If `L1`, `L3`, or `L4` materially uses backend-derived `L2` knowledge, emit the normal consultation protocol artifacts.
+
+Backend use must not remain chat-only.
+
+### Step 5. Promote only the distilled reusable object
+
+Promote:
+- concept
+- derivation object
+- method
+- workflow
+- bridge
+- validation pattern
+- warning note
+
+Do not promote:
+- raw folder dumps
+- unscoped code blobs
+- unresolved scratch notes
+- unexplained benchmark tables
+
+## 6. Recommended backend profiles
+
+### `human_note_library`
+
+Best targets:
+- `concept`
+- `derivation_object`
+- `bridge`
+- `warning_note`
+
+Typical examples:
+- a local Markdown theory vault
+
+### `software_repo`
+
+Best targets:
+- `method`
+- `workflow`
+- `validation_pattern`
+- `warning_note`
+- `bridge`
+
+Typical examples:
+- a numerical or formal code repository
+
+### `local_result_store`
+
+Best targets:
+- `validation_pattern`
+- `warning_note`
+- `claim_card`
+
+Use only when provenance and reproducibility paths are explicit.
+
+## 7. Promotion-side rule
+
+If an `L2` canonical unit was materially seeded by a backend, it may add:
+
+- `provenance.backend_refs`
+
+But `backend_refs` is supplemental.
+It does not replace:
+- `source_ids`
+- `l1_artifacts`
+- `l3_runs`
+- `l4_checks`
+
+## 8. Practical interpretation
+
+AITP keeps one unified rule:
+- human knowledge stores and software knowledge stores both enter through the same backend contract,
+- but they seed different canonical object families.
+
+## 9. Authoring checklist
+
+Before a backend counts as integrated, confirm:
+
+- backend card exists
+- index row exists
+- root paths are explicit
+- artifact granularity is explicit
+- `L0` registration path is defined
+- intended canonical targets are explicit
+- retrieval hints are explicit
+- no folder-level canonicalization is implied
+
+If any of these is missing, the backend is only partially integrated.

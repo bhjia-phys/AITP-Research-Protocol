@@ -123,6 +123,7 @@ class AITPServiceTests(unittest.TestCase):
         self.repo_root = self.root / "repo"
         self.kernel_root.mkdir(parents=True)
         self.repo_root.mkdir(parents=True)
+        (self.kernel_root / "canonical").mkdir(parents=True, exist_ok=True)
         self.service = AITPService(kernel_root=self.kernel_root, repo_root=self.repo_root)
 
     def tearDown(self) -> None:
@@ -327,7 +328,25 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue(registry.exists())
         self.assertTrue(report.exists())
         self.assertEqual(payload["overall_status"], "ready")
+        self.assertEqual(payload["sections"]["layers"]["L2"]["status"], "present")
         self.assertEqual(payload["sections"]["capabilities"]["operation_trust"]["status"], "present")
+
+    def test_doctor_reports_layer_roots_and_protocol_contracts(self) -> None:
+        for filename in (
+            "LAYER_MAP.md",
+            "ROUTING_POLICY.md",
+            "COMMUNICATION_CONTRACT.md",
+            "AUTONOMY_AND_OPERATOR_MODEL.md",
+            "L2_CONSULTATION_PROTOCOL.md",
+            "INDEXING_RULES.md",
+            "L0_SOURCE_LAYER.md",
+        ):
+            (self.kernel_root / filename).write_text("# present\n", encoding="utf-8")
+
+        payload = self.service.ensure_cli_installed()
+
+        self.assertEqual(payload["layer_roots"]["L2"]["status"], "present")
+        self.assertEqual(payload["protocol_contracts"]["layer_map"]["status"], "present")
 
     def test_run_topic_loop_writes_loop_state_and_executes_auto_actions(self) -> None:
         service = _LoopStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)

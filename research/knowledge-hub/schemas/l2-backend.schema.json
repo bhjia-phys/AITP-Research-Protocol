@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aitp.local/schemas/l2-backend.schema.json",
+  "title": "L2Backend",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "backend_id",
+    "title",
+    "backend_type",
+    "status",
+    "root_paths",
+    "purpose",
+    "source_policy",
+    "canonical_targets",
+    "retrieval_hints",
+    "notes"
+  ],
+  "properties": {
+    "backend_id": {
+      "type": "string",
+      "pattern": "^backend:[a-z0-9][a-z0-9-]*$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "backend_type": {
+      "type": "string",
+      "enum": [
+        "human_note_library",
+        "software_repo",
+        "local_docs_repo",
+        "local_result_store",
+        "mixed_local_library"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "planned",
+        "deprecated"
+      ]
+    },
+    "root_paths": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "purpose": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "source_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requires_l0_registration",
+        "allows_direct_canonical_promotion",
+        "default_source_type"
+      ],
+      "properties": {
+        "requires_l0_registration": {
+          "type": "boolean"
+        },
+        "allows_direct_canonical_promotion": {
+          "type": "boolean"
+        },
+        "default_source_type": {
+          "type": "string",
+          "enum": [
+            "paper",
+            "pdf",
+            "url",
+            "web_page",
+            "video",
+            "transcript",
+            "conversation",
+            "local_note"
+          ]
+        }
+      }
+    },
+    "canonical_targets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "atomic_note",
+          "concept",
+          "claim_card",
+          "derivation_object",
+          "method",
+          "workflow",
+          "bridge",
+          "validation_pattern",
+          "warning_note"
+        ]
+      }
+    },
+    "retrieval_hints": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "notes": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

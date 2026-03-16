@@ -71,13 +71,12 @@ def _detect_default_kernel_root() -> Path:
         return Path(env_override).expanduser()
 
     repo_candidate = DEFAULT_REPO_ROOT / "research" / "knowledge-hub"
-    if _looks_like_kernel_root(repo_candidate):
-        return repo_candidate
+    cwd_candidates = [Path.cwd().resolve() / "research" / "knowledge-hub", Path.cwd().resolve()]
+    for candidate in (repo_candidate, DEFAULT_REPO_ROOT, *cwd_candidates):
+        if _looks_like_kernel_root(candidate):
+            return candidate
 
-    if _looks_like_kernel_root(DEFAULT_REPO_ROOT):
-        return DEFAULT_REPO_ROOT
-
-    return Path("/home/bhj/OpenClaw-Workspaces/research/research/knowledge-hub").expanduser()
+    return repo_candidate
 
 
 DEFAULT_KERNEL_ROOT = _detect_default_kernel_root()
@@ -1452,6 +1451,10 @@ class AITPService:
                 "status": "present" if (self.kernel_root / "intake" / "topics" / topic_slug).exists() else "missing",
                 "path": str(self.kernel_root / "intake" / "topics" / topic_slug),
             },
+            "L2": {
+                "status": "present" if (self.kernel_root / "canonical").exists() else "missing",
+                "path": str(self.kernel_root / "canonical"),
+            },
             "L3": {
                 "status": "present" if (self.kernel_root / "feedback" / "topics" / topic_slug).exists() else "missing",
                 "path": str(self.kernel_root / "feedback" / "topics" / topic_slug),
@@ -1504,6 +1507,8 @@ class AITPService:
         recommendations: list[str] = []
         if runtime_section["topic_state.json"]["status"] != "present":
             recommendations.append("Run `aitp bootstrap ...` or `aitp resume ...` to materialize runtime state.")
+        if layer_section["L2"]["status"] != "present":
+            recommendations.append("Restore `canonical/` so the formal Layer 2 surface exists in this kernel.")
         if runtime_section["conformance_report.md"]["status"] != "present":
             recommendations.append("Run `aitp audit --topic-slug <topic_slug> --phase entry` to restore conformance visibility.")
         if capability_specific["operation_trust"]["status"] != "present" and latest_run_id:
@@ -1516,6 +1521,8 @@ class AITPService:
         overall_status = "ready"
         if runtime_section["topic_state.json"]["status"] != "present":
             overall_status = "missing_runtime"
+        elif layer_section["L2"]["status"] != "present":
+            overall_status = "missing_layers"
         elif capability_specific["operation_trust"]["status"] != "present":
             overall_status = "missing_trust"
 
@@ -2049,6 +2056,29 @@ aitp audit $ARGUMENTS
                 opencode_has_aitp = bool(opencode_payload.get("mcp", {}).get("aitp"))
             except json.JSONDecodeError:
                 opencode_has_aitp = False
+        layer_roots = {
+            "L0": str(self.kernel_root / "source-layer"),
+            "L1": str(self.kernel_root / "intake"),
+            "L2": str(self.kernel_root / "canonical"),
+            "L3": str(self.kernel_root / "feedback"),
+            "L4": str(self.kernel_root / "validation"),
+            "consultation": str(self.kernel_root / "consultation"),
+            "runtime": str(self.kernel_root / "runtime"),
+            "schemas": str(self.kernel_root / "schemas"),
+        }
+        layer_status = {
+            name: {"path": path, "status": "present" if Path(path).exists() else "missing"}
+            for name, path in layer_roots.items()
+        }
+        contract_paths = {
+            "layer_map": self.kernel_root / "LAYER_MAP.md",
+            "routing_policy": self.kernel_root / "ROUTING_POLICY.md",
+            "communication_contract": self.kernel_root / "COMMUNICATION_CONTRACT.md",
+            "autonomy_operator_model": self.kernel_root / "AUTONOMY_AND_OPERATOR_MODEL.md",
+            "l2_consultation_protocol": self.kernel_root / "L2_CONSULTATION_PROTOCOL.md",
+            "indexing_rules": self.kernel_root / "INDEXING_RULES.md",
+            "l0_source_layer": self.kernel_root / "L0_SOURCE_LAYER.md",
+        }
         return {
             "aitp": command_path,
             "aitp_mcp": mcp_path,
@@ -2057,4 +2087,9 @@ aitp audit $ARGUMENTS
             "kernel_root": str(self.kernel_root),
             "repo_root": str(self.repo_root),
             "opencode_has_aitp_mcp": opencode_has_aitp,
+            "layer_roots": layer_status,
+            "protocol_contracts": {
+                name: {"path": str(path), "status": "present" if path.exists() else "missing"}
+                for name, path in contract_paths.items()
+            },
         }

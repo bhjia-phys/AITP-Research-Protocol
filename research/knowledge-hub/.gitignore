@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 build/
+aitp_kernel.egg-info/
 
 data/documents.json
 data/queries/*.json
@@ -11,5 +12,22 @@ data/paper-runs/
 # PDF caches are local artifacts (do not version)
 data/queries/pdf_cache*/
 data/queries/**/*.pdf
+
+# layer runtime/topic artifacts are local state
+source-layer/topics/*
+!source-layer/topics/.gitkeep
+intake/topics/*
+!intake/topics/.gitkeep
+feedback/topics/*
+!feedback/topics/.gitkeep
+consultation/topics/*
+!consultation/topics/.gitkeep
+runtime/topics/*
+!runtime/topics/.gitkeep
+validation/topics/*
+!validation/topics/.gitkeep
+data/topics/*
+!data/topics/.gitkeep
+
 !data/.gitkeep
 !data/queries/.gitkeep

@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "profiles": {
+    "l1_provisional_understanding": {
+      "preferred_unit_types": [
+        "concept",
+        "claim_card",
+        "warning_note",
+        "workflow"
+      ],
+      "required_fields": [
+        "unit_id",
+        "unit_type",
+        "title",
+        "summary",
+        "assumptions",
+        "regime",
+        "scope",
+        "path"
+      ],
+      "edge_expansion": [
+        "supports",
+        "warned_by",
+        "specializes",
+        "generalizes"
+      ],
+      "max_primary_hits": 8
+    },
+    "l3_candidate_formation": {
+      "preferred_unit_types": [
+        "method",
+        "derivation_object",
+        "workflow",
+        "bridge",
+        "warning_note"
+      ],
+      "required_fields": [
+        "unit_id",
+        "unit_type",
+        "title",
+        "summary",
+        "assumptions",
+        "regime",
+        "scope",
+        "dependencies",
+        "related_units",
+        "path"
+      ],
+      "edge_expansion": [
+        "depends_on",
+        "uses_method",
+        "bridged_to",
+        "warned_by"
+      ],
+      "max_primary_hits": 10
+    },
+    "l4_adjudication": {
+      "preferred_unit_types": [
+        "validation_pattern",
+        "claim_card",
+        "warning_note",
+        "concept",
+        "derivation_object"
+      ],
+      "required_fields": [
+        "unit_id",
+        "unit_type",
+        "title",
+        "summary",
+        "assumptions",
+        "regime",
+        "scope",
+        "warning_tags",
+        "validation_tags",
+        "path"
+      ],
+      "edge_expansion": [
+        "validated_by",
+        "contradicts",
+        "warned_by",
+        "applies_in_regime"
+      ],
+      "max_primary_hits": 12
+    }
+  }
+}

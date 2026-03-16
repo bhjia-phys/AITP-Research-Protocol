@@ -8,13 +8,16 @@
 
 AITP stands for **AI Theoretical Physicist**.
 
-This repository now has four public layers:
+This repository now exposes a public research charter plus a standalone AITP
+kernel:
 
 - the **charter** that defines what serious AI-assisted theoretical-physics work
   should respect;
 - the **protocol contracts** that define the durable artifacts and gates;
-- a **minimal installable runtime** that materializes state, runs audits, and
-  executes explicit handlers;
+- a **standalone installable kernel** with fixed `L0-L4` directories, schemas,
+  and cross-layer protocol surfaces;
+- a **minimal runtime** that materializes state, runs audits, and executes
+  explicit handlers inside that kernel;
 - **reference adapters** for Codex, OpenClaw, Claude Code, and OpenCode.
 
 The intended rule is:
@@ -91,6 +94,10 @@ The public runtime now defaults to the repo-local kernel root:
 
 So a fresh clone no longer depends on the original private integration
 workspace just to get `aitp` running.
+
+`aitp doctor` now serves as the structural check for a fresh clone: it should
+show the detected repo/kernel roots plus the layer and contract surfaces that
+make the standalone install complete.
 
 ## Installation Flow
 
@@ -180,11 +187,22 @@ AITP-Research-Protocol/
     adapters/
       openclaw/
     knowledge-hub/
+      LAYER_MAP.md
+      ROUTING_POLICY.md
+      COMMUNICATION_CONTRACT.md
+      AUTONOMY_AND_OPERATOR_MODEL.md
+      L2_CONSULTATION_PROTOCOL.md
+      INDEXING_RULES.md
+      L0_SOURCE_LAYER.md
       setup.py
+      schemas/
       knowledge_hub/
-      runtime/
       source-layer/
+      intake/
+      canonical/
+      feedback/
       consultation/
+      runtime/
       validation/
 ```
 
@@ -197,6 +215,15 @@ Start here:
 - context loading: [`docs/CONTEXT_LOADING.md`](docs/CONTEXT_LOADING.md)
 - architecture: [`docs/architecture.md`](docs/architecture.md)
 - lessons from `get-physics-done`: [`docs/LESSONS_FROM_GET_PHYSICS_DONE.md`](docs/LESSONS_FROM_GET_PHYSICS_DONE.md)
+
+Kernel contract surface:
+
+- layer map: [`research/knowledge-hub/LAYER_MAP.md`](research/knowledge-hub/LAYER_MAP.md)
+- routing policy: [`research/knowledge-hub/ROUTING_POLICY.md`](research/knowledge-hub/ROUTING_POLICY.md)
+- communication contract: [`research/knowledge-hub/COMMUNICATION_CONTRACT.md`](research/knowledge-hub/COMMUNICATION_CONTRACT.md)
+- autonomy/operator model: [`research/knowledge-hub/AUTONOMY_AND_OPERATOR_MODEL.md`](research/knowledge-hub/AUTONOMY_AND_OPERATOR_MODEL.md)
+- L2 consultation: [`research/knowledge-hub/L2_CONSULTATION_PROTOCOL.md`](research/knowledge-hub/L2_CONSULTATION_PROTOCOL.md)
+- indexing rules: [`research/knowledge-hub/INDEXING_RULES.md`](research/knowledge-hub/INDEXING_RULES.md)
 
 Install guides:
 
@@ -220,7 +247,8 @@ Protocol objects:
 The repository is now more than a pure protocol archive:
 
 - it remains charter-and-protocol first;
-- it now ships a minimal installable runtime under `research/knowledge-hub`;
+- it now ships a standalone installable kernel under `research/knowledge-hub`;
+- it now ships fixed `L0-L4` directories plus `consultation/`, `runtime/`, and `schemas/`;
 - it can install user-side wrappers for the main target runtimes;
 - it still keeps stronger private integration claims honest.
 

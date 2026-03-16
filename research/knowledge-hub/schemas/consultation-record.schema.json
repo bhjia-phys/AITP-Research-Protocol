@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aitp.local/schemas/consultation-record.schema.json",
+  "title": "ConsultationRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "stage",
+    "purpose",
+    "query_text",
+    "retrieved_refs",
+    "applied_refs",
+    "note"
+  ],
+  "properties": {
+    "consultation_id": {
+      "type": "string",
+      "pattern": "^consult:[a-z0-9][a-z0-9-]*$"
+    },
+    "stage": {
+      "type": "string",
+      "enum": [
+        "L1",
+        "L3",
+        "L4"
+      ]
+    },
+    "purpose": {
+      "type": "string",
+      "minLength": 1
+    },
+    "query_text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "retrieved_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "https://aitp.local/schemas/object-ref.schema.json"
+      }
+    },
+    "applied_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "https://aitp.local/schemas/object-ref.schema.json"
+      }
+    },
+    "projection_of": {
+      "type": "string",
+      "minLength": 1
+    },
+    "note": {
+      "type": "string"
+    }
+  }
+}

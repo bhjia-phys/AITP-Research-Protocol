@@ -1,0 +1,249 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aitp.local/schemas/canonical-unit.schema.json",
+  "title": "CanonicalUnit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "unit_type",
+    "title",
+    "summary",
+    "maturity",
+    "created_at",
+    "updated_at",
+    "tags",
+    "assumptions",
+    "regime",
+    "scope",
+    "provenance",
+    "promotion",
+    "dependencies",
+    "related_units",
+    "payload"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*:[a-z0-9][a-z0-9-]*$"
+    },
+    "unit_type": {
+      "type": "string",
+      "enum": [
+        "atomic_note",
+        "concept",
+        "claim_card",
+        "derivation_object",
+        "method",
+        "workflow",
+        "bridge",
+        "validation_pattern",
+        "warning_note"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "maturity": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "candidate",
+        "validated",
+        "stable",
+        "deprecated"
+      ]
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "regime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain",
+        "approximations",
+        "scale",
+        "boundary_conditions",
+        "exclusions"
+      ],
+      "properties": {
+        "domain": {
+          "type": "string"
+        },
+        "approximations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scale": {
+          "type": "string"
+        },
+        "boundary_conditions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclusions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "applies_to",
+        "out_of_scope"
+      ],
+      "properties": {
+        "applies_to": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "out_of_scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_ids",
+        "l1_artifacts",
+        "l3_runs",
+        "l4_checks",
+        "citations"
+      ],
+      "properties": {
+        "source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "backend_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^backend:[a-z0-9][a-z0-9-]*$"
+          }
+        },
+        "l1_artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "l3_runs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "l4_checks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "citations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "route",
+        "promoted_by",
+        "promoted_at",
+        "review_status",
+        "rationale"
+      ],
+      "properties": {
+        "route": {
+          "type": "string",
+          "enum": [
+            "L1->L2",
+            "L3->L4->L2"
+          ]
+        },
+        "promoted_by": {
+          "type": "string"
+        },
+        "promoted_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "review_status": {
+          "type": "string",
+          "enum": [
+            "accepted",
+            "deferred",
+            "rejected",
+            "needs_revision"
+          ]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*:[a-z0-9][a-z0-9-]*$"
+      }
+    },
+    "related_units": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*:[a-z0-9][a-z0-9-]*$"
+      }
+    },
+    "payload": {
+      "type": "object"
+    }
+  }
+}

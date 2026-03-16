@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aitp.local/schemas/candidate.schema.json",
+  "title": "ResearchCandidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "candidate_id",
+    "candidate_type",
+    "title",
+    "summary",
+    "topic_slug",
+    "run_id",
+    "origin_refs",
+    "question",
+    "assumptions",
+    "proposed_validation_route",
+    "intended_l2_targets",
+    "status"
+  ],
+  "properties": {
+    "candidate_id": {
+      "type": "string",
+      "pattern": "^candidate:[a-z0-9][a-z0-9-]*$"
+    },
+    "candidate_type": {
+      "type": "string",
+      "enum": [
+        "concept",
+        "claim_card",
+        "derivation_object",
+        "method",
+        "workflow",
+        "bridge",
+        "validation_pattern",
+        "warning_note"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "topic_slug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "origin_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "https://aitp.local/schemas/object-ref.schema.json"
+      }
+    },
+    "question": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "proposed_validation_route": {
+      "type": "string",
+      "minLength": 1
+    },
+    "intended_l2_targets": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*:[a-z0-9][a-z0-9-]*$"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready_for_validation",
+        "under_validation",
+        "returned_to_l3",
+        "promoted"
+      ]
+    }
+  }
+}

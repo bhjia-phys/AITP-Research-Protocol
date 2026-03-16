@@ -1,10 +1,12 @@
 # Layer 4 — Validation / Adjudication Log
 
-This layer stores explicit checks that decide whether Layer 3 candidate material is ready to enter the canonical layer.
+This layer stores explicit checks that decide whether Layer 3 candidate
+material is ready to enter the canonical layer.
 
-Layer 4 has two cooperating surfaces:
-- an Obsidian control plane for human-readable adjudication notes,
-- an execution plane for reproducible validation artifacts and task records.
+The standalone public kernel treats this repository-local validation surface as
+the source-of-truth. Teams may optionally mirror human-readable adjudication
+notes elsewhere, but that external note surface is supplemental rather than
+normative.
 
 Use it for:
 - validation plans,
@@ -21,10 +23,6 @@ Layer 4 should actively consult Layer 2 while adjudicating:
 - retrieve concept and derivation objects to test scope and regime consistency.
 
 When that consultation materially shapes a durable validation artifact or promotion decision, record it through the first-class consultation protocol under `consultation/` and treat `l2_consultation_log.jsonl` as a local projection.
-
-Control plane:
-
-`/home/bhj/projects/repos/Theoretical-Physics/obsidian-markdown/11 L4 Validation/`
 
 Runs live under:
 

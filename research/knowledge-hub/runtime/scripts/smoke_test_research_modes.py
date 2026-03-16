@@ -42,7 +42,7 @@ def build_source_execution_task(knowledge_root: Path, topic_slug: str, run_id: s
         task_path,
         {
             "task_id": f"{mode}-source-task",
-            "validation_note": f"obsidian-markdown/11 L4 Validation/active/{topic_slug}-{mode}.md",
+            "validation_note": f"validation/topics/{topic_slug}/runs/{run_id}/validation_note.md",
             "candidate_id": f"candidate:{topic_slug}-{mode}",
             "research_mode": mode,
             "surface": surface,

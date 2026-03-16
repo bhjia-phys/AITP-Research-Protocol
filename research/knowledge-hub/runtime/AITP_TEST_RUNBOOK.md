@@ -81,11 +81,10 @@ Pass condition:
 - runtime state is readable
 - bounded Codex/AITP handoff is truthful
 
-## 6. L2 backend bridge test: Obsidian 01
+## 6. L2 backend bridge test: note-library backend
 
-Pick one real note from:
-
-- `/home/bhj/projects/repos/Theoretical-Physics/obsidian-markdown/01 Theoretical Physics/`
+Pick one real note from a backend that you have already registered under
+`canonical/backends/`.
 
 Register it into `L0`:
 
@@ -101,7 +100,7 @@ Then run one bounded loop step that explicitly mentions the backend:
 ```bash
 aitp loop \
   --topic-slug <topic_slug> \
-  --human-request "Use backend:obsidian-01-theoretical-physics as a human knowledge bridge, but keep all conclusions operator-visible." \
+  --human-request "Use the registered human-note backend as a bounded knowledge bridge, but keep all conclusions operator-visible." \
   --max-auto-steps 1 \
   --json
 ```
@@ -111,13 +110,12 @@ Pass condition:
 - runtime artifacts remain operator-visible
 - no direct folder-level canonicalization happens
 
-## 7. L2 backend bridge test: LibRPA
+## 7. L2 backend bridge test: software backend
 
 Do not start with heavy execution.
 Start with docs/tests/method context.
 
-Use backend card:
-- `backend:librpa-local-workspace`
+Use a registered software backend card from `canonical/backends/`.
 
 Goal:
 - seed one `method`, `workflow`, or `validation_pattern` candidate from software knowledge
