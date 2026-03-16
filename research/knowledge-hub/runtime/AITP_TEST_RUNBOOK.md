@@ -137,6 +137,16 @@ Pass condition:
 - no black-box code claims
 - paths to code/tests/results remain durable
 
+For the public toy-model numeric starter route, you can run:
+
+```bash
+research/knowledge-hub/runtime/scripts/run_toy_model_numeric_backend_smoke.sh
+```
+
+That script creates one temporary external toy-model backend, runs a tiny
+public TFIM exact-diagonalization helper on a fixed config, registers the
+generated run note into `L0`, and runs one bounded `aitp loop`.
+
 ## 8. Exit gate
 
 Close with:

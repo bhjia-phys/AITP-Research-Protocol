@@ -1,0 +1,10 @@
+{
+  "model": "transverse_field_ising_chain",
+  "sites": 4,
+  "coupling_j": 1.0,
+  "field_h": 1.0,
+  "boundary": "periodic",
+  "observable": "spectral_gap",
+  "summary_title": "TFIM finite-size gap benchmark",
+  "notes": "Public toy-model numeric starter config for a bounded finite-size exact-diagonalization check."
+}

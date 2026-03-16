@@ -20,5 +20,11 @@ Public starter pack for formal-theory backends:
 - `examples/formal-theory-note-library.example.json`
 - `../../runtime/scripts/run_formal_theory_backend_smoke.sh`
 
+Public starter pack for toy-model numeric backends:
+- `TOY_MODEL_NUMERIC_BACKEND_STARTER.md`
+- `examples/toy-model-numeric-workspace.example.json`
+- `../../validation/tools/tfim_exact_diagonalization.py`
+- `../../runtime/scripts/run_toy_model_numeric_backend_smoke.sh`
+
 Do not store promoted canonical units here.
 Store only backend descriptions and routing rules.

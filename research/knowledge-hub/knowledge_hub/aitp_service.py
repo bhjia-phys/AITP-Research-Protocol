@@ -379,6 +379,29 @@ class AITPService:
         lines.extend(
             [
                 "",
+                "## L2 backend bridge snapshot",
+                "",
+            ]
+        )
+        backend_bridges = payload.get("backend_bridges") or []
+        if backend_bridges:
+            for bridge in backend_bridges:
+                lines.extend(
+                    [
+                        f"- `{bridge['backend_id']}` title=`{bridge['title']}` type=`{bridge['backend_type']}` "
+                        f"status=`{bridge['status']}` card_status=`{bridge['card_status']}` sources=`{bridge['source_count']}`",
+                        f"  card_path=`{bridge['card_path'] or '(missing)'}`",
+                        f"  backend_root=`{bridge['backend_root'] or '(missing)'}`",
+                        f"  artifact_kinds=`{', '.join(bridge['artifact_kinds']) or '(missing)'}`",
+                        f"  canonical_targets=`{', '.join(bridge['canonical_targets']) or '(missing)'}`",
+                        f"  l0_registration_script=`{bridge['l0_registration_script'] or '(missing)'}`",
+                    ]
+                )
+        else:
+            lines.append("- None registered.")
+        lines.extend(
+            [
+                "",
                 "## Delivery rule",
                 "",
                 f"- {payload['delivery_rule'] or 'Outputs must name exact artifact paths and justify the chosen layer.'}",
@@ -442,6 +465,25 @@ class AITPService:
         queue_surface = interaction_state.get("action_queue_surface") or {}
         decision_surface = interaction_state.get("decision_surface") or {}
         research_mode_profile = topic_state.get("research_mode_profile") or {}
+        backend_bridges: list[dict[str, Any]] = []
+        for row in topic_state.get("backend_bridges") or []:
+            if not isinstance(row, dict):
+                continue
+            backend_bridges.append(
+                {
+                    "backend_id": str(row.get("backend_id") or "").strip() or "(missing)",
+                    "title": str(row.get("title") or row.get("backend_id") or "").strip() or "(missing)",
+                    "backend_type": str(row.get("backend_type") or "").strip() or "(missing)",
+                    "status": str(row.get("status") or "").strip() or "(missing)",
+                    "card_status": str(row.get("card_status") or "").strip() or "(missing)",
+                    "card_path": str(row.get("card_path") or "").strip() or None,
+                    "backend_root": str(row.get("backend_root") or "").strip() or None,
+                    "artifact_kinds": self._dedupe_strings(list(row.get("artifact_kinds") or [])),
+                    "canonical_targets": self._dedupe_strings(list(row.get("canonical_targets") or [])),
+                    "l0_registration_script": str(row.get("l0_registration_script") or "").strip() or None,
+                    "source_count": int(row.get("source_count") or 0),
+                }
+            )
 
         read_order: list[str] = [self._relativize(runtime_root / "runtime_protocol.generated.md")]
         for candidate in (
@@ -505,6 +547,7 @@ class AITPService:
             ],
             "reproducibility_expectations": research_mode_profile.get("reproducibility_expectations") or [],
             "note_expectations": research_mode_profile.get("note_expectations") or [],
+            "backend_bridges": backend_bridges,
             "delivery_rule": str((interaction_state.get("delivery_contract") or {}).get("rule") or ""),
             "editable_protocol_surfaces": editable_surfaces,
             "action_queue_surface": {

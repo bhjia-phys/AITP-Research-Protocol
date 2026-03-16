@@ -113,6 +113,117 @@ def relative_path(path: Path | None, root: Path) -> str | None:
     return path.relative_to(root).as_posix()
 
 
+def resolve_card_path(path_value: str | None, knowledge_root: Path) -> Path | None:
+    if not path_value or not str(path_value).strip():
+        return None
+    candidate = Path(str(path_value).strip()).expanduser()
+    if not candidate.is_absolute():
+        candidate = knowledge_root / candidate
+    resolved = candidate.resolve()
+    return resolved if resolved.exists() else None
+
+
+def load_backend_registry_rows(knowledge_root: Path) -> list[dict]:
+    return read_jsonl(knowledge_root / "canonical" / "backends" / "backend_index.jsonl")
+
+
+def scan_backend_cards(knowledge_root: Path) -> dict[str, Path]:
+    backend_root = knowledge_root / "canonical" / "backends"
+    discovered: dict[str, Path] = {}
+    for card_path in backend_root.rglob("*.json"):
+        if card_path.name == "backend.template.json":
+            continue
+        if "examples" in card_path.parts:
+            continue
+        payload = read_json(card_path)
+        backend_id = str((payload or {}).get("backend_id") or "").strip()
+        if backend_id and backend_id not in discovered:
+            discovered[backend_id] = card_path.resolve()
+    return discovered
+
+
+def build_backend_bridges(l0_source_rows: list[dict], knowledge_root: Path) -> list[dict]:
+    grouped_rows: dict[str, list[dict]] = {}
+    for row in l0_source_rows:
+        provenance = row.get("provenance") or {}
+        backend_id = str(provenance.get("backend_id") or "").strip()
+        if backend_id:
+            grouped_rows.setdefault(backend_id, []).append(row)
+
+    if not grouped_rows:
+        return []
+
+    registry_rows = load_backend_registry_rows(knowledge_root)
+    registry_by_id = {
+        str(row.get("backend_id") or "").strip(): row
+        for row in registry_rows
+        if str(row.get("backend_id") or "").strip()
+    }
+    scanned_cards = scan_backend_cards(knowledge_root)
+    bridges: list[dict] = []
+
+    for backend_id in sorted(grouped_rows):
+        rows = grouped_rows[backend_id]
+        provenance = rows[0].get("provenance") or {}
+        registry_row = registry_by_id.get(backend_id) or {}
+
+        explicit_card_path = resolve_card_path(str(provenance.get("backend_card_path") or ""), knowledge_root)
+        registry_card_path = resolve_card_path(str(registry_row.get("card_path") or ""), knowledge_root)
+        scanned_card_path = scanned_cards.get(backend_id)
+        card_path = explicit_card_path or registry_card_path or scanned_card_path
+        card_payload = read_json(card_path) if card_path is not None else None
+
+        artifact_kinds = sorted(
+            {
+                str((row.get("provenance") or {}).get("backend_artifact_kind") or "").strip()
+                for row in rows
+                if str((row.get("provenance") or {}).get("backend_artifact_kind") or "").strip()
+            }
+        )
+        source_ids = [
+            str(row.get("source_id") or "").strip()
+            for row in rows
+            if str(row.get("source_id") or "").strip()
+        ]
+        backend_root = str(
+            provenance.get("backend_root")
+            or ((card_payload or {}).get("root_paths") or [None])[0]
+            or ""
+        ).strip()
+
+        bridges.append(
+            {
+                "backend_id": backend_id,
+                "title": str((card_payload or {}).get("title") or registry_row.get("title") or backend_id),
+                "backend_type": str(
+                    (card_payload or {}).get("backend_type")
+                    or registry_row.get("backend_type")
+                    or "(missing)"
+                ),
+                "status": str((card_payload or {}).get("status") or registry_row.get("status") or "(missing)"),
+                "card_path": relative_path(card_path, knowledge_root)
+                if card_path is not None and str(card_path).startswith(str(knowledge_root))
+                else (str(card_path) if card_path is not None else str(provenance.get("backend_card_path") or "") or None),
+                "card_status": "present" if card_payload else "missing",
+                "backend_root": backend_root or "(missing)",
+                "artifact_granularity": str((card_payload or {}).get("artifact_granularity") or "(missing)"),
+                "artifact_kinds": artifact_kinds,
+                "canonical_targets": list(
+                    (card_payload or {}).get("canonical_targets")
+                    or registry_row.get("canonical_targets")
+                    or []
+                ),
+                "retrieval_hints": list((card_payload or {}).get("retrieval_hints") or []),
+                "l0_registration_script": str(
+                    ((card_payload or {}).get("l0_registration") or {}).get("script") or "(missing)"
+                ),
+                "source_count": len(source_ids),
+                "source_ids": source_ids,
+            }
+        )
+    return bridges
+
+
 def infer_resume_state(
     intake_status: dict | None,
     feedback_status: dict | None,
@@ -164,6 +275,7 @@ def infer_resume_state(
 def build_resume_markdown(state: dict) -> str:
     pointers = state["pointers"]
     layer_status = state["layer_status"]
+    backend_bridges = state.get("backend_bridges") or []
     closed_loop = state.get("closed_loop") or {}
     research_mode_profile = state.get("research_mode_profile") or {}
     lines = [
@@ -207,6 +319,31 @@ def build_resume_markdown(state: dict) -> str:
             f"- L3: `{layer_status['L3']['status']}`",
             f"- L4: `{layer_status['L4']['status']}`",
             f"- Closed loop: `{closed_loop.get('status', 'missing')}`",
+            "",
+            "## L0 backend bridges",
+            "",
+        ]
+    )
+    if backend_bridges:
+        for bridge in backend_bridges:
+            lines.extend(
+                [
+                    f"- `{bridge.get('backend_id') or '(missing)'}` title=`{bridge.get('title') or '(missing)'}` "
+                    f"type=`{bridge.get('backend_type') or '(missing)'}` status=`{bridge.get('status') or '(missing)'}` "
+                    f"card_status=`{bridge.get('card_status') or '(missing)'}` sources=`{bridge.get('source_count', 0)}`",
+                    f"  card_path=`{bridge.get('card_path') or '(missing)'}`",
+                    f"  backend_root=`{bridge.get('backend_root') or '(missing)'}`",
+                    f"  artifact_granularity=`{bridge.get('artifact_granularity') or '(missing)'}`",
+                    f"  artifact_kinds=`{', '.join(bridge.get('artifact_kinds') or []) or '(missing)'}`",
+                    f"  canonical_targets=`{', '.join(bridge.get('canonical_targets') or []) or '(missing)'}`",
+                    f"  l0_registration_script=`{bridge.get('l0_registration_script') or '(missing)'}`",
+                ]
+            )
+    else:
+        lines.append("- None registered.")
+
+    lines.extend(
+        [
             "",
             "## Closed-loop state",
             "",
@@ -320,6 +457,7 @@ def main() -> int:
     promotion_rows = read_jsonl(promotion_decisions_path) if promotion_decisions_path else []
     latest_decision = promotion_rows[-1] if promotion_rows else None
     consultation_rows = read_jsonl(consultation_index_path)
+    backend_bridges = build_backend_bridges(l0_source_rows, knowledge_root)
     next_actions_contract = load_next_actions_contract(next_actions_path)
     pending_actions = parse_contract_actions(next_actions_contract)
     if not pending_actions and next_actions_path:
@@ -398,6 +536,8 @@ def main() -> int:
         summary_parts.append(f"L4={latest_closed_loop_decision.get('decision', 'present')}")
     if closed_loop.get("selected_route"):
         summary_parts.append(f"closed_loop={closed_loop['selected_route'].get('route_id')}")
+    if backend_bridges:
+        summary_parts.append(f"backends={len(backend_bridges)}")
     summary_parts.append(f"mode={research_mode}")
     summary_parts.append(f"executor={active_executor_kind}")
     summary = (
@@ -429,10 +569,13 @@ def main() -> int:
         "pending_actions": pending_actions,
         "consultation_count": len(consultation_rows),
         "source_count": len(l0_source_rows),
+        "backend_bridge_count": len(backend_bridges),
+        "backend_bridges": backend_bridges,
         "layer_status": {
             "L0": {
                 "status": "present" if l0_source_rows else "missing",
                 "source_count": len(l0_source_rows),
+                "backend_bridge_count": len(backend_bridges),
             },
             "L1": {
                 "status": l1_status,
@@ -541,6 +684,7 @@ def main() -> int:
             "updated_by": args.updated_by,
             "research_mode": research_mode,
             "active_executor_kind": active_executor_kind,
+            "backend_bridge_count": len(backend_bridges),
             "state_path": topic_state_path.relative_to(knowledge_root).as_posix(),
             "resume_path": resume_path.relative_to(knowledge_root).as_posix(),
             "summary": summary,

@@ -1,0 +1,43 @@
+{
+  "$schema": "../../../schemas/l2-backend.schema.json",
+  "backend_id": "backend:toy-model-numeric-workspace",
+  "title": "Toy-Model Numeric Workspace",
+  "backend_type": "mixed_local_library",
+  "status": "planned",
+  "root_paths": [
+    "__TOY_MODEL_NUMERIC_WORKSPACE_ROOT__"
+  ],
+  "purpose": [
+    "Bridge an external toy-model numeric workspace into AITP L2 without treating the workspace tree as canonical truth.",
+    "Seed method, workflow, validation_pattern, and warning_note candidates from explicit model notes, configs, and small result bundles."
+  ],
+  "artifact_granularity": "One toy-model run note, together with one explicit config file and one small result bundle, is the atomic reusable backend artifact.",
+  "source_policy": {
+    "requires_l0_registration": true,
+    "allows_direct_canonical_promotion": false,
+    "default_source_type": "local_note"
+  },
+  "l0_registration": {
+    "script": "source-layer/scripts/register_local_note_source.py",
+    "required_provenance_fields": [
+      "provenance.backend_id",
+      "provenance.backend_root",
+      "provenance.backend_artifact_kind"
+    ],
+    "required_locator_fields": [
+      "locator.backend_relative_path"
+    ]
+  },
+  "canonical_targets": [
+    "method",
+    "workflow",
+    "validation_pattern",
+    "warning_note"
+  ],
+  "retrieval_hints": [
+    "Prefer exact model definitions, boundary conditions, sector choices, and config files before asking for new prose summaries.",
+    "When a toy-model result materially shapes L1, L3, or L4, register the concrete run note into L0 first.",
+    "Do not over-transfer a finite-size toy-model signal to the full theory; write the scope and limits explicitly during L2 promotion."
+  ],
+  "notes": "This is a public example card for external toy-model numeric workspaces such as small-system exact diagonalization folders, reduced-model notebooks, or finite-size benchmark collections."
+}

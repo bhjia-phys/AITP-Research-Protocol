@@ -840,6 +840,7 @@ def build_operator_console(interaction_state: dict, queue: list[dict]) -> str:
 
 def build_agent_brief(topic_state: dict, queue: list[dict], interaction_state: dict) -> str:
     pointers = topic_state["pointers"]
+    backend_bridges = topic_state.get("backend_bridges") or []
     decision_surface = interaction_state.get("decision_surface") or {}
     queue_surface = interaction_state.get("action_queue_surface") or {}
     research_mode_profile = topic_state.get("research_mode_profile") or {}
@@ -894,6 +895,29 @@ def build_agent_brief(topic_state: dict, queue: list[dict], interaction_state: d
     lines.extend(["", "### Human-readable notes", ""])
     for item in research_mode_profile.get("note_expectations") or ["No explicit note expectation recorded."]:
         lines.append(f"- {item}")
+    lines.extend(
+        [
+            "",
+            "## L2 backend bridge snapshot",
+            "",
+        ]
+    )
+    if backend_bridges:
+        for bridge in backend_bridges:
+            lines.extend(
+                [
+                    f"- `{bridge.get('backend_id') or '(missing)'}` title=`{bridge.get('title') or '(missing)'}` "
+                    f"type=`{bridge.get('backend_type') or '(missing)'}` status=`{bridge.get('status') or '(missing)'}` "
+                    f"card_status=`{bridge.get('card_status') or '(missing)'}` sources=`{bridge.get('source_count', 0)}`",
+                    f"  card_path=`{bridge.get('card_path') or '(missing)'}`",
+                    f"  backend_root=`{bridge.get('backend_root') or '(missing)'}`",
+                    f"  artifact_kinds=`{', '.join(bridge.get('artifact_kinds') or []) or '(missing)'}`",
+                    f"  canonical_targets=`{', '.join(bridge.get('canonical_targets') or []) or '(missing)'}`",
+                    f"  l0_registration_script=`{bridge.get('l0_registration_script') or '(missing)'}`",
+                ]
+            )
+    else:
+        lines.append("- None registered.")
     lines.extend(
         [
             "",

@@ -199,6 +199,43 @@ class AITPServiceTests(unittest.TestCase):
 
     def test_materialize_runtime_protocol_bundle_writes_expected_artifacts(self) -> None:
         runtime_root = self._write_runtime_state()
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "2026-03-13-demo",
+                    "resume_stage": "L3",
+                    "last_materialized_stage": "L3",
+                    "research_mode": "formal_derivation",
+                    "backend_bridge_count": 1,
+                    "backend_bridges": [
+                        {
+                            "backend_id": "backend:formal-theory-note-library",
+                            "title": "Formal Theory Note Library",
+                            "backend_type": "human_note_library",
+                            "status": "active",
+                            "card_path": "canonical/backends/formal-theory-note-library.json",
+                            "card_status": "present",
+                            "backend_root": "/tmp/formal-theory-notes",
+                            "artifact_granularity": "One derivation-focused note is the atomic backend artifact.",
+                            "artifact_kinds": ["formal_theory_note"],
+                            "canonical_targets": ["concept", "derivation_object"],
+                            "l0_registration_script": "source-layer/scripts/register_local_note_source.py",
+                            "source_count": 1,
+                            "source_ids": ["local_note:modular-flow-outline"],
+                        }
+                    ],
+                    "research_mode_profile": {
+                        "reproducibility_expectations": ["Keep backend provenance explicit."],
+                        "note_expectations": ["Write a human-readable derivation note."],
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
         (runtime_root / "interaction_state.json").write_text(
             json.dumps(
                 {
@@ -268,7 +305,14 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["human_request"], "run a bounded public protocol check")
         self.assertEqual(payload["priority_rules"][0]["source"], "control_note_or_decision_contract")
         self.assertEqual(payload["action_queue_surface"]["queue_source"], "heuristic")
+        self.assertEqual(payload["backend_bridges"][0]["backend_id"], "backend:formal-theory-note-library")
+        self.assertEqual(
+            payload["backend_bridges"][0]["l0_registration_script"],
+            "source-layer/scripts/register_local_note_source.py",
+        )
         self.assertIn("Prefer durable `next_actions.contract.json`", protocol_note.read_text(encoding="utf-8"))
+        self.assertIn("backend:formal-theory-note-library", protocol_note.read_text(encoding="utf-8"))
+        self.assertIn("source-layer/scripts/register_local_note_source.py", protocol_note.read_text(encoding="utf-8"))
 
     def test_operation_trust_registry_blocks_until_gate_is_satisfied(self) -> None:
         self._write_runtime_state()

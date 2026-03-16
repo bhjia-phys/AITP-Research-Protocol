@@ -4,6 +4,10 @@ This directory stores executable helpers for Layer 4 validation runs.
 
 The public kernel does not ship a personal topic-specific numerical tool by
 default.
+It does ship one tiny public toy-model starter:
+
+- `tfim_exact_diagonalization.py`
+
 This directory is reserved for auditable clone-local or contributed `L4`
 executors.
 
