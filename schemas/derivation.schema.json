@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DerivationContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "derivation_id",
+    "topic_slug",
+    "title",
+    "status",
+    "assumptions",
+    "symbols",
+    "step_ids",
+    "open_gaps",
+    "target_output"
+  ],
+  "properties": {
+    "derivation_id": { "type": "string", "minLength": 1 },
+    "topic_slug": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["draft", "active", "partially_closed", "closed"] },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "symbols": { "type": "array", "items": { "type": "string" } },
+    "step_ids": { "type": "array", "items": { "type": "string" } },
+    "open_gaps": { "type": "array", "items": { "type": "string" } },
+    "target_output": { "type": "string", "minLength": 1 }
+  }
+}

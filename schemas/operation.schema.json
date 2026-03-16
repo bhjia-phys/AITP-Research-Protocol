@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OperationContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "operation_id",
+    "topic_slug",
+    "kind",
+    "status",
+    "inputs",
+    "outputs",
+    "environment",
+    "repro_command",
+    "trust_status"
+  ],
+  "properties": {
+    "operation_id": { "type": "string", "minLength": 1 },
+    "topic_slug": { "type": "string", "minLength": 1 },
+    "kind": { "type": "string", "enum": ["numerical", "formal", "symbolic", "workflow", "backend"] },
+    "status": { "type": "string", "enum": ["planned", "running", "completed", "failed"] },
+    "inputs": { "type": "array", "items": { "type": "string" } },
+    "outputs": { "type": "array", "items": { "type": "string" } },
+    "environment": { "type": "array", "items": { "type": "string" } },
+    "repro_command": { "type": "string", "minLength": 1 },
+    "trust_status": { "type": "string", "enum": ["untrusted", "baseline_pending", "understanding_pending", "trusted"] }
+  }
+}

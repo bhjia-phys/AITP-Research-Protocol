@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CandidateClaimContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "claim_id",
+    "topic_slug",
+    "status",
+    "claim",
+    "claim_type",
+    "evidence_level",
+    "supports",
+    "risks",
+    "target_validation"
+  ],
+  "properties": {
+    "claim_id": { "type": "string", "minLength": 1 },
+    "topic_slug": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["draft", "candidate", "validated", "rejected", "deferred"] },
+    "claim": { "type": "string", "minLength": 1 },
+    "claim_type": { "type": "string", "enum": ["literature", "derivation", "numerical", "formal", "workflow"] },
+    "evidence_level": { "type": "string", "enum": ["source_bound", "local_reasoning", "candidate", "validated"] },
+    "supports": { "type": "array", "items": { "type": "string" } },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "target_validation": { "type": "array", "items": { "type": "string" } }
+  }
+}

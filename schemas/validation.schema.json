@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ValidationContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "validation_id",
+    "topic_slug",
+    "target_claim_ids",
+    "status",
+    "validation_mode",
+    "acceptance_rule",
+    "rejection_rule",
+    "artifacts"
+  ],
+  "properties": {
+    "validation_id": { "type": "string", "minLength": 1 },
+    "topic_slug": { "type": "string", "minLength": 1 },
+    "target_claim_ids": { "type": "array", "items": { "type": "string" } },
+    "status": { "type": "string", "enum": ["planned", "running", "pass", "fail", "deferred"] },
+    "validation_mode": { "type": "string", "enum": ["analytic", "numerical", "formal", "comparison", "hybrid"] },
+    "acceptance_rule": { "type": "string", "minLength": 1 },
+    "rejection_rule": { "type": "string", "minLength": 1 },
+    "artifacts": { "type": "array", "items": { "type": "string" } }
+  }
+}

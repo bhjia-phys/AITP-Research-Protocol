@@ -1,93 +1,62 @@
 # Roadmap
 
-## Phase 1 — Public kernel release
+## Phase 1 — Charter-first public repository
 
 Goal:
-- publish a clean, honest, minimal public repository.
+- publish AITP as a charter-and-protocol repository rather than a vague kernel.
 
 Deliverables:
-- README,
-- architecture overview,
-- roadmap,
-- initial project framing,
-- minimal public structure.
+- rewritten README,
+- charter doc,
+- agent model doc,
+- context-loading guidance,
+- adapter installation docs.
 
-Success criterion:
-- the repository clearly communicates the research vision, current scope, and architectural direction without pretending to be more complete than it is.
-
----
-
-## Phase 2 — Layer contracts and canonical memory
+## Phase 2 — Public contract family
 
 Goal:
-- make the L0-L4 architecture structurally stronger.
+- define the first stable protocol objects.
 
 Deliverables:
-- canonical objects with clearer schemas,
-- clearer handoff objects between layers,
-- better provenance and indexing conventions,
-- promotion rules from intake / feedback into canonical knowledge,
-- improved linking across concepts, methods, workflows, derivation objects, and claims.
+- contract docs,
+- JSON schemas,
+- public conformance vocabulary,
+- promotion and validation object boundaries.
 
-Success criterion:
-- the repository can express why Layer 2 is the center of gravity and show how reusable research memory compounds over time.
-
----
-
-## Phase 3 — Validation and writeback closure
+## Phase 3 — Reference adapters
 
 Goal:
-- connect knowledge structuring to real investigation and result writeback.
+- make AITP executable across multiple agent front-ends.
 
 Deliverables:
-- validation-route specifications,
-- decision ledger design,
-- execution or handoff surfaces for deeper checks,
-- result capture conventions,
-- keep / revise / discard / defer workflow,
-- better writeback from validated results into canonical memory.
+- OpenClaw adapter assets,
+- Codex adapter assets,
+- Claude Code adapter assets,
+- OpenCode adapter assets,
+- unified install and uninstall guidance.
 
-Success criterion:
-- the system supports a visible path from source acquisition to evaluation to structured writeback.
-
----
-
-## Phase 4 — Worked L0-L4 research cases
+## Phase 4 — Reference runtime boundary
 
 Goal:
-- demonstrate the system on real theoretical-physics-style cases.
-
-Candidate benchmark styles:
-- literature-to-knowledge case,
-- idea-evaluation case,
-- theory-to-numerics case,
-- theory-to-formalization case.
-
-Success criterion:
-- the repository contains examples that show the architecture is not merely conceptual.
-
----
-
-## Phase 5 — Broader public usability
-
-Goal:
-- make the project more reusable by people outside the original private workflow.
+- clarify what the public runtime is allowed to do.
 
 Deliverables:
-- cleaner public scripts,
-- better docs,
-- examples with lower environment dependence,
-- clearer extension points for other tools or agents.
+- runtime boundary docs,
+- audit surface description,
+- explicit line between protocol logic and implementation logic.
 
-Success criterion:
-- an external reader can understand the project and begin experimenting without access to the original private environment.
+## Phase 5 — Worked benchmark cases
 
----
+Goal:
+- show that AITP is not only philosophical prose.
 
-## Guiding principle
+Target cases:
+- literature-to-knowledge,
+- idea evaluation,
+- theory-to-numerics,
+- theory-to-formalization,
+- closed-loop research record.
 
-The project should prioritize:
-- epistemic honesty,
-- reusable structure,
-- research seriousness,
-- and gradual compounding over performative breadth.
+## Guiding constraint
+
+The repository should become stricter before it becomes broader.

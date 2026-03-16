@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ResearchQuestionContract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "question_id",
+    "title",
+    "topic_slug",
+    "status",
+    "question",
+    "scope",
+    "assumptions",
+    "non_goals",
+    "target_layers"
+  ],
+  "properties": {
+    "question_id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "topic_slug": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["draft", "active", "blocked", "closed"] },
+    "question": { "type": "string", "minLength": 1 },
+    "scope": { "type": "array", "items": { "type": "string" } },
+    "assumptions": { "type": "array", "items": { "type": "string" } },
+    "non_goals": { "type": "array", "items": { "type": "string" } },
+    "target_layers": {
+      "type": "array",
+      "items": { "type": "string", "enum": ["L1", "L2", "L3", "L4"] }
+    }
+  }
+}

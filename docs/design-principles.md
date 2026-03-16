@@ -1,43 +1,59 @@
 # Design Principles
 
-## 1. Human-in-the-loop over performative autonomy
+## 1. Charter before implementation
 
-The project is not trying to simulate a magically autonomous scientist. Important framing, interpretation, and acceptance decisions should remain visible to the human researcher.
+The public charter defines the intended research posture.
+The implementation should be replaceable without redefining the charter.
 
-## 2. Evidence before speculation
+## 2. Protocol before hidden logic
 
-The system should clearly distinguish:
-- what a source explicitly states,
-- what follows by short local reasoning,
-- what is plausible but not established,
+If a research decision can be expressed as a durable contract, it should not
+live only inside Python or prompt residue.
+
+## 3. Evidence before speculation
+
+AITP should distinguish:
+
+- what a source states,
+- what follows by short reasoning,
+- what is plausible but unestablished,
 - what is genuinely conjectural.
 
-## 3. Durable artifacts over chat residue
+## 4. Durable artifacts before chat residue
 
-If something matters, it should survive beyond a single conversation. That means notes, ledgers, maps, validation plans, and other structured artifacts should take precedence over one-off prose.
+If something matters, it should exist as an inspectable artifact on disk.
 
-## 4. Reusable knowledge over local noise
+## 5. Reusable knowledge before local convenience
 
-A major purpose of the system is to accumulate reusable research structure. The long-term value lies in workflows, methods, concepts, derivation objects, and other artifacts that remain useful across topics and sessions.
+The point of AITP is not just to answer one question. It is to compound useful
+research structure over time.
 
-## 5. Preserve uncertainty honestly
+## 6. Preserve uncertainty honestly
 
-Research contains partial derivations, failed attempts, anomalies, and unresolved contradictions. These should not be hidden or flattened into premature certainty.
+Partial derivations, failed attempts, anomalies, and unresolved contradictions
+must remain visible rather than being flattened into fake closure.
 
-## 6. Layer separation is epistemically important
+## 7. Validation is a first-class surface
 
-Source substrate, provisional understanding, canonical reusable knowledge, exploratory candidate formation, and validation should not be merged into one undifferentiated store. The L0-L4 architecture is meant to preserve this distinction.
+Language-level plausibility is not enough.
+Non-trivial claims should face explicit validation or explicit deferral.
 
-## 7. Validation matters
+## 8. Human checkpoints remain central
 
-A useful research system should not stop at language-level plausibility. It should support explicit validation routes and make it clearer what still needs to be checked analytically, numerically, symbolically, or formally.
+AITP is meant to support serious human-AI research collaboration, not perform
+fake autonomy for its own sake.
 
-Layer 4 should therefore be treated as an execution-backed validation surface, not just a place to store vague confidence notes.
+## 9. Context should be layered
 
-## 8. The system should compound over time
+The system should load:
 
-The point is not just to answer isolated prompts. The point is to build a research kernel that becomes more useful by accumulating reusable structure and better judgment surfaces over time.
+- a short charter,
+- a topic-local protocol bundle,
+- and only the specific sub-contracts needed for the current step.
 
-## 9. Typed communication over copied summaries
+This avoids context blowup while preserving rigor.
 
-The layers should communicate through durable references, typed objects, and explicit decisions rather than by copying whole artifacts into every later stage.
+## 10. Conformance is not correctness
+
+A conformant run means the agent followed the charter and protocol surface.
+It does not guarantee that the science is correct.
