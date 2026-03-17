@@ -1,51 +1,58 @@
 <svg width="1600" height="720" viewBox="0 0 1600 720" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">AITP README Hero</title>
-  <desc id="desc">A clean wide banner for AITP featuring a redesigned icon and a spacious layout referencing quantum matter, quantum gravity, and AI-native research workflows.</desc>
+  <desc id="desc">A wide AITP banner with a warped spacetime grid as the main background, a honeycomb lattice embedded inside it, and an AI mark framed by ket notation.</desc>
   <defs>
     <linearGradient id="heroBg" x1="0" y1="0" x2="1600" y2="720" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#05141F"/>
-      <stop offset="0.5" stop-color="#0A1D31"/>
-      <stop offset="1" stop-color="#061018"/>
+      <stop stop-color="#05131F"/>
+      <stop offset="0.48" stop-color="#091B2E"/>
+      <stop offset="1" stop-color="#061019"/>
     </linearGradient>
     <linearGradient id="heroBorder" x1="70" y1="50" x2="1540" y2="670" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#5BE4F3" stop-opacity="0.3"/>
-      <stop offset="1" stop-color="#5BE4F3" stop-opacity="0.06"/>
+      <stop stop-color="#5AE5F4" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#5AE5F4" stop-opacity="0.05"/>
     </linearGradient>
-    <linearGradient id="panelStroke" x1="0" y1="0" x2="1" y2="1">
-      <stop stop-color="#71F2EA"/>
-      <stop offset="1" stop-color="#8D8EFF"/>
+    <linearGradient id="warpStroke" x1="980" y1="44" x2="1458" y2="624" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#81D9FF"/>
+      <stop offset="1" stop-color="#888FFF"/>
     </linearGradient>
     <linearGradient id="chipFill" x1="0" y1="0" x2="0" y2="1">
-      <stop stop-color="#112A43"/>
-      <stop offset="1" stop-color="#0C2033"/>
+      <stop stop-color="#102A43"/>
+      <stop offset="1" stop-color="#0B2033"/>
     </linearGradient>
     <linearGradient id="routeLine" x1="0" y1="0" x2="1" y2="0">
-      <stop stop-color="#68F1E8"/>
+      <stop stop-color="#69F2E8"/>
       <stop offset="1" stop-color="#FFC857"/>
     </linearGradient>
-    <radialGradient id="leftGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(278 308) rotate(90) scale(260)">
-      <stop stop-color="#1BE1C8" stop-opacity="0.22"/>
+    <linearGradient id="panelStroke" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#74F3EA"/>
+      <stop offset="1" stop-color="#A98BFF"/>
+    </linearGradient>
+    <radialGradient id="leftGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(286 312) rotate(90) scale(250)">
+      <stop stop-color="#1BE1C8" stop-opacity="0.2"/>
       <stop offset="1" stop-color="#1BE1C8" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="rightGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1330 176) rotate(90) scale(240)">
-      <stop stop-color="#6BA8FF" stop-opacity="0.16"/>
+    <radialGradient id="rightGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1298 188) rotate(90) scale(240)">
+      <stop stop-color="#6BA8FF" stop-opacity="0.14"/>
       <stop offset="1" stop-color="#6BA8FF" stop-opacity="0"/>
     </radialGradient>
-    <clipPath id="heroGravityClip">
-      <circle cx="1310" cy="178" r="138"/>
+    <filter id="titleGlow" x="506" y="138" width="292" height="174" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="12"/>
+    </filter>
+    <clipPath id="heroWarpClip">
+      <path d="M946 78C1116 18 1356 42 1468 126C1520 166 1524 236 1494 294C1452 374 1434 460 1466 566C1474 592 1452 616 1426 612C1324 594 1208 594 1112 620C1018 646 930 612 902 534C846 378 832 240 946 78Z"/>
     </clipPath>
-    <clipPath id="panelGravityClip">
-      <circle cx="298" cy="108" r="84"/>
+    <clipPath id="iconPortalClip">
+      <circle cx="194" cy="194" r="146"/>
     </clipPath>
   </defs>
 
   <rect width="1600" height="720" rx="40" fill="url(#heroBg)"/>
   <rect x="1" y="1" width="1598" height="718" rx="39" stroke="url(#heroBorder)"/>
 
-  <circle cx="278" cy="308" r="260" fill="url(#leftGlow)"/>
-  <circle cx="1330" cy="176" r="240" fill="url(#rightGlow)"/>
+  <circle cx="286" cy="312" r="250" fill="url(#leftGlow)"/>
+  <circle cx="1298" cy="188" r="240" fill="url(#rightGlow)"/>
 
-  <g opacity="0.12">
+  <g opacity="0.11">
     <path d="M80 108H1520" stroke="#8FD7FF" stroke-width="1"/>
     <path d="M80 188H1520" stroke="#8FD7FF" stroke-width="1"/>
     <path d="M80 268H1520" stroke="#8FD7FF" stroke-width="1"/>
@@ -67,90 +74,104 @@
     <path d="M1440 80V640" stroke="#8FD7FF" stroke-width="1"/>
   </g>
 
-  <g opacity="0.18" clip-path="url(#heroGravityClip)">
-    <path d="M1172 92C1232 114 1290 118 1446 94" stroke="#7BCBFF" stroke-width="5" stroke-linecap="round"/>
-    <path d="M1164 142C1230 168 1298 170 1456 144" stroke="#7BCBFF" stroke-width="5" stroke-linecap="round"/>
-    <path d="M1158 198C1230 228 1308 230 1462 204" stroke="#7BCBFF" stroke-width="5" stroke-linecap="round"/>
-    <path d="M1158 254C1232 282 1310 286 1464 260" stroke="#7BCBFF" stroke-width="5" stroke-linecap="round"/>
-    <path d="M1212 34C1194 116 1190 214 1214 316" stroke="#9BE6FF" stroke-width="5" stroke-linecap="round"/>
-    <path d="M1270 28C1256 112 1252 220 1276 322" stroke="#9BE6FF" stroke-width="5" stroke-linecap="round"/>
-    <path d="M1328 28C1322 110 1324 224 1346 322" stroke="#9BE6FF" stroke-width="5" stroke-linecap="round"/>
-    <path d="M1386 36C1390 112 1402 220 1428 312" stroke="#9BE6FF" stroke-width="5" stroke-linecap="round"/>
+  <g clip-path="url(#heroWarpClip)" opacity="0.3">
+    <path d="M856 118C994 176 1166 194 1514 126" stroke="url(#warpStroke)" stroke-width="6" stroke-linecap="round"/>
+    <path d="M830 206C990 274 1188 286 1526 220" stroke="url(#warpStroke)" stroke-width="6" stroke-linecap="round"/>
+    <path d="M816 302C992 378 1210 390 1528 326" stroke="url(#warpStroke)" stroke-width="6" stroke-linecap="round"/>
+    <path d="M824 400C1004 476 1218 486 1520 430" stroke="url(#warpStroke)" stroke-width="6" stroke-linecap="round"/>
+    <path d="M858 500C1028 564 1212 570 1482 526" stroke="url(#warpStroke)" stroke-width="6" stroke-linecap="round"/>
+
+    <path d="M972 30C942 164 930 352 978 628" stroke="#9DE8FF" stroke-width="6" stroke-linecap="round"/>
+    <path d="M1080 26C1052 166 1046 362 1088 634" stroke="#9DE8FF" stroke-width="6" stroke-linecap="round"/>
+    <path d="M1188 26C1168 162 1170 368 1208 636" stroke="#9DE8FF" stroke-width="6" stroke-linecap="round"/>
+    <path d="M1296 34C1288 166 1302 372 1340 628" stroke="#9DE8FF" stroke-width="6" stroke-linecap="round"/>
+    <path d="M1402 48C1412 172 1438 362 1476 606" stroke="#9DE8FF" stroke-width="6" stroke-linecap="round"/>
   </g>
 
-  <g opacity="0.18" stroke="#73F2E8" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M1188 510L1218 492L1248 510L1248 544L1218 562L1188 544Z"/>
-    <path d="M1248 510L1278 492L1308 510L1308 544L1278 562L1248 544Z"/>
-    <path d="M1218 562L1248 544L1278 562L1278 596L1248 614L1218 596Z"/>
-    <path d="M1278 562L1308 544L1338 562L1338 596L1308 614L1278 596Z"/>
-    <path d="M1130 562L1160 544L1190 562L1190 596L1160 614L1130 596Z"/>
+  <g opacity="0.22" stroke="#73F3E9" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M1098 472L1128 454L1158 472L1158 506L1128 524L1098 506Z"/>
+    <path d="M1158 472L1188 454L1218 472L1218 506L1188 524L1158 506Z"/>
+    <path d="M1218 472L1248 454L1278 472L1278 506L1248 524L1218 506Z"/>
+    <path d="M1128 524L1158 506L1188 524L1188 558L1158 576L1128 558Z"/>
+    <path d="M1188 524L1218 506L1248 524L1248 558L1218 576L1188 558Z"/>
+    <path d="M1248 524L1278 506L1308 524L1308 558L1278 576L1248 558Z"/>
   </g>
 
-  <g transform="translate(86 120)">
-    <rect x="0" y="0" width="384" height="384" rx="80" fill="#071522" fill-opacity="0.78"/>
-    <rect x="1" y="1" width="382" height="382" rx="79" stroke="url(#panelStroke)" stroke-opacity="0.28"/>
-    <circle cx="192" cy="192" r="146" fill="#0A1F33"/>
-    <circle cx="192" cy="192" r="145" stroke="url(#panelStroke)" stroke-width="6"/>
-    <circle cx="98" cy="278" r="84" fill="#1BE1C8" fill-opacity="0.08"/>
-    <circle cx="298" cy="108" r="84" fill="#6BA8FF" fill-opacity="0.08"/>
+  <g transform="translate(92 118)">
+    <rect x="0" y="0" width="388" height="388" rx="82" fill="#071522" fill-opacity="0.78"/>
+    <rect x="1" y="1" width="386" height="386" rx="81" stroke="url(#panelStroke)" stroke-opacity="0.24"/>
+    <circle cx="194" cy="194" r="146" fill="#0A1F33"/>
 
-    <g clip-path="url(#panelGravityClip)">
-      <path d="M214 64C254 78 296 80 376 66" stroke="#7BCBFF" stroke-width="4" stroke-linecap="round"/>
-      <path d="M208 96C256 114 302 116 384 98" stroke="#7BCBFF" stroke-width="4" stroke-linecap="round"/>
-      <path d="M204 128C258 150 310 152 388 132" stroke="#7BCBFF" stroke-width="4" stroke-linecap="round"/>
-      <path d="M204 160C260 182 316 184 388 166" stroke="#7BCBFF" stroke-width="4" stroke-linecap="round"/>
-      <path d="M250 28C238 76 236 130 250 194" stroke="#9BE6FF" stroke-width="4" stroke-linecap="round"/>
-      <path d="M286 24C276 78 274 136 288 196" stroke="#9BE6FF" stroke-width="4" stroke-linecap="round"/>
-      <path d="M322 24C316 76 318 138 330 196" stroke="#9BE6FF" stroke-width="4" stroke-linecap="round"/>
-      <path d="M356 30C356 78 364 136 380 188" stroke="#9BE6FF" stroke-width="4" stroke-linecap="round"/>
+    <g clip-path="url(#iconPortalClip)" opacity="0.82">
+      <path d="M66 74C122 98 190 106 332 78" stroke="#7DD7FF" stroke-width="4" stroke-linecap="round"/>
+      <path d="M56 126C120 154 198 160 344 130" stroke="#7DD7FF" stroke-width="4" stroke-linecap="round"/>
+      <path d="M50 178C120 208 206 214 350 184" stroke="#7DD7FF" stroke-width="4" stroke-linecap="round"/>
+      <path d="M50 230C122 260 212 266 348 240" stroke="#7DD7FF" stroke-width="4" stroke-linecap="round"/>
+      <path d="M56 280C126 306 212 312 336 292" stroke="#7DD7FF" stroke-width="4" stroke-linecap="round"/>
+
+      <path d="M102 46C86 108 82 194 102 312" stroke="#9DE8FF" stroke-width="4" stroke-linecap="round"/>
+      <path d="M150 48C136 116 134 204 152 318" stroke="#9DE8FF" stroke-width="4" stroke-linecap="round"/>
+      <path d="M198 50C190 118 192 208 208 320" stroke="#9DE8FF" stroke-width="4" stroke-linecap="round"/>
+      <path d="M246 48C246 114 254 204 270 316" stroke="#9DE8FF" stroke-width="4" stroke-linecap="round"/>
+      <path d="M294 44C302 110 316 198 330 304" stroke="#9DE8FF" stroke-width="4" stroke-linecap="round"/>
     </g>
 
-    <g stroke="#73F2E8" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M34 280L62 264L90 280L90 312L62 328L34 312Z"/>
-      <path d="M90 280L118 264L146 280L146 312L118 328L90 312Z"/>
-      <path d="M62 328L90 312L118 328L118 360L90 376L62 360Z"/>
-      <path d="M118 328L146 312L174 328L174 360L146 376L118 360Z"/>
+    <g stroke="#73F3E9" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M60 266L88 250L116 266L116 298L88 314L60 298Z"/>
+      <path d="M116 266L144 250L172 266L172 298L144 314L116 298Z"/>
+      <path d="M88 314L116 298L144 314L144 346L116 362L88 346Z"/>
+      <path d="M144 314L172 298L200 314L200 346L172 362L144 346Z"/>
+    </g>
+
+    <g stroke="url(#panelStroke)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M118 98V288"/>
+      <path d="M268 98L318 194L268 288"/>
     </g>
 
     <g stroke="#FFC857" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M146 268L192 116L238 268"/>
-      <path d="M164 212H222"/>
-      <path d="M222 212H272"/>
-      <path d="M164 212H112"/>
-      <path d="M192 116V84"/>
+      <path d="M156 274L200 120L244 274"/>
+      <path d="M174 216H226"/>
+      <path d="M226 216H268"/>
+      <path d="M174 216H132"/>
+      <path d="M200 120V88"/>
     </g>
-    <g fill="#FFF1BE">
-      <circle cx="192" cy="84" r="9"/>
-      <circle cx="192" cy="116" r="8"/>
-      <circle cx="146" cy="268" r="9"/>
-      <circle cx="238" cy="268" r="9"/>
-      <circle cx="164" cy="212" r="8"/>
-      <circle cx="222" cy="212" r="8"/>
-      <circle cx="112" cy="212" r="7"/>
-      <circle cx="272" cy="212" r="7"/>
+
+    <g fill="#FFF0BF">
+      <circle cx="200" cy="88" r="8.5"/>
+      <circle cx="200" cy="120" r="8"/>
+      <circle cx="156" cy="274" r="8.5"/>
+      <circle cx="244" cy="274" r="8.5"/>
+      <circle cx="174" cy="216" r="7.5"/>
+      <circle cx="226" cy="216" r="7.5"/>
+      <circle cx="132" cy="216" r="6.5"/>
+      <circle cx="268" cy="216" r="6.5"/>
+      <circle cx="200" cy="186" r="8"/>
     </g>
   </g>
 
   <g font-family="Segoe UI, Arial, sans-serif">
-    <text x="560" y="164" fill="#88F1F8" font-size="24" font-weight="700" letter-spacing="5">AI THEORETICAL PHYSICIST</text>
+    <text x="560" y="166" fill="#89F1F8" font-size="24" font-weight="700" letter-spacing="5">AI THEORETICAL PHYSICIST</text>
+    <g filter="url(#titleGlow)">
+      <text x="560" y="286" fill="#7EF3E9" fill-opacity="0.18" font-size="112" font-weight="800" letter-spacing="3">AITP</text>
+    </g>
     <text x="560" y="286" fill="#F5FBFF" font-size="112" font-weight="800" letter-spacing="3">AITP</text>
-    <text x="560" y="354" fill="#D9EAF2" font-size="38" font-weight="700">Research Charter and Kernel</text>
-    <text x="560" y="428" fill="#C6DDE8" font-size="28">Quantum matter, quantum gravity, and AI-native protocol design</text>
-    <text x="560" y="468" fill="#C6DDE8" font-size="28">for bounded, evidence-led research workflows.</text>
+    <text x="560" y="356" fill="#D9EAF2" font-size="38" font-weight="700">Research Charter and Kernel</text>
+    <text x="560" y="426" fill="#C7DDE8" font-size="29">Protocol-first infrastructure for bounded, evidence-led research</text>
+    <text x="560" y="466" fill="#C7DDE8" font-size="29">where reusable memory is earned instead of improvised.</text>
   </g>
 
   <g transform="translate(560 520)" font-family="Segoe UI, Arial, sans-serif">
-    <rect x="0" y="0" width="224" height="60" rx="30" fill="url(#chipFill)"/>
-    <rect x="1" y="1" width="222" height="58" rx="29" stroke="#71F2EA" stroke-opacity="0.16"/>
-    <text x="112" y="38" text-anchor="middle" fill="#E8F9FD" font-size="22" font-weight="700">Quantum Matter</text>
+    <rect x="0" y="0" width="210" height="60" rx="30" fill="url(#chipFill)"/>
+    <rect x="1" y="1" width="208" height="58" rx="29" stroke="#71F2EA" stroke-opacity="0.16"/>
+    <text x="105" y="38" text-anchor="middle" fill="#E8F9FD" font-size="22" font-weight="700">Protocol-First</text>
 
-    <rect x="246" y="0" width="232" height="60" rx="30" fill="url(#chipFill)"/>
-    <rect x="247" y="1" width="230" height="58" rx="29" stroke="#71F2EA" stroke-opacity="0.16"/>
-    <text x="362" y="38" text-anchor="middle" fill="#E8F9FD" font-size="22" font-weight="700">Quantum Gravity</text>
+    <rect x="232" y="0" width="220" height="60" rx="30" fill="url(#chipFill)"/>
+    <rect x="233" y="1" width="218" height="58" rx="29" stroke="#71F2EA" stroke-opacity="0.16"/>
+    <text x="342" y="38" text-anchor="middle" fill="#E8F9FD" font-size="22" font-weight="700">Bounded Work</text>
 
-    <rect x="500" y="0" width="260" height="60" rx="30" fill="url(#chipFill)"/>
-    <rect x="501" y="1" width="258" height="58" rx="29" stroke="#71F2EA" stroke-opacity="0.16"/>
-    <text x="630" y="38" text-anchor="middle" fill="#E8F9FD" font-size="22" font-weight="700">AI-Native Kernel</text>
+    <rect x="474" y="0" width="250" height="60" rx="30" fill="url(#chipFill)"/>
+    <rect x="475" y="1" width="248" height="58" rx="29" stroke="#71F2EA" stroke-opacity="0.16"/>
+    <text x="599" y="38" text-anchor="middle" fill="#E8F9FD" font-size="22" font-weight="700">Human-Gated L2</text>
   </g>
 
   <g transform="translate(560 620)" font-family="Segoe UI, Arial, sans-serif">
