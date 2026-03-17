@@ -1,6 +1,6 @@
 <svg width="1600" height="720" viewBox="0 0 1600 720" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">AITP README Hero</title>
-  <desc id="desc">A wide AITP banner with a warped spacetime grid as the main background, a honeycomb lattice embedded inside it, and an AI mark framed by an explicit Dirac-style bracket motif.</desc>
+  <desc id="desc">A wide AITP banner with a warped spacetime grid as the main background, a honeycomb lattice embedded inside it, and an AI mark framed by a ket-style quantum-information motif like |AI⟩.</desc>
   <defs>
     <linearGradient id="heroBg" x1="0" y1="0" x2="1600" y2="720" gradientUnits="userSpaceOnUse">
       <stop stop-color="#05131F"/>
@@ -124,9 +124,7 @@
     </g>
 
     <g stroke="url(#panelStroke)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M92 98L58 194L92 288"/>
       <path d="M126 92V294"/>
-      <path d="M274 92V294"/>
       <path d="M308 98L342 194L308 288"/>
     </g>
     <path d="M126 92V294" stroke="#BFFFF8" stroke-width="13" stroke-linecap="round"/>
