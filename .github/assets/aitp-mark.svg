@@ -1,6 +1,6 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">AITP Mark</title>
-  <desc id="desc">A dark rounded-square AITP logo with a warped spacetime grid as background, a honeycomb lattice embedded inside it, and a circuit-like A framed by a ket-style quantum-information motif like |AI⟩.</desc>
+  <desc id="desc">A dark rounded-square AITP logo with a clean circular portal, a robot glyph at the center, and a ket-style quantum-information frame.</desc>
   <defs>
     <linearGradient id="bg" x1="42" y1="34" x2="462" y2="480" gradientUnits="userSpaceOnUse">
       <stop stop-color="#061725"/>
@@ -12,106 +12,80 @@
       <stop offset="0.68" stop-color="#0A1C2F"/>
       <stop offset="1" stop-color="#060E18"/>
     </radialGradient>
-    <linearGradient id="gridStroke" x1="150" y1="106" x2="362" y2="356" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#7DD7FF"/>
-      <stop offset="1" stop-color="#7A92FF"/>
-    </linearGradient>
     <linearGradient id="ketStroke" x1="166" y1="148" x2="382" y2="352" gradientUnits="userSpaceOnUse">
       <stop stop-color="#83F4EB"/>
       <stop offset="1" stop-color="#A98BFF"/>
     </linearGradient>
-    <linearGradient id="aiStroke" x1="212" y1="154" x2="304" y2="334" gradientUnits="userSpaceOnUse">
+    <linearGradient id="robotStroke" x1="202" y1="126" x2="316" y2="370" gradientUnits="userSpaceOnUse">
       <stop stop-color="#FFF2C6"/>
       <stop offset="0.46" stop-color="#FFC857"/>
       <stop offset="1" stop-color="#FF9354"/>
     </linearGradient>
-    <filter id="coreGlow" x="132" y="116" width="248" height="260" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+    <linearGradient id="robotFill" x1="258" y1="154" x2="258" y2="340" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFEAB5"/>
+      <stop offset="0.5" stop-color="#FFC857"/>
+      <stop offset="1" stop-color="#FF9354"/>
+    </linearGradient>
+    <filter id="coreGlow" x="146" y="128" width="224" height="232" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
       <feGaussianBlur stdDeviation="18"/>
     </filter>
-    <clipPath id="portalClip">
-      <circle cx="256" cy="256" r="146"/>
-    </clipPath>
+    <filter id="eyeGlow" x="214" y="164" width="88" height="50" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
   </defs>
 
   <rect x="24" y="24" width="464" height="464" rx="96" fill="url(#bg)"/>
   <rect x="24.5" y="24.5" width="463" height="463" rx="95.5" stroke="#61DEF1" stroke-opacity="0.16"/>
 
-  <g opacity="0.13">
-    <path d="M96 136H416" stroke="#90D7FF" stroke-width="1"/>
-    <path d="M96 200H416" stroke="#90D7FF" stroke-width="1"/>
-    <path d="M96 264H416" stroke="#90D7FF" stroke-width="1"/>
-    <path d="M96 328H416" stroke="#90D7FF" stroke-width="1"/>
-    <path d="M96 392H416" stroke="#90D7FF" stroke-width="1"/>
-    <path d="M136 96V416" stroke="#90D7FF" stroke-width="1"/>
-    <path d="M200 96V416" stroke="#90D7FF" stroke-width="1"/>
-    <path d="M264 96V416" stroke="#90D7FF" stroke-width="1"/>
-    <path d="M328 96V416" stroke="#90D7FF" stroke-width="1"/>
-    <path d="M392 96V416" stroke="#90D7FF" stroke-width="1"/>
-  </g>
-
   <circle cx="256" cy="256" r="146" fill="url(#portal)"/>
-
-  <g clip-path="url(#portalClip)" opacity="0.84">
-    <path d="M128 132C184 156 252 164 392 136" stroke="url(#gridStroke)" stroke-width="4" stroke-linecap="round"/>
-    <path d="M118 180C182 208 258 214 404 184" stroke="url(#gridStroke)" stroke-width="4" stroke-linecap="round"/>
-    <path d="M112 232C182 262 266 268 410 238" stroke="url(#gridStroke)" stroke-width="4" stroke-linecap="round"/>
-    <path d="M112 284C184 314 272 320 408 294" stroke="url(#gridStroke)" stroke-width="4" stroke-linecap="round"/>
-    <path d="M118 334C188 360 272 364 396 344" stroke="url(#gridStroke)" stroke-width="4" stroke-linecap="round"/>
-
-    <path d="M164 104C148 166 144 252 164 370" stroke="#9BE7FF" stroke-width="4" stroke-linecap="round"/>
-    <path d="M212 106C198 174 196 262 214 376" stroke="#9BE7FF" stroke-width="4" stroke-linecap="round"/>
-    <path d="M260 108C252 176 254 266 270 378" stroke="#9BE7FF" stroke-width="4" stroke-linecap="round"/>
-    <path d="M308 106C308 172 316 262 332 374" stroke="#9BE7FF" stroke-width="4" stroke-linecap="round"/>
-    <path d="M356 102C364 168 378 256 392 362" stroke="#9BE7FF" stroke-width="4" stroke-linecap="round"/>
-  </g>
+  <circle cx="256" cy="256" r="120" stroke="#7EE8F2" stroke-opacity="0.12" stroke-width="2"/>
+  <circle cx="256" cy="256" r="92" stroke="#A98BFF" stroke-opacity="0.12" stroke-width="2"/>
 
   <circle cx="178" cy="324" r="80" fill="#1CE2C7" fill-opacity="0.08"/>
   <circle cx="302" cy="190" r="76" fill="#6BA8FF" fill-opacity="0.08"/>
-  <circle cx="258" cy="244" r="72" fill="#FFC857" fill-opacity="0.09" filter="url(#coreGlow)"/>
-
-  <g stroke="#73F3E9" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M102 316L130 300L158 316L158 348L130 364L102 348Z"/>
-    <path d="M158 316L186 300L214 316L214 348L186 364L158 348Z"/>
-    <path d="M130 364L158 348L186 364L186 396L158 412L130 396Z"/>
-    <path d="M186 364L214 348L242 364L242 396L214 412L186 396Z"/>
-  </g>
-
-  <g fill="#9CF8EF">
-    <circle cx="102" cy="316" r="5.5"/>
-    <circle cx="130" cy="300" r="5.5"/>
-    <circle cx="158" cy="316" r="5.5"/>
-    <circle cx="158" cy="348" r="5.5"/>
-    <circle cx="130" cy="364" r="5.5"/>
-    <circle cx="186" cy="300" r="5.5"/>
-    <circle cx="214" cy="316" r="5.5"/>
-    <circle cx="214" cy="348" r="5.5"/>
-    <circle cx="186" cy="364" r="5.5"/>
-    <circle cx="158" cy="412" r="5.5"/>
-    <circle cx="214" cy="412" r="5.5"/>
-  </g>
+  <circle cx="258" cy="246" r="70" fill="#FFC857" fill-opacity="0.12" filter="url(#coreGlow)"/>
 
   <g stroke="url(#ketStroke)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
     <path d="M182 160V344"/>
     <path d="M366 160L402 252L366 344"/>
   </g>
 
-  <g stroke="url(#aiStroke)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M214 332L258 178L302 332"/>
-    <path d="M232 274H284"/>
-    <path d="M284 274H326"/>
-    <path d="M232 274H190"/>
-    <path d="M258 178V146"/>
+  <g fill="url(#robotFill)" fill-opacity="0.12">
+    <rect x="214" y="154" width="88" height="84" rx="24"/>
+    <path d="M226 250H290L302 298L258 336L214 298L226 250Z"/>
+  </g>
+
+  <g stroke="url(#robotStroke)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M258 124V146"/>
+    <path d="M214 190H196"/>
+    <path d="M302 190H320"/>
+    <rect x="214" y="154" width="88" height="84" rx="24"/>
+    <path d="M238 214H278"/>
+    <path d="M226 250H290L302 298L258 336L214 298L226 250Z"/>
+    <path d="M258 250V318"/>
+    <path d="M232 296H284"/>
+    <path d="M226 270L194 292"/>
+    <path d="M290 270L322 292"/>
+    <path d="M238 336L214 366"/>
+    <path d="M278 336L302 366"/>
+  </g>
+
+  <g fill="#6FF6EC" filter="url(#eyeGlow)">
+    <circle cx="238" cy="188" r="7"/>
+    <circle cx="278" cy="188" r="7"/>
+  </g>
+  <g fill="#9CF8EF">
+    <circle cx="238" cy="188" r="4.5"/>
+    <circle cx="278" cy="188" r="4.5"/>
   </g>
 
   <g fill="#FFF0BF">
-    <circle cx="258" cy="146" r="8.5"/>
-    <circle cx="258" cy="178" r="8"/>
-    <circle cx="214" cy="332" r="8.5"/>
-    <circle cx="302" cy="332" r="8.5"/>
-    <circle cx="232" cy="274" r="7.5"/>
-    <circle cx="284" cy="274" r="7.5"/>
-    <circle cx="190" cy="274" r="6.5"/>
-    <circle cx="326" cy="274" r="6.5"/>
-    <circle cx="258" cy="244" r="8"/>
+    <circle cx="258" cy="124" r="8.5"/>
+    <circle cx="194" cy="292" r="6.5"/>
+    <circle cx="322" cy="292" r="6.5"/>
+    <circle cx="214" cy="366" r="7"/>
+    <circle cx="302" cy="366" r="7"/>
+    <circle cx="258" cy="336" r="7"/>
+    <circle cx="258" cy="278" r="6"/>
   </g>
 </svg>
