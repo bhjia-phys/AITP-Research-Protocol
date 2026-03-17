@@ -1,6 +1,6 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">AITP Mark</title>
-  <desc id="desc">A dark rounded-square AITP logo with a warped spacetime grid as background, a honeycomb lattice embedded inside it, and a circuit-like A framed by ket notation for AI and quantum information.</desc>
+  <desc id="desc">A dark rounded-square AITP logo with a warped spacetime grid as background, a honeycomb lattice embedded inside it, and a circuit-like A framed by an explicit Dirac-style bracket motif for AI and quantum information.</desc>
   <defs>
     <linearGradient id="bg" x1="42" y1="34" x2="462" y2="480" gradientUnits="userSpaceOnUse">
       <stop stop-color="#061725"/>
@@ -16,7 +16,7 @@
       <stop stop-color="#7DD7FF"/>
       <stop offset="1" stop-color="#7A92FF"/>
     </linearGradient>
-    <linearGradient id="ketStroke" x1="168" y1="148" x2="350" y2="350" gradientUnits="userSpaceOnUse">
+    <linearGradient id="ketStroke" x1="136" y1="148" x2="382" y2="352" gradientUnits="userSpaceOnUse">
       <stop stop-color="#83F4EB"/>
       <stop offset="1" stop-color="#A98BFF"/>
     </linearGradient>
@@ -91,8 +91,10 @@
   </g>
 
   <g stroke="url(#ketStroke)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M176 160V344"/>
-    <path d="M322 160L368 252L322 344"/>
+    <path d="M146 160L110 252L146 344"/>
+    <path d="M182 160V344"/>
+    <path d="M330 160V344"/>
+    <path d="M366 160L402 252L366 344"/>
   </g>
 
   <g stroke="url(#aiStroke)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
