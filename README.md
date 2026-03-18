@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./.github/assets/aitp-mark.svg" width="116" alt="AITP logo" />
+  <img src="./.github/assets/aitp-mark.svg" width="116" alt="AITP AI monogram" />
   <h1>AITP Research Charter and Kernel</h1>
   <p><strong>Protocol-first infrastructure for building an AI Theoretical Physicist that behaves like a disciplined research participant rather than a free-form chat agent.</strong></p>
   <p>
@@ -12,7 +12,7 @@
 </div>
 
 <p align="center">
-  <img src="./.github/assets/aitp-hero.svg" width="100%" alt="AITP protocol-first research kernel hero" />
+  <img src="./.github/assets/aitp-hero.svg" width="100%" alt="AITP protocol-first research kernel hero with AI monogram" />
 </p>
 
 <p align="center">
