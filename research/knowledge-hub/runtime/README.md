@@ -15,6 +15,15 @@ Use `runtime/` to answer three operational questions quickly:
 2. which layer should resume next,
 3. which concrete files should be opened first.
 
+The runtime surface should answer those questions with lossless progressive
+disclosure.
+See `runtime/PROGRESSIVE_DISCLOSURE_PROTOCOL.md`.
+The generated JSON bundle now also carries a stable public schema contract so
+external executors can consume trigger semantics without parsing markdown prose.
+When deeper proof, gap, fusion, or verification triggers fire, the runtime
+surface must point back to the matching top-level kernel contracts rather than
+hiding those rules inside handler code.
+
 ## Layout
 
 - `topics/<topic_slug>/topic_state.json`
@@ -41,6 +50,8 @@ Use `runtime/` to answer three operational questions quickly:
   - generated queue-contract snapshot showing the current executable queue in declarative form
 - `topics/<topic_slug>/action_queue_contract.generated.md`
   - human-readable queue-contract snapshot
+- `schemas/progressive-disclosure-runtime-bundle.schema.json`
+  - public JSON contract for `runtime_protocol.generated.json`
 - `topics/<topic_slug>/deferred_candidates.json`
   - machine-readable deferred parking and reactivation buffer
 - `topics/<topic_slug>/deferred_candidates.md`
@@ -83,6 +94,7 @@ Use `runtime/` to answer three operational questions quickly:
 - Every active topic should refresh its runtime state after a meaningful `L1`, `L3`, or `L4` update.
 - The resume target should prefer the fallback route implied by the latest decision artifact when one exists.
 - Runtime should expose the human-visible operator contract rather than forcing the next agent or human to reconstruct it manually.
+- Runtime should expose the minimum sufficient execution contract first, then defer deeper protocol slices until declared triggers fire.
 - Runtime should materialize both an unfinished-work index and a next-action decision so the loop is inspectable rather than implicit.
 - Runtime should prefer declared contracts when they exist and only fall back to heuristics when they do not.
 - Runtime should also expose a conformance report so non-AITP operation becomes visible rather than implicit.
@@ -90,6 +102,7 @@ Use `runtime/` to answer three operational questions quickly:
 - Runtime should auto-promote theory-formal candidates only after explicit coverage and consensus artifacts exist.
 - Runtime should keep wide or mixed candidates out of Layer 2 by splitting or parking them first.
 - Runtime may spawn independent follow-up subtopics when cited-literature gaps are explicit enough to deserve a fresh `L0 -> L1 -> L3 -> L4 -> L2` route.
+- Runtime should expose proof-completion review, gap recovery, family fusion, and verification-bridge triggers as explicit deeper reads when those situations arise.
 
 ## Minimal required pointers
 
@@ -117,9 +130,10 @@ For example, an `L4` run may end with a `deferred` verdict that sends work back 
 ## Current workflow
 
 1. run `python3 research/adapters/openclaw/scripts/aitp_loop.py --topic-slug <topic_slug> --max-steps 1`
-2. open `runtime/topics/<topic_slug>/resume.md`, `operator_console.md`, `unfinished_work.md`, and `next_action_decision.md`
-3. follow `resume_stage`, `unfinished_work`, and the selected next-action decision
-4. after new work lands, advance the loop again instead of hand-maintaining runtime state
+2. open `runtime/topics/<topic_slug>/runtime_protocol.generated.md`, `agent_brief.md`, and `operator_console.md`
+3. only escalate into deferred surfaces when a declared trigger fires
+4. follow `resume_stage`, `unfinished_work`, and the selected next-action decision
+5. after new work lands, advance the loop again instead of hand-maintaining runtime state
 
 When you want to reduce heuristic behavior further, use:
 
@@ -143,6 +157,9 @@ For the minimal closed-loop v1, the external executor returns one JSON artifact 
 
 The current OpenClaw adapter launches `codex exec` through a tmux-backed session controller so the
 execution lane stays operator-visible even while the runtime waits for the returned result artifact.
+External runtimes that do not use the markdown brief should still consume
+`runtime_protocol.generated.json` through
+`runtime/schemas/progressive-disclosure-runtime-bundle.schema.json`.
 Use:
 
 ```bash
@@ -212,3 +229,11 @@ selection to be authored explicitly instead of inferred.
 
 Use `runtime/DEFERRED_RUNTIME_CONTRACTS.md` when a parked fragment needs a
 durable reactivation contract rather than a prose-only TODO.
+
+Use the top-level contracts below when the runtime trigger set says the topic is
+now proof-heavy, gap-heavy, fusion-heavy, or verification-heavy:
+
+- `PROOF_OBLIGATION_PROTOCOL.md`
+- `GAP_RECOVERY_PROTOCOL.md`
+- `FAMILY_FUSION_PROTOCOL.md`
+- `VERIFICATION_BRIDGE_PROTOCOL.md`

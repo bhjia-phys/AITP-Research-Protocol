@@ -8,6 +8,8 @@ from pathlib import Path
 
 import sys
 
+from jsonschema import Draft202012Validator
+
 
 def _bootstrap_path() -> None:
     package_root = Path(__file__).resolve().parents[1]
@@ -648,19 +650,44 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue(protocol_json.exists())
         self.assertTrue(protocol_note.exists())
         payload = json.loads(protocol_json.read_text(encoding="utf-8"))
+        schema = json.loads(
+            (
+                Path(__file__).resolve().parents[1]
+                / "runtime"
+                / "schemas"
+                / "progressive-disclosure-runtime-bundle.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        Draft202012Validator(schema).validate(payload)
+        self.assertEqual(
+            payload["$schema"],
+            "https://aitp.local/schemas/progressive-disclosure-runtime-bundle.schema.json",
+        )
+        self.assertEqual(payload["bundle_kind"], "progressive_disclosure_runtime_bundle")
         self.assertEqual(payload["human_request"], "run a bounded public protocol check")
         self.assertEqual(payload["priority_rules"][0]["source"], "control_note_or_decision_contract")
         self.assertEqual(payload["action_queue_surface"]["queue_source"], "heuristic")
         self.assertEqual(payload["backend_bridges"][0]["backend_id"], "backend:formal-theory-note-library")
         self.assertEqual(payload["promotion_gate"]["status"], "approved")
+        self.assertEqual(payload["minimal_execution_brief"]["selected_action_id"], "action:demo-topic:01")
+        self.assertEqual(payload["minimal_execution_brief"]["queue_source"], "heuristic")
+        self.assertEqual(payload["must_read_now"][0]["path"], "runtime/topics/demo-topic/runtime_protocol.generated.md")
+        self.assertEqual(payload["escalation_triggers"][1]["trigger"], "promotion_intent")
+        self.assertTrue(any(row["trigger"] == "decision_override_present" for row in payload["escalation_triggers"]))
+        self.assertTrue(any(row["slice"] == "current_execution_lane" for row in payload["recommended_protocol_slices"]))
         self.assertEqual(
             payload["backend_bridges"][0]["l0_registration_script"],
             "source-layer/scripts/register_local_note_source.py",
         )
-        self.assertIn("Prefer durable `next_actions.contract.json`", protocol_note.read_text(encoding="utf-8"))
-        self.assertIn("backend:formal-theory-note-library", protocol_note.read_text(encoding="utf-8"))
-        self.assertIn("## L2 promotion gate", protocol_note.read_text(encoding="utf-8"))
-        self.assertIn("source-layer/scripts/register_local_note_source.py", protocol_note.read_text(encoding="utf-8"))
+        note_text = protocol_note.read_text(encoding="utf-8")
+        self.assertIn("## Minimal execution brief", note_text)
+        self.assertIn("## Must read now", note_text)
+        self.assertIn("## Escalate only when triggered", note_text)
+        self.assertIn("`promotion_intent` status=`active`", note_text)
+        self.assertIn("Prefer durable `next_actions.contract.json`", note_text)
+        self.assertIn("backend:formal-theory-note-library", note_text)
+        self.assertIn("## L2 promotion gate", note_text)
+        self.assertIn("source-layer/scripts/register_local_note_source.py", note_text)
 
     def test_operation_trust_registry_blocks_until_gate_is_satisfied(self) -> None:
         self._write_runtime_state()
@@ -730,6 +757,10 @@ class AITPServiceTests(unittest.TestCase):
             "COMMUNICATION_CONTRACT.md",
             "AUTONOMY_AND_OPERATOR_MODEL.md",
             "L2_CONSULTATION_PROTOCOL.md",
+            "PROOF_OBLIGATION_PROTOCOL.md",
+            "GAP_RECOVERY_PROTOCOL.md",
+            "FAMILY_FUSION_PROTOCOL.md",
+            "VERIFICATION_BRIDGE_PROTOCOL.md",
             "INDEXING_RULES.md",
             "L0_SOURCE_LAYER.md",
         ):
@@ -739,6 +770,10 @@ class AITPServiceTests(unittest.TestCase):
 
         self.assertEqual(payload["layer_roots"]["L2"]["status"], "present")
         self.assertEqual(payload["protocol_contracts"]["layer_map"]["status"], "present")
+        self.assertEqual(payload["protocol_contracts"]["proof_obligation_protocol"]["status"], "present")
+        self.assertEqual(payload["protocol_contracts"]["gap_recovery_protocol"]["status"], "present")
+        self.assertEqual(payload["protocol_contracts"]["family_fusion_protocol"]["status"], "present")
+        self.assertEqual(payload["protocol_contracts"]["verification_bridge_protocol"]["status"], "present")
 
     def test_run_topic_loop_writes_loop_state_and_executes_auto_actions(self) -> None:
         service = _LoopStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)

@@ -32,6 +32,25 @@ Do not use it for:
 - raw source registration,
 - ad hoc chat-only memory references with no durable artifact.
 
+## 2.1 Runtime trigger handshake
+
+The runtime progressive-disclosure bundle names this path explicitly as:
+
+- `non_trivial_consultation`
+
+When that trigger is active in `runtime_protocol.generated.json` or
+`runtime_protocol.generated.md`, the next agent must open:
+
+- `L2_CONSULTATION_PROTOCOL.md`,
+- `consultation/topics/<topic_slug>/consultation_index.jsonl`,
+- the relevant consultation `request.json`, `result.json`, and `application.json`
+  artifacts.
+
+This runtime trigger expands consultation semantics only.
+It does not grant promotion or writeback authority.
+If the consultation outcome later supports canonical writeback, that is a
+second trigger path: `promotion_intent`, plus its own promotion-gate artifacts.
+
 ## 3. Core lifecycle
 
 One complete consultation should produce three protocol artifacts:
@@ -111,6 +130,9 @@ The request must say what local artifact triggered the need for memory lookup.
 ### Rule 3. Consultation is not promotion
 
 Looking up `L2` does not itself justify writing new objects into `L2`.
+The runtime trigger `non_trivial_consultation` is therefore distinct from
+`promotion_intent`, and both may be active in the same topic without collapsing
+into one decision surface.
 
 ### Rule 4. Empty or weak results are allowed
 

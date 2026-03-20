@@ -216,6 +216,146 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertEqual(actions[0]["action_type"], "reactivate_deferred_candidate")
         self.assertEqual(actions[0]["handler_args"]["entry_id"], "deferred:demo")
 
+    def test_build_operator_console_starts_with_immediate_execution_contract(self) -> None:
+        topic_state = {
+            "topic_slug": "demo-topic",
+            "promotion_gate": {"status": "approved"},
+            "pointers": {
+                "promotion_gate_path": "runtime/topics/demo-topic/promotion_gate.json",
+                "promotion_gate_note_path": "runtime/topics/demo-topic/promotion_gate.md",
+            },
+        }
+        interaction_state = {
+            "topic_slug": "demo-topic",
+            "human_request": "Continue bounded validation",
+            "resume_stage": "L3",
+            "last_materialized_stage": "L3",
+            "human_edit_surfaces": [
+                {
+                    "surface": "runtime_queue_contract",
+                    "path": "runtime/topics/demo-topic/action_queue_contract.generated.md",
+                    "role": "editable queue contract snapshot",
+                }
+            ],
+            "action_queue_surface": {
+                "queue_source": "heuristic",
+                "generated_contract_path": "runtime/topics/demo-topic/action_queue_contract.generated.json",
+                "generated_contract_note_path": "runtime/topics/demo-topic/action_queue_contract.generated.md",
+            },
+            "decision_surface": {
+                "decision_mode": "continue_unfinished",
+                "decision_source": "heuristic",
+                "decision_basis": "fallback queue selection",
+                "selected_action_id": "action:demo:1",
+                "selected_action_type": "skill_discovery",
+                "selected_action_auto_runnable": True,
+                "pending_count": 1,
+                "manual_pending_count": 0,
+                "auto_pending_count": 1,
+                "reason": "Bounded capability gap remains.",
+                "control_note_status": "missing",
+                "decision_contract_status": "missing",
+                "unfinished_work_path": "runtime/topics/demo-topic/unfinished_work.json",
+                "unfinished_work_note_path": "runtime/topics/demo-topic/unfinished_work.md",
+                "next_action_decision_path": "runtime/topics/demo-topic/next_action_decision.json",
+                "next_action_decision_note_path": "runtime/topics/demo-topic/next_action_decision.md",
+            },
+            "capability_adaptation": {
+                "protocol_path": "research/adapters/openclaw/SKILL_ADAPTATION_PROTOCOL.md",
+                "discovery_script": "research/adapters/openclaw/scripts/discover_external_skills.py",
+                "auto_install_allowed": False,
+                "discovery_artifacts": [],
+            },
+            "delivery_contract": {
+                "rule": "Outputs must cite exact artifact paths and justify the chosen layer."
+            },
+        }
+        queue = [
+            {
+                "action_id": "action:demo:1",
+                "action_type": "skill_discovery",
+                "summary": "Find the missing bounded workflow.",
+                "auto_runnable": True,
+                "handler": "discover_external_skills",
+            }
+        ]
+
+        rendered = self.orchestrate_topic.build_operator_console(topic_state, interaction_state, queue)
+
+        self.assertIn("## Immediate execution contract", rendered)
+        self.assertIn("### Do now", rendered)
+        self.assertIn("### Escalate when", rendered)
+        self.assertIn("`promotion_intent` status=`active`", rendered)
+        self.assertIn("## Deferred surfaces and human edit areas", rendered)
+
+    def test_build_agent_brief_starts_with_immediate_execution_contract(self) -> None:
+        topic_state = {
+            "topic_slug": "demo-topic",
+            "resume_stage": "L3",
+            "last_materialized_stage": "L3",
+            "source_count": 2,
+            "latest_run_id": "2026-03-20-demo",
+            "research_mode": "formal_derivation",
+            "active_executor_kind": "codex",
+            "active_reasoning_profile": "bounded",
+            "research_mode_profile": {
+                "profile_path": "runtime/research_modes/formal_derivation.json",
+                "label": "Formal derivation",
+                "reproducibility_expectations": ["Keep derivation anchors explicit."],
+                "note_expectations": ["Write a human-readable derivation note."],
+            },
+            "backend_bridges": [],
+            "promotion_gate": {"status": "not_requested", "promoted_units": []},
+            "pointers": {
+                "l0_source_index_path": "source-layer/topics/demo-topic/source_index.jsonl",
+                "intake_status_path": "source-layer/topics/demo-topic/intake_status.json",
+                "feedback_status_path": "feedback/topics/demo-topic/runs/2026-03-20-demo/feedback_status.json",
+                "promotion_decision_path": "validation/topics/demo-topic/runs/2026-03-20-demo/promotion_decision.json",
+                "promotion_gate_path": "runtime/topics/demo-topic/promotion_gate.json",
+                "promotion_gate_note_path": "runtime/topics/demo-topic/promotion_gate.md",
+                "consultation_index_path": "runtime/topics/demo-topic/consultation_index.json",
+            },
+        }
+        interaction_state = {
+            "decision_surface": {
+                "decision_source": "heuristic",
+                "decision_mode": "continue_unfinished",
+                "selected_action_id": "action:demo:2",
+                "control_note_status": "present",
+                "decision_contract_status": "missing",
+                "unfinished_work_path": "runtime/topics/demo-topic/unfinished_work.json",
+                "next_action_decision_path": "runtime/topics/demo-topic/next_action_decision.json",
+            },
+            "action_queue_surface": {
+                "queue_source": "declared_contract",
+                "declared_contract_path": "feedback/topics/demo-topic/runs/2026-03-20-demo/next_actions.contract.json",
+            },
+            "closed_loop": {
+                "selected_route_path": "runtime/topics/demo-topic/selected_validation_route.json",
+                "execution_task_path": "runtime/topics/demo-topic/execution_task.json",
+                "returned_result_path": "validation/topics/demo-topic/runs/2026-03-20-demo/returned_execution_result.json",
+                "trajectory_log_path": "runtime/topics/demo-topic/loop_history.jsonl",
+                "failure_classification_path": "runtime/topics/demo-topic/failure_classification.json",
+            },
+        }
+        queue = [
+            {
+                "action_id": "action:demo:2",
+                "action_type": "consultation_followup",
+                "summary": "Consult memory before reshaping the candidate.",
+                "auto_runnable": False,
+            }
+        ]
+
+        rendered = self.orchestrate_topic.build_agent_brief(topic_state, queue, interaction_state)
+
+        self.assertIn("## Immediate execution contract", rendered)
+        self.assertIn("### Do now", rendered)
+        self.assertIn("### Escalate when", rendered)
+        self.assertIn("`decision_override_present` status=`active`", rendered)
+        self.assertIn("`non_trivial_consultation` status=`active`", rendered)
+        self.assertIn("## Deferred surfaces and exact pointers", rendered)
+
 
 if __name__ == "__main__":
     unittest.main()

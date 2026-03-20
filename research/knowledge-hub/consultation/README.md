@@ -23,6 +23,27 @@ You may skip this surface only for ephemeral lookups that:
 - do not attach a warning or contradiction flag,
 - and do not affect writeback or promotion.
 
+## Runtime trigger handshake
+
+The runtime progressive-disclosure bundle exposes this surface through the
+stable trigger name:
+
+- `non_trivial_consultation`
+
+When that trigger is active, the next agent should read:
+
+- `L2_CONSULTATION_PROTOCOL.md`
+- `consultation/topics/<topic_slug>/consultation_index.jsonl`
+- the specific `request.json`, `result.json`, and `application.json` files for
+  the active consultation call
+
+This is intentionally separate from `promotion_intent`.
+Consultation can reshape terminology, candidate boundaries, or validation
+routes without authorizing any `L2` or `L2_auto` writeback.
+If consultation reveals a real theorem-family conflict or a cited-source proof
+gap, the next deeper governance read is not this file alone; it is the
+appropriate fusion or gap-recovery contract at the kernel root.
+
 ## Layout
 
 ```text

@@ -1,0 +1,624 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aitp.local/schemas/progressive-disclosure-runtime-bundle.schema.json",
+  "title": "ProgressiveDisclosureRuntimeBundle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "bundle_kind",
+    "protocol_version",
+    "topic_slug",
+    "updated_at",
+    "updated_by",
+    "human_request",
+    "resume_stage",
+    "last_materialized_stage",
+    "research_mode",
+    "minimal_execution_brief",
+    "must_read_now",
+    "may_defer_until_trigger",
+    "escalation_triggers",
+    "active_hard_constraints",
+    "recommended_protocol_slices",
+    "python_runtime_scope",
+    "agent_required_read_order",
+    "priority_rules",
+    "reproducibility_expectations",
+    "note_expectations",
+    "backend_bridges",
+    "promotion_gate",
+    "delivery_rule",
+    "editable_protocol_surfaces",
+    "action_queue_surface",
+    "decision_surface",
+    "pending_actions"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://aitp.local/schemas/progressive-disclosure-runtime-bundle.schema.json"
+    },
+    "bundle_kind": {
+      "type": "string",
+      "const": "progressive_disclosure_runtime_bundle"
+    },
+    "protocol_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "topic_slug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "human_request": {
+      "type": "string"
+    },
+    "resume_stage": {
+      "$ref": "#/$defs/nullable_stage"
+    },
+    "last_materialized_stage": {
+      "$ref": "#/$defs/nullable_stage"
+    },
+    "research_mode": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "minimal_execution_brief": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_stage",
+        "selected_action_id",
+        "selected_action_type",
+        "selected_action_summary",
+        "decision_source",
+        "queue_source",
+        "open_next",
+        "immediate_allowed_work",
+        "immediate_blocked_work"
+      ],
+      "properties": {
+        "current_stage": {
+          "$ref": "#/$defs/nullable_stage"
+        },
+        "selected_action_id": {
+          "type": "string"
+        },
+        "selected_action_type": {
+          "type": "string"
+        },
+        "selected_action_summary": {
+          "type": "string"
+        },
+        "decision_source": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "queue_source": {
+          "type": "string"
+        },
+        "open_next": {
+          "type": "string",
+          "minLength": 1
+        },
+        "immediate_allowed_work": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "immediate_blocked_work": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "must_read_now": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/path_reason"
+      }
+    },
+    "may_defer_until_trigger": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/deferred_surface"
+      }
+    },
+    "escalation_triggers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/escalation_trigger"
+      }
+    },
+    "active_hard_constraints": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "recommended_protocol_slices": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/protocol_slice"
+      }
+    },
+    "python_runtime_scope": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "agent_required_read_order": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "priority_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source",
+          "rule"
+        ],
+        "properties": {
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rule": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "reproducibility_expectations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "note_expectations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "backend_bridges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "backend_id",
+          "title",
+          "backend_type",
+          "status",
+          "card_status",
+          "card_path",
+          "backend_root",
+          "artifact_kinds",
+          "canonical_targets",
+          "l0_registration_script",
+          "source_count"
+        ],
+        "properties": {
+          "backend_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "backend_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1
+          },
+          "card_status": {
+            "type": "string",
+            "minLength": 1
+          },
+          "card_path": {
+            "$ref": "#/$defs/nullable_string"
+          },
+          "backend_root": {
+            "$ref": "#/$defs/nullable_string"
+          },
+          "artifact_kinds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "canonical_targets": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "l0_registration_script": {
+            "$ref": "#/$defs/nullable_string"
+          },
+          "source_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "promotion_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "candidate_id",
+        "candidate_type",
+        "path",
+        "note_path",
+        "backend_id",
+        "target_backend_root",
+        "review_mode",
+        "canonical_layer",
+        "coverage_status",
+        "consensus_status",
+        "merge_outcome",
+        "approved_by",
+        "promoted_units"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "candidate_id": {
+          "type": "string"
+        },
+        "candidate_type": {
+          "type": "string"
+        },
+        "path": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "note_path": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "backend_id": {
+          "type": "string"
+        },
+        "target_backend_root": {
+          "type": "string"
+        },
+        "review_mode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canonical_layer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "coverage_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consensus_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "merge_outcome": {
+          "type": "string",
+          "minLength": 1
+        },
+        "approved_by": {
+          "type": "string"
+        },
+        "promoted_units": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "delivery_rule": {
+      "type": "string"
+    },
+    "editable_protocol_surfaces": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "surface",
+          "path",
+          "role"
+        ],
+        "properties": {
+          "surface": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "action_queue_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "queue_source",
+        "declared_contract_path",
+        "generated_contract_path",
+        "generated_contract_note_path"
+      ],
+      "properties": {
+        "queue_source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "declared_contract_path": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "generated_contract_path": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "generated_contract_note_path": {
+          "$ref": "#/$defs/nullable_string"
+        }
+      }
+    },
+    "decision_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_mode",
+        "decision_source",
+        "decision_contract_status",
+        "control_note_path",
+        "selected_action_id"
+      ],
+      "properties": {
+        "decision_mode": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "decision_source": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "decision_contract_status": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "control_note_path": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "selected_action_id": {
+          "$ref": "#/$defs/nullable_string"
+        }
+      }
+    },
+    "pending_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "action_id",
+          "action_type",
+          "summary",
+          "auto_runnable",
+          "queue_source"
+        ],
+        "properties": {
+          "action_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "action_type": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "auto_runnable": {
+            "type": "boolean"
+          },
+          "queue_source": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nullable_stage": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^L[0-4]$"
+    },
+    "nullable_string": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "trigger_name": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "decision_override_present",
+            "promotion_intent",
+            "non_trivial_consultation",
+            "capability_gap_blocker",
+            "trust_missing",
+            "contradiction_detected",
+            "proof_completion_review",
+            "verification_route_selection"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        }
+      ]
+    },
+    "slice_name": {
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "current_execution_lane",
+            "decision_and_queue_details",
+            "consultation_memory",
+            "promotion_and_writeback",
+            "capability_and_skill_discovery",
+            "proof_completion_and_coverage",
+            "verification_route_selection"
+          ]
+        },
+        {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        }
+      ]
+    },
+    "path_reason": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "reason"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "deferred_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "trigger",
+        "reason"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "trigger": {
+          "$ref": "#/$defs/trigger_name"
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "escalation_trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "trigger",
+        "active",
+        "condition",
+        "required_reads"
+      ],
+      "properties": {
+        "trigger": {
+          "$ref": "#/$defs/trigger_name"
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "condition": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required_reads": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "protocol_slice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "slice",
+        "trigger",
+        "paths"
+      ],
+      "properties": {
+        "slice": {
+          "$ref": "#/$defs/slice_name"
+        },
+        "trigger": {
+          "oneOf": [
+            {
+              "const": ""
+            },
+            {
+              "$ref": "#/$defs/trigger_name"
+            }
+          ]
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

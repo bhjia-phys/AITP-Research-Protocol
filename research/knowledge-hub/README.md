@@ -36,6 +36,8 @@ workspace just to run `aitp`.
 
 `aitp doctor` should also report the fixed layer roots and key contract files so
 you can verify that the standalone install is structurally complete.
+That protocol report now includes the deeper proof/gap/fusion/verification
+governance surfaces in addition to the layer map and routing basics.
 
 ## Core Commands
 
@@ -69,6 +71,10 @@ research/knowledge-hub/
   COMMUNICATION_CONTRACT.md
   AUTONOMY_AND_OPERATOR_MODEL.md
   L2_CONSULTATION_PROTOCOL.md
+  PROOF_OBLIGATION_PROTOCOL.md
+  GAP_RECOVERY_PROTOCOL.md
+  FAMILY_FUSION_PROTOCOL.md
+  VERIFICATION_BRIDGE_PROTOCOL.md
   INDEXING_RULES.md
   L0_SOURCE_LAYER.md
   setup.py
@@ -110,6 +116,17 @@ Cross-layer protocol surfaces:
 - `runtime/`
 - `schemas/`
 
+Runtime-facing control notes:
+
+- `runtime/PROGRESSIVE_DISCLOSURE_PROTOCOL.md`
+
+Deeper governance contracts surfaced through `aitp doctor`:
+
+- `PROOF_OBLIGATION_PROTOCOL.md`
+- `GAP_RECOVERY_PROTOCOL.md`
+- `FAMILY_FUSION_PROTOCOL.md`
+- `VERIFICATION_BRIDGE_PROTOCOL.md`
+
 ## Runtime Rule
 
 AITP should not hide research control logic inside Python when a durable
@@ -128,13 +145,24 @@ candidate and review objects, evidence traces, and backend writeback rules.
   - `runtime/topics/<topic_slug>/runtime_protocol.generated.md`
   - optional `runtime/topics/<topic_slug>/promotion_gate.json`
   - optional `runtime/topics/<topic_slug>/promotion_gate.md`
+  - schema contract: `runtime/schemas/progressive-disclosure-runtime-bundle.schema.json`
 
 Agents should read that runtime bundle before acting on heuristic queue rows.
+That runtime bundle should follow the lossless progressive-disclosure rule in
+`runtime/PROGRESSIVE_DISCLOSURE_PROTOCOL.md`: show the minimum sufficient
+execution contract first, defer deeper details until declared triggers fire,
+and never hide hard constraints.
+External runtimes should consume its trigger semantics from the JSON bundle and
+its schema contract rather than scraping markdown prose.
 
 The layer contracts above remain the higher-priority governance surface.
 External backends such as a separate formal-theory knowledge network, a
 software repository, or a result store should enter through the documented
 `L2` backend bridge rather than through hidden path assumptions.
+When proof-grade theory work is active, deeper protocol slices should expose
+proof obligations, unresolved-gap routing, multi-source family fusion, and the
+selected verification bridge explicitly instead of collapsing them into one
+opaque prompt.
 
 Layer 2 now has two governed writeback paths:
 

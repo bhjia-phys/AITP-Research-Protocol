@@ -856,9 +856,17 @@ class AITPService:
         }
 
     def _runtime_protocol_markdown(self, payload: dict[str, Any]) -> str:
+        minimal = payload.get("minimal_execution_brief") or {}
+        must_read_now = payload.get("must_read_now") or []
+        active_hard_constraints = payload.get("active_hard_constraints") or []
+        escalation_triggers = payload.get("escalation_triggers") or []
+        may_defer_until_trigger = payload.get("may_defer_until_trigger") or []
+        recommended_protocol_slices = payload.get("recommended_protocol_slices") or []
         lines = [
             "# AITP runtime protocol bundle",
             "",
+            f"- JSON schema: `{payload.get('$schema') or '(missing)'}`",
+            f"- Bundle kind: `{payload.get('bundle_kind') or '(missing)'}`",
             f"- Topic slug: `{payload['topic_slug']}`",
             f"- Updated at: `{payload['updated_at']}`",
             f"- Updated by: `{payload['updated_by']}`",
@@ -867,14 +875,102 @@ class AITPService:
             f"- Last materialized stage: `{payload['last_materialized_stage'] or '(missing)'}`",
             f"- Research mode: `{payload['research_mode'] or '(missing)'}`",
             "",
-            "## Why this file exists",
+            "## Minimal execution brief",
             "",
-            "- Keep research behavior governed by durable protocol artifacts instead of hidden Python defaults.",
-            "- Limit Python to state materialization, audits, and explicit handler execution.",
+            f"- Current stage: `{minimal.get('current_stage') or payload['resume_stage'] or '(missing)'}`",
+            f"- Current bounded action: `{minimal.get('selected_action_summary') or '(no pending action)'}`",
+            f"- Selected action id: `{minimal.get('selected_action_id') or '(none)'}`",
+            f"- Selected action type: `{minimal.get('selected_action_type') or '(none)'}`",
+            f"- Decision source: `{minimal.get('decision_source') or '(missing)'}`",
+            f"- Queue source: `{minimal.get('queue_source') or '(missing)'}`",
+            f"- Open next: `{minimal.get('open_next') or '(missing)'}`",
             "",
-            "## What Python still does",
+            "### Allowed now",
             "",
         ]
+        for item in minimal.get("immediate_allowed_work") or ["Continue bounded work only after reading the required top-level surfaces."]:
+            lines.append(f"- {item}")
+        lines.extend(
+            [
+                "",
+                "### Blocked now",
+                "",
+            ]
+        )
+        for item in minimal.get("immediate_blocked_work") or ["Do not treat deferred surfaces as optional once their trigger fires."]:
+            lines.append(f"- {item}")
+        lines.extend(
+            [
+                "",
+                "## Must read now",
+                "",
+            ]
+        )
+        for idx, item in enumerate(must_read_now, start=1):
+            lines.append(f"{idx}. `{item['path']}` - {item['reason']}")
+        lines.extend(
+            [
+                "",
+                "## Active hard constraints",
+                "",
+            ]
+        )
+        for item in active_hard_constraints:
+            lines.append(f"- {item}")
+        lines.extend(
+            [
+                "",
+                "## Escalate only when triggered",
+                "",
+            ]
+        )
+        for item in escalation_triggers:
+            status = "active" if item.get("active") else "inactive"
+            lines.append(f"- `{item['trigger']}` status=`{status}`: {item['condition']}")
+            required_reads = item.get("required_reads") or []
+            if required_reads:
+                lines.append(f"  required_reads=`{', '.join(required_reads)}`")
+        lines.extend(
+            [
+                "",
+                "## Deferred protocol surfaces",
+                "",
+            ]
+        )
+        if may_defer_until_trigger:
+            for item in may_defer_until_trigger:
+                lines.append(
+                    f"- `{item['path']}` trigger=`{item['trigger']}` reason=`{item['reason']}`"
+                )
+        else:
+            lines.append("- None registered.")
+        lines.extend(
+            [
+                "",
+                "## Recommended protocol slices",
+                "",
+            ]
+        )
+        if recommended_protocol_slices:
+            for item in recommended_protocol_slices:
+                trigger = item.get("trigger") or "always"
+                lines.append(f"- `{item['slice']}` trigger=`{trigger}`")
+                for path in item.get("paths") or []:
+                    lines.append(f"  - `{path}`")
+        else:
+            lines.append("- None registered.")
+        lines.extend(
+            [
+                "",
+                "## Why this file exists",
+                "",
+                "- Keep research behavior governed by durable protocol artifacts instead of hidden Python defaults.",
+                "- Limit Python to state materialization, audits, and explicit handler execution.",
+                "",
+                "## What Python still does",
+                "",
+            ]
+        )
         for item in payload["python_runtime_scope"]:
             lines.append(f"- {item}")
         lines.extend(
@@ -1023,6 +1119,18 @@ class AITPService:
         queue_surface = interaction_state.get("action_queue_surface") or {}
         decision_surface = interaction_state.get("decision_surface") or {}
         research_mode_profile = topic_state.get("research_mode_profile") or {}
+        selected_action_id = str(decision_surface.get("selected_action_id") or "")
+        selected_pending_action: dict[str, Any] | None = None
+        pending_actions = [
+            row for row in queue_rows if str(row.get("status") or "pending") == "pending"
+        ]
+        if selected_action_id:
+            selected_pending_action = next(
+                (row for row in pending_actions if str(row.get("action_id") or "") == selected_action_id),
+                None,
+            )
+        if selected_pending_action is None and pending_actions:
+            selected_pending_action = pending_actions[0]
         backend_bridges: list[dict[str, Any]] = []
         for row in topic_state.get("backend_bridges") or []:
             if not isinstance(row, dict):
@@ -1043,20 +1151,377 @@ class AITPService:
                 }
             )
 
-        read_order: list[str] = [self._relativize(runtime_root / "runtime_protocol.generated.md")]
-        for candidate in (
-            "interaction_state.json",
-            "promotion_gate.md",
-            "agent_brief.md",
-            "operator_console.md",
-            "action_queue_contract.generated.md",
-            "conformance_report.md",
+        runtime_protocol_note = self._relativize(runtime_root / "runtime_protocol.generated.md")
+        must_read_now: list[dict[str, str]] = [
+            {
+                "path": runtime_protocol_note,
+                "reason": "Top-level execution contract for this topic. Read this file first.",
+            }
+        ]
+        for candidate, reason in (
+            (
+                "agent_brief.md",
+                "Stage-specific execution brief with the current bounded action and escalation cues.",
+            ),
+            (
+                "operator_console.md",
+                "Operator-visible execution state, pending actions, and current queue/decision status.",
+            ),
+            (
+                "conformance_report.md",
+                "Check whether current work is still counting as AITP before deeper execution.",
+            ),
         ):
             candidate_path = runtime_root / candidate
             if candidate_path.exists():
-                read_order.append(self._relativize(candidate_path))
+                must_read_now.append(
+                    {"path": self._relativize(candidate_path), "reason": reason}
+                )
+
+        may_defer_until_trigger: list[dict[str, str]] = []
+        for candidate, trigger, reason in (
+            (
+                "interaction_state.json",
+                "decision_override_present",
+                "Only open when raw control or contract state is needed.",
+            ),
+            (
+                "next_action_decision.md",
+                "decision_override_present",
+                "Open when you need the full selected-action rationale rather than the brief summary.",
+            ),
+            (
+                "action_queue_contract.generated.md",
+                "decision_override_present",
+                "Open when queue-contract details matter more than the brief queue snapshot.",
+            ),
+            (
+                "promotion_gate.md",
+                "promotion_intent",
+                "Only mandatory when current work could create, approve, or execute writeback.",
+            ),
+        ):
+            candidate_path = runtime_root / candidate
+            if candidate_path.exists():
+                may_defer_until_trigger.append(
+                    {
+                        "path": self._relativize(candidate_path),
+                        "trigger": trigger,
+                        "reason": reason,
+                    }
+                )
+
+        consultation_index_path = str((topic_state.get("pointers") or {}).get("consultation_index_path") or "")
+        closed_loop_surface = interaction_state.get("closed_loop") or {}
+        latest_run_id = str(topic_state.get("latest_run_id") or "").strip()
+        selected_action_handler_args = (selected_pending_action or {}).get("handler_args") or {}
+        active_run_id = str(selected_action_handler_args.get("run_id") or latest_run_id or "").strip()
+        active_candidate_id = str(
+            selected_action_handler_args.get("candidate_id") or promotion_gate.get("candidate_id") or ""
+        ).strip()
+        active_candidate_type = str(
+            selected_action_handler_args.get("candidate_type") or promotion_gate.get("candidate_type") or ""
+        ).strip()
+        theory_packet_reads: list[str] = []
+        if active_run_id and active_candidate_id:
+            theory_packet_paths = self._theory_packet_paths(topic_slug, active_run_id, active_candidate_id)
+            for key in (
+                "structure_map",
+                "coverage_ledger",
+                "notation_table",
+                "derivation_graph",
+                "agent_consensus",
+            ):
+                path = theory_packet_paths[key]
+                if path.exists():
+                    theory_packet_reads.append(self._relativize(path))
+        verification_route_reads = [
+            path
+            for path in (
+                str(closed_loop_surface.get("selected_route_path") or ""),
+                str(closed_loop_surface.get("execution_task_path") or ""),
+                str(closed_loop_surface.get("returned_result_path") or ""),
+            )
+            if path
+        ]
+        if consultation_index_path:
+            may_defer_until_trigger.append(
+                {
+                    "path": consultation_index_path,
+                    "trigger": "non_trivial_consultation",
+                    "reason": "Consultation details are only mandatory when L2 memory materially changes the current work.",
+                }
+            )
+        capability_report_path = runtime_root / "capability_report.md"
+        if capability_report_path.exists():
+            may_defer_until_trigger.append(
+                {
+                    "path": self._relativize(capability_report_path),
+                    "trigger": "capability_gap_blocker",
+                    "reason": "Capability details are only mandatory when a missing workflow or backend is the honest blocker.",
+                }
+            )
+        for path in theory_packet_reads:
+            may_defer_until_trigger.append(
+                {
+                    "path": path,
+                    "trigger": "proof_completion_review",
+                    "reason": "Theory-packet coverage and derivation surfaces only become mandatory when proof completion is the current concern.",
+                }
+            )
+        for path in verification_route_reads:
+            may_defer_until_trigger.append(
+                {
+                    "path": path,
+                    "trigger": "verification_route_selection",
+                    "reason": "Closed-loop route and execution details only become mandatory when validation-route selection or execution routing is the current concern.",
+                }
+            )
+
+        read_order: list[str] = [item["path"] for item in must_read_now]
         if not read_order:
             read_order.append(self._relativize(runtime_root / "topic_state.json"))
+
+        selected_action_summary = str((selected_pending_action or {}).get("summary") or "").strip()
+        selected_action_type = str((selected_pending_action or {}).get("action_type") or "").strip()
+        selected_action_auto_runnable = bool((selected_pending_action or {}).get("auto_runnable"))
+        selected_action_label = selected_action_summary or (
+            f"{selected_action_type} ({selected_action_id})" if selected_action_type else ""
+        )
+        immediate_allowed_work = []
+        if selected_action_label:
+            immediate_allowed_work.append(
+                f"Continue bounded `{topic_state.get('resume_stage') or '(missing)'}` work on `{selected_action_label}`."
+            )
+        else:
+            immediate_allowed_work.append(
+                f"Resume bounded `{topic_state.get('resume_stage') or '(missing)'}` work using the declared decision surface."
+            )
+        immediate_allowed_work.append(
+            "Prefer declared contracts and durable runtime artifacts over ad hoc browsing or memory-only routing."
+        )
+        if any(str(row.get("action_type") or "") == "skill_discovery" for row in pending_actions):
+            immediate_allowed_work.append(
+                "Run controlled skill discovery only if the capability gap is the honest blocker for the selected action."
+            )
+        if not selected_action_auto_runnable and selected_action_label:
+            immediate_allowed_work.append(
+                "Treat the currently selected action as manual follow-up unless a returned execution artifact proves otherwise."
+            )
+
+        immediate_blocked_work = [
+            "Do not promote or auto-promote material into Layer 2 unless the promotion trigger fires and the gate artifacts allow it.",
+            "Do not bypass conformance, declared control notes, or decision contracts with heuristic queue guesses.",
+            "Do not treat consultation as promotion or claim heavy execution happened without the corresponding returned result artifacts.",
+        ]
+
+        control_note_status = str(decision_surface.get("control_note_status") or "missing")
+        decision_contract_status = str(decision_surface.get("decision_contract_status") or "missing")
+        promotion_status = str(promotion_gate.get("status") or "not_requested")
+        capability_gap_active = any(
+            str(row.get("action_type") or "") == "skill_discovery" for row in pending_actions
+        )
+        contradiction_hint = any(
+            needle in selected_action_label.lower()
+            for needle in ("contradiction", "conflict", "regime mismatch")
+        )
+        proof_hint = bool(theory_packet_reads) and (
+            active_candidate_type
+            in {
+                "equation_card",
+                "theorem_card",
+                "proof_fragment",
+                "derivation_step",
+                "derivation_object",
+            }
+            or any(
+                needle in selected_action_label.lower()
+                for needle in ("proof", "derivation", "theorem", "coverage")
+            )
+        )
+        consultation_hint = any(
+            needle in selected_action_label.lower()
+            for needle in ("consult", "memory", "terminology", "candidate shape")
+        )
+        verification_route_hint = bool(verification_route_reads) and (
+            selected_action_type in {"select_validation_route", "materialize_execution_task", "dispatch_execution_task"}
+            or any(
+                needle in selected_action_label.lower()
+                for needle in ("validation route", "verification route", "execution task", "selected route")
+            )
+        )
+        trust_hint = any(
+            needle in selected_action_label.lower()
+            for needle in ("trust", "baseline", "atomize")
+        )
+        promotion_hint = (
+            promotion_status in {"requested", "approved"}
+            or any(
+                needle in selected_action_label.lower()
+                for needle in ("promot", "writeback", "candidate")
+            )
+        )
+        escalation_triggers = [
+            {
+                "trigger": "decision_override_present",
+                "active": control_note_status != "missing" or decision_contract_status != "missing",
+                "condition": "A control note or decision contract overrides heuristic queue selection.",
+                "required_reads": [
+                    path
+                    for path in (
+                        str(decision_surface.get("control_note_path") or ""),
+                        str(decision_surface.get("decision_contract_path") or ""),
+                        str(decision_surface.get("next_action_decision_note_path") or ""),
+                        str(queue_surface.get("generated_contract_note_path") or ""),
+                    )
+                    if path
+                ],
+            },
+            {
+                "trigger": "promotion_intent",
+                "active": promotion_hint,
+                "condition": "The current work could create, approve, or execute Layer 2 or Layer 2_auto writeback.",
+                "required_reads": [
+                    path
+                    for path in (
+                        str(promotion_gate.get("path") or ""),
+                        str(promotion_gate.get("note_path") or ""),
+                    )
+                    if path
+                ],
+            },
+            {
+                "trigger": "non_trivial_consultation",
+                "active": consultation_hint,
+                "condition": "L2 consultation materially changes terminology, candidate shape, validation route, or writeback intent.",
+                "required_reads": [
+                    path
+                    for path in (
+                        self._relativize(self.kernel_root / "L2_CONSULTATION_PROTOCOL.md"),
+                        consultation_index_path,
+                    )
+                    if path
+                ],
+            },
+            {
+                "trigger": "capability_gap_blocker",
+                "active": capability_gap_active,
+                "condition": "A missing workflow or backend is the honest blocker for the selected action.",
+                "required_reads": [
+                    path
+                    for path in (
+                        self._relativize(self._research_root() / "adapters" / "openclaw" / "SKILL_ADAPTATION_PROTOCOL.md"),
+                        self._relativize(capability_report_path) if capability_report_path.exists() else "",
+                    )
+                    if path
+                ],
+            },
+            {
+                "trigger": "proof_completion_review",
+                "active": proof_hint,
+                "condition": "Proof-heavy or derivation-heavy work must open the current theory-packet coverage and derivation surfaces before claiming completion.",
+                "required_reads": theory_packet_reads,
+            },
+            {
+                "trigger": "verification_route_selection",
+                "active": verification_route_hint,
+                "condition": "Closed-loop validation work must open the selected route and execution handoff surfaces before claiming execution or adjudication.",
+                "required_reads": verification_route_reads,
+            },
+            {
+                "trigger": "trust_missing",
+                "active": trust_hint,
+                "condition": "The current work wants to reuse an operation or method whose trust gate may not be satisfied.",
+                "required_reads": [],
+            },
+            {
+                "trigger": "contradiction_detected",
+                "active": contradiction_hint,
+                "condition": "Validation or family fusion exposes an unresolved contradiction or regime conflict.",
+                "required_reads": [
+                    path
+                    for path in (
+                        str((topic_state.get("pointers") or {}).get("promotion_decision_path") or ""),
+                        str((topic_state.get("pointers") or {}).get("feedback_status_path") or ""),
+                    )
+                    if path
+                ],
+            },
+        ]
+
+        recommended_protocol_slices = [
+            {
+                "slice": "current_execution_lane",
+                "trigger": "",
+                "paths": [item["path"] for item in must_read_now],
+            },
+            {
+                "slice": "decision_and_queue_details",
+                "trigger": "decision_override_present",
+                "paths": [
+                    path
+                    for path in (
+                        str(decision_surface.get("next_action_decision_note_path") or ""),
+                        str(queue_surface.get("generated_contract_note_path") or ""),
+                        str(queue_surface.get("declared_contract_path") or ""),
+                    )
+                    if path
+                ],
+            },
+            {
+                "slice": "consultation_memory",
+                "trigger": "non_trivial_consultation",
+                "paths": [
+                    path
+                    for path in (
+                        self._relativize(self.kernel_root / "L2_CONSULTATION_PROTOCOL.md"),
+                        consultation_index_path,
+                    )
+                    if path
+                ],
+            },
+            {
+                "slice": "promotion_and_writeback",
+                "trigger": "promotion_intent",
+                "paths": [
+                    path
+                    for path in (
+                        str(promotion_gate.get("path") or ""),
+                        str(promotion_gate.get("note_path") or ""),
+                    )
+                    if path
+                ],
+            },
+            {
+                "slice": "capability_and_skill_discovery",
+                "trigger": "capability_gap_blocker",
+                "paths": [
+                    path
+                    for path in (
+                        self._relativize(self._research_root() / "adapters" / "openclaw" / "SKILL_ADAPTATION_PROTOCOL.md"),
+                        self._relativize(capability_report_path) if capability_report_path.exists() else "",
+                    )
+                    if path
+                ],
+            },
+            {
+                "slice": "proof_completion_and_coverage",
+                "trigger": "proof_completion_review",
+                "paths": theory_packet_reads,
+            },
+            {
+                "slice": "verification_route_selection",
+                "trigger": "verification_route_selection",
+                "paths": verification_route_reads,
+            },
+        ]
+
+        active_hard_constraints = [
+            "Do not let progressive disclosure hide layer semantics, consultation obligations, trust gates, promotion gates, or conformance failures.",
+            "Do not treat heuristic queue rows as higher priority than declared control notes or decision contracts.",
+            "Do not perform Layer 2 or Layer 2_auto writeback unless the corresponding gate artifacts say it is allowed.",
+            "When a named trigger becomes active, read its mandatory deeper surfaces before continuing execution.",
+        ]
 
         editable_surfaces: list[dict[str, str]] = []
         for surface in interaction_state.get("human_edit_surfaces") or []:
@@ -1072,6 +1537,8 @@ class AITPService:
             )
 
         payload = {
+            "$schema": "https://aitp.local/schemas/progressive-disclosure-runtime-bundle.schema.json",
+            "bundle_kind": "progressive_disclosure_runtime_bundle",
             "protocol_version": 1,
             "topic_slug": topic_slug,
             "updated_at": now_iso(),
@@ -1080,6 +1547,23 @@ class AITPService:
             "resume_stage": topic_state.get("resume_stage"),
             "last_materialized_stage": topic_state.get("last_materialized_stage"),
             "research_mode": topic_state.get("research_mode"),
+            "minimal_execution_brief": {
+                "current_stage": topic_state.get("resume_stage"),
+                "selected_action_id": str((selected_pending_action or {}).get("action_id") or ""),
+                "selected_action_type": selected_action_type,
+                "selected_action_summary": selected_action_label,
+                "decision_source": decision_surface.get("decision_source"),
+                "queue_source": queue_surface.get("queue_source")
+                or ("declared_contract" if queue_surface.get("declared_contract_path") else "heuristic"),
+                "open_next": must_read_now[1]["path"] if len(must_read_now) > 1 else runtime_protocol_note,
+                "immediate_allowed_work": immediate_allowed_work,
+                "immediate_blocked_work": immediate_blocked_work,
+            },
+            "must_read_now": must_read_now,
+            "may_defer_until_trigger": may_defer_until_trigger,
+            "escalation_triggers": escalation_triggers,
+            "active_hard_constraints": active_hard_constraints,
+            "recommended_protocol_slices": recommended_protocol_slices,
             "python_runtime_scope": [
                 "Materialize durable runtime state and protocol snapshots on disk.",
                 "Run conformance, capability, and trust audits against persisted artifacts.",
@@ -3551,11 +4035,12 @@ description: Route research work through the AITP kernel using the installable `
 
 1. In a bare `codex` research session, do not start with direct browsing or free-form synthesis; enter through `aitp loop ...`, `aitp resume ...`, or `aitp bootstrap ...` first.
 2. For Codex-driven implementation or execution work inside an active topic, prefer `aitp-codex --topic-slug <topic_slug> "<task>"`.
-3. Read the generated `runtime_protocol.generated.md`, `promotion_gate.md`, `agent_brief.md`, `operator_console.md`, and `conformance_report.md`.
-4. Register reusable operations with `aitp operation-init ...`.
-5. For human-reviewed `L2`, use `aitp request-promotion ...` and wait for `aitp approve-promotion ...`.
-6. For theory-formal `L2_auto`, materialize coverage/consensus artifacts with `aitp coverage-audit ...` and then use `aitp auto-promote ...`.
-6. End with `aitp audit --topic-slug <topic_slug> --phase exit`.
+3. Read `runtime_protocol.generated.md` first, then the files listed under `Must read now`.
+4. Expand promotion, consultation, capability, or queue details only when the named trigger in the runtime bundle fires.
+5. Register reusable operations with `aitp operation-init ...`.
+6. For human-reviewed `L2`, use `aitp request-promotion ...` and wait for `aitp approve-promotion ...`.
+7. For theory-formal `L2_auto`, materialize coverage/consensus artifacts with `aitp coverage-audit ...` and then use `aitp auto-promote ...`.
+8. End with `aitp audit --topic-slug <topic_slug> --phase exit`.
 
 ## Hard rules
 
@@ -3604,9 +4089,10 @@ description: Route Claude Code through the AITP runtime so substantial research 
 
 1. Start topic work with `aitp loop ...` when possible.
 2. Use `aitp bootstrap ...` only to create a new topic, then return to `aitp loop ...`.
-3. Read `runtime_protocol.generated.md`, `agent_brief.md`, `operator_console.md`, and `conformance_report.md` before deeper work.
-4. Treat missing conformance as a hard failure for AITP work.
-5. Close with `aitp audit --topic-slug <topic_slug> --phase exit`.
+3. Read `runtime_protocol.generated.md` first, then follow its `Must read now` list before deeper work.
+4. Expand deferred surfaces only when the named trigger fires.
+5. Treat missing conformance as a hard failure for AITP work.
+6. Close with `aitp audit --topic-slug <topic_slug> --phase exit`.
 
 ## Hard rules
 
@@ -3634,7 +4120,7 @@ Use this skill when the task belongs inside AITP rather than a free-form note wo
 aitp loop --topic-slug <topic_slug> --human-request "<task>"
 ```
 
-Then read `runtime/topics/<topic_slug>/runtime_protocol.generated.md` before acting on the queue. Do not bypass the loop and jump straight into ad hoc browsing or execution.
+Then read `runtime/topics/<topic_slug>/runtime_protocol.generated.md` and follow its `Must read now` and `Escalate only when triggered` sections before acting on the queue. Do not bypass the loop and jump straight into ad hoc browsing or execution.
 
 If the topic does not exist yet:
 
@@ -3674,12 +4160,13 @@ Required pattern:
 
 1. enter through `aitp loop` whenever the topic already exists
 2. use `aitp bootstrap` only to create a new topic shell, then return to `aitp loop`
-3. inspect `runtime_protocol.generated.md` and the other generated runtime artifacts
-4. register reusable operations with `aitp operation-init`
-5. do the actual work
-6. request human approval before any human-reviewed `L2` promotion with `aitp request-promotion ...`
-7. for theory-formal `L2_auto`, materialize `coverage-audit` artifacts before `aitp auto-promote ...`
-7. close with `aitp audit --phase exit`
+3. read `runtime_protocol.generated.md` first, then follow `Must read now`
+4. expand deferred surfaces only when the named trigger in the runtime bundle fires
+5. register reusable operations with `aitp operation-init`
+6. do the actual work
+7. request human approval before any human-reviewed `L2` promotion with `aitp request-promotion ...`
+8. for theory-formal `L2_auto`, materialize `coverage-audit` artifacts before `aitp auto-promote ...`
+9. close with `aitp audit --phase exit`
 
 If method trust is missing:
 
@@ -3702,10 +4189,11 @@ User request: $ARGUMENTS
 
 1. If the topic already exists, run `aitp loop --topic-slug <topic_slug> --human-request "$ARGUMENTS"`.
 2. If the topic is new, run `aitp bootstrap --topic "<topic>" --statement "$ARGUMENTS"` and then `aitp loop --topic-slug <topic_slug> --human-request "$ARGUMENTS"`.
-3. Read the generated `runtime_protocol.generated.md`, `agent_brief.md`, `operator_console.md`, `capability_report.md`, and `conformance_report.md`.
-4. If the work is heading toward human-reviewed `L2`, use `aitp request-promotion ...` and wait for a durable approval gate.
-5. If the work is heading toward theory-formal `L2_auto`, use `aitp coverage-audit ...` before `aitp auto-promote ...`.
-6. Continue the task only after the runtime artifacts exist and conformance passes.
+3. Read `runtime_protocol.generated.md` first, then follow `Must read now`.
+4. Expand deferred surfaces only when the named trigger in `runtime_protocol.generated.md` fires.
+5. If the work is heading toward human-reviewed `L2`, use `aitp request-promotion ...` and wait for a durable approval gate.
+6. If the work is heading toward theory-formal `L2_auto`, use `aitp coverage-audit ...` before `aitp auto-promote ...`.
+7. Continue the task only after the runtime artifacts exist and conformance passes.
 """
         elif name == "aitp-resume":
             body = """---
@@ -3724,7 +4212,7 @@ Run:
 aitp resume $ARGUMENTS
 ```
 
-Then read the generated runtime artifacts before continuing.
+Then read `runtime_protocol.generated.md` first, follow `Must read now`, and only expand deferred surfaces when the named trigger fires.
 """
         elif name == "aitp-loop":
             body = """---
@@ -3743,7 +4231,8 @@ Run:
 aitp loop $ARGUMENTS
 ```
 
-Then inspect `runtime_protocol.generated.md`, `loop_state.json`, `capability_report.md`, and `conformance_report.md`.
+Then read `runtime_protocol.generated.md` first, follow `Must read now`, and only expand deferred surfaces when the named trigger fires.
+Inspect `loop_state.json` after the runtime contract if you need loop-exit status.
 If the loop surfaces a promotion-ready candidate, use `aitp request-promotion ...` for human-reviewed `L2`, or `aitp coverage-audit ...` before `aitp auto-promote ...` for theory-formal `L2_auto`.
 """
         else:
@@ -3776,8 +4265,9 @@ Arguments: $ARGUMENTS
 
 1. If the topic exists, run `aitp loop --topic-slug <topic_slug> --human-request "$ARGUMENTS"`.
 2. If the topic is new, run `aitp bootstrap --topic "<topic>" --statement "$ARGUMENTS"` and then `aitp loop --topic-slug <topic_slug> --human-request "$ARGUMENTS"`.
-3. Read the generated runtime protocol bundle before deeper work.
-4. Request human approval before any Layer 2 promotion.
+3. Read `runtime_protocol.generated.md` first, then follow `Must read now`.
+4. Expand deferred surfaces only when the named trigger fires.
+5. Request human approval before any Layer 2 promotion.
 """
         elif name == "aitp-loop":
             body = """---
@@ -3793,7 +4283,8 @@ Run:
 aitp loop $ARGUMENTS
 ```
 
-Then inspect `runtime_protocol.generated.md`, `loop_state.json`, and `conformance_report.md`.
+Then read `runtime_protocol.generated.md` first, follow `Must read now`, and only expand deferred surfaces when the named trigger fires.
+Inspect `loop_state.json` after the runtime contract if you need loop-exit status.
 If the result should enter Layer 2, run `aitp request-promotion ...` first.
 """
         else:
@@ -3995,6 +4486,10 @@ aitp audit $ARGUMENTS
             "communication_contract": self.kernel_root / "COMMUNICATION_CONTRACT.md",
             "autonomy_operator_model": self.kernel_root / "AUTONOMY_AND_OPERATOR_MODEL.md",
             "l2_consultation_protocol": self.kernel_root / "L2_CONSULTATION_PROTOCOL.md",
+            "proof_obligation_protocol": self.kernel_root / "PROOF_OBLIGATION_PROTOCOL.md",
+            "gap_recovery_protocol": self.kernel_root / "GAP_RECOVERY_PROTOCOL.md",
+            "family_fusion_protocol": self.kernel_root / "FAMILY_FUSION_PROTOCOL.md",
+            "verification_bridge_protocol": self.kernel_root / "VERIFICATION_BRIDGE_PROTOCOL.md",
             "indexing_rules": self.kernel_root / "INDEXING_RULES.md",
             "l0_source_layer": self.kernel_root / "L0_SOURCE_LAYER.md",
         }

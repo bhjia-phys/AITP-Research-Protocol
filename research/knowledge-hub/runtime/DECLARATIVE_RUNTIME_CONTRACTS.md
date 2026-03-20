@@ -179,6 +179,80 @@ values for the new runtime-capable flows:
 - `spawn_followup_subtopics`
 - `auto_promote_candidate`
 
+## 6. Progressive-disclosure runtime bundle contract
+
+Path:
+
+- `runtime/topics/<topic_slug>/runtime_protocol.generated.json`
+
+Public schema:
+
+- `runtime/schemas/progressive-disclosure-runtime-bundle.schema.json`
+
+Purpose:
+
+- expose `minimal_execution_brief`, `must_read_now`, and `escalation_triggers`
+  as a stable machine-readable contract,
+- let external runtimes consume trigger semantics without scraping markdown,
+- keep markdown as a human-readable projection instead of the only trigger
+  definition surface.
+
+Minimal shape:
+
+```json
+{
+  "$schema": "https://aitp.local/schemas/progressive-disclosure-runtime-bundle.schema.json",
+  "bundle_kind": "progressive_disclosure_runtime_bundle",
+  "protocol_version": 1,
+  "topic_slug": "my-topic",
+  "minimal_execution_brief": {
+    "current_stage": "L3",
+    "selected_action_id": "action:my-topic:02",
+    "queue_source": "declared_contract",
+    "open_next": "runtime/topics/my-topic/runtime_protocol.generated.md",
+    "immediate_allowed_work": [
+      "Continue bounded L3 work after reading the required surfaces."
+    ],
+    "immediate_blocked_work": [
+      "Do not promote material into Layer 2 without the gate artifacts."
+    ]
+  },
+  "escalation_triggers": [
+    {
+      "trigger": "non_trivial_consultation",
+      "active": true,
+      "condition": "L2 consultation materially changes route or writeback intent.",
+      "required_reads": [
+        "L2_CONSULTATION_PROTOCOL.md",
+        "consultation/topics/my-topic/consultation_index.jsonl"
+      ]
+    }
+  ],
+  "recommended_protocol_slices": [
+    {
+      "slice": "consultation_memory",
+      "trigger": "non_trivial_consultation",
+      "paths": [
+        "L2_CONSULTATION_PROTOCOL.md",
+        "consultation/topics/my-topic/consultation_index.jsonl"
+      ]
+    }
+  ]
+}
+```
+
+Rules:
+
+- `runtime_protocol.generated.json` is the durable machine-readable source.
+- `runtime_protocol.generated.md` may reorder or compress, but it must not
+  invent or hide trigger state.
+- Stable trigger names such as `promotion_intent`,
+  `non_trivial_consultation`, `proof_completion_review`, and
+  `verification_route_selection` should be consumed from JSON first.
+- External executors should treat the schema as the public contract and the
+  service implementation as one producer of that contract, not the contract
+  itself.
+
 ## Precedence
 
 The runtime should interpret steering in this order:

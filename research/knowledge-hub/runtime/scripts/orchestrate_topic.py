@@ -1073,23 +1073,85 @@ def build_interaction_state(
 
 
 def build_operator_console(topic_state: dict, interaction_state: dict, queue: list[dict]) -> str:
+    decision_surface = interaction_state.get("decision_surface") or {}
+    queue_surface = interaction_state.get("action_queue_surface") or {}
+    promotion_gate = topic_state.get("promotion_gate") or {}
+    selected_action_id = str(decision_surface.get("selected_action_id") or "")
+    selected_action = next(
+        (action for action in queue if str(action.get("action_id") or "") == selected_action_id),
+        queue[0] if queue else None,
+    )
+    selected_summary = str((selected_action or {}).get("summary") or "(no pending action)")
+    selected_type = str((selected_action or {}).get("action_type") or "(none)")
+    selected_auto = str(bool((selected_action or {}).get("auto_runnable"))).lower()
+    trigger_rows = [
+        (
+            "decision_override_present",
+            (decision_surface.get("control_note_status") or "missing") != "missing"
+            or (decision_surface.get("decision_contract_status") or "missing") != "missing",
+            "Open the decision contract or control note before trusting heuristic queue selection.",
+        ),
+        (
+            "promotion_intent",
+            str(promotion_gate.get("status") or "not_requested") in {"requested", "approved"},
+            "Open the promotion gate before any writeback-facing work.",
+        ),
+        (
+            "capability_gap_blocker",
+            any(str(action.get("action_type") or "") == "skill_discovery" for action in queue),
+            "Open capability/discovery surfaces only when the blocker is a real workflow gap.",
+        ),
+    ]
+    open_next = (
+        decision_surface.get("next_action_decision_note_path")
+        or queue_surface.get("generated_contract_note_path")
+        or "(missing)"
+    )
     lines = [
         "# AITP operator console",
+        "",
+        "## Immediate execution contract",
         "",
         f"- Topic slug: `{interaction_state['topic_slug']}`",
         f"- Human request: `{interaction_state['human_request']}`",
         f"- Resume stage: `{interaction_state['resume_stage']}`",
         f"- Last materialized stage: `{interaction_state['last_materialized_stage']}`",
+        f"- Current bounded action: `{selected_summary}`",
+        f"- Selected action type: `{selected_type}`",
+        f"- Selected action auto-runnable: `{selected_auto}`",
+        f"- Open next: `{open_next}`",
         "",
-        "## Active loops",
+        "### Do now",
         "",
-        "1. Research loop: use L0/L1/L2/L3/L4 according to the current epistemic state.",
-        "2. Capability loop: if a missing workflow or backend is the blocker, run controlled skill discovery before declaring failure.",
-        "3. Delivery loop: final output may land in L1, L2, L3, or L4, but it must always report exact artifact paths and the reason for that layer choice.",
+        f"- Continue bounded `{interaction_state['resume_stage']}` work on the selected action instead of expanding the whole protocol surface at once.",
+        "- Use declared decision and queue artifacts before heuristic interpretation.",
+        "- Keep final reporting honest about exact artifact paths and chosen layer.",
         "",
-        "## Human edit surfaces",
+        "### Do not do yet",
+        "",
+        "- Do not treat consultation as promotion or perform writeback without the gate surfaces.",
+        "- Do not claim heavy execution happened unless returned execution artifacts exist.",
+        "- Do not replace declared control notes or decision contracts with ad hoc queue guesses.",
+        "",
+        "### Escalate when",
         "",
     ]
+    for name, active, note in trigger_rows:
+        lines.append(f"- `{name}` status=`{'active' if active else 'inactive'}`: {note}")
+
+    lines.extend(
+        [
+            "",
+            "## Active loops",
+            "",
+            "1. Research loop: use L0/L1/L2/L3/L4 according to the current epistemic state.",
+            "2. Capability loop: if a missing workflow or backend is the blocker, run controlled skill discovery before declaring failure.",
+            "3. Delivery loop: final output may land in L1, L2, L3, or L4, but it must always report exact artifact paths and the reason for that layer choice.",
+            "",
+            "## Deferred surfaces and human edit areas",
+            "",
+        ]
+    )
 
     for surface in interaction_state["human_edit_surfaces"]:
         lines.append(f"- [{surface['surface']}] `{surface['path']}` {surface['role']}")
@@ -1109,9 +1171,6 @@ def build_operator_console(topic_state: dict, interaction_state: dict, queue: li
             f"(auto_runnable={str(action['auto_runnable']).lower()}, handler={handler})"
         )
 
-    decision_surface = interaction_state.get("decision_surface") or {}
-    queue_surface = interaction_state.get("action_queue_surface") or {}
-    promotion_gate = topic_state.get("promotion_gate") or {}
     lines.extend(
         [
             "",
@@ -1198,54 +1257,109 @@ def build_agent_brief(topic_state: dict, queue: list[dict], interaction_state: d
     decision_surface = interaction_state.get("decision_surface") or {}
     queue_surface = interaction_state.get("action_queue_surface") or {}
     research_mode_profile = topic_state.get("research_mode_profile") or {}
+    selected_action_id = str(decision_surface.get("selected_action_id") or "")
+    selected_action = next(
+        (action for action in queue if str(action.get("action_id") or "") == selected_action_id),
+        queue[0] if queue else None,
+    )
+    selected_summary = str((selected_action or {}).get("summary") or "(no pending action)")
+    trigger_rows = [
+        (
+            "decision_override_present",
+            (decision_surface.get("control_note_status") or "missing") != "missing"
+            or (decision_surface.get("decision_contract_status") or "missing") != "missing",
+            "Open control-note or decision-contract artifacts before trusting heuristic routing.",
+        ),
+        (
+            "promotion_intent",
+            str(promotion_gate.get("status") or "not_requested") in {"requested", "approved"},
+            "Open promotion-gate artifacts before any writeback-facing work.",
+        ),
+        (
+            "non_trivial_consultation",
+            "consult" in selected_summary.lower() or "memory" in selected_summary.lower(),
+            "Open consultation artifacts when L2 memory materially changes terminology, candidate shape, or route choice.",
+        ),
+        (
+            "capability_gap_blocker",
+            any(str(action.get("action_type") or "") == "skill_discovery" for action in queue),
+            "Open capability surfaces only when the blocker is a real missing workflow or backend.",
+        ),
+    ]
     lines = [
         "# AITP agent brief",
+        "",
+        "## Immediate execution contract",
         "",
         f"- Topic slug: `{topic_state['topic_slug']}`",
         f"- Resume stage: `{topic_state['resume_stage']}`",
         f"- Last materialized stage: `{topic_state['last_materialized_stage']}`",
+        f"- Current bounded action: `{selected_summary}`",
+        f"- Open next: `runtime/topics/{topic_state['topic_slug']}/operator_console.md`",
         f"- Source count: `{topic_state.get('source_count', 0)}`",
         f"- Latest run id: `{topic_state.get('latest_run_id') or '(none)'}`",
         f"- Research mode: `{topic_state.get('research_mode') or '(missing)'}`",
         f"- Executor kind: `{topic_state.get('active_executor_kind') or '(missing)'}`",
         f"- Reasoning profile: `{topic_state.get('active_reasoning_profile') or '(missing)'}`",
         "",
-        "## Primary pointers",
+        "### Do now",
         "",
-        f"- Layer 0 source index: `{pointers.get('l0_source_index_path') or '(missing)'}`",
-        f"- Intake status: `{pointers.get('intake_status_path') or '(missing)'}`",
-        f"- Feedback status: `{pointers.get('feedback_status_path') or '(missing)'}`",
-        f"- Promotion decision: `{pointers.get('promotion_decision_path') or '(missing)'}`",
-        f"- Promotion gate: `{pointers.get('promotion_gate_path') or '(missing)'}`",
-        f"- Promotion gate note: `{pointers.get('promotion_gate_note_path') or '(missing)'}`",
-        f"- Consultation index: `{pointers.get('consultation_index_path') or '(missing)'}`",
-        f"- Interaction state: `runtime/topics/{topic_state['topic_slug']}/interaction_state.json`",
-        f"- Operator console: `runtime/topics/{topic_state['topic_slug']}/operator_console.md`",
-        f"- Conformance state: `runtime/topics/{topic_state['topic_slug']}/conformance_state.json`",
-        f"- Conformance report: `runtime/topics/{topic_state['topic_slug']}/conformance_report.md`",
-        f"- Selected route: `{interaction_state.get('closed_loop', {}).get('selected_route_path') or '(missing)'}`",
-        f"- Execution task: `{interaction_state.get('closed_loop', {}).get('execution_task_path') or '(missing)'}`",
-        f"- Returned result contract: `{interaction_state.get('closed_loop', {}).get('returned_result_path') or '(missing)'}`",
-        f"- Trajectory log: `{interaction_state.get('closed_loop', {}).get('trajectory_log_path') or '(missing)'}`",
-        f"- Failure classification: `{interaction_state.get('closed_loop', {}).get('failure_classification_path') or '(missing)'}`",
-        f"- Capability protocol: `research/adapters/openclaw/SKILL_ADAPTATION_PROTOCOL.md`",
-        f"- Conformance protocol: `research/knowledge-hub/AGENT_CONFORMANCE_PROTOCOL.md`",
-        f"- Unfinished work: `{decision_surface.get('unfinished_work_path') or '(missing)'}`",
-        f"- Next-action decision: `{decision_surface.get('next_action_decision_path') or '(missing)'}`",
-        f"- Decision source: `{decision_surface.get('decision_source') or '(missing)'}`",
-        f"- Decision mode: `{decision_surface.get('decision_mode') or '(missing)'}`",
-        f"- Selected action: `{decision_surface.get('selected_action_id') or '(none)'}`",
-        f"- Queue source: `{queue_surface.get('queue_source') or '(missing)'}`",
-        f"- Declared L3 action contract: `{queue_surface.get('declared_contract_path') or '(missing)'}`",
+        f"- Continue bounded `{topic_state['resume_stage']}` work on the selected action instead of reopening the whole protocol stack.",
+        "- Read exact deeper surfaces only when the named trigger below becomes active.",
+        "- Keep outputs in the highest justified layer and report exact artifact paths.",
         "",
-        "## Research-mode governance",
+        "### Do not do yet",
         "",
-        f"- Profile path: `{research_mode_profile.get('profile_path') or '(missing)'}`",
-        f"- Profile label: `{research_mode_profile.get('label') or '(missing)'}`",
+        "- Do not promote or auto-promote material without the promotion gate and the required supporting artifacts.",
+        "- Do not treat consultation lookup as if it already justifies Layer 2 writeback.",
+        "- Do not bypass conformance, control notes, or declared contracts with ad hoc browsing.",
         "",
-        "### Reproducibility expectations",
+        "### Escalate when",
         "",
     ]
+    for name, active, note in trigger_rows:
+        lines.append(f"- `{name}` status=`{'active' if active else 'inactive'}`: {note}")
+
+    lines.extend(
+        [
+            "",
+            "## Deferred surfaces and exact pointers",
+            "",
+            f"- Layer 0 source index: `{pointers.get('l0_source_index_path') or '(missing)'}`",
+            f"- Intake status: `{pointers.get('intake_status_path') or '(missing)'}`",
+            f"- Feedback status: `{pointers.get('feedback_status_path') or '(missing)'}`",
+            f"- Promotion decision: `{pointers.get('promotion_decision_path') or '(missing)'}`",
+            f"- Promotion gate: `{pointers.get('promotion_gate_path') or '(missing)'}`",
+            f"- Promotion gate note: `{pointers.get('promotion_gate_note_path') or '(missing)'}`",
+            f"- Consultation index: `{pointers.get('consultation_index_path') or '(missing)'}`",
+            f"- Interaction state: `runtime/topics/{topic_state['topic_slug']}/interaction_state.json`",
+            f"- Operator console: `runtime/topics/{topic_state['topic_slug']}/operator_console.md`",
+            f"- Conformance state: `runtime/topics/{topic_state['topic_slug']}/conformance_state.json`",
+            f"- Conformance report: `runtime/topics/{topic_state['topic_slug']}/conformance_report.md`",
+            f"- Selected route: `{interaction_state.get('closed_loop', {}).get('selected_route_path') or '(missing)'}`",
+            f"- Execution task: `{interaction_state.get('closed_loop', {}).get('execution_task_path') or '(missing)'}`",
+            f"- Returned result contract: `{interaction_state.get('closed_loop', {}).get('returned_result_path') or '(missing)'}`",
+            f"- Trajectory log: `{interaction_state.get('closed_loop', {}).get('trajectory_log_path') or '(missing)'}`",
+            f"- Failure classification: `{interaction_state.get('closed_loop', {}).get('failure_classification_path') or '(missing)'}`",
+            f"- Capability protocol: `research/adapters/openclaw/SKILL_ADAPTATION_PROTOCOL.md`",
+            f"- Conformance protocol: `research/knowledge-hub/AGENT_CONFORMANCE_PROTOCOL.md`",
+            f"- Unfinished work: `{decision_surface.get('unfinished_work_path') or '(missing)'}`",
+            f"- Next-action decision: `{decision_surface.get('next_action_decision_path') or '(missing)'}`",
+            f"- Decision source: `{decision_surface.get('decision_source') or '(missing)'}`",
+            f"- Decision mode: `{decision_surface.get('decision_mode') or '(missing)'}`",
+            f"- Selected action: `{decision_surface.get('selected_action_id') or '(none)'}`",
+            f"- Queue source: `{queue_surface.get('queue_source') or '(missing)'}`",
+            f"- Declared L3 action contract: `{queue_surface.get('declared_contract_path') or '(missing)'}`",
+            "",
+            "## Research-mode governance",
+            "",
+            f"- Profile path: `{research_mode_profile.get('profile_path') or '(missing)'}`",
+            f"- Profile label: `{research_mode_profile.get('label') or '(missing)'}`",
+            "",
+            "### Reproducibility expectations",
+            "",
+        ]
+    )
     for item in research_mode_profile.get("reproducibility_expectations") or ["No explicit reproducibility expectation recorded."]:
         lines.append(f"- {item}")
     lines.extend(["", "### Human-readable notes", ""])
@@ -1286,11 +1400,6 @@ def build_agent_brief(topic_state: dict, queue: list[dict], interaction_state: d
             f"- Target backend root: `{promotion_gate.get('target_backend_root') or '(missing)'}`",
             f"- Approved by: `{promotion_gate.get('approved_by') or '(pending)'}`",
             f"- Promoted units: `{', '.join(promotion_gate.get('promoted_units') or []) or '(none)'}`",
-            "",
-        ]
-    )
-    lines.extend(
-        [
             "",
             "## Action queue",
             "",

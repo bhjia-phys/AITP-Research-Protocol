@@ -68,6 +68,20 @@ class SchemaContractTests(unittest.TestCase):
         self.assertEqual(deferred_payload["properties"]["buffer_version"]["const"], 1)
         self.assertIn("entries", deferred_payload["required"])
 
+    def test_progressive_disclosure_runtime_schema_exposes_stable_trigger_contract(self) -> None:
+        payload = self._read_json("runtime/schemas/progressive-disclosure-runtime-bundle.schema.json")
+        self.assertEqual(payload["properties"]["bundle_kind"]["const"], "progressive_disclosure_runtime_bundle")
+        self.assertEqual(payload["properties"]["protocol_version"]["const"], 1)
+        trigger_names = set(payload["$defs"]["trigger_name"]["anyOf"][0]["enum"])
+        self.assertIn("non_trivial_consultation", trigger_names)
+        self.assertIn("promotion_intent", trigger_names)
+        self.assertIn("proof_completion_review", trigger_names)
+        self.assertIn("verification_route_selection", trigger_names)
+        slice_names = set(payload["$defs"]["slice_name"]["anyOf"][0]["enum"])
+        self.assertIn("consultation_memory", slice_names)
+        self.assertIn("proof_completion_and_coverage", slice_names)
+        self.assertIn("verification_route_selection", slice_names)
+
     def test_closed_loop_policy_candidate_statuses_match_candidate_schema(self) -> None:
         candidate_payload = self._read_json("feedback/schemas/candidate.schema.json")
         candidate_statuses = set(candidate_payload["properties"]["status"]["enum"])
