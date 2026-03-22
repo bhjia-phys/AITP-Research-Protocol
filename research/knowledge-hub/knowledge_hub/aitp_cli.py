@@ -82,6 +82,19 @@ def build_parser() -> argparse.ArgumentParser:
     bootstrap.add_argument("--human-request")
     bootstrap.add_argument("--json", action="store_true")
 
+    new_topic = subparsers.add_parser("new-topic", help="Create a topic shell around an explicit research question")
+    new_topic.add_argument("--topic", required=True)
+    new_topic.add_argument("--question", required=True)
+    new_topic.add_argument("--mode", choices=["formal_theory", "toy_numeric", "code_method"])
+    new_topic.add_argument("--run-id")
+    new_topic.add_argument("--control-note")
+    new_topic.add_argument("--updated-by", default="aitp-cli")
+    new_topic.add_argument("--arxiv-id", action="append", default=[])
+    new_topic.add_argument("--local-note-path", action="append", default=[])
+    new_topic.add_argument("--skill-query", action="append", default=[])
+    new_topic.add_argument("--human-request")
+    new_topic.add_argument("--json", action="store_true")
+
     resume = subparsers.add_parser("resume", help="Resume an existing AITP topic")
     resume.add_argument("--topic-slug", required=True)
     resume.add_argument("--run-id")
@@ -183,6 +196,14 @@ def build_parser() -> argparse.ArgumentParser:
     coverage_audit.add_argument("--critical-unit-recall", type=float, default=1.0)
     coverage_audit.add_argument("--missing-anchor-count", type=int, default=0)
     coverage_audit.add_argument("--skeptic-major-gap-count", type=int, default=0)
+    coverage_audit.add_argument("--supporting-regression-question-id", action="append", default=[])
+    coverage_audit.add_argument("--supporting-oracle-id", action="append", default=[])
+    coverage_audit.add_argument("--supporting-regression-run-id", action="append", default=[])
+    coverage_audit.add_argument("--promotion-blocker", action="append", default=[])
+    coverage_audit.add_argument("--followup-gap-id", action="append", default=[])
+    coverage_audit.add_argument("--split-required", action="store_true")
+    coverage_audit.add_argument("--cited-recovery-required", action="store_true")
+    coverage_audit.add_argument("--topic-completion-status")
     coverage_audit.add_argument("--notes")
     coverage_audit.add_argument("--json", action="store_true")
 
@@ -231,6 +252,85 @@ def build_parser() -> argparse.ArgumentParser:
     loop.add_argument("--human-request")
     loop.add_argument("--max-auto-steps", type=int, default=4)
     loop.add_argument("--json", action="store_true")
+
+    status = subparsers.add_parser("status", help="Show topic shell status and active research contract")
+    status.add_argument("--topic-slug", required=True)
+    status.add_argument("--updated-by", default="aitp-cli")
+    status.add_argument("--json", action="store_true")
+
+    next_cmd = subparsers.add_parser("next", help="Show the next bounded action and mandatory read set")
+    next_cmd.add_argument("--topic-slug", required=True)
+    next_cmd.add_argument("--updated-by", default="aitp-cli")
+    next_cmd.add_argument("--json", action="store_true")
+
+    work = subparsers.add_parser("work", help="Unified shell around bounded bootstrap and loop execution")
+    work.add_argument("--topic")
+    work.add_argument("--topic-slug")
+    work.add_argument("--question")
+    work.add_argument("--mode", choices=["formal_theory", "toy_numeric", "code_method"])
+    work.add_argument("--run-id")
+    work.add_argument("--control-note")
+    work.add_argument("--updated-by", default="aitp-cli")
+    work.add_argument("--skill-query", action="append", default=[])
+    work.add_argument("--human-request")
+    work.add_argument("--max-auto-steps", type=int, default=1)
+    work.add_argument("--json", action="store_true")
+
+    verify = subparsers.add_parser("verify", help="Prepare a validation contract for a bounded verification mode")
+    verify.add_argument("--topic-slug", required=True)
+    verify.add_argument("--mode", choices=["proof", "comparison", "numeric", "topic-completion"], required=True)
+    verify.add_argument("--updated-by", default="aitp-cli")
+    verify.add_argument("--json", action="store_true")
+
+    complete_topic = subparsers.add_parser("complete-topic", help="Assess topic-completion status against regression and follow-up debt")
+    complete_topic.add_argument("--topic-slug", required=True)
+    complete_topic.add_argument("--run-id")
+    complete_topic.add_argument("--updated-by", default="aitp-cli")
+    complete_topic.add_argument("--json", action="store_true")
+
+    reintegrate_followup = subparsers.add_parser(
+        "reintegrate-followup",
+        help="Reintegrate a child follow-up topic back into its parent topic",
+    )
+    reintegrate_followup.add_argument("--topic-slug", required=True)
+    reintegrate_followup.add_argument("--child-topic-slug", required=True)
+    reintegrate_followup.add_argument("--run-id")
+    reintegrate_followup.add_argument("--updated-by", default="aitp-cli")
+    reintegrate_followup.add_argument("--json", action="store_true")
+
+    update_followup_return = subparsers.add_parser(
+        "update-followup-return",
+        help="Update a child topic follow-up return packet before parent reintegration",
+    )
+    update_followup_return.add_argument("--topic-slug", required=True)
+    update_followup_return.add_argument("--run-id")
+    update_followup_return.add_argument(
+        "--return-status",
+        required=True,
+        choices=[
+            "pending_reentry",
+            "recovered_units",
+            "resolved_gap_update",
+            "returned_with_gap",
+            "returned_unresolved",
+        ],
+    )
+    update_followup_return.add_argument(
+        "--accepted-return-shape",
+        choices=["recovered_units", "resolved_gap_update", "still_unresolved_packet"],
+    )
+    update_followup_return.add_argument("--return-summary")
+    update_followup_return.add_argument("--child-topic-summary")
+    update_followup_return.add_argument("--return-artifact-path", action="append", default=[])
+    update_followup_return.add_argument("--updated-by", default="aitp-cli")
+    update_followup_return.add_argument("--json", action="store_true")
+
+    lean_bridge = subparsers.add_parser("lean-bridge", help="Materialize Lean-ready bridge packets for a topic")
+    lean_bridge.add_argument("--topic-slug", required=True)
+    lean_bridge.add_argument("--run-id")
+    lean_bridge.add_argument("--candidate-id")
+    lean_bridge.add_argument("--updated-by", default="aitp-cli")
+    lean_bridge.add_argument("--json", action="store_true")
 
     state = subparsers.add_parser("state", help="Read topic runtime state")
     state.add_argument("--topic-slug", required=True)
@@ -329,6 +429,22 @@ def main() -> int:
             topic_slug=args.topic_slug,
             topic=args.topic,
             statement=args.statement,
+            run_id=args.run_id,
+            control_note=args.control_note,
+            updated_by=args.updated_by,
+            arxiv_ids=args.arxiv_id,
+            local_note_paths=args.local_note_path,
+            skill_queries=args.skill_query,
+            human_request=args.human_request,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "new-topic":
+        payload = service.new_topic(
+            topic=args.topic,
+            question=args.question,
+            mode=args.mode,
             run_id=args.run_id,
             control_note=args.control_note,
             updated_by=args.updated_by,
@@ -470,6 +586,14 @@ def main() -> int:
             critical_unit_recall=args.critical_unit_recall,
             missing_anchor_count=args.missing_anchor_count,
             skeptic_major_gap_count=args.skeptic_major_gap_count,
+            supporting_regression_question_ids=args.supporting_regression_question_id,
+            supporting_oracle_ids=args.supporting_oracle_id,
+            supporting_regression_run_ids=args.supporting_regression_run_id,
+            promotion_blockers=args.promotion_blocker,
+            split_required=args.split_required,
+            cited_recovery_required=args.cited_recovery_required,
+            followup_gap_ids=args.followup_gap_id,
+            topic_completion_status=args.topic_completion_status,
             notes=args.notes,
         )
         _emit(payload, args.json)
@@ -524,6 +648,93 @@ def main() -> int:
         _emit(payload, args.json)
         exit_state = (payload.get("exit_audit") or {}).get("conformance_state") or {}
         return 0 if exit_state.get("overall_status") == "pass" else 1
+
+    if args.command == "status":
+        payload = service.topic_status(
+            topic_slug=args.topic_slug,
+            updated_by=args.updated_by,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "next":
+        payload = service.topic_next(
+            topic_slug=args.topic_slug,
+            updated_by=args.updated_by,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "work":
+        payload = service.work_topic(
+            topic=args.topic,
+            topic_slug=args.topic_slug,
+            question=args.question,
+            mode=args.mode,
+            run_id=args.run_id,
+            control_note=args.control_note,
+            updated_by=args.updated_by,
+            skill_queries=args.skill_query,
+            human_request=args.human_request,
+            max_auto_steps=args.max_auto_steps,
+        )
+        _emit(payload, args.json)
+        if "exit_audit" in payload:
+            exit_state = (payload.get("exit_audit") or {}).get("conformance_state") or {}
+            return 0 if exit_state.get("overall_status") == "pass" else 1
+        return 0
+
+    if args.command == "verify":
+        payload = service.prepare_verification(
+            topic_slug=args.topic_slug,
+            mode=args.mode,
+            updated_by=args.updated_by,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "complete-topic":
+        payload = service.assess_topic_completion(
+            topic_slug=args.topic_slug,
+            run_id=args.run_id,
+            updated_by=args.updated_by,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "reintegrate-followup":
+        payload = service.reintegrate_followup_subtopic(
+            topic_slug=args.topic_slug,
+            child_topic_slug=args.child_topic_slug,
+            run_id=args.run_id,
+            updated_by=args.updated_by,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "update-followup-return":
+        payload = service.update_followup_return_packet(
+            topic_slug=args.topic_slug,
+            run_id=args.run_id,
+            return_status=args.return_status,
+            accepted_return_shape=args.accepted_return_shape,
+            return_summary=args.return_summary,
+            child_topic_summary=args.child_topic_summary,
+            return_artifact_paths=args.return_artifact_path,
+            updated_by=args.updated_by,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "lean-bridge":
+        payload = service.prepare_lean_bridge(
+            topic_slug=args.topic_slug,
+            run_id=args.run_id,
+            candidate_id=args.candidate_id,
+            updated_by=args.updated_by,
+        )
+        _emit(payload, args.json)
+        return 0
 
     if args.command == "state":
         payload = {"topic_state": service.get_runtime_state(args.topic_slug)}

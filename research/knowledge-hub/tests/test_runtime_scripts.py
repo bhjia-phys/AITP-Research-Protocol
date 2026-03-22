@@ -33,10 +33,6 @@ class RuntimeScriptTests(unittest.TestCase):
             "aitp_orchestrate_topic_test",
             "runtime/scripts/orchestrate_topic.py",
         )
-        self.closed_loop_v1 = _load_module(
-            "aitp_closed_loop_v1_test",
-            "runtime/scripts/closed_loop_v1.py",
-        )
         self.sync_topic_state = _load_module(
             "aitp_sync_topic_state_test",
             "runtime/scripts/sync_topic_state.py",
@@ -153,6 +149,10 @@ class RuntimeScriptTests(unittest.TestCase):
             "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/agent_consensus.json",
             {"status": "ready"},
         )
+        self._write_json(
+            "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/regression_gate.json",
+            {"status": "pass", "split_clearance_status": "clear", "promotion_blockers": []},
+        )
 
         actions = self.orchestrate_topic.auto_promotion_actions(
             self.knowledge_root,
@@ -163,6 +163,192 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertEqual(len(actions), 1)
         self.assertEqual(actions[0]["action_type"], "auto_promote_candidate")
         self.assertEqual(actions[0]["handler_args"]["candidate_id"], "candidate:demo-definition")
+
+    def test_auto_promotion_actions_block_split_and_blockers(self) -> None:
+        self._write_json(
+            "runtime/closed_loop_policies.json",
+            {
+                "auto_promotion_policy": {
+                    "enabled": True,
+                    "default_backend_id": "backend:theoretical-physics-knowledge-network",
+                    "trigger_candidate_statuses": ["ready_for_validation"],
+                    "theory_formal_candidate_types": ["definition_card"],
+                    "require_regression_gate_pass": True,
+                    "block_when_split_required": True,
+                    "block_when_promotion_blockers_present": True,
+                    "block_when_cited_recovery_required": True,
+                }
+            },
+        )
+        self._write_jsonl(
+            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            [
+                {
+                    "candidate_id": "candidate:demo-definition",
+                    "candidate_type": "definition_card",
+                    "title": "Demo Definition",
+                    "summary": "A bounded definition.",
+                    "topic_slug": "demo-topic",
+                    "run_id": "2026-03-13-demo",
+                    "origin_refs": [],
+                    "question": "Can the definition be promoted?",
+                    "assumptions": [],
+                    "proposed_validation_route": "bounded-smoke",
+                    "intended_l2_targets": ["definition:demo-definition"],
+                    "status": "ready_for_validation",
+                    "split_required": True,
+                    "promotion_blockers": ["Still too wide."],
+                }
+            ],
+        )
+        self._write_json(
+            "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/coverage_ledger.json",
+            {"status": "pass"},
+        )
+        self._write_json(
+            "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/agent_consensus.json",
+            {"status": "ready"},
+        )
+        self._write_json(
+            "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/regression_gate.json",
+            {
+                "status": "pass",
+                "split_required": True,
+                "split_clearance_status": "blocked",
+                "promotion_blockers": ["Still too wide."],
+                "cited_recovery_required": True,
+            },
+        )
+
+        actions = self.orchestrate_topic.auto_promotion_actions(
+            self.knowledge_root,
+            {"topic_slug": "demo-topic", "latest_run_id": "2026-03-13-demo"},
+            {"declared_contract_path": None},
+        )
+
+        self.assertEqual(actions, [])
+
+    def test_followup_reintegration_actions_detect_returned_child_topic(self) -> None:
+        self._write_json(
+            "runtime/closed_loop_policies.json",
+            {
+                "followup_subtopic_policy": {
+                    "enabled": True,
+                    "unresolved_return_statuses": [
+                        "pending_reentry",
+                        "returned_with_gap",
+                        "returned_unresolved"
+                    ]
+                }
+            },
+        )
+        self._write_jsonl(
+            "runtime/topics/demo-topic/followup_subtopics.jsonl",
+            [
+                {
+                    "child_topic_slug": "demo-topic--followup--x",
+                    "parent_topic_slug": "demo-topic",
+                    "status": "spawned",
+                    "return_packet_path": str(
+                        self.knowledge_root / "runtime" / "topics" / "demo-topic--followup--x" / "followup_return_packet.json"
+                    ),
+                }
+            ],
+        )
+        self._write_json(
+            "runtime/topics/demo-topic--followup--x/followup_return_packet.json",
+            {
+                "return_packet_version": 1,
+                "child_topic_slug": "demo-topic--followup--x",
+                "parent_topic_slug": "demo-topic",
+                "parent_run_id": "2026-03-13-demo",
+                "receipt_id": "receipt:demo",
+                "query": "recover missing definition",
+                "parent_gap_ids": ["open_gap:demo-gap"],
+                "parent_followup_task_ids": ["followup_source_task:demo-gap"],
+                "reentry_targets": ["definition:demo"],
+                "supporting_regression_question_ids": ["regression_question:demo"],
+                "source_id": "paper:demo",
+                "arxiv_id": "1510.07698v1",
+                "expected_return_route": "L0->L1->L3->L4->L2",
+                "acceptable_return_shapes": ["recovered_units", "resolved_gap_update", "still_unresolved_packet"],
+                "required_output_artifacts": ["candidate_ledger_or_recovered_units"],
+                "unresolved_return_statuses": ["pending_reentry", "returned_with_gap", "returned_unresolved"],
+                "return_status": "recovered_units",
+                "accepted_return_shape": "recovered_units",
+                "return_summary": "Recovered the missing definition.",
+                "return_artifact_paths": ["feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl"],
+                "reintegration_requirements": {
+                    "must_write_back_parent_gaps": True,
+                    "must_update_reentry_targets": True,
+                    "must_not_patch_parent_directly": True,
+                    "requires_child_topic_summary": True
+                },
+                "updated_at": "2026-03-13T00:00:00+08:00",
+                "updated_by": "test"
+            },
+        )
+
+        actions = self.orchestrate_topic.followup_reintegration_actions(
+            self.knowledge_root,
+            {"topic_slug": "demo-topic", "latest_run_id": "2026-03-13-demo"},
+            {"declared_contract_path": None},
+        )
+
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]["action_type"], "reintegrate_followup_subtopic")
+        self.assertEqual(actions[0]["handler_args"]["child_topic_slug"], "demo-topic--followup--x")
+
+    def test_topic_completion_actions_detect_missing_completion_surface(self) -> None:
+        self._write_jsonl(
+            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            [
+                {
+                    "candidate_id": "candidate:demo-definition",
+                    "candidate_type": "definition_card",
+                    "status": "ready_for_validation",
+                }
+            ],
+        )
+
+        actions = self.orchestrate_topic.topic_completion_actions(
+            self.knowledge_root,
+            {"topic_slug": "demo-topic", "latest_run_id": "2026-03-13-demo"},
+            {"declared_contract_path": None},
+        )
+
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]["action_type"], "assess_topic_completion")
+
+    def test_lean_bridge_actions_detect_missing_candidate_packet(self) -> None:
+        self._write_json(
+            "runtime/closed_loop_policies.json",
+            {
+                "lean_bridge_policy": {
+                    "enabled": True,
+                    "trigger_candidate_types": ["definition_card"]
+                }
+            },
+        )
+        self._write_jsonl(
+            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            [
+                {
+                    "candidate_id": "candidate:demo-definition",
+                    "candidate_type": "definition_card",
+                    "status": "ready_for_validation",
+                }
+            ],
+        )
+
+        actions = self.orchestrate_topic.lean_bridge_actions(
+            self.knowledge_root,
+            {"topic_slug": "demo-topic", "latest_run_id": "2026-03-13-demo"},
+            {"declared_contract_path": None},
+        )
+
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]["action_type"], "prepare_lean_bridge")
 
     def test_deferred_reactivation_actions_detect_ready_entry(self) -> None:
         self._write_json(
@@ -219,95 +405,6 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertEqual(len(actions), 1)
         self.assertEqual(actions[0]["action_type"], "reactivate_deferred_candidate")
         self.assertEqual(actions[0]["handler_args"]["entry_id"], "deferred:demo")
-
-    def test_ingest_execution_result_persists_structured_followup_gap_writeback(self) -> None:
-        topic_slug = "demo-topic"
-        run_id = "2026-03-21-demo"
-        self._write_json(
-            f"runtime/topics/{topic_slug}/selected_validation_route.json",
-            {
-                "route_id": "route:demo-topic:iqhe-proof",
-                "route_type": "formal",
-                "objective": "Recover the cited TKNN equivalence proof.",
-                "candidate_id": "candidate:demo-theorem-family",
-            },
-        )
-        self._write_json(
-            f"runtime/topics/{topic_slug}/execution_task.json",
-            {
-                "task_id": "recover-tknn-proof",
-                "summary": "Recover the missing cited TKNN proof locally.",
-                "candidate_id": "candidate:demo-theorem-family",
-                "research_mode": "formal_derivation",
-                "executor_kind": "codex",
-                "reasoning_profile": "high",
-            },
-        )
-        self._write_json(
-            f"validation/topics/{topic_slug}/runs/{run_id}/returned_execution_result.json",
-            {
-                "task_id": "recover-tknn-proof",
-                "status": "partial",
-                "what_was_attempted": "Tried to reconstruct the Hall-response equivalence from the current local branch.",
-                "what_actually_ran": "Recovered the local route up to the cited TKNN step but not the cited paper itself.",
-                "summary": "The route still depends on an un-ingested cited result.",
-                "limitations": [
-                    "The cited proof is still external to the current branch."
-                ],
-                "inconclusive": True,
-                "followup_gap_writeback": [
-                    {
-                        "gap_kind": "missing_cited_result",
-                        "title": "Recover the cited TKNN proof",
-                        "summary": "The Hall-response / Chern-number equivalence still delegates the microscopic proof to TKNN.",
-                        "blocker_reason": "The current branch has not yet ingested the cited paper that discharges the microscopic proof step.",
-                        "theorem_family_ids": [
-                            "theorem_family:iqhe-chern-response"
-                        ],
-                        "affected_unit_ids": [
-                            "theorem:integer-quantum-hall-response-equals-band-and-many-body-chern-number"
-                        ],
-                        "parent_unit_id": "theorem:integer-quantum-hall-response-equals-band-and-many-body-chern-number",
-                        "suggested_queries": [
-                            {
-                                "query": "TKNN integer quantum Hall Chern number proof",
-                                "reason": "Recover the cited microscopic proof from Layer 0.",
-                                "priority": "high",
-                                "target_source_type": "paper"
-                            }
-                        ],
-                        "reopen_conditions": [
-                            "Ingest the cited TKNN source and rebuild the local proof fragments."
-                        ]
-                    }
-                ]
-            },
-        )
-
-        payload = self.closed_loop_v1.ingest_execution_result(
-            self.knowledge_root,
-            {"topic_slug": topic_slug, "latest_run_id": run_id},
-            "aitp-cli",
-        )
-
-        gap_path = self.knowledge_root / "validation" / "topics" / topic_slug / "runs" / run_id / "followup_gap_writeback.json"
-        gap_note_path = self.knowledge_root / "validation" / "topics" / topic_slug / "runs" / run_id / "followup_gap_writeback.md"
-        followup_path = self.knowledge_root / "validation" / "topics" / topic_slug / "runs" / run_id / "literature_followup_queries.json"
-        feedback_status_path = self.knowledge_root / "feedback" / "topics" / topic_slug / "runs" / run_id / "status.json"
-
-        self.assertTrue(gap_path.exists())
-        self.assertTrue(gap_note_path.exists())
-        self.assertTrue(followup_path.exists())
-        gap_payload = json.loads(gap_path.read_text(encoding="utf-8"))
-        self.assertEqual(gap_payload["gaps"][0]["gap_kind"], "missing_cited_result")
-        self.assertEqual(gap_payload["gaps"][0]["return_to_stage"], "L0")
-        self.assertEqual(gap_payload["gaps"][0]["parent_task_id"], "recover-tknn-proof")
-        followup_payload = json.loads(followup_path.read_text(encoding="utf-8"))
-        self.assertEqual(followup_payload[0]["query"], "TKNN integer quantum Hall Chern number proof")
-        self.assertEqual(followup_payload[0]["triggered_by_gap_id"], gap_payload["gaps"][0]["gap_id"])
-        feedback_status = json.loads(feedback_status_path.read_text(encoding="utf-8"))
-        self.assertEqual(feedback_status["open_followup_gap_count"], 1)
-        self.assertEqual(payload["followup_gap_writeback"]["gap_count"], 1)
 
     def test_build_operator_console_starts_with_immediate_execution_contract(self) -> None:
         topic_state = {

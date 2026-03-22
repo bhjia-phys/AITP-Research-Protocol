@@ -60,6 +60,26 @@ A gap artifact should therefore record:
 - what source type is expected for recovery,
 - which objects should be revisited after recovery.
 
+If recovery is large enough to deserve an independent child topic, the child
+topic should also receive a durable return packet that records:
+
+- parent gaps and parent follow-up task ids,
+- reentry targets in the parent topic,
+- the expected return route `L0 -> L1 -> L3 -> L4 -> L2`,
+- acceptable return shapes,
+- unresolved return statuses,
+- and an explicit reintegration rule that the child topic must not silently
+  patch the parent branch directly.
+
+The child topic should update that return packet explicitly when it has either:
+
+- recovered units,
+- a resolved parent-gap update,
+- or an honest unresolved return.
+
+Only after that child-side update should the parent topic run reintegration and
+write its own reintegration receipt.
+
 When new cited-literature evidence arrives, the correct route is:
 
 - `L0 -> L1 -> L3 -> L4 -> L2`
@@ -105,7 +125,8 @@ Scripts may:
 - persist gap manifests,
 - append regression writeback,
 - reopen deferred entries when declared conditions match,
-- scaffold follow-up source tasks.
+- scaffold follow-up source tasks,
+- and materialize follow-up return packets.
 
 Scripts may not decide:
 

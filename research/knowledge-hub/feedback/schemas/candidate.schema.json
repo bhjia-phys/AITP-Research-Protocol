@@ -141,6 +141,57 @@
     "reactivated_from": {
       "type": "string",
       "pattern": "^deferred:[a-z0-9][a-z0-9-]*$"
+    },
+    "supporting_regression_question_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^regression_question:[a-z0-9][a-z0-9-]*$"
+      }
+    },
+    "supporting_oracle_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^question_oracle:[a-z0-9][a-z0-9-]*$"
+      }
+    },
+    "supporting_regression_run_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^regression_run:[a-z0-9][a-z0-9-]*$"
+      }
+    },
+    "promotion_blockers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "split_required": {
+      "type": "boolean"
+    },
+    "cited_recovery_required": {
+      "type": "boolean"
+    },
+    "followup_gap_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^open_gap:[a-z0-9][a-z0-9-]*$"
+      }
+    },
+    "topic_completion_status": {
+      "type": "string",
+      "enum": [
+        "not_assessed",
+        "gap-aware",
+        "regression-seeded",
+        "regression-stable",
+        "promotion-blocked",
+        "promotion-ready"
+      ]
     }
   }
 }

@@ -15,6 +15,11 @@
     "resume_stage",
     "last_materialized_stage",
     "research_mode",
+    "active_research_contract",
+    "promotion_readiness",
+    "open_gap_summary",
+    "topic_completion",
+    "lean_bridge",
     "minimal_execution_brief",
     "must_read_now",
     "may_defer_until_trigger",
@@ -72,6 +77,545 @@
         "string",
         "null"
       ]
+    },
+    "active_research_contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "question_id",
+        "title",
+        "status",
+        "template_mode",
+        "research_mode",
+        "validation_mode",
+        "target_layers",
+        "question",
+        "path",
+        "note_path"
+      ],
+      "properties": {
+        "question_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "template_mode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "research_mode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "validation_mode": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_layers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "promotion_readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "gate_status",
+        "ready_candidate_ids",
+        "blockers",
+        "blocker_count",
+        "summary",
+        "path"
+      ],
+      "properties": {
+        "topic_slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "latest_run_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gate_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ready_candidate_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "blocker_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "open_gap_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "gap_count",
+        "blockers",
+        "followup_gap_ids",
+        "pending_action_summaries",
+        "requires_l0_return",
+        "capability_gap_active",
+        "summary",
+        "path"
+      ],
+      "properties": {
+        "topic_slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "gap_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "followup_gap_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "followup_gap_writeback_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "followup_gap_writeback_child_topics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "pending_action_summaries": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "requires_l0_return": {
+          "type": "boolean"
+        },
+        "capability_gap_active": {
+          "type": "boolean"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "topic_completion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "regression_manifest",
+        "completion_gate_checks",
+        "promotion_ready_candidate_ids",
+        "summary",
+        "path"
+      ],
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "minLength": 1
+        },
+        "completion_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "topic_slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "candidate_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "followup_subtopic_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "reintegrated_followup_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unresolved_followup_child_topics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "returned_with_gap_child_topics": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "regression_manifest": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "candidate_ids",
+            "regression_question_ids",
+            "oracle_ids",
+            "regression_run_ids",
+            "candidate_count",
+            "question_count",
+            "oracle_count",
+            "run_count"
+          ],
+          "properties": {
+            "status": {
+              "type": "string",
+              "minLength": 1
+            },
+            "candidate_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "regression_question_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "oracle_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "regression_run_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "candidate_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "question_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "oracle_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "run_count": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "completion_gate_checks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "check",
+              "status",
+              "summary"
+            ],
+            "properties": {
+              "check": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "type": "string",
+                "minLength": 1
+              },
+              "summary": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "promotion_ready_candidate_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "blocked_candidate_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "regression_question_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "oracle_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "regression_run_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "open_gap_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "topic_completion_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "topic_completion_note_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_by": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "lean_bridge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "packet_count",
+        "ready_packet_count",
+        "needs_refinement_count",
+        "summary",
+        "path"
+      ],
+      "properties": {
+        "$schema": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bridge_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "topic_slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "packet_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "ready_packet_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "needs_refinement_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "packets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "candidate_id",
+              "candidate_type",
+              "declaration_kind",
+              "status",
+              "proof_obligation_count",
+              "packet_path",
+              "packet_note_path",
+              "proof_obligations_path",
+              "proof_state_path"
+            ],
+            "properties": {
+              "candidate_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "candidate_type": {
+                "type": "string"
+              },
+              "declaration_kind": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "type": "string",
+                "minLength": 1
+              },
+              "proof_obligation_count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "packet_path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "packet_note_path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "proof_obligations_path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "proof_state_path": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lean_bridge_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lean_bridge_note_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_by": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
     },
     "minimal_execution_brief": {
       "type": "object",

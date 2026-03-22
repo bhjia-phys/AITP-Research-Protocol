@@ -23,6 +23,14 @@
     "scope": { "type": "array", "items": { "type": "string" } },
     "assumptions": { "type": "array", "items": { "type": "string" } },
     "non_goals": { "type": "array", "items": { "type": "string" } },
+    "context_intake": { "type": "array", "items": { "type": "string" } },
+    "formalism_and_notation": { "type": "array", "items": { "type": "string" } },
+    "observables": { "type": "array", "items": { "type": "string" } },
+    "target_claims": { "type": "array", "items": { "type": "string" } },
+    "deliverables": { "type": "array", "items": { "type": "string" } },
+    "acceptance_tests": { "type": "array", "items": { "type": "string" } },
+    "forbidden_proxies": { "type": "array", "items": { "type": "string" } },
+    "uncertainty_markers": { "type": "array", "items": { "type": "string" } },
     "target_layers": {
       "type": "array",
       "items": { "type": "string", "enum": ["L1", "L2", "L3", "L4"] }

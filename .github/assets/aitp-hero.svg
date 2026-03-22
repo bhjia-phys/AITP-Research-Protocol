@@ -1,6 +1,6 @@
 <svg width="1600" height="720" viewBox="0 0 1600 720" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
   <title id="title">AITP README Hero</title>
-  <desc id="desc">A wide AITP banner with a minimal robot head framed by ket brackets and a Penrose-style causal diamond on the left, plus protocol messaging and the L0 to L4 route.</desc>
+  <desc id="desc">A wide AITP banner with a luminous AI monogram suspended inside a protocol chamber, plus protocol messaging and the L0 to L4 route.</desc>
   <defs>
     <linearGradient id="heroBg" x1="0" y1="0" x2="1600" y2="720" gradientUnits="userSpaceOnUse">
       <stop stop-color="#05131F"/>
@@ -27,32 +27,6 @@
       <stop stop-color="#74F3EA"/>
       <stop offset="1" stop-color="#A98BFF"/>
     </linearGradient>
-    <radialGradient id="iconPortal" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 256) rotate(90) scale(164)">
-      <stop stop-color="#12324D"/>
-      <stop offset="0.68" stop-color="#0A1C2F"/>
-      <stop offset="1" stop-color="#060E18"/>
-    </radialGradient>
-    <linearGradient id="iconConeStroke" x1="186" y1="158" x2="334" y2="360" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#73ECF5"/>
-      <stop offset="1" stop-color="#8090FF"/>
-    </linearGradient>
-    <linearGradient id="iconKetStroke" x1="170" y1="156" x2="388" y2="346" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#83F4EB"/>
-      <stop offset="1" stop-color="#A98BFF"/>
-    </linearGradient>
-    <linearGradient id="iconShellStroke" x1="206" y1="182" x2="302" y2="278" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#F0FCFF"/>
-      <stop offset="0.6" stop-color="#ADEFF8"/>
-      <stop offset="1" stop-color="#9AABFF"/>
-    </linearGradient>
-    <linearGradient id="iconShellFill" x1="256" y1="188" x2="256" y2="274" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#E3FAFF" stop-opacity="0.18"/>
-      <stop offset="1" stop-color="#7ACBFF" stop-opacity="0.08"/>
-    </linearGradient>
-    <linearGradient id="iconVisorFill" x1="224" y1="208" x2="288" y2="236" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#8CF7EE"/>
-      <stop offset="1" stop-color="#72A5FF"/>
-    </linearGradient>
     <radialGradient id="leftGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(286 312) rotate(90) scale(250)">
       <stop stop-color="#1BE1C8" stop-opacity="0.2"/>
       <stop offset="1" stop-color="#1BE1C8" stop-opacity="0"/>
@@ -67,6 +41,60 @@
     <clipPath id="heroWarpClip">
       <path d="M946 78C1116 18 1356 42 1468 126C1520 166 1524 236 1494 294C1452 374 1434 460 1466 566C1474 592 1452 616 1426 612C1324 594 1208 594 1112 620C1018 646 930 612 902 534C846 378 832 240 946 78Z"/>
     </clipPath>
+
+    <linearGradient id="beamFill" x1="68" y1="66" x2="338" y2="374" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#76F6EC" stop-opacity="0.22"/>
+      <stop offset="0.56" stop-color="#7FBCFF" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#FFC857" stop-opacity="0.08"/>
+    </linearGradient>
+    <linearGradient id="ambientStroke" x1="22" y1="70" x2="382" y2="360" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#69F2E8" stop-opacity="0.2"/>
+      <stop offset="0.72" stop-color="#8FB9FF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#FFC857" stop-opacity="0.16"/>
+    </linearGradient>
+    <radialGradient id="panelPortal" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 254) rotate(90) scale(172)">
+      <stop stop-color="#123B57"/>
+      <stop offset="0.6" stop-color="#0C2338"/>
+      <stop offset="1" stop-color="#07111D"/>
+    </radialGradient>
+    <radialGradient id="panelCoreGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(250 246) rotate(90) scale(96)">
+      <stop stop-color="#6AF8F0" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#6AF8F0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="panelSparkGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(344 166) rotate(90) scale(54)">
+      <stop stop-color="#FFC857" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#FFC857" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="panelFrameStroke" x1="156" y1="146" x2="358" y2="366" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#83F6ED"/>
+      <stop offset="0.58" stop-color="#7AC5FF"/>
+      <stop offset="1" stop-color="#A98BFF"/>
+    </linearGradient>
+    <linearGradient id="panelGlyphStroke" x1="180" y1="162" x2="330" y2="338" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EFFFFF"/>
+      <stop offset="0.38" stop-color="#87FFF2"/>
+      <stop offset="1" stop-color="#76A8FF"/>
+    </linearGradient>
+    <linearGradient id="panelGlyphFill" x1="306" y1="166" x2="306" y2="348" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EAF8FF"/>
+      <stop offset="0.4" stop-color="#8EF7EE"/>
+      <stop offset="1" stop-color="#77A7FF"/>
+    </linearGradient>
+    <linearGradient id="panelOrbitStroke" x1="138" y1="182" x2="428" y2="364" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#69F2E8" stop-opacity="0.22"/>
+      <stop offset="0.7" stop-color="#8EB6FF" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#FFC857" stop-opacity="0.22"/>
+    </linearGradient>
+    <linearGradient id="panelBracketStroke" x1="134" y1="156" x2="392" y2="356" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7EF4EB"/>
+      <stop offset="1" stop-color="#A28EFF"/>
+    </linearGradient>
+    <filter id="panelSoftBlur" x="126" y="122" width="264" height="272" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+    <filter id="panelGlyphGlow" x="150" y="130" width="218" height="248" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
   </defs>
 
   <rect width="1600" height="720" rx="40" fill="url(#heroBg)"/>
@@ -120,53 +148,77 @@
     <path d="M1248 524L1278 506L1308 524L1308 558L1278 576L1248 558Z"/>
   </g>
 
-  <g transform="translate(92 118)">
-    <rect x="0" y="0" width="388" height="388" rx="82" fill="#071522" fill-opacity="0.78"/>
-    <rect x="1" y="1" width="386" height="386" rx="81" stroke="url(#panelStroke)" stroke-opacity="0.24"/>
+  <g transform="translate(92 108)">
+    <rect x="0" y="0" width="404" height="404" rx="88" fill="#071522" fill-opacity="0.82"/>
+    <rect x="1" y="1" width="402" height="402" rx="87" stroke="url(#panelStroke)" stroke-opacity="0.24"/>
 
-    <g transform="translate(-62 -62)">
-      <circle cx="256" cy="256" r="146" fill="url(#iconPortal)"/>
-      <circle cx="256" cy="256" r="118" stroke="#7EE8F2" stroke-opacity="0.14" stroke-width="2"/>
-      <circle cx="256" cy="256" r="88" stroke="#A98BFF" stroke-opacity="0.14" stroke-width="2"/>
+    <path d="M52 336C106 300 154 244 214 104C224 80 248 62 274 62C304 62 332 84 336 116C348 214 358 286 386 338" fill="url(#beamFill)"/>
+    <circle cx="204" cy="204" r="164" stroke="#7CEFEA" stroke-opacity="0.08" stroke-width="2"/>
+    <circle cx="204" cy="204" r="130" stroke="#92BCFF" stroke-opacity="0.08" stroke-width="2"/>
 
-      <circle cx="188" cy="320" r="84" fill="#1CE2C7" fill-opacity="0.08"/>
-      <circle cx="304" cy="194" r="74" fill="#6BA8FF" fill-opacity="0.08"/>
-      <circle cx="256" cy="242" r="66" fill="#8EF5F1" fill-opacity="0.1"/>
+    <g opacity="0.26" stroke="url(#ambientStroke)" stroke-width="3" stroke-linecap="round">
+      <path d="M30 126C76 74 138 46 214 46C284 46 340 70 382 112"/>
+      <path d="M20 260C36 336 90 384 172 394C268 406 344 372 392 304"/>
+      <path d="M50 80C14 144 10 248 38 324"/>
+    </g>
 
-      <g opacity="0.72" stroke="url(#iconConeStroke)" stroke-linecap="round" fill="none">
-        <path d="M256 154L334 256L256 358L178 256Z" stroke-width="6" stroke-linejoin="round"/>
-        <path d="M256 154V358" stroke-width="4" opacity="0.45"/>
-        <path d="M202 256H310" stroke-width="4" opacity="0.7"/>
+    <g transform="translate(4 6) scale(0.78)">
+      <circle cx="256" cy="254" r="172" fill="url(#panelPortal)"/>
+      <circle cx="256" cy="254" r="146" stroke="#7EE8F2" stroke-opacity="0.14" stroke-width="2"/>
+      <circle cx="256" cy="254" r="112" stroke="#A98BFF" stroke-opacity="0.14" stroke-width="2"/>
+
+      <circle cx="250" cy="246" r="96" fill="url(#panelCoreGlow)"/>
+      <circle cx="344" cy="166" r="54" fill="url(#panelSparkGlow)"/>
+
+      <g opacity="0.32" stroke="url(#panelOrbitStroke)" stroke-width="3" stroke-linecap="round">
+        <path d="M130 196C166 144 225 112 292 112C342 112 388 132 424 164"/>
+        <path d="M118 300C132 362 178 410 240 424C308 440 381 412 428 356"/>
+        <path d="M154 160C116 216 106 284 126 344"/>
       </g>
 
-      <g stroke="url(#iconKetStroke)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M180 170V342"/>
-        <path d="M364 170L398 256L364 342"/>
+      <path d="M256 138L358 196V314L256 372L154 314V196L256 138Z" fill="#0A1827" fill-opacity="0.54" stroke="url(#panelFrameStroke)" stroke-opacity="0.74" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M256 138V372" stroke="url(#panelFrameStroke)" stroke-opacity="0.28" stroke-width="3" stroke-linecap="round"/>
+      <path d="M154 314L256 254L358 314" stroke="url(#panelFrameStroke)" stroke-opacity="0.18" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <g opacity="0.82" stroke="url(#panelBracketStroke)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M136 168V340"/>
+        <path d="M136 168L160 146"/>
+        <path d="M136 340L160 362"/>
+        <path d="M376 146L400 254L376 362"/>
       </g>
 
-      <g fill="url(#iconShellFill)">
-        <rect x="210" y="188" width="92" height="88" rx="28"/>
+      <g filter="url(#panelSoftBlur)" opacity="0.6">
+        <path d="M184 340L228 170L272 340" stroke="#78FFF0" stroke-opacity="0.55" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M206 266H250" stroke="#A8FFF8" stroke-opacity="0.5" stroke-width="14" stroke-linecap="round"/>
+        <rect x="286" y="170" width="38" height="176" rx="19" fill="#8BF7EE" fill-opacity="0.42"/>
       </g>
 
-      <g stroke="url(#iconShellStroke)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M256 160V188"/>
-        <path d="M210 228H196"/>
-        <path d="M302 228H316"/>
-        <rect x="210" y="188" width="92" height="88" rx="28"/>
+      <g filter="url(#panelGlyphGlow)" opacity="0.9">
+        <path d="M184 340L228 170L272 340" stroke="#7AFBF0" stroke-opacity="0.24" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+        <rect x="286" y="170" width="38" height="176" rx="19" fill="#7AFBF0" fill-opacity="0.18"/>
       </g>
 
-      <g fill="url(#iconVisorFill)" fill-opacity="0.95">
-        <rect x="224" y="204" width="64" height="30" rx="15"/>
+      <g stroke="url(#panelGlyphStroke)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M184 340L228 170L272 340"/>
+        <path d="M206 266H250"/>
       </g>
-      <g fill="#A9FFF7">
-        <circle cx="244" cy="219" r="5"/>
-        <circle cx="268" cy="219" r="5"/>
-      </g>
-      <path d="M238 252H274" stroke="#FFC857" stroke-width="10" stroke-linecap="round"/>
 
-      <g fill="#E7FBFF">
-        <circle cx="256" cy="152" r="7"/>
-      </g>
+      <rect x="286" y="170" width="38" height="176" rx="19" fill="url(#panelGlyphFill)"/>
+      <rect x="278" y="156" width="54" height="18" rx="9" fill="#E4FBFF" fill-opacity="0.88"/>
+      <rect x="278" y="346" width="54" height="18" rx="9" fill="#8CC6FF" fill-opacity="0.78"/>
+
+      <circle cx="140" cy="188" r="10" fill="#6EF4E9"/>
+      <circle cx="214" cy="126" r="8" fill="#8AF9EF"/>
+      <circle cx="304" cy="118" r="8" fill="#95D8FF"/>
+      <circle cx="388" cy="166" r="8" fill="#97A6FF"/>
+      <circle cx="430" cy="344" r="10" fill="#FFC857"/>
+
+      <path d="M336 160L344 146L352 160L366 168L352 176L344 190L336 176L322 168L336 160Z" fill="#FFC857"/>
+    </g>
+
+    <g font-family="Segoe UI, Arial, sans-serif">
+      <text x="34" y="48" fill="#89F1F8" font-size="13" font-weight="700" letter-spacing="4">AI FIELD</text>
+      <text x="34" y="72" fill="#C4D8E5" font-size="15">Protocol-contained reasoning surface</text>
     </g>
   </g>
 

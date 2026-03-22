@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aitp.local/schemas/lean-bridge-active.schema.json",
+  "title": "AITP Lean Bridge Active Index",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "bridge_version",
+    "topic_slug",
+    "run_id",
+    "status",
+    "packet_count",
+    "ready_packet_count",
+    "needs_refinement_count",
+    "packets",
+    "summary",
+    "updated_at",
+    "updated_by"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://aitp.local/schemas/lean-bridge-active.schema.json"
+    },
+    "bridge_version": {
+      "const": 1
+    },
+    "topic_slug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "empty",
+        "ready",
+        "needs_refinement"
+      ]
+    },
+    "packet_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "ready_packet_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "needs_refinement_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "packets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_id",
+          "candidate_type",
+          "declaration_kind",
+          "status",
+          "proof_obligation_count",
+          "packet_path",
+          "packet_note_path",
+          "proof_obligations_path",
+          "proof_state_path"
+        ],
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "candidate_type": {
+            "type": "string",
+            "minLength": 1
+          },
+          "declaration_kind": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1
+          },
+          "proof_obligation_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "packet_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "packet_note_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "proof_obligations_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "proof_state_path": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_by": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

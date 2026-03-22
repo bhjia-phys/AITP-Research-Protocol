@@ -1,89 +1,109 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
-  <title id="title">AITP Mark</title>
-  <desc id="desc">A dark rounded-square AITP logo with a minimal robot head framed by ket brackets and a Penrose-style causal diamond.</desc>
+  <title id="title">AITP AI Mark</title>
+  <desc id="desc">A dark rounded-square AITP logo featuring a luminous AI monogram inside a protocol field with orbital layer nodes.</desc>
   <defs>
-    <linearGradient id="bg" x1="42" y1="34" x2="462" y2="480" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#061725"/>
-      <stop offset="0.54" stop-color="#091D31"/>
+    <linearGradient id="bg" x1="30" y1="18" x2="474" y2="492" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#071723"/>
+      <stop offset="0.55" stop-color="#0A1E31"/>
       <stop offset="1" stop-color="#040B13"/>
     </linearGradient>
-    <radialGradient id="portal" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 256) rotate(90) scale(164)">
-      <stop stop-color="#12324D"/>
-      <stop offset="0.68" stop-color="#0A1C2F"/>
-      <stop offset="1" stop-color="#060E18"/>
+    <radialGradient id="portal" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(256 254) rotate(90) scale(172)">
+      <stop stop-color="#123B57"/>
+      <stop offset="0.6" stop-color="#0C2338"/>
+      <stop offset="1" stop-color="#07111D"/>
     </radialGradient>
-    <linearGradient id="coneStroke" x1="186" y1="158" x2="334" y2="360" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#73ECF5"/>
-      <stop offset="1" stop-color="#8090FF"/>
-    </linearGradient>
-    <linearGradient id="ketStroke" x1="170" y1="156" x2="388" y2="346" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#83F4EB"/>
+    <radialGradient id="coreGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(250 246) rotate(90) scale(96)">
+      <stop stop-color="#6AF8F0" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#6AF8F0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="sparkGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(344 166) rotate(90) scale(54)">
+      <stop stop-color="#FFC857" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#FFC857" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="frameStroke" x1="156" y1="146" x2="358" y2="366" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#83F6ED"/>
+      <stop offset="0.58" stop-color="#7AC5FF"/>
       <stop offset="1" stop-color="#A98BFF"/>
     </linearGradient>
-    <linearGradient id="shellStroke" x1="206" y1="182" x2="302" y2="278" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#F0FCFF"/>
-      <stop offset="0.6" stop-color="#ADEFF8"/>
-      <stop offset="1" stop-color="#9AABFF"/>
+    <linearGradient id="glyphStroke" x1="180" y1="162" x2="330" y2="338" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EFFFFF"/>
+      <stop offset="0.38" stop-color="#87FFF2"/>
+      <stop offset="1" stop-color="#76A8FF"/>
     </linearGradient>
-    <linearGradient id="shellFill" x1="256" y1="188" x2="256" y2="274" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#E3FAFF" stop-opacity="0.18"/>
-      <stop offset="1" stop-color="#7ACBFF" stop-opacity="0.08"/>
+    <linearGradient id="glyphFill" x1="306" y1="166" x2="306" y2="348" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EAF8FF"/>
+      <stop offset="0.4" stop-color="#8EF7EE"/>
+      <stop offset="1" stop-color="#77A7FF"/>
     </linearGradient>
-    <linearGradient id="visorFill" x1="224" y1="208" x2="288" y2="236" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#8CF7EE"/>
-      <stop offset="1" stop-color="#72A5FF"/>
+    <linearGradient id="orbitStroke" x1="138" y1="182" x2="428" y2="364" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#69F2E8" stop-opacity="0.22"/>
+      <stop offset="0.7" stop-color="#8EB6FF" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#FFC857" stop-opacity="0.22"/>
     </linearGradient>
-    <filter id="coreGlow" x="154" y="144" width="204" height="220" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+    <linearGradient id="bracketStroke" x1="134" y1="156" x2="392" y2="356" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7EF4EB"/>
+      <stop offset="1" stop-color="#A28EFF"/>
+    </linearGradient>
+    <filter id="softBlur" x="126" y="122" width="264" height="272" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
       <feGaussianBlur stdDeviation="18"/>
     </filter>
-    <filter id="visorGlow" x="208" y="196" width="96" height="48" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feGaussianBlur stdDeviation="6"/>
+    <filter id="glyphGlow" x="150" y="130" width="218" height="248" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="7"/>
     </filter>
   </defs>
 
   <rect x="24" y="24" width="464" height="464" rx="96" fill="url(#bg)"/>
-  <rect x="24.5" y="24.5" width="463" height="463" rx="95.5" stroke="#61DEF1" stroke-opacity="0.16"/>
+  <rect x="24.5" y="24.5" width="463" height="463" rx="95.5" stroke="#67E1F2" stroke-opacity="0.16"/>
 
-  <circle cx="256" cy="256" r="146" fill="url(#portal)"/>
-  <circle cx="256" cy="256" r="118" stroke="#7EE8F2" stroke-opacity="0.14" stroke-width="2"/>
-  <circle cx="256" cy="256" r="88" stroke="#A98BFF" stroke-opacity="0.14" stroke-width="2"/>
+  <circle cx="256" cy="254" r="172" fill="url(#portal)"/>
+  <circle cx="256" cy="254" r="146" stroke="#7EE8F2" stroke-opacity="0.14" stroke-width="2"/>
+  <circle cx="256" cy="254" r="112" stroke="#A98BFF" stroke-opacity="0.14" stroke-width="2"/>
 
-  <circle cx="188" cy="320" r="84" fill="#1CE2C7" fill-opacity="0.08"/>
-  <circle cx="304" cy="194" r="74" fill="#6BA8FF" fill-opacity="0.08"/>
-  <circle cx="256" cy="242" r="66" fill="#8EF5F1" fill-opacity="0.1" filter="url(#coreGlow)"/>
+  <circle cx="250" cy="246" r="96" fill="url(#coreGlow)"/>
+  <circle cx="344" cy="166" r="54" fill="url(#sparkGlow)"/>
 
-  <g opacity="0.76" stroke="url(#coneStroke)" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M256 154L334 256L256 358L178 256Z" stroke-width="6"/>
-    <path d="M256 154V358" stroke-width="4" opacity="0.45"/>
-    <path d="M202 256H310" stroke-width="4" opacity="0.7"/>
+  <g opacity="0.32" stroke="url(#orbitStroke)" stroke-width="3" stroke-linecap="round">
+    <path d="M130 196C166 144 225 112 292 112C342 112 388 132 424 164"/>
+    <path d="M118 300C132 362 178 410 240 424C308 440 381 412 428 356"/>
+    <path d="M154 160C116 216 106 284 126 344"/>
   </g>
 
-  <g stroke="url(#ketStroke)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M180 170V342"/>
-    <path d="M364 170L398 256L364 342"/>
+  <path d="M256 138L358 196V314L256 372L154 314V196L256 138Z" fill="#0A1827" fill-opacity="0.54" stroke="url(#frameStroke)" stroke-opacity="0.74" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M256 138V372" stroke="url(#frameStroke)" stroke-opacity="0.28" stroke-width="3" stroke-linecap="round"/>
+  <path d="M154 314L256 254L358 314" stroke="url(#frameStroke)" stroke-opacity="0.18" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <g opacity="0.82" stroke="url(#bracketStroke)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M136 168V340"/>
+    <path d="M136 168L160 146"/>
+    <path d="M136 340L160 362"/>
+    <path d="M376 146L400 254L376 362"/>
   </g>
 
-  <g fill="url(#shellFill)">
-    <rect x="210" y="188" width="92" height="88" rx="28"/>
+  <g filter="url(#softBlur)" opacity="0.6">
+    <path d="M184 340L228 170L272 340" stroke="#78FFF0" stroke-opacity="0.55" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M206 266H250" stroke="#A8FFF8" stroke-opacity="0.5" stroke-width="14" stroke-linecap="round"/>
+    <rect x="286" y="170" width="38" height="176" rx="19" fill="#8BF7EE" fill-opacity="0.42"/>
   </g>
 
-  <g stroke="url(#shellStroke)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M256 160V188"/>
-    <path d="M210 228H196"/>
-    <path d="M302 228H316"/>
-    <rect x="210" y="188" width="92" height="88" rx="28"/>
+  <g filter="url(#glyphGlow)" opacity="0.9">
+    <path d="M184 340L228 170L272 340" stroke="#7AFBF0" stroke-opacity="0.24" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="286" y="170" width="38" height="176" rx="19" fill="#7AFBF0" fill-opacity="0.18"/>
   </g>
 
-  <g fill="url(#visorFill)" filter="url(#visorGlow)">
-    <rect x="224" y="206" width="64" height="28" rx="14"/>
+  <g stroke="url(#glyphStroke)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M184 340L228 170L272 340"/>
+    <path d="M206 266H250"/>
   </g>
-  <g fill="#A9FFF7">
-    <circle cx="244" cy="220" r="5"/>
-    <circle cx="268" cy="220" r="5"/>
-  </g>
-  <path d="M238 252H274" stroke="#FFC857" stroke-width="10" stroke-linecap="round"/>
 
-  <g fill="#E7FBFF">
-    <circle cx="256" cy="152" r="7"/>
-  </g>
+  <rect x="286" y="170" width="38" height="176" rx="19" fill="url(#glyphFill)"/>
+  <rect x="278" y="156" width="54" height="18" rx="9" fill="#E4FBFF" fill-opacity="0.88"/>
+  <rect x="278" y="346" width="54" height="18" rx="9" fill="#8CC6FF" fill-opacity="0.78"/>
+
+  <circle cx="140" cy="188" r="10" fill="#6EF4E9"/>
+  <circle cx="214" cy="126" r="8" fill="#8AF9EF"/>
+  <circle cx="304" cy="118" r="8" fill="#95D8FF"/>
+  <circle cx="388" cy="166" r="8" fill="#97A6FF"/>
+  <circle cx="430" cy="344" r="10" fill="#FFC857"/>
+
+  <path d="M336 160L344 146L352 160L366 168L352 176L344 190L336 176L322 168L336 160Z" fill="#FFC857"/>
 </svg>

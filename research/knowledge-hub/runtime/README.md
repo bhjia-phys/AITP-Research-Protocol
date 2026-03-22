@@ -18,6 +18,9 @@ Use `runtime/` to answer three operational questions quickly:
 The runtime surface should answer those questions with lossless progressive
 disclosure.
 See `runtime/PROGRESSIVE_DISCLOSURE_PROTOCOL.md`.
+The runtime should also keep `RESEARCH_EXECUTION_GUARDRAILS.md` visible so the
+next agent cannot quietly replace declared deliverables or substitute proxy
+evidence for actual validation.
 The generated JSON bundle now also carries a stable public schema contract so
 external executors can consume trigger semantics without parsing markdown prose.
 When deeper proof, gap, fusion, or verification triggers fire, the runtime
@@ -95,17 +98,20 @@ hiding those rules inside handler code.
 - The resume target should prefer the fallback route implied by the latest decision artifact when one exists.
 - Runtime should expose the human-visible operator contract rather than forcing the next agent or human to reconstruct it manually.
 - Runtime should expose the minimum sufficient execution contract first, then defer deeper protocol slices until declared triggers fire.
+- Runtime should expose the global research-flow guardrails early enough that
+  scope, deliverables, acceptance tests, and forbidden proxies stay visible.
 - Runtime should materialize both an unfinished-work index and a next-action decision so the loop is inspectable rather than implicit.
 - Runtime should prefer declared contracts when they exist and only fall back to heuristics when they do not.
 - Runtime should also expose a conformance report so non-AITP operation becomes visible rather than implicit.
 - Runtime may materialize one thin closed-loop control step, but it must never claim that heavy execution already happened unless a returned execution result artifact is present.
 - Runtime should auto-promote theory-formal candidates only after explicit coverage and consensus artifacts exist.
+- Runtime should also require a regression gate, blocker clearance, and split honesty before theory-formal auto-promotion.
 - Runtime should keep wide or mixed candidates out of Layer 2 by splitting or parking them first.
 - Runtime may spawn independent follow-up subtopics when cited-literature gaps are explicit enough to deserve a fresh `L0 -> L1 -> L3 -> L4 -> L2` route.
+- Runtime should materialize a follow-up return packet for those child subtopics so reintegration is explicit rather than conversational.
+- Runtime should detect when a child return packet is no longer `pending_reentry` and queue parent-side reintegration automatically.
+- Runtime should also queue topic-completion refreshes and Lean-bridge refreshes when the latest run has outgrown the currently materialized shell surfaces.
 - Runtime should expose proof-completion review, gap recovery, family fusion, and verification-bridge triggers as explicit deeper reads when those situations arise.
-- Runtime should surface formal-theory guardrails before promotion-grade work proceeds: trusted target versus intermediate theory, faithfulness, comparator audit, provenance, and prerequisite closure must all remain explicit.
-- Runtime should prefer candidate-local formal-theory review artifacts over doc-only reminders when those audits already exist on disk.
-- Runtime should not let protocol-internal regression suites masquerade as clean external benchmarks.
 
 ## Minimal required pointers
 
@@ -134,11 +140,9 @@ For example, an `L4` run may end with a `deferred` verdict that sends work back 
 
 1. run `python3 research/adapters/openclaw/scripts/aitp_loop.py --topic-slug <topic_slug> --max-steps 1`
 2. open `runtime/topics/<topic_slug>/runtime_protocol.generated.md`, `agent_brief.md`, and `operator_console.md`
-3. if the runtime bundle shows open follow-up gaps, open the gap ledger before strengthening any claim or promotion attempt
-4. if the runtime bundle shows active formal-theory triggers, open the trust-boundary and faithfulness surfaces before treating any scaffold as promotion-ready
-5. only escalate into deferred surfaces when a declared trigger fires
-6. follow `resume_stage`, `unfinished_work`, and the selected next-action decision
-7. after new work lands, advance the loop again instead of hand-maintaining runtime state
+3. only escalate into deferred surfaces when a declared trigger fires
+4. follow `resume_stage`, `unfinished_work`, and the selected next-action decision
+5. after new work lands, advance the loop again instead of hand-maintaining runtime state
 
 When you want to reduce heuristic behavior further, use:
 
@@ -155,18 +159,10 @@ python3 runtime/scripts/orchestrate_topic.py \
 For the minimal closed-loop v1, the external executor returns one JSON artifact at:
 
 - `validation/topics/<topic_slug>/runs/<run_id>/returned_execution_result.json`
-- `validation/topics/<topic_slug>/runs/<run_id>/followup_gap_writeback.json`
-- `validation/topics/<topic_slug>/runs/<run_id>/followup_gap_writeback.md`
 - `validation/topics/<topic_slug>/runs/<run_id>/execution_notes/`
 - `validation/topics/<topic_slug>/runs/<run_id>/execution_notes/codex_session.json`
 - `validation/topics/<topic_slug>/runs/<run_id>/execution_notes/codex_session_receipts.jsonl`
 - `validation/topics/<topic_slug>/runs/<run_id>/literature_followup_receipts.jsonl`
-- `validation/topics/<topic_slug>/runs/<run_id>/theory-packets/<candidate_slug>/faithfulness_review.json`
-- `validation/topics/<topic_slug>/runs/<run_id>/theory-packets/<candidate_slug>/comparator_audit_record.json`
-- `validation/topics/<topic_slug>/runs/<run_id>/theory-packets/<candidate_slug>/provenance_review.json`
-- `validation/topics/<topic_slug>/runs/<run_id>/theory-packets/<candidate_slug>/prerequisite_closure_review.json`
-- `validation/topics/<topic_slug>/runs/<run_id>/theory-packets/<candidate_slug>/formal_theory_review.json`
-- `validation/topics/<topic_slug>/runs/<run_id>/theory-packets/<candidate_slug>/formal_theory_review.md`
 
 The current OpenClaw adapter launches `codex exec` through a tmux-backed session controller so the
 execution lane stays operator-visible even while the runtime waits for the returned result artifact.
@@ -188,32 +184,18 @@ The result contract template lives at:
 
 - `validation/templates/execution-result.template.json`
 
-If the returned result exposes unresolved derivation or formalization blockers,
-it should also emit a structured `followup_gap_writeback` block. Runtime ingests
-that block into:
-
-- `validation/topics/<topic_slug>/runs/<run_id>/followup_gap_writeback.json`
-- `validation/topics/<topic_slug>/runs/<run_id>/followup_gap_writeback.md`
-
-Those gap records are the durable contract for why the result cannot yet be
-treated as complete, which theorem family or unit is blocked, and whether the
-honest next move is to go back to `L0`, return to `L1`, stay in `L3`, or stop
-at a formalization blocker.
-When runtime shows nonzero open follow-up gaps, that ledger is part of the
-top-level blocker surface, not optional background detail.
-
-When a candidate is in the formal-theory lane, the same `theory-packets/`
-subtree may also contain a durable review ledger. Those artifacts are the
-source of truth for faithfulness, comparator audit, provenance, and
-prerequisite closure, so runtime should surface them directly whenever they
-exist.
-
 Bounded literature follow-up search can be auto-run from emitted query records:
 
 - `runtime/scripts/run_literature_followup.py`
 
 Those search receipts may then spawn independent follow-up subtopics and may
 reactivate parked deferred fragments when the declared conditions are satisfied.
+When follow-up subtopics are spawned, the child runtime root should also receive
+a durable return packet naming the parent gaps, follow-up tasks, and
+reintegration targets. That packet should also declare the expected return
+route, acceptable return shapes, unresolved return statuses, and the explicit
+rule that the child branch must reintegrate through writeback artifacts rather
+than by silently patching the parent topic.
 
 When a capability gap needs external skill discovery, add one or more queries:
 
@@ -256,6 +238,9 @@ Store summaries, stage decisions, and exact file pointers.
 
 Use `runtime/CONTROL_NOTE_CONTRACT.md` when a human wants to redirect or pause
 the loop through a durable steering note.
+
+Use `RESEARCH_EXECUTION_GUARDRAILS.md` when the selected action starts to drift
+scope, mutate deliverables, or confuse proxy-success with real validation.
 
 Use `runtime/DECLARATIVE_RUNTIME_CONTRACTS.md` when you want queue/decision
 selection to be authored explicitly instead of inferred.

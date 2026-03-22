@@ -32,6 +32,8 @@ python3 research/adapters/openclaw/scripts/aitp_loop.py ...
 or the equivalent installed `aitp loop ...` surface when available.
 
 The loop entrypoint must materialize the runtime surfaces before deeper work begins, even though it delegates internally to `research/knowledge-hub/runtime/scripts/orchestrate_topic.py`.
+Those runtime surfaces should keep the global research-flow guardrails visible,
+not just the queue state.
 
 ## Required runtime artifacts
 
@@ -53,6 +55,10 @@ Every active topic must expose:
 - `runtime/topics/<topic_slug>/conformance_report.md`
 
 If these are missing, the run is not considered AITP-conformant.
+
+For non-trivial topics, the runtime should also expose
+`research/knowledge-hub/RESEARCH_EXECUTION_GUARDRAILS.md` through the generated
+runtime brief so agents do not confuse proxy-success with validated progress.
 
 ## Entry gate
 
@@ -103,6 +109,9 @@ A passed conformance audit means:
 - the agent operated through the AITP artifact contract,
 - the run is inspectable and resumable,
 - later agents do not need to reconstruct state from chat.
+
+It should also mean the runtime did not hide the guardrails around scope,
+deliverables, acceptance tests, and forbidden proxies.
 
 It does not mean:
 

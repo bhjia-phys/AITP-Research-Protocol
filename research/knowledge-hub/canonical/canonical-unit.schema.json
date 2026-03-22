@@ -12,6 +12,7 @@
     "maturity",
     "created_at",
     "updated_at",
+    "topic_completion_status",
     "tags",
     "assumptions",
     "regime",
@@ -60,6 +61,17 @@
     "summary": {
       "type": "string",
       "minLength": 1
+    },
+    "topic_completion_status": {
+      "type": "string",
+      "enum": [
+        "not_assessed",
+        "gap-aware",
+        "regression-seeded",
+        "regression-stable",
+        "promotion-blocked",
+        "promotion-ready"
+      ]
     },
     "maturity": {
       "type": "string",
@@ -245,6 +257,63 @@
         },
         "consensus_status": {
           "type": "string"
+        },
+        "regression_gate_status": {
+          "type": "string"
+        },
+        "supporting_regression_question_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^regression_question:[a-z0-9][a-z0-9-]*$"
+          }
+        },
+        "supporting_oracle_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^question_oracle:[a-z0-9][a-z0-9-]*$"
+          }
+        },
+        "supporting_regression_run_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^regression_run:[a-z0-9][a-z0-9-]*$"
+          }
+        },
+        "promotion_blockers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "blocking_reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cited_recovery_required": {
+          "type": "boolean"
+        },
+        "followup_gap_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^open_gap:[a-z0-9][a-z0-9-]*$"
+          }
+        },
+        "split_clearance_status": {
+          "type": "string",
+          "enum": [
+            "clear",
+            "blocked",
+            "not_applicable"
+          ]
+        },
+        "promotion_blockers_cleared": {
+          "type": "boolean"
         },
         "promoted_by": {
           "type": "string"

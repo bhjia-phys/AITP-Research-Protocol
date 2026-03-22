@@ -141,6 +141,26 @@ Medium-term:
 - publish a supported-runtime matrix with tested versions
 - add release notes and compatibility notes
 
+## What We Should Absorb At The Protocol Layer
+
+GPD's strongest idea is not "many commands".
+It is that research should be constrained before execution, not only described
+after execution.
+
+AITP should therefore absorb these ideas directly into its public contracts and
+runtime-facing protocol:
+
+- non-trivial topics should carry richer research-question contracts with
+  observables, deliverables, acceptance tests, forbidden proxies, and explicit
+  uncertainty markers;
+- validation contracts should declare required checks, oracle artifacts,
+  executed evidence, confidence caps, and gap-followup routes;
+- runtime surfaces should expose global research-execution guardrails so agents
+  do not confuse polished progress with validated progress;
+- cited gaps, notation mismatches, and unresolved proof dependencies should
+  trigger explicit recovery or follow-up routes instead of being smoothed over
+  conversationally.
+
 Long-term:
 
 - preserve AITP’s L0-L4 ontology

@@ -21,6 +21,15 @@
     "validation_mode": { "type": "string", "enum": ["analytic", "numerical", "formal", "comparison", "hybrid"] },
     "acceptance_rule": { "type": "string", "minLength": 1 },
     "rejection_rule": { "type": "string", "minLength": 1 },
-    "artifacts": { "type": "array", "items": { "type": "string" } }
+    "artifacts": { "type": "array", "items": { "type": "string" } },
+    "required_checks": { "type": "array", "items": { "type": "string" } },
+    "oracle_artifacts": { "type": "array", "items": { "type": "string" } },
+    "executed_evidence": { "type": "array", "items": { "type": "string" } },
+    "confidence_cap": {
+      "type": "string",
+      "enum": ["none", "low", "medium", "high"]
+    },
+    "gap_followups": { "type": "array", "items": { "type": "string" } },
+    "failure_modes": { "type": "array", "items": { "type": "string" } }
   }
 }

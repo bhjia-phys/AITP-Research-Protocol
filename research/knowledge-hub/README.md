@@ -38,6 +38,8 @@ workspace just to run `aitp`.
 you can verify that the standalone install is structurally complete.
 That protocol report now includes the deeper proof/gap/fusion/verification
 governance surfaces in addition to the layer map and routing basics.
+Topic-completion and regression-governed promotion are part of that public
+surface rather than topic-local convention.
 
 ## Core Commands
 
@@ -55,7 +57,6 @@ aitp operation-update --topic-slug <topic_slug> --run-id <run_id> --operation "<
 aitp trust-audit --topic-slug <topic_slug> --run-id <run_id>
 aitp capability-audit --topic-slug <topic_slug>
 aitp coverage-audit --topic-slug <topic_slug> --candidate-id <candidate_id> --source-section <section> --covered-section <section>
-aitp formal-theory-audit --topic-slug <topic_slug> --candidate-id <candidate_id> --formal-theory-role trusted_target --statement-graph-role target_statement --faithfulness-status reviewed --faithfulness-strategy "<strategy>" --comparator-audit-status passed --attribution-requirement "<requirement>" --prerequisite-closure-status closed
 aitp request-promotion --topic-slug <topic_slug> --candidate-id <candidate_id>
 aitp approve-promotion --topic-slug <topic_slug> --candidate-id <candidate_id>
 aitp promote --topic-slug <topic_slug> --candidate-id <candidate_id> --target-backend-root <tpkn_root>
@@ -72,10 +73,12 @@ research/knowledge-hub/
   COMMUNICATION_CONTRACT.md
   AUTONOMY_AND_OPERATOR_MODEL.md
   L2_CONSULTATION_PROTOCOL.md
+  RESEARCH_EXECUTION_GUARDRAILS.md
   PROOF_OBLIGATION_PROTOCOL.md
   GAP_RECOVERY_PROTOCOL.md
   FAMILY_FUSION_PROTOCOL.md
   VERIFICATION_BRIDGE_PROTOCOL.md
+  TOPIC_COMPLETION_PROTOCOL.md
   INDEXING_RULES.md
   L0_SOURCE_LAYER.md
   setup.py
@@ -123,10 +126,12 @@ Runtime-facing control notes:
 
 Deeper governance contracts surfaced through `aitp doctor`:
 
+- `RESEARCH_EXECUTION_GUARDRAILS.md`
 - `PROOF_OBLIGATION_PROTOCOL.md`
 - `GAP_RECOVERY_PROTOCOL.md`
 - `FAMILY_FUSION_PROTOCOL.md`
 - `VERIFICATION_BRIDGE_PROTOCOL.md`
+- `TOPIC_COMPLETION_PROTOCOL.md`
 
 ## Runtime Rule
 
@@ -153,21 +158,10 @@ That runtime bundle should follow the lossless progressive-disclosure rule in
 `runtime/PROGRESSIVE_DISCLOSURE_PROTOCOL.md`: show the minimum sufficient
 execution contract first, defer deeper details until declared triggers fire,
 and never hide hard constraints.
+It should also surface the global research-flow guardrails that ban proxy
+success signals and require explicit research contracts for non-trivial work.
 External runtimes should consume its trigger semantics from the JSON bundle and
 its schema contract rather than scraping markdown prose.
-If a closed-loop run still has open typed follow-up gaps, the runtime bundle
-should surface that ledger as part of the top-level execution contract rather
-than leaving it buried inside validation-only artifacts.
-If the topic is in a formal-theory lane, the runtime bundle should also surface
-which parts of the statement graph are trusted targets, which are intermediate
-theory or scaffolds, whether faithfulness has been reviewed, and whether
-prerequisite closure is still blocking honest promotion.
-When the candidate already has a durable formal-theory audit, the runtime
-bundle should point directly to:
-
-- `validation/topics/<topic_slug>/runs/<run_id>/theory-packets/<candidate_slug>/formal_theory_review.md`
-- `validation/topics/<topic_slug>/runs/<run_id>/theory-packets/<candidate_slug>/formal_theory_review.json`
-- the component review artifacts for faithfulness, comparator audit, provenance, and prerequisite closure
 
 The layer contracts above remain the higher-priority governance surface.
 External backends such as a separate formal-theory knowledge network, a
@@ -178,15 +172,16 @@ proof obligations, unresolved-gap routing, multi-source family fusion, and the
 selected verification bridge explicitly instead of collapsing them into one
 opaque prompt.
 
-For theory-formal work, runtime now exposes additional guardrails that remain
-hard blockers rather than optional documentation:
+The current runtime shell now also materializes:
 
-- the trusted-target versus intermediate-theory boundary,
-- a separate faithfulness review gate,
-- comparator-style anti-cheat audits against nearby weakened statements,
-- explicit provenance and attribution review,
-- prerequisite closure as a default promotion gate,
-- contamination-aware benchmark governance for regression suites.
+- `runtime/topics/<topic_slug>/topic_completion.json|md`
+- `runtime/topics/<topic_slug>/lean_bridge.active.json|md`
+- `runtime/topics/<child_topic_slug>/followup_return_packet.json|md`
+- `runtime/topics/<topic_slug>/followup_reintegration.jsonl|md`
+- `runtime/topics/<topic_slug>/followup_gap_writeback.jsonl|md`
+
+and Lean-ready exports now carry local `proof_obligations.json` and
+`proof_state.json` artifacts for each candidate packet.
 
 Layer 2 now has two governed writeback paths:
 
@@ -196,8 +191,12 @@ Layer 2 now has two governed writeback paths:
    - `aitp promote ...`
 2. Theory-formal `L2_auto`:
    - `aitp coverage-audit ...`
-   - `aitp formal-theory-audit ...` when the candidate type is theorem-facing
    - `aitp auto-promote ...`
+
+For theory-formal `L2_auto`, coverage and consensus are necessary but not
+sufficient.
+Auto-promotion should also remain blocked until the candidate is regression
+backed, blocker-clear, and split/gap honest.
 
 The current public external writeback path targets the standalone
 `Theoretical-Physics-Knowledge-Network` repository through the backend card:
