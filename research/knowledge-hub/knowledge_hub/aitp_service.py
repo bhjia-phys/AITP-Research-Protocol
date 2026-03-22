@@ -4661,6 +4661,16 @@ EXIT /B 127
                 deduped.append(candidate)
         return deduped
 
+    def _openclaw_skill_target(self, *, scope: str, target_root: str | None) -> Path:
+        if target_root:
+            target_path = Path(target_root)
+            if target_path.name == "aitp-runtime" or target_path.parent.name == "skills":
+                return target_path
+            return target_path / "skills" / "aitp-runtime"
+        if scope == "project":
+            return self.repo_root / "skills" / "aitp-runtime"
+        return Path.home() / ".openclaw" / "skills" / "aitp-runtime"
+
     def _install_codex_mcp(self, *, force: bool) -> list[dict[str, str]]:
         codex = shutil.which("codex")
         if codex is None:
@@ -7349,11 +7359,7 @@ aitp audit $ARGUMENTS
             return installed
 
         if agent == "openclaw":
-            base = (
-                Path(target_root)
-                if target_root
-                else (home / ".openclaw" / "skills" / "aitp-runtime" if scope == "user" else self.repo_root / "skills" / "aitp-runtime")
-            )
+            base = self._openclaw_skill_target(scope=scope, target_root=target_root)
             base.mkdir(parents=True, exist_ok=True)
             skill_path = base / "SKILL.md"
             if skill_path.exists() and not force:

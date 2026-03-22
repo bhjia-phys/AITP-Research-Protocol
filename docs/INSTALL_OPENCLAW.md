@@ -15,6 +15,12 @@ python -m pip install -e research/knowledge-hub
 aitp doctor
 ```
 
+On Windows-native, you can also verify the repo-local launcher directly:
+
+```cmd
+scripts\aitp-local.cmd doctor
+```
+
 ## Install the OpenClaw wrapper
 
 ```bash
@@ -25,6 +31,30 @@ This installs:
 
 - the `aitp-runtime` OpenClaw skill
 - an MCP setup note or MCP bridge registration, depending on environment
+
+If you want a workspace-local OpenClaw skill surface, install it into the target
+workspace root:
+
+```bash
+aitp install-agent --agent openclaw --scope project --target-root /path/to/openclaw-workspace
+```
+
+That writes:
+
+- `skills/aitp-runtime/SKILL.md`
+- `skills/aitp-runtime/AITP_MCP_SETUP.md`
+
+Windows-native example:
+
+```cmd
+scripts\aitp-local.cmd install-agent --agent openclaw --scope project --target-root D:\openclaw-workspace
+```
+
+For the richer workspace-local plugin seed path, use the repo-local installer:
+
+```cmd
+scripts\install-openclaw-plugin-local.cmd --target-root D:\openclaw-workspace --json
+```
 
 ## Recommended entrypoint
 
@@ -53,9 +83,9 @@ Reference OpenClaw plugin assets live under:
 
 - `research/adapters/openclaw/`
 
-The CLI wrapper path above is currently the default supported standalone install
-path. The richer workspace-seeding plugin assets are present as reference
-material and can be promoted further later.
+The CLI install path above is the lightest supported route. The plugin installer
+is the richer workspace-seeding path when you want `.openclaw/extensions/`,
+seeded profile files, and the adapter-owned workspace bootstrap.
 
 ## Remove
 

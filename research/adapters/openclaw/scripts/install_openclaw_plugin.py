@@ -79,6 +79,13 @@ def copy_file(source: Path, target: Path, *, force: bool, records: list[CopyReco
     records.append(CopyRecord(kind=kind, source=str(source), target=str(target), action=action))
 
 
+def copy_file_if_present(source: Path, target: Path, *, force: bool, records: list[CopyRecord], kind: str) -> None:
+    if not source.exists():
+        records.append(CopyRecord(kind=kind, source=str(source), target=str(target), action="missing-skipped"))
+        return
+    copy_file(source, target, force=force, records=records, kind=kind)
+
+
 def is_excluded(relative_path: Path, patterns: list[str]) -> bool:
     rel = relative_path.as_posix()
     return any(fnmatch(rel, pattern) for pattern in patterns)
@@ -198,7 +205,7 @@ def main() -> int:
     ensure_directories(target_root, manifest.get("ensure_directories", []), records)
 
     for rule in manifest.get("copy_files", []):
-        copy_file(
+        copy_file_if_present(
             source_root / rule["source"],
             target_root / rule["target"],
             force=args.force,
@@ -219,7 +226,7 @@ def main() -> int:
     apply_seeds, seed_reason = resolve_seed_policy(args, source_root, target_root)
     if apply_seeds:
         for rule in manifest.get("seed_files", []):
-            copy_file(
+            copy_file_if_present(
                 source_root / rule["source"],
                 target_root / rule["target"],
                 force=True,
@@ -232,7 +239,7 @@ def main() -> int:
         enabled = bool(getattr(args, flag_name.replace("-", "_"), False))
         if not enabled:
             continue
-        copy_file(
+        copy_file_if_present(
             source_root / rule["source"],
             target_root / rule["target"],
             force=args.force,
@@ -278,9 +285,11 @@ def main() -> int:
         print(json.dumps(summary, ensure_ascii=False, indent=2))
     else:
         copied_count = len([record for record in records if record.kind != "directory"])
+        skipped_missing_count = len([record for record in records if record.action == "missing-skipped"])
         print(f"Installed OpenClaw AITP profile into {target_root}")
         print(f"- profile_version: {manifest.get('profile_version')}")
         print(f"- copied_entries: {copied_count}")
+        print(f"- missing_optional_entries: {skipped_missing_count}")
         print(f"- seeds_applied: {'yes' if apply_seeds else 'no'} ({seed_reason})")
         if plugin_result:
             print(f"- plugin_id: {plugin_result['plugin_id']}")

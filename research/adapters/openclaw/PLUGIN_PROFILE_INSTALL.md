@@ -1,13 +1,18 @@
 # OpenClaw AITP Plugin Install
 
 This document defines the current install surface for taking the AITP OpenClaw adapter into another OpenClaw workspace.
+The public repository guarantees the plugin, the AITP kernel/adapter trees, and
+any shipped seed files. If the source workspace also contains richer
+workspace-root profile notes or `research-bot` templates, the installer copies
+them too; if they are absent, it skips those optional legacy surfaces instead of
+failing.
 
 ## What gets installed
 
-The installer seeds three things together:
+The installer seeds up to three things together:
 
 1. the OpenClaw plugin itself
-2. the workspace profile files at the root
+2. workspace profile files at the root, when they exist in the source workspace
 3. the minimal AITP kernel / adapter surface needed for `aitp` to run inside the target workspace
 
 It intentionally does **not** copy live topic runtime state such as:
@@ -32,12 +37,24 @@ python3 research/adapters/openclaw/scripts/install_openclaw_plugin.py \
   --target-root /path/to/other-openclaw-workspace
 ```
 
+Windows-native equivalent from the repository root:
+
+```cmd
+scripts\install-openclaw-plugin-local.cmd --target-root D:\other-openclaw-workspace
+```
+
 If the target already has an older copy and you want to refresh it:
 
 ```bash
 python3 research/adapters/openclaw/scripts/install_openclaw_plugin.py \
   --target-root /path/to/other-openclaw-workspace \
   --force
+```
+
+Windows-native:
+
+```cmd
+scripts\install-openclaw-plugin-local.cmd --target-root D:\other-openclaw-workspace --force
 ```
 
 If the target should also inherit the local `mcporter` config from this machine:
@@ -100,7 +117,8 @@ These tools are thin wrappers around the installed `aitp` CLI and always execute
 
 ## Seed policy
 
-The installer keeps the research-brain profile but resets mutable state to clean seeds:
+When those files are present in the source workspace, the installer keeps the
+research-brain profile and resets mutable state to clean seeds such as:
 
 - `research-bot/state/briefing-status.json`
 - `research-bot/state/inbox.jsonl`
@@ -109,7 +127,10 @@ The installer keeps the research-brain profile but resets mutable state to clean
 - `research-bot/state/seen.json`
 - `research/knowledge-hub/runtime/topic_index.jsonl`
 
-This keeps the target reproducible and operator-readable without leaking the current workspace's live queues or runs.
+This keeps the target reproducible and operator-readable without leaking the
+current workspace's live queues or runs. If the public source repo does not
+ship those legacy profile/state files, the installer skips them and still
+installs the plugin plus the minimal AITP kernel surface.
 
 ## Minimal verification
 
@@ -118,6 +139,13 @@ After install, verify inside the target workspace:
 ```bash
 openclaw plugins list --json
 AITP_KERNEL_ROOT="$PWD/research/knowledge-hub" AITP_REPO_ROOT="$PWD" aitp doctor --json
+```
+
+On Windows-native, the simplest repo-root smoke test before entering the target
+workspace is:
+
+```cmd
+scripts\aitp-local.cmd doctor --json
 ```
 
 Then run a bounded loop check:

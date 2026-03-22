@@ -196,6 +196,19 @@ aitp install-agent --agent openclaw --scope user
 aitp loop --topic-slug <topic_slug> --human-request "<task>" --max-auto-steps 1
 ```
 
+If you want a workspace-local OpenClaw skill surface:
+
+```bash
+aitp install-agent --agent openclaw --scope project --target-root /path/to/openclaw-workspace
+```
+
+On Windows-native, the equivalent entrypoints are:
+
+```cmd
+scripts\aitp-local.cmd install-agent --agent openclaw --scope project --target-root D:\openclaw-workspace
+scripts\install-openclaw-plugin-local.cmd --target-root D:\openclaw-workspace
+```
+
 Expected behavior:
 
 - OpenClaw re-enters through `aitp loop`;

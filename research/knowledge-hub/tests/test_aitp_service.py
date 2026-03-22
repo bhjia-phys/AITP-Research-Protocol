@@ -2005,6 +2005,24 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue(aitp_shell_path.exists())
         self.assertIn("knowledge_hub.aitp_cli", aitp_shell_path.read_text(encoding="utf-8"))
 
+        openclaw_target = self.root / "openclaw-workspace"
+        result = self.service.install_agent(
+            agent="openclaw",
+            scope="project",
+            target_root=str(openclaw_target),
+            install_mcp=False,
+        )
+        installed_paths = {Path(item["path"]).name for item in result["installed"]}
+        self.assertIn("SKILL.md", installed_paths)
+        self.assertIn("AITP_MCP_SETUP.md", installed_paths)
+        openclaw_skill_path = openclaw_target / "skills" / "aitp-runtime" / "SKILL.md"
+        openclaw_setup_path = openclaw_target / "skills" / "aitp-runtime" / "AITP_MCP_SETUP.md"
+        self.assertTrue(openclaw_skill_path.exists())
+        self.assertTrue(openclaw_setup_path.exists())
+        self.assertIn("AITP Runtime For OpenClaw", openclaw_skill_path.read_text(encoding="utf-8"))
+        self.assertIn("mcporter config add aitp", openclaw_setup_path.read_text(encoding="utf-8"))
+        self.assertFalse((openclaw_target / "SKILL.md").exists())
+
         opencode_target = self.root / "opencode-commands"
         result = self.service.install_agent(
             agent="opencode",
