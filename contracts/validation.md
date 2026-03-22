@@ -15,6 +15,19 @@ Define how a candidate is supposed to be checked before acceptance.
 - `rejection_rule`
 - `artifacts`
 
+## High-rigor fields for non-trivial validation
+
+When validation is more than a lightweight smoke check, it should also declare:
+
+- `required_checks`
+- `oracle_artifacts`
+- `executed_evidence`
+- `confidence_cap`
+- `gap_followups`
+- `failure_modes`
+
 ## Why it matters
 
 Validation should be declared before the result is interpreted.
+Validation should also say what does not count as success, what evidence is
+still missing, and how confidence is capped when execution evidence is absent.

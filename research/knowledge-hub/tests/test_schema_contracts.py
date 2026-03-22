@@ -8,9 +8,39 @@ from pathlib import Path
 class SchemaContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.kernel_root = Path(__file__).resolve().parents[1]
+        self.repo_root = Path(__file__).resolve().parents[3]
 
     def _read_json(self, relative_path: str) -> dict:
         return json.loads((self.kernel_root / relative_path).read_text(encoding="utf-8"))
+
+    def _read_repo_json(self, relative_path: str) -> dict:
+        return json.loads((self.repo_root / relative_path).read_text(encoding="utf-8"))
+
+    def test_public_contract_schemas_expose_research_guardrail_fields(self) -> None:
+        research_payload = self._read_repo_json("schemas/research-question.schema.json")
+        validation_payload = self._read_repo_json("schemas/validation.schema.json")
+
+        for field in (
+            "context_intake",
+            "formalism_and_notation",
+            "observables",
+            "target_claims",
+            "deliverables",
+            "acceptance_tests",
+            "forbidden_proxies",
+            "uncertainty_markers",
+        ):
+            self.assertIn(field, research_payload["properties"])
+
+        for field in (
+            "required_checks",
+            "oracle_artifacts",
+            "executed_evidence",
+            "confidence_cap",
+            "gap_followups",
+            "failure_modes",
+        ):
+            self.assertIn(field, validation_payload["properties"])
 
     def test_candidate_schema_includes_theory_granular_types_and_auto_status(self) -> None:
         payload = self._read_json("feedback/schemas/candidate.schema.json")
@@ -25,6 +55,9 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIn("reactivated", statuses)
         self.assertIn("split_child_ids", payload["properties"])
         self.assertIn("buffer_entry_ids", payload["properties"])
+        self.assertIn("supporting_regression_question_ids", payload["properties"])
+        self.assertIn("promotion_blockers", payload["properties"])
+        self.assertIn("topic_completion_status", payload["properties"])
 
     def test_canonical_unit_schema_includes_l2_auto_routes_and_maturity(self) -> None:
         payload = self._read_json("canonical/canonical-unit.schema.json")
@@ -36,6 +69,14 @@ class SchemaContractTests(unittest.TestCase):
         route_states = set(payload["properties"]["promotion"]["properties"]["route"]["enum"])
         self.assertIn("L3->L4_auto->L2_auto", route_states)
         self.assertIn("L2_auto->L2", route_states)
+        self.assertIn("topic_completion_status", payload["properties"])
+        self.assertIn("regression_gate_status", payload["properties"]["promotion"]["properties"])
+        self.assertIn("supporting_regression_question_ids", payload["properties"]["promotion"]["properties"])
+        self.assertIn("supporting_oracle_ids", payload["properties"]["promotion"]["properties"])
+        self.assertIn("promotion_blockers", payload["properties"]["promotion"]["properties"])
+        self.assertIn("blocking_reasons", payload["properties"]["promotion"]["properties"])
+        self.assertIn("cited_recovery_required", payload["properties"]["promotion"]["properties"])
+        self.assertIn("followup_gap_ids", payload["properties"]["promotion"]["properties"])
 
     def test_backend_schema_requires_auto_promotion_policy_fields(self) -> None:
         payload = self._read_json("schemas/l2-backend.schema.json")
@@ -43,6 +84,9 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIn("allows_auto_canonical_promotion", required_source_policy)
         self.assertIn("auto_promotion_requires_coverage_audit", required_source_policy)
         self.assertIn("auto_promotion_requires_multi_agent_consensus", required_source_policy)
+        self.assertIn("auto_promotion_requires_regression_gate", required_source_policy)
+        self.assertIn("auto_promotion_requires_split_clearance", required_source_policy)
+        self.assertIn("auto_promotion_requires_gap_honesty", required_source_policy)
         canonical_targets = set(payload["properties"]["canonical_targets"]["items"]["enum"])
         self.assertIn("theorem_card", canonical_targets)
         self.assertIn("symbol_binding", canonical_targets)
@@ -63,15 +107,41 @@ class SchemaContractTests(unittest.TestCase):
     def test_split_and_deferred_contract_schemas_exist(self) -> None:
         split_payload = self._read_json("feedback/schemas/candidate-split-contract.schema.json")
         deferred_payload = self._read_json("runtime/schemas/deferred-candidate-buffer.schema.json")
+        followup_payload = self._read_json("runtime/schemas/followup-return-packet.schema.json")
+        topic_completion_payload = self._read_json("runtime/schemas/topic-completion.schema.json")
+        lean_ready_payload = self._read_json("runtime/schemas/lean-ready-packet.schema.json")
+        lean_bridge_active_payload = self._read_json("runtime/schemas/lean-bridge-active.schema.json")
         self.assertEqual(split_payload["properties"]["contract_version"]["const"], 1)
         self.assertIn("splits", split_payload["required"])
         self.assertEqual(deferred_payload["properties"]["buffer_version"]["const"], 1)
         self.assertIn("entries", deferred_payload["required"])
+        self.assertEqual(followup_payload["properties"]["return_packet_version"]["const"], 1)
+        self.assertIn("reintegration_requirements", followup_payload["required"])
+        self.assertIn("resolved_gap_update", followup_payload["properties"]["return_status"]["enum"])
+        self.assertIn("accepted_return_shape", followup_payload["properties"])
+        self.assertIn("return_artifact_paths", followup_payload["properties"])
+        self.assertEqual(topic_completion_payload["properties"]["completion_version"]["const"], 1)
+        self.assertIn("regression_manifest", topic_completion_payload["required"])
+        self.assertIn("completion_gate_checks", topic_completion_payload["required"])
+        self.assertEqual(lean_ready_payload["properties"]["bridge_version"]["const"], 1)
+        self.assertIn("proof_obligation_count", lean_ready_payload["required"])
+        self.assertIn("theory_packet_refs", lean_ready_payload["required"])
+        self.assertEqual(lean_bridge_active_payload["properties"]["bridge_version"]["const"], 1)
+        self.assertIn("needs_refinement_count", lean_bridge_active_payload["required"])
 
     def test_progressive_disclosure_runtime_schema_exposes_stable_trigger_contract(self) -> None:
         payload = self._read_json("runtime/schemas/progressive-disclosure-runtime-bundle.schema.json")
         self.assertEqual(payload["properties"]["bundle_kind"]["const"], "progressive_disclosure_runtime_bundle")
         self.assertEqual(payload["properties"]["protocol_version"]["const"], 1)
+        self.assertIn("active_research_contract", payload["properties"])
+        self.assertIn("promotion_readiness", payload["properties"])
+        self.assertIn("open_gap_summary", payload["properties"])
+        self.assertIn("topic_completion", payload["properties"])
+        self.assertIn("lean_bridge", payload["properties"])
+        self.assertIn("followup_gap_writeback_count", payload["properties"]["open_gap_summary"]["properties"])
+        self.assertIn("regression_manifest", payload["properties"]["topic_completion"]["properties"])
+        self.assertIn("completion_gate_checks", payload["properties"]["topic_completion"]["properties"])
+        self.assertIn("needs_refinement_count", payload["properties"]["lean_bridge"]["properties"])
         trigger_names = set(payload["$defs"]["trigger_name"]["anyOf"][0]["enum"])
         self.assertIn("non_trivial_consultation", trigger_names)
         self.assertIn("promotion_intent", trigger_names)
@@ -89,6 +159,8 @@ class SchemaContractTests(unittest.TestCase):
         mapped_statuses = set((policy_payload.get("result_ingest") or {}).get("candidate_status_by_decision", {}).values())
         self.assertTrue(mapped_statuses.issubset(candidate_statuses))
         self.assertTrue((policy_payload.get("auto_promotion_policy") or {}).get("enabled"))
+        self.assertTrue((policy_payload.get("topic_completion_policy") or {}).get("enabled"))
+        self.assertTrue((policy_payload.get("lean_bridge_policy") or {}).get("enabled"))
         self.assertTrue((policy_payload.get("candidate_split_policy") or {}).get("enabled"))
         self.assertTrue((policy_payload.get("deferred_buffer_policy") or {}).get("auto_reactivate"))
 

@@ -451,6 +451,7 @@ def build_tpkn_unit(
     review_artifacts: Any | None = None,
     coverage: dict[str, Any] | None = None,
     consensus: dict[str, Any] | None = None,
+    regression_gate: dict[str, Any] | None = None,
     merge_lineage: Any | None = None,
     conflict_status: str = "none",
     conflict_refs: list[str] | None = None,
@@ -514,6 +515,11 @@ def build_tpkn_unit(
         "formalization_status": "candidate",
         "validation_status": "validated",
         "maturity": "seed",
+        "topic_completion_status": str(
+            (regression_gate or {}).get("topic_completion_status")
+            or candidate.get("topic_completion_status")
+            or "not_assessed"
+        ),
         "canonical_layer": canonical_layer,
         "review_mode": review_mode,
         "promotion_route": promotion_route or "",
@@ -529,6 +535,43 @@ def build_tpkn_unit(
         ],
         "created_at": today_iso(),
         "updated_at": today_iso(),
+        "promotion": {
+            "route": promotion_route or (canonical_layer == "L2_auto" and "L3->L4_auto->L2_auto" or "L3->L4->L2"),
+            "review_mode": review_mode,
+            "canonical_layer": canonical_layer,
+            "coverage_status": str((coverage or {}).get("status") or "not_audited"),
+            "consensus_status": str((consensus or {}).get("status") or "not_requested"),
+            "regression_gate_status": str((regression_gate or {}).get("status") or "not_audited"),
+            "supporting_regression_question_ids": _dedupe_strings(
+                list((regression_gate or {}).get("supporting_regression_question_ids") or candidate.get("supporting_regression_question_ids") or [])
+            ),
+            "supporting_oracle_ids": _dedupe_strings(
+                list((regression_gate or {}).get("supporting_oracle_ids") or candidate.get("supporting_oracle_ids") or [])
+            ),
+            "supporting_regression_run_ids": _dedupe_strings(
+                list((regression_gate or {}).get("supporting_regression_run_ids") or candidate.get("supporting_regression_run_ids") or [])
+            ),
+            "promotion_blockers": _dedupe_strings(
+                list((regression_gate or {}).get("promotion_blockers") or candidate.get("promotion_blockers") or [])
+            ),
+            "blocking_reasons": _dedupe_strings(list((regression_gate or {}).get("blocking_reasons") or [])),
+            "cited_recovery_required": bool(
+                (regression_gate or {}).get("cited_recovery_required", candidate.get("cited_recovery_required", False))
+            ),
+            "followup_gap_ids": _dedupe_strings(
+                list((regression_gate or {}).get("followup_gap_ids") or candidate.get("followup_gap_ids") or [])
+            ),
+            "split_clearance_status": str((regression_gate or {}).get("split_clearance_status") or "not_applicable"),
+            "promotion_blockers_cleared": bool((regression_gate or {}).get("promotion_blockers_cleared", True)),
+            "promoted_by": "",
+            "promoted_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+            "review_status": "accepted",
+            "rationale": (
+                "Promoted after AI auto-review gates passed."
+                if review_mode == "ai_auto"
+                else "Promoted after explicit promotion review."
+            ),
+        },
     }
     normalized_review_artifacts = _normalize_metadata_entries(review_artifacts)
     if normalized_review_artifacts:
@@ -537,6 +580,8 @@ def build_tpkn_unit(
         unit["coverage"] = coverage
     if consensus:
         unit["consensus"] = consensus
+    if regression_gate:
+        unit["regression_gate"] = regression_gate
     normalized_merge_lineage = _normalize_metadata_entries(merge_lineage)
     if normalized_merge_lineage:
         unit["merge_lineage"] = normalized_merge_lineage
@@ -587,6 +632,18 @@ def merge_tpkn_unit(
     consensus = incoming_unit.get("consensus") or existing_unit.get("consensus")
     if consensus:
         merged["consensus"] = consensus
+    regression_gate = incoming_unit.get("regression_gate") or existing_unit.get("regression_gate")
+    if regression_gate:
+        merged["regression_gate"] = regression_gate
+    merged["topic_completion_status"] = str(
+        incoming_unit.get("topic_completion_status")
+        or existing_unit.get("topic_completion_status")
+        or "not_assessed"
+    )
+    promotion = dict(existing_unit.get("promotion") or {})
+    promotion.update(incoming_unit.get("promotion") or {})
+    if promotion:
+        merged["promotion"] = promotion
 
     lineage = _dedupe_strings(
         _normalize_metadata_entries(existing_unit.get("merge_lineage"))

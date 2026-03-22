@@ -16,6 +16,7 @@ The public machine-readable contract for
 AITP runtime artifacts may defer detail, but they may not weaken or hide:
 
 - layer semantics,
+- active research-contract guardrails,
 - consultation obligations,
 - trust and baseline gates,
 - promotion gates,
@@ -51,6 +52,7 @@ The top disclosure tier must always include:
 - selected action or declared absence of one,
 - immediate allowed work,
 - immediate blocked work,
+- visible research-flow guardrails when the work is non-trivial,
 - active hard constraints,
 - declared escalation triggers,
 - exact deeper file paths.
@@ -200,6 +202,7 @@ Scripts may not decide:
 - whether a proof is genuinely complete,
 - whether two theorem families are truly identical,
 - whether a gap is substantively resolved,
+- whether proxy evidence is good enough to count as validation,
 - whether a candidate is scientifically mature merely because it was generated.
 
 Those judgments remain protocol-governed research work, constrained by

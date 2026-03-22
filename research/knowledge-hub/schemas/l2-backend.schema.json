@@ -79,6 +79,9 @@
         "auto_promotion_domains",
         "auto_promotion_requires_coverage_audit",
         "auto_promotion_requires_multi_agent_consensus",
+        "auto_promotion_requires_regression_gate",
+        "auto_promotion_requires_split_clearance",
+        "auto_promotion_requires_gap_honesty",
         "default_source_type"
       ],
       "properties": {
@@ -102,6 +105,15 @@
           "type": "boolean"
         },
         "auto_promotion_requires_multi_agent_consensus": {
+          "type": "boolean"
+        },
+        "auto_promotion_requires_regression_gate": {
+          "type": "boolean"
+        },
+        "auto_promotion_requires_split_clearance": {
+          "type": "boolean"
+        },
+        "auto_promotion_requires_gap_honesty": {
           "type": "boolean"
         },
         "default_source_type": {

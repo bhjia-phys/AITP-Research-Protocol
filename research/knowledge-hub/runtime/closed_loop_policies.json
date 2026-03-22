@@ -233,6 +233,18 @@
       "reactivated",
       "returned_to_l3"
     ],
+    "required_theory_packet_artifacts": [
+      "structure_map",
+      "coverage_ledger",
+      "notation_table",
+      "derivation_graph",
+      "agent_consensus",
+      "regression_gate"
+    ],
+    "require_regression_gate_pass": true,
+    "block_when_split_required": true,
+    "block_when_promotion_blockers_present": true,
+    "block_when_cited_recovery_required": true,
     "theory_formal_candidate_types": [
       "definition_card",
       "notation_card",
@@ -251,13 +263,55 @@
   "followup_subtopic_policy": {
     "enabled": true,
     "max_subtopics_per_receipt": 2,
+    "bounded_gap_required": true,
     "spawn_target_source_types": [
       "paper",
       "arxiv",
       "review"
     ],
+    "return_packet_filename": "followup_return_packet.json",
+    "expected_return_route": "L0->L1->L3->L4->L2",
+    "acceptable_return_shapes": [
+      "recovered_units",
+      "resolved_gap_update",
+      "still_unresolved_packet"
+    ],
+    "required_output_artifacts": [
+      "candidate_ledger_or_recovered_units",
+      "gap_or_followup_writeback",
+      "reintegration_summary"
+    ],
+    "unresolved_return_statuses": [
+      "pending_reentry",
+      "returned_with_gap",
+      "returned_unresolved"
+    ],
+    "reintegration_requirements": {
+      "must_write_back_parent_gaps": true,
+      "must_update_reentry_targets": true,
+      "must_not_patch_parent_directly": true,
+      "requires_child_topic_summary": true
+    },
     "statement_template": "Follow up the cited-literature gap `{query}` from parent topic `{topic_slug}` using source `{arxiv_id}`.",
     "human_request_template": "Study the follow-up paper `{arxiv_id}` for the bounded gap `{query}` and build an independent AITP subtopic from L0 onward."
+  },
+  "topic_completion_policy": {
+    "enabled": true
+  },
+  "lean_bridge_policy": {
+    "enabled": true,
+    "trigger_candidate_types": [
+      "definition_card",
+      "notation_card",
+      "equation_card",
+      "assumption_card",
+      "regime_card",
+      "theorem_card",
+      "proof_fragment",
+      "derivation_step",
+      "equivalence_map",
+      "symbol_binding"
+    ]
   },
   "candidate_split_policy": {
     "enabled": true,

@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aitp.local/schemas/followup-return-packet.schema.json",
+  "title": "AITP Followup Return Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "return_packet_version",
+    "child_topic_slug",
+    "parent_topic_slug",
+    "parent_run_id",
+    "receipt_id",
+    "query",
+    "parent_gap_ids",
+    "parent_followup_task_ids",
+    "reentry_targets",
+    "supporting_regression_question_ids",
+    "source_id",
+    "arxiv_id",
+    "expected_return_route",
+    "acceptable_return_shapes",
+    "required_output_artifacts",
+    "unresolved_return_statuses",
+    "return_status",
+    "reintegration_requirements",
+    "updated_at",
+    "updated_by"
+  ],
+  "properties": {
+    "return_packet_version": {
+      "const": 1
+    },
+    "child_topic_slug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "parent_topic_slug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "parent_run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "receipt_id": {
+      "type": "string"
+    },
+    "query": {
+      "type": "string",
+      "minLength": 1
+    },
+    "parent_gap_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^open_gap:[a-z0-9][a-z0-9-]*$"
+      }
+    },
+    "parent_followup_task_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^followup_source_task:[a-z0-9][a-z0-9-]*$"
+      }
+    },
+    "reentry_targets": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*:[a-z0-9][a-z0-9-]*$"
+      }
+    },
+    "supporting_regression_question_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^regression_question:[a-z0-9][a-z0-9-]*$"
+      }
+    },
+    "source_id": {
+      "type": "string"
+    },
+    "arxiv_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "expected_return_route": {
+      "type": "string",
+      "enum": [
+        "L0->L1->L3->L4->L2"
+      ]
+    },
+    "acceptable_return_shapes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "recovered_units",
+          "resolved_gap_update",
+          "still_unresolved_packet"
+        ]
+      }
+    },
+    "required_output_artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "unresolved_return_statuses": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": [
+          "pending_reentry",
+          "returned_with_gap",
+          "returned_unresolved"
+        ]
+      }
+    },
+    "return_status": {
+      "type": "string",
+      "enum": [
+        "pending_reentry",
+        "recovered_units",
+        "resolved_gap_update",
+        "returned_with_gap",
+        "returned_unresolved"
+      ]
+    },
+    "accepted_return_shape": {
+      "type": "string",
+      "enum": [
+        "recovered_units",
+        "resolved_gap_update",
+        "still_unresolved_packet"
+      ]
+    },
+    "return_summary": {
+      "type": "string"
+    },
+    "child_topic_summary": {
+      "type": "string"
+    },
+    "return_artifact_paths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "child_run_id": {
+      "type": "string"
+    },
+    "reintegration_requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "must_write_back_parent_gaps",
+        "must_update_reentry_targets",
+        "must_not_patch_parent_directly",
+        "requires_child_topic_summary"
+      ],
+      "properties": {
+        "must_write_back_parent_gaps": {
+          "type": "boolean"
+        },
+        "must_update_reentry_targets": {
+          "type": "boolean"
+        },
+        "must_not_patch_parent_directly": {
+          "type": "boolean"
+        },
+        "requires_child_topic_summary": {
+          "type": "boolean"
+        }
+      }
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_by": {
+      "type": "string",
+      "minLength": 1
+    },
+    "return_updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "return_updated_by": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

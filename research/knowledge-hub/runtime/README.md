@@ -18,6 +18,9 @@ Use `runtime/` to answer three operational questions quickly:
 The runtime surface should answer those questions with lossless progressive
 disclosure.
 See `runtime/PROGRESSIVE_DISCLOSURE_PROTOCOL.md`.
+The runtime should also keep `RESEARCH_EXECUTION_GUARDRAILS.md` visible so the
+next agent cannot quietly replace declared deliverables or substitute proxy
+evidence for actual validation.
 The generated JSON bundle now also carries a stable public schema contract so
 external executors can consume trigger semantics without parsing markdown prose.
 When deeper proof, gap, fusion, or verification triggers fire, the runtime
@@ -95,13 +98,19 @@ hiding those rules inside handler code.
 - The resume target should prefer the fallback route implied by the latest decision artifact when one exists.
 - Runtime should expose the human-visible operator contract rather than forcing the next agent or human to reconstruct it manually.
 - Runtime should expose the minimum sufficient execution contract first, then defer deeper protocol slices until declared triggers fire.
+- Runtime should expose the global research-flow guardrails early enough that
+  scope, deliverables, acceptance tests, and forbidden proxies stay visible.
 - Runtime should materialize both an unfinished-work index and a next-action decision so the loop is inspectable rather than implicit.
 - Runtime should prefer declared contracts when they exist and only fall back to heuristics when they do not.
 - Runtime should also expose a conformance report so non-AITP operation becomes visible rather than implicit.
 - Runtime may materialize one thin closed-loop control step, but it must never claim that heavy execution already happened unless a returned execution result artifact is present.
 - Runtime should auto-promote theory-formal candidates only after explicit coverage and consensus artifacts exist.
+- Runtime should also require a regression gate, blocker clearance, and split honesty before theory-formal auto-promotion.
 - Runtime should keep wide or mixed candidates out of Layer 2 by splitting or parking them first.
 - Runtime may spawn independent follow-up subtopics when cited-literature gaps are explicit enough to deserve a fresh `L0 -> L1 -> L3 -> L4 -> L2` route.
+- Runtime should materialize a follow-up return packet for those child subtopics so reintegration is explicit rather than conversational.
+- Runtime should detect when a child return packet is no longer `pending_reentry` and queue parent-side reintegration automatically.
+- Runtime should also queue topic-completion refreshes and Lean-bridge refreshes when the latest run has outgrown the currently materialized shell surfaces.
 - Runtime should expose proof-completion review, gap recovery, family fusion, and verification-bridge triggers as explicit deeper reads when those situations arise.
 
 ## Minimal required pointers
@@ -181,6 +190,12 @@ Bounded literature follow-up search can be auto-run from emitted query records:
 
 Those search receipts may then spawn independent follow-up subtopics and may
 reactivate parked deferred fragments when the declared conditions are satisfied.
+When follow-up subtopics are spawned, the child runtime root should also receive
+a durable return packet naming the parent gaps, follow-up tasks, and
+reintegration targets. That packet should also declare the expected return
+route, acceptable return shapes, unresolved return statuses, and the explicit
+rule that the child branch must reintegrate through writeback artifacts rather
+than by silently patching the parent topic.
 
 When a capability gap needs external skill discovery, add one or more queries:
 
@@ -223,6 +238,9 @@ Store summaries, stage decisions, and exact file pointers.
 
 Use `runtime/CONTROL_NOTE_CONTRACT.md` when a human wants to redirect or pause
 the loop through a durable steering note.
+
+Use `RESEARCH_EXECUTION_GUARDRAILS.md` when the selected action starts to drift
+scope, mutate deliverables, or confuse proxy-success with real validation.
 
 Use `runtime/DECLARATIVE_RUNTIME_CONTRACTS.md` when you want queue/decision
 selection to be authored explicitly instead of inferred.

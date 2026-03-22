@@ -50,6 +50,7 @@ AITP exists to enforce the parts that are not cheap:
 | Charter | Defines what counts as disciplined AI-assisted theoretical-physics work | `docs/CHARTER.md`, `docs/AGENT_MODEL.md` |
 | Protocol contracts | Defines durable artifacts, promotion gates, and trust boundaries | `contracts/`, `schemas/` |
 | Standalone kernel | Ships the public `L0-L4` runtime, audits, and CLI/MCP surfaces | `research/knowledge-hub/` |
+| Research-flow guardrails | Forces explicit research contracts, bounded action packets, and anti-proxy verification rules | `research/knowledge-hub/RESEARCH_EXECUTION_GUARDRAILS.md` |
 | Adapters | Makes Codex, OpenClaw, Claude Code, and OpenCode enter through AITP | `adapters/`, `docs/INSTALL_*.md` |
 
 ## Quick Start
@@ -180,8 +181,33 @@ aitp install-agent --agent codex --scope user
 # open a new topic
 aitp bootstrap --topic "<topic>" --human-request "<task>"
 
+# open a new topic with an explicit shell contract
+aitp new-topic --topic "<topic>" --question "<bounded question>" --mode formal_theory
+
 # do one bounded unit of work
 aitp loop --topic-slug <topic_slug> --human-request "<task>" --max-auto-steps 1
+
+# inspect the shell before continuing
+aitp status --topic-slug <topic_slug>
+aitp next --topic-slug <topic_slug>
+
+# run one bounded shell-driven step
+aitp work --topic-slug <topic_slug> --question "<task>" --max-auto-steps 1
+
+# switch the active validation lane
+aitp verify --topic-slug <topic_slug> --mode proof
+
+# assess topic-completion and follow-up return debt
+aitp complete-topic --topic-slug <topic_slug>
+
+# let a child topic publish its return packet before parent reintegration
+aitp update-followup-return --topic-slug <child_topic_slug> --return-status recovered_units --return-artifact-path <artifact>
+
+# reintegrate a bounded child follow-up topic
+aitp reintegrate-followup --topic-slug <parent_topic_slug> --child-topic-slug <child_topic_slug>
+
+# export Lean-ready declaration packets
+aitp lean-bridge --topic-slug <topic_slug> --candidate-id <candidate_id>
 
 # continue an existing topic without re-bootstrap
 aitp resume --topic-slug <topic_slug> --human-request "<task>"
@@ -195,9 +221,34 @@ aitp promote --topic-slug <topic_slug> --candidate-id <candidate_id> --target-ba
 Operating rule:
 
 - `bootstrap` opens the topic shell;
+- `new-topic`, `status`, `next`, `work`, and `verify` expose a GPD-like command shell without changing the AITP layer model;
 - `loop` and `resume` do the actual bounded work;
+- `update-followup-return` records the child-side return contract before parent reintegration;
+- `complete-topic` now reports an explicit regression manifest and completion-gate checks;
+- `lean-bridge` now exports declaration packets together with proof-obligation and proof-state sidecars;
+- the runtime queue now also auto-appends refresh actions for topic completion, Lean bridge, and child-follow-up reintegration when those shell surfaces go stale;
 - `L3` and `L4` are normal destinations for exploratory output;
 - `L2` requires an explicit approval artifact.
+
+Every materialized topic now also refreshes a small set of durable shell
+surfaces under `runtime/topics/<topic_slug>/`:
+
+- `research_question.contract.{json,md}`
+- `validation_contract.active.{json,md}`
+- `topic_dashboard.md`
+- `promotion_readiness.md`
+- `gap_map.md`
+- `topic_completion.{json,md}`
+- `lean_bridge.active.{json,md}`
+- `followup_reintegration.{jsonl,md}`
+
+These surfaces are not decorative notes. They are the bounded shell that tells
+an agent what the active question is, what must be validated, whether the topic
+is promotion-ready, and whether the honest next move is to return to `L0` for
+missing sources or prior-work recovery.
+
+They also expose whether child follow-up topics have been reintegrated and what
+the current Lean-ready declaration/export debt looks like.
 
 ## One Protocol, Three Research Lanes
 
@@ -240,6 +291,8 @@ It is not trusted to:
 
 - redefine the charter;
 - silently merge evidence, derivation, and conjecture;
+- silently redefine scope, observables, or deliverables mid-run;
+- substitute polished prose or missing execution evidence for declared checks;
 - promote material into `L2` without an explicit gate.
 
 ## Repository Map

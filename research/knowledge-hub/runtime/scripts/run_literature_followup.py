@@ -44,6 +44,37 @@ def append_jsonl(path: Path, row: dict) -> None:
         handle.write(json.dumps(row, ensure_ascii=True) + "\n")
 
 
+def dedupe_strings(values: list[str] | None) -> list[str]:
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for value in values or []:
+        stripped = str(value).strip()
+        if stripped and stripped not in seen:
+            seen.add(stripped)
+            deduped.append(stripped)
+    return deduped
+
+
+def receipt_matches_existing(row: dict, args: argparse.Namespace) -> bool:
+    if row.get("query") != args.query or row.get("target_source_type") != args.target_source_type:
+        return False
+    if dedupe_strings(list(row.get("parent_gap_ids") or [])) != dedupe_strings(args.parent_gap_id):
+        return False
+    existing_parent_followups = dedupe_strings(
+        list(row.get("parent_followup_task_ids") or [])
+        + ([str(row.get("parent_followup_task_id") or "").strip()] if str(row.get("parent_followup_task_id") or "").strip() else [])
+    )
+    if existing_parent_followups != dedupe_strings(args.parent_followup_task_id):
+        return False
+    if dedupe_strings(list(row.get("reentry_targets") or [])) != dedupe_strings(args.reentry_target):
+        return False
+    if dedupe_strings(list(row.get("supporting_regression_question_ids") or [])) != dedupe_strings(
+        args.supporting_regression_question_id
+    ):
+        return False
+    return row.get("status") == "completed"
+
+
 def fetch_url(url: str, timeout: int = 60) -> bytes:
     with urllib.request.urlopen(url, timeout=timeout) as response:
         return response.read()
@@ -82,6 +113,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--priority", default="medium")
     parser.add_argument("--target-source-type", default="paper")
     parser.add_argument("--max-results", type=int, default=2)
+    parser.add_argument("--parent-gap-id", action="append", default=[])
+    parser.add_argument("--parent-followup-task-id", action="append", default=[])
+    parser.add_argument("--reentry-target", action="append", default=[])
+    parser.add_argument("--supporting-regression-question-id", action="append", default=[])
     parser.add_argument("--updated-by", default="openclaw")
     return parser
 
@@ -93,11 +128,7 @@ def main() -> int:
     receipts_path = validation_run_root / "literature_followup_receipts.jsonl"
 
     for row in read_jsonl(receipts_path):
-        if (
-            row.get("query") == args.query
-            and row.get("target_source_type") == args.target_source_type
-            and row.get("status") == "completed"
-        ):
+        if receipt_matches_existing(row, args):
             print(json.dumps(row, ensure_ascii=True))
             return 0
 
@@ -131,6 +162,10 @@ def main() -> int:
         "query": args.query,
         "priority": args.priority,
         "target_source_type": args.target_source_type,
+        "parent_gap_ids": dedupe_strings(args.parent_gap_id),
+        "parent_followup_task_ids": dedupe_strings(args.parent_followup_task_id),
+        "reentry_targets": dedupe_strings(args.reentry_target),
+        "supporting_regression_question_ids": dedupe_strings(args.supporting_regression_question_id),
         "updated_at": now_iso(),
         "updated_by": args.updated_by,
         "status": "completed" if matches else "no_matches",

@@ -276,6 +276,9 @@ class AITPServiceTests(unittest.TestCase):
                 "auto_promotion_domains": ["theory-formal"] if allows_auto else [],
                 "auto_promotion_requires_coverage_audit": True,
                 "auto_promotion_requires_multi_agent_consensus": True,
+                "auto_promotion_requires_regression_gate": True,
+                "auto_promotion_requires_split_clearance": True,
+                "auto_promotion_requires_gap_honesty": True,
                 "default_source_type": "local_note",
             },
             "l0_registration": {
@@ -667,27 +670,174 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["human_request"], "run a bounded public protocol check")
         self.assertEqual(payload["priority_rules"][0]["source"], "control_note_or_decision_contract")
         self.assertEqual(payload["action_queue_surface"]["queue_source"], "heuristic")
+        self.assertEqual(payload["active_research_contract"]["question_id"], "research_question:demo-topic")
+        self.assertEqual(payload["active_research_contract"]["template_mode"], "formal_theory")
         self.assertEqual(payload["backend_bridges"][0]["backend_id"], "backend:formal-theory-note-library")
         self.assertEqual(payload["promotion_gate"]["status"], "approved")
+        self.assertEqual(payload["promotion_readiness"]["status"], "approved")
+        self.assertEqual(payload["open_gap_summary"]["status"], "clear")
+        self.assertEqual(payload["topic_completion"]["status"], "not_assessed")
+        self.assertEqual(payload["lean_bridge"]["status"], "empty")
         self.assertEqual(payload["minimal_execution_brief"]["selected_action_id"], "action:demo-topic:01")
         self.assertEqual(payload["minimal_execution_brief"]["queue_source"], "heuristic")
         self.assertEqual(payload["must_read_now"][0]["path"], "runtime/topics/demo-topic/runtime_protocol.generated.md")
+        self.assertEqual(payload["must_read_now"][1]["path"], "runtime/topics/demo-topic/research_question.contract.md")
+        self.assertEqual(payload["must_read_now"][2]["path"], "runtime/topics/demo-topic/topic_dashboard.md")
+        self.assertEqual(payload["must_read_now"][3]["path"], "runtime/topics/demo-topic/topic_completion.md")
+        self.assertEqual(payload["must_read_now"][4]["path"], "runtime/topics/demo-topic/validation_contract.active.md")
+        self.assertTrue(any(row["path"] == "RESEARCH_EXECUTION_GUARDRAILS.md" for row in payload["must_read_now"]))
         self.assertEqual(payload["escalation_triggers"][1]["trigger"], "promotion_intent")
         self.assertTrue(any(row["trigger"] == "decision_override_present" for row in payload["escalation_triggers"]))
         self.assertTrue(any(row["slice"] == "current_execution_lane" for row in payload["recommended_protocol_slices"]))
+        self.assertTrue(
+            any("proxy-success" in row or "missing execution evidence" in row for row in payload["active_hard_constraints"])
+        )
+        self.assertTrue(any("return to L0" in row for row in payload["active_hard_constraints"]))
         self.assertEqual(
             payload["backend_bridges"][0]["l0_registration_script"],
             "source-layer/scripts/register_local_note_source.py",
         )
+        self.assertTrue(
+            any(row["surface"] == "research_question_contract" for row in payload["editable_protocol_surfaces"])
+        )
+        self.assertTrue(any(row["surface"] == "topic_completion" for row in payload["editable_protocol_surfaces"]))
+        self.assertTrue(any(row["surface"] == "lean_bridge" for row in payload["editable_protocol_surfaces"]))
         note_text = protocol_note.read_text(encoding="utf-8")
+        self.assertIn("## Active research contract", note_text)
+        self.assertIn("## Promotion readiness", note_text)
+        self.assertIn("## Open gap summary", note_text)
+        self.assertIn("## Topic completion", note_text)
+        self.assertIn("## Lean bridge", note_text)
         self.assertIn("## Minimal execution brief", note_text)
         self.assertIn("## Must read now", note_text)
         self.assertIn("## Escalate only when triggered", note_text)
         self.assertIn("`promotion_intent` status=`active`", note_text)
         self.assertIn("Prefer durable `next_actions.contract.json`", note_text)
+        self.assertIn("RESEARCH_EXECUTION_GUARDRAILS.md", note_text)
         self.assertIn("backend:formal-theory-note-library", note_text)
         self.assertIn("## L2 promotion gate", note_text)
         self.assertIn("source-layer/scripts/register_local_note_source.py", note_text)
+
+    def test_ensure_topic_shell_surfaces_writes_contracts_dashboard_and_gap_map(self) -> None:
+        runtime_root = self._write_runtime_state()
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "2026-03-13-demo",
+                    "resume_stage": "L1",
+                    "research_mode": "formal_derivation",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Recover the cited derivation before continuing the proof.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:l0",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:l0",
+                    "status": "pending",
+                    "action_type": "l0_source_expansion",
+                    "summary": "Recover the cited source chain and prior-work references.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.ensure_topic_shell_surfaces(
+            topic_slug="demo-topic",
+            updated_by="aitp-cli",
+        )
+
+        self.assertTrue(Path(payload["research_question_contract_path"]).exists())
+        self.assertTrue(Path(payload["validation_contract_path"]).exists())
+        self.assertTrue(Path(payload["topic_dashboard_path"]).exists())
+        self.assertTrue(Path(payload["promotion_readiness_path"]).exists())
+        self.assertTrue(Path(payload["gap_map_path"]).exists())
+        self.assertTrue(Path(payload["topic_completion_path"]).exists())
+        self.assertTrue(Path(payload["lean_bridge_path"]).exists())
+        self.assertEqual(payload["research_question_contract"]["research_mode"], "formal_derivation")
+        self.assertEqual(payload["validation_contract"]["validation_mode"], "formal")
+        self.assertEqual(payload["validation_contract"]["status"], "deferred")
+        self.assertTrue(payload["open_gap_summary"]["requires_l0_return"])
+        dashboard_text = Path(payload["topic_dashboard_path"]).read_text(encoding="utf-8")
+        gap_text = Path(payload["gap_map_path"]).read_text(encoding="utf-8")
+        self.assertIn("return to L0", dashboard_text)
+        self.assertIn("return to L0", gap_text)
+
+    def test_topic_status_and_prepare_verification_surface_new_shell_fields(self) -> None:
+        runtime_root = self._write_runtime_state()
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Check the proof obligations for the active topic.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:proof",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:proof",
+                    "status": "pending",
+                    "action_type": "manual_followup",
+                    "summary": "Complete the next proof fragment review.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        status_payload = self.service.topic_status(topic_slug="demo-topic")
+        self.assertEqual(status_payload["topic_slug"], "demo-topic")
+        self.assertIn("active_research_contract", status_payload)
+        self.assertIn("topic_completion", status_payload)
+        self.assertIn("lean_bridge", status_payload)
+        self.assertTrue(
+            any(row["path"].endswith("research_question.contract.md") for row in status_payload["must_read_now"])
+        )
+
+        verification_payload = self.service.prepare_verification(
+            topic_slug="demo-topic",
+            mode="proof",
+        )
+        self.assertEqual(verification_payload["verification_mode"], "proof")
+        self.assertEqual(verification_payload["validation_contract"]["validation_mode"], "formal")
+        self.assertIn("proof or derivation step", verification_payload["validation_contract"]["verification_focus"])
+        self.assertTrue(Path(verification_payload["runtime_protocol"]["runtime_protocol_path"]).exists())
 
     def test_operation_trust_registry_blocks_until_gate_is_satisfied(self) -> None:
         self._write_runtime_state()
@@ -757,6 +907,7 @@ class AITPServiceTests(unittest.TestCase):
             "COMMUNICATION_CONTRACT.md",
             "AUTONOMY_AND_OPERATOR_MODEL.md",
             "L2_CONSULTATION_PROTOCOL.md",
+            "RESEARCH_EXECUTION_GUARDRAILS.md",
             "PROOF_OBLIGATION_PROTOCOL.md",
             "GAP_RECOVERY_PROTOCOL.md",
             "FAMILY_FUSION_PROTOCOL.md",
@@ -770,6 +921,7 @@ class AITPServiceTests(unittest.TestCase):
 
         self.assertEqual(payload["layer_roots"]["L2"]["status"], "present")
         self.assertEqual(payload["protocol_contracts"]["layer_map"]["status"], "present")
+        self.assertEqual(payload["protocol_contracts"]["research_execution_guardrails"]["status"], "present")
         self.assertEqual(payload["protocol_contracts"]["proof_obligation_protocol"]["status"], "present")
         self.assertEqual(payload["protocol_contracts"]["gap_recovery_protocol"]["status"], "present")
         self.assertEqual(payload["protocol_contracts"]["family_fusion_protocol"]["status"], "present")
@@ -829,14 +981,20 @@ class AITPServiceTests(unittest.TestCase):
             critical_unit_recall=1.0,
             missing_anchor_count=0,
             skeptic_major_gap_count=0,
+            supporting_regression_question_ids=["regression_question:demo-definition"],
+            supporting_oracle_ids=["question_oracle:demo-definition"],
+            supporting_regression_run_ids=["regression_run:demo-definition"],
         )
 
         self.assertEqual(payload["coverage_status"], "pass")
+        self.assertEqual(payload["regression_gate_status"], "pass")
+        self.assertEqual(payload["topic_completion_status"], "promotion-ready")
         self.assertTrue(Path(payload["paths"]["structure_map"]).exists())
         self.assertTrue(Path(payload["paths"]["coverage_ledger"]).exists())
         self.assertTrue(Path(payload["paths"]["notation_table"]).exists())
         self.assertTrue(Path(payload["paths"]["derivation_graph"]).exists())
         self.assertTrue(Path(payload["paths"]["agent_consensus"]).exists())
+        self.assertTrue(Path(payload["paths"]["regression_gate"]).exists())
 
     def test_promote_candidate_merges_exact_title_collision(self) -> None:
         self._write_runtime_state()
@@ -965,6 +1123,9 @@ class AITPServiceTests(unittest.TestCase):
             critical_unit_recall=1.0,
             missing_anchor_count=0,
             skeptic_major_gap_count=0,
+            supporting_regression_question_ids=["regression_question:demo-definition"],
+            supporting_oracle_ids=["question_oracle:demo-definition"],
+            supporting_regression_run_ids=["regression_run:demo-definition"],
         )
 
         payload = self.service.auto_promote_candidate(
@@ -980,6 +1141,7 @@ class AITPServiceTests(unittest.TestCase):
         unit_payload = json.loads(Path(payload["target_unit_path"]).read_text(encoding="utf-8"))
         self.assertEqual(unit_payload["canonical_layer"], "L2_auto")
         self.assertEqual(unit_payload["review_mode"], "ai_auto")
+        self.assertEqual(unit_payload["topic_completion_status"], "promotion-ready")
         self.assertIsInstance(unit_payload["review_artifacts"], list)
         self.assertIn("candidate_id=candidate:demo-candidate", unit_payload["review_artifacts"])
         candidate_rows = [
@@ -988,6 +1150,63 @@ class AITPServiceTests(unittest.TestCase):
             if line.strip()
         ]
         self.assertEqual(candidate_rows[0]["status"], "auto_promoted")
+
+    def test_auto_promote_candidate_requires_passing_regression_gate(self) -> None:
+        self._write_runtime_state()
+        self._write_candidate()
+        self._write_tpkn_backend_card(allows_auto=True)
+        tpkn_root = self._write_fake_tpkn_repo()
+        self.service.audit_theory_coverage(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+            source_sections=["sec:intro"],
+            covered_sections=["sec:intro"],
+            consensus_status="unanimous",
+            critical_unit_recall=1.0,
+            missing_anchor_count=0,
+            skeptic_major_gap_count=0,
+        )
+
+        with self.assertRaisesRegex(PermissionError, "regression_gate.json"):
+            self.service.auto_promote_candidate(
+                topic_slug="demo-topic",
+                candidate_id="candidate:demo-candidate",
+                target_backend_root=str(tpkn_root),
+                domain="demo-domain",
+                subdomain="demo-subdomain",
+            )
+
+    def test_auto_promote_candidate_blocks_on_split_or_gap_honesty(self) -> None:
+        self._write_runtime_state()
+        self._write_candidate()
+        self._write_tpkn_backend_card(allows_auto=True)
+        tpkn_root = self._write_fake_tpkn_repo()
+        self.service.audit_theory_coverage(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+            source_sections=["sec:intro"],
+            covered_sections=["sec:intro"],
+            consensus_status="unanimous",
+            critical_unit_recall=1.0,
+            missing_anchor_count=0,
+            skeptic_major_gap_count=0,
+            supporting_regression_question_ids=["regression_question:demo-definition"],
+            supporting_oracle_ids=["question_oracle:demo-definition"],
+            supporting_regression_run_ids=["regression_run:demo-definition"],
+            promotion_blockers=["Need a narrower proof split."],
+            split_required=True,
+            cited_recovery_required=True,
+            topic_completion_status="promotion-blocked",
+        )
+
+        with self.assertRaisesRegex(PermissionError, "split clearance"):
+            self.service.auto_promote_candidate(
+                topic_slug="demo-topic",
+                candidate_id="candidate:demo-candidate",
+                target_backend_root=str(tpkn_root),
+                domain="demo-domain",
+                subdomain="demo-subdomain",
+            )
 
     def test_apply_candidate_split_contract_creates_children_and_deferred_buffer(self) -> None:
         self._write_runtime_state()
@@ -1170,6 +1389,10 @@ class AITPServiceTests(unittest.TestCase):
                     "topic_slug": "demo-topic",
                     "run_id": "2026-03-13-demo",
                     "query": "demo follow-up gap",
+                    "parent_gap_ids": ["open_gap:demo-gap"],
+                    "parent_followup_task_ids": ["followup_source_task:demo-followup"],
+                    "reentry_targets": ["theorem:demo-theorem"],
+                    "supporting_regression_question_ids": ["regression_question:demo-question"],
                     "target_source_type": "paper",
                     "status": "completed",
                     "matches": [
@@ -1198,6 +1421,395 @@ class AITPServiceTests(unittest.TestCase):
         ]
         self.assertEqual(ledger_rows[0]["parent_topic_slug"], "demo-topic")
         self.assertEqual(ledger_rows[0]["arxiv_id"], "1510.07698v1")
+        return_packet_path = Path(ledger_rows[0]["return_packet_path"])
+        self.assertTrue(return_packet_path.exists())
+        return_packet = json.loads(return_packet_path.read_text(encoding="utf-8"))
+        package_root = Path(__file__).resolve().parents[1]
+        packet_schema = json.loads(
+            (
+                package_root
+                / "runtime"
+                / "schemas"
+                / "followup-return-packet.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        Draft202012Validator(packet_schema).validate(return_packet)
+        self.assertEqual(return_packet["parent_gap_ids"], ["open_gap:demo-gap"])
+        self.assertEqual(return_packet["reentry_targets"], ["theorem:demo-theorem"])
+        self.assertEqual(return_packet["expected_return_route"], "L0->L1->L3->L4->L2")
+        self.assertIn("recovered_units", return_packet["acceptable_return_shapes"])
+        self.assertTrue(return_packet["reintegration_requirements"]["must_not_patch_parent_directly"])
+        self.assertTrue((return_packet_path.with_suffix(".md")).exists())
+
+    def test_reintegrate_followup_subtopic_writes_receipt_and_updates_parent_row(self) -> None:
+        service = _FollowupStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)
+        self._write_runtime_state()
+        receipts_path = (
+            self.kernel_root
+            / "validation"
+            / "topics"
+            / "demo-topic"
+            / "runs"
+            / "2026-03-13-demo"
+            / "literature_followup_receipts.jsonl"
+        )
+        receipts_path.parent.mkdir(parents=True, exist_ok=True)
+        receipts_path.write_text(
+            json.dumps(
+                {
+                    "receipt_id": "literature-followup:demo-topic:q2",
+                    "topic_slug": "demo-topic",
+                    "run_id": "2026-03-13-demo",
+                    "query": "recover the missing proof background",
+                    "parent_gap_ids": ["open_gap:proof-background"],
+                    "parent_followup_task_ids": ["followup_source_task:proof-background"],
+                    "reentry_targets": ["theorem:demo-main"],
+                    "supporting_regression_question_ids": ["regression_question:demo-main"],
+                    "target_source_type": "paper",
+                    "status": "completed",
+                    "matches": [{"arxiv_id": "1510.07698v1", "title": "Topological Phases of Matter"}],
+                },
+                ensure_ascii=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        spawned = service.spawn_followup_subtopics(topic_slug="demo-topic", updated_by="aitp-cli")
+        child_topic_slug = spawned["spawned_subtopics"][0]["child_topic_slug"]
+        followup_rows = [
+            json.loads(line)
+            for line in (self.kernel_root / "runtime" / "topics" / "demo-topic" / "followup_subtopics.jsonl").read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        service.update_followup_return_packet(
+            topic_slug=child_topic_slug,
+            return_status="recovered_units",
+            accepted_return_shape="recovered_units",
+            return_summary="Recovered the missing proof background and bounded notation context.",
+            return_artifact_paths=["feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl"],
+            updated_by="aitp-cli",
+        )
+
+        payload = service.reintegrate_followup_subtopic(
+            topic_slug="demo-topic",
+            child_topic_slug=child_topic_slug,
+            updated_by="aitp-cli",
+        )
+
+        self.assertEqual(payload["parent_followup_status"], "reintegrated")
+        self.assertTrue(Path(payload["followup_reintegration_path"]).exists())
+        updated_rows = [
+            json.loads(line)
+            for line in (self.kernel_root / "runtime" / "topics" / "demo-topic" / "followup_subtopics.jsonl").read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        self.assertEqual(updated_rows[0]["status"], "reintegrated")
+        reintegration_rows = [
+            json.loads(line)
+            for line in Path(payload["followup_reintegration_path"]).read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        self.assertEqual(reintegration_rows[0]["return_status"], "recovered_units")
+        self.assertEqual(reintegration_rows[0]["child_topic_completion_status"], "not_assessed")
+        self.assertTrue(Path(payload["runtime_protocol"]["runtime_protocol_path"]).exists())
+
+    def test_reintegrate_followup_subtopic_writes_gap_writeback_for_unresolved_return(self) -> None:
+        service = _FollowupStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)
+        self._write_runtime_state()
+        receipts_path = (
+            self.kernel_root
+            / "validation"
+            / "topics"
+            / "demo-topic"
+            / "runs"
+            / "2026-03-13-demo"
+            / "literature_followup_receipts.jsonl"
+        )
+        receipts_path.parent.mkdir(parents=True, exist_ok=True)
+        receipts_path.write_text(
+            json.dumps(
+                {
+                    "receipt_id": "literature-followup:demo-topic:q4",
+                    "topic_slug": "demo-topic",
+                    "run_id": "2026-03-13-demo",
+                    "query": "recover unresolved parity anomaly background",
+                    "parent_gap_ids": ["open_gap:parity-anomaly"],
+                    "parent_followup_task_ids": ["followup_source_task:parity-anomaly"],
+                    "reentry_targets": ["theorem:demo-parity"],
+                    "supporting_regression_question_ids": ["regression_question:demo-parity"],
+                    "target_source_type": "paper",
+                    "status": "completed",
+                    "matches": [{"arxiv_id": "1510.07698v1", "title": "Topological Phases of Matter"}],
+                },
+                ensure_ascii=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        spawned = service.spawn_followup_subtopics(topic_slug="demo-topic", updated_by="aitp-cli")
+        child_topic_slug = spawned["spawned_subtopics"][0]["child_topic_slug"]
+        service.update_followup_return_packet(
+            topic_slug=child_topic_slug,
+            return_status="returned_with_gap",
+            accepted_return_shape="still_unresolved_packet",
+            return_summary="The cited parity-anomaly prerequisite remains unresolved and must go back through L0.",
+            updated_by="aitp-cli",
+        )
+
+        payload = service.reintegrate_followup_subtopic(
+            topic_slug="demo-topic",
+            child_topic_slug=child_topic_slug,
+            updated_by="aitp-cli",
+        )
+
+        self.assertEqual(payload["parent_followup_status"], "returned_with_gap")
+        self.assertTrue(Path(payload["followup_gap_writeback_path"]).exists())
+        writeback_rows = [
+            json.loads(line)
+            for line in Path(payload["followup_gap_writeback_path"]).read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        self.assertEqual(writeback_rows[0]["parent_gap_ids"], ["open_gap:parity-anomaly"])
+        runtime_bundle = json.loads(
+            Path(payload["runtime_protocol"]["runtime_protocol_path"]).read_text(encoding="utf-8")
+        )
+        self.assertEqual(runtime_bundle["open_gap_summary"]["followup_gap_writeback_count"], 1)
+        self.assertIn("open_gap:parity-anomaly", runtime_bundle["open_gap_summary"]["followup_gap_ids"])
+
+    def test_update_followup_return_packet_writes_success_payload_and_schema_validates(self) -> None:
+        service = _FollowupStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)
+        self._write_runtime_state()
+        receipts_path = (
+            self.kernel_root
+            / "validation"
+            / "topics"
+            / "demo-topic"
+            / "runs"
+            / "2026-03-13-demo"
+            / "literature_followup_receipts.jsonl"
+        )
+        receipts_path.parent.mkdir(parents=True, exist_ok=True)
+        receipts_path.write_text(
+            json.dumps(
+                {
+                    "receipt_id": "literature-followup:demo-topic:q3",
+                    "topic_slug": "demo-topic",
+                    "run_id": "2026-03-13-demo",
+                    "query": "recover cited definition",
+                    "parent_gap_ids": ["open_gap:cited-definition"],
+                    "parent_followup_task_ids": ["followup_source_task:cited-definition"],
+                    "reentry_targets": ["definition:demo-main"],
+                    "supporting_regression_question_ids": ["regression_question:demo-main"],
+                    "target_source_type": "paper",
+                    "status": "completed",
+                    "matches": [{"arxiv_id": "1510.07698v1", "title": "Topological Phases of Matter"}],
+                },
+                ensure_ascii=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        spawned = service.spawn_followup_subtopics(topic_slug="demo-topic", updated_by="aitp-cli")
+        child_topic_slug = spawned["spawned_subtopics"][0]["child_topic_slug"]
+
+        payload = service.update_followup_return_packet(
+            topic_slug=child_topic_slug,
+            return_status="resolved_gap_update",
+            accepted_return_shape="resolved_gap_update",
+            return_summary="Recovered the cited definition and bounded the parent reentry target.",
+            child_topic_summary="The child topic now contains the cited-definition recovery path and bounded notes.",
+            return_artifact_paths=["validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo/coverage_ledger.json"],
+            updated_by="aitp-cli",
+        )
+
+        packet_schema = json.loads(
+            (
+                Path(__file__).resolve().parents[1]
+                / "runtime"
+                / "schemas"
+                / "followup-return-packet.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        packet_payload = json.loads(Path(payload["return_packet_path"]).read_text(encoding="utf-8"))
+        Draft202012Validator(packet_schema).validate(packet_payload)
+        self.assertEqual(packet_payload["return_status"], "resolved_gap_update")
+        self.assertEqual(packet_payload["accepted_return_shape"], "resolved_gap_update")
+        self.assertTrue(Path(payload["return_packet_note_path"]).exists())
+
+    def test_assess_topic_completion_and_prepare_lean_bridge_write_durable_artifacts(self) -> None:
+        self._write_runtime_state()
+        self._write_candidate()
+        self.service.audit_theory_coverage(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+            source_sections=["sec:intro", "sec:result"],
+            covered_sections=["sec:intro", "sec:result"],
+            equation_labels=["eq:1"],
+            notation_bindings=[{"symbol": "H", "meaning": "Hamiltonian"}],
+            derivation_nodes=["def:h", "eq:1"],
+            agent_votes=[{"role": "skeptic", "verdict": "no_major_gap", "notes": ""}],
+            consensus_status="unanimous",
+            critical_unit_recall=1.0,
+            missing_anchor_count=0,
+            skeptic_major_gap_count=0,
+            supporting_regression_question_ids=["regression_question:demo-definition"],
+            supporting_oracle_ids=["question_oracle:demo-definition"],
+            supporting_regression_run_ids=["regression_run:demo-definition"],
+        )
+
+        completion = self.service.assess_topic_completion(topic_slug="demo-topic")
+        self.assertEqual(completion["status"], "promotion-ready")
+        self.assertTrue(Path(completion["topic_completion_path"]).exists())
+        self.assertEqual(completion["regression_manifest"]["status"], "ready")
+        self.assertTrue(any(row["check"] == "followup_return_debt_clear" and row["status"] == "pass" for row in completion["completion_gate_checks"]))
+        topic_completion_schema = json.loads(
+            (
+                Path(__file__).resolve().parents[1]
+                / "runtime"
+                / "schemas"
+                / "topic-completion.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        Draft202012Validator(topic_completion_schema).validate(
+            json.loads(Path(completion["topic_completion_path"]).read_text(encoding="utf-8"))
+        )
+
+        lean_bridge = self.service.prepare_lean_bridge(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+        )
+        self.assertEqual(lean_bridge["status"], "ready")
+        self.assertTrue(Path(lean_bridge["lean_bridge_path"]).exists())
+        active_payload = json.loads(Path(lean_bridge["lean_bridge_path"]).read_text(encoding="utf-8"))
+        self.assertEqual(active_payload["packet_count"], 1)
+        packet_path = (
+            self.kernel_root
+            / "validation"
+            / "topics"
+            / "demo-topic"
+            / "runs"
+            / "2026-03-13-demo"
+            / "lean-bridge"
+            / "candidate-demo-candidate"
+            / "lean_ready_packet.json"
+        )
+        self.assertTrue(packet_path.exists())
+        packet_payload = json.loads(packet_path.read_text(encoding="utf-8"))
+        self.assertEqual(packet_payload["status"], "ready")
+        self.assertEqual(packet_payload["declaration_kind"], "def")
+        self.assertEqual(packet_payload["notation_bindings"][0]["symbol"], "H")
+        self.assertEqual(packet_payload["proof_obligation_count"], 0)
+        lean_ready_schema = json.loads(
+            (
+                Path(__file__).resolve().parents[1]
+                / "runtime"
+                / "schemas"
+                / "lean-ready-packet.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        Draft202012Validator(lean_ready_schema).validate(packet_payload)
+        self.assertTrue(
+            (
+                self.kernel_root
+                / "validation"
+                / "topics"
+                / "demo-topic"
+                / "runs"
+                / "2026-03-13-demo"
+                / "lean-bridge"
+                / "candidate-demo-candidate"
+                / "proof_state.json"
+            ).exists()
+        )
+
+    def test_prepare_lean_bridge_marks_packet_needs_refinement_when_theory_packet_is_incomplete(self) -> None:
+        self._write_runtime_state()
+        self._write_candidate()
+
+        lean_bridge = self.service.prepare_lean_bridge(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+        )
+
+        self.assertEqual(lean_bridge["status"], "needs_refinement")
+        packet_path = (
+            self.kernel_root
+            / "validation"
+            / "topics"
+            / "demo-topic"
+            / "runs"
+            / "2026-03-13-demo"
+            / "lean-bridge"
+            / "candidate-demo-candidate"
+            / "lean_ready_packet.json"
+        )
+        packet_payload = json.loads(packet_path.read_text(encoding="utf-8"))
+        self.assertGreater(packet_payload["proof_obligation_count"], 0)
+        self.assertEqual(packet_payload["status"], "needs_refinement")
+
+    def test_execute_auto_actions_supports_topic_completion_and_lean_bridge(self) -> None:
+        topic_slug = "demo-topic"
+        self._write_runtime_state()
+        self._write_candidate()
+        self.service.audit_theory_coverage(
+            topic_slug=topic_slug,
+            candidate_id="candidate:demo-candidate",
+            source_sections=["sec:intro"],
+            covered_sections=["sec:intro"],
+            equation_labels=["eq:1"],
+            notation_bindings=[{"symbol": "H", "meaning": "Hamiltonian"}],
+            derivation_nodes=["def:h"],
+            agent_votes=[{"role": "skeptic", "verdict": "no_major_gap", "notes": ""}],
+            consensus_status="unanimous",
+            critical_unit_recall=1.0,
+            missing_anchor_count=0,
+            skeptic_major_gap_count=0,
+            supporting_regression_question_ids=["regression_question:demo-definition"],
+            supporting_oracle_ids=["question_oracle:demo-definition"],
+            supporting_regression_run_ids=["regression_run:demo-definition"],
+        )
+        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        queue_path = runtime_root / "action_queue.jsonl"
+        queue_path.write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:topic-completion",
+                    "status": "pending",
+                    "auto_runnable": True,
+                    "action_type": "assess_topic_completion",
+                    "handler_args": {"run_id": "2026-03-13-demo"},
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n"
+            + json.dumps(
+                {
+                    "action_id": "action:demo-topic:lean-bridge",
+                    "status": "pending",
+                    "auto_runnable": True,
+                    "action_type": "prepare_lean_bridge",
+                    "handler_args": {"run_id": "2026-03-13-demo"},
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service._execute_auto_actions(
+            topic_slug=topic_slug,
+            updated_by="aitp-cli",
+            max_auto_steps=2,
+            default_skill_queries=None,
+        )
+
+        self.assertEqual(len(payload["executed"]), 2)
+        self.assertEqual(payload["executed"][0]["status"], "completed")
+        self.assertEqual(payload["executed"][1]["status"], "completed")
+        self.assertTrue((runtime_root / "topic_completion.json").exists())
+        self.assertTrue((runtime_root / "lean_bridge.active.json").exists())
 
     def test_execute_auto_actions_supports_generic_runtime_handler(self) -> None:
         topic_slug = "demo-topic"

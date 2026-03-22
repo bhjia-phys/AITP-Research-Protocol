@@ -21,6 +21,8 @@ DEFERRED_BUFFER_FILENAME = "deferred_candidates.json"
 DEFERRED_BUFFER_NOTE_FILENAME = "deferred_candidates.md"
 FOLLOWUP_SUBTOPICS_FILENAME = "followup_subtopics.jsonl"
 FOLLOWUP_SUBTOPICS_NOTE_FILENAME = "followup_subtopics.md"
+TOPIC_COMPLETION_FILENAME = "topic_completion.json"
+LEAN_BRIDGE_ACTIVE_FILENAME = "lean_bridge.active.json"
 
 
 def now_iso() -> str:
@@ -67,6 +69,16 @@ def read_jsonl(path: Path) -> list[dict]:
         if line:
             rows.append(json.loads(line))
     return rows
+
+
+def as_bool(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    if isinstance(value, (int, float)):
+        return bool(value)
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
 
 def relative_path(path: Path | None, root: Path) -> str | None:
@@ -149,6 +161,10 @@ def classify_action(summary: str) -> tuple[str, bool]:
         return "reactivate_deferred_candidate", True
     if "follow-up subtopic" in lowered or "followup subtopic" in lowered:
         return "spawn_followup_subtopics", True
+    if "topic-completion" in lowered or "topic completion" in lowered:
+        return "assess_topic_completion", True
+    if "lean bridge" in lowered or "formalization ready" in lowered or "lean-ready" in lowered:
+        return "prepare_lean_bridge", True
     if "auto-promote" in lowered or "l2_auto" in lowered:
         return "auto_promote_candidate", True
     if "conformance" in lowered:
@@ -346,9 +362,24 @@ def auto_promotion_actions(knowledge_root: Path, topic_state: dict, queue_meta: 
         )
         coverage_payload = load_json(packet_root / "coverage_ledger.json") or {}
         consensus_payload = load_json(packet_root / "agent_consensus.json") or {}
+        regression_payload = load_json(packet_root / "regression_gate.json") or {}
         if str(coverage_payload.get("status") or "") != "pass":
             continue
         if str(consensus_payload.get("status") or "") != "ready":
+            continue
+        if policy.get("require_regression_gate_pass", True) and str(regression_payload.get("status") or "") != "pass":
+            continue
+        if policy.get("block_when_split_required", True) and (
+            as_bool(row.get("split_required")) or as_bool(regression_payload.get("split_required"))
+        ):
+            continue
+        if policy.get("block_when_promotion_blockers_present", True) and (
+            list(row.get("promotion_blockers") or []) or list(regression_payload.get("promotion_blockers") or [])
+        ):
+            continue
+        if policy.get("block_when_cited_recovery_required", True) and (
+            as_bool(row.get("cited_recovery_required")) or as_bool(regression_payload.get("cited_recovery_required"))
+        ):
             continue
         actions.append(
             {
@@ -395,6 +426,7 @@ def followup_subtopic_actions(knowledge_root: Path, topic_state: dict, queue_met
         for value in (policy.get("spawn_target_source_types") or [])
         if str(value).strip()
     }
+    bounded_gap_required = bool(policy.get("bounded_gap_required"))
     max_subtopics = int(policy.get("max_subtopics_per_receipt") or 2)
     actions: list[dict] = []
     for receipt in read_jsonl(receipts_path):
@@ -402,6 +434,14 @@ def followup_subtopic_actions(knowledge_root: Path, topic_state: dict, queue_met
         if allowed_source_types and target_source_type not in allowed_source_types:
             continue
         if str(receipt.get("status") or "") != "completed":
+            continue
+        if bounded_gap_required and not (
+            list(receipt.get("parent_gap_ids") or [])
+            or list(receipt.get("parent_followup_task_ids") or [])
+            or str(receipt.get("parent_followup_task_id") or "").strip()
+            or list(receipt.get("reentry_targets") or [])
+            or list(receipt.get("supporting_regression_question_ids") or [])
+        ):
             continue
         match_count = 0
         for match in list(receipt.get("matches") or [])[:max_subtopics]:
@@ -436,6 +476,161 @@ def followup_subtopic_actions(knowledge_root: Path, topic_state: dict, queue_met
             }
         )
     return actions
+
+
+def followup_reintegration_actions(knowledge_root: Path, topic_state: dict, queue_meta: dict) -> list[dict]:
+    policy = (load_runtime_policy(knowledge_root).get("followup_subtopic_policy") or {})
+    if not policy.get("enabled"):
+        return []
+    run_id = str(topic_state.get("latest_run_id") or "").strip()
+    if not run_id:
+        return []
+    unresolved_statuses = {
+        str(value).strip()
+        for value in (policy.get("unresolved_return_statuses") or [])
+        if str(value).strip()
+    }
+    actions: list[dict] = []
+    for row in read_jsonl(knowledge_root / "runtime" / "topics" / topic_state["topic_slug"] / FOLLOWUP_SUBTOPICS_FILENAME):
+        child_topic_slug = str(row.get("child_topic_slug") or "").strip()
+        if not child_topic_slug:
+            continue
+        if str(row.get("status") or "").strip() == "reintegrated":
+            continue
+        return_packet_path = str(row.get("return_packet_path") or "").strip()
+        if not return_packet_path:
+            continue
+        packet_path = Path(return_packet_path).expanduser()
+        if not packet_path.is_absolute():
+            packet_path = knowledge_root / packet_path
+        return_packet = load_json(packet_path)
+        if return_packet is None:
+            continue
+        return_status = str(return_packet.get("return_status") or "").strip()
+        if not return_status or return_status == "pending_reentry":
+            continue
+        summary_suffix = (
+            "with unresolved gap writeback"
+            if return_status in unresolved_statuses and return_status != "pending_reentry"
+            else "and refresh the parent completion state"
+        )
+        actions.append(
+            {
+                "action_id": f"action:{topic_state['topic_slug']}:reintegrate-followup:{slugify(child_topic_slug)}",
+                "topic_slug": topic_state["topic_slug"],
+                "resume_stage": "L3",
+                "status": "pending",
+                "action_type": "reintegrate_followup_subtopic",
+                "summary": (
+                    f"Reintegrate returned child follow-up topic `{child_topic_slug}` back into the parent topic "
+                    f"{summary_suffix}."
+                ),
+                "auto_runnable": True,
+                "handler": None,
+                "handler_args": {
+                    "run_id": run_id,
+                    "child_topic_slug": child_topic_slug,
+                },
+                "queue_source": "runtime_appended",
+                "declared_contract_path": queue_meta.get("declared_contract_path"),
+            }
+        )
+    return actions
+
+
+def topic_completion_actions(knowledge_root: Path, topic_state: dict, queue_meta: dict) -> list[dict]:
+    policy = (load_runtime_policy(knowledge_root).get("topic_completion_policy") or {})
+    if policy.get("enabled") is False:
+        return []
+    run_id = str(topic_state.get("latest_run_id") or "").strip()
+    if not run_id:
+        return []
+    topic_slug = topic_state["topic_slug"]
+    candidate_rows = read_jsonl(
+        knowledge_root / "feedback" / "topics" / topic_slug / "runs" / run_id / "candidate_ledger.jsonl"
+    )
+    followup_rows = read_jsonl(knowledge_root / "runtime" / "topics" / topic_slug / FOLLOWUP_SUBTOPICS_FILENAME)
+    if not candidate_rows and not followup_rows:
+        return []
+    completion_payload = load_json(knowledge_root / "runtime" / "topics" / topic_slug / TOPIC_COMPLETION_FILENAME) or {}
+    needs_refresh = (
+        str(completion_payload.get("run_id") or "") != run_id
+        or int(completion_payload.get("candidate_count") or -1) != len(candidate_rows)
+        or int(completion_payload.get("followup_subtopic_count") or -1) != len(followup_rows)
+    )
+    if not needs_refresh:
+        return []
+    return [
+        {
+            "action_id": f"action:{topic_slug}:topic-completion",
+            "topic_slug": topic_slug,
+            "resume_stage": "L4",
+            "status": "pending",
+            "action_type": "assess_topic_completion",
+            "summary": "Refresh the topic-completion gate over regression support, blocker clearance, and child follow-up debt.",
+            "auto_runnable": True,
+            "handler": None,
+            "handler_args": {"run_id": run_id},
+            "queue_source": "runtime_appended",
+            "declared_contract_path": queue_meta.get("declared_contract_path"),
+        }
+    ]
+
+
+def lean_bridge_actions(knowledge_root: Path, topic_state: dict, queue_meta: dict) -> list[dict]:
+    policy = (load_runtime_policy(knowledge_root).get("lean_bridge_policy") or {})
+    if policy.get("enabled") is False:
+        return []
+    run_id = str(topic_state.get("latest_run_id") or "").strip()
+    if not run_id:
+        return []
+    topic_slug = topic_state["topic_slug"]
+    allowed_types = {
+        str(value).strip()
+        for value in (policy.get("trigger_candidate_types") or [])
+        if str(value).strip()
+    }
+    candidate_rows = read_jsonl(
+        knowledge_root / "feedback" / "topics" / topic_slug / "runs" / run_id / "candidate_ledger.jsonl"
+    )
+    target_candidates = []
+    for row in candidate_rows:
+        candidate_id = str(row.get("candidate_id") or "").strip()
+        candidate_type = str(row.get("candidate_type") or "").strip()
+        if not candidate_id:
+            continue
+        if allowed_types and candidate_type not in allowed_types:
+            continue
+        target_candidates.append(candidate_id)
+    if not target_candidates:
+        return []
+    active_payload = load_json(knowledge_root / "runtime" / "topics" / topic_slug / LEAN_BRIDGE_ACTIVE_FILENAME) or {}
+    packet_candidate_ids = {
+        str(row.get("candidate_id") or "").strip()
+        for row in (active_payload.get("packets") or [])
+        if str(row.get("candidate_id") or "").strip()
+    }
+    needs_refresh = (
+        str(active_payload.get("run_id") or "") != run_id
+        or not set(target_candidates).issubset(packet_candidate_ids)
+    )
+    if not needs_refresh:
+        return []
+    return [
+        {
+            "action_id": f"action:{topic_slug}:lean-bridge",
+            "topic_slug": topic_slug,
+            "resume_stage": "L4",
+            "status": "pending",
+            "action_type": "prepare_lean_bridge",
+            "summary": "Refresh Lean bridge packets and proof-state sidecars for the active bounded formal candidates.",
+            "auto_runnable": True,
+            "handler": None,
+            "handler_args": {"run_id": run_id},
+            "queue_source": "runtime_appended",
+            "declared_contract_path": queue_meta.get("declared_contract_path"),
+        }
+    ]
 
 
 def deferred_reactivation_actions(knowledge_root: Path, topic_state: dict, queue_meta: dict) -> list[dict]:
@@ -829,6 +1024,9 @@ def materialize_action_queue(
         )
 
     queue.extend(followup_subtopic_actions(knowledge_root, topic_state, queue_meta))
+    queue.extend(followup_reintegration_actions(knowledge_root, topic_state, queue_meta))
+    queue.extend(topic_completion_actions(knowledge_root, topic_state, queue_meta))
+    queue.extend(lean_bridge_actions(knowledge_root, topic_state, queue_meta))
     queue.extend(deferred_reactivation_actions(knowledge_root, topic_state, queue_meta))
     queue.extend(auto_promotion_actions(knowledge_root, topic_state, queue_meta))
 

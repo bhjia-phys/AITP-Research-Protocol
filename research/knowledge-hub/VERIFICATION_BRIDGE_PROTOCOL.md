@@ -38,6 +38,7 @@ Every selected verification route should state:
 - the bounded claim or family under review,
 - the chosen lane,
 - required prerequisite artifacts,
+- required topic-completion or regression artifacts when theory-formal promotion is in scope,
 - what counts as success, partial success, or failure,
 - what evidence files must be returned,
 - what writeback is allowed after return,
@@ -54,6 +55,7 @@ A successful bounded verification result does not automatically mean:
 
 Verification returns evidence.
 Promotion remains a separate protocol-governed decision.
+Topic completion and regression-backed blocker clearance remain separate gates.
 
 ## 5. Runtime trigger handshake
 
@@ -72,6 +74,14 @@ If the route is theory-formal rather than numerical, the same trigger still
 applies.
 The selected lane simply points to theory-packet and proof-obligation evidence
 instead of a numeric benchmark.
+
+When Lean-readiness is in scope, the bridge should also expose:
+
+- the active `lean_ready_packet.json`,
+- the attached `proof_obligations.json`,
+- and the local `proof_state.json`
+
+so proof export does not collapse into one opaque "formalization ready" label.
 
 ## 6. Result categories
 

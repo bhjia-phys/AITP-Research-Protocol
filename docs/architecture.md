@@ -103,6 +103,21 @@ The research layers are stabilized by explicit contracts:
 
 These contracts are the public interface between agents and the research state.
 
+For non-trivial topics, the public contracts should also carry enough
+research-flow structure to resist scope drift and fake completion:
+
+- context intake,
+- formalism and notation lock,
+- observables,
+- target claims,
+- deliverables,
+- acceptance tests,
+- forbidden proxies,
+- uncertainty markers.
+
+AITP should borrow that discipline from stronger workflow systems without
+collapsing the layer model into generic project phases.
+
 ## Runtime boundary
 
 The runtime is intentionally narrow.
@@ -118,6 +133,8 @@ It should not:
 
 - invent the research workflow in hidden code,
 - silently upgrade a claim,
+- silently weaken research contracts into prose-only summaries,
+- substitute proxy-success signals for declared validation evidence,
 - replace missing contracts with unrestricted heuristics.
 
 ## Agent adapters

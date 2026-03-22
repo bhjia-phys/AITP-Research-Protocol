@@ -214,6 +214,14 @@ Then either:
 - route `L4 -> L2` if accepted,
 - or route `L4 -> L3` if deferred, rejected, or still unresolved.
 
+For theory-formal candidates, `L4 -> L2_auto` also requires:
+
+- coverage artifacts,
+- consensus artifacts,
+- regression-backed support,
+- explicit blocker clearance,
+- and split/gap honesty.
+
 If the unresolved point is delegated to cited literature rather than local
 re-analysis, AITP may spawn an independent follow-up subtopic that re-enters at
 `L0 -> L1` instead of collapsing the new source into the original topic by
@@ -225,7 +233,8 @@ Write back only:
 - reusable typed units,
 - with explicit provenance,
 - with explicit assumptions and regime,
-- with explicit promotion metadata.
+- with explicit promotion metadata,
+- with explicit regression-backed support when theory-formal auto-promotion is claimed.
 
 Do not write back:
 - run-local TODOs,
@@ -237,6 +246,11 @@ If a candidate is too wide or too mixed:
 - split the reusable child candidates explicitly,
 - park the unresolved fragments into the deferred runtime buffer,
 - only promote the bounded children that actually satisfy the Layer 2 contract.
+
+If a cited follow-up route is spawned:
+- keep the child topic bounded to the named gap,
+- record parent gap ids and reintegration targets explicitly,
+- require the child to return a reintegration packet rather than a prose-only note.
 
 ## 5. Allowed and disallowed edges
 

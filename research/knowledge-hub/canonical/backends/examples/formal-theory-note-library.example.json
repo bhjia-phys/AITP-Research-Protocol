@@ -19,6 +19,9 @@
     "auto_promotion_domains": [],
     "auto_promotion_requires_coverage_audit": true,
     "auto_promotion_requires_multi_agent_consensus": true,
+    "auto_promotion_requires_regression_gate": true,
+    "auto_promotion_requires_split_clearance": true,
+    "auto_promotion_requires_gap_honesty": true,
     "default_source_type": "local_note"
   },
   "l0_registration": {

@@ -126,6 +126,16 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
+def as_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    if isinstance(value, (int, float)):
+        return bool(value)
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
 def write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
@@ -280,6 +290,77 @@ class AITPService:
             "note": runtime_root / "followup_subtopics.md",
         }
 
+    def _followup_return_packet_path(self, topic_slug: str) -> Path:
+        policy = self._load_runtime_policy().get("followup_subtopic_policy") or {}
+        filename = str(policy.get("return_packet_filename") or "followup_return_packet.json").strip()
+        return self._runtime_root(topic_slug) / filename
+
+    def _followup_return_packet_note_path(self, topic_slug: str) -> Path:
+        return self._followup_return_packet_path(topic_slug).with_suffix(".md")
+
+    def _research_question_contract_paths(self, topic_slug: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        return {
+            "json": runtime_root / "research_question.contract.json",
+            "note": runtime_root / "research_question.contract.md",
+        }
+
+    def _validation_contract_paths(self, topic_slug: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        return {
+            "json": runtime_root / "validation_contract.active.json",
+            "note": runtime_root / "validation_contract.active.md",
+        }
+
+    def _topic_dashboard_path(self, topic_slug: str) -> Path:
+        return self._runtime_root(topic_slug) / "topic_dashboard.md"
+
+    def _promotion_readiness_path(self, topic_slug: str) -> Path:
+        return self._runtime_root(topic_slug) / "promotion_readiness.md"
+
+    def _gap_map_path(self, topic_slug: str) -> Path:
+        return self._runtime_root(topic_slug) / "gap_map.md"
+
+    def _followup_gap_writeback_paths(self, topic_slug: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        return {
+            "jsonl": runtime_root / "followup_gap_writeback.jsonl",
+            "note": runtime_root / "followup_gap_writeback.md",
+        }
+
+    def _topic_completion_paths(self, topic_slug: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        return {
+            "json": runtime_root / "topic_completion.json",
+            "note": runtime_root / "topic_completion.md",
+        }
+
+    def _followup_reintegration_paths(self, topic_slug: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        return {
+            "jsonl": runtime_root / "followup_reintegration.jsonl",
+            "note": runtime_root / "followup_reintegration.md",
+        }
+
+    def _lean_bridge_active_paths(self, topic_slug: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        return {
+            "json": runtime_root / "lean_bridge.active.json",
+            "note": runtime_root / "lean_bridge.active.md",
+        }
+
+    def _lean_bridge_packet_paths(self, topic_slug: str, run_id: str, candidate_id: str) -> dict[str, Path]:
+        root = self._validation_run_root(topic_slug, run_id) / "lean-bridge" / slugify(candidate_id)
+        return {
+            "root": root,
+            "json": root / "lean_ready_packet.json",
+            "note": root / "lean_ready_packet.md",
+            "proof_obligations": root / "proof_obligations.json",
+            "proof_obligations_note": root / "proof_obligations.md",
+            "proof_state": root / "proof_state.json",
+            "proof_state_note": root / "proof_state.md",
+        }
+
     def _load_runtime_policy(self) -> dict[str, Any]:
         return read_json(self._runtime_policy_path()) or {}
 
@@ -315,9 +396,1650 @@ class AITPService:
                 deduped.append(stripped)
         return deduped
 
+    def _topic_display_title(self, topic_slug: str) -> str:
+        return topic_slug.replace("-", " ").strip().title() or topic_slug
+
+    def _template_mode_to_research_mode(self, template_mode: str | None) -> str:
+        normalized = str(template_mode or "").strip().lower()
+        mapping = {
+            "formal_theory": "formal_derivation",
+            "toy_numeric": "toy_model",
+            "code_method": "exploratory_general",
+        }
+        return mapping.get(normalized, normalized or "exploratory_general")
+
+    def _research_mode_to_template_mode(self, research_mode: str | None) -> str:
+        normalized = str(research_mode or "").strip().lower()
+        mapping = {
+            "formal_derivation": "formal_theory",
+            "toy_model": "toy_numeric",
+            "first_principles": "toy_numeric",
+            "exploratory_general": "code_method",
+        }
+        return mapping.get(normalized, "code_method")
+
+    def _validation_mode_for_template(self, template_mode: str | None) -> str:
+        normalized = str(template_mode or "").strip().lower()
+        if normalized == "formal_theory":
+            return "formal"
+        if normalized == "toy_numeric":
+            return "numerical"
+        return "hybrid"
+
+    def _coalesce_list(self, existing: Any, defaults: list[str]) -> list[str]:
+        if isinstance(existing, list):
+            values = self._dedupe_strings([str(item) for item in existing])
+            if values:
+                return values
+        return self._dedupe_strings(defaults)
+
+    def _coalesce_string(self, existing: Any, default: str) -> str:
+        resolved = str(existing or "").strip()
+        return resolved or default
+
+    def _slug_to_camel(self, value: str) -> str:
+        cleaned = re.sub(r"[^a-zA-Z0-9]+", " ", str(value or "").strip())
+        parts = [part for part in cleaned.split() if part]
+        if not parts:
+            return "AitpTopic"
+        return "".join(part[:1].upper() + part[1:] for part in parts)
+
+    def _pending_action_context(
+        self,
+        queue_rows: list[dict[str, Any]],
+        decision_surface: dict[str, Any] | None,
+    ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
+        pending_actions = [
+            row for row in queue_rows if str(row.get("status") or "pending") == "pending"
+        ]
+        selected_action_id = str((decision_surface or {}).get("selected_action_id") or "").strip()
+        selected_pending_action: dict[str, Any] | None = None
+        if selected_action_id:
+            selected_pending_action = next(
+                (
+                    row
+                    for row in pending_actions
+                    if str(row.get("action_id") or "").strip() == selected_action_id
+                ),
+                None,
+            )
+        if selected_pending_action is None and pending_actions:
+            selected_pending_action = pending_actions[0]
+        return pending_actions, selected_pending_action
+
     def _fingerprint_payload(self, payload: dict[str, Any]) -> str:
         serialized = json.dumps(payload, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
         return hashlib.sha1(serialized.encode("utf-8")).hexdigest()
+
+    def _derive_topic_completion_status(
+        self,
+        *,
+        requested_status: str | None,
+        coverage_status: str,
+        supporting_regression_question_ids: list[str],
+        supporting_oracle_ids: list[str],
+        supporting_regression_run_ids: list[str],
+        promotion_blockers: list[str],
+        split_required: bool,
+        cited_recovery_required: bool,
+    ) -> str:
+        valid_statuses = {
+            "not_assessed",
+            "gap-aware",
+            "regression-seeded",
+            "regression-stable",
+            "promotion-blocked",
+            "promotion-ready",
+        }
+        normalized_requested = str(requested_status or "").strip()
+        if normalized_requested in valid_statuses:
+            return normalized_requested
+        if promotion_blockers or split_required or cited_recovery_required:
+            return "promotion-blocked"
+        if (
+            coverage_status == "pass"
+            and supporting_regression_question_ids
+            and supporting_oracle_ids
+            and supporting_regression_run_ids
+        ):
+            return "promotion-ready"
+        if supporting_regression_question_ids or supporting_oracle_ids or supporting_regression_run_ids:
+            return "regression-stable"
+        if coverage_status == "pass":
+            return "regression-seeded"
+        return "gap-aware"
+
+    def _build_regression_gate(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str,
+        candidate_id: str,
+        updated_by: str,
+        coverage_status: str,
+        consensus_status: str,
+        topic_completion_status: str,
+        supporting_regression_question_ids: list[str],
+        supporting_oracle_ids: list[str],
+        supporting_regression_run_ids: list[str],
+        promotion_blockers: list[str],
+        split_required: bool,
+        cited_recovery_required: bool,
+        followup_gap_ids: list[str],
+        notes: str,
+    ) -> dict[str, Any]:
+        blocking_reasons: list[str] = []
+        if coverage_status != "pass":
+            blocking_reasons.append("coverage_not_passed")
+        if consensus_status != "ready":
+            blocking_reasons.append("consensus_not_ready")
+        if not supporting_regression_question_ids:
+            blocking_reasons.append("missing_supporting_regression_questions")
+        if not supporting_oracle_ids:
+            blocking_reasons.append("missing_supporting_oracles")
+        if not supporting_regression_run_ids:
+            blocking_reasons.append("missing_supporting_regression_runs")
+        if split_required:
+            blocking_reasons.append("split_required")
+        if promotion_blockers:
+            blocking_reasons.append("promotion_blockers_present")
+        if cited_recovery_required:
+            blocking_reasons.append("cited_recovery_required")
+
+        if not blocking_reasons and topic_completion_status == "promotion-ready":
+            status = "pass"
+        elif split_required or promotion_blockers or cited_recovery_required:
+            status = "blocked"
+        else:
+            status = "needs_revision"
+
+        return {
+            "topic_slug": topic_slug,
+            "run_id": run_id,
+            "candidate_id": candidate_id,
+            "status": status,
+            "coverage_status": coverage_status,
+            "consensus_status": consensus_status,
+            "topic_completion_status": topic_completion_status,
+            "supporting_regression_question_ids": supporting_regression_question_ids,
+            "supporting_oracle_ids": supporting_oracle_ids,
+            "supporting_regression_run_ids": supporting_regression_run_ids,
+            "promotion_blockers": promotion_blockers,
+            "promotion_blockers_cleared": not promotion_blockers and not cited_recovery_required,
+            "split_required": split_required,
+            "split_clearance_status": "blocked" if split_required else "clear",
+            "cited_recovery_required": cited_recovery_required,
+            "followup_gap_ids": followup_gap_ids,
+            "blocking_reasons": blocking_reasons,
+            "updated_at": now_iso(),
+            "updated_by": updated_by,
+            "notes": notes,
+        }
+
+    def _candidate_rows_for_run(self, topic_slug: str, run_id: str | None) -> list[dict[str, Any]]:
+        if not run_id:
+            return []
+        ledger_path = self._candidate_ledger_path(topic_slug, run_id)
+        return [row for row in read_jsonl(ledger_path) if isinstance(row, dict)]
+
+    def _derive_promotion_readiness(
+        self,
+        *,
+        topic_slug: str,
+        latest_run_id: str | None,
+        promotion_gate: dict[str, Any],
+        candidate_rows: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        ready_candidate_ids: list[str] = []
+        blockers: list[str] = []
+        for row in candidate_rows:
+            candidate_id = str(row.get("candidate_id") or "").strip()
+            completion_status = str(row.get("topic_completion_status") or "not_assessed")
+            row_blockers = self._dedupe_strings(list(row.get("promotion_blockers") or []))
+            if as_bool(row.get("split_required")):
+                row_blockers.append(f"{candidate_id or 'candidate'} requires a split contract before promotion.")
+            if as_bool(row.get("cited_recovery_required")):
+                row_blockers.append(
+                    f"{candidate_id or 'candidate'} must return to L0 for cited-source or prior-work recovery."
+                )
+            if (
+                candidate_id
+                and completion_status == "promotion-ready"
+                and not row_blockers
+                and row.get("supporting_regression_question_ids")
+                and row.get("supporting_oracle_ids")
+                and row.get("supporting_regression_run_ids")
+            ):
+                ready_candidate_ids.append(candidate_id)
+            blockers.extend(row_blockers)
+
+        gate_status = str(promotion_gate.get("status") or "not_requested")
+        if gate_status == "promoted":
+            status = "promoted"
+            summary = "Promotion already ran. Inspect the backend writeback artifacts before changing the topic again."
+        elif gate_status == "approved":
+            status = "approved"
+            summary = "A promotion gate is approved. Promotion may proceed against the configured backend."
+        elif gate_status == "pending_human_approval":
+            status = "awaiting_human"
+            summary = "A promotion request is pending human review."
+        elif ready_candidate_ids:
+            status = "ready"
+            summary = "At least one candidate is promotion-ready once the corresponding gate route is selected."
+        elif blockers:
+            status = "blocked"
+            summary = "Promotion is blocked by explicit split, recovery, or regression-support gaps."
+        elif candidate_rows:
+            status = "in_progress"
+            summary = "Candidate shaping exists, but promotion readiness is not yet established."
+        else:
+            status = "no_candidates"
+            summary = "No candidate ledger entries are present for the latest run yet."
+
+        return {
+            "topic_slug": topic_slug,
+            "latest_run_id": latest_run_id or "",
+            "status": status,
+            "gate_status": gate_status,
+            "ready_candidate_ids": self._dedupe_strings(ready_candidate_ids),
+            "blockers": self._dedupe_strings(blockers),
+            "blocker_count": len(self._dedupe_strings(blockers)),
+            "summary": summary,
+        }
+
+    def _derive_open_gap_summary(
+        self,
+        *,
+        topic_slug: str,
+        candidate_rows: list[dict[str, Any]],
+        pending_actions: list[dict[str, Any]],
+        selected_pending_action: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        blockers: list[str] = []
+        followup_gap_ids: list[str] = []
+        followup_gap_writeback_rows = self._load_followup_gap_writeback_rows(topic_slug)
+        capability_gap_active = any(
+            str(row.get("action_type") or "").strip() == "skill_discovery" for row in pending_actions
+        )
+        for row in candidate_rows:
+            candidate_id = str(row.get("candidate_id") or "").strip() or "candidate"
+            for blocker in row.get("promotion_blockers") or []:
+                text = str(blocker).strip()
+                if text:
+                    blockers.append(f"{candidate_id}: {text}")
+            if as_bool(row.get("split_required")):
+                blockers.append(f"{candidate_id}: split into narrower units before promotion.")
+            if as_bool(row.get("cited_recovery_required")):
+                blockers.append(
+                    f"{candidate_id}: return to L0 to recover cited definitions, derivations, or prior-work context."
+                )
+            followup_gap_ids.extend(list(row.get("followup_gap_ids") or []))
+        for row in followup_gap_writeback_rows:
+            child_topic_slug = str(row.get("child_topic_slug") or "").strip() or "followup-child"
+            return_status = str(row.get("return_status") or "").strip() or "returned_with_gap"
+            summary = str(row.get("summary") or "").strip()
+            blockers.append(
+                f"{child_topic_slug}: unresolved child follow-up returned as `{return_status}` and still requires parent gap writeback."
+            )
+            if summary:
+                blockers.append(f"{child_topic_slug}: {summary}")
+            followup_gap_ids.extend(list(row.get("parent_gap_ids") or []))
+
+        selected_action_type = str((selected_pending_action or {}).get("action_type") or "").strip()
+        selected_action_summary = str((selected_pending_action or {}).get("summary") or "").strip().lower()
+        requires_l0_return = any(
+            needle in selected_action_summary
+            for needle in ("source", "reference", "prior work", "background", "literature", "citation")
+        ) or selected_action_type == "l0_source_expansion"
+        requires_l0_return = requires_l0_return or any(
+            "return to l0" in blocker.lower() or "prior-work" in blocker.lower() or "cited" in blocker.lower()
+            for blocker in blockers
+        )
+        requires_l0_return = requires_l0_return or bool(followup_gap_writeback_rows)
+
+        gap_items = self._dedupe_strings(blockers + [str(value) for value in followup_gap_ids if str(value).strip()])
+        if requires_l0_return:
+            status = "return_to_L0"
+            summary = "Understanding or prior-work gaps are active. Recover sources through L0 before smoothing the topic in prose."
+        elif gap_items:
+            status = "open"
+            summary = "Open gap packets or blockers remain. Keep them explicit and do not silently merge them into the narrative."
+        elif capability_gap_active:
+            status = "capability_gap"
+            summary = "The main blocker is a capability/workflow gap. Resolve it explicitly through the runtime queue."
+        else:
+            status = "clear"
+            summary = "No explicit gap packet is currently open."
+
+        return {
+            "topic_slug": topic_slug,
+            "status": status,
+            "gap_count": len(gap_items),
+            "blockers": self._dedupe_strings(blockers),
+            "followup_gap_ids": self._dedupe_strings(followup_gap_ids),
+            "followup_gap_writeback_count": len(followup_gap_writeback_rows),
+            "followup_gap_writeback_child_topics": self._dedupe_strings(
+                [str(row.get("child_topic_slug") or "").strip() for row in followup_gap_writeback_rows if str(row.get("child_topic_slug") or "").strip()]
+            ),
+            "pending_action_summaries": self._dedupe_strings(
+                [str(row.get("summary") or "").strip() for row in pending_actions if str(row.get("summary") or "").strip()]
+            ),
+            "requires_l0_return": requires_l0_return,
+            "capability_gap_active": capability_gap_active,
+            "summary": summary,
+        }
+
+    def _render_research_question_contract_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            "# Active research question contract",
+            "",
+            f"- Topic slug: `{payload['topic_slug']}`",
+            f"- Question id: `{payload['question_id']}`",
+            f"- Title: `{payload['title']}`",
+            f"- Status: `{payload['status']}`",
+            f"- Template mode: `{payload.get('template_mode') or '(missing)'}`",
+            f"- Research mode: `{payload.get('research_mode') or '(missing)'}`",
+            "",
+            "## Question",
+            "",
+            payload["question"],
+            "",
+            "## Scope",
+            "",
+        ]
+        for item in payload.get("scope") or ["(missing)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Assumptions", ""])
+        for item in payload.get("assumptions") or ["(missing)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Non-goals", ""])
+        for item in payload.get("non_goals") or ["(missing)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Context intake", ""])
+        for item in payload.get("context_intake") or ["(missing)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Formalism and notation", ""])
+        for item in payload.get("formalism_and_notation") or ["(missing)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Observables", ""])
+        for item in payload.get("observables") or ["(missing)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Target claims", ""])
+        for item in payload.get("target_claims") or ["(missing)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Deliverables", ""])
+        for item in payload.get("deliverables") or ["(missing)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Acceptance tests", ""])
+        for item in payload.get("acceptance_tests") or ["(missing)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Forbidden proxies", ""])
+        for item in payload.get("forbidden_proxies") or ["(missing)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Uncertainty markers", ""])
+        for item in payload.get("uncertainty_markers") or ["(none)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Target layers", ""])
+        for item in payload.get("target_layers") or ["(missing)"]:
+            lines.append(f"- `{item}`")
+        return "\n".join(lines) + "\n"
+
+    def _render_validation_contract_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            "# Active validation contract",
+            "",
+            f"- Topic slug: `{payload['topic_slug']}`",
+            f"- Validation id: `{payload['validation_id']}`",
+            f"- Status: `{payload['status']}`",
+            f"- Template mode: `{payload.get('template_mode') or '(missing)'}`",
+            f"- Validation mode: `{payload.get('validation_mode') or '(missing)'}`",
+            f"- Verification focus: `{payload.get('verification_focus') or '(missing)'}`",
+            f"- Confidence cap: `{payload.get('confidence_cap') or '(missing)'}`",
+            "",
+            "## Acceptance rule",
+            "",
+            payload["acceptance_rule"],
+            "",
+            "## Rejection rule",
+            "",
+            payload["rejection_rule"],
+            "",
+            "## Target claim ids",
+            "",
+        ]
+        for item in payload.get("target_claim_ids") or ["(missing)"]:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "## Required checks", ""])
+        for item in payload.get("required_checks") or ["(missing)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Oracle artifacts", ""])
+        for item in payload.get("oracle_artifacts") or ["(none)"]:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "## Executed evidence", ""])
+        for item in payload.get("executed_evidence") or ["(none yet)"]:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "## Gap followups", ""])
+        for item in payload.get("gap_followups") or ["(none)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Failure modes", ""])
+        for item in payload.get("failure_modes") or ["(missing)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Artifact lanes", ""])
+        for item in payload.get("artifacts") or ["(missing)"]:
+            lines.append(f"- `{item}`")
+        return "\n".join(lines) + "\n"
+
+    def _render_topic_dashboard_markdown(
+        self,
+        *,
+        topic_slug: str,
+        topic_state: dict[str, Any],
+        selected_pending_action: dict[str, Any] | None,
+        pending_actions: list[dict[str, Any]],
+        research_contract: dict[str, Any],
+        validation_contract: dict[str, Any],
+        promotion_readiness: dict[str, Any],
+        open_gap_summary: dict[str, Any],
+        topic_completion: dict[str, Any],
+        lean_bridge: dict[str, Any],
+    ) -> str:
+        selected_action_summary = str((selected_pending_action or {}).get("summary") or "").strip() or "(none)"
+        lines = [
+            "# Topic dashboard",
+            "",
+            f"- Topic slug: `{topic_slug}`",
+            f"- Title: `{research_contract.get('title') or self._topic_display_title(topic_slug)}`",
+            f"- Resume stage: `{topic_state.get('resume_stage') or '(missing)'}`",
+            f"- Last materialized stage: `{topic_state.get('last_materialized_stage') or '(missing)'}`",
+            f"- Latest run id: `{topic_state.get('latest_run_id') or '(missing)'}`",
+            f"- Research mode: `{research_contract.get('research_mode') or topic_state.get('research_mode') or '(missing)'}`",
+            f"- Current bounded action: `{selected_action_summary}`",
+            f"- Pending action count: `{len(pending_actions)}`",
+            "",
+            "## Active question",
+            "",
+            research_contract.get("question") or "(missing)",
+            "",
+            "## Current status",
+            "",
+            f"- Research contract: `{research_contract.get('status') or '(missing)'}`",
+            f"- Validation contract: `{validation_contract.get('status') or '(missing)'}`",
+            f"- Promotion readiness: `{promotion_readiness.get('status') or '(missing)'}`",
+            f"- Gap status: `{open_gap_summary.get('status') or '(missing)'}`",
+            f"- Topic completion: `{topic_completion.get('status') or '(missing)'}`",
+            f"- Lean bridge: `{lean_bridge.get('status') or '(missing)'}`",
+            "",
+            "## Promotion readiness summary",
+            "",
+            promotion_readiness.get("summary") or "(missing)",
+            "",
+            "## Open gap summary",
+            "",
+            open_gap_summary.get("summary") or "(missing)",
+            "",
+            "## Topic completion summary",
+            "",
+            topic_completion.get("summary") or "(missing)",
+            "",
+            "## Lean bridge summary",
+            "",
+            lean_bridge.get("summary") or "(missing)",
+            "",
+            "## Immediate next actions",
+            "",
+        ]
+        for row in pending_actions[:8] or [{"summary": "(none)"}]:
+            lines.append(
+                f"- [{str(row.get('action_type') or 'unknown')}] {str(row.get('summary') or '(missing)')}"
+            )
+        lines.extend(
+            [
+                "",
+                "## Operating rule",
+                "",
+                "- If a definition, proof dependency, or prior-work comparison is missing, return to L0 and persist the recovery artifacts before continuing.",
+                "- Keep the research and validation contracts synchronized with any scope change.",
+            ]
+        )
+        return "\n".join(lines) + "\n"
+
+    def _render_promotion_readiness_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            "# Promotion readiness",
+            "",
+            f"- Topic slug: `{payload['topic_slug']}`",
+            f"- Latest run id: `{payload.get('latest_run_id') or '(missing)'}`",
+            f"- Status: `{payload.get('status') or '(missing)'}`",
+            f"- Gate status: `{payload.get('gate_status') or '(missing)'}`",
+            f"- Ready candidate count: `{len(payload.get('ready_candidate_ids') or [])}`",
+            f"- Blocker count: `{payload.get('blocker_count') or 0}`",
+            "",
+            "## Summary",
+            "",
+            payload.get("summary") or "(missing)",
+            "",
+            "## Ready candidates",
+            "",
+        ]
+        for item in payload.get("ready_candidate_ids") or ["(none)"]:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "## Blockers", ""])
+        for item in payload.get("blockers") or ["(none)"]:
+            lines.append(f"- {item}")
+        return "\n".join(lines) + "\n"
+
+    def _render_gap_map_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            "# Gap map",
+            "",
+            f"- Topic slug: `{payload['topic_slug']}`",
+            f"- Status: `{payload.get('status') or '(missing)'}`",
+            f"- Gap count: `{payload.get('gap_count') or 0}`",
+            f"- Requires L0 return: `{str(bool(payload.get('requires_l0_return'))).lower()}`",
+            f"- Capability gap active: `{str(bool(payload.get('capability_gap_active'))).lower()}`",
+            "",
+            "## Summary",
+            "",
+            payload.get("summary") or "(missing)",
+            "",
+            "## Blockers",
+            "",
+        ]
+        for item in payload.get("blockers") or ["(none)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Follow-up gap ids", ""])
+        for item in payload.get("followup_gap_ids") or ["(none)"]:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "## Follow-up gap writeback", ""])
+        lines.append(f"- Count: `{payload.get('followup_gap_writeback_count') or 0}`")
+        for item in payload.get("followup_gap_writeback_child_topics") or ["(none)"]:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "## Pending action summaries", ""])
+        for item in payload.get("pending_action_summaries") or ["(none)"]:
+            lines.append(f"- {item}")
+        lines.extend(
+            [
+                "",
+                "## Rule",
+                "",
+                "- When a blocker is really a missing citation, definition, derivation, or prior-work comparison, return to L0 and write back the recovery path instead of hiding it inside prose.",
+            ]
+        )
+        return "\n".join(lines) + "\n"
+
+    def _return_shape_for_status(
+        self,
+        return_status: str,
+        unresolved_statuses: set[str] | None = None,
+    ) -> str:
+        normalized = str(return_status or "").strip()
+        unresolved = unresolved_statuses or set()
+        if normalized == "recovered_units":
+            return "recovered_units"
+        if normalized == "resolved_gap_update":
+            return "resolved_gap_update"
+        if normalized in unresolved and normalized != "pending_reentry":
+            return "still_unresolved_packet"
+        return ""
+
+    def _completion_gate_checks(
+        self,
+        *,
+        regression_question_ids: list[str],
+        oracle_ids: list[str],
+        regression_run_ids: list[str],
+        promotion_ready_candidate_ids: list[str],
+        blocked_candidate_ids: list[str],
+        unresolved_followup_child_topics: list[str],
+        returned_with_gap_child_topics: list[str],
+    ) -> list[dict[str, str]]:
+        followup_blockers = self._dedupe_strings(
+            unresolved_followup_child_topics + returned_with_gap_child_topics
+        )
+        checks = [
+            {
+                "check": "regression_questions_present",
+                "status": "pass" if regression_question_ids else "blocked",
+                "summary": "Stable regression questions exist."
+                if regression_question_ids
+                else "No stable regression question ids are attached to the active topic.",
+            },
+            {
+                "check": "question_oracles_present",
+                "status": "pass" if oracle_ids else "blocked",
+                "summary": "Stable question oracles exist."
+                if oracle_ids
+                else "No stable question oracle ids are attached to the active topic.",
+            },
+            {
+                "check": "regression_runs_present",
+                "status": "pass" if regression_run_ids else "blocked",
+                "summary": "Recent regression runs exist."
+                if regression_run_ids
+                else "No regression run ids are attached to the active topic.",
+            },
+            {
+                "check": "promotion_ready_candidate_present",
+                "status": "pass" if promotion_ready_candidate_ids else "blocked",
+                "summary": "At least one candidate is marked promotion-ready."
+                if promotion_ready_candidate_ids
+                else "No candidate currently satisfies the topic-completion promotion-ready state.",
+            },
+            {
+                "check": "candidate_blockers_clear",
+                "status": "pass" if not blocked_candidate_ids else "blocked",
+                "summary": "No candidate-level completion blockers remain."
+                if not blocked_candidate_ids
+                else "One or more candidates still expose split, cited-recovery, or blocker debt.",
+            },
+            {
+                "check": "followup_return_debt_clear",
+                "status": "pass" if not followup_blockers else "blocked",
+                "summary": "No unreintegrated child follow-up return debt remains."
+                if not followup_blockers
+                else "At least one child follow-up topic still requires reintegration or further gap routing.",
+            },
+        ]
+        return checks
+
+    def _followup_return_packet_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            "# Follow-up return packet",
+            "",
+            f"- Child topic: `{payload.get('child_topic_slug') or '(missing)'}`",
+            f"- Parent topic: `{payload.get('parent_topic_slug') or '(missing)'}`",
+            f"- Parent run: `{payload.get('parent_run_id') or '(missing)'}`",
+            f"- Receipt id: `{payload.get('receipt_id') or '(missing)'}`",
+            f"- Query: `{payload.get('query') or '(missing)'}`",
+            f"- Source id: `{payload.get('source_id') or '(missing)'}`",
+            f"- arXiv id: `{payload.get('arxiv_id') or '(missing)'}`",
+            f"- Return status: `{payload.get('return_status') or '(missing)'}`",
+            f"- Accepted return shape: `{payload.get('accepted_return_shape') or '(pending)'}`",
+            "",
+            "## Parent reintegration context",
+            "",
+            f"- Parent gaps: `{', '.join(payload.get('parent_gap_ids') or []) or '(none)'}`",
+            f"- Parent follow-up tasks: `{', '.join(payload.get('parent_followup_task_ids') or []) or '(none)'}`",
+            f"- Reentry targets: `{', '.join(payload.get('reentry_targets') or []) or '(none)'}`",
+            f"- Supporting regression questions: `{', '.join(payload.get('supporting_regression_question_ids') or []) or '(none)'}`",
+            "",
+            "## Return route contract",
+            "",
+            f"- Expected return route: `{payload.get('expected_return_route') or '(missing)'}`",
+            f"- Acceptable return shapes: `{', '.join(payload.get('acceptable_return_shapes') or []) or '(none)'}`",
+            f"- Unresolved statuses: `{', '.join(payload.get('unresolved_return_statuses') or []) or '(none)'}`",
+            f"- Required output artifacts: `{', '.join(payload.get('required_output_artifacts') or []) or '(none)'}`",
+            "",
+            "## Return summary",
+            "",
+            payload.get("return_summary") or "(pending)",
+            "",
+            "## Return artifacts",
+            "",
+        ]
+        for item in payload.get("return_artifact_paths") or ["(none)"]:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "## Reintegration requirements", ""])
+        for key, value in sorted((payload.get("reintegration_requirements") or {}).items()):
+            lines.append(f"- `{key}`: `{str(bool(value)).lower()}`")
+        child_summary = str(payload.get("child_topic_summary") or "").strip()
+        if child_summary:
+            lines.extend(["", "## Child topic summary", "", child_summary, ""])
+        return "\n".join(lines) + "\n"
+
+    def _compute_topic_completion_payload(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None,
+        candidate_rows: list[dict[str, Any]],
+        updated_by: str,
+    ) -> dict[str, Any]:
+        followup_rows = self._load_followup_subtopic_rows(topic_slug)
+        reintegration_rows = self._load_followup_reintegration_rows(topic_slug)
+        policy = self._load_runtime_policy().get("followup_subtopic_policy") or {}
+        unresolved_statuses = {
+            str(value).strip()
+            for value in (policy.get("unresolved_return_statuses") or [])
+            if str(value).strip()
+        }
+        unresolved_statuses.discard("pending_reentry")
+
+        regression_question_ids: list[str] = []
+        oracle_ids: list[str] = []
+        regression_run_ids: list[str] = []
+        promotion_ready_candidate_ids: list[str] = []
+        blocked_candidate_ids: list[str] = []
+        open_gap_ids: list[str] = []
+        blockers: list[str] = []
+        candidate_ids: list[str] = []
+
+        for row in candidate_rows:
+            candidate_id = str(row.get("candidate_id") or "").strip()
+            if candidate_id:
+                candidate_ids.append(candidate_id)
+            regression_question_ids.extend(list(row.get("supporting_regression_question_ids") or []))
+            oracle_ids.extend(list(row.get("supporting_oracle_ids") or []))
+            regression_run_ids.extend(list(row.get("supporting_regression_run_ids") or []))
+            open_gap_ids.extend(list(row.get("followup_gap_ids") or []))
+            open_gap_ids.extend(list(row.get("parent_gap_ids") or []))
+            if str(row.get("topic_completion_status") or "") == "promotion-ready":
+                promotion_ready_candidate_ids.append(candidate_id)
+            if (
+                list(row.get("promotion_blockers") or [])
+                or as_bool(row.get("split_required"))
+                or as_bool(row.get("cited_recovery_required"))
+            ):
+                blocked_candidate_ids.append(candidate_id)
+            for blocker in row.get("promotion_blockers") or []:
+                text = str(blocker).strip()
+                if text:
+                    blockers.append(f"{candidate_id or 'candidate'}: {text}")
+            if as_bool(row.get("split_required")):
+                blockers.append(f"{candidate_id or 'candidate'}: split required before promotion.")
+            if as_bool(row.get("cited_recovery_required")):
+                blockers.append(
+                    f"{candidate_id or 'candidate'}: cited-source or prior-work recovery must return through L0."
+                )
+
+        reintegrated_children = {
+            str(row.get("child_topic_slug") or "").strip()
+            for row in reintegration_rows
+            if str(row.get("child_topic_slug") or "").strip()
+        }
+        unresolved_followup_child_topics: list[str] = []
+        returned_with_gap_child_topics: list[str] = []
+        for row in followup_rows:
+            child_topic_slug = str(row.get("child_topic_slug") or "").strip()
+            if not child_topic_slug:
+                continue
+            return_packet_path = str(row.get("return_packet_path") or "").strip()
+            return_packet = read_json(Path(return_packet_path)) if return_packet_path else None
+            return_status = str((return_packet or {}).get("return_status") or row.get("status") or "").strip()
+            if child_topic_slug in reintegrated_children or str(row.get("status") or "") == "reintegrated":
+                continue
+            if return_status in unresolved_statuses or str(row.get("status") or "") == "returned_with_gap":
+                returned_with_gap_child_topics.append(child_topic_slug)
+                blockers.append(f"{child_topic_slug}: returned from follow-up with unresolved gaps.")
+                continue
+            if return_status in {"spawned", "pending_reentry", ""} or str(row.get("status") or "") == "spawned":
+                unresolved_followup_child_topics.append(child_topic_slug)
+                blockers.append(f"{child_topic_slug}: follow-up child topic not yet reintegrated.")
+
+        regression_question_ids = self._dedupe_strings(regression_question_ids)
+        oracle_ids = self._dedupe_strings(oracle_ids)
+        regression_run_ids = self._dedupe_strings(regression_run_ids)
+        promotion_ready_candidate_ids = self._dedupe_strings(promotion_ready_candidate_ids)
+        blocked_candidate_ids = self._dedupe_strings(blocked_candidate_ids)
+        open_gap_ids = self._dedupe_strings(open_gap_ids)
+        blockers = self._dedupe_strings(blockers)
+        candidate_ids = self._dedupe_strings(candidate_ids)
+
+        regression_manifest_status = "empty"
+        if regression_question_ids and oracle_ids and regression_run_ids:
+            regression_manifest_status = "ready"
+        elif regression_question_ids or oracle_ids or regression_run_ids:
+            regression_manifest_status = "partial"
+
+        gate_checks = self._completion_gate_checks(
+            regression_question_ids=regression_question_ids,
+            oracle_ids=oracle_ids,
+            regression_run_ids=regression_run_ids,
+            promotion_ready_candidate_ids=promotion_ready_candidate_ids,
+            blocked_candidate_ids=blocked_candidate_ids,
+            unresolved_followup_child_topics=unresolved_followup_child_topics,
+            returned_with_gap_child_topics=returned_with_gap_child_topics,
+        )
+
+        if not candidate_rows and not followup_rows:
+            status = "not_assessed"
+            summary = "No candidate or follow-up completion surface exists yet."
+        elif blockers or unresolved_followup_child_topics or returned_with_gap_child_topics:
+            status = "promotion-blocked"
+            summary = "Topic completion is blocked by explicit candidate blockers or unreintegrated follow-up returns."
+        elif promotion_ready_candidate_ids and regression_question_ids and oracle_ids and regression_run_ids:
+            status = "promotion-ready"
+            summary = "The topic has regression-backed candidates and no unresolved follow-up return debt."
+        elif regression_question_ids and oracle_ids and regression_run_ids:
+            status = "regression-stable"
+            summary = "Regression-backed topic surfaces exist, but promotion readiness is not yet fully established."
+        elif regression_question_ids and oracle_ids:
+            status = "regression-seeded"
+            summary = "Question/oracle surfaces exist, but recent regression run support is still incomplete."
+        else:
+            status = "gap-aware"
+            summary = "The topic can name its blockers, but regression-governed completion is not established."
+
+        return {
+            "$schema": "https://aitp.local/schemas/topic-completion.schema.json",
+            "completion_version": 1,
+            "topic_slug": topic_slug,
+            "run_id": run_id or "",
+            "status": status,
+            "candidate_count": len(candidate_rows),
+            "followup_subtopic_count": len(followup_rows),
+            "reintegrated_followup_count": len(reintegrated_children),
+            "unresolved_followup_child_topics": self._dedupe_strings(unresolved_followup_child_topics),
+            "returned_with_gap_child_topics": self._dedupe_strings(returned_with_gap_child_topics),
+            "regression_manifest": {
+                "status": regression_manifest_status,
+                "candidate_ids": candidate_ids,
+                "regression_question_ids": regression_question_ids,
+                "oracle_ids": oracle_ids,
+                "regression_run_ids": regression_run_ids,
+                "candidate_count": len(candidate_ids),
+                "question_count": len(regression_question_ids),
+                "oracle_count": len(oracle_ids),
+                "run_count": len(regression_run_ids),
+            },
+            "completion_gate_checks": gate_checks,
+            "promotion_ready_candidate_ids": promotion_ready_candidate_ids,
+            "blocked_candidate_ids": blocked_candidate_ids,
+            "regression_question_ids": regression_question_ids,
+            "oracle_ids": oracle_ids,
+            "regression_run_ids": regression_run_ids,
+            "open_gap_ids": open_gap_ids,
+            "blockers": blockers,
+            "summary": summary,
+            "updated_at": now_iso(),
+            "updated_by": updated_by,
+        }
+
+    def _topic_completion_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            "# Topic completion",
+            "",
+            f"- Topic slug: `{payload['topic_slug']}`",
+            f"- Run id: `{payload.get('run_id') or '(missing)'}`",
+            f"- Status: `{payload.get('status') or '(missing)'}`",
+            f"- Candidate count: `{payload.get('candidate_count') or 0}`",
+            f"- Follow-up subtopic count: `{payload.get('followup_subtopic_count') or 0}`",
+            f"- Reintegrated follow-up count: `{payload.get('reintegrated_followup_count') or 0}`",
+            "",
+            "## Summary",
+            "",
+            payload.get("summary") or "(missing)",
+            "",
+            "## Promotion-ready candidates",
+            "",
+        ]
+        for item in payload.get("promotion_ready_candidate_ids") or ["(none)"]:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "## Blocked candidates", ""])
+        for item in payload.get("blocked_candidate_ids") or ["(none)"]:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "## Regression surface", ""])
+        lines.append(f"- Questions: `{', '.join(payload.get('regression_question_ids') or []) or '(none)'}`")
+        lines.append(f"- Oracles: `{', '.join(payload.get('oracle_ids') or []) or '(none)'}`")
+        lines.append(f"- Runs: `{', '.join(payload.get('regression_run_ids') or []) or '(none)'}`")
+        manifest = payload.get("regression_manifest") or {}
+        lines.extend(["", "## Regression manifest", ""])
+        lines.append(f"- Status: `{manifest.get('status') or 'empty'}`")
+        lines.append(f"- Candidate count: `{manifest.get('candidate_count') or 0}`")
+        lines.append(f"- Question count: `{manifest.get('question_count') or 0}`")
+        lines.append(f"- Oracle count: `{manifest.get('oracle_count') or 0}`")
+        lines.append(f"- Run count: `{manifest.get('run_count') or 0}`")
+        lines.extend(["", "## Completion gate checks", ""])
+        for row in payload.get("completion_gate_checks") or []:
+            lines.append(f"- `{row.get('check') or '(missing)'}` => `{row.get('status') or '(missing)'}`: {row.get('summary') or '(missing)'}")
+        lines.extend(["", "## Follow-up return debt", ""])
+        for item in payload.get("unresolved_followup_child_topics") or ["(none)"]:
+            lines.append(f"- unresolved: `{item}`")
+        for item in payload.get("returned_with_gap_child_topics") or []:
+            lines.append(f"- returned_with_gap: `{item}`")
+        lines.extend(["", "## Open gap ids", ""])
+        for item in payload.get("open_gap_ids") or ["(none)"]:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "## Blockers", ""])
+        for item in payload.get("blockers") or ["(none)"]:
+            lines.append(f"- {item}")
+        return "\n".join(lines) + "\n"
+
+    def _render_proof_obligations_markdown(self, rows: list[dict[str, Any]]) -> str:
+        lines = [
+            "# Proof obligations",
+            "",
+            f"- Obligation count: `{len(rows)}`",
+            "",
+        ]
+        for row in rows:
+            lines.extend(
+                [
+                    f"## `{row.get('obligation_id') or '(missing)'}`",
+                    "",
+                    f"- Category: `{row.get('category') or '(missing)'}`",
+                    f"- Status: `{row.get('status') or '(missing)'}`",
+                    f"- Claim: {row.get('claim') or '(missing)'}",
+                    f"- Prerequisites: `{', '.join(row.get('prerequisite_ids') or []) or '(none)'}`",
+                    f"- Equation labels: `{', '.join(row.get('equation_labels') or []) or '(none)'}`",
+                    f"- Source anchors: `{', '.join(row.get('source_anchor_ids') or []) or '(none)'}`",
+                    f"- Required logical move: {row.get('required_logical_move') or '(missing)'}",
+                    f"- Expected output: {row.get('expected_output_statement') or '(missing)'}",
+                    "",
+                ]
+            )
+        if not rows:
+            lines.append("- No proof obligations are currently registered.")
+            lines.append("")
+        return "\n".join(lines) + "\n"
+
+    def _render_proof_state_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            "# Proof state",
+            "",
+            f"- Candidate id: `{payload.get('candidate_id') or '(missing)'}`",
+            f"- Status: `{payload.get('status') or '(missing)'}`",
+            f"- Total obligations: `{payload.get('obligation_count') or 0}`",
+            "",
+            "## Status counts",
+            "",
+        ]
+        for key, value in sorted((payload.get("status_counts") or {}).items()):
+            lines.append(f"- `{key}`: `{value}`")
+        lines.extend(["", "## Obligation ids", ""])
+        for item in payload.get("obligation_ids") or ["(none)"]:
+            lines.append(f"- `{item}`")
+        return "\n".join(lines) + "\n"
+
+    def _lean_declaration_kind(self, candidate_type: str) -> str:
+        normalized = str(candidate_type or "").strip()
+        mapping = {
+            "definition_card": "def",
+            "notation_card": "def",
+            "regime_card": "def",
+            "assumption_card": "axiom",
+            "equation_card": "theorem",
+            "theorem_card": "theorem",
+            "claim_card": "theorem",
+            "proof_fragment": "lemma",
+            "derivation_step": "lemma",
+            "derivation_object": "theorem",
+            "method": "def",
+            "workflow": "def",
+            "bridge": "theorem",
+            "equivalence_map": "theorem",
+        }
+        return mapping.get(normalized, "def")
+
+    def _render_lean_bridge_packet_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            "# Lean-ready bridge packet",
+            "",
+            f"- Topic slug: `{payload['topic_slug']}`",
+            f"- Run id: `{payload.get('run_id') or '(missing)'}`",
+            f"- Candidate id: `{payload.get('candidate_id') or '(missing)'}`",
+            f"- Candidate type: `{payload.get('candidate_type') or '(missing)'}`",
+            f"- Declaration kind: `{payload.get('declaration_kind') or '(missing)'}`",
+            f"- Namespace: `{payload.get('namespace') or '(missing)'}`",
+            f"- Declaration name: `{payload.get('declaration_name') or '(missing)'}`",
+            f"- Status: `{payload.get('status') or '(missing)'}`",
+            "",
+            "## Statement",
+            "",
+            payload.get("statement_text") or "(missing)",
+            "",
+            "## Dependency ids",
+            "",
+        ]
+        for item in payload.get("dependency_ids") or ["(none)"]:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "## Notation bindings", ""])
+        for row in payload.get("notation_bindings") or []:
+            lines.append(f"- `{row.get('symbol') or '(missing)'}` := {row.get('meaning') or '(missing)'}")
+        if not payload.get("notation_bindings"):
+            lines.append("- (none)")
+        lines.extend(["", "## Proof obligations", ""])
+        for item in payload.get("proof_obligations") or ["(none)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Proof-state bridge", ""])
+        lines.append(f"- Obligation count: `{payload.get('proof_obligation_count') or 0}`")
+        lines.append(f"- Proof obligations JSON: `{payload.get('proof_obligations_path') or '(missing)'}`")
+        lines.append(f"- Proof state JSON: `{payload.get('proof_state_path') or '(missing)'}`")
+        lines.extend(["", "## Theory packet refs", ""])
+        for key, value in sorted((payload.get("theory_packet_refs") or {}).items()):
+            lines.append(f"- `{key}`: `{value or '(missing)'}`")
+        lines.extend(["", "## Skeleton", ""])
+        lines.append("```lean")
+        lines.extend(payload.get("lean_skeleton_lines") or ["-- no skeleton available"])
+        lines.append("```")
+        return "\n".join(lines) + "\n"
+
+    def _render_lean_bridge_index_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            "# Lean bridge",
+            "",
+            f"- Topic slug: `{payload['topic_slug']}`",
+            f"- Run id: `{payload.get('run_id') or '(missing)'}`",
+            f"- Status: `{payload.get('status') or '(missing)'}`",
+            f"- Packet count: `{payload.get('packet_count') or 0}`",
+            f"- Ready packet count: `{payload.get('ready_packet_count') or 0}`",
+            "",
+            "## Summary",
+            "",
+            payload.get("summary") or "(missing)",
+            "",
+            "## Packets",
+            "",
+        ]
+        for row in payload.get("packets") or []:
+            lines.append(
+                f"- `{row.get('candidate_id') or '(missing)'}` kind=`{row.get('declaration_kind') or '(missing)'}` "
+                f"status=`{row.get('status') or '(missing)'}` obligations=`{row.get('proof_obligation_count') or 0}` "
+                f"packet=`{row.get('packet_path') or '(missing)'}`"
+            )
+        if not payload.get("packets"):
+            lines.append("- (none)")
+        return "\n".join(lines) + "\n"
+
+    def _materialize_lean_bridge(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None,
+        candidate_rows: list[dict[str, Any]],
+        updated_by: str,
+        candidate_id: str | None = None,
+    ) -> dict[str, Any]:
+        selected_rows = candidate_rows
+        if candidate_id:
+            selected_rows = [
+                row
+                for row in candidate_rows
+                if str(row.get("candidate_id") or "").strip() == candidate_id
+            ]
+        packets: list[dict[str, Any]] = []
+        ready_packet_count = 0
+        for row in selected_rows:
+            current_candidate_id = str(row.get("candidate_id") or "").strip()
+            if not current_candidate_id or not run_id:
+                continue
+            packet_paths = self._lean_bridge_packet_paths(topic_slug, run_id, current_candidate_id)
+            theory_packet_paths = self._theory_packet_paths(topic_slug, run_id, current_candidate_id)
+            coverage_ledger = read_json(theory_packet_paths["coverage_ledger"]) or {}
+            structure_map = read_json(theory_packet_paths["structure_map"]) or {}
+            notation_table = read_json(theory_packet_paths["notation_table"]) or {}
+            derivation_graph = read_json(theory_packet_paths["derivation_graph"]) or {}
+            regression_gate = read_json(theory_packet_paths["regression_gate"]) or {}
+            namespace = f"AITP.{self._slug_to_camel(topic_slug)}"
+            declaration_kind = self._lean_declaration_kind(str(row.get("candidate_type") or ""))
+            declaration_name = slugify(str(row.get("title") or current_candidate_id)).replace("-", "_")
+            if not re.match(r"^[A-Za-z_]", declaration_name):
+                declaration_name = f"decl_{declaration_name}"
+            dependency_ids = self._dedupe_strings(
+                [str(node.get("id") or "").strip() for node in derivation_graph.get("nodes") or []]
+                + list(row.get("supporting_regression_question_ids") or [])
+                + list(row.get("supporting_oracle_ids") or [])
+                + list(row.get("supporting_regression_run_ids") or [])
+            )
+            equation_labels = self._dedupe_strings(list(coverage_ledger.get("equation_labels") or []))
+            proof_obligation_rows: list[dict[str, Any]] = []
+            for section in structure_map.get("sections") or []:
+                if str(section.get("status") or "") == "missing":
+                    section_id = str(section.get("section_id") or "(missing)")
+                    proof_obligation_rows.append(
+                        {
+                            "obligation_id": f"proof_obligation:{slugify(current_candidate_id)}:section:{slugify(section_id)}",
+                            "category": "source_section_recovery",
+                            "status": "source-cited-only",
+                            "claim": f"Recover the missing source section `{section_id}` before Lean export.",
+                            "prerequisite_ids": [section_id],
+                            "equation_labels": equation_labels,
+                            "source_anchor_ids": [section_id],
+                            "required_logical_move": "Return to L0 and ingest the cited section so the omitted derivation can be grounded.",
+                            "expected_output_statement": f"The theorem family regains a grounded section-level derivation for `{section_id}`.",
+                        }
+                    )
+            if str(notation_table.get("status") or "") != "captured":
+                proof_obligation_rows.append(
+                    {
+                        "obligation_id": f"proof_obligation:{slugify(current_candidate_id)}:notation-capture",
+                        "category": "notation_capture",
+                        "status": "blocked",
+                        "claim": "Complete the notation table before Lean export.",
+                        "prerequisite_ids": dependency_ids,
+                        "equation_labels": equation_labels,
+                        "source_anchor_ids": [],
+                        "required_logical_move": "Bind every non-trivial symbol to an explicit meaning and regime.",
+                        "expected_output_statement": "Notation bindings are complete enough for declaration-level formalization.",
+                    }
+                )
+            if str(derivation_graph.get("status") or "") != "captured":
+                proof_obligation_rows.append(
+                    {
+                        "obligation_id": f"proof_obligation:{slugify(current_candidate_id)}:derivation-capture",
+                        "category": "derivation_capture",
+                        "status": "blocked",
+                        "claim": "Complete the derivation graph before Lean export.",
+                        "prerequisite_ids": dependency_ids,
+                        "equation_labels": equation_labels,
+                        "source_anchor_ids": [],
+                        "required_logical_move": "Decompose the derivation into explicit nodes and edges instead of leaving the proof spine implicit.",
+                        "expected_output_statement": "The derivation graph exposes the ordered proof spine used by the target declaration.",
+                    }
+                )
+            for blocker in row.get("promotion_blockers") or []:
+                text = str(blocker).strip()
+                if text:
+                    proof_obligation_rows.append(
+                        {
+                            "obligation_id": f"proof_obligation:{slugify(current_candidate_id)}:blocker:{slugify(text)[:40]}",
+                            "category": "candidate_blocker",
+                            "status": "blocked",
+                            "claim": text,
+                            "prerequisite_ids": dependency_ids,
+                            "equation_labels": equation_labels,
+                            "source_anchor_ids": [],
+                            "required_logical_move": "Resolve the declared candidate blocker before exporting this family into Lean.",
+                            "expected_output_statement": "The candidate blocker is cleared without widening scope or hiding missing steps.",
+                        }
+                    )
+            if as_bool(row.get("split_required")):
+                proof_obligation_rows.append(
+                    {
+                        "obligation_id": f"proof_obligation:{slugify(current_candidate_id)}:split-before-export",
+                        "category": "scope_split",
+                        "status": "blocked",
+                        "claim": "Split the candidate into narrower formal units before Lean export.",
+                        "prerequisite_ids": [current_candidate_id],
+                        "equation_labels": equation_labels,
+                        "source_anchor_ids": [],
+                        "required_logical_move": "Emit a candidate split contract and export only bounded children.",
+                        "expected_output_statement": "The Lean bridge targets a bounded theorem/definition family rather than a mixed candidate.",
+                    }
+                )
+            if as_bool(row.get("cited_recovery_required")):
+                proof_obligation_rows.append(
+                    {
+                        "obligation_id": f"proof_obligation:{slugify(current_candidate_id)}:cited-recovery",
+                        "category": "cited_recovery",
+                        "status": "source-cited-only",
+                        "claim": "Return to L0 for cited-source recovery before Lean export.",
+                        "prerequisite_ids": [current_candidate_id],
+                        "equation_labels": equation_labels,
+                        "source_anchor_ids": [],
+                        "required_logical_move": "Ingest the cited prerequisite source and route the recovered units back through L1/L3/L4.",
+                        "expected_output_statement": "The proof family no longer depends on uncaptured cited background.",
+                    }
+                )
+            for item in regression_gate.get("blocking_reasons") or []:
+                text = str(item).strip()
+                if text:
+                    proof_obligation_rows.append(
+                        {
+                            "obligation_id": f"proof_obligation:{slugify(current_candidate_id)}:regression:{slugify(text)[:40]}",
+                            "category": "regression_gate",
+                            "status": "blocked",
+                            "claim": f"Regression gate: {text}",
+                            "prerequisite_ids": list(row.get("supporting_regression_question_ids") or []),
+                            "equation_labels": equation_labels,
+                            "source_anchor_ids": [],
+                            "required_logical_move": "Repair the regression-backed blocker rather than bypassing the gate.",
+                            "expected_output_statement": "The regression gate passes with explicit supporting evidence.",
+                        }
+                    )
+            for item in row.get("followup_gap_ids") or []:
+                text = str(item).strip()
+                if text:
+                    proof_obligation_rows.append(
+                        {
+                            "obligation_id": f"proof_obligation:{slugify(current_candidate_id)}:gap:{slugify(text)}",
+                            "category": "followup_gap",
+                            "status": "deferred",
+                            "claim": f"Open follow-up gap: {text}",
+                            "prerequisite_ids": [text],
+                            "equation_labels": equation_labels,
+                            "source_anchor_ids": [text],
+                            "required_logical_move": "Re-enter L0 and resolve the open gap before claiming a proof-grade export.",
+                            "expected_output_statement": "The referenced open gap is either recovered or explicitly routed as future work.",
+                        }
+                    )
+            proof_obligations = self._dedupe_strings(
+                [f"{row['status']}: {row['claim']}" for row in proof_obligation_rows]
+            )
+            status_counts: dict[str, int] = {}
+            for proof_row in proof_obligation_rows:
+                proof_status = str(proof_row.get("status") or "blocked")
+                status_counts[proof_status] = status_counts.get(proof_status, 0) + 1
+            status = "ready" if not proof_obligation_rows else "needs_refinement"
+            if status == "ready":
+                ready_packet_count += 1
+            statement_text = str(row.get("summary") or row.get("question") or row.get("title") or current_candidate_id)
+            lean_skeleton_lines = [
+                "import Mathlib",
+                "",
+                f"namespace {namespace}",
+                "",
+                f"{declaration_kind} {declaration_name} : Prop := by",
+                "  sorry",
+                "",
+                "end " + namespace,
+            ]
+            proof_obligations_payload = {
+                "bridge_version": 1,
+                "topic_slug": topic_slug,
+                "run_id": run_id,
+                "candidate_id": current_candidate_id,
+                "obligations": proof_obligation_rows,
+                "updated_at": now_iso(),
+                "updated_by": updated_by,
+            }
+            proof_state_payload = {
+                "bridge_version": 1,
+                "topic_slug": topic_slug,
+                "run_id": run_id,
+                "candidate_id": current_candidate_id,
+                "status": status,
+                "obligation_count": len(proof_obligation_rows),
+                "status_counts": status_counts,
+                "obligation_ids": [row["obligation_id"] for row in proof_obligation_rows],
+                "dependency_ids": dependency_ids,
+                "updated_at": now_iso(),
+                "updated_by": updated_by,
+            }
+            packet_payload = {
+                "$schema": "https://aitp.local/schemas/lean-ready-packet.schema.json",
+                "bridge_version": 1,
+                "topic_slug": topic_slug,
+                "run_id": run_id,
+                "candidate_id": current_candidate_id,
+                "candidate_type": str(row.get("candidate_type") or ""),
+                "status": status,
+                "namespace": namespace,
+                "declaration_kind": declaration_kind,
+                "declaration_name": declaration_name,
+                "statement_text": statement_text,
+                "dependency_ids": dependency_ids,
+                "equation_labels": equation_labels,
+                "regression_gate_status": str(regression_gate.get("status") or "not_audited"),
+                "notation_bindings": list(notation_table.get("bindings") or []),
+                "proof_obligations": proof_obligations,
+                "proof_obligation_count": len(proof_obligation_rows),
+                "proof_obligations_path": self._relativize(packet_paths["proof_obligations"]),
+                "proof_state_path": self._relativize(packet_paths["proof_state"]),
+                "theory_packet_refs": {
+                    "coverage_ledger": self._relativize(theory_packet_paths["coverage_ledger"]),
+                    "structure_map": self._relativize(theory_packet_paths["structure_map"]),
+                    "notation_table": self._relativize(theory_packet_paths["notation_table"]),
+                    "derivation_graph": self._relativize(theory_packet_paths["derivation_graph"]),
+                    "regression_gate": self._relativize(theory_packet_paths["regression_gate"]),
+                },
+                "lean_skeleton_lines": lean_skeleton_lines,
+                "updated_at": now_iso(),
+                "updated_by": updated_by,
+            }
+            write_json(packet_paths["proof_obligations"], proof_obligations_payload)
+            write_text(
+                packet_paths["proof_obligations_note"],
+                self._render_proof_obligations_markdown(proof_obligation_rows),
+            )
+            write_json(packet_paths["proof_state"], proof_state_payload)
+            write_text(
+                packet_paths["proof_state_note"],
+                self._render_proof_state_markdown(proof_state_payload),
+            )
+            write_json(packet_paths["json"], packet_payload)
+            write_text(packet_paths["note"], self._render_lean_bridge_packet_markdown(packet_payload))
+            packets.append(
+                {
+                    "candidate_id": current_candidate_id,
+                    "candidate_type": str(row.get("candidate_type") or ""),
+                    "declaration_kind": declaration_kind,
+                    "status": status,
+                    "proof_obligation_count": len(proof_obligation_rows),
+                    "packet_path": self._relativize(packet_paths["json"]),
+                    "packet_note_path": self._relativize(packet_paths["note"]),
+                    "proof_obligations_path": self._relativize(packet_paths["proof_obligations"]),
+                    "proof_state_path": self._relativize(packet_paths["proof_state"]),
+                }
+            )
+
+        active_paths = self._lean_bridge_active_paths(topic_slug)
+        if not packets:
+            status = "empty"
+            summary = "No candidate packet is available for Lean-ready export yet."
+        elif ready_packet_count == len(packets):
+            status = "ready"
+            summary = "All selected packets are Lean-ready at the current shell level."
+        else:
+            status = "needs_refinement"
+            summary = "At least one selected packet still carries proof obligations before Lean export."
+        payload = {
+            "$schema": "https://aitp.local/schemas/lean-bridge-active.schema.json",
+            "bridge_version": 1,
+            "topic_slug": topic_slug,
+            "run_id": run_id or "",
+            "status": status,
+            "packet_count": len(packets),
+            "ready_packet_count": ready_packet_count,
+            "needs_refinement_count": max(len(packets) - ready_packet_count, 0),
+            "packets": packets,
+            "summary": summary,
+            "updated_at": now_iso(),
+            "updated_by": updated_by,
+        }
+        write_json(active_paths["json"], payload)
+        write_text(active_paths["note"], self._render_lean_bridge_index_markdown(payload))
+        return {
+            **payload,
+            "lean_bridge_path": str(active_paths["json"]),
+            "lean_bridge_note_path": str(active_paths["note"]),
+        }
+
+    def ensure_topic_shell_surfaces(
+        self,
+        *,
+        topic_slug: str,
+        updated_by: str,
+        human_request: str | None = None,
+        topic_state: dict[str, Any] | None = None,
+        interaction_state: dict[str, Any] | None = None,
+        promotion_gate: dict[str, Any] | None = None,
+        queue_rows: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        runtime_root = self._ensure_runtime_root(topic_slug)
+        resolved_topic_state = dict(topic_state or read_json(runtime_root / "topic_state.json") or {})
+        resolved_interaction_state = dict(
+            interaction_state or read_json(runtime_root / "interaction_state.json") or {}
+        )
+        resolved_queue_rows = list(queue_rows or read_jsonl(runtime_root / "action_queue.jsonl"))
+        resolved_promotion_gate = dict(promotion_gate or self._load_promotion_gate(topic_slug) or {})
+        decision_surface = resolved_interaction_state.get("decision_surface") or {}
+        pending_actions, selected_pending_action = self._pending_action_context(
+            resolved_queue_rows,
+            decision_surface,
+        )
+        latest_run_id = str(resolved_topic_state.get("latest_run_id") or "").strip()
+        candidate_rows = self._candidate_rows_for_run(topic_slug, latest_run_id)
+        promotion_readiness = self._derive_promotion_readiness(
+            topic_slug=topic_slug,
+            latest_run_id=latest_run_id,
+            promotion_gate=resolved_promotion_gate,
+            candidate_rows=candidate_rows,
+        )
+        open_gap_summary = self._derive_open_gap_summary(
+            topic_slug=topic_slug,
+            candidate_rows=candidate_rows,
+            pending_actions=pending_actions,
+            selected_pending_action=selected_pending_action,
+        )
+        topic_completion = self.assess_topic_completion(
+            topic_slug=topic_slug,
+            run_id=latest_run_id or None,
+            updated_by=updated_by,
+            refresh_runtime_bundle=False,
+        )
+        lean_bridge = self.prepare_lean_bridge(
+            topic_slug=topic_slug,
+            run_id=latest_run_id or None,
+            updated_by=updated_by,
+            refresh_runtime_bundle=False,
+        )
+        followup_reintegration_paths = self._write_followup_reintegration_rows(
+            topic_slug,
+            self._load_followup_reintegration_rows(topic_slug),
+        )
+        followup_gap_writeback_paths = self._write_followup_gap_writeback_rows(
+            topic_slug,
+            self._load_followup_gap_writeback_rows(topic_slug),
+        )
+
+        research_paths = self._research_question_contract_paths(topic_slug)
+        validation_paths = self._validation_contract_paths(topic_slug)
+        dashboard_path = self._topic_dashboard_path(topic_slug)
+        readiness_path = self._promotion_readiness_path(topic_slug)
+        gap_map_path = self._gap_map_path(topic_slug)
+
+        existing_research = read_json(research_paths["json"]) or {}
+        existing_validation = read_json(validation_paths["json"]) or {}
+
+        research_mode = str(
+            resolved_topic_state.get("research_mode")
+            or existing_research.get("research_mode")
+            or self._template_mode_to_research_mode(existing_research.get("template_mode"))
+            or "exploratory_general"
+        ).strip()
+        template_mode = str(
+            existing_research.get("template_mode")
+            or self._research_mode_to_template_mode(research_mode)
+        ).strip()
+        validation_mode = str(
+            existing_validation.get("validation_mode")
+            or self._validation_mode_for_template(template_mode)
+        ).strip()
+        title = self._coalesce_string(
+            existing_research.get("title"),
+            self._topic_display_title(topic_slug),
+        )
+        selected_action_summary = str((selected_pending_action or {}).get("summary") or "").strip()
+        active_question = self._coalesce_string(
+            existing_research.get("question"),
+            human_request
+            or str(resolved_interaction_state.get("human_request") or "").strip()
+            or f"Clarify, validate, and persist the bounded theoretical-physics question for {title}.",
+        )
+
+        context_defaults = self._dedupe_strings(
+            [
+                f"Human request: {human_request or resolved_interaction_state.get('human_request') or active_question}",
+                f"Resume stage: {resolved_topic_state.get('resume_stage') or 'uninitialized'}",
+                f"Latest run id: {latest_run_id or 'missing'}",
+                f"Selected action: {selected_action_summary or 'none'}",
+            ]
+        )
+        target_claim_defaults = self._dedupe_strings(
+            [str(row.get("candidate_id") or "").strip() for row in candidate_rows if str(row.get("candidate_id") or "").strip()]
+            or [str((selected_pending_action or {}).get("action_id") or "").strip()]
+        )
+        deliverable_defaults = [
+            "Persist the active research question, validation route, and bounded next action as durable runtime artifacts.",
+            "Write derivation/proof or execution evidence into the appropriate AITP layer before claiming completion.",
+            "Produce Layer-appropriate outputs that can later be promoted into durable L2 knowledge when justified.",
+        ]
+        acceptance_defaults = [
+            "The question, scope, deliverables, and acceptance checks remain synchronized with the runtime state.",
+            "Missing definitions, cited derivations, or prior-work comparisons trigger a durable return to L0 instead of a prose-only bridge.",
+            "Proof or validation claims cite concrete L3/L4 artifacts rather than memory or style confidence.",
+        ]
+        forbidden_proxy_defaults = [
+            "Do not treat polished prose, hidden assumptions, or memory-only agreement as proof.",
+            "Do not silently widen scope without updating this contract.",
+            "Do not bypass L0 recovery when the blocker is really a missing source, citation chain, or prior-work comparison.",
+        ]
+        uncertainty_defaults = open_gap_summary["blockers"] or [
+            "Mark unresolved notation, source, or regime gaps explicitly before continuing."
+        ]
+        research_status_default = "blocked" if open_gap_summary["requires_l0_return"] else "active"
+        research_contract = {
+            "contract_version": 1,
+            "question_id": self._coalesce_string(
+                existing_research.get("question_id"),
+                f"research_question:{topic_slug}",
+            ),
+            "title": title,
+            "topic_slug": topic_slug,
+            "status": self._coalesce_string(existing_research.get("status"), research_status_default),
+            "template_mode": template_mode,
+            "research_mode": research_mode,
+            "question": active_question,
+            "scope": self._coalesce_list(
+                existing_research.get("scope"),
+                [
+                    f"Keep work bounded to topic `{topic_slug}` and the currently selected action.",
+                    "Make derivation dependencies, notation, and validation obligations explicit.",
+                ]
+                + ([f"Current bounded action: {selected_action_summary}"] if selected_action_summary else []),
+            ),
+            "assumptions": self._coalesce_list(
+                existing_research.get("assumptions"),
+                [
+                    "Only persisted AITP artifacts count as research progress.",
+                    "Missing cited derivations or prior-work context must be recovered through L0 rather than guessed.",
+                ],
+            ),
+            "non_goals": self._coalesce_list(
+                existing_research.get("non_goals"),
+                [
+                    "Do not treat the runtime shell as a generic project manager.",
+                    "Do not claim theory completion without layer-addressable derivation or validation evidence.",
+                ],
+            ),
+            "context_intake": self._coalesce_list(existing_research.get("context_intake"), context_defaults),
+            "formalism_and_notation": self._coalesce_list(
+                existing_research.get("formalism_and_notation"),
+                [
+                    f"Research mode `{research_mode}` governs the default level of derivation detail.",
+                    "Notation bindings must be persisted explicitly when symbols or conventions are non-trivial.",
+                ],
+            ),
+            "observables": self._coalesce_list(
+                existing_research.get("observables"),
+                [
+                    "Declared candidate ids, bounded claims, and validation outcomes.",
+                    "Promotion readiness, gap honesty, and whether the topic must return to L0.",
+                ],
+            ),
+            "target_claims": self._coalesce_list(existing_research.get("target_claims"), target_claim_defaults),
+            "deliverables": self._coalesce_list(existing_research.get("deliverables"), deliverable_defaults),
+            "acceptance_tests": self._coalesce_list(
+                existing_research.get("acceptance_tests"),
+                acceptance_defaults,
+            ),
+            "forbidden_proxies": self._coalesce_list(
+                existing_research.get("forbidden_proxies"),
+                forbidden_proxy_defaults,
+            ),
+            "uncertainty_markers": self._coalesce_list(
+                existing_research.get("uncertainty_markers"),
+                uncertainty_defaults,
+            ),
+            "target_layers": self._coalesce_list(
+                existing_research.get("target_layers"),
+                ["L1", "L3", "L4", "L2"],
+            ),
+        }
+
+        artifact_defaults = [
+            self._relativize(runtime_root / "runtime_protocol.generated.md"),
+            self._relativize(runtime_root / "action_queue.jsonl"),
+            self._relativize(research_paths["note"]),
+            self._relativize(dashboard_path),
+        ]
+        if (runtime_root / "conformance_report.md").exists():
+            artifact_defaults.append(self._relativize(runtime_root / "conformance_report.md"))
+        if (runtime_root / "capability_report.md").exists():
+            artifact_defaults.append(self._relativize(runtime_root / "capability_report.md"))
+        if self._promotion_gate_paths(topic_slug)["json"].exists():
+            artifact_defaults.append(self._relativize(self._promotion_gate_paths(topic_slug)["json"]))
+
+        validation_status_default = "deferred" if open_gap_summary["requires_l0_return"] else "planned"
+        validation_contract = {
+            "contract_version": 1,
+            "validation_id": self._coalesce_string(
+                existing_validation.get("validation_id"),
+                f"validation:{topic_slug}:active",
+            ),
+            "topic_slug": topic_slug,
+            "status": self._coalesce_string(existing_validation.get("status"), validation_status_default),
+            "template_mode": template_mode,
+            "verification_focus": self._coalesce_string(
+                existing_validation.get("verification_focus"),
+                selected_action_summary or promotion_readiness["summary"],
+            ),
+            "validation_mode": validation_mode,
+            "target_claim_ids": self._coalesce_list(
+                existing_validation.get("target_claim_ids"),
+                target_claim_defaults,
+            ),
+            "acceptance_rule": self._coalesce_string(
+                existing_validation.get("acceptance_rule"),
+                "Accept only when the declared claims are supported by persisted derivation or execution artifacts and all active L0-recovery blockers are discharged.",
+            ),
+            "rejection_rule": self._coalesce_string(
+                existing_validation.get("rejection_rule"),
+                "Reject whenever missing anchors, missing executed evidence, unresolved cited-source gaps, or contract drift remain active.",
+            ),
+            "required_checks": self._coalesce_list(
+                existing_validation.get("required_checks"),
+                [
+                    "Check that the research question, scope, and selected action still match the runtime state.",
+                    "Check that proof, derivation, or execution evidence is persisted in the declared layer.",
+                    "If prior-work or cited-source gaps remain, return to L0 before advancing the claim.",
+                ],
+            ),
+            "oracle_artifacts": self._coalesce_list(
+                existing_validation.get("oracle_artifacts"),
+                artifact_defaults,
+            ),
+            "executed_evidence": self._coalesce_list(
+                existing_validation.get("executed_evidence"),
+                [],
+            ),
+            "confidence_cap": self._coalesce_string(
+                existing_validation.get("confidence_cap"),
+                "medium" if open_gap_summary["status"] != "clear" else "high",
+            ),
+            "gap_followups": self._coalesce_list(
+                existing_validation.get("gap_followups"),
+                open_gap_summary["blockers"] + open_gap_summary["followup_gap_ids"],
+            ),
+            "failure_modes": self._coalesce_list(
+                existing_validation.get("failure_modes"),
+                [
+                    "Proof steps remain implicit or depend on unstated notation.",
+                    "Executed validation is claimed but no durable evidence path exists.",
+                    "A cited derivation or prior-work dependency was glossed over instead of recovered through L0.",
+                ],
+            ),
+            "artifacts": self._coalesce_list(
+                existing_validation.get("artifacts"),
+                artifact_defaults,
+            ),
+        }
+
+        write_json(research_paths["json"], research_contract)
+        write_text(research_paths["note"], self._render_research_question_contract_markdown(research_contract))
+        write_json(validation_paths["json"], validation_contract)
+        write_text(validation_paths["note"], self._render_validation_contract_markdown(validation_contract))
+        write_text(
+            dashboard_path,
+            self._render_topic_dashboard_markdown(
+                topic_slug=topic_slug,
+                topic_state=resolved_topic_state,
+                selected_pending_action=selected_pending_action,
+                pending_actions=pending_actions,
+                research_contract=research_contract,
+                validation_contract=validation_contract,
+                promotion_readiness=promotion_readiness,
+                open_gap_summary=open_gap_summary,
+                topic_completion=topic_completion,
+                lean_bridge=lean_bridge,
+            ),
+        )
+        write_text(readiness_path, self._render_promotion_readiness_markdown(promotion_readiness))
+        write_text(gap_map_path, self._render_gap_map_markdown(open_gap_summary))
+        return {
+            "research_question_contract_path": str(research_paths["json"]),
+            "research_question_contract_note_path": str(research_paths["note"]),
+            "validation_contract_path": str(validation_paths["json"]),
+            "validation_contract_note_path": str(validation_paths["note"]),
+            "topic_dashboard_path": str(dashboard_path),
+            "promotion_readiness_path": str(readiness_path),
+            "gap_map_path": str(gap_map_path),
+            "topic_completion_path": topic_completion["topic_completion_path"],
+            "topic_completion_note_path": topic_completion["topic_completion_note_path"],
+            "lean_bridge_path": lean_bridge["lean_bridge_path"],
+            "lean_bridge_note_path": lean_bridge["lean_bridge_note_path"],
+            "followup_reintegration_path": followup_reintegration_paths["followup_reintegration_path"],
+            "followup_reintegration_note_path": followup_reintegration_paths["followup_reintegration_note_path"],
+            "followup_gap_writeback_path": followup_gap_writeback_paths["followup_gap_writeback_path"],
+            "followup_gap_writeback_note_path": followup_gap_writeback_paths["followup_gap_writeback_note_path"],
+            "research_question_contract": research_contract,
+            "validation_contract": validation_contract,
+            "promotion_readiness": promotion_readiness,
+            "open_gap_summary": open_gap_summary,
+            "topic_completion": topic_completion,
+            "lean_bridge": lean_bridge,
+        }
 
     def _deferred_buffer_markdown(self, payload: dict[str, Any]) -> str:
         lines = [
@@ -380,11 +2102,75 @@ class AITPService:
                     f"- Source id: `{row.get('source_id') or '(missing)'}`",
                     f"- arXiv id: `{row.get('arxiv_id') or '(missing)'}`",
                     f"- Status: `{row.get('status') or '(missing)'}`",
+                    f"- Parent gaps: `{', '.join(row.get('parent_gap_ids') or []) or '(none)'}`",
+                    f"- Parent follow-up tasks: `{', '.join(row.get('parent_followup_task_ids') or []) or '(none)'}`",
+                    f"- Reentry targets: `{', '.join(row.get('reentry_targets') or []) or '(none)'}`",
+                    f"- Return packet: `{row.get('return_packet_path') or '(missing)'}`",
                     "",
                 ]
             )
         if not rows:
             lines.append("- No follow-up subtopics have been spawned yet.")
+            lines.append("")
+        return "\n".join(lines)
+
+    def _followup_reintegration_markdown(self, rows: list[dict[str, Any]]) -> str:
+        lines = [
+            "# Follow-up reintegration",
+            "",
+            f"- Receipt count: `{len(rows)}`",
+            "",
+        ]
+        for row in rows:
+            lines.extend(
+                [
+                    f"## `{row.get('child_topic_slug') or '(missing)'}`",
+                    "",
+                    f"- Parent topic: `{row.get('parent_topic_slug') or '(missing)'}`",
+                    f"- Parent run: `{row.get('parent_run_id') or '(missing)'}`",
+                    f"- Return status: `{row.get('return_status') or '(missing)'}`",
+                    f"- Accepted return shape: `{row.get('accepted_return_shape') or '(missing)'}`",
+                    f"- Receipt id: `{row.get('receipt_id') or '(missing)'}`",
+                    f"- Return packet: `{row.get('return_packet_path') or '(missing)'}`",
+                    f"- Reentry targets: `{', '.join(row.get('reentry_targets') or []) or '(none)'}`",
+                    f"- Parent gaps: `{', '.join(row.get('parent_gap_ids') or []) or '(none)'}`",
+                    f"- Child completion: `{row.get('child_topic_completion_status') or 'not_assessed'}`",
+                    f"- Gap writeback required: `{str(bool(row.get('gap_writeback_required'))).lower()}`",
+                    "",
+                    row.get("summary") or "(missing)",
+                    "",
+                ]
+            )
+        if not rows:
+            lines.append("- No follow-up reintegration receipts have been recorded yet.")
+            lines.append("")
+        return "\n".join(lines)
+
+    def _followup_gap_writeback_markdown(self, rows: list[dict[str, Any]]) -> str:
+        lines = [
+            "# Follow-up gap writeback",
+            "",
+            f"- Entry count: `{len(rows)}`",
+            "",
+        ]
+        for row in rows:
+            lines.extend(
+                [
+                    f"## `{row.get('child_topic_slug') or '(missing)'}`",
+                    "",
+                    f"- Parent topic: `{row.get('parent_topic_slug') or '(missing)'}`",
+                    f"- Parent run: `{row.get('parent_run_id') or '(missing)'}`",
+                    f"- Return status: `{row.get('return_status') or '(missing)'}`",
+                    f"- Parent gaps: `{', '.join(row.get('parent_gap_ids') or []) or '(none)'}`",
+                    f"- Parent follow-up tasks: `{', '.join(row.get('parent_followup_task_ids') or []) or '(none)'}`",
+                    f"- Reentry targets: `{', '.join(row.get('reentry_targets') or []) or '(none)'}`",
+                    "",
+                    row.get("summary") or "(missing)",
+                    "",
+                ]
+            )
+        if not rows:
+            lines.append("- No unresolved child follow-up gap writeback is currently pending.")
             lines.append("")
         return "\n".join(lines)
 
@@ -419,6 +2205,36 @@ class AITPService:
         return {
             "followup_subtopics_path": str(paths["jsonl"]),
             "followup_subtopics_note_path": str(paths["note"]),
+        }
+
+    def _write_followup_return_packet(self, topic_slug: str, payload: dict[str, Any]) -> str:
+        path = self._followup_return_packet_path(topic_slug)
+        write_json(path, payload)
+        write_text(self._followup_return_packet_note_path(topic_slug), self._followup_return_packet_markdown(payload))
+        return str(path)
+
+    def _load_followup_reintegration_rows(self, topic_slug: str) -> list[dict[str, Any]]:
+        return read_jsonl(self._followup_reintegration_paths(topic_slug)["jsonl"])
+
+    def _write_followup_reintegration_rows(self, topic_slug: str, rows: list[dict[str, Any]]) -> dict[str, str]:
+        paths = self._followup_reintegration_paths(topic_slug)
+        write_jsonl(paths["jsonl"], rows)
+        write_text(paths["note"], self._followup_reintegration_markdown(rows))
+        return {
+            "followup_reintegration_path": str(paths["jsonl"]),
+            "followup_reintegration_note_path": str(paths["note"]),
+        }
+
+    def _load_followup_gap_writeback_rows(self, topic_slug: str) -> list[dict[str, Any]]:
+        return read_jsonl(self._followup_gap_writeback_paths(topic_slug)["jsonl"])
+
+    def _write_followup_gap_writeback_rows(self, topic_slug: str, rows: list[dict[str, Any]]) -> dict[str, str]:
+        paths = self._followup_gap_writeback_paths(topic_slug)
+        write_jsonl(paths["jsonl"], rows)
+        write_text(paths["note"], self._followup_gap_writeback_markdown(rows))
+        return {
+            "followup_gap_writeback_path": str(paths["jsonl"]),
+            "followup_gap_writeback_note_path": str(paths["note"]),
         }
 
     def _reactivation_context(self, topic_slug: str) -> tuple[set[str], str, set[str]]:
@@ -660,6 +2476,12 @@ class AITPService:
             f"- Target backend root: `{payload.get('target_backend_root') or '(missing)'}`",
             f"- Review mode: `{payload.get('review_mode') or 'human'}`",
             f"- Canonical layer: `{payload.get('canonical_layer') or 'L2'}`",
+            f"- Coverage status: `{payload.get('coverage_status') or 'not_audited'}`",
+            f"- Consensus status: `{payload.get('consensus_status') or 'not_requested'}`",
+            f"- Regression gate status: `{payload.get('regression_gate_status') or 'not_audited'}`",
+            f"- Topic completion status: `{payload.get('topic_completion_status') or 'not_assessed'}`",
+            f"- Split required: `{payload.get('split_required')}`",
+            f"- Cited recovery required: `{payload.get('cited_recovery_required')}`",
             f"- Requested by: `{payload['requested_by']}` at `{payload['requested_at']}`",
             f"- Approved by: `{payload.get('approved_by') or '(pending)'}` at `{payload.get('approved_at') or '(pending)'}`",
             f"- Rejected by: `{payload.get('rejected_by') or '(n/a)'}` at `{payload.get('rejected_at') or '(n/a)'}`",
@@ -669,6 +2491,16 @@ class AITPService:
         ]
         for target in payload.get("intended_l2_targets") or ["(missing)"]:
             lines.append(f"- `{target}`")
+        lines.extend(["", "## Regression support", ""])
+        for target in payload.get("supporting_regression_question_ids") or ["(missing)"]:
+            lines.append(f"- question: `{target}`")
+        for target in payload.get("supporting_oracle_ids") or []:
+            lines.append(f"- oracle: `{target}`")
+        for target in payload.get("supporting_regression_run_ids") or []:
+            lines.append(f"- run: `{target}`")
+        lines.extend(["", "## Promotion blockers", ""])
+        for blocker in payload.get("promotion_blockers") or ["(none)"]:
+            lines.append(f"- {blocker}")
         lines.extend(
             [
                 "",
@@ -689,7 +2521,7 @@ class AITPService:
             lines.append("- Promotion already ran. Re-check the decision and backend writeback artifacts before editing further.")
         else:
             if payload.get("review_mode") == "ai_auto":
-                lines.append("- Auto promotion is blocked until coverage and consensus artifacts satisfy the configured gate.")
+                lines.append("- Auto promotion is blocked until coverage, consensus, regression, split-clearance, and gap-honesty artifacts satisfy the configured gate.")
             else:
                 lines.append("- L2 promotion is blocked until a human explicitly approves or rejects this request.")
         if payload.get("notes"):
@@ -727,6 +2559,7 @@ class AITPService:
             "notation_table": packet_root / "notation_table.json",
             "derivation_graph": packet_root / "derivation_graph.json",
             "agent_consensus": packet_root / "agent_consensus.json",
+            "regression_gate": packet_root / "regression_gate.json",
             "merge_report": packet_root / "merge_report.json",
             "auto_promotion_report": packet_root / "auto_promotion_report.json",
         }
@@ -857,6 +2690,11 @@ class AITPService:
 
     def _runtime_protocol_markdown(self, payload: dict[str, Any]) -> str:
         minimal = payload.get("minimal_execution_brief") or {}
+        active_research_contract = payload.get("active_research_contract") or {}
+        promotion_readiness = payload.get("promotion_readiness") or {}
+        open_gap_summary = payload.get("open_gap_summary") or {}
+        topic_completion = payload.get("topic_completion") or {}
+        lean_bridge = payload.get("lean_bridge") or {}
         must_read_now = payload.get("must_read_now") or []
         active_hard_constraints = payload.get("active_hard_constraints") or []
         escalation_triggers = payload.get("escalation_triggers") or []
@@ -874,6 +2712,53 @@ class AITPService:
             f"- Resume stage: `{payload['resume_stage'] or '(missing)'}`",
             f"- Last materialized stage: `{payload['last_materialized_stage'] or '(missing)'}`",
             f"- Research mode: `{payload['research_mode'] or '(missing)'}`",
+            "",
+            "## Active research contract",
+            "",
+            f"- Question id: `{active_research_contract.get('question_id') or '(missing)'}`",
+            f"- Title: `{active_research_contract.get('title') or '(missing)'}`",
+            f"- Status: `{active_research_contract.get('status') or '(missing)'}`",
+            f"- Template mode: `{active_research_contract.get('template_mode') or '(missing)'}`",
+            f"- Validation mode: `{active_research_contract.get('validation_mode') or '(missing)'}`",
+            f"- Contract JSON: `{active_research_contract.get('path') or '(missing)'}`",
+            f"- Contract note: `{active_research_contract.get('note_path') or '(missing)'}`",
+            "",
+            f"{active_research_contract.get('question') or '(missing)'}",
+            "",
+            "## Promotion readiness",
+            "",
+            f"- Status: `{promotion_readiness.get('status') or '(missing)'}`",
+            f"- Gate status: `{promotion_readiness.get('gate_status') or '(missing)'}`",
+            f"- Summary note: `{promotion_readiness.get('path') or '(missing)'}`",
+            f"- Ready candidates: `{', '.join(promotion_readiness.get('ready_candidate_ids') or []) or '(none)'}`",
+            "",
+            f"{promotion_readiness.get('summary') or '(missing)'}",
+            "",
+            "## Open gap summary",
+            "",
+            f"- Status: `{open_gap_summary.get('status') or '(missing)'}`",
+            f"- Gap count: `{open_gap_summary.get('gap_count') or 0}`",
+            f"- Follow-up gap writeback count: `{open_gap_summary.get('followup_gap_writeback_count') or 0}`",
+            f"- Requires L0 return: `{str(bool(open_gap_summary.get('requires_l0_return'))).lower()}`",
+            f"- Gap map: `{open_gap_summary.get('path') or '(missing)'}`",
+            "",
+            f"{open_gap_summary.get('summary') or '(missing)'}",
+            "",
+            "## Topic completion",
+            "",
+            f"- Status: `{topic_completion.get('status') or '(missing)'}`",
+            f"- Completion note: `{topic_completion.get('path') or '(missing)'}`",
+            f"- Promotion-ready candidates: `{', '.join(topic_completion.get('promotion_ready_candidate_ids') or []) or '(none)'}`",
+            "",
+            f"{topic_completion.get('summary') or '(missing)'}",
+            "",
+            "## Lean bridge",
+            "",
+            f"- Status: `{lean_bridge.get('status') or '(missing)'}`",
+            f"- Packet count: `{lean_bridge.get('packet_count') or 0}`",
+            f"- Bridge note: `{lean_bridge.get('path') or '(missing)'}`",
+            "",
+            f"{lean_bridge.get('summary') or '(missing)'}",
             "",
             "## Minimal execution brief",
             "",
@@ -1119,18 +3004,10 @@ class AITPService:
         queue_surface = interaction_state.get("action_queue_surface") or {}
         decision_surface = interaction_state.get("decision_surface") or {}
         research_mode_profile = topic_state.get("research_mode_profile") or {}
-        selected_action_id = str(decision_surface.get("selected_action_id") or "")
-        selected_pending_action: dict[str, Any] | None = None
-        pending_actions = [
-            row for row in queue_rows if str(row.get("status") or "pending") == "pending"
-        ]
-        if selected_action_id:
-            selected_pending_action = next(
-                (row for row in pending_actions if str(row.get("action_id") or "") == selected_action_id),
-                None,
-            )
-        if selected_pending_action is None and pending_actions:
-            selected_pending_action = pending_actions[0]
+        pending_actions, selected_pending_action = self._pending_action_context(
+            queue_rows,
+            decision_surface,
+        )
         backend_bridges: list[dict[str, Any]] = []
         for row in topic_state.get("backend_bridges") or []:
             if not isinstance(row, dict):
@@ -1150,14 +3027,76 @@ class AITPService:
                     "source_count": int(row.get("source_count") or 0),
                 }
             )
+        shell_surfaces = self.ensure_topic_shell_surfaces(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+            human_request=human_request,
+            topic_state=topic_state,
+            interaction_state=interaction_state,
+            promotion_gate=promotion_gate,
+            queue_rows=queue_rows,
+        )
+        research_contract = shell_surfaces["research_question_contract"]
+        validation_contract = shell_surfaces["validation_contract"]
+        promotion_readiness = dict(shell_surfaces["promotion_readiness"])
+        promotion_readiness["path"] = self._relativize(Path(shell_surfaces["promotion_readiness_path"]))
+        open_gap_summary = dict(shell_surfaces["open_gap_summary"])
+        open_gap_summary["path"] = self._relativize(Path(shell_surfaces["gap_map_path"]))
+        topic_completion = dict(shell_surfaces["topic_completion"])
+        topic_completion["path"] = self._relativize(Path(shell_surfaces["topic_completion_note_path"]))
+        lean_bridge = dict(shell_surfaces["lean_bridge"])
+        lean_bridge["path"] = self._relativize(Path(shell_surfaces["lean_bridge_note_path"]))
+        active_research_contract = {
+            "question_id": str(research_contract.get("question_id") or ""),
+            "title": str(research_contract.get("title") or ""),
+            "status": str(research_contract.get("status") or ""),
+            "template_mode": str(research_contract.get("template_mode") or ""),
+            "research_mode": str(research_contract.get("research_mode") or ""),
+            "validation_mode": str(validation_contract.get("validation_mode") or ""),
+            "target_layers": self._dedupe_strings(list(research_contract.get("target_layers") or [])),
+            "question": str(research_contract.get("question") or ""),
+            "path": self._relativize(Path(shell_surfaces["research_question_contract_path"])),
+            "note_path": self._relativize(Path(shell_surfaces["research_question_contract_note_path"])),
+        }
 
         runtime_protocol_note = self._relativize(runtime_root / "runtime_protocol.generated.md")
+        research_guardrails_note = self._relativize(self.kernel_root / "RESEARCH_EXECUTION_GUARDRAILS.md")
         must_read_now: list[dict[str, str]] = [
             {
                 "path": runtime_protocol_note,
                 "reason": "Top-level execution contract for this topic. Read this file first.",
             }
         ]
+        must_read_now.append(
+            {
+                "path": self._relativize(Path(shell_surfaces["research_question_contract_note_path"])),
+                "reason": "Active research question, scope, deliverables, and anti-proxy rules for this topic.",
+            }
+        )
+        must_read_now.append(
+            {
+                "path": self._relativize(Path(shell_surfaces["topic_dashboard_path"])),
+                "reason": "Operator-facing topic snapshot that condenses the active question, next action, readiness, and gaps.",
+            }
+        )
+        must_read_now.append(
+            {
+                "path": self._relativize(Path(shell_surfaces["topic_completion_note_path"])),
+                "reason": "Topic-completion gate over regression support, follow-up return debt, and blocker honesty.",
+            }
+        )
+        must_read_now.append(
+            {
+                "path": self._relativize(Path(shell_surfaces["validation_contract_note_path"])),
+                "reason": "Current validation route, required checks, and failure modes for this topic.",
+            }
+        )
+        must_read_now.append(
+            {
+                "path": research_guardrails_note,
+                "reason": "Global research-contract, bounded-action, and anti-proxy validation guardrails for non-trivial work.",
+            }
+        )
         for candidate, reason in (
             (
                 "agent_brief.md",
@@ -1199,6 +3138,31 @@ class AITPService:
                 "promotion_gate.md",
                 "promotion_intent",
                 "Only mandatory when current work could create, approve, or execute writeback.",
+            ),
+            (
+                Path(shell_surfaces["promotion_readiness_path"]).name,
+                "promotion_intent",
+                "Promotion readiness details become mandatory when writeback or gate routing is active.",
+            ),
+            (
+                Path(shell_surfaces["gap_map_path"]).name,
+                "capability_gap_blocker",
+                "Gap-map details become mandatory when the topic must return to L0 or resolve explicit blockers.",
+            ),
+            (
+                Path(shell_surfaces["lean_bridge_note_path"]).name,
+                "proof_completion_review",
+                "Lean-bridge packets become mandatory when proof-heavy work is being decomposed into formal obligations.",
+            ),
+            (
+                Path(shell_surfaces["followup_reintegration_note_path"]).name,
+                "non_trivial_consultation",
+                "Reintegration receipts matter when child follow-up topics are returning evidence to the parent topic.",
+            ),
+            (
+                Path(shell_surfaces["followup_gap_writeback_note_path"]).name,
+                "capability_gap_blocker",
+                "Open this when unresolved child follow-up returns have written new parent-side gap debt.",
             ),
         ):
             candidate_path = runtime_root / candidate
@@ -1284,6 +3248,7 @@ class AITPService:
 
         selected_action_summary = str((selected_pending_action or {}).get("summary") or "").strip()
         selected_action_type = str((selected_pending_action or {}).get("action_type") or "").strip()
+        selected_action_id = str((selected_pending_action or {}).get("action_id") or "").strip()
         selected_action_auto_runnable = bool((selected_pending_action or {}).get("auto_runnable"))
         selected_action_label = selected_action_summary or (
             f"{selected_action_type} ({selected_action_id})" if selected_action_type else ""
@@ -1313,6 +3278,7 @@ class AITPService:
             "Do not promote or auto-promote material into Layer 2 unless the promotion trigger fires and the gate artifacts allow it.",
             "Do not bypass conformance, declared control notes, or decision contracts with heuristic queue guesses.",
             "Do not treat consultation as promotion or claim heavy execution happened without the corresponding returned result artifacts.",
+            "Do not substitute polished prose, memory agreement, or missing execution evidence for the declared acceptance checks.",
         ]
 
         control_note_status = str(decision_surface.get("control_note_status") or "missing")
@@ -1518,8 +3484,11 @@ class AITPService:
 
         active_hard_constraints = [
             "Do not let progressive disclosure hide layer semantics, consultation obligations, trust gates, promotion gates, or conformance failures.",
+            "Do not let the active research contract drift silently in scope, observables, deliverables, or acceptance tests.",
             "Do not treat heuristic queue rows as higher priority than declared control notes or decision contracts.",
             "Do not perform Layer 2 or Layer 2_auto writeback unless the corresponding gate artifacts say it is allowed.",
+            "Do not treat proxy-success signals as validation when the declared execution or proof evidence is still missing.",
+            "If definitions, cited derivations, or prior-work comparisons are missing, return to L0 and persist the recovery artifacts before continuing.",
             "When a named trigger becomes active, read its mandatory deeper surfaces before continuing execution.",
         ]
 
@@ -1535,6 +3504,59 @@ class AITPService:
                     "role": str(surface.get("role") or "").strip(),
                 }
             )
+        editable_surfaces.extend(
+            [
+                {
+                    "surface": "research_question_contract",
+                    "path": self._relativize(Path(shell_surfaces["research_question_contract_note_path"])),
+                    "role": "Edit the active question, scope, deliverables, and anti-proxy constraints.",
+                },
+                {
+                    "surface": "validation_contract",
+                    "path": self._relativize(Path(shell_surfaces["validation_contract_note_path"])),
+                    "role": "Edit the active validation route, required checks, and failure modes.",
+                },
+                {
+                    "surface": "topic_dashboard",
+                    "path": self._relativize(Path(shell_surfaces["topic_dashboard_path"])),
+                    "role": "Human-readable topic summary for operator review and correction.",
+                },
+                {
+                    "surface": "promotion_readiness",
+                    "path": self._relativize(Path(shell_surfaces["promotion_readiness_path"])),
+                    "role": "Review promotion blockers, ready candidates, and gate state.",
+                },
+                {
+                    "surface": "gap_map",
+                    "path": self._relativize(Path(shell_surfaces["gap_map_path"])),
+                    "role": "Review whether the topic must return to L0 or keep bounded gap packets open.",
+                },
+                {
+                    "surface": "topic_completion",
+                    "path": self._relativize(Path(shell_surfaces["topic_completion_note_path"])),
+                    "role": "Review topic-completion status against regression support and follow-up return debt.",
+                },
+                {
+                    "surface": "lean_bridge",
+                    "path": self._relativize(Path(shell_surfaces["lean_bridge_note_path"])),
+                    "role": "Review Lean-ready packets, declaration skeletons, and outstanding proof obligations.",
+                },
+                {
+                    "surface": "followup_gap_writeback",
+                    "path": self._relativize(Path(shell_surfaces["followup_gap_writeback_note_path"])),
+                    "role": "Review unresolved child follow-up returns that were written back into the parent gap surface.",
+                },
+            ]
+        )
+        deduped_surfaces: list[dict[str, str]] = []
+        seen_surface_paths: set[str] = set()
+        for surface in editable_surfaces:
+            key = f"{surface['surface']}::{surface['path']}"
+            if key in seen_surface_paths:
+                continue
+            seen_surface_paths.add(key)
+            deduped_surfaces.append(surface)
+        editable_surfaces = deduped_surfaces
 
         payload = {
             "$schema": "https://aitp.local/schemas/progressive-disclosure-runtime-bundle.schema.json",
@@ -1546,7 +3568,12 @@ class AITPService:
             "human_request": human_request or str(interaction_state.get("human_request") or ""),
             "resume_stage": topic_state.get("resume_stage"),
             "last_materialized_stage": topic_state.get("last_materialized_stage"),
-            "research_mode": topic_state.get("research_mode"),
+            "research_mode": topic_state.get("research_mode") or active_research_contract.get("research_mode"),
+            "active_research_contract": active_research_contract,
+            "promotion_readiness": promotion_readiness,
+            "open_gap_summary": open_gap_summary,
+            "topic_completion": topic_completion,
+            "lean_bridge": lean_bridge,
             "minimal_execution_brief": {
                 "current_stage": topic_state.get("resume_stage"),
                 "selected_action_id": str((selected_pending_action or {}).get("action_id") or ""),
@@ -2058,8 +4085,25 @@ class AITPService:
             if str(value).strip()
         }
         max_subtopics = int(policy.get("max_subtopics_per_receipt") or 2)
+        bounded_gap_required = bool(policy.get("bounded_gap_required"))
         statement_template = str(policy.get("statement_template") or "")
         human_request_template = str(policy.get("human_request_template") or "")
+        expected_return_route = str(policy.get("expected_return_route") or "L0->L1->L3->L4->L2")
+        acceptable_return_shapes = self._dedupe_strings(
+            list(policy.get("acceptable_return_shapes") or ["recovered_units", "resolved_gap_update", "still_unresolved_packet"])
+        )
+        required_output_artifacts = self._dedupe_strings(
+            list(policy.get("required_output_artifacts") or ["candidate_ledger_or_recovered_units", "gap_or_followup_writeback", "reintegration_summary"])
+        )
+        unresolved_return_statuses = self._dedupe_strings(
+            list(policy.get("unresolved_return_statuses") or ["pending_reentry", "returned_with_gap", "returned_unresolved"])
+        )
+        reintegration_requirements = policy.get("reintegration_requirements") or {
+            "must_write_back_parent_gaps": True,
+            "must_update_reentry_targets": True,
+            "must_not_patch_parent_directly": True,
+            "requires_child_topic_summary": True,
+        }
 
         receipts_path = self._validation_run_root(topic_slug, resolved_run_id) / "literature_followup_receipts.jsonl"
         receipt_rows = read_jsonl(receipts_path)
@@ -2079,6 +4123,23 @@ class AITPService:
             if allowed_source_types and target_source_type not in allowed_source_types:
                 continue
             if str(row.get("status") or "") != "completed":
+                continue
+            parent_gap_ids = self._dedupe_strings(list(row.get("parent_gap_ids") or []))
+            raw_parent_followups = row.get("parent_followup_task_ids")
+            if raw_parent_followups is None:
+                single_parent_followup = str(row.get("parent_followup_task_id") or "").strip()
+                raw_parent_followups = [single_parent_followup] if single_parent_followup else []
+            parent_followup_task_ids = self._dedupe_strings(list(raw_parent_followups or []))
+            reentry_targets = self._dedupe_strings(list(row.get("reentry_targets") or []))
+            supporting_regression_question_ids = self._dedupe_strings(
+                list(row.get("supporting_regression_question_ids") or [])
+            )
+            if bounded_gap_required and not (
+                parent_gap_ids
+                or parent_followup_task_ids
+                or reentry_targets
+                or supporting_regression_question_ids
+            ):
                 continue
             for match in list(row.get("matches") or [])[:max_subtopics]:
                 arxiv_id = str(match.get("arxiv_id") or "").strip()
@@ -2117,6 +4178,29 @@ class AITPService:
                 child_source_rows = read_jsonl(self.kernel_root / "source-layer" / "topics" / child_topic_slug / "source_index.jsonl")
                 if child_source_rows:
                     source_id = str(child_source_rows[-1].get("source_id") or "")
+                return_packet = {
+                    "return_packet_version": 1,
+                    "child_topic_slug": child_topic_slug,
+                    "parent_topic_slug": topic_slug,
+                    "parent_run_id": resolved_run_id,
+                    "receipt_id": str(row.get("receipt_id") or ""),
+                    "query": str(row.get("query") or ""),
+                    "parent_gap_ids": parent_gap_ids,
+                    "parent_followup_task_ids": parent_followup_task_ids,
+                    "reentry_targets": reentry_targets,
+                    "supporting_regression_question_ids": supporting_regression_question_ids,
+                    "source_id": source_id,
+                    "arxiv_id": arxiv_id,
+                    "expected_return_route": expected_return_route,
+                    "acceptable_return_shapes": acceptable_return_shapes,
+                    "required_output_artifacts": required_output_artifacts,
+                    "unresolved_return_statuses": unresolved_return_statuses,
+                    "return_status": "pending_reentry",
+                    "reintegration_requirements": reintegration_requirements,
+                    "updated_at": now_iso(),
+                    "updated_by": updated_by,
+                }
+                return_packet_path = self._write_followup_return_packet(child_topic_slug, return_packet)
                 spawned_row = {
                     "parent_topic_slug": topic_slug,
                     "parent_run_id": resolved_run_id,
@@ -2124,6 +4208,10 @@ class AITPService:
                     "query": str(row.get("query") or ""),
                     "target_source_type": target_source_type,
                     "triggered_by_result_id": str(row.get("result_id") or row.get("triggered_by_result_id") or ""),
+                    "parent_gap_ids": parent_gap_ids,
+                    "parent_followup_task_ids": parent_followup_task_ids,
+                    "reentry_targets": reentry_targets,
+                    "supporting_regression_question_ids": supporting_regression_question_ids,
                     "arxiv_id": arxiv_id,
                     "source_id": source_id,
                     "child_topic_slug": child_topic_slug,
@@ -2131,6 +4219,7 @@ class AITPService:
                     "statement": statement,
                     "human_request": human_request,
                     "runtime_root": str(bootstrap.get("runtime_root") or ""),
+                    "return_packet_path": return_packet_path,
                     "updated_at": now_iso(),
                     "updated_by": updated_by,
                 }
@@ -2207,6 +4296,26 @@ class AITPService:
                         run_id=(row.get("handler_args") or {}).get("run_id"),
                         query=(row.get("handler_args") or {}).get("query"),
                         receipt_id=(row.get("handler_args") or {}).get("receipt_id"),
+                        updated_by=updated_by,
+                    )
+                elif action_type == "reintegrate_followup_subtopic":
+                    result = self.reintegrate_followup_subtopic(
+                        topic_slug=topic_slug,
+                        child_topic_slug=str((row.get("handler_args") or {}).get("child_topic_slug") or ""),
+                        run_id=(row.get("handler_args") or {}).get("run_id"),
+                        updated_by=updated_by,
+                    )
+                elif action_type == "assess_topic_completion":
+                    result = self.assess_topic_completion(
+                        topic_slug=topic_slug,
+                        run_id=(row.get("handler_args") or {}).get("run_id"),
+                        updated_by=updated_by,
+                    )
+                elif action_type == "prepare_lean_bridge":
+                    result = self.prepare_lean_bridge(
+                        topic_slug=topic_slug,
+                        run_id=(row.get("handler_args") or {}).get("run_id"),
+                        candidate_id=(row.get("handler_args") or {}).get("candidate_id"),
                         updated_by=updated_by,
                     )
                 elif action_type == "auto_promote_candidate":
@@ -2511,6 +4620,542 @@ class AITPService:
             raise FileNotFoundError(f"Runtime state missing for topic {topic_slug}")
         return topic_state
 
+    def new_topic(
+        self,
+        *,
+        topic: str,
+        question: str,
+        mode: str | None = None,
+        run_id: str | None = None,
+        control_note: str | None = None,
+        updated_by: str = "aitp-cli",
+        arxiv_ids: list[str] | None = None,
+        local_note_paths: list[str] | None = None,
+        skill_queries: list[str] | None = None,
+        human_request: str | None = None,
+    ) -> dict[str, Any]:
+        research_mode = self._template_mode_to_research_mode(mode) if mode else None
+        payload = self.orchestrate(
+            topic=topic,
+            statement=question,
+            run_id=run_id,
+            control_note=control_note,
+            updated_by=updated_by,
+            arxiv_ids=arxiv_ids,
+            local_note_paths=local_note_paths,
+            skill_queries=skill_queries,
+            human_request=human_request or question,
+            research_mode=research_mode,
+        )
+        payload["template_mode"] = mode or self._research_mode_to_template_mode(
+            str((payload.get("topic_state") or {}).get("research_mode") or research_mode or "")
+        )
+        return payload
+
+    def topic_status(
+        self,
+        *,
+        topic_slug: str,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        protocol_paths = self._materialize_runtime_protocol_bundle(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        bundle = read_json(Path(protocol_paths["runtime_protocol_path"])) or {}
+        minimal = bundle.get("minimal_execution_brief") or {}
+        return {
+            "topic_slug": topic_slug,
+            "title": str(((bundle.get("active_research_contract") or {}).get("title") or self._topic_display_title(topic_slug))),
+            "current_stage": bundle.get("resume_stage"),
+            "research_mode": bundle.get("research_mode"),
+            "selected_action_id": minimal.get("selected_action_id"),
+            "selected_action_type": minimal.get("selected_action_type"),
+            "selected_action_summary": minimal.get("selected_action_summary"),
+            "runtime_protocol_path": protocol_paths["runtime_protocol_path"],
+            "runtime_protocol_note_path": protocol_paths["runtime_protocol_note_path"],
+            "active_research_contract": bundle.get("active_research_contract") or {},
+            "promotion_readiness": bundle.get("promotion_readiness") or {},
+            "open_gap_summary": bundle.get("open_gap_summary") or {},
+            "topic_completion": bundle.get("topic_completion") or {},
+            "lean_bridge": bundle.get("lean_bridge") or {},
+            "must_read_now": bundle.get("must_read_now") or [],
+        }
+
+    def topic_next(
+        self,
+        *,
+        topic_slug: str,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        protocol_paths = self._materialize_runtime_protocol_bundle(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        bundle = read_json(Path(protocol_paths["runtime_protocol_path"])) or {}
+        minimal = bundle.get("minimal_execution_brief") or {}
+        return {
+            "topic_slug": topic_slug,
+            "selected_action_id": minimal.get("selected_action_id"),
+            "selected_action_type": minimal.get("selected_action_type"),
+            "selected_action_summary": minimal.get("selected_action_summary"),
+            "current_stage": minimal.get("current_stage"),
+            "open_next": minimal.get("open_next"),
+            "must_read_now": bundle.get("must_read_now") or [],
+            "escalation_triggers": bundle.get("escalation_triggers") or [],
+            "open_gap_summary": bundle.get("open_gap_summary") or {},
+            "topic_completion": bundle.get("topic_completion") or {},
+            "runtime_protocol_note_path": protocol_paths["runtime_protocol_note_path"],
+        }
+
+    def work_topic(
+        self,
+        *,
+        topic: str | None = None,
+        topic_slug: str | None = None,
+        question: str | None = None,
+        mode: str | None = None,
+        run_id: str | None = None,
+        control_note: str | None = None,
+        updated_by: str = "aitp-cli",
+        skill_queries: list[str] | None = None,
+        human_request: str | None = None,
+        max_auto_steps: int = 1,
+    ) -> dict[str, Any]:
+        research_mode = self._template_mode_to_research_mode(mode) if mode else None
+        if max_auto_steps <= 0:
+            return self.orchestrate(
+                topic=topic,
+                topic_slug=topic_slug,
+                statement=question,
+                run_id=run_id,
+                control_note=control_note,
+                updated_by=updated_by,
+                skill_queries=skill_queries,
+                human_request=human_request or question,
+                research_mode=research_mode,
+            )
+        return self.run_topic_loop(
+            topic=topic,
+            topic_slug=topic_slug,
+            statement=question,
+            run_id=run_id,
+            control_note=control_note,
+            updated_by=updated_by,
+            human_request=human_request or question,
+            skill_queries=skill_queries,
+            max_auto_steps=max_auto_steps,
+            research_mode=research_mode,
+        )
+
+    def prepare_verification(
+        self,
+        *,
+        topic_slug: str,
+        mode: str,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        mode_defaults = {
+            "proof": {
+                "validation_mode": "formal",
+                "verification_focus": "Check that every non-trivial proof or derivation step is explicit, anchored, and reusable.",
+                "required_checks": [
+                    "Open the theory-packet coverage, notation, and derivation surfaces before closing the proof lane.",
+                    "Confirm that cited prerequisites and prior-work dependencies have durable L0/L1 support.",
+                    "Reject any step that only exists as prose without derivation-step or proof-fragment support.",
+                ],
+            },
+            "comparison": {
+                "validation_mode": "comparison",
+                "verification_focus": "Compare the active claim set against cited prior work, alternative derivations, or reference formulations.",
+                "required_checks": [
+                    "Make the comparison target explicit and source-backed.",
+                    "Record regime matches and mismatches rather than smoothing them over.",
+                    "Return to L0 if the comparison source set is incomplete.",
+                ],
+            },
+            "numeric": {
+                "validation_mode": "numerical",
+                "verification_focus": "Validate the active topic against executed numeric or benchmark evidence.",
+                "required_checks": [
+                    "Require executed evidence artifacts, not only planned benchmarks.",
+                    "Require declared tolerances or qualitative agreement criteria.",
+                    "Reject narrative-only claims that lack result artifacts or route receipts.",
+                ],
+            },
+            "topic-completion": {
+                "validation_mode": "hybrid",
+                "verification_focus": "Judge whether the whole topic is ready for bounded completion or promotion routing.",
+                "required_checks": [
+                    "Check promotion blockers, split requirements, cited-recovery flags, and regression support together.",
+                    "Ensure the research and validation contracts still match the topic shell surfaces.",
+                    "Return to L0 for any unresolved source or prior-work blocker before marking topic completion.",
+                ],
+            },
+        }
+        if mode not in mode_defaults:
+            raise ValueError(f"Unsupported verification mode: {mode}")
+
+        self.get_runtime_state(topic_slug)
+        shell_surfaces = self.ensure_topic_shell_surfaces(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        validation_paths = self._validation_contract_paths(topic_slug)
+        validation_contract = dict(shell_surfaces["validation_contract"])
+        latest_run_id = str((self.get_runtime_state(topic_slug)).get("latest_run_id") or "").strip()
+        candidate_rows = self._candidate_rows_for_run(topic_slug, latest_run_id)
+        defaults = mode_defaults[mode]
+        validation_contract["status"] = "planned"
+        validation_contract["validation_mode"] = defaults["validation_mode"]
+        validation_contract["verification_focus"] = defaults["verification_focus"]
+        validation_contract["required_checks"] = defaults["required_checks"]
+        validation_contract["acceptance_rule"] = (
+            "Accept only when the requested verification mode is satisfied by durable artifacts and no active L0-recovery blocker is being hidden."
+        )
+        validation_contract["rejection_rule"] = (
+            "Reject when proof, comparison, or execution claims outrun the currently persisted artifacts."
+        )
+        if mode == "topic-completion":
+            validation_contract["target_claim_ids"] = self._dedupe_strings(
+                [str(row.get("candidate_id") or "").strip() for row in candidate_rows if str(row.get("candidate_id") or "").strip()]
+            )
+        write_json(validation_paths["json"], validation_contract)
+        write_text(
+            validation_paths["note"],
+            self._render_validation_contract_markdown(validation_contract),
+        )
+        protocol_paths = self._materialize_runtime_protocol_bundle(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        return {
+            "topic_slug": topic_slug,
+            "verification_mode": mode,
+            "validation_contract_path": str(validation_paths["json"]),
+            "validation_contract_note_path": str(validation_paths["note"]),
+            "validation_contract": validation_contract,
+            "runtime_protocol": protocol_paths,
+        }
+
+    def assess_topic_completion(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None = None,
+        updated_by: str = "aitp-cli",
+        refresh_runtime_bundle: bool = True,
+    ) -> dict[str, Any]:
+        resolved_run_id = self._resolve_run_id(topic_slug, run_id)
+        candidate_rows = self._candidate_rows_for_run(topic_slug, resolved_run_id)
+        payload = self._compute_topic_completion_payload(
+            topic_slug=topic_slug,
+            run_id=resolved_run_id,
+            candidate_rows=candidate_rows,
+            updated_by=updated_by,
+        )
+        paths = self._topic_completion_paths(topic_slug)
+        write_json(paths["json"], payload)
+        write_text(paths["note"], self._topic_completion_markdown(payload))
+        result = {
+            **payload,
+            "topic_completion_path": str(paths["json"]),
+            "topic_completion_note_path": str(paths["note"]),
+        }
+        if refresh_runtime_bundle:
+            result["runtime_protocol"] = self._materialize_runtime_protocol_bundle(
+                topic_slug=topic_slug,
+                updated_by=updated_by,
+            )
+        return result
+
+    def update_followup_return_packet(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None = None,
+        return_status: str,
+        accepted_return_shape: str | None = None,
+        return_summary: str | None = None,
+        child_topic_summary: str | None = None,
+        return_artifact_paths: list[str] | None = None,
+        updated_by: str = "aitp-cli",
+        refresh_runtime_bundle: bool = True,
+    ) -> dict[str, Any]:
+        packet_path = self._followup_return_packet_path(topic_slug)
+        packet = read_json(packet_path)
+        if packet is None:
+            raise FileNotFoundError(f"Follow-up return packet missing for child topic {topic_slug}")
+
+        normalized_status = str(return_status or "").strip()
+        if not normalized_status:
+            raise ValueError("Return status is required.")
+
+        policy = self._load_runtime_policy().get("followup_subtopic_policy") or {}
+        unresolved_statuses = {
+            str(value).strip()
+            for value in (policy.get("unresolved_return_statuses") or [])
+            if str(value).strip()
+        }
+        if not unresolved_statuses:
+            unresolved_statuses = {"pending_reentry", "returned_with_gap", "returned_unresolved"}
+        supported_statuses = {"pending_reentry", "recovered_units", "resolved_gap_update"} | unresolved_statuses
+        if normalized_status not in supported_statuses:
+            raise ValueError(f"Unsupported follow-up return status: {normalized_status}")
+
+        acceptable_return_shapes = self._dedupe_strings(list(packet.get("acceptable_return_shapes") or []))
+        resolved_return_shape = (
+            str(accepted_return_shape or "").strip()
+            or self._return_shape_for_status(normalized_status, unresolved_statuses)
+        )
+        if normalized_status == "pending_reentry":
+            resolved_return_shape = ""
+        if resolved_return_shape and acceptable_return_shapes and resolved_return_shape not in acceptable_return_shapes:
+            raise ValueError(
+                f"Return shape {resolved_return_shape} is not allowed for child topic {topic_slug}."
+            )
+
+        resolved_artifact_paths = self._dedupe_strings(list(return_artifact_paths or []))
+        if not resolved_artifact_paths:
+            resolved_artifact_paths = self._dedupe_strings(list(packet.get("return_artifact_paths") or []))
+
+        resolved_summary = str(return_summary or packet.get("return_summary") or "").strip()
+        resolved_child_summary = str(child_topic_summary or packet.get("child_topic_summary") or "").strip()
+        if normalized_status in {"recovered_units", "resolved_gap_update"} and not resolved_artifact_paths:
+            raise ValueError(
+                "Recovered follow-up returns must name at least one durable return artifact path."
+            )
+        if normalized_status in unresolved_statuses and normalized_status != "pending_reentry" and not resolved_summary:
+            raise ValueError("Unresolved follow-up returns must provide a return summary.")
+
+        resolved_child_run_id = self._resolve_run_id(topic_slug, run_id)
+        updated_packet = dict(packet)
+        updated_packet["return_status"] = normalized_status
+        if resolved_return_shape:
+            updated_packet["accepted_return_shape"] = resolved_return_shape
+        else:
+            updated_packet.pop("accepted_return_shape", None)
+        if resolved_summary:
+            updated_packet["return_summary"] = resolved_summary
+        elif normalized_status == "pending_reentry":
+            updated_packet.pop("return_summary", None)
+        if resolved_artifact_paths:
+            updated_packet["return_artifact_paths"] = resolved_artifact_paths
+        elif normalized_status == "pending_reentry":
+            updated_packet.pop("return_artifact_paths", None)
+        if resolved_child_summary:
+            updated_packet["child_topic_summary"] = resolved_child_summary
+        if resolved_child_run_id:
+            updated_packet["child_run_id"] = resolved_child_run_id
+        updated_packet["updated_at"] = now_iso()
+        updated_packet["updated_by"] = updated_by
+        updated_packet["return_updated_at"] = updated_packet["updated_at"]
+        updated_packet["return_updated_by"] = updated_by
+        self._write_followup_return_packet(topic_slug, updated_packet)
+
+        result = {
+            **updated_packet,
+            "topic_slug": topic_slug,
+            "return_packet_path": str(packet_path),
+            "return_packet_note_path": str(self._followup_return_packet_note_path(topic_slug)),
+        }
+        if refresh_runtime_bundle:
+            result["runtime_protocol"] = self._materialize_runtime_protocol_bundle(
+                topic_slug=topic_slug,
+                updated_by=updated_by,
+            )
+        return result
+
+    def reintegrate_followup_subtopic(
+        self,
+        *,
+        topic_slug: str,
+        child_topic_slug: str,
+        run_id: str | None = None,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        resolved_run_id = self._resolve_run_id(topic_slug, run_id)
+        if not resolved_run_id:
+            raise FileNotFoundError(f"Unable to resolve a validation run for topic {topic_slug}")
+        followup_rows = self._load_followup_subtopic_rows(topic_slug)
+        matching_row = next(
+            (
+                row
+                for row in followup_rows
+                if str(row.get("child_topic_slug") or "").strip() == child_topic_slug
+            ),
+            None,
+        )
+        if matching_row is None:
+            raise FileNotFoundError(f"Follow-up child topic not registered under parent topic {topic_slug}: {child_topic_slug}")
+        return_packet_path = str(matching_row.get("return_packet_path") or "").strip() or str(
+            self._followup_return_packet_path(child_topic_slug)
+        )
+        return_packet = read_json(Path(return_packet_path))
+        if return_packet is None:
+            raise FileNotFoundError(f"Follow-up return packet missing for child topic {child_topic_slug}")
+        if str(return_packet.get("parent_topic_slug") or "").strip() != topic_slug:
+            raise ValueError("Follow-up return packet parent topic does not match the requested parent topic.")
+        return_status = str(return_packet.get("return_status") or "").strip() or "pending_reentry"
+        if return_status == "pending_reentry":
+            raise ValueError("Child topic still reports pending_reentry and cannot be reintegrated yet.")
+        acceptable_return_shapes = self._dedupe_strings(list(return_packet.get("acceptable_return_shapes") or []))
+        policy = self._load_runtime_policy().get("followup_subtopic_policy") or {}
+        unresolved_statuses = {
+            str(value).strip()
+            for value in (policy.get("unresolved_return_statuses") or [])
+            if str(value).strip()
+        }
+        if not unresolved_statuses:
+            unresolved_statuses = {"pending_reentry", "returned_with_gap", "returned_unresolved"}
+        unresolved_statuses.discard("pending_reentry")
+        accepted_return_shape = str(return_packet.get("accepted_return_shape") or "").strip()
+        if not accepted_return_shape:
+            accepted_return_shape = self._return_shape_for_status(return_status, unresolved_statuses)
+            if not accepted_return_shape and acceptable_return_shapes and return_status != "pending_reentry":
+                accepted_return_shape = acceptable_return_shapes[0]
+        if accepted_return_shape and acceptable_return_shapes and accepted_return_shape not in acceptable_return_shapes:
+            raise ValueError(
+                f"Accepted return shape {accepted_return_shape} is not allowed by the child return packet."
+            )
+        return_artifact_paths = self._dedupe_strings(list(return_packet.get("return_artifact_paths") or []))
+        if return_status in {"recovered_units", "resolved_gap_update"} and not return_artifact_paths:
+            raise ValueError("Recovered child follow-up returns must provide durable return artifact paths before reintegration.")
+        parent_status = "returned_with_gap" if return_status in unresolved_statuses else "reintegrated"
+        child_completion = read_json(self._topic_completion_paths(child_topic_slug)["json"]) or {}
+        reintegration_requirements = dict(return_packet.get("reintegration_requirements") or {})
+        summary = (
+            str(return_packet.get("return_summary") or "").strip()
+            or str(return_packet.get("summary") or "").strip()
+            or (
+                "Child topic returned with unresolved gaps."
+                if parent_status == "returned_with_gap"
+                else "Child topic return packet was reintegrated into the parent topic."
+            )
+        )
+        receipt_row = {
+            "parent_topic_slug": topic_slug,
+            "parent_run_id": resolved_run_id,
+            "child_topic_slug": child_topic_slug,
+            "receipt_id": str(return_packet.get("receipt_id") or matching_row.get("receipt_id") or ""),
+            "return_status": return_status,
+            "accepted_return_shape": accepted_return_shape,
+            "source_id": str(return_packet.get("source_id") or matching_row.get("source_id") or ""),
+            "arxiv_id": str(return_packet.get("arxiv_id") or matching_row.get("arxiv_id") or ""),
+            "reentry_targets": self._dedupe_strings(list(return_packet.get("reentry_targets") or matching_row.get("reentry_targets") or [])),
+            "parent_gap_ids": self._dedupe_strings(list(return_packet.get("parent_gap_ids") or matching_row.get("parent_gap_ids") or [])),
+            "parent_followup_task_ids": self._dedupe_strings(
+                list(return_packet.get("parent_followup_task_ids") or matching_row.get("parent_followup_task_ids") or [])
+            ),
+            "supporting_regression_question_ids": self._dedupe_strings(
+                list(return_packet.get("supporting_regression_question_ids") or matching_row.get("supporting_regression_question_ids") or [])
+            ),
+            "return_packet_path": return_packet_path,
+            "return_artifact_paths": return_artifact_paths,
+            "child_topic_completion_status": str(child_completion.get("status") or "not_assessed"),
+            "child_topic_summary": str(return_packet.get("child_topic_summary") or "").strip(),
+            "gap_writeback_required": parent_status == "returned_with_gap"
+            and bool(reintegration_requirements.get("must_write_back_parent_gaps")),
+            "reentry_update_required": bool(reintegration_requirements.get("must_update_reentry_targets")),
+            "summary": summary,
+            "updated_at": now_iso(),
+            "updated_by": updated_by,
+        }
+        reintegration_rows = [
+            row
+            for row in self._load_followup_reintegration_rows(topic_slug)
+            if str(row.get("child_topic_slug") or "").strip() != child_topic_slug
+        ]
+        reintegration_rows.append(receipt_row)
+        reintegration_paths = self._write_followup_reintegration_rows(topic_slug, reintegration_rows)
+
+        gap_writeback_rows = [
+            row
+            for row in self._load_followup_gap_writeback_rows(topic_slug)
+            if str(row.get("child_topic_slug") or "").strip() != child_topic_slug
+        ]
+        if receipt_row["gap_writeback_required"]:
+            gap_writeback_rows.append(
+                {
+                    "parent_topic_slug": topic_slug,
+                    "parent_run_id": resolved_run_id,
+                    "child_topic_slug": child_topic_slug,
+                    "receipt_id": receipt_row["receipt_id"],
+                    "return_status": return_status,
+                    "parent_gap_ids": receipt_row["parent_gap_ids"],
+                    "parent_followup_task_ids": receipt_row["parent_followup_task_ids"],
+                    "reentry_targets": receipt_row["reentry_targets"],
+                    "summary": summary,
+                    "return_packet_path": return_packet_path,
+                    "return_artifact_paths": return_artifact_paths,
+                    "updated_at": now_iso(),
+                    "updated_by": updated_by,
+                }
+            )
+        gap_writeback_paths = self._write_followup_gap_writeback_rows(topic_slug, gap_writeback_rows)
+
+        updated_followup_rows: list[dict[str, Any]] = []
+        for row in followup_rows:
+            if str(row.get("child_topic_slug") or "").strip() != child_topic_slug:
+                updated_followup_rows.append(row)
+                continue
+            updated_row = dict(row)
+            updated_row["status"] = parent_status
+            updated_row["reintegrated_at"] = now_iso()
+            updated_row["reintegrated_by"] = updated_by
+            updated_row["reintegration_receipt_path"] = reintegration_paths["followup_reintegration_path"]
+            updated_row["return_status"] = return_status
+            updated_followup_rows.append(updated_row)
+        followup_paths = self._write_followup_subtopic_rows(topic_slug, updated_followup_rows)
+        completion = self.assess_topic_completion(
+            topic_slug=topic_slug,
+            run_id=resolved_run_id,
+            updated_by=updated_by,
+            refresh_runtime_bundle=False,
+        )
+        runtime_protocol = self._materialize_runtime_protocol_bundle(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        return {
+            "topic_slug": topic_slug,
+            "run_id": resolved_run_id,
+            "child_topic_slug": child_topic_slug,
+            "parent_followup_status": parent_status,
+            "reintegration_receipt": receipt_row,
+            **reintegration_paths,
+            **gap_writeback_paths,
+            **followup_paths,
+            "topic_completion": completion,
+            "runtime_protocol": runtime_protocol,
+        }
+
+    def prepare_lean_bridge(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None = None,
+        candidate_id: str | None = None,
+        updated_by: str = "aitp-cli",
+        refresh_runtime_bundle: bool = True,
+    ) -> dict[str, Any]:
+        resolved_run_id = self._resolve_run_id(topic_slug, run_id)
+        candidate_rows = self._candidate_rows_for_run(topic_slug, resolved_run_id)
+        payload = self._materialize_lean_bridge(
+            topic_slug=topic_slug,
+            run_id=resolved_run_id,
+            candidate_rows=candidate_rows,
+            updated_by=updated_by,
+            candidate_id=candidate_id,
+        )
+        result = dict(payload)
+        if refresh_runtime_bundle:
+            result["runtime_protocol"] = self._materialize_runtime_protocol_bundle(
+                topic_slug=topic_slug,
+                updated_by=updated_by,
+            )
+        return result
+
     def orchestrate(
         self,
         *,
@@ -2524,6 +5169,7 @@ class AITPService:
         local_note_paths: list[str] | None = None,
         skill_queries: list[str] | None = None,
         human_request: str | None = None,
+        research_mode: str | None = None,
     ) -> dict[str, Any]:
         if not topic_slug and not topic:
             raise ValueError("Provide topic_slug or topic.")
@@ -2547,6 +5193,8 @@ class AITPService:
             command.extend(["--control-note", control_note])
         if human_request:
             command.extend(["--human-request", human_request])
+        if research_mode:
+            command.extend(["--research-mode", research_mode])
         for arxiv_id in arxiv_ids or []:
             command.extend(["--arxiv-id", arxiv_id])
         for note_path in local_note_paths or []:
@@ -2577,6 +5225,13 @@ class AITPService:
                 "conformance_report": str(runtime_root / "conformance_report.md"),
                 "runtime_protocol": protocol_paths["runtime_protocol_path"],
                 "runtime_protocol_note": protocol_paths["runtime_protocol_note_path"],
+                "research_question_contract": str(self._research_question_contract_paths(resolved_topic_slug)["json"]),
+                "research_question_contract_note": str(self._research_question_contract_paths(resolved_topic_slug)["note"]),
+                "validation_contract": str(self._validation_contract_paths(resolved_topic_slug)["json"]),
+                "validation_contract_note": str(self._validation_contract_paths(resolved_topic_slug)["note"]),
+                "topic_dashboard": str(self._topic_dashboard_path(resolved_topic_slug)),
+                "promotion_readiness": str(self._promotion_readiness_path(resolved_topic_slug)),
+                "gap_map": str(self._gap_map_path(resolved_topic_slug)),
             },
             "topic_state": self.get_runtime_state(resolved_topic_slug),
             "conformance_state": read_json(runtime_root / "conformance_state.json"),
@@ -2784,6 +5439,14 @@ class AITPService:
         critical_unit_recall: float = 1.0,
         missing_anchor_count: int = 0,
         skeptic_major_gap_count: int = 0,
+        supporting_regression_question_ids: list[str] | None = None,
+        supporting_oracle_ids: list[str] | None = None,
+        supporting_regression_run_ids: list[str] | None = None,
+        promotion_blockers: list[str] | None = None,
+        split_required: bool | None = None,
+        cited_recovery_required: bool | None = None,
+        followup_gap_ids: list[str] | None = None,
+        topic_completion_status: str | None = None,
         notes: str | None = None,
     ) -> dict[str, Any]:
         resolved_run_id = self._resolve_run_id(topic_slug, run_id)
@@ -2798,6 +5461,41 @@ class AITPService:
         source_rows = read_jsonl(self.kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl")
         source_row = choose_source_row(source_rows=source_rows, candidate=candidate)
         source_id = str((source_row or {}).get("source_id") or "") or f"source:{slugify(candidate_id)}"
+        candidate_question_ids = self._dedupe_strings(
+            supporting_regression_question_ids
+            if supporting_regression_question_ids is not None
+            else list(candidate.get("supporting_regression_question_ids") or [])
+        )
+        candidate_oracle_ids = self._dedupe_strings(
+            supporting_oracle_ids
+            if supporting_oracle_ids is not None
+            else list(candidate.get("supporting_oracle_ids") or [])
+        )
+        candidate_regression_run_ids = self._dedupe_strings(
+            supporting_regression_run_ids
+            if supporting_regression_run_ids is not None
+            else list(candidate.get("supporting_regression_run_ids") or [])
+        )
+        candidate_promotion_blockers = self._dedupe_strings(
+            promotion_blockers
+            if promotion_blockers is not None
+            else list(candidate.get("promotion_blockers") or [])
+        )
+        candidate_split_required = (
+            as_bool(split_required)
+            if split_required is not None
+            else as_bool(candidate.get("split_required"))
+        )
+        candidate_cited_recovery_required = (
+            as_bool(cited_recovery_required)
+            if cited_recovery_required is not None
+            else as_bool(candidate.get("cited_recovery_required"))
+        )
+        candidate_followup_gap_ids = self._dedupe_strings(
+            followup_gap_ids
+            if followup_gap_ids is not None
+            else list(candidate.get("followup_gap_ids") or [])
+        )
 
         canonical_source_sections = self._dedupe_strings(source_sections or [])
         canonical_covered_sections = self._dedupe_strings(covered_sections or canonical_source_sections)
@@ -2939,12 +5637,51 @@ class AITPService:
             "skeptic_major_gap_count": skeptic_major_gap_count,
             "notes": notes or "",
         }
+        resolved_topic_completion_status = self._derive_topic_completion_status(
+            requested_status=topic_completion_status or str(candidate.get("topic_completion_status") or ""),
+            coverage_status=coverage_status,
+            supporting_regression_question_ids=candidate_question_ids,
+            supporting_oracle_ids=candidate_oracle_ids,
+            supporting_regression_run_ids=candidate_regression_run_ids,
+            promotion_blockers=candidate_promotion_blockers,
+            split_required=candidate_split_required,
+            cited_recovery_required=candidate_cited_recovery_required,
+        )
+        regression_gate = self._build_regression_gate(
+            topic_slug=topic_slug,
+            run_id=resolved_run_id,
+            candidate_id=candidate_id,
+            updated_by=updated_by,
+            coverage_status=coverage_status,
+            consensus_status=str(agent_consensus.get("status") or "blocked"),
+            topic_completion_status=resolved_topic_completion_status,
+            supporting_regression_question_ids=candidate_question_ids,
+            supporting_oracle_ids=candidate_oracle_ids,
+            supporting_regression_run_ids=candidate_regression_run_ids,
+            promotion_blockers=candidate_promotion_blockers,
+            split_required=candidate_split_required,
+            cited_recovery_required=candidate_cited_recovery_required,
+            followup_gap_ids=candidate_followup_gap_ids,
+            notes=notes or "",
+        )
 
         write_json(packet_paths["structure_map"], structure_map)
         write_json(packet_paths["coverage_ledger"], coverage_ledger)
         write_json(packet_paths["notation_table"], notation_table)
         write_json(packet_paths["derivation_graph"], derivation_graph)
         write_json(packet_paths["agent_consensus"], agent_consensus)
+        write_json(packet_paths["regression_gate"], regression_gate)
+
+        updated_candidate = dict(candidate)
+        updated_candidate["supporting_regression_question_ids"] = candidate_question_ids
+        updated_candidate["supporting_oracle_ids"] = candidate_oracle_ids
+        updated_candidate["supporting_regression_run_ids"] = candidate_regression_run_ids
+        updated_candidate["promotion_blockers"] = candidate_promotion_blockers
+        updated_candidate["split_required"] = candidate_split_required
+        updated_candidate["cited_recovery_required"] = candidate_cited_recovery_required
+        updated_candidate["followup_gap_ids"] = candidate_followup_gap_ids
+        updated_candidate["topic_completion_status"] = resolved_topic_completion_status
+        self._replace_candidate_row(topic_slug, resolved_run_id, candidate_id, updated_candidate)
 
         return {
             "topic_slug": topic_slug,
@@ -2952,6 +5689,8 @@ class AITPService:
             "candidate_id": candidate_id,
             "coverage_status": coverage_status,
             "coverage_score": coverage_score,
+            "regression_gate_status": regression_gate["status"],
+            "topic_completion_status": resolved_topic_completion_status,
             "ready_for_auto_promotion": coverage_ledger["ready_for_auto_promotion"],
             "paths": {key: str(value) for key, value in packet_paths.items() if key != "root"},
             "artifacts": {
@@ -2960,6 +5699,7 @@ class AITPService:
                 "notation_table": notation_table,
                 "derivation_graph": derivation_graph,
                 "agent_consensus": agent_consensus,
+                "regression_gate": regression_gate,
             },
         }
 
@@ -3315,6 +6055,19 @@ class AITPService:
             "canonical_layer": "L2",
             "coverage_status": "not_audited",
             "consensus_status": "not_requested",
+            "regression_gate_status": "not_audited",
+            "topic_completion_status": str(candidate.get("topic_completion_status") or "not_assessed"),
+            "supporting_regression_question_ids": self._dedupe_strings(
+                list(candidate.get("supporting_regression_question_ids") or [])
+            ),
+            "supporting_oracle_ids": self._dedupe_strings(list(candidate.get("supporting_oracle_ids") or [])),
+            "supporting_regression_run_ids": self._dedupe_strings(
+                list(candidate.get("supporting_regression_run_ids") or [])
+            ),
+            "promotion_blockers": self._dedupe_strings(list(candidate.get("promotion_blockers") or [])),
+            "split_required": as_bool(candidate.get("split_required")),
+            "cited_recovery_required": as_bool(candidate.get("cited_recovery_required")),
+            "followup_gap_ids": self._dedupe_strings(list(candidate.get("followup_gap_ids") or [])),
             "merge_outcome": "pending",
             "requested_by": requested_by,
             "requested_at": now_iso(),
@@ -3543,8 +6296,32 @@ class AITPService:
         review_artifacts_payload = dict(review_artifact_paths or {})
         review_artifacts_payload.setdefault("candidate_id", candidate_id)
         review_artifacts_payload.setdefault("promotion_gate_path", self._relativize(gate_path_json))
+        if packet_paths["regression_gate"].exists():
+            review_artifacts_payload.setdefault("regression_gate_path", self._relativize(packet_paths["regression_gate"]))
         if packet_paths["merge_report"].exists():
             review_artifacts_payload.setdefault("merge_report_path", self._relativize(packet_paths["merge_report"]))
+        regression_summary = read_json(packet_paths["regression_gate"]) or {
+            "status": str(gate_payload.get("regression_gate_status") or "not_audited"),
+            "topic_completion_status": str(
+                candidate.get("topic_completion_status") or gate_payload.get("topic_completion_status") or "not_assessed"
+            ),
+            "supporting_regression_question_ids": self._dedupe_strings(
+                list(candidate.get("supporting_regression_question_ids") or gate_payload.get("supporting_regression_question_ids") or [])
+            ),
+            "supporting_oracle_ids": self._dedupe_strings(
+                list(candidate.get("supporting_oracle_ids") or gate_payload.get("supporting_oracle_ids") or [])
+            ),
+            "supporting_regression_run_ids": self._dedupe_strings(
+                list(candidate.get("supporting_regression_run_ids") or gate_payload.get("supporting_regression_run_ids") or [])
+            ),
+            "promotion_blockers": self._dedupe_strings(
+                list(candidate.get("promotion_blockers") or gate_payload.get("promotion_blockers") or [])
+            ),
+            "split_clearance_status": "blocked" if as_bool(candidate.get("split_required")) else "clear",
+            "promotion_blockers_cleared": not (
+                list(candidate.get("promotion_blockers") or []) or as_bool(candidate.get("cited_recovery_required"))
+            ),
+        }
 
         incoming_unit_payload = build_tpkn_unit(
             candidate=candidate,
@@ -3569,6 +6346,7 @@ class AITPService:
             review_artifacts=review_artifacts_payload,
             coverage=coverage_summary,
             consensus=consensus_summary,
+            regression_gate=regression_summary,
             merge_lineage=merge_lineage,
             conflict_status="none",
             equivalence_refs=equivalence_refs,
@@ -3667,6 +6445,9 @@ class AITPService:
             "canonical_layer": canonical_layer,
             "coverage_status": str((coverage_summary or {}).get("status") or gate_payload.get("coverage_status") or "not_audited"),
             "consensus_status": str((consensus_summary or {}).get("status") or gate_payload.get("consensus_status") or "not_requested"),
+            "regression_gate_status": str(
+                regression_summary.get("status") or gate_payload.get("regression_gate_status") or "not_audited"
+            ),
             "merge_outcome": merge_outcome,
             "merge_target_unit": str((merge_target or {}).get("id") or ""),
             "reason": notes
@@ -3695,6 +6476,34 @@ class AITPService:
         gate_payload["canonical_layer"] = canonical_layer
         gate_payload["coverage_status"] = str((coverage_summary or {}).get("status") or gate_payload.get("coverage_status") or "not_audited")
         gate_payload["consensus_status"] = str((consensus_summary or {}).get("status") or gate_payload.get("consensus_status") or "not_requested")
+        gate_payload["regression_gate_status"] = str(
+            regression_summary.get("status") or gate_payload.get("regression_gate_status") or "not_audited"
+        )
+        gate_payload["topic_completion_status"] = str(
+            regression_summary.get("topic_completion_status") or gate_payload.get("topic_completion_status") or "not_assessed"
+        )
+        gate_payload["supporting_regression_question_ids"] = self._dedupe_strings(
+            list(regression_summary.get("supporting_regression_question_ids") or gate_payload.get("supporting_regression_question_ids") or [])
+        )
+        gate_payload["supporting_oracle_ids"] = self._dedupe_strings(
+            list(regression_summary.get("supporting_oracle_ids") or gate_payload.get("supporting_oracle_ids") or [])
+        )
+        gate_payload["supporting_regression_run_ids"] = self._dedupe_strings(
+            list(regression_summary.get("supporting_regression_run_ids") or gate_payload.get("supporting_regression_run_ids") or [])
+        )
+        gate_payload["promotion_blockers"] = self._dedupe_strings(
+            list(regression_summary.get("promotion_blockers") or gate_payload.get("promotion_blockers") or [])
+        )
+        gate_payload["split_required"] = bool(
+            regression_summary.get("split_required")
+            if "split_required" in regression_summary
+            else gate_payload.get("split_required")
+        )
+        gate_payload["cited_recovery_required"] = bool(
+            regression_summary.get("cited_recovery_required")
+            if "cited_recovery_required" in regression_summary
+            else gate_payload.get("cited_recovery_required")
+        )
         gate_payload["merge_outcome"] = merge_outcome
         gate_payload["promoted_by"] = promoted_by
         gate_payload["promoted_at"] = promoted_at
@@ -3771,12 +6580,21 @@ class AITPService:
             )
 
         packet_paths = self._theory_packet_paths(topic_slug, resolved_run_id, candidate_id)
-        required_paths = (
-            "structure_map",
-            "coverage_ledger",
-            "notation_table",
-            "derivation_graph",
-            "agent_consensus",
+        runtime_policy = self._load_runtime_policy().get("auto_promotion_policy") or {}
+        required_paths = tuple(
+            str(value).strip()
+            for value in (
+                runtime_policy.get("required_theory_packet_artifacts")
+                or [
+                    "structure_map",
+                    "coverage_ledger",
+                    "notation_table",
+                    "derivation_graph",
+                    "agent_consensus",
+                    "regression_gate",
+                ]
+            )
+            if str(value).strip()
         )
         missing = [name for name in required_paths if not packet_paths[name].exists()]
         if missing:
@@ -3786,6 +6604,7 @@ class AITPService:
 
         coverage_summary = read_json(packet_paths["coverage_ledger"]) or {}
         consensus_summary = read_json(packet_paths["agent_consensus"]) or {}
+        regression_summary = read_json(packet_paths["regression_gate"]) or {}
         structure_map = read_json(packet_paths["structure_map"]) or {}
         notation_table = read_json(packet_paths["notation_table"]) or {}
         derivation_graph = read_json(packet_paths["derivation_graph"]) or {}
@@ -3797,6 +6616,19 @@ class AITPService:
             consensus_summary.get("status") or ""
         ) != "ready":
             raise PermissionError("Auto promotion requires a ready agent_consensus.json status.")
+        if source_policy.get("auto_promotion_requires_split_clearance") and str(
+            regression_summary.get("split_clearance_status") or ""
+        ) not in {"clear", "not_applicable"}:
+            raise PermissionError("Auto promotion is blocked until split clearance is explicit.")
+        if source_policy.get("auto_promotion_requires_gap_honesty"):
+            if list(regression_summary.get("promotion_blockers") or []):
+                raise PermissionError("Auto promotion is blocked while promotion_blockers remain.")
+            if as_bool(regression_summary.get("cited_recovery_required")):
+                raise PermissionError("Auto promotion is blocked while cited recovery remains required.")
+        if source_policy.get("auto_promotion_requires_regression_gate") and str(
+            regression_summary.get("status") or ""
+        ) != "pass":
+            raise PermissionError("Auto promotion requires a passing regression_gate.json status.")
 
         gate_payload = {
             "topic_slug": topic_slug,
@@ -3814,6 +6646,25 @@ class AITPService:
             "canonical_layer": "L2_auto",
             "coverage_status": str(coverage_summary.get("status") or "not_audited"),
             "consensus_status": str(consensus_summary.get("status") or "not_requested"),
+            "regression_gate_status": str(regression_summary.get("status") or "not_audited"),
+            "topic_completion_status": str(regression_summary.get("topic_completion_status") or "not_assessed"),
+            "supporting_regression_question_ids": self._dedupe_strings(
+                list(regression_summary.get("supporting_regression_question_ids") or candidate.get("supporting_regression_question_ids") or [])
+            ),
+            "supporting_oracle_ids": self._dedupe_strings(
+                list(regression_summary.get("supporting_oracle_ids") or candidate.get("supporting_oracle_ids") or [])
+            ),
+            "supporting_regression_run_ids": self._dedupe_strings(
+                list(regression_summary.get("supporting_regression_run_ids") or candidate.get("supporting_regression_run_ids") or [])
+            ),
+            "promotion_blockers": self._dedupe_strings(
+                list(regression_summary.get("promotion_blockers") or candidate.get("promotion_blockers") or [])
+            ),
+            "split_required": as_bool(regression_summary.get("split_required")),
+            "cited_recovery_required": as_bool(regression_summary.get("cited_recovery_required")),
+            "followup_gap_ids": self._dedupe_strings(
+                list(regression_summary.get("followup_gap_ids") or candidate.get("followup_gap_ids") or [])
+            ),
             "merge_outcome": "pending",
             "requested_by": promoted_by,
             "requested_at": now_iso(),
@@ -3850,6 +6701,7 @@ class AITPService:
             "notation_table_path": self._relativize(packet_paths["notation_table"]),
             "derivation_graph_path": self._relativize(packet_paths["derivation_graph"]),
             "agent_consensus_path": self._relativize(packet_paths["agent_consensus"]),
+            "regression_gate_path": self._relativize(packet_paths["regression_gate"]),
             "promotion_gate_path": self._relativize(Path(gate_paths["promotion_gate_path"])),
             "candidate_id": candidate_id,
         }
@@ -3884,6 +6736,16 @@ class AITPService:
             "backend_card_path": str(card_path) if card_path else None,
             "coverage_status": str(coverage_summary.get("status") or ""),
             "consensus_status": str(consensus_summary.get("status") or ""),
+            "regression_gate_status": str(regression_summary.get("status") or ""),
+            "topic_completion_status": str(regression_summary.get("topic_completion_status") or ""),
+            "supporting_regression_question_ids": self._dedupe_strings(
+                list(regression_summary.get("supporting_regression_question_ids") or [])
+            ),
+            "supporting_oracle_ids": self._dedupe_strings(list(regression_summary.get("supporting_oracle_ids") or [])),
+            "supporting_regression_run_ids": self._dedupe_strings(
+                list(regression_summary.get("supporting_regression_run_ids") or [])
+            ),
+            "promotion_blockers": self._dedupe_strings(list(regression_summary.get("promotion_blockers") or [])),
             "structure_section_count": len(structure_map.get("sections") or []),
             "notation_binding_count": len(notation_table.get("bindings") or []),
             "derivation_node_count": len(derivation_graph.get("nodes") or []),
@@ -3916,6 +6778,7 @@ class AITPService:
         human_request: str | None = None,
         skill_queries: list[str] | None = None,
         max_auto_steps: int = 4,
+        research_mode: str | None = None,
     ) -> dict[str, Any]:
         if not topic_slug and not topic:
             raise ValueError("Provide topic_slug or topic.")
@@ -3929,6 +6792,7 @@ class AITPService:
             updated_by=updated_by,
             human_request=human_request,
             skill_queries=skill_queries or [],
+            research_mode=research_mode,
         )
         resolved_topic_slug = bootstrap["topic_slug"]
         resolved_run_id = self._resolve_run_id(resolved_topic_slug, run_id)
@@ -3962,6 +6826,7 @@ class AITPService:
                 updated_by=updated_by,
                 skill_queries=skill_queries or [],
                 human_request=human_request,
+                research_mode=research_mode,
             )
         auto_actions = {
             "queue_path": auto_queue_path,
@@ -4486,6 +7351,7 @@ aitp audit $ARGUMENTS
             "communication_contract": self.kernel_root / "COMMUNICATION_CONTRACT.md",
             "autonomy_operator_model": self.kernel_root / "AUTONOMY_AND_OPERATOR_MODEL.md",
             "l2_consultation_protocol": self.kernel_root / "L2_CONSULTATION_PROTOCOL.md",
+            "research_execution_guardrails": self.kernel_root / "RESEARCH_EXECUTION_GUARDRAILS.md",
             "proof_obligation_protocol": self.kernel_root / "PROOF_OBLIGATION_PROTOCOL.md",
             "gap_recovery_protocol": self.kernel_root / "GAP_RECOVERY_PROTOCOL.md",
             "family_fusion_protocol": self.kernel_root / "FAMILY_FUSION_PROTOCOL.md",

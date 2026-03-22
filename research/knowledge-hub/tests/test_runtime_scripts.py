@@ -149,6 +149,10 @@ class RuntimeScriptTests(unittest.TestCase):
             "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/agent_consensus.json",
             {"status": "ready"},
         )
+        self._write_json(
+            "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/regression_gate.json",
+            {"status": "pass", "split_clearance_status": "clear", "promotion_blockers": []},
+        )
 
         actions = self.orchestrate_topic.auto_promotion_actions(
             self.knowledge_root,
@@ -159,6 +163,192 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertEqual(len(actions), 1)
         self.assertEqual(actions[0]["action_type"], "auto_promote_candidate")
         self.assertEqual(actions[0]["handler_args"]["candidate_id"], "candidate:demo-definition")
+
+    def test_auto_promotion_actions_block_split_and_blockers(self) -> None:
+        self._write_json(
+            "runtime/closed_loop_policies.json",
+            {
+                "auto_promotion_policy": {
+                    "enabled": True,
+                    "default_backend_id": "backend:theoretical-physics-knowledge-network",
+                    "trigger_candidate_statuses": ["ready_for_validation"],
+                    "theory_formal_candidate_types": ["definition_card"],
+                    "require_regression_gate_pass": True,
+                    "block_when_split_required": True,
+                    "block_when_promotion_blockers_present": True,
+                    "block_when_cited_recovery_required": True,
+                }
+            },
+        )
+        self._write_jsonl(
+            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            [
+                {
+                    "candidate_id": "candidate:demo-definition",
+                    "candidate_type": "definition_card",
+                    "title": "Demo Definition",
+                    "summary": "A bounded definition.",
+                    "topic_slug": "demo-topic",
+                    "run_id": "2026-03-13-demo",
+                    "origin_refs": [],
+                    "question": "Can the definition be promoted?",
+                    "assumptions": [],
+                    "proposed_validation_route": "bounded-smoke",
+                    "intended_l2_targets": ["definition:demo-definition"],
+                    "status": "ready_for_validation",
+                    "split_required": True,
+                    "promotion_blockers": ["Still too wide."],
+                }
+            ],
+        )
+        self._write_json(
+            "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/coverage_ledger.json",
+            {"status": "pass"},
+        )
+        self._write_json(
+            "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/agent_consensus.json",
+            {"status": "ready"},
+        )
+        self._write_json(
+            "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/regression_gate.json",
+            {
+                "status": "pass",
+                "split_required": True,
+                "split_clearance_status": "blocked",
+                "promotion_blockers": ["Still too wide."],
+                "cited_recovery_required": True,
+            },
+        )
+
+        actions = self.orchestrate_topic.auto_promotion_actions(
+            self.knowledge_root,
+            {"topic_slug": "demo-topic", "latest_run_id": "2026-03-13-demo"},
+            {"declared_contract_path": None},
+        )
+
+        self.assertEqual(actions, [])
+
+    def test_followup_reintegration_actions_detect_returned_child_topic(self) -> None:
+        self._write_json(
+            "runtime/closed_loop_policies.json",
+            {
+                "followup_subtopic_policy": {
+                    "enabled": True,
+                    "unresolved_return_statuses": [
+                        "pending_reentry",
+                        "returned_with_gap",
+                        "returned_unresolved"
+                    ]
+                }
+            },
+        )
+        self._write_jsonl(
+            "runtime/topics/demo-topic/followup_subtopics.jsonl",
+            [
+                {
+                    "child_topic_slug": "demo-topic--followup--x",
+                    "parent_topic_slug": "demo-topic",
+                    "status": "spawned",
+                    "return_packet_path": str(
+                        self.knowledge_root / "runtime" / "topics" / "demo-topic--followup--x" / "followup_return_packet.json"
+                    ),
+                }
+            ],
+        )
+        self._write_json(
+            "runtime/topics/demo-topic--followup--x/followup_return_packet.json",
+            {
+                "return_packet_version": 1,
+                "child_topic_slug": "demo-topic--followup--x",
+                "parent_topic_slug": "demo-topic",
+                "parent_run_id": "2026-03-13-demo",
+                "receipt_id": "receipt:demo",
+                "query": "recover missing definition",
+                "parent_gap_ids": ["open_gap:demo-gap"],
+                "parent_followup_task_ids": ["followup_source_task:demo-gap"],
+                "reentry_targets": ["definition:demo"],
+                "supporting_regression_question_ids": ["regression_question:demo"],
+                "source_id": "paper:demo",
+                "arxiv_id": "1510.07698v1",
+                "expected_return_route": "L0->L1->L3->L4->L2",
+                "acceptable_return_shapes": ["recovered_units", "resolved_gap_update", "still_unresolved_packet"],
+                "required_output_artifacts": ["candidate_ledger_or_recovered_units"],
+                "unresolved_return_statuses": ["pending_reentry", "returned_with_gap", "returned_unresolved"],
+                "return_status": "recovered_units",
+                "accepted_return_shape": "recovered_units",
+                "return_summary": "Recovered the missing definition.",
+                "return_artifact_paths": ["feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl"],
+                "reintegration_requirements": {
+                    "must_write_back_parent_gaps": True,
+                    "must_update_reentry_targets": True,
+                    "must_not_patch_parent_directly": True,
+                    "requires_child_topic_summary": True
+                },
+                "updated_at": "2026-03-13T00:00:00+08:00",
+                "updated_by": "test"
+            },
+        )
+
+        actions = self.orchestrate_topic.followup_reintegration_actions(
+            self.knowledge_root,
+            {"topic_slug": "demo-topic", "latest_run_id": "2026-03-13-demo"},
+            {"declared_contract_path": None},
+        )
+
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]["action_type"], "reintegrate_followup_subtopic")
+        self.assertEqual(actions[0]["handler_args"]["child_topic_slug"], "demo-topic--followup--x")
+
+    def test_topic_completion_actions_detect_missing_completion_surface(self) -> None:
+        self._write_jsonl(
+            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            [
+                {
+                    "candidate_id": "candidate:demo-definition",
+                    "candidate_type": "definition_card",
+                    "status": "ready_for_validation",
+                }
+            ],
+        )
+
+        actions = self.orchestrate_topic.topic_completion_actions(
+            self.knowledge_root,
+            {"topic_slug": "demo-topic", "latest_run_id": "2026-03-13-demo"},
+            {"declared_contract_path": None},
+        )
+
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]["action_type"], "assess_topic_completion")
+
+    def test_lean_bridge_actions_detect_missing_candidate_packet(self) -> None:
+        self._write_json(
+            "runtime/closed_loop_policies.json",
+            {
+                "lean_bridge_policy": {
+                    "enabled": True,
+                    "trigger_candidate_types": ["definition_card"]
+                }
+            },
+        )
+        self._write_jsonl(
+            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            [
+                {
+                    "candidate_id": "candidate:demo-definition",
+                    "candidate_type": "definition_card",
+                    "status": "ready_for_validation",
+                }
+            ],
+        )
+
+        actions = self.orchestrate_topic.lean_bridge_actions(
+            self.knowledge_root,
+            {"topic_slug": "demo-topic", "latest_run_id": "2026-03-13-demo"},
+            {"declared_contract_path": None},
+        )
+
+        self.assertEqual(len(actions), 1)
+        self.assertEqual(actions[0]["action_type"], "prepare_lean_bridge")
 
     def test_deferred_reactivation_actions_detect_ready_entry(self) -> None:
         self._write_json(

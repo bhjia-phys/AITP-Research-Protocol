@@ -278,6 +278,14 @@ def aitp_audit_theory_coverage(
     critical_unit_recall: float = 1.0,
     missing_anchor_count: int = 0,
     skeptic_major_gap_count: int = 0,
+    supporting_regression_question_ids: list[str] | None = None,
+    supporting_oracle_ids: list[str] | None = None,
+    supporting_regression_run_ids: list[str] | None = None,
+    promotion_blockers: list[str] | None = None,
+    split_required: bool | None = None,
+    cited_recovery_required: bool | None = None,
+    followup_gap_ids: list[str] | None = None,
+    topic_completion_status: str | None = None,
     notes: str | None = None,
 ) -> str:
     """Record theory coverage, notation, derivation, and consensus artifacts for a candidate."""
@@ -297,7 +305,101 @@ def aitp_audit_theory_coverage(
             critical_unit_recall=critical_unit_recall,
             missing_anchor_count=missing_anchor_count,
             skeptic_major_gap_count=skeptic_major_gap_count,
+            supporting_regression_question_ids=supporting_regression_question_ids or [],
+            supporting_oracle_ids=supporting_oracle_ids or [],
+            supporting_regression_run_ids=supporting_regression_run_ids or [],
+            promotion_blockers=promotion_blockers or [],
+            split_required=split_required,
+            cited_recovery_required=cited_recovery_required,
+            followup_gap_ids=followup_gap_ids or [],
+            topic_completion_status=topic_completion_status,
             notes=notes,
+        )
+        return _ok(**result)
+    except Exception as exc:  # noqa: BLE001
+        return _err(str(exc))
+
+
+@mcp.tool()
+def aitp_complete_topic(
+    topic_slug: str,
+    run_id: str | None = None,
+    updated_by: str = "aitp-mcp",
+) -> str:
+    """Assess topic-completion status against regression support and follow-up debt."""
+    try:
+        result = service.assess_topic_completion(
+            topic_slug=topic_slug,
+            run_id=run_id,
+            updated_by=updated_by,
+        )
+        return _ok(**result)
+    except Exception as exc:  # noqa: BLE001
+        return _err(str(exc))
+
+
+@mcp.tool()
+def aitp_update_followup_return(
+    topic_slug: str,
+    return_status: str,
+    run_id: str | None = None,
+    accepted_return_shape: str | None = None,
+    return_summary: str | None = None,
+    child_topic_summary: str | None = None,
+    return_artifact_paths: list[str] | None = None,
+    updated_by: str = "aitp-mcp",
+) -> str:
+    """Update a child-topic follow-up return packet before parent reintegration."""
+    try:
+        result = service.update_followup_return_packet(
+            topic_slug=topic_slug,
+            run_id=run_id,
+            return_status=return_status,
+            accepted_return_shape=accepted_return_shape,
+            return_summary=return_summary,
+            child_topic_summary=child_topic_summary,
+            return_artifact_paths=return_artifact_paths or [],
+            updated_by=updated_by,
+        )
+        return _ok(**result)
+    except Exception as exc:  # noqa: BLE001
+        return _err(str(exc))
+
+
+@mcp.tool()
+def aitp_reintegrate_followup(
+    topic_slug: str,
+    child_topic_slug: str,
+    run_id: str | None = None,
+    updated_by: str = "aitp-mcp",
+) -> str:
+    """Reintegrate a child follow-up topic back into its parent topic."""
+    try:
+        result = service.reintegrate_followup_subtopic(
+            topic_slug=topic_slug,
+            child_topic_slug=child_topic_slug,
+            run_id=run_id,
+            updated_by=updated_by,
+        )
+        return _ok(**result)
+    except Exception as exc:  # noqa: BLE001
+        return _err(str(exc))
+
+
+@mcp.tool()
+def aitp_prepare_lean_bridge(
+    topic_slug: str,
+    run_id: str | None = None,
+    candidate_id: str | None = None,
+    updated_by: str = "aitp-mcp",
+) -> str:
+    """Materialize Lean-ready bridge packets for a topic or bounded candidate."""
+    try:
+        result = service.prepare_lean_bridge(
+            topic_slug=topic_slug,
+            run_id=run_id,
+            candidate_id=candidate_id,
+            updated_by=updated_by,
         )
         return _ok(**result)
     except Exception as exc:  # noqa: BLE001

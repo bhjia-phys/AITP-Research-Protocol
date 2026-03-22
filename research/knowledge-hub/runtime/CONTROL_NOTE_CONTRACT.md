@@ -54,6 +54,10 @@ summary: Redirect the topic toward the new validation route.
 - `summary`
   - short human-readable reason for the redirect.
 
+If the control note changes scope, observables, deliverables, or acceptance
+conditions, it should also point to the updated research-question or validation
+contract rather than trying to mutate those rules implicitly.
+
 ## Practical rule
 
 If a redirect is important enough to change the loop, it should be specific
@@ -62,4 +66,6 @@ enough to survive a new session:
 - name the target action when possible,
 - point to the artifacts that justify the redirect,
 - say whether unfinished work is allowed to be superseded,
+- update the relevant research-question or validation contract when the note
+  changes what "success" means,
 - record stop conditions when the loop should pause.
