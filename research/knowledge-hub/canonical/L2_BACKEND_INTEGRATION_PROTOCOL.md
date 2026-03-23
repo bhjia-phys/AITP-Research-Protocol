@@ -39,13 +39,14 @@ Optional but recommended:
 
 ## 3. Hard rules
 
-1. A backend root is never itself a live `L2` store.
+1. A backend root never counts as an AITP-governed downstream `L2` surface merely because a folder exists at that path; it becomes one only through an explicit backend card plus normal promotion gates.
 2. A backend card is metadata, not promotion.
 3. Concrete backend artifacts should usually be registered into `L0` before strong reuse.
 4. `L2` promotion still follows normal `L1->L2` or `L3->L4->L2` gates.
 5. Do not promote a whole folder tree as one canonical object.
 6. If the backend is software-heavy, do not treat raw source code as self-justifying knowledge.
 7. If the backend is human-note-heavy, do not treat folder structure as canonical ontology.
+8. If two backends are declared as paired human-facing and structured realizations of the same downstream knowledge network, the pairing must be explicit and semantic drift between them must be surfaced as backend debt.
 
 ## 4. Minimal backend card contract
 
@@ -163,7 +164,29 @@ Best targets:
 
 Use only when provenance and reproducibility paths are explicit.
 
-## 7. Promotion-side rule
+## 7. Paired downstream backends
+
+AITP may register a paired backend configuration when two backends are intended
+to realize the same downstream knowledge network at different storage
+resolutions.
+
+Typical pattern:
+
+- one `human_note_library` for operator-facing notes;
+- one `mixed_local_library` for typed units, graph checks, and deterministic
+  projections.
+
+Rules:
+
+- the pairing must be named explicitly in protocol docs or backend notes;
+- neither backend becomes privileged by serialization format alone;
+- normal promotion gates still decide whether writeback is allowed;
+- semantic identity, source anchors, assumptions, regime limits, and unresolved
+  boundaries must stay aligned across the pair;
+- any one-sided simplification or lag must be recorded as backend debt rather
+  than silently treated as equivalent.
+
+## 8. Promotion-side rule
 
 If an `L2` canonical unit was materially seeded by a backend, it may add:
 
@@ -176,13 +199,17 @@ It does not replace:
 - `l3_runs`
 - `l4_checks`
 
-## 8. Practical interpretation
+## 9. Practical interpretation
 
 AITP keeps one unified rule:
 - human knowledge stores and software knowledge stores both enter through the same backend contract,
 - but they seed different canonical object families.
 
-## 9. Authoring checklist
+In a paired-backend configuration, the human-facing note library and the typed
+repository are treated as two governed downstream implementations of one
+knowledge network.
+
+## 10. Authoring checklist
 
 Before a backend counts as integrated, confirm:
 
@@ -194,10 +221,11 @@ Before a backend counts as integrated, confirm:
 - intended canonical targets are explicit
 - retrieval hints are explicit
 - no folder-level canonicalization is implied
+- paired-backend semantics are explicit if the backend is part of a downstream pair
 
 If any of these is missing, the backend is only partially integrated.
 
-## 10. Public formal-theory starter pack
+## 11. Public formal-theory starter pack
 
 The public repository ships a formal-theory starter example here:
 

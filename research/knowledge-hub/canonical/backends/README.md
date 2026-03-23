@@ -20,8 +20,15 @@ Public starter pack for formal-theory backends:
 - `examples/formal-theory-note-library.example.json`
 - `../../runtime/scripts/run_formal_theory_backend_smoke.sh`
 
-Public bridge card for the standalone formal-theory repository:
+Public paired-backend docs for the theoretical-physics knowledge network:
+- `THEORETICAL_PHYSICS_BACKEND_PAIRING.md`
+- `theoretical-physics-brain.json`
 - `theoretical-physics-knowledge-network.json`
+
+When both backend cards are active in a clone, treat them as two governed
+downstream implementations of the same formal-theory knowledge network:
+- `theoretical-physics-brain.json`: operator-facing human-readable notes
+- `theoretical-physics-knowledge-network.json`: typed structured companion
 
 Public starter pack for toy-model numeric backends:
 - `TOY_MODEL_NUMERIC_BACKEND_STARTER.md`
