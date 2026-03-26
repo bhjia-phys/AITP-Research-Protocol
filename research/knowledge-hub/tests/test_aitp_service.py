@@ -1291,7 +1291,11 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue(innovation_decisions_path.exists())
         self.assertTrue(control_note_path.exists())
         self.assertTrue(next_actions_contract_path.exists())
-        self.assertIn("low-energy effective theory", innovation_direction_path.read_text(encoding="utf-8"))
+        innovation_note = innovation_direction_path.read_text(encoding="utf-8")
+        self.assertIn("low-energy effective theory", innovation_note)
+        self.assertIn("Redirect the active topic `Demo Topic` toward `low-energy effective theory`", innovation_note)
+        self.assertIn("Required deliverables: Update `runtime/topics/demo-topic/research_question.contract.md`", innovation_note)
+        self.assertIn("Do not treat renamed headings, unchanged old contracts, or narrative confidence", innovation_note)
         self.assertIn("directive: human_redirect", control_note_path.read_text(encoding="utf-8"))
         self.assertTrue((self.kernel_root / "runtime" / "current_topic.json").exists())
         current_topic_payload = json.loads((self.kernel_root / "runtime" / "current_topic.json").read_text(encoding="utf-8"))
@@ -1303,6 +1307,41 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue(
             str(service.orchestrate_calls[1].get("control_note") or "").endswith("runtime/topics/demo-topic/control_note.md")
         )
+
+    def test_materialize_steering_preserves_manual_innovation_direction_text(self) -> None:
+        runtime_root = self._write_runtime_state()
+        innovation_direction_path = runtime_root / "innovation_direction.md"
+        innovation_direction_path.write_text(
+            textwrap.dedent(
+                """\
+                # Innovation direction
+
+                topic_slug: `demo-topic`
+                updated_by: `human`
+                updated_at: `2026-03-27T00:00:00+08:00`
+                run_id: `(none)`
+
+                ## Manual note
+
+                - Keep the modular tensor category framing explicit.
+                """
+            ),
+            encoding="utf-8",
+        )
+
+        payload = self.service.materialize_steering_from_human_request(
+            topic_slug="demo-topic",
+            run_id="2026-03-13-demo",
+            human_request="继续这个 topic，方向改成 modular bootstrap constraints",
+            updated_by="aitp-session-start",
+        )
+
+        self.assertTrue(payload["materialized"])
+        updated_text = innovation_direction_path.read_text(encoding="utf-8")
+        self.assertIn("## Manual note", updated_text)
+        self.assertIn("Keep the modular tensor category framing explicit.", updated_text)
+        self.assertIn("Auto-filled from the latest steering request", updated_text)
+        self.assertIn("modular bootstrap constraints", updated_text)
 
     def test_build_codex_prompt_includes_innovation_surfaces(self) -> None:
         payload = {

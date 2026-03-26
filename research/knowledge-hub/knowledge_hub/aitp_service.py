@@ -2759,6 +2759,7 @@ class AITPService:
         start_marker: str,
         end_marker: str,
         replacement_block: str,
+        before_marker: str | None = None,
     ) -> str:
         pattern = re.compile(
             re.escape(start_marker) + r".*?" + re.escape(end_marker),
@@ -2768,9 +2769,146 @@ class AITPService:
             return pattern.sub(replacement_block, existing_text)
 
         base = existing_text.rstrip()
+        if before_marker and before_marker in base:
+            return base.replace(before_marker, replacement_block + "\n\n" + before_marker, 1) + "\n"
         if base:
             return base + "\n\n" + replacement_block + "\n"
         return replacement_block + "\n"
+
+    def _render_innovation_direction_auto_block(
+        self,
+        *,
+        topic_slug: str,
+        steering: dict[str, Any],
+        raw_request: str,
+        topic_state: dict[str, Any],
+    ) -> str:
+        decision = str(steering.get("decision") or "continue").strip() or "continue"
+        direction = str(steering.get("direction") or "").strip()
+        topic_title = self._topic_display_title(topic_slug)
+        resume_stage = str(topic_state.get("resume_stage") or topic_state.get("last_materialized_stage") or "L1")
+        research_contract_rel = self._relativize(self._research_question_contract_paths(topic_slug)["note"])
+        validation_contract_rel = self._relativize(self._validation_contract_paths(topic_slug)["note"])
+
+        if decision == "branch":
+            idea_statement = (
+                f"Open a bounded branch from `{topic_title}` toward `{direction}` while preserving the current evidence trail."
+                if direction
+                else f"Open a bounded branch from `{topic_title}` under the latest operator steering."
+            )
+        elif decision == "redirect":
+            idea_statement = (
+                f"Redirect the active topic `{topic_title}` toward `{direction}` and treat that lane as the current novelty target."
+                if direction
+                else f"Redirect the active topic `{topic_title}` according to the latest persisted operator steering."
+            )
+        elif decision == "pause":
+            idea_statement = f"Pause the active topic `{topic_title}` until the operator records the next bounded direction."
+        elif decision == "stop":
+            idea_statement = f"Stop the active topic `{topic_title}` until the operator explicitly reopens it."
+        else:
+            idea_statement = (
+                f"Continue the active topic `{topic_title}` under innovation direction `{direction}`."
+                if direction
+                else f"Continue the active topic `{topic_title}` under the latest persisted steering."
+            )
+
+        if direction:
+            novelty_reason = (
+                f"This lane may require different scope, observables, or validation logic than the previous framing. "
+                f"Novelty is still unproven until the contracts and evidence are updated around `{direction}`."
+            )
+            meaningful_novelty = (
+                f"A meaningful result must produce a direction-specific question and validation route for `{direction}` "
+                "that differs from the previous topic framing in more than wording."
+            )
+        else:
+            novelty_reason = (
+                "The latest steering changes operator intent, but the novelty lane is not specific enough yet to count as a new result."
+            )
+            meaningful_novelty = (
+                "A meaningful result must tighten the active question, deliverables, and validation route beyond the prior generic topic shell."
+            )
+        not_new_enough = "Renaming the direction while reusing the old question, deliverables, and checks unchanged."
+
+        supporting_artifacts = (
+            f"`{research_contract_rel}` and `{validation_contract_rel}` exist as the active contract surfaces, "
+            "but they may still reflect the previous direction."
+        )
+        unresolved_gap = (
+            f"The redirected direction has not yet been fully absorbed into `{research_contract_rel}` and `{validation_contract_rel}`."
+            if direction
+            else f"The latest steering has not yet been fully absorbed into `{research_contract_rel}` and `{validation_contract_rel}`."
+        )
+
+        if direction:
+            next_question = (
+                f"What exact problem statement, scope boundary, deliverables, and initial validation route should govern "
+                f"`{direction}` inside `{topic_title}`?"
+            )
+        else:
+            next_question = f"What exact bounded question should the next AITP step answer for `{topic_title}`?"
+
+        if decision in {"redirect", "branch"}:
+            stop_condition = (
+                f"Stop once `{research_contract_rel}` and `{validation_contract_rel}` explicitly reflect `{direction or 'the updated steering'}`."
+            )
+        elif decision == "pause":
+            stop_condition = "Stay paused until a new continue, branch, or redirect decision is written."
+        elif decision == "stop":
+            stop_condition = "Stay stopped until the operator explicitly reopens the topic."
+        else:
+            stop_condition = "Stop this loop step once the current contracts and next bounded action are synchronized."
+
+        return "\n".join(
+            [
+                "<!-- AITP:auto-direction:start -->",
+                "> Auto-filled from the latest steering request. Tighten any bullet manually if you need stricter bounds.",
+                "",
+                "## 1) Initial idea and novelty target",
+                "",
+                f"- Idea statement: {idea_statement}",
+                f"- Why this direction is potentially new: {novelty_reason}",
+                f"- What would count as meaningful novelty: {meaningful_novelty}",
+                f"- What would count as `not new enough`: {not_new_enough}",
+                "",
+                "## 2) Current evidence boundary",
+                "",
+                f"- Highest reliable layer currently reached: `{resume_stage}`",
+                f"- Strongest supporting evidence artifacts: {supporting_artifacts}",
+                "- Strongest contradictory evidence artifacts: No explicit contradiction artifact is recorded yet.",
+                f"- Main unresolved gap: {unresolved_gap}",
+                "",
+                "## 3) Human steering decision (required)",
+                "",
+                f"- Decision: `{decision}`",
+                f"- Why this decision was chosen: Derived directly from the latest operator request: `{raw_request or '(missing)'}`.",
+                "- Resource/risk limit for next loop step: Keep the next step bounded to contract synchronization and initial route selection. Do not claim novelty, proof closure, or execution evidence yet.",
+                f"- Deadline or stop condition: {stop_condition}",
+                "",
+                "## 4) Next bounded question for AI",
+                "",
+                f"- Next question: {next_question}",
+                f"- Required deliverables: Update `{research_contract_rel}`, `{validation_contract_rel}`, and the next-action surface if the steering changes queue selection.",
+                "- Required checks: Conformance stays `pass`; control note and contracts agree on the active direction; no old-direction acceptance check remains active.",
+                "- Forbidden proxies: Do not treat renamed headings, unchanged old contracts, or narrative confidence as evidence that the topic has actually changed direction.",
+                "",
+                "## 5) Promotion posture",
+                "",
+                "- Promotion allowed this step: `no`",
+                "- If yes, which candidate IDs are eligible: _(none yet)_",
+                "- If no, what must be true first: Direction-specific contracts, at least one bounded evidence artifact, and a candidate that survives the declared checks.",
+                "<!-- AITP:auto-direction:end -->",
+            ]
+        )
+
+    def _innovation_direction_looks_placeholder_heavy(self, text: str) -> bool:
+        placeholder_markers = [
+            "_(fill manually if missing)_",
+            "_(fill manually if needed)_",
+            "Decision: _(latest auto-updated snapshot appears below)_",
+        ]
+        return sum(text.count(marker) for marker in placeholder_markers) >= 4
 
     def _default_innovation_direction_text(
         self,
@@ -2778,6 +2916,9 @@ class AITPService:
         topic_slug: str,
         run_id: str | None,
         updated_by: str,
+        steering: dict[str, Any],
+        raw_request: str,
+        topic_state: dict[str, Any],
     ) -> str:
         return "\n".join(
             [
@@ -2788,39 +2929,12 @@ class AITPService:
                 f"updated_at: `{now_iso()}`",
                 f"run_id: `{run_id or '(none)'}`",
                 "",
-                "## 1) Initial idea and novelty target",
-                "",
-                "- Idea statement: _(fill manually if missing)_",
-                "- Why this direction is potentially new: _(fill manually if missing)_",
-                "- What would count as meaningful novelty: _(fill manually if missing)_",
-                "- What would count as `not new enough`: _(fill manually if missing)_",
-                "",
-                "## 2) Current evidence boundary",
-                "",
-                "- Highest reliable layer currently reached: _(fill manually if missing)_",
-                "- Strongest supporting evidence artifacts: _(fill manually if missing)_",
-                "- Strongest contradictory evidence artifacts: _(fill manually if missing)_",
-                "- Main unresolved gap: _(fill manually if missing)_",
-                "",
-                "## 3) Human steering decision (required)",
-                "",
-                "- Decision: _(latest auto-updated snapshot appears below)_",
-                "- Why this decision was chosen: _(fill manually if missing)_",
-                "- Resource/risk limit for next loop step: _(fill manually if missing)_",
-                "- Deadline or stop condition: _(fill manually if missing)_",
-                "",
-                "## 4) Next bounded question for AI",
-                "",
-                "- Next question: _(fill manually if missing)_",
-                "- Required deliverables: _(fill manually if missing)_",
-                "- Required checks: _(fill manually if missing)_",
-                "- Forbidden proxies: _(fill manually if missing)_",
-                "",
-                "## 5) Promotion posture",
-                "",
-                "- Promotion allowed this step: `no`",
-                "- If yes, which candidate IDs are eligible: _(fill manually if needed)_",
-                "- If no, what must be true first: _(fill manually if missing)_",
+                self._render_innovation_direction_auto_block(
+                    topic_slug=topic_slug,
+                    steering=steering,
+                    raw_request=raw_request,
+                    topic_state=topic_state,
+                ),
             ]
         )
 
@@ -2998,7 +3112,16 @@ class AITPService:
                 topic_slug=topic_slug,
                 run_id=run_id,
                 updated_by=updated_by,
+                steering=steering,
+                raw_request=raw_request,
+                topic_state=resolved_topic_state,
             )
+        )
+        auto_direction_block = self._render_innovation_direction_auto_block(
+            topic_slug=topic_slug,
+            steering=steering,
+            raw_request=raw_request,
+            topic_state=resolved_topic_state,
         )
         auto_block = "\n".join(
             [
@@ -3015,8 +3138,25 @@ class AITPService:
                 "<!-- AITP:auto-steering:end -->",
             ]
         )
+        if self._innovation_direction_looks_placeholder_heavy(existing_innovation_text):
+            updated_innovation_text = self._default_innovation_direction_text(
+                topic_slug=topic_slug,
+                run_id=run_id,
+                updated_by=updated_by,
+                steering=steering,
+                raw_request=raw_request,
+                topic_state=resolved_topic_state,
+            )
+        else:
+            updated_innovation_text = self._replace_marked_block(
+                existing_innovation_text,
+                start_marker="<!-- AITP:auto-direction:start -->",
+                end_marker="<!-- AITP:auto-direction:end -->",
+                replacement_block=auto_direction_block,
+                before_marker="<!-- AITP:auto-steering:start -->",
+            )
         updated_innovation_text = self._replace_marked_block(
-            existing_innovation_text,
+            updated_innovation_text,
             start_marker="<!-- AITP:auto-steering:start -->",
             end_marker="<!-- AITP:auto-steering:end -->",
             replacement_block=auto_block,
