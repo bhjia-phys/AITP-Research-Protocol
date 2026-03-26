@@ -263,79 +263,6 @@ class AITPService:
                 return parent.parent
         return target_path
 
-    def _shell_wrapper_template(self, module: str) -> str:
-        pathsep = os.pathsep
-        return f"""#!/usr/bin/env bash
-set -euo pipefail
-
-export AITP_KERNEL_ROOT="{self.kernel_root.as_posix()}"
-export AITP_REPO_ROOT="{self.repo_root.as_posix()}"
-export PYTHONPATH="${{AITP_KERNEL_ROOT}}{pathsep}${{PYTHONPATH:-}}"
-
-if [ -n "${{AITP_PYTHON:-}}" ]; then
-  exec "${{AITP_PYTHON}}" -m {module} "$@"
-fi
-if command -v python3 >/dev/null 2>&1; then
-  exec python3 -m {module} "$@"
-fi
-exec python -m {module} "$@"
-"""
-
-    def _cmd_wrapper_template(self, module: str) -> str:
-        return f"""@ECHO off
-SETLOCAL
-
-SET "AITP_KERNEL_ROOT={self.kernel_root}"
-SET "AITP_REPO_ROOT={self.repo_root}"
-IF DEFINED PYTHONPATH (
-  SET "PYTHONPATH=%AITP_KERNEL_ROOT%;%PYTHONPATH%"
-) ELSE (
-  SET "PYTHONPATH=%AITP_KERNEL_ROOT%"
-)
-
-IF DEFINED AITP_PYTHON (
-  "%AITP_PYTHON%" -m {module} %*
-  EXIT /B %ERRORLEVEL%
-)
-
-where python >NUL 2>NUL
-IF %ERRORLEVEL% EQU 0 (
-  python -m {module} %*
-  EXIT /B %ERRORLEVEL%
-)
-
-where py >NUL 2>NUL
-IF %ERRORLEVEL% EQU 0 (
-  py -3 -m {module} %*
-  EXIT /B %ERRORLEVEL%
-)
-
-ECHO Python 3 launcher not found on PATH.>&2
-EXIT /B 127
-"""
-
-    def _install_workspace_cli_wrappers(self, workspace_root: Path, *, force: bool) -> list[dict[str, str]]:
-        bin_root = workspace_root / ".agents" / "bin"
-        bin_root.mkdir(parents=True, exist_ok=True)
-
-        wrappers = {
-            "aitp": ("knowledge_hub.aitp_cli", self._shell_wrapper_template("knowledge_hub.aitp_cli")),
-            "aitp-codex": ("knowledge_hub.aitp_codex", self._shell_wrapper_template("knowledge_hub.aitp_codex")),
-            "aitp-mcp": ("knowledge_hub.aitp_mcp_server", self._shell_wrapper_template("knowledge_hub.aitp_mcp_server")),
-        }
-
-        installed: list[dict[str, str]] = []
-        for stem, (module_name, shell_text) in wrappers.items():
-            shell_path = bin_root / stem
-            cmd_path = bin_root / f"{stem}.cmd"
-            if (shell_path.exists() or cmd_path.exists()) and not force:
-                raise FileExistsError(f"Refusing to overwrite wrapper files under {bin_root}")
-            write_executable_text(shell_path, shell_text)
-            write_text(cmd_path, self._cmd_wrapper_template(module_name))
-            installed.append({"agent": "codex", "path": str(shell_path), "kind": "wrapper"})
-            installed.append({"agent": "codex", "path": str(cmd_path), "kind": "wrapper"})
-        return installed
-
     def _runtime_root(self, topic_slug: str) -> Path:
         return self.kernel_root / "runtime" / "topics" / topic_slug
 
@@ -5636,6 +5563,269 @@ EXIT /B 127
         self._write_json_file(config_path, payload)
         return [{"agent": "opencode", "path": str(config_path), "kind": "mcp-config"}]
 
+    def _opencode_plugin_template(self) -> str:
+        return r"""/**
+ * AITP plugin for OpenCode
+ *
+ * Injects the using-aitp bootstrap and registers the local AITP skills path.
+ */
+
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const extractAndStripFrontmatter = (content) => {
+  const match = content.match(/^---\\n([\\s\\S]*?)\\n---\\n([\\s\\S]*)$/);
+  if (!match) return { frontmatter: {}, content };
+
+  const frontmatterStr = match[1];
+  const body = match[2];
+  const frontmatter = {};
+
+  for (const line of frontmatterStr.split('\\n')) {
+    const colonIdx = line.indexOf(':');
+    if (colonIdx > 0) {
+      const key = line.slice(0, colonIdx).trim();
+      const value = line.slice(colonIdx + 1).trim().replace(/^[\"']|[\"']$/g, '');
+      frontmatter[key] = value;
+    }
+  }
+
+  return { frontmatter, content: body };
+};
+
+const resolveSkillsDir = () => {
+  const candidates = [
+    path.resolve(__dirname, '../../skills'),
+    path.resolve(__dirname, '../skills'),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(path.join(candidate, 'using-aitp', 'SKILL.md'))) {
+      return candidate;
+    }
+  }
+  return candidates[0];
+};
+
+const getBootstrapContent = () => {
+  const skillsDir = resolveSkillsDir();
+  const skillPath = path.join(skillsDir, 'using-aitp', 'SKILL.md');
+  if (!fs.existsSync(skillPath)) return null;
+
+  const fullContent = fs.readFileSync(skillPath, 'utf8');
+  const { content } = extractAndStripFrontmatter(fullContent);
+  const toolMapping = `**Tool Mapping for OpenCode:**\\n- \`TodoWrite\` -> \`todowrite\`\\n- \`Skill\` tool -> OpenCode's native \`skill\` tool\\n- File operations and shell calls -> native OpenCode tools\\n\\n**AITP skills location:**\\n\`${skillsDir}\``;
+
+  return `<EXTREMELY_IMPORTANT>\\nYou are in an AITP-enabled OpenCode session.\\n\\n**IMPORTANT: The using-aitp skill content is included below and is already loaded. Do not load using-aitp again.**\\n\\n${content}\\n\\n${toolMapping}\\n</EXTREMELY_IMPORTANT>`;
+};
+
+export const AITPPlugin = async () => {
+  const skillsDir = resolveSkillsDir();
+
+  return {
+    config: async (config) => {
+      config.skills = config.skills || {};
+      config.skills.paths = config.skills.paths || [];
+      if (!config.skills.paths.includes(skillsDir)) {
+        config.skills.paths.push(skillsDir);
+      }
+    },
+
+    'experimental.chat.system.transform': async (_input, output) => {
+      const bootstrap = getBootstrapContent();
+      if (bootstrap) {
+        (output.system ||= []).push(bootstrap);
+      }
+    }
+  };
+};
+
+export default AITPPlugin;
+"""
+
+    def _install_opencode_plugin(
+        self,
+        *,
+        scope: str,
+        target_root: str | None,
+        force: bool,
+    ) -> list[dict[str, str]]:
+        base = self._agent_hidden_root(
+            target_root=target_root,
+            scope=scope,
+            hidden_dir=".opencode",
+            user_root=Path.home() / ".config" / "opencode",
+            project_root=self.repo_root / ".opencode",
+        )
+        plugin_root = base / "plugins"
+        plugin_root.mkdir(parents=True, exist_ok=True)
+        plugin_path = plugin_root / "aitp.js"
+        if plugin_path.exists() and not force:
+            raise FileExistsError(f"Refusing to overwrite {plugin_path}")
+        write_text(plugin_path, self._opencode_plugin_template())
+        return [{"agent": "opencode", "path": str(plugin_path), "kind": "plugin"}]
+
+    def _claude_session_start_hook_template(self) -> str:
+        return """#!/usr/bin/env bash
+# SessionStart hook for AITP
+
+set -euo pipefail
+
+SCRIPT_DIR=\"$(cd \"$(dirname \"$0\")\" && pwd)\"
+PLUGIN_ROOT=\"$(cd \"${SCRIPT_DIR}/..\" && pwd)\"
+SKILL_PATH=\"${PLUGIN_ROOT}/skills/using-aitp/SKILL.md\"
+
+if [ -f \"$SKILL_PATH\" ]; then
+    using_aitp_content=$(cat \"$SKILL_PATH\")
+else
+    using_aitp_content=\"Error reading using-aitp skill from ${SKILL_PATH}\"
+fi
+
+escape_for_json() {
+    local s=\"$1\"
+    s=\"${s//\\\\/\\\\\\\\}\"
+    s=\"${s//\\\"/\\\\\\\"}\"
+    s=\"${s//$'\\n'/\\\\n}\"
+    s=\"${s//$'\\r'/\\\\r}\"
+    s=\"${s//$'\\t'/\\\\t}\"
+    printf '%s' \"$s\"
+}
+
+using_aitp_escaped=$(escape_for_json \"$using_aitp_content\")
+session_context=\"<EXTREMELY_IMPORTANT>\\nYou are in an AITP-enabled Claude Code session.\\n\\n**Below is the full content of the using-aitp skill. It is already loaded. Do not load using-aitp again.**\\n\\n${using_aitp_escaped}\\n</EXTREMELY_IMPORTANT>\"
+
+if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ]; then
+  printf '{\\n  \"hookSpecificOutput\": {\\n    \"hookEventName\": \"SessionStart\",\\n    \"additionalContext\": \"%s\"\\n  }\\n}\\n' \"$session_context\"
+else
+  printf '{\\n  \"additional_context\": \"%s\"\\n}\\n' \"$session_context\"
+fi
+
+exit 0
+"""
+
+    def _claude_hook_wrapper_template(self) -> str:
+        return """: << 'CMDBLOCK'
+@echo off
+if \"%~1\"==\"\" (
+    echo run-hook.cmd: missing script name >&2
+    exit /b 1
+)
+
+set \"HOOK_DIR=%~dp0\"
+
+if exist \"C:\\Program Files\\Git\\bin\\bash.exe\" (
+    \"C:\\Program Files\\Git\\bin\\bash.exe\" \"%HOOK_DIR%%~1\" %2 %3 %4 %5 %6 %7 %8 %9
+    exit /b %ERRORLEVEL%
+)
+if exist \"C:\\Program Files (x86)\\Git\\bin\\bash.exe\" (
+    \"C:\\Program Files (x86)\\Git\\bin\\bash.exe\" \"%HOOK_DIR%%~1\" %2 %3 %4 %5 %6 %7 %8 %9
+    exit /b %ERRORLEVEL%
+)
+
+where bash >nul 2>nul
+if %ERRORLEVEL% equ 0 (
+    bash \"%HOOK_DIR%%~1\" %2 %3 %4 %5 %6 %7 %8 %9
+    exit /b %ERRORLEVEL%
+)
+
+exit /b 0
+CMDBLOCK
+
+SCRIPT_DIR=\"$(cd \"$(dirname \"$0\")\" && pwd)\"
+SCRIPT_NAME=\"$1\"
+shift
+exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
+"""
+
+    def _claude_hooks_manifest_template(self) -> str:
+        payload = {
+            "hooks": {
+                "SessionStart": [
+                    {
+                        "matcher": "startup|clear|compact",
+                        "hooks": [
+                            {
+                                "type": "command",
+                                "command": '"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd" session-start',
+                                "async": False,
+                            }
+                        ],
+                    }
+                ]
+            }
+        }
+        return json.dumps(payload, ensure_ascii=True, indent=2) + "\n"
+
+    def _install_claude_session_start_hook(
+        self,
+        *,
+        scope: str,
+        target_root: str | None,
+        force: bool,
+    ) -> list[dict[str, str]]:
+        base = self._agent_hidden_root(
+            target_root=target_root,
+            scope=scope,
+            hidden_dir=".claude",
+            user_root=Path.home() / ".claude",
+            project_root=self.repo_root / ".claude",
+        )
+        hook_root = base / "hooks"
+        hook_root.mkdir(parents=True, exist_ok=True)
+
+        session_start_path = hook_root / "session-start"
+        if session_start_path.exists() and not force:
+            raise FileExistsError(f"Refusing to overwrite {session_start_path}")
+        write_executable_text(session_start_path, self._claude_session_start_hook_template())
+
+        run_hook_path = hook_root / "run-hook.cmd"
+        if run_hook_path.exists() and not force:
+            raise FileExistsError(f"Refusing to overwrite {run_hook_path}")
+        write_text(run_hook_path, self._claude_hook_wrapper_template())
+
+        hooks_json_path = hook_root / "hooks.json"
+        if hooks_json_path.exists() and not force:
+            raise FileExistsError(f"Refusing to overwrite {hooks_json_path}")
+        write_text(hooks_json_path, self._claude_hooks_manifest_template())
+
+        settings_path = base / "settings.json"
+        if settings_path.exists():
+            payload = json.loads(settings_path.read_text(encoding="utf-8"))
+        else:
+            payload = {}
+
+        command_entry = f'"{run_hook_path}" session-start'
+        desired_block = {
+            "matcher": "startup|clear|compact",
+            "hooks": [{"type": "command", "command": command_entry, "async": False}],
+        }
+        hooks_payload = payload.setdefault("hooks", {})
+        session_blocks = hooks_payload.setdefault("SessionStart", [])
+        filtered_blocks = []
+        for block in session_blocks:
+            block_hooks = block.get("hooks") or []
+            commands = {
+                str(entry.get("command") or "")
+                for entry in block_hooks
+                if isinstance(entry, dict)
+            }
+            if command_entry in commands:
+                continue
+            filtered_blocks.append(block)
+        filtered_blocks.append(desired_block)
+        hooks_payload["SessionStart"] = filtered_blocks
+        self._write_json_file(settings_path, payload)
+
+        return [
+            {"agent": "claude-code", "path": str(session_start_path), "kind": "hook"},
+            {"agent": "claude-code", "path": str(run_hook_path), "kind": "hook-wrapper"},
+            {"agent": "claude-code", "path": str(hooks_json_path), "kind": "hook-manifest"},
+            {"agent": "claude-code", "path": str(settings_path), "kind": "hook-config"},
+        ]
+
     def get_runtime_state(self, topic_slug: str) -> dict[str, Any]:
         topic_state = read_json(self._runtime_root(topic_slug) / "topic_state.json")
         if topic_state is None:
@@ -8825,19 +9015,20 @@ Before any substantial response in an AITP-governed workspace:
 2. check durable current-topic memory first with `aitp current-topic` or `runtime/current_topic.json`
 3. if the user says `继续这个 topic`, `continue this topic`, `this topic`, or `current topic`, resolve that to current-topic memory immediately
 4. only fall back to latest-topic memory if current-topic memory is missing
-5. read `session_start.generated.md` before `runtime_protocol.generated.md`
-6. only ask for a topic slug when both the request and durable memory remain genuinely ambiguous
+5. translate steering requests like `方向改成 X`, `continue this topic but focus on X`, or `先补验证` into durable steering state before substantial execution continues
+6. once AITP materializes the runtime bundle, follow `runtime_protocol.generated.md` and its `Must read now` list
+7. only ask for a topic slug when both the request and durable memory remain genuinely ambiguous
 
 This rule applies at session start, not later as a soft reminder.
 """
 
     def _codex_skill_template(self) -> str:
         session_start = self._session_start_routing_block(
-            hidden_entry="plain `aitp-codex \"<original request>\"` when possible, or `aitp session-start \"<original request>\"` when you only need to materialize the routing and runtime bundle first"
+            hidden_entry="platform bootstrap plus fallback `aitp session-start \"<original request>\"` when you need to materialize routing explicitly"
         )
         return f"""---
 name: aitp-runtime
-description: Route Codex research work through the AITP kernel using the installable `aitp` CLI. Use when the request is a theory topic, current-topic continuation, idea steering, derivation or validation planning, paper-learning task, or other AITP-governed execution instead of plain coding.
+description: Route Codex research work through the AITP kernel. Use when the request is a theory topic, current-topic continuation, idea steering, derivation or validation planning, paper-learning task, or other AITP-governed execution instead of plain coding.
 ---
 
 # AITP Runtime
@@ -8847,16 +9038,15 @@ description: Route Codex research work through the AITP kernel using the install
 ## Required entry
 
 1. In a bare `codex` research session, do not start with direct browsing or free-form synthesis.
-2. For session-start routing, prefer `aitp-codex "<task>"`. If you only need to materialize routing and the runtime bundle first, use `aitp session-start "<task>"`.
-3. If the topic is already obvious from current-topic memory, prefer plain `aitp-codex "<task>"` over asking the user for a slug.
-4. Read `session_start.generated.md` first.
-5. Then read `runtime_protocol.generated.md`, then the files listed under `Must read now`.
-6. If session-start says steering files are authoritative, read `innovation_direction.md` and `control_note.md` before touching the queue.
-7. Expand promotion, consultation, capability, or queue details only when the named trigger in the runtime bundle fires.
-8. Register reusable operations with `aitp operation-init ...`.
-9. For human-reviewed `L2`, use `aitp request-promotion ...` and wait for `aitp approve-promotion ...`.
-10. For theory-formal `L2_auto`, materialize coverage/consensus artifacts with `aitp coverage-audit ...` and then use `aitp auto-promote ...`.
-11. End with `aitp audit --topic-slug <topic_slug> --phase exit`.
+2. Let the installed bootstrap route natural-language research work into AITP first. Use `aitp session-start "<task>"` only as the manual fallback.
+3. Once the runtime bundle exists, read `runtime_protocol.generated.md`, then the files listed under `Must read now`.
+4. Treat `session_start.generated.md` as a runtime audit artifact when it exists, not as a separate user ritual.
+5. Keep `innovation_direction.md` and `control_note.md` current before touching the queue.
+6. Expand promotion, consultation, capability, or queue details only when the named trigger in the runtime bundle fires.
+7. Register reusable operations with `aitp operation-init ...`.
+8. For human-reviewed `L2`, use `aitp request-promotion ...` and wait for `aitp approve-promotion ...`.
+9. For theory-formal `L2_auto`, materialize coverage/consensus artifacts with `aitp coverage-audit ...` and then use `aitp auto-promote ...`.
+10. End with `aitp audit --topic-slug <topic_slug> --phase exit`.
 
 ## Hard rules
 
@@ -8875,10 +9065,6 @@ description: Route Codex research work through the AITP kernel using the install
 
 ```bash
 aitp session-start "<task>"
-aitp-codex "<task>"
-aitp-codex --current-topic "<task>"
-aitp-codex --topic-slug <topic_slug> "<task>"
-aitp-codex --latest-topic "<task>"
 aitp loop --topic-slug <topic_slug> --human-request "<task>" --skill-query "<capability gap>"
 aitp resume --topic-slug <topic_slug> --human-request "<task>"
 aitp coverage-audit --topic-slug <topic_slug> --candidate-id <candidate_id> --source-section <section> --covered-section <section>
@@ -8900,21 +9086,17 @@ Kernel root default: `{self.kernel_root}`
 
     def _using_aitp_skill_template(self, platform: str) -> str:
         if platform == "codex":
-            runtime_reference = "the installed `aitp-runtime` skill and the `aitp-codex` wrapper"
-            entry_commands = (
-                "`aitp session-start \"<task>\"`, `aitp new-topic ...`, `aitp resume ...`, `aitp loop ...`, "
-                "`aitp-codex \"<task>\"`, `aitp-codex --current-topic \"<task>\"`, "
-                "`aitp-codex --latest-topic \"<task>\"`, or `aitp-codex --topic-slug <topic_slug> \"<task>\"`"
-            )
-            hidden_entry = "plain `aitp-codex \"<original request>\"`"
+            runtime_reference = "the installed `aitp-runtime` skill plus Codex native skill discovery"
+            entry_commands = "`aitp session-start \"<task>\"`, `aitp new-topic ...`, `aitp resume ...`, `aitp loop ...`, or `aitp bootstrap ...`"
+            hidden_entry = "platform bootstrap with fallback `aitp session-start \"<original request>\"`"
         elif platform == "claude-code":
-            runtime_reference = "the installed `aitp-runtime` skill, the `using-aitp` gatekeeper, and the `/aitp*` commands"
+            runtime_reference = "the installed `aitp-runtime` skill, the `using-aitp` gatekeeper, and the Claude SessionStart bootstrap"
             entry_commands = "`aitp session-start \"<task>\"`, `aitp loop ...`, `aitp resume ...`, or `aitp bootstrap ...`"
-            hidden_entry = "plain `aitp session-start \"<original request>\"`"
+            hidden_entry = "the Claude bootstrap with fallback `aitp session-start \"<original request>\"`"
         elif platform == "opencode":
-            runtime_reference = "the installed `aitp-runtime` skill, the `using-aitp` gatekeeper, and the local `/aitp*` command bundle"
+            runtime_reference = "the installed `aitp-runtime` skill, the `using-aitp` gatekeeper, and the OpenCode plugin bootstrap"
             entry_commands = "`aitp session-start \"<task>\"`, `aitp loop ...`, `aitp resume ...`, or `aitp bootstrap ...`"
-            hidden_entry = "plain `aitp session-start \"<original request>\"`"
+            hidden_entry = "the OpenCode bootstrap with fallback `aitp session-start \"<original request>\"`"
         else:
             runtime_reference = "the installed `aitp-runtime` skill"
             entry_commands = "`aitp session-start \"<task>\"`, `aitp loop ...`, `aitp resume ...`, or `aitp bootstrap ...`"
@@ -8933,7 +9115,7 @@ Use this skill to decide whether the current task must be governed by AITP
 before you do substantial work.
 
 <EXTREMELY-IMPORTANT>
-If there is even a 1% chance the task is non-trivial theoretical-physics
+If there is even a small chance the task is non-trivial theoretical-physics
 research, theory-to-code validation, idea evaluation, literature-grounded
 scientific synthesis, or protocol-governed topic work, you MUST enter AITP
 first through {entry_commands}.
@@ -8964,9 +9146,9 @@ If the task is bucket `1`, you MUST:
 2. materialize or resume runtime state
 3. make sure `innovation_direction.md` and `control_note.md` are current before substantial execution continues
 4. if the operator speaks in natural steering language such as `继续这个 topic，方向改成 X`, translate that request into durable steering artifacts before continuing
-5. read `session_start.generated.md` first
-6. read `runtime_protocol.generated.md`
-7. read the files named under `Must read now`
+5. read `runtime_protocol.generated.md`
+6. read the files named under `Must read now`
+7. treat `session_start.generated.md` as a backend routing artifact when it exists, not as a user-facing entry ritual
 8. only then continue with the task
 
 If conformance fails, the work does not count as AITP work.
@@ -8978,10 +9160,10 @@ when the intent is already recoverable from durable routing memory.
 
 Preferred hidden routing:
 
-- If the user is clearly opening a new research topic, for example `开一个新 topic：Topological phases from modular data`, extract the topic title and route through `aitp session-start "<original request>"` or the stronger platform wrapper.
-- If the user says `继续这个 topic`, `continue this topic`, `current topic`, or otherwise refers to the active topic without naming a slug, route through `aitp session-start "<original request>"` or the stronger platform wrapper, letting current-topic memory win first.
+- If the user is clearly opening a new research topic, for example `开一个新 topic：Topological phases from modular data`, extract the topic title and route through `aitp session-start "<original request>"` or the platform bootstrap.
+- If the user says `继续这个 topic`, `continue this topic`, `current topic`, or otherwise refers to the active topic without naming a slug, route through `aitp session-start "<original request>"` or the platform bootstrap, letting current-topic memory win first.
 - If the user says `方向改成 X`, `continue this topic but focus on X`, `先补验证`, or another steering phrase, translate it into durable steering artifacts before continuing.
-- Resolve current-topic memory first and only fall back to the latest topic if that memory is missing, for example with `aitp-codex --latest-topic "<original request>"` on the Codex path.
+- Resolve current-topic memory first and only fall back to the latest topic if that memory is missing.
 - If the user names a known topic slug, preserve that slug and continue without asking for it again.
 - Only ask the user to specify a topic manually when the topic reference is genuinely ambiguous.
 
@@ -9021,7 +9203,7 @@ first.
 
     def _claude_code_skill_template(self) -> str:
         session_start = self._session_start_routing_block(
-            hidden_entry="plain `aitp session-start \"<original request>\"` before the first substantial Claude Code response"
+            hidden_entry="the Claude SessionStart bootstrap, with fallback `aitp session-start \"<original request>\"` when you need to materialize routing explicitly"
         )
         return f"""---
 name: aitp-runtime
@@ -9034,11 +9216,11 @@ description: Route Claude Code through the AITP runtime so natural-language rese
 
 ## Required entry
 
-1. Start research-governed topic work with `aitp session-start "<task>"` whenever the user speaks in natural language.
-2. Use `aitp loop ...` or `aitp resume ...` after session-start has materialized the topic shell.
+1. Let the Claude SessionStart bootstrap route natural-language research work into AITP before any substantial response. Use `aitp session-start "<task>"` only as the manual fallback.
+2. Use `aitp loop ...` or `aitp resume ...` after AITP has materialized the topic shell.
 3. Use `aitp bootstrap ...` only to create a new topic, then return to `aitp loop ...`.
-4. Read `session_start.generated.md` first.
-5. Then read `runtime_protocol.generated.md`, then follow its `Must read now` list before deeper work.
+4. Read `runtime_protocol.generated.md`, then follow its `Must read now` list before deeper work.
+5. Treat `session_start.generated.md` as a routing audit artifact when it exists.
 6. Expand deferred surfaces only when the named trigger fires.
 7. Treat missing conformance as a hard failure for AITP work.
 8. Close with `aitp audit --topic-slug <topic_slug> --phase exit`.
@@ -9056,7 +9238,7 @@ Kernel root default: `{self.kernel_root}`
 
     def _opencode_skill_template(self) -> str:
         session_start = self._session_start_routing_block(
-            hidden_entry="plain `aitp session-start \"<original request>\"` before the first substantial OpenCode response"
+            hidden_entry="the OpenCode plugin bootstrap, with fallback `aitp session-start \"<original request>\"` when you need to materialize routing explicitly"
         )
         return f"""---
 name: aitp-runtime
@@ -9069,11 +9251,11 @@ description: Route OpenCode through the AITP runtime so natural-language researc
 
 ## Required entry
 
-1. Start research-governed topic work with `aitp session-start "<task>"` whenever the user speaks in natural language.
-2. Use `aitp loop ...` or `aitp resume ...` after session-start has materialized the topic shell.
+1. Let the OpenCode plugin bootstrap route natural-language research work into AITP before any substantial response. Use `aitp session-start "<task>"` only as the manual fallback.
+2. Use `aitp loop ...` or `aitp resume ...` after AITP has materialized the topic shell.
 3. Use `aitp bootstrap ...` only to create a new topic, then return to `aitp loop ...`.
-4. Read `session_start.generated.md` first.
-5. Then read `runtime_protocol.generated.md`, then follow its `Must read now` list before deeper work.
+4. Read `runtime_protocol.generated.md`, then follow its `Must read now` list before deeper work.
+5. Treat `session_start.generated.md` as a routing audit artifact when it exists.
 6. Expand deferred surfaces only when the named trigger fires.
 7. Treat missing conformance as a hard failure for AITP work.
 8. Close with `aitp audit --topic-slug <topic_slug> --phase exit`.
@@ -9132,163 +9314,6 @@ server registered in `mcporter`.
 
 Kernel root default: `{self.kernel_root}`
 """
-
-    def _opencode_harness_template(self) -> str:
-        return """# AITP Command Harness
-
-These OpenCode commands route work through the installed `aitp` CLI instead of
-letting topic work drift into ad hoc file browsing.
-
-Required pattern:
-
-1. start session routing with `aitp session-start "<original request>"` whenever the user speaks in natural language
-2. treat `继续这个 topic`, `continue this topic`, `this topic`, and `current topic` as a current-topic-memory reference at session start
-3. use `aitp bootstrap` only to create a new topic shell, then return to `aitp loop`
-4. read `session_start.generated.md` first
-5. then read `runtime_protocol.generated.md`, then follow `Must read now`
-6. expand deferred surfaces only when the named trigger in the runtime bundle fires
-7. register reusable operations with `aitp operation-init`
-8. do the actual work
-9. request human approval before any human-reviewed `L2` promotion with `aitp request-promotion ...`
-10. for theory-formal `L2_auto`, materialize `coverage-audit` artifacts before `aitp auto-promote ...`
-11. close with `aitp audit --phase exit`
-
-If method trust is missing:
-
-- use `aitp baseline ...` for numerical backends
-- use `aitp atomize ...` for theory-method understanding
-- use `aitp trust-audit ...` before reusing an operation as if it were established
-"""
-
-    def _opencode_command_template(self, name: str) -> str:
-        if name == "aitp":
-            body = """---
-description: Enter the AITP kernel for a new or existing research task
-subtask: false
----
-# aitp Command
-
-Before doing substantial work, read `./AITP_COMMAND_HARNESS.md`.
-
-User request: $ARGUMENTS
-
-1. Run `aitp session-start "$ARGUMENTS"` first.
-2. Treat `继续这个 topic`, `continue this topic`, `this topic`, and `current topic` as a current-topic-memory request immediately instead of asking for a slug.
-3. Read `session_start.generated.md` first.
-4. Then read `runtime_protocol.generated.md`, then follow `Must read now`.
-5. Expand deferred surfaces only when the named trigger in `runtime_protocol.generated.md` fires.
-6. If the work is heading toward human-reviewed `L2`, use `aitp request-promotion ...` and wait for a durable approval gate.
-7. If the work is heading toward theory-formal `L2_auto`, use `aitp coverage-audit ...` before `aitp auto-promote ...`.
-8. Continue the task only after the runtime artifacts exist and conformance passes.
-"""
-        elif name == "aitp-resume":
-            body = """---
-description: Resume an existing AITP topic from the installable aitp CLI
-subtask: false
----
-# aitp-resume Command
-
-Before doing substantial work, read `./AITP_COMMAND_HARNESS.md`.
-
-Arguments: $ARGUMENTS
-
-Run:
-
-```bash
-aitp resume $ARGUMENTS
-```
-
-Then read `session_start.generated.md` if it exists, then `runtime_protocol.generated.md`, follow `Must read now`, and only expand deferred surfaces when the named trigger fires.
-"""
-        elif name == "aitp-loop":
-            body = """---
-description: Run the safe AITP auto-continue loop for an active topic
-subtask: false
----
-# aitp-loop Command
-
-Before doing substantial work, read `./AITP_COMMAND_HARNESS.md`.
-
-Arguments: $ARGUMENTS
-
-Run:
-
-```bash
-aitp loop $ARGUMENTS
-```
-
-Then read `session_start.generated.md` if it exists, then `runtime_protocol.generated.md`, follow `Must read now`, and only expand deferred surfaces when the named trigger fires.
-Inspect `loop_state.json` after the runtime contract if you need loop-exit status.
-If the loop surfaces a promotion-ready candidate, use `aitp request-promotion ...` for human-reviewed `L2`, or `aitp coverage-audit ...` before `aitp auto-promote ...` for theory-formal `L2_auto`.
-"""
-        else:
-            body = """---
-description: Run the AITP conformance audit for the active topic
-subtask: false
----
-# aitp-audit Command
-
-Before doing substantial work, read `./AITP_COMMAND_HARNESS.md`.
-
-Arguments: $ARGUMENTS
-
-Run:
-
-```bash
-aitp audit $ARGUMENTS
-```
-"""
-        return body
-
-    def _claude_code_command_template(self, name: str) -> str:
-        if name == "aitp":
-            body = """---
-description: Enter the AITP runtime for a Claude Code research task
----
-# aitp Command
-
-Arguments: $ARGUMENTS
-
-1. Run `aitp session-start "$ARGUMENTS"` first.
-2. Treat `继续这个 topic`, `continue this topic`, `this topic`, and `current topic` as a current-topic-memory request immediately instead of asking for a slug.
-3. Read `session_start.generated.md` first.
-4. Then read `runtime_protocol.generated.md`, then follow `Must read now`.
-5. Expand deferred surfaces only when the named trigger fires.
-6. Request human approval before any Layer 2 promotion.
-"""
-        elif name == "aitp-loop":
-            body = """---
-description: Run the bounded AITP loop inside Claude Code
----
-# aitp-loop Command
-
-Arguments: $ARGUMENTS
-
-Run:
-
-```bash
-aitp loop $ARGUMENTS
-```
-
-Then read `session_start.generated.md` if it exists, then `runtime_protocol.generated.md`, follow `Must read now`, and only expand deferred surfaces when the named trigger fires.
-Inspect `loop_state.json` after the runtime contract if you need loop-exit status.
-If the result should enter Layer 2, run `aitp request-promotion ...` first.
-"""
-        else:
-            body = """---
-description: Run the AITP conformance audit inside Claude Code
----
-# aitp-audit Command
-
-Arguments: $ARGUMENTS
-
-Run:
-
-```bash
-aitp audit $ARGUMENTS
-```
-"""
-        return body
 
     def install_agent(
         self,
@@ -9357,10 +9382,6 @@ aitp audit $ARGUMENTS
                     write_text(setup_path, self._codex_mcp_setup_markdown())
                     installed.append({"agent": agent, "path": str(setup_path), "kind": "mcp-setup"})
 
-            if target_root or scope == "project":
-                workspace_root = self._workspace_root_from_target_root(target_root)
-                installed.extend(self._install_workspace_cli_wrappers(workspace_root, force=force))
-
             if install_mcp and not target_root and scope == "user":
                 installed.extend(self._install_codex_mcp(force=force))
             return installed
@@ -9400,10 +9421,8 @@ aitp audit $ARGUMENTS
                 project_root=self.repo_root / ".opencode",
             )
             skill_base = target_base / "skills" / "aitp-runtime"
-            command_base = target_base / "commands"
             using_skill_base = target_base / "skills" / "using-aitp"
             skill_base.mkdir(parents=True, exist_ok=True)
-            command_base.mkdir(parents=True, exist_ok=True)
             using_skill_base.mkdir(parents=True, exist_ok=True)
 
             using_skill_path = using_skill_base / "SKILL.md"
@@ -9424,17 +9443,7 @@ aitp audit $ARGUMENTS
             write_text(setup_path, self._opencode_mcp_setup_markdown(scope=scope, target_root=target_root))
             installed.append({"agent": agent, "path": str(setup_path), "kind": "mcp-setup"})
 
-            harness_path = command_base / "AITP_COMMAND_HARNESS.md"
-            if harness_path.exists() and not force:
-                raise FileExistsError(f"Refusing to overwrite {harness_path}")
-            write_text(harness_path, self._opencode_harness_template())
-            installed.append({"agent": agent, "path": str(harness_path), "kind": "command-harness"})
-            for command_name in ("aitp", "aitp-resume", "aitp-loop", "aitp-audit"):
-                command_path = command_base / f"{command_name}.md"
-                if command_path.exists() and not force:
-                    raise FileExistsError(f"Refusing to overwrite {command_path}")
-                write_text(command_path, self._opencode_command_template(command_name))
-                installed.append({"agent": agent, "path": str(command_path), "kind": "command"})
+            installed.extend(self._install_opencode_plugin(scope=scope, target_root=target_root, force=force))
 
             if install_mcp:
                 installed.extend(self._install_opencode_mcp(force=force, scope=scope, target_root=target_root))
@@ -9449,10 +9458,8 @@ aitp audit $ARGUMENTS
                 project_root=self.repo_root / ".claude",
             )
             skill_base = target_base / "skills" / "aitp-runtime"
-            command_base = target_base / "commands"
 
             skill_base.mkdir(parents=True, exist_ok=True)
-            command_base.mkdir(parents=True, exist_ok=True)
             using_skill_base = skill_base.parent / "using-aitp"
             using_skill_base.mkdir(parents=True, exist_ok=True)
 
@@ -9468,13 +9475,6 @@ aitp audit $ARGUMENTS
             write_text(skill_path, self._claude_code_skill_template())
             installed.append({"agent": agent, "path": str(skill_path), "kind": "skill"})
 
-            for command_name in ("aitp", "aitp-loop", "aitp-audit"):
-                command_path = command_base / f"{command_name}.md"
-                if command_path.exists() and not force:
-                    raise FileExistsError(f"Refusing to overwrite {command_path}")
-                write_text(command_path, self._claude_code_command_template(command_name))
-                installed.append({"agent": agent, "path": str(command_path), "kind": "command"})
-
             setup_path = skill_base / "AITP_MCP_SETUP.md"
             if setup_path.exists() and not force:
                 raise FileExistsError(f"Refusing to overwrite {setup_path}")
@@ -9483,6 +9483,7 @@ aitp audit $ARGUMENTS
                 "Register an `aitp` MCP server pointing to `aitp-mcp` in your Claude Code config if you want structured tool access.\n",
             )
             installed.append({"agent": agent, "path": str(setup_path), "kind": "mcp-setup"})
+            installed.extend(self._install_claude_session_start_hook(scope=scope, target_root=target_root, force=force))
             return installed
 
         raise ValueError(f"Unsupported agent: {agent}")

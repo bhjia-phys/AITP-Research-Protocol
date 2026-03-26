@@ -1,19 +1,12 @@
 ---
 name: aitp-runtime
-description: Use the AITP charter and runtime surface when Claude Code is asked to do substantial theoretical-physics research work.
+description: Reference note for the Claude Code adapter surface; the active Claude bootstrap now lives in `/.claude-plugin`, `/hooks`, and the repository `skills/` directory.
 ---
 
-# AITP Runtime For Claude Code
+# Claude Code Adapter Reference
 
-## Required entry
+The public Claude Code path is now SessionStart-first:
 
-1. Enter through `aitp bootstrap`, `aitp resume`, or `aitp loop`.
-2. Read `runtime_protocol.generated.md` before deeper work.
-3. Treat missing conformance as a hard failure for AITP work.
-4. Close with `aitp audit --topic-slug <topic_slug> --phase exit`.
-
-## Hard rules
-
-- Charter first, adapter second.
-- Contracts before hidden heuristics.
-- Do not silently upgrade exploratory output into reusable knowledge.
+1. install the plugin or compatibility hook bundle described in `docs/INSTALL_CLAUDE_CODE.md`;
+2. let SessionStart inject `using-aitp` before substantive theory work;
+3. use `aitp session-start "<task>"` only as the manual fallback when bootstrap is unavailable.

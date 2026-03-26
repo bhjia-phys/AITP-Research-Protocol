@@ -6,7 +6,7 @@ It is the repo-local source-of-truth behind:
 
 - `aitp`
 - `aitp-mcp`
-- `aitp-codex`
+- the repository `skills/` bootstrap surfaces
 - the fixed `L0-L4` protocol surfaces shipped in this repository
 
 The repository remains protocol-first, but a fresh clone is now both readable
@@ -24,7 +24,6 @@ From the repository root:
 python -m pip install -e research/knowledge-hub
 aitp doctor
 aitp --help
-aitp-codex --help
 ```
 
 For a Windows-native smoke test from a fresh clone, the repo-local launchers do
@@ -32,7 +31,6 @@ not require WSL or a copied global `aitp` shim:
 
 ```cmd
 scripts\aitp-local.cmd doctor
-scripts\aitp-codex-local.cmd --help
 ```
 
 The public runtime defaults to the repo-local kernel root:
@@ -59,9 +57,6 @@ aitp bootstrap --topic "<topic>" --statement "<statement>"
 aitp session-start "<task>"
 aitp resume --topic-slug <topic_slug> --human-request "<task>"
 aitp loop --topic-slug <topic_slug> --human-request "<task>" --skill-query "<capability gap>"
-aitp-codex "<task>"
-aitp-codex --current-topic "<task>"
-aitp-codex --topic-slug <topic_slug> "<task>"
 aitp current-topic
 aitp audit --topic-slug <topic_slug> --phase exit
 aitp ci-check --topic-slug <topic_slug>
@@ -80,13 +75,11 @@ aitp auto-promote --topic-slug <topic_slug> --candidate-id <candidate_id> --targ
 aitp install-agent --agent all --scope user
 ```
 
-`aitp session-start "<task>"` now writes a durable startup contract under
+`aitp session-start "<task>"` still writes a durable startup contract under
 `runtime/topics/<topic_slug>/session_start.contract.json` plus the human-readable
-`session_start.generated.md`. The intended read order is:
-
-1. `session_start.generated.md`
-2. `runtime_protocol.generated.md`
-3. the files listed under `Must read now`
+`session_start.generated.md`, but outer agent UX should treat that as internal
+routing state. The first user-facing runtime checklist remains
+`runtime_protocol.generated.md`.
 
 ## Fixed Layout
 

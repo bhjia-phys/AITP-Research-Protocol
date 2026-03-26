@@ -17,7 +17,7 @@ setup(
     name="aitp-kernel",
     version="0.4.0",
     author="Bohan Jia",
-    description="AITP runtime CLI, MCP server, and agent installation wrappers",
+    description="AITP runtime CLI, MCP server, and agent bootstrap assets",
     long_description=README,
     long_description_content_type="text/markdown",
     url="https://github.com/bhjia-phys/AITP-Research-Protocol",

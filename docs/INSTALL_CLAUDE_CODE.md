@@ -1,9 +1,12 @@
 # Install Claude Code Adapter
 
+Claude Code should use AITP through SessionStart bootstrap, not through
+`/aitp`-style command bundles.
+
 ## Prerequisites
 
-- Python 3.10+
 - Claude Code installed locally
+- Python 3.10+
 
 ## Install the AITP runtime
 
@@ -14,66 +17,57 @@ python -m pip install -e research/knowledge-hub
 aitp doctor
 ```
 
-## Install the Claude Code wrapper
+## Preferred install
 
-```bash
-aitp install-agent --agent claude-code --scope user
-```
+Install the AITP Claude plugin from this repository so Claude Code can load:
 
-This installs:
+- `.claude-plugin/plugin.json`
+- `hooks/hooks.json`
+- `hooks/session-start`
+- `skills/using-aitp/`
+- `skills/aitp-runtime/`
 
-- the `using-aitp` gatekeeper under `~/.claude/skills/using-aitp/`
-- the `aitp-runtime` skill under `~/.claude/skills/aitp-runtime/`
-- command files under `~/.claude/commands/`
-- an MCP setup note for the optional `aitp-mcp` tool surface
+The intended outer behavior matches Superpowers:
 
-For a project-local install that Claude Code can load at session start:
+- SessionStart injects `using-aitp`;
+- natural-language theory requests enter AITP before substantive work;
+- current-topic continuation and steering stay natural-language first.
+
+## Compatibility install
+
+If you want local copied assets instead of plugin-managed assets:
 
 ```bash
 aitp install-agent --agent claude-code --scope project --target-root /path/to/theory-workspace
 ```
 
-That writes into the workspace-native Claude directory:
+This now writes:
 
 - `.claude/skills/using-aitp/`
 - `.claude/skills/aitp-runtime/`
-- `.claude/commands/`
+- `.claude/skills/aitp-runtime/AITP_MCP_SETUP.md`
+- `.claude/hooks/session-start`
+- `.claude/hooks/run-hook.cmd`
+- `.claude/hooks/hooks.json`
+- `.claude/settings.json`
 
-## Recommended entrypoint
+It no longer writes `.claude/commands/aitp*.md` by default.
 
-Use:
+## Verify
+
+Claude Code should now:
+
+- inject `using-aitp` at SessionStart;
+- route substantial theory work through AITP before response;
+- follow `runtime_protocol.generated.md` after routing succeeds.
+
+## Manual fallback
+
+If bootstrap is unavailable:
 
 ```bash
 aitp session-start "<task>"
 ```
-
-Then continue with `aitp loop ...` or `aitp resume ...` after the runtime
-bundle exists. Use `aitp bootstrap ...` only to create a new topic shell.
-
-Session-start invariant:
-
-- if the user says `继续这个 topic`, `continue this topic`, `this topic`, or `current topic`, Claude Code should treat that as a current-topic-memory request immediately
-- it should only fall back to the latest topic if current-topic memory is missing
-- it should only ask for a slug when the request remains genuinely ambiguous after checking durable memory
-- it should materialize and read `session_start.generated.md` before `runtime_protocol.generated.md`
-
-## Verify
-
-Claude Code should now be able to:
-
-- route substantial research work through `aitp session-start`
-- load the stricter `using-aitp` session-start constraint from `.claude/skills/using-aitp/`
-- read `session_start.generated.md` first
-- read the runtime protocol bundle first
-- resolve `继续这个 topic` against durable current-topic memory before asking for a slug
-- refuse to count missing-conformance work as AITP work
-
-## Manual fallback
-
-Reference assets still live at:
-
-- `adapters/claude-code/SKILL.md`
-- `adapters/claude-code/commands/`
 
 ## Remove
 

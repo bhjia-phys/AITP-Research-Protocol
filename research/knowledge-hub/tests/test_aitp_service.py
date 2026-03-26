@@ -2653,7 +2653,7 @@ class AITPServiceTests(unittest.TestCase):
         queue_row = json.loads(queue_path.read_text(encoding="utf-8").splitlines()[0])
         self.assertEqual(queue_row["status"], "completed")
 
-    def test_install_agent_writes_wrapper_files(self) -> None:
+    def test_install_agent_writes_bootstrap_assets(self) -> None:
         codex_target = self.root / "codex-skill"
         result = self.service.install_agent(
             agent="codex",
@@ -2668,40 +2668,21 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue(using_skill_path.exists())
         self.assertTrue(skill_path.exists())
         self.assertTrue(setup_path.exists())
-        self.assertIn("Use when starting any conversation", using_skill_path.read_text(encoding="utf-8"))
-        self.assertIn("If there is even a 1% chance", using_skill_path.read_text(encoding="utf-8"))
+        using_skill_text = using_skill_path.read_text(encoding="utf-8")
+        skill_text = skill_path.read_text(encoding="utf-8")
+        self.assertIn("Use when starting any conversation", using_skill_text)
+        self.assertIn("small chance", using_skill_text)
         self.assertIn("innovation_direction.md", using_skill_path.read_text(encoding="utf-8"))
         self.assertIn("继续这个 topic，方向改成 X", using_skill_path.read_text(encoding="utf-8"))
-        self.assertIn("aitp-codex \"<task>\"", skill_path.read_text(encoding="utf-8"))
-        self.assertIn("aitp-codex \"<original request>\"", using_skill_path.read_text(encoding="utf-8"))
-        self.assertIn("--current-topic", skill_path.read_text(encoding="utf-8"))
-        self.assertIn("--current-topic", using_skill_path.read_text(encoding="utf-8"))
-        self.assertIn("--latest-topic", skill_path.read_text(encoding="utf-8"))
-        self.assertIn("--latest-topic", using_skill_path.read_text(encoding="utf-8"))
-        self.assertIn("session_start.generated.md", skill_path.read_text(encoding="utf-8"))
-        self.assertIn("session_start.generated.md", using_skill_path.read_text(encoding="utf-8"))
-        self.assertIn("aitp loop", skill_path.read_text(encoding="utf-8"))
-        self.assertIn("aitp operation-init", skill_path.read_text(encoding="utf-8"))
+        self.assertNotIn("aitp-codex", using_skill_text)
+        self.assertNotIn("aitp-codex", skill_text)
+        self.assertIn("runtime_protocol.generated.md", skill_text)
+        self.assertIn("session_start.generated.md", skill_text)
+        self.assertIn("aitp loop", skill_text)
+        self.assertIn("aitp operation-init", skill_text)
         self.assertIn("codex mcp add aitp", setup_path.read_text(encoding="utf-8"))
-        wrapper_names = {Path(item["path"]).name for item in result["installed"] if item["kind"] == "wrapper"}
-        self.assertEqual(
-            wrapper_names,
-            {
-                "aitp",
-                "aitp.cmd",
-                "aitp-codex",
-                "aitp-codex.cmd",
-                "aitp-mcp",
-                "aitp-mcp.cmd",
-            },
-        )
-        aitp_cmd_path = codex_target / ".agents" / "bin" / "aitp.cmd"
-        self.assertTrue(aitp_cmd_path.exists())
-        self.assertIn("knowledge_hub.aitp_cli", aitp_cmd_path.read_text(encoding="utf-8"))
-        self.assertIn("AITP_KERNEL_ROOT", aitp_cmd_path.read_text(encoding="utf-8"))
-        aitp_shell_path = codex_target / ".agents" / "bin" / "aitp"
-        self.assertTrue(aitp_shell_path.exists())
-        self.assertIn("knowledge_hub.aitp_cli", aitp_shell_path.read_text(encoding="utf-8"))
+        self.assertFalse(any(item["kind"] == "wrapper" for item in result["installed"]))
+        self.assertFalse((codex_target / ".agents" / "bin").exists())
 
         openclaw_target = self.root / "openclaw-workspace"
         result = self.service.install_agent(
@@ -2734,22 +2715,19 @@ class AITPServiceTests(unittest.TestCase):
         opencode_using_skill_path = opencode_target / ".opencode" / "skills" / "using-aitp" / "SKILL.md"
         opencode_skill_path = opencode_target / ".opencode" / "skills" / "aitp-runtime" / "SKILL.md"
         opencode_setup_path = opencode_target / ".opencode" / "skills" / "aitp-runtime" / "AITP_MCP_SETUP.md"
-        opencode_harness_path = opencode_target / ".opencode" / "commands" / "AITP_COMMAND_HARNESS.md"
-        self.assertIn("AITP_COMMAND_HARNESS.md", installed_paths)
-        self.assertIn("aitp.md", installed_paths)
-        self.assertIn("aitp-resume.md", installed_paths)
-        self.assertIn("aitp-loop.md", installed_paths)
-        self.assertIn("aitp-audit.md", installed_paths)
+        opencode_plugin_path = opencode_target / ".opencode" / "plugins" / "aitp.js"
+        self.assertIn("aitp.js", installed_paths)
         self.assertIn("AITP_MCP_CONFIG.json", installed_paths)
         self.assertTrue(opencode_using_skill_path.exists())
         self.assertTrue(opencode_skill_path.exists())
         self.assertTrue(opencode_setup_path.exists())
-        self.assertTrue(opencode_harness_path.exists())
+        self.assertTrue(opencode_plugin_path.exists())
         self.assertIn("Session-start routing invariant", opencode_using_skill_path.read_text(encoding="utf-8"))
-        self.assertIn("aitp session-start", opencode_skill_path.read_text(encoding="utf-8"))
-        self.assertIn("session_start.generated.md", opencode_skill_path.read_text(encoding="utf-8"))
-        self.assertIn("current-topic-memory", opencode_harness_path.read_text(encoding="utf-8"))
-        self.assertIn("session_start.generated.md", opencode_harness_path.read_text(encoding="utf-8"))
+        self.assertIn("OpenCode plugin bootstrap", opencode_skill_path.read_text(encoding="utf-8"))
+        plugin_text = opencode_plugin_path.read_text(encoding="utf-8")
+        self.assertIn("experimental.chat.system.transform", plugin_text)
+        self.assertIn("using-aitp", plugin_text)
+        self.assertFalse((opencode_target / ".opencode" / "commands").exists())
 
         claude_target = self.root / "claude-workspace"
         result = self.service.install_agent(
@@ -2759,18 +2737,22 @@ class AITPServiceTests(unittest.TestCase):
         )
         installed_paths = {Path(item["path"]).name for item in result["installed"]}
         self.assertIn("SKILL.md", installed_paths)
-        self.assertIn("aitp.md", installed_paths)
-        self.assertIn("aitp-loop.md", installed_paths)
-        self.assertIn("aitp-audit.md", installed_paths)
         self.assertIn("AITP_MCP_SETUP.md", installed_paths)
+        self.assertIn("session-start", installed_paths)
+        self.assertIn("run-hook.cmd", installed_paths)
+        self.assertIn("hooks.json", installed_paths)
+        self.assertIn("settings.json", installed_paths)
         claude_using_skill_path = claude_target / ".claude" / "skills" / "using-aitp" / "SKILL.md"
         claude_skill_path = claude_target / ".claude" / "skills" / "aitp-runtime" / "SKILL.md"
-        claude_command_path = claude_target / ".claude" / "commands" / "aitp.md"
+        claude_hook_path = claude_target / ".claude" / "hooks" / "session-start"
+        claude_settings_path = claude_target / ".claude" / "settings.json"
         self.assertTrue(claude_using_skill_path.exists())
         self.assertTrue(claude_skill_path.exists())
-        self.assertTrue(claude_command_path.exists())
+        self.assertTrue(claude_hook_path.exists())
+        self.assertTrue(claude_settings_path.exists())
         self.assertIn("Use this skill to decide whether the current task must be governed by AITP", claude_using_skill_path.read_text(encoding="utf-8"))
-        self.assertIn("Session-start routing invariant", claude_skill_path.read_text(encoding="utf-8"))
-        self.assertIn("session_start.generated.md", claude_skill_path.read_text(encoding="utf-8"))
-        self.assertIn("session_start.generated.md", claude_command_path.read_text(encoding="utf-8"))
-        self.assertIn("aitp session-start", claude_command_path.read_text(encoding="utf-8"))
+        self.assertIn("Claude SessionStart bootstrap", claude_skill_path.read_text(encoding="utf-8"))
+        self.assertIn("using-aitp", claude_hook_path.read_text(encoding="utf-8"))
+        settings_payload = json.loads(claude_settings_path.read_text(encoding="utf-8"))
+        self.assertIn("SessionStart", settings_payload["hooks"])
+        self.assertFalse((claude_target / ".claude" / "commands").exists())

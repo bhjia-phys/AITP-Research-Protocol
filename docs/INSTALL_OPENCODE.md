@@ -1,9 +1,11 @@
 # Install OpenCode Adapter
 
+OpenCode should use AITP through a plugin, not through `/aitp` command bundles.
+
 ## Prerequisites
 
-- Python 3.10+
 - OpenCode installed locally
+- Python 3.10+
 
 ## Install the AITP runtime
 
@@ -14,74 +16,49 @@ python -m pip install -e research/knowledge-hub
 aitp doctor
 ```
 
-## Install the OpenCode adapter bundle
+## Preferred install
 
-```bash
-aitp install-agent --agent opencode --scope user
-```
+Follow [`.opencode/INSTALL.md`](../.opencode/INSTALL.md).
 
-This installs:
+The public OpenCode path is:
 
-- the `using-aitp` gatekeeper into the OpenCode skill root
-- the `aitp-runtime` skill into the OpenCode skill root
-- the AITP command harness
-- `/aitp`, `/aitp-resume`, `/aitp-loop`, and `/aitp-audit` command files
-- an `mcp.aitp` local server entry when config mutation is allowed
+1. add `aitp@git+https://github.com/bhjia-phys/AITP-Research-Protocol.git` to the `plugin` array in `opencode.json`;
+2. restart OpenCode;
+3. let the plugin inject `using-aitp` and register the AITP `skills/` path.
 
-If you want a separate theory workspace to run bare `opencode` in an AITP-first
-way, install the project bundle into that workspace root:
+## Compatibility install
+
+If you want local copied assets in a workspace or user config root:
 
 ```bash
 aitp install-agent --agent opencode --scope project --target-root /path/to/theory-workspace
 ```
 
-That writes:
+This now writes:
 
-- `.opencode/commands/AITP_COMMAND_HARNESS.md`
-- `.opencode/commands/aitp.md`, `aitp-resume.md`, `aitp-loop.md`, and `aitp-audit.md`
-- `.opencode/skills/using-aitp/SKILL.md`
-- `.opencode/skills/aitp-runtime/SKILL.md`
+- `.opencode/skills/using-aitp/`
+- `.opencode/skills/aitp-runtime/`
 - `.opencode/skills/aitp-runtime/AITP_MCP_SETUP.md`
-- `.opencode/AITP_MCP_CONFIG.json`
+- `.opencode/plugins/aitp.js`
+- optional MCP config
 
-## Recommended entrypoint
+It no longer writes `AITP_COMMAND_HARNESS.md` or `/aitp*` command files by default.
 
-Use the session-start path:
+## Verify
+
+OpenCode should now:
+
+- inject `using-aitp` through `experimental.chat.system.transform`;
+- register the AITP skills path through the plugin `config` hook;
+- route current-topic continuation and steering through AITP before substantive work.
+
+## Manual fallback
+
+If bootstrap is unavailable:
 
 ```bash
 aitp session-start "<task>"
 ```
-
-Then continue with `aitp loop ...` or `aitp resume ...` after the runtime
-bundle exists. The installed OpenCode skill and command bundle are now designed
-to treat `继续这个 topic`, `continue this topic`, `this topic`, and
-`current topic` as a current-topic-memory request before asking for a slug.
-The first-read startup contract is now `session_start.generated.md`, followed
-by `runtime_protocol.generated.md`.
-
-## Verify
-
-OpenCode should now be able to:
-
-- read the installed `using-aitp` and `aitp-runtime` skills when the active OpenCode setup loads the local skill root
-- enter the AITP runtime through the installed commands
-- resolve `继续这个 topic` against durable current-topic memory before asking for a slug
-- read `session_start.generated.md` first
-- read `runtime_protocol.generated.md` before doing deeper work
-- refresh conformance on exit
-
-If the local skill root is not active, the installed `/aitp` command bundle is
-still the explicit AITP entry surface, and its first step should be
-`aitp session-start "$ARGUMENTS"`.
-
-## Manual fallback
-
-If you want the reference assets only, they still live at:
-
-- `adapters/opencode/SKILL.md`
-- `adapters/opencode/AITP_MCP_SETUP.md`
-- `adapters/opencode/AITP_COMMAND_HARNESS.md`
-- `adapters/opencode/commands/`
 
 ## Remove
 

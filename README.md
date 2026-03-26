@@ -63,15 +63,19 @@ cd AITP-Research-Protocol
 
 python3 -m pip install -e research/knowledge-hub
 aitp doctor
-aitp install-agent --agent codex --scope user
 ```
 
 On Windows-native, the repo-local launchers work without WSL:
 
 ```cmd
 scripts\aitp-local.cmd doctor
-scripts\aitp-codex-local.cmd --help
 ```
+
+Then install the platform surface you actually use:
+
+- Codex: follow [`./.codex/INSTALL.md`](.codex/INSTALL.md)
+- OpenCode: follow [`./.opencode/INSTALL.md`](.opencode/INSTALL.md)
+- Claude Code: follow [`docs/INSTALL_CLAUDE_CODE.md`](docs/INSTALL_CLAUDE_CODE.md)
 
 If your system Python is externally managed:
 
@@ -79,17 +83,10 @@ If your system Python is externally managed:
 python3 -m pip install --break-system-packages --user -e research/knowledge-hub
 ```
 
-If you want a normal `codex` session inside a separate theory workspace, but
-you want that session to become AITP-first instead of ad hoc:
-
-```bash
-aitp install-agent --agent codex --scope project --target-root /path/to/theory-workspace
-```
-
-That writes `.agents/skills/using-aitp/` and `.agents/skills/aitp-runtime/`
-into the target workspace. A fresh clone now defaults to the repo-local kernel
-root at `research/knowledge-hub`, so `aitp` works without depending on the
-original private integration workspace.
+`aitp install-agent` still exists, but it is now the compatibility and
+workspace-seeding path. The public default is the same shape as Superpowers:
+skill discovery for Codex, plugin bootstrap for OpenCode, and SessionStart
+bootstrap for Claude Code.
 
 ## Research Model
 
@@ -127,82 +124,76 @@ flowchart LR
 
 AITP currently has three public workflows that matter.
 
-### 1. Bare Codex In A Theory Workspace
+### 1. Codex With Native Skill Discovery
 
-Use this when you want a normal `codex` conversation inside a project, but you
-do not want research behavior to collapse into browsing plus free-form
-synthesis.
+Use this when you want a normal `codex` conversation, but you want theory work
+to route through AITP automatically.
 
 ```bash
-# one-time workspace install
-aitp install-agent --agent codex --scope project --target-root /path/to/theory-workspace
+# one-time install
+git clone https://github.com/bhjia-phys/AITP-Research-Protocol.git ~/.codex/aitp
+python -m pip install -e ~/.codex/aitp/research/knowledge-hub
 
-# daily use
-cd /path/to/theory-workspace
-codex
+# expose the skills
+mkdir -p ~/.agents/skills
+ln -s ~/.codex/aitp/skills ~/.agents/skills/aitp
 ```
 
 Expected behavior:
 
-- `codex` discovers `.agents/skills/using-aitp/SKILL.md` as the conversation-level gatekeeper;
-- `codex` reads `.agents/skills/aitp-runtime/SKILL.md`;
-- the first serious research action becomes hidden `aitp-codex "<task>"` or `aitp session-start "<task>"`;
-- it materializes `session_start.generated.md` and reads that before `runtime_protocol.generated.md`;
+- `codex` discovers `using-aitp` as the conversation-level gatekeeper;
+- `codex` loads `aitp-runtime` only after AITP claims the task;
+- natural-language requests such as `继续这个 topic，方向改成 X` route through the current-topic-first AITP entry path;
 - it reads the runtime bundle before continuing;
 - outputs stay in `L1`, `L3`, or `L4` until a human approves `L2` promotion.
 
-For execution-heavy work inside an already active topic, use the stronger
-wrapper:
+Manual fallback:
 
 ```bash
 aitp session-start "<task>"
-aitp-codex "<task>"
-aitp-codex --current-topic "<task>"
-aitp-codex --topic-slug <topic_slug> "<task>"
-aitp-codex --latest-topic "<task>"
 ```
 
-In Codex App, the intended UX is natural language first rather than making the
-user remember these commands. With `using-aitp` installed, requests like
-`继续这个 topic，方向改成 X` should route through the hidden `aitp-codex`
-path instead of forcing the user to type shell syntax themselves.
-The durable `session_start.generated.md` artifact is now the first-read
-contract that makes that routing auditable and linear instead of just a soft
-instruction in the skill text.
-The plain `aitp-codex "<task>"` form is now the preferred shell mirror of that
-UX.
-That hidden route should prefer current-topic memory first, then the latest
-topic index, and only ask for a slug when the reference is genuinely
-ambiguous.
+The user experience target is natural language first. The user should not need
+to remember wrappers or front-door shell commands.
 
-### 2. Bare OpenCode In A Theory Workspace
+### 2. OpenCode With Plugin Bootstrap
 
-Use this when you want a normal `opencode` conversation inside a project, but
-you still want the session to default toward the AITP runtime instead of ad hoc
-file browsing.
+Use this when you want OpenCode to feel natural-language first, but still enter
+AITP before substantive theory work.
 
 ```bash
-# one-time workspace install
-aitp install-agent --agent opencode --scope project --target-root /path/to/theory-workspace
-
-# daily use
-cd /path/to/theory-workspace
-opencode
+# add the plugin to opencode.json
+{
+  "plugin": ["aitp@git+https://github.com/bhjia-phys/AITP-Research-Protocol.git"]
+}
 ```
 
 Expected behavior:
 
-- OpenCode gets `.opencode/skills/using-aitp/SKILL.md`, `.opencode/skills/aitp-runtime/SKILL.md`, and the `/aitp` command bundle;
-- the session-start rule now routes natural-language requests through `aitp session-start "<task>"`, with current-topic memory taking priority for phrases like `继续这个 topic`;
-- it materializes `session_start.generated.md` first, then `runtime_protocol.generated.md`;
-- the command bundle remains the explicit fallback entry surface when skill loading is unavailable;
+- the plugin registers the AITP `skills/` directory;
+- the plugin injects `using-aitp` through `experimental.chat.system.transform`;
+- natural-language requests route through the same current-topic-first AITP entry path used by Codex;
 - outputs stay in `L1`, `L3`, or `L4` until a human approves `L2` promotion.
 
-OpenCode still does not have a full execution wrapper as strong as
-`aitp-codex`, but its session-start routing is now aligned with the same
-current-topic-first rule used by Codex and Claude Code.
+Manual fallback remains `aitp session-start "<task>"`, but the public default
+is plugin bootstrap rather than `/aitp` command bundles.
 
-### 3. OpenClaw For Bounded Autonomous Research
+### 3. Claude Code With SessionStart Bootstrap
+
+Use this when you want Claude Code to enter AITP at conversation start instead
+of relying on explicit slash commands.
+
+Install the AITP Claude plugin or the compatibility hook bundle described in
+[`docs/INSTALL_CLAUDE_CODE.md`](docs/INSTALL_CLAUDE_CODE.md).
+
+Expected behavior:
+
+- Claude Code receives `using-aitp` through SessionStart bootstrap;
+- research requests route into AITP before any substantial response;
+- current-topic continuation and steering updates stay natural-language first;
+- `runtime_protocol.generated.md` remains the first runtime checklist after routing succeeds.
+
+### 4. OpenClaw For Bounded Autonomous Research
 
 Use this when you want bounded autonomous progress under heartbeat or
 control-note constraints, without giving the runtime permission to invent its
@@ -391,10 +382,9 @@ scripts\aitp-local.cmd install-agent --agent codex --scope project --target-root
 That project install now writes both:
 
 - `.agents/skills/aitp-runtime/`
-- `.agents/bin/aitp(.cmd)`, `.agents/bin/aitp-codex(.cmd)`, and `.agents/bin/aitp-mcp(.cmd)`
+- `.agents/skills/using-aitp/`
 
-so a Windows workspace can re-enter AITP without depending on a copied WSL shim
-or the original private integration machine.
+so a Windows workspace can re-enter AITP without depending on a copied WSL shim.
 
 The key boundary to preserve on Windows is this:
 
@@ -406,15 +396,15 @@ The key boundary to preserve on Windows is this:
 
 | Runtime | Public install path | Enforcement surface |
 | --- | --- | --- |
-| Codex | `aitp install-agent --agent codex` | Skill + MCP + `aitp-codex` wrapper |
+| Codex | [`.codex/INSTALL.md`](.codex/INSTALL.md) | Native skill discovery + `using-aitp` gatekeeper |
 | OpenClaw | `aitp install-agent --agent openclaw` | Skill + MCP bridge setup note |
-| Claude Code | `aitp install-agent --agent claude-code` | Skill + command bundle |
-| OpenCode | `aitp install-agent --agent opencode` | Skill + command harness + MCP config |
+| Claude Code | [`docs/INSTALL_CLAUDE_CODE.md`](docs/INSTALL_CLAUDE_CODE.md) | SessionStart hook + `using-aitp` bootstrap |
+| OpenCode | [`.opencode/INSTALL.md`](.opencode/INSTALL.md) | Plugin bootstrap + `using-aitp` injection |
 
 Current maturity is not uniform:
 
-- `Codex` is still the strongest path today because it supports both a bare-session skill install and the stronger `aitp-codex` wrapper.
-- `Claude Code` and `OpenCode` now share the same stricter `aitp session-start` routing rule, with native `.claude` / `.opencode` project installs and current-topic-first resolution for natural-language requests.
+- `Codex`, `OpenCode`, and `Claude Code` now converge on the same outer model: one gatekeeper skill plus native bootstrap.
+- `aitp install-agent` remains the compatibility path for seeded workspaces and manual fallbacks.
 - `OpenClaw` keeps the bounded autonomous loop path and MCP bridge notes, while `Codex` remains the most opinionated end-to-end execution surface.
 
 ## Design Boundaries
@@ -513,14 +503,14 @@ The repository is already more than a static protocol archive:
 
 - it ships a standalone installable kernel under `research/knowledge-hub`;
 - it exposes fixed `L0-L4` research surfaces plus `consultation/`, `runtime/`, and `schemas/`;
-- it installs user-side wrappers for the main target runtimes;
+- it exposes Superpowers-style outer installs for Codex, OpenCode, and Claude Code;
 - it includes an explicit human approval gate before `L2` promotion;
 - it can bridge into the standalone `Theoretical-Physics-Knowledge-Network` formal-theory backend without hard-wiring one private knowledge base as the only destination.
 
 Still in progress:
 
-- OpenClaw and OpenCode should continue moving toward a wrapper as opinionated as `aitp-codex`;
-- the standalone workspace-seeding path for some runtimes is still less mature than the CLI wrapper path;
+- OpenClaw still uses a different bounded-loop surface than the three bootstrap-first chat runtimes;
+- the compatibility installer should keep shrinking as native platform installs become sufficient;
 - multi-runtime smoke testing should keep expanding.
 
 ## See Also

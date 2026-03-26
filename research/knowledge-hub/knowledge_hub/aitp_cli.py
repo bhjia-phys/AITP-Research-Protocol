@@ -434,7 +434,7 @@ def build_parser() -> argparse.ArgumentParser:
     auto_promote.add_argument("--notes")
     auto_promote.add_argument("--json", action="store_true")
 
-    install = subparsers.add_parser("install-agent", help="Install AITP wrappers for supported agents")
+    install = subparsers.add_parser("install-agent", help="Install AITP skills and bootstrap assets for supported agents")
     install.add_argument("--agent", choices=["codex", "openclaw", "opencode", "claude-code", "all"], required=True)
     install.add_argument("--scope", choices=["user", "project"], default="user")
     install.add_argument("--target-root")

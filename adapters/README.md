@@ -1,13 +1,13 @@
 # Adapter Assets
 
-These adapter assets show how to make different agents enter the same AITP
+These adapter assets document how different agents enter the same AITP
 contract surface.
 
 Supported reference adapters:
 
 - OpenClaw
-- Codex
-- Claude Code
-- OpenCode
+- Codex bootstrap assets now live under `/.codex` plus the repository `skills/` directory
+- Claude Code bootstrap assets now live under `/.claude-plugin`, `/hooks`, and the repository `skills/` directory
+- OpenCode bootstrap assets now live under `/.opencode` plus the repository `skills/` directory
 
 All adapters assume an available `aitp` executable on `PATH`.
