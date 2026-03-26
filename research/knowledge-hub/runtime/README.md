@@ -127,7 +127,9 @@ Each `topic_state.json` should point to:
 - latest validation decision,
 - next-actions file when present,
 - consultation index,
-- active control-plane note when present.
+- active control-plane note when present,
+- current `innovation_direction.md` when the human has redirected novelty or scope,
+- the `innovation_decisions.jsonl` ledger when steering updates have occurred.
 
 ## Resume semantics
 
@@ -153,6 +155,8 @@ When you want to reduce heuristic behavior further, use:
 
 - `feedback/.../next_actions.contract.json` for an explicit L3 action queue
 - `runtime/.../next_action_decision.contract.json` for an explicit next-action choice
+- `aitp steer-topic --topic-slug <topic_slug> --innovation-direction "<direction>" --decision continue`
+  when the operator changes novelty direction or scope and that redirect must be durable before the loop continues
 
 For internal runtime work, the lower-level orchestrator still exists:
 
@@ -259,6 +263,11 @@ Store summaries, stage decisions, and exact file pointers.
 
 Use `runtime/CONTROL_NOTE_CONTRACT.md` when a human wants to redirect or pause
 the loop through a durable steering note.
+
+Use `runtime/topics/<topic_slug>/innovation_direction.md` plus
+`innovation_decisions.jsonl` when the operator changes novelty direction,
+research scope, or acceptance posture and that change must survive a new
+session.
 
 Use `RESEARCH_EXECUTION_GUARDRAILS.md` when the selected action starts to drift
 scope, mutate deliverables, or confuse proxy-success with real validation.

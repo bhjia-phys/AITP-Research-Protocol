@@ -34,6 +34,7 @@ class AITPCodexTests(unittest.TestCase):
                 "topic_state": {
                     "pointers": {
                         "control_note_path": "/tmp/control-note.md",
+                        "innovation_direction_path": "/tmp/innovation-direction.md",
                     }
                 },
             },
@@ -54,6 +55,7 @@ class AITPCodexTests(unittest.TestCase):
         prompt = aitp_codex.build_codex_prompt(payload)
         self.assertIn("Use the installed `aitp-runtime` skill", prompt)
         self.assertIn("/tmp/runtime/demo-topic/agent_brief.md", prompt)
+        self.assertIn("/tmp/innovation-direction.md", prompt)
         self.assertIn("trust: `blocked`", prompt)
         self.assertIn("Continue the topic", prompt)
 
@@ -62,6 +64,45 @@ class AITPCodexTests(unittest.TestCase):
         args = parser.parse_args(["--topic-slug", "demo-topic", "Continue demo"])
         self.assertEqual(args.topic_slug, "demo-topic")
         self.assertEqual(args.task, "Continue demo")
+
+    def test_extract_topic_direction_change_supports_english_and_chinese(self) -> None:
+        self.assertEqual(
+            aitp_codex.extract_topic_direction_change(
+                "continue this topic, direction changed to concrete Jones realization"
+            ),
+            "concrete Jones realization",
+        )
+        self.assertEqual(
+            aitp_codex.extract_topic_direction_change("继续这个 topic，方向改成 concrete Jones realization"),
+            "concrete Jones realization",
+        )
+
+    def test_apply_topic_steering_translates_direction_change_into_service_call(self) -> None:
+        calls: list[dict] = []
+
+        class _FakeService:
+            def steer_topic(self, **kwargs):  # noqa: ANN003
+                calls.append(kwargs)
+                return {"control_note_path": "runtime/topics/demo-topic/control_note.md"}
+
+        normalized_task, payload, control_note = aitp_codex.apply_topic_steering(
+            _FakeService(),  # type: ignore[arg-type]
+            topic_slug="demo-topic",
+            task="continue this topic, direction changed to concrete Jones realization",
+            run_id="2026-03-13-demo",
+            updated_by="aitp-codex",
+            innovation_direction=None,
+            steering_decision="continue",
+        )
+
+        self.assertEqual(
+            normalized_task,
+            "Continue the topic under updated innovation direction: concrete Jones realization",
+        )
+        self.assertEqual(control_note, "runtime/topics/demo-topic/control_note.md")
+        self.assertIsNotNone(payload)
+        self.assertEqual(calls[0]["topic_slug"], "demo-topic")
+        self.assertEqual(calls[0]["innovation_direction"], "concrete Jones realization")
 
 
 if __name__ == "__main__":

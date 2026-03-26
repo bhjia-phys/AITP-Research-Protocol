@@ -1037,6 +1037,42 @@ class AITPServiceTests(unittest.TestCase):
         bundle = json.loads(Path(payload["runtime_protocol"]["runtime_protocol_path"]).read_text(encoding="utf-8"))
         self.assertEqual(bundle["minimal_execution_brief"]["selected_action_id"], "action:demo-topic:02")
 
+    def test_steer_topic_writes_innovation_direction_and_control_note(self) -> None:
+        self._write_runtime_state()
+
+        payload = self.service.steer_topic(
+            topic_slug="demo-topic",
+            innovation_direction="Shift toward a bounded Jones-style concrete realization target.",
+            decision="continue",
+            human_request="continue this topic, direction changed to Jones concrete realization",
+            updated_by="codex",
+        )
+
+        control_note_path = self.kernel_root / payload["control_note_path"]
+        innovation_direction_path = self.kernel_root / payload["innovation_direction_path"]
+        decisions_path = self.kernel_root / payload["innovation_decisions_path"]
+
+        self.assertTrue(control_note_path.exists())
+        self.assertTrue(innovation_direction_path.exists())
+        self.assertTrue(decisions_path.exists())
+        self.assertIn("directive: human_redirect", control_note_path.read_text(encoding="utf-8"))
+        self.assertIn(
+            "Shift toward a bounded Jones-style concrete realization target.",
+            innovation_direction_path.read_text(encoding="utf-8"),
+        )
+        decision_rows = [
+            json.loads(line)
+            for line in decisions_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        self.assertEqual(decision_rows[-1]["decision"], "continue")
+        topic_state = json.loads((self.kernel_root / "runtime" / "topics" / "demo-topic" / "topic_state.json").read_text(encoding="utf-8"))
+        self.assertEqual(topic_state["pointers"]["control_note_path"], payload["control_note_path"])
+        self.assertEqual(
+            topic_state["pointers"]["innovation_direction_path"],
+            payload["innovation_direction_path"],
+        )
+
     def test_request_and_approve_promotion_gate_write_runtime_artifacts(self) -> None:
         self._write_runtime_state()
         self._write_candidate()
@@ -2319,10 +2355,13 @@ class AITPServiceTests(unittest.TestCase):
         )
 
         self.assertEqual(result["installed"][0]["kind"], "skill")
+        using_skill_path = codex_target / ".agents" / "skills" / "using-aitp" / "SKILL.md"
         skill_path = codex_target / ".agents" / "skills" / "aitp-runtime" / "SKILL.md"
         setup_path = codex_target / ".agents" / "skills" / "aitp-runtime" / "AITP_MCP_SETUP.md"
+        self.assertTrue(using_skill_path.exists())
         self.assertTrue(skill_path.exists())
         self.assertTrue(setup_path.exists())
+        self.assertIn("If there is even a 1% chance", using_skill_path.read_text(encoding="utf-8"))
         self.assertIn("aitp loop", skill_path.read_text(encoding="utf-8"))
         self.assertIn("aitp operation-init", skill_path.read_text(encoding="utf-8"))
         self.assertIn("codex mcp add aitp", setup_path.read_text(encoding="utf-8"))
@@ -2356,10 +2395,16 @@ class AITPServiceTests(unittest.TestCase):
         installed_paths = {Path(item["path"]).name for item in result["installed"]}
         self.assertIn("SKILL.md", installed_paths)
         self.assertIn("AITP_MCP_SETUP.md", installed_paths)
+        openclaw_using_skill_path = openclaw_target / "skills" / "using-aitp" / "SKILL.md"
         openclaw_skill_path = openclaw_target / "skills" / "aitp-runtime" / "SKILL.md"
         openclaw_setup_path = openclaw_target / "skills" / "aitp-runtime" / "AITP_MCP_SETUP.md"
+        self.assertTrue(openclaw_using_skill_path.exists())
         self.assertTrue(openclaw_skill_path.exists())
         self.assertTrue(openclaw_setup_path.exists())
+        self.assertIn(
+            "Use this skill to decide whether the current task must be governed by AITP",
+            openclaw_using_skill_path.read_text(encoding="utf-8"),
+        )
         self.assertIn("AITP Runtime For OpenClaw", openclaw_skill_path.read_text(encoding="utf-8"))
         self.assertIn("mcporter config add aitp", openclaw_setup_path.read_text(encoding="utf-8"))
         self.assertFalse((openclaw_target / "SKILL.md").exists())
@@ -2390,3 +2435,9 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("aitp-loop.md", installed_paths)
         self.assertIn("aitp-audit.md", installed_paths)
         self.assertIn("AITP_MCP_SETUP.md", installed_paths)
+        claude_using_skill_path = claude_target / "skills" / "using-aitp" / "SKILL.md"
+        self.assertTrue(claude_using_skill_path.exists())
+        self.assertIn(
+            "Use this skill to decide whether the current task must be governed by AITP",
+            claude_using_skill_path.read_text(encoding="utf-8"),
+        )

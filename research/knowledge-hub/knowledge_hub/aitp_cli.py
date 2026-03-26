@@ -253,6 +253,22 @@ def build_parser() -> argparse.ArgumentParser:
     loop.add_argument("--max-auto-steps", type=int, default=4)
     loop.add_argument("--json", action="store_true")
 
+    steer_topic = subparsers.add_parser(
+        "steer-topic",
+        help="Persist an innovation-direction update and paired control note before resuming the topic",
+    )
+    steer_topic.add_argument("--topic-slug", required=True)
+    steer_topic.add_argument("--innovation-direction", required=True)
+    steer_topic.add_argument("--decision", choices=["continue", "branch", "redirect", "stop"], default="continue")
+    steer_topic.add_argument("--run-id")
+    steer_topic.add_argument("--updated-by", default="aitp-cli")
+    steer_topic.add_argument("--summary")
+    steer_topic.add_argument("--next-question")
+    steer_topic.add_argument("--target-action-id")
+    steer_topic.add_argument("--target-action-summary")
+    steer_topic.add_argument("--human-request")
+    steer_topic.add_argument("--json", action="store_true")
+
     status = subparsers.add_parser("status", help="Show topic shell status and active research contract")
     status.add_argument("--topic-slug", required=True)
     status.add_argument("--updated-by", default="aitp-cli")
@@ -648,6 +664,22 @@ def main() -> int:
         _emit(payload, args.json)
         exit_state = (payload.get("exit_audit") or {}).get("conformance_state") or {}
         return 0 if exit_state.get("overall_status") == "pass" else 1
+
+    if args.command == "steer-topic":
+        payload = service.steer_topic(
+            topic_slug=args.topic_slug,
+            innovation_direction=args.innovation_direction,
+            decision=args.decision,
+            run_id=args.run_id,
+            updated_by=args.updated_by,
+            summary=args.summary,
+            next_question=args.next_question,
+            target_action_id=args.target_action_id,
+            target_action_summary=args.target_action_summary,
+            human_request=args.human_request,
+        )
+        _emit(payload, args.json)
+        return 0
 
     if args.command == "status":
         payload = service.topic_status(

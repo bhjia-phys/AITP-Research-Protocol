@@ -552,6 +552,39 @@ EXIT /B 127
     def _topic_display_title(self, topic_slug: str) -> str:
         return topic_slug.replace("-", " ").strip().title() or topic_slug
 
+    def _runtime_pointer_path(
+        self,
+        *,
+        topic_slug: str,
+        pointer_key: str,
+        default_filename: str,
+    ) -> tuple[Path, str]:
+        runtime_root = self._runtime_root(topic_slug)
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        try:
+            topic_state = self.get_runtime_state(topic_slug)
+        except FileNotFoundError:
+            path = runtime_root / default_filename
+            return path, self._relativize(path)
+
+        raw_path = str(((topic_state.get("pointers") or {}).get(pointer_key) or "")).strip()
+        if raw_path:
+            candidate = Path(raw_path)
+            resolved = candidate if candidate.is_absolute() else self.kernel_root / candidate
+            return resolved, self._relativize(resolved)
+
+        path = runtime_root / default_filename
+        return path, self._relativize(path)
+
+    def _yaml_quote(self, value: str) -> str:
+        return json.dumps(str(value), ensure_ascii=False)
+
+    def _yaml_list_block(self, values: list[str], *, indent: str = "  ") -> list[str]:
+        rows = [str(value).strip() for value in values if str(value).strip()]
+        if not rows:
+            return [f"{indent}[]"]
+        return [f"{indent}- {self._yaml_quote(value)}" for value in rows]
+
     def _template_mode_to_research_mode(self, template_mode: str | None) -> str:
         normalized = str(template_mode or "").strip().lower()
         mapping = {
@@ -4824,6 +4857,184 @@ EXIT /B 127
             raise FileNotFoundError(f"Runtime state missing for topic {topic_slug}")
         return topic_state
 
+    def steer_topic(
+        self,
+        *,
+        topic_slug: str,
+        innovation_direction: str,
+        decision: str = "continue",
+        run_id: str | None = None,
+        updated_by: str = "aitp-cli",
+        summary: str | None = None,
+        next_question: str | None = None,
+        target_action_id: str | None = None,
+        target_action_summary: str | None = None,
+        human_request: str | None = None,
+    ) -> dict[str, Any]:
+        direction_text = str(innovation_direction or "").strip()
+        if not direction_text:
+            raise ValueError("innovation_direction is required")
+
+        topic_state = self.get_runtime_state(topic_slug)
+        runtime_root = self._runtime_root(topic_slug)
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        resolved_run_id = self._resolve_run_id(topic_slug, run_id)
+        normalized_decision = str(decision or "continue").strip().lower() or "continue"
+        if normalized_decision not in {"continue", "branch", "redirect", "stop"}:
+            raise ValueError("decision must be one of continue, branch, redirect, or stop")
+
+        control_note_path, control_note_rel = self._runtime_pointer_path(
+            topic_slug=topic_slug,
+            pointer_key="control_note_path",
+            default_filename="control_note.md",
+        )
+        innovation_direction_path, innovation_direction_rel = self._runtime_pointer_path(
+            topic_slug=topic_slug,
+            pointer_key="innovation_direction_path",
+            default_filename="innovation_direction.md",
+        )
+        innovation_decisions_path, innovation_decisions_rel = self._runtime_pointer_path(
+            topic_slug=topic_slug,
+            pointer_key="innovation_decisions_path",
+            default_filename="innovation_decisions.jsonl",
+        )
+
+        steering_summary = (
+            str(summary).strip()
+            if summary and str(summary).strip()
+            else f"Continue `{topic_slug}` under updated innovation direction: {direction_text}"
+        )
+        steering_next_question = (
+            str(next_question).strip()
+            if next_question and str(next_question).strip()
+            else f"What is the next bounded AITP step under innovation direction: {direction_text}?"
+        )
+        steering_target_summary = (
+            str(target_action_summary).strip()
+            if target_action_summary and str(target_action_summary).strip()
+            else f"Continue the topic under updated innovation direction: {direction_text}"
+        )
+        control_directive = "stop" if normalized_decision == "stop" else "human_redirect"
+        allow_override = normalized_decision != "stop"
+
+        control_lines = [
+            "---",
+            f"directive: {control_directive}",
+            f"allow_override_unfinished: {'true' if allow_override else 'false'}",
+            f"allow_override_decision_contract: {'true' if allow_override else 'false'}",
+        ]
+        if target_action_id:
+            control_lines.append(f"target_action_id: {self._yaml_quote(target_action_id)}")
+        control_lines.append(f"target_action_summary: {self._yaml_quote(steering_target_summary)}")
+        control_lines.append("target_artifacts:")
+        control_lines.extend(self._yaml_list_block([innovation_direction_rel]))
+        control_lines.append("evidence_refs:")
+        control_lines.extend(self._yaml_list_block([innovation_direction_rel]))
+        control_lines.append("stop_conditions:")
+        control_lines.extend(
+            self._yaml_list_block(
+                [
+                    "Refresh runtime state and read the updated innovation direction before trusting any previous route.",
+                ]
+            )
+        )
+        control_lines.extend(
+            [
+                f"summary: {self._yaml_quote(steering_summary)}",
+                "---",
+                "",
+                "# Control note",
+                "",
+                f"- Topic slug: `{topic_slug}`",
+                f"- Updated by: `{updated_by}`",
+                f"- Updated at: `{now_iso()}`",
+                f"- Run id: `{resolved_run_id or '(none)'}`",
+                f"- Steering decision: `{normalized_decision}`",
+                f"- Innovation direction: {direction_text}",
+                f"- Triggering request: {human_request or '(none provided)'}",
+                "",
+                "## Why this control note exists",
+                "",
+                f"- {steering_summary}",
+                "",
+                "## Next bounded question",
+                "",
+                f"- {steering_next_question}",
+                "",
+                "## Rule",
+                "",
+                "- If direction, scope, deliverables, or acceptance criteria change again, update this note and `innovation_direction.md` together before resuming the loop.",
+                "",
+            ]
+        )
+        write_text(control_note_path, "\n".join(control_lines))
+
+        innovation_lines = [
+            "# Innovation direction",
+            "",
+            f"- Topic slug: `{topic_slug}`",
+            f"- Updated by: `{updated_by}`",
+            f"- Updated at: `{now_iso()}`",
+            f"- Run id: `{resolved_run_id or '(none)'}`",
+            f"- Decision ledger: `{innovation_decisions_rel}`",
+            f"- Paired control note: `{control_note_rel}`",
+            "",
+            "## Current direction",
+            "",
+            direction_text,
+            "",
+            "## Steering decision",
+            "",
+            f"- Decision: `{normalized_decision}`",
+            f"- Summary: {steering_summary}",
+            f"- Triggering request: {human_request or '(none provided)'}",
+            f"- Next bounded question: {steering_next_question}",
+            "",
+            "## Update rule",
+            "",
+            "- This note is the durable human novelty/scope surface.",
+            "- If the direction changes, refresh this note and the paired control note in the same step.",
+            "",
+        ]
+        write_text(innovation_direction_path, "\n".join(innovation_lines))
+
+        decision_row = {
+            "topic_slug": topic_slug,
+            "run_id": resolved_run_id,
+            "updated_at": now_iso(),
+            "updated_by": updated_by,
+            "decision": normalized_decision,
+            "innovation_direction": direction_text,
+            "summary": steering_summary,
+            "next_question": steering_next_question,
+            "human_request": human_request or "",
+            "control_note_path": control_note_rel,
+            "innovation_direction_path": innovation_direction_rel,
+        }
+        decision_rows = read_jsonl(innovation_decisions_path)
+        decision_rows.append(decision_row)
+        write_jsonl(innovation_decisions_path, decision_rows)
+
+        topic_state.setdefault("pointers", {})
+        topic_state["updated_at"] = now_iso()
+        topic_state["updated_by"] = updated_by
+        topic_state["pointers"]["control_note_path"] = control_note_rel
+        topic_state["pointers"]["innovation_direction_path"] = innovation_direction_rel
+        topic_state["pointers"]["innovation_decisions_path"] = innovation_decisions_rel
+        write_json(runtime_root / "topic_state.json", topic_state)
+
+        return {
+            "topic_slug": topic_slug,
+            "run_id": resolved_run_id,
+            "decision": normalized_decision,
+            "innovation_direction": direction_text,
+            "summary": steering_summary,
+            "next_question": steering_next_question,
+            "control_note_path": control_note_rel,
+            "innovation_direction_path": innovation_direction_rel,
+            "innovation_decisions_path": innovation_decisions_rel,
+        }
+
     def new_topic(
         self,
         *,
@@ -7630,6 +7841,7 @@ description: Route research work through the AITP kernel using the installable `
 aitp-codex --topic-slug <topic_slug> "<task>"
 aitp loop --topic-slug <topic_slug> --human-request "<task>" --skill-query "<capability gap>"
 aitp resume --topic-slug <topic_slug> --human-request "<task>"
+aitp steer-topic --topic-slug <topic_slug> --innovation-direction "<direction>" --decision continue
 aitp coverage-audit --topic-slug <topic_slug> --candidate-id <candidate_id> --source-section <section> --covered-section <section>
 aitp request-promotion --topic-slug <topic_slug> --candidate-id <candidate_id> --backend-id backend:theoretical-physics-knowledge-network
 aitp approve-promotion --topic-slug <topic_slug> --candidate-id <candidate_id>
@@ -7645,6 +7857,115 @@ aitp atomize --topic-slug <topic_slug> --run-id <run_id> --method-title "<method
 ```
 
 Kernel root default: `{self.kernel_root}`
+"""
+
+    def _using_aitp_skill_template(self, platform: str) -> str:
+        if platform == "codex":
+            runtime_reference = "the installed `aitp-runtime` skill"
+            entry_commands = (
+                "`aitp new-topic ...`, `aitp resume ...`, `aitp loop ...`, or "
+                "`aitp-codex --topic-slug <topic_slug> \"<task>\"`"
+            )
+        elif platform == "claude-code":
+            runtime_reference = "the installed `aitp-runtime` skill and `/aitp*` commands"
+            entry_commands = "`aitp loop ...`, `aitp resume ...`, or `aitp bootstrap ...`"
+        else:
+            runtime_reference = "the installed `aitp-runtime` skill"
+            entry_commands = "`aitp loop ...`, `aitp resume ...`, or `aitp bootstrap ...`"
+
+        return f"""---
+name: using-aitp
+description: Use at the start of any conversation in a workspace where AITP is installed, or whenever the task may involve theoretical-physics research, research protocol routing, or AITP-governed execution. Establishes whether work must first enter AITP before any substantial response.
+---
+
+# Using AITP
+
+Use this skill to decide whether the current task must be governed by AITP
+before you do substantial work.
+
+<EXTREMELY-IMPORTANT>
+If there is even a 1% chance the task is non-trivial theoretical-physics
+research, theory-to-code validation, idea evaluation, literature-grounded
+scientific synthesis, or protocol-governed topic work, you MUST enter AITP
+first through {entry_commands}.
+
+Do not start with free-form browsing, free-form explanation, or ad hoc file
+editing if the task should actually be inside AITP.
+</EXTREMELY-IMPORTANT>
+
+## Mandatory triage
+
+Before doing substantial work, classify the task into one of these buckets:
+
+1. `AITP research execution`
+   - a real research topic, idea, paper set, validation target, derivation,
+     benchmark, or theory-side execution loop
+2. `AITP protocol / tooling maintenance`
+   - editing the AITP repo itself, its docs, adapters, tests, or installer
+3. `plain coding outside AITP`
+   - normal software work that does not claim to be AITP-governed research
+
+## Hard gate
+
+If the task is bucket `1`, you MUST:
+
+1. enter through {runtime_reference}
+2. materialize or resume runtime state
+3. read `runtime_protocol.generated.md` first
+4. read the files named under `Must read now`
+5. if the human changed novelty direction, scope, deliverables, or acceptance criteria, update both:
+   - `runtime/topics/<topic_slug>/innovation_direction.md`
+   - `runtime/topics/<topic_slug>/control_note.md`
+6. only then continue with the task
+
+If conformance fails, the work does not count as AITP work.
+
+## Steering rule
+
+When the operator says the direction changed, do not treat that as mere chat.
+Persist it into AITP steering surfaces first.
+
+For example, in Codex, treat:
+
+- `continue this topic, direction changed to X`
+- `继续这个 topic，方向改成 X`
+
+as the equivalent of:
+
+```bash
+aitp steer-topic --topic-slug <topic_slug> --innovation-direction "X" --decision continue
+aitp-codex --topic-slug <topic_slug> "Continue the topic under updated direction: X"
+```
+
+## Allowed exception
+
+If the task is bucket `2`, you may work on the AITP codebase directly without
+opening a topic shell, but you must preserve:
+
+- the `L0 -> L1 -> L3 -> L4 -> L2` ontology
+- research-execution guardrails
+- promotion and audit semantics
+- adapter/runtime install consistency
+
+## Red flags
+
+These thoughts mean you are about to drift out of AITP discipline:
+
+- "I'll just answer the research question directly first."
+- "I only need a quick literature summary."
+- "I can inspect files before deciding whether AITP applies."
+- "This is probably too small to need runtime state."
+- "I'll come back and register the topic later."
+
+If one of those is true and the task is research-governed, stop and enter AITP
+first.
+
+## Practical rule
+
+- Research task: route through AITP first.
+- AITP repo maintenance task: edit code/docs/tests directly, but keep AITP
+  contracts strict.
+- When uncertain: bias toward entering AITP, not away from it.
 """
 
     def _claude_code_skill_template(self) -> str:
@@ -7921,6 +8242,14 @@ aitp audit $ARGUMENTS
         if agent == "codex":
             for base in self._codex_skill_targets(scope=scope, target_root=target_root):
                 base.mkdir(parents=True, exist_ok=True)
+                using_skill_base = base.parent / "using-aitp"
+                using_skill_base.mkdir(parents=True, exist_ok=True)
+                using_skill_path = using_skill_base / "SKILL.md"
+                if using_skill_path.exists() and not force:
+                    raise FileExistsError(f"Refusing to overwrite {using_skill_path}")
+                write_text(using_skill_path, self._using_aitp_skill_template("codex"))
+                installed.append({"agent": agent, "path": str(using_skill_path), "kind": "skill"})
+
                 skill_path = base / "SKILL.md"
                 if skill_path.exists() and not force:
                     raise FileExistsError(f"Refusing to overwrite {skill_path}")
@@ -7943,6 +8272,14 @@ aitp audit $ARGUMENTS
         if agent == "openclaw":
             base = self._openclaw_skill_target(scope=scope, target_root=target_root)
             base.mkdir(parents=True, exist_ok=True)
+            using_skill_base = base.parent / "using-aitp"
+            using_skill_base.mkdir(parents=True, exist_ok=True)
+            using_skill_path = using_skill_base / "SKILL.md"
+            if using_skill_path.exists() and not force:
+                raise FileExistsError(f"Refusing to overwrite {using_skill_path}")
+            write_text(using_skill_path, self._using_aitp_skill_template("openclaw"))
+            installed.append({"agent": agent, "path": str(using_skill_path), "kind": "skill"})
+
             skill_path = base / "SKILL.md"
             if skill_path.exists() and not force:
                 raise FileExistsError(f"Refusing to overwrite {skill_path}")
@@ -7997,6 +8334,14 @@ aitp audit $ARGUMENTS
 
             skill_base.mkdir(parents=True, exist_ok=True)
             command_base.mkdir(parents=True, exist_ok=True)
+
+            using_skill_base = skill_base.parent / "using-aitp"
+            using_skill_base.mkdir(parents=True, exist_ok=True)
+            using_skill_path = using_skill_base / "SKILL.md"
+            if using_skill_path.exists() and not force:
+                raise FileExistsError(f"Refusing to overwrite {using_skill_path}")
+            write_text(using_skill_path, self._using_aitp_skill_template("claude-code"))
+            installed.append({"agent": agent, "path": str(using_skill_path), "kind": "skill"})
 
             skill_path = skill_base / "SKILL.md"
             if skill_path.exists() and not force:

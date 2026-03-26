@@ -4,6 +4,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 from typing import Any
@@ -30,6 +31,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--statement")
     parser.add_argument("--run-id")
     parser.add_argument("--control-note")
+    parser.add_argument("--innovation-direction")
+    parser.add_argument("--steering-decision", choices=["continue", "branch", "redirect", "stop"], default="continue")
     parser.add_argument("--updated-by", default="aitp-codex")
     parser.add_argument("--skill-query", action="append", default=[])
     parser.add_argument("--max-auto-steps", type=int, default=4)
@@ -50,6 +53,62 @@ def _service_from_args(args: argparse.Namespace) -> AITPService:
     return AITPService(**kwargs)
 
 
+def extract_topic_direction_change(task: str) -> str | None:
+    text = str(task or "").strip()
+    if not text:
+        return None
+
+    patterns = [
+        re.compile(
+            r"^(?:continue|resume)\s+(?:this|the current)\s+topic\s*[,，]\s*direction\s+(?:changed|change|set)\s+to\s+(.+)$",
+            re.IGNORECASE,
+        ),
+        re.compile(
+            r"^继续(?:这个|当前)?\s*(?:topic|课题|主题)\s*[,，]\s*方向(?:改成|改为|变成|调整为)\s*(.+)$"
+        ),
+    ]
+    for pattern in patterns:
+        match = pattern.match(text)
+        if not match:
+            continue
+        direction = str(match.group(1) or "").strip()
+        if direction:
+            return direction
+    return None
+
+
+def apply_topic_steering(
+    service: AITPService,
+    *,
+    topic_slug: str | None,
+    task: str,
+    run_id: str | None,
+    updated_by: str,
+    innovation_direction: str | None,
+    steering_decision: str,
+) -> tuple[str, dict[str, Any] | None, str | None]:
+    if not topic_slug:
+        return task, None, None
+
+    resolved_direction = str(innovation_direction or "").strip() or extract_topic_direction_change(task)
+    if not resolved_direction:
+        return task, None, None
+
+    normalized_task = f"Continue the topic under updated innovation direction: {resolved_direction}"
+    steering_payload = service.steer_topic(
+        topic_slug=topic_slug,
+        innovation_direction=resolved_direction,
+        decision=steering_decision,
+        run_id=run_id,
+        updated_by=updated_by,
+        summary=normalized_task,
+        next_question=normalized_task,
+        target_action_summary=normalized_task,
+        human_request=task,
+    )
+    return normalized_task, steering_payload, steering_payload["control_note_path"]
+
+
 def build_codex_prompt(payload: dict[str, Any]) -> str:
     topic_slug = payload["topic_slug"]
     run_id = payload.get("run_id") or "(missing)"
@@ -61,6 +120,9 @@ def build_codex_prompt(payload: dict[str, Any]) -> str:
         payload["trust_audit"]["trust_report_path"] if payload.get("trust_audit") else "(missing)"
     )
     control_note_path = bootstrap["topic_state"].get("pointers", {}).get("control_note_path") or "(missing)"
+    innovation_direction_path = (
+        bootstrap["topic_state"].get("pointers", {}).get("innovation_direction_path") or "(missing)"
+    )
 
     lines = [
         "Use the installed `aitp-runtime` skill and stay inside AITP.",
@@ -76,6 +138,7 @@ def build_codex_prompt(payload: dict[str, Any]) -> str:
         f"- `{payload['loop_state_path']}`",
         f"- `{capability_report_path}`",
         f"- `{trust_report_path}`",
+        f"- `{innovation_direction_path}`",
         f"- `{control_note_path}`",
         "",
         "Current AITP state:",
@@ -85,6 +148,7 @@ def build_codex_prompt(payload: dict[str, Any]) -> str:
         "",
         "Hard rules:",
         "- treat runtime and validation artifacts as source of truth",
+        "- if the operator changed direction or scope, update `innovation_direction.md` and the paired control note before continuing",
         (
             f"- do not trust or promote reusable operations until `aitp trust-audit --topic-slug {topic_slug} "
             f"--run-id {run_id}` passes"
@@ -128,14 +192,25 @@ def main() -> int:
     args = parser.parse_args()
     service = _service_from_args(args)
 
+    normalized_task, steering_payload, control_note_override = apply_topic_steering(
+        service,
+        topic_slug=args.topic_slug,
+        task=args.task,
+        run_id=args.run_id,
+        updated_by=args.updated_by,
+        innovation_direction=args.innovation_direction,
+        steering_decision=args.steering_decision,
+    )
+    effective_control_note = control_note_override or args.control_note
+
     payload = service.run_topic_loop(
         topic_slug=args.topic_slug,
         topic=args.topic,
         statement=args.statement,
         run_id=args.run_id,
-        control_note=args.control_note,
+        control_note=effective_control_note,
         updated_by=args.updated_by,
-        human_request=args.task,
+        human_request=normalized_task,
         skill_queries=args.skill_query,
         max_auto_steps=args.max_auto_steps,
     )
@@ -147,6 +222,7 @@ def main() -> int:
         "loop_state_path": payload["loop_state_path"],
         "capability_report_path": payload["capability_audit"]["capability_report_path"],
         "trust_report_path": payload["trust_audit"]["trust_report_path"] if payload.get("trust_audit") else None,
+        "steering": steering_payload,
         "prompt": prompt,
     }
     if args.dry_run:

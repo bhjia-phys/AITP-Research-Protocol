@@ -426,6 +426,8 @@ def build_resume_markdown(state: dict) -> str:
             f"- Promotion decision: `{pointers['promotion_decision_path'] or '(missing)'}`",
             f"- Consultation index: `{pointers['consultation_index_path'] or '(missing)'}`",
             f"- L4 control note: `{pointers['control_note_path'] or '(missing)'}`",
+            f"- Innovation direction: `{pointers.get('innovation_direction_path') or '(missing)'}`",
+            f"- Innovation decisions: `{pointers.get('innovation_decisions_path') or '(missing)'}`",
             f"- Unfinished work index: `{pointers.get('unfinished_work_path') or '(missing)'}`",
             f"- Unfinished work note: `{pointers.get('unfinished_work_note_path') or '(missing)'}`",
             f"- Next-action decision: `{pointers.get('next_action_decision_path') or '(missing)'}`",
@@ -606,6 +608,8 @@ def main() -> int:
         control_note_rel = str(Path(control_note_rel))
     else:
         control_note_rel = str(existing_pointers.get("control_note_path") or "").strip() or None
+    innovation_direction_rel = str(existing_pointers.get("innovation_direction_path") or "").strip() or None
+    innovation_decisions_rel = str(existing_pointers.get("innovation_decisions_path") or "").strip() or None
 
     unfinished_work_path = topic_runtime_root / "unfinished_work.json"
     unfinished_work_note_path = topic_runtime_root / "unfinished_work.md"
@@ -727,6 +731,8 @@ def main() -> int:
             "followup_subtopics_note_path": relative_path(followup_subtopics_note_path, knowledge_root),
             "consultation_index_path": relative_path(consultation_index_path, knowledge_root),
             "control_note_path": control_note_rel,
+            "innovation_direction_path": innovation_direction_rel,
+            "innovation_decisions_path": innovation_decisions_rel,
             "unfinished_work_path": relative_path(unfinished_work_path, knowledge_root),
             "unfinished_work_note_path": relative_path(unfinished_work_note_path, knowledge_root),
             "next_action_decision_path": relative_path(next_action_decision_path, knowledge_root),

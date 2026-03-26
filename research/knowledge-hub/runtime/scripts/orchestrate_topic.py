@@ -1454,6 +1454,8 @@ def build_operator_console(topic_state: dict, interaction_state: dict, queue: li
             f"- Reason: {decision_surface.get('reason') or '(missing)'}",
             f"- Control note: `{decision_surface.get('control_note_path') or '(missing)'}` "
             f"status=`{decision_surface.get('control_note_status') or 'missing'}`",
+            f"- Innovation direction: `{topic_state.get('pointers', {}).get('innovation_direction_path') or '(missing)'}`",
+            f"- Innovation decisions: `{topic_state.get('pointers', {}).get('innovation_decisions_path') or '(missing)'}`",
             f"- Decision contract: `{decision_surface.get('decision_contract_path') or '(missing)'}` "
             f"status=`{decision_surface.get('decision_contract_status') or 'missing'}`",
             "",
@@ -1598,6 +1600,8 @@ def build_agent_brief(topic_state: dict, queue: list[dict], interaction_state: d
             f"- Promotion gate: `{pointers.get('promotion_gate_path') or '(missing)'}`",
             f"- Promotion gate note: `{pointers.get('promotion_gate_note_path') or '(missing)'}`",
             f"- Consultation index: `{pointers.get('consultation_index_path') or '(missing)'}`",
+            f"- Innovation direction: `{pointers.get('innovation_direction_path') or '(missing)'}`",
+            f"- Innovation decisions: `{pointers.get('innovation_decisions_path') or '(missing)'}`",
             f"- Interaction state: `runtime/topics/{topic_state['topic_slug']}/interaction_state.json`",
             f"- Operator console: `runtime/topics/{topic_state['topic_slug']}/operator_console.md`",
             f"- Conformance state: `runtime/topics/{topic_state['topic_slug']}/conformance_state.json`",

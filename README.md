@@ -86,10 +86,10 @@ you want that session to become AITP-first instead of ad hoc:
 aitp install-agent --agent codex --scope project --target-root /path/to/theory-workspace
 ```
 
-That writes `.agents/skills/aitp-runtime/` into the target workspace. A fresh
-clone now defaults to the repo-local kernel root at `research/knowledge-hub`,
-so `aitp` works without depending on the original private integration
-workspace.
+That writes `.agents/skills/using-aitp/` and `.agents/skills/aitp-runtime/`
+into the target workspace. A fresh clone now defaults to the repo-local kernel
+root at `research/knowledge-hub`, so `aitp` works without depending on the
+original private integration workspace.
 
 ## Research Model
 
@@ -144,6 +144,7 @@ codex
 
 Expected behavior:
 
+- `codex` discovers `.agents/skills/using-aitp/SKILL.md` as the conversation-level gatekeeper;
 - `codex` reads `.agents/skills/aitp-runtime/SKILL.md`;
 - the first serious research action becomes `aitp bootstrap`, `aitp loop`, or `aitp resume`;
 - it reads the runtime bundle before continuing;
@@ -155,6 +156,19 @@ wrapper:
 ```bash
 aitp-codex --topic-slug <topic_slug> "<task>"
 ```
+
+If the operator changes direction mid-topic, persist that steering update
+first:
+
+```bash
+aitp steer-topic --topic-slug <topic_slug> --innovation-direction "<new direction>" --decision continue
+aitp-codex --topic-slug <topic_slug> "Continue the topic under updated direction: <new direction>"
+```
+
+Inside Codex, the natural-language forms
+`continue this topic, direction changed to <new direction>` and
+`继续这个 topic，方向改成 <new direction>` now map to the same steering
+operation before the loop resumes.
 
 ### 2. Bare OpenCode In A Theory Workspace
 
