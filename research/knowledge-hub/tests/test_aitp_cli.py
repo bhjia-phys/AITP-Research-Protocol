@@ -133,6 +133,82 @@ class AITPCLITests(unittest.TestCase):
         self.assertEqual(session_start_args.task, "继续这个 topic，方向改成 X")
         self.assertFalse(session_start_args.current_topic)
 
+    def test_phase6_commands_are_registered(self) -> None:
+        parser = aitp_cli.build_parser()
+
+        emit_args = parser.parse_args(
+            [
+                "emit-decision",
+                "--topic-slug",
+                "demo-topic",
+                "--question",
+                "Clarify the validation route?",
+                "--options",
+                '[{"label":"small-system","description":"Use the smallest exact lane first"},{"label":"larger-system","description":"Defer to a larger finite-size lane"}]',
+                "--blocking",
+                "false",
+                "--default-option-index",
+                "0",
+                "--trigger-rule",
+                "direction_ambiguity",
+            ]
+        )
+        self.assertEqual(emit_args.command, "emit-decision")
+        self.assertFalse(emit_args.blocking)
+        self.assertEqual(emit_args.options[0]["label"], "small-system")
+        self.assertEqual(emit_args.default_option_index, 0)
+
+        resolve_args = parser.parse_args(
+            ["resolve-decision", "--topic-slug", "demo-topic", "--decision-id", "dp:demo", "--option", "1"]
+        )
+        self.assertEqual(resolve_args.command, "resolve-decision")
+        self.assertEqual(resolve_args.option, 1)
+
+        list_args = parser.parse_args(["list-decisions", "--topic-slug", "demo-topic", "--pending-only"])
+        self.assertEqual(list_args.command, "list-decisions")
+        self.assertTrue(list_args.pending_only)
+
+        trace_args = parser.parse_args(
+            [
+                "trace-decision",
+                "--topic-slug",
+                "demo-topic",
+                "--summary",
+                "Selected the small-system lane first.",
+                "--chosen",
+                "small-system",
+                "--rationale",
+                "It closes the exact benchmark gap first.",
+                "--input-refs",
+                '["runtime/topics/demo-topic/operator_console.md"]',
+                "--output-refs",
+                '["runtime/topics/demo-topic/chronicles/chronicle__demo.md"]',
+            ]
+        )
+        self.assertEqual(trace_args.command, "trace-decision")
+        self.assertEqual(trace_args.input_refs[0], "runtime/topics/demo-topic/operator_console.md")
+        self.assertEqual(trace_args.output_refs[0], "runtime/topics/demo-topic/chronicles/chronicle__demo.md")
+
+        chronicle_args = parser.parse_args(
+            [
+                "chronicle",
+                "--topic-slug",
+                "demo-topic",
+                "--finalize",
+                "--ending-state",
+                "Ready for the next bounded validation step.",
+                "--next-step",
+                "Run the larger-system lane.",
+                "--next-step",
+                "Write back the operator note.",
+                "--summary",
+                "Closed the current bounded session.",
+            ]
+        )
+        self.assertEqual(chronicle_args.command, "chronicle")
+        self.assertTrue(chronicle_args.finalize)
+        self.assertEqual(len(chronicle_args.next_step), 2)
+
     def test_main_dispatches_update_followup_return(self) -> None:
         with patch.object(aitp_cli, "_service_from_args") as mock_factory:
             mock_service = MagicMock()
@@ -178,6 +254,113 @@ class AITPCLITests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         mock_service.start_chat_session.assert_called_once()
+
+    def test_main_dispatches_emit_decision_without_service(self) -> None:
+        with patch.object(aitp_cli, "emit_decision_point", return_value={"decision_point": {"id": "dp:demo"}}) as mock_emit:
+            with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+                with patch.object(
+                    sys,
+                    "argv",
+                    [
+                        "aitp",
+                        "emit-decision",
+                        "--topic-slug",
+                        "demo-topic",
+                        "--question",
+                        "Clarify the validation route?",
+                        "--options",
+                        '[{"label":"small-system","description":"Use exact diagonalization"},{"label":"larger-system","description":"Use a larger finite-size lane"}]',
+                        "--blocking",
+                        "false",
+                    ],
+                ):
+                    exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_emit.assert_called_once()
+        mock_factory.assert_not_called()
+
+    def test_main_dispatches_resolve_decision_without_service(self) -> None:
+        with patch.object(aitp_cli, "resolve_decision_point", return_value={"decision_point": {"id": "dp:demo"}}) as mock_resolve:
+            with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+                with patch.object(
+                    sys,
+                    "argv",
+                    ["aitp", "resolve-decision", "--topic-slug", "demo-topic", "--decision-id", "dp:demo", "--option", "0"],
+                ):
+                    exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_resolve.assert_called_once()
+        mock_factory.assert_not_called()
+
+    def test_main_dispatches_list_decisions_without_service(self) -> None:
+        with patch.object(aitp_cli, "list_pending_decision_points", return_value=[{"id": "dp:demo"}]) as mock_list:
+            with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+                with patch.object(sys, "argv", ["aitp", "list-decisions", "--topic-slug", "demo-topic", "--pending-only"]):
+                    exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_list.assert_called_once()
+        mock_factory.assert_not_called()
+
+    def test_main_dispatches_trace_decision_without_service(self) -> None:
+        with patch.object(aitp_cli, "record_decision_trace", return_value={"decision_trace": {"id": "dt:demo"}}) as mock_trace:
+            with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+                with patch.object(
+                    sys,
+                    "argv",
+                    [
+                        "aitp",
+                        "trace-decision",
+                        "--topic-slug",
+                        "demo-topic",
+                        "--summary",
+                        "Selected the smaller benchmark lane.",
+                        "--chosen",
+                        "small-system",
+                        "--rationale",
+                        "It closes the benchmark gap first.",
+                    ],
+                ):
+                    exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_trace.assert_called_once()
+        mock_factory.assert_not_called()
+
+    def test_main_dispatches_chronicle_finalize_without_service(self) -> None:
+        latest = {"id": "chronicle:demo-topic-20260328010101", "topic_slug": "demo-topic"}
+        with patch.object(aitp_cli, "get_latest_chronicle", return_value=latest) as mock_latest:
+            with patch.object(
+                aitp_cli,
+                "finalize_chronicle",
+                return_value={"chronicle": {"id": "chronicle:demo-topic-20260328010101", "session_end": "2026-03-28T00:00:00+00:00"}},
+            ) as mock_finalize:
+                with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+                    with patch.object(
+                        sys,
+                        "argv",
+                        [
+                            "aitp",
+                            "chronicle",
+                            "--topic-slug",
+                            "demo-topic",
+                            "--finalize",
+                            "--ending-state",
+                            "Ready for the next bounded action.",
+                            "--next-step",
+                            "Run the larger-system lane.",
+                            "--summary",
+                            "Closed the current session.",
+                        ],
+                    ):
+                        exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_latest.assert_called_once()
+        mock_finalize.assert_called_once()
+        mock_factory.assert_not_called()
 
     def test_promotion_commands_are_registered(self) -> None:
         parser = aitp_cli.build_parser()

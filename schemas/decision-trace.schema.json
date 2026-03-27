@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aitp.dev/schemas/decision-trace.schema.json",
+  "title": "DecisionTrace",
+  "description": "A structured record of why a particular decision was made, capturing options considered, rationale, and counterfactuals. Represents Need D (traceable Q&A over protocol records).",
+  "type": "object",
+  "required": [
+    "id",
+    "topic_slug",
+    "timestamp",
+    "decision_summary",
+    "chosen",
+    "rationale",
+    "input_refs"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^dt:[a-z0-9-]+$",
+      "description": "Unique identifier, e.g. dt:jones-ch4-type-i-route-choice"
+    },
+    "topic_slug": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "decision_point_ref": {
+      "type": "string",
+      "description": "ID of the decision_point that led to this trace, if applicable"
+    },
+    "decision_summary": {
+      "type": "string",
+      "description": "One-sentence summary of what was decided"
+    },
+    "context": {
+      "type": "string",
+      "description": "Background: why this decision was needed"
+    },
+    "options_considered": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "option",
+          "pros",
+          "cons"
+        ],
+        "properties": {
+          "option": {
+            "type": "string"
+          },
+          "pros": {
+            "type": "string"
+          },
+          "cons": {
+            "type": "string"
+          },
+          "estimated_effort": {
+            "type": "string"
+          },
+          "risk_level": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        }
+      }
+    },
+    "chosen": {
+      "type": "string",
+      "description": "Which option was chosen"
+    },
+    "rationale": {
+      "type": "string",
+      "description": "Why this option was chosen over others"
+    },
+    "would_change_if": {
+      "type": "string",
+      "description": "Under what conditions we would revisit this decision"
+    },
+    "input_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Artifact paths or object_ref IDs that were inputs to this decision"
+    },
+    "output_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Artifact paths or object_ref IDs that were outputs of this decision"
+    },
+    "layer_transition": {
+      "type": "object",
+      "properties": {
+        "from_layer": {
+          "type": "string"
+        },
+        "to_layer": {
+          "type": "string"
+        }
+      }
+    },
+    "related_traces": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of other decision_traces that influenced or were influenced by this one"
+    }
+  }
+}

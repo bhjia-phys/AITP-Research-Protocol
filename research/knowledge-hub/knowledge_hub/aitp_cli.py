@@ -6,6 +6,14 @@ from pathlib import Path
 from typing import Any
 
 from .aitp_service import AITPService
+from .decision_point_handler import (
+    emit_decision_point,
+    get_all_decision_points,
+    list_pending_decision_points,
+    resolve_decision_point,
+)
+from .decision_trace_handler import record_decision_trace
+from .session_chronicle_handler import finalize_chronicle, get_latest_chronicle, start_chronicle
 
 
 def _emit(payload: dict[str, Any], as_json: bool) -> None:
@@ -60,6 +68,25 @@ def _parse_nearby_variant(value: str) -> dict[str, str]:
             "nearby variants must include label, relation, and verdict"
         )
     return {"label": label, "relation": relation, "verdict": verdict, "notes": note}
+
+
+def _parse_bool_string(value: str) -> bool:
+    normalized = str(value or "").strip().lower()
+    if normalized in {"true", "1", "yes"}:
+        return True
+    if normalized in {"false", "0", "no"}:
+        return False
+    raise argparse.ArgumentTypeError("expected one of: true, false")
+
+
+def _parse_json_array(value: str) -> list[Any]:
+    try:
+        payload = json.loads(value)
+    except json.JSONDecodeError as exc:
+        raise argparse.ArgumentTypeError(f"expected a JSON array: {exc}") from exc
+    if not isinstance(payload, list):
+        raise argparse.ArgumentTypeError("expected a JSON array")
+    return payload
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -355,6 +382,72 @@ def build_parser() -> argparse.ArgumentParser:
     current_topic = subparsers.add_parser("current-topic", help="Read the current-topic routing memory")
     current_topic.add_argument("--json", action="store_true")
 
+    emit_decision = subparsers.add_parser("emit-decision", help="Emit a durable Phase 6 decision point")
+    emit_decision.add_argument("--topic-slug", required=True)
+    emit_decision.add_argument("--question", required=True)
+    emit_decision.add_argument("--options", required=True, type=_parse_json_array)
+    emit_decision.add_argument("--blocking", required=True, type=_parse_bool_string)
+    emit_decision.add_argument("--phase", choices=["clarification", "routing", "execution", "validation", "promotion"], default="routing")
+    emit_decision.add_argument("--current-layer", choices=["L0", "L1", "L2", "L3", "L4"], default="L3")
+    emit_decision.add_argument("--source-layer", choices=["L0", "L1", "L2", "L3", "L4"])
+    emit_decision.add_argument("--target-layer", choices=["L0", "L1", "L2", "L3", "L4"])
+    emit_decision.add_argument("--default-option-index", type=int)
+    emit_decision.add_argument("--timeout-hint")
+    emit_decision.add_argument(
+        "--trigger-rule",
+        choices=[
+            "scope_change",
+            "method_uncertainty",
+            "benchmark_disagreement",
+            "promotion_gate",
+            "resource_choice",
+            "direction_ambiguity",
+            "validation_strategy",
+            "gap_recovery_route",
+            "formalization_bridge",
+            "custom",
+        ],
+    )
+    emit_decision.add_argument("--related-artifacts", type=_parse_json_array, default=[])
+    emit_decision.add_argument("--decision-id")
+    emit_decision.add_argument("--json", action="store_true")
+
+    resolve_decision = subparsers.add_parser("resolve-decision", help="Resolve a durable Phase 6 decision point")
+    resolve_decision.add_argument("--topic-slug", required=True)
+    resolve_decision.add_argument("--decision-id", required=True)
+    resolve_decision.add_argument("--option", required=True, type=int)
+    resolve_decision.add_argument("--comment")
+    resolve_decision.add_argument("--resolved-by", default="human")
+    resolve_decision.add_argument("--json", action="store_true")
+
+    list_decisions = subparsers.add_parser("list-decisions", help="List durable Phase 6 decision points")
+    list_decisions.add_argument("--topic-slug", required=True)
+    list_decisions.add_argument("--pending-only", action="store_true")
+    list_decisions.add_argument("--json", action="store_true")
+
+    trace_decision = subparsers.add_parser("trace-decision", help="Record a durable Phase 6 decision trace")
+    trace_decision.add_argument("--topic-slug", required=True)
+    trace_decision.add_argument("--summary", required=True)
+    trace_decision.add_argument("--chosen", required=True)
+    trace_decision.add_argument("--rationale", required=True)
+    trace_decision.add_argument("--input-refs", type=_parse_json_array, default=[])
+    trace_decision.add_argument("--output-refs", type=_parse_json_array, default=[])
+    trace_decision.add_argument("--context")
+    trace_decision.add_argument("--decision-point-ref")
+    trace_decision.add_argument("--would-change-if")
+    trace_decision.add_argument("--from-layer")
+    trace_decision.add_argument("--to-layer")
+    trace_decision.add_argument("--related-traces", type=_parse_json_array, default=[])
+    trace_decision.add_argument("--json", action="store_true")
+
+    chronicle = subparsers.add_parser("chronicle", help="Read, create, or finalize the active Phase 6 session chronicle")
+    chronicle.add_argument("--topic-slug", required=True)
+    chronicle.add_argument("--finalize", action="store_true")
+    chronicle.add_argument("--ending-state")
+    chronicle.add_argument("--next-step", action="append", default=[])
+    chronicle.add_argument("--summary")
+    chronicle.add_argument("--json", action="store_true")
+
     session_start = subparsers.add_parser(
         "session-start",
         help="Materialize AITP routing and runtime state from a natural-language session-start request",
@@ -457,9 +550,118 @@ def _service_from_args(args: argparse.Namespace) -> AITPService:
     return AITPService(**kwargs)
 
 
+def _run_phase6_command(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int | None:
+    kernel_root = args.kernel_root if getattr(args, "kernel_root", None) else None
+
+    if args.command == "emit-decision":
+        layer_context = {"current_layer": args.current_layer}
+        if args.source_layer:
+            layer_context["source_layer"] = args.source_layer
+        if args.target_layer:
+            layer_context["target_layer"] = args.target_layer
+        payload = emit_decision_point(
+            topic_slug=args.topic_slug,
+            question=args.question,
+            options=args.options,
+            blocking=args.blocking,
+            phase=args.phase,
+            layer_context=layer_context,
+            default_option_index=args.default_option_index,
+            timeout_hint=args.timeout_hint,
+            trigger_rule=args.trigger_rule,
+            related_artifacts=args.related_artifacts,
+            decision_id=args.decision_id,
+            kernel_root=kernel_root,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "resolve-decision":
+        payload = resolve_decision_point(
+            topic_slug=args.topic_slug,
+            decision_id=args.decision_id,
+            option_index=args.option,
+            comment=args.comment,
+            resolved_by=args.resolved_by,
+            kernel_root=kernel_root,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "list-decisions":
+        decisions = (
+            list_pending_decision_points(args.topic_slug, kernel_root=kernel_root)
+            if args.pending_only
+            else get_all_decision_points(args.topic_slug, kernel_root=kernel_root)
+        )
+        _emit({"decision_points": decisions}, args.json)
+        return 0
+
+    if args.command == "trace-decision":
+        layer_transition = None
+        if args.from_layer or args.to_layer:
+            layer_transition = {}
+            if args.from_layer:
+                layer_transition["from_layer"] = args.from_layer
+            if args.to_layer:
+                layer_transition["to_layer"] = args.to_layer
+        payload = record_decision_trace(
+            topic_slug=args.topic_slug,
+            summary=args.summary,
+            chosen=args.chosen,
+            rationale=args.rationale,
+            input_refs=args.input_refs,
+            context=args.context,
+            decision_point_ref=args.decision_point_ref,
+            would_change_if=args.would_change_if,
+            output_refs=args.output_refs,
+            layer_transition=layer_transition,
+            related_traces=args.related_traces,
+            kernel_root=kernel_root,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "chronicle":
+        latest = get_latest_chronicle(args.topic_slug, kernel_root=kernel_root)
+        if args.finalize:
+            if not args.ending_state:
+                parser.error("chronicle --finalize requires --ending-state")
+            if not args.summary:
+                parser.error("chronicle --finalize requires --summary")
+            if not args.next_step:
+                parser.error("chronicle --finalize requires at least one --next-step")
+            if not latest or latest.get("session_end"):
+                print(f"No open chronicle found for topic '{args.topic_slug}'.")
+                return 1
+            payload = finalize_chronicle(
+                chronicle_id=str(latest["id"]),
+                ending_state=args.ending_state,
+                next_steps=args.next_step,
+                summary=args.summary,
+                kernel_root=kernel_root,
+            )
+            _emit(payload, args.json)
+            return 0
+
+        if latest and not latest.get("session_end"):
+            _emit({"chronicle": latest, "created": False}, args.json)
+            return 0
+
+        chronicle_id = start_chronicle(args.topic_slug, kernel_root=kernel_root)
+        created = get_latest_chronicle(args.topic_slug, kernel_root=kernel_root)
+        _emit({"chronicle": created, "created": True, "chronicle_id": chronicle_id}, args.json)
+        return 0
+
+    return None
+
+
 def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
+    phase6_exit = _run_phase6_command(args, parser)
+    if phase6_exit is not None:
+        return phase6_exit
     service = _service_from_args(args)
 
     if args.command == "bootstrap":

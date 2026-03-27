@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+from typing import Callable
+
+import jsonschema
+from jsonschema.validators import validator_for
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SCHEMA_ROOT = REPO_ROOT / "schemas"
+SCHEMA_MAP = {
+    "decision-point.schema.json": SCHEMA_ROOT / "decision-point.schema.json",
+    "decision-trace.schema.json": SCHEMA_ROOT / "decision-trace.schema.json",
+    "session-chronicle.schema.json": SCHEMA_ROOT / "session-chronicle.schema.json",
+    "promotion-or-reject.schema.json": SCHEMA_ROOT / "promotion-or-reject.schema.json",
+}
+
+
+def _read_json(path: Path) -> dict:
+    with path.open("r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def _repo_relative(path: Path) -> Path | None:
+    try:
+        return path.resolve().relative_to(REPO_ROOT.resolve())
+    except ValueError:
+        return None
+
+
+def _staged_paths() -> list[Path]:
+    result = subprocess.run(
+        ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    paths: list[Path] = []
+    for line in result.stdout.splitlines():
+        text = line.strip()
+        if not text:
+            continue
+        path = REPO_ROOT / text
+        if path.suffix.lower() == ".json":
+            paths.append(path)
+    return paths
+
+
+def _schema_for_instance(path: Path) -> Path | None:
+    relative = _repo_relative(path)
+    parts = tuple(part.lower() for part in (relative.parts if relative is not None else path.parts))
+    name = path.name.lower()
+
+    if name in {key.lower() for key in SCHEMA_MAP}:
+        return SCHEMA_MAP[path.name]
+    if "decision_points" in parts and path.suffix.lower() == ".json":
+        return SCHEMA_MAP["decision-point.schema.json"]
+    if "decision_traces" in parts and path.suffix.lower() == ".json":
+        return SCHEMA_MAP["decision-trace.schema.json"]
+    if "chronicles" in parts and path.suffix.lower() == ".json":
+        return SCHEMA_MAP["session-chronicle.schema.json"]
+    if name.startswith("promotion-or-reject") and path.suffix.lower() == ".json":
+        return SCHEMA_MAP["promotion-or-reject.schema.json"]
+    return None
+
+
+def _validate_schema_file(path: Path) -> None:
+    schema = _read_json(path)
+    validator_cls = validator_for(schema)
+    validator_cls.check_schema(schema)
+
+
+def _validate_instance(path: Path, schema_path: Path) -> None:
+    instance = _read_json(path)
+    schema = _read_json(schema_path)
+    validator_cls = validator_for(schema)
+    validator = validator_cls(schema)
+    validator.validate(instance)
+
+
+def _iter_targets(argv: list[str]) -> list[Path]:
+    if argv:
+        return [Path(item).resolve() for item in argv]
+    return _staged_paths()
+
+
+def main(argv: list[str]) -> int:
+    failures: list[str] = []
+    for path in _iter_targets(argv):
+        if not path.exists():
+            failures.append(f"{path}: file does not exist")
+            continue
+        if path.suffix.lower() != ".json":
+            continue
+        schema_path = _schema_for_instance(path)
+        if schema_path is None:
+            continue
+        try:
+            if path.name in SCHEMA_MAP:
+                _validate_schema_file(path)
+            else:
+                _validate_instance(path, schema_path)
+        except (json.JSONDecodeError, jsonschema.SchemaError, jsonschema.ValidationError) as exc:
+            failures.append(f"{path}: {exc}")
+
+    if failures:
+        for failure in failures:
+            print(f"[pre-commit-validate-schemas] {failure}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

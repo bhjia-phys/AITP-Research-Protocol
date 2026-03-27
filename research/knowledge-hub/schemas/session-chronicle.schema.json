@@ -1,0 +1,108 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aitp.dev/schemas/session-chronicle.schema.json",
+  "title": "SessionChronicle",
+  "description": "A human-readable narrative summary of an AITP session, designed for post-hoc understanding. Complements the audit-focused conformance_report.",
+  "type": "object",
+  "required": [
+    "id",
+    "topic_slug",
+    "session_start",
+    "summary"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^chronicle:[a-z0-9-]+$"
+    },
+    "topic_slug": {
+      "type": "string"
+    },
+    "session_start": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "session_end": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "starting_state": {
+      "type": "string",
+      "description": "Where the topic was when this session began"
+    },
+    "actions_taken": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "action",
+          "result"
+        ],
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "result": {
+            "type": "string"
+          },
+          "artifacts_created": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "artifacts_modified": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "decision_trace_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "problems_encountered": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "problem": {
+            "type": "string"
+          },
+          "resolution": {
+            "type": "string"
+          },
+          "still_open": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "ending_state": {
+      "type": "string",
+      "description": "Where the topic is now"
+    },
+    "next_steps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "open_decision_points": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of unresolved decision_points"
+    },
+    "summary": {
+      "type": "string",
+      "description": "2-3 sentence narrative summary for quick human consumption"
+    }
+  }
+}

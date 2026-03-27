@@ -22,6 +22,17 @@ If the topic does not exist yet:
 aitp bootstrap --topic "<topic>" --statement "<statement>"
 ```
 
+If the idea is still vague after routing, ask clarification questions before
+full execution. Tighten `scope`, `assumptions`, and `target_claims` first.
+
+Use Phase 6 records during the run:
+
+```bash
+aitp emit-decision --topic-slug <topic_slug> --question "<question>" --options "<json>" --blocking false
+aitp resolve-decision --topic-slug <topic_slug> --decision-id <dp_id> --option <index>
+aitp chronicle --topic-slug <topic_slug>
+```
+
 ## Before finishing
 
 ```bash
@@ -33,3 +44,4 @@ aitp audit --topic-slug <topic_slug> --phase exit
 - If conformance fails, the run does not count as AITP work.
 - Prefer durable contracts and control notes over fallback heuristics.
 - Do not present exploratory output as validated reusable knowledge.
+- Treat human checkpoints as decision points plus decision traces, not as disposable chat state.

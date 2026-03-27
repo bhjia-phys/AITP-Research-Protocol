@@ -57,6 +57,20 @@ Target cases:
 - theory-to-formalization,
 - closed-loop research record.
 
+## Phase 6 — Decision Points, Traces, and Lightweight Runtime
+
+Goal:
+- harden the operator-facing runtime so AITP can ask questions, preserve
+  causal traces, and run with a smaller viable shell.
+
+Deliverables:
+- decision point protocol plus schema,
+- decision trace protocol plus schema,
+- session chronicle protocol plus schema,
+- clarification loop guidance for vague idea-first starts,
+- lightweight runtime conformance profile,
+- git-level schema validation for critical runtime artifacts.
+
 ## Guiding constraint
 
 The repository should become stricter before it becomes broader.

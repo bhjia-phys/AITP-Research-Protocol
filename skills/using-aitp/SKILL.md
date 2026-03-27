@@ -23,6 +23,19 @@ description: Use when a request might be theoretical-physics research, topic con
 - If there is even a small chance the request is real theoretical-physics research rather than plain coding, enter AITP first.
 - Do not start with free-form browsing, synthesis, or editing when the task belongs inside AITP.
 - Treat natural-language steering as state, not chat decoration. If the user changes direction, update durable steering before deeper work.
+- If the idea is vague, do not jump straight into `L0-L4`; run clarification first.
+
+## Clarification sub-protocol
+
+1. Tighten the active `research_question.contract.json` before substantive execution whenever `scope`, `assumptions`, or `target_claims` are still vague.
+2. Ask at most 3 clarification rounds, with 1-3 questions per round.
+3. Prefer questions that remove the biggest ambiguity first: scope, assumptions, target claims, benchmark surface, or validation route.
+4. When runtime state already exists, materialize these questions as decision points with:
+   - `phase: clarification`
+   - `trigger_rule: direction_ambiguity`
+   - `blocking: false` unless the question is truly execution-critical
+5. If the human says `just go`, `skip clarification`, or equivalent, proceed honestly and mark any still-missing critical fields as `clarification_deferred: true`.
+6. Only enter normal `L0-L4` routing after clarification is complete or explicitly skipped.
 
 ## Routing rules
 
@@ -31,7 +44,12 @@ description: Use when a request might be theoretical-physics research, topic con
 3. Fall back to the latest topic only when current-topic memory is missing.
 4. If the user opens a new topic in natural language, extract the title and let AITP materialize the topic shell.
 5. If the user changes direction, scope, or control intent in natural language, translate that into `innovation_direction.md` and `control_note.md` updates before execution continues.
-6. After AITP routing is materialized, load `aitp-runtime` and follow `runtime_protocol.generated.md`.
+6. Preserve the lightweight runtime minimum even in small sessions:
+   - `topic_state.json`
+   - `operator_console.md`
+   - `research_question.contract.json`
+   - `control_note.md`
+7. After AITP routing is materialized, load `aitp-runtime` and follow `runtime_protocol.generated.md`.
 
 ## Allowed exception
 

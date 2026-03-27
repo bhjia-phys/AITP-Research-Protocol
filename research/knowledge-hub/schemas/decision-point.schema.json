@@ -1,0 +1,171 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aitp.dev/schemas/decision-point.schema.json",
+  "title": "DecisionPoint",
+  "description": "A structured question AITP emits when it reaches a decision node requiring human input. Represents Need C (human-in-the-loop active questioning).",
+  "type": "object",
+  "required": [
+    "id",
+    "topic_slug",
+    "phase",
+    "layer_context",
+    "question",
+    "options",
+    "blocking",
+    "created_at"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^dp:[a-z0-9-]+$",
+      "description": "Unique identifier, e.g. dp:jones-ch4-route-choice"
+    },
+    "topic_slug": {
+      "type": "string",
+      "description": "The active topic this decision belongs to"
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "clarification",
+        "routing",
+        "execution",
+        "validation",
+        "promotion"
+      ],
+      "description": "Which phase of the AITP loop this decision arises in"
+    },
+    "layer_context": {
+      "type": "object",
+      "properties": {
+        "current_layer": {
+          "type": "string",
+          "enum": [
+            "L0",
+            "L1",
+            "L2",
+            "L3",
+            "L4"
+          ]
+        },
+        "source_layer": {
+          "type": "string",
+          "enum": [
+            "L0",
+            "L1",
+            "L2",
+            "L3",
+            "L4"
+          ]
+        },
+        "target_layer": {
+          "type": "string",
+          "enum": [
+            "L0",
+            "L1",
+            "L2",
+            "L3",
+            "L4"
+          ]
+        }
+      },
+      "required": [
+        "current_layer"
+      ]
+    },
+    "question": {
+      "type": "string",
+      "description": "The human-readable question"
+    },
+    "options": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "label",
+          "description"
+        ],
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "consequences": {
+            "type": "string",
+            "description": "What happens if this option is chosen"
+          },
+          "artifact_refs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Paths to artifacts this option would produce or modify"
+          }
+        }
+      },
+      "minItems": 2
+    },
+    "blocking": {
+      "type": "boolean",
+      "description": "If true, AITP must pause until human resolves this. If false, AITP may proceed with the first option as default after timeout."
+    },
+    "default_option_index": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Index into options[] to use as default if non-blocking and human does not respond"
+    },
+    "timeout_hint": {
+      "type": "string",
+      "description": "Suggested timeout for non-blocking decisions, e.g. '30m', '1h', '24h'"
+    },
+    "trigger_rule": {
+      "type": "string",
+      "enum": [
+        "scope_change",
+        "method_uncertainty",
+        "benchmark_disagreement",
+        "promotion_gate",
+        "resource_choice",
+        "direction_ambiguity",
+        "validation_strategy",
+        "gap_recovery_route",
+        "formalization_bridge",
+        "custom"
+      ],
+      "description": "Why this decision point was triggered"
+    },
+    "related_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Artifact paths relevant to this decision"
+    },
+    "resolution": {
+      "type": "object",
+      "description": "Filled in when the human resolves this decision point",
+      "properties": {
+        "chosen_option_index": {
+          "type": "integer"
+        },
+        "human_comment": {
+          "type": "string"
+        },
+        "resolved_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "resolved_by": {
+          "type": "string",
+          "description": "human or auto_timeout"
+        }
+      }
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
