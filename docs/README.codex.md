@@ -16,6 +16,10 @@ Fetch and follow instructions from https://raw.githubusercontent.com/bhjia-phys/
 - `using-aitp` acts as the gatekeeper for topic continuation, paper learning, derivation planning, steering updates, and validation work.
 - Once AITP claims the task, Codex follows `aitp-runtime` and the runtime bundle.
 
+The point is not to make the user memorize wrapper commands. The point is to
+make Codex enter the research protocol before it starts answering like a chat
+assistant.
+
 ## User experience target
 
 The user should just speak naturally. They should not need to learn `aitp-codex`, wrappers, or command bundles.

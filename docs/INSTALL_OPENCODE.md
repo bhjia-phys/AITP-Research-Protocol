@@ -26,6 +26,12 @@ The public OpenCode path is:
 2. restart OpenCode;
 3. let the plugin inject `using-aitp` and register the AITP `skills/` path.
 
+That is the recommended path because it matches the intended AITP UX:
+
+- no `/aitp` command ritual for normal use;
+- natural-language requests route through `using-aitp` first;
+- AITP state becomes durable before substantive theory work starts.
+
 ## Compatibility install
 
 If you want local copied assets in a workspace or user config root:
@@ -51,6 +57,10 @@ OpenCode should now:
 - inject `using-aitp` through `experimental.chat.system.transform`;
 - register the AITP skills path through the plugin `config` hook;
 - route current-topic continuation and steering through AITP before substantive work.
+
+If you are migrating from an older AITP setup, remove legacy `/aitp*` command
+bundles from your OpenCode workspace so the plugin-first path is the only
+default surface.
 
 ## Manual fallback
 

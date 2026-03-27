@@ -8,6 +8,22 @@ If you also installed the runtime itself, remove it with:
 python -m pip uninstall aitp-kernel
 ```
 
+If you installed with `pip install -e research/knowledge-hub`, this is the
+package you want to uninstall.
+
+## General rule
+
+There are two install modes:
+
+- preferred native install for the runtime platform;
+- compatibility install via `aitp install-agent`.
+
+Uninstall the assets that match the mode you actually used. Do not assume that
+every platform writes the same files.
+
+The commands below use POSIX-style `rm`. On Windows, remove the same paths with
+PowerShell `Remove-Item -Recurse -Force` or with File Explorer.
+
 ## OpenClaw
 
 ```bash
@@ -25,13 +41,17 @@ If you installed through native skill discovery:
 rm ~/.agents/skills/aitp
 ```
 
+Optionally also remove the cloned repo if you no longer want the local source:
+
+```bash
+rm -rf ~/.codex/aitp
+```
+
 If you used `aitp install-agent` instead:
 
 ```bash
-rm -rf ~/.codex/skills/using-aitp
-rm -rf ~/.codex/skills/aitp-runtime
-rm -rf ~/.codex-home/skills/using-aitp
-rm -rf ~/.codex-home/skills/aitp-runtime
+rm -rf /path/to/theory-workspace/.agents/skills/using-aitp
+rm -rf /path/to/theory-workspace/.agents/skills/aitp-runtime
 ```
 
 Also remove any `aitp` MCP registration if you added one.
@@ -40,36 +60,43 @@ Also remove any `aitp` MCP registration if you added one.
 
 Plugin-managed install:
 
-```bash
-rm -rf ~/.claude/plugins/aitp
-```
+Use the Claude Code plugin manager to uninstall or disable the `aitp` plugin.
+
+If your Claude environment keeps a local plugin checkout, remove that local
+plugin directory as well.
 
 Compatibility install:
 
 ```bash
-rm -rf ~/.claude/skills/using-aitp
-rm -rf ~/.claude/skills/aitp-runtime
-rm -rf ~/.claude/hooks/session-start
-rm -rf ~/.claude/hooks/run-hook.cmd
-rm -rf ~/.claude/hooks/hooks.json
+rm -rf /path/to/theory-workspace/.claude/skills/using-aitp
+rm -rf /path/to/theory-workspace/.claude/skills/aitp-runtime
+rm -f /path/to/theory-workspace/.claude/hooks/session-start
+rm -f /path/to/theory-workspace/.claude/hooks/run-hook.cmd
+rm -f /path/to/theory-workspace/.claude/hooks/hooks.json
+rm -f /path/to/theory-workspace/.claude/settings.json
 ```
 
-Then remove the corresponding `SessionStart` hook block from `~/.claude/settings.json` if you used the compatibility installer.
+If you merged the compatibility hook into an existing Claude settings file
+instead of removing the whole generated file, delete only the AITP
+`SessionStart` hook block.
 
 ## OpenCode
 
 Plugin-managed install:
 
-```bash
-rm -f ~/.config/opencode/plugins/aitp.js
-```
+Remove `aitp@git+https://github.com/bhjia-phys/AITP-Research-Protocol.git`
+from the `plugin` array in `opencode.json`, then restart OpenCode.
 
 Compatibility install:
 
 ```bash
-rm -rf ~/.config/opencode/skills/using-aitp
-rm -rf ~/.config/opencode/skills/aitp-runtime
-rm -f ~/.config/opencode/plugins/aitp.js
+rm -rf /path/to/theory-workspace/.opencode/skills/using-aitp
+rm -rf /path/to/theory-workspace/.opencode/skills/aitp-runtime
+rm -f /path/to/theory-workspace/.opencode/plugins/aitp.js
 ```
 
 Also remove any `aitp` MCP entry from the OpenCode configuration file.
+
+Legacy `/aitp*` command bundles are no longer the default install path. If you
+still have them from an older AITP install, remove them manually so they do not
+compete with the plugin-first route.

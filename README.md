@@ -31,6 +31,14 @@ may use different scripts, prompts, and task decompositions, but they must
 preserve the layer model, durable artifacts, evidence boundaries, and governed
 promotion gates that make the work auditable and reusable.
 
+AITP is not trying to make an AI sound like a physicist. It is trying to make
+an AI work more like a theoretical physicist:
+
+- source-grounded before confident;
+- explicit about assumptions, gaps, and validation debt;
+- able to continue a real topic over time instead of improvising per chat;
+- accountable to a human research partner who still owns direction and novelty.
+
 ## Why AITP
 
 Large models can already write research-sounding prose. That is cheap.
@@ -42,6 +50,51 @@ AITP exists to enforce the parts that are not cheap:
 - reusable memory is earned instead of assumed;
 - failed attempts and uncertainty remain visible;
 - humans stay legitimate at high-impact decision points.
+
+## Core Idea
+
+AITP is an AI Theoretical Physicist research protocol.
+
+The intended workflow is not:
+
+- human throws prompts over the wall;
+- AI returns polished research-sounding text;
+- everyone pretends this is a research process.
+
+The intended workflow is:
+
+- the human proposes or steers the research idea;
+- the AI executes bounded research work inside a durable protocol;
+- the human guides direction, standards, and innovation at the points that
+  matter;
+- both can resume the same topic without reconstructing context from chat.
+
+The relationship is closer to `research collaborator + advisor + operator`
+than to `user + tool`.
+
+In other words, AITP wants the AI to behave like a disciplined junior or
+mid-level theoretical-physics collaborator whose work is inspectable, whose
+state is durable, and whose authority stops at explicit human gates.
+
+## Why The UX Looks Like Superpowers
+
+AITP now deliberately converges on the same outer-install shape as
+Superpowers:
+
+- Codex: native skill discovery
+- OpenCode: plugin bootstrap
+- Claude Code: SessionStart bootstrap
+
+That convergence is about user experience, not identity.
+
+Superpowers' core lesson is correct: the agent should enter the right workflow
+before it starts doing substantial work, and the user should not need to learn
+a front-door command language first.
+
+AITP keeps that outer principle, but its inner target is different. Superpowers
+is a general coding workflow framework. AITP is a theory-research protocol with
+layered memory, promotion gates, gap recovery, and explicit scientific trust
+boundaries.
 
 ## What You Get
 
@@ -58,7 +111,7 @@ AITP exists to enforce the parts that are not cheap:
 The fastest useful path is still the Codex path:
 
 ```bash
-git clone git@github.com:bhjia-phys/AITP-Research-Protocol.git
+git clone https://github.com/bhjia-phys/AITP-Research-Protocol.git
 cd AITP-Research-Protocol
 
 python3 -m pip install -e research/knowledge-hub
@@ -76,6 +129,7 @@ Then install the platform surface you actually use:
 - Codex: follow [`./.codex/INSTALL.md`](.codex/INSTALL.md)
 - OpenCode: follow [`./.opencode/INSTALL.md`](.opencode/INSTALL.md)
 - Claude Code: follow [`docs/INSTALL_CLAUDE_CODE.md`](docs/INSTALL_CLAUDE_CODE.md)
+- OpenClaw: follow [`docs/INSTALL_OPENCLAW.md`](docs/INSTALL_OPENCLAW.md)
 
 If your system Python is externally managed:
 
@@ -87,6 +141,14 @@ python3 -m pip install --break-system-packages --user -e research/knowledge-hub
 workspace-seeding path. The public default is the same shape as Superpowers:
 skill discovery for Codex, plugin bootstrap for OpenCode, and SessionStart
 bootstrap for Claude Code.
+
+If you are choosing from scratch:
+
+- use `Codex` when you want the cleanest current end-to-end AITP experience;
+- use `OpenCode` when you want plugin-based natural-language routing;
+- use `Claude Code` when you want the same gatekeeper model through
+  SessionStart;
+- use `OpenClaw` when you explicitly want bounded autonomous loop execution.
 
 ## Research Model
 
@@ -406,6 +468,19 @@ Current maturity is not uniform:
 - `Codex`, `OpenCode`, and `Claude Code` now converge on the same outer model: one gatekeeper skill plus native bootstrap.
 - `aitp install-agent` remains the compatibility path for seeded workspaces and manual fallbacks.
 - `OpenClaw` keeps the bounded autonomous loop path and MCP bridge notes, while `Codex` remains the most opinionated end-to-end execution surface.
+
+## Install And Remove
+
+For platform-specific install steps, see:
+
+- [`docs/INSTALL_CODEX.md`](docs/INSTALL_CODEX.md)
+- [`docs/INSTALL_OPENCODE.md`](docs/INSTALL_OPENCODE.md)
+- [`docs/INSTALL_CLAUDE_CODE.md`](docs/INSTALL_CLAUDE_CODE.md)
+- [`docs/INSTALL_OPENCLAW.md`](docs/INSTALL_OPENCLAW.md)
+
+To remove adapter assets or the editable runtime install, see:
+
+- [`docs/UNINSTALL.md`](docs/UNINSTALL.md)
 
 ## Design Boundaries
 

@@ -30,6 +30,13 @@ The public Codex path is:
 That gives Codex the same outer shape as Superpowers: skill discovery first,
 then `using-aitp` decides whether the session must enter AITP.
 
+What this means in practice:
+
+- the user just talks naturally;
+- `using-aitp` decides whether the request must become AITP state first;
+- `aitp-runtime` is loaded only after routing succeeds;
+- `aitp session-start "<task>"` becomes a fallback, not the normal front door.
+
 ## Compatibility install
 
 If you want workspace-local copied skills instead of a symlink:
@@ -54,6 +61,13 @@ Codex should now be able to:
 - treat `继续这个 topic` as current-topic continuation before asking for a slug;
 - translate steering language into durable AITP steering updates;
 - follow `runtime_protocol.generated.md` after routing succeeds.
+
+Minimal sanity checks:
+
+```bash
+aitp doctor
+ls -la ~/.agents/skills/aitp
+```
 
 ## Manual fallback
 

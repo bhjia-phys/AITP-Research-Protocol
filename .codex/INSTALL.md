@@ -46,6 +46,9 @@ Ask for a theory task in natural language, for example:
 
 Codex should load `using-aitp` automatically and route the task into AITP before substantial work.
 
+This is the normal user path. `aitp session-start "<task>"` is only the manual
+fallback when native bootstrap is unavailable.
+
 ## Manual fallback
 
 If bootstrap does not fire, use:
@@ -66,3 +69,6 @@ python -m pip install -e ~/.codex/aitp/research/knowledge-hub
 ```bash
 rm ~/.agents/skills/aitp
 ```
+
+If you also want to remove the editable runtime install or any compatibility
+assets, follow [`../docs/UNINSTALL.md`](../docs/UNINSTALL.md).

@@ -33,6 +33,10 @@ The intended outer behavior matches Superpowers:
 - natural-language theory requests enter AITP before substantive work;
 - current-topic continuation and steering stay natural-language first.
 
+This is the preferred path because Claude Code should not need a custom
+`/aitp` command vocabulary for normal AITP use. The session should already be
+inside the right routing discipline before substantial work begins.
+
 ## Compatibility install
 
 If you want local copied assets instead of plugin-managed assets:
@@ -60,6 +64,9 @@ Claude Code should now:
 - inject `using-aitp` at SessionStart;
 - route substantial theory work through AITP before response;
 - follow `runtime_protocol.generated.md` after routing succeeds.
+
+If you are migrating from an older setup, remove any legacy `.claude/commands/aitp*.md`
+bundle so SessionStart bootstrap is the only default entry.
 
 ## Manual fallback
 

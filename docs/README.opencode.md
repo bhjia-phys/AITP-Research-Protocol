@@ -20,3 +20,9 @@ Restart OpenCode.
 2. Injects `using-aitp` through `experimental.chat.system.transform`.
 
 The result should feel like natural-language-first AITP routing rather than explicit command invocation.
+
+That means the normal user path is:
+
+- talk naturally about the topic;
+- let the plugin route the session into AITP;
+- only use `aitp session-start "<task>"` when the bootstrap surface is missing or you need an explicit fallback.
