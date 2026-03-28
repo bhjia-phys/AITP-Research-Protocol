@@ -85,11 +85,16 @@ class L2BackendContractTests(unittest.TestCase):
         acceptance_script = (
             self.kernel_root / "runtime" / "scripts" / "run_witten_topological_phases_formal_closure_acceptance.py"
         )
+        scrpa_acceptance_script = (
+            self.kernel_root / "runtime" / "scripts" / "run_scrpa_thesis_topic_acceptance.py"
+        )
         readme = (self.kernel_root / "README.md").read_text(encoding="utf-8")
-        runtime_readme = (self.kernel_root / "runtime" / "README.md").read_text(encoding="utf-8")
+        runbook = (self.kernel_root / "runtime" / "AITP_TEST_RUNBOOK.md").read_text(encoding="utf-8")
         self.assertTrue(acceptance_script.exists())
+        self.assertTrue(scrpa_acceptance_script.exists())
         self.assertIn("run_witten_topological_phases_formal_closure_acceptance.py", readme)
-        self.assertIn("run_witten_topological_phases_formal_closure_acceptance.py", runtime_readme)
+        self.assertIn("run_scrpa_thesis_topic_acceptance.py", readme)
+        self.assertIn("run_scrpa_thesis_topic_acceptance.py", runbook)
 
     def test_semi_formal_theory_protocol_is_present_and_documented(self) -> None:
         protocol = self.kernel_root / "SEMI_FORMAL_THEORY_PROTOCOL.md"

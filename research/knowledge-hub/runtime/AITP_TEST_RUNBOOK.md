@@ -156,3 +156,18 @@ aitp audit --topic-slug <topic_slug> --phase exit
 ```
 
 The run only counts if exit conformance is still honest.
+
+## 9. Real-topic acceptance: scRPA thesis lane
+
+Use this when you want a real formal-theory topic acceptance that starts from
+the master's-thesis scRPA material instead of a synthetic smoke payload.
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_scrpa_thesis_topic_acceptance.py --json
+```
+
+Pass condition:
+- the topic lands in the `formal_theory` lane
+- the runtime stays in the `light` profile
+- `topic_synopsis.json`, `pending_decisions.json`, and `promotion_readiness.json` are materialized
+- the topic remains honest about still needing thesis-grounded source/candidate tightening before any stronger closure claim

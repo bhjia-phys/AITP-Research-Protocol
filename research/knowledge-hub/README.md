@@ -245,6 +245,7 @@ research/knowledge-hub/runtime/scripts/run_formal_theory_backend_smoke.sh
 research/knowledge-hub/runtime/scripts/run_tpkn_formal_promotion_smoke.sh
 research/knowledge-hub/runtime/scripts/run_tpkn_formal_auto_promotion_smoke.sh
 python research/knowledge-hub/runtime/scripts/run_witten_topological_phases_formal_closure_acceptance.py --json
+python research/knowledge-hub/runtime/scripts/run_scrpa_thesis_topic_acceptance.py --json
 ```
 
 The Witten acceptance script is the bounded real-topic closure check for the
@@ -253,3 +254,11 @@ candidate, runs coverage + formal-theory review, dispatches the reviewed
 controller actions for `topic_completion` and `lean_bridge`, and then validates
 `L2_auto` writeback into a disposable TPKN copy while keeping Lean export as a
 downstream bridge rather than the primary meaning of `L2` success.
+
+The scRPA thesis acceptance script is a real-topic shell acceptance for the
+formal-theory lane: it opens a topic from the master's-thesis scRPA chapter,
+introduction, abstract, and conclusion, verifies that the topic lands in the
+formal-theory lane, stays in the light runtime profile, materializes the new
+projection surfaces, and keeps the first honest next step at the thesis-to-L0
+source-recovery boundary instead of pretending numerical closure already
+exists.
