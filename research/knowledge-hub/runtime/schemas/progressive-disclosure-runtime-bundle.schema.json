@@ -15,7 +15,12 @@
     "resume_stage",
     "last_materialized_stage",
     "research_mode",
+    "load_profile",
+    "topic_synopsis",
+    "pending_decisions",
     "active_research_contract",
+    "idea_packet",
+    "operator_checkpoint",
     "promotion_readiness",
     "open_gap_summary",
     "topic_completion",
@@ -78,6 +83,160 @@
         "null"
       ]
     },
+    "load_profile": {
+      "type": "string",
+      "enum": [
+        "light",
+        "full"
+      ]
+    },
+    "topic_synopsis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "topic_slug",
+        "title",
+        "question",
+        "lane",
+        "load_profile",
+        "status",
+        "next_action_summary",
+        "open_gap_summary",
+        "pending_decision_count",
+        "knowledge_packet_paths",
+        "updated_at",
+        "updated_by",
+        "path"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "topic_slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lane": {
+          "type": "string",
+          "minLength": 1
+        },
+        "load_profile": {
+          "type": "string",
+          "enum": [
+            "light",
+            "full"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "human_request": {
+          "type": "string"
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "next_action_summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "open_gap_summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pending_decision_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "knowledge_packet_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "pending_decisions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "topic_slug",
+        "pending_count",
+        "blocking_count",
+        "unresolved_ids",
+        "latest_resolved_trace_ref",
+        "latest_resolved_summary",
+        "updated_at",
+        "updated_by",
+        "path"
+      ],
+      "properties": {
+        "topic_slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "pending_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "blocking_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unresolved_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "latest_resolved_trace_ref": {
+          "type": "string"
+        },
+        "latest_resolved_summary": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
     "active_research_contract": {
       "type": "object",
       "additionalProperties": false,
@@ -134,6 +293,260 @@
           "minLength": 1
         },
         "note_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "idea_packet": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "topic_slug",
+        "status",
+        "status_reason",
+        "initial_idea",
+        "novelty_target",
+        "non_goals",
+        "first_validation_route",
+        "initial_evidence_bar",
+        "missing_fields",
+        "clarification_questions",
+        "execution_context_signals",
+        "path",
+        "note_path",
+        "updated_at",
+        "updated_by"
+      ],
+      "properties": {
+        "topic_slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "needs_clarification",
+            "approved_for_execution",
+            "deferred"
+          ]
+        },
+        "status_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "initial_idea": {
+          "type": "string"
+        },
+        "novelty_target": {
+          "type": "string"
+        },
+        "non_goals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "first_validation_route": {
+          "type": "string",
+          "minLength": 1
+        },
+        "initial_evidence_bar": {
+          "type": "string",
+          "minLength": 1
+        },
+        "missing_fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "clarification_questions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "execution_context_signals": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_by": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "operator_checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checkpoint_id",
+        "topic_slug",
+        "run_id",
+        "checkpoint_kind",
+        "status",
+        "active",
+        "trigger_fingerprint",
+        "question",
+        "required_response",
+        "response_channels",
+        "blocker_summary",
+        "evidence_refs",
+        "selected_action_id",
+        "selected_action_summary",
+        "answer",
+        "requested_at",
+        "requested_by",
+        "answered_at",
+        "answered_by",
+        "path",
+        "note_path",
+        "ledger_path",
+        "updated_at",
+        "updated_by"
+      ],
+      "properties": {
+        "checkpoint_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "topic_slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "checkpoint_kind": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "requested",
+            "answered",
+            "cancelled",
+            "superseded"
+          ]
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "trigger_fingerprint": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required_response": {
+          "type": "string",
+          "minLength": 1
+        },
+        "response_channels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "blocker_summary": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "selected_action_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "selected_action_summary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "answer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "requested_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "requested_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "answered_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "answered_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ledger_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_by": {
           "type": "string",
           "minLength": 1
         }

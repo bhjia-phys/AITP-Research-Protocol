@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aitp.dev/schemas/topic-synopsis.schema.json",
+  "title": "TopicSynopsis",
+  "description": "Lightweight agent-facing synopsis for the active topic. Used to keep ordinary AITP topic work in a low-context profile.",
+  "type": "object",
+  "required": [
+    "id",
+    "topic_slug",
+    "title",
+    "question",
+    "lane",
+    "load_profile",
+    "status",
+    "next_action_summary",
+    "open_gap_summary",
+    "pending_decision_count",
+    "knowledge_packet_paths",
+    "updated_at",
+    "updated_by"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^topic_synopsis:[a-z0-9-]+$"
+    },
+    "topic_slug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "question": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lane": {
+      "type": "string",
+      "enum": [
+        "formal_theory",
+        "toy_numeric",
+        "code_method"
+      ]
+    },
+    "load_profile": {
+      "type": "string",
+      "enum": [
+        "light",
+        "full"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "human_request": {
+      "type": "string"
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "next_action_summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "open_gap_summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pending_decision_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "knowledge_packet_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_by": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": false
+}

@@ -21,6 +21,10 @@ Restart OpenCode. The plugin registers the AITP skills path and injects `using-a
 That is the normal user path. OpenCode should enter AITP from natural-language
 requests, not from a `/aitp` command ritual.
 
+Ordinary topic work should stay in a light runtime profile by default and only
+expand when benchmark mismatch, scope change, promotion intent, or explicit
+deep checking makes the full runtime necessary.
+
 ## Verify
 
 Ask OpenCode for a theory task in natural language, for example:

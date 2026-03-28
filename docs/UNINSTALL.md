@@ -18,6 +18,14 @@ There are two install modes:
 - preferred native install for the runtime platform;
 - compatibility install via `aitp install-agent`.
 
+Today that still means:
+
+- Claude Code: plugin skeleton plus runtime install
+- OpenCode: plugin-first repo install
+- Codex: native skill discovery plus runtime install
+
+None of these should require a custom `/aitp` command bundle for normal use.
+
 Uninstall the assets that match the mode you actually used. Do not assume that
 every platform writes the same files.
 

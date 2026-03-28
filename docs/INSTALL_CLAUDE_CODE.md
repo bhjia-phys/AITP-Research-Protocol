@@ -32,10 +32,15 @@ The intended outer behavior matches Superpowers:
 - SessionStart injects `using-aitp`;
 - natural-language theory requests enter AITP before substantive work;
 - current-topic continuation and steering stay natural-language first.
+- ordinary topic work should remain in a light runtime profile unless a real
+  escalation trigger fires.
 
 This is the preferred path because Claude Code should not need a custom
 `/aitp` command vocabulary for normal AITP use. The session should already be
 inside the right routing discipline before substantial work begins.
+
+This is currently a plugin skeleton plus runtime install, not a marketplace
+one-click package. The product direction is still plugin-first.
 
 ## Compatibility install
 

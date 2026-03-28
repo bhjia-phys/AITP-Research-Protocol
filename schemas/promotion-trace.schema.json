@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aitp.dev/schemas/promotion-trace.schema.json",
+  "title": "PromotionTrace",
+  "description": "Lightweight trace that connects candidate state, promotion gate state, supporting audits, and human approval or rejection state.",
+  "type": "object",
+  "required": [
+    "id",
+    "topic_slug",
+    "trace_scope",
+    "status",
+    "human_gate_status",
+    "candidate_refs",
+    "packet_refs",
+    "decision_trace_refs",
+    "audit_refs",
+    "backend_target",
+    "updated_at",
+    "updated_by"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^promotion_trace:[a-z0-9-]+$"
+    },
+    "topic_slug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "trace_scope": {
+      "type": "string",
+      "enum": [
+        "topic_latest"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "gate_status": {
+      "type": "string"
+    },
+    "human_gate_status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string"
+    },
+    "candidate_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "packet_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "decision_trace_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "audit_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "backend_target": {
+      "type": "object",
+      "required": [
+        "backend_id",
+        "target_backend_root",
+        "canonical_layer"
+      ],
+      "properties": {
+        "backend_id": {
+          "type": "string"
+        },
+        "target_backend_root": {
+          "type": "string"
+        },
+        "canonical_layer": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_by": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": false
+}

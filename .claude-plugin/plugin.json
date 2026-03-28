@@ -1,18 +1,35 @@
 {
   "name": "aitp",
-  "description": "AI Theoretical Physicist bootstrap for Claude Code: topic routing, steering discipline, and runtime-first research execution",
-  "version": "0.5.0",
+  "description": "AI Theoretical Physicist bootstrap for Claude Code: Superpowers-style natural-language routing on top of a layered theoretical-physics research kernel",
+  "version": "0.6.0",
   "author": {
     "name": "Bohan Jia"
   },
   "homepage": "https://github.com/bhjia-phys/AITP-Research-Protocol",
   "repository": "https://github.com/bhjia-phys/AITP-Research-Protocol",
+  "entry": "skills/using-aitp/SKILL.md",
+  "install_guide": "docs/INSTALL_CLAUDE_CODE.md",
+  "runtime_cli_package": "research/knowledge-hub",
+  "hooks": {
+    "SessionStart": "hooks/session-start"
+  },
+  "commands": {
+    "aitp": "skills/aitp-runtime/SKILL.md"
+  },
+  "dependencies": {
+    "python": ">=3.10",
+    "pip": [
+      "jsonschema"
+    ]
+  },
   "license": "MIT",
   "keywords": [
     "aitp",
     "theoretical-physics",
     "research",
     "skills",
-    "claude-code"
+    "claude-code",
+    "plugin-first",
+    "superpowers-style"
   ]
 }

@@ -4,6 +4,7 @@
   <p><strong>Protocol-first infrastructure for building an AI Theoretical Physicist that behaves like a disciplined research participant rather than a free-form chat agent.</strong></p>
   <p>
     <a href="#quick-start">Quick Start</a> ·
+    <a href="./docs/USER_TOPIC_JOURNEY.md">User Journey</a> ·
     <a href="#research-model">Research Model</a> ·
     <a href="#how-you-actually-use-it">Usage</a> ·
     <a href="#runtime-support-matrix">Runtime Support</a> ·
@@ -55,6 +56,10 @@ AITP exists to enforce the parts that are not cheap:
 
 AITP is an AI Theoretical Physicist research protocol.
 
+In product terms:
+
+`AITP = Superpowers-style interaction layer + layered theoretical-physics research kernel + native agent execution capabilities`
+
 The intended workflow is not:
 
 - human throws prompts over the wall;
@@ -71,6 +76,10 @@ The intended workflow is:
 
 The relationship is closer to `research collaborator + advisor + operator`
 than to `user + tool`.
+
+If you want to see what that should feel like for a real topic, read:
+
+- [`docs/USER_TOPIC_JOURNEY.md`](docs/USER_TOPIC_JOURNEY.md)
 
 In other words, AITP wants the AI to behave like a disciplined junior or
 mid-level theoretical-physics collaborator whose work is inspectable, whose
@@ -131,6 +140,11 @@ Then install the platform surface you actually use:
 - Claude Code: follow [`docs/INSTALL_CLAUDE_CODE.md`](docs/INSTALL_CLAUDE_CODE.md)
 - OpenClaw: follow [`docs/INSTALL_OPENCLAW.md`](docs/INSTALL_OPENCLAW.md)
 
+If you want the clearest picture of the intended user experience before you
+install anything, start with:
+
+- [`docs/USER_TOPIC_JOURNEY.md`](docs/USER_TOPIC_JOURNEY.md)
+
 If your system Python is externally managed:
 
 ```bash
@@ -184,7 +198,23 @@ flowchart LR
 
 ## How You Actually Use It
 
-AITP currently has three public workflows that matter.
+AITP currently has four public workflows that matter.
+
+### What A Real Topic Should Feel Like
+
+The target experience is:
+
+- the user starts in natural language;
+- AITP only asks short route-changing questions when it must;
+- ordinary topic work stays in a light runtime profile;
+- only benchmark mismatches, scope changes, promotion, or exit audit force the
+  runtime to expand;
+- the user can later ask what happened, why a route was chosen, and what is
+  still open.
+
+That journey is described in:
+
+- [`docs/USER_TOPIC_JOURNEY.md`](docs/USER_TOPIC_JOURNEY.md)
 
 ### 1. Codex With Native Skill Discovery
 
@@ -217,6 +247,10 @@ aitp session-start "<task>"
 
 The user experience target is natural language first. The user should not need
 to remember wrappers or front-door shell commands.
+
+AITP should also stay light by default. In ordinary topic work the runtime
+should only require the minimum topic surfaces needed to continue safely, and
+only expand into the full runtime bundle when something important happens.
 
 ### 2. OpenCode With Plugin Bootstrap
 
@@ -384,6 +418,12 @@ theoretical-physics work.
 | Toy-model numerics | baseline papers, model specs, observables, scripts | controlled runs, convergence checks, benchmark comparison | validated workflows, benchmark notes, reusable operations |
 | Code-backed algorithm development | upstream codebases, papers, existing methods | reproduction, trust audit, implementation validation | trusted methods, reusable operation manifests, backend writeback |
 
+Code-backed work inside AITP is not a detached coding task.
+The outer user experience should still feel like a Superpowers-style natural
+language workflow, but the resulting code, benchmark evidence, validation
+state, and reusable method outputs still belong to the active AITP topic and
+its promotion gates.
+
 For theory-heavy work, the default target is the semi-formal layer described in:
 
 - `research/knowledge-hub/SEMI_FORMAL_THEORY_PROTOCOL.md`
@@ -468,6 +508,13 @@ Current maturity is not uniform:
 - `Codex`, `OpenCode`, and `Claude Code` now converge on the same outer model: one gatekeeper skill plus native bootstrap.
 - `aitp install-agent` remains the compatibility path for seeded workspaces and manual fallbacks.
 - `OpenClaw` keeps the bounded autonomous loop path and MCP bridge notes, while `Codex` remains the most opinionated end-to-end execution surface.
+
+Current automation target:
+
+- high-automation research collaboration, not fake full autonomy;
+- the human still owns direction, novelty, expensive route choices, and final
+  trusted promotion decisions;
+- AITP should do as much bounded execution work as possible before it asks.
 
 ## Install And Remove
 

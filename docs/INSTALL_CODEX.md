@@ -27,6 +27,11 @@ The public Codex path is:
 2. expose `skills/` through `~/.agents/skills/aitp`;
 3. restart Codex.
 
+This is the current plugin-first-equivalent Codex path.
+It is not marketplace one-click yet, but the product goal is the same as
+Superpowers: the user installs once, then speaks naturally and lets the
+gatekeeper skill decide whether AITP should claim the session.
+
 That gives Codex the same outer shape as Superpowers: skill discovery first,
 then `using-aitp` decides whether the session must enter AITP.
 
@@ -35,6 +40,8 @@ What this means in practice:
 - the user just talks naturally;
 - `using-aitp` decides whether the request must become AITP state first;
 - `aitp-runtime` is loaded only after routing succeeds;
+- ordinary topic work should stay light unless something important forces a
+  deeper runtime expansion;
 - `aitp session-start "<task>"` becomes a fallback, not the normal front door.
 
 ## Compatibility install

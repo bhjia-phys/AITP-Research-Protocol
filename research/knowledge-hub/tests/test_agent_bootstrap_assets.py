@@ -16,9 +16,11 @@ class AgentBootstrapAssetTests(unittest.TestCase):
 
         self.assertIn("continue this topic", using_skill)
         self.assertIn("validation planning", using_skill)
+        self.assertIn("Do not expose protocol jargon", using_skill)
         self.assertNotIn("aitp-codex", using_skill)
         self.assertIn("runtime_protocol.generated.md", runtime_skill)
         self.assertIn("session_start.generated.md", runtime_skill)
+        self.assertIn("Do not say things like", runtime_skill)
 
     def test_opencode_plugin_assets_exist(self) -> None:
         package_payload = json.loads((self.repo_root / "package.json").read_text(encoding="utf-8"))
@@ -35,6 +37,8 @@ class AgentBootstrapAssetTests(unittest.TestCase):
         hook_text = (self.repo_root / "hooks" / "session-start").read_text(encoding="utf-8")
 
         self.assertEqual(plugin_payload["name"], "aitp")
+        self.assertEqual(plugin_payload["entry"], "skills/using-aitp/SKILL.md")
+        self.assertIn("SessionStart", plugin_payload["hooks"])
         self.assertIn("SessionStart", hook_payload["hooks"])
         self.assertIn("run-hook.cmd", json.dumps(hook_payload))
         self.assertIn("using-aitp", hook_text)
@@ -44,7 +48,17 @@ class AgentBootstrapAssetTests(unittest.TestCase):
 
         self.assertIn("~/.agents/skills/aitp", install_doc)
         self.assertIn("native skill discovery", install_doc)
+        self.assertIn("plugin-first-equivalent", install_doc)
         self.assertNotIn("aitp-codex", install_doc)
+
+    def test_readme_links_to_user_topic_journey(self) -> None:
+        readme = (self.repo_root / "README.md").read_text(encoding="utf-8")
+        journey_doc = (self.repo_root / "docs" / "USER_TOPIC_JOURNEY.md").read_text(encoding="utf-8")
+
+        self.assertIn("docs/USER_TOPIC_JOURNEY.md", readme)
+        self.assertIn("Lane 1: Formal theory topic", journey_doc)
+        self.assertIn("Lane 2: Toy numerics topic", journey_doc)
+        self.assertIn("Lane 3: Code-backed method topic", journey_doc)
 
 
 if __name__ == "__main__":

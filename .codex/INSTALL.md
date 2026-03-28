@@ -1,6 +1,7 @@
 # Installing AITP for Codex
 
-Enable AITP in Codex through native skill discovery. Clone once, then symlink the skills directory.
+Enable AITP in Codex through native skill discovery. Install once, then let
+natural-language theory work route through the gatekeeper skill.
 
 ## Prerequisites
 
@@ -37,6 +38,10 @@ Enable AITP in Codex through native skill discovery. Clone once, then symlink th
 
 4. Restart Codex.
 
+This is the current Codex plugin-first-equivalent install path.
+It is still a local source install rather than a marketplace package, but the
+intended behavior matches Superpowers: install once, then just talk naturally.
+
 ## Verify
 
 Ask for a theory task in natural language, for example:
@@ -45,6 +50,10 @@ Ask for a theory task in natural language, for example:
 - `开一个新 topic：Topological phases from modular data，先做问题定义和验证路线`
 
 Codex should load `using-aitp` automatically and route the task into AITP before substantial work.
+
+For ordinary topic work, AITP should stay in a light runtime profile unless a
+benchmark mismatch, scope change, promotion step, or explicit full check forces
+the runtime to expand.
 
 This is the normal user path. `aitp session-start "<task>"` is only the manual
 fallback when native bootstrap is unavailable.

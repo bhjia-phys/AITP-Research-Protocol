@@ -13,6 +13,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .decision_point_handler import get_all_decision_points, list_pending_decision_points
+from .decision_trace_handler import get_decision_traces
+from .runtime_projection_handler import (
+    build_knowledge_packets_from_candidates,
+    write_pending_decisions_projection,
+    write_promotion_readiness_projection,
+    write_promotion_trace,
+    write_topic_synopsis,
+)
 from .tpkn_bridge import (
     build_supporting_question_oracle_unit,
     build_supporting_regression_question_unit,
@@ -323,6 +332,30 @@ class AITPService:
             return self._relativize(path)
         return path.as_posix()
 
+    def _artifact_path_on_disk(self, value: str | Path | None) -> Path | None:
+        raw = str(value or "").strip()
+        if not raw:
+            return None
+        path = Path(raw).expanduser()
+        if path.is_absolute():
+            return path
+        for root in (self.kernel_root, self.repo_root):
+            candidate = (root / path).resolve()
+            if candidate.exists():
+                return candidate
+        kernel_prefixes = (
+            "runtime/",
+            "source-layer/",
+            "intake/",
+            "feedback/",
+            "validation/",
+            "canonical/",
+            "consultation/",
+        )
+        if raw.startswith(kernel_prefixes):
+            return (self.kernel_root / path).resolve()
+        return (self.repo_root / path).resolve()
+
     def _research_root(self) -> Path:
         return self.kernel_root.parent
 
@@ -401,6 +434,21 @@ class AITPService:
         return {
             "json": runtime_root / "validation_contract.active.json",
             "note": runtime_root / "validation_contract.active.md",
+        }
+
+    def _idea_packet_paths(self, topic_slug: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        return {
+            "json": runtime_root / "idea_packet.json",
+            "note": runtime_root / "idea_packet.md",
+        }
+
+    def _operator_checkpoint_paths(self, topic_slug: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        return {
+            "json": runtime_root / "operator_checkpoint.active.json",
+            "note": runtime_root / "operator_checkpoint.active.md",
+            "ledger": runtime_root / "operator_checkpoints.jsonl",
         }
 
     def _topic_dashboard_path(self, topic_slug: str) -> Path:
@@ -540,6 +588,80 @@ class AITPService:
         if normalized == "toy_numeric":
             return "numerical"
         return "hybrid"
+
+    def _lane_for_modes(self, *, template_mode: str | None, research_mode: str | None) -> str:
+        normalized_template = str(template_mode or "").strip().lower()
+        normalized_research = str(research_mode or "").strip().lower()
+        if normalized_template == "formal_theory" or normalized_research == "formal_derivation":
+            return "formal_theory"
+        if normalized_template == "toy_numeric" or normalized_research in {"toy_model", "first_principles"}:
+            return "toy_numeric"
+        return "code_method"
+
+    def _resolve_load_profile(
+        self,
+        *,
+        explicit_load_profile: str | None,
+        human_request: str | None = None,
+        topic_state: dict[str, Any] | None = None,
+    ) -> tuple[str, str]:
+        normalized_explicit = str(explicit_load_profile or "").strip().lower()
+        if normalized_explicit in {"light", "full"}:
+            return normalized_explicit, "explicit_request"
+
+        normalized_request = str(human_request or "").strip().lower()
+        if normalized_request:
+            full_patterns = (
+                r"\bmismatch\b",
+                r"\bpromotion\b",
+                r"\baudit\b",
+                r"\bscope\b",
+                r"\bcontradiction\b",
+                r"\bdisagree(?:ment)?\b",
+                r"不一致",
+                r"矛盾",
+                r"全面检查",
+                r"全量",
+                r"晋升",
+                r"升级到l2",
+                r"改范围",
+                r"改 scope",
+            )
+            for pattern in full_patterns:
+                if re.search(pattern, normalized_request, flags=re.IGNORECASE):
+                    return "full", "auto_escalation_from_request"
+            return "light", "auto_light_for_ordinary_topic_work"
+
+        remembered = str((topic_state or {}).get("load_profile") or "").strip().lower()
+        if remembered in {"light", "full"}:
+            return remembered, "persisted_topic_state"
+        return "light", "default_light_profile"
+
+    def _persist_load_profile_state(
+        self,
+        *,
+        topic_slug: str,
+        load_profile: str,
+        reason: str,
+        updated_by: str,
+    ) -> dict[str, Any]:
+        topic_state_path = self._runtime_root(topic_slug) / "topic_state.json"
+        topic_state = read_json(topic_state_path) or {"topic_slug": topic_slug}
+        previous_profile = str(topic_state.get("load_profile") or "").strip()
+        topic_state["load_profile"] = load_profile
+        topic_state["load_profile_reason"] = reason
+        topic_state["load_profile_updated_at"] = now_iso()
+        topic_state["load_profile_updated_by"] = updated_by
+        if previous_profile and previous_profile != load_profile:
+            topic_state["load_profile_last_transition"] = {
+                "from": previous_profile,
+                "to": load_profile,
+                "reason": reason,
+                "updated_at": topic_state["load_profile_updated_at"],
+                "updated_by": updated_by,
+            }
+        write_json(topic_state_path, topic_state)
+        return topic_state
 
     def _coalesce_list(self, existing: Any, defaults: list[str]) -> list[str]:
         if isinstance(existing, list):
@@ -844,6 +966,827 @@ class AITPService:
             "summary": summary,
         }
 
+    def _request_looks_actionable(self, request: str | None) -> bool:
+        raw_request = str(request or "").strip()
+        if not raw_request:
+            return False
+        normalized = raw_request.lower()
+        actionable_cues = (
+            "define",
+            "scope",
+            "benchmark",
+            "validate",
+            "validation",
+            "derive",
+            "derivation",
+            "prove",
+            "proof",
+            "explore",
+            "analyze",
+            "analysis",
+            "survey",
+            "plan",
+            "compare",
+            "check",
+            "build",
+            "implement",
+            "establish",
+            "建立",
+            "定义",
+            "范围",
+            "验证",
+            "推导",
+            "证明",
+            "探索",
+            "分析",
+            "调研",
+            "计划",
+            "比较",
+            "检查",
+            "实现",
+        )
+        if any(cue in normalized for cue in actionable_cues):
+            return True
+        token_count = len(re.findall(r"[A-Za-z0-9_]+", raw_request))
+        return token_count > 8 or len(raw_request) > 80
+
+    def _derive_idea_packet(
+        self,
+        *,
+        topic_slug: str,
+        updated_by: str,
+        human_request: str | None,
+        topic_state: dict[str, Any],
+        interaction_state: dict[str, Any],
+        existing_idea_packet: dict[str, Any],
+        existing_research: dict[str, Any],
+        existing_validation: dict[str, Any],
+        research_contract: dict[str, Any],
+        validation_contract: dict[str, Any],
+        selected_pending_action: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        source_rows = read_jsonl(self.kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl")
+        request_text = (
+            str(human_request or "").strip()
+            or str(interaction_state.get("human_request") or "").strip()
+        )
+        actionable_request = self._request_looks_actionable(request_text)
+        initial_idea = self._coalesce_string(
+            existing_idea_packet.get("initial_idea"),
+            request_text or str(existing_research.get("question") or "").strip(),
+        )
+        novelty_target = self._coalesce_string(existing_idea_packet.get("novelty_target"), "")
+        non_goals = self._coalesce_list(
+            existing_idea_packet.get("non_goals"),
+            list(existing_research.get("non_goals") or []),
+        )
+        first_validation_route = self._coalesce_string(
+            existing_idea_packet.get("first_validation_route"),
+            str(existing_validation.get("verification_focus") or "").strip()
+            or str(validation_contract.get("verification_focus") or "").strip()
+            or str((selected_pending_action or {}).get("summary") or "").strip()
+            or "Define the first bounded validation route before deeper execution.",
+        )
+        initial_evidence_bar = self._coalesce_string(
+            existing_idea_packet.get("initial_evidence_bar"),
+            str(existing_validation.get("acceptance_rule") or "").strip()
+            or str(validation_contract.get("acceptance_rule") or "").strip()
+            or "Require a durable first validation artifact before advancing the topic.",
+        )
+
+        missing_fields: list[str] = []
+        if not initial_idea:
+            missing_fields.append("initial_idea")
+        if not novelty_target:
+            missing_fields.append("novelty_target")
+        if not non_goals:
+            missing_fields.append("non_goals")
+        if not first_validation_route:
+            missing_fields.append("first_validation_route")
+        if not initial_evidence_bar:
+            missing_fields.append("initial_evidence_bar")
+
+        execution_context_signals: list[str] = []
+        if str(topic_state.get("latest_run_id") or "").strip():
+            execution_context_signals.append("latest_run_id")
+        if source_rows:
+            execution_context_signals.append("l0_sources")
+        if str((selected_pending_action or {}).get("action_id") or "").strip():
+            execution_context_signals.append("selected_action")
+        explicit_shell_context = bool(
+            str(existing_research.get("question") or "").strip()
+            or list(existing_research.get("scope") or [])
+            or list(existing_research.get("deliverables") or [])
+            or str(existing_validation.get("verification_focus") or "").strip()
+            or list(existing_validation.get("required_checks") or [])
+        )
+        if explicit_shell_context:
+            execution_context_signals.append("existing_shell_contracts")
+
+        existing_status = str(existing_idea_packet.get("status") or "").strip()
+        fully_clarified_packet = bool(
+            initial_idea
+            and novelty_target
+            and non_goals
+            and first_validation_route
+            and initial_evidence_bar
+        )
+        if existing_status == "deferred":
+            status = existing_status
+        elif execution_context_signals:
+            status = "approved_for_execution"
+        elif fully_clarified_packet:
+            status = "approved_for_execution"
+        elif initial_idea and first_validation_route and initial_evidence_bar and actionable_request:
+            status = "approved_for_execution"
+        else:
+            status = "needs_clarification"
+
+        status_reason = (
+            "Approved for execution because durable topic context already exists."
+            if status == "approved_for_execution" and execution_context_signals
+            else (
+                "Approved for execution because the idea packet now specifies a novelty target, first validation route, and evidence bar."
+                if status == "approved_for_execution" and fully_clarified_packet
+                else (
+                    "Approved for execution because the request already specifies a concrete initial lane and evidence bar."
+                    if status == "approved_for_execution"
+                    else "Needs clarification because the topic is not yet specific enough to justify substantive execution."
+                )
+            )
+        )
+
+        clarification_questions: list[str] = []
+        if status == "needs_clarification":
+            if not actionable_request:
+                clarification_questions.append(
+                    "Should AITP first do scoped problem definition, literature scoping, benchmark reproduction, or derivation planning?"
+                )
+            if "initial_idea" in missing_fields:
+                clarification_questions.append(
+                    "What is the idea in one sentence, including the physical object, regime, and intended question?"
+                )
+            if "novelty_target" in missing_fields:
+                clarification_questions.append(
+                    "What exact novelty target should count as success beyond routine reproduction or literature summary?"
+                )
+            if "non_goals" in missing_fields:
+                clarification_questions.append(
+                    "What should this topic explicitly not try to solve in the first lane?"
+                )
+            if "first_validation_route" in missing_fields:
+                clarification_questions.append(
+                    "What is the first validation lane: literature scoping, analytic derivation, benchmark reproduction, or numerical pilot?"
+                )
+            if "initial_evidence_bar" in missing_fields:
+                clarification_questions.append(
+                    "What minimum evidence bar should justify continuing beyond the first bounded step?"
+                )
+
+        return {
+            "topic_slug": topic_slug,
+            "status": status,
+            "status_reason": status_reason,
+            "initial_idea": initial_idea,
+            "novelty_target": novelty_target,
+            "non_goals": non_goals,
+            "first_validation_route": first_validation_route,
+            "initial_evidence_bar": initial_evidence_bar,
+            "missing_fields": self._dedupe_strings(missing_fields),
+            "clarification_questions": self._dedupe_strings(clarification_questions),
+            "execution_context_signals": self._dedupe_strings(execution_context_signals),
+            "updated_at": now_iso(),
+            "updated_by": updated_by,
+        }
+
+    def _operator_checkpoint_signature(self, payload: dict[str, Any]) -> str:
+        signature_payload = {
+            "checkpoint_id": payload.get("checkpoint_id"),
+            "checkpoint_kind": payload.get("checkpoint_kind"),
+            "status": payload.get("status"),
+            "trigger_fingerprint": payload.get("trigger_fingerprint"),
+            "question": payload.get("question"),
+            "required_response": payload.get("required_response"),
+            "selected_action_id": payload.get("selected_action_id"),
+            "answer": payload.get("answer"),
+        }
+        return json.dumps(signature_payload, ensure_ascii=True, sort_keys=True)
+
+    def _derive_operator_checkpoint(
+        self,
+        *,
+        topic_slug: str,
+        updated_by: str,
+        existing_checkpoint: dict[str, Any],
+        idea_packet: dict[str, Any],
+        research_contract: dict[str, Any],
+        validation_contract: dict[str, Any],
+        promotion_gate: dict[str, Any],
+        selected_pending_action: dict[str, Any] | None,
+        decision_surface: dict[str, Any],
+        dashboard_path: Path,
+        idea_packet_paths: dict[str, Path],
+        research_paths: dict[str, Path],
+        validation_paths: dict[str, Path],
+    ) -> tuple[dict[str, Any], dict[str, Any] | None]:
+        selected_action_id = str((selected_pending_action or {}).get("action_id") or "").strip()
+        selected_action_type = str((selected_pending_action or {}).get("action_type") or "").strip()
+        selected_action_summary = str((selected_pending_action or {}).get("summary") or "").strip()
+        selected_action_summary_lower = selected_action_summary.lower()
+        promotion_status = str(promotion_gate.get("status") or "not_requested").strip()
+        control_note_path = str(decision_surface.get("control_note_path") or "").strip()
+        checkpoint_kind: str | None = None
+        question = ""
+        required_response = ""
+        blocker_summary: list[str] = []
+        evidence_refs: list[str] = []
+        response_channels: list[str] = []
+
+        if str(idea_packet.get("status") or "").strip() == "needs_clarification":
+            checkpoint_kind = "scope_ambiguity"
+            question = "AITP needs the initial topic intent clarified before substantive execution can continue."
+            required_response = (
+                "Fill the idea packet with a novelty target, non-goals, first validation route, and initial evidence bar."
+            )
+            blocker_summary = list(idea_packet.get("clarification_questions") or []) or [
+                "Complete the missing intent fields in the idea packet."
+            ]
+            evidence_refs = [
+                self._relativize(idea_packet_paths["note"]),
+                self._relativize(research_paths["note"]),
+                self._relativize(validation_paths["note"]),
+            ]
+            response_channels = [
+                self._relativize(idea_packet_paths["note"]),
+                self._relativize(research_paths["note"]),
+                self._relativize(validation_paths["note"]),
+            ]
+        elif promotion_status in {"requested", "pending_human_approval"}:
+            checkpoint_kind = "promotion_approval"
+            candidate_id = str(promotion_gate.get("candidate_id") or "").strip() or "(missing)"
+            backend_id = str(promotion_gate.get("backend_id") or "").strip() or "(missing)"
+            question = f"Should AITP approve promotion for `{candidate_id}` into `{backend_id}`?"
+            required_response = "Approve, reject, or narrow the current promotion request before writeback continues."
+            blocker_summary = self._dedupe_strings(
+                list(promotion_gate.get("promotion_blockers") or [])
+                or ["Promotion is waiting for an explicit human decision."]
+            )
+            evidence_refs = self._dedupe_strings(
+                [
+                    self._relativize(self._promotion_gate_paths(topic_slug)["json"]),
+                    self._relativize(self._promotion_gate_paths(topic_slug)["note"]),
+                    self._relativize(dashboard_path),
+                ]
+            )
+            response_channels = [
+                self._relativize(self._promotion_gate_paths(topic_slug)["note"]),
+                self._relativize(dashboard_path),
+            ]
+        elif any(needle in selected_action_summary_lower for needle in ("contradiction", "conflict", "regime mismatch")):
+            checkpoint_kind = "contradiction_adjudication"
+            question = "AITP found a contradiction-style blocker and needs the operator to choose the adjudication route."
+            required_response = "Choose whether to split regimes, downgrade the claim, or return to L0 for source recovery."
+            blocker_summary = [
+                selected_action_summary or "An unresolved contradiction/regime conflict is active.",
+                "Do not let the queue guess the adjudication route without an explicit operator choice.",
+            ]
+            evidence_refs = [
+                self._relativize(self._gap_map_path(topic_slug)),
+                self._relativize(validation_paths["note"]),
+                self._relativize(dashboard_path),
+            ]
+            response_channels = [
+                self._relativize(self._gap_map_path(topic_slug)),
+                self._relativize(validation_paths["note"]),
+            ]
+        elif (
+            selected_action_type in {"select_validation_route", "materialize_execution_task", "dispatch_execution_task"}
+            or any(
+                needle in selected_action_summary_lower
+                for needle in ("validation route", "verification route", "benchmark", "selected route")
+            )
+        ):
+            checkpoint_kind = "benchmark_or_validation_route_choice"
+            question = "AITP needs an operator decision on the next benchmark or validation lane."
+            required_response = "Choose the initial benchmark/validation route that should govern the next bounded step."
+            blocker_summary = [
+                selected_action_summary or "Validation-route choice remains unresolved.",
+                "The active validation contract needs an explicit route choice before deeper execution.",
+            ]
+            evidence_refs = [
+                self._relativize(validation_paths["note"]),
+                self._relativize(dashboard_path),
+            ]
+            response_channels = [self._relativize(validation_paths["note"])]
+        elif any(
+            needle in selected_action_summary_lower
+            for needle in ("resource limit", "risk limit", "compute budget", "system size", "larger-system", "budget")
+        ):
+            checkpoint_kind = "resource_risk_limit_choice"
+            question = "AITP needs an operator decision on the acceptable resource or risk limit for the next lane."
+            required_response = "State the permitted budget, system-size ceiling, or risk boundary before the next step expands."
+            blocker_summary = [
+                selected_action_summary or "The next lane requires an explicit resource/risk limit.",
+            ]
+            evidence_refs = [
+                self._relativize(dashboard_path),
+                self._relativize(validation_paths["note"]),
+            ]
+            response_channels = [self._relativize(dashboard_path)]
+        elif any(
+            needle in selected_action_summary_lower
+            for needle in ("innovation direction", "novelty direction", "direction choice", "focus direction")
+        ):
+            checkpoint_kind = "novelty_direction_choice"
+            question = "AITP needs an operator decision on the novelty direction before continuing."
+            required_response = "Clarify which innovation target should dominate the current topic branch."
+            blocker_summary = [
+                selected_action_summary or "The current novelty direction remains ambiguous.",
+            ]
+            evidence_refs = [
+                self._relativize(research_paths["note"]),
+                self._relativize(dashboard_path),
+            ]
+            if control_note_path:
+                evidence_refs.append(self._normalize_artifact_path(control_note_path) or control_note_path)
+            response_channels = self._dedupe_strings(
+                [self._normalize_artifact_path(control_note_path) or "", self._relativize(research_paths["note"])]
+            )
+        elif any(
+            needle in selected_action_summary_lower
+            for needle in ("continue or branch", "branch or redirect", "redirect decision", "stop or continue")
+        ):
+            checkpoint_kind = "stop_continue_branch_redirect_decision"
+            question = "AITP needs an explicit stop/continue/branch/redirect decision from the operator."
+            required_response = "Record whether the topic should continue, pause, branch, stop, or redirect."
+            blocker_summary = [selected_action_summary or "The loop is waiting for an explicit operator steering decision."]
+            evidence_refs = self._dedupe_strings(
+                [self._normalize_artifact_path(control_note_path) or "", self._relativize(dashboard_path)]
+            )
+            response_channels = self._dedupe_strings([self._normalize_artifact_path(control_note_path) or ""])
+
+        now = now_iso()
+        existing_status = str(existing_checkpoint.get("status") or "").strip()
+        existing_id = str(existing_checkpoint.get("checkpoint_id") or "").strip()
+        existing_fingerprint = str(existing_checkpoint.get("trigger_fingerprint") or "").strip()
+
+        if checkpoint_kind is None:
+            payload = dict(existing_checkpoint or {})
+            payload.setdefault("checkpoint_id", f"checkpoint:{topic_slug}:none")
+            payload["topic_slug"] = topic_slug
+            payload["run_id"] = str(existing_checkpoint.get("run_id") or "")
+            payload["checkpoint_kind"] = None
+            payload["status"] = "cancelled"
+            payload["active"] = False
+            payload["trigger_fingerprint"] = ""
+            payload["question"] = "No active operator checkpoint is currently blocking execution."
+            payload["required_response"] = "No operator response is currently required."
+            payload["response_channels"] = []
+            payload["blocker_summary"] = []
+            payload["evidence_refs"] = []
+            payload["selected_action_id"] = selected_action_id or None
+            payload["selected_action_summary"] = selected_action_summary or None
+            payload["answer"] = payload.get("answer")
+            payload["requested_at"] = payload.get("requested_at")
+            payload["requested_by"] = payload.get("requested_by")
+            payload["answered_at"] = payload.get("answered_at")
+            payload["answered_by"] = payload.get("answered_by")
+            payload["updated_at"] = now if existing_status in {"requested", "answered"} else payload.get("updated_at") or now
+            payload["updated_by"] = updated_by
+            return payload, None
+
+        checkpoint_id = f"checkpoint:{topic_slug}:{slugify(checkpoint_kind)}"
+        trigger_fingerprint = "|".join(
+            [
+                checkpoint_kind,
+                selected_action_id,
+                promotion_status,
+                ",".join(self._dedupe_strings(list(idea_packet.get("missing_fields") or []))),
+                selected_action_summary,
+            ]
+        )
+        payload = {
+            "checkpoint_id": checkpoint_id,
+            "topic_slug": topic_slug,
+            "run_id": str(research_contract.get("run_id") or ""),
+            "checkpoint_kind": checkpoint_kind,
+            "status": "requested",
+            "active": True,
+            "trigger_fingerprint": trigger_fingerprint,
+            "question": question,
+            "required_response": required_response,
+            "response_channels": self._dedupe_strings(response_channels),
+            "blocker_summary": self._dedupe_strings(blocker_summary),
+            "evidence_refs": self._dedupe_strings(evidence_refs),
+            "selected_action_id": selected_action_id or None,
+            "selected_action_summary": selected_action_summary or None,
+            "answer": None,
+            "requested_at": now,
+            "requested_by": updated_by,
+            "answered_at": None,
+            "answered_by": None,
+            "updated_at": now,
+            "updated_by": updated_by,
+        }
+        superseded_payload: dict[str, Any] | None = None
+        if existing_id == checkpoint_id and existing_fingerprint == trigger_fingerprint:
+            if existing_status in {"requested", "answered"}:
+                payload["status"] = existing_status
+                payload["active"] = existing_status == "requested"
+                payload["answer"] = existing_checkpoint.get("answer")
+                payload["requested_at"] = existing_checkpoint.get("requested_at") or now
+                payload["requested_by"] = existing_checkpoint.get("requested_by") or updated_by
+                payload["answered_at"] = existing_checkpoint.get("answered_at")
+                payload["answered_by"] = existing_checkpoint.get("answered_by")
+                payload["updated_at"] = existing_checkpoint.get("updated_at") or now
+                payload["updated_by"] = existing_checkpoint.get("updated_by") or updated_by
+        elif existing_status in {"requested", "answered"} and existing_id and existing_id != checkpoint_id:
+            superseded_payload = dict(existing_checkpoint)
+            superseded_payload["status"] = "superseded"
+            superseded_payload["active"] = False
+            superseded_payload["updated_at"] = now
+            superseded_payload["updated_by"] = updated_by
+        return payload, superseded_payload
+
+    def _render_operator_checkpoint_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            "# Operator checkpoint",
+            "",
+            f"- Topic slug: `{payload.get('topic_slug') or '(missing)'}`",
+            f"- Checkpoint id: `{payload.get('checkpoint_id') or '(missing)'}`",
+            f"- Kind: `{payload.get('checkpoint_kind') or '(none)'}`",
+            f"- Status: `{payload.get('status') or '(missing)'}`",
+            f"- Active: `{str(bool(payload.get('active'))).lower()}`",
+            f"- Requested at: `{payload.get('requested_at') or '(missing)'}`",
+            f"- Requested by: `{payload.get('requested_by') or '(missing)'}`",
+            f"- Answered at: `{payload.get('answered_at') or '(none)'}`",
+            f"- Answered by: `{payload.get('answered_by') or '(none)'}`",
+            "",
+            "## Question",
+            "",
+            payload.get("question") or "(missing)",
+            "",
+            "## Required response",
+            "",
+            payload.get("required_response") or "(missing)",
+            "",
+            "## Blocker summary",
+            "",
+        ]
+        for item in payload.get("blocker_summary") or ["(none)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Response channels", ""])
+        for item in payload.get("response_channels") or ["(none)"]:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "## Evidence refs", ""])
+        for item in payload.get("evidence_refs") or ["(none)"]:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "## Current answer", ""])
+        lines.append(payload.get("answer") or "(none yet)")
+        return "\n".join(lines) + "\n"
+
+    def _write_operator_checkpoint(
+        self,
+        *,
+        topic_slug: str,
+        payload: dict[str, Any],
+        superseded_payload: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        paths = self._operator_checkpoint_paths(topic_slug)
+        ledger_rows = read_jsonl(paths["ledger"])
+        if superseded_payload is not None:
+            if not ledger_rows or self._operator_checkpoint_signature(ledger_rows[-1]) != self._operator_checkpoint_signature(
+                superseded_payload
+            ):
+                ledger_rows.append(superseded_payload)
+        if not ledger_rows or self._operator_checkpoint_signature(ledger_rows[-1]) != self._operator_checkpoint_signature(payload):
+            ledger_rows.append(payload)
+        write_json(paths["json"], payload)
+        write_text(paths["note"], self._render_operator_checkpoint_markdown(payload))
+        write_jsonl(paths["ledger"], ledger_rows)
+        return {
+            "operator_checkpoint_path": str(paths["json"]),
+            "operator_checkpoint_note_path": str(paths["note"]),
+            "operator_checkpoint_ledger_path": str(paths["ledger"]),
+            "operator_checkpoint": payload,
+        }
+
+    def _refresh_operator_console_checkpoint_section(
+        self,
+        *,
+        topic_slug: str,
+        operator_checkpoint: dict[str, Any],
+        topic_status_explainability: dict[str, Any] | None = None,
+    ) -> None:
+        operator_console_path = self._runtime_root(topic_slug) / "operator_console.md"
+        if not operator_console_path.exists():
+            return
+        text = operator_console_path.read_text(encoding="utf-8")
+        marker = "\n## Active operator checkpoint\n"
+        if marker in text:
+            text = text.split(marker, 1)[0].rstrip() + "\n"
+        lines = [text.rstrip(), "", "## Active operator checkpoint", ""]
+        lines.append(f"- Status: `{operator_checkpoint.get('status') or '(missing)'}`")
+        lines.append(f"- Kind: `{operator_checkpoint.get('checkpoint_kind') or '(none)'}`")
+        lines.append(f"- Question: {operator_checkpoint.get('question') or '(missing)'}")
+        lines.append(
+            f"- Open next: `{self._relativize(self._operator_checkpoint_paths(topic_slug)['note'])}`"
+        )
+        blocker_summary = operator_checkpoint.get("blocker_summary") or []
+        if blocker_summary:
+            lines.extend(["", "### Why it is blocked", ""])
+            for item in blocker_summary:
+                lines.append(f"- {item}")
+        explainability = topic_status_explainability or {}
+        if explainability:
+            current_route_choice = explainability.get("current_route_choice") or {}
+            last_evidence_return = explainability.get("last_evidence_return") or {}
+            active_human_need = explainability.get("active_human_need") or {}
+            lines.extend(
+                [
+                    "",
+                    "## Topic explainability",
+                    "",
+                    f"- Why here: {explainability.get('why_this_topic_is_here') or '(missing)'}",
+                    f"- Current route: {current_route_choice.get('selected_action_summary') or '(none)'}",
+                    f"- Last evidence: {last_evidence_return.get('summary') or '(none)'}",
+                    f"- Human need: {active_human_need.get('summary') or '(none)'}",
+                ]
+            )
+        write_text(operator_console_path, "\n".join(lines).rstrip() + "\n")
+
+    def answer_operator_checkpoint(
+        self,
+        *,
+        topic_slug: str,
+        answer: str,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        paths = self._operator_checkpoint_paths(topic_slug)
+        payload = read_json(paths["json"])
+        if payload is None:
+            raise FileNotFoundError(f"No active operator checkpoint surface exists for topic {topic_slug}.")
+        if str(payload.get("status") or "").strip() != "requested":
+            raise ValueError("Operator checkpoint is not currently in requested status.")
+        answer_text = str(answer or "").strip()
+        if not answer_text:
+            raise ValueError("answer must not be empty")
+        answered_at = now_iso()
+        payload["status"] = "answered"
+        payload["active"] = False
+        payload["answer"] = answer_text
+        payload["answered_at"] = answered_at
+        payload["answered_by"] = updated_by
+        payload["updated_at"] = answered_at
+        payload["updated_by"] = updated_by
+        result = self._write_operator_checkpoint(topic_slug=topic_slug, payload=payload)
+        runtime_root = self._runtime_root(topic_slug)
+        topic_state = read_json(runtime_root / "topic_state.json") or {}
+        interaction_state = read_json(runtime_root / "interaction_state.json") or {}
+        queue_rows = read_jsonl(runtime_root / "action_queue.jsonl")
+        decision_surface = interaction_state.get("decision_surface") or {}
+        _, selected_pending_action = self._pending_action_context(queue_rows, decision_surface)
+        validation_contract = read_json(self._validation_contract_paths(topic_slug)["json"]) or {}
+        topic_status_explainability = {
+            "topic_slug": topic_slug,
+            "current_status_summary": "The latest operator checkpoint was answered and now awaits the next bounded runtime step.",
+            "why_this_topic_is_here": "The latest operator checkpoint was answered and recorded. AITP should sync the answer into the next bounded step instead of silently reopening the checkpoint.",
+            "current_route_choice": {
+                "resume_stage": str(topic_state.get("resume_stage") or ""),
+                "decision_source": str((interaction_state.get("decision_surface") or {}).get("decision_source") or ""),
+                "queue_source": str((interaction_state.get("action_queue_surface") or {}).get("queue_source") or ""),
+                "selected_action_id": str((selected_pending_action or {}).get("action_id") or "") or None,
+                "selected_action_type": str((selected_pending_action or {}).get("action_type") or "") or None,
+                "selected_action_summary": str((selected_pending_action or {}).get("summary") or "") or None,
+                "selected_action_auto_runnable": bool((selected_pending_action or {}).get("auto_runnable")),
+                "selected_validation_route_path": self._normalize_artifact_path(
+                    (topic_state.get("pointers") or {}).get("selected_validation_route_path")
+                ),
+                "next_action_decision_note_path": self._normalize_artifact_path(
+                    (topic_state.get("pointers") or {}).get("next_action_decision_note_path")
+                    or (interaction_state.get("decision_surface") or {}).get("next_action_decision_note_path")
+                ),
+            },
+            "last_evidence_return": self._derive_last_evidence_return(
+                topic_state=topic_state,
+                validation_contract=validation_contract,
+            ),
+            "active_human_need": {
+                "status": "none",
+                "kind": "none",
+                "path": None,
+                "summary": "No active human checkpoint is currently blocking the bounded loop.",
+            },
+            "blocker_summary": [],
+            "next_bounded_action": {
+                "status": "selected" if selected_pending_action else "missing",
+                "action_id": str((selected_pending_action or {}).get("action_id") or "") or None,
+                "action_type": str((selected_pending_action or {}).get("action_type") or "") or None,
+                "summary": str((selected_pending_action or {}).get("summary") or "") or "No bounded action is currently selected.",
+                "auto_runnable": bool((selected_pending_action or {}).get("auto_runnable")),
+            },
+            "updated_at": answered_at,
+        }
+        topic_state_path = runtime_root / "topic_state.json"
+        if topic_state_path.exists() and topic_state:
+            updated_topic_state = dict(topic_state)
+            updated_topic_state["status_explainability"] = topic_status_explainability
+            write_json(topic_state_path, updated_topic_state)
+        self._refresh_operator_console_checkpoint_section(
+            topic_slug=topic_slug,
+            operator_checkpoint=payload,
+            topic_status_explainability=topic_status_explainability,
+        )
+        return {
+            **result,
+            "operator_checkpoint": payload,
+            "topic_state_explainability": topic_status_explainability,
+        }
+
+    def _derive_last_evidence_return(
+        self,
+        *,
+        topic_state: dict[str, Any],
+        validation_contract: dict[str, Any],
+    ) -> dict[str, Any]:
+        pointers = topic_state.get("pointers") or {}
+        returned_result_path = self._artifact_path_on_disk(pointers.get("returned_execution_result_path"))
+        if returned_result_path and returned_result_path.exists():
+            returned_result = read_json(returned_result_path) or {}
+            recorded_at = str(
+                returned_result.get("updated_at")
+                or returned_result.get("returned_at")
+                or returned_result.get("completed_at")
+                or ""
+            ).strip()
+            summary = str(
+                returned_result.get("summary")
+                or returned_result.get("what_actually_ran")
+                or returned_result.get("what_was_attempted")
+                or "A returned execution result is present but did not include a richer summary."
+            ).strip()
+            return {
+                "status": "present",
+                "kind": "returned_execution_result",
+                "path": self._relativize(returned_result_path),
+                "record_id": str(returned_result.get("result_id") or ""),
+                "recorded_at": recorded_at,
+                "summary": summary,
+            }
+
+        feedback_status_path = self._artifact_path_on_disk(pointers.get("feedback_status_path"))
+        if feedback_status_path and feedback_status_path.exists():
+            feedback_status = read_json(feedback_status_path) or {}
+            return {
+                "status": "present",
+                "kind": "feedback_status",
+                "path": self._relativize(feedback_status_path),
+                "record_id": str(
+                    feedback_status.get("last_result_id") or feedback_status.get("last_closed_loop_decision_id") or ""
+                ),
+                "recorded_at": self._coalesce_string(feedback_status.get("last_updated"), ""),
+                "summary": str(feedback_status.get("summary") or "").strip()
+                or (
+                    f"Feedback stage `{feedback_status.get('stage') or '(missing)'}` "
+                    f"with candidate status `{feedback_status.get('candidate_status') or '(missing)'}`."
+                ),
+            }
+
+        executed_evidence = self._dedupe_strings(list(validation_contract.get("executed_evidence") or []))
+        if executed_evidence:
+            return {
+                "status": "present",
+                "kind": "validation_evidence",
+                "path": executed_evidence[0],
+                "record_id": "",
+                "recorded_at": "",
+                "summary": "Validation evidence artifacts are present, but no returned execution result was recorded as the latest evidence surface.",
+            }
+
+        return {
+            "status": "missing",
+            "kind": "none",
+            "path": None,
+            "record_id": "",
+            "recorded_at": "",
+            "summary": "No durable evidence-return artifact is currently recorded for this topic.",
+        }
+
+    def _derive_topic_status_explainability(
+        self,
+        *,
+        topic_slug: str,
+        topic_state: dict[str, Any],
+        interaction_state: dict[str, Any],
+        selected_pending_action: dict[str, Any] | None,
+        idea_packet: dict[str, Any],
+        operator_checkpoint: dict[str, Any],
+        open_gap_summary: dict[str, Any],
+        validation_contract: dict[str, Any],
+    ) -> dict[str, Any]:
+        decision_surface = interaction_state.get("decision_surface") or {}
+        queue_surface = interaction_state.get("action_queue_surface") or {}
+        pointers = topic_state.get("pointers") or {}
+        selected_action_summary = str((selected_pending_action or {}).get("summary") or "").strip()
+        selected_action_type = str((selected_pending_action or {}).get("action_type") or "").strip()
+        selected_action_id = str((selected_pending_action or {}).get("action_id") or "").strip()
+        selected_action_auto_runnable = bool((selected_pending_action or {}).get("auto_runnable"))
+        current_route_choice = {
+            "resume_stage": str(topic_state.get("resume_stage") or ""),
+            "decision_source": str(decision_surface.get("decision_source") or ""),
+            "queue_source": str(queue_surface.get("queue_source") or ""),
+            "selected_action_id": selected_action_id or None,
+            "selected_action_type": selected_action_type or None,
+            "selected_action_summary": selected_action_summary or None,
+            "selected_action_auto_runnable": selected_action_auto_runnable,
+            "selected_validation_route_path": self._normalize_artifact_path(
+                pointers.get("selected_validation_route_path")
+            ),
+            "next_action_decision_note_path": self._normalize_artifact_path(
+                pointers.get("next_action_decision_note_path")
+                or decision_surface.get("next_action_decision_note_path")
+            ),
+        }
+        last_evidence_return = self._derive_last_evidence_return(
+            topic_state=topic_state,
+            validation_contract=validation_contract,
+        )
+
+        active_human_need: dict[str, Any]
+        blocker_summary: list[str]
+        if str(operator_checkpoint.get("status") or "").strip() == "requested":
+            blocker_summary = self._dedupe_strings(list(operator_checkpoint.get("blocker_summary") or []))
+            active_human_need = {
+                "status": "requested",
+                "kind": str(operator_checkpoint.get("checkpoint_kind") or ""),
+                "path": self._normalize_artifact_path(operator_checkpoint.get("note_path")),
+                "summary": str(operator_checkpoint.get("question") or ""),
+            }
+            why_this_topic_is_here = (
+                (blocker_summary[0] if blocker_summary else "")
+                or str(operator_checkpoint.get("question") or "").strip()
+                or "AITP paused at an active operator checkpoint."
+            )
+        elif str(idea_packet.get("status") or "").strip() == "needs_clarification":
+            blocker_summary = self._dedupe_strings(
+                list(idea_packet.get("clarification_questions") or [])
+                or [f"Missing idea-packet fields: {', '.join(idea_packet.get('missing_fields') or []) or '(none)'}"]
+            )
+            active_human_need = {
+                "status": "requested",
+                "kind": "idea_packet_clarification",
+                "path": self._normalize_artifact_path(idea_packet.get("note_path")),
+                "summary": str(idea_packet.get("status_reason") or ""),
+            }
+            why_this_topic_is_here = (
+                (blocker_summary[0] if blocker_summary else "")
+                or str(idea_packet.get("status_reason") or "").strip()
+                or "AITP is holding at the research-intent gate."
+            )
+        else:
+            blocker_summary = self._dedupe_strings(list(open_gap_summary.get("blockers") or []))
+            active_human_need = {
+                "status": "none",
+                "kind": "none",
+                "path": None,
+                "summary": "No active human checkpoint is currently blocking the bounded loop.",
+            }
+            why_this_topic_is_here = (
+                (blocker_summary[0] if blocker_summary else "")
+                or (
+                    f"The topic is currently following `{selected_action_summary}` at stage "
+                    f"`{topic_state.get('resume_stage') or '(missing)'}`."
+                    if selected_action_summary
+                    else ""
+                )
+                or str(topic_state.get("resume_reason") or "").strip()
+                or "AITP is holding the current bounded route defined by the runtime state."
+            )
+
+        next_bounded_action = {
+            "status": "selected" if selected_action_summary else "missing",
+            "action_id": selected_action_id or None,
+            "action_type": selected_action_type or None,
+            "summary": selected_action_summary or "No bounded action is currently selected.",
+            "auto_runnable": selected_action_auto_runnable,
+        }
+        return {
+            "topic_slug": topic_slug,
+            "current_status_summary": (
+                f"Stage `{topic_state.get('resume_stage') or '(missing)'}`; "
+                f"next `{next_bounded_action['summary']}`; "
+                f"human need `{active_human_need['kind']}`; "
+                f"last evidence `{last_evidence_return['kind']}`."
+            ),
+            "why_this_topic_is_here": why_this_topic_is_here,
+            "current_route_choice": current_route_choice,
+            "last_evidence_return": last_evidence_return,
+            "active_human_need": active_human_need,
+            "blocker_summary": blocker_summary,
+            "next_bounded_action": next_bounded_action,
+            "updated_at": now_iso(),
+        }
+
     def _render_research_question_contract_markdown(self, payload: dict[str, Any]) -> str:
         lines = [
             "# Active research question contract",
@@ -944,6 +1887,57 @@ class AITPService:
             lines.append(f"- `{item}`")
         return "\n".join(lines) + "\n"
 
+    def _render_idea_packet_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            "# Idea packet",
+            "",
+            f"- Topic slug: `{payload['topic_slug']}`",
+            f"- Status: `{payload.get('status') or '(missing)'}`",
+            f"- Updated at: `{payload.get('updated_at') or '(missing)'}`",
+            f"- Updated by: `{payload.get('updated_by') or '(missing)'}`",
+            "",
+            "## Gate summary",
+            "",
+            payload.get("status_reason") or "(missing)",
+            "",
+            "## Initial idea",
+            "",
+            payload.get("initial_idea") or "(missing)",
+            "",
+            "## Novelty target",
+            "",
+            payload.get("novelty_target") or "(missing)",
+            "",
+            "## Non-goals",
+            "",
+        ]
+        for item in payload.get("non_goals") or ["(missing)"]:
+            lines.append(f"- {item}")
+        lines.extend(
+            [
+                "",
+                "## First validation route",
+                "",
+                payload.get("first_validation_route") or "(missing)",
+                "",
+                "## Initial evidence bar",
+                "",
+                payload.get("initial_evidence_bar") or "(missing)",
+                "",
+                "## Missing fields",
+                "",
+            ]
+        )
+        for item in payload.get("missing_fields") or ["(none)"]:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "## Clarification questions", ""])
+        for item in payload.get("clarification_questions") or ["(none)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Execution context signals", ""])
+        for item in payload.get("execution_context_signals") or ["(none)"]:
+            lines.append(f"- `{item}`")
+        return "\n".join(lines) + "\n"
+
     def _render_topic_dashboard_markdown(
         self,
         *,
@@ -951,6 +1945,9 @@ class AITPService:
         topic_state: dict[str, Any],
         selected_pending_action: dict[str, Any] | None,
         pending_actions: list[dict[str, Any]],
+        idea_packet: dict[str, Any],
+        operator_checkpoint: dict[str, Any],
+        topic_status_explainability: dict[str, Any],
         research_contract: dict[str, Any],
         validation_contract: dict[str, Any],
         promotion_readiness: dict[str, Any],
@@ -959,6 +1956,10 @@ class AITPService:
         lean_bridge: dict[str, Any],
     ) -> str:
         selected_action_summary = str((selected_pending_action or {}).get("summary") or "").strip() or "(none)"
+        current_route_choice = topic_status_explainability.get("current_route_choice") or {}
+        last_evidence_return = topic_status_explainability.get("last_evidence_return") or {}
+        active_human_need = topic_status_explainability.get("active_human_need") or {}
+        blocker_summary = topic_status_explainability.get("blocker_summary") or []
         lines = [
             "# Topic dashboard",
             "",
@@ -975,14 +1976,74 @@ class AITPService:
             "",
             research_contract.get("question") or "(missing)",
             "",
+            "## Why this topic is here",
+            "",
+            topic_status_explainability.get("why_this_topic_is_here") or "(missing)",
+            "",
             "## Current status",
             "",
+            f"- Idea packet: `{idea_packet.get('status') or '(missing)'}`",
+            f"- Operator checkpoint: `{operator_checkpoint.get('status') or '(missing)'}`",
             f"- Research contract: `{research_contract.get('status') or '(missing)'}`",
             f"- Validation contract: `{validation_contract.get('status') or '(missing)'}`",
             f"- Promotion readiness: `{promotion_readiness.get('status') or '(missing)'}`",
             f"- Gap status: `{open_gap_summary.get('status') or '(missing)'}`",
             f"- Topic completion: `{topic_completion.get('status') or '(missing)'}`",
             f"- Lean bridge: `{lean_bridge.get('status') or '(missing)'}`",
+            "",
+            "## Idea packet summary",
+            "",
+            f"- Gate status: `{idea_packet.get('status') or '(missing)'}`",
+            f"- First validation route: {idea_packet.get('first_validation_route') or '(missing)'}",
+            f"- Initial evidence bar: {idea_packet.get('initial_evidence_bar') or '(missing)'}",
+            f"- Missing fields: `{', '.join(idea_packet.get('missing_fields') or []) or '(none)'}`",
+            "",
+            idea_packet.get("status_reason") or "(missing)",
+            "",
+            "## Active operator checkpoint",
+            "",
+            f"- Status: `{operator_checkpoint.get('status') or '(missing)'}`",
+            f"- Kind: `{operator_checkpoint.get('checkpoint_kind') or '(none)'}`",
+            f"- Open next: `{operator_checkpoint.get('note_path') or '(missing)'}`",
+            "",
+            operator_checkpoint.get("question") or "(none)",
+            "",
+            "## Current route choice",
+            "",
+            f"- Decision source: `{current_route_choice.get('decision_source') or '(missing)'}`",
+            f"- Queue source: `{current_route_choice.get('queue_source') or '(missing)'}`",
+            f"- Selected action id: `{current_route_choice.get('selected_action_id') or '(none)'}`",
+            f"- Selected action type: `{current_route_choice.get('selected_action_type') or '(none)'}`",
+            f"- Selected action auto-runnable: `{str(bool(current_route_choice.get('selected_action_auto_runnable'))).lower()}`",
+            f"- Next-action decision note: `{current_route_choice.get('next_action_decision_note_path') or '(missing)'}`",
+            f"- Selected validation route: `{current_route_choice.get('selected_validation_route_path') or '(missing)'}`",
+            "",
+            f"{current_route_choice.get('selected_action_summary') or '(none)'}",
+            "",
+            "## Last evidence return",
+            "",
+            f"- Status: `{last_evidence_return.get('status') or '(missing)'}`",
+            f"- Kind: `{last_evidence_return.get('kind') or '(missing)'}`",
+            f"- Record id: `{last_evidence_return.get('record_id') or '(none)'}`",
+            f"- Recorded at: `{last_evidence_return.get('recorded_at') or '(unknown)'}`",
+            f"- Path: `{last_evidence_return.get('path') or '(missing)'}`",
+            "",
+            f"{last_evidence_return.get('summary') or '(none)'}",
+            "",
+            "## Active human need",
+            "",
+            f"- Status: `{active_human_need.get('status') or '(missing)'}`",
+            f"- Kind: `{active_human_need.get('kind') or '(missing)'}`",
+            f"- Path: `{active_human_need.get('path') or '(missing)'}`",
+            "",
+            f"{active_human_need.get('summary') or '(none)'}",
+            "",
+            "## Blocker summary",
+            "",
+        ]
+        for item in blocker_summary or ["(none)"]:
+            lines.append(f"- {item}")
+        lines.extend([
             "",
             "## Promotion readiness summary",
             "",
@@ -1002,7 +2063,7 @@ class AITPService:
             "",
             "## Immediate next actions",
             "",
-        ]
+        ])
         for row in pending_actions[:8] or [{"summary": "(none)"}]:
             lines.append(
                 f"- [{str(row.get('action_type') or 'unknown')}] {str(row.get('summary') or '(missing)')}"
@@ -1905,12 +2966,16 @@ class AITPService:
 
         research_paths = self._research_question_contract_paths(topic_slug)
         validation_paths = self._validation_contract_paths(topic_slug)
+        idea_packet_paths = self._idea_packet_paths(topic_slug)
+        operator_checkpoint_paths = self._operator_checkpoint_paths(topic_slug)
         dashboard_path = self._topic_dashboard_path(topic_slug)
         readiness_path = self._promotion_readiness_path(topic_slug)
         gap_map_path = self._gap_map_path(topic_slug)
 
         existing_research = read_json(research_paths["json"]) or {}
         existing_validation = read_json(validation_paths["json"]) or {}
+        existing_idea_packet = read_json(idea_packet_paths["json"]) or {}
+        existing_operator_checkpoint = read_json(operator_checkpoint_paths["json"]) or {}
 
         research_mode = str(
             resolved_topic_state.get("research_mode")
@@ -2115,11 +3180,67 @@ class AITPService:
                 artifact_defaults,
             ),
         }
+        idea_packet = self._derive_idea_packet(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+            human_request=human_request,
+            topic_state=resolved_topic_state,
+            interaction_state=resolved_interaction_state,
+            existing_idea_packet=existing_idea_packet,
+            existing_research=existing_research,
+            existing_validation=existing_validation,
+            research_contract=research_contract,
+            validation_contract=validation_contract,
+            selected_pending_action=selected_pending_action,
+        )
+        operator_checkpoint, superseded_checkpoint = self._derive_operator_checkpoint(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+            existing_checkpoint=existing_operator_checkpoint,
+            idea_packet=idea_packet,
+            research_contract=research_contract,
+            validation_contract=validation_contract,
+            promotion_gate=resolved_promotion_gate,
+            selected_pending_action=selected_pending_action,
+            decision_surface=decision_surface,
+            dashboard_path=dashboard_path,
+            idea_packet_paths=idea_packet_paths,
+            research_paths=research_paths,
+            validation_paths=validation_paths,
+        )
 
         write_json(research_paths["json"], research_contract)
         write_text(research_paths["note"], self._render_research_question_contract_markdown(research_contract))
         write_json(validation_paths["json"], validation_contract)
         write_text(validation_paths["note"], self._render_validation_contract_markdown(validation_contract))
+        write_json(idea_packet_paths["json"], idea_packet)
+        write_text(idea_packet_paths["note"], self._render_idea_packet_markdown(idea_packet))
+        operator_checkpoint_paths_written = self._write_operator_checkpoint(
+            topic_slug=topic_slug,
+            payload=operator_checkpoint,
+            superseded_payload=superseded_checkpoint,
+        )
+        operator_checkpoint_surface = {
+            **operator_checkpoint,
+            "path": self._relativize(Path(operator_checkpoint_paths_written["operator_checkpoint_path"])),
+            "note_path": self._relativize(Path(operator_checkpoint_paths_written["operator_checkpoint_note_path"])),
+            "ledger_path": self._relativize(Path(operator_checkpoint_paths_written["operator_checkpoint_ledger_path"])),
+        }
+        topic_status_explainability = self._derive_topic_status_explainability(
+            topic_slug=topic_slug,
+            topic_state=resolved_topic_state,
+            interaction_state=resolved_interaction_state,
+            selected_pending_action=selected_pending_action,
+            idea_packet=idea_packet,
+            operator_checkpoint=operator_checkpoint_surface,
+            open_gap_summary=open_gap_summary,
+            validation_contract=validation_contract,
+        )
+        topic_state_path = runtime_root / "topic_state.json"
+        if topic_state_path.exists() and resolved_topic_state:
+            resolved_topic_state = dict(resolved_topic_state)
+            resolved_topic_state["status_explainability"] = topic_status_explainability
+            write_json(topic_state_path, resolved_topic_state)
         write_text(
             dashboard_path,
             self._render_topic_dashboard_markdown(
@@ -2127,6 +3248,9 @@ class AITPService:
                 topic_state=resolved_topic_state,
                 selected_pending_action=selected_pending_action,
                 pending_actions=pending_actions,
+                idea_packet=idea_packet,
+                operator_checkpoint=operator_checkpoint_surface,
+                topic_status_explainability=topic_status_explainability,
                 research_contract=research_contract,
                 validation_contract=validation_contract,
                 promotion_readiness=promotion_readiness,
@@ -2137,11 +3261,21 @@ class AITPService:
         )
         write_text(readiness_path, self._render_promotion_readiness_markdown(promotion_readiness))
         write_text(gap_map_path, self._render_gap_map_markdown(open_gap_summary))
+        self._refresh_operator_console_checkpoint_section(
+            topic_slug=topic_slug,
+            operator_checkpoint=operator_checkpoint_surface,
+            topic_status_explainability=topic_status_explainability,
+        )
         return {
             "research_question_contract_path": str(research_paths["json"]),
             "research_question_contract_note_path": str(research_paths["note"]),
             "validation_contract_path": str(validation_paths["json"]),
             "validation_contract_note_path": str(validation_paths["note"]),
+            "idea_packet_path": str(idea_packet_paths["json"]),
+            "idea_packet_note_path": str(idea_packet_paths["note"]),
+            "operator_checkpoint_path": operator_checkpoint_paths_written["operator_checkpoint_path"],
+            "operator_checkpoint_note_path": operator_checkpoint_paths_written["operator_checkpoint_note_path"],
+            "operator_checkpoint_ledger_path": operator_checkpoint_paths_written["operator_checkpoint_ledger_path"],
             "topic_dashboard_path": str(dashboard_path),
             "promotion_readiness_path": str(readiness_path),
             "gap_map_path": str(gap_map_path),
@@ -2155,6 +3289,9 @@ class AITPService:
             "followup_gap_writeback_note_path": followup_gap_writeback_paths["followup_gap_writeback_note_path"],
             "research_question_contract": research_contract,
             "validation_contract": validation_contract,
+            "idea_packet": idea_packet,
+            "operator_checkpoint": operator_checkpoint_surface,
+            "topic_state_explainability": topic_status_explainability,
             "promotion_readiness": promotion_readiness,
             "open_gap_summary": open_gap_summary,
             "topic_completion": topic_completion,
@@ -2634,6 +3771,7 @@ class AITPService:
         skill_queries: list[str] | None = None,
         max_auto_steps: int = 4,
         research_mode: str | None = None,
+        load_profile: str | None = None,
     ) -> dict[str, Any]:
         pre_route_current_topic = read_json(self._current_topic_memory_paths()["json"]) or {}
         routing = self.route_codex_chat_request(
@@ -2654,6 +3792,7 @@ class AITPService:
             skill_queries=skill_queries,
             max_auto_steps=max_auto_steps,
             research_mode=research_mode,
+            load_profile=load_profile,
         )
         session_start = self._materialize_session_start_contract(
             task=task,
@@ -2671,6 +3810,7 @@ class AITPService:
             "run_id": payload.get("run_id"),
             "loop_state_path": payload["loop_state_path"],
             "runtime_protocol_path": payload["runtime_protocol"]["runtime_protocol_path"],
+            "load_profile": payload.get("load_profile"),
             "capability_report_path": payload["capability_audit"]["capability_report_path"],
             "trust_report_path": payload["trust_audit"]["trust_report_path"] if payload.get("trust_audit") else None,
             "current_topic_memory": payload["current_topic_memory"],
@@ -3667,8 +4807,13 @@ class AITPService:
         }
 
     def _runtime_protocol_markdown(self, payload: dict[str, Any]) -> str:
+        load_profile = str(payload.get("load_profile") or "light")
+        topic_synopsis = payload.get("topic_synopsis") or {}
+        pending_decisions = payload.get("pending_decisions") or {}
         minimal = payload.get("minimal_execution_brief") or {}
         active_research_contract = payload.get("active_research_contract") or {}
+        idea_packet = payload.get("idea_packet") or {}
+        operator_checkpoint = payload.get("operator_checkpoint") or {}
         promotion_readiness = payload.get("promotion_readiness") or {}
         open_gap_summary = payload.get("open_gap_summary") or {}
         topic_completion = payload.get("topic_completion") or {}
@@ -3690,6 +4835,25 @@ class AITPService:
             f"- Resume stage: `{payload['resume_stage'] or '(missing)'}`",
             f"- Last materialized stage: `{payload['last_materialized_stage'] or '(missing)'}`",
             f"- Research mode: `{payload['research_mode'] or '(missing)'}`",
+            f"- Load profile: `{load_profile}`",
+            "",
+            "## Topic synopsis",
+            "",
+            f"- Synopsis path: `{topic_synopsis.get('path') or '(missing)'}`",
+            f"- Lane: `{topic_synopsis.get('lane') or '(missing)'}`",
+            f"- Pending decisions: `{topic_synopsis.get('pending_decision_count') or 0}`",
+            f"- Knowledge packets: `{len(topic_synopsis.get('knowledge_packet_paths') or [])}`",
+            "",
+            f"{topic_synopsis.get('next_action_summary') or '(missing)'}",
+            "",
+            "## Pending decisions",
+            "",
+            f"- Projection path: `{pending_decisions.get('path') or '(missing)'}`",
+            f"- Pending count: `{pending_decisions.get('pending_count') or 0}`",
+            f"- Blocking count: `{pending_decisions.get('blocking_count') or 0}`",
+            f"- Latest resolved trace: `{pending_decisions.get('latest_resolved_trace_ref') or '(none)'}`",
+            "",
+            f"{pending_decisions.get('latest_resolved_summary') or '(no resolved decision trace recorded)'}",
             "",
             "## Active research contract",
             "",
@@ -3702,6 +4866,24 @@ class AITPService:
             f"- Contract note: `{active_research_contract.get('note_path') or '(missing)'}`",
             "",
             f"{active_research_contract.get('question') or '(missing)'}",
+            "",
+            "## Idea packet",
+            "",
+            f"- Status: `{idea_packet.get('status') or '(missing)'}`",
+            f"- Idea note: `{idea_packet.get('note_path') or '(missing)'}`",
+            f"- First validation route: `{idea_packet.get('first_validation_route') or '(missing)'}`",
+            f"- Initial evidence bar: `{idea_packet.get('initial_evidence_bar') or '(missing)'}`",
+            f"- Missing fields: `{', '.join(idea_packet.get('missing_fields') or []) or '(none)'}`",
+            "",
+            f"{idea_packet.get('status_reason') or '(missing)'}",
+            "",
+            "## Operator checkpoint",
+            "",
+            f"- Status: `{operator_checkpoint.get('status') or '(missing)'}`",
+            f"- Kind: `{operator_checkpoint.get('checkpoint_kind') or '(none)'}`",
+            f"- Checkpoint note: `{operator_checkpoint.get('note_path') or '(missing)'}`",
+            "",
+            f"{operator_checkpoint.get('question') or '(none)'}",
             "",
             "## Promotion readiness",
             "",
@@ -3829,6 +5011,7 @@ class AITPService:
                 "",
                 "- Keep research behavior governed by durable protocol artifacts instead of hidden Python defaults.",
                 "- Limit Python to state materialization, audits, and explicit handler execution.",
+                f"- Keep ordinary topic work in the `{load_profile}` profile unless a real trigger forces escalation.",
                 "",
                 "## What Python still does",
                 "",
@@ -3973,9 +5156,21 @@ class AITPService:
         topic_slug: str,
         updated_by: str,
         human_request: str | None = None,
+        load_profile: str | None = None,
     ) -> dict[str, str]:
         runtime_root = self._ensure_runtime_root(topic_slug)
         topic_state = read_json(runtime_root / "topic_state.json") or {}
+        resolved_load_profile, load_profile_reason = self._resolve_load_profile(
+            explicit_load_profile=load_profile,
+            human_request=human_request,
+            topic_state=topic_state,
+        )
+        topic_state = self._persist_load_profile_state(
+            topic_slug=topic_slug,
+            load_profile=resolved_load_profile,
+            reason=load_profile_reason,
+            updated_by=updated_by,
+        )
         interaction_state = read_json(runtime_root / "interaction_state.json") or {}
         promotion_gate = self._load_promotion_gate(topic_slug) or {}
         queue_rows = read_jsonl(runtime_root / "action_queue.jsonl")
@@ -4016,6 +5211,13 @@ class AITPService:
         )
         research_contract = shell_surfaces["research_question_contract"]
         validation_contract = shell_surfaces["validation_contract"]
+        idea_packet = dict(shell_surfaces["idea_packet"])
+        idea_packet["path"] = self._relativize(Path(shell_surfaces["idea_packet_path"]))
+        idea_packet["note_path"] = self._relativize(Path(shell_surfaces["idea_packet_note_path"]))
+        operator_checkpoint = dict(shell_surfaces["operator_checkpoint"])
+        operator_checkpoint["path"] = self._relativize(Path(shell_surfaces["operator_checkpoint_path"]))
+        operator_checkpoint["note_path"] = self._relativize(Path(shell_surfaces["operator_checkpoint_note_path"]))
+        operator_checkpoint["ledger_path"] = self._relativize(Path(shell_surfaces["operator_checkpoint_ledger_path"]))
         promotion_readiness = dict(shell_surfaces["promotion_readiness"])
         promotion_readiness["path"] = self._relativize(Path(shell_surfaces["promotion_readiness_path"]))
         open_gap_summary = dict(shell_surfaces["open_gap_summary"])
@@ -4036,6 +5238,104 @@ class AITPService:
             "path": self._relativize(Path(shell_surfaces["research_question_contract_path"])),
             "note_path": self._relativize(Path(shell_surfaces["research_question_contract_note_path"])),
         }
+        latest_run_id = str(topic_state.get("latest_run_id") or "").strip()
+        lane = self._lane_for_modes(
+            template_mode=active_research_contract.get("template_mode"),
+            research_mode=active_research_contract.get("research_mode"),
+        )
+        candidate_rows = self._candidate_rows_for_run(topic_slug, latest_run_id)
+        knowledge_packets = build_knowledge_packets_from_candidates(
+            topic_slug,
+            candidate_rows,
+            lane=lane,
+            updated_at=now_iso(),
+            updated_by=updated_by,
+            kernel_root=self.kernel_root,
+        )
+        knowledge_packet_paths = [
+            self._relativize(Path(item["path"]))
+            for item in knowledge_packets
+        ]
+        all_decisions = get_all_decision_points(topic_slug, kernel_root=self.kernel_root)
+        pending_decisions = list_pending_decision_points(topic_slug, kernel_root=self.kernel_root)
+        decision_traces = get_decision_traces(topic_slug, kernel_root=self.kernel_root)
+        latest_resolved_trace = decision_traces[-1] if decision_traces else None
+        pending_decisions_payload = {
+            "topic_slug": topic_slug,
+            "pending_count": len(pending_decisions),
+            "blocking_count": sum(1 for row in pending_decisions if row.get("blocking")),
+            "unresolved_ids": [str(row.get("id") or "") for row in pending_decisions if str(row.get("id") or "").strip()],
+            "latest_resolved_trace_ref": str((latest_resolved_trace or {}).get("id") or ""),
+            "latest_resolved_summary": str((latest_resolved_trace or {}).get("decision_summary") or ""),
+            "updated_at": now_iso(),
+            "updated_by": updated_by,
+        }
+        pending_decisions_written = write_pending_decisions_projection(
+            topic_slug,
+            pending_decisions_payload,
+            kernel_root=self.kernel_root,
+        )
+        promotion_readiness_written = write_promotion_readiness_projection(
+            topic_slug,
+            promotion_readiness,
+            kernel_root=self.kernel_root,
+        )
+        topic_synopsis_payload = {
+            "id": f"topic_synopsis:{topic_slug}",
+            "topic_slug": topic_slug,
+            "title": str(active_research_contract.get("title") or self._topic_display_title(topic_slug)),
+            "question": str(active_research_contract.get("question") or ""),
+            "lane": lane,
+            "load_profile": resolved_load_profile,
+            "status": str(active_research_contract.get("status") or "active"),
+            "human_request": human_request or str(interaction_state.get("human_request") or ""),
+            "assumptions": self._dedupe_strings(list(research_contract.get("assumptions") or [])),
+            "next_action_summary": str((selected_pending_action or {}).get("summary") or "No bounded action is currently selected."),
+            "open_gap_summary": str(open_gap_summary.get("summary") or ""),
+            "pending_decision_count": len(pending_decisions),
+            "knowledge_packet_paths": knowledge_packet_paths,
+            "updated_at": now_iso(),
+            "updated_by": updated_by,
+        }
+        topic_synopsis_written = write_topic_synopsis(
+            topic_slug,
+            topic_synopsis_payload,
+            kernel_root=self.kernel_root,
+        )
+        promotion_trace_payload = {
+            "id": f"promotion_trace:{slugify(topic_slug)}",
+            "topic_slug": topic_slug,
+            "trace_scope": "topic_latest",
+            "status": str(promotion_readiness.get("status") or "not_ready"),
+            "gate_status": str(promotion_readiness.get("gate_status") or ""),
+            "human_gate_status": str(promotion_gate.get("status") or "not_requested"),
+            "summary": str(promotion_readiness.get("summary") or ""),
+            "candidate_refs": self._dedupe_strings(
+                list(promotion_readiness.get("ready_candidate_ids") or [])
+                + [str(row.get("candidate_id") or "") for row in candidate_rows if str(row.get("candidate_id") or "").strip()]
+            ),
+            "packet_refs": knowledge_packet_paths,
+            "decision_trace_refs": [str(row.get("id") or "") for row in decision_traces[-5:] if str(row.get("id") or "").strip()],
+            "audit_refs": self._dedupe_strings(
+                [
+                    self._relativize(Path(shell_surfaces["topic_completion_note_path"])),
+                    self._relativize(Path(shell_surfaces["gap_map_path"])),
+                    self._relativize(Path(shell_surfaces["validation_contract_note_path"])),
+                ]
+            ),
+            "backend_target": {
+                "backend_id": str(promotion_gate.get("backend_id") or ""),
+                "target_backend_root": str(promotion_gate.get("target_backend_root") or ""),
+                "canonical_layer": str(promotion_gate.get("canonical_layer") or "L2"),
+            },
+            "updated_at": now_iso(),
+            "updated_by": updated_by,
+        }
+        promotion_trace_written = write_promotion_trace(
+            topic_slug,
+            promotion_trace_payload,
+            kernel_root=self.kernel_root,
+        )
 
         runtime_protocol_note = self._relativize(runtime_root / "runtime_protocol.generated.md")
         research_guardrails_note = self._relativize(self.kernel_root / "RESEARCH_EXECUTION_GUARDRAILS.md")
@@ -4049,69 +5349,96 @@ class AITPService:
             str(active_research_contract.get("research_mode") or "").strip() == "formal_derivation"
             or str(active_research_contract.get("template_mode") or "").strip() == "formal_theory"
         )
-        must_read_now: list[dict[str, str]] = [
-            {
-                "path": runtime_protocol_note,
-                "reason": "Top-level execution contract for this topic. Read this file first.",
-            }
-        ]
-        must_read_now.append(
-            {
-                "path": self._relativize(Path(shell_surfaces["research_question_contract_note_path"])),
-                "reason": "Active research question, scope, deliverables, and anti-proxy rules for this topic.",
-            }
-        )
-        must_read_now.append(
-            {
-                "path": self._relativize(Path(shell_surfaces["topic_dashboard_path"])),
-                "reason": "Operator-facing topic snapshot that condenses the active question, next action, readiness, and gaps.",
-            }
-        )
-        must_read_now.append(
-            {
-                "path": self._relativize(Path(shell_surfaces["topic_completion_note_path"])),
-                "reason": "Topic-completion gate over regression support, follow-up return debt, and blocker honesty.",
-            }
-        )
-        must_read_now.append(
-            {
-                "path": self._relativize(Path(shell_surfaces["validation_contract_note_path"])),
-                "reason": "Current validation route, required checks, and failure modes for this topic.",
-            }
-        )
-        innovation_direction_path = str((topic_state.get("pointers") or {}).get("innovation_direction_path") or "")
-        if innovation_direction_path:
+        must_read_now: list[dict[str, str]] = []
+        if resolved_load_profile == "light":
+            must_read_now.extend(
+                [
+                    {
+                        "path": self._relativize(runtime_root / "topic_state.json"),
+                        "reason": "Minimal runtime state for the current topic, including the active load profile.",
+                    },
+                    {
+                        "path": self._relativize(Path(shell_surfaces["research_question_contract_note_path"])),
+                        "reason": "Active research question, scope, and deliverables for ordinary topic work.",
+                    },
+                    {
+                        "path": str((topic_state.get("pointers") or {}).get("control_note_path") or self._relativize(runtime_root / "control_note.md")),
+                        "reason": "Current human steering note for this topic.",
+                    },
+                    {
+                        "path": self._relativize(runtime_root / "operator_console.md"),
+                        "reason": "Operator-facing topic state, pending actions, and unresolved checkpoints.",
+                    },
+                ]
+            )
+        else:
+            if str(operator_checkpoint.get("status") or "").strip() == "requested":
+                must_read_now.append(
+                    {
+                        "path": str(operator_checkpoint.get("note_path") or ""),
+                        "reason": "Active operator checkpoint. Resolve this human-decision surface before deeper execution.",
+                    }
+                )
+            if str(idea_packet.get("status") or "").strip() == "needs_clarification":
+                must_read_now.append(
+                    {
+                        "path": str(idea_packet.get("note_path") or ""),
+                        "reason": "Clarify the idea packet before substantive execution. This is the active intent gate for the topic.",
+                    }
+                )
+            must_read_now.extend(
+                [
+                    {
+                        "path": self._relativize(Path(shell_surfaces["research_question_contract_note_path"])),
+                        "reason": "Active research question, scope, deliverables, and anti-proxy rules for this topic.",
+                    },
+                    {
+                        "path": self._relativize(Path(shell_surfaces["topic_dashboard_path"])),
+                        "reason": "Operator-facing topic snapshot that condenses the active question, next action, readiness, and gaps.",
+                    },
+                    {
+                        "path": self._relativize(Path(shell_surfaces["topic_completion_note_path"])),
+                        "reason": "Topic-completion gate over regression support, follow-up return debt, and blocker honesty.",
+                    },
+                    {
+                        "path": self._relativize(Path(shell_surfaces["validation_contract_note_path"])),
+                        "reason": "Current validation route, required checks, and failure modes for this topic.",
+                    },
+                ]
+            )
+            innovation_direction_path = str((topic_state.get("pointers") or {}).get("innovation_direction_path") or "")
+            if innovation_direction_path:
+                must_read_now.append(
+                    {
+                        "path": innovation_direction_path,
+                        "reason": "Current human innovation target, steering decision, and novelty boundary for this topic.",
+                    }
+                )
             must_read_now.append(
                 {
-                    "path": innovation_direction_path,
-                    "reason": "Current human innovation target, steering decision, and novelty boundary for this topic.",
+                    "path": research_guardrails_note,
+                    "reason": "Global research-contract, bounded-action, and anti-proxy validation guardrails for non-trivial work.",
                 }
             )
-        must_read_now.append(
-            {
-                "path": research_guardrails_note,
-                "reason": "Global research-contract, bounded-action, and anti-proxy validation guardrails for non-trivial work.",
-            }
-        )
-        for candidate, reason in (
-            (
-                "agent_brief.md",
-                "Stage-specific execution brief with the current bounded action and escalation cues.",
-            ),
-            (
-                "operator_console.md",
-                "Operator-visible execution state, pending actions, and current queue/decision status.",
-            ),
-            (
-                "conformance_report.md",
-                "Check whether current work is still counting as AITP before deeper execution.",
-            ),
-        ):
-            candidate_path = runtime_root / candidate
-            if candidate_path.exists():
-                must_read_now.append(
-                    {"path": self._relativize(candidate_path), "reason": reason}
-                )
+            for candidate, reason in (
+                (
+                    "agent_brief.md",
+                    "Stage-specific execution brief with the current bounded action and escalation cues.",
+                ),
+                (
+                    "operator_console.md",
+                    "Operator-visible execution state, pending actions, and current queue/decision status.",
+                ),
+                (
+                    "conformance_report.md",
+                    "Check whether current work is still counting as AITP before deeper execution.",
+                ),
+            ):
+                candidate_path = runtime_root / candidate
+                if candidate_path.exists():
+                    must_read_now.append(
+                        {"path": self._relativize(candidate_path), "reason": reason}
+                    )
 
         may_defer_until_trigger: list[dict[str, str]] = []
         for candidate, trigger, reason in (
@@ -4278,6 +5605,16 @@ class AITPService:
             immediate_allowed_work.append(
                 "Treat the currently selected action as manual follow-up unless a returned execution artifact proves otherwise."
             )
+        if str(operator_checkpoint.get("status") or "").strip() == "requested":
+            immediate_allowed_work = [
+                f"Resolve `{operator_checkpoint.get('note_path') or '(missing)'}` before deeper execution.",
+                "Limit the next step to answering the active operator checkpoint and syncing the affected durable artifacts.",
+            ]
+        if str(idea_packet.get("status") or "").strip() == "needs_clarification":
+            immediate_allowed_work = [
+                f"Clarify `{idea_packet.get('note_path') or '(missing)'}` and then synchronize the research and validation contracts.",
+                "Limit the next step to intent clarification, scope tightening, and first-lane selection.",
+            ]
 
         immediate_blocked_work = [
             "Do not promote or auto-promote material into Layer 2 unless the promotion trigger fires and the gate artifacts allow it.",
@@ -4285,6 +5622,14 @@ class AITPService:
             "Do not treat consultation as promotion or claim heavy execution happened without the corresponding returned result artifacts.",
             "Do not substitute polished prose, memory agreement, or missing execution evidence for the declared acceptance checks.",
         ]
+        if str(idea_packet.get("status") or "").strip() == "needs_clarification":
+            immediate_blocked_work.append(
+                "Do not treat literature intake, benchmark execution, derivation work, or queue advancement as started until the idea packet is clarified."
+            )
+        if str(operator_checkpoint.get("status") or "").strip() == "requested":
+            immediate_blocked_work.append(
+                "Do not continue deeper research execution until the active operator checkpoint is answered or cancelled."
+            )
 
         control_note_status = str(decision_surface.get("control_note_status") or "missing")
         decision_contract_status = str(decision_surface.get("decision_contract_status") or "missing")
@@ -4514,6 +5859,14 @@ class AITPService:
             "Do not collapse one compiled section packet into a whole-topic Lean completion claim.",
             "Do not treat live Lean community discussion as theorem truth, and do not cite physlib without recording the consulted commit, path, or declaration surface.",
         ]
+        if str(idea_packet.get("status") or "").strip() == "needs_clarification":
+            active_hard_constraints.append(
+                f"Do not continue substantive execution until `{idea_packet.get('note_path') or '(missing)'}` resolves the missing intent fields."
+            )
+        if str(operator_checkpoint.get("status") or "").strip() == "requested":
+            active_hard_constraints.append(
+                f"Do not continue deeper execution until `{operator_checkpoint.get('note_path') or '(missing)'}` is answered or cancelled."
+            )
 
         editable_surfaces: list[dict[str, str]] = []
         for surface in interaction_state.get("human_edit_surfaces") or []:
@@ -4529,6 +5882,16 @@ class AITPService:
             )
         editable_surfaces.extend(
             [
+                {
+                    "surface": "operator_checkpoint",
+                    "path": self._relativize(Path(shell_surfaces["operator_checkpoint_note_path"])),
+                    "role": "Answer the current human-checkpoint question or mark how the checkpoint was resolved.",
+                },
+                {
+                    "surface": "idea_packet",
+                    "path": self._relativize(Path(shell_surfaces["idea_packet_note_path"])),
+                    "role": "Edit the initial idea, novelty target, first validation route, and evidence bar before deeper execution.",
+                },
                 {
                     "surface": "research_question_contract",
                     "path": self._relativize(Path(shell_surfaces["research_question_contract_note_path"])),
@@ -4592,7 +5955,18 @@ class AITPService:
             "resume_stage": topic_state.get("resume_stage"),
             "last_materialized_stage": topic_state.get("last_materialized_stage"),
             "research_mode": topic_state.get("research_mode") or active_research_contract.get("research_mode"),
+            "load_profile": resolved_load_profile,
+            "topic_synopsis": {
+                **topic_synopsis_written["topic_synopsis"],
+                "path": self._relativize(Path(topic_synopsis_written["path"])),
+            },
+            "pending_decisions": {
+                **pending_decisions_written["pending_decisions"],
+                "path": self._relativize(Path(pending_decisions_written["path"])),
+            },
             "active_research_contract": active_research_contract,
+            "idea_packet": idea_packet,
+            "operator_checkpoint": operator_checkpoint,
             "promotion_readiness": promotion_readiness,
             "open_gap_summary": open_gap_summary,
             "topic_completion": topic_completion,
@@ -4605,7 +5979,7 @@ class AITPService:
                 "decision_source": decision_surface.get("decision_source"),
                 "queue_source": queue_surface.get("queue_source")
                 or ("declared_contract" if queue_surface.get("declared_contract_path") else "heuristic"),
-                "open_next": must_read_now[1]["path"] if len(must_read_now) > 1 else runtime_protocol_note,
+                "open_next": must_read_now[0]["path"] if must_read_now else runtime_protocol_note,
                 "immediate_allowed_work": immediate_allowed_work,
                 "immediate_blocked_work": immediate_blocked_work,
             },
@@ -6016,7 +7390,12 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
             "resume_stage": str(topic_state.get("resume_stage") or ""),
             "runtime_root": str(self._runtime_root(topic_slug)),
             "human_request": str(human_request or "").strip(),
-            "summary": str(topic_state.get("summary") or topic_state.get("resume_reason") or ""),
+            "summary": str(
+                ((topic_state.get("status_explainability") or {}).get("current_status_summary"))
+                or topic_state.get("summary")
+                or topic_state.get("resume_reason")
+                or ""
+            ),
         }
         paths = self._current_topic_memory_paths()
         write_json(paths["json"], payload)
@@ -6167,12 +7546,22 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
         control_note_path = self._normalize_artifact_path(
             steering_artifacts.get("control_note_path") or pointers.get("control_note_path")
         )
+        operator_checkpoint_path = self._normalize_artifact_path(
+            (runtime_bundle.get("operator_checkpoint") or {}).get("path")
+        )
+        operator_checkpoint_note_path = self._normalize_artifact_path(
+            (runtime_bundle.get("operator_checkpoint") or {}).get("note_path")
+        )
+        idea_packet_path = self._normalize_artifact_path((runtime_bundle.get("idea_packet") or {}).get("path"))
+        idea_packet_note_path = self._normalize_artifact_path((runtime_bundle.get("idea_packet") or {}).get("note_path"))
         innovation_direction_path = self._normalize_artifact_path(
             steering_artifacts.get("innovation_direction_path") or pointers.get("innovation_direction_path")
         )
         innovation_decisions_path = self._normalize_artifact_path(
             steering_artifacts.get("innovation_decisions_path") or pointers.get("innovation_decisions_path")
         )
+        operator_checkpoint_status = str(((runtime_bundle.get("operator_checkpoint") or {}).get("status") or "")).strip()
+        idea_packet_status = str(((runtime_bundle.get("idea_packet") or {}).get("status") or "")).strip()
 
         if steering_artifacts.get("detected"):
             _append_read(
@@ -6186,6 +7575,16 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
             _append_read(
                 innovation_decisions_path,
                 "Durable steering history for this topic. Open when the redirect history matters.",
+            )
+        if idea_packet_status == "needs_clarification":
+            _append_read(
+                idea_packet_note_path,
+                "Resolve the active idea-packet clarification gate before substantive execution continues.",
+            )
+        if operator_checkpoint_status == "requested":
+            _append_read(
+                operator_checkpoint_note_path,
+                "Resolve the active operator checkpoint before deeper execution continues.",
             )
 
         selected_action = (runtime_bundle.get("minimal_execution_brief") or {})
@@ -6205,10 +7604,6 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
                 "result": "Session-start defines the immediate startup order; the runtime bundle defines the topic contract.",
             },
             {
-                "step": "Finish the files listed under `Must read now` before touching the queue or giving a substantial research answer.",
-                "result": "Current topic state, question scope, validation route, and guardrails are loaded in a fixed order.",
-            },
-            {
                 "step": "If steering artifacts were auto-updated from the human request, treat `innovation_direction.md` and `control_note.md` as authoritative before continuing.",
                 "result": "Natural-language steering becomes durable protocol state before execution.",
             },
@@ -6217,6 +7612,29 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
                 "result": selected_action_payload["summary"] or "Continue the bounded topic lane declared in the runtime bundle.",
             },
         ]
+        if idea_packet_status == "needs_clarification":
+            linear_flow.insert(
+                2,
+                {
+                    "step": "Open `idea_packet.md` and answer its clarification questions before touching the queue or claiming substantive execution.",
+                    "result": "AITP blocks deeper execution until the initial intent, validation route, and evidence bar are explicit.",
+                },
+            )
+        if operator_checkpoint_status == "requested":
+            linear_flow.insert(
+                2,
+                {
+                    "step": "Open `operator_checkpoint.active.md` and resolve the active human-checkpoint question before the bounded loop continues.",
+                    "result": "AITP stops at a durable operator checkpoint instead of silently guessing the human decision.",
+                },
+            )
+        linear_flow.insert(
+            2 + int(operator_checkpoint_status == "requested") + int(idea_packet_status == "needs_clarification"),
+            {
+                "step": "Finish the files listed under `Must read now` before touching the queue or giving a substantial research answer.",
+                "result": "Current topic state, question scope, validation route, and guardrails are loaded in a fixed order.",
+            },
+        )
 
         hard_stops = [
             "Do not skip session-start and jump straight into free-form explanation, browsing, or file editing for AITP-governed research work.",
@@ -6225,6 +7643,14 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
             "Do not replace durable current-topic routing with a fresh topic guess when session-start already resolved the topic.",
             "Do not ignore `innovation_direction.md` or `control_note.md` after a steering request changed direction, paused work, or opened a branch.",
         ]
+        if idea_packet_status == "needs_clarification":
+            hard_stops.append(
+                "Do not continue substantive execution until `idea_packet.md` resolves the missing intent fields and clarification questions."
+            )
+        if operator_checkpoint_status == "requested":
+            hard_stops.append(
+                "Do not continue deeper execution until `operator_checkpoint.active.md` is answered or cancelled."
+            )
         if steering_artifacts.get("detected"):
             hard_stops.append(
                 "This request carried human steering. `innovation_direction.md` and `control_note.md` must be read before deeper execution."
@@ -6264,6 +7690,10 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
                 "current_topic_note_path": self._normalize_artifact_path(
                     (loop_payload.get("current_topic_memory") or {}).get("current_topic_note_path")
                 ),
+                "operator_checkpoint_path": operator_checkpoint_path,
+                "operator_checkpoint_note_path": operator_checkpoint_note_path,
+                "idea_packet_path": idea_packet_path,
+                "idea_packet_note_path": idea_packet_note_path,
                 "innovation_direction_path": innovation_direction_path,
                 "innovation_decisions_path": innovation_decisions_path,
                 "control_note_path": control_note_path,
@@ -6369,6 +7799,33 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
         )
         return payload
 
+    def refresh_runtime_context(
+        self,
+        *,
+        topic_slug: str,
+        updated_by: str = "aitp-cli",
+        human_request: str | None = None,
+        load_profile: str | None = None,
+    ) -> dict[str, Any]:
+        protocol_paths = self._materialize_runtime_protocol_bundle(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+            human_request=human_request,
+            load_profile=load_profile,
+        )
+        bundle = read_json(Path(protocol_paths["runtime_protocol_path"])) or {}
+        topic_state = read_json(self._runtime_root(topic_slug) / "topic_state.json") or {}
+        return {
+            "topic_slug": topic_slug,
+            "load_profile": str(bundle.get("load_profile") or topic_state.get("load_profile") or "light"),
+            "runtime_protocol_path": protocol_paths["runtime_protocol_path"],
+            "runtime_protocol_note_path": protocol_paths["runtime_protocol_note_path"],
+            "topic_state": topic_state,
+            "topic_synopsis": bundle.get("topic_synopsis") or {},
+            "pending_decisions": bundle.get("pending_decisions") or {},
+            "promotion_readiness": bundle.get("promotion_readiness") or {},
+        }
+
     def topic_status(
         self,
         *,
@@ -6378,20 +7835,29 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
         protocol_paths = self._materialize_runtime_protocol_bundle(
             topic_slug=topic_slug,
             updated_by=updated_by,
+            load_profile=None,
         )
         bundle = read_json(Path(protocol_paths["runtime_protocol_path"])) or {}
+        topic_state = read_json(self._runtime_root(topic_slug) / "topic_state.json") or {}
         minimal = bundle.get("minimal_execution_brief") or {}
         return {
             "topic_slug": topic_slug,
             "title": str(((bundle.get("active_research_contract") or {}).get("title") or self._topic_display_title(topic_slug))),
             "current_stage": bundle.get("resume_stage"),
             "research_mode": bundle.get("research_mode"),
+            "load_profile": bundle.get("load_profile") or topic_state.get("load_profile"),
             "selected_action_id": minimal.get("selected_action_id"),
             "selected_action_type": minimal.get("selected_action_type"),
             "selected_action_summary": minimal.get("selected_action_summary"),
             "runtime_protocol_path": protocol_paths["runtime_protocol_path"],
             "runtime_protocol_note_path": protocol_paths["runtime_protocol_note_path"],
+            "topic_state": topic_state,
+            "topic_state_explainability": (topic_state.get("status_explainability") or {}),
+            "topic_synopsis": bundle.get("topic_synopsis") or {},
+            "pending_decisions": bundle.get("pending_decisions") or {},
             "active_research_contract": bundle.get("active_research_contract") or {},
+            "idea_packet": bundle.get("idea_packet") or {},
+            "operator_checkpoint": bundle.get("operator_checkpoint") or {},
             "promotion_readiness": bundle.get("promotion_readiness") or {},
             "open_gap_summary": bundle.get("open_gap_summary") or {},
             "topic_completion": bundle.get("topic_completion") or {},
@@ -6413,6 +7879,7 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
         minimal = bundle.get("minimal_execution_brief") or {}
         return {
             "topic_slug": topic_slug,
+            "load_profile": bundle.get("load_profile"),
             "selected_action_id": minimal.get("selected_action_id"),
             "selected_action_type": minimal.get("selected_action_type"),
             "selected_action_summary": minimal.get("selected_action_summary"),
@@ -6420,6 +7887,8 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
             "open_next": minimal.get("open_next"),
             "must_read_now": bundle.get("must_read_now") or [],
             "escalation_triggers": bundle.get("escalation_triggers") or [],
+            "topic_synopsis": bundle.get("topic_synopsis") or {},
+            "pending_decisions": bundle.get("pending_decisions") or {},
             "open_gap_summary": bundle.get("open_gap_summary") or {},
             "topic_completion": bundle.get("topic_completion") or {},
             "runtime_protocol_note_path": protocol_paths["runtime_protocol_note_path"],
@@ -6438,6 +7907,7 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
         skill_queries: list[str] | None = None,
         human_request: str | None = None,
         max_auto_steps: int = 1,
+        load_profile: str | None = None,
     ) -> dict[str, Any]:
         research_mode = self._template_mode_to_research_mode(mode) if mode else None
         if max_auto_steps <= 0:
@@ -6458,6 +7928,12 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
                 source="work",
                 human_request=human_request or question,
             )
+            payload["runtime_context"] = self.refresh_runtime_context(
+                topic_slug=payload["topic_slug"],
+                updated_by=updated_by,
+                human_request=human_request or question,
+                load_profile=load_profile,
+            )
             return payload
         return self.run_topic_loop(
             topic=topic,
@@ -6470,6 +7946,7 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
             skill_queries=skill_queries,
             max_auto_steps=max_auto_steps,
             research_mode=research_mode,
+            load_profile=load_profile,
         )
 
     def prepare_verification(
@@ -6953,6 +8430,11 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
                 "research_question_contract_note": str(self._research_question_contract_paths(resolved_topic_slug)["note"]),
                 "validation_contract": str(self._validation_contract_paths(resolved_topic_slug)["json"]),
                 "validation_contract_note": str(self._validation_contract_paths(resolved_topic_slug)["note"]),
+                "idea_packet": str(self._idea_packet_paths(resolved_topic_slug)["json"]),
+                "idea_packet_note": str(self._idea_packet_paths(resolved_topic_slug)["note"]),
+                "operator_checkpoint": str(self._operator_checkpoint_paths(resolved_topic_slug)["json"]),
+                "operator_checkpoint_note": str(self._operator_checkpoint_paths(resolved_topic_slug)["note"]),
+                "operator_checkpoint_ledger": str(self._operator_checkpoint_paths(resolved_topic_slug)["ledger"]),
                 "topic_dashboard": str(self._topic_dashboard_path(resolved_topic_slug)),
                 "promotion_readiness": str(self._promotion_readiness_path(resolved_topic_slug)),
                 "gap_map": str(self._gap_map_path(resolved_topic_slug)),
@@ -8030,6 +9512,18 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
             "conformance_report.md",
             "runtime_protocol.generated.json",
             "runtime_protocol.generated.md",
+            "research_question.contract.json",
+            "research_question.contract.md",
+            "validation_contract.active.json",
+            "validation_contract.active.md",
+            "idea_packet.json",
+            "idea_packet.md",
+            "operator_checkpoint.active.json",
+            "operator_checkpoint.active.md",
+            "operator_checkpoints.jsonl",
+            "topic_dashboard.md",
+            "promotion_readiness.md",
+            "gap_map.md",
             "promotion_gate.json",
             "promotion_gate.md",
             "skill_discovery.json",
@@ -8988,6 +10482,7 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
         skill_queries: list[str] | None = None,
         max_auto_steps: int = 4,
         research_mode: str | None = None,
+        load_profile: str | None = None,
     ) -> dict[str, Any]:
         if not topic_slug and not topic:
             raise ValueError("Provide topic_slug or topic.")
@@ -9118,6 +10613,19 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
             "steering": steering_artifacts,
             "current_topic_memory": current_topic_memory,
         }
+        resolved_load_profile, load_profile_reason = self._resolve_load_profile(
+            explicit_load_profile=load_profile,
+            human_request=human_request,
+            topic_state=bootstrap.get("topic_state"),
+        )
+        self._persist_load_profile_state(
+            topic_slug=resolved_topic_slug,
+            load_profile=resolved_load_profile,
+            reason=load_profile_reason,
+            updated_by=updated_by,
+        )
+        loop_state["load_profile"] = resolved_load_profile
+        loop_state["load_profile_reason"] = load_profile_reason
         loop_state_path = self._loop_state_path(resolved_topic_slug)
         loop_history_path = self._loop_history_path(resolved_topic_slug)
         write_json(loop_state_path, loop_state)
@@ -9128,10 +10636,12 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
             topic_slug=resolved_topic_slug,
             updated_by=updated_by,
             human_request=human_request,
+            load_profile=resolved_load_profile,
         )
         return {
             "topic_slug": resolved_topic_slug,
             "run_id": resolved_run_id,
+            "load_profile": resolved_load_profile,
             "bootstrap": bootstrap,
             "entry_audit": entry_audit,
             "auto_actions": auto_actions,
@@ -9181,12 +10691,13 @@ description: Route Codex research work through the AITP kernel. Use when the req
 2. Let the installed bootstrap route natural-language research work into AITP first. Use `aitp session-start "<task>"` only as the manual fallback.
 3. Once the runtime bundle exists, read `runtime_protocol.generated.md`, then the files listed under `Must read now`.
 4. Treat `session_start.generated.md` as a runtime audit artifact when it exists, not as a separate user ritual.
-5. Keep `innovation_direction.md` and `control_note.md` current before touching the queue.
-6. Expand promotion, consultation, capability, or queue details only when the named trigger in the runtime bundle fires.
-7. Register reusable operations with `aitp operation-init ...`.
-8. For human-reviewed `L2`, use `aitp request-promotion ...` and wait for `aitp approve-promotion ...`.
-9. For theory-formal `L2_auto`, materialize coverage/consensus artifacts with `aitp coverage-audit ...` and then use `aitp auto-promote ...`.
-10. End with `aitp audit --topic-slug <topic_slug> --phase exit`.
+5. Ordinary topic work should stay in the light runtime profile unless a benchmark mismatch, scope change, promotion step, or explicit deep check forces the full profile.
+6. Keep `innovation_direction.md` and `control_note.md` current before touching the queue.
+7. Expand promotion, consultation, capability, or queue details only when the named trigger in the runtime bundle fires.
+8. Register reusable operations with `aitp operation-init ...`.
+9. For human-reviewed `L2`, use `aitp request-promotion ...` and wait for `aitp approve-promotion ...`.
+10. For theory-formal `L2_auto`, materialize coverage/consensus artifacts with `aitp coverage-audit ...` and then use `aitp auto-promote ...`.
+11. End with `aitp audit --topic-slug <topic_slug> --phase exit`.
 
 ## Hard rules
 
@@ -9200,6 +10711,7 @@ description: Route Codex research work through the AITP kernel. Use when the req
 - If there is a capability gap, prefer `aitp loop ... --skill-query ...` so discovery becomes runtime state instead of ad hoc browsing.
 - Human-reviewed Layer 2 promotion is blocked until `promotion_gate.json` says `approved` and `aitp promote ...` records the writeback.
 - Theory-formal `L2_auto` promotion is blocked until `coverage_ledger.json` passes and `agent_consensus.json` is ready.
+- Do not expose protocol jargon in ordinary user-facing dialogue.
 
 ## Common commands
 
@@ -9293,6 +10805,14 @@ If the task is bucket `1`, you MUST:
 
 If conformance fails, the work does not count as AITP work.
 
+## Conversation style rules
+
+- Do not expose protocol jargon to the user. Avoid phrases like `decision_point`, `L2 consultation`, or `load profile`.
+- Ask in plain research language.
+- By default ask one question at a time.
+- If the user already gave enough direction, do not ask just to satisfy a workflow ritual.
+- If the user says `you decide`, `just go`, or `直接做`, treat that as authorization to proceed and record the durable trace in the background.
+
 ## Natural-language routing
 
 Do not make the user translate a clear research request into AITP shell syntax
@@ -9361,9 +10881,10 @@ description: Route Claude Code through the AITP runtime so natural-language rese
 3. Use `aitp bootstrap ...` only to create a new topic, then return to `aitp loop ...`.
 4. Read `runtime_protocol.generated.md`, then follow its `Must read now` list before deeper work.
 5. Treat `session_start.generated.md` as a routing audit artifact when it exists.
-6. Expand deferred surfaces only when the named trigger fires.
-7. Treat missing conformance as a hard failure for AITP work.
-8. Close with `aitp audit --topic-slug <topic_slug> --phase exit`.
+6. Ordinary topic work should stay in the light runtime profile unless a benchmark mismatch, scope change, promotion step, or explicit deep check forces the full profile.
+7. Expand deferred surfaces only when the named trigger fires.
+8. Treat missing conformance as a hard failure for AITP work.
+9. Close with `aitp audit --topic-slug <topic_slug> --phase exit`.
 
 ## Hard rules
 
@@ -9372,6 +10893,7 @@ description: Route Claude Code through the AITP runtime so natural-language rese
 - Do not silently upgrade exploratory output into reusable knowledge.
 - Keep `innovation_direction.md` and `control_note.md` current before substantial execution continues.
 - Use `aitp baseline ...`, `aitp atomize ...`, and `aitp trust-audit ...` before claiming method reuse.
+- Do not expose protocol jargon in ordinary user-facing dialogue.
 
 Kernel root default: `{self.kernel_root}`
 """
@@ -9396,15 +10918,17 @@ description: Route OpenCode through the AITP runtime so natural-language researc
 3. Use `aitp bootstrap ...` only to create a new topic, then return to `aitp loop ...`.
 4. Read `runtime_protocol.generated.md`, then follow its `Must read now` list before deeper work.
 5. Treat `session_start.generated.md` as a routing audit artifact when it exists.
-6. Expand deferred surfaces only when the named trigger fires.
-7. Treat missing conformance as a hard failure for AITP work.
-8. Close with `aitp audit --topic-slug <topic_slug> --phase exit`.
+6. Ordinary topic work should stay in the light runtime profile unless a benchmark mismatch, scope change, promotion step, or explicit deep check forces the full profile.
+7. Expand deferred surfaces only when the named trigger fires.
+8. Treat missing conformance as a hard failure for AITP work.
+9. Close with `aitp audit --topic-slug <topic_slug> --phase exit`.
 
 ## Hard rules
 
 - OpenCode should feel natural-language first, but routing must still become durable AITP state immediately.
 - Keep `innovation_direction.md` and `control_note.md` current before substantial execution continues.
 - Use `aitp baseline ...`, `aitp atomize ...`, and `aitp trust-audit ...` before claiming reusable method progress.
+- Do not expose protocol jargon in ordinary user-facing dialogue.
 
 Kernel root default: `{self.kernel_root}`
 """

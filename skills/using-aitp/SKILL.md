@@ -25,6 +25,15 @@ description: Use when a request might be theoretical-physics research, topic con
 - Treat natural-language steering as state, not chat decoration. If the user changes direction, update durable steering before deeper work.
 - If the idea is vague, do not jump straight into `L0-L4`; run clarification first.
 
+## Conversation style rules
+
+- Do not expose protocol jargon to the user. Avoid phrases like `decision_point`, `L2 consultation`, `load profile`, or `runtime surface`.
+- Ask in plain language, as if you are a research collaborator choosing the next route together.
+- By default ask one question at a time. Only ask more than one when a single answer would still leave the route materially ambiguous.
+- If the user already gave enough direction, do not ask a clarification question just to satisfy a protocol step.
+- If the user says `you decide`, `just go`, `直接做`, or equivalent, stop clarifying, record the authorization durably, and continue.
+- When giving options, explain the routes and tradeoffs in natural language instead of exposing JSON-style labels or schema fields.
+
 ## Clarification sub-protocol
 
 1. Tighten the active `research_question.contract.json` before substantive execution whenever `scope`, `assumptions`, or `target_claims` are still vague.

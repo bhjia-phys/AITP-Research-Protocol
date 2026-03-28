@@ -131,6 +131,7 @@ def build_parser() -> argparse.ArgumentParser:
     resume.add_argument("--local-note-path", action="append", default=[])
     resume.add_argument("--skill-query", action="append", default=[])
     resume.add_argument("--human-request")
+    resume.add_argument("--load-profile", choices=["auto", "light", "full"], default="auto")
     resume.add_argument("--json", action="store_true")
 
     audit = subparsers.add_parser("audit", help="Run the AITP conformance audit")
@@ -278,6 +279,7 @@ def build_parser() -> argparse.ArgumentParser:
     loop.add_argument("--skill-query", action="append", default=[])
     loop.add_argument("--human-request")
     loop.add_argument("--max-auto-steps", type=int, default=4)
+    loop.add_argument("--load-profile", choices=["auto", "light", "full"], default="auto")
     loop.add_argument("--json", action="store_true")
 
     steer_topic = subparsers.add_parser(
@@ -317,6 +319,7 @@ def build_parser() -> argparse.ArgumentParser:
     work.add_argument("--skill-query", action="append", default=[])
     work.add_argument("--human-request")
     work.add_argument("--max-auto-steps", type=int, default=1)
+    work.add_argument("--load-profile", choices=["auto", "light", "full"], default="auto")
     work.add_argument("--json", action="store_true")
 
     verify = subparsers.add_parser("verify", help="Prepare a validation contract for a bounded verification mode")
@@ -464,6 +467,7 @@ def build_parser() -> argparse.ArgumentParser:
     session_start.add_argument("--skill-query", action="append", default=[])
     session_start.add_argument("--max-auto-steps", type=int, default=4)
     session_start.add_argument("--research-mode")
+    session_start.add_argument("--load-profile", choices=["auto", "light", "full"], default="auto")
     session_start.add_argument("--json", action="store_true")
     session_start.add_argument("task", help="Natural-language research request to route into AITP")
 
@@ -719,6 +723,12 @@ def main() -> int:
             source="resume",
             human_request=args.human_request,
         )
+        payload["runtime_context"] = service.refresh_runtime_context(
+            topic_slug=payload["topic_slug"],
+            updated_by=args.updated_by,
+            human_request=args.human_request,
+            load_profile=None if args.load_profile == "auto" else args.load_profile,
+        )
         _emit(payload, args.json)
         return 0
 
@@ -896,6 +906,7 @@ def main() -> int:
             human_request=args.human_request,
             skill_queries=args.skill_query,
             max_auto_steps=args.max_auto_steps,
+            load_profile=None if args.load_profile == "auto" else args.load_profile,
         )
         _emit(payload, args.json)
         exit_state = (payload.get("exit_audit") or {}).get("conformance_state") or {}
@@ -945,6 +956,7 @@ def main() -> int:
             skill_queries=args.skill_query,
             human_request=args.human_request,
             max_auto_steps=args.max_auto_steps,
+            load_profile=None if args.load_profile == "auto" else args.load_profile,
         )
         _emit(payload, args.json)
         if "exit_audit" in payload:
@@ -1028,6 +1040,7 @@ def main() -> int:
             skill_queries=args.skill_query,
             max_auto_steps=args.max_auto_steps,
             research_mode=args.research_mode,
+            load_profile=None if args.load_profile == "auto" else args.load_profile,
         )
         _emit(payload, args.json)
         return 0

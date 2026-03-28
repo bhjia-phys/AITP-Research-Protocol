@@ -30,7 +30,12 @@ That is the recommended path because it matches the intended AITP UX:
 
 - no `/aitp` command ritual for normal use;
 - natural-language requests route through `using-aitp` first;
+- ordinary topic work should remain in a light runtime profile unless a real
+  escalation trigger fires;
 - AITP state becomes durable before substantive theory work starts.
+
+This is already plugin-first, but still repo-sourced rather than marketplace
+one-click.
 
 ## Compatibility install
 

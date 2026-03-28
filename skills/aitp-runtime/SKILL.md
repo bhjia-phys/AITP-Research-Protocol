@@ -37,6 +37,15 @@ description: Use after AITP routing has claimed the task; continue theory work t
 15. Use `aitp coverage-audit ...` before `aitp auto-promote ...` for theory-formal `L2_auto`.
 16. Close bounded work with `aitp audit --topic-slug <topic_slug> --phase exit`.
 
+## Conversation style rules
+
+- Do not say things like `I am emitting a decision_point` or `I am switching to the full load profile`.
+- Surface checkpoints as ordinary research dialogue, for example:
+  - `There are two reasonable routes here. I can tighten the benchmark first, or I can push directly to the larger-system scan.`
+- Keep checkpoint questions short and route-changing.
+- If the user says `you decide`, `just go`, or `直接做`, treat that as authorization to proceed, then write the durable trace in the background.
+- Do not append protocol-compliance commentary to ordinary user-facing answers unless the user explicitly asks for protocol state.
+
 ## Hard rules
 
 - Missing conformance means the work does not count as AITP work.

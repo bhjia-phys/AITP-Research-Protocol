@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://aitp.dev/schemas/knowledge-packet.schema.json",
+  "title": "KnowledgePacket",
+  "description": "Agent-facing summary object derived from candidate or validated research state. It is a lightweight packet, not a replacement for atomic units.",
+  "type": "object",
+  "required": [
+    "id",
+    "topic_slug",
+    "packet_type",
+    "source_ref",
+    "title",
+    "summary",
+    "status",
+    "supporting_refs",
+    "updated_at",
+    "updated_by"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^packet:[a-z0-9-]+$"
+    },
+    "topic_slug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "packet_type": {
+      "type": "string",
+      "enum": [
+        "concept",
+        "theorem",
+        "method",
+        "code_method",
+        "regression_status"
+      ]
+    },
+    "source_ref": {
+      "type": "string",
+      "minLength": 1
+    },
+    "candidate_type": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lane": {
+      "type": "string",
+      "enum": [
+        "formal_theory",
+        "toy_numeric",
+        "code_method"
+      ]
+    },
+    "supporting_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "target_l2_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_by": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": false
+}
