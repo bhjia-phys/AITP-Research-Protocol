@@ -632,7 +632,10 @@ class AITPServiceTests(unittest.TestCase):
 
     def test_service_accepts_string_paths(self) -> None:
         (self.repo_root / "AGENTS.md").write_text("# test\n", encoding="utf-8")
+        (self.repo_root / "docs").mkdir(parents=True, exist_ok=True)
+        (self.repo_root / "docs" / "CHARTER.md").write_text("# charter\n", encoding="utf-8")
         (self.repo_root / "research" / "knowledge-hub").mkdir(parents=True, exist_ok=True)
+        (self.repo_root / "research" / "knowledge-hub" / "setup.py").write_text("# setup\n", encoding="utf-8")
         service = AITPService(
             kernel_root=str(self.kernel_root),
             repo_root=str(self.repo_root),

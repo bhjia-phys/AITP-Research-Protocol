@@ -42,7 +42,11 @@ from .tpkn_bridge import (
 
 
 def _looks_like_repo_root(path: Path) -> bool:
-    return (path / "AGENTS.md").exists() and (path / "research" / "knowledge-hub").exists()
+    return (
+        (path / "AGENTS.md").exists()
+        and (path / "docs" / "CHARTER.md").exists()
+        and (path / "research" / "knowledge-hub" / "setup.py").exists()
+    )
 
 
 def _looks_like_kernel_root(path: Path) -> bool:
@@ -7098,13 +7102,12 @@ class AITPService:
             return [self.repo_root / ".agents" / "skills" / "aitp-runtime"]
 
         home = Path.home()
-        candidates = []
+        candidates = [home / ".agents" / "skills" / "aitp-runtime"]
         if (home / ".codex").exists() or (home / ".codex" / "config.toml").exists():
             candidates.append(home / ".codex" / "skills" / "aitp-runtime")
         if (home / ".codex-home").exists():
             candidates.append(home / ".codex-home" / "skills" / "aitp-runtime")
-        if not candidates:
-            candidates.append(home / ".codex" / "skills" / "aitp-runtime")
+        candidates.append(home / ".codex" / "skills" / "aitp-runtime")
 
         deduped: list[Path] = []
         seen: set[str] = set()
