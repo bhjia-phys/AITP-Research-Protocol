@@ -385,42 +385,287 @@ Plans:
 
 ---
 
-## Conceptual Gaps (not yet scoped as backlog items)
+## Conceptual Gaps — Scoped Backlog Items
 
-The following deeper conceptual gaps were identified but are not yet specific
-enough for backlog entries. They should be revisited as the L2 knowledge graph
-matures:
+These gaps were identified during the deep conceptual audit from a theoretical
+physicist's perspective. Each has been refined into a concrete, actionable
+backlog entry.
 
-- **No symbolic/analytical reasoning path**: The execution and validation
-  infrastructure only handles numerical code execution, not mathematical
-  derivation, proof checking, limiting-case analysis, or dimensional analysis.
-  Theoretical physics primarily advances through math, not code.
+### Phase 999.19: Add Symbolic And Analytical Reasoning Path (BACKLOG)
 
-- **No research judgment in decision-making**: `decide_next_action.py` uses
-  keyword substring matching and queue ordering. A real collaborator decides
-  based on what is most promising, what is blocking other work, and research
-  momentum. The system has no concept of "I'm making progress, keep going"
-  vs "I'm stuck, switch direction."
+**Goal:** `closed_loop_v1.py` (1801 lines) only validates numerical execution
+(python scripts). Theoretical physics primarily advances through mathematical
+derivation — limiting-case analysis, dimensional analysis, symmetry arguments,
+perturbation expansions, proof sketches. Add: (1) A `symbolic_validation`
+execution lane that accepts SymPy/Mathematica/sage scripts alongside Python.
+(2) An `analytical_review` lane where the AI checks a derivation's internal
+consistency (dimensional analysis of each step, limiting-case agreement,
+cross-reference with known results in L2). (3) Update `lane` classification in
+L1 distillation to recognize analytical vs numerical work. (4) Add validation
+that a formal-theory candidate's proof sketch survives basic sanity checks
+before promotion. Priority: HIGH — this is the single biggest capability gap.
+**Source:** Conceptual audit 2026-04-07, L0-L4 layer audit
+**Requirements:** TBD
+**Plans:** 0 plans
 
-- **Layer model too rigid for real research**: The L0→L1→L3→L4→L2 pipeline
-  with explicit prohibitions (no L1→L4→L2) forces serialization of what is
-  inherently parallel and iterative in real research.
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
 
-- **No model of creativity, taste, or physical intuition**: The CHARTER has
-  10 principles all about discipline and process. Nothing about what makes a
-  problem interesting, what makes an approach elegant, or when to pursue a
-  surprising result.
+### Phase 999.20: Add Research Judgment To Decision-Making (BACKLOG)
 
-- **No cross-session collaborator learning**: "Resume from JSON state" is not
-  the same as "remember the context of our conversation." No mechanism for
-  the AI to learn the researcher's reasoning style, preferred formalisms, or
-  ongoing concerns across topics.
+**Goal:** `decide_next_action.py` uses keyword substring matching and hardcoded
+scoring magic numbers (lines 392-414) to select actions. A real collaborator
+decides based on research momentum: "I'm making progress on this approach, keep
+going" vs "I'm stuck after 3 attempts, switch strategy" vs "This surprising
+result deserves deeper investigation." Add: (1) A `research_momentum` signal
+derived from recent action outcomes (success/failure pattern, diminishing
+returns detection). (2) A `stuck_detection` heuristic that triggers after N
+failed attempts on the same sub-question and suggests pivoting. (3) A
+`surprise_capture` mechanism that flags unexpected results for deeper
+investigation rather than treating them as errors. (4) Replace keyword scoring
+with a lightweight decision model that weights: progress velocity, blocking
+dependency resolution, and novelty of findings. Priority: HIGH — directly
+affects research quality.
+**Source:** Conceptual audit 2026-04-07, code audit of decide_next_action.py
+**Requirements:** TBD
+**Plans:** 0 plans
 
-- **Bureaucracy-to-research ratio too high**: A single topic step produces 14+
-  administrative artifacts. orchestrate_topic.py runs 7+ subprocess calls
-  before any research happens. Need a "quick exploration" mode for 30-minute
-  idea sessions without full topic bootstrap.
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
 
-- **Source fidelity not graded**: Papers, arXiv preprints, blog posts, YouTube
-  videos, and hallway conversations are registered identically. A physicist
-  assigns very different trust levels to these.
+### Phase 999.21: Make Layer Model Flexible For Real Research Iteration (BACKLOG)
+
+**Goal:** The L0→L1→L3→L4→L2 pipeline with explicit prohibitions (e.g., no
+L1→L4→L2 bypass) forces serialization of what is inherently parallel and
+iterative. Real research flows: read paper (L0) → realize assumption is wrong
+(L1) → check L2 knowledge → revise understanding → go back to paper → iterate.
+The current model treats each layer as a state machine transition. Add: (1)
+Explicit "iteration edges" — allow L4→L1 backedges when validation fails (not
+just to L3). (2) Allow L1→L2 direct consultation during intake (not just
+through formal topic work). (3) Model research as a graph with recommended
+paths, not a linear pipeline with gates. (4) Keep the existing gates as
+"promotion" checks (for L2 publication) while allowing exploratory loops that
+don't require full gate passage. Priority: MEDIUM — current model works for
+structured work but breaks for exploratory research.
+**Source:** Conceptual audit 2026-04-07, L0-L4 layer audit
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.22: Model Creativity, Taste, And Physical Intuition (BACKLOG)
+
+**Goal:** The CHARTER has 10 principles all about discipline and process. Nothing
+about what makes a problem interesting, what makes an approach elegant, or when
+to pursue a surprising result. This is the hardest gap to address technically,
+but concrete steps: (1) Add a `physical_picture` object type (see 999.14) so
+intuitive mental models are first-class knowledge. (2) Add a `research_taste`
+profile to the operator model — preferred formalisms (path integral vs operator
+vs canonical), preferred tools (analytic vs numerical vs diagrammatic), and
+problem aesthetic (elegance of result vs breadth of applicability). (3) When
+the AI encounters multiple solution approaches, annotate each with qualitative
+assessments: elegance, generality, computational cost, conceptual clarity.
+(4) Add a "surprise detector" that flags when a result contradicts physical
+intuition — this is often where breakthroughs happen. Priority: LOW-MEDIUM —
+this is a long-term research direction, not a quick fix.
+**Source:** Conceptual audit 2026-04-07
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.23: Cross-Session Collaborator Learning (BACKLOG)
+
+**Goal:** "Resume from JSON state" is not the same as "remember the context of
+our conversation." A real collaborator remembers: the researcher's reasoning
+style (prefers geometric arguments), ongoing concerns (still worried about the
+convergence issue from last month), and communication preferences (likes brief
+updates, hates excessive detail). Add: (1) A `collaborator_profile` stored in
+the operator's AITP config — tracks reasoning preferences, formalism choices,
+communication style. (2) Cross-topic context threads — when a new topic starts,
+automatically surface relevant conclusions from related past topics. (3) A
+`research_trajectory` summary that persists across sessions: what directions
+have been explored, what was abandoned and why, what is still open. (4) The AI
+should proactively reference past work: "Last time we tried X and it failed
+because Y — should we try a different approach?" Priority: MEDIUM — enhances
+long-term research collaboration quality.
+**Source:** Conceptual audit 2026-04-07
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.24: Quick Exploration Mode With Low Bureaucracy (BACKLOG)
+
+**Goal:** A single topic step produces 14+ administrative artifacts.
+`orchestrate_topic.py` runs 7+ subprocess calls before any research happens.
+Real research includes 30-minute idea sessions: "what if we try X?" — scribble
+on a whiteboard, check a few limits, decide if it's worth pursuing. Add: (1)
+A `quick_explore` mode that skips full topic bootstrap: no runtime protocol
+bundle, no queue materialization, no checkpoint gates. (2) Quick mode produces
+a lightweight session log (not 14 artifacts) that can be promoted to a full
+topic if it proves fruitful. (3) CLI entry: `aitp explore "what if flux
+attachment gives composite fermions in this model?"` that goes directly to AI
+interaction with minimal ceremony. (4) Promotion path: quick session → "this
+looks promising" → auto-creates full topic with accumulated context. Priority:
+HIGH — the bureaucracy problem is the most immediately painful gap for actual
+use.
+**Source:** Conceptual audit 2026-04-07, code audit of orchestrate_topic.py
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.25: Source Fidelity Grading (BACKLOG)
+
+**Goal:** Papers, arXiv preprints, blog posts, YouTube videos, and hallway
+conversations are registered identically in the L0 source model. A physicist
+assigns very different trust levels: published journal > arXiv with citations >
+arXiv without citations > blog post > informal note. Add: (1) A `fidelity`
+field to source registration: `peer_reviewed`, `arXiv_cited`, `arXiv_preprint`,
+`preprint_unreviewed`, `blog_or_popular`, `informal_note`, `verbal`. (2)
+Automatic fidelity inference from source metadata (DOI → peer_reviewed, arXiv
+ID → arXiv_preprint, etc.). (3) Candidate promotion gates weight evidence by
+source fidelity — a claim backed only by blog posts should not promote to L2
+without stronger evidence. (4) Display fidelity in source lists so the operator
+can see trust levels at a glance. Priority: MEDIUM — important for research
+integrity but not blocking current work.
+**Source:** Conceptual audit 2026-04-07
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+---
+
+## L0-L4 Layer-Specific Audit Findings
+
+These items address specific gaps found when auditing each protocol layer
+against real theoretical physics research workflow.
+
+### Phase 999.26: L0 Citation Graph Traversal And BibTeX Support (BACKLOG)
+
+**Goal:** L0 (source layer) registers individual papers but has no citation
+graph traversal. A physicist reading a key paper immediately follows its
+references forward (who cited this?) and backward (what does this cite?). Add:
+(1) Citation graph construction — when a paper is registered, extract its
+references and citing papers from available metadata. (2) A `traverse_citations`
+action that follows citation chains N hops deep. (3) BibTeX import/export so
+papers can be managed with standard physics tooling (Overleaf, Zotero,
+LaTeX). (4) "Related work" suggestions based on citation co-occurrence. (5)
+Integration with arXiv API for automatic metadata enrichment. Priority: HIGH —
+citation traversal is how physicists actually navigate literature.
+**Source:** L0-L4 layer audit 2026-04-07
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.27: L1 Assumption Extraction And Reading Depth Model (BACKLOG)
+
+**Goal:** L1 (intake/distillation) extracts novelty via keyword matching
+(`source_distillation_support.py`) and classifies lanes as
+formal_theory/numerical/exploratory — both are too shallow. Missing: (1)
+Assumption extraction — every paper makes explicit and implicit assumptions.
+The AI should identify: "This paper assumes non-interacting electrons" or
+"This derivation uses the Born-Oppenheimer approximation." (2) Reading depth
+tracking — distinguish between "skimmed abstract" vs "read introduction and
+conclusions" vs "studied key equations" vs "reproduced calculation." (3)
+Method identification — not just "numerical" but specifically "DMRG on a
+1D chain with PBC, 200 sites, bond dimension χ=800." (4) Assumption
+contradiction detection — flag when two papers in the same topic make
+incompatible assumptions. Priority: HIGH — shallow intake means shallow
+research.
+**Source:** L0-L4 layer audit 2026-04-07
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.28: L3 Scratch Mode And Negative Results Documentation (BACKLOG)
+
+**Goal:** L3 (candidate layer) only supports formal candidate objects with
+structured claims and evidence. Real research includes: scratch work that may
+never become formal, dead ends worth remembering (so you don't retry them),
+and exploratory calculations. Add: (1) A `scratch` candidate type — informal
+working notes that don't need claim/evidence structure. (2) A `negative_result`
+type — "Tried X approach, it failed because Y, don't retry." These are
+valuable research knowledge that prevents wasted effort. (3) Candidate
+demotion — not everything promoted to L3 should stay. Allow "this didn't pan
+out" resolution with reasons. (4) A `calculation_log` type for intermediate
+computational results that aren't ready for formal status. Priority: MEDIUM —
+important for research hygiene.
+**Source:** L0-L4 layer audit 2026-04-07
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.29: L4 Analytical Validation Beyond Numerical Execution (BACKLOG)
+
+**Goal:** L4 (validation) only validates via numerical code execution through
+`closed_loop_v1.py`. Missing validation modes for theoretical physics: (1)
+Limiting-case analysis — does the result agree with known limits? (2)
+Dimensional analysis — are the units correct at each step? (3) Symmetry
+checks — does the result respect the symmetries of the problem? (4)
+Cross-reference validation — does the result agree with published values in L2?
+(5) Self-consistency — does the result satisfy its own assumptions? Add these
+as validation modes alongside the existing numerical execution mode. Each mode
+produces a structured validation report. The AI should automatically suggest
+appropriate validation modes based on the candidate type. Priority: HIGH —
+without analytical validation, AITP cannot reliably evaluate theoretical work.
+**Source:** L0-L4 layer audit 2026-04-07
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.30: Cross-Layer Parallel Research And Context Carrying (BACKLOG)
+
+**Goal:** The current pipeline routes research sequentially: L0→L1→L3→L4→L2.
+Real research is parallel: while waiting for a calculation to finish, you read
+another paper; while writing up one result, you explore a related question.
+Missing: (1) Parallel action execution — allow multiple research actions
+simultaneously (read + calculate + explore). (2) Backward context carrying —
+when L4 validation fails and sends back to L3, carry the failure reason forward
+instead of starting from scratch. (3) Cross-topic context — when working on
+topic B, surface relevant findings from topic A without manual intervention.
+(4) Interrupt and resume — allow pausing a research thread, working on
+something else, then resuming with full context. Priority: MEDIUM — improves
+research efficiency but requires significant runtime changes.
+**Source:** L0-L4 layer audit 2026-04-07
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
+
+### Phase 999.31: Artifact Footprint Reduction (BACKLOG)
+
+**Goal:** A single topic step produces 14+ administrative artifacts (runtime
+protocol bundle, queue materialization, action logs, checkpoint files, status
+updates, etc.). `orchestrate_topic.py` runs 7+ subprocess calls before any
+research happens. This overhead: (1) Slows down every interaction. (2) Makes
+the topic directory overwhelming for the operator to navigate. (3) Consumes
+token budget on administrative content instead of research content. Add: (1)
+Audit all artifacts per topic step — classify as essential vs optional vs
+redundant. (2) Consolidate related artifacts (e.g., merge 3 status files into
+1). (3) Make optional artifacts opt-in rather than default. (4) Reduce
+subprocess calls in orchestrate_topic.py by combining related operations. (5)
+Target: reduce per-step artifact count from 14+ to ≤5 essential artifacts.
+Priority: MEDIUM — overlaps with 999.24 (quick exploration mode).
+**Source:** L0-L4 layer audit 2026-04-07, code audit of orchestrate_topic.py
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd:review-backlog when ready)
