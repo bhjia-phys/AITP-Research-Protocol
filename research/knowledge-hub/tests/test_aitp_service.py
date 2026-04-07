@@ -321,6 +321,11 @@ class AITPServiceTests(unittest.TestCase):
             runtime_bundle_schema,
             self.kernel_root / "runtime" / "schemas" / runtime_bundle_schema.name,
         )
+        result_brief_schema = self.package_root / "runtime" / "schemas" / "result-brief.schema.json"
+        shutil.copyfile(
+            result_brief_schema,
+            self.kernel_root / "runtime" / "schemas" / result_brief_schema.name,
+        )
         self.service = AITPService(kernel_root=self.kernel_root, repo_root=self.repo_root)
 
     def tearDown(self) -> None:
@@ -1438,11 +1443,39 @@ class AITPServiceTests(unittest.TestCase):
         result_brief_note_path = Path(payload["result_brief_note_path"])
         self.assertTrue(result_brief_path.exists())
         self.assertTrue(result_brief_note_path.exists())
+        result_brief_payload = json.loads(result_brief_path.read_text(encoding="utf-8"))
+        schema = json.loads(
+            (
+                self.kernel_root
+                / "runtime"
+                / "schemas"
+                / "result-brief.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        Draft202012Validator(schema).validate(result_brief_payload)
         result_brief_note = result_brief_note_path.read_text(encoding="utf-8")
         self.assertIn("## What Changed", result_brief_note)
         self.assertIn("## Evidence", result_brief_note)
         self.assertIn("## Scope", result_brief_note)
         self.assertIn("## What This Does Not Yet Justify", result_brief_note)
+
+    def test_ensure_topic_shell_surfaces_result_brief_blocks_on_pending_decisions(self) -> None:
+        self._write_runtime_state()
+
+        with patch(
+            "knowledge_hub.aitp_service.list_pending_decision_points",
+            return_value=[{"id": "decision:demo-blocking", "blocking": True}],
+        ):
+            payload = self.service.ensure_topic_shell_surfaces(
+                topic_slug="demo-topic",
+                updated_by="aitp-cli",
+            )
+
+        result_brief_payload = json.loads(
+            Path(payload["result_brief_path"]).read_text(encoding="utf-8")
+        )
+        self.assertEqual(result_brief_payload["interaction_class"], "checkpoint_question")
+        self.assertIn("decision:demo-blocking", result_brief_payload["what_changed"])
 
     def test_topic_status_and_prepare_verification_surface_new_shell_fields(self) -> None:
         runtime_root = self._write_runtime_state()

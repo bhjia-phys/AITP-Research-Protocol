@@ -2842,6 +2842,7 @@ class AITPService:
         operator_checkpoint: dict[str, Any],
         open_gap_summary: dict[str, Any],
         validation_contract: dict[str, Any],
+        pending_decisions: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         decision_surface = interaction_state.get("decision_surface") or {}
         queue_surface = interaction_state.get("action_queue_surface") or {}
@@ -2886,6 +2887,24 @@ class AITPService:
                 or str(operator_checkpoint.get("question") or "").strip()
                 or "AITP paused at an active operator checkpoint."
             )
+        elif int((pending_decisions or {}).get("blocking_count") or 0) > 0:
+            unresolved_ids = [
+                str(item).strip()
+                for item in (pending_decisions or {}).get("unresolved_ids") or []
+                if str(item).strip()
+            ]
+            if unresolved_ids:
+                stop_reason = f"Blocking pending decisions require resolution: {', '.join(unresolved_ids)}."
+            else:
+                stop_reason = "Blocking pending decisions require resolution before deeper execution."
+            blocker_summary = self._dedupe_strings(unresolved_ids) or [stop_reason]
+            active_human_need = {
+                "status": "requested",
+                "kind": "pending_decisions",
+                "path": None,
+                "summary": stop_reason,
+            }
+            why_this_topic_is_here = stop_reason
         elif str(idea_packet.get("status") or "").strip() == "needs_clarification":
             blocker_summary = self._dedupe_strings(
                 list(idea_packet.get("clarification_questions") or [])
@@ -4546,16 +4565,6 @@ class AITPService:
             "note_path": self._relativize(Path(operator_checkpoint_paths_written["operator_checkpoint_note_path"])),
             "ledger_path": self._relativize(Path(operator_checkpoint_paths_written["operator_checkpoint_ledger_path"])),
         }
-        topic_status_explainability = self._derive_topic_status_explainability(
-            topic_slug=topic_slug,
-            topic_state=resolved_topic_state,
-            interaction_state=resolved_interaction_state,
-            selected_pending_action=selected_pending_action,
-            idea_packet=idea_packet,
-            operator_checkpoint=operator_checkpoint_surface,
-            open_gap_summary=open_gap_summary,
-            validation_contract=validation_contract,
-        )
         pending_decisions = list_pending_decision_points(topic_slug, kernel_root=self.kernel_root)
         pending_decisions_payload = {
             "blocking_count": sum(1 for row in pending_decisions if row.get("blocking")),
@@ -4565,6 +4574,17 @@ class AITPService:
                 if str(row.get("id") or "").strip()
             ],
         }
+        topic_status_explainability = self._derive_topic_status_explainability(
+            topic_slug=topic_slug,
+            topic_state=resolved_topic_state,
+            interaction_state=resolved_interaction_state,
+            selected_pending_action=selected_pending_action,
+            idea_packet=idea_packet,
+            operator_checkpoint=operator_checkpoint_surface,
+            open_gap_summary=open_gap_summary,
+            validation_contract=validation_contract,
+            pending_decisions=pending_decisions_payload,
+        )
         interaction_contract = self._derive_interaction_contract(
             idea_packet=idea_packet,
             operator_checkpoint=operator_checkpoint_surface,

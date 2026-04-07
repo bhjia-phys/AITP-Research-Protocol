@@ -536,6 +536,18 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertEqual(bundle["result_brief"]["kind"], "result_brief")
         self.assertTrue(bundle["result_brief"]["path"])
         self.assertTrue(bundle["result_brief"]["note_path"])
+        result_brief_path = self.kernel_root / bundle["result_brief"]["path"]
+        result_brief_payload = json.loads(result_brief_path.read_text(encoding="utf-8"))
+        for field in (
+            "kind",
+            "topic_slug",
+            "interaction_class",
+            "what_changed",
+            "evidence_summary",
+            "scope_summary",
+            "non_claims",
+        ):
+            self.assertEqual(bundle["result_brief"][field], result_brief_payload[field])
         self.assertIn("interaction_class", bundle["topic_synopsis"])
         self.assertIn("stop_status", bundle["topic_synopsis"])
         self.assertIn("stop_reason", bundle["topic_synopsis"])
@@ -599,6 +611,18 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
 
     def test_runtime_bundle_blocks_on_pending_decision_blockers(self) -> None:
         shell_surfaces = self._shell_surfaces()
+        blocking_brief = {
+            "kind": "result_brief",
+            "topic_slug": "demo-topic",
+            "interaction_class": "checkpoint_question",
+            "what_changed": "Blocking pending decisions require resolution: decision:demo-blocking.",
+            "evidence_summary": "No durable evidence return recorded yet.",
+            "scope_summary": "Resolve the blocking decision before deeper execution.",
+            "non_claims": ["No new claims are justified without benchmark evidence."],
+        }
+        result_brief_path = Path(shell_surfaces["result_brief_path"])
+        result_brief_path.write_text(json.dumps(blocking_brief, indent=2) + "\n", encoding="utf-8")
+        shell_surfaces["result_brief"] = blocking_brief
         with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
             with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
                 with patch(
@@ -638,6 +662,12 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 for item in bundle["active_hard_constraints"]
             )
         )
+        result_brief_payload = json.loads(
+            (self.kernel_root / bundle["result_brief"]["path"]).read_text(encoding="utf-8")
+        )
+        self.assertEqual(bundle["result_brief"]["interaction_class"], "checkpoint_question")
+        self.assertEqual(bundle["result_brief"]["interaction_class"], result_brief_payload["interaction_class"])
+        self.assertIn("decision:demo-blocking", result_brief_payload["what_changed"])
 
 
 if __name__ == "__main__":
