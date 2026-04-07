@@ -2015,6 +2015,11 @@ class AITPService:
         checkpoint_status = str(operator_checkpoint.get("status") or "").strip()
         idea_status = str(idea_packet.get("status") or "").strip()
         blocking_count = int(pending_decisions.get("blocking_count") or 0)
+        blocking_ids = [
+            str(item).strip()
+            for item in (pending_decisions.get("blocking_ids") or [])
+            if str(item).strip()
+        ]
         if checkpoint_status == "requested":
             stop_reason = str(operator_checkpoint.get("question") or "").strip()
             if not stop_reason:
@@ -2032,13 +2037,8 @@ class AITPService:
                 "primary_result_shape": "checkpoint_card",
             }
         if blocking_count > 0:
-            unresolved_ids = [
-                str(item).strip()
-                for item in (pending_decisions.get("unresolved_ids") or [])
-                if str(item).strip()
-            ]
-            if unresolved_ids:
-                stop_reason = f"Blocking pending decisions require resolution: {', '.join(unresolved_ids)}."
+            if blocking_ids:
+                stop_reason = f"Blocking pending decisions require resolution: {', '.join(blocking_ids)}."
             else:
                 stop_reason = "Blocking pending decisions require resolution before deeper execution."
             return {
@@ -2346,14 +2346,14 @@ class AITPService:
                 self._relativize(validation_paths["note"]),
             ]
         elif int((pending_decisions or {}).get("blocking_count") or 0) > 0:
-            unresolved_ids = [
+            blocking_ids = [
                 str(item).strip()
-                for item in (pending_decisions or {}).get("unresolved_ids") or []
+                for item in (pending_decisions or {}).get("blocking_ids") or []
                 if str(item).strip()
             ]
             checkpoint_kind = "pending_decisions"
-            if unresolved_ids:
-                question = f"Resolve blocking pending decisions before continuing: {', '.join(unresolved_ids)}."
+            if blocking_ids:
+                question = f"Resolve blocking pending decisions before continuing: {', '.join(blocking_ids)}."
             else:
                 question = "Resolve blocking pending decisions before continuing execution."
             required_response = "Close the blocking pending decisions and sync their durable traces."
@@ -2904,16 +2904,16 @@ class AITPService:
                 or "AITP paused at an active operator checkpoint."
             )
         elif int((pending_decisions or {}).get("blocking_count") or 0) > 0:
-            unresolved_ids = [
+            blocking_ids = [
                 str(item).strip()
-                for item in (pending_decisions or {}).get("unresolved_ids") or []
+                for item in (pending_decisions or {}).get("blocking_ids") or []
                 if str(item).strip()
             ]
-            if unresolved_ids:
-                stop_reason = f"Blocking pending decisions require resolution: {', '.join(unresolved_ids)}."
+            if blocking_ids:
+                stop_reason = f"Blocking pending decisions require resolution: {', '.join(blocking_ids)}."
             else:
                 stop_reason = "Blocking pending decisions require resolution before deeper execution."
-            blocker_summary = self._dedupe_strings(unresolved_ids) or [stop_reason]
+            blocker_summary = [stop_reason]
             active_human_need = {
                 "status": "requested",
                 "kind": "pending_decisions",
@@ -4557,6 +4557,14 @@ class AITPService:
                 if str(row.get("id") or "").strip()
             ],
         }
+        pending_decisions_internal = {
+            **pending_decisions_payload,
+            "blocking_ids": [
+                str(row.get("id") or "").strip()
+                for row in pending_decisions
+                if row.get("blocking") and str(row.get("id") or "").strip()
+            ],
+        }
         operator_checkpoint, superseded_checkpoint = self._derive_operator_checkpoint(
             topic_slug=topic_slug,
             updated_by=updated_by,
@@ -4566,7 +4574,7 @@ class AITPService:
             validation_contract=validation_contract,
             promotion_gate=resolved_promotion_gate,
             selected_pending_action=selected_pending_action,
-            pending_decisions=pending_decisions_payload,
+            pending_decisions=pending_decisions_internal,
             decision_surface=decision_surface,
             dashboard_path=dashboard_path,
             idea_packet_paths=idea_packet_paths,
@@ -4600,12 +4608,12 @@ class AITPService:
             operator_checkpoint=operator_checkpoint_surface,
             open_gap_summary=open_gap_summary,
             validation_contract=validation_contract,
-            pending_decisions=pending_decisions_payload,
+            pending_decisions=pending_decisions_internal,
         )
         interaction_contract = self._derive_interaction_contract(
             idea_packet=idea_packet,
             operator_checkpoint=operator_checkpoint_surface,
-            pending_decisions=pending_decisions_payload,
+            pending_decisions=pending_decisions_internal,
         )
         last_evidence_return = topic_status_explainability.get("last_evidence_return") or {}
         scope_parts = self._dedupe_strings(
@@ -6780,6 +6788,14 @@ class AITPService:
             "updated_at": now_iso(),
             "updated_by": updated_by,
         }
+        pending_decisions_internal = {
+            **pending_decisions_payload,
+            "blocking_ids": [
+                str(row.get("id") or "").strip()
+                for row in pending_decisions
+                if row.get("blocking") and str(row.get("id") or "").strip()
+            ],
+        }
         pending_decisions_written = write_pending_decisions_projection(
             topic_slug,
             pending_decisions_payload,
@@ -6793,7 +6809,7 @@ class AITPService:
         interaction_contract = self._derive_interaction_contract(
             idea_packet=idea_packet,
             operator_checkpoint=operator_checkpoint,
-            pending_decisions=pending_decisions_payload,
+            pending_decisions=pending_decisions_internal,
         )
         result_brief_payload = dict(shell_surfaces.get("result_brief") or {})
         if not result_brief_payload:

@@ -1505,6 +1505,59 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(bundle["result_brief"]["interaction_class"], "checkpoint_question")
         self.assertEqual(bundle["result_brief"]["what_changed"], expected_reason)
 
+    def test_ensure_topic_shell_surfaces_uses_blocking_only_decision_ids(self) -> None:
+        runtime_root = self._write_runtime_state()
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:benchmark",
+                    "status": "pending",
+                    "action_type": "benchmark",
+                    "summary": "Select the benchmark route and proceed.",
+                    "auto_runnable": False,
+                    "queue_source": "declared_contract",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        with patch(
+            "knowledge_hub.aitp_service.list_pending_decision_points",
+            return_value=[
+                {"id": "decision:demo-blocking", "blocking": True},
+                {"id": "decision:demo-nonblocking", "blocking": False},
+            ],
+        ):
+            payload = self.service.ensure_topic_shell_surfaces(
+                topic_slug="demo-topic",
+                updated_by="aitp-cli",
+            )
+            bundle_paths = self.service._materialize_runtime_protocol_bundle(
+                topic_slug="demo-topic",
+                updated_by="aitp-cli",
+                human_request="continue this topic",
+                load_profile="light",
+            )
+
+        result_brief_payload = json.loads(
+            Path(payload["result_brief_path"]).read_text(encoding="utf-8")
+        )
+        bundle = json.loads(Path(bundle_paths["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        operator_checkpoint = json.loads(
+            Path(payload["operator_checkpoint_path"]).read_text(encoding="utf-8")
+        )
+        expected_reason = "Resolve blocking pending decisions before continuing: decision:demo-blocking."
+        self.assertEqual(operator_checkpoint["question"], expected_reason)
+        self.assertEqual(bundle["interaction_contract"]["stop_reason"], expected_reason)
+        self.assertEqual(result_brief_payload["what_changed"], expected_reason)
+        self.assertEqual(bundle["result_brief"]["what_changed"], expected_reason)
+        self.assertNotIn("decision:demo-nonblocking", operator_checkpoint["question"])
+        self.assertNotIn("decision:demo-nonblocking", bundle["interaction_contract"]["stop_reason"])
+        self.assertNotIn("decision:demo-nonblocking", result_brief_payload["what_changed"])
+
     def test_topic_status_and_prepare_verification_surface_new_shell_fields(self) -> None:
         runtime_root = self._write_runtime_state()
         (runtime_root / "interaction_state.json").write_text(
