@@ -1498,10 +1498,12 @@ class AITPServiceTests(unittest.TestCase):
         )
         bundle = json.loads(Path(bundle_paths["runtime_protocol_path"]).read_text(encoding="utf-8"))
         self.assertEqual(result_brief_payload["interaction_class"], "checkpoint_question")
-        self.assertIn("decision:demo-blocking", result_brief_payload["what_changed"])
+        expected_reason = "Resolve blocking pending decisions before continuing: decision:demo-blocking."
+        self.assertEqual(result_brief_payload["what_changed"], expected_reason)
         self.assertEqual(bundle["interaction_contract"]["interaction_class"], "checkpoint_question")
-        self.assertIn("decision:demo-blocking", bundle["interaction_contract"]["stop_reason"])
+        self.assertEqual(bundle["interaction_contract"]["stop_reason"], expected_reason)
         self.assertEqual(bundle["result_brief"]["interaction_class"], "checkpoint_question")
+        self.assertEqual(bundle["result_brief"]["what_changed"], expected_reason)
 
     def test_topic_status_and_prepare_verification_surface_new_shell_fields(self) -> None:
         runtime_root = self._write_runtime_state()

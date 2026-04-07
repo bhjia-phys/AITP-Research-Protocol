@@ -2357,7 +2357,7 @@ class AITPService:
             else:
                 question = "Resolve blocking pending decisions before continuing execution."
             required_response = "Close the blocking pending decisions and sync their durable traces."
-            blocker_summary = unresolved_ids or [question]
+            blocker_summary = [question]
             evidence_refs = [self._relativize(dashboard_path)]
             response_channels = [self._relativize(dashboard_path)]
         elif promotion_status in {"requested", "pending_human_approval"}:
