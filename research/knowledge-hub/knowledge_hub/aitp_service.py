@@ -6758,11 +6758,11 @@ class AITPService:
             operator_checkpoint=operator_checkpoint,
             pending_decisions=pending_decisions_payload,
         )
-        result_brief = dict(shell_surfaces.get("result_brief") or {})
-        if not result_brief:
+        result_brief_payload = dict(shell_surfaces.get("result_brief") or {})
+        if not result_brief_payload:
             topic_status_explainability = shell_surfaces.get("topic_state_explainability") or {}
             last_evidence_return = topic_status_explainability.get("last_evidence_return") or {}
-            result_brief = {
+            result_brief_payload = {
                 "kind": "result_brief",
                 "topic_slug": topic_slug,
                 "interaction_class": interaction_contract["interaction_class"],
@@ -6771,12 +6771,23 @@ class AITPService:
                 "scope_summary": str(active_research_contract.get("question") or "").strip(),
                 "non_claims": self._dedupe_strings(list(idea_packet.get("non_goals") or [])),
             }
-        result_brief["path"] = self._relativize(
+        result_brief_path = self._relativize(
             Path(shell_surfaces.get("result_brief_path") or self._result_brief_paths(topic_slug)["json"])
         )
-        result_brief["note_path"] = self._relativize(
+        result_brief_note_path = self._relativize(
             Path(shell_surfaces.get("result_brief_note_path") or self._result_brief_paths(topic_slug)["note"])
         )
+        result_brief = {
+            "path": result_brief_path,
+            "note_path": result_brief_note_path,
+            "kind": result_brief_payload.get("kind") or "result_brief",
+            "topic_slug": result_brief_payload.get("topic_slug") or topic_slug,
+            "interaction_class": result_brief_payload.get("interaction_class") or interaction_contract["interaction_class"],
+            "what_changed": result_brief_payload.get("what_changed") or "",
+            "evidence_summary": result_brief_payload.get("evidence_summary") or "",
+            "scope_summary": result_brief_payload.get("scope_summary") or "",
+            "non_claims": self._dedupe_strings(list(result_brief_payload.get("non_claims") or [])),
+        }
         topic_synopsis_payload = {
             "id": f"topic_synopsis:{topic_slug}",
             "topic_slug": topic_slug,
