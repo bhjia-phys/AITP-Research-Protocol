@@ -31,7 +31,9 @@
     "interaction_class": {
       "type": "string",
       "enum": [
+        "free_explore",
         "silent_continue",
+        "non_blocking_update",
         "checkpoint_question"
       ]
     },

@@ -23,6 +23,7 @@
     "rejection_rule": { "type": "string", "minLength": 1 },
     "artifacts": { "type": "array", "items": { "type": "string" } },
     "required_checks": { "type": "array", "items": { "type": "string" } },
+    "analytic_check_families": { "type": "array", "items": { "type": "string" } },
     "oracle_artifacts": { "type": "array", "items": { "type": "string" } },
     "executed_evidence": { "type": "array", "items": { "type": "string" } },
     "confidence_cap": {

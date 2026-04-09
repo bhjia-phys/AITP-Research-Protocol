@@ -148,6 +148,40 @@ That outcome is still useful and should remain visible.
 The local `l2_consultation_log.jsonl` files can stay small.
 If detail is needed, the protocol surface should hold it.
 
+## 6.1 Human-facing consultation outputs
+
+Human-facing consultation outputs are operator-readable derived surfaces such as:
+- consultation receipts,
+- compact memory maps,
+- warning-focused summary cards,
+- and review packets that explain what was surfaced and what was actually
+  applied.
+
+These outputs must preserve:
+- canonical unit ids,
+- assumptions,
+- regime and scope limits,
+- provenance pointers,
+- and warning surfaces.
+
+## 6.2 AI-facing consultation outputs
+
+AI-facing consultation outputs are compact machine-primary packets.
+They should surface:
+- selected canonical unit ids,
+- why they were selected,
+- the edge neighborhood or retrieval profile that shaped the result,
+- warnings,
+- assumptions and regime limits,
+- unresolved conflicts,
+- and exact pointers for deeper follow-up.
+
+## 6.3 Symmetry rule
+
+Human-facing and AI-facing consultation outputs are derived from the same promoted identity.
+They may differ in rendering, but they may not silently disagree about trust,
+scope, assumptions, or unresolved boundaries.
+
 ## 7. Stage expectations
 
 ### `L1`

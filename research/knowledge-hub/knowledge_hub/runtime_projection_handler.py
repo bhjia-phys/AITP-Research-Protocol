@@ -72,6 +72,83 @@ def write_topic_synopsis(
     return {"topic_synopsis": payload, "path": str(path)}
 
 
+def write_l0_sources_projection(
+    topic_slug: str,
+    payload: dict[str, Any],
+    *,
+    kernel_root: Path | None = None,
+) -> dict[str, Any]:
+    path = _runtime_topic_root(topic_slug, kernel_root) / "l0_sources.json"
+    _write_json(path, payload)
+    return {"l0_sources": payload, "path": str(path)}
+
+
+def write_l1_understanding_projection(
+    topic_slug: str,
+    payload: dict[str, Any],
+    *,
+    kernel_root: Path | None = None,
+) -> dict[str, Any]:
+    path = _runtime_topic_root(topic_slug, kernel_root) / "l1_understanding.json"
+    _write_json(path, payload)
+    return {"l1_understanding": payload, "path": str(path)}
+
+
+def write_l4_validation_projection(
+    topic_slug: str,
+    payload: dict[str, Any],
+    *,
+    kernel_root: Path | None = None,
+) -> dict[str, Any]:
+    path = _runtime_topic_root(topic_slug, kernel_root) / "l4_validation.json"
+    _write_json(path, payload)
+    return {"l4_validation": payload, "path": str(path)}
+
+
+def write_l2_memory_projection(
+    topic_slug: str,
+    payload: dict[str, Any],
+    *,
+    kernel_root: Path | None = None,
+) -> dict[str, Any]:
+    path = _runtime_topic_root(topic_slug, kernel_root) / "l2_memory.json"
+    _write_json(path, payload)
+    return {"l2_memory": payload, "path": str(path)}
+
+
+def write_l3_analysis_projection(
+    topic_slug: str,
+    payload: dict[str, Any],
+    *,
+    kernel_root: Path | None = None,
+) -> dict[str, Any]:
+    path = _runtime_topic_root(topic_slug, kernel_root) / "l3_analysis.json"
+    _write_json(path, payload)
+    return {"l3_analysis": payload, "path": str(path)}
+
+
+def write_l3_result_integration_projection(
+    topic_slug: str,
+    payload: dict[str, Any],
+    *,
+    kernel_root: Path | None = None,
+) -> dict[str, Any]:
+    path = _runtime_topic_root(topic_slug, kernel_root) / "l3_result_integration.json"
+    _write_json(path, payload)
+    return {"l3_result_integration": payload, "path": str(path)}
+
+
+def write_l3_distillation_projection(
+    topic_slug: str,
+    payload: dict[str, Any],
+    *,
+    kernel_root: Path | None = None,
+) -> dict[str, Any]:
+    path = _runtime_topic_root(topic_slug, kernel_root) / "l3_distillation.json"
+    _write_json(path, payload)
+    return {"l3_distillation": payload, "path": str(path)}
+
+
 def write_pending_decisions_projection(
     topic_slug: str,
     payload: dict[str, Any],

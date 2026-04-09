@@ -16,7 +16,12 @@
     "last_materialized_stage",
     "research_mode",
     "load_profile",
+    "l0_sources",
+    "l1_understanding",
+    "l4_validation",
+    "l2_memory",
     "topic_synopsis",
+    "l3_subplanes",
     "interaction_contract",
     "result_brief",
     "pending_decisions",
@@ -26,6 +31,10 @@
     "promotion_readiness",
     "open_gap_summary",
     "strategy_memory",
+    "collaborator_memory",
+    "exploration_window",
+    "task_type_lane_guidance",
+    "collaborator_routing_guidance",
     "topic_skill_projection",
     "topic_completion",
     "lean_bridge",
@@ -94,6 +103,18 @@
         "full"
       ]
     },
+    "l0_sources": {
+      "$ref": "#/$defs/layer_projection"
+    },
+    "l1_understanding": {
+      "$ref": "#/$defs/layer_projection"
+    },
+    "l4_validation": {
+      "$ref": "#/$defs/l4_projection"
+    },
+    "l2_memory": {
+      "$ref": "#/$defs/l2_projection"
+    },
     "topic_synopsis": {
       "type": "object",
       "additionalProperties": false,
@@ -102,6 +123,7 @@
         "topic_slug",
         "title",
         "question",
+        "task_type",
         "lane",
         "load_profile",
         "status",
@@ -134,6 +156,14 @@
           "type": "string",
           "minLength": 1
         },
+        "task_type": {
+          "type": "string",
+          "enum": [
+            "open_exploration",
+            "conjecture_attempt",
+            "target_driven_execution"
+          ]
+        },
         "lane": {
           "type": "string",
           "minLength": 1
@@ -161,7 +191,9 @@
         "interaction_class": {
           "type": "string",
           "enum": [
+            "free_explore",
             "silent_continue",
+            "non_blocking_update",
             "checkpoint_question"
           ]
         },
@@ -179,6 +211,7 @@
           "type": "string",
           "enum": [
             "status_update",
+            "result_brief",
             "checkpoint_card"
           ]
         },
@@ -215,6 +248,26 @@
         }
       }
     },
+    "l3_subplanes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "analysis",
+        "result_integration",
+        "distillation"
+      ],
+      "properties": {
+        "analysis": {
+          "$ref": "#/$defs/l3_subplane"
+        },
+        "result_integration": {
+          "$ref": "#/$defs/l3_subplane"
+        },
+        "distillation": {
+          "$ref": "#/$defs/l3_subplane"
+        }
+      }
+    },
     "interaction_contract": {
       "type": "object",
       "additionalProperties": false,
@@ -228,7 +281,9 @@
         "interaction_class": {
           "type": "string",
           "enum": [
+            "free_explore",
             "silent_continue",
+            "non_blocking_update",
             "checkpoint_question"
           ]
         },
@@ -246,6 +301,7 @@
           "type": "string",
           "enum": [
             "status_update",
+            "result_brief",
             "checkpoint_card"
           ]
         }
@@ -277,7 +333,9 @@
         "interaction_class": {
           "type": "string",
           "enum": [
+            "free_explore",
             "silent_continue",
+            "non_blocking_update",
             "checkpoint_question"
           ]
         },
@@ -371,6 +429,7 @@
         "question_id",
         "title",
         "status",
+        "task_type",
         "template_mode",
         "research_mode",
         "validation_mode",
@@ -391,6 +450,14 @@
         "status": {
           "type": "string",
           "minLength": 1
+        },
+        "task_type": {
+          "type": "string",
+          "enum": [
+            "open_exploration",
+            "conjecture_attempt",
+            "target_driven_execution"
+          ]
         },
         "template_mode": {
           "type": "string",
@@ -431,6 +498,7 @@
       "required": [
         "topic_slug",
         "status",
+        "task_type",
         "status_reason",
         "initial_idea",
         "novelty_target",
@@ -456,6 +524,14 @@
             "needs_clarification",
             "approved_for_execution",
             "deferred"
+          ]
+        },
+        "task_type": {
+          "type": "string",
+          "enum": [
+            "open_exploration",
+            "conjecture_attempt",
+            "target_driven_execution"
           ]
         },
         "status_reason": {
@@ -878,6 +954,263 @@
           }
         },
         "summary": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "collaborator_memory": {
+      "$ref": "#/$defs/collaborator_memory"
+    },
+    "exploration_window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "current_question",
+        "candidate_intuitions",
+        "local_blockers",
+        "likely_next_target_layer",
+        "window_open",
+        "closure_required",
+        "summary",
+        "path",
+        "note_path"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "inactive",
+            "open"
+          ]
+        },
+        "current_question": {
+          "type": "string"
+        },
+        "candidate_intuitions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "local_blockers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "likely_next_target_layer": {
+          "type": "string"
+        },
+        "window_open": {
+          "type": "boolean"
+        },
+        "closure_required": {
+          "type": "boolean"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "task_type_lane_guidance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "topic_slug",
+        "task_type",
+        "lane",
+        "lane_family",
+        "summary",
+        "l0_expectation",
+        "l1_expectation",
+        "l3_expectation",
+        "l4_expectation",
+        "l2_writeback_expectation",
+        "recommended_first_moves",
+        "human_interaction_bias",
+        "path",
+        "note_path"
+      ],
+      "properties": {
+        "topic_slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "task_type": {
+          "type": "string",
+          "enum": [
+            "open_exploration",
+            "conjecture_attempt",
+            "target_driven_execution"
+          ]
+        },
+        "lane": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lane_family": {
+          "type": "string",
+          "enum": [
+            "formal_theory",
+            "model_numeric",
+            "code_and_materials"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "l0_expectation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "l1_expectation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "l3_expectation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "l4_expectation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "l2_writeback_expectation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "recommended_first_moves": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "human_interaction_bias": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "collaborator_routing_guidance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "topic_slug",
+        "task_type",
+        "lane",
+        "lane_family",
+        "preferred_lanes",
+        "alignment_status",
+        "summary",
+        "recommended_steering_action",
+        "override_surfaces",
+        "guidance_ref",
+        "path",
+        "note_path"
+      ],
+      "properties": {
+        "topic_slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "task_type": {
+          "type": "string",
+          "enum": [
+            "open_exploration",
+            "conjecture_attempt",
+            "target_driven_execution"
+          ]
+        },
+        "lane": {
+          "type": "string",
+          "minLength": 1
+        },
+        "lane_family": {
+          "type": "string",
+          "enum": [
+            "formal_theory",
+            "model_numeric",
+            "code_and_materials"
+          ]
+        },
+        "preferred_lanes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "alignment_status": {
+          "type": "string",
+          "enum": [
+            "no_preference",
+            "aligned",
+            "preference_mismatch"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "recommended_steering_action": {
+          "type": "string",
+          "minLength": 1
+        },
+        "override_surfaces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "surface",
+              "path",
+              "role"
+            ],
+            "properties": {
+              "surface": {
+                "type": "string",
+                "minLength": 1
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1
+              },
+              "role": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "guidance_ref": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note_path": {
           "type": "string",
           "minLength": 1
         }
@@ -1785,6 +2118,713 @@
         "string",
         "null"
       ]
+    },
+    "layer_projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subplane",
+        "status",
+        "summary",
+        "path",
+        "note_path",
+        "primary_output_path",
+        "next_allowed_transitions",
+        "consumed_by"
+      ],
+      "properties": {
+        "subplane": {
+          "type": "string",
+          "enum": [
+            "L0",
+            "L1"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "primary_output_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "source_titles": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "source_types": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "source_fidelity_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "highest_fidelity_class": {
+          "type": "string"
+        },
+        "source_fidelity_summary": {
+          "type": "string"
+        },
+        "arxiv_id_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "bibtex_signal_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "citation_signal_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "citation_graph_status": {
+          "type": "string"
+        },
+        "citation_graph_summary": {
+          "type": "string"
+        },
+        "backend_bridge_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "intake_stage": {
+          "type": "string"
+        },
+        "next_stage": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reading_depth": {
+          "type": "string"
+        },
+        "assumption_quality": {
+          "type": "string"
+        },
+        "analytic_check_families": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "notation_table_path": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "assumption_table_path": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "regime_table_path": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "claim_extraction_path": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "available_artifact_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "next_allowed_transitions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "consumed_by": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "collaborator_memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "memory_kind",
+        "status",
+        "preference_count",
+        "preferences",
+        "preferred_lanes",
+        "avoided_pattern_count",
+        "avoided_patterns",
+        "long_horizon_concern_count",
+        "long_horizon_concerns",
+        "collaboration_style",
+        "path",
+        "note_path",
+        "summary"
+      ],
+      "properties": {
+        "memory_kind": {
+          "type": "string",
+          "const": "collaborator_memory"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "absent",
+            "available"
+          ]
+        },
+        "preference_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "preferences": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "preferred_lanes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "avoided_pattern_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "avoided_patterns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "long_horizon_concern_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "long_horizon_concerns": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "collaboration_style": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "path": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "note_path": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "l4_projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subplane",
+        "status",
+        "summary",
+        "path",
+        "note_path",
+        "primary_output_path",
+        "validation_mode",
+        "evidence_status",
+        "next_allowed_transitions",
+        "consumed_by"
+      ],
+      "properties": {
+        "subplane": {
+          "type": "string",
+          "const": "L4"
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "primary_output_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "validation_mode": {
+          "type": "string"
+        },
+        "verification_focus": {
+          "type": "string"
+        },
+        "analytic_check_families": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "evidence_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_kind": {
+          "type": "string"
+        },
+        "evidence_path": {
+          "type": "string"
+        },
+        "record_id": {
+          "type": "string"
+        },
+        "next_allowed_transitions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "consumed_by": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "l2_projection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subplane",
+        "status",
+        "summary",
+        "path",
+        "note_path",
+        "primary_output_path",
+        "consultation_count",
+        "staging_entry_count",
+        "promotion_gate_status",
+        "promoted_unit_count",
+        "graph_surface",
+        "next_allowed_transitions",
+        "consumed_by"
+      ],
+      "properties": {
+        "subplane": {
+          "type": "string",
+          "const": "L2"
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "primary_output_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "consultation_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "staging_entry_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "staging_entry_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "intended_l2_targets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "promotion_gate_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "promoted_unit_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "promoted_units": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "consultation_surface": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "consultation_index_path",
+            "consultation_count",
+            "latest_consultation_id",
+            "latest_query_text",
+            "latest_summary",
+            "latest_application_path",
+            "latest_summary_note_path",
+            "latest_memory_map_path",
+            "latest_memory_map_note_path"
+          ],
+          "properties": {
+            "consultation_index_path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "consultation_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "latest_consultation_id": {
+              "type": "string"
+            },
+            "latest_query_text": {
+              "type": "string"
+            },
+            "latest_summary": {
+              "type": "string"
+            },
+            "latest_application_path": {
+              "type": "string"
+            },
+            "latest_summary_note_path": {
+              "type": "string"
+            },
+            "latest_memory_map_path": {
+              "type": "string"
+            },
+            "latest_memory_map_note_path": {
+              "type": "string"
+            }
+          }
+        },
+        "writeback_surface": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "promotion_gate_status",
+            "staging_entry_count",
+            "staging_entry_ids",
+            "intended_l2_targets",
+            "promoted_unit_count",
+            "promoted_units"
+          ],
+          "properties": {
+            "promotion_gate_status": {
+              "type": "string",
+              "minLength": 1
+            },
+            "staging_entry_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "staging_entry_ids": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "intended_l2_targets": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "promoted_unit_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "promoted_units": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "graph_surface": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "index_path",
+            "edges_path",
+            "unit_count",
+            "edge_count",
+            "unit_types",
+            "status",
+            "summary"
+          ],
+          "properties": {
+            "index_path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "edges_path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "unit_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "edge_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "unit_types": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "empty",
+                "seeded"
+              ]
+            },
+            "summary": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "next_allowed_transitions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "consumed_by": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "l3_subplane": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "subplane",
+        "status",
+        "summary",
+        "path",
+        "note_path",
+        "primary_output_path",
+        "next_allowed_transitions",
+        "consumed_by"
+      ],
+      "properties": {
+        "subplane": {
+          "type": "string",
+          "enum": [
+            "L3-A",
+            "L3-R",
+            "L3-D"
+          ]
+        },
+        "status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "primary_output_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "supporting_output_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "candidate_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "candidate_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "selected_action_summary": {
+          "type": "string"
+        },
+        "evidence_status": {
+          "type": "string"
+        },
+        "evidence_kind": {
+          "type": "string"
+        },
+        "record_id": {
+          "type": "string"
+        },
+        "ready_candidate_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "staging_entry_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "staging_entry_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "intended_l2_targets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "writeback_blockers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "mandatory_inputs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "next_allowed_transitions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "consumed_by": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "forbidden_direct_transitions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "mandatory_routing_rule": {
+          "type": "string"
+        }
+      }
     },
     "trigger_name": {
       "anyOf": [

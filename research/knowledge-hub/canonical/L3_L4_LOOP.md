@@ -58,7 +58,7 @@ So the productive loop is:
 
 When starting from a new source, the full path is usually:
 
-`L0 -> L1 -> L3 -> L4 -> L2`
+`L0 -> L1 -> L3-A -> L4 -> L3-R -> L3-D -> L2`
 
 ## Failure handling
 

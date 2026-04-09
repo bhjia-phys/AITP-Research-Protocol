@@ -1,0 +1,84 @@
+{
+  "id": "warning_note:tfim-dense-ed-finite-size-limit",
+  "unit_type": "warning_note",
+  "title": "Dense exact diagonalization finite-size limit",
+  "summary": "The public TFIM helper is only a tiny-system benchmark gate and not a scalable solver claim.",
+  "maturity": "human_promoted",
+  "created_at": "2026-04-08T05:38:02+00:00",
+  "updated_at": "2026-04-08T05:38:02+00:00",
+  "topic_completion_status": "regression-stable",
+  "tags": [
+    "tfim",
+    "warning",
+    "finite-size"
+  ],
+  "assumptions": [
+    "Dense exact diagonalization does not scale to larger systems in this route."
+  ],
+  "regime": {
+    "domain": "tfim benchmark-first seed",
+    "approximations": [
+      "tiny exact benchmark"
+    ],
+    "scale": "smoke-test",
+    "boundary_conditions": [
+      "bounded public route"
+    ],
+    "exclusions": [
+      "large-scale numerics",
+      "broad portability claims"
+    ]
+  },
+  "scope": {
+    "applies_to": [
+      "bounded TFIM benchmark memory"
+    ],
+    "out_of_scope": [
+      "full many-body closure"
+    ]
+  },
+  "provenance": {
+    "source_ids": [
+      "source:tfim-exact-diagonalization-tool",
+      "source:tfim-benchmark-code-method-acceptance",
+      "source:aitp-test-runbook"
+    ],
+    "l1_artifacts": [
+      "README.md#tfim-code-method-acceptance",
+      "runtime/AITP_TEST_RUNBOOK.md#real-topic-acceptance-code-backed-benchmark-first-lane"
+    ],
+    "l3_runs": [
+      "runtime/scripts/run_tfim_benchmark_code_method_acceptance.py"
+    ],
+    "l4_checks": [
+      "runtime/scripts/run_tfim_benchmark_code_method_acceptance.py",
+      "validation/tools/tfim_exact_diagonalization.py"
+    ],
+    "citations": [
+      "AITP public TFIM benchmark-first acceptance lane"
+    ]
+  },
+  "promotion": {
+    "route": "L3->L4->L2",
+    "review_mode": "human",
+    "canonical_layer": "L2",
+    "promoted_by": "aitp-cli",
+    "promoted_at": "2026-04-08T05:38:02+00:00",
+    "review_status": "accepted",
+    "rationale": "Repo-seeded L2 MVP direction for the public TFIM benchmark-first lane."
+  },
+  "dependencies": [
+    "method:tfim-exact-diagonalization-helper"
+  ],
+  "related_units": [
+    "workflow:tfim-benchmark-workflow",
+    "claim_card:tfim-benchmark-before-portability-claim"
+  ],
+  "payload": {
+    "warning_tags": [
+      "finite-size",
+      "benchmark-only",
+      "non-scalable"
+    ]
+  }
+}

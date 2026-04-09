@@ -84,7 +84,7 @@ survives explicit checking.
 
 The default non-trivial route is:
 
-`L0 -> L1 -> L3 -> L4 -> L2`
+`L0 -> L1 -> L3-A -> L4 -> L3-R -> L3-D -> L2`
 
 The low-risk exception is:
 

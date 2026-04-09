@@ -154,6 +154,14 @@ Required behavior:
 - record the reduction or lag explicitly;
 - prefer honest mismatch reporting over forced lossy synchronization.
 
+For paired-backend maintenance, use:
+
+- `../L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md`
+
+That protocol defines drift audit, backend debt, rebuild, and post-rebuild
+verification as explicit operations rather than leaving them as informal repair
+work.
+
 ## 7. Promotion rule
 
 Promotion does not target "the typed side first" or "the human side first" as
@@ -165,6 +173,9 @@ Instead:
 - backend-specific writeback materializes the object in one or both
   realizations;
 - any one-sided materialization must say what still remains to align.
+
+Any later drift audit or rebuild must preserve the same promoted identity.
+It may not silently turn backend maintenance into a second promotion channel.
 
 ## 8. One-line doctrine
 

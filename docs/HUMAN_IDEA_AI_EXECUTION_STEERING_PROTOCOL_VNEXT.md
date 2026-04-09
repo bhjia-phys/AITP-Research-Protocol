@@ -3,7 +3,7 @@
 Status: implementation target
 
 Scope: next-stage protocol and runtime hardening on top of existing AITP
-`L0 -> L1 -> L3 -> L4 -> L2`
+`L0 -> L1 -> L3-A -> L4 -> L3-R -> L3-D -> L2`
 
 ## 1) Goal
 

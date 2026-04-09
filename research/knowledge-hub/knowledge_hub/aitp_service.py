@@ -18,11 +18,24 @@ from .decision_point_handler import get_all_decision_points, list_pending_decisi
 from .decision_trace_handler import get_decision_traces
 from .runtime_projection_handler import (
     build_knowledge_packets_from_candidates,
+    write_l0_sources_projection,
+    write_l1_understanding_projection,
+    write_l2_memory_projection,
+    write_l3_analysis_projection,
+    write_l3_distillation_projection,
+    write_l3_result_integration_projection,
+    write_l4_validation_projection,
     write_pending_decisions_projection,
     write_promotion_readiness_projection,
     write_promotion_trace,
     write_topic_skill_projection,
     write_topic_synopsis,
+)
+from .l2_graph import (
+    consult_canonical_l2 as consult_canonical_l2_graph,
+    materialize_canonical_index as materialize_canonical_l2_index,
+    seed_l2_demo_direction as seed_l2_demo_graph_direction,
+    stage_l2_insight as stage_l2_graph_insight,
 )
 from .tpkn_bridge import (
     build_supporting_question_oracle_unit,
@@ -294,6 +307,13 @@ class AITPService:
         return {
             "json": runtime_root / "current_topic.json",
             "note": runtime_root / "current_topic.md",
+        }
+
+    def _collaborator_memory_paths(self) -> dict[str, Path]:
+        root = self.kernel_root / "collaborator-memory"
+        return {
+            "json": root / "profile.json",
+            "note": root / "profile.md",
         }
 
     def _session_start_paths(self, topic_slug: str) -> dict[str, Path]:
@@ -621,6 +641,37 @@ class AITPService:
 
     def _promotion_readiness_path(self, topic_slug: str) -> Path:
         return self._runtime_root(topic_slug) / "promotion_readiness.md"
+
+    def _layer_projection_paths(self, topic_slug: str, layer: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        stem_by_layer = {
+            "L0": "l0_sources",
+            "L1": "l1_understanding",
+            "L2": "l2_memory",
+            "L4": "l4_validation",
+        }
+        if layer not in stem_by_layer:
+            raise ValueError(f"Unsupported layer projection: {layer}")
+        stem = stem_by_layer[layer]
+        return {
+            "json": runtime_root / f"{stem}.json",
+            "note": runtime_root / f"{stem}.md",
+        }
+
+    def _l3_subplane_paths(self, topic_slug: str, subplane: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        stem_by_subplane = {
+            "analysis": "l3_analysis",
+            "result_integration": "l3_result_integration",
+            "distillation": "l3_distillation",
+        }
+        if subplane not in stem_by_subplane:
+            raise ValueError(f"Unsupported L3 subplane: {subplane}")
+        stem = stem_by_subplane[subplane]
+        return {
+            "json": runtime_root / f"{stem}.json",
+            "note": runtime_root / f"{stem}.md",
+        }
 
     def _gap_map_path(self, topic_slug: str) -> Path:
         return self._runtime_root(topic_slug) / "gap_map.md"
@@ -2005,12 +2056,602 @@ class AITPService:
             "summary": summary,
         }
 
+    def _derive_collaborator_memory_summary(self) -> dict[str, Any]:
+        paths = self._collaborator_memory_paths()
+        payload = read_json(paths["json"]) or {}
+        preferences = self._dedupe_strings(list(payload.get("preferences") or []))
+        preferred_lanes = self._dedupe_strings(list(payload.get("preferred_lanes") or []))
+        avoided_patterns = self._dedupe_strings(list(payload.get("avoided_patterns") or []))
+        concerns = self._dedupe_strings(list(payload.get("long_horizon_concerns") or []))
+        collaboration_style = self._dedupe_strings(list(payload.get("collaboration_style") or []))
+        if payload:
+            status = "available"
+            summary = (
+                "Collaborator-specific preferences and long-horizon concerns are available. "
+                "Use them as steering context, not as canonical scientific memory."
+            )
+        else:
+            status = "absent"
+            summary = "No collaborator-specific memory is currently recorded."
+        return {
+            "memory_kind": "collaborator_memory",
+            "status": status,
+            "preference_count": len(preferences),
+            "preferences": preferences,
+            "preferred_lanes": preferred_lanes,
+            "avoided_pattern_count": len(avoided_patterns),
+            "avoided_patterns": avoided_patterns,
+            "long_horizon_concern_count": len(concerns),
+            "long_horizon_concerns": concerns,
+            "collaboration_style": collaboration_style,
+            "path": self._relativize(paths["json"]) if paths["json"].exists() else None,
+            "note_path": self._relativize(paths["note"]) if paths["note"].exists() else None,
+            "summary": summary,
+        }
+
+    def _topic_staging_entries(self, topic_slug: str) -> list[dict[str, Any]]:
+        entry_root = self.kernel_root / "canonical" / "staging" / "entries"
+        if not entry_root.exists():
+            return []
+        rows: list[dict[str, Any]] = []
+        for path in sorted(entry_root.glob("staging--*.json")):
+            payload = read_json(path) or {}
+            if str(payload.get("topic_slug") or "").strip() != topic_slug:
+                continue
+            rows.append(
+                {
+                    **payload,
+                    "path": self._relativize(path),
+                }
+            )
+        return rows
+
+    def _origin_ref_strings(self, origin_refs: list[Any]) -> list[str]:
+        refs: list[str] = []
+        for row in origin_refs:
+            if isinstance(row, str):
+                value = row.strip()
+                if value:
+                    refs.append(value)
+                continue
+            if not isinstance(row, dict):
+                continue
+            for key in ("path", "id", "title"):
+                value = str(row.get(key) or "").strip()
+                if value:
+                    refs.append(value)
+                    break
+        return self._dedupe_strings(refs)
+
+    def _source_fidelity_class(self, row: dict[str, Any]) -> str:
+        source_type = str(row.get("source_type") or "").strip().lower()
+        if source_type in {"journal", "peer_reviewed_paper", "peer_reviewed_article", "published_paper"}:
+            return "peer_reviewed"
+        if source_type in {"paper", "arxiv", "preprint"}:
+            return "preprint"
+        if source_type in {"thesis", "dissertation"}:
+            return "thesis"
+        if source_type in {"book", "monograph", "lecture_notes", "review_article"}:
+            return "formal_reference"
+        if source_type in {"blog", "informal_note", "note", "webpage", "forum", "video", "talk", "verbal_claim"}:
+            return "informal"
+        if source_type in {"code", "repository", "numerical", "dataset", "software_doc", "local"}:
+            return "code_artifact"
+        return "unknown"
+
+    def _source_fidelity_summary(self, fidelity_counts: dict[str, int]) -> str:
+        nonzero = {key: value for key, value in fidelity_counts.items() if value > 0}
+        if not nonzero:
+            return "No registered source fidelity signal is currently available."
+        ordered = sorted(nonzero.items(), key=lambda item: (-item[1], item[0]))
+        parts = [f"{value} {key.replace('_', ' ')}" for key, value in ordered]
+        if len(nonzero) == 1:
+            return f"Current source basis is dominated by {parts[0]} evidence."
+        return f"Current source basis mixes {'; '.join(parts)} evidence."
+
+    def _infer_reading_depth(
+        self,
+        *,
+        intake_stage: str,
+        notation_table_path: Path,
+        assumption_table_path: Path,
+        regime_table_path: Path,
+        claim_extraction_path: Path,
+        explicit_value: str,
+    ) -> str:
+        if explicit_value:
+            return explicit_value
+        if all(path.exists() for path in (notation_table_path, assumption_table_path, regime_table_path, claim_extraction_path)):
+            return "structured_reconstruction"
+        if intake_stage == "technical_understanding" and notation_table_path.exists() and assumption_table_path.exists():
+            return "technical_reconstruction"
+        if notation_table_path.exists() or assumption_table_path.exists():
+            return "partial_reconstruction"
+        if intake_stage and intake_stage != "missing":
+            return "source_preview"
+        return "missing"
+
+    def _infer_assumption_quality(
+        self,
+        *,
+        assumption_table_path: Path,
+        claim_extraction_path: Path,
+        explicit_value: str,
+    ) -> str:
+        if explicit_value:
+            return explicit_value
+        if assumption_table_path.exists() and claim_extraction_path.exists():
+            return "structured"
+        if assumption_table_path.exists():
+            return "partial"
+        return "missing"
+
+    def _citation_graph_signals(self, source_rows: list[dict[str, Any]]) -> dict[str, Any]:
+        arxiv_id_count = 0
+        bibtex_signal_count = 0
+        citation_signal_count = 0
+        for row in source_rows:
+            provenance = row.get("provenance") or {}
+            if str(row.get("arxiv_id") or provenance.get("arxiv_id") or provenance.get("versioned_id") or "").strip():
+                arxiv_id_count += 1
+            if str(row.get("bibtex_key") or provenance.get("bibtex_key") or provenance.get("doi") or "").strip():
+                bibtex_signal_count += 1
+            references = row.get("references") or provenance.get("references") or row.get("citations") or []
+            if isinstance(references, list) and references:
+                citation_signal_count += 1
+        status = "present" if any((arxiv_id_count, bibtex_signal_count, citation_signal_count)) else "missing"
+        if status == "present":
+            summary = (
+                f"Source graph signals: arXiv-backed={arxiv_id_count}, "
+                f"BibTeX/DOI-backed={bibtex_signal_count}, cited-reference rows={citation_signal_count}."
+            )
+        else:
+            summary = "No citation-graph or BibTeX-style source signals are currently registered."
+        return {
+            "arxiv_id_count": arxiv_id_count,
+            "bibtex_signal_count": bibtex_signal_count,
+            "citation_signal_count": citation_signal_count,
+            "citation_graph_status": status,
+            "citation_graph_summary": summary,
+        }
+
+    def _derive_l0_sources_projection(
+        self,
+        *,
+        topic_slug: str,
+        backend_bridges: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        source_index_path = self.kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl"
+        source_rows = read_jsonl(source_index_path)
+        source_ids = self._dedupe_strings(
+            [str(row.get("source_id") or "").strip() for row in source_rows if str(row.get("source_id") or "").strip()]
+        )
+        source_titles = self._dedupe_strings(
+            [str(row.get("title") or "").strip() for row in source_rows if str(row.get("title") or "").strip()]
+        )
+        source_types = self._dedupe_strings(
+            [str(row.get("source_type") or "").strip() for row in source_rows if str(row.get("source_type") or "").strip()]
+        )
+        fidelity_counts = {
+            "peer_reviewed": 0,
+            "preprint": 0,
+            "thesis": 0,
+            "formal_reference": 0,
+            "informal": 0,
+            "code_artifact": 0,
+            "unknown": 0,
+        }
+        for row in source_rows:
+            fidelity_counts[self._source_fidelity_class(row)] += 1
+        highest_fidelity_class = next(
+            (
+                key
+                for key in (
+                    "peer_reviewed",
+                    "preprint",
+                    "thesis",
+                    "formal_reference",
+                    "code_artifact",
+                    "informal",
+                    "unknown",
+                )
+                if fidelity_counts[key] > 0
+            ),
+            "unknown",
+        )
+        fidelity_summary = self._source_fidelity_summary(fidelity_counts)
+        citation_signals = self._citation_graph_signals(source_rows)
+        if source_rows:
+            status = "present"
+            summary = (
+                f"{len(source_rows)} registered source(s) are available for fresh reading and source recovery. "
+                f"{fidelity_summary} {citation_signals['citation_graph_summary']}"
+            )
+        else:
+            status = "missing"
+            summary = "No registered L0 source packet is currently available for this topic."
+        return {
+            "subplane": "L0",
+            "status": status,
+            "summary": summary,
+            "primary_output_path": self._relativize(source_index_path),
+            "source_count": len(source_rows),
+            "source_ids": source_ids,
+            "source_titles": source_titles,
+            "source_types": source_types,
+            "source_fidelity_counts": fidelity_counts,
+            "highest_fidelity_class": highest_fidelity_class,
+            "source_fidelity_summary": fidelity_summary,
+            "arxiv_id_count": citation_signals["arxiv_id_count"],
+            "bibtex_signal_count": citation_signals["bibtex_signal_count"],
+            "citation_signal_count": citation_signals["citation_signal_count"],
+            "citation_graph_status": citation_signals["citation_graph_status"],
+            "citation_graph_summary": citation_signals["citation_graph_summary"],
+            "backend_bridge_count": len(backend_bridges),
+            "next_allowed_transitions": ["L1", "L3-A", "L4"],
+            "consumed_by": ["L1", "L3-A", "L4", "H-plane"],
+        }
+
+    def _derive_l1_understanding_projection(self, *, topic_slug: str) -> dict[str, Any]:
+        intake_root = self.kernel_root / "intake" / "topics" / topic_slug
+        intake_status_path = intake_root / "status.json"
+        intake_status = read_json(intake_status_path) or {}
+        notation_table_path = intake_root / "notation_table.md"
+        assumption_table_path = intake_root / "assumption_table.md"
+        regime_table_path = intake_root / "regime_table.md"
+        claim_extraction_path = intake_root / "claim_extraction.md"
+        artifact_paths = []
+        if intake_root.exists():
+            for path in sorted(intake_root.glob("*")):
+                if path.name == "status.json":
+                    continue
+                artifact_paths.append(self._relativize(path))
+        intake_stage = str(intake_status.get("stage") or ("present" if intake_root.exists() else "missing")).strip()
+        next_stage = str(intake_status.get("next_stage") or "").strip()
+        reading_depth = self._infer_reading_depth(
+            intake_stage=intake_stage or "missing",
+            notation_table_path=notation_table_path,
+            assumption_table_path=assumption_table_path,
+            regime_table_path=regime_table_path,
+            claim_extraction_path=claim_extraction_path,
+            explicit_value=str(intake_status.get("reading_depth") or "").strip(),
+        )
+        assumption_quality = self._infer_assumption_quality(
+            assumption_table_path=assumption_table_path,
+            claim_extraction_path=claim_extraction_path,
+            explicit_value=str(intake_status.get("assumption_quality") or "").strip(),
+        )
+        if intake_root.exists() or intake_status:
+            status = "present"
+            summary = str(intake_status.get("summary") or "").strip() or (
+                "Layer 1 understanding artifacts are present and can feed topic analysis or validation."
+            )
+        else:
+            status = "missing"
+            summary = "No durable L1 understanding packet is currently available for this topic."
+        return {
+            "subplane": "L1",
+            "status": status,
+            "summary": summary,
+            "primary_output_path": self._relativize(intake_status_path),
+            "intake_stage": intake_stage or "missing",
+            "next_stage": next_stage or None,
+            "reading_depth": reading_depth,
+            "assumption_quality": assumption_quality,
+            "notation_table_path": self._relativize(notation_table_path) if notation_table_path.exists() else None,
+            "assumption_table_path": self._relativize(assumption_table_path) if assumption_table_path.exists() else None,
+            "regime_table_path": self._relativize(regime_table_path) if regime_table_path.exists() else None,
+            "claim_extraction_path": self._relativize(claim_extraction_path) if claim_extraction_path.exists() else None,
+            "available_artifact_paths": artifact_paths,
+            "next_allowed_transitions": ["L3-A", "L4", "L3-D"],
+            "consumed_by": ["L3-A", "L4", "L3-D", "H-plane"],
+        }
+
+    def _derive_l4_validation_projection(
+        self,
+        *,
+        topic_slug: str,
+        topic_state: dict[str, Any],
+        validation_contract: dict[str, Any],
+        topic_status_explainability: dict[str, Any],
+    ) -> dict[str, Any]:
+        last_evidence_return = topic_status_explainability.get("last_evidence_return") or self._derive_last_evidence_return(
+            topic_state=topic_state,
+            validation_contract=validation_contract,
+        )
+        evidence_status = str(last_evidence_return.get("status") or "missing").strip()
+        evidence_path = str(last_evidence_return.get("path") or "").strip()
+        if evidence_status == "present":
+            status = "active"
+            summary = str(last_evidence_return.get("summary") or "").strip() or (
+                "A durable validation-return artifact is present for this topic."
+            )
+            primary_output_path = evidence_path or self._relativize(self._validation_contract_paths(topic_slug)["json"])
+        elif str(validation_contract.get("status") or "").strip():
+            status = "planned"
+            summary = "Validation is contract-defined, but no durable return artifact is recorded yet."
+            primary_output_path = (
+                str(validation_contract.get("path") or "").strip()
+                or self._relativize(self._validation_contract_paths(topic_slug)["json"])
+            )
+        else:
+            status = "missing"
+            summary = "No explicit Layer 4 validation projection is currently available for this topic."
+            primary_output_path = self._relativize(self._validation_contract_paths(topic_slug)["json"])
+        return {
+            "subplane": "L4",
+            "status": status,
+            "summary": summary,
+            "primary_output_path": primary_output_path,
+            "validation_mode": str(validation_contract.get("validation_mode") or ""),
+            "verification_focus": str(validation_contract.get("verification_focus") or ""),
+            "analytic_check_families": self._dedupe_strings(list(validation_contract.get("analytic_check_families") or [])),
+            "evidence_status": evidence_status,
+            "evidence_kind": str(last_evidence_return.get("kind") or "none"),
+            "evidence_path": evidence_path,
+            "record_id": str(last_evidence_return.get("record_id") or ""),
+            "next_allowed_transitions": ["L3-R", "H-plane"],
+            "consumed_by": ["L3-R", "H-plane"],
+        }
+
+    def _canonical_l2_graph_surface(self) -> dict[str, Any]:
+        canonical_index_path = self.kernel_root / "canonical" / "index.jsonl"
+        canonical_edges_path = self.kernel_root / "canonical" / "edges.jsonl"
+        canonical_index_rows = read_jsonl(canonical_index_path)
+        canonical_edge_rows = read_jsonl(canonical_edges_path)
+        canonical_unit_types = sorted(
+            {
+                str(row.get("unit_type") or "").strip()
+                for row in canonical_index_rows
+                if str(row.get("unit_type") or "").strip()
+            }
+        )
+        if canonical_index_rows or canonical_edge_rows:
+            status = "seeded"
+            summary = (
+                f"Canonical L2 graph is seeded with {len(canonical_index_rows)} units and "
+                f"{len(canonical_edge_rows)} edges across {len(canonical_unit_types)} unit types."
+            )
+        else:
+            status = "empty"
+            summary = (
+                "Canonical L2 graph is currently empty, so consultation may expose only "
+                "local topic traces or staging instead of substantive reusable graph memory."
+            )
+        return {
+            "index_path": self._relativize(canonical_index_path),
+            "edges_path": self._relativize(canonical_edges_path),
+            "unit_count": len(canonical_index_rows),
+            "edge_count": len(canonical_edge_rows),
+            "unit_types": canonical_unit_types,
+            "status": status,
+            "summary": summary,
+        }
+
+    def _derive_l2_memory_projection(
+        self,
+        *,
+        topic_slug: str,
+        topic_state: dict[str, Any],
+        promotion_readiness: dict[str, Any],
+        promotion_gate: dict[str, Any],
+        topic_skill_projection: dict[str, Any],
+        candidate_rows: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        graph_surface = self._canonical_l2_graph_surface()
+        consultation_index_path = self._normalize_artifact_path(
+            (topic_state.get("pointers") or {}).get("consultation_index_path")
+        ) or self._relativize(self._consultation_root(topic_slug) / "consultation_index.jsonl")
+        consultation_rows = read_jsonl(self._consultation_root(topic_slug) / "consultation_index.jsonl")
+        staging_entries = self._topic_staging_entries(topic_slug)
+        intended_l2_targets = self._dedupe_strings(
+            [
+                str(topic_skill_projection.get("intended_l2_target") or "").strip(),
+                *[
+                    str(target).strip()
+                    for row in candidate_rows
+                    for target in (row.get("intended_l2_targets") or [])
+                    if str(target).strip()
+                ],
+                *[
+                    str(value).strip()
+                    for value in (promotion_readiness.get("ready_candidate_ids") or [])
+                    if str(value).strip()
+                ],
+            ]
+        )
+        promoted_units = self._dedupe_strings(list(promotion_gate.get("promoted_units") or []))
+        if consultation_rows or staging_entries or intended_l2_targets or promoted_units:
+            status = "active"
+            summary = "Layer 2 memory surfaces are active through consultation, staging, or writeback readiness."
+        elif str(graph_surface.get("status") or "") == "seeded":
+            status = "quiet"
+            summary = "Canonical Layer 2 graph memory is seeded, but no strong topic-local consultation or writeback signal is currently active."
+        else:
+            status = "quiet"
+            summary = "No strong Layer 2 consultation or writeback signal is currently active for this topic."
+        latest_consultation = consultation_rows[-1] if consultation_rows else {}
+        latest_consultation_id = str((latest_consultation or {}).get("consultation_id") or "").strip()
+        consultation_surface = {
+            "consultation_index_path": consultation_index_path,
+            "consultation_count": len(consultation_rows),
+            "latest_consultation_id": latest_consultation_id,
+            "latest_query_text": str((latest_consultation or {}).get("query_text") or "").strip(),
+            "latest_summary": str((latest_consultation or {}).get("summary") or "").strip(),
+            "latest_application_path": str((latest_consultation or {}).get("application_path") or "").strip(),
+            "latest_summary_note_path": str((latest_consultation or {}).get("summary_note_path") or "").strip(),
+            "latest_memory_map_path": str((latest_consultation or {}).get("memory_map_path") or "").strip(),
+            "latest_memory_map_note_path": str((latest_consultation or {}).get("memory_map_note_path") or "").strip(),
+        }
+        writeback_surface = {
+            "promotion_gate_status": str(promotion_gate.get("status") or "not_requested"),
+            "staging_entry_count": len(staging_entries),
+            "staging_entry_ids": self._dedupe_strings(
+                [str(row.get("entry_id") or "").strip() for row in staging_entries if str(row.get("entry_id") or "").strip()]
+            ),
+            "intended_l2_targets": intended_l2_targets,
+            "promoted_unit_count": len(promoted_units),
+            "promoted_units": promoted_units,
+        }
+        return {
+            "subplane": "L2",
+            "status": status,
+            "summary": summary,
+            "primary_output_path": consultation_index_path,
+            "consultation_count": len(consultation_rows),
+            "staging_entry_count": len(staging_entries),
+            "staging_entry_ids": writeback_surface["staging_entry_ids"],
+            "intended_l2_targets": intended_l2_targets,
+            "promotion_gate_status": str(promotion_gate.get("status") or "not_requested"),
+            "promoted_unit_count": len(promoted_units),
+            "promoted_units": promoted_units,
+            "consultation_surface": consultation_surface,
+            "writeback_surface": writeback_surface,
+            "graph_surface": graph_surface,
+            "next_allowed_transitions": ["L3-A", "L3-D", "H-plane"],
+            "consumed_by": ["L3-A", "L3-D", "H-plane"],
+        }
+
+    def _derive_l3_subplanes(
+        self,
+        *,
+        topic_slug: str,
+        latest_run_id: str,
+        candidate_rows: list[dict[str, Any]],
+        selected_pending_action: dict[str, Any] | None,
+        result_brief: dict[str, Any],
+        topic_status_explainability: dict[str, Any],
+        promotion_readiness_path: str,
+        promotion_readiness: dict[str, Any],
+    ) -> dict[str, dict[str, Any]]:
+        candidate_ids = self._dedupe_strings(
+            [str(row.get("candidate_id") or "").strip() for row in candidate_rows if str(row.get("candidate_id") or "").strip()]
+        )
+        selected_action_summary = str((selected_pending_action or {}).get("summary") or "").strip()
+        if latest_run_id:
+            analysis_primary_output_path = self._relativize(self._candidate_ledger_path(topic_slug, latest_run_id))
+        else:
+            analysis_primary_output_path = self._relativize(self.kernel_root / "feedback" / "topics" / topic_slug)
+        if candidate_ids:
+            analysis_status = "active"
+            analysis_summary = (
+                f"{len(candidate_ids)} candidate ledger item(s) are shaping the current topic analysis."
+            )
+        elif selected_action_summary:
+            analysis_status = "route_selected_without_candidates"
+            analysis_summary = (
+                "A bounded next action is selected, but no candidate-ledger artifact has been recorded yet."
+            )
+        else:
+            analysis_status = "idle"
+            analysis_summary = "No durable topic-analysis packet is currently recorded."
+        analysis = {
+            "subplane": "L3-A",
+            "status": analysis_status,
+            "summary": analysis_summary,
+            "primary_output_path": analysis_primary_output_path,
+            "supporting_output_paths": [],
+            "candidate_count": len(candidate_ids),
+            "candidate_ids": candidate_ids,
+            "selected_action_summary": selected_action_summary,
+            "mandatory_inputs": ["L0", "L1", "L2 consult"],
+            "next_allowed_transitions": ["L4", "L0", "L1"],
+            "consumed_by": ["L4", "L0", "L1", "H-plane"],
+        }
+
+        last_evidence_return = topic_status_explainability.get("last_evidence_return") or {}
+        evidence_status = str(last_evidence_return.get("status") or "missing").strip()
+        if evidence_status == "present":
+            result_integration_status = "active"
+            result_integration_summary = str(last_evidence_return.get("summary") or "").strip() or (
+                "A durable L4 return is present and awaits interpretation routing."
+            )
+        elif candidate_rows or selected_action_summary:
+            result_integration_status = "awaiting_l4_return"
+            result_integration_summary = "No durable L4 return is currently recorded for this topic."
+        else:
+            result_integration_status = "idle"
+            result_integration_summary = "Result integration is idle because no bounded validation return is present."
+        result_integration = {
+            "subplane": "L3-R",
+            "status": result_integration_status,
+            "summary": result_integration_summary,
+            "primary_output_path": str(result_brief.get("path") or ""),
+            "supporting_output_paths": self._dedupe_strings(
+                [
+                    str(result_brief.get("note_path") or ""),
+                    str(last_evidence_return.get("path") or ""),
+                ]
+            ),
+            "evidence_status": evidence_status,
+            "evidence_kind": str(last_evidence_return.get("kind") or "none"),
+            "record_id": str(last_evidence_return.get("record_id") or ""),
+            "mandatory_inputs": ["L4"],
+            "next_allowed_transitions": ["L3-A", "L3-D", "L0", "L1"],
+            "consumed_by": ["L3-A", "L3-D", "H-plane"],
+        }
+
+        staging_entries = self._topic_staging_entries(topic_slug)
+        staging_entry_ids = self._dedupe_strings(
+            [str(row.get("entry_id") or "").strip() for row in staging_entries if str(row.get("entry_id") or "").strip()]
+        )
+        staging_entry_paths = self._dedupe_strings(
+            [str(row.get("path") or "").strip() for row in staging_entries if str(row.get("path") or "").strip()]
+        )
+        intended_l2_targets = self._dedupe_strings(
+            [
+                str(target).strip()
+                for row in candidate_rows
+                for target in (row.get("intended_l2_targets") or [])
+                if str(target).strip()
+            ]
+        )
+        ready_candidate_ids = self._dedupe_strings(list(promotion_readiness.get("ready_candidate_ids") or []))
+        writeback_blockers = self._dedupe_strings(list(promotion_readiness.get("blockers") or []))
+        if ready_candidate_ids or staging_entry_ids or intended_l2_targets:
+            distillation_status = "active"
+            distillation_summary = (
+                "Distillation outputs are present and can route toward staging or canonical L2 under the current gate rules."
+            )
+        elif candidate_rows:
+            distillation_status = "pending"
+            distillation_summary = "Candidate shaping exists, but no staging or promotion-ready distillation output is recorded yet."
+        else:
+            distillation_status = "idle"
+            distillation_summary = "No durable distillation output is currently recorded."
+        distillation = {
+            "subplane": "L3-D",
+            "status": distillation_status,
+            "summary": distillation_summary,
+            "primary_output_path": promotion_readiness_path,
+            "supporting_output_paths": staging_entry_paths,
+            "ready_candidate_ids": ready_candidate_ids,
+            "staging_entry_ids": staging_entry_ids,
+            "staging_entry_paths": staging_entry_paths,
+            "intended_l2_targets": intended_l2_targets,
+            "writeback_blockers": writeback_blockers,
+            "mandatory_inputs": ["L3-R"],
+            "next_allowed_transitions": ["staging", "L2", "L3-A", "L1"],
+            "consumed_by": ["canonical/staging/", "L2", "H-plane"],
+            "forbidden_direct_transitions": ["L4->L2"],
+            "mandatory_routing_rule": "L4 outputs must return to L3-R before any L2 writeback decision.",
+        }
+
+        return {
+            "analysis": analysis,
+            "result_integration": result_integration,
+            "distillation": distillation,
+        }
+
     def _derive_interaction_contract(
         self,
         *,
+        topic_slug: str | None = None,
+        human_request: str | None = None,
         idea_packet: dict[str, Any],
         operator_checkpoint: dict[str, Any],
         pending_decisions: dict[str, Any],
+        promotion_readiness: dict[str, Any] | None = None,
     ) -> dict[str, str]:
         checkpoint_status = str(operator_checkpoint.get("status") or "").strip()
         idea_status = str(idea_packet.get("status") or "").strip()
@@ -2063,6 +2704,48 @@ class AITPService:
                 "stop_reason": stop_reason,
                 "primary_result_shape": "checkpoint_card",
             }
+        update_reasons: list[str] = []
+        if topic_slug:
+            consultation_rows = read_jsonl(self._consultation_root(topic_slug) / "consultation_index.jsonl")
+            latest_consultation = consultation_rows[-1] if consultation_rows else {}
+            if str((latest_consultation or {}).get("summary_note_path") or "").strip():
+                update_reasons.append("A new consultation summary is available for operator review.")
+            staged_entry_count = len(self._topic_staging_entries(topic_slug))
+            if staged_entry_count > 0:
+                noun = "entry" if staged_entry_count == 1 else "entries"
+                update_reasons.append(f"{staged_entry_count} staged memory {noun} are now available.")
+        promotion_status = str((promotion_readiness or {}).get("status") or "").strip()
+        if promotion_status in {"approved", "promoted", "blocked"}:
+            update_reasons.append(f"Promotion readiness changed to `{promotion_status}`.")
+        if update_reasons:
+            return {
+                "interaction_class": "non_blocking_update",
+                "stop_status": "continue",
+                "stop_reason": " ".join(update_reasons),
+                "primary_result_shape": "result_brief",
+            }
+        task_type = str(idea_packet.get("task_type") or "").strip()
+        if task_type == "open_exploration":
+            return {
+                "interaction_class": "free_explore",
+                "stop_status": "continue",
+                "stop_reason": "Open exploration is active, so bounded speculative analysis may continue before a harder route commitment is required.",
+                "primary_result_shape": "status_update",
+            }
+        if task_type == "conjecture_attempt" and self._request_prefers_exploration(human_request):
+            return {
+                "interaction_class": "free_explore",
+                "stop_status": "continue",
+                "stop_reason": "Conjecture-shaping work is still exploratory, so bounded route comparison may continue before a harder commitment is required.",
+                "primary_result_shape": "status_update",
+            }
+        if self._request_prefers_exploration(human_request):
+            return {
+                "interaction_class": "free_explore",
+                "stop_status": "continue",
+                "stop_reason": "Bounded exploratory analysis may continue before a harder route or writeback commitment is required.",
+                "primary_result_shape": "status_update",
+            }
         return {
             "interaction_class": "silent_continue",
             "stop_status": "continue",
@@ -2114,6 +2797,111 @@ class AITPService:
         token_count = len(re.findall(r"[A-Za-z0-9_]+", raw_request))
         return token_count > 8 or len(raw_request) > 80
 
+    def _request_prefers_exploration(self, request: str | None) -> bool:
+        raw_request = str(request or "").strip()
+        if not raw_request:
+            return False
+        normalized = raw_request.lower()
+        exploratory_cues = (
+            "explore",
+            "speculate",
+            "brainstorm",
+            "possible bridge",
+            "possible bridges",
+            "what if",
+            "idea",
+            "intuition",
+            "open question",
+            "探索",
+            "想法",
+            "直觉",
+            "猜想",
+            "关联",
+            "联系",
+            "可能",
+        )
+        hard_commit_cues = (
+            "implement",
+            "build",
+            "benchmark",
+            "validate",
+            "validation",
+            "promote",
+            "writeback",
+            "prove",
+            "proof",
+            "formalize",
+            "run ",
+            "execute",
+            "实现",
+            "验证",
+            "写回",
+            "提升",
+            "证明",
+        )
+        return any(cue in normalized for cue in exploratory_cues) and not any(
+            cue in normalized for cue in hard_commit_cues
+        )
+
+    def _infer_task_type(self, request: str | None) -> str:
+        normalized = str(request or "").strip().lower()
+        if not normalized:
+            return "open_exploration"
+        target_driven_cues = (
+            "implement",
+            "implementation",
+            "build",
+            "finite-temperature",
+            "finite temperature",
+            "librpa",
+            "librpa",
+            "run ",
+            "execute",
+            "derive the",
+            "prove the",
+            "实现",
+            "跑",
+            "执行",
+            "基准",
+            "有限温",
+        )
+        exploration_cues = (
+            "explore",
+            "discussion",
+            "discuss",
+            "brainstorm",
+            "possible",
+            "maybe",
+            "idea",
+            "ideas",
+            "open question",
+            "可能",
+            "想法",
+            "讨论",
+            "探索",
+        )
+        conjecture_cues = (
+            "plausible bridge",
+            "whether there is",
+            "connection",
+            "link between",
+            "structural link",
+            "conjecture",
+            "hypothesis",
+            "bridge between",
+            "关联",
+            "联系",
+            "桥接",
+            "猜想",
+        )
+        if any(cue in normalized for cue in exploration_cues):
+            return "open_exploration"
+        if any(cue in normalized for cue in conjecture_cues):
+            return "conjecture_attempt"
+        if any(cue in normalized for cue in target_driven_cues):
+            return "target_driven_execution"
+        return "target_driven_execution" if self._request_looks_actionable(request) else "open_exploration"
+
     def _derive_idea_packet(
         self,
         *,
@@ -2135,6 +2923,11 @@ class AITPService:
             or str(interaction_state.get("human_request") or "").strip()
         )
         actionable_request = self._request_looks_actionable(request_text)
+        task_type = self._coalesce_string(
+            existing_idea_packet.get("task_type"),
+            existing_research.get("task_type"),
+            self._infer_task_type(request_text),
+        )
 
         # 从 source 中蒸馏信息（新增功能）
         distilled = self._distill_from_sources(source_rows or [], topic_slug)
@@ -2269,6 +3062,7 @@ class AITPService:
         return {
             "topic_slug": topic_slug,
             "status": status,
+            "task_type": task_type,
             "status_reason": status_reason,
             "initial_idea": initial_idea,
             "novelty_target": novelty_target,
@@ -2989,6 +3783,7 @@ class AITPService:
             f"- Question id: `{payload['question_id']}`",
             f"- Title: `{payload['title']}`",
             f"- Status: `{payload['status']}`",
+            f"- Task type: `{payload.get('task_type') or '(missing)'}`",
             f"- Template mode: `{payload.get('template_mode') or '(missing)'}`",
             f"- Research mode: `{payload.get('research_mode') or '(missing)'}`",
             "",
@@ -3064,6 +3859,11 @@ class AITPService:
         lines.extend(["", "## Required checks", ""])
         for item in payload.get("required_checks") or ["(missing)"]:
             lines.append(f"- {item}")
+        analytic_check_families = payload.get("analytic_check_families") or []
+        if analytic_check_families:
+            lines.extend(["", "## Analytic check families", ""])
+            for item in analytic_check_families:
+                lines.append(f"- `{item}`")
         lines.extend(["", "## Oracle artifacts", ""])
         for item in payload.get("oracle_artifacts") or ["(none)"]:
             lines.append(f"- `{item}`")
@@ -3087,6 +3887,7 @@ class AITPService:
             "",
             f"- Topic slug: `{payload['topic_slug']}`",
             f"- Status: `{payload.get('status') or '(missing)'}`",
+            f"- Task type: `{payload.get('task_type') or '(missing)'}`",
             f"- Updated at: `{payload.get('updated_at') or '(missing)'}`",
             f"- Updated by: `{payload.get('updated_by') or '(missing)'}`",
             "",
@@ -3157,6 +3958,245 @@ class AITPService:
         for item in payload.get("non_claims") or ["(missing)"]:
             lines.append(f"- {item}")
         return "\n".join(lines) + "\n"
+
+    def _render_layer_projection_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            f"# {payload.get('subplane') or 'Layer'} projection",
+            "",
+            f"- Status: `{payload.get('status') or '(missing)'}`",
+            f"- Primary output path: `{payload.get('primary_output_path') or '(missing)'}`",
+            f"- Next allowed transitions: `{', '.join(payload.get('next_allowed_transitions') or []) or '(missing)'}`",
+            f"- Consumed by: `{', '.join(payload.get('consumed_by') or []) or '(missing)'}`",
+            "",
+            payload.get("summary") or "(missing)",
+            "",
+        ]
+        source_ids = payload.get("source_ids") or []
+        if source_ids:
+            lines.extend(["## Source ids", ""])
+            for item in source_ids:
+                lines.append(f"- `{item}`")
+            lines.append("")
+        source_titles = payload.get("source_titles") or []
+        if source_titles:
+            lines.extend(["## Source titles", ""])
+            for item in source_titles:
+                lines.append(f"- {item}")
+            lines.append("")
+        if "source_count" in payload:
+            lines.extend(
+                [
+                    "## Source count",
+                    "",
+                    f"- `{payload.get('source_count')}` registered source(s)",
+                    "",
+                ]
+            )
+        source_types = payload.get("source_types") or []
+        if source_types:
+            lines.extend(["## Source types", ""])
+            for item in source_types:
+                lines.append(f"- `{item}`")
+            lines.append("")
+        fidelity_counts = payload.get("source_fidelity_counts") or {}
+        if fidelity_counts:
+            lines.extend(
+                [
+                    "## Source fidelity",
+                    "",
+                    f"- Highest fidelity class: `{payload.get('highest_fidelity_class') or '(missing)'}`",
+                    f"- Summary: {payload.get('source_fidelity_summary') or '(missing)'}",
+                    "",
+                ]
+            )
+            for key in sorted(fidelity_counts):
+                lines.append(f"- `{key}`: `{fidelity_counts.get(key)}`")
+            lines.append("")
+        if "citation_graph_status" in payload:
+            lines.extend(
+                [
+                    "## Citation graph signals",
+                    "",
+                    f"- Status: `{payload.get('citation_graph_status') or '(missing)'}`",
+                    f"- Summary: {payload.get('citation_graph_summary') or '(missing)'}",
+                    f"- arXiv ids: `{payload.get('arxiv_id_count') or 0}`",
+                    f"- BibTeX/DOI signals: `{payload.get('bibtex_signal_count') or 0}`",
+                    f"- Reference-bearing rows: `{payload.get('citation_signal_count') or 0}`",
+                    "",
+                ]
+            )
+        if "intake_stage" in payload:
+            lines.extend(
+                [
+                    "## Intake status",
+                    "",
+                    f"- Stage: `{payload.get('intake_stage') or '(missing)'}`",
+                    f"- Next stage: `{payload.get('next_stage') or '(none)'}`",
+                    f"- Reading depth: `{payload.get('reading_depth') or '(missing)'}`",
+                    f"- Assumption quality: `{payload.get('assumption_quality') or '(missing)'}`",
+                    f"- Notation table: `{payload.get('notation_table_path') or '(missing)'}`",
+                    f"- Assumption table: `{payload.get('assumption_table_path') or '(missing)'}`",
+                    f"- Regime table: `{payload.get('regime_table_path') or '(missing)'}`",
+                    f"- Claim extraction: `{payload.get('claim_extraction_path') or '(missing)'}`",
+                    "",
+                ]
+            )
+        if "validation_mode" in payload:
+            lines.extend(
+                [
+                    "## Validation status",
+                    "",
+                    f"- Validation mode: `{payload.get('validation_mode') or '(missing)'}`",
+                    f"- Verification focus: `{payload.get('verification_focus') or '(missing)'}`",
+                    f"- Evidence status: `{payload.get('evidence_status') or '(missing)'}`",
+                    f"- Evidence kind: `{payload.get('evidence_kind') or '(missing)'}`",
+                    f"- Evidence path: `{payload.get('evidence_path') or '(missing)'}`",
+                    "",
+                ]
+            )
+            analytic_check_families = payload.get("analytic_check_families") or []
+            if analytic_check_families:
+                lines.extend(["## Analytic check families", ""])
+                for item in analytic_check_families:
+                    lines.append(f"- `{item}`")
+                lines.append("")
+        if "consultation_count" in payload:
+            lines.extend(
+                [
+                    "## L2 activity",
+                    "",
+                    f"- Consultation count: `{payload.get('consultation_count') or 0}`",
+                    f"- Staging entry count: `{payload.get('staging_entry_count') or 0}`",
+                    f"- Promotion gate status: `{payload.get('promotion_gate_status') or '(missing)'}`",
+                    f"- Promoted unit count: `{payload.get('promoted_unit_count') or 0}`",
+                    "",
+                ]
+            )
+        consultation_surface = payload.get("consultation_surface") or {}
+        if consultation_surface:
+            lines.extend(
+                [
+                    "## Consultation surface",
+                    "",
+                    f"- Consultation index: `{consultation_surface.get('consultation_index_path') or '(missing)'}`",
+                    f"- Consultation count: `{consultation_surface.get('consultation_count') or 0}`",
+                    f"- Latest consultation id: `{consultation_surface.get('latest_consultation_id') or '(none)'}`",
+                    f"- Latest query: `{consultation_surface.get('latest_query_text') or '(none)'}`",
+                    f"- Latest application: `{consultation_surface.get('latest_application_path') or '(none)'}`",
+                    f"- Latest note: `{consultation_surface.get('latest_summary_note_path') or '(none)'}`",
+                    f"- Latest memory map: `{consultation_surface.get('latest_memory_map_note_path') or '(none)'}`",
+                    "",
+                    f"{consultation_surface.get('latest_summary') or '(no consultation summary yet)' }",
+                    "",
+                ]
+            )
+        writeback_surface = payload.get("writeback_surface") or {}
+        if writeback_surface:
+            lines.extend(
+                [
+                    "## Writeback surface",
+                    "",
+                    f"- Promotion gate status: `{writeback_surface.get('promotion_gate_status') or '(missing)'}`",
+                    f"- Staging entry count: `{writeback_surface.get('staging_entry_count') or 0}`",
+                    f"- Promoted unit count: `{writeback_surface.get('promoted_unit_count') or 0}`",
+                    "",
+                ]
+            )
+        graph_surface = payload.get("graph_surface") or {}
+        if graph_surface:
+            lines.extend(
+                [
+                    "## Canonical graph surface",
+                    "",
+                    f"- Status: `{graph_surface.get('status') or '(missing)'}`",
+                    f"- Index path: `{graph_surface.get('index_path') or '(missing)'}`",
+                    f"- Edge path: `{graph_surface.get('edges_path') or '(missing)'}`",
+                    f"- Unit count: `{graph_surface.get('unit_count') or 0}`",
+                    f"- Edge count: `{graph_surface.get('edge_count') or 0}`",
+                    f"- Unit types: `{', '.join(graph_surface.get('unit_types') or []) or '(none)'}`",
+                    "",
+                    f"{graph_surface.get('summary') or '(no canonical graph summary yet)' }",
+                    "",
+                ]
+            )
+        available_artifact_paths = payload.get("available_artifact_paths") or []
+        if available_artifact_paths:
+            lines.extend(["## Available artifact paths", ""])
+            for item in available_artifact_paths:
+                lines.append(f"- `{item}`")
+            lines.append("")
+        staging_entry_ids = payload.get("staging_entry_ids") or []
+        if staging_entry_ids:
+            lines.extend(["## Staging entry ids", ""])
+            for item in staging_entry_ids:
+                lines.append(f"- `{item}`")
+            lines.append("")
+        intended_l2_targets = payload.get("intended_l2_targets") or []
+        if intended_l2_targets:
+            lines.extend(["## Intended L2 targets", ""])
+            for item in intended_l2_targets:
+                lines.append(f"- `{item}`")
+            lines.append("")
+        return "\n".join(lines).rstrip() + "\n"
+
+    def _render_l3_subplane_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            f"# {payload.get('subplane') or 'L3'} projection",
+            "",
+            f"- Status: `{payload.get('status') or '(missing)'}`",
+            f"- Primary output path: `{payload.get('primary_output_path') or '(missing)'}`",
+            f"- Next allowed transitions: `{', '.join(payload.get('next_allowed_transitions') or []) or '(missing)'}`",
+            f"- Consumed by: `{', '.join(payload.get('consumed_by') or []) or '(missing)'}`",
+            "",
+            payload.get("summary") or "(missing)",
+            "",
+        ]
+        supporting_output_paths = payload.get("supporting_output_paths") or []
+        if supporting_output_paths:
+            lines.extend(["## Supporting output paths", ""])
+            for item in supporting_output_paths:
+                lines.append(f"- `{item}`")
+            lines.append("")
+        candidate_ids = payload.get("candidate_ids") or []
+        if candidate_ids:
+            lines.extend(["## Candidate ids", ""])
+            for item in candidate_ids:
+                lines.append(f"- `{item}`")
+            lines.append("")
+        ready_candidate_ids = payload.get("ready_candidate_ids") or []
+        if ready_candidate_ids:
+            lines.extend(["## Ready candidate ids", ""])
+            for item in ready_candidate_ids:
+                lines.append(f"- `{item}`")
+            lines.append("")
+        staging_entry_ids = payload.get("staging_entry_ids") or []
+        if staging_entry_ids:
+            lines.extend(["## Staging entry ids", ""])
+            for item in staging_entry_ids:
+                lines.append(f"- `{item}`")
+            lines.append("")
+        intended_l2_targets = payload.get("intended_l2_targets") or []
+        if intended_l2_targets:
+            lines.extend(["## Intended L2 targets", ""])
+            for item in intended_l2_targets:
+                lines.append(f"- `{item}`")
+            lines.append("")
+        writeback_blockers = payload.get("writeback_blockers") or []
+        if writeback_blockers:
+            lines.extend(["## Writeback blockers", ""])
+            for item in writeback_blockers:
+                lines.append(f"- {item}")
+            lines.append("")
+        forbidden_direct_transitions = payload.get("forbidden_direct_transitions") or []
+        if forbidden_direct_transitions:
+            lines.extend(["## Forbidden direct transitions", ""])
+            for item in forbidden_direct_transitions:
+                lines.append(f"- `{item}`")
+            lines.append("")
+        mandatory_routing_rule = str(payload.get("mandatory_routing_rule") or "").strip()
+        if mandatory_routing_rule:
+            lines.extend(["## Mandatory routing rule", "", mandatory_routing_rule, ""])
+        return "\n".join(lines).rstrip() + "\n"
 
     def _render_topic_skill_projection_markdown(self, payload: dict[str, Any]) -> str:
         lines = [
@@ -4330,6 +5370,11 @@ class AITPService:
             [str(row.get("candidate_id") or "").strip() for row in candidate_rows if str(row.get("candidate_id") or "").strip()]
             or [str((selected_pending_action or {}).get("action_id") or "").strip()]
         )
+        task_type = self._coalesce_string(
+            existing_research.get("task_type"),
+            existing_idea_packet.get("task_type"),
+            self._infer_task_type(human_request or resolved_interaction_state.get("human_request")),
+        )
         deliverable_defaults = [
             "Persist the active research question, validation route, and bounded next action as durable runtime artifacts.",
             "Write derivation/proof or execution evidence into the appropriate AITP layer before claiming completion.",
@@ -4358,6 +5403,7 @@ class AITPService:
             "title": title,
             "topic_slug": topic_slug,
             "status": self._coalesce_string(existing_research.get("status"), research_status_default),
+            "task_type": task_type,
             "template_mode": template_mode,
             "research_mode": research_mode,
             "question": active_question,
@@ -4611,9 +5657,11 @@ class AITPService:
             pending_decisions=pending_decisions_internal,
         )
         interaction_contract = self._derive_interaction_contract(
+            topic_slug=topic_slug,
             idea_packet=idea_packet,
             operator_checkpoint=operator_checkpoint_surface,
             pending_decisions=pending_decisions_internal,
+            promotion_readiness=promotion_readiness,
         )
         last_evidence_return = topic_status_explainability.get("last_evidence_return") or {}
         scope_parts = self._dedupe_strings(
@@ -6122,8 +7170,406 @@ class AITPService:
             "request": call_root / "request.json",
             "result": call_root / "result.json",
             "application": call_root / "application.json",
+            "summary_note": call_root / "summary.md",
+            "memory_map": call_root / "memory_map.json",
+            "memory_map_note": call_root / "memory_map.md",
             "index": self._consultation_root(topic_slug) / "consultation_index.jsonl",
         }
+
+    def _exploration_window_paths(self, topic_slug: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        return {
+            "json": runtime_root / "exploration_window.json",
+            "note": runtime_root / "exploration_window.md",
+        }
+
+    def _task_type_lane_guidance_paths(self, topic_slug: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        return {
+            "json": runtime_root / "task_type_lane_guidance.json",
+            "note": runtime_root / "task_type_lane_guidance.md",
+        }
+
+    def _collaborator_routing_guidance_paths(self, topic_slug: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        return {
+            "json": runtime_root / "collaborator_routing_guidance.json",
+            "note": runtime_root / "collaborator_routing_guidance.md",
+        }
+
+    def _render_l2_consultation_summary_markdown(
+        self,
+        *,
+        consultation_id: str,
+        topic_slug: str,
+        stage: str,
+        retrieval_profile: str,
+        query_text: str,
+        result_summary: str,
+        retrieved_refs: list[dict[str, Any]],
+        effect_on_work: str,
+        projection_paths: list[str],
+    ) -> str:
+        lines = [
+            "# L2 consultation summary",
+            "",
+            f"- Consultation id: `{consultation_id}`",
+            f"- Topic: `{topic_slug}`",
+            f"- Stage: `{stage}`",
+            f"- Retrieval profile: `{retrieval_profile}`",
+            f"- Query: `{query_text}`",
+            "",
+            result_summary or "(missing summary)",
+            "",
+        ]
+        if retrieved_refs:
+            lines.extend(["## Retrieved references", ""])
+            for row in retrieved_refs:
+                lines.append(
+                    f"- `{row.get('trust_surface') or 'unknown'}` :: `{row.get('id') or '(missing-id)'}` :: "
+                    f"{row.get('title') or '(untitled)'}"
+                )
+                lines.append(f"  - Reason: {row.get('selection_reason') or '(missing)'}")
+                lines.append(f"  - Path: `{row.get('path') or '(missing)'}`")
+                lines.append(f"  - Summary: {row.get('summary') or '(missing)'}")
+            lines.append("")
+        warning_refs = [
+            row
+            for row in retrieved_refs
+            if str(row.get("unit_type") or "").strip() == "warning_note"
+        ]
+        if warning_refs:
+            lines.extend(["## Warning notes", ""])
+            for row in warning_refs:
+                lines.append(f"- `{row.get('id') or '(missing-id)'}` :: {row.get('summary') or '(missing)'}")
+            lines.append("")
+        if effect_on_work:
+            lines.extend(["## Effect on work", "", effect_on_work, ""])
+        if projection_paths:
+            lines.extend(["## Follow-up paths", ""])
+            for path in projection_paths:
+                lines.append(f"- `{path}`")
+            lines.append("")
+        return "\n".join(lines).rstrip() + "\n"
+
+    def _render_l2_consultation_memory_map_markdown(
+        self,
+        *,
+        consultation_id: str,
+        topic_slug: str,
+        retrieval_profile: str,
+        query_text: str,
+        graph_surface: dict[str, Any],
+        primary_refs: list[dict[str, Any]],
+        expanded_refs: list[dict[str, Any]],
+        warning_refs: list[dict[str, Any]],
+        staged_refs: list[dict[str, Any]],
+    ) -> str:
+        lines = [
+            "# L2 consultation memory map",
+            "",
+            f"- Consultation id: `{consultation_id}`",
+            f"- Topic: `{topic_slug}`",
+            f"- Retrieval profile: `{retrieval_profile}`",
+            f"- Query: `{query_text}`",
+            "",
+            "## Canonical graph status",
+            "",
+            f"- Status: `{graph_surface.get('status') or '(missing)'}`",
+            f"- Unit count: `{graph_surface.get('unit_count') or 0}`",
+            f"- Edge count: `{graph_surface.get('edge_count') or 0}`",
+            f"- Unit types: `{', '.join(graph_surface.get('unit_types') or []) or '(none)'}`",
+            "",
+            f"{graph_surface.get('summary') or '(missing graph summary)'}",
+            "",
+            "## Primary canonical hits",
+            "",
+        ]
+        if primary_refs:
+            for row in primary_refs:
+                lines.append(f"- `{row.get('id') or '(missing-id)'}` :: {row.get('title') or '(untitled)'}")
+                lines.append(f"  - Reason: {row.get('selection_reason') or '(missing)'}")
+                lines.append(f"  - Path: `{row.get('path') or '(missing)'}`")
+        else:
+            lines.append("- `(none)`")
+        lines.extend(["", "## Expanded canonical hits", ""])
+        if expanded_refs:
+            for row in expanded_refs:
+                lines.append(f"- `{row.get('id') or '(missing-id)'}` :: {row.get('title') or '(untitled)'}")
+                lines.append(f"  - Reason: {row.get('selection_reason') or '(missing)'}")
+                lines.append(f"  - Path: `{row.get('path') or '(missing)'}`")
+        else:
+            lines.append("- `(none)`")
+        lines.extend(["", "## Warning notes", ""])
+        if warning_refs:
+            for row in warning_refs:
+                lines.append(f"- `{row.get('id') or '(missing-id)'}` :: {row.get('summary') or '(missing)'}")
+        else:
+            lines.append("- `(none)`")
+        lines.extend(["", "## Staged hits", ""])
+        if staged_refs:
+            for row in staged_refs:
+                lines.append(f"- `{row.get('id') or '(missing-id)'}` :: {row.get('title') or '(untitled)'}")
+                lines.append(f"  - Reason: {row.get('selection_reason') or '(missing)'}")
+                lines.append(f"  - Path: `{row.get('path') or '(missing)'}`")
+        else:
+            lines.append("- `(none)`")
+        lines.append("")
+        return "\n".join(lines).rstrip() + "\n"
+
+    def _render_exploration_window_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            "# Exploration window",
+            "",
+            f"- Status: `{payload.get('status') or '(missing)'}`",
+            f"- Window open: `{str(bool(payload.get('window_open'))).lower()}`",
+            f"- Closure required: `{str(bool(payload.get('closure_required'))).lower()}`",
+            f"- Likely next target layer: `{payload.get('likely_next_target_layer') or '(missing)'}`",
+            "",
+            "## Current question",
+            "",
+            f"{payload.get('current_question') or '(none)'}",
+            "",
+            "## Candidate intuitions",
+            "",
+        ]
+        candidate_intuitions = payload.get("candidate_intuitions") or []
+        if candidate_intuitions:
+            for item in candidate_intuitions:
+                lines.append(f"- {item}")
+        else:
+            lines.append("- `(none)`")
+        lines.extend(["", "## Local blockers", ""])
+        local_blockers = payload.get("local_blockers") or []
+        if local_blockers:
+            for item in local_blockers:
+                lines.append(f"- {item}")
+        else:
+            lines.append("- `(none)`")
+        lines.extend(["", "## Summary", "", f"{payload.get('summary') or '(missing)' }", ""])
+        return "\n".join(lines).rstrip() + "\n"
+
+    def _lane_family(self, lane: str | None) -> str:
+        normalized = str(lane or "").strip()
+        if normalized == "formal_theory":
+            return "formal_theory"
+        if normalized in {"toy_numeric", "theory_synthesis"}:
+            return "model_numeric"
+        if normalized in {"code_method", "first_principles"}:
+            return "code_and_materials"
+        return "formal_theory"
+
+    def _derive_task_type_lane_guidance(self, *, topic_slug: str, task_type: str, lane: str) -> dict[str, Any]:
+        lane_family = self._lane_family(lane)
+        templates: dict[tuple[str, str], dict[str, Any]] = {
+            (
+                "open_exploration",
+                "formal_theory",
+            ): {
+                "summary": "Open formal-theory exploration should widen the source basis first, compare multiple structural routes in L3-A, and treat L4 as a partial or blocking check rather than a closure demand.",
+                "l0_expectation": "Broaden the formal source basis before locking one route.",
+                "l1_expectation": "Read comparatively for assumptions, notation, and tension across nearby sources.",
+                "l3_expectation": "Keep route comparison active in L3-A instead of hardening one line too early.",
+                "l4_expectation": "Allow partial or blocking analytical checks without forcing fake closure.",
+                "l2_writeback_expectation": "Only distill scoped reusable insights after L3-D decides they survived the exploratory loop.",
+                "recommended_first_moves": [
+                    "Expand the nearby formal source basis before narrowing notation or claims.",
+                    "Compare at least two candidate bridge or structure routes in L3-A.",
+                    "Use L4 only for bounded sanity checks, not full closure pressure.",
+                ],
+                "human_interaction_bias": "Prefer non-blocking updates unless a contradiction or route boundary becomes consequential.",
+            },
+            (
+                "conjecture_attempt",
+                "model_numeric",
+            ): {
+                "summary": "Conjectural model-numeric work should tighten the benchmark model, compare candidate bridges explicitly, and demand a meaningful first check rather than staying at survey level.",
+                "l0_expectation": "Gather the specific benchmark-model and nearby comparison sources needed to sharpen the conjecture.",
+                "l1_expectation": "Extract assumptions and regime limits tightly enough to turn the conjecture into candidate checks.",
+                "l3_expectation": "Use L3-A to compare bridge candidates and isolate the one most worth testing.",
+                "l4_expectation": "Run a meaningful first benchmark or consistency check, not only descriptive survey work.",
+                "l2_writeback_expectation": "Write back only the checked bridge candidate, warning, or negative result that survives the first test.",
+                "recommended_first_moves": [
+                    "Choose the smallest honest benchmark model for the conjecture.",
+                    "Write the candidate bridge and its expected failure modes explicitly before checking.",
+                    "Use the first bounded L4 check to eliminate or sharpen the conjecture.",
+                ],
+                "human_interaction_bias": "Allow exploratory comparison early, but checkpoint when the conjecture hardens into a main route.",
+            },
+            (
+                "target_driven_execution",
+                "code_and_materials",
+            ): {
+                "summary": "Target-driven code-and-materials work should narrow L0 to implementation-relevant sources, keep L1 highly technical, harden one route in L3, and carry a heavy L4 burden.",
+                "l0_expectation": "Restrict the source basis to implementation, algorithm, and benchmark-critical material.",
+                "l1_expectation": "Read at high technical detail for interfaces, assumptions, and exact benchmark obligations.",
+                "l3_expectation": "Harden one route and track concrete blockers rather than keeping many speculative branches open.",
+                "l4_expectation": "Require an explicit benchmark, execution artifact, or bounded numerical check before claiming progress.",
+                "l2_writeback_expectation": "Write back only reusable workflow, validation, warning, or method memory that survived the execution check.",
+                "recommended_first_moves": [
+                    "Narrow the relevant implementation and benchmark sources first.",
+                    "Choose one bounded execution route and define the first hard benchmark.",
+                    "Do not widen scope until the first benchmark or validation artifact exists.",
+                ],
+                "human_interaction_bias": "Prefer ordinary continuation; raise checkpoints at route-choice, benchmark-mismatch, or resource-risk boundaries.",
+            },
+        }
+        fallback_by_task_type: dict[str, dict[str, Any]] = {
+            "open_exploration": {
+                "summary": "Open exploration should keep source intake broad, route comparison live, and closure pressure low until one route earns harder validation.",
+                "l0_expectation": "Broaden sources before narrowing.",
+                "l1_expectation": "Read comparatively rather than monolithically.",
+                "l3_expectation": "Compare routes before hardening one.",
+                "l4_expectation": "Use bounded partial checks.",
+                "l2_writeback_expectation": "Write back only scoped reusable insights after distillation.",
+                "recommended_first_moves": [
+                    "Broaden the nearby source basis.",
+                    "Compare candidate routes before hardening one.",
+                ],
+                "human_interaction_bias": "Prefer free exploration unless a harder boundary is reached.",
+            },
+            "conjecture_attempt": {
+                "summary": "Conjecture attempts should sharpen one plausible bridge into a bounded candidate and ask for a real first check.",
+                "l0_expectation": "Gather the minimum source basis that can sharpen the conjecture honestly.",
+                "l1_expectation": "Extract assumptions and regime limits tightly enough to define a check.",
+                "l3_expectation": "Compare bridge candidates and pick one to test.",
+                "l4_expectation": "Run a meaningful bounded check early.",
+                "l2_writeback_expectation": "Write back only checked bridge or failure memory.",
+                "recommended_first_moves": [
+                    "State the bridge candidate explicitly.",
+                    "Choose the first bounded check before widening scope.",
+                ],
+                "human_interaction_bias": "Stay flexible early, then checkpoint when one route hardens.",
+            },
+            "target_driven_execution": {
+                "summary": "Target-driven execution should narrow scope early, harden one route, and insist on concrete validation artifacts.",
+                "l0_expectation": "Gather only route-critical sources.",
+                "l1_expectation": "Read technically and concretely.",
+                "l3_expectation": "Harden one route and surface blockers explicitly.",
+                "l4_expectation": "Demand a hard benchmark or validation artifact.",
+                "l2_writeback_expectation": "Write back only reusable checked workflow or method memory.",
+                "recommended_first_moves": [
+                    "Choose one bounded execution route.",
+                    "Define the first benchmark or validation artifact.",
+                ],
+                "human_interaction_bias": "Prefer ordinary continuation unless a true checkpoint boundary appears.",
+            },
+        }
+        template = templates.get((task_type, lane_family), fallback_by_task_type.get(task_type, fallback_by_task_type["open_exploration"]))
+        return {
+            "topic_slug": topic_slug,
+            "task_type": task_type,
+            "lane": lane,
+            "lane_family": lane_family,
+            **template,
+        }
+
+    def _render_task_type_lane_guidance_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            "# Task-Type By Lane Guidance",
+            "",
+            f"- Task type: `{payload.get('task_type') or '(missing)'}`",
+            f"- Lane: `{payload.get('lane') or '(missing)'}`",
+            f"- Lane family: `{payload.get('lane_family') or '(missing)'}`",
+            "",
+            "## Summary",
+            "",
+            f"{payload.get('summary') or '(missing)'}",
+            "",
+            "## Layer expectations",
+            "",
+            f"- L0: {payload.get('l0_expectation') or '(missing)'}",
+            f"- L1: {payload.get('l1_expectation') or '(missing)'}",
+            f"- L3: {payload.get('l3_expectation') or '(missing)'}",
+            f"- L4: {payload.get('l4_expectation') or '(missing)'}",
+            f"- L2 writeback: {payload.get('l2_writeback_expectation') or '(missing)'}",
+            "",
+            "## Recommended first moves",
+            "",
+        ]
+        for item in payload.get("recommended_first_moves") or ["(none)"]:
+            lines.append(f"- {item}")
+        lines.extend(
+            [
+                "",
+                "## Human interaction bias",
+                "",
+                f"{payload.get('human_interaction_bias') or '(missing)'}",
+                "",
+            ]
+        )
+        return "\n".join(lines).rstrip() + "\n"
+
+    def _derive_collaborator_routing_guidance(
+        self,
+        *,
+        topic_slug: str,
+        task_type: str,
+        lane: str,
+        task_type_lane_guidance: dict[str, Any],
+        collaborator_memory: dict[str, Any],
+        override_surfaces: list[dict[str, str]],
+    ) -> dict[str, Any]:
+        preferred_lanes = self._dedupe_strings(list(collaborator_memory.get("preferred_lanes") or []))
+        lane_family = self._lane_family(lane)
+        if not preferred_lanes:
+            alignment_status = "no_preference"
+            summary = "No collaborator lane preference is currently recorded, so routing can follow the active task-type guidance without a preference conflict."
+            recommended_steering_action = "Use the current task-type-by-lane guidance and only override it if the operator wants a different route."
+        elif lane in preferred_lanes or lane_family in preferred_lanes:
+            alignment_status = "aligned"
+            summary = "The current route is aligned with recorded collaborator lane preferences."
+            recommended_steering_action = "Continue with the current route unless the operator explicitly redirects scope or validation style."
+        else:
+            alignment_status = "preference_mismatch"
+            summary = (
+                f"The current route (`{lane}` / `{lane_family}`) does not match the recorded collaborator lane preferences "
+                f"({', '.join(preferred_lanes)})."
+            )
+            recommended_steering_action = (
+                "Review the override surfaces and decide whether to keep the current route or redirect the topic toward a preferred lane."
+            )
+        return {
+            "topic_slug": topic_slug,
+            "task_type": task_type,
+            "lane": lane,
+            "lane_family": lane_family,
+            "preferred_lanes": preferred_lanes,
+            "alignment_status": alignment_status,
+            "summary": summary,
+            "recommended_steering_action": recommended_steering_action,
+            "override_surfaces": override_surfaces,
+            "guidance_ref": task_type_lane_guidance.get("note_path") or "",
+        }
+
+    def _render_collaborator_routing_guidance_markdown(self, payload: dict[str, Any]) -> str:
+        lines = [
+            "# Collaborator Routing Guidance",
+            "",
+            f"- Task type: `{payload.get('task_type') or '(missing)'}`",
+            f"- Lane: `{payload.get('lane') or '(missing)'}`",
+            f"- Lane family: `{payload.get('lane_family') or '(missing)'}`",
+            f"- Alignment status: `{payload.get('alignment_status') or '(missing)'}`",
+            f"- Preferred lanes: `{', '.join(payload.get('preferred_lanes') or []) or '(none)'}`",
+            f"- Guidance reference: `{payload.get('guidance_ref') or '(missing)'}`",
+            "",
+            "## Summary",
+            "",
+            f"{payload.get('summary') or '(missing)'}",
+            "",
+            "## Recommended steering action",
+            "",
+            f"{payload.get('recommended_steering_action') or '(missing)'}",
+            "",
+            "## Override surfaces",
+            "",
+        ]
+        for row in payload.get("override_surfaces") or []:
+            lines.append(f"- `{row.get('surface') or '(missing)'}` :: `{row.get('path') or '(missing)'}` :: {row.get('role') or '(missing)'}")
+        if not payload.get("override_surfaces"):
+            lines.append("- `(none)`")
+        lines.append("")
+        return "\n".join(lines).rstrip() + "\n"
 
     def _record_l2_consultation(
         self,
@@ -6145,10 +7591,20 @@ class AITPService:
         produced_by: str,
         written_by: str,
         retrieval_profile: str,
+        primary_refs: list[dict[str, Any]] | None = None,
+        expanded_refs: list[dict[str, Any]] | None = None,
+        staged_refs: list[dict[str, Any]] | None = None,
+        warning_refs: list[dict[str, Any]] | None = None,
+        graph_surface: dict[str, Any] | None = None,
     ) -> dict[str, str]:
         consultation_id = f"consult:{consultation_slug}"
         timestamp = now_iso()
         paths = self._consultation_paths(topic_slug, consultation_slug)
+        resolved_primary_refs = list(primary_refs or [])
+        resolved_expanded_refs = list(expanded_refs or [])
+        resolved_staged_refs = list(staged_refs or [])
+        resolved_warning_refs = list(warning_refs or [])
+        resolved_graph_surface = dict(graph_surface or self._canonical_l2_graph_surface())
 
         request_payload: dict[str, Any] = {
             "consultation_id": consultation_id,
@@ -6189,15 +7645,34 @@ class AITPService:
             "written_at": timestamp,
             "notes": "Generated after applying backend consultation to the promotion path.",
         }
+        memory_map_payload: dict[str, Any] = {
+            "consultation_id": consultation_id,
+            "topic_slug": topic_slug,
+            "stage": stage,
+            "retrieval_profile": retrieval_profile,
+            "query_text": query_text,
+            "graph_surface": resolved_graph_surface,
+            "primary_refs": resolved_primary_refs,
+            "expanded_refs": resolved_expanded_refs,
+            "warning_refs": resolved_warning_refs,
+            "staged_refs": resolved_staged_refs,
+            "result_summary": result_summary,
+            "updated_at": timestamp,
+        }
         index_entry: dict[str, Any] = {
             "consultation_id": consultation_id,
             "topic_slug": topic_slug,
             "stage": stage,
             "status": "applied",
             "context_ref": context_ref,
+            "query_text": query_text,
+            "retrieval_profile": retrieval_profile,
             "request_path": self._relativize(paths["request"]),
             "result_path": self._relativize(paths["result"]),
             "application_path": self._relativize(paths["application"]),
+            "summary_note_path": self._relativize(paths["summary_note"]),
+            "memory_map_path": self._relativize(paths["memory_map"]),
+            "memory_map_note_path": self._relativize(paths["memory_map_note"]),
             "summary": result_summary,
         }
         if run_id:
@@ -6209,6 +7684,35 @@ class AITPService:
         write_json(paths["request"], request_payload)
         write_json(paths["result"], result_payload)
         write_json(paths["application"], application_payload)
+        write_json(paths["memory_map"], memory_map_payload)
+        write_text(
+            paths["summary_note"],
+            self._render_l2_consultation_summary_markdown(
+                consultation_id=consultation_id,
+                topic_slug=topic_slug,
+                stage=stage,
+                retrieval_profile=retrieval_profile,
+                query_text=query_text,
+                result_summary=result_summary,
+                retrieved_refs=retrieved_refs,
+                effect_on_work=effect_on_work,
+                projection_paths=projection_paths,
+            ),
+        )
+        write_text(
+            paths["memory_map_note"],
+            self._render_l2_consultation_memory_map_markdown(
+                consultation_id=consultation_id,
+                topic_slug=topic_slug,
+                retrieval_profile=retrieval_profile,
+                query_text=query_text,
+                graph_surface=resolved_graph_surface,
+                primary_refs=resolved_primary_refs,
+                expanded_refs=resolved_expanded_refs,
+                warning_refs=resolved_warning_refs,
+                staged_refs=resolved_staged_refs,
+            ),
+        )
         index_rows = [row for row in read_jsonl(paths["index"]) if row.get("consultation_id") != consultation_id]
         index_rows.append(index_entry)
         write_jsonl(paths["index"], index_rows)
@@ -6237,12 +7741,23 @@ class AITPService:
             "consultation_request_path": str(paths["request"]),
             "consultation_result_path": str(paths["result"]),
             "consultation_application_path": str(paths["application"]),
+            "consultation_summary_path": str(paths["summary_note"]),
+            "consultation_memory_map_path": str(paths["memory_map"]),
+            "consultation_memory_map_note_path": str(paths["memory_map_note"]),
             "consultation_index_path": str(paths["index"]),
         }
 
     def _runtime_protocol_markdown(self, payload: dict[str, Any]) -> str:
         load_profile = str(payload.get("load_profile") or "light")
+        l0_sources = payload.get("l0_sources") or {}
+        l1_understanding = payload.get("l1_understanding") or {}
+        l4_validation = payload.get("l4_validation") or {}
+        l2_memory = payload.get("l2_memory") or {}
         topic_synopsis = payload.get("topic_synopsis") or {}
+        l3_subplanes = payload.get("l3_subplanes") or {}
+        l3_analysis = l3_subplanes.get("analysis") or {}
+        l3_result_integration = l3_subplanes.get("result_integration") or {}
+        l3_distillation = l3_subplanes.get("distillation") or {}
         pending_decisions = payload.get("pending_decisions") or {}
         minimal = payload.get("minimal_execution_brief") or {}
         active_research_contract = payload.get("active_research_contract") or {}
@@ -6251,6 +7766,10 @@ class AITPService:
         promotion_readiness = payload.get("promotion_readiness") or {}
         open_gap_summary = payload.get("open_gap_summary") or {}
         strategy_memory = payload.get("strategy_memory") or {}
+        collaborator_memory = payload.get("collaborator_memory") or {}
+        exploration_window = payload.get("exploration_window") or {}
+        task_type_lane_guidance = payload.get("task_type_lane_guidance") or {}
+        collaborator_routing_guidance = payload.get("collaborator_routing_guidance") or {}
         topic_skill_projection = payload.get("topic_skill_projection") or {}
         topic_completion = payload.get("topic_completion") or {}
         lean_bridge = payload.get("lean_bridge") or {}
@@ -6273,6 +7792,44 @@ class AITPService:
             f"- Research mode: `{payload['research_mode'] or '(missing)'}`",
             f"- Load profile: `{load_profile}`",
             "",
+            "## L0 source basis",
+            "",
+            f"- Status: `{l0_sources.get('status') or '(missing)'}`",
+            f"- Projection path: `{l0_sources.get('path') or '(missing)'}`",
+            f"- Source index: `{l0_sources.get('primary_output_path') or '(missing)'}`",
+            f"- Source count: `{l0_sources.get('source_count') or 0}`",
+            "",
+            f"{l0_sources.get('summary') or '(missing)'}",
+            "",
+            "## L1 understanding basis",
+            "",
+            f"- Status: `{l1_understanding.get('status') or '(missing)'}`",
+            f"- Projection path: `{l1_understanding.get('path') or '(missing)'}`",
+            f"- Intake status path: `{l1_understanding.get('primary_output_path') or '(missing)'}`",
+            f"- Intake stage: `{l1_understanding.get('intake_stage') or '(missing)'}`",
+            "",
+            f"{l1_understanding.get('summary') or '(missing)'}",
+            "",
+            "## L4 validation surface",
+            "",
+            f"- Status: `{l4_validation.get('status') or '(missing)'}`",
+            f"- Projection path: `{l4_validation.get('path') or '(missing)'}`",
+            f"- Primary validation output: `{l4_validation.get('primary_output_path') or '(missing)'}`",
+            f"- Validation mode: `{l4_validation.get('validation_mode') or '(missing)'}`",
+            f"- Evidence status: `{l4_validation.get('evidence_status') or '(missing)'}`",
+            "",
+            f"{l4_validation.get('summary') or '(missing)'}",
+            "",
+            "## L2 memory surface",
+            "",
+            f"- Status: `{l2_memory.get('status') or '(missing)'}`",
+            f"- Projection path: `{l2_memory.get('path') or '(missing)'}`",
+            f"- Primary memory output: `{l2_memory.get('primary_output_path') or '(missing)'}`",
+            f"- Consultation count: `{l2_memory.get('consultation_count') or 0}`",
+            f"- Staging entry count: `{l2_memory.get('staging_entry_count') or 0}`",
+            "",
+            f"{l2_memory.get('summary') or '(missing)'}",
+            "",
             "## Topic synopsis",
             "",
             f"- Synopsis path: `{topic_synopsis.get('path') or '(missing)'}`",
@@ -6281,6 +7838,27 @@ class AITPService:
             f"- Knowledge packets: `{len(topic_synopsis.get('knowledge_packet_paths') or [])}`",
             "",
             f"{topic_synopsis.get('next_action_summary') or '(missing)'}",
+            "",
+            "## L3 subplanes",
+            "",
+            f"- `L3-A` status: `{l3_analysis.get('status') or '(missing)'}`",
+            f"- `L3-A` note: `{l3_analysis.get('note_path') or '(missing)'}`",
+            f"- `L3-A` next: `{', '.join(l3_analysis.get('next_allowed_transitions') or []) or '(missing)'}`",
+            "",
+            f"{l3_analysis.get('summary') or '(missing)'}",
+            "",
+            f"- `L3-R` status: `{l3_result_integration.get('status') or '(missing)'}`",
+            f"- `L3-R` note: `{l3_result_integration.get('note_path') or '(missing)'}`",
+            f"- `L3-R` next: `{', '.join(l3_result_integration.get('next_allowed_transitions') or []) or '(missing)'}`",
+            "",
+            f"{l3_result_integration.get('summary') or '(missing)'}",
+            "",
+            f"- `L3-D` status: `{l3_distillation.get('status') or '(missing)'}`",
+            f"- `L3-D` note: `{l3_distillation.get('note_path') or '(missing)'}`",
+            f"- `L3-D` next: `{', '.join(l3_distillation.get('next_allowed_transitions') or []) or '(missing)'}`",
+            f"- Forbidden direct transitions: `{', '.join(l3_distillation.get('forbidden_direct_transitions') or []) or '(none)'}`",
+            "",
+            f"{l3_distillation.get('summary') or '(missing)'}",
             "",
             "## Pending decisions",
             "",
@@ -6296,6 +7874,7 @@ class AITPService:
             f"- Question id: `{active_research_contract.get('question_id') or '(missing)'}`",
             f"- Title: `{active_research_contract.get('title') or '(missing)'}`",
             f"- Status: `{active_research_contract.get('status') or '(missing)'}`",
+            f"- Task type: `{active_research_contract.get('task_type') or '(missing)'}`",
             f"- Template mode: `{active_research_contract.get('template_mode') or '(missing)'}`",
             f"- Validation mode: `{active_research_contract.get('validation_mode') or '(missing)'}`",
             f"- Contract JSON: `{active_research_contract.get('path') or '(missing)'}`",
@@ -6351,6 +7930,42 @@ class AITPService:
             f"- Latest path: `{strategy_memory.get('latest_path') or '(none)'}`",
             "",
             f"{strategy_memory.get('summary') or '(missing)'}",
+            "",
+            "## Collaborator memory",
+            "",
+            f"- Status: `{collaborator_memory.get('status') or '(missing)'}`",
+            f"- Preference count: `{collaborator_memory.get('preference_count') or 0}`",
+            f"- Preferred lanes: `{', '.join(collaborator_memory.get('preferred_lanes') or []) or '(none)'}`",
+            f"- Note path: `{collaborator_memory.get('note_path') or '(none)'}`",
+            "",
+            f"{collaborator_memory.get('summary') or '(missing)'}",
+            "",
+            "## Exploration window",
+            "",
+            f"- Status: `{exploration_window.get('status') or '(missing)'}`",
+            f"- Window note: `{exploration_window.get('note_path') or '(missing)'}`",
+            f"- Window open: `{str(bool(exploration_window.get('window_open'))).lower()}`",
+            f"- Closure required: `{str(bool(exploration_window.get('closure_required'))).lower()}`",
+            f"- Likely next target layer: `{exploration_window.get('likely_next_target_layer') or '(missing)'}`",
+            "",
+            f"{exploration_window.get('summary') or '(missing)'}",
+            "",
+            "## Task-Type By Lane Guidance",
+            "",
+            f"- Task type: `{task_type_lane_guidance.get('task_type') or '(missing)'}`",
+            f"- Lane: `{task_type_lane_guidance.get('lane') or '(missing)'}`",
+            f"- Lane family: `{task_type_lane_guidance.get('lane_family') or '(missing)'}`",
+            f"- Guidance note: `{task_type_lane_guidance.get('note_path') or '(missing)'}`",
+            "",
+            f"{task_type_lane_guidance.get('summary') or '(missing)'}",
+            "",
+            "## Collaborator Routing Guidance",
+            "",
+            f"- Alignment status: `{collaborator_routing_guidance.get('alignment_status') or '(missing)'}`",
+            f"- Preferred lanes: `{', '.join(collaborator_routing_guidance.get('preferred_lanes') or []) or '(none)'}`",
+            f"- Routing note: `{collaborator_routing_guidance.get('note_path') or '(missing)'}`",
+            "",
+            f"{collaborator_routing_guidance.get('summary') or '(missing)'}",
             "",
             "## Topic skill projection",
             "",
@@ -6678,6 +8293,13 @@ class AITPService:
         research_contract = shell_surfaces["research_question_contract"]
         validation_contract = shell_surfaces["validation_contract"]
         idea_packet = dict(shell_surfaces["idea_packet"])
+        runtime_task_type = self._coalesce_string(
+            research_contract.get("task_type"),
+            idea_packet.get("task_type"),
+            self._infer_task_type(human_request or str(interaction_state.get("human_request") or "")),
+        )
+        research_contract = {**research_contract, "task_type": runtime_task_type}
+        idea_packet["task_type"] = runtime_task_type
         idea_packet["path"] = self._relativize(Path(shell_surfaces["idea_packet_path"]))
         idea_packet["note_path"] = self._relativize(Path(shell_surfaces["idea_packet_note_path"]))
         operator_checkpoint = dict(shell_surfaces["operator_checkpoint"])
@@ -6708,6 +8330,7 @@ class AITPService:
                 "summary": "No run-local strategy memory is currently recorded for this topic.",
             }
         )
+        collaborator_memory = self._derive_collaborator_memory_summary()
         topic_skill_projection = dict(
             shell_surfaces.get("topic_skill_projection")
             or {
@@ -6748,6 +8371,7 @@ class AITPService:
             "question_id": str(research_contract.get("question_id") or ""),
             "title": str(research_contract.get("title") or ""),
             "status": str(research_contract.get("status") or ""),
+            "task_type": str(research_contract.get("task_type") or ""),
             "template_mode": str(research_contract.get("template_mode") or ""),
             "research_mode": str(research_contract.get("research_mode") or ""),
             "validation_mode": str(validation_contract.get("validation_mode") or ""),
@@ -6807,10 +8431,96 @@ class AITPService:
             kernel_root=self.kernel_root,
         )
         interaction_contract = self._derive_interaction_contract(
+            topic_slug=topic_slug,
+            human_request=human_request or str(interaction_state.get("human_request") or ""),
             idea_packet=idea_packet,
             operator_checkpoint=operator_checkpoint,
             pending_decisions=pending_decisions_internal,
+            promotion_readiness=promotion_readiness,
         )
+        exploration_paths = self._exploration_window_paths(topic_slug)
+        exploration_question = (
+            str(human_request or "").strip()
+            or str(interaction_state.get("human_request") or "").strip()
+            or str(active_research_contract.get("question") or "").strip()
+        )
+        exploration_window = {
+            "status": "open" if interaction_contract["interaction_class"] == "free_explore" else "inactive",
+            "current_question": exploration_question,
+            "candidate_intuitions": self._dedupe_strings(
+                [
+                    str(idea_packet.get("novelty_target") or "").strip(),
+                    str(idea_packet.get("initial_idea") or "").strip(),
+                ]
+            ),
+            "local_blockers": self._dedupe_strings(list(open_gap_summary.get("blockers") or [])),
+            "likely_next_target_layer": "L3-A" if interaction_contract["interaction_class"] == "free_explore" else str(topic_state.get("resume_stage") or "L3-A"),
+            "window_open": interaction_contract["interaction_class"] == "free_explore",
+            "closure_required": False,
+            "summary": (
+                "Bounded exploratory analysis is currently allowed before a harder validation, writeback, or checkpoint commitment is required."
+                if interaction_contract["interaction_class"] == "free_explore"
+                else "No active exploration window is currently open."
+            ),
+        }
+        write_json(exploration_paths["json"], exploration_window)
+        write_text(exploration_paths["note"], self._render_exploration_window_markdown(exploration_window))
+        exploration_window = {
+            **exploration_window,
+            "path": self._relativize(exploration_paths["json"]),
+            "note_path": self._relativize(exploration_paths["note"]),
+        }
+        task_type_lane_guidance_paths = self._task_type_lane_guidance_paths(topic_slug)
+        task_type_lane_guidance = self._derive_task_type_lane_guidance(
+            topic_slug=topic_slug,
+            task_type=runtime_task_type,
+            lane=lane,
+        )
+        write_json(task_type_lane_guidance_paths["json"], task_type_lane_guidance)
+        write_text(
+            task_type_lane_guidance_paths["note"],
+            self._render_task_type_lane_guidance_markdown(task_type_lane_guidance),
+        )
+        task_type_lane_guidance = {
+            **task_type_lane_guidance,
+            "path": self._relativize(task_type_lane_guidance_paths["json"]),
+            "note_path": self._relativize(task_type_lane_guidance_paths["note"]),
+        }
+        collaborator_routing_guidance_paths = self._collaborator_routing_guidance_paths(topic_slug)
+        collaborator_routing_guidance = self._derive_collaborator_routing_guidance(
+            topic_slug=topic_slug,
+            task_type=runtime_task_type,
+            lane=lane,
+            task_type_lane_guidance=task_type_lane_guidance,
+            collaborator_memory=collaborator_memory,
+            override_surfaces=[
+                {
+                    "surface": "research_question_contract",
+                    "path": self._relativize(Path(shell_surfaces["research_question_contract_note_path"])),
+                    "role": "Adjust the active research question, scope, and declared route.",
+                },
+                {
+                    "surface": "idea_packet",
+                    "path": self._relativize(Path(shell_surfaces["idea_packet_note_path"])),
+                    "role": "Adjust the initial idea framing, novelty target, and first validation route.",
+                },
+                {
+                    "surface": "control_note",
+                    "path": str((topic_state.get("pointers") or {}).get("control_note_path") or self._relativize(runtime_root / "control_note.md")),
+                    "role": "Apply a bounded operator redirect without silently changing the route.",
+                },
+            ],
+        )
+        write_json(collaborator_routing_guidance_paths["json"], collaborator_routing_guidance)
+        write_text(
+            collaborator_routing_guidance_paths["note"],
+            self._render_collaborator_routing_guidance_markdown(collaborator_routing_guidance),
+        )
+        collaborator_routing_guidance = {
+            **collaborator_routing_guidance,
+            "path": self._relativize(collaborator_routing_guidance_paths["json"]),
+            "note_path": self._relativize(collaborator_routing_guidance_paths["note"]),
+        }
         result_brief_payload = dict(shell_surfaces.get("result_brief") or {})
         if not result_brief_payload:
             topic_status_explainability = shell_surfaces.get("topic_state_explainability") or {}
@@ -6824,6 +8534,7 @@ class AITPService:
                 "scope_summary": str(active_research_contract.get("question") or "").strip(),
                 "non_claims": self._dedupe_strings(list(idea_packet.get("non_goals") or [])),
             }
+        result_brief_payload["interaction_class"] = interaction_contract["interaction_class"]
         result_brief_path = self._relativize(
             Path(shell_surfaces.get("result_brief_path") or self._result_brief_paths(topic_slug)["json"])
         )
@@ -6841,12 +8552,137 @@ class AITPService:
             "scope_summary": result_brief_payload.get("scope_summary") or "",
             "non_claims": self._dedupe_strings(list(result_brief_payload.get("non_claims") or [])),
         }
+        l0_sources_payload = self._derive_l0_sources_projection(
+            topic_slug=topic_slug,
+            backend_bridges=backend_bridges,
+        )
+        l1_understanding_payload = self._derive_l1_understanding_projection(topic_slug=topic_slug)
+        l4_validation_payload = self._derive_l4_validation_projection(
+            topic_slug=topic_slug,
+            topic_state=topic_state,
+            validation_contract=validation_contract,
+            topic_status_explainability=shell_surfaces.get("topic_state_explainability") or {},
+        )
+        l2_memory_payload = self._derive_l2_memory_projection(
+            topic_slug=topic_slug,
+            topic_state=topic_state,
+            promotion_readiness=promotion_readiness,
+            promotion_gate=promotion_gate,
+            topic_skill_projection=topic_skill_projection,
+            candidate_rows=candidate_rows,
+        )
+        l0_paths = self._layer_projection_paths(topic_slug, "L0")
+        l1_paths = self._layer_projection_paths(topic_slug, "L1")
+        l4_paths = self._layer_projection_paths(topic_slug, "L4")
+        l2_paths = self._layer_projection_paths(topic_slug, "L2")
+        l0_written = write_l0_sources_projection(
+            topic_slug,
+            l0_sources_payload,
+            kernel_root=self.kernel_root,
+        )
+        l1_written = write_l1_understanding_projection(
+            topic_slug,
+            l1_understanding_payload,
+            kernel_root=self.kernel_root,
+        )
+        l4_written = write_l4_validation_projection(
+            topic_slug,
+            l4_validation_payload,
+            kernel_root=self.kernel_root,
+        )
+        l2_written = write_l2_memory_projection(
+            topic_slug,
+            l2_memory_payload,
+            kernel_root=self.kernel_root,
+        )
+        write_text(l0_paths["note"], self._render_layer_projection_markdown(l0_sources_payload))
+        write_text(l1_paths["note"], self._render_layer_projection_markdown(l1_understanding_payload))
+        write_text(l4_paths["note"], self._render_layer_projection_markdown(l4_validation_payload))
+        write_text(l2_paths["note"], self._render_layer_projection_markdown(l2_memory_payload))
+        l0_sources = {
+            **l0_written["l0_sources"],
+            "path": self._relativize(Path(l0_written["path"])),
+            "note_path": self._relativize(l0_paths["note"]),
+        }
+        l1_understanding = {
+            **l1_written["l1_understanding"],
+            "path": self._relativize(Path(l1_written["path"])),
+            "note_path": self._relativize(l1_paths["note"]),
+        }
+        l4_validation = {
+            **l4_written["l4_validation"],
+            "path": self._relativize(Path(l4_written["path"])),
+            "note_path": self._relativize(l4_paths["note"]),
+        }
+        l2_memory = {
+            **l2_written["l2_memory"],
+            "path": self._relativize(Path(l2_written["path"])),
+            "note_path": self._relativize(l2_paths["note"]),
+        }
+        l3_subplanes_payload = self._derive_l3_subplanes(
+            topic_slug=topic_slug,
+            latest_run_id=latest_run_id,
+            candidate_rows=candidate_rows,
+            selected_pending_action=selected_pending_action,
+            result_brief=result_brief,
+            topic_status_explainability=shell_surfaces.get("topic_state_explainability") or {},
+            promotion_readiness_path=self._relativize(Path(promotion_readiness_written["path"])),
+            promotion_readiness=promotion_readiness,
+        )
+        l3_analysis_paths = self._l3_subplane_paths(topic_slug, "analysis")
+        l3_result_integration_paths = self._l3_subplane_paths(topic_slug, "result_integration")
+        l3_distillation_paths = self._l3_subplane_paths(topic_slug, "distillation")
+        l3_analysis_written = write_l3_analysis_projection(
+            topic_slug,
+            l3_subplanes_payload["analysis"],
+            kernel_root=self.kernel_root,
+        )
+        l3_result_integration_written = write_l3_result_integration_projection(
+            topic_slug,
+            l3_subplanes_payload["result_integration"],
+            kernel_root=self.kernel_root,
+        )
+        l3_distillation_written = write_l3_distillation_projection(
+            topic_slug,
+            l3_subplanes_payload["distillation"],
+            kernel_root=self.kernel_root,
+        )
+        write_text(
+            l3_analysis_paths["note"],
+            self._render_l3_subplane_markdown(l3_subplanes_payload["analysis"]),
+        )
+        write_text(
+            l3_result_integration_paths["note"],
+            self._render_l3_subplane_markdown(l3_subplanes_payload["result_integration"]),
+        )
+        write_text(
+            l3_distillation_paths["note"],
+            self._render_l3_subplane_markdown(l3_subplanes_payload["distillation"]),
+        )
+        l3_subplanes = {
+            "analysis": {
+                **l3_analysis_written["l3_analysis"],
+                "path": self._relativize(Path(l3_analysis_written["path"])),
+                "note_path": self._relativize(l3_analysis_paths["note"]),
+            },
+            "result_integration": {
+                **l3_result_integration_written["l3_result_integration"],
+                "path": self._relativize(Path(l3_result_integration_written["path"])),
+                "note_path": self._relativize(l3_result_integration_paths["note"]),
+            },
+            "distillation": {
+                **l3_distillation_written["l3_distillation"],
+                "path": self._relativize(Path(l3_distillation_written["path"])),
+                "note_path": self._relativize(l3_distillation_paths["note"]),
+            },
+        }
         topic_synopsis_payload = {
             "id": f"topic_synopsis:{topic_slug}",
             "topic_slug": topic_slug,
             "title": str(active_research_contract.get("title") or self._topic_display_title(topic_slug)),
             "question": str(active_research_contract.get("question") or ""),
             "lane": lane,
+            "task_type": str(research_contract.get("task_type") or ""),
             "load_profile": resolved_load_profile,
             "status": str(active_research_contract.get("status") or "active"),
             "human_request": human_request or str(interaction_state.get("human_request") or ""),
@@ -6951,6 +8787,20 @@ class AITPService:
                         "reason": "Recent strategy memory overlaps with the current route. Consult it before trusting heuristic route selection.",
                     }
                 )
+            if collaborator_memory.get("status") == "available" and collaborator_memory.get("note_path"):
+                must_read_now.append(
+                    {
+                        "path": str(collaborator_memory.get("note_path")),
+                        "reason": "Collaborator-specific preferences are available here. Read them as steering context, not as canonical L2 truth.",
+                    }
+                )
+            if str(collaborator_routing_guidance.get("alignment_status") or "") == "preference_mismatch":
+                must_read_now.append(
+                    {
+                        "path": collaborator_routing_guidance["note_path"],
+                        "reason": "Current route and collaborator lane preference disagree. Review the routing guidance before continuing.",
+                    }
+                )
             if str(topic_skill_projection.get("status") or "") == "available" and topic_skill_projection.get("note_path"):
                 must_read_now.append(
                     {
@@ -7031,6 +8881,13 @@ class AITPService:
                         "reason": "Recent strategy memory overlaps with the current route. Consult it before trusting heuristic route selection.",
                     }
                 )
+            if collaborator_memory.get("status") == "available" and collaborator_memory.get("note_path"):
+                must_read_now.append(
+                    {
+                        "path": str(collaborator_memory.get("note_path")),
+                        "reason": "Collaborator-specific preferences are available here. Read them as steering context, not as canonical L2 truth.",
+                    }
+                )
             if str(topic_skill_projection.get("status") or "") == "available" and topic_skill_projection.get("note_path"):
                 must_read_now.append(
                     {
@@ -7063,6 +8920,15 @@ class AITPService:
                     must_read_now.append(
                         {"path": self._relativize(candidate_path), "reason": reason}
                     )
+
+        if exploration_window["window_open"]:
+            must_read_now.insert(
+                1,
+                {
+                    "path": exploration_window["note_path"],
+                    "reason": "Bounded exploration is currently open. Use this carrier to preserve tentative route ideas without treating them as durable closure.",
+                },
+            )
 
         may_defer_until_trigger: list[dict[str, str]] = []
         for candidate, trigger, reason in (
@@ -7502,6 +9368,7 @@ class AITPService:
             "Do not let the active research contract drift silently in scope, observables, deliverables, or acceptance tests.",
             "Do not treat heuristic queue rows as higher priority than declared control notes or decision contracts.",
             "Do not perform Layer 2 or Layer 2_auto writeback unless the corresponding gate artifacts say it is allowed.",
+            "Do not route L4 outputs directly into L2. They must return through L3-R and then L3-D before any writeback decision.",
             "Do not treat proxy-success signals as validation when the declared execution or proof evidence is still missing.",
             "If definitions, cited derivations, or prior-work comparisons are missing, return to L0 and persist the recovery artifacts before continuing.",
             "When a named trigger becomes active, read its mandatory deeper surfaces before continuing execution.",
@@ -7536,6 +9403,11 @@ class AITPService:
         editable_surfaces.extend(
             [
                 {
+                    "surface": "exploration_window",
+                    "path": exploration_window["note_path"],
+                    "role": "Review or refine the current bounded exploration carrier before harder validation, writeback, or checkpoint closure.",
+                },
+                {
                     "surface": "operator_checkpoint",
                     "path": self._relativize(Path(shell_surfaces["operator_checkpoint_note_path"])),
                     "role": "Answer the current human-checkpoint question or mark how the checkpoint was resolved.",
@@ -7559,6 +9431,41 @@ class AITPService:
                     "surface": "topic_dashboard",
                     "path": self._relativize(Path(shell_surfaces["topic_dashboard_path"])),
                     "role": "Human-readable topic summary for operator review and correction.",
+                },
+                {
+                    "surface": "l0_sources",
+                    "path": self._relativize(l0_paths["note"]),
+                    "role": "Review the current registered source basis before deeper reading or source recovery.",
+                },
+                {
+                    "surface": "l1_understanding",
+                    "path": self._relativize(l1_paths["note"]),
+                    "role": "Review the current provisional-understanding packet before topic analysis or validation.",
+                },
+                {
+                    "surface": "l4_validation",
+                    "path": self._relativize(l4_paths["note"]),
+                    "role": "Review the current validation return surface before interpreting or rerouting it.",
+                },
+                {
+                    "surface": "l2_memory",
+                    "path": self._relativize(l2_paths["note"]),
+                    "role": "Review consultation, staging, and writeback state before treating L2 as active memory.",
+                },
+                {
+                    "surface": "l3_analysis",
+                    "path": self._relativize(l3_analysis_paths["note"]),
+                    "role": "Review the current topic-analysis packet, active candidates, and legal next transitions.",
+                },
+                {
+                    "surface": "l3_result_integration",
+                    "path": self._relativize(l3_result_integration_paths["note"]),
+                    "role": "Review how the latest L4 return was interpreted before rerouting or writeback.",
+                },
+                {
+                    "surface": "l3_distillation",
+                    "path": self._relativize(l3_distillation_paths["note"]),
+                    "role": "Review staging/writeback readiness and the forbidden direct L4-to-L2 path.",
                 },
                 {
                     "surface": "topic_skill_projection",
@@ -7622,10 +9529,15 @@ class AITPService:
             "last_materialized_stage": topic_state.get("last_materialized_stage"),
             "research_mode": topic_state.get("research_mode") or active_research_contract.get("research_mode"),
             "load_profile": resolved_load_profile,
+            "l0_sources": l0_sources,
+            "l1_understanding": l1_understanding,
+            "l4_validation": l4_validation,
+            "l2_memory": l2_memory,
             "topic_synopsis": {
                 **topic_synopsis_written["topic_synopsis"],
                 "path": self._relativize(Path(topic_synopsis_written["path"])),
             },
+            "l3_subplanes": l3_subplanes,
             "interaction_contract": interaction_contract,
             "pending_decisions": {
                 **pending_decisions_written["pending_decisions"],
@@ -7638,6 +9550,10 @@ class AITPService:
             "promotion_readiness": promotion_readiness,
             "open_gap_summary": open_gap_summary,
             "strategy_memory": strategy_memory,
+            "collaborator_memory": collaborator_memory,
+            "exploration_window": exploration_window,
+            "task_type_lane_guidance": task_type_lane_guidance,
+            "collaborator_routing_guidance": collaborator_routing_guidance,
             "topic_skill_projection": topic_skill_projection,
             "topic_completion": topic_completion,
             "lean_bridge": lean_bridge,
@@ -8162,7 +10078,7 @@ class AITPService:
         bounded_gap_required = bool(policy.get("bounded_gap_required"))
         statement_template = str(policy.get("statement_template") or "")
         human_request_template = str(policy.get("human_request_template") or "")
-        expected_return_route = str(policy.get("expected_return_route") or "L0->L1->L3->L4->L2")
+        expected_return_route = str(policy.get("expected_return_route") or "L0->L1->L3-A->L4->L3-R->L3-D->L2")
         acceptable_return_shapes = self._dedupe_strings(
             list(policy.get("acceptable_return_shapes") or ["recovered_units", "resolved_gap_update", "still_unresolved_packet"])
         )
@@ -9049,6 +10965,74 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
             raise FileNotFoundError("Current topic memory has not been materialized yet.")
         return payload
 
+    def get_collaborator_memory(self) -> dict[str, Any]:
+        payload = read_json(self._collaborator_memory_paths()["json"])
+        if payload is None:
+            raise FileNotFoundError("Collaborator memory has not been materialized yet.")
+        return payload
+
+    def _render_collaborator_memory_note(self, payload: dict[str, Any]) -> str:
+        lines = [
+            "# Collaborator memory",
+            "",
+            f"- Updated at: `{payload.get('updated_at') or '(missing)'}`",
+            f"- Updated by: `{payload.get('updated_by') or '(missing)'}`",
+            "",
+            "This file stores collaborator-specific preferences and long-horizon concerns.",
+            "It is separate from canonical scientific memory and must not be treated as Layer 2 truth.",
+            "",
+            "## Preferences",
+            "",
+        ]
+        for item in payload.get("preferences") or ["(none)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Preferred lanes", ""])
+        for item in payload.get("preferred_lanes") or ["(none)"]:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "## Avoided patterns", ""])
+        for item in payload.get("avoided_patterns") or ["(none)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Long-horizon concerns", ""])
+        for item in payload.get("long_horizon_concerns") or ["(none)"]:
+            lines.append(f"- {item}")
+        lines.extend(["", "## Collaboration style", ""])
+        for item in payload.get("collaboration_style") or ["(none)"]:
+            lines.append(f"- {item}")
+        lines.append("")
+        return "\n".join(lines)
+
+    def record_collaborator_memory(
+        self,
+        *,
+        preferences: list[str] | None = None,
+        preferred_lanes: list[str] | None = None,
+        avoided_patterns: list[str] | None = None,
+        long_horizon_concerns: list[str] | None = None,
+        collaboration_style: list[str] | None = None,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        existing = read_json(self._collaborator_memory_paths()["json"]) or {}
+        payload = {
+            "memory_kind": "collaborator_memory",
+            "updated_at": now_iso(),
+            "updated_by": updated_by,
+            "preferences": self._dedupe_strings([*(existing.get("preferences") or []), *(preferences or [])]),
+            "preferred_lanes": self._dedupe_strings([*(existing.get("preferred_lanes") or []), *(preferred_lanes or [])]),
+            "avoided_patterns": self._dedupe_strings([*(existing.get("avoided_patterns") or []), *(avoided_patterns or [])]),
+            "long_horizon_concerns": self._dedupe_strings(
+                [*(existing.get("long_horizon_concerns") or []), *(long_horizon_concerns or [])]
+            ),
+            "collaboration_style": self._dedupe_strings([*(existing.get("collaboration_style") or []), *(collaboration_style or [])]),
+        }
+        paths = self._collaborator_memory_paths()
+        write_json(paths["json"], payload)
+        write_text(paths["note"], self._render_collaborator_memory_note(payload))
+        return {
+            **payload,
+            "collaborator_memory_path": str(paths["json"]),
+            "collaborator_memory_note_path": str(paths["note"]),
+        }
+
     def _render_current_topic_note(self, payload: dict[str, Any]) -> str:
         return "\n".join(
             [
@@ -9728,6 +11712,22 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
                     "Return to L0 if the comparison source set is incomplete.",
                 ],
             },
+            "analytic": {
+                "validation_mode": "analytic",
+                "verification_focus": "Check limiting cases, dimensional consistency, symmetry constraints, and self-consistency before trusting the active derivation or claim.",
+                "analytic_check_families": [
+                    "limiting_case",
+                    "dimensional_consistency",
+                    "symmetry_constraint",
+                    "self_consistency",
+                ],
+                "required_checks": [
+                    "State at least one limiting case or asymptotic regime the current claim should satisfy.",
+                    "Check dimensional or units consistency where the claim carries physical scales.",
+                    "Record any symmetry, conservation, or invariance expectation that the result must respect.",
+                    "Return to L0 or L1 if the analytic check depends on an unstated definition, regime, or prior-work comparison.",
+                ],
+            },
             "numeric": {
                 "validation_mode": "numerical",
                 "verification_focus": "Validate the active topic against executed numeric or benchmark evidence.",
@@ -9763,6 +11763,7 @@ exec bash \"${SCRIPT_DIR}/${SCRIPT_NAME}\" \"$@\"
         validation_contract["status"] = "planned"
         validation_contract["validation_mode"] = defaults["validation_mode"]
         validation_contract["verification_focus"] = defaults["verification_focus"]
+        validation_contract["analytic_check_families"] = defaults.get("analytic_check_families") or []
         validation_contract["required_checks"] = defaults["required_checks"]
         validation_contract["acceptance_rule"] = (
             "Accept only when the requested verification mode is satisfied by durable artifacts and no active L0-recovery blocker is being hidden."
@@ -12590,7 +14591,7 @@ the implementation path.
 If the task is bucket `2`, you may work on the AITP codebase directly without
 opening a topic shell, but you must preserve:
 
-- the `L0 -> L1 -> L3 -> L4 -> L2` ontology
+- the `L0 -> L1 -> L3-A -> L4 -> L3-R -> L3-D -> L2` ontology
 - research-execution guardrails
 - promotion and audit semantics
 - adapter/runtime install consistency
@@ -13047,6 +15048,426 @@ Kernel root default: `{self.kernel_root}`
                 name: {"path": str(path), "status": "present" if path.exists() else "missing"}
                 for name, path in contract_paths.items()
             },
+        }
+
+    def seed_l2_demo_direction(
+        self,
+        *,
+        direction: str = "tfim-benchmark-first",
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        return seed_l2_demo_graph_direction(self.kernel_root, direction=direction, updated_by=updated_by)
+
+    def materialize_l2_index(self, *, updated_by: str = "aitp-cli") -> dict[str, Any]:
+        payload = materialize_canonical_l2_index(self.kernel_root)
+        payload["updated_by"] = updated_by
+        return payload
+
+    def consult_l2(
+        self,
+        *,
+        query_text: str,
+        retrieval_profile: str = "l3_candidate_formation",
+        max_primary_hits: int | None = None,
+        include_staging: bool = False,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        payload = consult_canonical_l2_graph(
+            self.kernel_root,
+            query_text=query_text,
+            retrieval_profile=retrieval_profile,
+            max_primary_hits=max_primary_hits,
+            include_staging=include_staging,
+        )
+        payload["updated_by"] = updated_by
+        return payload
+
+    def consult_topic_l2(
+        self,
+        *,
+        topic_slug: str,
+        query_text: str,
+        run_id: str | None = None,
+        stage: str = "L3",
+        retrieval_profile: str = "l3_candidate_formation",
+        max_primary_hits: int | None = None,
+        include_staging: bool = True,
+        purpose: str | None = None,
+        requested_unit_types: list[str] | None = None,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        resolved_run_id = self._resolve_run_id(topic_slug, run_id)
+        retrieval_payload = consult_canonical_l2_graph(
+            self.kernel_root,
+            query_text=query_text,
+            retrieval_profile=retrieval_profile,
+            max_primary_hits=max_primary_hits,
+            include_staging=include_staging,
+        )
+        profile_payload = (
+            (read_json(self.kernel_root / "canonical" / "retrieval_profiles.json") or {}).get("profiles") or {}
+        ).get(retrieval_profile) or {}
+        preferred_types = set(profile_payload.get("preferred_unit_types") or [])
+
+        def _canonical_reason(row: dict[str, Any]) -> str:
+            matched_terms = [str(item).strip() for item in (row.get("matched_terms") or []) if str(item).strip()]
+            parts: list[str] = []
+            if matched_terms:
+                parts.append(f"matched terms: {', '.join(matched_terms)}")
+            if str(row.get("unit_type") or "") in preferred_types:
+                parts.append("preferred by retrieval profile")
+            return "; ".join(parts) or "selected by bounded lexical-plus-profile retrieval"
+
+        def _expanded_reason(row: dict[str, Any]) -> str:
+            via_relation = str(row.get("via_relation") or "").strip()
+            via_id = str(row.get("via_id") or "").strip()
+            if via_relation and via_id:
+                return f"expanded via `{via_relation}` from `{via_id}`"
+            return "expanded from a primary canonical hit"
+
+        def _stage_reason(row: dict[str, Any]) -> str:
+            matched_terms = [str(item).strip() for item in (row.get("matched_terms") or []) if str(item).strip()]
+            if matched_terms:
+                return f"matched staged distillation terms: {', '.join(matched_terms)}"
+            return "matched a staged distillation entry"
+
+        retrieved_refs: list[dict[str, Any]] = []
+        primary_refs: list[dict[str, Any]] = []
+        expanded_refs: list[dict[str, Any]] = []
+        staged_refs: list[dict[str, Any]] = []
+        warning_refs: list[dict[str, Any]] = []
+        followup_paths: list[str] = []
+        graph_surface = self._canonical_l2_graph_surface()
+
+        for row in retrieval_payload.get("primary_hits") or []:
+            ref = {
+                "id": str(row.get("id") or ""),
+                "unit_type": str(row.get("unit_type") or ""),
+                "title": str(row.get("title") or ""),
+                "summary": str(row.get("summary") or ""),
+                "path": str(row.get("path") or ""),
+                "trust_surface": "canonical",
+                "selection_reason": _canonical_reason(row),
+            }
+            retrieved_refs.append(ref)
+            primary_refs.append(ref)
+            if ref["path"]:
+                followup_paths.append(ref["path"])
+            if ref["unit_type"] == "warning_note":
+                warning_refs.append(ref)
+
+        for row in retrieval_payload.get("expanded_hits") or []:
+            ref = {
+                "id": str(row.get("id") or ""),
+                "unit_type": str(row.get("unit_type") or ""),
+                "title": str(row.get("title") or ""),
+                "summary": str(row.get("summary") or ""),
+                "path": str(row.get("path") or ""),
+                "trust_surface": "canonical",
+                "selection_reason": _expanded_reason(row),
+            }
+            retrieved_refs.append(ref)
+            expanded_refs.append(ref)
+            if ref["path"]:
+                followup_paths.append(ref["path"])
+            if ref["unit_type"] == "warning_note":
+                warning_refs.append(ref)
+
+        for row in retrieval_payload.get("staged_hits") or []:
+            ref = {
+                "id": str(row.get("entry_id") or ""),
+                "unit_type": str(row.get("candidate_unit_type") or ""),
+                "title": str(row.get("title") or ""),
+                "summary": str(row.get("summary") or ""),
+                "path": str(row.get("path") or ""),
+                "trust_surface": str(row.get("trust_surface") or "staging"),
+                "selection_reason": _stage_reason(row),
+            }
+            retrieved_refs.append(ref)
+            staged_refs.append(ref)
+            if ref["path"]:
+                followup_paths.append(ref["path"])
+
+        canonical_hit_count = len(retrieval_payload.get("primary_hits") or []) + len(retrieval_payload.get("expanded_hits") or [])
+        staged_hit_count = len(retrieval_payload.get("staged_hits") or [])
+        result_summary = (
+            f"Retrieved {len(retrieval_payload.get('primary_hits') or [])} primary canonical hits, "
+            f"{len(retrieval_payload.get('expanded_hits') or [])} expanded canonical hits, and "
+            f"{staged_hit_count} staged hits."
+        )
+        context_ref = {
+            "topic_slug": topic_slug,
+            "run_id": resolved_run_id or "",
+            "surface": "topic_l2_consultation",
+            "stage": stage,
+        }
+        consultation_slug = f"{stage.lower()}-{slugify(query_text)[:32]}-{slugify(now_iso())[-12:]}"
+        projection_paths = [
+            self._relativize(self._runtime_root(topic_slug) / "l2_memory.md"),
+            self._relativize(self._l3_subplane_paths(topic_slug, "analysis")["note"]),
+            self._relativize(self._l3_subplane_paths(topic_slug, "distillation")["note"]),
+        ]
+        if resolved_run_id:
+            projection_paths.append(self._relativize(self._candidate_ledger_path(topic_slug, resolved_run_id)))
+        consultation = self._record_l2_consultation(
+            topic_slug=topic_slug,
+            stage=stage,
+            run_id=resolved_run_id,
+            consultation_slug=consultation_slug,
+            context_ref=context_ref,
+            purpose=purpose or "Consult Layer 2 memory to shape the next bounded topic move without blurring canonical and staged trust.",
+            query_text=query_text,
+            requested_unit_types=list(requested_unit_types or []),
+            retrieved_refs=retrieved_refs,
+            primary_refs=primary_refs,
+            expanded_refs=expanded_refs,
+            staged_refs=staged_refs,
+            warning_refs=warning_refs,
+            graph_surface=graph_surface,
+            result_summary=result_summary,
+            effect_on_work=(
+                "Consultation prepared reusable canonical and staged memory pointers for the active topic."
+                if retrieved_refs
+                else "No bounded reusable memory was retrieved for the active topic query."
+            ),
+            outcome="candidate_narrowed" if retrieved_refs else "no_change",
+            projection_paths=self._dedupe_strings(projection_paths),
+            requested_by=updated_by,
+            produced_by=updated_by,
+            written_by=updated_by,
+            retrieval_profile=retrieval_profile,
+        )
+        return {
+            **retrieval_payload,
+            "topic_slug": topic_slug,
+            "run_id": resolved_run_id or "",
+            "stage": stage,
+            "consultation": consultation,
+            "trust_summary": {
+                "canonical_hit_count": canonical_hit_count,
+                "staged_hit_count": staged_hit_count,
+            },
+            "warning_refs": warning_refs,
+            "followup_paths": self._dedupe_strings(followup_paths),
+            "result_summary": result_summary,
+            "updated_by": updated_by,
+        }
+
+    def stage_l2_insight(
+        self,
+        *,
+        title: str,
+        summary: str,
+        candidate_unit_type: str = "concept",
+        tags: list[str] | None = None,
+        source_refs: list[str] | None = None,
+        assumptions: list[str] | None = None,
+        linked_unit_ids: list[str] | None = None,
+        contradicts_unit_ids: list[str] | None = None,
+        integration_summary: str | None = None,
+        failure_kind: str | None = None,
+        failed_route: str | None = None,
+        next_implication: str | None = None,
+        scope_note: str | None = None,
+        topic_slug: str | None = None,
+        notes: str | None = None,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        return stage_l2_graph_insight(
+            self.kernel_root,
+            title=title,
+            summary=summary,
+            candidate_unit_type=candidate_unit_type,
+            tags=list(tags or []),
+            source_refs=list(source_refs or []),
+            created_by=updated_by,
+            assumptions=list(assumptions or []),
+            linked_unit_ids=list(linked_unit_ids or []),
+            contradicts_unit_ids=list(contradicts_unit_ids or []),
+            integration_summary=integration_summary,
+            failure_kind=failure_kind,
+            failed_route=failed_route,
+            next_implication=next_implication,
+            scope_note=scope_note,
+            topic_slug=topic_slug,
+            notes=notes,
+        )
+
+    def stage_negative_result(
+        self,
+        *,
+        title: str,
+        summary: str,
+        failure_kind: str,
+        failed_route: str | None = None,
+        next_implication: str | None = None,
+        tags: list[str] | None = None,
+        source_refs: list[str] | None = None,
+        assumptions: list[str] | None = None,
+        contradicts_unit_ids: list[str] | None = None,
+        scope_note: str | None = None,
+        topic_slug: str | None = None,
+        notes: str | None = None,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        return stage_l2_graph_insight(
+            self.kernel_root,
+            title=title,
+            summary=summary,
+            candidate_unit_type="negative_result",
+            tags=self._dedupe_strings(["negative-result", *(tags or [])]),
+            source_refs=list(source_refs or []),
+            created_by=updated_by,
+            assumptions=list(assumptions or []),
+            linked_unit_ids=[],
+            contradicts_unit_ids=list(contradicts_unit_ids or []),
+            integration_summary=f"Recorded a negative-result memory candidate for `{failure_kind}`.",
+            failure_kind=failure_kind,
+            failed_route=failed_route,
+            next_implication=next_implication,
+            scope_note=scope_note,
+            topic_slug=topic_slug,
+            notes=notes,
+        )
+
+    def stage_topic_distillation(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None = None,
+        candidate_ids: list[str] | None = None,
+        tags: list[str] | None = None,
+        contradicts_unit_ids: list[str] | None = None,
+        scope_note: str | None = None,
+        notes: str | None = None,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        resolved_run_id = self._resolve_run_id(topic_slug, run_id)
+        if not resolved_run_id:
+            raise FileNotFoundError(f"Unable to resolve a feedback run for topic {topic_slug}")
+
+        candidate_rows = self._candidate_rows_for_run(topic_slug, resolved_run_id)
+        if not candidate_rows:
+            return {
+                "topic_slug": topic_slug,
+                "run_id": resolved_run_id,
+                "status": "no_candidates",
+                "selection_basis": "none",
+                "staged_entry_ids": [],
+                "staged_entries": [],
+            }
+
+        promotion_gate = self._load_promotion_gate(topic_slug) or {}
+        promotion_readiness = self._derive_promotion_readiness(
+            topic_slug=topic_slug,
+            latest_run_id=resolved_run_id,
+            promotion_gate=promotion_gate,
+            candidate_rows=candidate_rows,
+        )
+        requested_ids = {str(item).strip() for item in (candidate_ids or []) if str(item).strip()}
+        selected_rows: list[dict[str, Any]] = []
+        selection_basis = "candidate_ledger_distillation"
+
+        if requested_ids:
+            selected_rows = [
+                row
+                for row in candidate_rows
+                if str(row.get("candidate_id") or "").strip() in requested_ids
+            ]
+            missing_ids = sorted(requested_ids - {str(row.get("candidate_id") or "").strip() for row in selected_rows})
+            if missing_ids:
+                raise FileNotFoundError(
+                    f"Topic distillation staging could not find candidate ids: {', '.join(missing_ids)}"
+                )
+            selection_basis = "explicit_candidate_ids"
+        else:
+            ready_ids = set(promotion_readiness.get("ready_candidate_ids") or [])
+            if ready_ids:
+                selected_rows = [
+                    row for row in candidate_rows if str(row.get("candidate_id") or "").strip() in ready_ids
+                ]
+                selection_basis = "promotion_ready_candidates"
+            else:
+                selected_rows = [
+                    row
+                    for row in candidate_rows
+                    if (row.get("intended_l2_targets") or [])
+                    or str(row.get("status") or "").strip() in {"ready_for_validation", "promotion-ready", "validated"}
+                ]
+                if not selected_rows:
+                    selected_rows = [candidate_rows[0]]
+
+        result_brief = read_json(self._result_brief_paths(topic_slug)["json"]) or {}
+        topic_state = read_json(self._runtime_root(topic_slug) / "topic_state.json") or {"topic_slug": topic_slug}
+        validation_contract = read_json(self._validation_contract_paths(topic_slug)["json"]) or {}
+        last_evidence_return = self._derive_last_evidence_return(
+            topic_state=topic_state,
+            validation_contract=validation_contract,
+        )
+        if not str(last_evidence_return.get("path") or "").strip():
+            fallback_return_path = self._validation_run_root(topic_slug, resolved_run_id) / "returned_execution_result.json"
+            if fallback_return_path.exists():
+                fallback_payload = read_json(fallback_return_path) or {}
+                last_evidence_return = {
+                    "status": "present",
+                    "kind": "returned_execution_result",
+                    "record_id": str(fallback_payload.get("result_id") or "").strip(),
+                    "recorded_at": str(fallback_payload.get("updated_at") or fallback_payload.get("returned_at") or "").strip(),
+                    "path": self._relativize(fallback_return_path),
+                    "summary": str(fallback_payload.get("summary") or "").strip(),
+                }
+        ledger_ref = self._relativize(self._candidate_ledger_path(topic_slug, resolved_run_id))
+        result_brief_ref = ""
+        if self._result_brief_paths(topic_slug)["json"].exists():
+            result_brief_ref = self._relativize(self._result_brief_paths(topic_slug)["json"])
+        evidence_ref = str(last_evidence_return.get("path") or "").strip()
+
+        staged_entries: list[dict[str, Any]] = []
+        for row in selected_rows:
+            candidate_id = str(row.get("candidate_id") or "").strip()
+            candidate_type = str(row.get("candidate_type") or "concept").strip() or "concept"
+            source_refs = self._dedupe_strings(
+                [
+                    ledger_ref,
+                    *self._origin_ref_strings(list(row.get("origin_refs") or [])),
+                    result_brief_ref,
+                    evidence_ref,
+                ]
+            )
+            integration_parts = [
+                str(result_brief.get("what_changed") or "").strip(),
+                str(last_evidence_return.get("summary") or "").strip(),
+                str(promotion_readiness.get("summary") or "").strip(),
+            ]
+            integration_summary = " ".join(part for part in integration_parts if part).strip()
+            entry = stage_l2_graph_insight(
+                self.kernel_root,
+                title=str(row.get("title") or candidate_id or f"{topic_slug} distillation"),
+                summary=str(row.get("summary") or "Topic-side distillation candidate."),
+                candidate_unit_type=candidate_type,
+                tags=self._dedupe_strings([topic_slug, candidate_type, *list(tags or [])]),
+                source_refs=source_refs,
+                created_by=updated_by,
+                assumptions=self._dedupe_strings(list(row.get("assumptions") or [])),
+                linked_unit_ids=self._dedupe_strings(list(row.get("intended_l2_targets") or [])),
+                contradicts_unit_ids=self._dedupe_strings(list(contradicts_unit_ids or [])),
+                integration_summary=integration_summary,
+                scope_note=scope_note or str(row.get("question") or row.get("proposed_validation_route") or ""),
+                topic_slug=topic_slug,
+                notes=notes or f"Created from topic distillation for {candidate_id or topic_slug}.",
+            )
+            staged_entries.append(entry)
+
+        return {
+            "topic_slug": topic_slug,
+            "run_id": resolved_run_id,
+            "status": "staged",
+            "selection_basis": selection_basis,
+            "promotion_readiness_status": str(promotion_readiness.get("status") or ""),
+            "staged_entry_ids": [str(row.get("entry_id") or "") for row in staged_entries],
+            "staged_entries": staged_entries,
+            "result_brief_path": result_brief_ref,
+            "evidence_path": evidence_ref,
         }
 
     def migrate_local_install(

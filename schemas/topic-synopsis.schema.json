@@ -9,6 +9,7 @@
     "topic_slug",
     "title",
     "question",
+    "task_type",
     "lane",
     "load_profile",
     "status",
@@ -39,6 +40,14 @@
     "question": {
       "type": "string",
       "minLength": 1
+    },
+    "task_type": {
+      "type": "string",
+      "enum": [
+        "open_exploration",
+        "conjecture_attempt",
+        "target_driven_execution"
+      ]
     },
     "lane": {
       "type": "string",
@@ -73,7 +82,9 @@
     "interaction_class": {
       "type": "string",
       "enum": [
+        "free_explore",
         "silent_continue",
+        "non_blocking_update",
         "checkpoint_question"
       ]
     },
@@ -91,6 +102,7 @@
       "type": "string",
       "enum": [
         "status_update",
+        "result_brief",
         "checkpoint_card"
       ]
     },

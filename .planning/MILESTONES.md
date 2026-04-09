@@ -1,31 +1,53 @@
 # Milestones
 
-## v1.1 L2 Topic-Skill Projection (Shipped: 2026-04-01)
+## Status
 
-**Scope capture:** retrospective milestone note from shipped implementation in commit `6445c59`
+Completed milestone chain:
 
-**Key accomplishments:**
+- `v1.28` implemented
+- `v1.29` implemented
+- `v1.30` implemented
+- `v1.31` implemented
+- `v1.32` first slice implemented
+- `v1.33` first slice implemented
+- `v1.34` implemented
+- `v1.35` implemented
 
-- `topic_skill_projection` now exists as a legal canonical unit family, backend target, and candidate type
-- `AITPService` can compile topic-skill projections from runtime topic state, strategy memory, operation manifests, trust audit, and topic completion surfaces
-- runtime topics now materialize `topic_skill_projection.active.json|md` and expose the projection through `topic_status()`, `topic_next()`, dashboard, and runtime protocol read paths
-- TFIM is now a real seed exemplar that generates the projection, creates the candidate ledger row, and exercises human-reviewed promotion into `units/topic-skill-projections/`
-- auto-promotion is explicitly blocked for this family in v1 while the projection remains human-reviewed execution memory
+## Latest Closed Milestone
 
----
+- `v1.35` implemented
 
-## v1.0 Runtime Hardening (Shipped: 2026-03-31)
+## Why `v1.35` Existed
 
-**Phases completed:** 5 phases, 7 plans, 10 tasks
+After `v1.34`, AITP was stronger on memory honesty and bounded exploration,
+but it still did not operationally distinguish:
 
-**Key accomplishments:**
+- `open_exploration`
+- `conjecture_attempt`
+- `target_driven_execution`
 
-- Source-backed topic starts now derive sharper idea-packet, research-question, and validation-route defaults from registered source material
-- Runtime status surfaces now explain why a topic is here, what route it is following, what evidence returned last, and what human need remains
-- Topic-start hardening is now covered by deterministic regressions and a clean runtime test suite
-- Steering-style operator checkpoint answers now materialize durable steering artifacts and refreshed runtime routes
-- Run-local strategy memory can now be written, surfaced through runtime status, and consulted as bounded route guidance
-- The TFIM exact-diagonalization helper now has a real benchmark-first `code_method` acceptance lane inside AITP
-- The repository now has an explicit rule for when work belongs to GSD repo execution versus AITP topic execution
+as different kinds of research jobs.
 
----
+## Active Milestone
+
+- `v1.36` `L0 L1 Source Intelligence And Physicist-Grade Intake`
+
+## Why `v1.36` Exists
+
+After `v1.35`, AITP is better at classifying and routing the research job, but
+it still falls short where a real theoretical-physics collaborator most needs
+substance:
+
+- durable source identity across related topics,
+- usable citation/source-neighbor intelligence,
+- assumption/regime/notation-aware reading,
+- and contradiction-sensitive intake that later layers can trust.
+
+This is the next bottleneck because better routing without better reading still
+leaves `L2`, `L3`, and `L4` working over a weak substrate.
+
+## Current Status
+
+- `v1.35` closed
+- `v1.36` active
+- next implementation target: Phase `42` `source-identity-and-citation-graph`

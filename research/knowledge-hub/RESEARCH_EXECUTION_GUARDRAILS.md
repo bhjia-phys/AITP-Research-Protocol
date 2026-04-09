@@ -1,7 +1,7 @@
 # Research Execution Guardrails
 
 This file captures the strongest research-flow lessons AITP should absorb from
-`get-physics-done` without replacing the `L0 -> L1 -> L3 -> L4 -> L2` ontology.
+`get-physics-done` without replacing the `L0 -> L1 -> L3-A -> L4 -> L3-R -> L3-D -> L2` ontology.
 
 AITP should stay layer-first.
 It should also stop treating "workflow discipline" as an optional style choice.

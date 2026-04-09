@@ -270,7 +270,7 @@ class RuntimeScriptTests(unittest.TestCase):
                 "supporting_regression_question_ids": ["regression_question:demo"],
                 "source_id": "paper:demo",
                 "arxiv_id": "1510.07698v1",
-                "expected_return_route": "L0->L1->L3->L4->L2",
+                "expected_return_route": "L0->L1->L3-A->L4->L3-R->L3-D->L2",
                 "acceptable_return_shapes": ["recovered_units", "resolved_gap_update", "still_unresolved_packet"],
                 "required_output_artifacts": ["candidate_ledger_or_recovered_units"],
                 "unresolved_return_statuses": ["pending_reentry", "returned_with_gap", "returned_unresolved"],

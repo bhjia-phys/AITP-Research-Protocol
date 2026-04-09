@@ -46,6 +46,17 @@ When a promotion packet lands in one or both backends, preserve alignment for:
 If one backend currently cannot express the full structure of the other, record
 that reduction honestly rather than silently broadening or weakening the claim.
 
+Maintain the pair through:
+
+- `../L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md`
+
+That means:
+
+- run drift audit explicitly,
+- record backend debt explicitly,
+- and rebuild only through a bounded resynchronization step that preserves the
+  promoted identity.
+
 ## Relation to `L2` trust surfaces
 
 The paired backend split is not the same thing as:

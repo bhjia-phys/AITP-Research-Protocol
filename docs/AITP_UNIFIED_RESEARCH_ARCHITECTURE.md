@@ -4,156 +4,186 @@ Status: working design synthesis
 
 ## Purpose
 
-This document is the top-level design contract for AITP as a research
-collaborator.
+This document is the top-level architecture contract for AITP as a
+theoretical-physics collaborator.
 
-It exists to unify several design threads that are currently documented
-separately:
+It is the architecture-facing companion to:
 
-- the `L0-L4` epistemic layer model,
-- lanes,
-- runtime modes and backedges,
-- progressive-disclosure runtime behavior,
-- `L2` trust semantics,
-- and the paired human-readable plus typed theoretical-physics knowledge
-  network.
+- `docs/superpowers/specs/2026-04-08-aitp-research-scenario-and-layer-responsibility-freeze-design.md`
+- `docs/superpowers/specs/2026-04-08-l2-governance-plane-consolidation-design.md`
+- `docs/superpowers/specs/2026-04-08-aitp-collaborator-capability-tracks-design.md`
 
-The goal is to keep these structures compatible rather than letting them drift
-into competing local taxonomies.
-
-## Design problem
-
-AITP currently has strong partial designs, but they live on different axes:
-
-- `layer` says what kind of epistemic object something is;
-- `lane` says what kind of bounded research loop is dominant;
-- `mode` says how the system should operate right now;
-- `transition` says how the system moves over the layer graph;
-- `canonical / compiled / staging` says what trust posture an `L2` surface has;
-- paired downstream backends say how long-term theoretical-physics knowledge is
-  realized for humans and for machines.
-
-These axes are individually useful.
-The main problem is not that any one of them is wrong.
-The main problem is that AITP still lacks one unified statement of how they fit
+Its job is not to replace those specs.
+Its job is to give one architectural statement of how the major axes fit
 together.
 
-## Core decision
+## Core Decision
 
-AITP should be modeled as six orthogonal axes:
+AITP is now treated as eight orthogonal structures:
 
-1. `layer`
+1. `task_type`
 2. `lane`
-3. `mode`
-4. `transition`
-5. `knowledge trust surface`
-6. `knowledge realization`
+3. `layer`
+4. `mode`
+5. `transition`
+6. `H-plane`
+7. `knowledge trust surface`
+8. `knowledge realization`
 
 Short form:
 
-- layer = epistemic meaning
-- lane = dominant closure style
-- mode = operating posture
-- transition = movement law
-- trust surface = authoritative vs derived vs provisional `L2`
-- realization = where long-term knowledge is stored for humans and machines
+- task type = what kind of research job is being attempted?
+- lane = what broad research direction and evidence base dominates?
+- layer = what epistemic object is this right now?
+- mode = how should the system operate for this step?
+- transition = how is it moving over the research graph?
+- H-plane = how and when humans intervene, review, steer, or receive results
+- trust surface = canonical vs compiled vs staging inside `L2`
+- realization = where long-horizon knowledge is materialized for humans and for machines
 
-These axes must not be collapsed into one mixed taxonomy.
+These structures must not be collapsed into one mixed taxonomy.
 
-## 1. The six axes
+## 1. Task Type
 
-### 1.1 Layer
+The top-level task types are:
 
-Layer answers:
+- `open_exploration`
+- `conjecture_attempt`
+- `target_driven_execution`
 
-- what kind of research-state object is this right now?
+These are the primary orchestration classes for real research work.
 
-AITP keeps the current epistemic layer model:
+They affect:
 
-- `L0` source substrate
-- `L1` intake / provisional understanding
-- `L3` candidate formation / exploratory notebook
-- `L4` validation / adjudication
-- `L2` reusable promoted memory
+- `L0` source breadth,
+- `L1` reading posture,
+- `L3` route comparison intensity,
+- `L4` validation selection,
+- and the shape of the reusable result expected in `L2`.
 
-The default forward law remains:
+The old coarse `scenario` framing should now be read as acceptance use cases
+rather than the main orchestration axis.
 
-`L0 -> L1 -> L3 -> L4 -> L2`
+## 2. Lane
 
-### 1.2 Lane
-
-Lane answers:
-
-- what kind of bounded research loop is mainly doing the work?
-
-Current primary lanes remain:
+The main lane families are:
 
 - `formal_theory`
-- `toy_numeric`
-- `code_method`
+- `model_numeric`
+- `code_and_materials`
 
-AITP should also reserve one explicit future extension lane:
+The reserved future lane remains:
 
 - `theory_synthesis`
 
-This extension lane is the natural home for:
+These lanes should be understood as broad research directions, not as literal
+filesystem roots and not as replacements for the epistemic layer model.
 
-- cross-paper comparison,
-- assumption reconciliation,
-- framework alignment,
-- notation unification,
-- and concept-network construction that is not well described as proof, toy
-  numerics, or implementation.
+## 3. Layer
 
-### 1.3 Mode
+The epistemic layers remain:
 
-Mode answers:
+- `L0` source substrate
+- `L1` technical understanding
+- `L3` research synthesis
+- `L4` validation and adjudication
+- `L2` reusable promoted memory
 
-- how should AITP operate for this step?
+### 3.1 The current `L3` correction
 
-Keep the current small top-level mode set:
+Top-level `L3` remains valid, but it is no longer treated as one undifferentiated
+bucket.
+
+It is frozen as an umbrella layer with three internal subplanes:
+
+- `L3-A` topic analysis
+- `L3-R` result integration
+- `L3-D` distillation
+
+This lets AITP keep top-level continuity while stopping `L3` from carrying
+analysis, raw result interpretation, and `L2` preparation as one muddled role.
+
+## 4. Mode
+
+The small top-level mode set remains:
 
 - `discussion`
 - `explore`
 - `verify`
 - `promote`
 
-Keep one bounded conditional submode:
+And the bounded submode remains:
 
 - `iterative_verify`
 
-Do not solve every missing behavior by inventing more top-level modes.
-If a new behavior is local and bounded, prefer:
+The architecture rule stays the same:
 
-- a submode,
-- a trigger,
-- or an operation family inside an existing mode.
+- do not solve every missing behavior by inventing more top-level modes.
 
-### 1.4 Transition
+## 5. Transition
 
-Transition answers:
-
-- what move is being made over the layer graph?
-
-Keep the current movement law:
+The movement law remains transition-based rather than pipeline-only:
 
 - `forward_transition`
 - `backedge_transition`
 - `boundary_hold`
 
-Backedges are first-class and normal:
+But the frozen research law is now sharper than the older shorthand.
 
-- `L1 -> L0`
-- `L3 -> L0`
-- `L4 -> L0`
-- `L3 -> L2`
-- `L4 -> L2`
+The older shorthand:
 
-### 1.5 Knowledge trust surface
+- `L0 -> L1 -> L3 -> L4 -> L2`
 
-This axis applies specifically to `L2`.
+is no longer sufficient.
 
-Keep the current three trust classes:
+The new frozen target is:
+
+- `L0 -> L1 -> L3-A`
+- `L2 consult -> L3-A`
+- `L3-A -> L4 | L0 | L1`
+- `L4 -> L3-R`
+- `L3-R -> L3-A | L3-D | L0 | L1`
+- `L3-D -> staging | L2 | L3-A | L1`
+
+This means:
+
+- `L0/L1/L3-A` is the mandatory front-side research chain
+- `L2` never replaces fresh analysis and always re-enters through `L3-A`
+- `L4` never writes directly to `L2`
+- `L4` outputs must return to `L3-R`
+
+## 6. H-Plane
+
+Human interaction is not a normal epistemic layer.
+
+It is a cross-cutting interaction plane:
+
+- `H-plane`
+
+It may intervene at:
+
+- `L0`
+- `L1`
+- `L3-A`
+- `L3-R`
+- `L3-D`
+- `L4`
+- `L2`
+
+Its job is to govern:
+
+- stop versus continue,
+- non-blocking update versus blocking checkpoint,
+- route choice,
+- promotion review,
+- contradiction review,
+- and user-facing result delivery.
+
+This keeps human interaction explicit without collapsing it into the layer model.
+
+## 7. Knowledge Trust Surface
+
+The `L2` trust split remains:
 
 1. canonical `L2`
 2. compiled `L2`
@@ -161,447 +191,275 @@ Keep the current three trust classes:
 
 Short form:
 
-- canonical is authoritative
-- compiled is derived
-- staging is provisional
+- canonical = authoritative reusable memory
+- compiled = derived helper surface
+- staging = provisional durable memory candidate
 
 This is a trust distinction, not a human-versus-machine distinction.
 
-### 1.6 Knowledge realization
+## 8. Knowledge Realization
 
-This axis answers:
-
-- where does long-term domain knowledge live as a usable downstream
-  realization?
-
-For theoretical physics, AITP should treat the paired downstream knowledge
-network as two coordinated realizations:
+For theoretical physics, long-horizon downstream knowledge remains paired:
 
 - `backend:theoretical-physics-brain`
-  - operator-facing, human-readable realization
+  - operator-primary, human-readable realization
 - `backend:theoretical-physics-knowledge-network`
-  - typed, structured, machine-strong realization
+  - machine-primary, typed realization
 
-These are two realizations of the same downstream knowledge network.
-They are not separate epistemic layers.
+These are paired downstream realizations of the same promoted identity.
 
-## 2. Unified architecture
+They are not:
 
-### 2.1 Plane A: research process plane
+- separate epistemic layers,
+- and not separate truth systems.
 
-This is the active research process.
+Authority remains with:
 
-It includes:
+- promotion identity,
+- provenance,
+- assumptions,
+- scope,
+- and the `L2` governance plane.
+
+## 9. Plane View
+
+### Plane A: research process plane
+
+This plane contains:
 
 - `L0`
 - `L1`
 - `L3`
 - `L4`
-- cross-layer support surfaces such as `runtime/`, `consultation/`, and
-  `schemas/`
+- `runtime/`
+- `consultation/`
+- `schemas/`
 
-Its job is:
+It is where:
 
-- topic progress,
-- source grounding,
-- candidate formation,
-- validation,
-- trust gating,
-- and bounded promotion decisions.
+- reading,
+- synthesis,
+- checking,
+- backedges,
+- and human-steered progress happen.
 
-This plane is where modes and transitions live.
+### Plane B: `L2` governance plane
 
-### 2.2 Plane B: L2 governance plane
+This plane contains:
 
-This is the AITP-governed memory plane.
+- canonical memory,
+- compiled memory,
+- staging memory,
+- promotion records,
+- edge/index layers,
+- and backend bridge metadata.
 
-Its job is:
+This plane is further consolidated by:
 
-- assign reusable identity,
-- preserve provenance,
-- define trust posture,
-- expose retrieval profiles,
-- materialize compiled helper surfaces,
-- materialize hygiene and staging surfaces,
-- and record backend bridge intent.
+- `docs/superpowers/specs/2026-04-08-l2-governance-plane-consolidation-design.md`
+- `research/knowledge-hub/L2_CONSULTATION_PROTOCOL.md`
+- `research/knowledge-hub/canonical/L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md`
 
-This plane is not the same as a giant downstream knowledge library.
-It is the AITP-governed contract and indexing surface for reusable knowledge.
+### Plane C: downstream knowledge realizations
 
-### 2.3 Plane C: downstream knowledge-network plane
-
-This is where theoretical-physics knowledge is realized for long-horizon use.
-
-For the paired theoretical-physics setup, it has two coordinated
-implementations:
+This plane contains:
 
 - the human-readable brain
 - the typed knowledge network
 
-These should be treated as:
+They remain paired downstream realizations of the same governed knowledge.
 
-- paired downstream realizations,
-- semantically aligned,
-- governed by the same promotion packet,
-- and audited for drift.
+## 10. Layer Outputs That Other Parts Read
 
-Neither path alone should silently define truth merely because of file format.
+This is the architectural read contract.
+These outputs are the minimum durable handoff surface across `L0/L1/L3/L4/L2`.
+If a later layer, runtime surface, or operator report depends on work from an
+earlier layer, that dependency should resolve through these artifacts rather
+than through chat-only memory.
 
-## 3. Human-readable versus typed backend rule
+### `L0` outputs
 
-### 3.1 What remains true
+Expected outputs:
 
-The paired backend design is valid and should remain.
+- source registry
+- citation graph
+- source fidelity metadata
+- source packets
+- source-followup tasks
 
-Human-readable and typed knowledge should both exist because they serve
-different but equally real needs:
+Read by:
 
-- the human-readable backend supports reading, curation, explanation, and
-  operator cognition;
-- the typed backend supports graph checks, structured retrieval, alignment,
-  and machine rebuilding.
+- `L1`
+- `L3-A`
+- `L4` when source recovery is needed
+- `H-plane` when the operator needs the source basis exposed explicitly
 
-### 3.2 What must be clarified
+### `L1` outputs
 
-AITP should not rely on vague words like "canonical" without stating which axis
-is meant.
+Expected outputs:
 
-There are at least three different meanings in play:
+- assumption table
+- notation table
+- regime table
+- claim extraction packet
+- reading-depth record
+- contradiction candidates
 
-1. canonical as authoritative `L2` trust posture
-2. canonical as the kernel-root contract surface under `research/knowledge-hub/canonical/`
-3. canonical as "the machine-strong typed representation"
+Read by:
 
-These meanings must be separated.
+- `L3-A`
+- `L4`
+- `L3-D` when distilling reusable memory
+- `H-plane` when assumptions or notation conflicts need review
 
-### 3.3 Unified rule
+### `L3-A` outputs
 
-Use this rule going forward:
+Expected outputs:
 
-- semantic identity is anchored by the promotion packet, reusable unit id,
-  provenance, assumptions, and scope;
-- trust status is anchored by the `L2` governance plane;
-- human-readable and typed backends are paired realizations of that identity;
-- if one realization is richer for a given family, record the reduction
-  honestly rather than silently broadening or weakening the claim.
+- analysis workspace
+- route comparison
+- bridge candidate
+- candidate packet
+- next-step routing choice
 
-### 3.4 Practical primary roles
+Read by:
 
-To avoid fake equality while still avoiding an absolute hierarchy:
+- `L4`
+- `L0/L1` through backedge choice
+- `H-plane`
 
-- the human-readable backend is `operator-primary`
-  - reading, editing, and domain narrative
-- the typed backend is `machine-primary`
-  - graph checks, retrieval, relation traversal, and structural rebuilding
+### `L3-R` outputs
 
-But:
+Expected outputs:
 
-- neither backend is globally more authoritative than the other by path alone;
-- the authority comes from the paired promotion and alignment contract.
+- validation return
+- post-check interpretation
+- scope update
+- failure classification
+- route-return recommendation
 
-## 4. L2 trust surfaces versus backend realizations
+Read by:
 
-This distinction must stay explicit.
+- `L3-A`
+- `L3-D`
+- `H-plane`
 
-### 4.1 Canonical `L2`
+### `L3-D` outputs
 
-Canonical `L2` means:
+Expected outputs:
 
-- promoted reusable units,
-- lightweight authoritative relation/index layers,
-- promotion and provenance records,
-- backend bridge metadata,
-- and the minimum contract surfaces needed for trustworthy retrieval and
-  writeback.
+- distilled memory candidate
+- staged insight candidate
+- promotion-ready packet
+- memory-scope summary
 
-### 4.2 Compiled `L2`
+Read by:
 
-Compiled `L2` means:
+- `staging`
+- canonical `L2`
+- `H-plane`
 
-- derived maps,
-- navigation aids,
-- consultation helpers,
-- replay surfaces,
-- and other regenerated views.
+### `L4` outputs
 
-Compiled surfaces may be:
+Expected outputs:
 
-- machine-readable,
-- human-readable,
-- or both.
+- symbolic sanity report
+- limit/symmetry/dimensional report
+- source-consistency report
+- numerical or code/materials validation record
+- adjudication outcome
 
-They are still derived.
-They are not the same thing as the human-readable backend.
+These outputs must return to `L3-R` before any memory writeback.
+They should never be consumed as direct `L2` promotion input without that
+interpretive pass.
 
-### 4.3 Staging `L2`
+### `L2` outputs
 
-Staging `L2` means:
+Expected outputs:
 
-- quarantine,
-- provisional entry,
-- pre-promotion capture,
-- and explicit not-yet-trusted memory.
+- consultation outputs
+- compiled helper views
+- staged candidates
+- reusable canonical units
+- downstream realization inputs
 
-Staging is where low-friction capture should land before full canonical
-promotion.
+Human-facing and AI-facing consultation outputs may differ in rendering, but
+must be derived from the same promoted identity.
 
-### 4.4 Consequence
+## 11. `L2` As Active Research Brain
 
-Do not confuse:
+`L2` should function as:
 
-- `compiled markdown` with `human-readable backend`,
-- `typed backend` with `canonical truth`,
-- or `staging capture` with reusable memory.
+- active consultation memory,
+- compiled reusable memory,
+- staged provisional memory,
+- and long-horizon research accumulation.
 
-These are different axes.
+It must not function as:
 
-## 5. Operation families
+- raw RAG over unexplained corpus text,
+- a shortcut that bypasses fresh reading or checking,
+- or a hidden promotion path.
 
-AITP does need more than one kind of local operation.
-But these should usually be modeled as operation families inside the existing
-mode system rather than as many new top-level modes.
+This is the architectural version of the shift from retrieval-only memory
+toward persistent wiki-style knowledge compilation.
 
-### 5.1 Source intake operation
+## 12. Collaborator Memory Versus Domain Memory
 
-Primary shape:
+This distinction is now architectural.
 
-- layer: `L0 -> L1`
-- dominant mode: `discussion` or `explore`
-- output: registered source plus bounded interpretation surface
+### Domain memory
 
-### 5.2 Consultation operation
+Stores:
 
-Primary shape:
+- reusable scientific concepts
+- methods
+- workflows
+- warnings
+- route capsules
+- physical pictures
+- theory-synthesis objects
 
-- layer: `L1/L3/L4 -> L2` narrow consult
-- dominant mode: depends on caller
-- output: consultation receipt and applied summary
+This belongs in governed `L2`.
 
-Rule:
+### Collaborator memory
 
-- consultation is not promotion
+Stores:
 
-### 5.3 Candidate-build operation
+- route history
+- preference
+- style and taste
+- trajectory
+- negative-result reuse posture
 
-Primary shape:
+This must remain durable, but it is not the same thing as canonical scientific
+memory.
 
-- layer: `L1 -> L3`
-- dominant mode: `explore`
-- output: candidate packet, blocker note, route choice
+## 13. Lean Reserve
 
-### 5.4 Iterative verification operation
+Lean remains a downstream export path.
 
-Primary shape:
+It is not the definition of `L2` success.
 
-- layer: bounded `L3/L4`
-- dominant mode: `verify`
-- submode: `iterative_verify`
-- output: explicit pass/partial/fail/blocked evidence
+The architecture therefore keeps:
 
-### 5.5 Promotion operation
+- Lean as a downstream export path,
+- not the definition of `L2` success.
 
-Primary shape:
+## 14. Architectural Priority Order
 
-- layer: `L4 -> L2`
-- dominant mode: `promote`
-- output: promotion gate, backend receipt, reusable registration
+If AITP is being built first as a theoretical-physics collaborator, the priority
+order remains:
 
-### 5.6 Knowledge-curation operation
+1. make `L2` actually grow
+2. make intake and validation look like real theoretical physics
+3. make the agent feel like a long-horizon collaborator
+4. only then push reliability polish and publication output
 
-Primary shape:
+## One-Line Doctrine
 
-- layer: `L2`
-- dominant mode: usually `promote` or operator-invoked maintenance
-- output: compiled surfaces, hygiene reports, staging review, pair-alignment
-  audit
-
-This is the right place for:
-
-- drift reports between brain and TPKN
-- rebuild of compiled maps
-- integrity checks over graph and indexes
-
-### 5.7 Trajectory-learning operation
-
-Primary shape:
-
-- spans multiple topics and sessions
-- not a new layer
-- not a free-form memory dump
-
-Its job is:
-
-- collaborator profile updates,
-- recurring taste and reasoning preferences,
-- route success/failure history,
-- negative-result memory,
-- and research-trajectory summaries.
-
-This should eventually feed:
-
-- lane choice,
-- mode choice,
-- suggestion quality,
-- and retrieval ranking.
-
-## 6. How AITP should become a better collaborator
-
-AITP should become more useful through four concrete growth loops.
-
-### 6.1 Knowledge growth loop
-
-Needed capabilities:
-
-- lightweight knowledge capture
-- first seeded graph
-- graph traversal
-- progressive disclosure retrieval
-
-Without this loop, AITP only accumulates runtime traces.
-It does not become smarter in a reusable way.
-
-### 6.2 Research judgment loop
-
-Needed capabilities:
-
-- assumption extraction
-- reading depth awareness
-- symbolic and analytical validation
-- research momentum and stuckness detection
-
-Without this loop, AITP behaves like a disciplined workflow runner rather than
-a scientific collaborator.
-
-### 6.3 Collaborator memory loop
-
-Needed capabilities:
-
-- collaborator profile
-- cross-session context
-- research trajectory summary
-- remembered negative results and abandoned routes
-
-Without this loop, AITP can resume a topic but does not really remember the
-researcher.
-
-### 6.4 Low-bureaucracy exploration loop
-
-Needed capabilities:
-
-- quick exploration mode
-- reduced artifact footprint
-- later promotion from quick exploration into full topic form
-
-Without this loop, AITP is too heavy for the earliest and most creative stages
-of research.
-
-## 7. Current architectural problems
-
-From this unified view, the main current problems are:
-
-1. The paired human-readable plus typed knowledge-network design exists, but
-   the graph and retrieval substrate is still too empty to make it truly
-   operational.
-2. The system has good protocol surfaces for lanes, modes, and transitions, but
-   the knowledge-growth path is still underpowered.
-3. `L2` trust semantics and backend-realization semantics are both present, but
-   they are not yet stated in one place strongly enough to prevent confusion.
-4. The runtime control plane is richer than the reusable-memory plane, which
-   makes AITP better at process discipline than at becoming wiser over time.
-5. The system still lacks a first-class operation for paired-backend alignment,
-   drift reporting, and rebuild policy.
-
-## 8. Unified priority order
-
-If AITP is being built first as a theoretical-physics collaborator rather than
-first as a publication or packaging system, the next work should prioritize the
-following order.
-
-### Priority A: make `L2` actually grow
-
-Recommended cluster:
-
-- graph traversal and search
-- progressive disclosure retrieval
-- first seeded knowledge graph
-- lightweight knowledge entry
-
-### Priority B: make validation look more like theoretical physics
-
-Recommended cluster:
-
-- assumption extraction and reading depth
-- symbolic and analytical reasoning path
-- analytical validation beyond numerical execution
-- research judgment in decision-making
-
-### Priority C: make the agent feel like a long-term collaborator
-
-Recommended cluster:
-
-- cross-session collaborator learning
-- research trajectory recording
-- quick exploration mode
-- source fidelity grading
-- citation graph traversal
-
-### Priority D: only then expand publication-facing output
-
-`L5 Publication Factory` should remain downstream of evidence, reusable memory,
-and collaborator-quality improvements.
-
-## 9. Rules for future design changes
-
-Use these rules when evaluating new AITP proposals.
-
-### 9.1 Do not add a new core layer lightly
-
-Most current gaps are:
-
-- transition gaps,
-- mode gaps,
-- retrieval gaps,
-- or realization gaps.
-
-They are not evidence that the layer ontology itself is wrong.
-
-### 9.2 Do not turn every operation into a new top-level mode
-
-Prefer:
-
-- four stable top-level modes,
-- a small number of submodes,
-- and explicit operation families.
-
-### 9.3 Do not let runtime state become the real knowledge base
-
-Runtime is the control plane.
-It is not the durable knowledge network.
-
-### 9.4 Do not let the human-readable backend degrade into prose dump
-
-The human-readable backend must still preserve:
-
-- identity,
-- evidence anchors,
-- assumptions,
-- regime limits,
-- warnings,
-- and unresolved gaps.
-
-### 9.5 Do not let the typed backend silently claim authority by structure alone
-
-Typed structure is valuable, but it is not equivalent to justified truth.
-
-### 9.6 Do not mix compiled surfaces with canonical status
-
-Compiled views help use knowledge.
-They do not define what knowledge is.
-
-## 10. One-line doctrine
-
-AITP should separate epistemic layers, operating modes, research lanes, trust
-surfaces, and human-versus-machine knowledge realizations, then connect them
-through explicit promotion, consultation, and alignment contracts instead of
-letting one file format or one runtime surface silently become the whole
-system.
+AITP should organize theoretical-physics work by `task_type × lane × layer`,
+route all fresh source or memory returns through analysis, route all `L4`
+results through result integration, distill reusable knowledge before storing
+it, and let the human interaction plane intervene anywhere without collapsing
+that interaction into the epistemic layer model.

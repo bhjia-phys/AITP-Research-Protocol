@@ -16,11 +16,46 @@ from .decision_trace_handler import record_decision_trace
 from .session_chronicle_handler import finalize_chronicle, get_latest_chronicle, start_chronicle
 
 
+def _humanize_key(key: str) -> str:
+    return key.replace("_", " ").strip()
+
+
+def _render_human_lines(value: Any, *, prefix: str = "") -> list[str]:
+    lines: list[str] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            label = _humanize_key(str(key))
+            if isinstance(item, (dict, list)):
+                lines.append(f"{prefix}{label}:")
+                lines.extend(_render_human_lines(item, prefix=f"{prefix}  "))
+            else:
+                lines.append(f"{prefix}{label}: {item}")
+        return lines
+    if isinstance(value, list):
+        for item in value:
+            if isinstance(item, (dict, list)):
+                lines.append(f"{prefix}-")
+                lines.extend(_render_human_lines(item, prefix=f"{prefix}  "))
+            else:
+                lines.append(f"{prefix}- {item}")
+        return lines
+    lines.append(f"{prefix}{value}")
+    return lines
+
+
 def _emit(payload: dict[str, Any], as_json: bool) -> None:
     if as_json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
+    if len(payload) == 1:
+        key, value = next(iter(payload.items()))
+        title = _humanize_key(str(key)).title()
+        lines = [title, ""]
+        lines.extend(_render_human_lines(value))
+    else:
+        lines = ["Result", ""]
+        lines.extend(_render_human_lines(payload))
+    print("\n".join(lines))
 
 
 def _parse_notation_binding(value: str) -> dict[str, str]:
@@ -324,7 +359,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     verify = subparsers.add_parser("verify", help="Prepare a validation contract for a bounded verification mode")
     verify.add_argument("--topic-slug", required=True)
-    verify.add_argument("--mode", choices=["proof", "comparison", "numeric", "topic-completion"], required=True)
+    verify.add_argument("--mode", choices=["proof", "comparison", "analytic", "numeric", "topic-completion"], required=True)
     verify.add_argument("--updated-by", default="aitp-cli")
     verify.add_argument("--json", action="store_true")
 
@@ -384,6 +419,94 @@ def build_parser() -> argparse.ArgumentParser:
 
     current_topic = subparsers.add_parser("current-topic", help="Read the current-topic routing memory")
     current_topic.add_argument("--json", action="store_true")
+
+    show_collaborator_memory = subparsers.add_parser(
+        "show-collaborator-memory",
+        help="Read collaborator-specific memory kept separate from canonical scientific memory",
+    )
+    show_collaborator_memory.add_argument("--json", action="store_true")
+
+    record_collaborator_memory = subparsers.add_parser(
+        "record-collaborator-memory",
+        help="Record collaborator-specific preferences and long-horizon concerns",
+    )
+    record_collaborator_memory.add_argument("--preference", action="append", default=[])
+    record_collaborator_memory.add_argument("--preferred-lane", action="append", default=[])
+    record_collaborator_memory.add_argument("--avoid", action="append", default=[])
+    record_collaborator_memory.add_argument("--concern", action="append", default=[])
+    record_collaborator_memory.add_argument("--style", action="append", default=[])
+    record_collaborator_memory.add_argument("--updated-by", default="aitp-cli")
+    record_collaborator_memory.add_argument("--json", action="store_true")
+
+    seed_l2_demo = subparsers.add_parser("seed-l2-demo", help="Seed the first internal L2 MVP direction")
+    seed_l2_demo.add_argument("--direction", default="tfim-benchmark-first")
+    seed_l2_demo.add_argument("--updated-by", default="aitp-cli")
+    seed_l2_demo.add_argument("--json", action="store_true")
+
+    consult_l2 = subparsers.add_parser("consult-l2", help="Consult the canonical internal L2 graph")
+    consult_l2.add_argument("--query", required=True)
+    consult_l2.add_argument("--retrieval-profile", default="l3_candidate_formation")
+    consult_l2.add_argument("--max-primary-hits", type=int)
+    consult_l2.add_argument("--include-staging", action="store_true")
+    consult_l2.add_argument("--topic-slug")
+    consult_l2.add_argument("--run-id")
+    consult_l2.add_argument("--stage", choices=["L1", "L3", "L4"], default="L3")
+    consult_l2.add_argument("--purpose")
+    consult_l2.add_argument("--requested-unit-type", action="append", default=[])
+    consult_l2.add_argument("--updated-by", default="aitp-cli")
+    consult_l2.add_argument("--json", action="store_true")
+
+    stage_l2_insight = subparsers.add_parser("stage-l2-insight", help="Record a provisional reusable L2 insight")
+    stage_l2_insight.add_argument("--title", required=True)
+    stage_l2_insight.add_argument("--summary", required=True)
+    stage_l2_insight.add_argument("--candidate-unit-type", default="concept")
+    stage_l2_insight.add_argument("--tag", action="append", default=[])
+    stage_l2_insight.add_argument("--source-ref", action="append", default=[])
+    stage_l2_insight.add_argument("--assumption", action="append", default=[])
+    stage_l2_insight.add_argument("--linked-unit-id", action="append", default=[])
+    stage_l2_insight.add_argument("--contradicts-unit-id", action="append", default=[])
+    stage_l2_insight.add_argument("--integration-summary")
+    stage_l2_insight.add_argument("--failure-kind")
+    stage_l2_insight.add_argument("--failed-route")
+    stage_l2_insight.add_argument("--next-implication")
+    stage_l2_insight.add_argument("--scope-note")
+    stage_l2_insight.add_argument("--topic-slug")
+    stage_l2_insight.add_argument("--notes")
+    stage_l2_insight.add_argument("--updated-by", default="aitp-cli")
+    stage_l2_insight.add_argument("--json", action="store_true")
+
+    stage_negative_result = subparsers.add_parser(
+        "stage-negative-result",
+        help="Record a provisional negative result so failed routes do not disappear",
+    )
+    stage_negative_result.add_argument("--title", required=True)
+    stage_negative_result.add_argument("--summary", required=True)
+    stage_negative_result.add_argument("--failure-kind", required=True)
+    stage_negative_result.add_argument("--failed-route")
+    stage_negative_result.add_argument("--next-implication")
+    stage_negative_result.add_argument("--tag", action="append", default=[])
+    stage_negative_result.add_argument("--source-ref", action="append", default=[])
+    stage_negative_result.add_argument("--assumption", action="append", default=[])
+    stage_negative_result.add_argument("--contradicts-unit-id", action="append", default=[])
+    stage_negative_result.add_argument("--scope-note")
+    stage_negative_result.add_argument("--topic-slug")
+    stage_negative_result.add_argument("--notes")
+    stage_negative_result.add_argument("--updated-by", default="aitp-cli")
+    stage_negative_result.add_argument("--json", action="store_true")
+
+    stage_topic_distillation = subparsers.add_parser(
+        "stage-topic-distillation",
+        help="Turn topic-side distillation outputs into provisional L2 staging entries",
+    )
+    stage_topic_distillation.add_argument("--topic-slug", required=True)
+    stage_topic_distillation.add_argument("--run-id")
+    stage_topic_distillation.add_argument("--candidate-id", action="append", default=[])
+    stage_topic_distillation.add_argument("--tag", action="append", default=[])
+    stage_topic_distillation.add_argument("--contradicts-unit-id", action="append", default=[])
+    stage_topic_distillation.add_argument("--scope-note")
+    stage_topic_distillation.add_argument("--notes")
+    stage_topic_distillation.add_argument("--updated-by", default="aitp-cli")
+    stage_topic_distillation.add_argument("--json", action="store_true")
 
     emit_decision = subparsers.add_parser("emit-decision", help="Emit a durable Phase 6 decision point")
     emit_decision.add_argument("--topic-slug", required=True)
@@ -1031,6 +1154,111 @@ def main() -> int:
 
     if args.command == "current-topic":
         payload = {"current_topic": service.get_current_topic_memory()}
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "show-collaborator-memory":
+        payload = {"collaborator_memory": service.get_collaborator_memory()}
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "record-collaborator-memory":
+        payload = service.record_collaborator_memory(
+            preferences=args.preference,
+            preferred_lanes=args.preferred_lane,
+            avoided_patterns=args.avoid,
+            long_horizon_concerns=args.concern,
+            collaboration_style=args.style,
+            updated_by=args.updated_by,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "seed-l2-demo":
+        payload = service.seed_l2_demo_direction(
+            direction=args.direction,
+            updated_by=args.updated_by,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "consult-l2":
+        if args.topic_slug:
+            payload = service.consult_topic_l2(
+                topic_slug=args.topic_slug,
+                run_id=args.run_id,
+                stage=args.stage,
+                query_text=args.query,
+                retrieval_profile=args.retrieval_profile,
+                max_primary_hits=args.max_primary_hits,
+                include_staging=args.include_staging,
+                purpose=args.purpose,
+                requested_unit_types=args.requested_unit_type,
+                updated_by=args.updated_by,
+            )
+        else:
+            payload = service.consult_l2(
+                query_text=args.query,
+                retrieval_profile=args.retrieval_profile,
+                max_primary_hits=args.max_primary_hits,
+                include_staging=args.include_staging,
+                updated_by=args.updated_by,
+            )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "stage-l2-insight":
+        payload = service.stage_l2_insight(
+            title=args.title,
+            summary=args.summary,
+            candidate_unit_type=args.candidate_unit_type,
+            tags=args.tag,
+            source_refs=args.source_ref,
+            assumptions=args.assumption,
+            linked_unit_ids=args.linked_unit_id,
+            contradicts_unit_ids=args.contradicts_unit_id,
+            integration_summary=args.integration_summary,
+            failure_kind=args.failure_kind,
+            failed_route=args.failed_route,
+            next_implication=args.next_implication,
+            scope_note=args.scope_note,
+            topic_slug=args.topic_slug,
+            notes=args.notes,
+            updated_by=args.updated_by,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "stage-negative-result":
+        payload = service.stage_negative_result(
+            title=args.title,
+            summary=args.summary,
+            failure_kind=args.failure_kind,
+            failed_route=args.failed_route,
+            next_implication=args.next_implication,
+            tags=args.tag,
+            source_refs=args.source_ref,
+            assumptions=args.assumption,
+            contradicts_unit_ids=args.contradicts_unit_id,
+            scope_note=args.scope_note,
+            topic_slug=args.topic_slug,
+            notes=args.notes,
+            updated_by=args.updated_by,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "stage-topic-distillation":
+        payload = service.stage_topic_distillation(
+            topic_slug=args.topic_slug,
+            run_id=args.run_id,
+            candidate_ids=args.candidate_id,
+            tags=args.tag,
+            contradicts_unit_ids=args.contradicts_unit_id,
+            scope_note=args.scope_note,
+            notes=args.notes,
+            updated_by=args.updated_by,
+        )
         _emit(payload, args.json)
         return 0
 

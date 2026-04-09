@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import io
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
 import sys
@@ -19,6 +21,26 @@ from knowledge_hub import aitp_cli
 
 
 class AITPCLITests(unittest.TestCase):
+    def test_emit_renders_human_readable_output_when_json_not_requested(self) -> None:
+        stream = io.StringIO()
+        with redirect_stdout(stream):
+            aitp_cli._emit({"status": "staged", "entry_id": "staging:demo", "topic_slug": "demo-topic"}, False)
+
+        output = stream.getvalue()
+        self.assertIn("Result", output)
+        self.assertIn("status: staged", output)
+        self.assertIn("entry id: staging:demo", output)
+        self.assertNotIn("{", output)
+
+    def test_emit_renders_json_when_requested(self) -> None:
+        stream = io.StringIO()
+        with redirect_stdout(stream):
+            aitp_cli._emit({"status": "staged"}, True)
+
+        output = stream.getvalue()
+        self.assertIn("{", output)
+        self.assertIn('"status"', output)
+
     def test_ci_check_command_is_registered(self) -> None:
         parser = aitp_cli.build_parser()
         args = parser.parse_args(["ci-check", "--topic-slug", "demo-topic"])
@@ -53,6 +75,82 @@ class AITPCLITests(unittest.TestCase):
 
         capability_args = parser.parse_args(["capability-audit", "--topic-slug", "demo-topic"])
         self.assertEqual(capability_args.command, "capability-audit")
+
+    def test_l2_graph_commands_are_registered(self) -> None:
+        parser = aitp_cli.build_parser()
+
+        seed_args = parser.parse_args(["seed-l2-demo"])
+        self.assertEqual(seed_args.command, "seed-l2-demo")
+        self.assertEqual(seed_args.direction, "tfim-benchmark-first")
+
+        consult_args = parser.parse_args(["consult-l2", "--query", "TFIM benchmark workflow"])
+        self.assertEqual(consult_args.command, "consult-l2")
+        self.assertEqual(consult_args.retrieval_profile, "l3_candidate_formation")
+
+        consult_topic_args = parser.parse_args(
+            [
+                "consult-l2",
+                "--topic-slug",
+                "demo-topic",
+                "--stage",
+                "L3",
+                "--include-staging",
+                "--query",
+                "TFIM benchmark workflow",
+            ]
+        )
+        self.assertEqual(consult_topic_args.topic_slug, "demo-topic")
+        self.assertEqual(consult_topic_args.stage, "L3")
+        self.assertTrue(consult_topic_args.include_staging)
+
+        stage_args = parser.parse_args(
+            [
+                "stage-l2-insight",
+                "--title",
+                "Weak-coupling TFIM picture",
+                "--summary",
+                "Use the bounded benchmark as an intuition carrier only.",
+                "--linked-unit-id",
+                "topic_skill_projection:tfim-benchmark-first-route",
+                "--contradicts-unit-id",
+                "claim_card:tfim-benchmark-before-portability-claim",
+                "--integration-summary",
+                "Added a weak-coupling picture and linked it to the active route capsule.",
+            ]
+        )
+        self.assertEqual(stage_args.command, "stage-l2-insight")
+        self.assertEqual(stage_args.candidate_unit_type, "concept")
+        self.assertEqual(stage_args.linked_unit_id[0], "topic_skill_projection:tfim-benchmark-first-route")
+        self.assertEqual(stage_args.contradicts_unit_id[0], "claim_card:tfim-benchmark-before-portability-claim")
+
+        negative_result_args = parser.parse_args(
+            [
+                "stage-negative-result",
+                "--title",
+                "Portability route failed",
+                "--summary",
+                "The larger-system extrapolation failed.",
+                "--failure-kind",
+                "regime_mismatch",
+            ]
+        )
+        self.assertEqual(negative_result_args.command, "stage-negative-result")
+        self.assertEqual(negative_result_args.failure_kind, "regime_mismatch")
+
+        stage_topic_args = parser.parse_args(
+            [
+                "stage-topic-distillation",
+                "--topic-slug",
+                "demo-topic",
+                "--candidate-id",
+                "candidate:demo-route-memory",
+                "--tag",
+                "demo",
+            ]
+        )
+        self.assertEqual(stage_topic_args.command, "stage-topic-distillation")
+        self.assertEqual(stage_topic_args.topic_slug, "demo-topic")
+        self.assertEqual(stage_topic_args.candidate_id, ["candidate:demo-route-memory"])
 
     def test_topic_shell_commands_are_registered(self) -> None:
         parser = aitp_cli.build_parser()
@@ -95,6 +193,10 @@ class AITPCLITests(unittest.TestCase):
         self.assertEqual(verify_args.command, "verify")
         self.assertEqual(verify_args.mode, "proof")
 
+        analytic_verify_args = parser.parse_args(["verify", "--topic-slug", "demo-topic", "--mode", "analytic"])
+        self.assertEqual(analytic_verify_args.command, "verify")
+        self.assertEqual(analytic_verify_args.mode, "analytic")
+
         complete_args = parser.parse_args(["complete-topic", "--topic-slug", "demo-topic"])
         self.assertEqual(complete_args.command, "complete-topic")
 
@@ -127,6 +229,21 @@ class AITPCLITests(unittest.TestCase):
 
         current_topic_args = parser.parse_args(["current-topic"])
         self.assertEqual(current_topic_args.command, "current-topic")
+
+        collaborator_show_args = parser.parse_args(["show-collaborator-memory"])
+        self.assertEqual(collaborator_show_args.command, "show-collaborator-memory")
+
+        collaborator_record_args = parser.parse_args(
+            [
+                "record-collaborator-memory",
+                "--preference",
+                "prefer bounded benchmark-first routes",
+                "--preferred-lane",
+                "formal_theory",
+            ]
+        )
+        self.assertEqual(collaborator_record_args.command, "record-collaborator-memory")
+        self.assertEqual(collaborator_record_args.preferred_lane, ["formal_theory"])
 
         session_start_args = parser.parse_args(["session-start", "继续这个 topic，方向改成 X"])
         self.assertEqual(session_start_args.command, "session-start")
@@ -259,6 +376,139 @@ class AITPCLITests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         mock_service.get_current_topic_memory.assert_called_once()
+
+    def test_main_dispatches_show_collaborator_memory(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.get_collaborator_memory.return_value = {"memory_kind": "collaborator_memory"}
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "show-collaborator-memory"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.get_collaborator_memory.assert_called_once()
+
+    def test_main_dispatches_record_collaborator_memory(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.record_collaborator_memory.return_value = {"memory_kind": "collaborator_memory"}
+            mock_factory.return_value = mock_service
+            with patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp",
+                    "record-collaborator-memory",
+                    "--preference",
+                    "prefer bounded benchmark-first routes",
+                ],
+            ):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.record_collaborator_memory.assert_called_once()
+
+    def test_main_dispatches_consult_l2(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.consult_l2.return_value = {"primary_hits": []}
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "consult-l2", "--query", "TFIM workflow"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.consult_l2.assert_called_once()
+
+    def test_main_dispatches_topic_consult_l2(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.consult_topic_l2.return_value = {"primary_hits": [], "consultation": {}}
+            mock_factory.return_value = mock_service
+            with patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp",
+                    "consult-l2",
+                    "--topic-slug",
+                    "demo-topic",
+                    "--query",
+                    "TFIM benchmark workflow",
+                    "--include-staging",
+                ],
+            ):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.consult_topic_l2.assert_called_once()
+
+    def test_main_dispatches_stage_l2_insight(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.stage_l2_insight.return_value = {"status": "staged", "entry_id": "staging:demo"}
+            mock_factory.return_value = mock_service
+            with patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp",
+                    "stage-l2-insight",
+                    "--title",
+                    "Weak-coupling TFIM picture",
+                    "--summary",
+                    "Use the bounded benchmark as an intuition carrier only.",
+                    "--integration-summary",
+                    "Added a weak-coupling picture and linked it to the active route capsule.",
+                ],
+            ):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.stage_l2_insight.assert_called_once()
+
+    def test_main_dispatches_stage_negative_result(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.stage_negative_result.return_value = {"status": "staged", "entry_id": "staging:negative"}
+            mock_factory.return_value = mock_service
+            with patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp",
+                    "stage-negative-result",
+                    "--title",
+                    "Portability route failed",
+                    "--summary",
+                    "The larger-system extrapolation failed.",
+                    "--failure-kind",
+                    "regime_mismatch",
+                ],
+            ):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.stage_negative_result.assert_called_once()
+
+    def test_main_dispatches_stage_topic_distillation(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.stage_topic_distillation.return_value = {"status": "staged", "staged_entry_ids": ["staging:demo"]}
+            mock_factory.return_value = mock_service
+            with patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp",
+                    "stage-topic-distillation",
+                    "--topic-slug",
+                    "demo-topic",
+                ],
+            ):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.stage_topic_distillation.assert_called_once()
 
     def test_main_dispatches_session_start(self) -> None:
         with patch.object(aitp_cli, "_service_from_args") as mock_factory:

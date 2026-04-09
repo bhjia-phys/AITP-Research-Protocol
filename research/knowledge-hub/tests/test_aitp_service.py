@@ -311,7 +311,7 @@ class AITPServiceTests(unittest.TestCase):
         self.package_root = Path(__file__).resolve().parents[1]
         self.kernel_root.mkdir(parents=True)
         self.repo_root.mkdir(parents=True)
-        (self.kernel_root / "canonical").mkdir(parents=True, exist_ok=True)
+        shutil.copytree(self.package_root / "canonical", self.kernel_root / "canonical", dirs_exist_ok=True)
         (self.kernel_root / "schemas").mkdir(parents=True, exist_ok=True)
         (self.kernel_root / "runtime" / "schemas").mkdir(parents=True, exist_ok=True)
         for schema_path in (self.package_root / "schemas").glob("*.json"):
@@ -831,6 +831,13 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["human_request"], "run a bounded public protocol check")
         self.assertEqual(payload["priority_rules"][0]["source"], "control_note_or_decision_contract")
         self.assertEqual(payload["action_queue_surface"]["queue_source"], "heuristic")
+        self.assertIn("l0_sources", payload)
+        self.assertIn("l1_understanding", payload)
+        self.assertEqual(payload["l0_sources"]["subplane"], "L0")
+        self.assertEqual(payload["l1_understanding"]["subplane"], "L1")
+        self.assertIn("notation_table_path", payload["l1_understanding"])
+        self.assertIn("consultation_surface", payload["l2_memory"])
+        self.assertIn("writeback_surface", payload["l2_memory"])
         self.assertEqual(payload["active_research_contract"]["question_id"], "research_question:demo-topic")
         self.assertEqual(payload["idea_packet"]["status"], "approved_for_execution")
         self.assertEqual(payload["operator_checkpoint"]["status"], "cancelled")
@@ -838,8 +845,14 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["backend_bridges"][0]["backend_id"], "backend:formal-theory-note-library")
         self.assertEqual(payload["promotion_gate"]["status"], "approved")
         self.assertEqual(payload["promotion_readiness"]["status"], "approved")
+        self.assertIn("l3_subplanes", payload)
+        self.assertEqual(payload["l3_subplanes"]["analysis"]["subplane"], "L3-A")
+        self.assertEqual(payload["l3_subplanes"]["result_integration"]["subplane"], "L3-R")
+        self.assertEqual(payload["l3_subplanes"]["distillation"]["subplane"], "L3-D")
+        self.assertIn("L4->L2", payload["l3_subplanes"]["distillation"]["forbidden_direct_transitions"])
         self.assertEqual(payload["open_gap_summary"]["status"], "clear")
         self.assertEqual(payload["strategy_memory"]["status"], "absent")
+        self.assertEqual(payload["collaborator_memory"]["status"], "absent")
         self.assertEqual(payload["topic_skill_projection"]["status"], "not_applicable")
         self.assertEqual(payload["topic_completion"]["status"], "not_assessed")
         self.assertEqual(payload["lean_bridge"]["status"], "empty")
@@ -927,6 +940,59 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(rows[0]["outcome"], "helpful")
         self.assertEqual(rows[0]["lane"], "code_method")
         self.assertIn("multi-source derivation merge", rows[0]["reuse_conditions"])
+
+    def test_record_collaborator_memory_writes_separate_non_l2_surface(self) -> None:
+        payload = self.service.record_collaborator_memory(
+            preferences=["prefer bounded benchmark-first routes"],
+            preferred_lanes=["formal_theory"],
+            avoided_patterns=["do not overclaim from informal notes"],
+            long_horizon_concerns=["keep failed derivation branches visible"],
+            collaboration_style=["use non-blocking updates before checkpoints when possible"],
+            updated_by="test-suite",
+        )
+
+        self.assertEqual(payload["memory_kind"], "collaborator_memory")
+        self.assertTrue(Path(payload["collaborator_memory_path"]).exists())
+        self.assertTrue(Path(payload["collaborator_memory_note_path"]).exists())
+        loaded = self.service.get_collaborator_memory()
+        self.assertIn("prefer bounded benchmark-first routes", loaded["preferences"])
+        self.assertIn("formal_theory", loaded["preferred_lanes"])
+
+    def test_runtime_bundle_surfaces_collaborator_memory_as_noncanonical_context(self) -> None:
+        runtime_root = self._write_runtime_state()
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "continue this topic",
+                    "action_queue_surface": {},
+                    "decision_surface": {},
+                    "human_edit_surfaces": [],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        self.service.record_collaborator_memory(
+            preferences=["prefer bounded benchmark-first routes"],
+            preferred_lanes=["formal_theory"],
+            updated_by="test-suite",
+        )
+
+        payload = self.service._materialize_runtime_protocol_bundle(
+            topic_slug="demo-topic",
+            updated_by="test-suite",
+            human_request="continue this topic",
+            load_profile="light",
+        )
+
+        bundle = json.loads(Path(payload["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        self.assertEqual(bundle["collaborator_memory"]["status"], "available")
+        self.assertIn("formal_theory", bundle["collaborator_memory"]["preferred_lanes"])
+        self.assertTrue(
+            any(str(row.get("path") or "").endswith("collaborator-memory/profile.md") for row in bundle["must_read_now"])
+        )
 
     def test_topic_status_surfaces_relevant_strategy_memory(self) -> None:
         runtime_root = self._write_runtime_state()
@@ -1613,6 +1679,21 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(verification_payload["validation_contract"]["validation_mode"], "formal")
         self.assertIn("proof or derivation step", verification_payload["validation_contract"]["verification_focus"])
         self.assertTrue(Path(verification_payload["runtime_protocol"]["runtime_protocol_path"]).exists())
+
+        analytic_payload = self.service.prepare_verification(
+            topic_slug="demo-topic",
+            mode="analytic",
+        )
+        self.assertEqual(analytic_payload["verification_mode"], "analytic")
+        self.assertEqual(analytic_payload["validation_contract"]["validation_mode"], "analytic")
+        self.assertIn("limiting cases", analytic_payload["validation_contract"]["verification_focus"])
+        self.assertEqual(
+            analytic_payload["validation_contract"]["analytic_check_families"],
+            ["limiting_case", "dimensional_consistency", "symmetry_constraint", "self_consistency"],
+        )
+        self.assertTrue(
+            any("dimensional" in item.lower() for item in analytic_payload["validation_contract"]["required_checks"])
+        )
 
     def test_runtime_bundle_and_session_start_require_idea_packet_when_clarification_needed(self) -> None:
         runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
@@ -2775,6 +2856,193 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(unit_payload["type"], "topic_skill_projection")
         self.assertEqual(unit_payload["canonical_layer"], "L2")
 
+    def test_stage_topic_distillation_materializes_topic_scoped_staging_entries(self) -> None:
+        runtime_root = self._write_runtime_state()
+        self._write_candidate(
+            intended_l2_target="workflow:demo-benchmark",
+            title="Demo Benchmark Route",
+        )
+        (runtime_root / "result_brief.latest.json").write_text(
+            json.dumps(
+                {
+                    "kind": "result_brief",
+                    "topic_slug": "demo-topic",
+                    "interaction_class": "silent_continue",
+                    "what_changed": "The bounded benchmark route now looks stable enough to preserve.",
+                    "evidence_summary": "The tiny exact benchmark closed the first validation loop.",
+                    "scope_summary": "Preserve only the bounded benchmark-first route.",
+                    "non_claims": [],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        validation_root = self.kernel_root / "validation" / "topics" / "demo-topic" / "runs" / "2026-03-13-demo"
+        validation_root.mkdir(parents=True, exist_ok=True)
+        (validation_root / "returned_execution_result.json").write_text(
+            json.dumps(
+                {
+                    "result_id": "result:demo-benchmark",
+                    "summary": "The tiny exact benchmark reproduced the expected gap.",
+                    "updated_at": "2026-03-13T00:00:00+08:00",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.stage_topic_distillation(
+            topic_slug="demo-topic",
+            updated_by="test-suite",
+        )
+
+        self.assertEqual(payload["status"], "staged")
+        self.assertEqual(payload["selection_basis"], "candidate_ledger_distillation")
+        self.assertEqual(payload["staged_entry_ids"], ["staging:demo-benchmark-route"])
+        entry_path = self.kernel_root / "canonical" / "staging" / "entries" / "staging--demo-benchmark-route.json"
+        self.assertTrue(entry_path.exists())
+        entry = json.loads(entry_path.read_text(encoding="utf-8"))
+        self.assertEqual(entry["topic_slug"], "demo-topic")
+        self.assertEqual(entry["linked_unit_ids"], ["workflow:demo-benchmark"])
+        self.assertIn("feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl", entry["source_refs"])
+        self.assertIn("validation/topics/demo-topic/runs/2026-03-13-demo/returned_execution_result.json", entry["source_refs"])
+        self.assertIn("bounded benchmark route now looks stable enough", entry["integration_summary"])
+
+    def test_l0_projection_distinguishes_source_fidelity_classes(self) -> None:
+        source_root = self.kernel_root / "source-layer" / "topics" / "demo-topic"
+        source_root.mkdir(parents=True, exist_ok=True)
+        source_root.joinpath("source_index.jsonl").write_text(
+            "".join(
+                json.dumps(row, ensure_ascii=True, separators=(",", ":")) + "\n"
+                for row in [
+                    {"source_id": "journal:demo", "source_type": "journal", "title": "Journal Source", "bibtex_key": "Doe2024"},
+                    {"source_id": "paper:demo", "source_type": "paper", "title": "Preprint Source", "arxiv_id": "2401.12345"},
+                    {"source_id": "blog:demo", "source_type": "blog", "title": "Blog Source"},
+                    {"source_id": "talk:demo", "source_type": "verbal_claim", "title": "Talk Claim", "references": ["paper:demo"]},
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        payload = self.service._derive_l0_sources_projection(
+            topic_slug="demo-topic",
+            backend_bridges=[],
+        )
+
+        self.assertEqual(payload["source_count"], 4)
+        self.assertEqual(payload["source_fidelity_counts"]["peer_reviewed"], 1)
+        self.assertEqual(payload["source_fidelity_counts"]["preprint"], 1)
+        self.assertEqual(payload["source_fidelity_counts"]["informal"], 2)
+        self.assertEqual(payload["highest_fidelity_class"], "peer_reviewed")
+        self.assertIn("peer reviewed", payload["source_fidelity_summary"])
+        self.assertIn("informal", payload["source_fidelity_summary"])
+        self.assertEqual(payload["arxiv_id_count"], 1)
+        self.assertEqual(payload["bibtex_signal_count"], 1)
+        self.assertEqual(payload["citation_signal_count"], 1)
+        self.assertEqual(payload["citation_graph_status"], "present")
+
+    def test_l1_projection_infers_reading_depth_and_assumption_quality(self) -> None:
+        intake_root = self.kernel_root / "intake" / "topics" / "demo-topic"
+        intake_root.mkdir(parents=True, exist_ok=True)
+        (intake_root / "status.json").write_text(
+            json.dumps(
+                {
+                    "stage": "technical_understanding",
+                    "next_stage": "L3",
+                    "summary": "Assumptions and notation are reconstructed enough for topic analysis.",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (intake_root / "notation_table.md").write_text("# Notation\n", encoding="utf-8")
+        (intake_root / "assumption_table.md").write_text("# Assumptions\n", encoding="utf-8")
+
+        payload = self.service._derive_l1_understanding_projection(topic_slug="demo-topic")
+
+        self.assertEqual(payload["reading_depth"], "technical_reconstruction")
+        self.assertEqual(payload["assumption_quality"], "partial")
+
+    def test_consult_topic_l2_records_consultation_and_returns_trust_aware_packet(self) -> None:
+        self._write_runtime_state(run_id="run-001")
+        self._write_candidate(
+            run_id="run-001",
+            intended_l2_target="workflow:demo-benchmark",
+            title="Demo Route Memory",
+        )
+        self.service.seed_l2_demo_direction(updated_by="test-suite")
+        self.service.stage_topic_distillation(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            updated_by="test-suite",
+        )
+
+        payload = self.service.consult_topic_l2(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            query_text="TFIM benchmark workflow demo route memory",
+            include_staging=True,
+            updated_by="test-suite",
+        )
+
+        self.assertEqual(payload["topic_slug"], "demo-topic")
+        self.assertGreaterEqual(payload["trust_summary"]["canonical_hit_count"], 1)
+        self.assertGreaterEqual(payload["trust_summary"]["staged_hit_count"], 1)
+        self.assertTrue(payload["warning_refs"])
+        self.assertTrue(payload["followup_paths"])
+        result_path = Path(payload["consultation"]["consultation_result_path"])
+        summary_path = Path(payload["consultation"]["consultation_summary_path"])
+        memory_map_path = Path(payload["consultation"]["consultation_memory_map_path"])
+        memory_map_note_path = Path(payload["consultation"]["consultation_memory_map_note_path"])
+        self.assertTrue(result_path.exists())
+        self.assertTrue(summary_path.exists())
+        self.assertTrue(memory_map_path.exists())
+        self.assertTrue(memory_map_note_path.exists())
+        summary_text = summary_path.read_text(encoding="utf-8")
+        memory_map_text = memory_map_note_path.read_text(encoding="utf-8")
+        self.assertIn("L2 consultation summary", summary_text)
+        self.assertIn("TFIM benchmark workflow demo route memory", summary_text)
+        self.assertIn("Retrieved references", summary_text)
+        self.assertIn("L2 consultation memory map", memory_map_text)
+        self.assertIn("Primary canonical hits", memory_map_text)
+        self.assertIn("Expanded canonical hits", memory_map_text)
+        self.assertIn("Warning notes", memory_map_text)
+        self.assertIn("Staged hits", memory_map_text)
+        self.assertIn("Canonical graph status", memory_map_text)
+        index_rows = [
+            json.loads(line)
+            for line in (
+                self.kernel_root / "consultation" / "topics" / "demo-topic" / "consultation_index.jsonl"
+            ).read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        self.assertEqual(index_rows[-1]["query_text"], "TFIM benchmark workflow demo route memory")
+        self.assertEqual(index_rows[-1]["retrieval_profile"], "l3_candidate_formation")
+        self.assertTrue(index_rows[-1]["summary_note_path"].endswith("/summary.md"))
+        self.assertTrue(index_rows[-1]["memory_map_path"].endswith("/memory_map.json"))
+        self.assertTrue(index_rows[-1]["memory_map_note_path"].endswith("/memory_map.md"))
+
+    def test_stage_negative_result_records_negative_result_entry(self) -> None:
+        payload = self.service.stage_negative_result(
+            title="Portability route failed",
+            summary="The larger-system extrapolation failed.",
+            failure_kind="regime_mismatch",
+            failed_route="larger-system extrapolation",
+            next_implication="Return to the bounded benchmark route.",
+            topic_slug="demo-topic",
+            updated_by="test-suite",
+        )
+
+        self.assertEqual(payload["candidate_unit_type"], "negative_result")
+        self.assertEqual(payload["failure_kind"], "regime_mismatch")
+        self.assertEqual(payload["topic_slug"], "demo-topic")
+
     def test_auto_promote_rejects_topic_skill_projection(self) -> None:
         runtime_root = self._write_runtime_state(run_id="run-001")
         (runtime_root / "topic_state.json").write_text(
@@ -3365,7 +3633,7 @@ class AITPServiceTests(unittest.TestCase):
         Draft202012Validator(packet_schema).validate(return_packet)
         self.assertEqual(return_packet["parent_gap_ids"], ["open_gap:demo-gap"])
         self.assertEqual(return_packet["reentry_targets"], ["theorem:demo-theorem"])
-        self.assertEqual(return_packet["expected_return_route"], "L0->L1->L3->L4->L2")
+        self.assertEqual(return_packet["expected_return_route"], "L0->L1->L3-A->L4->L3-R->L3-D->L2")
         self.assertIn("recovered_units", return_packet["acceptable_return_shapes"])
         self.assertTrue(return_packet["reintegration_requirements"]["must_not_patch_parent_directly"])
         self.assertTrue((return_packet_path.with_suffix(".md")).exists())

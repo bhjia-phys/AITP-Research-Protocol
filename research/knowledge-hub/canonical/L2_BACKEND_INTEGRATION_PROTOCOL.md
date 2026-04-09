@@ -36,6 +36,8 @@ Optional but recommended:
 
 6. one onboarding note or bridge note
 7. one smoke-test example showing how a concrete artifact enters `L0`
+8. for paired downstream backends, one explicit maintenance rule that points to
+   `L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md`
 
 ## 3. Hard rules
 
@@ -179,6 +181,8 @@ Typical pattern:
 Rules:
 
 - the pairing must be named explicitly in protocol docs or backend notes;
+- the pairing must also point at `L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md`
+  for drift audit, backend debt, and rebuild;
 - neither backend becomes privileged by serialization format alone;
 - the human-facing backend may be operator-primary and the typed backend may be
   machine-primary, but those are role distinctions rather than silent
@@ -225,6 +229,8 @@ Before a backend counts as integrated, confirm:
 - retrieval hints are explicit
 - no folder-level canonicalization is implied
 - paired-backend semantics are explicit if the backend is part of a downstream pair
+- paired-backend maintenance semantics are explicit if the backend is part of a
+  downstream pair
 
 If any of these is missing, the backend is only partially integrated.
 

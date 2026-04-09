@@ -18,21 +18,36 @@ The intended next sequence is:
      maintenance workflows
    - keep `L2` trust surfaces distinct from downstream human-readable versus
      typed realizations
+   - freeze `task_type`, `lane`, `layer`, and `H-plane` as separate axes
 2. **L2 knowledge-network MVP**
    - define the minimum useful knowledge object subset
    - add `physical_picture`
    - add lightweight knowledge entry
    - seed one small real knowledge direction with nodes and edges
+   - borrow mixed-corpus graph seeding ideas for `L0/L1 -> staging`, not as a
+     replacement for canonical `L2` promotion
+   - shift from retrieval-only memory toward persistent wiki-style compilation
+     of reusable insight candidates
+   - split overloaded `L3` responsibilities into analysis, result-integration,
+     and distillation subplanes
 3. **Graph retrieval and consultation maturity**
    - graph traversal and search
    - progressive-disclosure retrieval
    - consultation that actually expands structured context instead of returning
      an empty library surface
+   - human-facing graph reports / wiki-like navigation / Obsidian-friendly
+     derived views
+   - retrieval should ride on compiled memory rather than repeatedly treating
+     the whole corpus as unexplained raw context
+   - make the `H-plane` interaction semantics explicit across `L0-L4`
 4. **Document understanding and source intelligence**
    - source fidelity grading
    - citation graph traversal
    - assumption extraction and reading-depth tracking
    - better cross-paper comparison and contradiction handling
+   - explicit extracted-versus-inferred-versus-ambiguous relation labeling in
+     intake and staging
+   - provide task-type by lane templates for real research paths
 5. **Research judgment and theoretical validation**
    - symbolic / analytical reasoning path
    - analytical validation beyond numerical execution
@@ -310,6 +325,94 @@ by a single topic step, aiming for a much smaller essential surface.
 full research arcs, rather than assuming a fixed predetermined pipeline.
 **Source:** Research workflow learning discussion 2026-04-07
 **Context:** `.planning/backlog/999.32-research-trajectory-recording-and-mode-learning/`
+
+### 999.33: Mixed-Corpus Graph Seed Ingestion For L0/L1/Staging
+
+**Goal:** Add a graph-building intake path over mixed artifacts such as papers,
+notes, code, and image-derived descriptions so AITP can cheaply seed staging
+and early `L2` graph structure from real corpora instead of relying only on
+manual canonical entry.
+**Important boundary:** This path may seed `L0/L1/staging`, but it must not
+directly bypass canonical `L2` promotion gates.
+**Source:** External pattern review (`graphify`) 2026-04-08
+**Context:** `.planning/backlog/999.33-mixed-corpus-graph-seed-ingestion/`
+
+### 999.34: Extracted Versus Inferred Versus Ambiguous Graph Labels
+
+**Goal:** Distinguish directly extracted relations, model-inferred relations,
+and ambiguous candidates during intake, staging, and graph review so AITP can
+use graph growth without confusing convenience edges with trusted scientific
+structure.
+**Source:** External pattern review (`graphify`) 2026-04-08
+**Context:** `.planning/backlog/999.34-extracted-inferred-ambiguous-graph-labels/`
+
+### 999.35: Human-Facing Graph Report And Obsidian-Derived Navigation
+
+**Goal:** Add human-readable graph views such as reports, wiki-style maps, or
+Obsidian-friendly derived pages so the operator can inspect knowledge growth
+without reading raw JSONL indexes and edges.
+**Source:** External pattern review (`graphify`) 2026-04-08
+**Context:** `.planning/backlog/999.35-human-facing-graph-report-and-obsidian-navigation/`
+
+### 999.36: Incremental Graph Rebuild And Update Hooks
+
+**Goal:** Add incremental update, rebuild, and cache-aware graph refresh
+mechanisms so continued literature intake and note growth can update the graph
+cheaply instead of rebuilding everything from scratch each time.
+**Source:** External pattern review (`graphify`) 2026-04-08
+**Context:** `.planning/backlog/999.36-incremental-graph-rebuild-and-update-hooks/`
+
+### 999.37: Persistent Wiki-Style Knowledge Compilation
+
+**Goal:** Move beyond retrieval-only memory by compiling repeated reading,
+discussion, and route-comparison outcomes into a durable linked research brain
+that records updates, contradictions, and what new knowledge was added.
+**Important boundary:** This compilation loop may enrich staging and prepared
+canonical candidates, but it must still respect `L4` validation and promotion
+gates before authoritative `L2` writeback.
+**Source:** External pattern review (Karpathy `LLM Wiki`) plus collaborator
+capability tracks 2026-04-08
+**Context:** `.planning/backlog/999.37-persistent-wiki-style-knowledge-compilation/`
+
+### 999.38: Freeze Task-Type Axis And Orchestration Templates
+
+**Goal:** Replace the too-coarse scenario framing with explicit task types:
+`open_exploration`, `conjecture_attempt`, and `target_driven_execution`, then
+define how those task types shape routing without replacing `L0-L4`.
+**Source:** Research-scenario freeze 2026-04-08
+**Context:** `.planning/backlog/999.38-task-type-axis-and-orchestration-templates/`
+
+### 999.39: Human Interaction Plane
+
+**Goal:** Model human interaction as a cross-cutting `H-plane` that can
+intervene at any layer, rather than smearing checkpoint/stop/update behavior
+across unrelated runtime notes.
+**Source:** Research-scenario freeze 2026-04-08
+**Context:** `.planning/backlog/999.39-human-interaction-plane/`
+
+### 999.40: Decompose L3 Into Analysis, Result-Integration, And Distillation
+
+**Goal:** Keep top-level `L3` continuity while explicitly splitting its current
+overload into `L3-A` topic analysis, `L3-R` `L4` return interpretation, and
+`L3-D` `L2` distillation preparation.
+**Source:** Research-scenario freeze 2026-04-08
+**Context:** `.planning/backlog/999.40-decompose-l3-into-analysis-result-integration-and-distillation/`
+
+### 999.41: Mandatory L4 To L3 Synthesis Return
+
+**Goal:** Freeze and implement the rule that `L4` does not write directly to
+`L2`; instead it must return through `L3-R`, after which `L3-D` decides what is
+actually reusable.
+**Source:** Research-scenario freeze 2026-04-08
+**Context:** `.planning/backlog/999.41-mandatory-l4-to-l3-synthesis-return/`
+
+### 999.42: Task-Type By Lane Template Library
+
+**Goal:** Provide reusable orchestration templates for combinations such as
+`open_exploration × formal_theory`, `conjecture_attempt × model_numeric`, and
+`target_driven_execution × code_and_materials`.
+**Source:** Research-scenario freeze 2026-04-08
+**Context:** `.planning/backlog/999.42-task-type-by-lane-template-library/`
 
 ## Legacy Note
 

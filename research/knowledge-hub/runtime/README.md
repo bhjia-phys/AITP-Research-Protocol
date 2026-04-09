@@ -135,7 +135,7 @@ hiding those rules inside handler code.
 - Runtime should keep `FORMAL_THEORY_AUTOMATION_WORKFLOW.md` visible when operators need to know which lane is currently automated and which lane still requires bounded manual judgment.
 - Runtime should keep `SECTION_FORMALIZATION_PROTOCOL.md` visible when section-oriented formalization is active so one compiled section is not mistaken for whole-topic closure.
 - Runtime should keep wide or mixed candidates out of Layer 2 by splitting or parking them first.
-- Runtime may spawn independent follow-up subtopics when cited-literature gaps are explicit enough to deserve a fresh `L0 -> L1 -> L3 -> L4 -> L2` route.
+- Runtime may spawn independent follow-up subtopics when cited-literature gaps are explicit enough to deserve a fresh `L0 -> L1 -> L3-A -> L4 -> L3-R -> L3-D -> L2` route.
 - Runtime should materialize a follow-up return packet for those child subtopics so reintegration is explicit rather than conversational.
 - Runtime should detect when a child return packet is no longer `pending_reentry` and queue parent-side reintegration automatically.
 - Runtime should also queue topic-completion refreshes and Lean-bridge refreshes when the latest run has outgrown the currently materialized shell surfaces.

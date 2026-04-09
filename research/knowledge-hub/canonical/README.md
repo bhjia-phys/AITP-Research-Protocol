@@ -12,9 +12,11 @@ Core docs:
 - `L2_MVP_CONTRACT.md`
 - `L2_BACKEND_BRIDGE.md`
 - `L2_BACKEND_INTEGRATION_PROTOCOL.md`
+- `L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md`
 - `PROMOTION_POLICY.md`
 - `L3_L4_LOOP.md`
 - `examples/paper-result-decomposition.md`
+- `../../docs/superpowers/specs/2026-04-08-l2-governance-plane-consolidation-design.md`
 - `../INDEXING_RULES.md`
 - `edges.jsonl`
 - `retrieval_profiles.json`
@@ -49,5 +51,11 @@ Use `edges.jsonl` as the lightweight relation layer.
 Use `retrieval_profiles.json` as the stage-aware retrieval policy surface.
 Use `backends/` as the internal bridge registry for external human/software knowledge stores.
 Use `L2_BACKEND_INTEGRATION_PROTOCOL.md` as the unified rule for adding future backends.
+Use `L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md` as the explicit drift-audit,
+backend-debt, and rebuild rule for paired downstream realizations.
 Promotion into this layer should usually come through explicit Layer 4 validation, not by default.
 Keep promotion queues, unresolved prerequisites, research blockers, and run-local TODOs in Layer 3 rather than here.
+
+Current `v1.28` scope stops at governance-plane closure and paired-backend
+maintenance semantics.
+Graph activation, traversal, and populated retrieval remain later work.

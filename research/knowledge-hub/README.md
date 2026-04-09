@@ -141,6 +141,10 @@ Cross-layer protocol surfaces:
 - `runtime/`
 - `schemas/`
 
+`L2_CONSULTATION_PROTOCOL.md` now includes the human-facing versus AI-facing
+consultation output contract, so consultation remains operator-usable without
+becoming a second promotion path.
+
 Runtime-facing control notes:
 
 - `runtime/PROGRESSIVE_DISCLOSURE_PROTOCOL.md`
@@ -283,6 +287,64 @@ opens a `code_method` topic around that workflow, records a baseline-gated
 coding operation plus strategy memory, compiles a `topic_skill_projection`, and
 verifies that operation trust and runtime surfaces stay inside AITP instead of
 turning into an untracked coding side quest.
+
+That same public TFIM lane is now the first seeded internal `L2` direction.
+The seed makes `canonical/index.jsonl` and `canonical/edges.jsonl` non-empty
+and gives AITP a bounded reusable graph containing the benchmark substrate,
+benchmark-first validation concept, exact-diagonalization method, workflow,
+validation pattern, warning note, bridge, claim card, and route capsule.
+
+Use:
+
+- `aitp seed-l2-demo`
+- `aitp consult-l2 --query "TFIM exact diagonalization benchmark workflow"`
+- `aitp stage-l2-insight --title "..." --summary "..."`
+- `aitp stage-topic-distillation --topic-slug "<topic>"`
+- `aitp consult-l2 --topic-slug "<topic>" --query "..." --include-staging`
+
+The lightweight staging path is the low-friction intake surface for reusable
+insight candidates discovered during discussion, reading, or early route
+exploration. It records provisional memory under `canonical/staging/` without
+pretending that the entry is already canonical `L2`.
+
+`stage-topic-distillation` is the first topic-driven memory-growth bridge for
+`v1.29`: it reads the active topic's `L3-D`-adjacent candidate and evidence
+surfaces, then stages provisional reusable memory without hand-authoring
+canonical unit JSON.
+
+`L0` now surfaces source-fidelity classes in the runtime projection so the
+system can distinguish peer-reviewed, preprint, thesis, formal-reference,
+informal, and code-artifact evidence instead of treating all sources as
+equivalent.
+
+`L0` also surfaces first citation-graph signals such as arXiv ids,
+BibTeX/DOI-like metadata, and whether a source row already carries explicit
+references. This is still only a baseline signal, not a full literature graph.
+
+`aitp verify --mode analytic` is the first bounded physics-grade analytic
+validation preset. It does not replace derivations or numerics; it forces the
+runtime contract to ask for limiting-case, dimensional, symmetry, and
+self-consistency checks explicitly.
+
+`aitp stage-negative-result` is the first explicit failed-route retention path.
+It records a provisional `negative_result` staging entry with failure kind,
+failed route, and next implication so abandoned directions do not silently
+disappear.
+
+`record-collaborator-memory` and `show-collaborator-memory` are the first
+explicit collaborator-memory surfaces. They are stored outside canonical `L2`
+so personal preferences and long-horizon concerns do not get confused with
+scientific truth.
+
+Staging is therefore not just a scratch inbox.
+It is the first step of a wiki-like compilation loop:
+
+- capture a reusable insight candidate,
+- link it to existing units,
+- mark contradictions or warning posture explicitly,
+- summarize what new knowledge was added,
+- and only later promote it into canonical `L2` if review and validation
+  justify that step.
 
 `topic_skill_projection` is reusable execution memory. When the lane is
 `formal_theory`, that means the projection tells the next agent what theorem-
