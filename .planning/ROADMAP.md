@@ -1,39 +1,13 @@
 # Roadmap
 
-Milestone: `v1.36` `L0 L1 Source Intelligence And Physicist-Grade Intake`
+## Completed Milestones
 
-## Phase 42: Source Identity And Citation Graph
+- ✅ `v1.36` `L0 L1 Source Intelligence And Physicist-Grade Intake` — Phases `42-45` (shipped `2026-04-10`) — see `.planning/milestones/v1.36-ROADMAP.md`
 
-Goal:
-- strengthen source identity across topics,
-- and expose better citation/source-neighbor signals.
+## Current Milestone
 
-Requirements:
-- `REQ-SRC-01`
-- `REQ-SRC-02`
+- none
 
-## Phase 43: Assumption And Regime Intake
+## Next Step
 
-Goal:
-- strengthen `L1` intake with assumption, regime, and reading-depth structure.
-
-Requirements:
-- `REQ-L1-01`
-
-## Phase 44: Contradiction And Notation Alignment
-
-Goal:
-- surface contradiction candidates and notation-alignment tension during
-  intake.
-
-Requirements:
-- `REQ-L1-02`
-
-## Phase 45: Runtime Source-Intelligence Read Path
-
-Goal:
-- expose the stronger `L0/L1` outputs in runtime/topic read paths so later
-  layers can actually use them.
-
-Requirements:
-- `REQ-L1-03`
+- define the next bottleneck and run `$gsd-new-milestone`

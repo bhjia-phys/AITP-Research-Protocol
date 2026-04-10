@@ -12,42 +12,35 @@ Completed milestone chain:
 - `v1.33` first slice implemented
 - `v1.34` implemented
 - `v1.35` implemented
+- `v1.36` implemented
 
 ## Latest Closed Milestone
 
-- `v1.35` implemented
+- `v1.36` `L0 L1 Source Intelligence And Physicist-Grade Intake` implemented
 
-## Why `v1.35` Existed
+## Why `v1.36` Existed
 
-After `v1.34`, AITP was stronger on memory honesty and bounded exploration,
-but it still did not operationally distinguish:
+After `v1.35`, AITP could route work more honestly, but it still lacked the
+front-side substrate quality that a real theoretical-physics collaborator needs:
 
-- `open_exploration`
-- `conjecture_attempt`
-- `target_driven_execution`
+- durable source identity across related topics
+- usable citation/source-neighbor intelligence
+- stronger assumption/regime/reading-depth intake
+- contradiction- and notation-sensitive intake honesty
+- runtime/topic read paths that actually expose those stronger `L0/L1` signals
 
-as different kinds of research jobs.
+## What `v1.36` Delivered
 
-## Active Milestone
-
-- `v1.36` `L0 L1 Source Intelligence And Physicist-Grade Intake`
-
-## Why `v1.36` Exists
-
-After `v1.35`, AITP is better at classifying and routing the research job, but
-it still falls short where a real theoretical-physics collaborator most needs
-substance:
-
-- durable source identity across related topics,
-- usable citation/source-neighbor intelligence,
-- assumption/regime/notation-aware reading,
-- and contradiction-sensitive intake that later layers can trust.
-
-This is the next bottleneck because better routing without better reading still
-leaves `L2`, `L3`, and `L4` working over a weak substrate.
+- stronger `L0` source identity and citation/source-neighbor signals
+- durable `l1_source_intake` for assumptions, regimes, reading depth,
+  contradictions, and notation tension
+- runtime/topic read paths that expose source intelligence instead of hiding it
+  in internal artifacts
+- maintainability-preserving helper extraction while the full
+  `research/knowledge-hub` suite stayed green
 
 ## Current Status
 
-- `v1.35` closed
-- `v1.36` active
-- next implementation target: Phase `42` `source-identity-and-citation-graph`
+- `v1.36` closed and archived
+- no active milestone is open yet
+- next command boundary: `$gsd-new-milestone`
