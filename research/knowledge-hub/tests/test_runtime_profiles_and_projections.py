@@ -356,6 +356,38 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "status": "active",
             "human_request": "continue this topic",
             "assumptions": ["Benchmark first."],
+            "l1_source_intake": {
+                "source_count": 1,
+                "assumption_rows": [
+                    {
+                        "source_id": "paper:demo-source",
+                        "source_title": "Demo Source",
+                        "source_type": "paper",
+                        "assumption": "Benchmark first.",
+                        "reading_depth": "abstract_only",
+                        "evidence_excerpt": "Benchmark first.",
+                    }
+                ],
+                "regime_rows": [
+                    {
+                        "source_id": "paper:demo-source",
+                        "source_title": "Demo Source",
+                        "source_type": "paper",
+                        "regime": "weak coupling",
+                        "reading_depth": "abstract_only",
+                        "evidence_excerpt": "weak coupling",
+                    }
+                ],
+                "reading_depth_rows": [
+                    {
+                        "source_id": "paper:demo-source",
+                        "source_title": "Demo Source",
+                        "source_type": "paper",
+                        "reading_depth": "abstract_only",
+                        "basis": "metadata_link",
+                    }
+                ],
+            },
             "runtime_focus": {
                 "summary": "Stage `L3`; next `Run the smallest exact benchmark first.`; human need `none`; last evidence `none`.",
                 "why_this_topic_is_here": "The topic is currently following the bounded benchmark route.",
@@ -609,6 +641,62 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             )
         )
         jsonschema.validate(bundle, schema)
+
+    def test_runtime_bundle_projects_l1_source_intake_into_contract_and_synopsis(self) -> None:
+        shell_surfaces = self._shell_surfaces()
+        shell_surfaces["research_question_contract"]["l1_source_intake"] = {
+            "source_count": 1,
+            "assumption_rows": [
+                {
+                    "source_id": "paper:demo-source",
+                    "source_title": "Demo Source",
+                    "source_type": "paper",
+                    "assumption": "Benchmark first.",
+                    "reading_depth": "abstract_only",
+                    "evidence_excerpt": "Benchmark first.",
+                }
+            ],
+            "regime_rows": [
+                {
+                    "source_id": "paper:demo-source",
+                    "source_title": "Demo Source",
+                    "source_type": "paper",
+                    "regime": "weak coupling",
+                    "reading_depth": "abstract_only",
+                    "evidence_excerpt": "weak coupling",
+                }
+            ],
+            "reading_depth_rows": [
+                {
+                    "source_id": "paper:demo-source",
+                    "source_title": "Demo Source",
+                    "source_type": "paper",
+                    "reading_depth": "abstract_only",
+                    "basis": "metadata_link",
+                }
+            ],
+        }
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
+                result = self.service._materialize_runtime_protocol_bundle(
+                    topic_slug="demo-topic",
+                    updated_by="test",
+                    human_request="continue this topic and keep the benchmark lane bounded",
+                    load_profile="light",
+                )
+
+        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        self.assertEqual(
+            bundle["active_research_contract"]["l1_source_intake"]["assumption_rows"][0]["assumption"],
+            "Benchmark first.",
+        )
+        self.assertEqual(
+            bundle["topic_synopsis"]["l1_source_intake"]["reading_depth_rows"][0]["reading_depth"],
+            "abstract_only",
+        )
+        note_text = Path(result["runtime_protocol_note_path"]).read_text(encoding="utf-8")
+        self.assertIn("## L1 source intake", note_text)
+        self.assertIn("## Source-backed regimes", note_text)
 
     def test_runtime_bundle_auto_escalates_to_full_for_mismatch_requests(self) -> None:
         shell_surfaces = self._shell_surfaces()

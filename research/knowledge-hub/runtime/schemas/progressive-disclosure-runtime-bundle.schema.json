@@ -286,6 +286,7 @@
         "lane",
         "load_profile",
         "status",
+        "l1_source_intake",
         "runtime_focus",
         "truth_sources",
         "next_action_summary",
@@ -336,6 +337,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "l1_source_intake": {
+          "$ref": "#/$defs/l1_source_intake"
         },
         "runtime_focus": {
           "type": "object",
@@ -563,6 +567,7 @@
         "validation_mode",
         "target_layers",
         "question",
+        "l1_source_intake",
         "path",
         "note_path"
       ],
@@ -601,6 +606,9 @@
         "question": {
           "type": "string",
           "minLength": 1
+        },
+        "l1_source_intake": {
+          "$ref": "#/$defs/l1_source_intake"
         },
         "path": {
           "type": "string",
@@ -2156,6 +2164,153 @@
         "string",
         "null"
       ]
+    },
+    "l1_source_intake": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_count",
+        "assumption_rows",
+        "regime_rows",
+        "reading_depth_rows"
+      ],
+      "properties": {
+        "source_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "assumption_rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/l1_assumption_row"
+          }
+        },
+        "regime_rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/l1_regime_row"
+          }
+        },
+        "reading_depth_rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/l1_reading_depth_row"
+          }
+        }
+      }
+    },
+    "l1_assumption_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "source_title",
+        "source_type",
+        "assumption",
+        "reading_depth",
+        "evidence_excerpt"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_title": {
+          "type": "string"
+        },
+        "source_type": {
+          "type": "string"
+        },
+        "assumption": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reading_depth": {
+          "type": "string",
+          "enum": [
+            "full_read",
+            "abstract_only",
+            "skim"
+          ]
+        },
+        "evidence_excerpt": {
+          "type": "string"
+        }
+      }
+    },
+    "l1_regime_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "source_title",
+        "source_type",
+        "regime",
+        "reading_depth",
+        "evidence_excerpt"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_title": {
+          "type": "string"
+        },
+        "source_type": {
+          "type": "string"
+        },
+        "regime": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reading_depth": {
+          "type": "string",
+          "enum": [
+            "full_read",
+            "abstract_only",
+            "skim"
+          ]
+        },
+        "evidence_excerpt": {
+          "type": "string"
+        }
+      }
+    },
+    "l1_reading_depth_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "source_title",
+        "source_type",
+        "reading_depth",
+        "basis"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_title": {
+          "type": "string"
+        },
+        "source_type": {
+          "type": "string"
+        },
+        "reading_depth": {
+          "type": "string",
+          "enum": [
+            "full_read",
+            "abstract_only",
+            "skim"
+          ]
+        },
+        "basis": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
     },
     "trigger_name": {
       "anyOf": [

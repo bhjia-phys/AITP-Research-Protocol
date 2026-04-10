@@ -25,6 +25,61 @@
     "non_goals": { "type": "array", "items": { "type": "string" } },
     "context_intake": { "type": "array", "items": { "type": "string" } },
     "source_basis_refs": { "type": "array", "items": { "type": "string" } },
+    "l1_source_intake": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_count", "assumption_rows", "regime_rows", "reading_depth_rows"],
+      "properties": {
+        "source_count": { "type": "integer", "minimum": 0 },
+        "assumption_rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source_id", "source_title", "source_type", "assumption", "reading_depth", "evidence_excerpt"],
+            "properties": {
+              "source_id": { "type": "string", "minLength": 1 },
+              "source_title": { "type": "string" },
+              "source_type": { "type": "string" },
+              "assumption": { "type": "string", "minLength": 1 },
+              "reading_depth": { "type": "string", "enum": ["full_read", "abstract_only", "skim"] },
+              "evidence_excerpt": { "type": "string" }
+            }
+          }
+        },
+        "regime_rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source_id", "source_title", "source_type", "regime", "reading_depth", "evidence_excerpt"],
+            "properties": {
+              "source_id": { "type": "string", "minLength": 1 },
+              "source_title": { "type": "string" },
+              "source_type": { "type": "string" },
+              "regime": { "type": "string", "minLength": 1 },
+              "reading_depth": { "type": "string", "enum": ["full_read", "abstract_only", "skim"] },
+              "evidence_excerpt": { "type": "string" }
+            }
+          }
+        },
+        "reading_depth_rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["source_id", "source_title", "source_type", "reading_depth", "basis"],
+            "properties": {
+              "source_id": { "type": "string", "minLength": 1 },
+              "source_title": { "type": "string" },
+              "source_type": { "type": "string" },
+              "reading_depth": { "type": "string", "enum": ["full_read", "abstract_only", "skim"] },
+              "basis": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
     "interpretation_focus": { "type": "array", "items": { "type": "string" } },
     "open_ambiguities": { "type": "array", "items": { "type": "string" } },
     "formalism_and_notation": { "type": "array", "items": { "type": "string" } },

@@ -4,6 +4,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from .source_intelligence import detect_assumptions, detect_regimes, infer_reading_depth_label
+
 _FORMAL_SOURCE_TYPES = {"paper", "thesis", "article", "local_note", "book", "lecture", "derivation"}
 _NUMERICAL_SOURCE_TYPES = {"benchmark", "code", "implementation", "numerical", "experiment"}
 _TITLE_NOVELTY_KEYWORDS = ("novel", "new", "first", "closure", "variational", "derivation")
@@ -18,12 +20,22 @@ _SUMMARY_NOVELTY_KEYWORDS = (
 )
 
 
-def _empty_distillation() -> dict[str, str]:
+def _empty_l1_source_intake() -> dict[str, Any]:
+    return {
+        "source_count": 0,
+        "assumption_rows": [],
+        "regime_rows": [],
+        "reading_depth_rows": [],
+    }
+
+
+def _empty_distillation() -> dict[str, Any]:
     return {
         "distilled_initial_idea": "",
         "distilled_novelty_target": "",
         "distilled_first_validation_route": "",
         "distilled_lane": "",
+        "distilled_l1_source_intake": _empty_l1_source_intake(),
     }
 
 
@@ -98,6 +110,152 @@ def _resolve_preview_content(*, snapshot_text: str, summary: str, absolute_path:
     if not preview_content and summary:
         preview_content = _strip_comment_lines(summary)[:300].strip()
     return preview_content
+
+
+def _normalize_excerpt(text: str, *, max_chars: int = 220) -> str:
+    normalized = re.sub(r"\s+", " ", text).strip()
+    return normalized[:max_chars]
+
+
+def _excerpt_for_signal(*, text: str, needle: str) -> str:
+    normalized = _normalize_excerpt(text, max_chars=400)
+    if not normalized:
+        return ""
+    lowered = normalized.lower()
+    lowered_needle = str(needle or "").strip().lower()
+    if not lowered_needle:
+        return normalized[:220]
+    match_index = lowered.find(lowered_needle)
+    if match_index < 0:
+        return normalized[:220]
+    start = max(0, match_index - 60)
+    end = min(len(normalized), match_index + len(lowered_needle) + 100)
+    return normalized[start:end].strip()
+
+
+def _dedupe_rows(rows: list[dict[str, Any]], *, key_fields: tuple[str, ...]) -> list[dict[str, Any]]:
+    deduped: list[dict[str, Any]] = []
+    seen: set[tuple[str, ...]] = set()
+    for row in rows:
+        key = tuple(str(row.get(field) or "").strip().lower() for field in key_fields)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(row)
+    return deduped
+
+
+def _reading_depth_signal(
+    *,
+    source_type: str,
+    provenance: dict[str, Any],
+    locator: dict[str, Any],
+    snapshot_text: str,
+    absolute_path: str,
+) -> tuple[str, str]:
+    inferred = infer_reading_depth_label(
+        source_type=source_type,
+        provenance=provenance,
+        locator=locator,
+    )
+    original_path = Path(absolute_path) if absolute_path else None
+    if snapshot_text.strip():
+        return "full_read", "snapshot_preview"
+    if original_path and original_path.exists() and original_path.suffix.lower() in {".tex", ".md", ".txt"}:
+        return "full_read", "local_source_text"
+    if inferred == "full_read":
+        return "full_read", "extracted_source_bundle"
+    if inferred == "abstract_only":
+        return "abstract_only", "metadata_link"
+    return "skim", "summary_only"
+
+
+def _build_l1_source_intake(
+    *,
+    kernel_root: Path,
+    source_rows: list[dict[str, Any]],
+    topic_slug: str,
+) -> dict[str, Any]:
+    if not source_rows:
+        return _empty_l1_source_intake()
+
+    assumption_rows: list[dict[str, str]] = []
+    regime_rows: list[dict[str, str]] = []
+    reading_depth_rows: list[dict[str, str]] = []
+    counted_sources: set[str] = set()
+
+    for row in source_rows:
+        source_id = str(row.get("source_id") or "").strip()
+        source_type = str(row.get("source_type") or "").strip()
+        title = str(row.get("title") or "").strip()
+        summary = str(row.get("summary") or "").strip()
+        provenance = row.get("provenance") or {}
+        locator = row.get("locator") or {}
+        if not isinstance(provenance, dict):
+            provenance = {}
+        if not isinstance(locator, dict):
+            locator = {}
+        absolute_path = str(provenance.get("absolute_path") or "").strip()
+        snapshot_text = _load_snapshot_text(kernel_root=kernel_root, topic_slug=topic_slug, source_id=source_id)
+        preview_content = _resolve_preview_content(
+            snapshot_text=snapshot_text,
+            summary=summary,
+            absolute_path=absolute_path,
+        )
+        analysis_text = "\n".join(part for part in (preview_content, summary) if str(part).strip())
+        reading_depth, basis = _reading_depth_signal(
+            source_type=source_type,
+            provenance=provenance,
+            locator=locator,
+            snapshot_text=snapshot_text,
+            absolute_path=absolute_path,
+        )
+        source_key = source_id or title
+        if source_key:
+            counted_sources.add(source_key)
+            reading_depth_rows.append(
+                {
+                    "source_id": source_id,
+                    "source_title": title,
+                    "source_type": source_type,
+                    "reading_depth": reading_depth,
+                    "basis": basis,
+                }
+            )
+        if not analysis_text:
+            continue
+        for assumption in detect_assumptions(text=analysis_text):
+            assumption_rows.append(
+                {
+                    "source_id": source_id,
+                    "source_title": title,
+                    "source_type": source_type,
+                    "assumption": assumption,
+                    "reading_depth": reading_depth,
+                    "evidence_excerpt": _excerpt_for_signal(text=analysis_text, needle=assumption),
+                }
+            )
+        for regime in detect_regimes(text=analysis_text):
+            regime_rows.append(
+                {
+                    "source_id": source_id,
+                    "source_title": title,
+                    "source_type": source_type,
+                    "regime": regime,
+                    "reading_depth": reading_depth,
+                    "evidence_excerpt": _excerpt_for_signal(text=analysis_text, needle=regime),
+                }
+            )
+
+    return {
+        "source_count": len(counted_sources),
+        "assumption_rows": _dedupe_rows(assumption_rows, key_fields=("source_id", "assumption")),
+        "regime_rows": _dedupe_rows(regime_rows, key_fields=("source_id", "regime")),
+        "reading_depth_rows": _dedupe_rows(
+            reading_depth_rows,
+            key_fields=("source_id", "reading_depth", "basis"),
+        ),
+    }
 
 
 def _claims_from_snapshot(*, snapshot_text: str, source_id: str) -> list[dict[str, Any]]:
@@ -257,7 +415,7 @@ def distill_from_sources(
     kernel_root: Path,
     source_rows: list[dict[str, Any]],
     topic_slug: str,
-) -> dict[str, str]:
+) -> dict[str, Any]:
     if not source_rows:
         return _empty_distillation()
 
@@ -267,9 +425,15 @@ def distill_from_sources(
         topic_slug=topic_slug,
     )
     lane, first_validation_route = _distill_lane_and_route(source_types=source_types, titles=titles)
+    l1_source_intake = _build_l1_source_intake(
+        kernel_root=kernel_root,
+        source_rows=source_rows,
+        topic_slug=topic_slug,
+    )
     return {
         "distilled_initial_idea": _distill_initial_idea(previews=previews, titles=titles),
         "distilled_novelty_target": _distill_novelty_target(claims),
         "distilled_first_validation_route": first_validation_route,
         "distilled_lane": lane,
+        "distilled_l1_source_intake": l1_source_intake,
     }

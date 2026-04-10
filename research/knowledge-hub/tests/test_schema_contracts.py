@@ -23,6 +23,7 @@ class SchemaContractTests(unittest.TestCase):
         for field in (
             "context_intake",
             "source_basis_refs",
+            "l1_source_intake",
             "interpretation_focus",
             "open_ambiguities",
             "formalism_and_notation",
@@ -113,6 +114,7 @@ class SchemaContractTests(unittest.TestCase):
         payload = self._read_json("schemas/topic-synopsis.schema.json")
         self.assertIn("runtime_focus", payload["required"])
         self.assertIn("truth_sources", payload["required"])
+        self.assertIn("l1_source_intake", payload["required"])
         runtime_focus = payload["properties"]["runtime_focus"]["properties"]
         self.assertIn("summary", runtime_focus)
         self.assertIn("next_action_summary", runtime_focus)
@@ -121,6 +123,10 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIn("topic_state_path", truth_sources)
         self.assertIn("next_action_surface_path", truth_sources)
         self.assertIn("promotion_readiness_path", truth_sources)
+        intake = payload["properties"]["l1_source_intake"]["properties"]
+        self.assertIn("assumption_rows", intake)
+        self.assertIn("regime_rows", intake)
+        self.assertIn("reading_depth_rows", intake)
 
     def test_consult_and_promotion_schemas_include_new_theory_surface(self) -> None:
         consult_payload = self._read_json("consultation/schemas/consult-request.schema.json")
@@ -176,6 +182,8 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIn("topic_completion", payload["properties"])
         self.assertIn("lean_bridge", payload["properties"])
         self.assertIn("topic_skill_projection", payload["properties"])
+        self.assertIn("l1_source_intake", payload["properties"]["topic_synopsis"]["properties"])
+        self.assertIn("l1_source_intake", payload["properties"]["active_research_contract"]["properties"])
         self.assertIn("runtime_focus", payload["properties"]["topic_synopsis"]["properties"])
         self.assertIn("truth_sources", payload["properties"]["topic_synopsis"]["properties"])
         self.assertIn("blocked_by_details", payload["properties"]["dependency_state"]["properties"])

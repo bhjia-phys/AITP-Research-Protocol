@@ -57,6 +57,158 @@ def _as_bool(value: Any) -> bool:
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _empty_l1_source_intake() -> dict[str, Any]:
+    return {
+        "source_count": 0,
+        "assumption_rows": [],
+        "regime_rows": [],
+        "reading_depth_rows": [],
+    }
+
+
+def _normalize_l1_intake_rows(rows: Any, *, required_field: str) -> list[dict[str, str]]:
+    if not isinstance(rows, list):
+        return []
+    normalized: list[dict[str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        source_id = str(row.get("source_id") or "").strip()
+        payload_value = str(row.get(required_field) or "").strip()
+        if not source_id or not payload_value:
+            continue
+        key = (source_id.lower(), payload_value.lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        normalized.append(
+            {
+                "source_id": source_id,
+                "source_title": str(row.get("source_title") or "").strip(),
+                "source_type": str(row.get("source_type") or "").strip(),
+                required_field: payload_value,
+                "reading_depth": str(row.get("reading_depth") or "").strip() or "skim",
+                "evidence_excerpt": str(row.get("evidence_excerpt") or "").strip(),
+            }
+        )
+    return normalized
+
+
+def _normalize_reading_depth_rows(rows: Any) -> list[dict[str, str]]:
+    if not isinstance(rows, list):
+        return []
+    normalized: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        source_id = str(row.get("source_id") or "").strip()
+        reading_depth = str(row.get("reading_depth") or "").strip()
+        basis = str(row.get("basis") or "").strip()
+        if not source_id or not reading_depth:
+            continue
+        key = (source_id.lower(), reading_depth.lower(), basis.lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        normalized.append(
+            {
+                "source_id": source_id,
+                "source_title": str(row.get("source_title") or "").strip(),
+                "source_type": str(row.get("source_type") or "").strip(),
+                "reading_depth": reading_depth,
+                "basis": basis or "summary_only",
+            }
+        )
+    return normalized
+
+
+def _normalize_l1_source_intake(payload: Any) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        return _empty_l1_source_intake()
+    normalized = {
+        "source_count": int(payload.get("source_count") or 0),
+        "assumption_rows": _normalize_l1_intake_rows(
+            payload.get("assumption_rows"),
+            required_field="assumption",
+        ),
+        "regime_rows": _normalize_l1_intake_rows(
+            payload.get("regime_rows"),
+            required_field="regime",
+        ),
+        "reading_depth_rows": _normalize_reading_depth_rows(payload.get("reading_depth_rows")),
+    }
+    if normalized["source_count"] <= 0:
+        source_keys = {
+            str(row.get("source_id") or "").strip()
+            for row in normalized["reading_depth_rows"]
+            if str(row.get("source_id") or "").strip()
+        }
+        normalized["source_count"] = len(source_keys)
+    return normalized
+
+
+def _coalesce_l1_source_intake(existing: Any, default: dict[str, Any]) -> dict[str, Any]:
+    normalized_existing = _normalize_l1_source_intake(existing)
+    if any(normalized_existing[key] for key in ("assumption_rows", "regime_rows", "reading_depth_rows")):
+        return normalized_existing
+    return _normalize_l1_source_intake(default)
+
+
+def _l1_context_lines(l1_source_intake: dict[str, Any]) -> list[str]:
+    lines: list[str] = []
+    if l1_source_intake.get("regime_rows"):
+        regimes = [str(row.get("regime") or "").strip() for row in l1_source_intake["regime_rows"]]
+        regimes = [item for item in regimes if item]
+        if regimes:
+            lines.append(f"Source-backed regimes: {', '.join(regimes[:4])}")
+    if l1_source_intake.get("reading_depth_rows"):
+        depth_summary = []
+        for row in l1_source_intake["reading_depth_rows"][:4]:
+            source_id = str(row.get("source_id") or "").strip()
+            reading_depth = str(row.get("reading_depth") or "").strip()
+            if source_id and reading_depth:
+                depth_summary.append(f"{source_id}={reading_depth}")
+        if depth_summary:
+            lines.append(f"Recorded reading depth: {', '.join(depth_summary)}")
+    return lines
+
+
+def _l1_interpretation_focus_lines(l1_source_intake: dict[str, Any]) -> list[str]:
+    lines: list[str] = []
+    regimes = [str(row.get("regime") or "").strip() for row in l1_source_intake.get("regime_rows") or []]
+    regimes = [item for item in regimes if item]
+    if regimes:
+        lines.append(f"Keep interpretation bounded to the recorded source regimes: {', '.join(regimes[:4])}.")
+    partial_depth_rows = [
+        row
+        for row in l1_source_intake.get("reading_depth_rows") or []
+        if str(row.get("reading_depth") or "").strip() != "full_read"
+    ]
+    if partial_depth_rows:
+        lines.append("Do not over-interpret claims that are currently backed only by abstract-only or skim-level reading depth.")
+    return lines
+
+
+def _l1_open_ambiguity_lines(l1_source_intake: dict[str, Any]) -> list[str]:
+    partial_depth_rows = [
+        row
+        for row in l1_source_intake.get("reading_depth_rows") or []
+        if str(row.get("reading_depth") or "").strip() != "full_read"
+    ]
+    if not partial_depth_rows:
+        return []
+    labels = [
+        f"{row['source_id']}={row['reading_depth']}"
+        for row in partial_depth_rows[:4]
+        if str(row.get("source_id") or "").strip()
+    ]
+    if not labels:
+        return []
+    return [f"Reading-depth limits still apply for: {', '.join(labels)}"]
+
+
 def derive_open_gap_summary(
     self,
     *,
@@ -1138,6 +1290,7 @@ def ensure_topic_shell_surfaces(
     distilled_first_validation_route = str(
         distilled.get("distilled_first_validation_route") or ""
     ).strip()
+    distilled_l1_source_intake = _normalize_l1_source_intake(distilled.get("distilled_l1_source_intake"))
 
     research_mode = str(
         resolved_topic_state.get("research_mode")
@@ -1173,6 +1326,7 @@ def ensure_topic_shell_surfaces(
             f"Latest run id: {latest_run_id or 'missing'}",
             f"Selected action: {selected_action_summary or 'none'}",
         ]
+        + _l1_context_lines(distilled_l1_source_intake)
     )
     target_claim_defaults = self._dedupe_strings(
         [str(row.get("candidate_id") or "").strip() for row in candidate_rows if str(row.get("candidate_id") or "").strip()]
@@ -1197,6 +1351,10 @@ def ensure_topic_shell_surfaces(
         "Mark unresolved notation, source, or regime gaps explicitly before continuing."
     ]
     research_status_default = "blocked" if open_gap_summary["requires_l0_return"] else "active"
+    l1_source_intake = _coalesce_l1_source_intake(
+        existing_research.get("l1_source_intake"),
+        distilled_l1_source_intake,
+    )
     research_contract = {
         "contract_version": 1,
         "question_id": self._coalesce_string(
@@ -1219,6 +1377,8 @@ def ensure_topic_shell_surfaces(
         ),
         "assumptions": self._coalesce_list(
             existing_research.get("assumptions"),
+            [str(row.get("assumption") or "").strip() for row in l1_source_intake.get("assumption_rows") or []]
+            +
             [
                 "Only persisted AITP artifacts count as research progress.",
                 "Missing cited derivations or prior-work context must be recovered through L0 rather than guessed.",
@@ -1232,6 +1392,7 @@ def ensure_topic_shell_surfaces(
             ],
         ),
         "context_intake": self._coalesce_list(existing_research.get("context_intake"), context_defaults),
+        "l1_source_intake": l1_source_intake,
         "source_basis_refs": self._coalesce_list(
             existing_research.get("source_basis_refs"),
             self._research_source_basis_refs(topic_slug=topic_slug, source_rows=source_rows),
@@ -1243,14 +1404,16 @@ def ensure_topic_shell_surfaces(
                 first_validation_route=distilled_first_validation_route,
                 research_mode=research_mode,
                 selected_action_summary=selected_action_summary,
-            ),
+            )
+            + _l1_interpretation_focus_lines(l1_source_intake),
         ),
         "open_ambiguities": self._coalesce_list(
             existing_research.get("open_ambiguities"),
             self._research_open_ambiguities_defaults(
                 existing_idea_packet=existing_idea_packet,
                 open_gap_summary=open_gap_summary,
-            ),
+            )
+            + _l1_open_ambiguity_lines(l1_source_intake),
         ),
         "formalism_and_notation": self._coalesce_list(
             existing_research.get("formalism_and_notation"),
@@ -1331,6 +1494,7 @@ def ensure_topic_shell_surfaces(
             existing_validation.get("required_checks"),
             [
                 "Check that the research question, scope, and selected action still match the runtime state.",
+                "Check that source-backed assumptions and regimes are not being treated as settled beyond their recorded reading depth.",
                 "Check that proof, derivation, or execution evidence is persisted in the declared layer.",
                 "If prior-work or cited-source gaps remain, return to L0 before advancing the claim.",
             ],

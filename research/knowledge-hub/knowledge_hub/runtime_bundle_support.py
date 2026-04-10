@@ -57,6 +57,56 @@ def _slugify(text: str) -> str:
     return lowered or "aitp-topic"
 
 
+def _empty_l1_source_intake() -> dict[str, Any]:
+    return {
+        "source_count": 0,
+        "assumption_rows": [],
+        "regime_rows": [],
+        "reading_depth_rows": [],
+    }
+
+
+def _append_l1_source_intake_markdown(lines: list[str], payload: dict[str, Any]) -> None:
+    l1_source_intake = payload.get("l1_source_intake") or {}
+    lines.extend(
+        [
+            "",
+            "## L1 source intake",
+            "",
+            f"- Source count: `{l1_source_intake.get('source_count') or 0}`",
+            "",
+            "## Source-backed assumptions",
+            "",
+        ]
+    )
+    for row in l1_source_intake.get("assumption_rows") or ["(none)"]:
+        if isinstance(row, dict):
+            lines.append(
+                f"- `{row.get('source_id') or '(missing)'}` [{row.get('reading_depth') or 'skim'}]: "
+                f"{row.get('assumption') or '(missing)'}"
+            )
+        else:
+            lines.append(f"- {row}")
+    lines.extend(["", "## Source-backed regimes", ""])
+    for row in l1_source_intake.get("regime_rows") or ["(none)"]:
+        if isinstance(row, dict):
+            lines.append(
+                f"- `{row.get('source_id') or '(missing)'}` [{row.get('reading_depth') or 'skim'}]: "
+                f"{row.get('regime') or '(missing)'}"
+            )
+        else:
+            lines.append(f"- {row}")
+    lines.extend(["", "## Reading depth", ""])
+    for row in l1_source_intake.get("reading_depth_rows") or ["(none)"]:
+        if isinstance(row, dict):
+            lines.append(
+                f"- `{row.get('source_id') or '(missing)'}` => `{row.get('reading_depth') or 'skim'}` "
+                f"(basis: `{row.get('basis') or 'summary_only'}`)"
+            )
+        else:
+            lines.append(f"- {row}")
+
+
 def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
     load_profile = str(payload.get("load_profile") or "light")
     topic_synopsis = payload.get("topic_synopsis") or {}
@@ -134,104 +184,109 @@ def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
         f"- Contract note: `{active_research_contract.get('note_path') or '(missing)'}`",
         "",
         f"{active_research_contract.get('question') or '(missing)'}",
-        "",
-        "## Idea packet",
-        "",
-        f"- Status: `{idea_packet.get('status') or '(missing)'}`",
-        f"- Idea note: `{idea_packet.get('note_path') or '(missing)'}`",
-        f"- First validation route: `{idea_packet.get('first_validation_route') or '(missing)'}`",
-        f"- Initial evidence bar: `{idea_packet.get('initial_evidence_bar') or '(missing)'}`",
-        f"- Missing fields: `{', '.join(idea_packet.get('missing_fields') or []) or '(none)'}`",
-        "",
-        f"{idea_packet.get('status_reason') or '(missing)'}",
-        "",
-        "## Operator checkpoint",
-        "",
-        f"- Status: `{operator_checkpoint.get('status') or '(missing)'}`",
-        f"- Kind: `{operator_checkpoint.get('checkpoint_kind') or '(none)'}`",
-        f"- Checkpoint note: `{operator_checkpoint.get('note_path') or '(missing)'}`",
-        "",
-        f"{operator_checkpoint.get('question') or '(none)'}",
-        "",
-        "## Validation review bundle",
-        "",
-        f"- Status: `{validation_review_bundle.get('status') or '(missing)'}`",
-        f"- Primary review kind: `{validation_review_bundle.get('primary_review_kind') or '(missing)'}`",
-        f"- Bundle JSON: `{validation_review_bundle.get('path') or '(missing)'}`",
-        f"- Bundle note: `{validation_review_bundle.get('note_path') or '(missing)'}`",
-        "",
-        f"{validation_review_bundle.get('summary') or '(missing)'}",
-        "",
-        "## Promotion readiness",
-        "",
-        f"- Status: `{promotion_readiness.get('status') or '(missing)'}`",
-        f"- Gate status: `{promotion_readiness.get('gate_status') or '(missing)'}`",
-        f"- Summary note: `{promotion_readiness.get('path') or '(missing)'}`",
-        f"- Ready candidates: `{', '.join(promotion_readiness.get('ready_candidate_ids') or []) or '(none)'}`",
-        "",
-        f"{promotion_readiness.get('summary') or '(missing)'}",
-        "",
-        "## Open gap summary",
-        "",
-        f"- Status: `{open_gap_summary.get('status') or '(missing)'}`",
-        f"- Gap count: `{open_gap_summary.get('gap_count') or 0}`",
-        f"- Follow-up gap writeback count: `{open_gap_summary.get('followup_gap_writeback_count') or 0}`",
-        f"- Requires L0 return: `{str(bool(open_gap_summary.get('requires_l0_return'))).lower()}`",
-        f"- Gap map: `{open_gap_summary.get('path') or '(missing)'}`",
-        "",
-        f"{open_gap_summary.get('summary') or '(missing)'}",
-        "",
-        "## Strategy memory",
-        "",
-        f"- Status: `{strategy_memory.get('status') or '(missing)'}`",
-        f"- Lane: `{strategy_memory.get('lane') or '(missing)'}`",
-        f"- Row count: `{strategy_memory.get('row_count') or 0}`",
-        f"- Relevant count: `{strategy_memory.get('relevant_count') or 0}`",
-        f"- Helpful count: `{strategy_memory.get('helpful_count') or 0}`",
-        f"- Harmful count: `{strategy_memory.get('harmful_count') or 0}`",
-        f"- Latest path: `{strategy_memory.get('latest_path') or '(none)'}`",
-        "",
-        f"{strategy_memory.get('summary') or '(missing)'}",
-        "",
-        "## Topic skill projection",
-        "",
-        f"- Status: `{topic_skill_projection.get('status') or '(missing)'}`",
-        f"- Projection id: `{topic_skill_projection.get('id') or '(missing)'}`",
-        f"- Candidate id: `{topic_skill_projection.get('candidate_id') or '(none)'}`",
-        f"- Note path: `{topic_skill_projection.get('note_path') or '(missing)'}`",
-        f"- Intended L2 target: `{topic_skill_projection.get('intended_l2_target') or '(none)'}`",
-        "",
-        f"{topic_skill_projection.get('summary') or '(missing)'}",
-        "",
-        "## Topic completion",
-        "",
-        f"- Status: `{topic_completion.get('status') or '(missing)'}`",
-        f"- Completion note: `{topic_completion.get('path') or '(missing)'}`",
-        f"- Promotion-ready candidates: `{', '.join(topic_completion.get('promotion_ready_candidate_ids') or []) or '(none)'}`",
-        "",
-        f"{topic_completion.get('summary') or '(missing)'}",
-        "",
-        "## Lean bridge",
-        "",
-        f"- Status: `{lean_bridge.get('status') or '(missing)'}`",
-        f"- Packet count: `{lean_bridge.get('packet_count') or 0}`",
-        f"- Bridge note: `{lean_bridge.get('path') or '(missing)'}`",
-        "",
-        f"{lean_bridge.get('summary') or '(missing)'}",
-        "",
-        "## Minimal execution brief",
-        "",
-        f"- Current stage: `{minimal.get('current_stage') or payload['resume_stage'] or '(missing)'}`",
-        f"- Current bounded action: `{minimal.get('selected_action_summary') or '(no pending action)'}`",
-        f"- Selected action id: `{minimal.get('selected_action_id') or '(none)'}`",
-        f"- Selected action type: `{minimal.get('selected_action_type') or '(none)'}`",
-        f"- Decision source: `{minimal.get('decision_source') or '(missing)'}`",
-        f"- Queue source: `{minimal.get('queue_source') or '(missing)'}`",
-        f"- Open next: `{minimal.get('open_next') or '(missing)'}`",
-        "",
-        "### Allowed now",
-        "",
     ]
+    _append_l1_source_intake_markdown(lines, active_research_contract)
+    lines.extend(
+        [
+            "",
+            "## Idea packet",
+            "",
+            f"- Status: `{idea_packet.get('status') or '(missing)'}`",
+            f"- Idea note: `{idea_packet.get('note_path') or '(missing)'}`",
+            f"- First validation route: `{idea_packet.get('first_validation_route') or '(missing)'}`",
+            f"- Initial evidence bar: `{idea_packet.get('initial_evidence_bar') or '(missing)'}`",
+            f"- Missing fields: `{', '.join(idea_packet.get('missing_fields') or []) or '(none)'}`",
+            "",
+            f"{idea_packet.get('status_reason') or '(missing)'}",
+            "",
+            "## Operator checkpoint",
+            "",
+            f"- Status: `{operator_checkpoint.get('status') or '(missing)'}`",
+            f"- Kind: `{operator_checkpoint.get('checkpoint_kind') or '(none)'}`",
+            f"- Checkpoint note: `{operator_checkpoint.get('note_path') or '(missing)'}`",
+            "",
+            f"{operator_checkpoint.get('question') or '(none)'}",
+            "",
+            "## Validation review bundle",
+            "",
+            f"- Status: `{validation_review_bundle.get('status') or '(missing)'}`",
+            f"- Primary review kind: `{validation_review_bundle.get('primary_review_kind') or '(missing)'}`",
+            f"- Bundle JSON: `{validation_review_bundle.get('path') or '(missing)'}`",
+            f"- Bundle note: `{validation_review_bundle.get('note_path') or '(missing)'}`",
+            "",
+            f"{validation_review_bundle.get('summary') or '(missing)'}",
+            "",
+            "## Promotion readiness",
+            "",
+            f"- Status: `{promotion_readiness.get('status') or '(missing)'}`",
+            f"- Gate status: `{promotion_readiness.get('gate_status') or '(missing)'}`",
+            f"- Summary note: `{promotion_readiness.get('path') or '(missing)'}`",
+            f"- Ready candidates: `{', '.join(promotion_readiness.get('ready_candidate_ids') or []) or '(none)'}`",
+            "",
+            f"{promotion_readiness.get('summary') or '(missing)'}",
+            "",
+            "## Open gap summary",
+            "",
+            f"- Status: `{open_gap_summary.get('status') or '(missing)'}`",
+            f"- Gap count: `{open_gap_summary.get('gap_count') or 0}`",
+            f"- Follow-up gap writeback count: `{open_gap_summary.get('followup_gap_writeback_count') or 0}`",
+            f"- Requires L0 return: `{str(bool(open_gap_summary.get('requires_l0_return'))).lower()}`",
+            f"- Gap map: `{open_gap_summary.get('path') or '(missing)'}`",
+            "",
+            f"{open_gap_summary.get('summary') or '(missing)'}",
+            "",
+            "## Strategy memory",
+            "",
+            f"- Status: `{strategy_memory.get('status') or '(missing)'}`",
+            f"- Lane: `{strategy_memory.get('lane') or '(missing)'}`",
+            f"- Row count: `{strategy_memory.get('row_count') or 0}`",
+            f"- Relevant count: `{strategy_memory.get('relevant_count') or 0}`",
+            f"- Helpful count: `{strategy_memory.get('helpful_count') or 0}`",
+            f"- Harmful count: `{strategy_memory.get('harmful_count') or 0}`",
+            f"- Latest path: `{strategy_memory.get('latest_path') or '(none)'}`",
+            "",
+            f"{strategy_memory.get('summary') or '(missing)'}",
+            "",
+            "## Topic skill projection",
+            "",
+            f"- Status: `{topic_skill_projection.get('status') or '(missing)'}`",
+            f"- Projection id: `{topic_skill_projection.get('id') or '(missing)'}`",
+            f"- Candidate id: `{topic_skill_projection.get('candidate_id') or '(none)'}`",
+            f"- Note path: `{topic_skill_projection.get('note_path') or '(missing)'}`",
+            f"- Intended L2 target: `{topic_skill_projection.get('intended_l2_target') or '(none)'}`",
+            "",
+            f"{topic_skill_projection.get('summary') or '(missing)'}`",
+            "",
+            "## Topic completion",
+            "",
+            f"- Status: `{topic_completion.get('status') or '(missing)'}`",
+            f"- Completion note: `{topic_completion.get('path') or '(missing)'}`",
+            f"- Promotion-ready candidates: `{', '.join(topic_completion.get('promotion_ready_candidate_ids') or []) or '(none)'}`",
+            "",
+            f"{topic_completion.get('summary') or '(missing)'}`",
+            "",
+            "## Lean bridge",
+            "",
+            f"- Status: `{lean_bridge.get('status') or '(missing)'}`",
+            f"- Packet count: `{lean_bridge.get('packet_count') or 0}`",
+            f"- Bridge note: `{lean_bridge.get('path') or '(missing)'}`",
+            "",
+            f"{lean_bridge.get('summary') or '(missing)'}`",
+            "",
+            "## Minimal execution brief",
+            "",
+            f"- Current stage: `{minimal.get('current_stage') or payload['resume_stage'] or '(missing)'}`",
+            f"- Current bounded action: `{minimal.get('selected_action_summary') or '(no pending action)'}`",
+            f"- Selected action id: `{minimal.get('selected_action_id') or '(none)'}`",
+            f"- Selected action type: `{minimal.get('selected_action_type') or '(none)'}`",
+            f"- Decision source: `{minimal.get('decision_source') or '(missing)'}`",
+            f"- Queue source: `{minimal.get('queue_source') or '(missing)'}`",
+            f"- Open next: `{minimal.get('open_next') or '(missing)'}`",
+            "",
+            "### Allowed now",
+            "",
+        ]
+    )
     for item in minimal.get("immediate_allowed_work") or ["Continue bounded work only after reading the required top-level surfaces."]:
         lines.append(f"- {item}")
     lines.extend(
@@ -598,6 +653,7 @@ def materialize_runtime_protocol_bundle(
         "validation_mode": str(validation_contract.get("validation_mode") or ""),
         "target_layers": self._dedupe_strings(list(research_contract.get("target_layers") or [])),
         "question": str(research_contract.get("question") or ""),
+        "l1_source_intake": research_contract.get("l1_source_intake") or _empty_l1_source_intake(),
         "path": self._relativize(Path(shell_surfaces["research_question_contract_path"])),
         "note_path": self._relativize(Path(shell_surfaces["research_question_contract_note_path"])),
     }
@@ -676,6 +732,7 @@ def materialize_runtime_protocol_bundle(
         "status": str(active_research_contract.get("status") or "active"),
         "human_request": human_request or str(interaction_state.get("human_request") or ""),
         "assumptions": self._dedupe_strings(list(research_contract.get("assumptions") or [])),
+        "l1_source_intake": research_contract.get("l1_source_intake") or _empty_l1_source_intake(),
         "runtime_focus": runtime_focus,
         "truth_sources": topic_synopsis_truth_sources,
         "next_action_summary": str(runtime_focus.get("next_action_summary") or "No bounded action is currently selected."),

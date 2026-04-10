@@ -3,6 +3,51 @@ from __future__ import annotations
 from typing import Any
 
 
+def _append_l1_source_intake_markdown(lines: list[str], payload: dict[str, Any]) -> None:
+    l1_source_intake = payload.get("l1_source_intake") or {}
+    lines.extend(
+        [
+            "",
+            "## L1 source intake",
+            "",
+            f"- Source count: `{l1_source_intake.get('source_count') or 0}`",
+            "",
+            "## Source-backed assumptions",
+            "",
+        ]
+    )
+    for row in l1_source_intake.get("assumption_rows") or ["(none)"]:
+        if isinstance(row, dict):
+            lines.append(
+                f"- `{row.get('source_id') or '(missing)'}` [{row.get('reading_depth') or 'skim'}]: "
+                f"{row.get('assumption') or '(missing)'}"
+            )
+            if row.get("evidence_excerpt"):
+                lines.append(f"  evidence: {row.get('evidence_excerpt')}")
+        else:
+            lines.append(f"- {row}")
+    lines.extend(["", "## Source-backed regimes", ""])
+    for row in l1_source_intake.get("regime_rows") or ["(none)"]:
+        if isinstance(row, dict):
+            lines.append(
+                f"- `{row.get('source_id') or '(missing)'}` [{row.get('reading_depth') or 'skim'}]: "
+                f"{row.get('regime') or '(missing)'}"
+            )
+            if row.get("evidence_excerpt"):
+                lines.append(f"  evidence: {row.get('evidence_excerpt')}")
+        else:
+            lines.append(f"- {row}")
+    lines.extend(["", "## Reading depth", ""])
+    for row in l1_source_intake.get("reading_depth_rows") or ["(none)"]:
+        if isinstance(row, dict):
+            lines.append(
+                f"- `{row.get('source_id') or '(missing)'}` => `{row.get('reading_depth') or 'skim'}` "
+                f"(basis: `{row.get('basis') or 'summary_only'}`)"
+            )
+        else:
+            lines.append(f"- {row}")
+
+
 def render_operator_checkpoint_markdown(payload: dict[str, Any]) -> str:
     lines = [
         "# Operator checkpoint",
@@ -70,6 +115,7 @@ def render_research_question_contract_markdown(payload: dict[str, Any]) -> str:
     lines.extend(["", "## Context intake", ""])
     for item in payload.get("context_intake") or ["(missing)"]:
         lines.append(f"- {item}")
+    _append_l1_source_intake_markdown(lines, payload)
     lines.extend(["", "## Source basis refs", ""])
     for item in payload.get("source_basis_refs") or ["(missing)"]:
         lines.append(f"- {item}")

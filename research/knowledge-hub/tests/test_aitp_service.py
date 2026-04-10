@@ -1668,6 +1668,108 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("Idea packet summary", dashboard_text)
         self.assertIn("scope_ambiguity", dashboard_text)
 
+    def test_ensure_topic_shell_surfaces_persists_source_backed_l1_intake(self) -> None:
+        runtime_root = self._write_runtime_state()
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "2026-03-13-demo",
+                    "resume_stage": "L1",
+                    "research_mode": "formal_derivation",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Recover the bounded theorem route from the thesis source.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:proof",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:proof",
+                    "status": "pending",
+                    "action_type": "proof_review",
+                    "summary": "Extract the first bounded proof obligation from the thesis source.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        source_root = self.kernel_root / "source-layer" / "topics" / "demo-topic"
+        source_root.mkdir(parents=True, exist_ok=True)
+        thesis_path = self.root / "inputs" / "demo-source.tex"
+        thesis_path.parent.mkdir(parents=True, exist_ok=True)
+        thesis_path.write_text(
+            "\\section{Bounded closure}\n"
+            "We assume fractional occupations remain bounded in the weak coupling limit at zero temperature.\n"
+            "This gives the first theorem-facing closure target.\n",
+            encoding="utf-8",
+        )
+        (source_root / "source_index.jsonl").write_text(
+            json.dumps(
+                {
+                    "source_id": "thesis:demo-source",
+                    "source_type": "thesis",
+                    "title": "Bounded closure thesis",
+                    "summary": (
+                        "We assume fractional occupations remain bounded in the weak coupling limit at zero temperature. "
+                        "This gives the first theorem-facing closure target."
+                    ),
+                    "provenance": {
+                        "absolute_path": str(thesis_path),
+                    },
+                },
+                ensure_ascii=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        snapshot_root = source_root / "sources" / "thesis-demo-source"
+        snapshot_root.mkdir(parents=True, exist_ok=True)
+        (snapshot_root / "snapshot.md").write_text(
+            "# Snapshot\n\n"
+            "## Preview\n"
+            "We assume fractional occupations remain bounded in the weak coupling limit at zero temperature.\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.ensure_topic_shell_surfaces(
+            topic_slug="demo-topic",
+            updated_by="aitp-cli",
+        )
+
+        l1_source_intake = payload["research_question_contract"]["l1_source_intake"]
+        self.assertEqual(l1_source_intake["source_count"], 1)
+        self.assertEqual(l1_source_intake["assumption_rows"][0]["source_id"], "thesis:demo-source")
+        self.assertEqual(l1_source_intake["assumption_rows"][0]["reading_depth"], "full_read")
+        self.assertTrue(any(row["regime"] == "weak coupling" for row in l1_source_intake["regime_rows"]))
+        self.assertTrue(any(row["regime"] == "zero temperature" for row in l1_source_intake["regime_rows"]))
+        research_note = Path(payload["research_question_contract_note_path"]).read_text(encoding="utf-8")
+        self.assertIn("## L1 source intake", research_note)
+        self.assertIn("## Source-backed assumptions", research_note)
+        self.assertIn("## Reading depth", research_note)
+
     def test_topic_status_and_prepare_verification_surface_new_shell_fields(self) -> None:
         runtime_root = self._write_runtime_state()
         (runtime_root / "interaction_state.json").write_text(

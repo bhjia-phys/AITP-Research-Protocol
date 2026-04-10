@@ -102,6 +102,7 @@ class TopicStartRegressionTests(unittest.TestCase):
             "% Comment-only preamble\n"
             "% Another ignored line\n"
             "\\section{Diagonal gauge freedom}\n"
+            "We assume fractional occupations remain bounded in the weak coupling limit at zero temperature.\n"
             "We analyze whether fractional occupations give a bounded closure for diagonal gauge redundancy in scRPA.\n",
             encoding="utf-8",
         )
@@ -110,7 +111,10 @@ class TopicStartRegressionTests(unittest.TestCase):
             "source_id": "thesis:demo-source",
             "source_type": "thesis",
             "title": "Diagonal Gauge Freedom in scRPA",
-            "summary": "We derive a bounded closure target and outline the first proof obligation for diagonal gauge redundancy.",
+            "summary": (
+                "We assume fractional occupations remain bounded in the weak coupling limit at zero temperature. "
+                "We derive a bounded closure target and outline the first proof obligation for diagonal gauge redundancy."
+            ),
             "provenance": {
                 "absolute_path": str(thesis_path),
             },
@@ -162,6 +166,10 @@ class TopicStartRegressionTests(unittest.TestCase):
             explainability["current_route_choice"]["selected_action_summary"],
             "Extract the first bounded proof obligation from the thesis source.",
         )
+        self.assertIn("l1_source_intake", research_question_contract)
+        self.assertTrue(research_question_contract["l1_source_intake"]["assumption_rows"])
+        self.assertTrue(research_question_contract["l1_source_intake"]["regime_rows"])
+        self.assertTrue(research_question_contract["l1_source_intake"]["reading_depth_rows"])
         self.assertIn(
             "Extract the first bounded proof obligation from the thesis source.",
             explainability["why_this_topic_is_here"],
@@ -271,6 +279,36 @@ class TopicStartRegressionTests(unittest.TestCase):
         self.assertIn("Snapshot preview text should win", distilled["distilled_initial_idea"])
         self.assertNotIn("Original fallback text should not win", distilled["distilled_initial_idea"])
         self.assertNotIn("Summary fallback text should lose", distilled["distilled_initial_idea"])
+
+    def test_distill_from_sources_extracts_l1_assumption_regime_and_reading_depth_structure(self) -> None:
+        topic_slug = "demo-topic"
+        self._write_source_backed_topic(topic_slug=topic_slug)
+
+        distilled = self.service._distill_from_sources(
+            [
+                {
+                    "source_id": "thesis:demo-source",
+                    "source_type": "thesis",
+                    "title": "Diagonal Gauge Freedom in scRPA",
+                    "summary": (
+                        "We assume fractional occupations remain bounded in the weak coupling limit at zero temperature. "
+                        "We derive a bounded closure target and outline the first proof obligation."
+                    ),
+                    "provenance": {
+                        "absolute_path": str(self.root / "inputs" / "demo-thesis.tex"),
+                    },
+                }
+            ],
+            topic_slug,
+        )
+
+        l1_source_intake = distilled["distilled_l1_source_intake"]
+        self.assertEqual(l1_source_intake["source_count"], 1)
+        self.assertEqual(l1_source_intake["assumption_rows"][0]["source_id"], "thesis:demo-source")
+        self.assertIn("fractional occupations remain bounded", l1_source_intake["assumption_rows"][0]["assumption"])
+        self.assertIn("weak coupling", json.dumps(l1_source_intake["regime_rows"]))
+        self.assertIn("zero temperature", json.dumps(l1_source_intake["regime_rows"]))
+        self.assertEqual(l1_source_intake["reading_depth_rows"][0]["reading_depth"], "full_read")
 
 
 if __name__ == "__main__":
