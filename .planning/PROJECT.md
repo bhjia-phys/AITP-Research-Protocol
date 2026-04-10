@@ -78,7 +78,9 @@ Make AITP materially stronger at the front-side research chain by:
 ## Active Roadmap
 
 - Phase `42` source identity and citation graph
+  - status: implemented on the remediation branch
 - Phase `43` assumption and regime intake
+  - status: next active phase
 - Phase `44` contradiction and notation alignment
 - Phase `45` runtime source-intelligence read path
 
@@ -105,7 +107,7 @@ disciplined step.
 
 ## Latest Integrated Regression Evidence
 
-- `138 passed` on 2026-04-09
+- `248 passed, 10 subtests passed` on 2026-04-10
 
 ## Immediate Reality Check
 
@@ -115,4 +117,4 @@ It means the currently scoped `v1.35` chain has been implemented and closed,
 and `v1.36` is now the active milestone.
 
 ---
-*Last updated: 2026-04-09 after opening `v1.36`*
+*Last updated: 2026-04-10 after closing Phase `42` and opening Phase `43`*
