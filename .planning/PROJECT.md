@@ -84,7 +84,7 @@ Make AITP materially stronger at the front-side research chain by:
 - Phase `44` contradiction and notation alignment
   - status: implemented on the remediation branch
 - Phase `45` runtime source-intelligence read path
-  - status: next active phase
+  - status: implemented on the remediation branch
 
 ## Important Honesty Boundary
 
@@ -119,4 +119,4 @@ It means the currently scoped `v1.35` chain has been implemented and closed,
 and `v1.36` is now the active milestone.
 
 ---
-*Last updated: 2026-04-10 after closing Phase `44` and opening Phase `45`*
+*Last updated: 2026-04-10 after closing Phase `45` and preparing milestone closeout*
