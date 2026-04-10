@@ -9,14 +9,15 @@ Core docs:
 - `CANONICAL_UNIT.md`
 - `canonical-unit.schema.json`
 - `LAYER2_OBJECT_FAMILIES.md`
+- `L2_COMPILER_PROTOCOL.md`
 - `L2_MVP_CONTRACT.md`
+- `L2_STAGING_PROTOCOL.md`
 - `L2_BACKEND_BRIDGE.md`
 - `L2_BACKEND_INTEGRATION_PROTOCOL.md`
 - `L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md`
 - `PROMOTION_POLICY.md`
 - `L3_L4_LOOP.md`
 - `examples/paper-result-decomposition.md`
-- `../../docs/superpowers/specs/2026-04-08-l2-governance-plane-consolidation-design.md`
 - `../INDEXING_RULES.md`
 - `edges.jsonl`
 - `retrieval_profiles.json`
@@ -50,12 +51,15 @@ Use `index.jsonl` as the cross-cutting catalog.
 Use `edges.jsonl` as the lightweight relation layer.
 Use `retrieval_profiles.json` as the stage-aware retrieval policy surface.
 Use `backends/` as the internal bridge registry for external human/software knowledge stores.
+Use `compiled/` for derived consultation/reuse helper surfaces only.
+Use `hygiene/` for audit-only workspace reports over canonical `L2`.
+Use `staging/` for provisional or scratch `L2`-adjacent material that is not
+yet trusted canonical memory.
 Use `L2_BACKEND_INTEGRATION_PROTOCOL.md` as the unified rule for adding future backends.
-Use `L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md` as the explicit drift-audit,
-backend-debt, and rebuild rule for paired downstream realizations.
+Use `L2_COMPILER_PROTOCOL.md` as the contract for canonical-versus-compiled-
+versus-staging behavior.
+Use `L2_STAGING_PROTOCOL.md` as the contract for provisional staging behavior.
 Promotion into this layer should usually come through explicit Layer 4 validation, not by default.
 Keep promotion queues, unresolved prerequisites, research blockers, and run-local TODOs in Layer 3 rather than here.
-
-Current `v1.28` scope stops at governance-plane closure and paired-backend
-maintenance semantics.
-Graph activation, traversal, and populated retrieval remain later work.
+Keep high-level `L2` compiler semantics in protocol docs, schemas, JSON policy,
+or templates rather than growing them ad hoc inside giant Python service files.

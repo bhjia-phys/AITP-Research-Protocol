@@ -81,6 +81,14 @@ aitp doctor
 ls -la ~/.agents/skills/aitp
 ```
 
+For the structured runtime view, use:
+
+```bash
+aitp doctor --json
+```
+
+That report should show Codex as the current baseline runtime.
+
 ## Manual fallback
 
 If bootstrap does not fire, use:

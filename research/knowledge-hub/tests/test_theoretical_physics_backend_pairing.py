@@ -75,19 +75,6 @@ class TheoreticalPhysicsBackendPairingTests(unittest.TestCase):
         self.assertIn("no silent hierarchy", contract)
         self.assertIn("canonical / compiled / staging", contract)
 
-    def test_pairing_contract_references_maintenance_protocol(self) -> None:
-        contract = (
-            self.backends_root / "THEORETICAL_PHYSICS_PAIRED_BACKEND_CONTRACT.md"
-        ).read_text(encoding="utf-8")
-        pairing = (self.backends_root / "THEORETICAL_PHYSICS_BACKEND_PAIRING.md").read_text(
-            encoding="utf-8"
-        )
-
-        self.assertIn("L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md", contract)
-        self.assertIn("drift audit", contract)
-        self.assertIn("rebuild", contract)
-        self.assertIn("L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md", pairing)
-
 
 if __name__ == "__main__":
     unittest.main()

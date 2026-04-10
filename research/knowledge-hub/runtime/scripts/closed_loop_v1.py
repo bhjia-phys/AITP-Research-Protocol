@@ -807,7 +807,11 @@ def choose_route_candidate(
             or "Selected the highest-scoring pending action against an existing non-completed execution-task record."
         )
 
-    needs_human_confirm = bool(task_payload.get("needs_human_confirm")) if best_task is not None else False
+    explicit_human_confirm = task_payload.get("needs_human_confirm")
+    if explicit_human_confirm is None:
+        needs_human_confirm = True
+    else:
+        needs_human_confirm = bool(explicit_human_confirm)
     allow_web_search = bool(task_payload.get("allow_web_search")) if best_task is not None else False
 
     return {
@@ -1061,6 +1065,14 @@ def materialize_execution_task(knowledge_root: Path, topic_state: dict, updated_
         "## Summary",
         "",
         f"- {task_payload['human_summary']}",
+        "",
+        "## Approval gate",
+        "",
+        (
+            "- Human confirmation is required before dispatch because this execution lane was inferred from the current route and has not yet been explicitly approved in durable task artifacts."
+            if task_payload["needs_human_confirm"]
+            else "- This execution lane is already marked as explicitly approved for automatic dispatch."
+        ),
         "",
         "## Allowed input artifacts",
         "",

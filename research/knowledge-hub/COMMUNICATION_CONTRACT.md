@@ -125,6 +125,10 @@ Purpose:
 Minimum handoff object:
 - `object_ref`
 
+Supporting derived surfaces:
+- compiled `L2` helper views may be attached as read aids, but they do not
+  replace canonical `object_ref` targets
+
 Typical uses:
 - retrieve a method,
 - retrieve a derivation object,
@@ -140,6 +144,10 @@ Purpose:
 Minimum handoff object:
 - `object_ref`
 
+Supporting derived surfaces:
+- compiled `L2` helper views may support navigation or grouping, but canonical
+  refs remain the durable communication object
+
 Typical uses:
 - concept lookup,
 - claim comparison,
@@ -153,6 +161,10 @@ Purpose:
 
 Minimum handoff object:
 - `object_ref`
+
+Supporting derived surfaces:
+- compiled `L2` helper views may summarize reusable checks or warnings, but the
+  adjudication path should still cite canonical objects explicitly
 
 Typical uses:
 - validation pattern retrieval,
@@ -176,6 +188,9 @@ The base intent is:
 - request what memory is needed,
 - record what `L2` returned,
 - record what was actually applied.
+
+Compiled `L2` surfaces may appear as supporting derived reads inside that
+process, but they do not become the canonical communication object.
 
 See:
 - `L2_CONSULTATION_PROTOCOL.md`
@@ -222,7 +237,10 @@ Do not:
 - dump whole validation notes into Layer 2,
 - use chat as the only record of what moved between layers,
 - treat an external note vault as an implicit communication bus,
-- treat a bare retrieval list as if it already proves application.
+- treat a bare retrieval list as if it already proves application,
+- treat a compiled `L2` helper view as if it replaced canonical unit refs,
+- treat staged provisional entries as if they were already canonical `L2`
+  communication objects.
 
 ## 8. Operational reading
 

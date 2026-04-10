@@ -9,14 +9,11 @@
     "topic_slug",
     "title",
     "question",
-    "task_type",
     "lane",
     "load_profile",
     "status",
-    "interaction_class",
-    "stop_status",
-    "stop_reason",
-    "primary_result_shape",
+    "runtime_focus",
+    "truth_sources",
     "next_action_summary",
     "open_gap_summary",
     "pending_decision_count",
@@ -41,21 +38,11 @@
       "type": "string",
       "minLength": 1
     },
-    "task_type": {
-      "type": "string",
-      "enum": [
-        "open_exploration",
-        "conjecture_attempt",
-        "target_driven_execution"
-      ]
-    },
     "lane": {
       "type": "string",
       "enum": [
         "formal_theory",
         "toy_numeric",
-        "first_principles",
-        "theory_synthesis",
         "code_method"
       ]
     },
@@ -79,32 +66,144 @@
         "type": "string"
       }
     },
-    "interaction_class": {
-      "type": "string",
-      "enum": [
-        "free_explore",
-        "silent_continue",
-        "non_blocking_update",
-        "checkpoint_question"
-      ]
+    "runtime_focus": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "why_this_topic_is_here",
+        "resume_stage",
+        "last_materialized_stage",
+        "next_action_id",
+        "next_action_type",
+        "next_action_summary",
+        "human_need_status",
+        "human_need_kind",
+        "human_need_summary",
+        "blocker_summary",
+        "last_evidence_kind",
+        "last_evidence_summary",
+        "dependency_status",
+        "dependency_summary",
+        "promotion_status"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "why_this_topic_is_here": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resume_stage": {
+          "type": "string"
+        },
+        "last_materialized_stage": {
+          "type": "string"
+        },
+        "next_action_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "next_action_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "next_action_summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "human_need_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "human_need_kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "human_need_summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "blocker_summary": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "last_evidence_kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "last_evidence_summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dependency_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dependency_summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "promotion_status": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
     },
-    "stop_status": {
-      "type": "string",
-      "enum": [
-        "continue",
-        "checkpoint_required"
-      ]
-    },
-    "stop_reason": {
-      "type": "string"
-    },
-    "primary_result_shape": {
-      "type": "string",
-      "enum": [
-        "status_update",
-        "result_brief",
-        "checkpoint_card"
-      ]
+    "truth_sources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "topic_state_path",
+        "research_question_contract_path",
+        "next_action_surface_path",
+        "human_need_surface_path",
+        "dependency_registry_path",
+        "promotion_readiness_path",
+        "promotion_gate_path"
+      ],
+      "properties": {
+        "topic_state_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "research_question_contract_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "next_action_surface_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "human_need_surface_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "dependency_registry_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "promotion_readiness_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "promotion_gate_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
     },
     "next_action_summary": {
       "type": "string",

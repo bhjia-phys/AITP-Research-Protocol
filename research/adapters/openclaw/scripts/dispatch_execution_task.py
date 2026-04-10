@@ -390,6 +390,8 @@ def main() -> int:
             "dispatch_execution_task currently supports executor_kind in "
             f"{sorted(SUPPORTED_CODEX_EXECUTORS)}; got {executor_kind}"
         )
+    if bool(task_payload.get("needs_human_confirm")):
+        raise SystemExit("Execution task still requires human confirmation before dispatch.")
     if not bool(task_payload.get("auto_dispatch_allowed")):
         raise SystemExit("Execution task does not allow automatic dispatch")
 

@@ -438,9 +438,66 @@ def runtime_state_refs(topic_state: dict) -> list[str]:
     return unique_list(refs)
 
 
-def build_unfinished_work(topic_state: dict, queue_rows: list[dict], control_note: dict) -> dict:
+def load_runtime_contract(topic_runtime_root: Path) -> dict | None:
+    return read_json(topic_runtime_root / "runtime_protocol.generated.json")
+
+
+def preferred_action_types_from_runtime_contract(runtime_contract: dict | None) -> list[str]:
+    if not runtime_contract:
+        return []
+    runtime_mode = str(runtime_contract.get("runtime_mode") or "").strip()
+    transition_posture = runtime_contract.get("transition_posture") or {}
+    transition_kind = str(transition_posture.get("transition_kind") or "").strip()
+    triggered_by = {
+        str(item).strip()
+        for item in (transition_posture.get("triggered_by") or [])
+        if str(item).strip()
+    }
+    if transition_kind == "backedge_transition" and "capability_gap_blocker" in triggered_by:
+        return ["skill_discovery"]
+    if transition_kind == "backedge_transition" and "non_trivial_consultation" in triggered_by:
+        return ["consultation_followup"]
+    if runtime_mode == "promote" or "promotion_intent" in triggered_by:
+        return [
+            "l2_promotion_review",
+            "request_promotion",
+            "approve_promotion",
+            "promote_candidate",
+            "auto_promote_candidate",
+        ]
+    if runtime_mode == "verify" or "verification_route_selection" in triggered_by:
+        return [
+            "select_validation_route",
+            "materialize_execution_task",
+            "dispatch_execution_task",
+            "await_execution_result",
+            "ingest_execution_result",
+        ]
+    return []
+
+
+def policy_ranked_pending(pending_rows: list[dict], runtime_contract: dict | None = None) -> list[dict]:
+    blocking = [row for row in pending_rows if is_system_blocker(row)]
+    non_blocking = [row for row in pending_rows if not is_system_blocker(row)]
+    preferred_action_types = preferred_action_types_from_runtime_contract(runtime_contract)
+    if preferred_action_types:
+        preferred = [
+            row for row in non_blocking if str(row.get("action_type") or "").strip() in preferred_action_types
+        ]
+        if preferred:
+            preferred_ids = {str(row.get("action_id") or "").strip() for row in preferred}
+            trailing = [
+                row for row in non_blocking if str(row.get("action_id") or "").strip() not in preferred_ids
+            ]
+            return blocking + preferred + trailing
+    if blocking:
+        return blocking + non_blocking
+    return list(pending_rows)
+
+
+def build_unfinished_work(topic_state: dict, queue_rows: list[dict], control_note: dict, runtime_contract: dict | None = None) -> dict:
     pending_rows = [row for row in queue_rows if row.get("status") == "pending"]
-    ordered_pending = policy_ranked_pending(pending_rows)
+    ordered_pending = policy_ranked_pending(pending_rows, runtime_contract=runtime_contract)
     pending_items = [build_pending_item(index, row) for index, row in enumerate(ordered_pending)]
     auto_pending = [item for item in pending_items if item["auto_runnable"]]
     manual_pending = [item for item in pending_items if not item["auto_runnable"]]
@@ -457,7 +514,7 @@ def build_unfinished_work(topic_state: dict, queue_rows: list[dict], control_not
         if raw_path:
             note_surfaces.append({"label": label, "path": raw_path})
 
-    return {
+    payload = {
         "topic_slug": topic_state["topic_slug"],
         "updated_at": now_iso(),
         "updated_by": topic_state.get("updated_by", "codex"),
@@ -486,17 +543,23 @@ def build_unfinished_work(topic_state: dict, queue_rows: list[dict], control_not
         "queue_head_action_id": pending_items[0]["action_id"] if pending_items else None,
         "ordered_pending_actions": pending_items,
         "runtime_state_refs": runtime_state_refs(topic_state),
-        "source_intelligence": topic_state.get("source_intelligence") or {},
         "human_note_surfaces": note_surfaces,
         "closed_loop": topic_state.get("closed_loop") or {},
     }
+    preferred_action_types = preferred_action_types_from_runtime_contract(runtime_contract)
+    if preferred_action_types:
+        payload["policy"]["runtime_contract_preferred_action_types"] = preferred_action_types
+    return payload
 
 
-def select_default_action(pending_rows: list[dict]) -> tuple[dict | None, str | None]:
+def select_default_action(pending_rows: list[dict], runtime_contract: dict | None = None) -> tuple[dict | None, str | None]:
     if not pending_rows:
         return None, None
-    ordered = policy_ranked_pending(pending_rows)
+    ordered = policy_ranked_pending(pending_rows, runtime_contract=runtime_contract)
     selected = ordered[0]
+    preferred_action_types = preferred_action_types_from_runtime_contract(runtime_contract)
+    if preferred_action_types and str(selected.get("action_type") or "").strip() in preferred_action_types:
+        return selected, f"runtime_contract_preferred:{str(selected.get('action_type') or '').strip()}"
     if is_system_blocker(selected):
         return selected, "unfinished_runtime_blocker"
     return selected, "unfinished_queue_head"
@@ -602,7 +665,7 @@ def apply_decision_contract(pending_rows: list[dict], contract_payload: dict | N
     }
 
 
-def build_next_action_decision(topic_state: dict, queue_rows: list[dict], control_note: dict) -> dict:
+def build_next_action_decision(topic_state: dict, queue_rows: list[dict], control_note: dict, runtime_contract: dict | None = None) -> dict:
     pending_rows = [row for row in queue_rows if row.get("status") == "pending"]
     decision_contract = load_decision_contract(
         Path(__file__).resolve().parents[1] / "topics" / topic_state["topic_slug"]
@@ -699,7 +762,7 @@ def build_next_action_decision(topic_state: dict, queue_rows: list[dict], contro
             "evidence_refs": unique_list(contract_decision["evidence_refs"] + runtime_state_refs(topic_state)),
         }
 
-    default_row, default_basis = select_default_action(pending_rows)
+    default_row, default_basis = select_default_action(pending_rows, runtime_contract=runtime_contract)
     selected_row = default_row
     decision_mode = "continue_unfinished" if default_row is not None else "no_action"
     decision_source = "heuristic"
@@ -933,9 +996,10 @@ def main() -> int:
 
     updated_by = args.updated_by
     topic_state["updated_by"] = updated_by
-    unfinished_work = build_unfinished_work(topic_state, queue_rows, control_note)
+    runtime_contract = load_runtime_contract(topic_runtime_root)
+    unfinished_work = build_unfinished_work(topic_state, queue_rows, control_note, runtime_contract)
     unfinished_work["updated_by"] = updated_by
-    next_action = build_next_action_decision(topic_state, queue_rows, control_note)
+    next_action = build_next_action_decision(topic_state, queue_rows, control_note, runtime_contract)
     next_action["updated_by"] = updated_by
 
     write_json(topic_runtime_root / UNFINISHED_WORK_FILENAME, unfinished_work)

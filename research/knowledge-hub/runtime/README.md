@@ -46,13 +46,19 @@ hiding those rules inside handler code.
 - `topics/<topic_slug>/operator_checkpoints.jsonl`
   - append-only checkpoint ledger across requested/answered/superseded/cancelled states
 - `topics/<topic_slug>/operator_console.md`
-  - human-readable operator view of the active loops and editable surfaces
+  - legacy compatibility operator view of the active loops and editable surfaces
+- `topics/<topic_slug>/topic_synopsis.json`
+  - authoritative machine-readable runtime synopsis for operator-facing concerns such as current status summary, next action, human need, dependency posture, and truth-source paths
 - `topics/<topic_slug>/topic_dashboard.md`
-  - human-readable status and explainability surface: why the topic is here, last evidence return, next action, and active human need
-- `topics/<topic_slug>/result_brief.latest.json`
-  - machine-readable latest result brief surface for retrieval and downstream adapters
-- `topics/<topic_slug>/result_brief.latest.md`
-  - human-readable latest result brief surface paired with the JSON brief
+  - primary human-readable render of the runtime synopsis and explainability surface
+- `topics/<topic_slug>/validation_review_bundle.active.json`
+  - primary machine-readable `L4` review bundle for the active topic/run before specialist review files are inspected
+- `topics/<topic_slug>/validation_review_bundle.active.md`
+  - primary human-readable `L4` review bundle
+- `topics/<topic_slug>/runtime_protocol.generated.json`
+  - derived progressive-disclosure bundle for external executors and session bootstrap
+- `topics/<topic_slug>/runtime_protocol.generated.md`
+  - derived human-readable render of the progressive-disclosure bundle
 - `topics/<topic_slug>/topic_skill_projection.active.json`
   - machine-readable reusable execution projection derived from a mature topic when the lane is stable enough
 - `topics/<topic_slug>/topic_skill_projection.active.md`
@@ -89,12 +95,28 @@ hiding those rules inside handler code.
   - human-readable conformance report
 - `topic_index.jsonl`
   - one-row registry for the latest known state of each topic
+- `active_topics.json`
+  - authoritative multi-topic registry for one workspace
+- `active_topics.md`
+  - human-readable registry summary with focus and dependency state
+- `topic_family_reuse.json`
+  - protocol-native workspace-level catalog of mature reusable route capsules grouped by family/lane
+- `topic_family_reuse.md`
+  - human-readable topic-family reuse catalog with family rules and anti-proxy boundaries
+- `collaborator_memory.jsonl`
+  - append-only runtime-side collaborator memory ledger for preference, trajectory, and working-style memory
+- `collaborator_memory.md`
+  - human-readable collaborator-memory projection; not canonical scientific memory
+- `current_topic.json`
+  - focused-topic compatibility projection for current-topic flows
+- `current_topic.md`
+  - human-readable focused-topic compatibility note
 - `scripts/sync_topic_state.py`
   - helper that materializes the runtime state from existing layer artifacts
 - `topics/<topic_slug>/action_queue.jsonl`
   - typed next-action queue derived from the current topic state
 - `topics/<topic_slug>/agent_brief.md`
-  - human-readable route and execution brief for the next agent
+  - legacy compatibility execution brief for older external-execution flows
 - `topics/<topic_slug>/selected_validation_route.json`
   - one selected validation lane for the current closed-loop step
 - `topics/<topic_slug>/execution_task.json`
@@ -109,15 +131,69 @@ hiding those rules inside handler code.
   - start/wait/submit/kill receipts for the live Codex session
 - `scripts/orchestrate_topic.py`
   - internal topic bootstrap + resume orchestrator used by the public loop surface
+- `scripts/orchestrator_contract_support.py`
+  - focused contract-aware queue shaping, checkpoint append gating, and runtime-appended action assembly support for `orchestrate_topic.py`
+- `scripts/interaction_surface_support.py`
+  - focused interaction-state assembly plus operator-console and agent-brief rendering support for `orchestrate_topic.py`
+- `scripts/sync_topic_state_support.py`
+  - focused resume-stage inference, evidence-return explainability, and resume-note rendering support for `sync_topic_state.py`
+
+## Surface role map
+
+Treat runtime surfaces by role, not by filename age.
+
+| Role | Surfaces | Meaning |
+|------|----------|---------|
+| Primary runtime truth | `topic_synopsis.json`, `topic_dashboard.md` | The main machine/human answer pair for current-topic runtime status |
+| Primary review truth | `validation_review_bundle.active.json`, `validation_review_bundle.active.md` | The main `L4` review entry pair before opening deeper review-support surfaces |
+| Primary workspace registry | `active_topics.json`, `active_topics.md` | The authoritative multi-topic workspace state |
+| Protocol-native reuse surface | `topic_family_reuse.json`, `topic_family_reuse.md` | Workspace-level catalog of mature reusable route capsules grouped by family/lane |
+| Derived startup bundle | `runtime_protocol.generated.json`, `runtime_protocol.generated.md` | A startup/read-order bundle derived from the primary runtime truths |
+| Compatibility projections | `current_topic.json`, `current_topic.md`, `operator_console.md`, `agent_brief.md` | Legacy or compatibility-oriented surfaces kept to avoid abrupt breakage |
+| Supporting slices | `research_question.contract.md`, `validation_contract.active.md`, `promotion_readiness.md`, `gap_map.md`, `topic_completion.md` | Deeper bounded slices that explain one part of the current route |
+
+The practical rule is:
+
+- start from the primary runtime truth
+- open the derived startup bundle only to get ordered read guidance
+- open compatibility surfaces only when a specific legacy or adapter flow still needs them
+- open supporting slices only when the current trigger makes that slice relevant
+
+Migration notes for the demoted surfaces live at:
+
+- `../../docs/MIGRATE_RUNTIME_SURFACES.md`
 
 ## Rules
 
 - `runtime/` does not replace layer-local source-of-truth files.
 - `runtime/` only summarizes and points to those files.
+- `topic_synopsis.json` is the primary machine synopsis for operator-facing runtime concerns.
+- `topic_dashboard.md` is the primary human render for that synopsis.
+- `runtime_protocol.generated.{json,md}` is a derived startup bundle, not a peer source of truth.
+- `validation_review_bundle.active.{json,md}` is the primary `L4` review entry surface; specialist review files remain supporting artifacts.
+- `current_topic.{json,md}` is a compatibility projection, not the authoritative workspace registry.
+- `topic_family_reuse.{json,md}` is the protocol-native reuse surface; it summarizes mature route capsules but does not itself bypass trust gates or current-topic choice.
+- `collaborator_memory.jsonl|md` is runtime-side collaborator memory, not canonical scientific memory, not `L2`, and not a promotion surface.
+- `operator_console.md` and `agent_brief.md` are compatibility surfaces, not the primary runtime read path.
+- `promotion_readiness.md` and `gap_map.md` are supporting slices, not peer summaries competing with `topic_dashboard.md`.
 - Every active topic should refresh its runtime state after a meaningful `L1`, `L3`, or `L4` update.
 - The resume target should prefer the fallback route implied by the latest decision artifact when one exists.
 - Runtime should expose the human-visible operator contract rather than forcing the next agent or human to reconstruct it manually.
 - Runtime should expose why the topic is at its current stage, what the last durable evidence return was, and whether an active human checkpoint is blocking the next step.
+- Runtime bundles should expose explicit `runtime_mode`, `mode_envelope`, and
+  `transition_posture` so mode and backedge policy do not remain hidden inside
+  Python heuristics.
+- Runtime should keep multi-topic state explicit: the active-topic registry is
+  authoritative, while `current_topic.json` is the focused-topic compatibility
+  projection.
+- If two runtime files answer the same operator question, `topic_synopsis.json`
+  should usually own the machine summary while the other file becomes a render
+  or a deeper slice.
+- Projection-aware routing may consult mature `topic_skill_projection` metadata,
+  but only through explicit, inspectable hooks; explicit topic choice and
+  durable current-topic focus still outrank projection hints.
+- Runtime should make scheduler and dependency state inspectable rather than
+  hiding topic selection behind latest-topic heuristics.
 - Runtime may materialize a topic-skill projection when the lane is mature enough to reuse, but that projection is not the same thing as the raw live topic state.
 - For `formal_theory`, a topic-skill projection only counts as mature enough to
   reuse when theorem-facing trust artifacts are ready; even then it is reusable
@@ -127,6 +203,12 @@ hiding those rules inside handler code.
   scope, deliverables, acceptance tests, and forbidden proxies stay visible.
 - Runtime should materialize both an unfinished-work index and a next-action decision so the loop is inspectable rather than implicit.
 - Runtime should prefer declared contracts when they exist and only fall back to heuristics when they do not.
+- Active operator checkpoints or declared `append_runtime_actions=false`
+  should block runtime-appended system queue materialization, while explicit
+  capability-gap skill append remains separately governed.
+- `operator_checkpoint.active.json` is itself an explicit append gate and must
+  suppress runtime-appended queue expansion even before a refreshed runtime
+  bundle reprojects that checkpoint into `transition_posture`.
 - Runtime should also expose a conformance report so non-AITP operation becomes visible rather than implicit.
 - Runtime may materialize one thin closed-loop control step, but it must never claim that heavy execution already happened unless a returned execution result artifact is present.
 - Runtime should auto-promote theory-formal candidates only after explicit coverage, consensus, and formal-theory review artifacts exist.
@@ -135,7 +217,7 @@ hiding those rules inside handler code.
 - Runtime should keep `FORMAL_THEORY_AUTOMATION_WORKFLOW.md` visible when operators need to know which lane is currently automated and which lane still requires bounded manual judgment.
 - Runtime should keep `SECTION_FORMALIZATION_PROTOCOL.md` visible when section-oriented formalization is active so one compiled section is not mistaken for whole-topic closure.
 - Runtime should keep wide or mixed candidates out of Layer 2 by splitting or parking them first.
-- Runtime may spawn independent follow-up subtopics when cited-literature gaps are explicit enough to deserve a fresh `L0 -> L1 -> L3-A -> L4 -> L3-R -> L3-D -> L2` route.
+- Runtime may spawn independent follow-up subtopics when cited-literature gaps are explicit enough to deserve a fresh `L0 -> L1 -> L3 -> L4 -> L2` route.
 - Runtime should materialize a follow-up return packet for those child subtopics so reintegration is explicit rather than conversational.
 - Runtime should detect when a child return packet is no longer `pending_reentry` and queue parent-side reintegration automatically.
 - Runtime should also queue topic-completion refreshes and Lean-bridge refreshes when the latest run has outgrown the currently materialized shell surfaces.
@@ -180,10 +262,11 @@ For example, an `L4` run may end with a `deferred` verdict that sends work back 
 ## Current workflow
 
 1. run `python3 research/adapters/openclaw/scripts/aitp_loop.py --topic-slug <topic_slug> --max-steps 1`
-2. open `runtime/topics/<topic_slug>/runtime_protocol.generated.md`, `agent_brief.md`, and `operator_console.md`
-3. only escalate into deferred surfaces when a declared trigger fires
-4. follow `resume_stage`, `unfinished_work`, and the selected next-action decision
-5. after new work lands, advance the loop again instead of hand-maintaining runtime state
+2. open `runtime/topics/<topic_slug>/runtime_protocol.generated.md`
+3. read the primary surfaces it points to first, especially `topic_dashboard.md` and `research_question.contract.md` in the light profile; only open `topic_synopsis.json`, control notes, or review surfaces when their declared trigger fires
+4. only escalate into deferred or supporting surfaces when a declared trigger fires
+5. follow `resume_stage`, `unfinished_work`, and the selected next-action decision
+6. after new work lands, advance the loop again instead of hand-maintaining runtime state
 
 When you want to reduce heuristic behavior further, use:
 
@@ -191,6 +274,18 @@ When you want to reduce heuristic behavior further, use:
 - `runtime/.../next_action_decision.contract.json` for an explicit next-action choice
 - `aitp steer-topic --topic-slug <topic_slug> --innovation-direction "<direction>" --decision continue`
   when the operator changes novelty direction or scope and that redirect must be durable before the loop continues
+
+For explicit multi-topic control, use:
+
+```bash
+aitp topics
+aitp focus-topic --topic-slug <topic_slug>
+aitp pause-topic --topic-slug <topic_slug>
+aitp resume-topic --topic-slug <topic_slug>
+aitp block-topic --topic-slug <topic_slug> --blocked-by <other_topic_slug> --reason "<reason>"
+aitp unblock-topic --topic-slug <topic_slug> --blocked-by <other_topic_slug>
+aitp clear-topic-dependencies --topic-slug <topic_slug>
+```
 
 For internal runtime work, the lower-level orchestrator still exists:
 

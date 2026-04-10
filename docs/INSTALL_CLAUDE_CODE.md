@@ -75,6 +75,10 @@ Claude Code should now:
 - route substantial theory work through AITP before response;
 - follow `runtime_protocol.generated.md` after routing succeeds.
 
+Use `aitp doctor --json` to verify not just file presence but also whether the
+Claude bootstrap assets still match the canonical hook files and whether
+`.claude/settings.json` still wires the expected SessionStart command.
+
 If you are migrating from an older setup, remove any legacy `.claude/commands/aitp*.md`
 bundle so SessionStart bootstrap is the only default entry.
 

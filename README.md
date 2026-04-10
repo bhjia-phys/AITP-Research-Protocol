@@ -80,6 +80,7 @@ than to `user + tool`.
 If you want to see what that should feel like for a real topic, read:
 
 - [`docs/USER_TOPIC_JOURNEY.md`](docs/USER_TOPIC_JOURNEY.md)
+- [`docs/MULTI_TOPIC_RUNTIME.md`](docs/MULTI_TOPIC_RUNTIME.md)
 
 In other words, AITP wants the AI to behave like a disciplined junior or
 mid-level theoretical-physics collaborator whose work is inspectable, whose
@@ -104,6 +105,15 @@ AITP keeps that outer principle, but its inner target is different. Superpowers
 is a general coding workflow framework. AITP is a theory-research protocol with
 layered memory, promotion gates, gap recovery, and explicit scientific trust
 boundaries.
+
+The explicit design rule is:
+
+- borrow workflow shells
+- preserve protocol kernel
+
+That boundary is documented here:
+
+- [`docs/AITP_WORKFLOW_SHELL_AND_PROTOCOL_KERNEL.md`](docs/AITP_WORKFLOW_SHELL_AND_PROTOCOL_KERNEL.md)
 
 ## What You Get
 
@@ -213,6 +223,7 @@ Before choosing a workflow, keep one routing rule explicit:
 The detailed coexistence rule lives at:
 
 - [`docs/AITP_GSD_WORKFLOW_CONTRACT.md`](docs/AITP_GSD_WORKFLOW_CONTRACT.md)
+- [`docs/MULTI_TOPIC_RUNTIME.md`](docs/MULTI_TOPIC_RUNTIME.md)
 
 ### What A Real Topic Should Feel Like
 
@@ -258,6 +269,29 @@ Manual fallback:
 ```bash
 aitp session-start "<task>"
 ```
+
+### Multi-Topic Runtime
+
+AITP now supports multiple active topics in one workspace.
+
+The key public surfaces are:
+
+- `aitp topics`
+- `aitp current-topic`
+- `aitp focus-topic --topic-slug <topic_slug>`
+- `aitp pause-topic --topic-slug <topic_slug>`
+- `aitp resume-topic --topic-slug <topic_slug>`
+
+The model is:
+
+- `runtime/active_topics.json` is the authoritative registry
+- `runtime/current_topic.json` is the focused-topic compatibility projection
+- `aitp loop` may use a scheduler when no explicit topic is provided
+
+Details:
+
+- [`docs/MULTI_TOPIC_RUNTIME.md`](docs/MULTI_TOPIC_RUNTIME.md)
+- [`docs/MIGRATE_MULTI_TOPIC.md`](docs/MIGRATE_MULTI_TOPIC.md)
 
 The user experience target is natural language first. The user should not need
 to remember wrappers or front-door shell commands.
@@ -510,18 +544,29 @@ The key boundary to preserve on Windows is this:
 
 ## Runtime Support Matrix
 
-| Runtime | Public install path | Enforcement surface |
-| --- | --- | --- |
-| Codex | [`.codex/INSTALL.md`](.codex/INSTALL.md) | Native skill discovery + `using-aitp` gatekeeper |
-| OpenClaw | `aitp install-agent --agent openclaw` | Skill + MCP bridge setup note |
-| Claude Code | [`docs/INSTALL_CLAUDE_CODE.md`](docs/INSTALL_CLAUDE_CODE.md) | SessionStart hook + `using-aitp` bootstrap |
-| OpenCode | [`.opencode/INSTALL.md`](.opencode/INSTALL.md) | Plugin bootstrap + `using-aitp` injection |
+| Runtime | Public install path | Enforcement surface | Current role |
+| --- | --- | --- | --- |
+| Codex | [`.codex/INSTALL.md`](.codex/INSTALL.md) | Native skill discovery + `using-aitp` gatekeeper | Current baseline |
+| Claude Code | [`docs/INSTALL_CLAUDE_CODE.md`](docs/INSTALL_CLAUDE_CODE.md) | SessionStart hook + `using-aitp` bootstrap | Parity target |
+| OpenCode | [`.opencode/INSTALL.md`](.opencode/INSTALL.md) | Plugin bootstrap + `using-aitp` injection | Parity target |
+| OpenClaw | `aitp install-agent --agent openclaw` | Skill + MCP bridge setup note | Specialized lane |
 
 Current maturity is not uniform:
 
-- `Codex`, `OpenCode`, and `Claude Code` now converge on the same outer model: one gatekeeper skill plus native bootstrap.
+- `Codex` is the current baseline runtime for the cleanest end-to-end AITP use.
+- `Claude Code` and `OpenCode` are parity targets: their front doors are now diagnosable and much more converged, but they are not documented as Codex-level deep execution lanes yet.
+- `OpenClaw` keeps the bounded autonomous loop path and MCP bridge notes; it is a specialized lane, not part of the front-door parity target set.
 - `aitp install-agent` remains the compatibility path for seeded workspaces and manual fallbacks.
-- `OpenClaw` keeps the bounded autonomous loop path and MCP bridge notes, while `Codex` remains the most opinionated end-to-end execution surface.
+
+To inspect what is actually converged on your current machine, run
+`aitp doctor --json`.
+
+That is the machine-local truth surface for:
+
+- Codex baseline readiness
+- Claude Code front-door readiness
+- OpenCode preferred-versus-compatibility readiness
+- OpenClaw specialized-lane visibility
 
 Current automation target:
 
@@ -583,6 +628,7 @@ AITP-Research-Protocol/
         ├── COMMUNICATION_CONTRACT.md
         ├── AUTONOMY_AND_OPERATOR_MODEL.md
         ├── L2_CONSULTATION_PROTOCOL.md
+        ├── L5_PUBLICATION_FACTORY_PROTOCOL.md
         ├── INDEXING_RULES.md
         ├── L0_SOURCE_LAYER.md
         ├── setup.py
@@ -605,6 +651,7 @@ Core charter and architecture:
 - [`docs/AGENT_MODEL.md`](docs/AGENT_MODEL.md)
 - [`docs/CONTEXT_LOADING.md`](docs/CONTEXT_LOADING.md)
 - [`docs/architecture.md`](docs/architecture.md)
+- [`docs/AITP_WORKFLOW_SHELL_AND_PROTOCOL_KERNEL.md`](docs/AITP_WORKFLOW_SHELL_AND_PROTOCOL_KERNEL.md)
 - [`docs/LESSONS_FROM_GET_PHYSICS_DONE.md`](docs/LESSONS_FROM_GET_PHYSICS_DONE.md)
 
 Kernel contract surface:
@@ -614,6 +661,7 @@ Kernel contract surface:
 - [`research/knowledge-hub/COMMUNICATION_CONTRACT.md`](research/knowledge-hub/COMMUNICATION_CONTRACT.md)
 - [`research/knowledge-hub/AUTONOMY_AND_OPERATOR_MODEL.md`](research/knowledge-hub/AUTONOMY_AND_OPERATOR_MODEL.md)
 - [`research/knowledge-hub/L2_CONSULTATION_PROTOCOL.md`](research/knowledge-hub/L2_CONSULTATION_PROTOCOL.md)
+- [`research/knowledge-hub/L5_PUBLICATION_FACTORY_PROTOCOL.md`](research/knowledge-hub/L5_PUBLICATION_FACTORY_PROTOCOL.md)
 - [`research/knowledge-hub/INDEXING_RULES.md`](research/knowledge-hub/INDEXING_RULES.md)
 
 Install guides:
@@ -654,6 +702,7 @@ Still in progress:
 ## See Also
 
 - [`docs/design-principles.md`](docs/design-principles.md)
+- [`docs/AITP_WORKFLOW_SHELL_AND_PROTOCOL_KERNEL.md`](docs/AITP_WORKFLOW_SHELL_AND_PROTOCOL_KERNEL.md)
 - [`docs/roadmap.md`](docs/roadmap.md)
 - [`docs/benchmark-cases.md`](docs/benchmark-cases.md)
 - [`reference-runtime/README.md`](reference-runtime/README.md)

@@ -68,6 +68,10 @@ OpenCode should now:
 - register the AITP skills path through the plugin `config` hook;
 - route current-topic continuation and steering through AITP before substantive work.
 
+Use `aitp doctor --json` to verify whether OpenCode is ready through the
+preferred `opencode.json` plugin entry or only through a partial/stale
+workspace compatibility surface.
+
 If you are migrating from an older AITP setup, remove legacy `/aitp*` command
 bundles from your OpenCode workspace so the plugin-first path is the only
 default surface.

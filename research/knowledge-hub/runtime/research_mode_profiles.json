@@ -72,24 +72,6 @@
         "L3 note: maintain a human-readable derivation notebook with named lemmas or checkpoints.",
         "L4 note: summarize what was established, what was only sketched, and what requires further proof."
       ]
-    },
-    "theory_synthesis": {
-      "label": "Theory synthesis",
-      "description": "For orchestrating cross-derivation synthesis, concept consolidation, and integration across formal and numerical lanes while keeping the evidence ledger explicit.",
-      "default_surface": "formal",
-      "default_executor_kind": "codex_cli",
-      "default_runtime_lane": "codex",
-      "reasoning_profile": "high",
-      "reproducibility_expectations": [
-        "Persist synthesis claims with explicit tracebacks to prior derivations or validations.",
-        "Record assumption merges, scope constraints, and any unresolved contradictions.",
-        "Separate synthesized conclusions from open conjectures and speculative bridges."
-      ],
-      "note_expectations": [
-        "L2 note: promote only consolidated theory statements with clear provenance.",
-        "L3 note: maintain a synthesis notebook that tracks which fragments were merged.",
-        "L4 note: summarize what integrations were completed and which are pending validation."
-      ]
     }
   }
 }

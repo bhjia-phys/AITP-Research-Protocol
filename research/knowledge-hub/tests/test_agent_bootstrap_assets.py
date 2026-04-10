@@ -69,6 +69,71 @@ class AgentBootstrapAssetTests(unittest.TestCase):
         self.assertIn("../docs/AITP_GSD_WORKFLOW_CONTRACT.md", kernel_readme)
         self.assertIn("AITP governs research topics. GSD governs implementation of AITP itself.", workflow_contract)
 
+    def test_runtime_support_docs_publish_baseline_and_parity_language(self) -> None:
+        root_readme = (self.repo_root / "README.md").read_text(encoding="utf-8")
+        codex_install = (self.repo_root / "docs" / "INSTALL_CODEX.md").read_text(encoding="utf-8")
+        claude_install = (self.repo_root / "docs" / "INSTALL_CLAUDE_CODE.md").read_text(encoding="utf-8")
+        opencode_install = (self.repo_root / "docs" / "INSTALL_OPENCODE.md").read_text(encoding="utf-8")
+        migrate_doc = (self.repo_root / "docs" / "MIGRATE_LOCAL_INSTALL.md").read_text(encoding="utf-8")
+
+        self.assertIn("Current baseline", root_readme)
+        self.assertIn("Parity target", root_readme)
+        self.assertIn("Specialized lane", root_readme)
+        self.assertIn("aitp doctor --json", root_readme)
+        self.assertIn("current baseline runtime", codex_install)
+        self.assertIn("aitp doctor --json", claude_install)
+        self.assertIn("aitp doctor --json", opencode_install)
+        self.assertIn("runtime_convergence_after.front_door_runtimes_converged", migrate_doc)
+
+    def test_kernel_boundary_docs_reference_extracted_modules(self) -> None:
+        kernel_readme = (self.repo_root / "research" / "knowledge-hub" / "README.md").read_text(encoding="utf-8")
+        architecture_doc = (self.repo_root / "docs" / "architecture.md").read_text(encoding="utf-8")
+
+        self.assertIn("frontdoor_support.py", kernel_readme)
+        self.assertIn("agent_install_support.py", kernel_readme)
+        self.assertIn("kernel_templates.py", kernel_readme)
+        self.assertIn("kernel_markdown_renderers.py", kernel_readme)
+        self.assertIn("runtime_bundle_support.py", kernel_readme)
+        self.assertIn("topic_shell_support.py", kernel_readme)
+        self.assertIn("followup_support.py", kernel_readme)
+        self.assertIn("cli_frontdoor_handler.py", kernel_readme)
+        self.assertIn("frontdoor_support.py", architecture_doc)
+        self.assertIn("agent_install_support.py", architecture_doc)
+        self.assertIn("kernel_templates.py", architecture_doc)
+        self.assertIn("kernel_markdown_renderers.py", architecture_doc)
+        self.assertIn("runtime_bundle_support.py", architecture_doc)
+        self.assertIn("topic_shell_support.py", architecture_doc)
+        self.assertIn("followup_support.py", architecture_doc)
+        self.assertIn("cli_frontdoor_handler.py", architecture_doc)
+
+    def test_multi_topic_runtime_docs_are_linked_and_present(self) -> None:
+        root_readme = (self.repo_root / "README.md").read_text(encoding="utf-8")
+        kernel_readme = (self.repo_root / "research" / "knowledge-hub" / "README.md").read_text(encoding="utf-8")
+        runtime_readme = (self.repo_root / "research" / "knowledge-hub" / "runtime" / "README.md").read_text(encoding="utf-8")
+        multi_topic_doc = (self.repo_root / "docs" / "MULTI_TOPIC_RUNTIME.md").read_text(encoding="utf-8")
+        migration_doc = (self.repo_root / "docs" / "MIGRATE_MULTI_TOPIC.md").read_text(encoding="utf-8")
+
+        self.assertIn("docs/MULTI_TOPIC_RUNTIME.md", root_readme)
+        self.assertIn("docs/MIGRATE_MULTI_TOPIC.md", root_readme)
+        self.assertIn("../docs/MULTI_TOPIC_RUNTIME.md", kernel_readme)
+        self.assertIn("../docs/MIGRATE_MULTI_TOPIC.md", kernel_readme)
+        self.assertIn("active_topics.json", runtime_readme)
+        self.assertIn("aitp focus-topic", runtime_readme)
+        self.assertIn("authoritative registry", multi_topic_doc)
+        self.assertIn("current_topic.json", migration_doc)
+
+    def test_l5_publication_factory_protocol_is_linked_and_present(self) -> None:
+        root_readme = (self.repo_root / "README.md").read_text(encoding="utf-8")
+        kernel_readme = (self.repo_root / "research" / "knowledge-hub" / "README.md").read_text(encoding="utf-8")
+        protocol_doc = (
+            self.repo_root / "research" / "knowledge-hub" / "L5_PUBLICATION_FACTORY_PROTOCOL.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("research/knowledge-hub/L5_PUBLICATION_FACTORY_PROTOCOL.md", root_readme)
+        self.assertIn("L5_PUBLICATION_FACTORY_PROTOCOL.md", kernel_readme)
+        self.assertIn("`L5` is not a new scientific-truth layer", protocol_doc)
+        self.assertIn("publication_intent", protocol_doc)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -162,10 +162,22 @@ def main() -> int:
 
     check(status_payload["load_profile"] == "light", "Expected the scRPA thesis topic to stay in light profile.")
     check(status_payload["topic_synopsis"]["lane"] == "formal_theory", "Expected the scRPA thesis topic to resolve to the formal_theory lane.")
-    check(len(next_payload["must_read_now"]) == 4, "Expected light profile must_read_now to remain minimal.")
+    check(len(next_payload["must_read_now"]) == 2, "Expected light profile must_read_now to remain minimal.")
     check(
-        next_payload["must_read_now"][0]["path"] == f"runtime/topics/{topic_slug}/topic_state.json",
-        "Expected the first light-profile read to be topic_state.json.",
+        next_payload["must_read_now"][0]["path"] == f"runtime/topics/{topic_slug}/topic_dashboard.md",
+        "Expected the first light-profile read to be topic_dashboard.md.",
+    )
+    check(
+        next_payload["must_read_now"][1]["path"] == f"runtime/topics/{topic_slug}/research_question.contract.md",
+        "Expected the second light-profile read to be research_question.contract.md.",
+    )
+    check(
+        any(
+            row["path"] == f"runtime/topics/{topic_slug}/topic_synopsis.json"
+            and row["trigger"] == "runtime_truth_audit"
+            for row in next_payload["may_defer_until_trigger"]
+        ),
+        "Expected topic_synopsis.json to move behind the runtime_truth_audit trigger in light profile.",
     )
     check(
         status_payload["open_gap_summary"]["requires_l0_return"] is True,

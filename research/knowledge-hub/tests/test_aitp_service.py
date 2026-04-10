@@ -302,6 +302,35 @@ class _FollowupStubService(AITPService):
         }
 
 
+class _TopicCreationStubService(AITPService):
+    def orchestrate(self, **kwargs):  # noqa: ANN003
+        topic_slug = kwargs.get("topic_slug") or "demo-topic"
+        if not kwargs.get("topic_slug"):
+            topic = str(kwargs.get("topic") or "demo-topic")
+            topic_slug = topic.lower().replace(" ", "-")
+        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": topic_slug,
+                    "latest_run_id": "2026-04-04-bootstrap",
+                    "resume_stage": "L1",
+                    "summary": f"New topic {topic_slug}",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return {
+            "topic_slug": topic_slug,
+            "runtime_root": str(runtime_root),
+            "topic_state": json.loads((runtime_root / "topic_state.json").read_text(encoding="utf-8")),
+        }
+
+
 class AITPServiceTests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmpdir = tempfile.TemporaryDirectory()
@@ -311,7 +340,7 @@ class AITPServiceTests(unittest.TestCase):
         self.package_root = Path(__file__).resolve().parents[1]
         self.kernel_root.mkdir(parents=True)
         self.repo_root.mkdir(parents=True)
-        shutil.copytree(self.package_root / "canonical", self.kernel_root / "canonical", dirs_exist_ok=True)
+        (self.kernel_root / "canonical").mkdir(parents=True, exist_ok=True)
         (self.kernel_root / "schemas").mkdir(parents=True, exist_ok=True)
         (self.kernel_root / "runtime" / "schemas").mkdir(parents=True, exist_ok=True)
         for schema_path in (self.package_root / "schemas").glob("*.json"):
@@ -321,15 +350,35 @@ class AITPServiceTests(unittest.TestCase):
             runtime_bundle_schema,
             self.kernel_root / "runtime" / "schemas" / runtime_bundle_schema.name,
         )
-        result_brief_schema = self.package_root / "runtime" / "schemas" / "result-brief.schema.json"
-        shutil.copyfile(
-            result_brief_schema,
-            self.kernel_root / "runtime" / "schemas" / result_brief_schema.name,
-        )
         self.service = AITPService(kernel_root=self.kernel_root, repo_root=self.repo_root)
 
     def tearDown(self) -> None:
         self._tmpdir.cleanup()
+
+    def _make_opencode_status(self, **overrides: object) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "config_path": "C:/Users/demo/AppData/Roaming/opencode/opencode.json",
+            "config_exists": True,
+            "config_parse_ok": True,
+            "plugin_list_present": True,
+            "plugin_list_valid": True,
+            "plugins": ["aitp@git+https://github.com/bhjia-phys/AITP-Research-Protocol.git"],
+            "canonical_plugin_entry": "aitp@git+https://github.com/bhjia-phys/AITP-Research-Protocol.git",
+            "canonical_plugin_entry_present": True,
+            "aitp_plugin_entries": ["aitp@git+https://github.com/bhjia-phys/AITP-Research-Protocol.git"],
+            "noncanonical_aitp_plugin_entries": [],
+            "workspace_plugin_path": "",
+            "workspace_using_skill_path": "",
+            "workspace_runtime_skill_path": "",
+            "workspace_plugin_present": False,
+            "workspace_using_skill_present": False,
+            "workspace_runtime_skill_present": False,
+            "workspace_plugin_matches_canonical": False,
+            "workspace_using_skill_matches_canonical": False,
+            "workspace_runtime_skill_matches_canonical": False,
+        }
+        payload.update(overrides)
+        return payload
 
     def _write_runtime_state(self, topic_slug: str = "demo-topic", run_id: str = "2026-03-13-demo") -> Path:
         runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
@@ -348,6 +397,102 @@ class AITPServiceTests(unittest.TestCase):
             encoding="utf-8",
         )
         return runtime_root
+
+    def _write_available_projection(
+        self,
+        *,
+        topic_slug: str,
+        lane: str,
+        summary: str,
+        required_first_routes: list[str] | None = None,
+    ) -> None:
+        runtime_root = self._write_runtime_state(topic_slug=topic_slug, run_id="run-001")
+        (runtime_root / "topic_synopsis.json").write_text(
+            json.dumps(
+                {
+                    "id": f"topic_synopsis:{topic_slug}",
+                    "topic_slug": topic_slug,
+                    "title": topic_slug.replace("-", " ").title(),
+                    "question": "Demo question",
+                    "lane": lane,
+                    "load_profile": "light",
+                    "status": "active",
+                    "runtime_focus": {
+                        "summary": summary,
+                        "why_this_topic_is_here": summary,
+                        "resume_stage": "L3",
+                        "last_materialized_stage": "L3",
+                        "next_action_id": "action:demo:01",
+                        "next_action_type": "inspect_runtime",
+                        "next_action_summary": summary,
+                        "human_need_status": "none",
+                        "human_need_kind": "none",
+                        "human_need_summary": "No active human checkpoint is currently blocking the bounded loop.",
+                        "blocker_summary": [],
+                        "last_evidence_kind": "none",
+                        "last_evidence_summary": "No durable evidence-return artifact is currently recorded for this topic.",
+                        "dependency_status": "clear",
+                        "dependency_summary": "No active topic dependencies.",
+                        "promotion_status": "not_ready",
+                    },
+                    "truth_sources": {
+                        "topic_state_path": f"runtime/topics/{topic_slug}/topic_state.json",
+                        "research_question_contract_path": f"runtime/topics/{topic_slug}/research_question.contract.json",
+                        "next_action_surface_path": f"runtime/topics/{topic_slug}/action_queue.jsonl",
+                        "human_need_surface_path": None,
+                        "dependency_registry_path": "runtime/active_topics.json",
+                        "promotion_readiness_path": f"runtime/topics/{topic_slug}/promotion_readiness.json",
+                        "promotion_gate_path": None,
+                    },
+                    "next_action_summary": summary,
+                    "open_gap_summary": "No explicit gap packet is currently open.",
+                    "pending_decision_count": 0,
+                    "knowledge_packet_paths": [],
+                    "updated_at": "2026-04-04T10:00:00+08:00",
+                    "updated_by": "test",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "topic_skill_projection.active.json").write_text(
+            json.dumps(
+                {
+                    "id": f"topic_skill_projection:{topic_slug}",
+                    "topic_slug": topic_slug,
+                    "source_topic_slug": topic_slug,
+                    "run_id": "run-001",
+                    "title": f"{topic_slug} projection",
+                    "summary": summary,
+                    "lane": lane,
+                    "status": "available",
+                    "status_reason": "Projection is available.",
+                    "candidate_id": f"candidate:{topic_slug}-projection",
+                    "intended_l2_target": f"topic_skill_projection:{topic_slug}",
+                    "entry_signals": [f"lane={lane}"],
+                    "required_first_reads": [f"runtime/topics/{topic_slug}/research_question.contract.md"],
+                    "required_first_routes": required_first_routes or [],
+                    "benchmark_first_rules": [],
+                    "operator_checkpoint_rules": [],
+                    "operation_trust_requirements": [],
+                    "strategy_guidance": [],
+                    "forbidden_proxies": [],
+                    "derived_from_artifacts": [],
+                    "updated_at": "2026-04-04T10:00:00+08:00",
+                    "updated_by": "test",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "topic_skill_projection.active.md").write_text(
+            f"# {topic_slug} projection\n",
+            encoding="utf-8",
+        )
 
     def _write_candidate(
         self,
@@ -831,13 +976,6 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["human_request"], "run a bounded public protocol check")
         self.assertEqual(payload["priority_rules"][0]["source"], "control_note_or_decision_contract")
         self.assertEqual(payload["action_queue_surface"]["queue_source"], "heuristic")
-        self.assertIn("l0_sources", payload)
-        self.assertIn("l1_understanding", payload)
-        self.assertEqual(payload["l0_sources"]["subplane"], "L0")
-        self.assertEqual(payload["l1_understanding"]["subplane"], "L1")
-        self.assertIn("notation_table_path", payload["l1_understanding"])
-        self.assertIn("consultation_surface", payload["l2_memory"])
-        self.assertIn("writeback_surface", payload["l2_memory"])
         self.assertEqual(payload["active_research_contract"]["question_id"], "research_question:demo-topic")
         self.assertEqual(payload["idea_packet"]["status"], "approved_for_execution")
         self.assertEqual(payload["operator_checkpoint"]["status"], "cancelled")
@@ -845,28 +983,50 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["backend_bridges"][0]["backend_id"], "backend:formal-theory-note-library")
         self.assertEqual(payload["promotion_gate"]["status"], "approved")
         self.assertEqual(payload["promotion_readiness"]["status"], "approved")
-        self.assertIn("l3_subplanes", payload)
-        self.assertEqual(payload["l3_subplanes"]["analysis"]["subplane"], "L3-A")
-        self.assertEqual(payload["l3_subplanes"]["result_integration"]["subplane"], "L3-R")
-        self.assertEqual(payload["l3_subplanes"]["distillation"]["subplane"], "L3-D")
-        self.assertIn("L4->L2", payload["l3_subplanes"]["distillation"]["forbidden_direct_transitions"])
         self.assertEqual(payload["open_gap_summary"]["status"], "clear")
         self.assertEqual(payload["strategy_memory"]["status"], "absent")
-        self.assertEqual(payload["collaborator_memory"]["status"], "absent")
         self.assertEqual(payload["topic_skill_projection"]["status"], "not_applicable")
         self.assertEqual(payload["topic_completion"]["status"], "not_assessed")
         self.assertEqual(payload["lean_bridge"]["status"], "empty")
+        self.assertEqual(payload["validation_review_bundle"]["status"], "not_materialized")
+        self.assertEqual(payload["validation_review_bundle"]["primary_review_kind"], "validation_contract")
+        self.assertEqual(
+            payload["topic_synopsis"]["runtime_focus"]["summary"],
+            "Stage `L3`; next `Inspect the current runtime state.`; human need `none`; last evidence `none`.",
+        )
+        self.assertEqual(
+            payload["topic_synopsis"]["truth_sources"]["topic_state_path"],
+            "runtime/topics/demo-topic/topic_state.json",
+        )
+        self.assertEqual(
+            payload["topic_synopsis"]["truth_sources"]["next_action_surface_path"],
+            "runtime/topics/demo-topic/action_queue_contract.generated.json",
+        )
         self.assertEqual(payload["minimal_execution_brief"]["selected_action_id"], "action:demo-topic:01")
+        self.assertEqual(
+            payload["minimal_execution_brief"]["selected_action_summary"],
+            payload["topic_synopsis"]["runtime_focus"]["next_action_summary"],
+        )
         self.assertEqual(payload["minimal_execution_brief"]["queue_source"], "heuristic")
         self.assertEqual(payload["load_profile"], "light")
-        self.assertEqual(payload["must_read_now"][0]["path"], "runtime/topics/demo-topic/topic_state.json")
+        self.assertEqual(len(payload["must_read_now"]), 2)
+        self.assertEqual(payload["must_read_now"][0]["path"], "runtime/topics/demo-topic/topic_dashboard.md")
         self.assertEqual(payload["must_read_now"][1]["path"], "runtime/topics/demo-topic/research_question.contract.md")
-        self.assertEqual(payload["must_read_now"][2]["path"], "runtime/topics/demo-topic/control_note.md")
-        self.assertEqual(payload["must_read_now"][3]["path"], "runtime/topics/demo-topic/operator_console.md")
+        self.assertEqual(payload["minimal_execution_brief"]["open_next"], "runtime/topics/demo-topic/topic_dashboard.md")
+        self.assertFalse(any(row["path"].endswith("operator_console.md") for row in payload["must_read_now"]))
         self.assertFalse(any(row["path"] == "RESEARCH_EXECUTION_GUARDRAILS.md" for row in payload["must_read_now"]))
+        self.assertTrue(
+            any(
+                row["path"] == "runtime/topics/demo-topic/topic_synopsis.json"
+                and row["trigger"] == "runtime_truth_audit"
+                for row in payload["may_defer_until_trigger"]
+            )
+        )
         self.assertEqual(payload["escalation_triggers"][1]["trigger"], "promotion_intent")
         self.assertTrue(any(row["trigger"] == "decision_override_present" for row in payload["escalation_triggers"]))
+        self.assertTrue(any(row["trigger"] == "runtime_truth_audit" for row in payload["escalation_triggers"]))
         self.assertTrue(any(row["slice"] == "current_execution_lane" for row in payload["recommended_protocol_slices"]))
+        self.assertTrue(any(row["slice"] == "runtime_truth_details" for row in payload["recommended_protocol_slices"]))
         self.assertTrue(
             any(
                 row["trigger"] == "formal_theory_upstream_scan"
@@ -897,6 +1057,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue(any(row["surface"] == "lean_bridge" for row in payload["editable_protocol_surfaces"]))
         note_text = protocol_note.read_text(encoding="utf-8")
         self.assertIn("## Active research contract", note_text)
+        self.assertIn("## Validation review bundle", note_text)
         self.assertIn("## Promotion readiness", note_text)
         self.assertIn("## Open gap summary", note_text)
         self.assertIn("## Strategy memory", note_text)
@@ -941,58 +1102,59 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(rows[0]["lane"], "code_method")
         self.assertIn("multi-source derivation merge", rows[0]["reuse_conditions"])
 
-    def test_record_collaborator_memory_writes_separate_non_l2_surface(self) -> None:
+    def test_record_collaborator_memory_writes_runtime_ledger_and_note(self) -> None:
         payload = self.service.record_collaborator_memory(
-            preferences=["prefer bounded benchmark-first routes"],
-            preferred_lanes=["formal_theory"],
-            avoided_patterns=["do not overclaim from informal notes"],
-            long_horizon_concerns=["keep failed derivation branches visible"],
-            collaboration_style=["use non-blocking updates before checkpoints when possible"],
-            updated_by="test-suite",
+            memory_kind="preference",
+            summary="Prefer bounded operator-algebra routes before broader numerical detours.",
+            details="This is collaborator-side route taste, not canonical scientific truth.",
+            topic_slug="demo-topic",
+            run_id="2026-04-09-demo",
+            tags=["operator-algebra", "bounded-route"],
+            related_topic_slugs=["demo-topic", "operator-algebra-notes"],
+            updated_by="human",
         )
 
-        self.assertEqual(payload["memory_kind"], "collaborator_memory")
-        self.assertTrue(Path(payload["collaborator_memory_path"]).exists())
-        self.assertTrue(Path(payload["collaborator_memory_note_path"]).exists())
-        loaded = self.service.get_collaborator_memory()
-        self.assertIn("prefer bounded benchmark-first routes", loaded["preferences"])
-        self.assertIn("formal_theory", loaded["preferred_lanes"])
+        path = Path(payload["collaborator_memory_path"])
+        note_path = Path(payload["collaborator_memory_note_path"])
+        self.assertTrue(path.exists())
+        self.assertTrue(note_path.exists())
+        rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["memory_kind"], "preference")
+        self.assertEqual(rows[0]["topic_slug"], "demo-topic")
+        self.assertEqual(rows[0]["storage_layer"], "runtime")
+        self.assertEqual(rows[0]["canonical_status"], "separate_from_scientific_memory")
+        note_text = note_path.read_text(encoding="utf-8")
+        self.assertIn("not canonical scientific memory", note_text)
+        self.assertIn("operator-algebra", note_text)
 
-    def test_runtime_bundle_surfaces_collaborator_memory_as_noncanonical_context(self) -> None:
-        runtime_root = self._write_runtime_state()
-        (runtime_root / "interaction_state.json").write_text(
-            json.dumps(
-                {
-                    "human_request": "continue this topic",
-                    "action_queue_surface": {},
-                    "decision_surface": {},
-                    "human_edit_surfaces": [],
-                },
-                ensure_ascii=True,
-                indent=2,
-            )
-            + "\n",
-            encoding="utf-8",
+    def test_get_collaborator_memory_filters_by_topic_and_stays_runtime_side(self) -> None:
+        self.service.record_collaborator_memory(
+            memory_kind="preference",
+            summary="Prefer the theorem-facing route for this topic family.",
+            topic_slug="demo-topic",
+            tags=["formal-theory"],
+            updated_by="human",
         )
         self.service.record_collaborator_memory(
-            preferences=["prefer bounded benchmark-first routes"],
-            preferred_lanes=["formal_theory"],
-            updated_by="test-suite",
+            memory_kind="trajectory",
+            summary="The benchmark topic already consumed the broad numerical detour.",
+            topic_slug="other-topic",
+            related_topic_slugs=["demo-topic"],
+            tags=["benchmark"],
+            updated_by="human",
         )
 
-        payload = self.service._materialize_runtime_protocol_bundle(
-            topic_slug="demo-topic",
-            updated_by="test-suite",
-            human_request="continue this topic",
-            load_profile="light",
-        )
+        payload = self.service.get_collaborator_memory(topic_slug="demo-topic", limit=5)
 
-        bundle = json.loads(Path(payload["runtime_protocol_path"]).read_text(encoding="utf-8"))
-        self.assertEqual(bundle["collaborator_memory"]["status"], "available")
-        self.assertIn("formal_theory", bundle["collaborator_memory"]["preferred_lanes"])
-        self.assertTrue(
-            any(str(row.get("path") or "").endswith("collaborator-memory/profile.md") for row in bundle["must_read_now"])
-        )
+        self.assertEqual(payload["status"], "available")
+        self.assertEqual(payload["memory_domain"], "collaborator")
+        self.assertEqual(payload["storage_layer"], "runtime")
+        self.assertEqual(payload["canonical_status"], "separate_from_scientific_memory")
+        self.assertEqual(payload["matching_count"], 2)
+        self.assertEqual(len(payload["entries"]), 2)
+        self.assertTrue(any(row["topic_slug"] == "demo-topic" for row in payload["entries"]))
+        self.assertTrue(any("demo-topic" in row["related_topic_slugs"] for row in payload["entries"]))
 
     def test_topic_status_surfaces_relevant_strategy_memory(self) -> None:
         runtime_root = self._write_runtime_state()
@@ -1438,23 +1600,32 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue(Path(payload["operator_checkpoint_ledger_path"]).exists())
         self.assertTrue(Path(payload["topic_dashboard_path"]).exists())
         self.assertTrue(Path(payload["promotion_readiness_path"]).exists())
+        self.assertTrue(Path(payload["validation_review_bundle_path"]).exists())
+        self.assertTrue(Path(payload["validation_review_bundle_note_path"]).exists())
         self.assertTrue(Path(payload["gap_map_path"]).exists())
         self.assertTrue(Path(payload["topic_completion_path"]).exists())
         self.assertTrue(Path(payload["lean_bridge_path"]).exists())
         self.assertEqual(payload["research_question_contract"]["research_mode"], "formal_derivation")
+        self.assertTrue(payload["research_question_contract"]["source_basis_refs"])
+        self.assertTrue(payload["research_question_contract"]["interpretation_focus"])
+        self.assertTrue(payload["research_question_contract"]["open_ambiguities"])
         self.assertEqual(payload["validation_contract"]["validation_mode"], "formal")
+        self.assertTrue(payload["validation_contract"]["primary_review_bundle_path"].endswith("validation_review_bundle.active.json"))
         self.assertEqual(payload["idea_packet"]["status"], "approved_for_execution")
         self.assertEqual(payload["operator_checkpoint"]["status"], "cancelled")
         self.assertIn("topic_state_explainability", payload)
         self.assertEqual(payload["validation_contract"]["status"], "deferred")
         self.assertTrue(payload["open_gap_summary"]["requires_l0_return"])
         dashboard_text = Path(payload["topic_dashboard_path"]).read_text(encoding="utf-8")
+        review_text = Path(payload["validation_review_bundle_note_path"]).read_text(encoding="utf-8")
         gap_text = Path(payload["gap_map_path"]).read_text(encoding="utf-8")
         self.assertIn("Idea packet", dashboard_text)
         self.assertIn("operator_checkpoint.active.md", dashboard_text)
+        self.assertIn("## Validation review bundle", dashboard_text)
         self.assertIn("## Last evidence return", dashboard_text)
         self.assertIn("## Active human need", dashboard_text)
         self.assertIn("return to L0", dashboard_text)
+        self.assertIn("Primary L4 review surface", review_text)
         self.assertIn("return to L0", gap_text)
 
     def test_ensure_topic_shell_surfaces_materializes_idea_packet_for_vague_topic(self) -> None:
@@ -1496,133 +1667,6 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("needs_clarification", dashboard_text)
         self.assertIn("Idea packet summary", dashboard_text)
         self.assertIn("scope_ambiguity", dashboard_text)
-
-    def test_ensure_topic_shell_surfaces_writes_result_brief(self) -> None:
-        self._write_runtime_state()
-
-        payload = self.service.ensure_topic_shell_surfaces(
-            topic_slug="demo-topic",
-            updated_by="aitp-cli",
-        )
-
-        result_brief_path = Path(payload["result_brief_path"])
-        result_brief_note_path = Path(payload["result_brief_note_path"])
-        self.assertTrue(result_brief_path.exists())
-        self.assertTrue(result_brief_note_path.exists())
-        result_brief_payload = json.loads(result_brief_path.read_text(encoding="utf-8"))
-        schema = json.loads(
-            (
-                self.kernel_root
-                / "runtime"
-                / "schemas"
-                / "result-brief.schema.json"
-            ).read_text(encoding="utf-8")
-        )
-        Draft202012Validator(schema).validate(result_brief_payload)
-        result_brief_note = result_brief_note_path.read_text(encoding="utf-8")
-        self.assertIn("## What Changed", result_brief_note)
-        self.assertIn("## Evidence", result_brief_note)
-        self.assertIn("## Scope", result_brief_note)
-        self.assertIn("## What This Does Not Yet Justify", result_brief_note)
-
-    def test_ensure_topic_shell_surfaces_result_brief_blocks_on_pending_decisions(self) -> None:
-        runtime_root = self._write_runtime_state()
-        (runtime_root / "action_queue.jsonl").write_text(
-            json.dumps(
-                {
-                    "action_id": "action:demo-topic:benchmark",
-                    "status": "pending",
-                    "action_type": "benchmark",
-                    "summary": "Select the benchmark route and proceed.",
-                    "auto_runnable": False,
-                    "queue_source": "declared_contract",
-                },
-                ensure_ascii=True,
-                separators=(",", ":"),
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-
-        with patch(
-            "knowledge_hub.aitp_service.list_pending_decision_points",
-            return_value=[{"id": "decision:demo-blocking", "blocking": True}],
-        ):
-            payload = self.service.ensure_topic_shell_surfaces(
-                topic_slug="demo-topic",
-                updated_by="aitp-cli",
-            )
-            bundle_paths = self.service._materialize_runtime_protocol_bundle(
-                topic_slug="demo-topic",
-                updated_by="aitp-cli",
-                human_request="continue this topic",
-                load_profile="light",
-            )
-
-        result_brief_payload = json.loads(
-            Path(payload["result_brief_path"]).read_text(encoding="utf-8")
-        )
-        bundle = json.loads(Path(bundle_paths["runtime_protocol_path"]).read_text(encoding="utf-8"))
-        self.assertEqual(result_brief_payload["interaction_class"], "checkpoint_question")
-        expected_reason = "Resolve blocking pending decisions before continuing: decision:demo-blocking."
-        self.assertEqual(result_brief_payload["what_changed"], expected_reason)
-        self.assertEqual(bundle["interaction_contract"]["interaction_class"], "checkpoint_question")
-        self.assertEqual(bundle["interaction_contract"]["stop_reason"], expected_reason)
-        self.assertEqual(bundle["result_brief"]["interaction_class"], "checkpoint_question")
-        self.assertEqual(bundle["result_brief"]["what_changed"], expected_reason)
-
-    def test_ensure_topic_shell_surfaces_uses_blocking_only_decision_ids(self) -> None:
-        runtime_root = self._write_runtime_state()
-        (runtime_root / "action_queue.jsonl").write_text(
-            json.dumps(
-                {
-                    "action_id": "action:demo-topic:benchmark",
-                    "status": "pending",
-                    "action_type": "benchmark",
-                    "summary": "Select the benchmark route and proceed.",
-                    "auto_runnable": False,
-                    "queue_source": "declared_contract",
-                },
-                ensure_ascii=True,
-                separators=(",", ":"),
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-
-        with patch(
-            "knowledge_hub.aitp_service.list_pending_decision_points",
-            return_value=[
-                {"id": "decision:demo-blocking", "blocking": True},
-                {"id": "decision:demo-nonblocking", "blocking": False},
-            ],
-        ):
-            payload = self.service.ensure_topic_shell_surfaces(
-                topic_slug="demo-topic",
-                updated_by="aitp-cli",
-            )
-            bundle_paths = self.service._materialize_runtime_protocol_bundle(
-                topic_slug="demo-topic",
-                updated_by="aitp-cli",
-                human_request="continue this topic",
-                load_profile="light",
-            )
-
-        result_brief_payload = json.loads(
-            Path(payload["result_brief_path"]).read_text(encoding="utf-8")
-        )
-        bundle = json.loads(Path(bundle_paths["runtime_protocol_path"]).read_text(encoding="utf-8"))
-        operator_checkpoint = json.loads(
-            Path(payload["operator_checkpoint_path"]).read_text(encoding="utf-8")
-        )
-        expected_reason = "Resolve blocking pending decisions before continuing: decision:demo-blocking."
-        self.assertEqual(operator_checkpoint["question"], expected_reason)
-        self.assertEqual(bundle["interaction_contract"]["stop_reason"], expected_reason)
-        self.assertEqual(result_brief_payload["what_changed"], expected_reason)
-        self.assertEqual(bundle["result_brief"]["what_changed"], expected_reason)
-        self.assertNotIn("decision:demo-nonblocking", operator_checkpoint["question"])
-        self.assertNotIn("decision:demo-nonblocking", bundle["interaction_contract"]["stop_reason"])
-        self.assertNotIn("decision:demo-nonblocking", result_brief_payload["what_changed"])
 
     def test_topic_status_and_prepare_verification_surface_new_shell_fields(self) -> None:
         runtime_root = self._write_runtime_state()
@@ -1680,21 +1724,6 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("proof or derivation step", verification_payload["validation_contract"]["verification_focus"])
         self.assertTrue(Path(verification_payload["runtime_protocol"]["runtime_protocol_path"]).exists())
 
-        analytic_payload = self.service.prepare_verification(
-            topic_slug="demo-topic",
-            mode="analytic",
-        )
-        self.assertEqual(analytic_payload["verification_mode"], "analytic")
-        self.assertEqual(analytic_payload["validation_contract"]["validation_mode"], "analytic")
-        self.assertIn("limiting cases", analytic_payload["validation_contract"]["verification_focus"])
-        self.assertEqual(
-            analytic_payload["validation_contract"]["analytic_check_families"],
-            ["limiting_case", "dimensional_consistency", "symmetry_constraint", "self_consistency"],
-        )
-        self.assertTrue(
-            any("dimensional" in item.lower() for item in analytic_payload["validation_contract"]["required_checks"])
-        )
-
     def test_runtime_bundle_and_session_start_require_idea_packet_when_clarification_needed(self) -> None:
         runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
         runtime_root.mkdir(parents=True, exist_ok=True)
@@ -1719,6 +1748,10 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(bundle["idea_packet"]["status"], "needs_clarification")
         self.assertEqual(bundle["operator_checkpoint"]["status"], "requested")
         self.assertEqual(bundle["operator_checkpoint"]["checkpoint_kind"], "scope_ambiguity")
+        self.assertEqual(bundle["runtime_mode"], "discussion")
+        self.assertIsNone(bundle["active_submode"])
+        self.assertEqual(bundle["mode_envelope"]["mode"], "discussion")
+        self.assertTrue(bundle["transition_posture"]["requires_human_checkpoint"])
         self.assertTrue(any(row["path"].endswith("idea_packet.md") for row in bundle["must_read_now"]))
         self.assertTrue(any(row["path"].endswith("operator_checkpoint.active.md") for row in bundle["must_read_now"]))
         self.assertTrue(any("idea_packet.md" in row for row in bundle["active_hard_constraints"]))
@@ -1751,65 +1784,6 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue(any(row["path"].endswith("operator_checkpoint.active.md") for row in session_payload["must_read_now"]))
         self.assertTrue(any("idea_packet.md" in row for row in session_payload["hard_stops"]))
         self.assertTrue(any("operator_checkpoint.active.md" in row for row in session_payload["hard_stops"]))
-
-    def test_session_start_blocks_on_pending_decision_blockers(self) -> None:
-        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
-        runtime_root.mkdir(parents=True, exist_ok=True)
-        (runtime_root / "interaction_state.json").write_text(
-            json.dumps(
-                {
-                    "human_request": "Continue the bounded topic lane.",
-                },
-                ensure_ascii=True,
-                indent=2,
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-
-        with patch(
-            "knowledge_hub.aitp_service.list_pending_decision_points",
-            return_value=[
-                {"id": "decision:demo-blocking", "blocking": True}
-            ],
-        ):
-            protocol_paths = self.service._materialize_runtime_protocol_bundle(
-                topic_slug="demo-topic",
-                updated_by="aitp-cli",
-                human_request="Continue the bounded topic lane.",
-            )
-
-        session_payload = self.service._materialize_session_start_contract(
-            task="Continue the bounded topic lane.",
-            routing={
-                "route": "request_current_topic_reference",
-                "reason": "User referenced the current topic.",
-                "topic_slug": "demo-topic",
-                "topic": "Demo Topic",
-            },
-            loop_payload={
-                "topic_slug": "demo-topic",
-                "runtime_protocol": protocol_paths,
-                "loop_state": {
-                    "entry_conformance": "pass",
-                    "exit_conformance": "pass",
-                    "capability_status": "ready",
-                    "trust_status": "pass",
-                },
-                "steering_artifacts": {},
-                "bootstrap": {"topic_state": {"pointers": {}}},
-                "current_topic_memory": {},
-            },
-            updated_by="aitp-session-start",
-        )
-        self.assertTrue(any("pending_decisions" in row["path"] for row in session_payload["must_read_now"]))
-        self.assertTrue(any("blocking pending decisions" in row for row in session_payload["hard_stops"]))
-        self.assertTrue(
-            any(
-                "blocking pending decision" in row.get("step", "")
-                for row in session_payload["linear_flow"]
-            )
-        )
 
     def test_answer_operator_checkpoint_updates_ledger_and_operator_console(self) -> None:
         runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
@@ -1943,6 +1917,179 @@ class AITPServiceTests(unittest.TestCase):
         )
         self.assertEqual(answered["topic_state_explainability"]["active_human_need"]["status"], "none")
 
+    def test_execution_lane_confirmation_checkpoint_created_before_dispatch(self) -> None:
+        runtime_root = self._write_runtime_state()
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "run the bounded benchmark lane",
+                    "decision_surface": {
+                        "decision_mode": "continue_unfinished",
+                        "decision_source": "heuristic",
+                        "decision_contract_status": "missing",
+                        "control_note_path": None,
+                        "selected_action_id": "action:demo-topic:dispatch",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:dispatch",
+                    "status": "pending",
+                    "action_type": "await_execution_result",
+                    "summary": "Run `runtime/topics/demo-topic/execution_task.json` in the external `codex_cli` lane and write the returned result artifact.",
+                    "auto_runnable": False,
+                    "queue_source": "runtime_appended",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "execution_task.json").write_text(
+            json.dumps(
+                {
+                    "task_id": "demo-task",
+                    "validation_note": "runtime/topics/demo-topic/validation_contract.active.md",
+                    "candidate_id": "candidate:demo-candidate",
+                    "surface": "numerical",
+                    "status": "planned",
+                    "input_artifacts": [],
+                    "planned_outputs": [],
+                    "pass_conditions": ["Write the returned result artifact."],
+                    "failure_signals": ["Returned result is missing."],
+                    "assigned_runtime": "codex",
+                    "executor_kind": "codex_cli",
+                    "result_artifacts": [],
+                    "summary": "Demo execution task",
+                    "needs_human_confirm": True,
+                    "auto_dispatch_allowed": False,
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.ensure_topic_shell_surfaces(topic_slug="demo-topic", updated_by="test")
+
+        self.assertEqual(payload["operator_checkpoint"]["status"], "requested")
+        self.assertEqual(payload["operator_checkpoint"]["checkpoint_kind"], "execution_lane_confirmation")
+        self.assertIn("confirm the execution lane", payload["operator_checkpoint"]["question"].lower())
+
+    def test_execute_auto_actions_stops_when_operator_checkpoint_is_requested(self) -> None:
+        runtime_root = self._write_runtime_state()
+        queue_path = runtime_root / "action_queue.jsonl"
+        queue_path.write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:01",
+                    "status": "pending",
+                    "action_type": "skill_discovery",
+                    "summary": "Find a bounded external skill.",
+                    "auto_runnable": True,
+                    "handler_args": {"queries": ["demo query"]},
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "operator_checkpoint.active.json").write_text(
+            json.dumps(
+                {
+                    "checkpoint_id": "checkpoint:demo-topic:dispatch",
+                    "topic_slug": "demo-topic",
+                    "run_id": "2026-03-13-demo",
+                    "checkpoint_kind": "execution_lane_confirmation",
+                    "status": "requested",
+                    "note_path": "runtime/topics/demo-topic/operator_checkpoint.active.md",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service._execute_auto_actions(
+            topic_slug="demo-topic",
+            updated_by="test",
+            max_auto_steps=1,
+            default_skill_queries=["demo query"],
+        )
+
+        self.assertEqual(payload["executed"], [])
+        self.assertTrue(payload["checkpoint_blocking"])
+        self.assertEqual(payload["checkpoint_kind"], "execution_lane_confirmation")
+        queue_row = json.loads(queue_path.read_text(encoding="utf-8").splitlines()[0])
+        self.assertEqual(queue_row["status"], "pending")
+
+    def test_execute_auto_actions_stops_on_backedge_transition_contract(self) -> None:
+        runtime_root = self._write_runtime_state()
+        queue_path = runtime_root / "action_queue.jsonl"
+        queue_path.write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:01",
+                    "status": "pending",
+                    "action_type": "skill_discovery",
+                    "summary": "Consult memory before continuing the bounded route.",
+                    "auto_runnable": True,
+                    "handler_args": {"queries": ["demo query"]},
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Continue carefully and consult memory if needed.",
+                    "decision_surface": {
+                        "decision_mode": "continue_unfinished",
+                        "decision_source": "heuristic",
+                        "selected_action_id": "action:demo-topic:01",
+                    },
+                    "action_queue_surface": {
+                        "queue_source": "heuristic",
+                    },
+                    "human_edit_surfaces": [],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service._execute_auto_actions(
+            topic_slug="demo-topic",
+            updated_by="test",
+            max_auto_steps=1,
+            default_skill_queries=["demo query"],
+        )
+
+        self.assertEqual(payload["executed"], [])
+        self.assertTrue(payload["transition_blocking"])
+        self.assertEqual(payload["transition_kind"], "backedge_transition")
+        self.assertEqual(payload["runtime_mode"], "explore")
+        queue_row = json.loads(queue_path.read_text(encoding="utf-8").splitlines()[0])
+        self.assertEqual(queue_row["status"], "pending")
+
     def test_pending_human_promotion_gate_creates_operator_checkpoint(self) -> None:
         runtime_root = self._write_runtime_state()
         (runtime_root / "interaction_state.json").write_text(
@@ -2038,6 +2185,11 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["sections"]["runtime"]["idea_packet.json"]["status"], "present")
         self.assertEqual(payload["sections"]["runtime"]["operator_checkpoint.active.json"]["status"], "present")
         self.assertEqual(payload["sections"]["runtime"]["operator_checkpoints.jsonl"]["status"], "present")
+        self.assertIn(payload["sections"]["runtime"]["topic_synopsis.json"]["status"], {"present", "missing"})
+        self.assertIn(
+            payload["sections"]["runtime"]["validation_review_bundle.active.json"]["status"],
+            {"present", "missing"},
+        )
 
     def test_status_explainability_uses_returned_execution_result(self) -> None:
         runtime_root = self._write_runtime_state()
@@ -2177,6 +2329,427 @@ class AITPServiceTests(unittest.TestCase):
             "present",
         )
 
+    def test_doctor_reports_runtime_support_matrix_for_ready_baseline_and_targets(self) -> None:
+        codex_status = {
+            "using_skill_path": "C:\\Users\\demo\\.agents\\skills\\using-aitp\\SKILL.md",
+            "runtime_skill_path": "C:\\Users\\demo\\.agents\\skills\\aitp-runtime\\SKILL.md",
+            "using_skill_present": True,
+            "runtime_skill_present": True,
+            "using_skill_matches_canonical": True,
+            "runtime_skill_matches_canonical": True,
+        }
+        claude_status = {
+            "using_skill_path": "C:\\Users\\demo\\.claude\\skills\\using-aitp\\SKILL.md",
+            "runtime_skill_path": "C:\\Users\\demo\\.claude\\skills\\aitp-runtime\\SKILL.md",
+            "session_start_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start",
+            "hook_wrapper_path": "C:\\Users\\demo\\.claude\\hooks\\run-hook.cmd",
+            "hooks_manifest_path": "C:\\Users\\demo\\.claude\\hooks\\hooks.json",
+            "settings_path": "C:\\Users\\demo\\.claude\\settings.json",
+            "using_skill": True,
+            "runtime_skill": True,
+            "session_start_hook": True,
+            "hook_wrapper": True,
+            "hooks_manifest": True,
+            "settings": True,
+            "using_skill_matches_canonical": True,
+            "runtime_skill_matches_canonical": True,
+            "session_start_hook_matches_canonical": True,
+            "hook_wrapper_matches_canonical": True,
+            "hooks_manifest_matches_canonical": True,
+            "settings_has_expected_session_start_command": True,
+        }
+        with patch.object(
+            self.service,
+            "_pip_show_package",
+            return_value={
+                "version": "0.4.0",
+                "editable project location": str(self.service._canonical_package_root()),
+            },
+        ):
+            with patch.object(self.service, "_codex_skill_status", return_value=codex_status):
+                with patch.object(self.service, "_claude_hook_status", return_value=claude_status):
+                    with patch.object(
+                        self.service,
+                        "_opencode_plugin_status",
+                        return_value=self._make_opencode_status(),
+                    ):
+                        with patch.object(self.service, "_workspace_legacy_entrypoints", return_value=[]):
+                            with patch.object(self.service, "_claude_legacy_command_paths", return_value=[]):
+                                with patch(
+                                    "knowledge_hub.aitp_service.shutil.which",
+                                    side_effect=lambda name: {
+                                        "aitp": "C:\\temp\\aitp.exe",
+                                        "aitp-mcp": "C:\\temp\\aitp-mcp.exe",
+                                        "codex": "C:\\temp\\codex.exe",
+                                        "openclaw": "C:\\temp\\openclaw.exe",
+                                        "mcporter": "C:\\temp\\mcporter.exe",
+                                    }.get(name, ""),
+                                ):
+                                    payload = self.service.ensure_cli_installed(workspace_root=str(self.root))
+
+        matrix = payload["runtime_support_matrix"]
+        self.assertEqual(matrix["baseline_runtime"], "codex")
+        self.assertEqual(matrix["parity_targets"], ["claude_code", "opencode"])
+        self.assertEqual(matrix["specialized_lanes"], ["openclaw"])
+        self.assertEqual(matrix["runtimes"]["codex"]["status"], "ready")
+        self.assertEqual(matrix["runtimes"]["codex"]["maturity_class"], "baseline")
+        self.assertEqual(matrix["runtimes"]["claude_code"]["status"], "ready")
+        self.assertEqual(matrix["runtimes"]["claude_code"]["maturity_class"], "parity_target")
+        self.assertEqual(matrix["runtimes"]["opencode"]["status"], "ready")
+        self.assertEqual(matrix["runtimes"]["openclaw"]["maturity_class"], "specialized_lane")
+        self.assertTrue(matrix["runtimes"]["claude_code"]["surface_checks"]["settings_has_expected_session_start_command"])
+
+    def test_doctor_runtime_support_matrix_reports_partial_front_doors_honestly(self) -> None:
+        codex_status = {
+            "using_skill_path": "C:\\Users\\demo\\.agents\\skills\\using-aitp\\SKILL.md",
+            "runtime_skill_path": "C:\\Users\\demo\\.agents\\skills\\aitp-runtime\\SKILL.md",
+            "using_skill_present": True,
+            "runtime_skill_present": True,
+            "using_skill_matches_canonical": True,
+            "runtime_skill_matches_canonical": True,
+        }
+        claude_status = {
+            "using_skill_path": "C:\\Users\\demo\\.claude\\skills\\using-aitp\\SKILL.md",
+            "runtime_skill_path": "C:\\Users\\demo\\.claude\\skills\\aitp-runtime\\SKILL.md",
+            "session_start_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start",
+            "hook_wrapper_path": "C:\\Users\\demo\\.claude\\hooks\\run-hook.cmd",
+            "hooks_manifest_path": "C:\\Users\\demo\\.claude\\hooks\\hooks.json",
+            "settings_path": "C:\\Users\\demo\\.claude\\settings.json",
+            "using_skill": True,
+            "runtime_skill": False,
+            "session_start_hook": False,
+            "hook_wrapper": False,
+            "hooks_manifest": False,
+            "settings": False,
+            "using_skill_matches_canonical": True,
+            "runtime_skill_matches_canonical": False,
+            "session_start_hook_matches_canonical": False,
+            "hook_wrapper_matches_canonical": False,
+            "hooks_manifest_matches_canonical": False,
+            "settings_has_expected_session_start_command": False,
+        }
+        with patch.object(
+            self.service,
+            "_pip_show_package",
+            return_value={
+                "version": "0.4.0",
+                "editable project location": str(self.service._canonical_package_root()),
+            },
+        ):
+            with patch.object(self.service, "_codex_skill_status", return_value=codex_status):
+                with patch.object(self.service, "_claude_hook_status", return_value=claude_status):
+                    with patch.object(
+                        self.service,
+                        "_opencode_plugin_status",
+                        return_value=self._make_opencode_status(
+                            config_exists=False,
+                            config_parse_ok=False,
+                            plugin_list_present=False,
+                            plugin_list_valid=False,
+                            plugins=[],
+                            canonical_plugin_entry_present=False,
+                            aitp_plugin_entries=[],
+                        ),
+                    ):
+                        with patch.object(self.service, "_workspace_legacy_entrypoints", return_value=[]):
+                            with patch.object(
+                                self.service,
+                                "_claude_legacy_command_paths",
+                                return_value=[Path("C:/Users/demo/.claude/commands/aitp.md")],
+                            ):
+                                with patch(
+                                    "knowledge_hub.aitp_service.shutil.which",
+                                    side_effect=lambda name: {
+                                        "aitp": "C:\\temp\\aitp.exe",
+                                        "codex": "C:\\temp\\codex.exe",
+                                    }.get(name, ""),
+                                ):
+                                    payload = self.service.ensure_cli_installed(workspace_root=str(self.root))
+
+        matrix = payload["runtime_support_matrix"]["runtimes"]
+        self.assertEqual(matrix["codex"]["status"], "ready")
+        self.assertEqual(matrix["claude_code"]["status"], "stale")
+        self.assertIn("legacy_claude_commands_present", matrix["claude_code"]["issues"])
+        self.assertEqual(matrix["opencode"]["status"], "missing")
+        self.assertIn("opencode_config_missing", matrix["opencode"]["issues"])
+        self.assertEqual(matrix["openclaw"]["status"], "missing")
+
+    def test_doctor_runtime_support_matrix_reports_stale_claude_surfaces(self) -> None:
+        codex_status = {
+            "using_skill_path": "C:\\Users\\demo\\.agents\\skills\\using-aitp\\SKILL.md",
+            "runtime_skill_path": "C:\\Users\\demo\\.agents\\skills\\aitp-runtime\\SKILL.md",
+            "using_skill_present": True,
+            "runtime_skill_present": True,
+            "using_skill_matches_canonical": True,
+            "runtime_skill_matches_canonical": True,
+        }
+        claude_status = {
+            "using_skill_path": "C:\\Users\\demo\\.claude\\skills\\using-aitp\\SKILL.md",
+            "runtime_skill_path": "C:\\Users\\demo\\.claude\\skills\\aitp-runtime\\SKILL.md",
+            "session_start_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start",
+            "hook_wrapper_path": "C:\\Users\\demo\\.claude\\hooks\\run-hook.cmd",
+            "hooks_manifest_path": "C:\\Users\\demo\\.claude\\hooks\\hooks.json",
+            "settings_path": "C:\\Users\\demo\\.claude\\settings.json",
+            "using_skill": True,
+            "runtime_skill": True,
+            "session_start_hook": True,
+            "hook_wrapper": True,
+            "hooks_manifest": True,
+            "settings": True,
+            "using_skill_matches_canonical": True,
+            "runtime_skill_matches_canonical": True,
+            "session_start_hook_matches_canonical": False,
+            "hook_wrapper_matches_canonical": True,
+            "hooks_manifest_matches_canonical": True,
+            "settings_has_expected_session_start_command": False,
+        }
+        with patch.object(
+            self.service,
+            "_pip_show_package",
+            return_value={
+                "version": "0.4.0",
+                "editable project location": str(self.service._canonical_package_root()),
+            },
+        ):
+            with patch.object(self.service, "_codex_skill_status", return_value=codex_status):
+                with patch.object(self.service, "_claude_hook_status", return_value=claude_status):
+                    with patch.object(
+                        self.service,
+                        "_opencode_plugin_status",
+                        return_value=self._make_opencode_status(),
+                    ):
+                        with patch.object(self.service, "_workspace_legacy_entrypoints", return_value=[]):
+                            with patch.object(self.service, "_claude_legacy_command_paths", return_value=[]):
+                                with patch(
+                                    "knowledge_hub.aitp_service.shutil.which",
+                                    side_effect=lambda name: {
+                                        "aitp": "C:\\temp\\aitp.exe",
+                                        "codex": "C:\\temp\\codex.exe",
+                                    }.get(name, ""),
+                                ):
+                                    payload = self.service.ensure_cli_installed(workspace_root=str(self.root))
+
+        claude_row = payload["runtime_support_matrix"]["runtimes"]["claude_code"]
+        self.assertEqual(claude_row["status"], "stale")
+        self.assertIn("session_start_hook_matches_canonical_stale", claude_row["issues"])
+        self.assertIn("settings_session_start_command_mismatch", claude_row["issues"])
+
+    def test_doctor_runtime_support_matrix_reports_ready_opencode_compatibility_surface(self) -> None:
+        codex_status = {
+            "using_skill_path": "C:\\Users\\demo\\.agents\\skills\\using-aitp\\SKILL.md",
+            "runtime_skill_path": "C:\\Users\\demo\\.agents\\skills\\aitp-runtime\\SKILL.md",
+            "using_skill_present": True,
+            "runtime_skill_present": True,
+            "using_skill_matches_canonical": True,
+            "runtime_skill_matches_canonical": True,
+        }
+        claude_status = {
+            "using_skill_path": "C:\\Users\\demo\\.claude\\skills\\using-aitp\\SKILL.md",
+            "runtime_skill_path": "C:\\Users\\demo\\.claude\\skills\\aitp-runtime\\SKILL.md",
+            "session_start_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start",
+            "hook_wrapper_path": "C:\\Users\\demo\\.claude\\hooks\\run-hook.cmd",
+            "hooks_manifest_path": "C:\\Users\\demo\\.claude\\hooks\\hooks.json",
+            "settings_path": "C:\\Users\\demo\\.claude\\settings.json",
+            "using_skill": True,
+            "runtime_skill": True,
+            "session_start_hook": True,
+            "hook_wrapper": True,
+            "hooks_manifest": True,
+            "settings": True,
+            "using_skill_matches_canonical": True,
+            "runtime_skill_matches_canonical": True,
+            "session_start_hook_matches_canonical": True,
+            "hook_wrapper_matches_canonical": True,
+            "hooks_manifest_matches_canonical": True,
+            "settings_has_expected_session_start_command": True,
+        }
+        with patch.object(
+            self.service,
+            "_pip_show_package",
+            return_value={
+                "version": "0.4.0",
+                "editable project location": str(self.service._canonical_package_root()),
+            },
+        ):
+            with patch.object(self.service, "_codex_skill_status", return_value=codex_status):
+                with patch.object(self.service, "_claude_hook_status", return_value=claude_status):
+                    with patch.object(
+                        self.service,
+                        "_opencode_plugin_status",
+                        return_value=self._make_opencode_status(
+                            config_exists=False,
+                            config_parse_ok=False,
+                            plugin_list_present=False,
+                            plugin_list_valid=False,
+                            plugins=[],
+                            canonical_plugin_entry_present=False,
+                            aitp_plugin_entries=[],
+                            workspace_plugin_path="D:/theory/.opencode/plugins/aitp.js",
+                            workspace_using_skill_path="D:/theory/.opencode/skills/using-aitp/SKILL.md",
+                            workspace_runtime_skill_path="D:/theory/.opencode/skills/aitp-runtime/SKILL.md",
+                            workspace_plugin_present=True,
+                            workspace_using_skill_present=True,
+                            workspace_runtime_skill_present=True,
+                            workspace_plugin_matches_canonical=True,
+                            workspace_using_skill_matches_canonical=True,
+                            workspace_runtime_skill_matches_canonical=True,
+                        ),
+                    ):
+                        with patch.object(self.service, "_workspace_legacy_entrypoints", return_value=[]):
+                            with patch.object(self.service, "_claude_legacy_command_paths", return_value=[]):
+                                with patch(
+                                    "knowledge_hub.aitp_service.shutil.which",
+                                    side_effect=lambda name: {
+                                        "aitp": "C:\\temp\\aitp.exe",
+                                        "codex": "C:\\temp\\codex.exe",
+                                    }.get(name, ""),
+                                ):
+                                    payload = self.service.ensure_cli_installed(workspace_root=str(self.root))
+
+        opencode_row = payload["runtime_support_matrix"]["runtimes"]["opencode"]
+        self.assertEqual(opencode_row["status"], "ready")
+        self.assertIn("Workspace-local compatibility bootstrap is present", " ".join(opencode_row["notes"]))
+
+    def test_doctor_runtime_support_matrix_reports_partial_opencode_workspace_install(self) -> None:
+        codex_status = {
+            "using_skill_path": "C:\\Users\\demo\\.agents\\skills\\using-aitp\\SKILL.md",
+            "runtime_skill_path": "C:\\Users\\demo\\.agents\\skills\\aitp-runtime\\SKILL.md",
+            "using_skill_present": True,
+            "runtime_skill_present": True,
+            "using_skill_matches_canonical": True,
+            "runtime_skill_matches_canonical": True,
+        }
+        claude_status = {
+            "using_skill_path": "C:\\Users\\demo\\.claude\\skills\\using-aitp\\SKILL.md",
+            "runtime_skill_path": "C:\\Users\\demo\\.claude\\skills\\aitp-runtime\\SKILL.md",
+            "session_start_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start",
+            "hook_wrapper_path": "C:\\Users\\demo\\.claude\\hooks\\run-hook.cmd",
+            "hooks_manifest_path": "C:\\Users\\demo\\.claude\\hooks\\hooks.json",
+            "settings_path": "C:\\Users\\demo\\.claude\\settings.json",
+            "using_skill": True,
+            "runtime_skill": True,
+            "session_start_hook": True,
+            "hook_wrapper": True,
+            "hooks_manifest": True,
+            "settings": True,
+            "using_skill_matches_canonical": True,
+            "runtime_skill_matches_canonical": True,
+            "session_start_hook_matches_canonical": True,
+            "hook_wrapper_matches_canonical": True,
+            "hooks_manifest_matches_canonical": True,
+            "settings_has_expected_session_start_command": True,
+        }
+        with patch.object(
+            self.service,
+            "_pip_show_package",
+            return_value={
+                "version": "0.4.0",
+                "editable project location": str(self.service._canonical_package_root()),
+            },
+        ):
+            with patch.object(self.service, "_codex_skill_status", return_value=codex_status):
+                with patch.object(self.service, "_claude_hook_status", return_value=claude_status):
+                    with patch.object(
+                        self.service,
+                        "_opencode_plugin_status",
+                        return_value=self._make_opencode_status(
+                            config_exists=False,
+                            config_parse_ok=False,
+                            plugin_list_present=False,
+                            plugin_list_valid=False,
+                            plugins=[],
+                            canonical_plugin_entry_present=False,
+                            aitp_plugin_entries=[],
+                            workspace_plugin_path="D:/theory/.opencode/plugins/aitp.js",
+                            workspace_using_skill_path="D:/theory/.opencode/skills/using-aitp/SKILL.md",
+                            workspace_runtime_skill_path="D:/theory/.opencode/skills/aitp-runtime/SKILL.md",
+                            workspace_plugin_present=True,
+                            workspace_using_skill_present=False,
+                            workspace_runtime_skill_present=True,
+                            workspace_plugin_matches_canonical=True,
+                            workspace_using_skill_matches_canonical=False,
+                            workspace_runtime_skill_matches_canonical=True,
+                        ),
+                    ):
+                        with patch.object(self.service, "_workspace_legacy_entrypoints", return_value=[]):
+                            with patch.object(self.service, "_claude_legacy_command_paths", return_value=[]):
+                                with patch(
+                                    "knowledge_hub.aitp_service.shutil.which",
+                                    side_effect=lambda name: {
+                                        "aitp": "C:\\temp\\aitp.exe",
+                                        "codex": "C:\\temp\\codex.exe",
+                                    }.get(name, ""),
+                                ):
+                                    payload = self.service.ensure_cli_installed(workspace_root=str(self.root))
+
+        opencode_row = payload["runtime_support_matrix"]["runtimes"]["opencode"]
+        self.assertEqual(opencode_row["status"], "partial")
+        self.assertIn("workspace_using_skill_missing", opencode_row["issues"])
+
+    def test_doctor_runtime_support_matrix_reports_stale_opencode_config(self) -> None:
+        codex_status = {
+            "using_skill_path": "C:\\Users\\demo\\.agents\\skills\\using-aitp\\SKILL.md",
+            "runtime_skill_path": "C:\\Users\\demo\\.agents\\skills\\aitp-runtime\\SKILL.md",
+            "using_skill_present": True,
+            "runtime_skill_present": True,
+            "using_skill_matches_canonical": True,
+            "runtime_skill_matches_canonical": True,
+        }
+        claude_status = {
+            "using_skill_path": "C:\\Users\\demo\\.claude\\skills\\using-aitp\\SKILL.md",
+            "runtime_skill_path": "C:\\Users\\demo\\.claude\\skills\\aitp-runtime\\SKILL.md",
+            "session_start_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start",
+            "hook_wrapper_path": "C:\\Users\\demo\\.claude\\hooks\\run-hook.cmd",
+            "hooks_manifest_path": "C:\\Users\\demo\\.claude\\hooks\\hooks.json",
+            "settings_path": "C:\\Users\\demo\\.claude\\settings.json",
+            "using_skill": True,
+            "runtime_skill": True,
+            "session_start_hook": True,
+            "hook_wrapper": True,
+            "hooks_manifest": True,
+            "settings": True,
+            "using_skill_matches_canonical": True,
+            "runtime_skill_matches_canonical": True,
+            "session_start_hook_matches_canonical": True,
+            "hook_wrapper_matches_canonical": True,
+            "hooks_manifest_matches_canonical": True,
+            "settings_has_expected_session_start_command": True,
+        }
+        with patch.object(
+            self.service,
+            "_pip_show_package",
+            return_value={
+                "version": "0.4.0",
+                "editable project location": str(self.service._canonical_package_root()),
+            },
+        ):
+            with patch.object(self.service, "_codex_skill_status", return_value=codex_status):
+                with patch.object(self.service, "_claude_hook_status", return_value=claude_status):
+                    with patch.object(
+                        self.service,
+                        "_opencode_plugin_status",
+                        return_value=self._make_opencode_status(
+                            plugins=["aitp@git+ssh://old-private-repo"],
+                            canonical_plugin_entry_present=False,
+                            aitp_plugin_entries=["aitp@git+ssh://old-private-repo"],
+                            noncanonical_aitp_plugin_entries=["aitp@git+ssh://old-private-repo"],
+                        ),
+                    ):
+                        with patch.object(self.service, "_workspace_legacy_entrypoints", return_value=[]):
+                            with patch.object(self.service, "_claude_legacy_command_paths", return_value=[]):
+                                with patch(
+                                    "knowledge_hub.aitp_service.shutil.which",
+                                    side_effect=lambda name: {
+                                        "aitp": "C:\\temp\\aitp.exe",
+                                        "codex": "C:\\temp\\codex.exe",
+                                    }.get(name, ""),
+                                ):
+                                    payload = self.service.ensure_cli_installed(workspace_root=str(self.root))
+
+        opencode_row = payload["runtime_support_matrix"]["runtimes"]["opencode"]
+        self.assertEqual(opencode_row["status"], "stale")
+        self.assertIn("noncanonical_aitp_plugin_entries_present", opencode_row["issues"])
+
     def test_doctor_detects_mixed_install_signals(self) -> None:
         workspace_root = self.root / "Theoretical-Physics"
         workspace_root.mkdir(parents=True, exist_ok=True)
@@ -2200,6 +2773,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["overall_status"], "mixed_install")
         self.assertIn("stale_cli", payload["issues"])
         self.assertIn("legacy_workspace_entrypoints_present", payload["issues"])
+        self.assertIn("runtime_support_matrix", payload)
 
     def test_migrate_local_install_moves_workspace_legacy_and_records_pip_actions(self) -> None:
         workspace_root = self.root / "Theoretical-Physics"
@@ -2248,6 +2822,62 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn(("codex", False), install_calls)
         self.assertIn(("claude-code", False), install_calls)
         self.assertIn(("opencode", False), install_calls)
+        self.assertIn("runtime_convergence_before", result)
+        self.assertIn("runtime_convergence_after", result)
+
+    def test_migrate_local_install_reports_runtime_convergence_before_and_after(self) -> None:
+        workspace_root = self.root / "Theoretical-Physics"
+        workspace_root.mkdir(parents=True, exist_ok=True)
+
+        before = {
+            "overall_status": "mixed_install",
+            "runtime_support_matrix": {
+                "baseline_runtime": "codex",
+                "parity_targets": ["claude_code", "opencode"],
+                "specialized_lanes": ["openclaw"],
+                "runtimes": {
+                    "codex": {"status": "ready"},
+                    "claude_code": {"status": "partial"},
+                    "opencode": {"status": "missing"},
+                    "openclaw": {"status": "missing"},
+                },
+            },
+        }
+        after = {
+            "overall_status": "clean",
+            "runtime_support_matrix": {
+                "baseline_runtime": "codex",
+                "parity_targets": ["claude_code", "opencode"],
+                "specialized_lanes": ["openclaw"],
+                "runtimes": {
+                    "codex": {"status": "ready"},
+                    "claude_code": {"status": "ready"},
+                    "opencode": {"status": "ready"},
+                    "openclaw": {"status": "missing"},
+                },
+            },
+        }
+
+        def fake_install_agent(*, agent: str, scope: str = "user", target_root: str | None = None, force: bool = True, install_mcp: bool = True):
+            return {"installed": [{"agent": agent, "path": f"/tmp/{agent}", "kind": "skill"}]}
+
+        with patch.object(self.service, "ensure_cli_installed", side_effect=[before, after]):
+            with patch.object(self.service, "_pip_show_package", return_value={"version": "0.4.0", "editable project location": str(self.service._canonical_package_root())}):
+                with patch.object(self.service, "install_agent", side_effect=fake_install_agent):
+                    with patch.object(self.service, "_ensure_opencode_plugin_enabled", return_value={"config_path": "C:\\temp\\opencode.json", "plugin_entry": "aitp@git+https://github.com/bhjia-phys/AITP-Research-Protocol.git"}):
+                        result = self.service.migrate_local_install(
+                            workspace_root=str(workspace_root),
+                            agents=["codex", "claude-code", "opencode"],
+                            with_mcp=False,
+                        )
+
+        self.assertFalse(result["runtime_convergence_before"]["front_door_runtimes_converged"])
+        self.assertEqual(
+            result["runtime_convergence_before"]["status_by_runtime"],
+            {"codex": "ready", "claude_code": "partial", "opencode": "missing", "openclaw": "missing"},
+        )
+        self.assertTrue(result["runtime_convergence_after"]["front_door_runtimes_converged"])
+        self.assertEqual(result["runtime_convergence_after"]["ready_runtimes"], ["codex", "claude_code", "opencode"])
 
     def test_run_topic_loop_writes_loop_state_and_executes_auto_actions(self) -> None:
         service = _LoopStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)
@@ -2327,6 +2957,951 @@ class AITPServiceTests(unittest.TestCase):
 
         self.assertEqual(self.service.current_topic_slug(), remembered_topic)
 
+    def test_active_topic_record_prefers_topic_synopsis_runtime_focus_summary(self) -> None:
+        topic_slug = "synopsis-topic"
+        topic_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        topic_root.mkdir(parents=True, exist_ok=True)
+        (topic_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": topic_slug,
+                    "latest_run_id": "2026-04-04-synopsis",
+                    "resume_stage": "L3",
+                    "summary": "State summary should not win.",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (topic_root / "topic_synopsis.json").write_text(
+            json.dumps(
+                {
+                    "id": f"topic_synopsis:{topic_slug}",
+                    "topic_slug": topic_slug,
+                    "title": "Synopsis Topic",
+                    "question": "What should the registry show?",
+                    "lane": "code_method",
+                    "load_profile": "light",
+                    "status": "active",
+                    "runtime_focus": {
+                        "summary": "Synopsis-owned runtime summary.",
+                        "why_this_topic_is_here": "The topic is following the bounded synopsis route.",
+                        "resume_stage": "L3",
+                        "last_materialized_stage": "L3",
+                        "next_action_id": "action:synopsis-topic:01",
+                        "next_action_type": "inspect_runtime",
+                        "next_action_summary": "Inspect the synopsis truth model.",
+                        "human_need_status": "none",
+                        "human_need_kind": "none",
+                        "human_need_summary": "No active human checkpoint is currently blocking the bounded loop.",
+                        "blocker_summary": [],
+                        "last_evidence_kind": "none",
+                        "last_evidence_summary": "No durable evidence-return artifact is currently recorded for this topic.",
+                        "dependency_status": "clear",
+                        "dependency_summary": "No active topic dependencies.",
+                        "promotion_status": "not_ready",
+                    },
+                    "truth_sources": {
+                        "topic_state_path": f"runtime/topics/{topic_slug}/topic_state.json",
+                        "research_question_contract_path": f"runtime/topics/{topic_slug}/research_question.contract.json",
+                        "next_action_surface_path": f"runtime/topics/{topic_slug}/action_queue.jsonl",
+                        "human_need_surface_path": None,
+                        "dependency_registry_path": "runtime/active_topics.json",
+                        "promotion_readiness_path": f"runtime/topics/{topic_slug}/promotion_readiness.json",
+                        "promotion_gate_path": None,
+                    },
+                    "next_action_summary": "This older synopsis string should not win once runtime_focus exists.",
+                    "open_gap_summary": "No explicit gap packet is currently open.",
+                    "pending_decision_count": 0,
+                    "knowledge_packet_paths": [],
+                    "updated_at": "2026-04-04T10:00:00+08:00",
+                    "updated_by": "test",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        record = self.service._build_active_topic_record(topic_slug=topic_slug)
+
+        self.assertIsNotNone(record)
+        self.assertEqual(record["summary"], "Synopsis-owned runtime summary.")
+
+    def test_topic_synopsis_runtime_focus_preserves_fallback_shape(self) -> None:
+        payload = self.service._topic_synopsis_runtime_focus(
+            topic_state={"resume_stage": "L3", "last_materialized_stage": "L1"},
+            topic_status_explainability={
+                "next_bounded_action": {
+                    "action_id": "action:demo-topic:01",
+                    "action_type": "inspect_runtime",
+                    "summary": "Inspect the persisted runtime truth.",
+                },
+                "active_human_need": {},
+                "last_evidence_return": {},
+                "blocker_summary": ["Need a tighter benchmark."],
+            },
+            dependency_state={},
+            promotion_readiness={},
+        )
+
+        self.assertEqual(
+            payload["summary"],
+            "Stage `L3`; next `Inspect the persisted runtime truth.`; human need `none`; last evidence `none`.",
+        )
+        self.assertEqual(payload["next_action_id"], "action:demo-topic:01")
+        self.assertEqual(payload["next_action_type"], "inspect_runtime")
+        self.assertEqual(payload["promotion_status"], "not_ready")
+        self.assertEqual(payload["blocker_summary"], ["Need a tighter benchmark."])
+        self.assertEqual(payload["dependency_summary"], "No dependency state recorded.")
+
+    def test_get_current_topic_memory_prefers_registry_focus_and_projects_compatibility_file(self) -> None:
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        focused_topic = "registry-topic"
+        focused_runtime_root = runtime_root / "topics" / focused_topic
+        focused_runtime_root.mkdir(parents=True, exist_ok=True)
+        (focused_runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": focused_topic,
+                    "latest_run_id": "2026-04-04-registry",
+                    "resume_stage": "L3",
+                    "summary": "Registry-backed focus topic.",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "active_topics.json").write_text(
+            json.dumps(
+                {
+                    "registry_version": 1,
+                    "focused_topic_slug": focused_topic,
+                    "updated_at": "2026-04-04T10:00:00+08:00",
+                    "updated_by": "registry-test",
+                    "source": "test",
+                    "topics": [
+                        {
+                            "topic_slug": focused_topic,
+                            "status": "blocked",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T10:00:00+08:00",
+                            "runtime_root": str(focused_runtime_root),
+                            "lane": "code_method",
+                            "resume_stage": "L3",
+                            "run_id": "2026-04-04-registry",
+                            "projection_status": "missing",
+                            "projection_note_path": None,
+                            "blocked_by": [],
+                            "focus_state": "focused",
+                            "summary": "Registry focus summary.",
+                            "human_request": "continue this topic",
+                        }
+                    ],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.get_current_topic_memory()
+
+        self.assertEqual(payload["topic_slug"], focused_topic)
+        self.assertEqual(payload["source"], "active-topics-registry")
+        self.assertEqual(payload["summary"], "Registry focus summary.")
+        projected_payload = json.loads((runtime_root / "current_topic.json").read_text(encoding="utf-8"))
+        self.assertEqual(projected_payload["topic_slug"], focused_topic)
+
+    def test_build_current_topic_memory_payload_prefers_topic_synopsis_runtime_focus_summary(self) -> None:
+        topic_slug = "current-synopsis-topic"
+        topic_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        topic_root.mkdir(parents=True, exist_ok=True)
+        (topic_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": topic_slug,
+                    "latest_run_id": "2026-04-04-current",
+                    "resume_stage": "L4",
+                    "summary": "Fallback state summary.",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (topic_root / "topic_synopsis.json").write_text(
+            json.dumps(
+                {
+                    "id": f"topic_synopsis:{topic_slug}",
+                    "topic_slug": topic_slug,
+                    "title": "Current Synopsis Topic",
+                    "question": "Which summary should current-topic project?",
+                    "lane": "toy_numeric",
+                    "load_profile": "light",
+                    "status": "active",
+                    "runtime_focus": {
+                        "summary": "Current-topic summary should come from synopsis runtime_focus.",
+                        "why_this_topic_is_here": "This topic is still in a bounded numerical route.",
+                        "resume_stage": "L4",
+                        "last_materialized_stage": "L4",
+                        "next_action_id": "action:current-synopsis-topic:01",
+                        "next_action_type": "review_validation",
+                        "next_action_summary": "Review the validation artifacts.",
+                        "human_need_status": "none",
+                        "human_need_kind": "none",
+                        "human_need_summary": "No active human checkpoint is currently blocking the bounded loop.",
+                        "blocker_summary": [],
+                        "last_evidence_kind": "validation_evidence",
+                        "last_evidence_summary": "Validation evidence artifacts are present.",
+                        "dependency_status": "clear",
+                        "dependency_summary": "No active topic dependencies.",
+                        "promotion_status": "not_ready",
+                    },
+                    "truth_sources": {
+                        "topic_state_path": f"runtime/topics/{topic_slug}/topic_state.json",
+                        "research_question_contract_path": f"runtime/topics/{topic_slug}/research_question.contract.json",
+                        "next_action_surface_path": f"runtime/topics/{topic_slug}/action_queue.jsonl",
+                        "human_need_surface_path": None,
+                        "dependency_registry_path": "runtime/active_topics.json",
+                        "promotion_readiness_path": f"runtime/topics/{topic_slug}/promotion_readiness.json",
+                        "promotion_gate_path": None,
+                    },
+                    "next_action_summary": "Older current-topic fallback.",
+                    "open_gap_summary": "No explicit gap packet is currently open.",
+                    "pending_decision_count": 0,
+                    "knowledge_packet_paths": [],
+                    "updated_at": "2026-04-04T11:00:00+08:00",
+                    "updated_by": "test",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service._build_current_topic_memory_payload(
+            topic_slug=topic_slug,
+            updated_by="test",
+            source="test",
+        )
+
+        self.assertEqual(payload["summary"], "Current-topic summary should come from synopsis runtime_focus.")
+
+    def test_remember_current_topic_writes_active_topics_registry_and_bootstraps_known_topics(self) -> None:
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        topic_index_path = runtime_root / "topic_index.jsonl"
+        topic_index_path.write_text(
+            json.dumps({"topic_slug": "older-topic", "updated_at": "2026-04-03T08:00:00+08:00"}, ensure_ascii=True) + "\n",
+            encoding="utf-8",
+        )
+        for topic_slug, updated_at in (("older-topic", "2026-04-03T08:00:00+08:00"), ("focused-topic", "2026-04-04T09:00:00+08:00")):
+            topic_runtime_root = runtime_root / "topics" / topic_slug
+            topic_runtime_root.mkdir(parents=True, exist_ok=True)
+            (topic_runtime_root / "topic_state.json").write_text(
+                json.dumps(
+                    {
+                        "topic_slug": topic_slug,
+                        "updated_at": updated_at,
+                        "latest_run_id": f"{topic_slug}-run",
+                        "resume_stage": "L3",
+                        "summary": f"Summary for {topic_slug}.",
+                    },
+                    ensure_ascii=True,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+
+        payload = self.service.remember_current_topic(
+            topic_slug="focused-topic",
+            updated_by="registry-test",
+            source="test",
+            human_request="continue focused topic",
+        )
+
+        registry_payload = json.loads((runtime_root / "active_topics.json").read_text(encoding="utf-8"))
+        self.assertEqual(registry_payload["focused_topic_slug"], "focused-topic")
+        topic_slugs = {row["topic_slug"] for row in registry_payload["topics"]}
+        self.assertEqual(topic_slugs, {"older-topic", "focused-topic"})
+        focused_row = next(row for row in registry_payload["topics"] if row["topic_slug"] == "focused-topic")
+        self.assertEqual(focused_row["focus_state"], "focused")
+        self.assertEqual(focused_row["priority"], 0)
+        self.assertEqual(payload["topic_slug"], "focused-topic")
+        self.assertTrue((runtime_root / "active_topics.md").exists())
+
+    def test_select_next_topic_prefers_priority_then_focus_and_reports_skips(self) -> None:
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        rows = [
+            {
+                "topic_slug": "focused-low",
+                "status": "ready",
+                "priority": 1,
+                "last_activity": "2026-04-04T10:00:00+08:00",
+                "runtime_root": str(runtime_root / "topics" / "focused-low"),
+                "lane": "code_method",
+                "focus_state": "focused",
+                "projection_status": "missing",
+                "blocked_by": [],
+                "summary": "Focused topic",
+            },
+            {
+                "topic_slug": "priority-high",
+                "status": "ready",
+                "priority": 3,
+                "last_activity": "2026-04-04T09:00:00+08:00",
+                "runtime_root": str(runtime_root / "topics" / "priority-high"),
+                "lane": "formal_theory",
+                "focus_state": "background",
+                "projection_status": "missing",
+                "blocked_by": [],
+                "summary": "High priority topic",
+            },
+            {
+                "topic_slug": "paused-topic",
+                "status": "paused",
+                "priority": 10,
+                "last_activity": "2026-04-04T11:00:00+08:00",
+                "runtime_root": str(runtime_root / "topics" / "paused-topic"),
+                "lane": "code_method",
+                "focus_state": "background",
+                "projection_status": "missing",
+                "blocked_by": [],
+                "summary": "Paused topic",
+            },
+            {
+                "topic_slug": "dependency-topic",
+                "status": "ready",
+                "priority": 9,
+                "last_activity": "2026-04-04T12:00:00+08:00",
+                "runtime_root": str(runtime_root / "topics" / "dependency-topic"),
+                "lane": "code_method",
+                "focus_state": "background",
+                "projection_status": "missing",
+                "blocked_by": ["other-topic"],
+                "summary": "Dependency blocked topic",
+            },
+        ]
+        for row in rows:
+            topic_runtime_root = Path(row["runtime_root"])
+            topic_runtime_root.mkdir(parents=True, exist_ok=True)
+            (topic_runtime_root / "topic_state.json").write_text(
+                json.dumps(
+                    {
+                        "topic_slug": row["topic_slug"],
+                        "latest_run_id": f"{row['topic_slug']}-run",
+                        "resume_stage": "L3",
+                    },
+                    ensure_ascii=True,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+        (runtime_root / "active_topics.json").write_text(
+            json.dumps(
+                {
+                    "registry_version": 1,
+                    "focused_topic_slug": "focused-low",
+                    "updated_at": "2026-04-04T12:30:00+08:00",
+                    "updated_by": "scheduler-test",
+                    "source": "test",
+                    "topics": rows,
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.select_next_topic(updated_by="scheduler-test")
+
+        self.assertEqual(payload["selected_topic_slug"], "priority-high")
+        self.assertIn("highest_priority=3", payload["selection_reason"])
+        skipped = {row["topic_slug"]: row["reason"] for row in payload["skipped_topics"]}
+        self.assertEqual(skipped["paused-topic"], "paused")
+        self.assertEqual(skipped["dependency-topic"], "dependency_blocked")
+
+    def test_run_topic_loop_without_explicit_topic_uses_scheduler_selection(self) -> None:
+        service = _LoopStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        selected_root = runtime_root / "topics" / "scheduled-topic"
+        selected_root.mkdir(parents=True, exist_ok=True)
+        (selected_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "scheduled-topic",
+                    "latest_run_id": "2026-04-04-scheduled",
+                    "resume_stage": "L3",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "active_topics.json").write_text(
+            json.dumps(
+                {
+                    "registry_version": 1,
+                    "focused_topic_slug": "scheduled-topic",
+                    "updated_at": "2026-04-04T13:00:00+08:00",
+                    "updated_by": "scheduler-test",
+                    "source": "test",
+                    "topics": [
+                        {
+                            "topic_slug": "scheduled-topic",
+                            "status": "ready",
+                            "priority": 1,
+                            "last_activity": "2026-04-04T13:00:00+08:00",
+                            "runtime_root": str(selected_root),
+                            "lane": "code_method",
+                            "focus_state": "focused",
+                            "projection_status": "missing",
+                            "blocked_by": [],
+                            "summary": "Scheduled topic",
+                        }
+                    ],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = service.run_topic_loop(
+            human_request="continue the best topic",
+            max_auto_steps=0,
+            updated_by="scheduler-test",
+        )
+
+        self.assertEqual(payload["topic_slug"], "scheduled-topic")
+        self.assertEqual(payload["scheduler"]["selected_topic_slug"], "scheduled-topic")
+
+    def test_list_active_topics_reports_effective_status_and_focus(self) -> None:
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        topic_root = runtime_root / "topics" / "demo-topic"
+        topic_root.mkdir(parents=True, exist_ok=True)
+        (topic_root / "topic_state.json").write_text(
+            json.dumps({"topic_slug": "demo-topic", "latest_run_id": "run", "resume_stage": "L3"}, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "active_topics.json").write_text(
+            json.dumps(
+                {
+                    "registry_version": 1,
+                    "focused_topic_slug": "demo-topic",
+                    "updated_at": "2026-04-04T14:00:00+08:00",
+                    "updated_by": "test",
+                    "source": "test",
+                    "topics": [
+                        {
+                            "topic_slug": "demo-topic",
+                            "status": "blocked",
+                            "operator_status": "paused",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T14:00:00+08:00",
+                            "runtime_root": str(topic_root),
+                            "lane": "code_method",
+                            "focus_state": "focused",
+                            "projection_status": "missing",
+                            "blocked_by": [],
+                            "summary": "Paused topic",
+                        }
+                    ],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.list_active_topics(updated_by="test")
+
+        self.assertEqual(payload["focused_topic_slug"], "demo-topic")
+        self.assertEqual(payload["topics"][0]["effective_status"], "paused")
+
+    def test_list_active_topics_materializes_protocol_native_topic_family_reuse_surface(self) -> None:
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        self._write_available_projection(
+            topic_slug="code-family-topic",
+            lane="code_method",
+            summary="Validated reusable benchmark-first code-method route.",
+            required_first_routes=["Close the benchmark-first route before broader workflow claims."],
+        )
+        self._write_available_projection(
+            topic_slug="formal-family-topic",
+            lane="formal_theory",
+            summary="Validated reusable theorem-facing formal-theory route.",
+            required_first_routes=["Read the theorem-facing route before reusing the proof lane."],
+        )
+        self._write_runtime_state(topic_slug="blocked-topic", run_id="run-blocked")
+        (runtime_root / "topics" / "blocked-topic" / "topic_skill_projection.active.json").write_text(
+            json.dumps(
+                {
+                    "id": "topic_skill_projection:blocked-topic",
+                    "topic_slug": "blocked-topic",
+                    "lane": "code_method",
+                    "status": "blocked",
+                    "summary": "Blocked projection should not enter family reuse.",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "active_topics.json").write_text(
+            json.dumps(
+                {
+                    "registry_version": 1,
+                    "focused_topic_slug": "code-family-topic",
+                    "updated_at": "2026-04-04T14:00:00+08:00",
+                    "updated_by": "test",
+                    "source": "test",
+                    "topics": [
+                        {
+                            "topic_slug": "code-family-topic",
+                            "status": "active",
+                            "operator_status": "",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T14:00:00+08:00",
+                            "runtime_root": str(runtime_root / "topics" / "code-family-topic"),
+                            "lane": "code_method",
+                            "focus_state": "focused",
+                            "projection_status": "available",
+                            "projection_note_path": "runtime/topics/code-family-topic/topic_skill_projection.active.md",
+                            "blocked_by": [],
+                            "summary": "Code family route.",
+                        },
+                        {
+                            "topic_slug": "formal-family-topic",
+                            "status": "active",
+                            "operator_status": "",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T14:10:00+08:00",
+                            "runtime_root": str(runtime_root / "topics" / "formal-family-topic"),
+                            "lane": "formal_theory",
+                            "focus_state": "background",
+                            "projection_status": "available",
+                            "projection_note_path": "runtime/topics/formal-family-topic/topic_skill_projection.active.md",
+                            "blocked_by": [],
+                            "summary": "Formal family route.",
+                        },
+                        {
+                            "topic_slug": "blocked-topic",
+                            "status": "active",
+                            "operator_status": "",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T14:20:00+08:00",
+                            "runtime_root": str(runtime_root / "topics" / "blocked-topic"),
+                            "lane": "code_method",
+                            "focus_state": "background",
+                            "projection_status": "blocked",
+                            "projection_note_path": None,
+                            "blocked_by": [],
+                            "summary": "Blocked route.",
+                        },
+                    ],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.list_active_topics(updated_by="test")
+
+        reuse = payload["topic_family_reuse"]
+        self.assertEqual(reuse["surface_kind"], "topic_family_reuse")
+        self.assertEqual(reuse["family_count"], 2)
+        families_by_lane = {row["lane"]: row for row in reuse["families"]}
+        self.assertEqual(families_by_lane["code_method"]["topic_slugs"], ["code-family-topic"])
+        self.assertEqual(families_by_lane["formal_theory"]["topic_slugs"], ["formal-family-topic"])
+        self.assertTrue(Path(payload["topic_family_reuse_path"]).exists())
+        self.assertTrue(Path(payload["topic_family_reuse_note_path"]).exists())
+        note_text = Path(payload["topic_family_reuse_note_path"]).read_text(encoding="utf-8")
+        self.assertIn("protocol-native route reuse", note_text)
+        self.assertNotIn("blocked-topic", note_text)
+
+    def test_pause_topic_moves_focus_to_next_eligible_topic(self) -> None:
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        for topic_slug in ("alpha-topic", "beta-topic"):
+            topic_root = runtime_root / "topics" / topic_slug
+            topic_root.mkdir(parents=True, exist_ok=True)
+            (topic_root / "topic_state.json").write_text(
+                json.dumps({"topic_slug": topic_slug, "latest_run_id": "run", "resume_stage": "L3"}, ensure_ascii=True, indent=2) + "\n",
+                encoding="utf-8",
+            )
+        (runtime_root / "active_topics.json").write_text(
+            json.dumps(
+                {
+                    "registry_version": 1,
+                    "focused_topic_slug": "alpha-topic",
+                    "updated_at": "2026-04-04T14:00:00+08:00",
+                    "updated_by": "test",
+                    "source": "test",
+                    "topics": [
+                        {
+                            "topic_slug": "alpha-topic",
+                            "status": "ready",
+                            "operator_status": "",
+                            "priority": 1,
+                            "last_activity": "2026-04-04T14:00:00+08:00",
+                            "runtime_root": str(runtime_root / "topics" / "alpha-topic"),
+                            "lane": "code_method",
+                            "focus_state": "focused",
+                            "projection_status": "missing",
+                            "blocked_by": [],
+                            "summary": "Alpha",
+                        },
+                        {
+                            "topic_slug": "beta-topic",
+                            "status": "ready",
+                            "operator_status": "",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T13:00:00+08:00",
+                            "runtime_root": str(runtime_root / "topics" / "beta-topic"),
+                            "lane": "formal_theory",
+                            "focus_state": "background",
+                            "projection_status": "missing",
+                            "blocked_by": [],
+                            "summary": "Beta",
+                        },
+                    ],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.pause_topic(topic_slug="alpha-topic", updated_by="test", human_request="暂停 alpha-topic")
+
+        self.assertEqual(payload["status"], "paused")
+        self.assertEqual(payload["focused_topic_slug"], "beta-topic")
+        registry_payload = json.loads((runtime_root / "active_topics.json").read_text(encoding="utf-8"))
+        alpha_row = next(row for row in registry_payload["topics"] if row["topic_slug"] == "alpha-topic")
+        self.assertEqual(alpha_row["operator_status"], "paused")
+
+    def test_resume_topic_focuses_the_resumed_topic(self) -> None:
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        topic_root = runtime_root / "topics" / "alpha-topic"
+        topic_root.mkdir(parents=True, exist_ok=True)
+        (topic_root / "topic_state.json").write_text(
+            json.dumps({"topic_slug": "alpha-topic", "latest_run_id": "run", "resume_stage": "L3"}, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "active_topics.json").write_text(
+            json.dumps(
+                {
+                    "registry_version": 1,
+                    "focused_topic_slug": "alpha-topic",
+                    "updated_at": "2026-04-04T14:00:00+08:00",
+                    "updated_by": "test",
+                    "source": "test",
+                    "topics": [
+                        {
+                            "topic_slug": "alpha-topic",
+                            "status": "blocked",
+                            "operator_status": "paused",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T14:00:00+08:00",
+                            "runtime_root": str(topic_root),
+                            "lane": "code_method",
+                            "focus_state": "focused",
+                            "projection_status": "missing",
+                            "blocked_by": [],
+                            "summary": "Alpha",
+                        }
+                    ],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.resume_topic(topic_slug="alpha-topic", updated_by="test", human_request="恢复 alpha-topic")
+
+        self.assertEqual(payload["status"], "ready")
+        self.assertEqual(payload["focused_topic_slug"], "alpha-topic")
+        registry_payload = json.loads((runtime_root / "active_topics.json").read_text(encoding="utf-8"))
+        alpha_row = next(row for row in registry_payload["topics"] if row["topic_slug"] == "alpha-topic")
+        self.assertEqual(alpha_row["operator_status"], "ready")
+
+    def test_route_codex_chat_request_detects_multi_topic_management_intents(self) -> None:
+        topic_index_path = self.kernel_root / "runtime" / "topic_index.jsonl"
+        topic_index_path.parent.mkdir(parents=True, exist_ok=True)
+        topic_index_path.write_text(
+            json.dumps({"topic_slug": "alpha-topic", "updated_at": "2026-04-04T10:00:00+08:00"}, ensure_ascii=True) + "\n",
+            encoding="utf-8",
+        )
+        alpha_root = self.kernel_root / "runtime" / "topics" / "alpha-topic"
+        alpha_root.mkdir(parents=True, exist_ok=True)
+        (alpha_root / "topic_state.json").write_text(
+            json.dumps({"topic_slug": "alpha-topic", "latest_run_id": "run", "resume_stage": "L3"}, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        (self.kernel_root / "runtime" / "current_topic.json").write_text(
+            json.dumps({"topic_slug": "alpha-topic"}, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+        list_route = self.service.route_codex_chat_request(task="现在有哪些课题？")
+        pause_route = self.service.route_codex_chat_request(task="暂停 alpha-topic")
+        resume_route = self.service.route_codex_chat_request(task="恢复 alpha-topic")
+        focus_route = self.service.route_codex_chat_request(task="切换到 alpha-topic")
+
+        self.assertEqual(list_route["route"], "request_list_active_topics")
+        self.assertEqual(pause_route["route"], "request_pause_topic")
+        self.assertEqual(resume_route["route"], "request_resume_topic")
+        self.assertEqual(focus_route["route"], "request_focus_topic")
+
+    def test_start_chat_session_handles_topic_management_routes_without_running_loop(self) -> None:
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        topic_root = runtime_root / "topics" / "alpha-topic"
+        topic_root.mkdir(parents=True, exist_ok=True)
+        (topic_root / "topic_state.json").write_text(
+            json.dumps({"topic_slug": "alpha-topic", "latest_run_id": "run", "resume_stage": "L3"}, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "active_topics.json").write_text(
+            json.dumps(
+                {
+                    "registry_version": 1,
+                    "focused_topic_slug": "alpha-topic",
+                    "updated_at": "2026-04-04T14:00:00+08:00",
+                    "updated_by": "test",
+                    "source": "test",
+                    "topics": [
+                        {
+                            "topic_slug": "alpha-topic",
+                            "status": "ready",
+                            "operator_status": "",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T14:00:00+08:00",
+                            "runtime_root": str(topic_root),
+                            "lane": "code_method",
+                            "focus_state": "focused",
+                            "projection_status": "missing",
+                            "blocked_by": [],
+                            "summary": "Alpha",
+                        }
+                    ],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.start_chat_session(task="现在有哪些课题？", updated_by="test")
+
+        self.assertEqual(payload["routing"]["route"], "request_list_active_topics")
+        self.assertIn("topic_management", payload)
+        self.assertNotIn("loop_state_path", payload)
+
+    def test_new_topic_keeps_existing_registry_rows_and_adds_new_topic(self) -> None:
+        service = _TopicCreationStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        existing_root = runtime_root / "topics" / "existing-topic"
+        existing_root.mkdir(parents=True, exist_ok=True)
+        (existing_root / "topic_state.json").write_text(
+            json.dumps({"topic_slug": "existing-topic", "latest_run_id": "old-run", "resume_stage": "L3"}, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "active_topics.json").write_text(
+            json.dumps(
+                {
+                    "registry_version": 1,
+                    "focused_topic_slug": "existing-topic",
+                    "updated_at": "2026-04-04T14:00:00+08:00",
+                    "updated_by": "test",
+                    "source": "test",
+                    "topics": [
+                        {
+                            "topic_slug": "existing-topic",
+                            "status": "ready",
+                            "operator_status": "",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T14:00:00+08:00",
+                            "runtime_root": str(existing_root),
+                            "lane": "code_method",
+                            "focus_state": "focused",
+                            "projection_status": "missing",
+                            "blocked_by": [],
+                            "summary": "Existing topic",
+                        }
+                    ],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = service.new_topic(
+            topic="Fresh Topic",
+            question="Open a bounded new topic",
+            updated_by="test",
+            human_request="开一个新课题：Fresh Topic",
+        )
+
+        self.assertEqual(payload["topic_slug"], "fresh-topic")
+        registry_payload = json.loads((runtime_root / "active_topics.json").read_text(encoding="utf-8"))
+        topic_slugs = {row["topic_slug"] for row in registry_payload["topics"]}
+        self.assertEqual(topic_slugs, {"existing-topic", "fresh-topic"})
+        self.assertEqual(registry_payload["focused_topic_slug"], "fresh-topic")
+
+    def test_set_and_clear_topic_dependency_updates_registry_details(self) -> None:
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        for topic_slug in ("alpha-topic", "beta-topic"):
+            topic_root = runtime_root / "topics" / topic_slug
+            topic_root.mkdir(parents=True, exist_ok=True)
+            (topic_root / "topic_state.json").write_text(
+                json.dumps({"topic_slug": topic_slug, "latest_run_id": "run", "resume_stage": "L3"}, ensure_ascii=True, indent=2) + "\n",
+                encoding="utf-8",
+            )
+        (runtime_root / "active_topics.json").write_text(
+            json.dumps(
+                {
+                    "registry_version": 1,
+                    "focused_topic_slug": "alpha-topic",
+                    "updated_at": "2026-04-04T15:00:00+08:00",
+                    "updated_by": "test",
+                    "source": "test",
+                    "topics": [
+                        {
+                            "topic_slug": "alpha-topic",
+                            "status": "ready",
+                            "operator_status": "",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T15:00:00+08:00",
+                            "runtime_root": str(runtime_root / "topics" / "alpha-topic"),
+                            "lane": "code_method",
+                            "focus_state": "focused",
+                            "projection_status": "missing",
+                            "blocked_by": [],
+                            "blocked_by_details": [],
+                            "summary": "Alpha",
+                        },
+                        {
+                            "topic_slug": "beta-topic",
+                            "status": "ready",
+                            "operator_status": "",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T14:00:00+08:00",
+                            "runtime_root": str(runtime_root / "topics" / "beta-topic"),
+                            "lane": "formal_theory",
+                            "focus_state": "background",
+                            "projection_status": "missing",
+                            "blocked_by": [],
+                            "blocked_by_details": [],
+                            "summary": "Beta",
+                        },
+                    ],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        blocked = self.service.set_topic_dependency(
+            topic_slug="alpha-topic",
+            blocked_by_topic_slug="beta-topic",
+            reason="Need the bounded Jones route first.",
+            updated_by="test",
+        )
+        self.assertEqual(blocked["status"], "dependency_blocked")
+        self.assertEqual(blocked["blocked_by"], ["beta-topic"])
+        self.assertEqual(blocked["blocked_by_details"][0]["reason"], "Need the bounded Jones route first.")
+
+        cleared = self.service.clear_topic_dependency(
+            topic_slug="alpha-topic",
+            blocked_by_topic_slug="beta-topic",
+            updated_by="test",
+        )
+        self.assertEqual(cleared["status"], "dependency_cleared")
+        self.assertEqual(cleared["blocked_by"], [])
+
+    def test_topic_status_and_dashboard_expose_dependency_state(self) -> None:
+        self._write_runtime_state()
+        runtime_root = self.kernel_root / "runtime"
+        registry_root = runtime_root / "topics" / "demo-topic"
+        (runtime_root / "active_topics.json").write_text(
+            json.dumps(
+                {
+                    "registry_version": 1,
+                    "focused_topic_slug": "demo-topic",
+                    "updated_at": "2026-04-04T15:00:00+08:00",
+                    "updated_by": "test",
+                    "source": "test",
+                    "topics": [
+                        {
+                            "topic_slug": "demo-topic",
+                            "status": "ready",
+                            "operator_status": "",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T15:00:00+08:00",
+                            "runtime_root": str(registry_root),
+                            "lane": "code_method",
+                            "focus_state": "focused",
+                            "projection_status": "missing",
+                            "blocked_by": ["other-topic"],
+                            "blocked_by_details": [
+                                {"topic_slug": "other-topic", "reason": "Need the prerequisite benchmark first."}
+                            ],
+                            "summary": "Demo",
+                        }
+                    ],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        shell_payload = self.service.ensure_topic_shell_surfaces(topic_slug="demo-topic", updated_by="test")
+        status_payload = self.service.topic_status(topic_slug="demo-topic", updated_by="test")
+        dashboard_text = Path(shell_payload["topic_dashboard_path"]).read_text(encoding="utf-8")
+
+        self.assertEqual(status_payload["dependency_state"]["status"], "dependency_blocked")
+        self.assertIn("other-topic", status_payload["dependency_state"]["blocked_by"])
+        self.assertIn("## Dependencies", dashboard_text)
+        self.assertIn("Need the prerequisite benchmark first.", dashboard_text)
+
     def test_route_codex_chat_request_detects_new_topic_from_natural_language(self) -> None:
         routing = self.service.route_codex_chat_request(
             task="帮我开一个新 topic：Topological phases from modular data，先做问题定义",
@@ -2379,6 +3954,148 @@ class AITPServiceTests(unittest.TestCase):
 
         self.assertEqual(routing["route"], "request_named_existing_topic")
         self.assertEqual(routing["topic_slug"], "topological-phases-from-modular-data")
+
+    def test_route_codex_chat_request_projection_hint_does_not_override_current_topic(self) -> None:
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        self._write_runtime_state(topic_slug="alpha-topic", run_id="run-alpha")
+        self._write_available_projection(
+            topic_slug="beta-topic",
+            lane="code_method",
+            summary="Validated reusable benchmark-first code-method route for bounded algorithm implementation.",
+            required_first_routes=["Close the benchmark-first route before broader workflow claims."],
+        )
+        (runtime_root / "current_topic.json").write_text(
+            json.dumps({"topic_slug": "alpha-topic"}, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "active_topics.json").write_text(
+            json.dumps(
+                {
+                    "registry_version": 1,
+                    "focused_topic_slug": "alpha-topic",
+                    "updated_at": "2026-04-04T10:00:00+08:00",
+                    "updated_by": "test",
+                    "source": "test",
+                    "topics": [
+                        {
+                            "topic_slug": "alpha-topic",
+                            "status": "ready",
+                            "operator_status": "",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T10:00:00+08:00",
+                            "runtime_root": str(runtime_root / "topics" / "alpha-topic"),
+                            "lane": "formal_theory",
+                            "resume_stage": "L3",
+                            "run_id": "run-alpha",
+                            "projection_status": "missing",
+                            "projection_note_path": None,
+                            "blocked_by": [],
+                            "focus_state": "focused",
+                            "summary": "Alpha current topic.",
+                        },
+                        {
+                            "topic_slug": "beta-topic",
+                            "status": "active",
+                            "operator_status": "",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T11:00:00+08:00",
+                            "runtime_root": str(runtime_root / "topics" / "beta-topic"),
+                            "lane": "code_method",
+                            "resume_stage": "L3",
+                            "run_id": "run-001",
+                            "projection_status": "available",
+                            "projection_note_path": "runtime/topics/beta-topic/topic_skill_projection.active.md",
+                            "blocked_by": [],
+                            "focus_state": "background",
+                            "summary": "Reusable benchmark-first code route.",
+                        },
+                    ],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        routing = self.service.route_codex_chat_request(
+            task="I want the benchmark-first code method implementation route.",
+        )
+
+        self.assertEqual(routing["route"], "implicit_current_topic")
+        self.assertEqual(routing["topic_slug"], "alpha-topic")
+        self.assertEqual(routing["projection_routing"]["matched_topic_slug"], "beta-topic")
+        self.assertFalse(routing["projection_routing"]["used"])
+
+    def test_route_codex_chat_request_projection_hint_can_select_topic_without_current_focus(self) -> None:
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        self._write_runtime_state(topic_slug="alpha-topic", run_id="run-alpha")
+        self._write_available_projection(
+            topic_slug="beta-topic",
+            lane="formal_theory",
+            summary="Validated reusable theorem-facing formal-theory route for operator algebra derivation.",
+            required_first_routes=["Read the formal theorem route before reusing the proof lane."],
+        )
+        (runtime_root / "active_topics.json").write_text(
+            json.dumps(
+                {
+                    "registry_version": 1,
+                    "focused_topic_slug": "",
+                    "updated_at": "2026-04-04T10:00:00+08:00",
+                    "updated_by": "test",
+                    "source": "test",
+                    "topics": [
+                        {
+                            "topic_slug": "alpha-topic",
+                            "status": "ready",
+                            "operator_status": "",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T12:00:00+08:00",
+                            "runtime_root": str(runtime_root / "topics" / "alpha-topic"),
+                            "lane": "toy_model",
+                            "resume_stage": "L3",
+                            "run_id": "run-alpha",
+                            "projection_status": "missing",
+                            "projection_note_path": None,
+                            "blocked_by": [],
+                            "focus_state": "background",
+                            "summary": "Alpha topic.",
+                        },
+                        {
+                            "topic_slug": "beta-topic",
+                            "status": "active",
+                            "operator_status": "",
+                            "priority": 0,
+                            "last_activity": "2026-04-04T11:00:00+08:00",
+                            "runtime_root": str(runtime_root / "topics" / "beta-topic"),
+                            "lane": "formal_theory",
+                            "resume_stage": "L3",
+                            "run_id": "run-001",
+                            "projection_status": "available",
+                            "projection_note_path": "runtime/topics/beta-topic/topic_skill_projection.active.md",
+                            "blocked_by": [],
+                            "focus_state": "background",
+                            "summary": "Reusable theorem route.",
+                        },
+                    ],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        routing = self.service.route_codex_chat_request(
+            task="I want the theorem-facing formal proof route with operator algebra structure.",
+        )
+
+        self.assertEqual(routing["route"], "projection_matched_topic")
+        self.assertEqual(routing["topic_slug"], "beta-topic")
+        self.assertTrue(routing["projection_routing"]["used"])
+        self.assertEqual(routing["projection_routing"]["decision"], "selected_projection_match")
 
     def test_start_chat_session_materializes_current_topic_route(self) -> None:
         runtime_root = self.kernel_root / "runtime"
@@ -2856,193 +4573,6 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(unit_payload["type"], "topic_skill_projection")
         self.assertEqual(unit_payload["canonical_layer"], "L2")
 
-    def test_stage_topic_distillation_materializes_topic_scoped_staging_entries(self) -> None:
-        runtime_root = self._write_runtime_state()
-        self._write_candidate(
-            intended_l2_target="workflow:demo-benchmark",
-            title="Demo Benchmark Route",
-        )
-        (runtime_root / "result_brief.latest.json").write_text(
-            json.dumps(
-                {
-                    "kind": "result_brief",
-                    "topic_slug": "demo-topic",
-                    "interaction_class": "silent_continue",
-                    "what_changed": "The bounded benchmark route now looks stable enough to preserve.",
-                    "evidence_summary": "The tiny exact benchmark closed the first validation loop.",
-                    "scope_summary": "Preserve only the bounded benchmark-first route.",
-                    "non_claims": [],
-                },
-                ensure_ascii=True,
-                indent=2,
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-        validation_root = self.kernel_root / "validation" / "topics" / "demo-topic" / "runs" / "2026-03-13-demo"
-        validation_root.mkdir(parents=True, exist_ok=True)
-        (validation_root / "returned_execution_result.json").write_text(
-            json.dumps(
-                {
-                    "result_id": "result:demo-benchmark",
-                    "summary": "The tiny exact benchmark reproduced the expected gap.",
-                    "updated_at": "2026-03-13T00:00:00+08:00",
-                },
-                ensure_ascii=True,
-                indent=2,
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-
-        payload = self.service.stage_topic_distillation(
-            topic_slug="demo-topic",
-            updated_by="test-suite",
-        )
-
-        self.assertEqual(payload["status"], "staged")
-        self.assertEqual(payload["selection_basis"], "candidate_ledger_distillation")
-        self.assertEqual(payload["staged_entry_ids"], ["staging:demo-benchmark-route"])
-        entry_path = self.kernel_root / "canonical" / "staging" / "entries" / "staging--demo-benchmark-route.json"
-        self.assertTrue(entry_path.exists())
-        entry = json.loads(entry_path.read_text(encoding="utf-8"))
-        self.assertEqual(entry["topic_slug"], "demo-topic")
-        self.assertEqual(entry["linked_unit_ids"], ["workflow:demo-benchmark"])
-        self.assertIn("feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl", entry["source_refs"])
-        self.assertIn("validation/topics/demo-topic/runs/2026-03-13-demo/returned_execution_result.json", entry["source_refs"])
-        self.assertIn("bounded benchmark route now looks stable enough", entry["integration_summary"])
-
-    def test_l0_projection_distinguishes_source_fidelity_classes(self) -> None:
-        source_root = self.kernel_root / "source-layer" / "topics" / "demo-topic"
-        source_root.mkdir(parents=True, exist_ok=True)
-        source_root.joinpath("source_index.jsonl").write_text(
-            "".join(
-                json.dumps(row, ensure_ascii=True, separators=(",", ":")) + "\n"
-                for row in [
-                    {"source_id": "journal:demo", "source_type": "journal", "title": "Journal Source", "bibtex_key": "Doe2024"},
-                    {"source_id": "paper:demo", "source_type": "paper", "title": "Preprint Source", "arxiv_id": "2401.12345"},
-                    {"source_id": "blog:demo", "source_type": "blog", "title": "Blog Source"},
-                    {"source_id": "talk:demo", "source_type": "verbal_claim", "title": "Talk Claim", "references": ["paper:demo"]},
-                ]
-            ),
-            encoding="utf-8",
-        )
-
-        payload = self.service._derive_l0_sources_projection(
-            topic_slug="demo-topic",
-            backend_bridges=[],
-        )
-
-        self.assertEqual(payload["source_count"], 4)
-        self.assertEqual(payload["source_fidelity_counts"]["peer_reviewed"], 1)
-        self.assertEqual(payload["source_fidelity_counts"]["preprint"], 1)
-        self.assertEqual(payload["source_fidelity_counts"]["informal"], 2)
-        self.assertEqual(payload["highest_fidelity_class"], "peer_reviewed")
-        self.assertIn("peer reviewed", payload["source_fidelity_summary"])
-        self.assertIn("informal", payload["source_fidelity_summary"])
-        self.assertEqual(payload["arxiv_id_count"], 1)
-        self.assertEqual(payload["bibtex_signal_count"], 1)
-        self.assertEqual(payload["citation_signal_count"], 1)
-        self.assertEqual(payload["citation_graph_status"], "present")
-
-    def test_l1_projection_infers_reading_depth_and_assumption_quality(self) -> None:
-        intake_root = self.kernel_root / "intake" / "topics" / "demo-topic"
-        intake_root.mkdir(parents=True, exist_ok=True)
-        (intake_root / "status.json").write_text(
-            json.dumps(
-                {
-                    "stage": "technical_understanding",
-                    "next_stage": "L3",
-                    "summary": "Assumptions and notation are reconstructed enough for topic analysis.",
-                },
-                ensure_ascii=True,
-                indent=2,
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-        (intake_root / "notation_table.md").write_text("# Notation\n", encoding="utf-8")
-        (intake_root / "assumption_table.md").write_text("# Assumptions\n", encoding="utf-8")
-
-        payload = self.service._derive_l1_understanding_projection(topic_slug="demo-topic")
-
-        self.assertEqual(payload["reading_depth"], "technical_reconstruction")
-        self.assertEqual(payload["assumption_quality"], "partial")
-
-    def test_consult_topic_l2_records_consultation_and_returns_trust_aware_packet(self) -> None:
-        self._write_runtime_state(run_id="run-001")
-        self._write_candidate(
-            run_id="run-001",
-            intended_l2_target="workflow:demo-benchmark",
-            title="Demo Route Memory",
-        )
-        self.service.seed_l2_demo_direction(updated_by="test-suite")
-        self.service.stage_topic_distillation(
-            topic_slug="demo-topic",
-            run_id="run-001",
-            updated_by="test-suite",
-        )
-
-        payload = self.service.consult_topic_l2(
-            topic_slug="demo-topic",
-            run_id="run-001",
-            query_text="TFIM benchmark workflow demo route memory",
-            include_staging=True,
-            updated_by="test-suite",
-        )
-
-        self.assertEqual(payload["topic_slug"], "demo-topic")
-        self.assertGreaterEqual(payload["trust_summary"]["canonical_hit_count"], 1)
-        self.assertGreaterEqual(payload["trust_summary"]["staged_hit_count"], 1)
-        self.assertTrue(payload["warning_refs"])
-        self.assertTrue(payload["followup_paths"])
-        result_path = Path(payload["consultation"]["consultation_result_path"])
-        summary_path = Path(payload["consultation"]["consultation_summary_path"])
-        memory_map_path = Path(payload["consultation"]["consultation_memory_map_path"])
-        memory_map_note_path = Path(payload["consultation"]["consultation_memory_map_note_path"])
-        self.assertTrue(result_path.exists())
-        self.assertTrue(summary_path.exists())
-        self.assertTrue(memory_map_path.exists())
-        self.assertTrue(memory_map_note_path.exists())
-        summary_text = summary_path.read_text(encoding="utf-8")
-        memory_map_text = memory_map_note_path.read_text(encoding="utf-8")
-        self.assertIn("L2 consultation summary", summary_text)
-        self.assertIn("TFIM benchmark workflow demo route memory", summary_text)
-        self.assertIn("Retrieved references", summary_text)
-        self.assertIn("L2 consultation memory map", memory_map_text)
-        self.assertIn("Primary canonical hits", memory_map_text)
-        self.assertIn("Expanded canonical hits", memory_map_text)
-        self.assertIn("Warning notes", memory_map_text)
-        self.assertIn("Staged hits", memory_map_text)
-        self.assertIn("Canonical graph status", memory_map_text)
-        index_rows = [
-            json.loads(line)
-            for line in (
-                self.kernel_root / "consultation" / "topics" / "demo-topic" / "consultation_index.jsonl"
-            ).read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
-        self.assertEqual(index_rows[-1]["query_text"], "TFIM benchmark workflow demo route memory")
-        self.assertEqual(index_rows[-1]["retrieval_profile"], "l3_candidate_formation")
-        self.assertTrue(index_rows[-1]["summary_note_path"].endswith("/summary.md"))
-        self.assertTrue(index_rows[-1]["memory_map_path"].endswith("/memory_map.json"))
-        self.assertTrue(index_rows[-1]["memory_map_note_path"].endswith("/memory_map.md"))
-
-    def test_stage_negative_result_records_negative_result_entry(self) -> None:
-        payload = self.service.stage_negative_result(
-            title="Portability route failed",
-            summary="The larger-system extrapolation failed.",
-            failure_kind="regime_mismatch",
-            failed_route="larger-system extrapolation",
-            next_implication="Return to the bounded benchmark route.",
-            topic_slug="demo-topic",
-            updated_by="test-suite",
-        )
-
-        self.assertEqual(payload["candidate_unit_type"], "negative_result")
-        self.assertEqual(payload["failure_kind"], "regime_mismatch")
-        self.assertEqual(payload["topic_slug"], "demo-topic")
-
     def test_auto_promote_rejects_topic_skill_projection(self) -> None:
         runtime_root = self._write_runtime_state(run_id="run-001")
         (runtime_root / "topic_state.json").write_text(
@@ -3261,6 +4791,104 @@ class AITPServiceTests(unittest.TestCase):
                 domain="demo-domain",
                 subdomain="demo-subdomain",
             )
+
+    def test_ensure_topic_shell_surfaces_materializes_primary_validation_review_bundle(self) -> None:
+        self._write_runtime_state()
+        self._write_candidate(
+            candidate_type="theorem_card",
+            intended_l2_target="theorem:demo-topological-theorem",
+            title="Demo Topological Theorem",
+        )
+        self.service.audit_theory_coverage(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+            source_sections=["sec:intro"],
+            covered_sections=["sec:intro"],
+            equation_labels=["eq:1"],
+            notation_bindings=[{"symbol": "H", "meaning": "Hamiltonian"}],
+            derivation_nodes=["def:h", "eq:1"],
+            agent_votes=[{"role": "skeptic", "verdict": "no_major_gap", "notes": ""}],
+            consensus_status="unanimous",
+            critical_unit_recall=1.0,
+            missing_anchor_count=0,
+            skeptic_major_gap_count=0,
+        )
+        self.service.audit_formal_theory(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+            formal_theory_role="trusted_target",
+            statement_graph_role="target_statement",
+            definition_trust_tier="scientific_source",
+            target_statement_id="theorem:demo-topological-theorem",
+            statement_graph_parents=["definition:chern-number"],
+            statement_graph_children=["corollary:demo-hall-response"],
+            informal_statement="A bounded theorem card for formal-theory review.",
+            formal_target="Demo.Topological.demo_theorem",
+            faithfulness_status="reviewed",
+            faithfulness_strategy="bounded source-to-target map",
+            comparator_audit_status="passed",
+            provenance_kind="adapted_existing_formalization",
+            attribution_requirements=["Preserve upstream theorem citation."],
+            provenance_sources=["physlib:demo/theorem.lean@abc1234"],
+            prerequisite_closure_status="closed",
+            lean_prerequisite_ids=["physlib:chern-number"],
+            supporting_obligation_ids=["proof_obligation:demo-topological-theorem"],
+        )
+
+        payload = self.service.ensure_topic_shell_surfaces(
+            topic_slug="demo-topic",
+            updated_by="test",
+        )
+
+        review_bundle = payload["validation_review_bundle"]
+        self.assertEqual(review_bundle["primary_review_kind"], "formal_theory_review")
+        self.assertEqual(review_bundle["status"], "ready")
+        artifact_kinds = {row["artifact_kind"] for row in review_bundle["specialist_artifacts"]}
+        self.assertIn("formal_theory_review", artifact_kinds)
+        self.assertIn("coverage_ledger", artifact_kinds)
+        review_note = Path(payload["validation_review_bundle_note_path"]).read_text(encoding="utf-8")
+        self.assertIn("formal_theory_review", review_note)
+
+    def test_render_validation_review_bundle_markdown_lists_entrypoints_and_artifacts(self) -> None:
+        markdown = self.service._render_validation_review_bundle_markdown(
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-04-04-demo",
+                "status": "blocked",
+                "primary_review_kind": "formal_theory_review",
+                "validation_mode": "formal",
+                "promotion_readiness_status": "not_ready",
+                "topic_completion_status": "not_assessed",
+                "promotion_gate_status": "not_requested",
+                "summary": "Primary L4 review surface is blocked on a formal audit.",
+                "entrypoints": {
+                    "validation_contract_path": "runtime/topics/demo-topic/validation.contract.json",
+                    "validation_contract_note_path": "runtime/topics/demo-topic/validation.contract.md",
+                    "promotion_readiness_path": "runtime/topics/demo-topic/promotion_readiness.json",
+                    "promotion_readiness_note_path": "runtime/topics/demo-topic/promotion_readiness.md",
+                    "topic_completion_path": "runtime/topics/demo-topic/topic_completion.json",
+                    "topic_completion_note_path": "runtime/topics/demo-topic/topic_completion.md",
+                    "gap_map_path": "runtime/topics/demo-topic/gap_map.md",
+                    "promotion_gate_path": None,
+                },
+                "candidate_ids": ["candidate:demo-candidate"],
+                "blockers": ["formal_theory_review=not_ready"],
+                "specialist_artifacts": [
+                    {
+                        "artifact_kind": "formal_theory_review",
+                        "candidate_id": "candidate:demo-candidate",
+                        "status": "not_ready",
+                        "path": "validation/topics/demo-topic/runs/2026-04-04-demo/theory-packets/candidate-demo-candidate/formal_theory_review.json",
+                    }
+                ],
+            }
+        )
+
+        self.assertIn("# Validation review bundle", markdown)
+        self.assertIn("validation_contract_path", markdown)
+        self.assertIn("candidate:demo-candidate", markdown)
+        self.assertIn("formal_theory_review=not_ready", markdown)
+        self.assertIn("formal_theory_review", markdown)
 
     def test_auto_promote_candidate_requires_passing_regression_gate(self) -> None:
         self._write_runtime_state()
@@ -3633,7 +5261,7 @@ class AITPServiceTests(unittest.TestCase):
         Draft202012Validator(packet_schema).validate(return_packet)
         self.assertEqual(return_packet["parent_gap_ids"], ["open_gap:demo-gap"])
         self.assertEqual(return_packet["reentry_targets"], ["theorem:demo-theorem"])
-        self.assertEqual(return_packet["expected_return_route"], "L0->L1->L3-A->L4->L3-R->L3-D->L2")
+        self.assertEqual(return_packet["expected_return_route"], "L0->L1->L3->L4->L2")
         self.assertIn("recovered_units", return_packet["acceptable_return_shapes"])
         self.assertTrue(return_packet["reintegration_requirements"]["must_not_patch_parent_directly"])
         self.assertTrue((return_packet_path.with_suffix(".md")).exists())
@@ -4010,8 +5638,25 @@ class AITPServiceTests(unittest.TestCase):
 
     def test_execute_auto_actions_supports_generic_runtime_handler(self) -> None:
         topic_slug = "demo-topic"
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
-        runtime_root.mkdir(parents=True, exist_ok=True)
+        runtime_root = self._write_runtime_state(topic_slug=topic_slug)
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Select exactly one validation route for the current topic.",
+                    "decision_surface": {
+                        "decision_mode": "continue_unfinished",
+                        "decision_source": "heuristic",
+                        "selected_action_id": "action:demo-topic:generic:01",
+                    },
+                    "action_queue_surface": {"queue_source": "heuristic"},
+                    "human_edit_surfaces": [],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
         handler_path = self.kernel_root / "runtime" / "scripts" / "generic_runtime_handler.py"
         handler_path.parent.mkdir(parents=True, exist_ok=True)
         handler_path.write_text(
@@ -4041,6 +5686,7 @@ class AITPServiceTests(unittest.TestCase):
                     "status": "pending",
                     "auto_runnable": True,
                     "action_type": "select_validation_route",
+                    "summary": "Select exactly one validation route for the current topic.",
                     "handler": str(handler_path),
                     "handler_args": {"step": "select_route"},
                 },

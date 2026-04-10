@@ -8,7 +8,7 @@ The purpose is to make routing operational rather than intuitive.
 
 The default route for non-trivial research material is:
 
-`L0 -> L1 -> L3-A -> L4 -> L3-R -> L3-D -> L2`
+`L0 -> L1 -> L3 -> L4 -> L2`
 
 The low-risk exception route is:
 
@@ -258,7 +258,7 @@ If a cited follow-up route is spawned:
 
 - `L0 -> L1`
 - `L0 -> L1 -> L2` in low-risk cases
-- `L0 -> L1 -> L3-A -> L4 -> L3-R -> L3-D -> L2`
+- `L0 -> L1 -> L3 -> L4 -> L2`
 - `L2 -> L1` as consultation
 - `L2 -> L3` as consultation and seeding
 - `L2 -> L4` as consultation for validation patterns and contradiction checks

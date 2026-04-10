@@ -24,7 +24,7 @@ REPO_ROOT = SCRIPT_PATH.parents[4]
 if str(KERNEL_ROOT) not in sys.path:
     sys.path.insert(0, str(KERNEL_ROOT))
 
-from knowledge_hub.aitp_service import AITPService, write_json  # noqa: E402
+from knowledge_hub.aitp_service import AITPService, bounded_slugify, write_json  # noqa: E402
 
 
 WITTEN_SOURCE_ID = "paper:witten-topological-phases-1510.07698v2"
@@ -510,7 +510,7 @@ def main() -> int:
         / "runs"
         / args.run_id
         / "lean-bridge"
-        / "candidate-witten-l2-hall-response-equivalence"
+        / bounded_slugify("candidate:witten-l2-hall-response-equivalence")
         / "lean_ready_packet.json"
     )
     promotion_gate_path = kernel_root / "runtime" / "topics" / args.topic_slug / "promotion_gate.json"

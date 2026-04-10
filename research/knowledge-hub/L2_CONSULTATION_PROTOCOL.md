@@ -73,6 +73,36 @@ One complete consultation should produce three protocol artifacts:
 This keeps retrieval separate from application.
 The system should not pretend that every retrieved ref was actually used.
 
+Compiled `L2` helper surfaces may be returned as supporting derived reads when
+they improve explainability, but they do not replace canonical unit refs as the
+authoritative memory objects.
+
+## 3.1 Human-facing consultation outputs
+
+Human-facing consultation outputs are operator-readable derived surfaces such as:
+
+- compact markdown summaries,
+- application notes,
+- result digests,
+- and consultation logs that explain what was asked, returned, and actually used.
+
+These outputs should stay readable without hiding the canonical refs that back
+them.
+
+## 3.2 AI-facing consultation outputs
+
+AI-facing consultation outputs are compact machine-primary packets.
+
+They should keep:
+
+- canonical unit refs,
+- retrieval profile identity,
+- applied refs,
+- and enough structure for later routing and replay.
+
+Human-facing and AI-facing consultation outputs are derived from the same promoted identity
+and the same consultation event.
+
 ## 4. Source-of-truth layout
 
 The protocol surface lives under:
@@ -127,6 +157,10 @@ The request must say what local artifact triggered the need for memory lookup.
 `consult_result` records what was returned.
 `consult_application` records what was actually used.
 
+If a compiled `L2` surface is shown during consultation, the result should
+still keep explicit canonical unit refs visible rather than treating the
+compiled surface as the memory object itself.
+
 ### Rule 3. Consultation is not promotion
 
 Looking up `L2` does not itself justify writing new objects into `L2`.
@@ -148,39 +182,25 @@ That outcome is still useful and should remain visible.
 The local `l2_consultation_log.jsonl` files can stay small.
 If detail is needed, the protocol surface should hold it.
 
-## 6.1 Human-facing consultation outputs
+### Rule 6. Compiled views help navigation, not canonical status
 
-Human-facing consultation outputs are operator-readable derived surfaces such as:
-- consultation receipts,
-- compact memory maps,
-- warning-focused summary cards,
-- and review packets that explain what was surfaced and what was actually
-  applied.
+Compiled `L2` views may help a human or agent navigate the reusable memory
+surface more effectively.
 
-These outputs must preserve:
-- canonical unit ids,
-- assumptions,
-- regime and scope limits,
-- provenance pointers,
-- and warning surfaces.
+They are:
+- derived,
+- regenerateable,
+- and secondary to canonical unit records.
 
-## 6.2 AI-facing consultation outputs
+They do not create promotion status by themselves.
 
-AI-facing consultation outputs are compact machine-primary packets.
-They should surface:
-- selected canonical unit ids,
-- why they were selected,
-- the edge neighborhood or retrieval profile that shaped the result,
-- warnings,
-- assumptions and regime limits,
-- unresolved conflicts,
-- and exact pointers for deeper follow-up.
+### Rule 7. Staged entries are not canonical consultation refs
 
-## 6.3 Symmetry rule
+Provisional staging entries may later inform canonical work, but they should
+not be treated as canonical `L2` consultation results by default.
 
-Human-facing and AI-facing consultation outputs are derived from the same promoted identity.
-They may differ in rendering, but they may not silently disagree about trust,
-scope, assumptions, or unresolved boundaries.
+If staged material matters, the consultation path should say so explicitly
+instead of silently presenting it as trusted reusable memory.
 
 ## 7. Stage expectations
 

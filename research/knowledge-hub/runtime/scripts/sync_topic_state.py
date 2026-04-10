@@ -11,6 +11,12 @@ from pathlib import Path
 
 from closed_loop_v1 import compute_closed_loop_status
 from research_mode_profiles import resolve_task_research_profile
+from sync_topic_state_support import (
+    build_resume_markdown as render_resume_markdown,
+    derive_last_evidence_return as derive_last_evidence_return_support,
+    derive_status_explainability as derive_status_explainability_support,
+    infer_resume_state as infer_resume_state_support,
+)
 
 
 VALID_RESUME_STAGES = {"L0", "L1", "L2", "L3", "L4"}
@@ -60,83 +66,6 @@ def write_jsonl(path: Path, rows: list[dict]) -> None:
 def write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
-
-
-def dedupe_strings(values: list[str]) -> list[str]:
-    seen: set[str] = set()
-    ordered: list[str] = []
-    for value in values:
-        normalized = str(value or "").strip()
-        if not normalized or normalized in seen:
-            continue
-        seen.add(normalized)
-        ordered.append(normalized)
-    return ordered
-
-
-def build_source_intelligence_state(*, l0_source_rows: list[dict], intake_source_rows: list[dict]) -> dict:
-    canonical_source_ids = dedupe_strings(
-        [str(row.get("canonical_source_id") or "").strip() for row in l0_source_rows]
-    )
-    assumptions = dedupe_strings(
-        [
-            str(value).strip()
-            for row in intake_source_rows
-            for value in list(row.get("assumptions") or [])
-            if str(value).strip()
-        ]
-    )
-    regimes = dedupe_strings(
-        [
-            str(value).strip()
-            for row in intake_source_rows
-            for value in list(row.get("regimes") or [])
-            if str(value).strip()
-        ]
-    )
-    reading_depth_labels = dedupe_strings(
-        [
-            str(row.get("reading_depth_label") or "").strip()
-            for row in intake_source_rows
-            if str(row.get("reading_depth_label") or "").strip()
-        ]
-    )
-    contradiction_candidates = [
-        item
-        for row in intake_source_rows
-        for item in list(row.get("contradiction_candidates") or [])
-        if isinstance(item, dict)
-    ]
-    notation_tension_candidates = [
-        item
-        for row in intake_source_rows
-        for item in list(row.get("notation_tension_candidates") or [])
-        if isinstance(item, dict)
-    ]
-    citation_edge_count = sum(len(list(row.get("references") or [])) for row in l0_source_rows)
-    neighbor_signal_count = sum(len(list(row.get("source_neighbors") or [])) for row in l0_source_rows)
-    summary_parts = [
-        f"canonical={len(canonical_source_ids)}",
-        f"citations={citation_edge_count}",
-        f"neighbors={neighbor_signal_count}",
-        f"assumptions={len(assumptions)}",
-        f"regimes={len(regimes)}",
-        f"contradictions={len(contradiction_candidates)}",
-        f"notation_tensions={len(notation_tension_candidates)}",
-    ]
-    return {
-        "canonical_source_ids": canonical_source_ids,
-        "citation_edge_count": citation_edge_count,
-        "neighbor_signal_count": neighbor_signal_count,
-        "assumptions": assumptions,
-        "regimes": regimes,
-        "reading_depth_labels": reading_depth_labels,
-        "contradiction_candidates": contradiction_candidates,
-        "notation_tension_candidates": notation_tension_candidates,
-        "contradiction_candidate_count": len(contradiction_candidates),
-        "notation_tension_count": len(notation_tension_candidates),
-        "summary": "Source intelligence: " + ", ".join(summary_parts),
-    }
 
 
 def parse_next_actions(path: Path) -> list[str]:
@@ -218,6 +147,17 @@ def relative_path(path: Path | None, root: Path) -> str | None:
     if path is None or not path.exists():
         return None
     return path.relative_to(root).as_posix()
+
+
+def prefer_existing_or_runtime_surface(
+    existing_value: object,
+    runtime_candidate: Path,
+    root: Path,
+) -> str | None:
+    existing = str(existing_value or "").strip()
+    if existing:
+        return existing
+    return relative_path(runtime_candidate, root)
 
 
 def resolve_card_path(path_value: str | None, knowledge_root: Path) -> Path | None:
@@ -337,46 +277,13 @@ def infer_resume_state(
     latest_decision: dict | None,
     closed_loop_decision: dict | None,
 ) -> tuple[str, str, str]:
-    if latest_decision:
-        verdict = latest_decision.get("verdict", "unknown")
-        fallback_targets = latest_decision.get("fallback_targets") or []
-        if verdict in {"accepted", "promoted"}:
-            return "L2", "L4", "Latest validation promoted material into Layer 2."
-        if verdict in {"deferred", "rejected", "needs_revision"}:
-            if fallback_targets:
-                first_target = fallback_targets[0]
-                if str(first_target).startswith("feedback/"):
-                    return (
-                        "L3",
-                        "L4",
-                        f"Latest Layer 4 verdict is {verdict}; resume exploratory work in Layer 3.",
-                    )
-                if str(first_target).startswith("intake/"):
-                    return (
-                        "L1",
-                        "L4",
-                        f"Latest Layer 4 verdict is {verdict}; resume source-bound work in Layer 1.",
-                    )
-            return "L4", "L4", f"Latest Layer 4 verdict is {verdict}; inspect the validation record."
-
-    if closed_loop_decision:
-        decision = closed_loop_decision.get("decision", "unknown")
-        if decision == "keep":
-            return "L4", "L4", "Latest closed-loop decision kept the route; inspect the Layer 4 writeback before any promotion."
-        if decision in {"revise", "discard", "defer"}:
-            return "L3", "L4", f"Latest closed-loop decision is {decision}; resume exploratory work in Layer 3."
-        return "L4", "L4", "A Layer 4 closed-loop decision exists; inspect the validation writeback."
-
-    if feedback_status:
-        return "L3", "L3", "A Layer 3 run exists without a later decision artifact."
-
-    if intake_status:
-        next_stage = intake_status.get("next_stage")
-        if next_stage in VALID_RESUME_STAGES:
-            return next_stage, "L1", f"Layer 1 status points next to {next_stage}."
-        return "L1", "L1", "Only Layer 1 intake artifacts are currently materialized."
-
-    return "L0", "L0", "No layer artifacts were found for this topic."
+    return infer_resume_state_support(
+        valid_resume_stages=VALID_RESUME_STAGES,
+        intake_status=intake_status,
+        feedback_status=feedback_status,
+        latest_decision=latest_decision,
+        closed_loop_decision=closed_loop_decision,
+    )
 
 
 def first_text(*values: object) -> str:
@@ -392,51 +299,10 @@ def derive_last_evidence_return(
     feedback_status: dict | None,
     closed_loop: dict,
 ) -> dict:
-    result_manifest = closed_loop.get("result_manifest") or {}
-    closed_loop_paths = closed_loop.get("paths") or {}
-    latest_decision = closed_loop.get("latest_decision") or {}
-    if result_manifest:
-        return {
-            "status": "present",
-            "kind": "result_manifest",
-            "path": str(closed_loop_paths.get("result_manifest_path") or ""),
-            "record_id": str(result_manifest.get("result_id") or ""),
-            "recorded_at": first_text(
-                result_manifest.get("updated_at"),
-                result_manifest.get("ingested_at"),
-                latest_decision.get("decided_at"),
-            ),
-            "summary": first_text(
-                result_manifest.get("summary"),
-                latest_decision.get("reason"),
-                f"Closed-loop result manifest is `{result_manifest.get('status') or 'present'}`.",
-            ),
-        }
-    if feedback_status:
-        return {
-            "status": "present",
-            "kind": "feedback_status",
-            "path": str(feedback_status.get("last_result_manifest_path") or ""),
-            "record_id": str(
-                feedback_status.get("last_result_id") or feedback_status.get("last_closed_loop_decision_id") or ""
-            ),
-            "recorded_at": first_text(feedback_status.get("last_updated")),
-            "summary": first_text(
-                feedback_status.get("summary"),
-                (
-                    f"Feedback stage `{feedback_status.get('stage') or '(missing)'}` "
-                    f"with candidate status `{feedback_status.get('candidate_status') or '(missing)'}`."
-                ),
-            ),
-        }
-    return {
-        "status": "missing",
-        "kind": "none",
-        "path": "",
-        "record_id": "",
-        "recorded_at": "",
-        "summary": "No durable evidence-return artifact is currently recorded for this topic.",
-    }
+    return derive_last_evidence_return_support(
+        feedback_status=feedback_status,
+        closed_loop=closed_loop,
+    )
 
 
 def derive_status_explainability(
@@ -450,315 +316,23 @@ def derive_status_explainability(
     closed_loop: dict,
     next_action_decision_note_path: Path,
 ) -> dict:
-    idea_packet = read_json(topic_runtime_root / "idea_packet.json") or {}
-    operator_checkpoint = read_json(topic_runtime_root / "operator_checkpoint.active.json") or {}
-    last_evidence_return = derive_last_evidence_return(
+    return derive_status_explainability_support(
+        topic_slug=topic_slug,
+        resume_stage=resume_stage,
+        resume_reason=resume_reason,
+        pending_actions=pending_actions,
+        topic_runtime_root=topic_runtime_root,
         feedback_status=feedback_status,
         closed_loop=closed_loop,
+        next_action_decision_note_path=next_action_decision_note_path,
+        read_json=read_json,
+        relative_path=relative_path,
+        now_iso=now_iso,
     )
-    next_action_summary = first_text(pending_actions[0] if pending_actions else "")
-    active_human_need: dict
-    blocker_summary: list[str]
-    if str(operator_checkpoint.get("status") or "").strip() == "requested":
-        blocker_summary = [
-            str(item).strip()
-            for item in (operator_checkpoint.get("blocker_summary") or [])
-            if str(item).strip()
-        ]
-        active_human_need = {
-            "status": "requested",
-            "kind": str(operator_checkpoint.get("checkpoint_kind") or ""),
-            "path": relative_path(topic_runtime_root / "operator_checkpoint.active.md", topic_runtime_root.parents[2]) or "",
-            "summary": str(operator_checkpoint.get("question") or ""),
-        }
-        why_this_topic_is_here = first_text(
-            blocker_summary[0] if blocker_summary else "",
-            operator_checkpoint.get("question"),
-            "AITP paused at an active operator checkpoint.",
-        )
-    elif str(idea_packet.get("status") or "").strip() == "needs_clarification":
-        blocker_summary = [
-            str(item).strip()
-            for item in (idea_packet.get("clarification_questions") or [])
-            if str(item).strip()
-        ]
-        active_human_need = {
-            "status": "requested",
-            "kind": "idea_packet_clarification",
-            "path": relative_path(topic_runtime_root / "idea_packet.md", topic_runtime_root.parents[2]) or "",
-            "summary": str(idea_packet.get("status_reason") or ""),
-        }
-        why_this_topic_is_here = first_text(
-            blocker_summary[0] if blocker_summary else "",
-            idea_packet.get("status_reason"),
-            "AITP is holding at the research-intent gate.",
-        )
-    else:
-        blocker_summary = []
-        active_human_need = {
-            "status": "none",
-            "kind": "none",
-            "path": "",
-            "summary": "No active human checkpoint is currently blocking the bounded loop.",
-        }
-        why_this_topic_is_here = first_text(
-            (
-                f"The topic is currently following `{next_action_summary}` at stage `{resume_stage}`."
-                if next_action_summary
-                else ""
-            ),
-            resume_reason,
-            "AITP is holding the current bounded route defined by the runtime state.",
-        )
-    return {
-        "topic_slug": topic_slug,
-        "current_status_summary": (
-            f"Stage `{resume_stage}`; "
-            f"next `{next_action_summary or 'No bounded action is currently selected.'}`; "
-            f"human need `{active_human_need['kind']}`; "
-            f"last evidence `{last_evidence_return['kind']}`."
-        ),
-        "why_this_topic_is_here": why_this_topic_is_here,
-        "current_route_choice": {
-            "resume_stage": resume_stage,
-            "selected_route_id": str((closed_loop.get("selected_route") or {}).get("route_id") or ""),
-            "execution_task_id": str((closed_loop.get("execution_task") or {}).get("task_id") or ""),
-            "next_action_summary": next_action_summary,
-            "next_action_decision_note_path": relative_path(next_action_decision_note_path, topic_runtime_root.parents[2]) or "",
-            "selected_validation_route_path": str((closed_loop.get("paths") or {}).get("selected_route_path") or ""),
-        },
-        "last_evidence_return": last_evidence_return,
-        "active_human_need": active_human_need,
-        "blocker_summary": blocker_summary,
-        "next_bounded_action": {
-            "status": "selected" if next_action_summary else "missing",
-            "summary": next_action_summary or "No bounded action is currently selected.",
-        },
-        "updated_at": now_iso(),
-    }
 
 
 def build_resume_markdown(state: dict) -> str:
-    pointers = state["pointers"]
-    layer_status = state["layer_status"]
-    source_intelligence = state.get("source_intelligence") or {}
-    backend_bridges = state.get("backend_bridges") or []
-    promotion_gate = state.get("promotion_gate") or {}
-    closed_loop = state.get("closed_loop") or {}
-    research_mode_profile = state.get("research_mode_profile") or {}
-    status_explainability = state.get("status_explainability") or {}
-    current_route_choice = status_explainability.get("current_route_choice") or {}
-    last_evidence_return = status_explainability.get("last_evidence_return") or {}
-    active_human_need = status_explainability.get("active_human_need") or {}
-    blocker_summary = status_explainability.get("blocker_summary") or []
-    summary = (
-        state.get("summary")
-        or status_explainability.get("why_this_topic_is_here")
-        or state["resume_reason"]
-    )
-    lines = [
-        "# Topic runtime resume",
-        "",
-        f"- Topic slug: `{state['topic_slug']}`",
-        f"- Updated at: `{state['updated_at']}`",
-        f"- Updated by: `{state['updated_by']}`",
-        f"- Last materialized stage: `{state['last_materialized_stage']}`",
-        f"- Resume stage: `{state['resume_stage']}`",
-        f"- Latest run id: `{state['latest_run_id'] or '(none)'}`",
-        f"- Research mode: `{state.get('research_mode') or '(missing)'}`",
-        f"- Active executor kind: `{state.get('active_executor_kind') or '(missing)'}`",
-        f"- Active reasoning profile: `{state.get('active_reasoning_profile') or '(missing)'}`",
-        "",
-        "## Resume reason",
-        "",
-        f"- {state['resume_reason']}",
-        "",
-        "## Why this topic is here",
-        "",
-        f"- {status_explainability.get('why_this_topic_is_here') or state['resume_reason']}",
-        "",
-        "## Research-mode governance",
-        "",
-        f"- Profile path: `{research_mode_profile.get('profile_path') or '(missing)'}`",
-        f"- Label: `{research_mode_profile.get('label') or '(missing)'}`",
-        f"- Description: {research_mode_profile.get('description') or '(missing)'}",
-        "",
-        "### Reproducibility expectations",
-        "",
-    ]
-    for item in research_mode_profile.get("reproducibility_expectations") or ["No explicit reproducibility expectation recorded."]:
-        lines.append(f"- {item}")
-    lines.extend(["", "### Human-readable notes", ""])
-    for item in research_mode_profile.get("note_expectations") or ["No explicit note expectation recorded."]:
-        lines.append(f"- {item}")
-    lines.extend(
-        [
-            "",
-            "## Layer snapshot",
-            "",
-            f"- L0: `{layer_status['L0']['status']}` ({state['source_count']} sources)",
-            f"- L1: `{layer_status['L1']['status']}`",
-            f"- L3: `{layer_status['L3']['status']}`",
-            f"- L4: `{layer_status['L4']['status']}`",
-            f"- Closed loop: `{closed_loop.get('status', 'missing')}`",
-            "",
-            "## L0 backend bridges",
-            "",
-        ]
-    )
-    if backend_bridges:
-        for bridge in backend_bridges:
-            lines.extend(
-                [
-                    f"- `{bridge.get('backend_id') or '(missing)'}` title=`{bridge.get('title') or '(missing)'}` "
-                    f"type=`{bridge.get('backend_type') or '(missing)'}` status=`{bridge.get('status') or '(missing)'}` "
-                    f"card_status=`{bridge.get('card_status') or '(missing)'}` sources=`{bridge.get('source_count', 0)}`",
-                    f"  card_path=`{bridge.get('card_path') or '(missing)'}`",
-                    f"  backend_root=`{bridge.get('backend_root') or '(missing)'}`",
-                    f"  artifact_granularity=`{bridge.get('artifact_granularity') or '(missing)'}`",
-                    f"  artifact_kinds=`{', '.join(bridge.get('artifact_kinds') or []) or '(missing)'}`",
-                    f"  canonical_targets=`{', '.join(bridge.get('canonical_targets') or []) or '(missing)'}`",
-                    f"  l0_registration_script=`{bridge.get('l0_registration_script') or '(missing)'}`",
-                ]
-            )
-    else:
-        lines.append("- None registered.")
-
-    lines.extend(
-        [
-            "",
-            "## L2 promotion gate",
-            "",
-            f"- Status: `{promotion_gate.get('status') or 'not_requested'}`",
-            f"- Candidate id: `{promotion_gate.get('candidate_id') or '(missing)'}`",
-            f"- Candidate type: `{promotion_gate.get('candidate_type') or '(missing)'}`",
-            f"- Backend id: `{promotion_gate.get('backend_id') or '(missing)'}`",
-            f"- Target backend root: `{promotion_gate.get('target_backend_root') or '(missing)'}`",
-            f"- Review mode: `{promotion_gate.get('review_mode') or '(missing)'}`",
-            f"- Canonical layer: `{promotion_gate.get('canonical_layer') or '(missing)'}`",
-            f"- Coverage status: `{promotion_gate.get('coverage_status') or '(missing)'}`",
-            f"- Consensus status: `{promotion_gate.get('consensus_status') or '(missing)'}`",
-            f"- Merge outcome: `{promotion_gate.get('merge_outcome') or '(missing)'}`",
-            f"- Gate JSON: `{pointers.get('promotion_gate_path') or '(missing)'}`",
-            f"- Gate note: `{pointers.get('promotion_gate_note_path') or '(missing)'}`",
-            "",
-            "## Closed-loop state",
-            "",
-            f"- Selected route: `{closed_loop.get('selected_route_id') or '(missing)'}`",
-            f"- Execution task: `{closed_loop.get('task_id') or '(missing)'}`",
-            f"- Result manifest: `{closed_loop.get('result_id') or '(missing)'}`",
-            f"- Latest decision: `{closed_loop.get('latest_decision') or '(missing)'}`",
-            f"- Literature follow-ups: `{closed_loop.get('literature_followup_count', 0)}`",
-            f"- Follow-up gaps: `{closed_loop.get('followup_gap_count', 0)}`",
-            f"- Deferred candidates: `{state.get('deferred_candidate_count', 0)}`",
-            f"- Reactivatable deferred entries: `{state.get('reactivable_deferred_count', 0)}`",
-            f"- Follow-up subtopics: `{state.get('followup_subtopic_count', 0)}`",
-            "",
-            "## Current route choice",
-            "",
-            f"- Selected route: `{current_route_choice.get('selected_route_id') or '(missing)'}`",
-            f"- Execution task: `{current_route_choice.get('execution_task_id') or '(missing)'}`",
-            f"- Next bounded action: {current_route_choice.get('next_action_summary') or '(none)'}",
-            f"- Next-action decision note: `{current_route_choice.get('next_action_decision_note_path') or '(missing)'}`",
-            f"- Selected validation route: `{current_route_choice.get('selected_validation_route_path') or '(missing)'}`",
-            "",
-            "## Last evidence return",
-            "",
-            f"- Status: `{last_evidence_return.get('status') or '(missing)'}`",
-            f"- Kind: `{last_evidence_return.get('kind') or '(missing)'}`",
-            f"- Record id: `{last_evidence_return.get('record_id') or '(none)'}`",
-            f"- Recorded at: `{last_evidence_return.get('recorded_at') or '(unknown)'}`",
-            f"- Path: `{last_evidence_return.get('path') or '(missing)'}`",
-            f"- Summary: {last_evidence_return.get('summary') or '(none)'}",
-            "",
-            "## Active human need",
-            "",
-            f"- Status: `{active_human_need.get('status') or '(missing)'}`",
-            f"- Kind: `{active_human_need.get('kind') or '(missing)'}`",
-            f"- Path: `{active_human_need.get('path') or '(missing)'}`",
-            f"- Summary: {active_human_need.get('summary') or '(none)'}",
-            "",
-            "## Blocker summary",
-            "",
-        ]
-    )
-    for item in blocker_summary or ["(none)"]:
-        lines.append(f"- {item}")
-
-    lines.extend(
-        [
-            "",
-            "## Source intelligence",
-            "",
-            f"- Canonical source ids: `{len(source_intelligence.get('canonical_source_ids') or [])}`",
-            f"- Citation edges: `{source_intelligence.get('citation_edge_count', 0)}`",
-            f"- Neighbor signals: `{source_intelligence.get('neighbor_signal_count', 0)}`",
-            f"- Assumptions: `{len(source_intelligence.get('assumptions') or [])}`",
-            f"- Regimes: `{len(source_intelligence.get('regimes') or [])}`",
-            f"- Reading depths: `{', '.join(source_intelligence.get('reading_depth_labels') or []) or '(none)'}`",
-            f"- Contradiction candidates: `{source_intelligence.get('contradiction_candidate_count', 0)}`",
-            f"- Notation tensions: `{source_intelligence.get('notation_tension_count', 0)}`",
-            f"- Summary: {source_intelligence.get('summary') or '(none)'}",
-            "",
-            "## Pending actions",
-            "",
-        ]
-    )
-    if state["pending_actions"]:
-        for index, action in enumerate(state["pending_actions"], start=1):
-            lines.append(f"{index}. {action}")
-    else:
-        lines.append("- None recorded.")
-
-    lines.extend(
-        [
-            "",
-            "## Key pointers",
-            "",
-            f"- L0 source index: `{pointers['l0_source_index_path'] or '(missing)'}`",
-            f"- Intake status: `{pointers['intake_status_path'] or '(missing)'}`",
-            f"- Feedback status: `{pointers['feedback_status_path'] or '(missing)'}`",
-            f"- Next actions: `{pointers['next_actions_path'] or '(missing)'}`",
-            f"- Next-actions contract: `{pointers.get('next_actions_contract_path') or '(missing)'}`",
-            f"- Promotion decision: `{pointers['promotion_decision_path'] or '(missing)'}`",
-            f"- Consultation index: `{pointers['consultation_index_path'] or '(missing)'}`",
-            f"- L4 control note: `{pointers['control_note_path'] or '(missing)'}`",
-            f"- Innovation direction: `{pointers.get('innovation_direction_path') or '(missing)'}`",
-            f"- Innovation decisions: `{pointers.get('innovation_decisions_path') or '(missing)'}`",
-            f"- Unfinished work index: `{pointers.get('unfinished_work_path') or '(missing)'}`",
-            f"- Unfinished work note: `{pointers.get('unfinished_work_note_path') or '(missing)'}`",
-            f"- Next-action decision: `{pointers.get('next_action_decision_path') or '(missing)'}`",
-            f"- Next-action decision note: `{pointers.get('next_action_decision_note_path') or '(missing)'}`",
-            f"- Next-action decision contract: `{pointers.get('next_action_decision_contract_path') or '(missing)'}`",
-            f"- Next-action decision contract note: `{pointers.get('next_action_decision_contract_note_path') or '(missing)'}`",
-            f"- Generated queue-contract snapshot: `{pointers.get('action_queue_contract_generated_path') or '(missing)'}`",
-            f"- Generated queue-contract note: `{pointers.get('action_queue_contract_generated_note_path') or '(missing)'}`",
-            f"- Selected validation route: `{pointers.get('selected_validation_route_path') or '(missing)'}`",
-            f"- Execution task: `{pointers.get('execution_task_path') or '(missing)'}`",
-            f"- Execution notes: `{pointers.get('execution_notes_path') or '(missing)'}`",
-            f"- Returned execution result: `{pointers.get('returned_execution_result_path') or '(missing)'}`",
-            f"- Result manifest: `{pointers.get('result_manifest_path') or '(missing)'}`",
-            f"- Trajectory log: `{pointers.get('trajectory_log_path') or '(missing)'}`",
-            f"- Trajectory note: `{pointers.get('trajectory_note_path') or '(missing)'}`",
-            f"- Failure classification: `{pointers.get('failure_classification_path') or '(missing)'}`",
-            f"- Failure classification note: `{pointers.get('failure_classification_note_path') or '(missing)'}`",
-            f"- Decision ledger: `{pointers.get('decision_ledger_path') or '(missing)'}`",
-            f"- Literature follow-ups: `{pointers.get('literature_followup_queries_path') or '(missing)'}`",
-            f"- Literature follow-up receipts: `{pointers.get('literature_followup_receipts_path') or '(missing)'}`",
-            f"- Follow-up gap writeback: `{pointers.get('followup_gap_writeback_path') or '(missing)'}`",
-            f"- Follow-up gap writeback note: `{pointers.get('followup_gap_writeback_note_path') or '(missing)'}`",
-            f"- Deferred buffer: `{pointers.get('deferred_buffer_path') or '(missing)'}`",
-            f"- Deferred buffer note: `{pointers.get('deferred_buffer_note_path') or '(missing)'}`",
-            f"- Follow-up subtopics: `{pointers.get('followup_subtopics_path') or '(missing)'}`",
-            f"- Follow-up subtopics note: `{pointers.get('followup_subtopics_note_path') or '(missing)'}`",
-            "",
-            "## Summary",
-            "",
-            f"- {summary}",
-            "",
-        ]
-    )
-    return "\n".join(lines)
+    return render_resume_markdown(state)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -792,7 +366,6 @@ def main() -> int:
         detected_run_id = latest_run_id(validation_runs_root) or latest_run_id(feedback_runs_root)
 
     l0_source_index_path = source_layer_topic_root / "source_index.jsonl"
-    intake_source_index_path = intake_topic_root / "source_index.jsonl"
     intake_status_path = intake_topic_root / "status.json"
     feedback_status_path = (
         feedback_runs_root / detected_run_id / "status.json" if detected_run_id else None
@@ -808,7 +381,6 @@ def main() -> int:
     consultation_index_path = consultation_root / "consultation_index.jsonl"
 
     l0_source_rows = read_jsonl(l0_source_index_path)
-    intake_source_rows = read_jsonl(intake_source_index_path)
     intake_status = read_json(intake_status_path)
     feedback_status = read_json(feedback_status_path) if feedback_status_path else None
     promotion_rows = read_jsonl(promotion_decisions_path) if promotion_decisions_path else []
@@ -877,10 +449,6 @@ def main() -> int:
         if str(entry.get("status") or "") == "buffered"
         and buffer_entry_ready_for_reactivation(entry, source_ids, source_text, child_topic_slugs)
     )
-    source_intelligence = build_source_intelligence_state(
-        l0_source_rows=l0_source_rows,
-        intake_source_rows=intake_source_rows,
-    )
 
     resume_stage, last_materialized_stage, resume_reason = infer_resume_state(
         intake_status=intake_status,
@@ -910,9 +478,21 @@ def main() -> int:
     if control_note_rel:
         control_note_rel = str(Path(control_note_rel))
     else:
-        control_note_rel = str(existing_pointers.get("control_note_path") or "").strip() or None
-    innovation_direction_rel = str(existing_pointers.get("innovation_direction_path") or "").strip() or None
-    innovation_decisions_rel = str(existing_pointers.get("innovation_decisions_path") or "").strip() or None
+        control_note_rel = prefer_existing_or_runtime_surface(
+            existing_pointers.get("control_note_path"),
+            topic_runtime_root / "control_note.md",
+            knowledge_root,
+        )
+    innovation_direction_rel = prefer_existing_or_runtime_surface(
+        existing_pointers.get("innovation_direction_path"),
+        topic_runtime_root / "innovation_direction.md",
+        knowledge_root,
+    )
+    innovation_decisions_rel = prefer_existing_or_runtime_surface(
+        existing_pointers.get("innovation_decisions_path"),
+        topic_runtime_root / "innovation_decisions.jsonl",
+        knowledge_root,
+    )
 
     unfinished_work_path = topic_runtime_root / "unfinished_work.json"
     unfinished_work_note_path = topic_runtime_root / "unfinished_work.md"
@@ -922,6 +502,10 @@ def main() -> int:
     next_action_decision_contract_note_path = topic_runtime_root / NEXT_ACTION_DECISION_CONTRACT_NOTE_FILENAME
     action_queue_contract_generated_path = topic_runtime_root / ACTION_QUEUE_CONTRACT_GENERATED_FILENAME
     action_queue_contract_generated_note_path = topic_runtime_root / ACTION_QUEUE_CONTRACT_GENERATED_NOTE_FILENAME
+    topic_synopsis_path = topic_runtime_root / "topic_synopsis.json"
+    topic_dashboard_path = topic_runtime_root / "topic_dashboard.md"
+    validation_review_bundle_path = topic_runtime_root / "validation_review_bundle.active.json"
+    validation_review_bundle_note_path = topic_runtime_root / "validation_review_bundle.active.md"
     status_explainability = derive_status_explainability(
         topic_slug=topic_slug,
         resume_stage=resume_stage,
@@ -987,7 +571,6 @@ def main() -> int:
         "source_count": len(l0_source_rows),
         "backend_bridge_count": len(backend_bridges),
         "backend_bridges": backend_bridges,
-        "source_intelligence": source_intelligence,
         "deferred_candidate_count": len(deferred_buffer.get("entries") or []),
         "reactivable_deferred_count": reactivatable_deferred_count,
         "followup_subtopic_count": len(followup_subtopics),
@@ -1029,7 +612,6 @@ def main() -> int:
         },
         "pointers": {
             "l0_source_index_path": relative_path(l0_source_index_path, knowledge_root),
-            "intake_source_index_path": relative_path(intake_source_index_path, knowledge_root),
             "intake_status_path": relative_path(intake_status_path, knowledge_root),
             "feedback_status_path": relative_path(feedback_status_path, knowledge_root),
             "next_actions_path": relative_path(next_actions_path, knowledge_root),
@@ -1050,6 +632,10 @@ def main() -> int:
             "innovation_decisions_path": innovation_decisions_rel,
             "unfinished_work_path": relative_path(unfinished_work_path, knowledge_root),
             "unfinished_work_note_path": relative_path(unfinished_work_note_path, knowledge_root),
+            "topic_synopsis_path": relative_path(topic_synopsis_path, knowledge_root),
+            "topic_dashboard_path": relative_path(topic_dashboard_path, knowledge_root),
+            "primary_runtime_machine_surface_path": relative_path(topic_synopsis_path, knowledge_root),
+            "primary_runtime_human_surface_path": relative_path(topic_dashboard_path, knowledge_root),
             "next_action_decision_path": relative_path(next_action_decision_path, knowledge_root),
             "next_action_decision_note_path": relative_path(next_action_decision_note_path, knowledge_root),
             "next_action_decision_contract_path": relative_path(
@@ -1068,6 +654,10 @@ def main() -> int:
                 action_queue_contract_generated_note_path,
                 knowledge_root,
             ),
+            "primary_review_bundle_path": relative_path(validation_review_bundle_path, knowledge_root),
+            "primary_review_bundle_note_path": relative_path(validation_review_bundle_note_path, knowledge_root),
+            "validation_review_bundle_path": relative_path(validation_review_bundle_path, knowledge_root),
+            "validation_review_bundle_note_path": relative_path(validation_review_bundle_note_path, knowledge_root),
             "selected_validation_route_path": relative_path(
                 (knowledge_root / closed_loop["paths"]["selected_route_path"])
                 if closed_loop["paths"].get("selected_route_path")

@@ -64,6 +64,14 @@ AITP should not say:
 - `I need an L2 consultation`
 - `I am switching to a full load profile`
 
+The same rule applies at important layer transitions:
+
+- if AITP is about to move into a materially different lane, it may ask one
+  bounded question first
+- if AITP is about to dispatch non-trivial `L4` execution, it should first
+  materialize the execution plan and then ask for confirmation when lane,
+  runtime target, or resource scale still changes cost or trust materially
+
 ### 3. AITP stays light unless something important happens
 
 Ordinary topic work should stay in a light runtime profile.
@@ -100,7 +108,9 @@ AITP should answer from durable runtime state, not from chat improvisation.
 2. Determine whether the question is specific enough.
 3. Pull the relevant sources and source maps into the active runtime.
 4. Build the current bounded question and validation route.
-5. Surface only the next proof or derivation lane that is honest now.
+5. If the next step requires non-trivial `L4` execution, first materialize the
+   concrete execution plan and ask for confirmation when needed.
+6. Surface only the next proof or derivation lane that is honest now.
 
 ### What the user sees
 
@@ -202,6 +212,12 @@ They also include:
 ### Human checkpoint example
 
 `I can make the smallest benchmark-first patch now, or I can try to wire the full method path immediately. The first route is slower upfront but much safer.`
+
+If the next step requires external execution resources, the expected behavior is:
+
+- AITP first writes the execution plan
+- AITP states whether it thinks this should be local, server-backed, Lean-heavy, or a small bounded computation
+- AITP asks for confirmation before dispatch if that choice is still materially open
 
 ### Why coding inside AITP matters
 

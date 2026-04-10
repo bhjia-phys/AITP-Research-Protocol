@@ -67,6 +67,8 @@ Required runtime artifacts:
 - `runtime/topics/<topic_slug>/topic_state.json`
 - `runtime/topics/<topic_slug>/action_queue.jsonl`
 - `runtime/topics/<topic_slug>/interaction_state.json`
+- `runtime/topics/<topic_slug>/execution_task.json`
+- `runtime/topics/<topic_slug>/execution_task.md`
 - `runtime/topics/<topic_slug>/operator_console.md`
 - `runtime/topics/<topic_slug>/conformance_state.json`
 - `runtime/topics/<topic_slug>/conformance_report.md`
@@ -103,6 +105,38 @@ The human may edit:
 - runtime artifacts to clarify operator-facing intent.
 
 AITP should treat these edits as first-class inputs, not as anomalies.
+
+## Layer-transition checkpoints
+
+AITP should ask the human only when the answer materially changes:
+
+- the layer jump,
+- the execution lane,
+- the trust boundary,
+- the cost or resource profile.
+
+This means:
+
+- ordinary bounded work should continue automatically
+- meaningful layer transitions may ask one bounded route-changing question
+- those questions must become durable checkpoint artifacts rather than chat-only interruptions
+
+## Pre-L4 execution approval
+
+Before non-trivial `L4` execution dispatch, AITP should first materialize a
+concrete execution plan.
+
+That plan should make explicit:
+
+- what lane is being proposed
+- whether this is local work, external runtime work, Lean/formal work, or small bounded numerics
+- the runtime/executor target
+- the expected resource scale
+- the pass/failure contract
+
+If runtime target, server choice, or resource class is not already explicitly
+approved in durable artifacts, automatic continuation should stop until the
+operator confirms the plan.
 
 ## Safety boundary
 

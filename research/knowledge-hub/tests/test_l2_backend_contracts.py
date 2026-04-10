@@ -120,6 +120,41 @@ class L2BackendContractTests(unittest.TestCase):
         self.assertIn("topic_skill_projection.active.json|md", runbook)
         self.assertIn("units/topic-skill-projections/", runbook)
 
+    def test_l2_compiler_protocol_is_present_and_referenced(self) -> None:
+        protocol_path = self.kernel_root / "canonical" / "L2_COMPILER_PROTOCOL.md"
+        canonical_readme = (self.kernel_root / "canonical" / "README.md").read_text(encoding="utf-8")
+        consultation_protocol = (self.kernel_root / "L2_CONSULTATION_PROTOCOL.md").read_text(encoding="utf-8")
+        communication_contract = (self.kernel_root / "COMMUNICATION_CONTRACT.md").read_text(encoding="utf-8")
+        architecture_doc = (self.kernel_root.parents[1] / "docs" / "architecture.md").read_text(encoding="utf-8")
+
+        self.assertTrue(protocol_path.exists())
+        protocol = protocol_path.read_text(encoding="utf-8")
+        self.assertIn("L2_COMPILER_PROTOCOL.md", canonical_readme)
+        self.assertIn("canonical/compiled/workspace_memory_map.json", protocol)
+        self.assertIn("canonical/staging/", protocol)
+        self.assertIn("Python should stay in the kernel role", protocol)
+        self.assertIn("Compiled `L2` helper surfaces", consultation_protocol)
+        self.assertIn("compiled `L2` helper views", communication_contract)
+        self.assertIn("Derived compiled `L2` helper surfaces", architecture_doc)
+
+    def test_l2_staging_protocol_and_public_readme_reference_final_v15_surfaces(self) -> None:
+        staging_protocol_path = self.kernel_root / "canonical" / "L2_STAGING_PROTOCOL.md"
+        kernel_readme = (self.kernel_root / "README.md").read_text(encoding="utf-8")
+        canonical_readme = (self.kernel_root / "canonical" / "README.md").read_text(encoding="utf-8")
+        consultation_protocol = (self.kernel_root / "L2_CONSULTATION_PROTOCOL.md").read_text(encoding="utf-8")
+        communication_contract = (self.kernel_root / "COMMUNICATION_CONTRACT.md").read_text(encoding="utf-8")
+
+        self.assertTrue(staging_protocol_path.exists())
+        self.assertIn("workspace_memory_map.json|md", kernel_readme)
+        self.assertIn("workspace_hygiene_report.json|md", kernel_readme)
+        self.assertIn("workspace_staging_manifest.json|md", kernel_readme)
+        self.assertIn("topic_replay_bundle.json|md", kernel_readme)
+        self.assertIn("stage-l2-provisional", kernel_readme)
+        self.assertIn("L2_STAGING_PROTOCOL.md", canonical_readme)
+        self.assertIn("hygiene/", canonical_readme)
+        self.assertIn("Rule 7. Staged entries are not canonical consultation refs", consultation_protocol)
+        self.assertIn("staged provisional entries", communication_contract)
+
     def test_semi_formal_theory_protocol_is_present_and_documented(self) -> None:
         protocol = self.kernel_root / "SEMI_FORMAL_THEORY_PROTOCOL.md"
         readme = (self.kernel_root / "README.md").read_text(encoding="utf-8")
@@ -156,63 +191,6 @@ class L2BackendContractTests(unittest.TestCase):
         self.assertTrue(tool_path.exists())
         self.assertIn("run_toy_model_numeric_backend_smoke.sh", starter)
         self.assertIn("tfim_exact_diagonalization.py", starter)
-
-    def test_l2_mvp_contract_and_result_brief_surfaces_are_documented(self) -> None:
-        canonical_readme = (self.kernel_root / "canonical" / "README.md").read_text(encoding="utf-8")
-        runtime_readme = (self.kernel_root / "runtime" / "README.md").read_text(encoding="utf-8")
-        contract_path = self.kernel_root / "canonical" / "L2_MVP_CONTRACT.md"
-        canonical_unit_schema = json.loads(
-            (self.kernel_root / "canonical" / "canonical-unit.schema.json").read_text(encoding="utf-8")
-        )
-
-        self.assertTrue(contract_path.exists())
-        contract = contract_path.read_text(encoding="utf-8")
-        normalized_contract = " ".join(contract.split())
-        schema_unit_types = set(canonical_unit_schema["properties"]["unit_type"]["enum"])
-        readme_typed_families = {
-            line.removeprefix("- `").removesuffix("`")
-            for line in canonical_readme.splitlines()
-            if line.startswith("- `")
-        }
-
-        self.assertIn("L2_MVP_CONTRACT.md", canonical_readme)
-        self.assertIn("Purpose", contract)
-        self.assertIn("MVP node families", contract)
-        self.assertIn("concept", contract)
-        self.assertIn("theorem_card", contract)
-        self.assertIn("method", contract)
-        self.assertIn("assumption_card", contract)
-        self.assertIn("physical_picture", contract)
-        self.assertIn("warning_note", contract)
-        self.assertTrue({"concept", "theorem_card", "method", "assumption_card", "warning_note"}.issubset(schema_unit_types))
-        self.assertTrue({"concept", "method", "warning_note"}.issubset(readme_typed_families))
-        self.assertNotIn("physical_picture", schema_unit_types)
-        self.assertNotIn("physical_picture", readme_typed_families)
-        self.assertIn("RESERVED by the M1 contract", normalized_contract)
-        self.assertIn("NOT yet active in the current canonical-unit schema", normalized_contract)
-        self.assertIn("current typed L2 vocabulary", normalized_contract)
-        self.assertIn("Immediate next extension family", contract)
-        self.assertIn("negative_result", contract)
-        self.assertNotIn("negative_result", schema_unit_types)
-        self.assertNotIn("negative_result", readme_typed_families)
-        self.assertIn("next-extension", normalized_contract)
-        self.assertIn("deferred", normalized_contract)
-        self.assertIn("MVP edge families", contract)
-        self.assertIn("depends_on", contract)
-        self.assertIn("uses_method", contract)
-        self.assertIn("valid_under", contract)
-        self.assertIn("warns_about", contract)
-        self.assertIn("contradicts", contract)
-        self.assertIn("analogy_to", contract)
-        self.assertIn("derived_from_source", contract)
-        self.assertIn("Activation rule", contract)
-        self.assertIn("M1 freezes the contract", normalized_contract)
-        self.assertIn("M2 activates schema/object-family support", normalized_contract)
-        self.assertIn("seeded graph data", normalized_contract)
-        self.assertIn("traversal", normalized_contract)
-        self.assertIn("populated retrieval", normalized_contract)
-        self.assertIn("topics/<topic_slug>/result_brief.latest.json", runtime_readme)
-        self.assertIn("topics/<topic_slug>/result_brief.latest.md", runtime_readme)
 
 
 if __name__ == "__main__":

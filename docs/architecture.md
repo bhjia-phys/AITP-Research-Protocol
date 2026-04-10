@@ -55,6 +55,11 @@ L2 is the active memory surface of the system.
 That includes reusable execution memory, not only reusable knowledge
 statements.
 
+Canonical `L2` units remain authoritative.
+Derived compiled `L2` helper surfaces may exist to improve consultation,
+navigation, and hygiene review, but they do not replace canonical units or
+promotion records.
+
 ### L3 — Exploratory research and candidate formation
 
 Use L3 for:
@@ -84,7 +89,7 @@ survives explicit checking.
 
 The default non-trivial route is:
 
-`L0 -> L1 -> L3-A -> L4 -> L3-R -> L3-D -> L2`
+`L0 -> L1 -> L3 -> L4 -> L2`
 
 The low-risk exception is:
 
@@ -139,6 +144,38 @@ It should not:
 - silently weaken research contracts into prose-only summaries,
 - substitute proxy-success signals for declared validation evidence,
 - replace missing contracts with unrestricted heuristics.
+
+The same implementation rule applies to future `L2` compiler work:
+
+- deterministic materialization, validation, indexing, and audit may live in
+  code,
+- but mutable knowledge semantics, high-level policy tables, and render-heavy
+  compiler meaning should prefer protocol docs, schemas, templates, and
+  declarative policy surfaces over new giant service functions.
+
+The same maintainability rule now applies to kernel entry surfaces:
+
+- `aitp_service.py` should increasingly act as a façade over focused helper
+  modules such as `frontdoor_support.py`, `agent_install_support.py`,
+  `kernel_templates.py`, `kernel_markdown_renderers.py`,
+  `runtime_bundle_support.py`, `topic_shell_support.py`,
+  `source_distillation_support.py`, `topic_loop_support.py`,
+  `chat_session_support.py`, `capability_audit_support.py`,
+  `followup_support.py`, `auto_promotion_support.py`,
+  `formal_theory_audit_support.py`, `candidate_promotion_support.py`,
+  `lean_bridge_support.py`, `theory_coverage_audit_support.py`,
+  `topic_skill_projection_support.py`, and `promotion_gate_support.py`
+- `aitp_cli.py` should increasingly route through command-family handlers such
+  as `cli_frontdoor_handler.py`
+- `runtime/scripts/orchestrate_topic.py` should increasingly route
+  contract-aware queue shaping and checkpoint/append policy through focused
+  helpers such as `runtime/scripts/orchestrator_contract_support.py` and
+  `runtime/scripts/interaction_surface_support.py` instead of letting one
+  script silently become the next hidden brain
+- `runtime/scripts/sync_topic_state.py` should increasingly route
+  explainability and resume rendering through focused helpers such as
+  `runtime/scripts/sync_topic_state_support.py` instead of keeping one large
+  state-sync script as the next hidden hotspot
 
 ## Agent adapters
 

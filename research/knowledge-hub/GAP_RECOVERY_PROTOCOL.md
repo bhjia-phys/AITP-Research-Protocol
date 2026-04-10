@@ -65,7 +65,7 @@ topic should also receive a durable return packet that records:
 
 - parent gaps and parent follow-up task ids,
 - reentry targets in the parent topic,
-- the expected return route `L0 -> L1 -> L3-A -> L4 -> L3-R -> L3-D -> L2`,
+- the expected return route `L0 -> L1 -> L3 -> L4 -> L2`,
 - acceptable return shapes,
 - unresolved return statuses,
 - and an explicit reintegration rule that the child topic must not silently
@@ -82,7 +82,7 @@ write its own reintegration receipt.
 
 When new cited-literature evidence arrives, the correct route is:
 
-- `L0 -> L1 -> L3-A -> L4 -> L3-R -> L3-D -> L2`
+- `L0 -> L1 -> L3 -> L4 -> L2`
 
 not a direct silent patch to a canonical theorem card.
 

@@ -1,12 +1,12 @@
 # Current topic memory
 
 - Topic slug: `tfim-benchmark-first-code-method-acceptance`
-- Updated at: `2026-04-01T01:52:24+08:00`
+- Updated at: `2026-04-10T16:28:11+08:00`
 - Updated by: `tfim-code-method-acceptance`
-- Source: `work`
+- Source: `active-topics-registry`
 - Resume stage: `L1`
-- Latest run id: `2026-04-01-tfim-code-method`
-- Runtime root: `D:\BaiduSyncdisk\repos\AITP-Research-Protocol\research\knowledge-hub\runtime\topics\tfim-benchmark-first-code-method-acceptance`
+- Latest run id: `2026-04-10-162810-tfim-code-method`
+- Runtime root: `D:\BaiduSyncdisk\repos\_worktrees\aitp-v137-v142-remediation\research\knowledge-hub\runtime\topics\tfim-benchmark-first-code-method-acceptance`
 - Human request: Keep the benchmark-first route bounded, prefer the small exact TFIM result, and treat broader workflow changes as downstream of the benchmark gate.
 - Summary: Stage `L1`; next `No explicit pending actions were found; inspect the runtime resume state.`; human need `none`; last evidence `none`.
 

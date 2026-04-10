@@ -34,8 +34,6 @@ A backend card says:
 - what kind of knowledge it contains,
 - which canonical object families it is expected to seed,
 - what registration and promotion rules apply.
-- and, when a paired downstream backend exists, which maintenance contract
-  governs drift audit, backend debt, and rebuild.
 
 ## 3. Hard rules
 
@@ -71,9 +69,6 @@ A concrete clone may later register:
 3. Register that artifact into `L0` when strong reuse or promotion is expected.
 4. Let `L1`, `L3`, or `L4` consult and apply the result explicitly.
 5. Promote only the reusable distilled object, not the whole backend artifact tree.
-6. If the backend belongs to a paired downstream realization, maintain that pair
-   through `L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md` instead of silently
-   treating one side as authoritative.
 
 ## 7. Why this helps
 
@@ -86,9 +81,3 @@ That bridge is what lets the same kernel support:
 - pure formal theory libraries,
 - numerical code ecosystems,
 - and future mixed workflows without turning `L2` into a black box.
-
-When the downstream realization is paired, the bridge remains only half the
-story.
-Explicit drift audit and rebuild rules are the other half, and they live in:
-
-- `L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md`

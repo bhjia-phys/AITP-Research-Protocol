@@ -25,7 +25,7 @@ from knowledge_hub.aitp_service import AITPService  # noqa: E402
 
 
 def now_stamp() -> str:
-    return datetime.now().astimezone().strftime("%Y-%m-%d")
+    return datetime.now().astimezone().strftime("%Y-%m-%d-%H%M%S")
 
 
 def read_json(path: Path) -> dict[str, Any]:

@@ -6,6 +6,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 def _load_module(module_name: str, relative_path: str):
@@ -33,13 +34,17 @@ class RuntimeScriptTests(unittest.TestCase):
             "aitp_orchestrate_topic_test",
             "runtime/scripts/orchestrate_topic.py",
         )
-        self.sync_topic_state = _load_module(
-            "aitp_sync_topic_state_test",
-            "runtime/scripts/sync_topic_state.py",
-        )
         self.decide_next_action = _load_module(
             "aitp_decide_next_action_test",
             "runtime/scripts/decide_next_action.py",
+        )
+        self.closed_loop_v1 = _load_module(
+            "aitp_closed_loop_v1_test",
+            "runtime/scripts/closed_loop_v1.py",
+        )
+        self.sync_topic_state = _load_module(
+            "aitp_sync_topic_state_test",
+            "runtime/scripts/sync_topic_state.py",
         )
 
     def tearDown(self) -> None:
@@ -274,7 +279,7 @@ class RuntimeScriptTests(unittest.TestCase):
                 "supporting_regression_question_ids": ["regression_question:demo"],
                 "source_id": "paper:demo",
                 "arxiv_id": "1510.07698v1",
-                "expected_return_route": "L0->L1->L3-A->L4->L3-R->L3-D->L2",
+                "expected_return_route": "L0->L1->L3->L4->L2",
                 "acceptable_return_shapes": ["recovered_units", "resolved_gap_update", "still_unresolved_packet"],
                 "required_output_artifacts": ["candidate_ledger_or_recovered_units"],
                 "unresolved_return_statuses": ["pending_reentry", "returned_with_gap", "returned_unresolved"],
@@ -405,6 +410,551 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertTrue(
             any(summary.startswith("Keep the abstract/concrete equivalence route") for summary in summaries)
         )
+
+    def test_materialize_action_queue_prefers_skill_discovery_for_capability_gap_contract(self) -> None:
+        self._write_json(
+            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            {
+                "runtime_mode": "explore",
+                "transition_posture": {
+                    "transition_kind": "backedge_transition",
+                    "triggered_by": ["capability_gap_blocker"],
+                },
+            },
+        )
+
+        queue, _ = self.orchestrate_topic.materialize_action_queue(
+            {
+                "topic_slug": "demo-topic",
+                "latest_run_id": "2026-03-13-demo",
+                "resume_stage": "L3",
+                "pending_actions": [
+                    "Continue a manual follow-up on the current lane.",
+                    "Review whether a new backend or workflow capability is needed.",
+                ],
+            },
+            ["bounded capability gap"],
+            self.knowledge_root / "runtime" / "scripts" / "discover_external_skills.py",
+            self.knowledge_root / "runtime" / "scripts" / "advance_closed_loop.py",
+            self.knowledge_root / "runtime" / "scripts" / "handoff_execution.py",
+            self.knowledge_root / "runtime" / "scripts" / "run_literature_followup.py",
+            self.knowledge_root,
+        )
+
+        self.assertEqual(queue[0]["action_type"], "skill_discovery")
+
+    def test_materialize_action_queue_prefers_promotion_review_in_promote_mode(self) -> None:
+        self._write_json(
+            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            {
+                "runtime_mode": "promote",
+                "transition_posture": {
+                    "transition_kind": "forward_transition",
+                    "triggered_by": ["promotion_intent"],
+                },
+            },
+        )
+
+        queue, _ = self.orchestrate_topic.materialize_action_queue(
+            {
+                "topic_slug": "demo-topic",
+                "latest_run_id": "2026-03-13-demo",
+                "resume_stage": "L4",
+                "pending_actions": [
+                    "Keep a manual follow-up lane open for later.",
+                    "Review Layer 2 promotion for the bounded candidate.",
+                ],
+            },
+            [],
+            self.knowledge_root / "runtime" / "scripts" / "discover_external_skills.py",
+            self.knowledge_root / "runtime" / "scripts" / "advance_closed_loop.py",
+            self.knowledge_root / "runtime" / "scripts" / "handoff_execution.py",
+            self.knowledge_root / "runtime" / "scripts" / "run_literature_followup.py",
+            self.knowledge_root,
+        )
+
+        self.assertEqual(queue[0]["action_type"], "l2_promotion_review")
+
+    def test_materialize_action_queue_skips_runtime_execution_append_for_consultation_backedge(self) -> None:
+        self._write_json(
+            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            {
+                "runtime_mode": "explore",
+                "transition_posture": {
+                    "transition_kind": "backedge_transition",
+                    "triggered_by": ["non_trivial_consultation"],
+                },
+            },
+        )
+
+        with patch.object(
+            self.orchestrate_topic,
+            "compute_closed_loop_status",
+            return_value={
+                "next_transition": "select_route",
+                "awaiting_external_result": False,
+                "execution_task": None,
+                "literature_followups": [],
+                "paths": {},
+            },
+        ):
+            queue, _ = self.orchestrate_topic.materialize_action_queue(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "2026-03-13-demo",
+                    "resume_stage": "L3",
+                    "pending_actions": [
+                        "Consult memory before reshaping the candidate.",
+                    ],
+                },
+                [],
+                self.knowledge_root / "runtime" / "scripts" / "discover_external_skills.py",
+                self.knowledge_root / "runtime" / "scripts" / "advance_closed_loop.py",
+                self.knowledge_root / "runtime" / "scripts" / "handoff_execution.py",
+                self.knowledge_root / "runtime" / "scripts" / "run_literature_followup.py",
+                self.knowledge_root,
+            )
+
+        self.assertFalse(any(row["action_type"] == "select_validation_route" for row in queue))
+
+    def test_materialize_action_queue_skips_skill_append_in_promote_mode(self) -> None:
+        self._write_json(
+            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            {
+                "runtime_mode": "promote",
+                "transition_posture": {
+                    "transition_kind": "forward_transition",
+                    "triggered_by": ["promotion_intent"],
+                },
+            },
+        )
+
+        queue, _ = self.orchestrate_topic.materialize_action_queue(
+            {
+                "topic_slug": "demo-topic",
+                "latest_run_id": "2026-03-13-demo",
+                "resume_stage": "L4",
+                "pending_actions": [
+                    "Resolve backend parity before doing anything else.",
+                    "Review Layer 2 promotion for the bounded candidate.",
+                ],
+            },
+            ["backend parity"],
+            self.knowledge_root / "runtime" / "scripts" / "discover_external_skills.py",
+            self.knowledge_root / "runtime" / "scripts" / "advance_closed_loop.py",
+            self.knowledge_root / "runtime" / "scripts" / "handoff_execution.py",
+            self.knowledge_root / "runtime" / "scripts" / "run_literature_followup.py",
+            self.knowledge_root,
+        )
+
+        self.assertFalse(any(row["action_type"] == "skill_discovery" for row in queue))
+
+    def test_materialize_action_queue_skips_runtime_appends_when_human_checkpoint_required(self) -> None:
+        self._write_json(
+            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            {
+                "runtime_mode": "verify",
+                "transition_posture": {
+                    "transition_kind": "boundary_hold",
+                    "triggered_by": ["verification_route_selection"],
+                    "requires_human_checkpoint": True,
+                },
+            },
+        )
+
+        with patch.object(
+            self.orchestrate_topic,
+            "compute_closed_loop_status",
+            return_value={
+                "next_transition": "select_route",
+                "awaiting_external_result": False,
+                "execution_task": None,
+                "literature_followups": [
+                    {"query": "demo query", "target_source_type": "paper", "priority": "medium"}
+                ],
+                "paths": {},
+            },
+        ):
+            queue, _ = self.orchestrate_topic.materialize_action_queue(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "2026-03-13-demo",
+                    "resume_stage": "L4",
+                "pending_actions": [
+                        "Continue a bounded manual derivation follow-up.",
+                    ],
+                },
+                ["backend parity"],
+                self.knowledge_root / "runtime" / "scripts" / "discover_external_skills.py",
+                self.knowledge_root / "runtime" / "scripts" / "advance_closed_loop.py",
+                self.knowledge_root / "runtime" / "scripts" / "handoff_execution.py",
+                self.knowledge_root / "runtime" / "scripts" / "run_literature_followup.py",
+                self.knowledge_root,
+            )
+
+        self.assertFalse(any(row["action_type"] == "skill_discovery" for row in queue))
+        self.assertFalse(any(row["action_type"] == "select_validation_route" for row in queue))
+        self.assertFalse(any(row["action_type"] == "literature_followup_search" for row in queue))
+
+    def test_materialize_action_queue_skips_helper_runtime_appends_when_human_checkpoint_required(self) -> None:
+        self._write_json(
+            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            {
+                "runtime_mode": "verify",
+                "transition_posture": {
+                    "transition_kind": "boundary_hold",
+                    "triggered_by": ["verification_route_selection"],
+                    "requires_human_checkpoint": True,
+                },
+            },
+        )
+
+        helper_action = lambda action_id, action_type: {
+            "action_id": action_id,
+            "topic_slug": "demo-topic",
+            "resume_stage": "L4",
+            "status": "pending",
+            "action_type": action_type,
+            "summary": f"Helper-generated {action_type}.",
+            "auto_runnable": True,
+            "handler": None,
+            "handler_args": {},
+            "queue_source": "runtime_appended",
+            "declared_contract_path": None,
+        }
+
+        with (
+            patch.object(
+                self.orchestrate_topic,
+                "pending_split_contract_action",
+                return_value=[helper_action("action:demo-topic:split", "apply_candidate_split_contract")],
+            ),
+            patch.object(
+                self.orchestrate_topic,
+                "topic_completion_actions",
+                return_value=[helper_action("action:demo-topic:completion", "assess_topic_completion")],
+            ),
+            patch.object(
+                self.orchestrate_topic,
+                "auto_promotion_actions",
+                return_value=[helper_action("action:demo-topic:auto-promote", "auto_promote_candidate")],
+            ),
+        ):
+            queue, _ = self.orchestrate_topic.materialize_action_queue(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "2026-03-13-demo",
+                    "resume_stage": "L4",
+                    "pending_actions": [
+                        "Continue a bounded manual derivation follow-up.",
+                    ],
+                },
+                [],
+                self.knowledge_root / "runtime" / "scripts" / "discover_external_skills.py",
+                self.knowledge_root / "runtime" / "scripts" / "advance_closed_loop.py",
+                self.knowledge_root / "runtime" / "scripts" / "handoff_execution.py",
+                self.knowledge_root / "runtime" / "scripts" / "run_literature_followup.py",
+                self.knowledge_root,
+            )
+
+        action_types = {row["action_type"] for row in queue}
+        self.assertNotIn("apply_candidate_split_contract", action_types)
+        self.assertNotIn("assess_topic_completion", action_types)
+        self.assertNotIn("auto_promote_candidate", action_types)
+
+    def test_materialize_action_queue_skips_runtime_and_helper_appends_when_operator_checkpoint_is_requested(self) -> None:
+        self._write_json(
+            "runtime/topics/demo-topic/operator_checkpoint.active.json",
+            {
+                "checkpoint_id": "checkpoint:demo-topic:execution-lane-confirmation",
+                "topic_slug": "demo-topic",
+                "checkpoint_kind": "execution_lane_confirmation",
+                "status": "requested",
+                "active": True,
+                "question": "Confirm the execution lane before deeper runtime expansion.",
+            },
+        )
+
+        helper_action = lambda action_id, action_type: {
+            "action_id": action_id,
+            "topic_slug": "demo-topic",
+            "resume_stage": "L4",
+            "status": "pending",
+            "action_type": action_type,
+            "summary": f"Helper-generated {action_type}.",
+            "auto_runnable": True,
+            "handler": None,
+            "handler_args": {},
+            "queue_source": "runtime_appended",
+            "declared_contract_path": None,
+        }
+
+        with (
+            patch.object(
+                self.orchestrate_topic,
+                "compute_closed_loop_status",
+                return_value={
+                    "next_transition": "select_route",
+                    "awaiting_external_result": False,
+                    "execution_task": None,
+                    "literature_followups": [
+                        {"query": "demo query", "target_source_type": "paper", "priority": "medium"}
+                    ],
+                    "paths": {},
+                },
+            ),
+            patch.object(
+                self.orchestrate_topic,
+                "pending_split_contract_action",
+                return_value=[helper_action("action:demo-topic:split", "apply_candidate_split_contract")],
+            ),
+        ):
+            queue, queue_meta = self.orchestrate_topic.materialize_action_queue(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "2026-03-13-demo",
+                    "resume_stage": "L4",
+                    "pending_actions": [
+                        "Continue a bounded manual derivation follow-up.",
+                    ],
+                },
+                ["bounded capability gap"],
+                self.knowledge_root / "runtime" / "scripts" / "discover_external_skills.py",
+                self.knowledge_root / "runtime" / "scripts" / "advance_closed_loop.py",
+                self.knowledge_root / "runtime" / "scripts" / "handoff_execution.py",
+                self.knowledge_root / "runtime" / "scripts" / "run_literature_followup.py",
+                self.knowledge_root,
+            )
+
+        action_types = {row["action_type"] for row in queue}
+        self.assertNotIn("skill_discovery", action_types)
+        self.assertNotIn("select_validation_route", action_types)
+        self.assertNotIn("literature_followup_search", action_types)
+        self.assertNotIn("apply_candidate_split_contract", action_types)
+        self.assertEqual(
+            queue_meta["operator_checkpoint_path"],
+            "runtime/topics/demo-topic/operator_checkpoint.active.json",
+        )
+        self.assertIn("operator checkpoint", str(queue_meta["append_policy_reason"]).lower())
+
+    def test_materialize_action_queue_declared_contract_can_disable_runtime_appends_but_keep_skill_append(self) -> None:
+        self._write_json(
+            "feedback/topics/demo-topic/runs/2026-03-13-demo/next_actions.contract.json",
+            {
+                "contract_version": 1,
+                "policy_note": "Keep only the declared queue plus capability-gap help.",
+                "append_runtime_actions": False,
+                "append_skill_action_if_needed": True,
+                "actions": [
+                    {
+                        "action_id": "action:demo-topic:declared-01",
+                        "summary": "Continue a bounded manual derivation follow-up.",
+                        "action_type": "manual_followup",
+                        "resume_stage": "L3",
+                        "auto_runnable": False,
+                    }
+                ],
+            },
+        )
+
+        helper_action = lambda action_id, action_type: {
+            "action_id": action_id,
+            "topic_slug": "demo-topic",
+            "resume_stage": "L4",
+            "status": "pending",
+            "action_type": action_type,
+            "summary": f"Helper-generated {action_type}.",
+            "auto_runnable": True,
+            "handler": None,
+            "handler_args": {},
+            "queue_source": "runtime_appended",
+            "declared_contract_path": "feedback/topics/demo-topic/runs/2026-03-13-demo/next_actions.contract.json",
+        }
+
+        with (
+            patch.object(
+                self.orchestrate_topic,
+                "compute_closed_loop_status",
+                return_value={
+                    "next_transition": "select_route",
+                    "awaiting_external_result": False,
+                    "execution_task": None,
+                    "literature_followups": [
+                        {"query": "demo query", "target_source_type": "paper", "priority": "medium"}
+                    ],
+                    "paths": {},
+                },
+            ),
+            patch.object(
+                self.orchestrate_topic,
+                "pending_split_contract_action",
+                return_value=[helper_action("action:demo-topic:split", "apply_candidate_split_contract")],
+            ),
+            patch.object(
+                self.orchestrate_topic,
+                "followup_subtopic_actions",
+                return_value=[helper_action("action:demo-topic:subtopic", "spawn_followup_subtopics")],
+            ),
+            patch.object(
+                self.orchestrate_topic,
+                "topic_completion_actions",
+                return_value=[helper_action("action:demo-topic:completion", "assess_topic_completion")],
+            ),
+            patch.object(
+                self.orchestrate_topic,
+                "auto_promotion_actions",
+                return_value=[helper_action("action:demo-topic:auto-promote", "auto_promote_candidate")],
+            ),
+        ):
+            queue, _ = self.orchestrate_topic.materialize_action_queue(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "2026-03-13-demo",
+                    "resume_stage": "L3",
+                    "pending_actions": [
+                        "Continue a bounded manual derivation follow-up.",
+                    ],
+                    "pointers": {
+                        "next_actions_path": "feedback/topics/demo-topic/runs/2026-03-13-demo/next_actions.md",
+                    },
+                },
+                ["backend parity"],
+                self.knowledge_root / "runtime" / "scripts" / "discover_external_skills.py",
+                self.knowledge_root / "runtime" / "scripts" / "advance_closed_loop.py",
+                self.knowledge_root / "runtime" / "scripts" / "handoff_execution.py",
+                self.knowledge_root / "runtime" / "scripts" / "run_literature_followup.py",
+                self.knowledge_root,
+            )
+
+        action_types = {row["action_type"] for row in queue}
+        self.assertIn("manual_followup", action_types)
+        self.assertIn("skill_discovery", action_types)
+        self.assertNotIn("apply_candidate_split_contract", action_types)
+        self.assertNotIn("select_validation_route", action_types)
+        self.assertNotIn("literature_followup_search", action_types)
+        self.assertNotIn("spawn_followup_subtopics", action_types)
+        self.assertNotIn("assess_topic_completion", action_types)
+        self.assertNotIn("auto_promote_candidate", action_types)
+
+    def test_decide_next_action_prefers_skill_discovery_for_capability_gap_backedge(self) -> None:
+        topic_runtime_root = self.knowledge_root / "runtime" / "topics" / "demo-topic"
+        topic_runtime_root.mkdir(parents=True, exist_ok=True)
+        (topic_runtime_root / "runtime_protocol.generated.json").write_text(
+            json.dumps(
+                {
+                    "runtime_mode": "explore",
+                    "transition_posture": {
+                        "transition_kind": "backedge_transition",
+                        "triggered_by": ["capability_gap_blocker"],
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        topic_state = {
+            "topic_slug": "demo-topic",
+            "updated_by": "test",
+            "resume_stage": "L3",
+            "pointers": {},
+        }
+        queue_rows = [
+            {
+                "action_id": "action:demo:1",
+                "action_type": "manual_followup",
+                "summary": "Keep probing the current manual lane.",
+                "status": "pending",
+                "auto_runnable": False,
+            },
+            {
+                "action_id": "action:demo:2",
+                "action_type": "skill_discovery",
+                "summary": "Search for the bounded missing capability.",
+                "status": "pending",
+                "auto_runnable": True,
+            },
+        ]
+        control_note = {"directive": None}
+        runtime_contract = self.decide_next_action.load_runtime_contract(topic_runtime_root)
+
+        unfinished = self.decide_next_action.build_unfinished_work(
+            topic_state,
+            queue_rows,
+            control_note,
+            runtime_contract,
+        )
+        decision = self.decide_next_action.build_next_action_decision(
+            topic_state,
+            queue_rows,
+            control_note,
+            runtime_contract,
+        )
+
+        self.assertEqual(unfinished["queue_head_action_id"], "action:demo:2")
+        self.assertEqual(decision["selected_action"]["action_id"], "action:demo:2")
+        self.assertEqual(decision["decision_basis"], "runtime_contract_preferred:skill_discovery")
+
+    def test_decide_next_action_prefers_promotion_review_in_promote_mode(self) -> None:
+        topic_runtime_root = self.knowledge_root / "runtime" / "topics" / "demo-topic"
+        topic_runtime_root.mkdir(parents=True, exist_ok=True)
+        (topic_runtime_root / "runtime_protocol.generated.json").write_text(
+            json.dumps(
+                {
+                    "runtime_mode": "promote",
+                    "transition_posture": {
+                        "transition_kind": "forward_transition",
+                        "triggered_by": ["promotion_intent"],
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        topic_state = {
+            "topic_slug": "demo-topic",
+            "updated_by": "test",
+            "resume_stage": "L4",
+            "pointers": {},
+        }
+        queue_rows = [
+            {
+                "action_id": "action:demo:1",
+                "action_type": "manual_followup",
+                "summary": "Continue a non-promotion manual lane.",
+                "status": "pending",
+                "auto_runnable": False,
+            },
+            {
+                "action_id": "action:demo:2",
+                "action_type": "l2_promotion_review",
+                "summary": "Review Layer 2 promotion for the bounded candidate.",
+                "status": "pending",
+                "auto_runnable": False,
+            },
+        ]
+        control_note = {"directive": None}
+        runtime_contract = self.decide_next_action.load_runtime_contract(topic_runtime_root)
+
+        unfinished = self.decide_next_action.build_unfinished_work(
+            topic_state,
+            queue_rows,
+            control_note,
+            runtime_contract,
+        )
+        decision = self.decide_next_action.build_next_action_decision(
+            topic_state,
+            queue_rows,
+            control_note,
+            runtime_contract,
+        )
+
+        self.assertEqual(unfinished["queue_head_action_id"], "action:demo:2")
+        self.assertEqual(decision["selected_action"]["action_id"], "action:demo:2")
+        self.assertEqual(decision["decision_basis"], "runtime_contract_preferred:l2_promotion_review")
 
     def test_lean_bridge_actions_detect_missing_candidate_packet(self) -> None:
         self._write_json(
@@ -813,64 +1363,38 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertIn("`non_trivial_consultation` status=`active`", rendered)
         self.assertIn("## Deferred surfaces and exact pointers", rendered)
 
-    def test_build_source_intelligence_state_summarizes_runtime_read_path(self) -> None:
-        payload = self.sync_topic_state.build_source_intelligence_state(
-            l0_source_rows=[
-                {
-                    "source_id": "paper:demo-source",
-                    "canonical_source_id": "source_identity:arxiv:demo-source",
-                    "references": ["doi:10.1000/demo"],
-                }
-            ],
-            intake_source_rows=[
-                {
-                    "assumptions": ["translational invariance"],
-                    "regimes": ["strong coupling"],
-                    "reading_depth_label": "abstract_only",
-                    "contradiction_candidates": [{"kind": "assumption_conflict"}],
-                    "notation_tension_candidates": [{"meaning": "stress"}],
-                }
-            ],
+    def test_materialize_execution_task_defaults_to_human_confirmation_for_inferred_route(self) -> None:
+        self._write_json(
+            "runtime/topics/demo-topic/selected_validation_route.json",
+            {
+                "route_id": "route:demo-topic:benchmark",
+                "objective": "Run the bounded benchmark lane in the current execution environment.",
+                "input_artifacts": ["feedback/topics/demo-topic/runs/run-001/result_summary.md"],
+                "expected_outputs": ["validation/topics/demo-topic/runs/run-001/results/benchmark.json"],
+                "success_criterion": ["Benchmark output is materialized."],
+                "failure_signals": ["Benchmark run does not produce the declared artifact."],
+                "run_id": "run-001",
+                "surface": "numerical",
+            },
         )
 
-        self.assertEqual(payload["canonical_source_ids"], ["source_identity:arxiv:demo-source"])
-        self.assertEqual(payload["citation_edge_count"], 1)
-        self.assertEqual(payload["assumptions"], ["translational invariance"])
-        self.assertEqual(payload["regimes"], ["strong coupling"])
-        self.assertEqual(payload["reading_depth_labels"], ["abstract_only"])
-        self.assertEqual(payload["contradiction_candidate_count"], 1)
-        self.assertEqual(payload["notation_tension_count"], 1)
-
-    def test_build_unfinished_work_carries_source_intelligence(self) -> None:
-        payload = self.decide_next_action.build_unfinished_work(
+        payload = self.closed_loop_v1.materialize_execution_task(
+            self.knowledge_root,
             {
                 "topic_slug": "demo-topic",
+                "latest_run_id": "run-001",
+                "research_mode": "first_principles",
                 "updated_by": "test",
-                "resume_stage": "L1",
-                "source_intelligence": {
-                    "canonical_source_ids": ["source_identity:arxiv:demo-source"],
-                    "contradiction_candidate_count": 1,
-                },
-                "pointers": {},
             },
-            [],
-            {},
+            updated_by="test",
         )
 
-        self.assertEqual(
-            payload["source_intelligence"]["canonical_source_ids"],
-            ["source_identity:arxiv:demo-source"],
-        )
-        self.assertEqual(payload["source_intelligence"]["contradiction_candidate_count"], 1)
-
-    def test_windows_run_hook_emits_visible_warning_when_bash_is_missing(self) -> None:
-        hook_path = Path(__file__).resolve().parents[3] / "hooks" / "run-hook.cmd"
-        hook_text = hook_path.read_text(encoding="utf-8")
-        self.assertIn(
-            "WARNING: AITP session initialization could not run because bash is not available",
-            hook_text,
-        )
-        self.assertIn("1>&2", hook_text)
+        self.assertTrue(payload["needs_human_confirm"])
+        self.assertFalse(payload["auto_dispatch_allowed"])
+        task_note = (
+            self.knowledge_root / "runtime" / "topics" / "demo-topic" / "execution_task.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("Human confirmation is required before dispatch", task_note)
 
 
 if __name__ == "__main__":

@@ -270,7 +270,7 @@
       "review"
     ],
     "return_packet_filename": "followup_return_packet.json",
-    "expected_return_route": "L0->L1->L3-A->L4->L3-R->L3-D->L2",
+    "expected_return_route": "L0->L1->L3->L4->L2",
     "acceptable_return_shapes": [
       "recovered_units",
       "resolved_gap_update",

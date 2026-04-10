@@ -57,3 +57,26 @@ This avoids context blowup while preserving rigor.
 
 A conformant run means the agent followed the charter and protocol surface.
 It does not guarantee that the science is correct.
+
+## 11. Borrow workflow shells, preserve protocol kernel
+
+AITP should learn from systems like Superpowers, GSD, Compound, and OpenSpec
+at the workflow-shell layer:
+
+- natural-language entry
+- progressive disclosure
+- explicit planning and review loops
+- compact public command surfaces
+
+But topic state, validation state, promotion gates, and durable runtime truth
+must remain part of the protocol kernel rather than collapsing into prompt
+convention.
+
+See:
+
+- [`AITP_WORKFLOW_SHELL_AND_PROTOCOL_KERNEL.md`](AITP_WORKFLOW_SHELL_AND_PROTOCOL_KERNEL.md)
+- [`AITP_INTELLIGENCE_PRESERVATION_PRINCIPLES.md`](AITP_INTELLIGENCE_PRESERVATION_PRINCIPLES.md)
+- [`AITP_ONTOLOGY_AND_MODE_COMPLETENESS.md`](AITP_ONTOLOGY_AND_MODE_COMPLETENESS.md)
+- [`AITP_MODE_ENVELOPE_PROTOCOL.md`](AITP_MODE_ENVELOPE_PROTOCOL.md)
+- [`AITP_L3_L4_ITERATIVE_VERIFY_LOOP_PROTOCOL.md`](AITP_L3_L4_ITERATIVE_VERIFY_LOOP_PROTOCOL.md)
+- [`AITP_TRANSITION_AND_BACKEDGE_PROTOCOL.md`](AITP_TRANSITION_AND_BACKEDGE_PROTOCOL.md)

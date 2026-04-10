@@ -39,7 +39,9 @@ Rules:
 
 - `actions[*].summary` is required.
 - `action_type` may be omitted; runtime will fill it heuristically.
-- `append_runtime_actions=true` keeps closed-loop/system actions appended.
+- `append_runtime_actions=true` keeps runtime-appended system actions appended,
+  including closed-loop, split-apply, follow-up reintegration, topic-completion,
+  Lean-bridge, deferred-reactivation, and auto-promotion helper actions.
 - `append_skill_action_if_needed=true` keeps capability-gap actions appended.
 
 Keep the human explanation in:
@@ -193,6 +195,13 @@ Purpose:
 
 - expose `minimal_execution_brief`, `must_read_now`, and `escalation_triggers`
   as a stable machine-readable contract,
+- expose explicit `runtime_mode`, `mode_envelope`, and `transition_posture`
+  instead of leaving mode/transition policy implicit inside handler code,
+- let queue ordering and next-action selection increasingly consume the same
+  explicit contract instead of staying purely heuristic,
+- let queue materialization suppress obviously mismatched runtime-appended
+  actions when the explicit contract already says the topic is in a different
+  routing posture,
 - let external runtimes consume trigger semantics without scraping markdown,
 - keep markdown as a human-readable projection instead of the only trigger
   definition surface.
@@ -205,6 +214,15 @@ Minimal shape:
   "bundle_kind": "progressive_disclosure_runtime_bundle",
   "protocol_version": 1,
   "topic_slug": "my-topic",
+  "runtime_mode": "explore",
+  "active_submode": null,
+  "mode_envelope": {
+    "mode": "explore",
+    "load_profile": "light"
+  },
+  "transition_posture": {
+    "transition_kind": "boundary_hold"
+  },
   "minimal_execution_brief": {
     "current_stage": "L3",
     "selected_action_id": "action:my-topic:02",

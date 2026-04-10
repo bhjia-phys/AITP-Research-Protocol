@@ -19,7 +19,7 @@ def _bootstrap_path() -> None:
 _bootstrap_path()
 
 from knowledge_hub.aitp_service import AITPService  # noqa: E402
-from knowledge_hub.l2_graph import stage_l2_insight  # noqa: E402
+from knowledge_hub.mode_envelope_support import build_runtime_mode_contract  # noqa: E402
 from knowledge_hub.runtime_projection_handler import (  # noqa: E402
     build_knowledge_packets_from_candidates,
     write_promotion_trace,
@@ -34,16 +34,13 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.package_root = Path(__file__).resolve().parents[1]
         self.temp_root = Path(tempfile.mkdtemp(prefix="aitp-runtime-profiles-"))
         self.kernel_root = self.temp_root / "kernel"
-        shutil.copytree(self.package_root / "canonical", self.kernel_root / "canonical", dirs_exist_ok=True)
         (self.kernel_root / "schemas").mkdir(parents=True, exist_ok=True)
         (self.kernel_root / "runtime" / "schemas").mkdir(parents=True, exist_ok=True)
         for name in (
-            "edge.schema.json",
             "topic-synopsis.schema.json",
             "knowledge-packet.schema.json",
             "promotion-trace.schema.json",
             "topic-skill-projection.schema.json",
-            "l2-staging-entry.schema.json",
         ):
             source = self.package_root / "schemas" / name
             target = self.kernel_root / "schemas" / name
@@ -72,9 +69,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                     "latest_run_id": "run-001",
                     "research_mode": "toy_model",
                     "pointers": {
-                        "control_note_path": "runtime/topics/demo-topic/control_note.md",
-                        "consultation_index_path": "consultation/topics/demo-topic/consultation_index.jsonl",
-                        "returned_execution_result_path": "validation/topics/demo-topic/runs/run-001/returned_execution_result.json",
+                        "control_note_path": "runtime/topics/demo-topic/control_note.md"
                     },
                 },
                 indent=2,
@@ -113,69 +108,6 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         )
         (self.runtime_root / "control_note.md").write_text("# Control note\n", encoding="utf-8")
         (self.runtime_root / "operator_console.md").write_text("# Operator Console\n", encoding="utf-8")
-        source_root = self.kernel_root / "source-layer" / "topics" / "demo-topic"
-        source_root.mkdir(parents=True, exist_ok=True)
-        (source_root / "source_index.jsonl").write_text(
-            json.dumps(
-                {
-                    "source_id": "paper:demo-benchmark",
-                    "canonical_source_id": "source_identity:arxiv:demo-benchmark",
-                    "source_type": "paper",
-                    "title": "Demo Benchmark Paper",
-                    "summary": "Primary benchmark paper for the bounded route.",
-                    "references": ["doi:10.1000/shared-demo-reference"],
-                },
-                separators=(",", ":"),
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-        intake_root = self.kernel_root / "intake" / "topics" / "demo-topic"
-        intake_root.mkdir(parents=True, exist_ok=True)
-        (intake_root / "status.json").write_text(
-            json.dumps(
-                {
-                    "stage": "technical_understanding",
-                    "next_stage": "L3",
-                    "last_updated": "2026-03-28T00:00:00+00:00",
-                    "summary": "Assumptions and notation are partially reconstructed.",
-                },
-                indent=2,
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-        (intake_root / "notation_table.md").write_text("# Notation table\n", encoding="utf-8")
-        (intake_root / "assumption_table.md").write_text("# Assumption table\n", encoding="utf-8")
-        consultation_root = self.kernel_root / "consultation" / "topics" / "demo-topic"
-        consultation_root.mkdir(parents=True, exist_ok=True)
-        (consultation_root / "consultation_index.jsonl").write_text(
-            json.dumps(
-                {
-                    "consultation_id": "consultation:demo:l3",
-                    "topic_slug": "demo-topic",
-                    "stage": "L3",
-                    "query_text": "demo benchmark route",
-                },
-                separators=(",", ":"),
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-        validation_root = self.kernel_root / "validation" / "topics" / "demo-topic" / "runs" / "run-001"
-        validation_root.mkdir(parents=True, exist_ok=True)
-        (validation_root / "returned_execution_result.json").write_text(
-            json.dumps(
-                {
-                    "result_id": "result:demo-benchmark",
-                    "summary": "The tiny exact benchmark reproduced the expected gap.",
-                    "updated_at": "2026-03-28T00:00:00+00:00",
-                },
-                indent=2,
-            )
-            + "\n",
-            encoding="utf-8",
-        )
 
         self.service = AITPService(kernel_root=self.kernel_root, repo_root=self.repo_root)
 
@@ -224,6 +156,14 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         )
         dashboard = self._write_surface("runtime/topics/demo-topic/topic_dashboard.md", "# Dashboard\n")
         readiness_note = self._write_surface("runtime/topics/demo-topic/promotion_readiness.md", "# Promotion readiness\n")
+        review_bundle_json = self._write_surface(
+            "runtime/topics/demo-topic/validation_review_bundle.active.json",
+            json.dumps({"bundle_kind": "validation_review_bundle", "status": "not_materialized"}, indent=2) + "\n",
+        )
+        review_bundle_note = self._write_surface(
+            "runtime/topics/demo-topic/validation_review_bundle.active.md",
+            "# Validation review bundle\n",
+        )
         gap_note = self._write_surface("runtime/topics/demo-topic/gap_map.md", "# Gap map\n")
         topic_completion_json = self._write_surface(
             "runtime/topics/demo-topic/topic_completion.json",
@@ -239,26 +179,6 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         followup_reintegration_note = self._write_surface("runtime/topics/demo-topic/followup_reintegration.md", "# Follow-up reintegration\n")
         followup_gap_writeback_jsonl = self._write_surface("runtime/topics/demo-topic/followup_gap_writeback.jsonl", "")
         followup_gap_writeback_note = self._write_surface("runtime/topics/demo-topic/followup_gap_writeback.md", "# Follow-up gap writeback\n")
-        result_brief_json = self._write_surface(
-            "runtime/topics/demo-topic/result_brief.latest.json",
-            json.dumps(
-                {
-                    "kind": "result_brief",
-                    "topic_slug": "demo-topic",
-                    "interaction_class": "silent_continue",
-                    "what_changed": "No significant change recorded.",
-                    "evidence_summary": "No durable evidence return recorded yet.",
-                    "scope_summary": "Continue the bounded toy-numeric lane.",
-                    "non_claims": ["No new claims are justified without benchmark evidence."],
-                },
-                indent=2,
-            )
-            + "\n",
-        )
-        result_brief_note = self._write_surface(
-            "runtime/topics/demo-topic/result_brief.latest.md",
-            "# Result brief\n",
-        )
 
         return {
             "research_question_contract_path": research_json,
@@ -272,6 +192,8 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "operator_checkpoint_ledger_path": checkpoint_ledger,
             "topic_dashboard_path": dashboard,
             "promotion_readiness_path": readiness_note,
+            "validation_review_bundle_path": review_bundle_json,
+            "validation_review_bundle_note_path": review_bundle_note,
             "gap_map_path": gap_note,
             "topic_completion_path": topic_completion_json,
             "topic_completion_note_path": topic_completion_note,
@@ -281,8 +203,6 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "followup_reintegration_note_path": followup_reintegration_note,
             "followup_gap_writeback_path": followup_gap_writeback_jsonl,
             "followup_gap_writeback_note_path": followup_gap_writeback_note,
-            "result_brief_path": result_brief_json,
-            "result_brief_note_path": result_brief_note,
             "research_question_contract": {
                 "question_id": "research_question:demo-topic",
                 "title": "Demo Topic",
@@ -346,6 +266,33 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "blocker_count": 1,
                 "summary": "The topic is not ready for promotion yet.",
             },
+            "validation_review_bundle": {
+                "bundle_kind": "validation_review_bundle",
+                "topic_slug": "demo-topic",
+                "run_id": "run-001",
+                "status": "not_materialized",
+                "primary_review_kind": "validation_contract",
+                "candidate_ids": [],
+                "validation_mode": "numerical",
+                "promotion_readiness_status": "not_ready",
+                "topic_completion_status": "in_progress",
+                "promotion_gate_status": "not_requested",
+                "blockers": ["Benchmark not yet executed."],
+                "entrypoints": {
+                    "validation_contract_path": "runtime/topics/demo-topic/validation_contract.active.json",
+                    "validation_contract_note_path": "runtime/topics/demo-topic/validation_contract.active.md",
+                    "promotion_readiness_path": "runtime/topics/demo-topic/promotion_readiness.json",
+                    "promotion_readiness_note_path": "runtime/topics/demo-topic/promotion_readiness.md",
+                    "topic_completion_path": "runtime/topics/demo-topic/topic_completion.json",
+                    "topic_completion_note_path": "runtime/topics/demo-topic/topic_completion.md",
+                    "gap_map_path": "runtime/topics/demo-topic/gap_map.md",
+                    "promotion_gate_path": None,
+                },
+                "specialist_artifacts": [],
+                "summary": "Primary L4 review surface for topic `demo-topic` using `validation_contract` as the current review entry point. No specialist review artifacts are materialized for the active run yet.",
+                "updated_at": "2026-03-28T00:00:00+00:00",
+                "updated_by": "test",
+            },
             "open_gap_summary": {
                 "status": "open",
                 "gap_count": 1,
@@ -387,15 +334,6 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "updated_at": "2026-03-28T00:00:00+00:00",
                 "updated_by": "test",
             },
-            "result_brief": {
-                "kind": "result_brief",
-                "topic_slug": "demo-topic",
-                "interaction_class": "silent_continue",
-                "what_changed": "No significant change recorded.",
-                "evidence_summary": "No durable evidence return recorded yet.",
-                "scope_summary": "Continue the bounded toy-numeric lane.",
-                "non_claims": ["No new claims are justified without benchmark evidence."],
-            },
         }
 
     def test_new_projection_schemas_validate_and_are_mirrored(self) -> None:
@@ -413,16 +351,38 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "topic_slug": "demo-topic",
             "title": "Demo Topic",
             "question": "What is the first honest benchmark route?",
-            "task_type": "target_driven_execution",
             "lane": "toy_numeric",
             "load_profile": "light",
             "status": "active",
             "human_request": "continue this topic",
             "assumptions": ["Benchmark first."],
-            "interaction_class": "silent_continue",
-            "stop_status": "continue",
-            "stop_reason": "Default continuation for bounded topic work.",
-            "primary_result_shape": "status_update",
+            "runtime_focus": {
+                "summary": "Stage `L3`; next `Run the smallest exact benchmark first.`; human need `none`; last evidence `none`.",
+                "why_this_topic_is_here": "The topic is currently following the bounded benchmark route.",
+                "resume_stage": "L3",
+                "last_materialized_stage": "L3",
+                "next_action_id": "action:demo-topic:01",
+                "next_action_type": "run_benchmark",
+                "next_action_summary": "Run the smallest exact benchmark first.",
+                "human_need_status": "none",
+                "human_need_kind": "none",
+                "human_need_summary": "No active human checkpoint is currently blocking the bounded loop.",
+                "blocker_summary": [],
+                "last_evidence_kind": "none",
+                "last_evidence_summary": "No durable evidence-return artifact is currently recorded for this topic.",
+                "dependency_status": "clear",
+                "dependency_summary": "No active topic dependencies.",
+                "promotion_status": "not_ready",
+            },
+            "truth_sources": {
+                "topic_state_path": "runtime/topics/demo-topic/topic_state.json",
+                "research_question_contract_path": "runtime/topics/demo-topic/research_question.contract.json",
+                "next_action_surface_path": "runtime/topics/demo-topic/action_queue.jsonl",
+                "human_need_surface_path": None,
+                "dependency_registry_path": "runtime/active_topics.json",
+                "promotion_readiness_path": "runtime/topics/demo-topic/promotion_readiness.json",
+                "promotion_gate_path": None,
+            },
             "next_action_summary": "Run the smallest exact benchmark first.",
             "open_gap_summary": "The benchmark route is still pending.",
             "pending_decision_count": 0,
@@ -598,85 +558,45 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
 
         bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
         self.assertEqual(bundle["load_profile"], "light")
-        self.assertEqual(len(bundle["must_read_now"]), 4)
-        self.assertEqual(bundle["must_read_now"][0]["path"], "runtime/topics/demo-topic/topic_state.json")
-        self.assertIn("l0_sources", bundle)
-        self.assertEqual(bundle["l0_sources"]["source_count"], 1)
-        self.assertEqual(bundle["l0_sources"]["primary_output_path"], "source-layer/topics/demo-topic/source_index.jsonl")
-        self.assertEqual(bundle["l0_sources"]["source_fidelity_counts"]["preprint"], 1)
-        self.assertEqual(bundle["l0_sources"]["highest_fidelity_class"], "preprint")
-        self.assertIn("preprint evidence", bundle["l0_sources"]["source_fidelity_summary"])
-        self.assertIn("L1", bundle["l0_sources"]["next_allowed_transitions"])
-        self.assertIn("l1_understanding", bundle)
-        self.assertEqual(bundle["l1_understanding"]["intake_stage"], "technical_understanding")
-        self.assertEqual(bundle["l1_understanding"]["primary_output_path"], "intake/topics/demo-topic/status.json")
-        self.assertEqual(bundle["l1_understanding"]["reading_depth"], "technical_reconstruction")
-        self.assertEqual(bundle["l1_understanding"]["assumption_quality"], "partial")
-        self.assertEqual(bundle["l1_understanding"]["notation_table_path"], "intake/topics/demo-topic/notation_table.md")
-        self.assertEqual(bundle["l1_understanding"]["assumption_table_path"], "intake/topics/demo-topic/assumption_table.md")
-        self.assertIn("L3-A", bundle["l1_understanding"]["next_allowed_transitions"])
-        self.assertIn("l4_validation", bundle)
-        self.assertEqual(bundle["l4_validation"]["validation_mode"], "numerical")
-        self.assertEqual(bundle["l4_validation"]["evidence_status"], "present")
-        self.assertEqual(bundle["l4_validation"]["analytic_check_families"], [])
-        self.assertIn("L3-R", bundle["l4_validation"]["next_allowed_transitions"])
-        self.assertIn("l2_memory", bundle)
-        self.assertEqual(bundle["l2_memory"]["consultation_count"], 1)
-        self.assertEqual(
-            bundle["l2_memory"]["consultation_surface"]["consultation_index_path"],
-            "consultation/topics/demo-topic/consultation_index.jsonl",
+        self.assertEqual(bundle["runtime_mode"], "explore")
+        self.assertIsNone(bundle["active_submode"])
+        self.assertEqual(bundle["mode_envelope"]["mode"], "explore")
+        self.assertEqual(bundle["mode_envelope"]["load_profile"], "light")
+        self.assertEqual(bundle["mode_envelope"]["minimum_mandatory_context"][0]["path"], "runtime/topics/demo-topic/topic_dashboard.md")
+        self.assertIn("L3 -> L0", bundle["mode_envelope"]["allowed_backedges"])
+        self.assertEqual(bundle["transition_posture"]["transition_kind"], "boundary_hold")
+        self.assertEqual(len(bundle["must_read_now"]), 2)
+        self.assertEqual(bundle["must_read_now"][0]["path"], "runtime/topics/demo-topic/topic_dashboard.md")
+        self.assertEqual(bundle["must_read_now"][1]["path"], "runtime/topics/demo-topic/research_question.contract.md")
+        self.assertEqual(bundle["minimal_execution_brief"]["open_next"], "runtime/topics/demo-topic/topic_dashboard.md")
+        self.assertNotIn("operator_console.md", json.dumps(bundle["must_read_now"]))
+        self.assertTrue(
+            any(
+                row["path"] == "runtime/topics/demo-topic/control_note.md"
+                and row["trigger"] == "decision_override_present"
+                for row in bundle["may_defer_until_trigger"]
+            )
         )
-        self.assertEqual(bundle["l2_memory"]["consultation_surface"]["consultation_count"], 1)
-        self.assertEqual(bundle["l2_memory"]["writeback_surface"]["staging_entry_count"], 0)
-        self.assertIn(
-            "workflow:demo-benchmark",
-            bundle["l2_memory"]["writeback_surface"]["intended_l2_targets"],
+        self.assertTrue(
+            any(
+                row["path"] == "runtime/topics/demo-topic/topic_synopsis.json"
+                and row["trigger"] == "runtime_truth_audit"
+                for row in bundle["may_defer_until_trigger"]
+            )
         )
-        self.assertEqual(bundle["l2_memory"]["graph_surface"]["status"], "seeded")
-        self.assertGreater(bundle["l2_memory"]["graph_surface"]["unit_count"], 0)
-        self.assertGreater(bundle["l2_memory"]["graph_surface"]["edge_count"], 0)
-        self.assertIn("concept", bundle["l2_memory"]["graph_surface"]["unit_types"])
-        self.assertIn("workflow", bundle["l2_memory"]["graph_surface"]["unit_types"])
-        self.assertIn("L3-A", bundle["l2_memory"]["next_allowed_transitions"])
-        self.assertEqual(bundle["collaborator_memory"]["status"], "absent")
-        self.assertTrue((self.runtime_root / "l0_sources.json").exists())
-        self.assertTrue((self.runtime_root / "l0_sources.md").exists())
-        self.assertTrue((self.runtime_root / "l1_understanding.json").exists())
-        self.assertTrue((self.runtime_root / "l1_understanding.md").exists())
-        self.assertTrue((self.runtime_root / "l4_validation.json").exists())
-        self.assertTrue((self.runtime_root / "l4_validation.md").exists())
-        self.assertTrue((self.runtime_root / "l2_memory.json").exists())
-        self.assertTrue((self.runtime_root / "l2_memory.md").exists())
         self.assertIn("topic_synopsis", bundle)
+        self.assertIn("runtime_focus", bundle["topic_synopsis"])
+        self.assertIn("truth_sources", bundle["topic_synopsis"])
+        self.assertEqual(
+            bundle["minimal_execution_brief"]["selected_action_summary"],
+            bundle["topic_synopsis"]["runtime_focus"]["next_action_summary"],
+        )
+        self.assertEqual(
+            bundle["topic_synopsis"]["truth_sources"]["next_action_surface_path"],
+            "runtime/topics/demo-topic/action_queue.jsonl",
+        )
+        self.assertTrue(any(row["trigger"] == "runtime_truth_audit" for row in bundle["escalation_triggers"]))
         self.assertIn("pending_decisions", bundle)
-        self.assertIn("interaction_contract", bundle)
-        self.assertIn("result_brief", bundle)
-        self.assertEqual(bundle["topic_synopsis"]["task_type"], "target_driven_execution")
-        self.assertEqual(bundle["active_research_contract"]["task_type"], "target_driven_execution")
-        self.assertEqual(bundle["idea_packet"]["task_type"], "target_driven_execution")
-        self.assertIn("task_type_lane_guidance", bundle)
-        self.assertEqual(bundle["interaction_contract"]["interaction_class"], "silent_continue")
-        self.assertEqual(bundle["interaction_contract"]["stop_status"], "continue")
-        self.assertEqual(bundle["interaction_contract"]["primary_result_shape"], "status_update")
-        self.assertEqual(bundle["result_brief"]["kind"], "result_brief")
-        self.assertTrue(bundle["result_brief"]["path"])
-        self.assertTrue(bundle["result_brief"]["note_path"])
-        result_brief_path = self.kernel_root / bundle["result_brief"]["path"]
-        result_brief_payload = json.loads(result_brief_path.read_text(encoding="utf-8"))
-        for field in (
-            "kind",
-            "topic_slug",
-            "interaction_class",
-            "what_changed",
-            "evidence_summary",
-            "scope_summary",
-            "non_claims",
-        ):
-            self.assertEqual(bundle["result_brief"][field], result_brief_payload[field])
-        self.assertIn("interaction_class", bundle["topic_synopsis"])
-        self.assertIn("stop_status", bundle["topic_synopsis"])
-        self.assertIn("stop_reason", bundle["topic_synopsis"])
-        self.assertIn("primary_result_shape", bundle["topic_synopsis"])
         self.assertTrue((self.runtime_root / "topic_synopsis.json").exists())
         self.assertTrue((self.runtime_root / "pending_decisions.json").exists())
         self.assertTrue((self.runtime_root / "promotion_readiness.json").exists())
@@ -689,278 +609,6 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             )
         )
         jsonschema.validate(bundle, schema)
-
-    def test_runtime_bundle_surfaces_task_type_by_lane_guidance(self) -> None:
-        cases = [
-            (
-                "explore possible algebraic links before fixing a route",
-                "formal_derivation",
-                "open_exploration",
-                "formal_theory",
-            ),
-            (
-                "test whether there is a plausible bridge using a small benchmark model",
-                "toy_model",
-                "conjecture_attempt",
-                "model_numeric",
-            ),
-            (
-                "implement finite-temperature GW in LibRPA and check the first bounded benchmark",
-                "code_method",
-                "target_driven_execution",
-                "code_and_materials",
-            ),
-        ]
-        summaries: list[str] = []
-        for request_text, research_mode, expected_task_type, expected_lane_family in cases:
-            shell_surfaces = self._shell_surfaces()
-            shell_surfaces["research_question_contract"]["research_mode"] = research_mode
-            with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
-                with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
-                    result = self.service._materialize_runtime_protocol_bundle(
-                        topic_slug="demo-topic",
-                        updated_by="test",
-                        human_request=request_text,
-                        load_profile="light",
-                    )
-
-            bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
-            guidance = bundle["task_type_lane_guidance"]
-            self.assertEqual(guidance["task_type"], expected_task_type)
-            self.assertEqual(guidance["lane_family"], expected_lane_family)
-            self.assertTrue(guidance["path"])
-            self.assertTrue(guidance["note_path"])
-            note_text = (self.kernel_root / guidance["note_path"]).read_text(encoding="utf-8")
-            self.assertIn("recommended first moves", note_text.lower())
-            summaries.append(guidance["summary"])
-
-        self.assertEqual(len(set(summaries)), len(summaries))
-
-    def test_runtime_bundle_surfaces_collaborator_routing_guidance_on_lane_mismatch(self) -> None:
-        shell_surfaces = self._shell_surfaces()
-        shell_surfaces["research_question_contract"]["research_mode"] = "toy_model"
-        self.service.record_collaborator_memory(
-            preferred_lanes=["formal_theory"],
-            preferences=["Prefer algebraic and theorem-heavy routes when possible."],
-            updated_by="test",
-        )
-        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
-            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
-                result = self.service._materialize_runtime_protocol_bundle(
-                    topic_slug="demo-topic",
-                    updated_by="test",
-                    human_request="continue this topic",
-                    load_profile="light",
-                )
-
-        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
-        routing = bundle["collaborator_routing_guidance"]
-        self.assertEqual(routing["alignment_status"], "preference_mismatch")
-        self.assertIn("formal_theory", routing["preferred_lanes"])
-        self.assertTrue(routing["note_path"])
-        note_text = (self.kernel_root / routing["note_path"]).read_text(encoding="utf-8")
-        self.assertIn("override surfaces", note_text.lower())
-        self.assertTrue(
-            any("collaborator_routing_guidance.md" in item.get("path", "") for item in bundle["must_read_now"])
-        )
-
-    def test_runtime_bundle_infers_task_type_from_request_shape(self) -> None:
-        shell_surfaces = self._shell_surfaces()
-        cases = [
-            (
-                "explore possible structural links between the two ideas before choosing a route",
-                "open_exploration",
-            ),
-            (
-                "test whether there is a plausible bridge between the two frameworks",
-                "conjecture_attempt",
-            ),
-            (
-                "implement finite-temperature GW in LibRPA and check the first bounded benchmark",
-                "target_driven_execution",
-            ),
-        ]
-        for request_text, expected_task_type in cases:
-            with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
-                with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
-                    result = self.service._materialize_runtime_protocol_bundle(
-                        topic_slug="demo-topic",
-                        updated_by="test",
-                        human_request=request_text,
-                        load_profile="light",
-                    )
-
-            bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
-            self.assertEqual(bundle["topic_synopsis"]["task_type"], expected_task_type)
-            self.assertEqual(bundle["active_research_contract"]["task_type"], expected_task_type)
-            self.assertEqual(bundle["idea_packet"]["task_type"], expected_task_type)
-
-    def test_runtime_bundle_surfaces_empty_canonical_graph_status(self) -> None:
-        shell_surfaces = self._shell_surfaces()
-        (self.kernel_root / "canonical" / "index.jsonl").write_text("", encoding="utf-8")
-        (self.kernel_root / "canonical" / "edges.jsonl").write_text("", encoding="utf-8")
-
-        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
-            with patch.object(
-                self.service,
-                "_candidate_rows_for_run",
-                return_value=[],
-            ):
-                result = self.service._materialize_runtime_protocol_bundle(
-                    topic_slug="demo-topic",
-                    updated_by="test",
-                    human_request="continue this topic without active L2 graph memory",
-                    load_profile="light",
-                )
-
-        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
-        graph_surface = bundle["l2_memory"]["graph_surface"]
-        self.assertEqual(graph_surface["status"], "empty")
-        self.assertEqual(graph_surface["unit_count"], 0)
-        self.assertEqual(graph_surface["edge_count"], 0)
-        self.assertEqual(graph_surface["unit_types"], [])
-
-    def test_runtime_bundle_materializes_l3_subplane_projections(self) -> None:
-        shell_surfaces = self._shell_surfaces()
-        candidate_ledger_path = self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001" / "candidate_ledger.jsonl"
-        candidate_ledger_path.parent.mkdir(parents=True, exist_ok=True)
-        candidate_ledger_path.write_text(
-            json.dumps(
-                {
-                    "candidate_id": "candidate:demo-benchmark-packet",
-                    "candidate_type": "method",
-                    "title": "Demo Benchmark Packet",
-                    "summary": "Small exact benchmark route for the topic.",
-                    "status": "ready_for_validation",
-                    "origin_refs": [],
-                    "intended_l2_targets": ["workflow:demo-benchmark"],
-                },
-                separators=(",", ":"),
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-        stage_l2_insight(
-            self.kernel_root,
-            title="Demo Route Memory",
-            summary="Stage the route memory after the benchmark interpretation is stable.",
-            candidate_unit_type="workflow",
-            tags=["demo", "benchmark"],
-            source_refs=["feedback/topics/demo-topic/runs/run-001/candidate_ledger.jsonl"],
-            created_by="test",
-            linked_unit_ids=["workflow:demo-benchmark"],
-            integration_summary="Distill the benchmark route before canonical writeback.",
-            topic_slug="demo-topic",
-        )
-        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
-            with patch.object(
-                self.service,
-                "_candidate_rows_for_run",
-                return_value=[
-                    {
-                        "candidate_id": "candidate:demo-benchmark-packet",
-                        "candidate_type": "method",
-                        "title": "Demo Benchmark Packet",
-                        "summary": "Small exact benchmark route for the topic.",
-                        "status": "ready_for_validation",
-                        "origin_refs": [],
-                        "intended_l2_targets": ["workflow:demo-benchmark"],
-                    }
-                ],
-            ):
-                result = self.service._materialize_runtime_protocol_bundle(
-                    topic_slug="demo-topic",
-                    updated_by="test",
-                    human_request="continue this topic and keep the benchmark lane bounded",
-                    load_profile="light",
-                )
-
-        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
-        self.assertIn("l3_subplanes", bundle)
-        analysis = bundle["l3_subplanes"]["analysis"]
-        self.assertEqual(analysis["subplane"], "L3-A")
-        self.assertEqual(analysis["primary_output_path"], "feedback/topics/demo-topic/runs/run-001/candidate_ledger.jsonl")
-        self.assertIn("L4", analysis["next_allowed_transitions"])
-        self.assertTrue((self.runtime_root / "l3_analysis.json").exists())
-        self.assertTrue((self.runtime_root / "l3_analysis.md").exists())
-
-        result_integration = bundle["l3_subplanes"]["result_integration"]
-        self.assertEqual(result_integration["subplane"], "L3-R")
-        self.assertIn("L3-D", result_integration["next_allowed_transitions"])
-        self.assertTrue((self.runtime_root / "l3_result_integration.json").exists())
-        self.assertTrue((self.runtime_root / "l3_result_integration.md").exists())
-
-        distillation = bundle["l3_subplanes"]["distillation"]
-        self.assertEqual(distillation["subplane"], "L3-D")
-        self.assertIn("staging:demo-route-memory", distillation["staging_entry_ids"])
-        self.assertIn("workflow:demo-benchmark", distillation["intended_l2_targets"])
-        self.assertIn("L4->L2", distillation["forbidden_direct_transitions"])
-        self.assertTrue((self.runtime_root / "l3_distillation.json").exists())
-        self.assertTrue((self.runtime_root / "l3_distillation.md").exists())
-
-    def test_runtime_bundle_surfaces_latest_topic_consultation_details(self) -> None:
-        self.service.seed_l2_demo_direction(updated_by="test")
-        shell_surfaces = self._shell_surfaces()
-        (self.kernel_root / "consultation" / "topics" / "demo-topic" / "consultation_index.jsonl").write_text(
-            "",
-            encoding="utf-8",
-        )
-        candidate_ledger_path = self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001" / "candidate_ledger.jsonl"
-        candidate_ledger_path.parent.mkdir(parents=True, exist_ok=True)
-        candidate_ledger_path.write_text(
-            json.dumps(
-                {
-                    "candidate_id": "candidate:demo-route-memory",
-                    "candidate_type": "workflow",
-                    "title": "Demo Route Memory",
-                    "summary": "Topic-derived route memory that should be staged before canonical writeback.",
-                    "status": "ready_for_validation",
-                    "origin_refs": [],
-                    "intended_l2_targets": ["workflow:demo-benchmark"],
-                },
-                separators=(",", ":"),
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-        self.service.stage_topic_distillation(topic_slug="demo-topic", run_id="run-001", updated_by="test")
-        self.service.consult_topic_l2(
-            topic_slug="demo-topic",
-            run_id="run-001",
-            query_text="TFIM benchmark workflow demo route memory",
-            include_staging=True,
-            updated_by="test",
-        )
-
-        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
-            result = self.service._materialize_runtime_protocol_bundle(
-                topic_slug="demo-topic",
-                updated_by="test",
-                human_request="continue this topic with the bounded benchmark memory",
-                load_profile="light",
-            )
-
-        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
-        consultation_surface = bundle["l2_memory"]["consultation_surface"]
-        self.assertEqual(consultation_surface["consultation_count"], 1)
-        self.assertIn("TFIM benchmark workflow", consultation_surface["latest_query_text"])
-        self.assertIn("Retrieved", consultation_surface["latest_summary"])
-        self.assertTrue(consultation_surface["latest_application_path"])
-        self.assertTrue(consultation_surface["latest_summary_note_path"])
-        self.assertTrue(consultation_surface["latest_memory_map_path"])
-        self.assertTrue(consultation_surface["latest_memory_map_note_path"])
-        memory_map_note = self.kernel_root / consultation_surface["latest_memory_map_note_path"]
-        self.assertTrue(memory_map_note.exists())
-        memory_map_text = memory_map_note.read_text(encoding="utf-8")
-        self.assertIn("Primary canonical hits", memory_map_text)
-        self.assertIn("Expanded canonical hits", memory_map_text)
-        self.assertIn("Warning notes", memory_map_text)
-        self.assertIn("Staged hits", memory_map_text)
-        self.assertIn("Canonical graph status", memory_map_text)
-        self.assertEqual(bundle["l2_memory"]["writeback_surface"]["staging_entry_count"], 1)
-        self.assertEqual(bundle["interaction_contract"]["interaction_class"], "non_blocking_update")
-        self.assertEqual(bundle["interaction_contract"]["primary_result_shape"], "result_brief")
-        self.assertEqual(bundle["result_brief"]["interaction_class"], "non_blocking_update")
 
     def test_runtime_bundle_auto_escalates_to_full_for_mismatch_requests(self) -> None:
         shell_surfaces = self._shell_surfaces()
@@ -977,325 +625,71 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertEqual(bundle["load_profile"], "full")
         self.assertGreater(len(bundle["must_read_now"]), 4)
         self.assertIn("topic_dashboard.md", json.dumps(bundle["must_read_now"]))
+        self.assertIn("validation_review_bundle.active.md", json.dumps(bundle["must_read_now"]))
+        self.assertNotIn("operator_console.md", json.dumps(bundle["must_read_now"]))
+        self.assertNotIn("agent_brief.md", json.dumps(bundle["must_read_now"]))
 
-    def test_runtime_bundle_supports_free_explore_and_exploration_window(self) -> None:
+    def test_build_runtime_mode_contract_classifies_verify_and_promote_modes(self) -> None:
+        verify_contract = build_runtime_mode_contract(
+            resume_stage="L4",
+            load_profile="full",
+            idea_packet_status="approved_for_execution",
+            operator_checkpoint_status="cancelled",
+            selected_action_type="dispatch_execution_task",
+            selected_action_summary="Dispatch the selected execution task.",
+            must_read_now=[{"path": "runtime/topics/demo-topic/topic_dashboard.md", "reason": "dashboard"}],
+            may_defer_until_trigger=[],
+            escalation_triggers=[
+                {
+                    "trigger": "verification_route_selection",
+                    "active": True,
+                    "condition": "selected route is active",
+                    "required_reads": ["runtime/topics/demo-topic/selected_validation_route.json"],
+                }
+            ],
+        )
+        self.assertEqual(verify_contract["runtime_mode"], "verify")
+        self.assertEqual(verify_contract["active_submode"], "iterative_verify")
+        self.assertEqual(verify_contract["transition_posture"]["transition_kind"], "boundary_hold")
+
+        promote_contract = build_runtime_mode_contract(
+            resume_stage="L4",
+            load_profile="full",
+            idea_packet_status="approved_for_execution",
+            operator_checkpoint_status="cancelled",
+            selected_action_type="promote_candidate",
+            selected_action_summary="Promote the current candidate into Layer 2.",
+            must_read_now=[{"path": "runtime/topics/demo-topic/promotion_gate.md", "reason": "gate"}],
+            may_defer_until_trigger=[],
+            escalation_triggers=[
+                {
+                    "trigger": "promotion_intent",
+                    "active": True,
+                    "condition": "writeback is active",
+                    "required_reads": ["runtime/topics/demo-topic/promotion_gate.md"],
+                }
+            ],
+        )
+        self.assertEqual(promote_contract["runtime_mode"], "promote")
+        self.assertIsNone(promote_contract["active_submode"])
+        self.assertEqual(promote_contract["transition_posture"]["transition_kind"], "forward_transition")
+
+    def test_topic_status_exposes_primary_runtime_surface_roles(self) -> None:
         shell_surfaces = self._shell_surfaces()
         with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
             with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
-                result = self.service._materialize_runtime_protocol_bundle(
-                    topic_slug="demo-topic",
-                    updated_by="test",
-                    human_request="explore possible bridges and speculative links before fixing a route",
-                    load_profile="light",
-                )
+                status_payload = self.service.topic_status(topic_slug="demo-topic")
 
-        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
-        self.assertEqual(bundle["interaction_contract"]["interaction_class"], "free_explore")
-        self.assertEqual(bundle["interaction_contract"]["stop_status"], "continue")
-        self.assertIn("exploration_window", bundle)
-        self.assertEqual(bundle["exploration_window"]["status"], "open")
-        self.assertFalse(bundle["exploration_window"]["closure_required"])
-        self.assertTrue(bundle["exploration_window"]["path"])
-        self.assertTrue(bundle["exploration_window"]["note_path"])
-        self.assertEqual(bundle["exploration_window"]["carrier_path"], "exploration_window.json")
-        note_path = self.kernel_root / bundle["exploration_window"]["note_path"]
-        self.assertTrue(note_path.exists())
-        note_text = note_path.read_text(encoding="utf-8")
-        self.assertIn("exploration window", note_text.lower())
-        self.assertIn("possible bridges", note_text.lower())
-        self.assertTrue(
-            any("exploration_window.md" in item.get("path", "") for item in bundle["must_read_now"])
-        )
-
-    def test_runtime_bundle_surfaces_source_identity_and_neighbor_signals(self) -> None:
-        shell_surfaces = self._shell_surfaces()
-        (self.kernel_root / "source-layer" / "global_index.jsonl").write_text(
-            "\n".join(
-                [
-                    json.dumps(
-                        {
-                            "source_id": "paper:demo-benchmark",
-                            "canonical_source_id": "source_identity:arxiv:demo-benchmark",
-                            "topic_slug": "demo-topic",
-                            "source_type": "paper",
-                            "title": "Demo Benchmark Paper",
-                            "local_path": "source-layer/topics/demo-topic/sources/paper-demo-benchmark/source.json",
-                            "acquired_at": "2026-03-28T00:00:00+00:00",
-                            "references": ["doi:10.1000/shared-demo-reference"],
-                        },
-                        separators=(",", ":"),
-                    ),
-                    json.dumps(
-                        {
-                            "source_id": "paper:neighbor-benchmark",
-                            "canonical_source_id": "source_identity:arxiv:demo-benchmark",
-                            "topic_slug": "neighbor-topic",
-                            "source_type": "paper",
-                            "title": "Neighbor Benchmark Paper",
-                            "local_path": "source-layer/topics/neighbor-topic/sources/paper-neighbor-benchmark/source.json",
-                            "acquired_at": "2026-03-28T00:00:00+00:00",
-                            "references": ["doi:10.1000/shared-demo-reference"],
-                        },
-                        separators=(",", ":"),
-                    ),
-                ]
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-
-        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
-            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
-                result = self.service._materialize_runtime_protocol_bundle(
-                    topic_slug="demo-topic",
-                    updated_by="test",
-                    human_request="continue this topic",
-                    load_profile="light",
-                )
-
-        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
-        l0_sources = bundle["l0_sources"]
+        roles = status_payload["primary_runtime_surfaces"]
+        self.assertEqual(roles["primary"]["runtime_machine"], "runtime/topics/demo-topic/topic_synopsis.json")
+        self.assertEqual(roles["primary"]["runtime_human"], "runtime/topics/demo-topic/topic_dashboard.md")
         self.assertEqual(
-            l0_sources["canonical_source_ids"],
-            ["source_identity:arxiv:demo-benchmark"],
+            roles["primary"]["review_human"],
+            "runtime/topics/demo-topic/validation_review_bundle.active.md",
         )
-        self.assertGreaterEqual(l0_sources["cross_topic_match_count"], 1)
-        self.assertEqual(l0_sources["citation_edges"][0]["target_ref"], "doi:10.1000/shared-demo-reference")
-        self.assertEqual(l0_sources["source_neighbors"][0]["relation_kind"], "shared_identity")
-
-    def test_runtime_bundle_surfaces_intake_assumptions_regimes_and_reading_depth_labels(self) -> None:
-        shell_surfaces = self._shell_surfaces()
-        (self.kernel_root / "intake" / "topics" / "demo-topic" / "source_index.jsonl").write_text(
-            json.dumps(
-                {
-                    "source_id": "paper:demo-benchmark",
-                    "assumptions": ["translational invariance"],
-                    "regimes": ["strong coupling"],
-                    "reading_depth_label": "abstract_only",
-                },
-                separators=(",", ":"),
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-
-        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
-            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
-                result = self.service._materialize_runtime_protocol_bundle(
-                    topic_slug="demo-topic",
-                    updated_by="test",
-                    human_request="continue this topic",
-                    load_profile="light",
-                )
-
-        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
-        l1_understanding = bundle["l1_understanding"]
-        self.assertEqual(l1_understanding["assumptions"], ["translational invariance"])
-        self.assertEqual(l1_understanding["regimes"], ["strong coupling"])
-        self.assertEqual(l1_understanding["reading_depth_labels"], ["abstract_only"])
-
-    def test_runtime_bundle_surfaces_contradiction_and_notation_tension_candidates(self) -> None:
-        shell_surfaces = self._shell_surfaces()
-        (self.kernel_root / "intake" / "topics" / "demo-topic" / "source_index.jsonl").write_text(
-            "\n".join(
-                [
-                    json.dumps(
-                        {
-                            "source_id": "paper:demo-benchmark",
-                            "contradiction_candidates": [
-                                {
-                                    "kind": "assumption_conflict",
-                                    "against_source_id": "paper:prior-source",
-                                    "detail": "non-relativistic limit vs relativistic limit",
-                                }
-                            ],
-                            "notation_tension_candidates": [
-                                {
-                                    "meaning": "stress",
-                                    "existing_symbol": "sigma",
-                                    "incoming_symbol": "tau",
-                                }
-                            ],
-                        },
-                        separators=(",", ":"),
-                    )
-                ]
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-
-        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
-            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
-                result = self.service._materialize_runtime_protocol_bundle(
-                    topic_slug="demo-topic",
-                    updated_by="test",
-                    human_request="continue this topic",
-                    load_profile="light",
-                )
-
-        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
-        l1_understanding = bundle["l1_understanding"]
-        self.assertEqual(l1_understanding["contradiction_candidates"][0]["kind"], "assumption_conflict")
-        self.assertEqual(l1_understanding["notation_tension_candidates"][0]["meaning"], "stress")
-
-    def test_topic_status_surfaces_source_intelligence_summary(self) -> None:
-        (self.kernel_root / "source-layer" / "global_index.jsonl").write_text(
-            json.dumps(
-                {
-                    "source_id": "paper:demo-benchmark",
-                    "canonical_source_id": "source_identity:arxiv:demo-benchmark",
-                    "topic_slug": "demo-topic",
-                    "references": ["doi:10.1000/shared-demo-reference"],
-                },
-                separators=(",", ":"),
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-        (self.kernel_root / "intake" / "topics" / "demo-topic" / "source_index.jsonl").write_text(
-            json.dumps(
-                {
-                    "source_id": "paper:demo-benchmark",
-                    "assumptions": ["translational invariance"],
-                    "regimes": ["strong coupling"],
-                    "reading_depth_label": "abstract_only",
-                },
-                separators=(",", ":"),
-            )
-            + "\n",
-            encoding="utf-8",
-        )
-
-        status = self.service.topic_status(topic_slug="demo-topic", updated_by="test")
-
-        self.assertEqual(
-            status["source_intelligence"]["canonical_source_ids"],
-            ["source_identity:arxiv:demo-benchmark"],
-        )
-        self.assertIn("canonical", status["source_intelligence_summary"].lower())
-
-    def test_task_type_biases_interaction_posture_even_without_exploration_keyword(self) -> None:
-        shell_surfaces = self._shell_surfaces()
-        shell_surfaces["research_question_contract"]["task_type"] = "open_exploration"
-        shell_surfaces["idea_packet"]["task_type"] = "open_exploration"
-        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
-            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
-                result = self.service._materialize_runtime_protocol_bundle(
-                    topic_slug="demo-topic",
-                    updated_by="test",
-                    human_request="continue this topic",
-                    load_profile="light",
-                )
-
-        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
-        self.assertEqual(bundle["topic_synopsis"]["task_type"], "open_exploration")
-        self.assertEqual(bundle["interaction_contract"]["interaction_class"], "free_explore")
-
-    def test_target_driven_task_type_prefers_silent_continue(self) -> None:
-        shell_surfaces = self._shell_surfaces()
-        shell_surfaces["research_question_contract"]["task_type"] = "target_driven_execution"
-        shell_surfaces["idea_packet"]["task_type"] = "target_driven_execution"
-        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
-            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
-                result = self.service._materialize_runtime_protocol_bundle(
-                    topic_slug="demo-topic",
-                    updated_by="test",
-                    human_request="continue this topic",
-                    load_profile="light",
-                )
-
-        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
-        self.assertEqual(bundle["topic_synopsis"]["task_type"], "target_driven_execution")
-        self.assertEqual(bundle["interaction_contract"]["interaction_class"], "silent_continue")
-
-    def test_runtime_bundle_surfaces_checkpoint_interaction_contract(self) -> None:
-        shell_surfaces = self._shell_surfaces()
-        shell_surfaces["operator_checkpoint"] = {
-            **shell_surfaces["operator_checkpoint"],
-            "status": "requested",
-            "question": "Confirm the benchmark route before continuing.",
-            "blocker_summary": ["Awaiting operator confirmation."],
-        }
-        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
-            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
-                result = self.service._materialize_runtime_protocol_bundle(
-                    topic_slug="demo-topic",
-                    updated_by="test",
-                    human_request="continue this topic",
-                    load_profile="light",
-                )
-
-        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
-        interaction_contract = bundle["interaction_contract"]
-        self.assertEqual(interaction_contract["interaction_class"], "checkpoint_question")
-        self.assertEqual(interaction_contract["stop_status"], "checkpoint_required")
-        self.assertEqual(interaction_contract["primary_result_shape"], "checkpoint_card")
-        self.assertIn("Confirm the benchmark route", interaction_contract["stop_reason"])
-        synopsis = bundle["topic_synopsis"]
-        self.assertEqual(synopsis["interaction_class"], "checkpoint_question")
-        self.assertEqual(synopsis["stop_status"], "checkpoint_required")
-        self.assertEqual(synopsis["primary_result_shape"], "checkpoint_card")
-
-    def test_runtime_bundle_blocks_on_pending_decision_blockers(self) -> None:
-        shell_surfaces = self._shell_surfaces()
-        blocking_brief = {
-            "kind": "result_brief",
-            "topic_slug": "demo-topic",
-            "interaction_class": "checkpoint_question",
-            "what_changed": "Blocking pending decisions require resolution: decision:demo-blocking.",
-            "evidence_summary": "No durable evidence return recorded yet.",
-            "scope_summary": "Resolve the blocking decision before deeper execution.",
-            "non_claims": ["No new claims are justified without benchmark evidence."],
-        }
-        result_brief_path = Path(shell_surfaces["result_brief_path"])
-        result_brief_path.write_text(json.dumps(blocking_brief, indent=2) + "\n", encoding="utf-8")
-        shell_surfaces["result_brief"] = blocking_brief
-        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
-            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
-                with patch(
-                    "knowledge_hub.aitp_service.list_pending_decision_points",
-                    return_value=[
-                        {"id": "decision:demo-blocking", "blocking": True}
-                    ],
-                ):
-                    result = self.service._materialize_runtime_protocol_bundle(
-                        topic_slug="demo-topic",
-                        updated_by="test",
-                        human_request="continue this topic",
-                        load_profile="light",
-                    )
-
-        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
-        interaction_contract = bundle["interaction_contract"]
-        self.assertEqual(interaction_contract["interaction_class"], "checkpoint_question")
-        self.assertEqual(interaction_contract["stop_status"], "checkpoint_required")
-        self.assertEqual(interaction_contract["primary_result_shape"], "checkpoint_card")
-        self.assertTrue(
-            all(
-                "Continue bounded" not in item
-                and "Resume bounded" not in item
-                for item in bundle["minimal_execution_brief"]["immediate_allowed_work"]
-            )
-        )
-        self.assertTrue(
-            any(
-                "blocking pending decisions" in item
-                for item in bundle["minimal_execution_brief"]["immediate_blocked_work"]
-            )
-        )
-        self.assertTrue(
-            any(
-                "blocking decisions" in item
-                for item in bundle["active_hard_constraints"]
-            )
-        )
-        result_brief_payload = json.loads(
-            (self.kernel_root / bundle["result_brief"]["path"]).read_text(encoding="utf-8")
-        )
-        self.assertEqual(bundle["result_brief"]["interaction_class"], "checkpoint_question")
-        self.assertEqual(bundle["result_brief"]["interaction_class"], result_brief_payload["interaction_class"])
-        self.assertIn("decision:demo-blocking", result_brief_payload["what_changed"])
+        self.assertEqual(roles["compatibility"]["current_topic_machine"], "runtime/current_topic.json")
+        self.assertEqual(roles["compatibility"]["operator_console"], "runtime/topics/demo-topic/operator_console.md")
+        self.assertEqual(status_payload["must_read_now"][0]["path"], "runtime/topics/demo-topic/topic_dashboard.md")
 
 
 if __name__ == "__main__":

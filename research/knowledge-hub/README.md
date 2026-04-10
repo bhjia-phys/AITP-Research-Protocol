@@ -50,6 +50,63 @@ governance surfaces in addition to the layer map and routing basics.
 Topic-completion and regression-governed promotion are part of that public
 surface rather than topic-local convention.
 
+## Kernel Boundaries
+
+Recent maintainability work has started turning the kernel back into a thin
+façade plus focused helper modules instead of one giant service file.
+
+Current extracted boundaries include:
+
+- `knowledge_hub/frontdoor_support.py`
+  - doctor, migration, and runtime/front-door readiness support
+- `knowledge_hub/agent_install_support.py`
+  - agent install, bootstrap, plugin, and MCP setup support
+- `knowledge_hub/kernel_templates.py`
+  - install/bootstrap skill templates and session-start note rendering
+- `knowledge_hub/kernel_markdown_renderers.py`
+  - pure markdown and note renderers for contracts, promotion/gap notes, Lean packets, and control/current-topic surfaces
+- `knowledge_hub/runtime_bundle_support.py`
+  - progressive-disclosure runtime bundle and session-start contract materialization
+- `knowledge_hub/topic_shell_support.py`
+  - topic-shell assembly, shell-surface derivation, and dashboard materialization
+- `knowledge_hub/source_distillation_support.py`
+  - source-backed idea distillation, preview fallback recovery, novelty extraction, and lane/first-route inference
+- `knowledge_hub/topic_loop_support.py`
+  - topic-loop bootstrap, auto-step iteration, loop-state persistence, and runtime-bundle closure
+- `knowledge_hub/chat_session_support.py`
+  - Codex chat routing, projection/current-topic fallback, management-route handling, and session-start orchestration
+- `knowledge_hub/capability_audit_support.py`
+  - runtime/layer/integration capability audit assembly, recommendation synthesis, and capability report persistence
+- `knowledge_hub/followup_support.py`
+  - follow-up subtopic orchestration, deferred-buffer management, and reintegration/writeback flows
+- `knowledge_hub/auto_promotion_support.py`
+  - auto-promotion approval gating, report assembly, and handoff into the main promotion path
+- `knowledge_hub/formal_theory_audit_support.py`
+  - formal-theory audit normalization, blocker evaluation, review artifact writing, and candidate ledger updates
+- `knowledge_hub/candidate_promotion_support.py`
+  - candidate promotion preparation, TPKN writeback materialization, consultation logging, and promotion-state finalization
+- `knowledge_hub/lean_bridge_support.py`
+  - Lean-bridge packet construction, proof-obligation materialization, and active index synthesis
+- `knowledge_hub/theory_coverage_audit_support.py`
+  - theory-coverage normalization, packet artifact construction, regression-gate assembly, and candidate ledger updates
+- `knowledge_hub/topic_skill_projection_support.py`
+  - topic-skill projection context derivation, route/read guidance assembly, and lane-specific availability gating
+- `knowledge_hub/promotion_gate_support.py`
+  - shared promotion-gate markdown, persistence, logging, and human approval lifecycle support
+- `knowledge_hub/cli_frontdoor_handler.py`
+  - the front-door CLI command family:
+    `session-start`, `install-agent`, `migrate-local-install`, and `doctor`
+- `runtime/scripts/orchestrator_contract_support.py`
+  - contract-aware queue shaping, checkpoint append gating, and runtime-appended action assembly support for `orchestrate_topic.py`
+- `runtime/scripts/interaction_surface_support.py`
+  - interaction-state assembly plus operator-console and agent-brief rendering support for `orchestrate_topic.py`
+- `runtime/scripts/sync_topic_state_support.py`
+  - resume-stage inference, evidence-return explainability, and resume-note rendering support for `sync_topic_state.py`
+
+`knowledge_hub/aitp_service.py` and `knowledge_hub/aitp_cli.py` still act as
+public entry façades, but new work should prefer extracted modules over adding
+more unrelated behavior back into those hotspot files.
+
 ## Core Commands
 
 ```bash
@@ -58,6 +115,17 @@ aitp session-start "<task>"
 aitp resume --topic-slug <topic_slug> --human-request "<task>"
 aitp loop --topic-slug <topic_slug> --human-request "<task>" --skill-query "<capability gap>"
 aitp current-topic
+aitp collaborator-memory --topic-slug <topic_slug>
+aitp record-collaborator-memory --memory-kind preference --summary "<summary>"
+aitp replay-topic --topic-slug <topic_slug>
+aitp stage-l2-provisional --topic-slug <topic_slug> --entry-kind <kind> --title "<title>" --summary "<summary>"
+aitp topics
+aitp focus-topic --topic-slug <topic_slug>
+aitp pause-topic --topic-slug <topic_slug>
+aitp resume-topic --topic-slug <topic_slug>
+aitp block-topic --topic-slug <topic_slug> --blocked-by <other_topic_slug> --reason "<reason>"
+aitp unblock-topic --topic-slug <topic_slug> --blocked-by <other_topic_slug>
+aitp clear-topic-dependencies --topic-slug <topic_slug>
 aitp audit --topic-slug <topic_slug> --phase exit
 aitp ci-check --topic-slug <topic_slug>
 aitp baseline --topic-slug <topic_slug> --run-id <run_id> --title "<baseline title>" --reference "<source>" --agreement-criterion "<criterion>"
@@ -95,13 +163,16 @@ research/knowledge-hub/
   GAP_RECOVERY_PROTOCOL.md
   FAMILY_FUSION_PROTOCOL.md
   VERIFICATION_BRIDGE_PROTOCOL.md
+  L5_PUBLICATION_FACTORY_PROTOCOL.md
   SEMI_FORMAL_THEORY_PROTOCOL.md
   FORMAL_THEORY_AUTOMATION_WORKFLOW.md
   SECTION_FORMALIZATION_PROTOCOL.md
   FORMAL_THEORY_UPSTREAM_REFERENCE_PROTOCOL.md
   TOPIC_COMPLETION_PROTOCOL.md
+  TOPIC_REPLAY_PROTOCOL.md
   INDEXING_RULES.md
   L0_SOURCE_LAYER.md
+  canonical/L2_STAGING_PROTOCOL.md
   setup.py
   requirements.txt
   schemas/
@@ -141,10 +212,6 @@ Cross-layer protocol surfaces:
 - `runtime/`
 - `schemas/`
 
-`L2_CONSULTATION_PROTOCOL.md` now includes the human-facing versus AI-facing
-consultation output contract, so consultation remains operator-usable without
-becoming a second promotion path.
-
 Runtime-facing control notes:
 
 - `runtime/PROGRESSIVE_DISCLOSURE_PROTOCOL.md`
@@ -156,6 +223,7 @@ Deeper governance contracts surfaced through `aitp doctor`:
 - `GAP_RECOVERY_PROTOCOL.md`
 - `FAMILY_FUSION_PROTOCOL.md`
 - `VERIFICATION_BRIDGE_PROTOCOL.md`
+- `L5_PUBLICATION_FACTORY_PROTOCOL.md`
 - `SEMI_FORMAL_THEORY_PROTOCOL.md`
 - `FORMAL_THEORY_AUTOMATION_WORKFLOW.md`
 - `SECTION_FORMALIZATION_PROTOCOL.md`
@@ -212,6 +280,18 @@ The current runtime shell now also materializes:
 and Lean-ready exports now carry local `proof_obligations.json` and
 `proof_state.json` artifacts for each candidate packet.
 
+The v1.3 runtime now also supports multiple active topics in one workspace.
+
+- `runtime/active_topics.json` is the authoritative active-topic registry
+- `runtime/current_topic.json` is the focused-topic compatibility projection
+- `aitp loop` may resolve through a deterministic scheduler when no explicit
+  topic is supplied
+
+See:
+
+- `../docs/MULTI_TOPIC_RUNTIME.md`
+- `../docs/MIGRATE_MULTI_TOPIC.md`
+
 Layer 2 now has two governed writeback paths:
 
 1. Human-reviewed `L2`:
@@ -233,6 +313,37 @@ The current public external writeback path targets the standalone
 `Theoretical-Physics-Knowledge-Network` repository through the backend card:
 
 - `canonical/backends/theoretical-physics-knowledge-network.json`
+
+Layer 2 now also has three operator-facing derived or quarantine surfaces:
+
+- compiled helper surfaces under `canonical/compiled/`
+  - current seed: `workspace_memory_map.json|md`
+- hygiene reports under `canonical/hygiene/`
+  - current seed: `workspace_hygiene_report.json|md`
+- provisional staging under `canonical/staging/`
+  - current seed: `workspace_staging_manifest.json|md`
+
+These do not replace canonical promoted units.
+They respectively mean:
+
+- compiled: easier navigation and consultation
+- hygiene: audit-only structural review
+- staging: durable quarantine for provisional `L2`-adjacent output
+
+For human-readable topic study, runtime topics may also materialize:
+
+- `runtime/topics/<topic_slug>/topic_replay_bundle.json|md`
+
+That replay bundle is derived and points back to authoritative topic artifacts.
+
+Runtime also has a collaborator-side memory ledger that stays outside canonical
+scientific memory:
+
+- `runtime/collaborator_memory.jsonl`
+- `runtime/collaborator_memory.md`
+
+Those surfaces are for collaborator preference, trajectory, and working-style
+memory only. They are not `L2`, not promotion input, and not scientific truth.
 
 ## Validation
 
@@ -287,64 +398,6 @@ opens a `code_method` topic around that workflow, records a baseline-gated
 coding operation plus strategy memory, compiles a `topic_skill_projection`, and
 verifies that operation trust and runtime surfaces stay inside AITP instead of
 turning into an untracked coding side quest.
-
-That same public TFIM lane is now the first seeded internal `L2` direction.
-The seed makes `canonical/index.jsonl` and `canonical/edges.jsonl` non-empty
-and gives AITP a bounded reusable graph containing the benchmark substrate,
-benchmark-first validation concept, exact-diagonalization method, workflow,
-validation pattern, warning note, bridge, claim card, and route capsule.
-
-Use:
-
-- `aitp seed-l2-demo`
-- `aitp consult-l2 --query "TFIM exact diagonalization benchmark workflow"`
-- `aitp stage-l2-insight --title "..." --summary "..."`
-- `aitp stage-topic-distillation --topic-slug "<topic>"`
-- `aitp consult-l2 --topic-slug "<topic>" --query "..." --include-staging`
-
-The lightweight staging path is the low-friction intake surface for reusable
-insight candidates discovered during discussion, reading, or early route
-exploration. It records provisional memory under `canonical/staging/` without
-pretending that the entry is already canonical `L2`.
-
-`stage-topic-distillation` is the first topic-driven memory-growth bridge for
-`v1.29`: it reads the active topic's `L3-D`-adjacent candidate and evidence
-surfaces, then stages provisional reusable memory without hand-authoring
-canonical unit JSON.
-
-`L0` now surfaces source-fidelity classes in the runtime projection so the
-system can distinguish peer-reviewed, preprint, thesis, formal-reference,
-informal, and code-artifact evidence instead of treating all sources as
-equivalent.
-
-`L0` also surfaces first citation-graph signals such as arXiv ids,
-BibTeX/DOI-like metadata, and whether a source row already carries explicit
-references. This is still only a baseline signal, not a full literature graph.
-
-`aitp verify --mode analytic` is the first bounded physics-grade analytic
-validation preset. It does not replace derivations or numerics; it forces the
-runtime contract to ask for limiting-case, dimensional, symmetry, and
-self-consistency checks explicitly.
-
-`aitp stage-negative-result` is the first explicit failed-route retention path.
-It records a provisional `negative_result` staging entry with failure kind,
-failed route, and next implication so abandoned directions do not silently
-disappear.
-
-`record-collaborator-memory` and `show-collaborator-memory` are the first
-explicit collaborator-memory surfaces. They are stored outside canonical `L2`
-so personal preferences and long-horizon concerns do not get confused with
-scientific truth.
-
-Staging is therefore not just a scratch inbox.
-It is the first step of a wiki-like compilation loop:
-
-- capture a reusable insight candidate,
-- link it to existing units,
-- mark contradictions or warning posture explicitly,
-- summarize what new knowledge was added,
-- and only later promote it into canonical `L2` if review and validation
-  justify that step.
 
 `topic_skill_projection` is reusable execution memory. When the lane is
 `formal_theory`, that means the projection tells the next agent what theorem-

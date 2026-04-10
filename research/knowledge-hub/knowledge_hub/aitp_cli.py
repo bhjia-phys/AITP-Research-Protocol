@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from .aitp_service import AITPService
+from .cli_compat_handler import dispatch_compat_command, emit_payload, register_compat_commands
+from .cli_frontdoor_handler import dispatch_frontdoor_command, register_frontdoor_commands
 from .decision_point_handler import (
     emit_decision_point,
     get_all_decision_points,
@@ -13,49 +15,13 @@ from .decision_point_handler import (
     resolve_decision_point,
 )
 from .decision_trace_handler import record_decision_trace
+from .l2_staging import stage_provisional_l2_entry
 from .session_chronicle_handler import finalize_chronicle, get_latest_chronicle, start_chronicle
-
-
-def _humanize_key(key: str) -> str:
-    return key.replace("_", " ").strip()
-
-
-def _render_human_lines(value: Any, *, prefix: str = "") -> list[str]:
-    lines: list[str] = []
-    if isinstance(value, dict):
-        for key, item in value.items():
-            label = _humanize_key(str(key))
-            if isinstance(item, (dict, list)):
-                lines.append(f"{prefix}{label}:")
-                lines.extend(_render_human_lines(item, prefix=f"{prefix}  "))
-            else:
-                lines.append(f"{prefix}{label}: {item}")
-        return lines
-    if isinstance(value, list):
-        for item in value:
-            if isinstance(item, (dict, list)):
-                lines.append(f"{prefix}-")
-                lines.extend(_render_human_lines(item, prefix=f"{prefix}  "))
-            else:
-                lines.append(f"{prefix}- {item}")
-        return lines
-    lines.append(f"{prefix}{value}")
-    return lines
+from .topic_replay import materialize_topic_replay_bundle
 
 
 def _emit(payload: dict[str, Any], as_json: bool) -> None:
-    if as_json:
-        print(json.dumps(payload, ensure_ascii=False, indent=2))
-        return
-    if len(payload) == 1:
-        key, value = next(iter(payload.items()))
-        title = _humanize_key(str(key)).title()
-        lines = [title, ""]
-        lines.extend(_render_human_lines(value))
-    else:
-        lines = ["Result", ""]
-        lines.extend(_render_human_lines(payload))
-    print("\n".join(lines))
+    emit_payload(payload, as_json)
 
 
 def _parse_notation_binding(value: str) -> dict[str, str]:
@@ -359,7 +325,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     verify = subparsers.add_parser("verify", help="Prepare a validation contract for a bounded verification mode")
     verify.add_argument("--topic-slug", required=True)
-    verify.add_argument("--mode", choices=["proof", "comparison", "analytic", "numeric", "topic-completion"], required=True)
+    verify.add_argument("--mode", choices=["proof", "comparison", "numeric", "topic-completion"], required=True)
     verify.add_argument("--updated-by", default="aitp-cli")
     verify.add_argument("--json", action="store_true")
 
@@ -417,96 +383,73 @@ def build_parser() -> argparse.ArgumentParser:
     state.add_argument("--topic-slug", required=True)
     state.add_argument("--json", action="store_true")
 
+    topics = subparsers.add_parser("topics", help="List active topics from the multi-topic registry")
+    topics.add_argument("--updated-by", default="aitp-cli")
+    topics.add_argument("--json", action="store_true")
+
     current_topic = subparsers.add_parser("current-topic", help="Read the current-topic routing memory")
     current_topic.add_argument("--json", action="store_true")
 
-    show_collaborator_memory = subparsers.add_parser(
-        "show-collaborator-memory",
-        help="Read collaborator-specific memory kept separate from canonical scientific memory",
+    collaborator_memory = subparsers.add_parser(
+        "collaborator-memory",
+        help="Read runtime-side collaborator memory without mixing it into canonical scientific memory",
     )
-    show_collaborator_memory.add_argument("--json", action="store_true")
+    collaborator_memory.add_argument("--topic-slug")
+    collaborator_memory.add_argument("--limit", type=int, default=10)
+    collaborator_memory.add_argument("--json", action="store_true")
 
-    record_collaborator_memory = subparsers.add_parser(
-        "record-collaborator-memory",
-        help="Record collaborator-specific preferences and long-horizon concerns",
-    )
-    record_collaborator_memory.add_argument("--preference", action="append", default=[])
-    record_collaborator_memory.add_argument("--preferred-lane", action="append", default=[])
-    record_collaborator_memory.add_argument("--avoid", action="append", default=[])
-    record_collaborator_memory.add_argument("--concern", action="append", default=[])
-    record_collaborator_memory.add_argument("--style", action="append", default=[])
-    record_collaborator_memory.add_argument("--updated-by", default="aitp-cli")
-    record_collaborator_memory.add_argument("--json", action="store_true")
+    replay_topic = subparsers.add_parser("replay-topic", help="Build a human-readable replay bundle for one topic")
+    replay_topic.add_argument("--topic-slug", required=True)
+    replay_topic.add_argument("--json", action="store_true")
 
-    seed_l2_demo = subparsers.add_parser("seed-l2-demo", help="Seed the first internal L2 MVP direction")
-    seed_l2_demo.add_argument("--direction", default="tfim-benchmark-first")
-    seed_l2_demo.add_argument("--updated-by", default="aitp-cli")
-    seed_l2_demo.add_argument("--json", action="store_true")
+    stage_l2 = subparsers.add_parser("stage-l2-provisional", help="Write provisional L2-adjacent output into canonical staging")
+    stage_l2.add_argument("--topic-slug", required=True)
+    stage_l2.add_argument("--entry-kind", required=True)
+    stage_l2.add_argument("--title", required=True)
+    stage_l2.add_argument("--summary", required=True)
+    stage_l2.add_argument("--source-artifact-path", action="append", default=[])
+    stage_l2.add_argument("--notes")
+    stage_l2.add_argument("--updated-by", default="aitp-cli")
+    stage_l2.add_argument("--json", action="store_true")
 
-    consult_l2 = subparsers.add_parser("consult-l2", help="Consult the canonical internal L2 graph")
-    consult_l2.add_argument("--query", required=True)
-    consult_l2.add_argument("--retrieval-profile", default="l3_candidate_formation")
-    consult_l2.add_argument("--max-primary-hits", type=int)
-    consult_l2.add_argument("--include-staging", action="store_true")
-    consult_l2.add_argument("--topic-slug")
-    consult_l2.add_argument("--run-id")
-    consult_l2.add_argument("--stage", choices=["L1", "L3", "L4"], default="L3")
-    consult_l2.add_argument("--purpose")
-    consult_l2.add_argument("--requested-unit-type", action="append", default=[])
-    consult_l2.add_argument("--updated-by", default="aitp-cli")
-    consult_l2.add_argument("--json", action="store_true")
+    focus_topic = subparsers.add_parser("focus-topic", help="Move registry focus to a specific topic")
+    focus_topic.add_argument("--topic-slug", required=True)
+    focus_topic.add_argument("--updated-by", default="aitp-cli")
+    focus_topic.add_argument("--human-request")
+    focus_topic.add_argument("--json", action="store_true")
 
-    stage_l2_insight = subparsers.add_parser("stage-l2-insight", help="Record a provisional reusable L2 insight")
-    stage_l2_insight.add_argument("--title", required=True)
-    stage_l2_insight.add_argument("--summary", required=True)
-    stage_l2_insight.add_argument("--candidate-unit-type", default="concept")
-    stage_l2_insight.add_argument("--tag", action="append", default=[])
-    stage_l2_insight.add_argument("--source-ref", action="append", default=[])
-    stage_l2_insight.add_argument("--assumption", action="append", default=[])
-    stage_l2_insight.add_argument("--linked-unit-id", action="append", default=[])
-    stage_l2_insight.add_argument("--contradicts-unit-id", action="append", default=[])
-    stage_l2_insight.add_argument("--integration-summary")
-    stage_l2_insight.add_argument("--failure-kind")
-    stage_l2_insight.add_argument("--failed-route")
-    stage_l2_insight.add_argument("--next-implication")
-    stage_l2_insight.add_argument("--scope-note")
-    stage_l2_insight.add_argument("--topic-slug")
-    stage_l2_insight.add_argument("--notes")
-    stage_l2_insight.add_argument("--updated-by", default="aitp-cli")
-    stage_l2_insight.add_argument("--json", action="store_true")
+    pause_topic = subparsers.add_parser("pause-topic", help="Pause a topic in the active-topics registry")
+    pause_topic.add_argument("--topic-slug", required=True)
+    pause_topic.add_argument("--updated-by", default="aitp-cli")
+    pause_topic.add_argument("--human-request")
+    pause_topic.add_argument("--json", action="store_true")
 
-    stage_negative_result = subparsers.add_parser(
-        "stage-negative-result",
-        help="Record a provisional negative result so failed routes do not disappear",
-    )
-    stage_negative_result.add_argument("--title", required=True)
-    stage_negative_result.add_argument("--summary", required=True)
-    stage_negative_result.add_argument("--failure-kind", required=True)
-    stage_negative_result.add_argument("--failed-route")
-    stage_negative_result.add_argument("--next-implication")
-    stage_negative_result.add_argument("--tag", action="append", default=[])
-    stage_negative_result.add_argument("--source-ref", action="append", default=[])
-    stage_negative_result.add_argument("--assumption", action="append", default=[])
-    stage_negative_result.add_argument("--contradicts-unit-id", action="append", default=[])
-    stage_negative_result.add_argument("--scope-note")
-    stage_negative_result.add_argument("--topic-slug")
-    stage_negative_result.add_argument("--notes")
-    stage_negative_result.add_argument("--updated-by", default="aitp-cli")
-    stage_negative_result.add_argument("--json", action="store_true")
+    resume_topic = subparsers.add_parser("resume-topic", help="Resume a paused topic in the active-topics registry")
+    resume_topic.add_argument("--topic-slug", required=True)
+    resume_topic.add_argument("--updated-by", default="aitp-cli")
+    resume_topic.add_argument("--human-request")
+    resume_topic.add_argument("--json", action="store_true")
 
-    stage_topic_distillation = subparsers.add_parser(
-        "stage-topic-distillation",
-        help="Turn topic-side distillation outputs into provisional L2 staging entries",
-    )
-    stage_topic_distillation.add_argument("--topic-slug", required=True)
-    stage_topic_distillation.add_argument("--run-id")
-    stage_topic_distillation.add_argument("--candidate-id", action="append", default=[])
-    stage_topic_distillation.add_argument("--tag", action="append", default=[])
-    stage_topic_distillation.add_argument("--contradicts-unit-id", action="append", default=[])
-    stage_topic_distillation.add_argument("--scope-note")
-    stage_topic_distillation.add_argument("--notes")
-    stage_topic_distillation.add_argument("--updated-by", default="aitp-cli")
-    stage_topic_distillation.add_argument("--json", action="store_true")
+    block_topic = subparsers.add_parser("block-topic", help="Declare that one topic is blocked by another topic")
+    block_topic.add_argument("--topic-slug", required=True)
+    block_topic.add_argument("--blocked-by", required=True)
+    block_topic.add_argument("--reason", required=True)
+    block_topic.add_argument("--updated-by", default="aitp-cli")
+    block_topic.add_argument("--human-request")
+    block_topic.add_argument("--json", action="store_true")
+
+    unblock_topic = subparsers.add_parser("unblock-topic", help="Clear one dependency from a topic")
+    unblock_topic.add_argument("--topic-slug", required=True)
+    unblock_topic.add_argument("--blocked-by", required=True)
+    unblock_topic.add_argument("--updated-by", default="aitp-cli")
+    unblock_topic.add_argument("--human-request")
+    unblock_topic.add_argument("--json", action="store_true")
+
+    clear_topic_dependencies = subparsers.add_parser("clear-topic-dependencies", help="Clear all dependencies from a topic")
+    clear_topic_dependencies.add_argument("--topic-slug", required=True)
+    clear_topic_dependencies.add_argument("--updated-by", default="aitp-cli")
+    clear_topic_dependencies.add_argument("--human-request")
+    clear_topic_dependencies.add_argument("--json", action="store_true")
 
     emit_decision = subparsers.add_parser("emit-decision", help="Emit a durable Phase 6 decision point")
     emit_decision.add_argument("--topic-slug", required=True)
@@ -574,26 +517,6 @@ def build_parser() -> argparse.ArgumentParser:
     chronicle.add_argument("--summary")
     chronicle.add_argument("--json", action="store_true")
 
-    session_start = subparsers.add_parser(
-        "session-start",
-        help="Materialize AITP routing and runtime state from a natural-language session-start request",
-    )
-    session_topic_group = session_start.add_mutually_exclusive_group(required=False)
-    session_topic_group.add_argument("--topic-slug")
-    session_topic_group.add_argument("--topic")
-    session_topic_group.add_argument("--current-topic", action="store_true")
-    session_topic_group.add_argument("--latest-topic", action="store_true")
-    session_start.add_argument("--statement")
-    session_start.add_argument("--run-id")
-    session_start.add_argument("--control-note")
-    session_start.add_argument("--updated-by", default="aitp-session-start")
-    session_start.add_argument("--skill-query", action="append", default=[])
-    session_start.add_argument("--max-auto-steps", type=int, default=4)
-    session_start.add_argument("--research-mode")
-    session_start.add_argument("--load-profile", choices=["auto", "light", "full"], default="auto")
-    session_start.add_argument("--json", action="store_true")
-    session_start.add_argument("task", help="Natural-language research request to route into AITP")
-
     request_promotion = subparsers.add_parser("request-promotion", help="Request human approval before Layer 2 promotion")
     request_promotion.add_argument("--topic-slug", required=True)
     request_promotion.add_argument("--candidate-id", required=True)
@@ -654,24 +577,8 @@ def build_parser() -> argparse.ArgumentParser:
     auto_promote.add_argument("--notes")
     auto_promote.add_argument("--json", action="store_true")
 
-    install = subparsers.add_parser("install-agent", help="Install AITP skills and bootstrap assets for supported agents")
-    install.add_argument("--agent", choices=["codex", "openclaw", "opencode", "claude-code", "all"], required=True)
-    install.add_argument("--scope", choices=["user", "project"], default="user")
-    install.add_argument("--target-root")
-    install.add_argument("--no-force", action="store_true")
-    install.add_argument("--no-mcp", action="store_true")
-    install.add_argument("--json", action="store_true")
-
-    migrate = subparsers.add_parser("migrate-local-install", help="Converge a mixed local AITP install to the canonical repo-backed install")
-    migrate.add_argument("--workspace-root", required=True)
-    migrate.add_argument("--backup-root")
-    migrate.add_argument("--agent", choices=["codex", "claude-code", "opencode"], action="append", default=[])
-    migrate.add_argument("--with-mcp", action="store_true")
-    migrate.add_argument("--json", action="store_true")
-
-    doctor = subparsers.add_parser("doctor", help="Show AITP CLI install status")
-    doctor.add_argument("--workspace-root")
-    doctor.add_argument("--json", action="store_true")
+    register_compat_commands(subparsers)
+    register_frontdoor_commands(subparsers)
 
     return parser
 
@@ -1152,133 +1059,108 @@ def main() -> int:
         _emit(payload, args.json)
         return 0
 
+    if args.command == "topics":
+        payload = service.list_active_topics(updated_by=args.updated_by)
+        _emit(payload, args.json)
+        return 0
+
     if args.command == "current-topic":
         payload = {"current_topic": service.get_current_topic_memory()}
         _emit(payload, args.json)
         return 0
 
-    if args.command == "show-collaborator-memory":
-        payload = {"collaborator_memory": service.get_collaborator_memory()}
-        _emit(payload, args.json)
-        return 0
-
-    if args.command == "record-collaborator-memory":
-        payload = service.record_collaborator_memory(
-            preferences=args.preference,
-            preferred_lanes=args.preferred_lane,
-            avoided_patterns=args.avoid,
-            long_horizon_concerns=args.concern,
-            collaboration_style=args.style,
-            updated_by=args.updated_by,
+    if args.command == "collaborator-memory":
+        payload = service.get_collaborator_memory(
+            topic_slug=args.topic_slug,
+            limit=args.limit,
         )
         _emit(payload, args.json)
         return 0
 
-    if args.command == "seed-l2-demo":
-        payload = service.seed_l2_demo_direction(
-            direction=args.direction,
-            updated_by=args.updated_by,
-        )
+    if args.command == "replay-topic":
+        payload = materialize_topic_replay_bundle(service.kernel_root, args.topic_slug)
         _emit(payload, args.json)
         return 0
 
-    if args.command == "consult-l2":
-        if args.topic_slug:
-            payload = service.consult_topic_l2(
-                topic_slug=args.topic_slug,
-                run_id=args.run_id,
-                stage=args.stage,
-                query_text=args.query,
-                retrieval_profile=args.retrieval_profile,
-                max_primary_hits=args.max_primary_hits,
-                include_staging=args.include_staging,
-                purpose=args.purpose,
-                requested_unit_types=args.requested_unit_type,
-                updated_by=args.updated_by,
-            )
-        else:
-            payload = service.consult_l2(
-                query_text=args.query,
-                retrieval_profile=args.retrieval_profile,
-                max_primary_hits=args.max_primary_hits,
-                include_staging=args.include_staging,
-                updated_by=args.updated_by,
-            )
-        _emit(payload, args.json)
-        return 0
-
-    if args.command == "stage-l2-insight":
-        payload = service.stage_l2_insight(
+    if args.command == "stage-l2-provisional":
+        payload = stage_provisional_l2_entry(
+            service.kernel_root,
+            topic_slug=args.topic_slug,
+            entry_kind=args.entry_kind,
             title=args.title,
             summary=args.summary,
-            candidate_unit_type=args.candidate_unit_type,
-            tags=args.tag,
-            source_refs=args.source_ref,
-            assumptions=args.assumption,
-            linked_unit_ids=args.linked_unit_id,
-            contradicts_unit_ids=args.contradicts_unit_id,
-            integration_summary=args.integration_summary,
-            failure_kind=args.failure_kind,
-            failed_route=args.failed_route,
-            next_implication=args.next_implication,
-            scope_note=args.scope_note,
-            topic_slug=args.topic_slug,
+            source_artifact_paths=args.source_artifact_path,
             notes=args.notes,
-            updated_by=args.updated_by,
+            staged_by=args.updated_by,
         )
         _emit(payload, args.json)
         return 0
 
-    if args.command == "stage-negative-result":
-        payload = service.stage_negative_result(
-            title=args.title,
-            summary=args.summary,
-            failure_kind=args.failure_kind,
-            failed_route=args.failed_route,
-            next_implication=args.next_implication,
-            tags=args.tag,
-            source_refs=args.source_ref,
-            assumptions=args.assumption,
-            contradicts_unit_ids=args.contradicts_unit_id,
-            scope_note=args.scope_note,
+    if args.command == "focus-topic":
+        payload = service.focus_topic(
             topic_slug=args.topic_slug,
-            notes=args.notes,
             updated_by=args.updated_by,
+            human_request=args.human_request,
         )
         _emit(payload, args.json)
         return 0
 
-    if args.command == "stage-topic-distillation":
-        payload = service.stage_topic_distillation(
+    if args.command == "pause-topic":
+        payload = service.pause_topic(
             topic_slug=args.topic_slug,
-            run_id=args.run_id,
-            candidate_ids=args.candidate_id,
-            tags=args.tag,
-            contradicts_unit_ids=args.contradicts_unit_id,
-            scope_note=args.scope_note,
-            notes=args.notes,
             updated_by=args.updated_by,
+            human_request=args.human_request,
         )
         _emit(payload, args.json)
         return 0
 
-    if args.command == "session-start":
-        payload = service.start_chat_session(
-            task=args.task,
-            explicit_topic_slug=args.topic_slug,
-            explicit_topic=args.topic,
-            explicit_current_topic=args.current_topic,
-            explicit_latest_topic=args.latest_topic,
-            statement=args.statement,
-            run_id=args.run_id,
-            control_note=args.control_note,
+    if args.command == "resume-topic":
+        payload = service.resume_topic(
+            topic_slug=args.topic_slug,
             updated_by=args.updated_by,
-            skill_queries=args.skill_query,
-            max_auto_steps=args.max_auto_steps,
-            research_mode=args.research_mode,
-            load_profile=None if args.load_profile == "auto" else args.load_profile,
+            human_request=args.human_request,
         )
         _emit(payload, args.json)
+        return 0
+
+    if args.command == "block-topic":
+        payload = service.set_topic_dependency(
+            topic_slug=args.topic_slug,
+            blocked_by_topic_slug=args.blocked_by,
+            reason=args.reason,
+            updated_by=args.updated_by,
+            human_request=args.human_request,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "unblock-topic":
+        payload = service.clear_topic_dependency(
+            topic_slug=args.topic_slug,
+            blocked_by_topic_slug=args.blocked_by,
+            updated_by=args.updated_by,
+            human_request=args.human_request,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "clear-topic-dependencies":
+        payload = service.clear_all_topic_dependencies(
+            topic_slug=args.topic_slug,
+            updated_by=args.updated_by,
+            human_request=args.human_request,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    compat_payload = dispatch_compat_command(args, service, parser)
+    if compat_payload is not None:
+        _emit(compat_payload, args.json)
+        return 0
+
+    frontdoor_payload = dispatch_frontdoor_command(args, service)
+    if frontdoor_payload is not None:
+        _emit(frontdoor_payload, args.json)
         return 0
 
     if args.command == "request-promotion":
@@ -1350,32 +1232,6 @@ def main() -> int:
             source_section_title=args.source_section_title,
             notes=args.notes,
         )
-        _emit(payload, args.json)
-        return 0
-
-    if args.command == "install-agent":
-        payload = service.install_agent(
-            agent=args.agent,
-            scope=args.scope,
-            target_root=args.target_root,
-            force=not args.no_force,
-            install_mcp=not args.no_mcp,
-        )
-        _emit(payload, args.json)
-        return 0
-
-    if args.command == "migrate-local-install":
-        payload = service.migrate_local_install(
-            workspace_root=args.workspace_root,
-            backup_root=args.backup_root,
-            agents=args.agent or None,
-            with_mcp=args.with_mcp,
-        )
-        _emit(payload, args.json)
-        return 0
-
-    if args.command == "doctor":
-        payload = service.ensure_cli_installed(workspace_root=args.workspace_root)
         _emit(payload, args.json)
         return 0
 

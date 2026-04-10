@@ -45,6 +45,7 @@ Default behavior:
 5. back up and remove workspace-root legacy harness files
 6. back up and remove any user-level Claude `aitp*.md` legacy command bundles
 7. run doctor logic before and after, then return a structured report
+8. report front-door runtime convergence before and after for Codex, Claude Code, and OpenCode
 
 ## Backups
 
@@ -75,6 +76,15 @@ The local install is considered converged when:
 - Claude hook surfaces are present
 - OpenCode plugin is actually enabled in `opencode.json`
 - no workspace-root legacy harness files remain active
+- `runtime_convergence_after.front_door_runtimes_converged` is `true`
+
+The migration report now also includes:
+
+- `runtime_convergence_before.status_by_runtime`
+- `runtime_convergence_after.status_by_runtime`
+
+so you can see exactly which front-door runtimes were repaired and which ones
+still need manual follow-up.
 
 ## Notes
 

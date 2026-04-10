@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sys
 import tarfile
 import textwrap
 import urllib.error
@@ -15,22 +14,6 @@ import urllib.request
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
-
-PACKAGE_ROOT = Path(__file__).resolve().parents[2]
-if str(PACKAGE_ROOT) not in sys.path:
-    sys.path.insert(0, str(PACKAGE_ROOT))
-
-from knowledge_hub.source_intelligence import (
-    derive_canonical_source_id,
-    detect_assumptions,
-    detect_contradiction_candidates,
-    detect_notation_candidates,
-    detect_notation_tension_candidates,
-    detect_regimes,
-    extract_neighbor_terms,
-    extract_reference_ids,
-    infer_reading_depth_label,
-)
 
 
 ATOM_NS = {"atom": "http://www.w3.org/2005/Atom"}
@@ -175,60 +158,35 @@ def build_source_payload(
     registered_by: str,
     acquired_at: str,
 ) -> dict:
-    summary = short_summary(metadata["summary"])
-    provenance = {
-        "arxiv_id": metadata["versioned_id"],
-        "authors": metadata["authors"],
-        "published": metadata["published"],
-        "updated": metadata["updated"],
-        "abs_url": metadata["abs_url"],
-        "pdf_url": metadata["pdf_url"],
-        "source_url": metadata["source_url"],
-    }
-    locator = {
-        "local_path": source_json_rel,
-        "snapshot_path": snapshot_rel,
-        "preferred_open_sequence": [
-            "local_extracted_tex",
-            "arxiv_source_tex",
-            "arxiv_html",
-            "arxiv_pdf",
-        ],
-        "downloaded_source_bundle": bundle_rel,
-        "extracted_source_dir": extract_rel,
-    }
-    canonical_source_id = derive_canonical_source_id(
-        source_type="paper",
-        title=metadata["title"],
-        summary=summary,
-        provenance=provenance,
-        locator=locator,
-    )
-    references = extract_reference_ids(text=metadata["summary"], provenance=provenance)
-    neighbor_terms = extract_neighbor_terms(title=metadata["title"], summary=summary)
     return {
         "source_id": f"paper:{slugify(metadata['title'])}-{metadata['base_id'].replace('.', '-')}",
-        "canonical_source_id": canonical_source_id,
         "source_type": "paper",
         "title": metadata["title"],
         "topic_slug": topic_slug,
-        "provenance": provenance,
-        "locator": locator,
+        "provenance": {
+            "arxiv_id": metadata["versioned_id"],
+            "authors": metadata["authors"],
+            "published": metadata["published"],
+            "updated": metadata["updated"],
+            "abs_url": metadata["abs_url"],
+            "pdf_url": metadata["pdf_url"],
+            "source_url": metadata["source_url"],
+        },
+        "locator": {
+            "local_path": source_json_rel,
+            "snapshot_path": snapshot_rel,
+            "preferred_open_sequence": [
+                "local_extracted_tex",
+                "arxiv_source_tex",
+                "arxiv_html",
+                "arxiv_pdf",
+            ],
+            "downloaded_source_bundle": bundle_rel,
+            "extracted_source_dir": extract_rel,
+        },
         "acquired_at": acquired_at,
         "registered_by": registered_by,
-        "summary": summary,
-        "references": references,
-        "neighbor_terms": neighbor_terms,
-        "assumptions": detect_assumptions(text=metadata["summary"]),
-        "regimes": detect_regimes(text=metadata["summary"]),
-        "reading_depth_label": infer_reading_depth_label(
-            source_type="paper",
-            provenance=provenance,
-            locator=locator,
-        ),
-        "notation_candidates": detect_notation_candidates(text=metadata["summary"]),
-        "contradiction_candidates": [],
-        "notation_tension_candidates": [],
+        "summary": short_summary(metadata["summary"]),
     }
 
 
@@ -384,17 +342,6 @@ def main() -> int:
         registered_by=args.registered_by,
         acquired_at=acquired_at,
     )
-    topic_index_path = source_layer_topic_root / "source_index.jsonl"
-    existing_topic_rows = load_jsonl(topic_index_path)
-    source_payload["contradiction_candidates"] = detect_contradiction_candidates(
-        existing_rows=existing_topic_rows,
-        assumptions=list(source_payload.get("assumptions") or []),
-        regimes=list(source_payload.get("regimes") or []),
-    )
-    source_payload["notation_tension_candidates"] = detect_notation_tension_candidates(
-        existing_rows=existing_topic_rows,
-        notation_candidates=list(source_payload.get("notation_candidates") or []),
-    )
     source_id = source_payload["source_id"]
 
     write_json(layer0_source_root / "source.json", source_payload)
@@ -412,9 +359,10 @@ def main() -> int:
         encoding="utf-8",
     )
 
+    topic_index_path = source_layer_topic_root / "source_index.jsonl"
     write_jsonl(
         topic_index_path,
-        append_unique(existing_topic_rows, source_payload, ("source_id",)),
+        append_unique(load_jsonl(topic_index_path), source_payload, ("source_id",)),
     )
 
     global_index_path = knowledge_root / "source-layer" / "global_index.jsonl"
@@ -424,13 +372,10 @@ def main() -> int:
             load_jsonl(global_index_path),
             {
                 "source_id": source_id,
-                "canonical_source_id": source_payload["canonical_source_id"],
                 "topic_slug": topic_slug,
                 "source_type": source_payload["source_type"],
                 "title": source_payload["title"],
                 "local_path": layer0_source_json_rel,
-                "references": source_payload["references"],
-                "neighbor_terms": source_payload["neighbor_terms"],
                 "acquired_at": acquired_at,
             },
             ("source_id", "topic_slug"),

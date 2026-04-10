@@ -239,6 +239,58 @@ class DispatchActionQueueTests(unittest.TestCase):
         self.assertEqual(receipt_rows[0]["handler_key"], "assess_topic_completion")
 
 
+class DispatchExecutionTaskTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.runtime_root = Path(self._tmpdir.name) / "runtime" / "topics" / "demo-topic"
+        self.runtime_root.mkdir(parents=True, exist_ok=True)
+        self.module = _load_module(
+            "aitp_dispatch_execution_task_test",
+            "research/adapters/openclaw/scripts/dispatch_execution_task.py",
+        )
+        self.module.resolve_topic_slug = lambda value: value or "demo-topic"
+        self.module.topic_runtime_root = lambda topic_slug: self.runtime_root
+        self.module.KNOWLEDGE_ROOT = Path(self._tmpdir.name)
+
+    def tearDown(self) -> None:
+        self._tmpdir.cleanup()
+
+    def test_dispatch_execution_task_refuses_when_human_confirmation_is_still_required(self) -> None:
+        (self.runtime_root / "execution_task.json").write_text(
+            json.dumps(
+                {
+                    "task_id": "demo-task",
+                    "route_id": "route:demo-topic:benchmark",
+                    "run_id": "run-001",
+                    "result_writeback_path": "validation/topics/demo-topic/runs/run-001/returned_execution_result.json",
+                    "result_template_path": "validation/templates/execution-result.template.json",
+                    "executor_kind": "codex_cli",
+                    "assigned_runtime": "codex",
+                    "needs_human_confirm": True,
+                    "auto_dispatch_allowed": True,
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        with self.assertRaises(SystemExit) as ctx:
+            with mock.patch.object(
+                sys,
+                "argv",
+                [
+                    "dispatch_execution_task.py",
+                    "--topic-slug",
+                    "demo-topic",
+                ],
+            ):
+                self.module.main()
+
+        self.assertIn("requires human confirmation", str(ctx.exception))
+
+
 class ExternalSkillDiscoveryTests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmpdir = tempfile.TemporaryDirectory()

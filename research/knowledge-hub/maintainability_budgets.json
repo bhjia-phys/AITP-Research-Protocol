@@ -1,0 +1,90 @@
+{
+  "roots": [
+    "research/knowledge-hub/knowledge_hub",
+    "research/knowledge-hub/runtime/scripts"
+  ],
+  "default_watch_thresholds": {
+    "max_lines": 1000,
+    "max_longest_function_lines": 200
+  },
+  "watchlist": {
+    "research/knowledge-hub/knowledge_hub/aitp_service.py": {
+      "category": "critical_service",
+      "max_lines": 6800,
+      "max_longest_function_lines": 170,
+      "reason": "This file still mixes runtime truth, registry, projection, install, promotion, steering, and remaining orchestration concerns. Front-door support, agent-install support, template rendering, pure markdown rendering, the runtime-bundle/session-start boundary, the topic-shell assembly boundary, the source-distillation boundary, the topic-loop boundary, the chat-routing/session-start boundary, the capability-audit boundary, and the follow-up/closed-loop boundary have now moved out, and future milestones should keep shrinking it instead of letting it grow back."
+    },
+    "research/knowledge-hub/knowledge_hub/runtime_bundle_support.py": {
+      "category": "runtime_bundle_support",
+      "max_lines": 1850,
+      "max_longest_function_lines": 1125,
+      "reason": "This new support module intentionally holds the progressive-disclosure runtime bundle and session-start materialization boundary. It is allowed to stay large temporarily, but future phases should keep splitting orchestration concerns instead of growing it further."
+    },
+    "research/knowledge-hub/knowledge_hub/topic_shell_support.py": {
+      "category": "topic_shell_support",
+      "max_lines": 1650,
+      "max_longest_function_lines": 600,
+      "reason": "This support module intentionally holds the topic-shell assembly boundary, including shell-surface derivation and dashboard assembly. It is allowed to stay large temporarily, but future phases should split its completion, checkpoint, and shell assembly concerns further instead of letting it grow unchecked."
+    },
+    "research/knowledge-hub/knowledge_hub/followup_support.py": {
+      "category": "followup_support",
+      "max_lines": 1100,
+      "max_longest_function_lines": 220,
+      "reason": "This support module intentionally holds the follow-up/deferred-buffer/closed-loop reintegration boundary. It is allowed to stay large temporarily, but future phases should split spawn, reintegration, and deferred-buffer orchestration further instead of letting it grow unchecked."
+    },
+    "research/knowledge-hub/knowledge_hub/aitp_cli.py": {
+      "category": "dispatch_entrypoint",
+      "max_lines": 1300,
+      "max_longest_function_lines": 600,
+      "reason": "The CLI has now started splitting command families into dedicated handlers. Bumped from 1250 to 1300 after v1.37-v1.42 added multi-topic and promotion commands. Future subcommand growth should continue using extracted handlers instead of returning to one giant dispatcher."
+    },
+    "research/knowledge-hub/knowledge_hub/tpkn_bridge.py": {
+      "category": "bridge_module",
+      "max_lines": 1050,
+      "max_longest_function_lines": 240,
+      "reason": "The bridge stays acceptable for now, but its core unit-builder is already above the default function-size watch threshold."
+    },
+    "research/knowledge-hub/runtime/scripts/orchestrate_topic.py": {
+      "category": "runtime_orchestrator",
+      "max_lines": 1500,
+      "max_longest_function_lines": 180,
+      "reason": "This runtime script still owns orchestration entrypoints, but contract-aware queue policy and interaction/operator surface materialization now sit behind focused helper boundaries. It should stay bounded and should not absorb more rendering or registry logic."
+    },
+    "research/knowledge-hub/runtime/scripts/closed_loop_v1.py": {
+      "category": "runtime_closed_loop",
+      "max_lines": 1900,
+      "max_longest_function_lines": 260,
+      "reason": "Execution-result ingest and closed-loop route logic are already large. Additional growth should be split into focused helpers."
+    },
+    "research/knowledge-hub/runtime/scripts/sync_topic_state.py": {
+      "category": "runtime_sync",
+      "max_lines": 950,
+      "max_longest_function_lines": 390,
+      "reason": "Runtime state sync is still a fat CLI script, but explainability and resume rendering now sit behind a focused helper boundary. Shared inference and utility layers should keep leaving this script before it grows much further."
+    },
+    "research/knowledge-hub/runtime/scripts/decide_next_action.py": {
+      "category": "runtime_decision",
+      "max_lines": 1050,
+      "max_longest_function_lines": 220,
+      "reason": "Decision selection is now absorbing explicit contract-aware routing hints. It should stay watchlisted so future milestones extract routing policy instead of letting one decision script silently become the new hidden brain."
+    },
+    "research/knowledge-hub/runtime/scripts/run_jones_chapter4_finite_product_formal_closure_acceptance.py": {
+      "category": "acceptance_script",
+      "max_lines": 1050,
+      "max_longest_function_lines": 620,
+      "reason": "Acceptance scripts are allowed to be scenario-heavy, but their giant main functions should not keep growing unchecked."
+    },
+    "research/knowledge-hub/runtime/scripts/run_witten_topological_phases_formal_closure_acceptance.py": {
+      "category": "acceptance_script",
+      "max_lines": 700,
+      "max_longest_function_lines": 320,
+      "reason": "This acceptance script is intentionally example-shaped, but its main function is already above the default guard threshold."
+    },
+    "research/knowledge-hub/runtime/scripts/run_tfim_benchmark_code_method_acceptance.py": {
+      "category": "acceptance_script",
+      "max_lines": 650,
+      "max_longest_function_lines": 360,
+      "reason": "This acceptance script remains manageable only if future benchmark-specific additions are kept out of the giant main function."
+    }
+  }
+}

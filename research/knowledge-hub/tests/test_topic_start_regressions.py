@@ -141,6 +141,8 @@ class TopicStartRegressionTests(unittest.TestCase):
 
         idea_packet = payload["idea_packet"]
         explainability = payload["topic_state_explainability"]
+        research_question_contract = payload["research_question_contract"]
+        validation_contract = payload["validation_contract"]
 
         self.assertEqual(idea_packet["status"], "approved_for_execution")
         self.assertIn("Diagonal gauge freedom", idea_packet["initial_idea"])
@@ -150,6 +152,12 @@ class TopicStartRegressionTests(unittest.TestCase):
         )
         self.assertIn("Novel diagonal closure target", idea_packet["novelty_target"])
         self.assertIn("Extract the core thesis claim", idea_packet["first_validation_route"])
+        self.assertIn("Diagonal gauge freedom", research_question_contract["question"])
+        self.assertNotEqual(
+            research_question_contract["question"],
+            "Please inspect this thesis and take it from there.",
+        )
+        self.assertIn("Extract the core thesis claim", validation_contract["verification_focus"])
         self.assertEqual(
             explainability["current_route_choice"]["selected_action_summary"],
             "Extract the first bounded proof obligation from the thesis source.",
@@ -159,21 +167,6 @@ class TopicStartRegressionTests(unittest.TestCase):
             explainability["why_this_topic_is_here"],
         )
         self.assertEqual(explainability["active_human_need"]["status"], "none")
-
-    def test_source_distillation_maps_numerical_lane_to_toy_numeric(self) -> None:
-        distilled = self.service._distill_from_sources(
-            [
-                {
-                    "source_id": "code:demo-source",
-                    "source_type": "numerical",
-                    "title": "Benchmark Run",
-                    "summary": "Baseline benchmark for regression tests.",
-                }
-            ],
-            "demo-numerical-topic",
-        )
-
-        self.assertEqual(distilled["distilled_lane"], "toy_numeric")
 
     def test_explicit_idea_packet_fields_override_source_distillation(self) -> None:
         runtime_root, _ = self._write_source_backed_topic(
@@ -209,6 +202,75 @@ class TopicStartRegressionTests(unittest.TestCase):
             "Human-defined first validation route.",
         )
         self.assertEqual(idea_packet["status"], "approved_for_execution")
+
+    def test_distill_from_sources_uses_summary_fallback_for_numerical_sources(self) -> None:
+        distilled = self.service._distill_from_sources(
+            [
+                {
+                    "source_id": "code:tfim-benchmark",
+                    "source_type": "code",
+                    "title": "Tiny TFIM Benchmark",
+                    "summary": (
+                        "We show the exact diagonalization baseline reproduces the first finite-size benchmark. "
+                        "This establishes the observable normalization before larger runs."
+                    ),
+                    "provenance": {
+                        "absolute_path": str(self.root / "inputs" / "missing-benchmark.md"),
+                    },
+                }
+            ],
+            "demo-topic",
+        )
+
+        self.assertEqual(distilled["distilled_lane"], "numerical")
+        self.assertIn("Tiny TFIM Benchmark", distilled["distilled_initial_idea"])
+        self.assertIn("exact diagonalization baseline", distilled["distilled_initial_idea"])
+        self.assertIn("exact diagonalization baseline reproduces", distilled["distilled_novelty_target"])
+        self.assertIn("baseline benchmark", distilled["distilled_first_validation_route"])
+
+    def test_distill_from_sources_prefers_snapshot_preview_over_original_and_summary(self) -> None:
+        topic_slug = "demo-topic"
+        source_root = self.kernel_root / "source-layer" / "topics" / topic_slug
+        source_root.mkdir(parents=True, exist_ok=True)
+
+        original_path = self.root / "inputs" / "snapshot-priority.tex"
+        original_path.parent.mkdir(parents=True, exist_ok=True)
+        original_path.write_text(
+            "\\section{Original fallback}\n"
+            "Original fallback text should not win when snapshot preview is available.\n",
+            encoding="utf-8",
+        )
+
+        snapshot_root = source_root / "sources" / "paper-demo-source"
+        snapshot_root.mkdir(parents=True, exist_ok=True)
+        snapshot_root.joinpath("snapshot.md").write_text(
+            "# Snapshot\n\n"
+            "## Preview\n"
+            "Snapshot preview text should win over original and summary fallbacks.\n\n"
+            "## Notes\n"
+            "The snapshot preview is already usable.\n",
+            encoding="utf-8",
+        )
+
+        distilled = self.service._distill_from_sources(
+            [
+                {
+                    "source_id": "paper:demo-source",
+                    "source_type": "paper",
+                    "title": "Snapshot Priority Paper",
+                    "summary": "Summary fallback text should lose to the snapshot preview.",
+                    "provenance": {
+                        "absolute_path": str(original_path),
+                    },
+                }
+            ],
+            topic_slug,
+        )
+
+        self.assertEqual(distilled["distilled_lane"], "formal_theory")
+        self.assertIn("Snapshot preview text should win", distilled["distilled_initial_idea"])
+        self.assertNotIn("Original fallback text should not win", distilled["distilled_initial_idea"])
+        self.assertNotIn("Summary fallback text should lose", distilled["distilled_initial_idea"])
 
 
 if __name__ == "__main__":

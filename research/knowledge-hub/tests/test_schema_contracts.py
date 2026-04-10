@@ -22,6 +22,9 @@ class SchemaContractTests(unittest.TestCase):
 
         for field in (
             "context_intake",
+            "source_basis_refs",
+            "interpretation_focus",
+            "open_ambiguities",
             "formalism_and_notation",
             "observables",
             "target_claims",
@@ -34,8 +37,10 @@ class SchemaContractTests(unittest.TestCase):
 
         for field in (
             "required_checks",
-            "analytic_check_families",
             "oracle_artifacts",
+            "primary_review_bundle_path",
+            "review_focus",
+            "open_review_questions",
             "executed_evidence",
             "confidence_cap",
             "gap_followups",
@@ -104,41 +109,18 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIn("forbidden_proxies", payload["required"])
         self.assertIn("theorem certificate", payload["description"])
 
-    def test_topic_synopsis_schema_expands_lane_enum(self) -> None:
-        expected_lanes = {
-            "formal_theory",
-            "toy_numeric",
-            "first_principles",
-            "theory_synthesis",
-            "code_method",
-        }
+    def test_topic_synopsis_schema_exposes_runtime_focus_and_truth_sources(self) -> None:
         payload = self._read_json("schemas/topic-synopsis.schema.json")
-        lane_values = set(payload["properties"]["lane"]["enum"])
-        self.assertEqual(lane_values, expected_lanes)
-        task_type_values = set(payload["properties"]["task_type"]["enum"])
-        self.assertEqual(
-            task_type_values,
-            {"open_exploration", "conjecture_attempt", "target_driven_execution"},
-        )
-
-        repo_payload = self._read_repo_json("schemas/topic-synopsis.schema.json")
-        repo_lane_values = set(repo_payload["properties"]["lane"]["enum"])
-        self.assertEqual(repo_lane_values, expected_lanes)
-        repo_task_type_values = set(repo_payload["properties"]["task_type"]["enum"])
-        self.assertEqual(
-            repo_task_type_values,
-            {"open_exploration", "conjecture_attempt", "target_driven_execution"},
-        )
-        for field in (
-            "interaction_class",
-            "stop_status",
-            "stop_reason",
-            "primary_result_shape",
-        ):
-            self.assertIn(field, payload["properties"])
-            self.assertIn(field, repo_payload["properties"])
-            self.assertIn(field, payload["required"])
-            self.assertIn(field, repo_payload["required"])
+        self.assertIn("runtime_focus", payload["required"])
+        self.assertIn("truth_sources", payload["required"])
+        runtime_focus = payload["properties"]["runtime_focus"]["properties"]
+        self.assertIn("summary", runtime_focus)
+        self.assertIn("next_action_summary", runtime_focus)
+        self.assertIn("dependency_status", runtime_focus)
+        truth_sources = payload["properties"]["truth_sources"]["properties"]
+        self.assertIn("topic_state_path", truth_sources)
+        self.assertIn("next_action_surface_path", truth_sources)
+        self.assertIn("promotion_readiness_path", truth_sources)
 
     def test_consult_and_promotion_schemas_include_new_theory_surface(self) -> None:
         consult_payload = self._read_json("consultation/schemas/consult-request.schema.json")
@@ -182,92 +164,28 @@ class SchemaContractTests(unittest.TestCase):
         payload = self._read_json("runtime/schemas/progressive-disclosure-runtime-bundle.schema.json")
         self.assertEqual(payload["properties"]["bundle_kind"]["const"], "progressive_disclosure_runtime_bundle")
         self.assertEqual(payload["properties"]["protocol_version"]["const"], 1)
-        self.assertIn("l0_sources", payload["properties"])
-        self.assertIn("l1_understanding", payload["properties"])
-        self.assertIn("l0_sources", payload["required"])
-        self.assertIn("l1_understanding", payload["required"])
-        self.assertIn("notation_table_path", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("assumption_table_path", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("source_fidelity_counts", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("highest_fidelity_class", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("source_fidelity_summary", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("citation_graph_status", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("citation_graph_summary", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("canonical_source_ids", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("cross_topic_match_count", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("citation_edges", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("source_neighbors", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("reading_depth", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("reading_depth_labels", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("assumption_quality", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("assumptions", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("regimes", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("contradiction_candidates", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("notation_tension_candidates", payload["$defs"]["layer_projection"]["properties"])
-        self.assertIn("analytic_check_families", payload["$defs"]["layer_projection"]["properties"])
+        self.assertIn("runtime_mode", payload["properties"])
+        self.assertIn("active_submode", payload["properties"])
+        self.assertIn("mode_envelope", payload["properties"])
+        self.assertIn("transition_posture", payload["properties"])
         self.assertIn("active_research_contract", payload["properties"])
-        self.assertIn("interaction_contract", payload["properties"])
-        self.assertIn("interaction_contract", payload["required"])
-        self.assertIn("l3_subplanes", payload["properties"])
-        self.assertIn("l3_subplanes", payload["required"])
-        self.assertIn("task_type", payload["properties"]["topic_synopsis"]["properties"])
-        self.assertIn("task_type", payload["properties"]["active_research_contract"]["properties"])
-        self.assertIn("task_type", payload["properties"]["idea_packet"]["properties"])
-        self.assertIn("consultation_surface", payload["$defs"]["l2_projection"]["properties"])
-        self.assertIn("writeback_surface", payload["$defs"]["l2_projection"]["properties"])
-        self.assertIn("graph_surface", payload["$defs"]["l2_projection"]["properties"])
-        self.assertIn(
-            "latest_query_text",
-            payload["$defs"]["l2_projection"]["properties"]["consultation_surface"]["properties"],
-        )
-        self.assertIn(
-            "latest_summary",
-            payload["$defs"]["l2_projection"]["properties"]["consultation_surface"]["properties"],
-        )
-        self.assertIn(
-            "latest_application_path",
-            payload["$defs"]["l2_projection"]["properties"]["consultation_surface"]["properties"],
-        )
-        self.assertIn(
-            "latest_summary_note_path",
-            payload["$defs"]["l2_projection"]["properties"]["consultation_surface"]["properties"],
-        )
-        self.assertIn(
-            "latest_memory_map_path",
-            payload["$defs"]["l2_projection"]["properties"]["consultation_surface"]["properties"],
-        )
-        self.assertIn(
-            "latest_memory_map_note_path",
-            payload["$defs"]["l2_projection"]["properties"]["consultation_surface"]["properties"],
-        )
-        self.assertIn(
-            "unit_count",
-            payload["$defs"]["l2_projection"]["properties"]["graph_surface"]["properties"],
-        )
-        self.assertIn(
-            "edge_count",
-            payload["$defs"]["l2_projection"]["properties"]["graph_surface"]["properties"],
-        )
-        self.assertIn(
-            "unit_types",
-            payload["$defs"]["l2_projection"]["properties"]["graph_surface"]["properties"],
-        )
         self.assertIn("promotion_readiness", payload["properties"])
+        self.assertIn("validation_review_bundle", payload["properties"])
         self.assertIn("open_gap_summary", payload["properties"])
+        self.assertIn("dependency_state", payload["properties"])
         self.assertIn("topic_completion", payload["properties"])
         self.assertIn("lean_bridge", payload["properties"])
-        self.assertIn("collaborator_memory", payload["properties"])
         self.assertIn("topic_skill_projection", payload["properties"])
-        self.assertIn("exploration_window", payload["properties"])
-        self.assertIn("task_type_lane_guidance", payload["properties"])
-        self.assertIn("collaborator_routing_guidance", payload["properties"])
-        self.assertIn("analysis", payload["properties"]["l3_subplanes"]["properties"])
-        self.assertIn("result_integration", payload["properties"]["l3_subplanes"]["properties"])
-        self.assertIn("distillation", payload["properties"]["l3_subplanes"]["properties"])
+        self.assertIn("runtime_focus", payload["properties"]["topic_synopsis"]["properties"])
+        self.assertIn("truth_sources", payload["properties"]["topic_synopsis"]["properties"])
+        self.assertIn("blocked_by_details", payload["properties"]["dependency_state"]["properties"])
         self.assertIn("followup_gap_writeback_count", payload["properties"]["open_gap_summary"]["properties"])
         self.assertIn("regression_manifest", payload["properties"]["topic_completion"]["properties"])
         self.assertIn("completion_gate_checks", payload["properties"]["topic_completion"]["properties"])
         self.assertIn("needs_refinement_count", payload["properties"]["lean_bridge"]["properties"])
+        self.assertIn("minimum_mandatory_context", payload["properties"]["mode_envelope"]["properties"])
+        self.assertIn("allowed_backedges", payload["properties"]["mode_envelope"]["properties"])
+        self.assertIn("transition_kind", payload["properties"]["transition_posture"]["properties"])
         trigger_names = set(payload["$defs"]["trigger_name"]["anyOf"][0]["enum"])
         self.assertIn("non_trivial_consultation", trigger_names)
         self.assertIn("promotion_intent", trigger_names)
@@ -277,39 +195,11 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIn("consultation_memory", slice_names)
         self.assertIn("proof_completion_and_coverage", slice_names)
         self.assertIn("verification_route_selection", slice_names)
-        interaction_values = set(payload["properties"]["interaction_contract"]["properties"]["interaction_class"]["enum"])
-        self.assertIn("free_explore", interaction_values)
         retrieval_profiles = self._read_json("canonical/retrieval_profiles.json")
         l3_types = set(retrieval_profiles["profiles"]["l3_candidate_formation"]["preferred_unit_types"])
         l4_types = set(retrieval_profiles["profiles"]["l4_adjudication"]["preferred_unit_types"])
         self.assertIn("topic_skill_projection", l3_types)
         self.assertIn("topic_skill_projection", l4_types)
-
-    def test_exploration_window_schema_is_present_and_mirrored(self) -> None:
-        public_payload = self._read_repo_json("schemas/exploration-window.schema.json")
-        kernel_payload = self._read_json("schemas/exploration-window.schema.json")
-        self.assertEqual(public_payload, kernel_payload)
-        self.assertIn("time_window", public_payload["properties"])
-        self.assertIn("active_scope", public_payload["properties"])
-        self.assertIn("constraints", public_payload["properties"])
-
-    def test_result_brief_schema_requires_core_summary_fields(self) -> None:
-        payload = self._read_json("runtime/schemas/result-brief.schema.json")
-        self.assertEqual(payload["properties"]["kind"]["const"], "result_brief")
-        for field in (
-            "kind",
-            "topic_slug",
-            "interaction_class",
-            "what_changed",
-            "evidence_summary",
-            "scope_summary",
-            "non_claims",
-        ):
-            self.assertIn(field, payload["required"])
-        interaction_enum = set(payload["properties"]["interaction_class"]["enum"])
-        self.assertIn("silent_continue", interaction_enum)
-        self.assertIn("non_blocking_update", interaction_enum)
-        self.assertIn("checkpoint_question", interaction_enum)
 
     def test_closed_loop_policy_candidate_statuses_match_candidate_schema(self) -> None:
         candidate_payload = self._read_json("feedback/schemas/candidate.schema.json")
@@ -322,11 +212,6 @@ class SchemaContractTests(unittest.TestCase):
         self.assertTrue((policy_payload.get("lean_bridge_policy") or {}).get("enabled"))
         self.assertTrue((policy_payload.get("candidate_split_policy") or {}).get("enabled"))
         self.assertTrue((policy_payload.get("deferred_buffer_policy") or {}).get("auto_reactivate"))
-
-    def test_execution_task_schema_accepts_theory_synthesis(self) -> None:
-        payload = self._read_json("validation/schemas/execution-task.schema.json")
-        research_modes = set(payload["properties"]["research_mode"]["enum"])
-        self.assertIn("theory_synthesis", research_modes)
 
 
 if __name__ == "__main__":
