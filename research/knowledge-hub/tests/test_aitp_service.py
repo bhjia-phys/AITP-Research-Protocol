@@ -1873,6 +1873,115 @@ class AITPServiceTests(unittest.TestCase):
             json.dumps(payload["research_question_contract"]["open_ambiguities"]),
         )
 
+    def test_topic_status_surfaces_source_intelligence_read_path(self) -> None:
+        runtime_root = self._write_runtime_state()
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "2026-03-13-demo",
+                    "resume_stage": "L1",
+                    "research_mode": "formal_derivation",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Inspect the runtime source-intelligence surface.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:read",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:read",
+                    "status": "pending",
+                    "action_type": "inspect_resume_state",
+                    "summary": "Inspect the source-intelligence summary before proceeding.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        demo_source_root = self.kernel_root / "source-layer" / "topics" / "demo-topic"
+        demo_source_root.mkdir(parents=True, exist_ok=True)
+        (demo_source_root / "source_index.jsonl").write_text(
+            "\n".join(
+                [
+                    json.dumps(
+                        {
+                            "source_id": "paper:demo-source",
+                            "source_type": "paper",
+                            "title": "Demo runtime source",
+                            "summary": "Runtime source summary with shared reference context.",
+                            "references": ["doi:10-1000/shared"],
+                            "canonical_source_id": "source_identity:doi:10-1000-demo",
+                            "provenance": {
+                                "abs_url": "https://example.org/demo",
+                            },
+                        },
+                        ensure_ascii=True,
+                    )
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        neighbor_source_root = self.kernel_root / "source-layer" / "topics" / "neighbor-topic"
+        neighbor_source_root.mkdir(parents=True, exist_ok=True)
+        (neighbor_source_root / "source_index.jsonl").write_text(
+            "\n".join(
+                [
+                    json.dumps(
+                        {
+                            "source_id": "paper:neighbor-source",
+                            "source_type": "paper",
+                            "title": "Neighbor runtime source",
+                            "summary": "Neighbor source summary with shared reference context.",
+                            "references": ["doi:10-1000/shared"],
+                            "canonical_source_id": "source_identity:doi:10-1000-neighbor",
+                            "provenance": {
+                                "abs_url": "https://example.org/neighbor",
+                            },
+                        },
+                        ensure_ascii=True,
+                    )
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        status_payload = self.service.topic_status(topic_slug="demo-topic")
+
+        self.assertIn("source_intelligence", status_payload)
+        self.assertEqual(status_payload["source_intelligence"]["canonical_source_ids"][0], "source_identity:doi:10-1000-demo")
+        self.assertEqual(status_payload["source_intelligence"]["cross_topic_match_count"], 1)
+        self.assertEqual(status_payload["source_intelligence"]["citation_edges"][0]["target_ref"], "doi:10-1000/shared")
+        self.assertEqual(status_payload["source_intelligence"]["source_neighbors"][0]["relation_kind"], "shared_reference")
+        dashboard_text = (self.kernel_root / "runtime" / "topics" / "demo-topic" / "topic_dashboard.md").read_text(encoding="utf-8")
+        self.assertIn("## Source intelligence", dashboard_text)
+        protocol_text = Path(status_payload["runtime_protocol_note_path"]).read_text(encoding="utf-8")
+        self.assertIn("## Source intelligence", protocol_text)
+
     def test_topic_status_and_prepare_verification_surface_new_shell_fields(self) -> None:
         runtime_root = self._write_runtime_state()
         (runtime_root / "interaction_state.json").write_text(

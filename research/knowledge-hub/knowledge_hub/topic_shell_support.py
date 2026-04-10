@@ -6,14 +6,19 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from .runtime_projection_handler import write_topic_skill_projection
-from .source_intelligence import (
-    detect_contradiction_candidates,
-    detect_notation_candidates,
-    detect_notation_tension_candidates,
+from .l1_source_intake_support import (
+    coalesce_l1_source_intake,
+    derive_l1_conflict_intake,
+    empty_l1_source_intake,
+    l1_context_lines,
+    l1_interpretation_focus_lines,
+    l1_open_ambiguity_lines,
+    normalize_l1_source_intake,
+    render_source_intelligence_markdown,
+    source_intelligence_paths,
+    source_intelligence_payload,
 )
-
-
+from .runtime_projection_handler import write_topic_skill_projection
 def _read_json(path: Path) -> dict[str, Any] | None:
     if not path.exists():
         return None
@@ -60,412 +65,6 @@ def _as_bool(value: Any) -> bool:
     if isinstance(value, (int, float)):
         return bool(value)
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
-
-
-def _empty_l1_source_intake() -> dict[str, Any]:
-    return {
-        "source_count": 0,
-        "assumption_rows": [],
-        "regime_rows": [],
-        "reading_depth_rows": [],
-        "notation_rows": [],
-        "contradiction_candidates": [],
-        "notation_tension_candidates": [],
-    }
-
-
-def _normalize_l1_intake_rows(rows: Any, *, required_field: str) -> list[dict[str, str]]:
-    if not isinstance(rows, list):
-        return []
-    normalized: list[dict[str, str]] = []
-    seen: set[tuple[str, str]] = set()
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        source_id = str(row.get("source_id") or "").strip()
-        payload_value = str(row.get(required_field) or "").strip()
-        if not source_id or not payload_value:
-            continue
-        key = (source_id.lower(), payload_value.lower())
-        if key in seen:
-            continue
-        seen.add(key)
-        normalized.append(
-            {
-                "source_id": source_id,
-                "source_title": str(row.get("source_title") or "").strip(),
-                "source_type": str(row.get("source_type") or "").strip(),
-                required_field: payload_value,
-                "reading_depth": str(row.get("reading_depth") or "").strip() or "skim",
-                "evidence_excerpt": str(row.get("evidence_excerpt") or "").strip(),
-            }
-        )
-    return normalized
-
-
-def _normalize_reading_depth_rows(rows: Any) -> list[dict[str, str]]:
-    if not isinstance(rows, list):
-        return []
-    normalized: list[dict[str, str]] = []
-    seen: set[tuple[str, str, str]] = set()
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        source_id = str(row.get("source_id") or "").strip()
-        reading_depth = str(row.get("reading_depth") or "").strip()
-        basis = str(row.get("basis") or "").strip()
-        if not source_id or not reading_depth:
-            continue
-        key = (source_id.lower(), reading_depth.lower(), basis.lower())
-        if key in seen:
-            continue
-        seen.add(key)
-        normalized.append(
-            {
-                "source_id": source_id,
-                "source_title": str(row.get("source_title") or "").strip(),
-                "source_type": str(row.get("source_type") or "").strip(),
-                "reading_depth": reading_depth,
-                "basis": basis or "summary_only",
-            }
-        )
-    return normalized
-
-
-def _normalize_notation_rows(rows: Any) -> list[dict[str, str]]:
-    if not isinstance(rows, list):
-        return []
-    normalized: list[dict[str, str]] = []
-    seen: set[tuple[str, str, str]] = set()
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        source_id = str(row.get("source_id") or "").strip()
-        symbol = str(row.get("symbol") or "").strip()
-        meaning = str(row.get("meaning") or "").strip()
-        if not source_id or not symbol or not meaning:
-            continue
-        key = (source_id.lower(), symbol.lower(), meaning.lower())
-        if key in seen:
-            continue
-        seen.add(key)
-        normalized.append(
-            {
-                "source_id": source_id,
-                "source_title": str(row.get("source_title") or "").strip(),
-                "source_type": str(row.get("source_type") or "").strip(),
-                "symbol": symbol,
-                "meaning": meaning,
-                "reading_depth": str(row.get("reading_depth") or "").strip() or "skim",
-                "evidence_excerpt": str(row.get("evidence_excerpt") or "").strip(),
-            }
-        )
-    return normalized
-
-
-def _normalize_contradiction_candidates(rows: Any) -> list[dict[str, str]]:
-    if not isinstance(rows, list):
-        return []
-    normalized: list[dict[str, str]] = []
-    seen: set[tuple[str, str, str]] = set()
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        source_id = str(row.get("source_id") or "").strip()
-        against_source_id = str(row.get("against_source_id") or "").strip()
-        detail = str(row.get("detail") or "").strip()
-        if not source_id or not against_source_id or not detail:
-            continue
-        key = (source_id.lower(), against_source_id.lower(), detail.lower())
-        if key in seen:
-            continue
-        seen.add(key)
-        normalized.append(
-            {
-                "kind": str(row.get("kind") or "").strip() or "assumption_conflict",
-                "source_id": source_id,
-                "source_title": str(row.get("source_title") or "").strip(),
-                "source_type": str(row.get("source_type") or "").strip(),
-                "reading_depth": str(row.get("reading_depth") or "").strip() or "skim",
-                "against_source_id": against_source_id,
-                "against_source_title": str(row.get("against_source_title") or "").strip(),
-                "against_source_type": str(row.get("against_source_type") or "").strip(),
-                "against_reading_depth": str(row.get("against_reading_depth") or "").strip() or "skim",
-                "detail": detail,
-            }
-        )
-    return normalized
-
-
-def _normalize_notation_tension_candidates(rows: Any) -> list[dict[str, str]]:
-    if not isinstance(rows, list):
-        return []
-    normalized: list[dict[str, str]] = []
-    seen: set[tuple[str, str, str, str]] = set()
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        source_id = str(row.get("source_id") or "").strip()
-        against_source_id = str(row.get("against_source_id") or "").strip()
-        meaning = str(row.get("meaning") or "").strip()
-        incoming_symbol = str(row.get("incoming_symbol") or "").strip()
-        existing_symbol = str(row.get("existing_symbol") or "").strip()
-        if not source_id or not against_source_id or not meaning or not incoming_symbol or not existing_symbol:
-            continue
-        key = (
-            source_id.lower(),
-            against_source_id.lower(),
-            meaning.lower(),
-            incoming_symbol.lower(),
-        )
-        if key in seen:
-            continue
-        seen.add(key)
-        normalized.append(
-            {
-                "source_id": source_id,
-                "source_title": str(row.get("source_title") or "").strip(),
-                "source_type": str(row.get("source_type") or "").strip(),
-                "reading_depth": str(row.get("reading_depth") or "").strip() or "skim",
-                "against_source_id": against_source_id,
-                "against_source_title": str(row.get("against_source_title") or "").strip(),
-                "against_source_type": str(row.get("against_source_type") or "").strip(),
-                "against_reading_depth": str(row.get("against_reading_depth") or "").strip() or "skim",
-                "meaning": meaning,
-                "existing_symbol": existing_symbol,
-                "incoming_symbol": incoming_symbol,
-            }
-        )
-    return normalized
-
-
-def _normalize_l1_source_intake(payload: Any) -> dict[str, Any]:
-    if not isinstance(payload, dict):
-        return _empty_l1_source_intake()
-    normalized = {
-        "source_count": int(payload.get("source_count") or 0),
-        "assumption_rows": _normalize_l1_intake_rows(
-            payload.get("assumption_rows"),
-            required_field="assumption",
-        ),
-        "regime_rows": _normalize_l1_intake_rows(
-            payload.get("regime_rows"),
-            required_field="regime",
-        ),
-        "reading_depth_rows": _normalize_reading_depth_rows(payload.get("reading_depth_rows")),
-        "notation_rows": _normalize_notation_rows(payload.get("notation_rows")),
-        "contradiction_candidates": _normalize_contradiction_candidates(payload.get("contradiction_candidates")),
-        "notation_tension_candidates": _normalize_notation_tension_candidates(
-            payload.get("notation_tension_candidates")
-        ),
-    }
-    if normalized["source_count"] <= 0:
-        source_keys = {
-            str(row.get("source_id") or "").strip()
-            for row in normalized["reading_depth_rows"]
-            if str(row.get("source_id") or "").strip()
-        }
-        normalized["source_count"] = len(source_keys)
-    return normalized
-
-
-def _coalesce_l1_source_intake(existing: Any, default: dict[str, Any]) -> dict[str, Any]:
-    normalized_existing = _normalize_l1_source_intake(existing)
-    if any(
-        normalized_existing[key]
-        for key in (
-            "assumption_rows",
-            "regime_rows",
-            "reading_depth_rows",
-            "notation_rows",
-            "contradiction_candidates",
-            "notation_tension_candidates",
-        )
-    ):
-        return normalized_existing
-    return _normalize_l1_source_intake(default)
-
-
-def _summary_excerpt(row: dict[str, Any]) -> str:
-    summary = re.sub(r"\s+", " ", str(row.get("summary") or "").strip())
-    return summary[:220]
-
-
-def _derive_l1_conflict_intake(
-    source_rows: list[dict[str, Any]],
-    l1_source_intake: dict[str, Any],
-) -> dict[str, Any]:
-    reading_depth_by_source = {
-        str(row.get("source_id") or "").strip(): str(row.get("reading_depth") or "").strip() or "skim"
-        for row in l1_source_intake.get("reading_depth_rows") or []
-        if str(row.get("source_id") or "").strip()
-    }
-    assumptions_by_source: dict[str, list[str]] = {}
-    for row in l1_source_intake.get("assumption_rows") or []:
-        source_id = str(row.get("source_id") or "").strip()
-        if source_id:
-            assumptions_by_source.setdefault(source_id, []).append(str(row.get("assumption") or "").strip())
-    regimes_by_source: dict[str, list[str]] = {}
-    for row in l1_source_intake.get("regime_rows") or []:
-        source_id = str(row.get("source_id") or "").strip()
-        if source_id:
-            regimes_by_source.setdefault(source_id, []).append(str(row.get("regime") or "").strip())
-
-    notation_rows: list[dict[str, str]] = []
-    contradiction_candidates: list[dict[str, str]] = []
-    notation_tension_candidates: list[dict[str, str]] = []
-    processed_rows: list[dict[str, Any]] = []
-    processed_by_source: dict[str, dict[str, Any]] = {}
-
-    for row in source_rows:
-        source_id = str(row.get("source_id") or "").strip()
-        source_title = str(row.get("title") or "").strip()
-        source_type = str(row.get("source_type") or "").strip()
-        if not source_id:
-            continue
-        reading_depth = reading_depth_by_source.get(source_id, "skim")
-        text = " ".join(part for part in (str(row.get("summary") or "").strip(), source_title) if part).strip()
-        notation_candidates = detect_notation_candidates(text=text)
-        excerpt = _summary_excerpt(row)
-        for candidate in notation_candidates:
-            notation_rows.append(
-                {
-                    "source_id": source_id,
-                    "source_title": source_title,
-                    "source_type": source_type,
-                    "symbol": str(candidate.get("symbol") or "").strip(),
-                    "meaning": str(candidate.get("meaning") or "").strip(),
-                    "reading_depth": reading_depth,
-                    "evidence_excerpt": excerpt,
-                }
-            )
-
-        for candidate in detect_contradiction_candidates(
-            existing_rows=processed_rows,
-            assumptions=assumptions_by_source.get(source_id, []),
-            regimes=regimes_by_source.get(source_id, []),
-        ):
-            against_source_id = str(candidate.get("against_source_id") or "").strip()
-            against_row = processed_by_source.get(against_source_id, {})
-            contradiction_candidates.append(
-                {
-                    "kind": str(candidate.get("kind") or "").strip() or "assumption_conflict",
-                    "source_id": source_id,
-                    "source_title": source_title,
-                    "source_type": source_type,
-                    "reading_depth": reading_depth,
-                    "against_source_id": against_source_id,
-                    "against_source_title": str(against_row.get("source_title") or "").strip(),
-                    "against_source_type": str(against_row.get("source_type") or "").strip(),
-                    "against_reading_depth": str(against_row.get("reading_depth") or "").strip() or "skim",
-                    "detail": str(candidate.get("detail") or "").strip(),
-                }
-            )
-
-        for tension in detect_notation_tension_candidates(
-            existing_rows=processed_rows,
-            notation_candidates=notation_candidates,
-        ):
-            against_source_id = str(tension.get("against_source_id") or "").strip()
-            against_row = processed_by_source.get(against_source_id, {})
-            notation_tension_candidates.append(
-                {
-                    "source_id": source_id,
-                    "source_title": source_title,
-                    "source_type": source_type,
-                    "reading_depth": reading_depth,
-                    "against_source_id": against_source_id,
-                    "against_source_title": str(against_row.get("source_title") or "").strip(),
-                    "against_source_type": str(against_row.get("source_type") or "").strip(),
-                    "against_reading_depth": str(against_row.get("reading_depth") or "").strip() or "skim",
-                    "meaning": str(tension.get("meaning") or "").strip(),
-                    "existing_symbol": str(tension.get("existing_symbol") or "").strip(),
-                    "incoming_symbol": str(tension.get("incoming_symbol") or "").strip(),
-                }
-            )
-
-        processed_row = {
-            "source_id": source_id,
-            "source_title": source_title,
-            "source_type": source_type,
-            "reading_depth": reading_depth,
-            "assumptions": assumptions_by_source.get(source_id, []),
-            "regimes": regimes_by_source.get(source_id, []),
-            "notation_candidates": notation_candidates,
-        }
-        processed_rows.append(processed_row)
-        processed_by_source[source_id] = processed_row
-
-    return {
-        "notation_rows": _normalize_notation_rows(notation_rows),
-        "contradiction_candidates": _normalize_contradiction_candidates(contradiction_candidates),
-        "notation_tension_candidates": _normalize_notation_tension_candidates(notation_tension_candidates),
-    }
-
-
-def _l1_context_lines(l1_source_intake: dict[str, Any]) -> list[str]:
-    lines: list[str] = []
-    if l1_source_intake.get("regime_rows"):
-        regimes = [str(row.get("regime") or "").strip() for row in l1_source_intake["regime_rows"]]
-        regimes = [item for item in regimes if item]
-        if regimes:
-            lines.append(f"Source-backed regimes: {', '.join(regimes[:4])}")
-    if l1_source_intake.get("reading_depth_rows"):
-        depth_summary = []
-        for row in l1_source_intake["reading_depth_rows"][:4]:
-            source_id = str(row.get("source_id") or "").strip()
-            reading_depth = str(row.get("reading_depth") or "").strip()
-            if source_id and reading_depth:
-                depth_summary.append(f"{source_id}={reading_depth}")
-        if depth_summary:
-            lines.append(f"Recorded reading depth: {', '.join(depth_summary)}")
-    return lines
-
-
-def _l1_interpretation_focus_lines(l1_source_intake: dict[str, Any]) -> list[str]:
-    lines: list[str] = []
-    regimes = [str(row.get("regime") or "").strip() for row in l1_source_intake.get("regime_rows") or []]
-    regimes = [item for item in regimes if item]
-    if regimes:
-        lines.append(f"Keep interpretation bounded to the recorded source regimes: {', '.join(regimes[:4])}.")
-    partial_depth_rows = [
-        row
-        for row in l1_source_intake.get("reading_depth_rows") or []
-        if str(row.get("reading_depth") or "").strip() != "full_read"
-    ]
-    if partial_depth_rows:
-        lines.append("Do not over-interpret claims that are currently backed only by abstract-only or skim-level reading depth.")
-    return lines
-
-
-def _l1_open_ambiguity_lines(l1_source_intake: dict[str, Any]) -> list[str]:
-    lines: list[str] = []
-    partial_depth_rows = [
-        row
-        for row in l1_source_intake.get("reading_depth_rows") or []
-        if str(row.get("reading_depth") or "").strip() != "full_read"
-    ]
-    if partial_depth_rows:
-        labels = [
-            f"{row['source_id']}={row['reading_depth']}"
-            for row in partial_depth_rows[:4]
-            if str(row.get("source_id") or "").strip()
-        ]
-        if labels:
-            lines.append(f"Reading-depth limits still apply for: {', '.join(labels)}")
-    for row in l1_source_intake.get("contradiction_candidates") or []:
-        detail = str(row.get("detail") or "").strip()
-        if detail:
-            lines.append(f"Contradiction candidate: {detail}")
-    for row in l1_source_intake.get("notation_tension_candidates") or []:
-        meaning = str(row.get("meaning") or "").strip()
-        existing_symbol = str(row.get("existing_symbol") or "").strip()
-        incoming_symbol = str(row.get("incoming_symbol") or "").strip()
-        if meaning and existing_symbol and incoming_symbol:
-            lines.append(
-                f"Notation tension: `{existing_symbol}` vs `{incoming_symbol}` for `{meaning}`"
-            )
-    return lines
 
 
 def derive_open_gap_summary(
@@ -1114,6 +713,7 @@ def render_topic_dashboard_markdown(
     *,
     topic_slug: str,
     topic_state: dict[str, Any],
+    source_intelligence: dict[str, Any],
     runtime_focus: dict[str, Any],
     selected_pending_action: dict[str, Any] | None,
     pending_actions: list[dict[str, Any]],
@@ -1227,6 +827,15 @@ def render_topic_dashboard_markdown(
         "",
         f"{runtime_focus.get('human_need_summary') or active_human_need.get('summary') or '(none)'}",
         "",
+        "## Source intelligence",
+        "",
+        f"- Canonical source ids: `{', '.join(source_intelligence.get('canonical_source_ids') or []) or '(none)'}`",
+        f"- Citation edge count: `{len(source_intelligence.get('citation_edges') or [])}`",
+        f"- Neighbor signal count: `{source_intelligence.get('neighbor_signal_count') or 0}`",
+        f"- Cross-topic matches: `{source_intelligence.get('cross_topic_match_count') or 0}`",
+        "",
+        source_intelligence.get("summary") or "(missing)",
+        "",
         "## Validation review bundle",
         "",
         f"- Status: `{validation_review_bundle.get('status') or '(missing)'}`",
@@ -1286,6 +895,13 @@ def render_topic_dashboard_markdown(
         if item == (topic_skill_projection.get("required_first_routes") or [None])[0]:
             lines.extend(["", "## Projection route guidance", ""])
         lines.append(f"- {item}")
+    if source_intelligence.get("source_neighbors"):
+        lines.extend(["", "## Source neighbors", ""])
+        for row in source_intelligence.get("source_neighbors") or []:
+            lines.append(
+                f"- `{row.get('source_id') or '(missing)'}` ~ `{row.get('neighbor_source_id') or '(missing)'}` "
+                f"via `{row.get('relation_kind') or '(missing)'}`"
+            )
     lines.extend([
         "",
         "## Immediate next actions",
@@ -1537,6 +1153,7 @@ def ensure_topic_shell_surfaces(
     readiness_path = self._promotion_readiness_path(topic_slug)
     validation_review_bundle_paths = self._validation_review_bundle_paths(topic_slug)
     gap_map_path = self._gap_map_path(topic_slug)
+    source_intelligence_artifact_paths = source_intelligence_paths(runtime_root)
 
     existing_research = _read_json(research_paths["json"]) or {}
     existing_validation = _read_json(validation_paths["json"]) or {}
@@ -1544,12 +1161,24 @@ def ensure_topic_shell_surfaces(
     existing_operator_checkpoint = _read_json(operator_checkpoint_paths["json"]) or {}
     existing_execution_task = _read_json(runtime_root / "execution_task.json") or {}
     source_rows = _read_jsonl(self.kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl")
+    source_intelligence = source_intelligence_payload(
+        kernel_root=self.kernel_root,
+        topic_slug=topic_slug,
+        source_rows=source_rows,
+    )
+    source_intelligence_json_ref = self._relativize(source_intelligence_artifact_paths["json"])
+    source_intelligence_note_ref = self._relativize(source_intelligence_artifact_paths["note"])
+    source_intelligence_surface = {
+        **source_intelligence,
+        "path": source_intelligence_json_ref,
+        "note_path": source_intelligence_note_ref,
+    }
     distilled = self._distill_from_sources(source_rows or [], topic_slug)
     distilled_initial_idea = str(distilled.get("distilled_initial_idea") or "").strip()
     distilled_first_validation_route = str(
         distilled.get("distilled_first_validation_route") or ""
     ).strip()
-    distilled_l1_source_intake = _normalize_l1_source_intake(distilled.get("distilled_l1_source_intake"))
+    distilled_l1_source_intake = normalize_l1_source_intake(distilled.get("distilled_l1_source_intake"))
 
     research_mode = str(
         resolved_topic_state.get("research_mode")
@@ -1585,7 +1214,7 @@ def ensure_topic_shell_surfaces(
             f"Latest run id: {latest_run_id or 'missing'}",
             f"Selected action: {selected_action_summary or 'none'}",
         ]
-        + _l1_context_lines(distilled_l1_source_intake)
+        + l1_context_lines(distilled_l1_source_intake)
     )
     target_claim_defaults = self._dedupe_strings(
         [str(row.get("candidate_id") or "").strip() for row in candidate_rows if str(row.get("candidate_id") or "").strip()]
@@ -1610,12 +1239,12 @@ def ensure_topic_shell_surfaces(
         "Mark unresolved notation, source, or regime gaps explicitly before continuing."
     ]
     research_status_default = "blocked" if open_gap_summary["requires_l0_return"] else "active"
-    l1_source_intake = _coalesce_l1_source_intake(
+    l1_source_intake = coalesce_l1_source_intake(
         existing_research.get("l1_source_intake"),
         distilled_l1_source_intake,
     )
     l1_source_intake.update(
-        _derive_l1_conflict_intake(
+        derive_l1_conflict_intake(
             source_rows=source_rows,
             l1_source_intake=l1_source_intake,
         )
@@ -1670,7 +1299,7 @@ def ensure_topic_shell_surfaces(
                 research_mode=research_mode,
                 selected_action_summary=selected_action_summary,
             )
-            + _l1_interpretation_focus_lines(l1_source_intake),
+            + l1_interpretation_focus_lines(l1_source_intake),
         ),
         "open_ambiguities": self._coalesce_list(
             existing_research.get("open_ambiguities"),
@@ -1678,7 +1307,7 @@ def ensure_topic_shell_surfaces(
                 existing_idea_packet=existing_idea_packet,
                 open_gap_summary=open_gap_summary,
             )
-            + _l1_open_ambiguity_lines(l1_source_intake),
+            + l1_open_ambiguity_lines(l1_source_intake),
         ),
         "formalism_and_notation": self._coalesce_list(
             existing_research.get("formalism_and_notation"),
@@ -1892,6 +1521,8 @@ def ensure_topic_shell_surfaces(
 
     _write_json(research_paths["json"], research_contract)
     _write_text(research_paths["note"], self._render_research_question_contract_markdown(research_contract))
+    _write_json(source_intelligence_artifact_paths["json"], source_intelligence_surface)
+    _write_text(source_intelligence_artifact_paths["note"], render_source_intelligence_markdown(source_intelligence_surface))
     _write_json(validation_paths["json"], validation_contract)
     _write_text(validation_paths["note"], self._render_validation_contract_markdown(validation_contract))
     _write_json(validation_review_bundle_paths["json"], validation_review_bundle)
@@ -1938,6 +1569,7 @@ def ensure_topic_shell_surfaces(
         self._render_topic_dashboard_markdown(
             topic_slug=topic_slug,
             topic_state=resolved_topic_state,
+            source_intelligence=source_intelligence_surface,
             runtime_focus=runtime_focus,
             selected_pending_action=selected_pending_action,
             pending_actions=pending_actions,
@@ -1980,6 +1612,8 @@ def ensure_topic_shell_surfaces(
         "operator_checkpoint_note_path": operator_checkpoint_paths_written["operator_checkpoint_note_path"],
         "operator_checkpoint_ledger_path": operator_checkpoint_paths_written["operator_checkpoint_ledger_path"],
         "topic_dashboard_path": str(dashboard_path),
+        "source_intelligence_path": str(source_intelligence_artifact_paths["json"]),
+        "source_intelligence_note_path": str(source_intelligence_artifact_paths["note"]),
         "topic_skill_projection_path": str(topic_skill_projection_paths["json"]),
         "topic_skill_projection_note_path": str(topic_skill_projection_paths["note"]),
         "promotion_readiness_path": str(readiness_path),
@@ -1993,6 +1627,7 @@ def ensure_topic_shell_surfaces(
         "followup_gap_writeback_path": followup_gap_writeback_paths["followup_gap_writeback_path"],
         "followup_gap_writeback_note_path": followup_gap_writeback_paths["followup_gap_writeback_note_path"],
         "research_question_contract": research_contract,
+        "source_intelligence": source_intelligence_surface,
         "validation_contract": validation_contract,
         "validation_review_bundle": {
             **validation_review_bundle,

@@ -698,6 +698,62 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertIn("## L1 source intake", note_text)
         self.assertIn("## Source-backed regimes", note_text)
 
+    def test_runtime_bundle_projects_source_intelligence_into_read_path(self) -> None:
+        shell_surfaces = self._shell_surfaces()
+        shell_surfaces["source_intelligence_path"] = self._write_surface(
+            "runtime/topics/demo-topic/source_intelligence.json",
+            json.dumps({"topic_slug": "demo-topic"}, indent=2) + "\n",
+        )
+        shell_surfaces["source_intelligence_note_path"] = self._write_surface(
+            "runtime/topics/demo-topic/source_intelligence.md",
+            "# Source intelligence\n",
+        )
+        shell_surfaces["source_intelligence"] = {
+            "topic_slug": "demo-topic",
+            "summary": "1 canonical source id, 1 citation edge, 1 neighbor signal, 1 cross-topic match.",
+            "canonical_source_ids": ["source_identity:doi:10-1000-demo"],
+            "cross_topic_match_count": 1,
+            "citation_edges": [
+                {
+                    "source_id": "paper:demo-source",
+                    "target_ref": "doi:10-1000/shared",
+                    "target_source_id": None,
+                    "relation": "cites",
+                }
+            ],
+            "source_neighbors": [
+                {
+                    "source_id": "paper:demo-source",
+                    "neighbor_source_id": "paper:neighbor-source",
+                    "neighbor_topic_slug": "neighbor-topic",
+                    "neighbor_canonical_source_id": "source_identity:doi:10-1000-neighbor",
+                    "relation_kind": "shared_reference",
+                    "shared_reference_count": 1,
+                    "shared_term_count": 2,
+                    "cross_topic": True,
+                }
+            ],
+            "neighbor_signal_count": 1,
+            "path": "runtime/topics/demo-topic/source_intelligence.json",
+            "note_path": "runtime/topics/demo-topic/source_intelligence.md",
+        }
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
+                result = self.service._materialize_runtime_protocol_bundle(
+                    topic_slug="demo-topic",
+                    updated_by="test",
+                    human_request="continue this topic and inspect the source intelligence",
+                    load_profile="light",
+                )
+
+        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        self.assertEqual(bundle["source_intelligence"]["canonical_source_ids"][0], "source_identity:doi:10-1000-demo")
+        self.assertEqual(bundle["source_intelligence"]["cross_topic_match_count"], 1)
+        self.assertEqual(bundle["source_intelligence"]["source_neighbors"][0]["relation_kind"], "shared_reference")
+        note_text = Path(result["runtime_protocol_note_path"]).read_text(encoding="utf-8")
+        self.assertIn("## Source intelligence", note_text)
+        self.assertIn("shared_reference", note_text)
+
     def test_runtime_bundle_auto_escalates_to_full_for_mismatch_requests(self) -> None:
         shell_surfaces = self._shell_surfaces()
         with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):

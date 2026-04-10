@@ -21,6 +21,7 @@
     "mode_envelope",
     "transition_posture",
     "topic_synopsis",
+    "source_intelligence",
     "pending_decisions",
     "active_research_contract",
     "idea_packet",
@@ -500,6 +501,9 @@
           "minLength": 1
         }
       }
+    },
+    "source_intelligence": {
+      "$ref": "#/$defs/source_intelligence"
     },
     "pending_decisions": {
       "type": "object",
@@ -2152,6 +2156,138 @@
     }
   },
   "$defs": {
+    "source_intelligence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "topic_slug",
+        "summary",
+        "canonical_source_ids",
+        "cross_topic_match_count",
+        "citation_edges",
+        "source_neighbors",
+        "neighbor_signal_count",
+        "path",
+        "note_path"
+      ],
+      "properties": {
+        "topic_slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canonical_source_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "cross_topic_match_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "citation_edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source_citation_edge"
+          }
+        },
+        "source_neighbors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source_neighbor_signal"
+          }
+        },
+        "neighbor_signal_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "source_citation_edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "target_ref",
+        "target_source_id",
+        "relation"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_source_id": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "relation": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "source_neighbor_signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "neighbor_source_id",
+        "neighbor_topic_slug",
+        "neighbor_canonical_source_id",
+        "relation_kind",
+        "shared_reference_count",
+        "shared_term_count",
+        "cross_topic"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "neighbor_source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "neighbor_topic_slug": {
+          "type": "string"
+        },
+        "neighbor_canonical_source_id": {
+          "$ref": "#/$defs/nullable_string"
+        },
+        "relation_kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "shared_reference_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "shared_term_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "cross_topic": {
+          "type": "boolean"
+        }
+      }
+    },
     "nullable_stage": {
       "type": [
         "string",

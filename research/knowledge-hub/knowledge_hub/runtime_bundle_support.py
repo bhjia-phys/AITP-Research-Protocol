@@ -10,6 +10,14 @@ from .decision_point_handler import get_all_decision_points, list_pending_decisi
 from .decision_trace_handler import get_decision_traces
 from .kernel_templates import render_session_start_note
 from .mode_envelope_support import decision_override_read, dedupe_surface_entries, light_profile_primary_reads, runtime_mode_markdown_lines, runtime_mode_payload_fragment
+from .runtime_read_path_support import (
+    append_l1_source_intake_markdown,
+    append_source_intelligence_markdown,
+    build_active_research_contract_payload,
+    empty_l1_source_intake,
+    empty_source_intelligence,
+    normalized_source_intelligence,
+)
 from .runtime_projection_handler import (
     build_knowledge_packets_from_candidates,
     write_pending_decisions_projection,
@@ -17,14 +25,10 @@ from .runtime_projection_handler import (
     write_promotion_trace,
     write_topic_synopsis,
 )
-
-
 def _read_json(path: Path) -> dict[str, Any] | None:
     if not path.exists():
         return None
     return json.loads(path.read_text(encoding="utf-8"))
-
-
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     if not path.exists():
         return []
@@ -34,79 +38,19 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
         if line:
             rows.append(json.loads(line))
     return rows
-
-
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
-
-
 def _write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
-
-
 def _now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
-
-
 def _slugify(text: str) -> str:
     lowered = text.lower()
     lowered = re.sub(r"[^a-z0-9]+", "-", lowered)
     lowered = re.sub(r"-+", "-", lowered).strip("-")
     return lowered or "aitp-topic"
-
-
-def _empty_l1_source_intake() -> dict[str, Any]:
-    return {
-        "source_count": 0,
-        "assumption_rows": [],
-        "regime_rows": [],
-        "reading_depth_rows": [],
-    }
-
-
-def _append_l1_source_intake_markdown(lines: list[str], payload: dict[str, Any]) -> None:
-    l1_source_intake = payload.get("l1_source_intake") or {}
-    lines.extend(
-        [
-            "",
-            "## L1 source intake",
-            "",
-            f"- Source count: `{l1_source_intake.get('source_count') or 0}`",
-            "",
-            "## Source-backed assumptions",
-            "",
-        ]
-    )
-    for row in l1_source_intake.get("assumption_rows") or ["(none)"]:
-        if isinstance(row, dict):
-            lines.append(
-                f"- `{row.get('source_id') or '(missing)'}` [{row.get('reading_depth') or 'skim'}]: "
-                f"{row.get('assumption') or '(missing)'}"
-            )
-        else:
-            lines.append(f"- {row}")
-    lines.extend(["", "## Source-backed regimes", ""])
-    for row in l1_source_intake.get("regime_rows") or ["(none)"]:
-        if isinstance(row, dict):
-            lines.append(
-                f"- `{row.get('source_id') or '(missing)'}` [{row.get('reading_depth') or 'skim'}]: "
-                f"{row.get('regime') or '(missing)'}"
-            )
-        else:
-            lines.append(f"- {row}")
-    lines.extend(["", "## Reading depth", ""])
-    for row in l1_source_intake.get("reading_depth_rows") or ["(none)"]:
-        if isinstance(row, dict):
-            lines.append(
-                f"- `{row.get('source_id') or '(missing)'}` => `{row.get('reading_depth') or 'skim'}` "
-                f"(basis: `{row.get('basis') or 'summary_only'}`)"
-            )
-        else:
-            lines.append(f"- {row}")
-
-
 def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
     load_profile = str(payload.get("load_profile") or "light")
     topic_synopsis = payload.get("topic_synopsis") or {}
@@ -121,6 +65,7 @@ def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
     validation_review_bundle = payload.get("validation_review_bundle") or {}
     open_gap_summary = payload.get("open_gap_summary") or {}
     strategy_memory = payload.get("strategy_memory") or {}
+    source_intelligence = payload.get("source_intelligence") or {}
     topic_skill_projection = payload.get("topic_skill_projection") or {}
     topic_completion = payload.get("topic_completion") or {}
     lean_bridge = payload.get("lean_bridge") or {}
@@ -151,6 +96,10 @@ def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
         f"- Knowledge packets: `{len(topic_synopsis.get('knowledge_packet_paths') or [])}`",
         "",
         f"{runtime_focus.get('summary') or topic_synopsis.get('next_action_summary') or '(missing)'}",
+    ]
+    append_source_intelligence_markdown(lines, source_intelligence)
+    lines.extend(
+        [
         "",
         "## Runtime truth model",
         "",
@@ -185,7 +134,8 @@ def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
         "",
         f"{active_research_contract.get('question') or '(missing)'}",
     ]
-    _append_l1_source_intake_markdown(lines, active_research_contract)
+    )
+    append_l1_source_intake_markdown(lines, active_research_contract)
     lines.extend(
         [
             "",
@@ -586,6 +536,11 @@ def materialize_runtime_protocol_bundle(
     validation_review_bundle = dict(shell_surfaces["validation_review_bundle"])
     validation_review_bundle["path"] = self._relativize(Path(shell_surfaces["validation_review_bundle_path"]))
     validation_review_bundle["note_path"] = self._relativize(Path(shell_surfaces["validation_review_bundle_note_path"]))
+    source_intelligence = normalized_source_intelligence(
+        topic_slug=topic_slug,
+        shell_surfaces=shell_surfaces,
+        relativize=self._relativize,
+    )
     open_gap_summary = dict(shell_surfaces["open_gap_summary"])
     open_gap_summary["path"] = self._relativize(Path(shell_surfaces["gap_map_path"]))
     strategy_memory = dict(
@@ -644,19 +599,13 @@ def materialize_runtime_protocol_bundle(
     topic_completion["path"] = self._relativize(Path(shell_surfaces["topic_completion_note_path"]))
     lean_bridge = dict(shell_surfaces["lean_bridge"])
     lean_bridge["path"] = self._relativize(Path(shell_surfaces["lean_bridge_note_path"]))
-    active_research_contract = {
-        "question_id": str(research_contract.get("question_id") or ""),
-        "title": str(research_contract.get("title") or ""),
-        "status": str(research_contract.get("status") or ""),
-        "template_mode": str(research_contract.get("template_mode") or ""),
-        "research_mode": str(research_contract.get("research_mode") or ""),
-        "validation_mode": str(validation_contract.get("validation_mode") or ""),
-        "target_layers": self._dedupe_strings(list(research_contract.get("target_layers") or [])),
-        "question": str(research_contract.get("question") or ""),
-        "l1_source_intake": research_contract.get("l1_source_intake") or _empty_l1_source_intake(),
-        "path": self._relativize(Path(shell_surfaces["research_question_contract_path"])),
-        "note_path": self._relativize(Path(shell_surfaces["research_question_contract_note_path"])),
-    }
+    active_research_contract = build_active_research_contract_payload(
+        research_contract=research_contract,
+        validation_contract=validation_contract,
+        shell_surfaces=shell_surfaces,
+        relativize=self._relativize,
+    )
+    active_research_contract["target_layers"] = self._dedupe_strings(active_research_contract.get("target_layers") or [])
     latest_run_id = str(topic_state.get("latest_run_id") or "").strip()
     lane = self._lane_for_modes(
         template_mode=active_research_contract.get("template_mode"),
@@ -732,7 +681,7 @@ def materialize_runtime_protocol_bundle(
         "status": str(active_research_contract.get("status") or "active"),
         "human_request": human_request or str(interaction_state.get("human_request") or ""),
         "assumptions": self._dedupe_strings(list(research_contract.get("assumptions") or [])),
-        "l1_source_intake": research_contract.get("l1_source_intake") or _empty_l1_source_intake(),
+        "l1_source_intake": research_contract.get("l1_source_intake") or empty_l1_source_intake(),
         "runtime_focus": runtime_focus,
         "truth_sources": topic_synopsis_truth_sources,
         "next_action_summary": str(runtime_focus.get("next_action_summary") or "No bounded action is currently selected."),
@@ -781,7 +730,6 @@ def materialize_runtime_protocol_bundle(
         promotion_trace_payload,
         kernel_root=self.kernel_root,
     )
-
     runtime_protocol_note = self._relativize(runtime_root / "runtime_protocol.generated.md")
     research_guardrails_note = self._relativize(self.kernel_root / "RESEARCH_EXECUTION_GUARDRAILS.md")
     formal_theory_upstream_note = self._relativize(
@@ -919,7 +867,6 @@ def materialize_runtime_protocol_bundle(
                 "reason": "Global research-contract, bounded-action, and anti-proxy validation guardrails for non-trivial work.",
             }
         )
-
     may_defer_until_trigger: list[dict[str, str]] = []
     must_read_paths = {item["path"] for item in must_read_now}
     for candidate, trigger, reason in (
@@ -1006,7 +953,6 @@ def materialize_runtime_protocol_bundle(
                     "reason": reason,
                 }
             )
-
     consultation_index_path = str((topic_state.get("pointers") or {}).get("consultation_index_path") or "")
     innovation_decisions_path = str((topic_state.get("pointers") or {}).get("innovation_decisions_path") or "")
     closed_loop_surface = interaction_state.get("closed_loop") or {}
@@ -1098,11 +1044,9 @@ def materialize_runtime_protocol_bundle(
                 "reason": "Closed-loop route and execution details only become mandatory when validation-route selection or execution routing is the current concern.",
             }
         )
-
     read_order: list[str] = [item["path"] for item in must_read_now]
     if not read_order:
         read_order.append(self._relativize(runtime_root / "topic_state.json"))
-
     selected_action_summary = str(runtime_focus.get("next_action_summary") or "").strip()
     selected_action_type = str(
         runtime_focus.get("next_action_type") or (selected_pending_action or {}).get("action_type") or ""
@@ -1529,6 +1473,7 @@ def materialize_runtime_protocol_bundle(
         "operator_checkpoint": operator_checkpoint,
         "promotion_readiness": promotion_readiness,
         "validation_review_bundle": validation_review_bundle,
+        "source_intelligence": source_intelligence,
         "open_gap_summary": open_gap_summary,
         "dependency_state": dependency_state,
         "strategy_memory": strategy_memory,
