@@ -13,7 +13,7 @@ natural-language theory work route through the gatekeeper skill.
 1. Install the public runtime:
 
    ```bash
-   python -m pip install aitp
+   python -m pip install aitp-kernel
    aitp --version
    ```
 
@@ -123,7 +123,7 @@ aitp session-start "<task>"
 Public package path:
 
 ```bash
-python -m pip install --upgrade aitp
+python -m pip install --upgrade aitp-kernel
 aitp install-agent --agent codex --scope user
 ```
 

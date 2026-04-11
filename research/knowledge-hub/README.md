@@ -21,10 +21,17 @@ code-backed method development.
 For the public package path:
 
 ```bash
-python -m pip install aitp
+python -m pip install aitp-kernel
 aitp --version
 aitp doctor
 aitp --help
+```
+
+Maintainers can verify that a published-style wheel really installs and runs in
+an isolated environment with:
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_public_install_smoke.py --json
 ```
 
 Contributor / local-dev lane from the repository root:
@@ -47,8 +54,8 @@ The public runtime now has two honest defaults:
 - installed package: `~/.aitp/kernel`
 
 So a normal standalone clone does not need the original private integration
-workspace just to run `aitp`, and a public `pip install aitp` does not need a
-git checkout to materialize the static kernel bundle.
+workspace just to run `aitp`, and a public `pip install aitp-kernel` does not
+need a git checkout to materialize the static kernel bundle.
 On Windows, the local launchers inject `research\knowledge-hub` onto
 `PYTHONPATH`, so the repo can run natively even before you choose a permanent
 Python install layout.
@@ -432,6 +439,7 @@ python research/knowledge-hub/runtime/scripts/run_collaborator_continuity_accept
 python research/knowledge-hub/runtime/scripts/run_first_run_topic_acceptance.py --json
 python research/knowledge-hub/runtime/scripts/run_quick_exploration_acceptance.py --json
 python research/knowledge-hub/runtime/scripts/run_dependency_contract_acceptance.py --json
+python research/knowledge-hub/runtime/scripts/run_public_install_smoke.py --json
 python research/knowledge-hub/runtime/scripts/run_tfim_benchmark_code_method_acceptance.py --json
 ```
 
@@ -520,6 +528,13 @@ The dependency-contract acceptance script is the bounded `v1.50` packaging
 closure path: it builds the kernel wheel and sdist, then checks that the
 generated distribution metadata exposes bounded `Requires-Dist` entries, the
 declared `Requires-Python` floor, and the packaged runtime bundle roots.
+
+The public-install smoke script is the bounded `v1.66` closure path for the
+publishable-package milestone: it builds a wheel, installs it into a clean
+virtualenv, points `AITP_HOME` at an isolated temp root, then checks
+`aitp --version`, `aitp doctor --json`, and the real `bootstrap -> loop ->
+status` path through the installed wheel under an isolated virtualenv rather
+than through a repo checkout.
 
 The TFIM code-method acceptance script is the bounded code-backed benchmark
 lane: it runs the public exact-diagonalization helper on the tiny TFIM config,

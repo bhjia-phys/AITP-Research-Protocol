@@ -87,13 +87,13 @@ def main() -> int:
         sdist_path = build_sdist(package_root=package_root, dist_dir=wheel_dir)
         sdist_names = extract_sdist_names(sdist_path)
         checks = {
-            "distribution_name": "Name: aitp" in metadata_text,
+            "distribution_name": "Name: aitp-kernel" in metadata_text,
             "requires_dist_mcp": "Requires-Dist: mcp<2.0.0,>=1.0.0" in metadata_text,
             "requires_dist_jsonschema": "Requires-Dist: jsonschema<5.0.0,>=4.0.0" in metadata_text,
             "requires_python": "Requires-Python: >=3.10" in metadata_text,
             "bundle_layer_map": "knowledge_hub/_bundle/LAYER_MAP.md" in wheel_names,
             "bundle_orchestrator": "knowledge_hub/_bundle/runtime/scripts/orchestrate_topic.py" in wheel_names,
-            "sdist_name": sdist_path.name.startswith("aitp-") and sdist_path.name.endswith(".tar.gz"),
+            "sdist_name": sdist_path.name.startswith("aitp_kernel-") and sdist_path.name.endswith(".tar.gz"),
             "sdist_layer_map": any(name.endswith("/LAYER_MAP.md") for name in sdist_names),
             "sdist_runtime_script": any(name.endswith("/runtime/scripts/orchestrate_topic.py") for name in sdist_names),
         }

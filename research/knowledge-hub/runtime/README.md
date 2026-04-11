@@ -450,6 +450,20 @@ That acceptance script uses a temporary kernel root, runs production
 and checks that the shared `bootstrap -> loop -> status` quickstart path keeps
 the topic shell, loop state, and runtime protocol coherent.
 
+For an isolated bounded public-install smoke pass, run:
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_public_install_smoke.py --json
+```
+
+That acceptance script builds a wheel from the current package root, installs it
+into a clean virtualenv, points `AITP_HOME` at an isolated temp home, then runs
+the installed package through `aitp --version`, `aitp doctor --json`, and an
+isolated `bootstrap -> loop -> status` quickstart path from the wheel-backed
+runtime itself. The goal is to prove that the published `aitp-kernel`
+distribution works outside a repo checkout instead of only inside editable-
+install development flows.
+
 For an isolated bounded quick-exploration acceptance pass, run:
 
 ```bash

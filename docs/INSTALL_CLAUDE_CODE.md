@@ -13,7 +13,7 @@ Claude Code should use AITP through SessionStart bootstrap, not through
 For the public install path:
 
 ```bash
-python -m pip install aitp
+python -m pip install aitp-kernel
 aitp --version
 aitp doctor
 ```

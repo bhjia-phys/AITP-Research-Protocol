@@ -7,7 +7,7 @@ Codex already has native skill discovery. AITP uses that directly.
 First install the public runtime:
 
 ```bash
-python -m pip install aitp
+python -m pip install aitp-kernel
 aitp install-agent --agent codex --scope user
 ```
 

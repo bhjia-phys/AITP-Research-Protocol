@@ -13,7 +13,7 @@
 
 | Option | Description | Selected |
 |--------|-------------|----------|
-| `pip install aitp` by default | newcomer-facing install surface | ✓ |
+| `pip install aitp-kernel` by default | newcomer-facing install surface | ✓ |
 | keep editable install first | preserve old repo-first entry | |
 
 ---

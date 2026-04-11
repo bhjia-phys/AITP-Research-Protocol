@@ -5,18 +5,11 @@ Remove the AITP adapter assets you installed.
 If you also installed the runtime itself, remove it with:
 
 ```bash
-python -m pip uninstall aitp
-```
-
-If this machine still has an older legacy distribution or editable install,
-also remove:
-
-```bash
 python -m pip uninstall aitp-kernel
 ```
 
 Contributor/local-dev editable installs still uninstall through the same `aitp`
-entrypoint because the editable package now publishes as `aitp`.
+entrypoint because the editable package now publishes as `aitp-kernel`.
 
 ## General rule
 

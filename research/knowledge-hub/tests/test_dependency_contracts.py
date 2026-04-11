@@ -46,7 +46,7 @@ class DependencyContractTests(unittest.TestCase):
         self.assertIn("pip", script)
         self.assertIn("wheel", script)
         self.assertIn("sdist", script)
-        self.assertIn("Name: aitp", script)
+        self.assertIn("Name: aitp-kernel", script)
         self.assertIn("Requires-Dist", script)
         self.assertIn("Requires-Python", script)
         self.assertIn("knowledge_hub/_bundle/LAYER_MAP.md", script)

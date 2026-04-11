@@ -1,10 +1,10 @@
 # Milestone Context
 
-Current milestone: `v1.66` `PyPI Publishable Package`
+Current milestone: none selected
 
 ## Latest Closed Milestone
 
-`v1.65` `Installation And Adoption Readiness`
+`v1.66` `PyPI Publishable Package`
 
 ## Why It Was Next
 
@@ -28,13 +28,14 @@ That means the next bounded milestone should focus on:
 - Keep OpenClaw as a specialized lane rather than expanding this milestone into
   broader runtime parity.
 - Avoid broad repository restructuring unless it is directly required to ship a
-  public `aitp` package.
+  public `aitp-kernel` package while preserving the `aitp` CLI.
 
 ## Current Status
 
-`v1.66` is active.
+`v1.66` is complete.
 
 Immediate next repository task:
 
-- discuss and plan Phase `133`
-- keep `v1.65` closed unless a fresh install/adoption regression appears
+- select the next bounded milestone from backlog
+- keep `v1.65` and `v1.66` closed unless a fresh install/adoption or packaging
+  regression appears

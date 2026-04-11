@@ -7,7 +7,7 @@ This is the consolidated install index for AITP.
 All supported runtime surfaces share the same kernel install step:
 
 ```bash
-python -m pip install aitp
+python -m pip install aitp-kernel
 aitp --version
 aitp doctor
 ```

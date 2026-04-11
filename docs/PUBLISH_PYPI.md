@@ -1,6 +1,6 @@
 # Publish AITP To PyPI
 
-Use this runbook when you want to ship a new public `aitp` release.
+Use this runbook when you want to ship a new public `aitp-kernel` release.
 
 ## Preconditions
 
@@ -18,9 +18,11 @@ python -m pip install --upgrade build twine
 
 ```bash
 python research/knowledge-hub/runtime/scripts/run_dependency_contract_acceptance.py --json
+python research/knowledge-hub/runtime/scripts/run_public_install_smoke.py --json
 ```
 
-This should produce a successful wheel and sdist validation for `aitp`.
+This should produce a successful wheel/sdist validation for `aitp-kernel` and a
+clean-install smoke pass through the installed `aitp` CLI.
 
 ## 3. Build distributions
 
@@ -30,8 +32,8 @@ python -m build research/knowledge-hub
 
 Expected artifacts:
 
-- `research/knowledge-hub/dist/aitp-<version>-py3-none-any.whl`
-- `research/knowledge-hub/dist/aitp-<version>.tar.gz`
+- `research/knowledge-hub/dist/aitp_kernel-<version>-py3-none-any.whl`
+- `research/knowledge-hub/dist/aitp_kernel-<version>.tar.gz`
 
 ## 4. Check distribution metadata
 
@@ -58,7 +60,7 @@ python -m twine upload research/knowledge-hub/dist/*
 In a clean Python 3.10+ environment:
 
 ```bash
-python -m pip install aitp
+python -m pip install aitp-kernel
 aitp --version
 aitp doctor
 ```

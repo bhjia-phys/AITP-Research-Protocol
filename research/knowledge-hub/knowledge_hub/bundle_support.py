@@ -6,8 +6,8 @@ import shutil
 from pathlib import Path
 
 
-PACKAGE_DISTRIBUTION_NAME = "aitp"
-LEGACY_PACKAGE_DISTRIBUTION_NAMES = ("aitp-kernel",)
+PACKAGE_DISTRIBUTION_NAME = "aitp-kernel"
+LEGACY_PACKAGE_DISTRIBUTION_NAMES: tuple[str, ...] = ()
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _BUNDLE_DIRNAME = "_bundle"

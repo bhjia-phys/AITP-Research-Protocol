@@ -24,7 +24,7 @@ class DocumentationEntrypointTests(unittest.TestCase):
         publish_doc = (self.repo_root / "docs" / "PUBLISH_PYPI.md").read_text(encoding="utf-8")
 
         self.assertIn("Python 3.10+", install_doc)
-        self.assertIn("python -m pip install aitp", install_doc)
+        self.assertIn("python -m pip install aitp-kernel", install_doc)
         self.assertIn("Contributor / local-dev install", install_doc)
         self.assertIn("python -m pip install -e research/knowledge-hub", install_doc)
         self.assertIn("docs/INSTALL_CODEX.md", install_doc)

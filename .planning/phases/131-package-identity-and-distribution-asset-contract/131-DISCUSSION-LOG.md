@@ -13,12 +13,13 @@
 
 | Option | Description | Selected |
 |--------|-------------|----------|
-| Publish as `aitp` | Match the backlog target and newcomer install contract | ✓ |
-| Keep `aitp-kernel` | Preserve current local-only identity | |
+| Publish under an available PyPI name | Match the public-package goal honestly | ✓ |
+| Keep an unpublishable target name | Preserve wording but block release | |
 | Split multiple public distributions now | Expand scope into repo decomposition | |
 
-**Selection rationale:** The backlog target is explicitly `pip install aitp`,
-so the public package identity should converge on that name.
+**Selection rationale:** `aitp` is already occupied on PyPI, so the public
+package identity needs a publishable fallback; the implementation now uses
+`aitp-kernel`.
 
 ---
 

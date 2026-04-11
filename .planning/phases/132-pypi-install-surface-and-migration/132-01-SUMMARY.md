@@ -9,7 +9,7 @@ first to public-package first.
 
 ## What Landed
 
-- install docs and READMEs now default to `python -m pip install aitp`
+- install docs and READMEs now default to `python -m pip install aitp-kernel`
 - editable install is now explicitly documented as the contributor / local-dev
   lane rather than the default public path
 - a new PyPI release runbook exists in

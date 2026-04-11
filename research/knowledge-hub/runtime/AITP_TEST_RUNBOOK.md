@@ -324,3 +324,19 @@ Pass condition:
 - `status --json` exposes the same topic slug plus the next bounded action
 - the runtime protocol survives all three commands
 - the acceptance runs on an isolated temp kernel root
+
+## 18. Isolated acceptance: public install smoke
+
+Use this when you want one bounded proof that the published-style
+`aitp-kernel` wheel really installs and runs outside the repository.
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_public_install_smoke.py --json
+```
+
+Pass condition:
+- a clean virtualenv installs the locally built `aitp-kernel` wheel
+- `aitp --version` returns the expected semver from the installed CLI
+- `aitp doctor --json` materializes the bundle into isolated `AITP_HOME/kernel`
+- `bootstrap --json`, `loop --json`, and `status --json` all succeed from the
+  installed wheel under isolated roots, not through repo-local `PYTHONPATH`

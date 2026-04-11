@@ -11,7 +11,7 @@ from Phase `131` exists.
 
 The scope is:
 
-- default install docs for `pip install aitp`
+- default install docs for `pip install aitp-kernel`
 - adapter install docs that no longer assume editable install first
 - migration docs that separate repo-backed local convergence from public-package
   migration
@@ -25,7 +25,7 @@ environment. That remains closure work.
 <decisions>
 ## Implementation Decisions
 
-- **D-01:** Make `pip install aitp` the default newcomer path everywhere
+- **D-01:** Make `pip install aitp-kernel` the default newcomer path everywhere
   user-facing docs are primarily about installation.
 - **D-02:** Keep editable install documented, but explicitly demote it to the
   contributor / local-dev lane.
@@ -62,7 +62,7 @@ environment. That remains closure work.
 <deferred>
 ## Deferred Ideas
 
-- a true clean-environment `pip install aitp` smoke gate stays in Phase `133`
+- a true clean-environment `pip install aitp-kernel` smoke gate stays in Phase `133`
 - final closure evidence and milestone audit remain Phase `133`
 
 </deferred>

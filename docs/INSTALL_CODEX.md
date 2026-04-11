@@ -13,7 +13,7 @@ Codex should use AITP through native skill discovery, not through wrappers.
 For the public install path:
 
 ```bash
-python -m pip install aitp
+python -m pip install aitp-kernel
 aitp --version
 aitp doctor
 ```

@@ -25,9 +25,29 @@ def _text_matches_canonical(path: Path, repo_root: Path, canonical_relative_path
     return path.read_text(encoding="utf-8") == canonical_path.read_text(encoding="utf-8")
 
 
+def _looks_like_python_command(command: str) -> bool:
+    name = Path(str(command or "")).name.lower()
+    return name.startswith(("python", "pypy")) or name in {"py", "py.exe"}
+
+
+def _resolve_python_command() -> list[str]:
+    if _looks_like_python_command(sys.executable):
+        return [sys.executable]
+
+    discovered = shutil.which("python") or shutil.which("python3")
+    if discovered:
+        return [discovered]
+
+    py_launcher = shutil.which("py")
+    if py_launcher:
+        return [py_launcher, "-3"]
+
+    return [sys.executable] if sys.executable else ["python"]
+
+
 def pip_show_package(package_name: str) -> dict[str, str]:
     completed = subprocess.run(
-        [sys.executable, "-m", "pip", "show", package_name],
+        [*_resolve_python_command(), "-m", "pip", "show", package_name],
         check=False,
         capture_output=True,
         text=True,
@@ -373,7 +393,7 @@ def ensure_cli_installed(service: Any, *, workspace_root: str | None = None) -> 
     package_repair_command = (
         "python -m pip install -e research/knowledge-hub"
         if service._has_repo_checkout()
-        else "python -m pip install aitp"
+        else f"python -m pip install {PACKAGE_DISTRIBUTION_NAME}"
     )
     stale_cli = bool(editable_location) and Path(editable_location).resolve() != service._canonical_package_root().resolve()
     if not version and not editable_location:

@@ -11,7 +11,7 @@ OpenCode should load AITP through a plugin, not through a command bundle.
 Before plugin bootstrap, complete the shared kernel install:
 
 ```bash
-python -m pip install aitp
+python -m pip install aitp-kernel
 aitp --version
 ```
 
@@ -69,7 +69,7 @@ command bundles so the plugin-first path is the only default entry.
 ## Updating
 
 ```bash
-python -m pip install --upgrade aitp
+python -m pip install --upgrade aitp-kernel
 ```
 
 Restart OpenCode after a new package or plugin install.

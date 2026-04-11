@@ -18,7 +18,7 @@ If you have not installed AITP yet, start with [`docs/INSTALL.md`](INSTALL.md).
 From a clean shell:
 
 ```bash
-python -m pip install aitp
+python -m pip install aitp-kernel
 aitp --version
 aitp doctor
 aitp doctor --json

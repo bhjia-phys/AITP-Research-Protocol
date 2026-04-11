@@ -12,7 +12,7 @@ OpenCode should use AITP through a plugin, not through `/aitp` command bundles.
 For the public install path:
 
 ```bash
-python -m pip install aitp
+python -m pip install aitp-kernel
 aitp --version
 aitp doctor
 ```

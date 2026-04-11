@@ -5,11 +5,11 @@ Status: implemented on `main`
 ## Goal
 
 Establish the package identity, semver source of truth, and distribution asset
-contract behind the future public `pip install aitp` path.
+contract behind the future public `pip install aitp-kernel` path.
 
 ## What Landed
 
-- the public distribution now builds as `aitp` through
+- the public distribution now builds as `aitp-kernel` through
   `research/knowledge-hub/setup.py` plus a new
   [pyproject.toml](D:\BaiduSyncdisk\repos\AITP-Research-Protocol\research\knowledge-hub\pyproject.toml)
 - a new bundled-kernel build path in

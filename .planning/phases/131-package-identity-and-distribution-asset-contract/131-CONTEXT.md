@@ -7,7 +7,7 @@
 ## Phase Boundary
 
 This phase hardens the package identity, version, and distribution-asset
-contract behind the upcoming public `pip install aitp` path.
+contract behind the upcoming public PyPI install path.
 
 The phase owns:
 
@@ -25,8 +25,9 @@ packaging contract first.
 ## Implementation Decisions
 
 ### Distribution Identity
-- **D-01:** The public package name should converge on `aitp`, not remain
-  `aitp-kernel`, because the backlog target is `pip install aitp`.
+- **D-01:** The public package name should converge on an actually publishable
+  PyPI name; the current implementation uses `aitp-kernel` because `aitp` is
+  already occupied on PyPI.
 - **D-02:** The import package may stay `knowledge_hub` if that keeps the diff
   smaller and does not block the public distribution contract.
 

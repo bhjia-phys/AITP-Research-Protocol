@@ -49,30 +49,39 @@ it still does **not** mean the broader AITP architecture is finished.
 
 ## Current Focus
 
-- Active milestone: `v1.66` `PyPI Publishable Package`
-- Latest closed milestone: `v1.65` `Installation And Adoption Readiness`
-- Next boundary: discuss and plan Phase `133`
+- Active milestone: none selected
+- Latest closed milestone: `v1.66` `PyPI Publishable Package`
+- Next boundary: select the next milestone from backlog
 
-## Current Milestone: v1.66 PyPI Publishable Package
+## Latest Closed Milestone: v1.66 PyPI Publishable Package
 
 **Goal:** Replace repo-clone plus editable-install onboarding with a versioned
-public `pip install aitp` path without regressing the already-shipped adoption
+public `pip install aitp-kernel` path without regressing the already-shipped adoption
 surface.
 
 **Target features:**
-- a public distribution contract that publishes as `aitp` instead of a
-  repo-local `aitp-kernel` editable-first surface
+- a public distribution contract that publishes under an actually available
+  PyPI name instead of a repo-local editable-first surface
 - a single semver and packaged runtime-asset contract that survives outside a
   git checkout
 - newcomer docs and release workflow that make PyPI the default path while
   keeping editable install available for contributors
+- one clean-install smoke path that proves the installed wheel can run outside
+  the repository
+
+**Closed features:**
+- `aitp-kernel` as the real publishable package name while keeping `aitp` as
+  the CLI
+- one bounded distribution verification contract for wheel + sdist metadata and
+  packaged runtime assets
+- one isolated public-install smoke acceptance path for the installed runtime
 
 **Explicitly deferred from this milestone:**
 - reopening install/adoption hardening work already closed in `v1.65`
 - OpenClaw parity or broader cross-runtime deep execution parity
 - any repo split that is not directly required for shipping the public package
 
-## Latest Closed Milestone: v1.65 Installation And Adoption Readiness
+## Previous Closed Milestone: v1.65 Installation And Adoption Readiness
 
 **Goal:** Make installation verification, first-run quickstart, and
 Windows-native bootstrap behavior converge into one honest adoption surface for
@@ -216,10 +225,24 @@ already-shipped surfaces.
 - `.planning/milestones/v1.63-MILESTONE-AUDIT.md`
 - `.planning/milestones/v1.64-MILESTONE-AUDIT.md`
 - `.planning/milestones/v1.65-MILESTONE-AUDIT.md`
+- `.planning/milestones/v1.66-MILESTONE-AUDIT.md`
 
 ## Latest Integrated Regression Evidence
 
 - `367 tests passed` on 2026-04-11
+- public-package closure slice:
+  - `python -m unittest discover -s research/knowledge-hub/tests -p "test_agent_bootstrap_assets.py"`
+  - `python -m unittest discover -s research/knowledge-hub/tests -p "test_documentation_entrypoints.py"`
+  - `python -m unittest discover -s research/knowledge-hub/tests -p "test_dependency_contracts.py"`
+  - `python -m unittest discover -s research/knowledge-hub/tests -p "test_quickstart_contracts.py"`
+  - `python -m unittest discover -s research/knowledge-hub/tests -p "test_public_install_contracts.py"`
+  - result: `24 tests passed`
+- distribution metadata acceptance:
+  - `python research/knowledge-hub/runtime/scripts/run_dependency_contract_acceptance.py --json`
+  - result: `success`
+- public install smoke acceptance:
+  - `python research/knowledge-hub/runtime/scripts/run_public_install_smoke.py --json`
+  - result: `success`
 - install/adoption regression slice:
   - `python -m unittest research/knowledge-hub/tests/test_agent_bootstrap_assets.py research/knowledge-hub/tests/test_aitp_service.py research/knowledge-hub/tests/test_quickstart_contracts.py research/knowledge-hub/tests/test_aitp_cli_e2e.py`
   - result: `159 tests passed`
@@ -238,8 +261,8 @@ already-shipped surfaces.
 This does **not** mean AITP is finished.
 
 It means `v1.66` is now the active PyPI packaging milestone and the next step
-is discussing and planning Phase `131` without reopening `999.49` through
+is selecting the next bounded milestone without reopening `999.48` through
 `999.51`.
 
 ---
-*Last updated: 2026-04-11 after opening v1.66 PyPI Publishable Package*
+*Last updated: 2026-04-11 after closing v1.66 PyPI Publishable Package*

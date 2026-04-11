@@ -10,8 +10,8 @@ If you are not keeping a repo-backed local workflow, the simpler public-package
 migration is:
 
 ```bash
-python -m pip uninstall aitp aitp-kernel
-python -m pip install aitp
+python -m pip uninstall aitp-kernel
+python -m pip install aitp-kernel
 aitp --version
 aitp doctor
 ```
@@ -24,7 +24,7 @@ checkout plus its agent surfaces.
 Typical symptoms:
 
 - `aitp --help` does not show `new-topic`, `status`, `next`, `work`, `current-topic`, or `session-start`
-- `python -m pip show aitp` or `python -m pip show aitp-kernel` points to an older editable install such as a private workspace checkout
+- `python -m pip show aitp-kernel` points to an older editable install such as a private workspace checkout
 - Codex skills are partially new, but Claude or OpenCode are not fully converged
 - the workspace root still contains files such as:
   - `AITP_COMMAND_HARNESS.md`
@@ -50,7 +50,7 @@ aitp migrate-local-install --workspace-root D:\BaiduSyncdisk\Theoretical-Physics
 
 Default behavior:
 
-1. inspect the current local install with `pip show aitp` and the legacy fallback `pip show aitp-kernel`
+1. inspect the current local install with `pip show aitp-kernel`
 2. if the editable install is not the canonical repo, uninstall the old package and reinstall from:
    - `AITP-Research-Protocol/research/knowledge-hub`
 3. refresh user-level Codex, Claude Code, and OpenCode AITP assets
@@ -105,4 +105,4 @@ still need manual follow-up.
 - What changes is the underlying AITP install source and the active local agent-entry surfaces.
 - This does not remove AITP compatibility entrypoints such as `aitp-codex` from the package itself. It only removes old local front-door surfaces from the active workspace path.
 - This command is intentionally repo-backed. For a clean public-package path,
-  prefer `python -m pip install aitp` instead of reinstalling the editable repo.
+  prefer `python -m pip install aitp-kernel` instead of reinstalling the editable repo.

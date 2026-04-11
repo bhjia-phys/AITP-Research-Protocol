@@ -41,7 +41,7 @@ Everything is durable. You can close your laptop, come back days later, say "con
 ### Quick Start
 
 ```bash
-python -m pip install aitp
+python -m pip install aitp-kernel
 aitp --version
 aitp doctor
 ```

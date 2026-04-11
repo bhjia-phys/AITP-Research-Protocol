@@ -595,7 +595,8 @@ can install it" and "a curious researcher can try AITP without friction." They
 answer "can someone else actually start using this?" rather than "does the
 install documentation exist?". Current assessment: AITP sits at Maturity Level
 1→2 transition on installation; to reach Level 3 (research utility for others),
-it needs `pip install aitp` and a 5-minute quickstart.
+it needs one public `pip install aitp-kernel` path while keeping the `aitp` CLI
+name and a 5-minute quickstart.
 
 Merge note for this cluster:
 
@@ -607,12 +608,14 @@ Merge note for this cluster:
 
 ### 999.48: PyPI-Publishable Package
 
-**Goal:** Replace `pip install -e research/knowledge-hub` with `pip install aitp`
-from PyPI. Ship versioned releases with proper dependency resolution instead of
-requiring a local editable install from a git clone.
-**Success criteria:** `pip install aitp` works on a clean Python 3.10+ environment
-on both Linux and Windows; `aitp --version` returns a meaningful semver string;
-existing editable installs continue to work via the migration guide.
+**Goal:** Replace `pip install -e research/knowledge-hub` with
+`pip install aitp-kernel` from PyPI while preserving the `aitp` CLI command.
+Ship versioned releases with proper dependency resolution instead of requiring a
+local editable install from a git clone.
+**Success criteria:** `pip install aitp-kernel` works on a clean Python 3.10+
+environment on both Linux and Windows; `aitp --version` returns a meaningful
+semver string; existing editable installs continue to work via the migration
+guide.
 **Why this matters:** Requiring a git clone and editable install means only
 developers already committed to the project can try AITP. PyPI publication is
 the single highest-impact step toward making AITP available to other
