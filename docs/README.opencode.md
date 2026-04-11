@@ -26,3 +26,8 @@ That means the normal user path is:
 - talk naturally about the topic;
 - let the plugin route the session into AITP;
 - only use `aitp session-start "<task>"` when the bootstrap surface is missing or you need an explicit fallback.
+
+For the shared install verification and first-run proof, use:
+
+- [`INSTALL.md`](INSTALL.md)
+- [`QUICKSTART.md`](QUICKSTART.md)

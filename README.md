@@ -133,7 +133,7 @@ The fastest useful path is still the Codex path:
 git clone https://github.com/bhjia-phys/AITP-Research-Protocol.git
 cd AITP-Research-Protocol
 
-python3 -m pip install -e research/knowledge-hub
+python -m pip install -e research/knowledge-hub
 aitp doctor
 ```
 
@@ -141,6 +141,15 @@ On Windows-native, the repo-local launchers work without WSL:
 
 ```cmd
 scripts\aitp-local.cmd doctor
+```
+
+If `aitp` is not on `PATH` yet, you can also use the same launcher for the
+shared first-run path:
+
+```cmd
+scripts\aitp-local.cmd bootstrap --topic "Jones Chapter 4 finite-dimensional backbone" --statement "Start from the finite-dimensional backbone and record the first honest closure target."
+scripts\aitp-local.cmd loop --topic-slug jones-chapter-4-finite-dimensional-backbone --human-request "Continue with the first bounded route and stop before expensive execution." --max-auto-steps 1
+scripts\aitp-local.cmd status --topic-slug jones-chapter-4-finite-dimensional-backbone
 ```
 
 Then install the platform surface you actually use:
@@ -154,6 +163,7 @@ Then install the platform surface you actually use:
 If you want the clearest picture of the intended user experience before you
 install anything, start with:
 
+- [`docs/QUICKSTART.md`](docs/QUICKSTART.md)
 - [`docs/USER_TOPIC_JOURNEY.md`](docs/USER_TOPIC_JOURNEY.md)
 
 If your system Python is externally managed:
@@ -586,6 +596,12 @@ That is the machine-local truth surface for:
 - OpenCode preferred-versus-compatibility readiness
 - OpenClaw specialized-lane visibility
 
+The doctor JSON now also exposes:
+
+- `runtime_convergence`
+- `full_convergence_repair`
+- `runtime_support_matrix.runtimes.<runtime>.remediation`
+
 It also exposes:
 
 - `control_plane_contracts`
@@ -711,6 +727,7 @@ Kernel contract surface:
 Install guides:
 
 - [`docs/INSTALL.md`](docs/INSTALL.md)
+- [`docs/QUICKSTART.md`](docs/QUICKSTART.md)
 - [`docs/MIGRATE_LOCAL_INSTALL.md`](docs/MIGRATE_LOCAL_INSTALL.md)
 - [`docs/INSTALL_CODEX.md`](docs/INSTALL_CODEX.md)
 - [`docs/INSTALL_OPENCLAW.md`](docs/INSTALL_OPENCLAW.md)

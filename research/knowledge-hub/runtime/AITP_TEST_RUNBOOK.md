@@ -308,3 +308,19 @@ Pass condition:
 - `promote-exploration --current-topic --json` writes `promotion_request.json|md`
 - promotion materializes a bounded `session-start` contract for the target topic
 - the acceptance runs on an isolated temp kernel root
+
+## 17. Isolated acceptance: first-run topic quickstart
+
+Use this when you want one bounded proof that a fresh user can pass through the
+shared first-run CLI path without jumping straight into deeper runtime work.
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_first_run_topic_acceptance.py --json
+```
+
+Pass condition:
+- `bootstrap --json` creates a real topic shell for a non-synthetic topic
+- `loop --json` keeps the topic in the light runtime profile and writes `loop_state.json`
+- `status --json` exposes the same topic slug plus the next bounded action
+- the runtime protocol survives all three commands
+- the acceptance runs on an isolated temp kernel root

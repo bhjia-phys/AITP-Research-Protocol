@@ -16,6 +16,12 @@ natural-language theory work route through the gatekeeper skill.
    git clone https://github.com/bhjia-phys/AITP-Research-Protocol.git ~/.codex/aitp
    ```
 
+   Windows (PowerShell):
+
+   ```powershell
+   git clone https://github.com/bhjia-phys/AITP-Research-Protocol.git "$env:USERPROFILE\.codex\aitp"
+   ```
+
 2. Install the runtime CLI:
 
    ```bash
@@ -36,11 +42,29 @@ natural-language theory work route through the gatekeeper skill.
    cmd /c mklink /J "$env:USERPROFILE\.agents\skills\aitp" "$env:USERPROFILE\.codex\aitp\skills"
    ```
 
+   Windows-friendly no-junction alternative:
+
+   ```cmd
+   scripts\aitp-local.cmd install-agent --agent codex --scope user
+   ```
+
+   This copies `using-aitp` and `aitp-runtime` into `%USERPROFILE%\.agents\skills`
+   instead of relying on a junction. Rerun it after updates if you use this path.
+
 4. Restart Codex.
 
 This is the current Codex plugin-first-equivalent install path.
 It is still a local source install rather than a marketplace package, but the
 intended behavior matches Superpowers: install once, then just talk naturally.
+
+Before you trust the install, verify it:
+
+```bash
+aitp doctor
+aitp doctor --json
+```
+
+The Codex row should be `ready` in `runtime_support_matrix.runtimes.codex`.
 
 ## Verify
 
@@ -58,6 +82,10 @@ the runtime to expand.
 This is the normal user path. `aitp session-start "<task>"` is only the manual
 fallback when native bootstrap is unavailable.
 
+After the Codex row is `ready`, use the shared first-run guide:
+
+- [`../docs/QUICKSTART.md`](../docs/QUICKSTART.md)
+
 ## Manual fallback
 
 If bootstrap does not fire, use:
@@ -73,10 +101,24 @@ cd ~/.codex/aitp && git pull
 python -m pip install -e ~/.codex/aitp/research/knowledge-hub
 ```
 
+Windows (PowerShell):
+
+```powershell
+Set-Location "$env:USERPROFILE\.codex\aitp"
+git pull
+python -m pip install -e "$env:USERPROFILE\.codex\aitp\research\knowledge-hub"
+```
+
 ## Uninstalling
 
 ```bash
 rm ~/.agents/skills/aitp
+```
+
+Windows (PowerShell):
+
+```powershell
+Remove-Item "$env:USERPROFILE\.agents\skills\aitp" -Recurse -Force
 ```
 
 If you also want to remove the editable runtime install or any compatibility

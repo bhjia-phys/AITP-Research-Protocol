@@ -29,3 +29,8 @@ Manual fallback remains:
 ```bash
 aitp session-start "<task>"
 ```
+
+For the shared install verification and first-run proof, use:
+
+- [`INSTALL.md`](INSTALL.md)
+- [`QUICKSTART.md`](QUICKSTART.md)

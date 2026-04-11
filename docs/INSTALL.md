@@ -11,6 +11,12 @@ python -m pip install -e research/knowledge-hub
 aitp doctor
 ```
 
+If `aitp` is not on `PATH` yet on Windows-native, use the repo-local launcher:
+
+```cmd
+scripts\aitp-local.cmd doctor
+```
+
 Common prerequisites:
 
 - Git
@@ -43,5 +49,25 @@ aitp doctor
 aitp doctor --json
 ```
 
+`aitp doctor` now renders a front-door install summary for Codex, Claude Code,
+and OpenCode, while treating OpenClaw as a specialized lane.
+
+For machine-readable verification, inspect:
+
+- `runtime_convergence.front_door_runtimes_converged`
+- `full_convergence_repair.command`
+- `runtime_support_matrix.runtimes.codex.status`
+- `runtime_support_matrix.runtimes.claude_code.status`
+- `runtime_support_matrix.runtimes.opencode.status`
+- `runtime_support_matrix.runtimes.<runtime>.remediation`
+
+If a runtime is not `ready`, use that runtime's
+`runtime_support_matrix.runtimes.<runtime>.remediation.command`, then rerun
+`runtime_support_matrix.runtimes.<runtime>.remediation.followup_command`.
+
 Use the runtime-specific install docs above when you need platform-specific
 bootstrap details after the shared kernel install succeeds.
+
+For the shared first-run path after install verification, continue with:
+
+- [`docs/QUICKSTART.md`](QUICKSTART.md)

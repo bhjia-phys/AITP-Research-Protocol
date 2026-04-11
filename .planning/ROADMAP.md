@@ -1,27 +1,24 @@
-# Roadmap: v1.64 L1 Method Specificity Surface
+# Roadmap: v1.65 Installation And Adoption Readiness
 
 ## Result
 
-`v1.64` is complete.
+`v1.65` is active.
 
 ## Phases
 
-- [x] **Phase 124: Method Specificity Contract**
-- [x] **Phase 125: Method Specificity Runtime And Acceptance Surface**
-- [x] **Phase 126: Closure And Regression Audit**
+- [ ] **Phase 127: Doctor And Front-Door Verification Hardening**
+- [ ] **Phase 128: Shared Quickstart And First-Run Acceptance**
+- [ ] **Phase 129: Windows-Native Bootstrap And Path Robustness**
+- [ ] **Phase 130: Closure And Regression Audit**
 
-## Outcome
+## Target Outcome
 
-`v1.64` now closes the first missing production slice in backlog `999.27`
-without reopening already-shipped assumption, reading-depth, or basic
-contradiction surfaces.
-
-Production outcome:
-
-- bounded `method_specificity_rows` in `l1_source_intake`
-- runtime/topic-shell/status exposure for source-backed method specificity
-- one isolated acceptance path through real `status --json`
+- one install-verification surface that gives Codex, Claude Code, and OpenCode
+  the same `doctor` / remediation truth contract
+- one shared first-run path proven through `bootstrap -> loop -> status`
+- one Windows-native adoption surface that no longer assumes bash or POSIX
+  symlink habits for the default front-door experience
 
 ## Next Step
 
-Select the next milestone from backlog and archived review findings.
+Plan Phase `127`.

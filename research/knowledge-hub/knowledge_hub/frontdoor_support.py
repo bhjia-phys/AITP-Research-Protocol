@@ -209,6 +209,7 @@ def claude_hook_status(*, repo_root: Path) -> dict[str, Any]:
     using_path = base / "skills" / "using-aitp" / "SKILL.md"
     runtime_path = base / "skills" / "aitp-runtime" / "SKILL.md"
     session_start_path = base / "hooks" / "session-start"
+    session_start_python_path = base / "hooks" / "session-start.py"
     run_hook_path = base / "hooks" / "run-hook.cmd"
     hooks_manifest_path = base / "hooks" / "hooks.json"
     settings_path = base / "settings.json"
@@ -216,18 +217,25 @@ def claude_hook_status(*, repo_root: Path) -> dict[str, Any]:
         "using_skill_path": str(using_path),
         "runtime_skill_path": str(runtime_path),
         "session_start_hook_path": str(session_start_path),
+        "session_start_python_hook_path": str(session_start_python_path),
         "hook_wrapper_path": str(run_hook_path),
         "hooks_manifest_path": str(hooks_manifest_path),
         "settings_path": str(settings_path),
         "using_skill": using_path.exists(),
         "runtime_skill": runtime_path.exists(),
         "session_start_hook": session_start_path.exists(),
+        "session_start_python_hook": session_start_python_path.exists(),
         "hook_wrapper": run_hook_path.exists(),
         "hooks_manifest": hooks_manifest_path.exists(),
         "settings": settings_path.exists(),
         "using_skill_matches_canonical": _text_matches_canonical(using_path, repo_root, "skills/using-aitp/SKILL.md"),
         "runtime_skill_matches_canonical": _text_matches_canonical(runtime_path, repo_root, "skills/aitp-runtime/SKILL.md"),
         "session_start_hook_matches_canonical": _text_matches_canonical(session_start_path, repo_root, "hooks/session-start"),
+        "session_start_python_hook_matches_canonical": _text_matches_canonical(
+            session_start_python_path,
+            repo_root,
+            "hooks/session-start.py",
+        ),
         "hook_wrapper_matches_canonical": _text_matches_canonical(run_hook_path, repo_root, "hooks/run-hook.cmd"),
         "hooks_manifest_matches_canonical": _text_matches_canonical(hooks_manifest_path, repo_root, "hooks/hooks.json"),
         "settings_has_expected_session_start_command": claude_settings_has_expected_session_start_command(
@@ -260,6 +268,8 @@ def runtime_convergence_summary(doctor_payload: dict[str, Any]) -> dict[str, Any
     front_door_runtimes = ["codex", *list(matrix.get("parity_targets") or [])]
     ready_runtimes = [runtime for runtime, status in status_by_runtime.items() if status == "ready"]
     non_ready_runtimes = [runtime for runtime, status in status_by_runtime.items() if status != "ready"]
+    front_door_ready_runtimes = [runtime for runtime in front_door_runtimes if status_by_runtime.get(runtime) == "ready"]
+    front_door_non_ready_runtimes = [runtime for runtime in front_door_runtimes if status_by_runtime.get(runtime) != "ready"]
     return {
         "baseline_runtime": str(matrix.get("baseline_runtime") or ""),
         "front_door_runtimes": front_door_runtimes,
@@ -267,6 +277,8 @@ def runtime_convergence_summary(doctor_payload: dict[str, Any]) -> dict[str, Any
         "status_by_runtime": status_by_runtime,
         "ready_runtimes": ready_runtimes,
         "non_ready_runtimes": non_ready_runtimes,
+        "front_door_ready_runtimes": front_door_ready_runtimes,
+        "front_door_non_ready_runtimes": front_door_non_ready_runtimes,
         "specialized_lanes": list(matrix.get("specialized_lanes") or []),
     }
 
@@ -345,6 +357,14 @@ def ensure_cli_installed(service: Any, *, workspace_root: str | None = None) -> 
     version = str(pip_payload.get("version") or "").strip()
     canonical_package_root = str(service._canonical_package_root().resolve())
     stale_cli = bool(editable_location) and Path(editable_location).resolve() != service._canonical_package_root().resolve()
+    if not version and not editable_location:
+        package_status = "not_installed"
+    elif stale_cli:
+        package_status = "stale_editable_install"
+    elif editable_location:
+        package_status = "canonical_editable_install"
+    else:
+        package_status = "installed"
     codex_skill_status_payload = service._codex_skill_status()
     claude_hook_status_payload = service._claude_hook_status()
     opencode_status = service._opencode_plugin_status(workspace_path)
@@ -386,23 +406,28 @@ def ensure_cli_installed(service: Any, *, workspace_root: str | None = None) -> 
         issues.append("stale_cli")
     if legacy_entrypoints:
         issues.append("legacy_workspace_entrypoints_present")
-    if not codex_skill_status_payload["using_skill_present"] or not codex_skill_status_payload["runtime_skill_present"]:
-        issues.append("codex_skill_surface_missing")
-    elif not codex_skill_status_payload["using_skill_matches_canonical"] or not codex_skill_status_payload["runtime_skill_matches_canonical"]:
-        issues.append("codex_skill_surface_stale")
-    if not all(claude_hook_status_payload.values()):
-        issues.append("claude_hook_surface_incomplete")
-    if legacy_claude_commands:
-        issues.append("claude_legacy_commands_present")
     runtime_support_matrix = build_runtime_support_matrix(
         codex_path=codex_path,
         openclaw_path=openclaw_path,
         mcporter_path=mcporter_path,
+        workspace_root=str(workspace_path),
         codex_skill_status=codex_skill_status_payload,
         claude_hook_status=claude_hook_status_payload,
         legacy_claude_commands=legacy_claude_commands,
         opencode_status=opencode_status,
     )
+    codex_runtime_status = str(runtime_support_matrix["runtimes"]["codex"]["status"])
+    if codex_runtime_status in {"missing", "partial"}:
+        issues.append("codex_skill_surface_incomplete")
+    elif codex_runtime_status == "stale":
+        issues.append("codex_skill_surface_stale")
+
+    claude_runtime_status = str(runtime_support_matrix["runtimes"]["claude_code"]["status"])
+    if claude_runtime_status in {"missing", "partial"}:
+        issues.append("claude_hook_surface_incomplete")
+    elif claude_runtime_status == "stale":
+        issues.append("claude_hook_surface_stale")
+
     opencode_runtime_status = str(runtime_support_matrix["runtimes"]["opencode"]["status"])
     if opencode_runtime_status == "missing":
         issues.append("opencode_plugin_surface_missing")
@@ -410,6 +435,7 @@ def ensure_cli_installed(service: Any, *, workspace_root: str | None = None) -> 
         issues.append("opencode_plugin_surface_incomplete")
     elif opencode_runtime_status == "stale":
         issues.append("opencode_plugin_surface_stale")
+    runtime_convergence = runtime_convergence_summary({"runtime_support_matrix": runtime_support_matrix})
     overall_status = "clean" if not issues else "mixed_install"
     return {
         "overall_status": overall_status,
@@ -425,9 +451,11 @@ def ensure_cli_installed(service: Any, *, workspace_root: str | None = None) -> 
         "package": {
             "name": "aitp-kernel",
             "version": version,
+            "status": package_status,
             "editable_project_location": editable_location,
             "canonical_package_root": canonical_package_root,
             "matches_canonical": not stale_cli and bool(editable_location),
+            "repair_command": "python -m pip install -e research/knowledge-hub",
         },
         "command_paths": {
             "aitp": command_path or "",
@@ -443,6 +471,13 @@ def ensure_cli_installed(service: Any, *, workspace_root: str | None = None) -> 
         },
         "legacy_workspace_entrypoints": [str(path) for path in legacy_entrypoints],
         "runtime_support_matrix": runtime_support_matrix,
+        "runtime_convergence": runtime_convergence,
+        "full_convergence_repair": {
+            "status": "none_required" if overall_status == "clean" else "recommended",
+            "command": f'aitp migrate-local-install --workspace-root "{workspace_path}" --json',
+            "followup_command": "aitp doctor --json",
+            "doc_path": "docs/MIGRATE_LOCAL_INSTALL.md",
+        },
         "layer_roots": layer_status,
         "protocol_contracts": {
             name: {"path": str(path), "status": "present" if path.exists() else "missing"}

@@ -48,9 +48,27 @@ it still does **not** mean the broader AITP architecture is finished.
 
 ## Current Focus
 
-- No active milestone is currently open
+- Active milestone: `v1.65` `Installation And Adoption Readiness`
 - Latest closed milestone: `v1.64` `L1 Method Specificity Surface`
-- Next boundary: select and plan the next milestone
+- Next boundary: discuss and plan Phase `127`
+
+## Current Milestone: v1.65 Installation And Adoption Readiness
+
+**Goal:** Make installation verification, first-run quickstart, and
+Windows-native bootstrap behavior converge into one honest adoption surface for
+Codex, Claude Code, and OpenCode.
+
+**Target features:**
+- a machine-readable `aitp doctor` / remediation contract for the three
+  front-door runtimes
+- a shared `bootstrap -> loop -> status` quickstart with isolated acceptance
+  coverage
+- Windows-native bootstrap paths that do not assume bash or POSIX symlink
+  habits for the default experience
+
+**Explicitly deferred from this milestone:**
+- `999.48` PyPI publishable package
+- OpenClaw deep parity beyond specialized-lane visibility
 
 ## Latest Closed Milestone: v1.64 L1 Method Specificity Surface
 
@@ -198,8 +216,8 @@ already-shipped surfaces.
 
 This does **not** mean AITP is finished.
 
-It means `v1.64` is closed on a verified baseline and the next step is picking
-the next milestone.
+It means `v1.65` is now the active install/adoption milestone and the next step
+is discussing and planning Phase `127`.
 
 ---
-*Last updated: 2026-04-11 after adding maturity ladder section*
+*Last updated: 2026-04-11 after opening v1.65 Installation And Adoption Readiness*

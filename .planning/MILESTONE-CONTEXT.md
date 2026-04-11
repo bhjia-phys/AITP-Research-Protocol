@@ -1,6 +1,6 @@
 # Milestone Context
 
-Current milestone: none
+Current milestone: `v1.65` `Installation And Adoption Readiness`
 
 ## Latest Closed Milestone
 
@@ -8,33 +8,34 @@ Current milestone: none
 
 ## Why It Was Next
 
-After `v1.63`, backlog `999.27` still remained open in one concrete way:
-assumptions, reading depth, notation tension, and basic contradiction surfaces
-already exist, but `method specificity` still has no real production surface.
+The backlog now explicitly overrides the old ordering for user-facing
+installation and first-use work.
 
-`v1.64` closed that bounded method-specificity slice instead of reopening the
-already-shipped intake basics:
+Current priority is to improve installation and first-use surfaces before
+promoting deeper collaborator-core backlog.
 
-- extract source-backed method family and specificity tier rows from real L1
-  source text
-- surface those rows through topic-shell markdown, runtime bundle, and
-  `status --json`
-- prove the new surface through one isolated non-mocked acceptance path
+That means the next bounded milestone should focus on:
+
+- `999.49` installation verification and smoke-test hardening
+- `999.50` 5-minute quickstart and first-run proof
+- `999.51` Windows path and symlink robustness
+
+while leaving `999.48` PyPI publication for a later dedicated milestone.
 
 ## What This Closure Protects
 
-- Do not reopen the already-shipped assumption/reading-depth surfaces just to
-  claim method-specificity work.
-- Keep the implementation inside the existing L1/topic-shell/runtime boundaries
-  instead of inventing a parallel stack.
-- Close only a first production slice of `999.27`; broader intake maturity
-  remains open.
+- Do not reopen old install/use entry items like `999.3`, `999.4`, or `999.5`
+  as separate milestones.
+- Keep the install/adoption work centered on the canonical cluster
+  `999.49` through `999.51`.
+- Keep OpenClaw as a specialized lane rather than a front-door parity target
+  for this milestone.
 
 ## Current Status
 
-`v1.64` is closed.
+`v1.65` is active.
 
 Immediate next repository task:
 
-- choose the next milestone boundary from backlog and review findings
+- discuss and plan Phase `127`
 - do not reopen `v1.64` unless a fresh regression appears

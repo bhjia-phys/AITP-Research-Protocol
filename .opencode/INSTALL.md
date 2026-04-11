@@ -8,6 +8,12 @@ OpenCode should load AITP through a plugin, not through a command bundle.
 
 ## Installation
 
+Before plugin bootstrap, complete the shared kernel install:
+
+```bash
+python -m pip install -e research/knowledge-hub
+```
+
 Add AITP to the `plugin` array in your `opencode.json`:
 
 ```json
@@ -27,12 +33,26 @@ deep checking makes the full runtime necessary.
 
 ## Verify
 
+First verify the shared kernel and plugin state:
+
+```bash
+aitp doctor
+aitp doctor --json
+```
+
+The OpenCode row should be `ready` in
+`runtime_support_matrix.runtimes.opencode`.
+
 Ask OpenCode for a theory task in natural language, for example:
 
 - `继续这个 topic，方向改成 effective field theory`
 - `读这篇论文并建立验证路线`
 
 OpenCode should enter AITP before doing substantial work.
+
+After the OpenCode row is `ready`, use the shared first-run guide:
+
+- [`../docs/QUICKSTART.md`](../docs/QUICKSTART.md)
 
 ## Manual fallback
 

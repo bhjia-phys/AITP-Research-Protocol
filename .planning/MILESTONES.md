@@ -48,10 +48,10 @@ Completed milestone chain:
 
 ## Current Active Milestone
 
-- none
+- `v1.65` `Installation And Adoption Readiness`
 
 ## Current Status
 
 - `v1.36` through `v1.64` closed and archived
-- no active milestone is currently open
-- next command boundary: choose and plan the next milestone
+- `v1.65` is now open for the install/adoption cluster
+- next command boundary: discuss and plan Phase `127`

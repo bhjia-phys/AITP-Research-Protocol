@@ -53,6 +53,33 @@ class AITPCLIE2ETests(unittest.TestCase):
             check=False,
         )
 
+    def _prepare_first_run_kernel(self) -> None:
+        for dirname in ("source-layer", "intake", "feedback", "consultation", "validation"):
+            (self.kernel_root / dirname).mkdir(parents=True, exist_ok=True)
+        shutil.copytree(
+            self.package_root / "runtime" / "scripts",
+            self.kernel_root / "runtime" / "scripts",
+            dirs_exist_ok=True,
+        )
+        for name in (
+            "closed_loop_policies.json",
+            "research_mode_profiles.json",
+            "CONTROL_NOTE_CONTRACT.md",
+            "DECLARATIVE_RUNTIME_CONTRACTS.md",
+            "DEFERRED_RUNTIME_CONTRACTS.md",
+            "INNOVATION_DIRECTION_TEMPLATE.md",
+            "PROGRESSIVE_DISCLOSURE_PROTOCOL.md",
+        ):
+            target = self.kernel_root / "runtime" / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(self.package_root / "runtime" / name, target)
+        for path in self.package_root.iterdir():
+            if path.is_file() and path.suffix == ".md":
+                shutil.copy2(path, self.kernel_root / path.name)
+        exploration_window = self.package_root / "exploration_window.json"
+        if exploration_window.exists():
+            shutil.copy2(exploration_window, self.kernel_root / "exploration_window.json")
+
     def _write_topic_state(
         self,
         topic_slug: str,
@@ -98,6 +125,64 @@ class AITPCLIE2ETests(unittest.TestCase):
         self.assertTrue(
             (self.kernel_root / "canonical" / "staging" / "entries" / "staging--portability-route-failed.json").exists()
         )
+
+    def test_first_run_bootstrap_loop_status_cli_flow(self) -> None:
+        self._prepare_first_run_kernel()
+
+        bootstrap = self._run_cli(
+            "bootstrap",
+            "--topic",
+            "Jones Chapter 4 finite-dimensional backbone",
+            "--statement",
+            "Start from the finite-dimensional backbone and record the first honest closure target.",
+            "--json",
+        )
+        self.assertEqual(bootstrap.returncode, 0, msg=bootstrap.stderr)
+        bootstrap_payload = json.loads(bootstrap.stdout)
+        topic_slug = bootstrap_payload["topic_slug"]
+        self.assertEqual(topic_slug, "jones-chapter-4-finite-dimensional-backbone")
+        self.assertTrue(Path(bootstrap_payload["files"]["topic_state"]).exists())
+        self.assertTrue(Path(bootstrap_payload["files"]["runtime_protocol"]).exists())
+
+        loop = self._run_cli(
+            "loop",
+            "--topic-slug",
+            topic_slug,
+            "--human-request",
+            "Continue with the first bounded route and stop before expensive execution.",
+            "--max-auto-steps",
+            "1",
+            "--json",
+        )
+        self.assertEqual(loop.returncode, 0, msg=loop.stderr)
+        loop_payload = json.loads(loop.stdout)
+        self.assertEqual(loop_payload["topic_slug"], topic_slug)
+        self.assertEqual(loop_payload["load_profile"], "light")
+        self.assertEqual(
+            (loop_payload["entry_audit"]["conformance_state"] or {}).get("overall_status"),
+            "pass",
+        )
+        self.assertEqual(
+            (loop_payload["exit_audit"]["conformance_state"] or {}).get("overall_status"),
+            "pass",
+        )
+        self.assertTrue(Path(loop_payload["loop_state_path"]).exists())
+        self.assertTrue(Path(loop_payload["runtime_protocol"]["runtime_protocol_path"]).exists())
+
+        status = self._run_cli(
+            "status",
+            "--topic-slug",
+            topic_slug,
+            "--json",
+        )
+        self.assertEqual(status.returncode, 0, msg=status.stderr)
+        status_payload = json.loads(status.stdout)
+        self.assertEqual(status_payload["topic_slug"], topic_slug)
+        self.assertEqual(status_payload["load_profile"], "light")
+        self.assertTrue(bool(status_payload["selected_action_id"]))
+        self.assertTrue(bool(status_payload["selected_action_type"]))
+        self.assertTrue(Path(status_payload["runtime_protocol_path"]).exists())
+        self.assertTrue(Path(status_payload["runtime_protocol_note_path"]).exists())
 
     def test_record_collaborator_memory_json_and_human_paths(self) -> None:
         human = self._run_cli(

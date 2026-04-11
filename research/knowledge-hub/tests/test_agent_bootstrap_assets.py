@@ -35,6 +35,8 @@ class AgentBootstrapAssetTests(unittest.TestCase):
         plugin_payload = json.loads((self.repo_root / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
         hook_payload = json.loads((self.repo_root / "hooks" / "hooks.json").read_text(encoding="utf-8"))
         hook_text = (self.repo_root / "hooks" / "session-start").read_text(encoding="utf-8")
+        python_hook_text = (self.repo_root / "hooks" / "session-start.py").read_text(encoding="utf-8")
+        run_hook_text = (self.repo_root / "hooks" / "run-hook.cmd").read_text(encoding="utf-8")
 
         self.assertEqual(plugin_payload["name"], "aitp")
         self.assertEqual(plugin_payload["entry"], "skills/using-aitp/SKILL.md")
@@ -42,6 +44,8 @@ class AgentBootstrapAssetTests(unittest.TestCase):
         self.assertIn("SessionStart", hook_payload["hooks"])
         self.assertIn("run-hook.cmd", json.dumps(hook_payload))
         self.assertIn("using-aitp", hook_text)
+        self.assertIn("hookSpecificOutput", python_hook_text)
+        self.assertIn("PYTHON_HOOK", run_hook_text)
 
     def test_codex_install_doc_points_to_skill_discovery(self) -> None:
         install_doc = (self.repo_root / ".codex" / "INSTALL.md").read_text(encoding="utf-8")
@@ -49,16 +53,37 @@ class AgentBootstrapAssetTests(unittest.TestCase):
         self.assertIn("~/.agents/skills/aitp", install_doc)
         self.assertIn("native skill discovery", install_doc)
         self.assertIn("plugin-first-equivalent", install_doc)
+        self.assertIn("aitp doctor", install_doc)
+        self.assertIn("QUICKSTART.md", install_doc)
+        self.assertIn("mklink /J", install_doc)
+        self.assertIn("install-agent --agent codex --scope user", install_doc)
         self.assertNotIn("aitp-codex", install_doc)
+
+    def test_opencode_install_doc_points_to_shared_quickstart(self) -> None:
+        install_doc = (self.repo_root / ".opencode" / "INSTALL.md").read_text(encoding="utf-8")
+        readme_doc = (self.repo_root / "docs" / "README.opencode.md").read_text(encoding="utf-8")
+
+        self.assertIn("aitp doctor", install_doc)
+        self.assertIn("runtime_support_matrix.runtimes.opencode", install_doc)
+        self.assertIn("QUICKSTART.md", install_doc)
+        self.assertIn("QUICKSTART.md", readme_doc)
 
     def test_readme_links_to_user_topic_journey(self) -> None:
         readme = (self.repo_root / "README.md").read_text(encoding="utf-8")
         journey_doc = (self.repo_root / "docs" / "USER_TOPIC_JOURNEY.md").read_text(encoding="utf-8")
+        quickstart_doc = (self.repo_root / "docs" / "QUICKSTART.md").read_text(encoding="utf-8")
 
         self.assertIn("docs/USER_TOPIC_JOURNEY.md", readme)
+        self.assertIn("docs/QUICKSTART.md", readme)
         self.assertIn("Lane 1: Formal theory topic", journey_doc)
         self.assertIn("Lane 2: Toy numerics topic", journey_doc)
         self.assertIn("Lane 3: Code-backed method topic", journey_doc)
+        self.assertIn("bootstrap", quickstart_doc)
+        self.assertIn("loop", quickstart_doc)
+        self.assertIn("status", quickstart_doc)
+        self.assertIn("Codex", quickstart_doc)
+        self.assertIn("Claude Code", quickstart_doc)
+        self.assertIn("OpenCode", quickstart_doc)
 
     def test_readmes_link_to_aitp_gsd_workflow_contract(self) -> None:
         root_readme = (self.repo_root / "README.md").read_text(encoding="utf-8")
@@ -71,6 +96,7 @@ class AgentBootstrapAssetTests(unittest.TestCase):
 
     def test_runtime_support_docs_publish_baseline_and_parity_language(self) -> None:
         root_readme = (self.repo_root / "README.md").read_text(encoding="utf-8")
+        install_index = (self.repo_root / "docs" / "INSTALL.md").read_text(encoding="utf-8")
         codex_install = (self.repo_root / "docs" / "INSTALL_CODEX.md").read_text(encoding="utf-8")
         claude_install = (self.repo_root / "docs" / "INSTALL_CLAUDE_CODE.md").read_text(encoding="utf-8")
         opencode_install = (self.repo_root / "docs" / "INSTALL_OPENCODE.md").read_text(encoding="utf-8")
@@ -80,9 +106,31 @@ class AgentBootstrapAssetTests(unittest.TestCase):
         self.assertIn("Parity target", root_readme)
         self.assertIn("Specialized lane", root_readme)
         self.assertIn("aitp doctor --json", root_readme)
+        self.assertIn("runtime_convergence", root_readme)
+        self.assertIn("full_convergence_repair", root_readme)
+        self.assertIn("runtime_support_matrix.runtimes.<runtime>.remediation", root_readme)
+        self.assertIn("scripts\\aitp-local.cmd bootstrap", root_readme)
+        self.assertIn("scripts\\aitp-local.cmd doctor", install_index)
+        self.assertIn("runtime_convergence.front_door_runtimes_converged", install_index)
+        self.assertIn("runtime_support_matrix.runtimes.<runtime>.remediation", install_index)
         self.assertIn("current baseline runtime", codex_install)
+        self.assertIn("runtime_support_matrix.runtimes.codex.remediation", codex_install)
+        self.assertIn("Get-ChildItem \"$env:USERPROFILE\\.agents\\skills\"", codex_install)
+        self.assertIn("aitp install-agent --agent codex --scope user", codex_install)
+        self.assertIn("scripts\\aitp-local.cmd install-agent --agent codex --scope project --target-root D:\\theory-workspace", codex_install)
+        self.assertIn("scripts\\aitp-local.cmd install-agent --agent codex --scope user", codex_install)
         self.assertIn("aitp doctor --json", claude_install)
+        self.assertIn("runtime_support_matrix.runtimes.claude_code.remediation", claude_install)
+        self.assertIn("aitp install-agent --agent claude-code --scope user", claude_install)
+        self.assertIn("scripts\\aitp-local.cmd install-agent --agent claude-code --scope project --target-root D:\\theory-workspace", claude_install)
+        self.assertIn("scripts\\aitp-local.cmd install-agent --agent claude-code --scope user", claude_install)
+        self.assertIn("session-start.py", claude_install)
         self.assertIn("aitp doctor --json", opencode_install)
+        self.assertIn("runtime_support_matrix.runtimes.opencode.remediation", opencode_install)
+        self.assertIn("%USERPROFILE%\\.config\\opencode\\opencode.json", opencode_install)
+        self.assertIn("aitp install-agent --agent opencode --scope user", opencode_install)
+        self.assertIn("scripts\\aitp-local.cmd install-agent --agent opencode --scope project --target-root D:\\theory-workspace", opencode_install)
+        self.assertIn("scripts\\aitp-local.cmd install-agent --agent opencode --scope user", opencode_install)
         self.assertIn("runtime_convergence_after.front_door_runtimes_converged", migrate_doc)
 
     def test_control_plane_docs_publish_audit_entrypoints_and_doctor_fields(self) -> None:

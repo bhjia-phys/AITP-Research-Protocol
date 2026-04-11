@@ -34,6 +34,10 @@ The public OpenCode path is:
 2. restart OpenCode;
 3. let the plugin inject `using-aitp` and register the AITP `skills/` path.
 
+On Windows-native, the default user config path is typically:
+
+- `%USERPROFILE%\.config\opencode\opencode.json`
+
 That is the recommended path because it matches the intended AITP UX:
 
 - no `/aitp` command ritual for normal use;
@@ -51,6 +55,24 @@ If you want local copied assets in a workspace or user config root:
 
 ```bash
 aitp install-agent --agent opencode --scope project --target-root /path/to/theory-workspace
+```
+
+User-scope copied-assets alternative:
+
+```bash
+aitp install-agent --agent opencode --scope user
+```
+
+Windows-native example:
+
+```cmd
+scripts\aitp-local.cmd install-agent --agent opencode --scope project --target-root D:\theory-workspace
+```
+
+Windows-native user-scope alternative:
+
+```cmd
+scripts\aitp-local.cmd install-agent --agent opencode --scope user
 ```
 
 This now writes:
@@ -74,10 +96,21 @@ OpenCode should now:
 Use `aitp doctor --json` to verify whether OpenCode is ready through the
 preferred `opencode.json` plugin entry or only through a partial/stale
 workspace compatibility surface.
-The same JSON report now also exposes `control_plane_contracts` and
-`control_plane_surfaces` so OpenCode-side operators can find the unified
-architecture docs plus the runtime audit/status commands that inspect live
-topics.
+The same JSON report should show:
+
+- `runtime_support_matrix.runtimes.opencode.status` as `ready`
+- `runtime_support_matrix.runtimes.opencode.remediation` when the OpenCode row
+  needs repair or preferred-plugin convergence is only recommended
+- `runtime_convergence.front_door_runtimes_converged` when the full front-door
+  adoption surface is aligned
+- `control_plane_contracts` and `control_plane_surfaces` so OpenCode-side
+  operators can find the unified architecture docs plus the runtime
+  audit/status commands that inspect live topics
+
+If the OpenCode row is not `ready`, or if its remediation status is
+`recommended`, run the command in
+`runtime_support_matrix.runtimes.opencode.remediation.command`, then rerun
+`runtime_support_matrix.runtimes.opencode.remediation.followup_command`.
 
 Useful follow-up commands once a topic exists:
 
@@ -86,6 +119,10 @@ aitp capability-audit --topic-slug <topic_slug>
 aitp paired-backend-audit --topic-slug <topic_slug>
 aitp h-plane-audit --topic-slug <topic_slug>
 ```
+
+After the OpenCode row is `ready`, continue with the shared first-run guide:
+
+- [`docs/QUICKSTART.md`](QUICKSTART.md)
 
 If you are migrating from an older AITP setup, remove legacy `/aitp*` command
 bundles from your OpenCode workspace so the plugin-first path is the only

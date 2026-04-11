@@ -60,6 +60,24 @@ If you want workspace-local copied skills instead of a symlink:
 aitp install-agent --agent codex --scope project --target-root /path/to/theory-workspace
 ```
 
+User-scope copied-assets alternative:
+
+```bash
+aitp install-agent --agent codex --scope user
+```
+
+Windows-native example:
+
+```cmd
+scripts\aitp-local.cmd install-agent --agent codex --scope project --target-root D:\theory-workspace
+```
+
+Windows-native user-scope alternative:
+
+```cmd
+scripts\aitp-local.cmd install-agent --agent codex --scope user
+```
+
 This now writes only:
 
 - `.agents/skills/using-aitp/`
@@ -84,16 +102,33 @@ aitp doctor
 ls -la ~/.agents/skills/aitp
 ```
 
+Windows (PowerShell), inspect the skills root and confirm either the `aitp`
+junction or copied `using-aitp` / `aitp-runtime` folders are present:
+
+```powershell
+Get-ChildItem "$env:USERPROFILE\.agents\skills"
+```
+
 For the structured runtime view, use:
 
 ```bash
 aitp doctor --json
 ```
 
-That report should show Codex as the current baseline runtime.
-It should also expose `control_plane_contracts` and
-`control_plane_surfaces`, which point at the unified architecture docs and the
-runtime audit/status commands for live topics.
+That report should show:
+
+- Codex as the current baseline runtime
+- `runtime_support_matrix.runtimes.codex.status` as `ready`
+- `runtime_convergence.front_door_runtimes_converged` when the whole
+  Codex/Claude Code/OpenCode front door is aligned
+- `runtime_support_matrix.runtimes.codex.remediation` for the exact Codex
+  repair command if the row is not `ready`
+- `control_plane_contracts` and `control_plane_surfaces` for the unified
+  architecture docs plus the runtime audit/status commands for live topics
+
+If the Codex row is not `ready`, run the command in
+`runtime_support_matrix.runtimes.codex.remediation.command`, then rerun
+`runtime_support_matrix.runtimes.codex.remediation.followup_command`.
 
 Useful follow-up commands once a topic exists:
 
@@ -102,6 +137,10 @@ aitp capability-audit --topic-slug <topic_slug>
 aitp paired-backend-audit --topic-slug <topic_slug>
 aitp h-plane-audit --topic-slug <topic_slug>
 ```
+
+After the Codex row is `ready`, continue with the shared first-run guide:
+
+- [`docs/QUICKSTART.md`](QUICKSTART.md)
 
 ## Manual fallback
 

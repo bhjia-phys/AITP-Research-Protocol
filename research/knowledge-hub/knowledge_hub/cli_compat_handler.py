@@ -39,12 +39,115 @@ def _render_human_lines(payload: Any, *, indent: int = 0, key: str | None = None
     return [f"{prefix}{_humanize_key(key)}: {payload}"]
 
 
+def _looks_like_doctor_payload(payload: Any) -> bool:
+    return isinstance(payload, dict) and "overall_status" in payload and "runtime_support_matrix" in payload and "package" in payload
+
+
+def _doctor_runtime_lines(runtime_key: str, row: dict[str, Any], *, indent: int = 2) -> list[str]:
+    prefix = " " * indent
+    detail_prefix = " " * (indent + 2)
+    maturity_label = str(row.get("maturity_class") or "").replace("_", " ").strip() or "runtime"
+    display_name = str(row.get("display_name") or runtime_key)
+    status = str(row.get("status") or "unknown")
+    lines = [f"{prefix}- {display_name}: {status} [{maturity_label}]"]
+    entry = str(row.get("preferred_entry") or "").strip()
+    if entry:
+        lines.append(f"{detail_prefix}Entry: {entry}")
+    issues = list(row.get("issues") or [])
+    if issues:
+        lines.append(f"{detail_prefix}Issues: {', '.join(str(issue) for issue in issues)}")
+    remediation = row.get("remediation") or {}
+    remediation_status = str(remediation.get("status") or "")
+    if remediation_status and remediation_status != "none_required":
+        lines.append(f"{detail_prefix}Repair status: {remediation_status}")
+        command = str(remediation.get("command") or "").strip()
+        if command:
+            lines.append(f"{detail_prefix}Repair: {command}")
+        doc_path = str(remediation.get("doc_path") or "").strip()
+        if doc_path:
+            lines.append(f"{detail_prefix}Docs: {doc_path}")
+        seen_hints: set[str] = set()
+        for hint_row in remediation.get("issue_hints") or []:
+            hint = str((hint_row or {}).get("hint") or "").strip()
+            if hint and hint not in seen_hints:
+                seen_hints.add(hint)
+                lines.append(f"{detail_prefix}Hint: {hint}")
+    return lines
+
+
+def _render_doctor_payload(payload: dict[str, Any]) -> list[str]:
+    lines = ["AITP Doctor", ""]
+    lines.append(f"Overall: {payload.get('overall_status', 'unknown')}")
+
+    package = payload.get("package") or {}
+    package_status = str(package.get("status") or "unknown")
+    package_version = str(package.get("version") or "unknown")
+    lines.append(f"Package: {package_status} (aitp-kernel {package_version})")
+
+    layer_roots = payload.get("layer_roots") or {}
+    missing_roots = [name for name, row in layer_roots.items() if str((row or {}).get("status") or "") != "present"]
+    protocol_contracts = payload.get("protocol_contracts") or {}
+    missing_contracts = [name for name, row in protocol_contracts.items() if str((row or {}).get("status") or "") != "present"]
+    if not missing_roots and not missing_contracts:
+        lines.append("Protocol roots: ready")
+    else:
+        missing_rows = missing_roots + missing_contracts
+        lines.append(f"Protocol roots: missing {', '.join(str(item) for item in missing_rows)}")
+
+    runtime_convergence = payload.get("runtime_convergence") or {}
+    front_door_ready = list(runtime_convergence.get("front_door_ready_runtimes") or [])
+    front_door_non_ready = list(runtime_convergence.get("front_door_non_ready_runtimes") or [])
+    front_door_converged = bool(runtime_convergence.get("front_door_runtimes_converged"))
+    if front_door_converged:
+        lines.append("Front-door convergence: yes")
+    else:
+        lines.append(
+            "Front-door convergence: no"
+            + (
+                f" (ready: {', '.join(front_door_ready)}; repair: {', '.join(front_door_non_ready)})"
+                if front_door_ready or front_door_non_ready
+                else ""
+            )
+        )
+
+    full_repair = payload.get("full_convergence_repair") or {}
+    if str(full_repair.get("status") or "") != "none_required":
+        command = str(full_repair.get("command") or "").strip()
+        if command:
+            lines.append(f"Full repair: {command}")
+
+    matrix = payload.get("runtime_support_matrix") or {}
+    runtime_rows = matrix.get("runtimes") or {}
+    front_door_runtimes = list(runtime_convergence.get("front_door_runtimes") or [])
+    if front_door_runtimes:
+        lines.append("")
+        lines.append("Front-door runtimes:")
+        for runtime_key in front_door_runtimes:
+            row = runtime_rows.get(runtime_key) or {}
+            lines.extend(_doctor_runtime_lines(runtime_key, row))
+
+    specialized_lanes = list(matrix.get("specialized_lanes") or [])
+    if specialized_lanes:
+        lines.append("")
+        lines.append("Specialized lanes:")
+        for runtime_key in specialized_lanes:
+            row = runtime_rows.get(runtime_key) or {}
+            lines.extend(_doctor_runtime_lines(runtime_key, row))
+
+    lines.append("")
+    lines.append("Machine view: aitp doctor --json")
+    return lines
+
+
 def emit_payload(payload: dict[str, Any], as_json: bool) -> None:
     if as_json:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return
-    lines = ["Result", ""]
-    lines.extend(_render_human_lines(payload))
+    if _looks_like_doctor_payload(payload):
+        lines = _render_doctor_payload(payload)
+    else:
+        lines = ["Result", ""]
+        lines.extend(_render_human_lines(payload))
     print("\n".join(lines).rstrip())
 
 

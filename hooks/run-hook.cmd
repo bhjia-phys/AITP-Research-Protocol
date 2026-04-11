@@ -6,6 +6,26 @@ if "%~1"=="" (
 )
 
 set "HOOK_DIR=%~dp0"
+set "PYTHON_HOOK=%HOOK_DIR%%~1.py"
+
+if exist "%PYTHON_HOOK%" (
+    if defined AITP_PYTHON (
+        "%AITP_PYTHON%" "%PYTHON_HOOK%" %2 %3 %4 %5 %6 %7 %8 %9
+        exit /b %ERRORLEVEL%
+    )
+
+    where python >NUL 2>NUL
+    if %ERRORLEVEL% equ 0 (
+        python "%PYTHON_HOOK%" %2 %3 %4 %5 %6 %7 %8 %9
+        exit /b %ERRORLEVEL%
+    )
+
+    where py >NUL 2>NUL
+    if %ERRORLEVEL% equ 0 (
+        py -3 "%PYTHON_HOOK%" %2 %3 %4 %5 %6 %7 %8 %9
+        exit /b %ERRORLEVEL%
+    )
+)
 
 if exist "C:\Program Files\Git\bin\bash.exe" (
     "C:\Program Files\Git\bin\bash.exe" "%HOOK_DIR%%~1" %2 %3 %4 %5 %6 %7 %8 %9

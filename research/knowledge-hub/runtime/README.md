@@ -439,6 +439,17 @@ production `status --json`, production `current-topic --json`, and production
 `research_trajectory.active.json|md`, and `mode_learning.active.json|md` are
 all visible through the real continuity surfaces.
 
+For an isolated bounded first-run topic acceptance pass, run:
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_first_run_topic_acceptance.py --json
+```
+
+That acceptance script uses a temporary kernel root, runs production
+`bootstrap --json`, production `loop --json`, then production `status --json`,
+and checks that the shared `bootstrap -> loop -> status` quickstart path keeps
+the topic shell, loop state, and runtime protocol coherent.
+
 For an isolated bounded quick-exploration acceptance pass, run:
 
 ```bash
