@@ -1,13 +1,27 @@
-# Roadmap
+# Roadmap: v1.64 L1 Method Specificity Surface
 
-## Completed Milestones
+## Result
 
-- ✅ `v1.36` `L0 L1 Source Intelligence And Physicist-Grade Intake` — Phases `42-45` (shipped `2026-04-10`) — see `.planning/milestones/v1.36-ROADMAP.md`
+`v1.64` is complete.
 
-## Current Milestone
+## Phases
 
-- none
+- [x] **Phase 124: Method Specificity Contract**
+- [x] **Phase 125: Method Specificity Runtime And Acceptance Surface**
+- [x] **Phase 126: Closure And Regression Audit**
+
+## Outcome
+
+`v1.64` now closes the first missing production slice in backlog `999.27`
+without reopening already-shipped assumption, reading-depth, or basic
+contradiction surfaces.
+
+Production outcome:
+
+- bounded `method_specificity_rows` in `l1_source_intake`
+- runtime/topic-shell/status exposure for source-backed method specificity
+- one isolated acceptance path through real `status --json`
 
 ## Next Step
 
-- define the next bottleneck and run `$gsd-new-milestone`
+Select the next milestone from backlog and archived review findings.

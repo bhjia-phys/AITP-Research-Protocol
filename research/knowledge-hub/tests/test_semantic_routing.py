@@ -38,4 +38,4 @@ def test_canonical_lane_prefers_specific_research_mode_over_template() -> None:
 
 
 def test_canonical_validation_mode_prefers_specific_research_mode_over_template() -> None:
-    assert canonical_validation_mode("formal_theory", "theory_synthesis") == "hybrid"
+    assert canonical_validation_mode("formal_theory", "theory_synthesis") == "analytical"

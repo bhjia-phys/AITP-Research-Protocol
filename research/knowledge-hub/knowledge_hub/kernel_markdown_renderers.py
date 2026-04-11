@@ -46,6 +46,17 @@ def _append_l1_source_intake_markdown(lines: list[str], payload: dict[str, Any])
             )
         else:
             lines.append(f"- {row}")
+    lines.extend(["", "## Method specificity", ""])
+    for row in l1_source_intake.get("method_specificity_rows") or ["(none)"]:
+        if isinstance(row, dict):
+            lines.append(
+                f"- `{row.get('source_id') or '(missing)'}` [{row.get('reading_depth') or 'skim'}]: "
+                f"`{row.get('method_family') or '(missing)'}` / `{row.get('specificity_tier') or '(missing)'}`"
+            )
+            if row.get("evidence_excerpt"):
+                lines.append(f"  evidence: {row.get('evidence_excerpt')}")
+        else:
+            lines.append(f"- {row}")
     lines.extend(["", "## Notation rows", ""])
     for row in l1_source_intake.get("notation_rows") or ["(none)"]:
         if isinstance(row, dict):
@@ -661,6 +672,15 @@ def render_current_topic_note(payload: dict[str, Any]) -> str:
             f"- Runtime root: `{payload.get('runtime_root') or '(missing)'}`",
             f"- Human request: {payload.get('human_request') or '(missing)'}",
             f"- Summary: {payload.get('summary') or '(missing)'}",
+            f"- Collaborator profile status: `{payload.get('collaborator_profile_status') or '(missing)'}`",
+            f"- Collaborator profile note: `{payload.get('collaborator_profile_note_path') or '(none)'}`",
+            f"- Collaborator profile summary: {payload.get('collaborator_profile_summary') or '(none)'}",
+            f"- Research trajectory status: `{payload.get('research_trajectory_status') or '(missing)'}`",
+            f"- Research trajectory note: `{payload.get('research_trajectory_note_path') or '(none)'}`",
+            f"- Research trajectory summary: {payload.get('research_trajectory_summary') or '(none)'}",
+            f"- Mode learning status: `{payload.get('mode_learning_status') or '(missing)'}`",
+            f"- Mode learning note: `{payload.get('mode_learning_note_path') or '(none)'}`",
+            f"- Mode learning summary: {payload.get('mode_learning_summary') or '(none)'}",
             "",
             "This is the workspace-facing memory used to resolve natural-language requests such as `继续这个 topic` before falling back to the latest topic index.",
             "",

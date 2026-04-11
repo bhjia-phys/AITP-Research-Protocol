@@ -16,6 +16,9 @@ python -m pip install -e research/knowledge-hub
 aitp doctor
 ```
 
+The runtime requirements in `research/knowledge-hub/requirements.txt` now use
+bounded version ranges rather than fully open-ended dependency specifiers.
+
 If this machine previously used an older workspace-backed editable install,
 first converge the local install:
 
@@ -71,6 +74,18 @@ OpenCode should now:
 Use `aitp doctor --json` to verify whether OpenCode is ready through the
 preferred `opencode.json` plugin entry or only through a partial/stale
 workspace compatibility surface.
+The same JSON report now also exposes `control_plane_contracts` and
+`control_plane_surfaces` so OpenCode-side operators can find the unified
+architecture docs plus the runtime audit/status commands that inspect live
+topics.
+
+Useful follow-up commands once a topic exists:
+
+```bash
+aitp capability-audit --topic-slug <topic_slug>
+aitp paired-backend-audit --topic-slug <topic_slug>
+aitp h-plane-audit --topic-slug <topic_slug>
+```
 
 If you are migrating from an older AITP setup, remove legacy `/aitp*` command
 bundles from your OpenCode workspace so the plugin-first path is the only

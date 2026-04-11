@@ -19,6 +19,8 @@ class ValidationReviewService:
     def review_artifact_status(self, artifact_kind: str, payload: dict[str, Any]) -> str:
         if artifact_kind == "coverage_ledger":
             return str(payload.get("coverage_status") or payload.get("status") or "unknown")
+        if artifact_kind == "analytical_review":
+            return str(payload.get("overall_status") or payload.get("status") or "unknown")
         if artifact_kind == "formal_theory_review":
             return str(payload.get("overall_status") or payload.get("status") or "unknown")
         if artifact_kind == "merge_report":
@@ -44,6 +46,7 @@ class ValidationReviewService:
                 "coverage_ledger",
                 "agent_consensus",
                 "regression_gate",
+                "analytical_review",
                 "faithfulness_review",
                 "provenance_review",
                 "prerequisite_closure_review",
@@ -95,8 +98,13 @@ class ValidationReviewService:
             [str(row.get("candidate_id") or "") for row in candidate_rows if str(row.get("candidate_id") or "").strip()]
         )
         artifact_kinds = {str(row.get("artifact_kind") or "") for row in artifact_rows}
-        if "formal_theory_review" in artifact_kinds:
+        validation_mode = str(validation_contract.get("validation_mode") or "")
+        if validation_mode == "analytical" and "analytical_review" in artifact_kinds:
+            primary_review_kind = "analytical_review"
+        elif "formal_theory_review" in artifact_kinds:
             primary_review_kind = "formal_theory_review"
+        elif "analytical_review" in artifact_kinds:
+            primary_review_kind = "analytical_review"
         elif artifact_kinds & {"regression_gate", "coverage_ledger", "agent_consensus"}:
             primary_review_kind = "promotion_readiness"
         else:

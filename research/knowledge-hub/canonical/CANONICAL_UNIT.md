@@ -108,6 +108,7 @@ The existence of `draft` or `candidate` in Layer 2 should be exceptional, not th
 Default storage projection:
 - `atomic_note` -> `canonical/atomic-notes/`
 - `concept` -> `canonical/concepts/`
+- `physical_picture` -> `canonical/physical-pictures/`
 - `definition_card` -> backend-defined definitions storage
 - `notation_card` -> backend-defined notation storage
 - `equation_card` -> backend-defined equations storage

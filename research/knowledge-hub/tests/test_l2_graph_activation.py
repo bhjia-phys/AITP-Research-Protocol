@@ -47,9 +47,13 @@ class L2GraphActivationTests(unittest.TestCase):
         self.assertTrue(index_rows)
         self.assertTrue(edge_rows)
         self.assertTrue(
+            (self.kernel_root / "canonical" / "physical-pictures" / "physical_picture--tfim-weak-coupling-benchmark-intuition.json").exists()
+        )
+        self.assertTrue(
             (self.kernel_root / "canonical" / "topic-skill-projections" / "topic_skill_projection--tfim-benchmark-first-route.json").exists()
         )
         self.assertIn("topic_skill_projection", {row["unit_type"] for row in index_rows})
+        self.assertIn("physical_picture", {row["unit_type"] for row in index_rows})
         self.assertIn("uses_method", {row["relation"] for row in edge_rows})
 
     def test_profile_guided_consultation_returns_seeded_hits_and_neighbors(self) -> None:
@@ -72,8 +76,32 @@ class L2GraphActivationTests(unittest.TestCase):
         self.assertIn("method:tfim-exact-diagonalization-helper", ids)
         self.assertIn("workflow:tfim-benchmark-workflow", expanded_ids | ids)
         self.assertIn("topic_skill_projection:tfim-benchmark-first-route", expanded_ids | ids)
+        self.assertIn("physical_picture:tfim-weak-coupling-benchmark-intuition", expanded_ids | ids)
         self.assertIn("warning_note:tfim-dense-ed-finite-size-limit", expanded_ids | ids)
         self.assertIn("uses_method", payload["expanded_edge_types"])
+        self.assertGreaterEqual(payload["traversal_summary"]["max_depth_reached"], 1)
+
+    def test_l1_consultation_exposes_bounded_multi_hop_traversal_paths(self) -> None:
+        seed_l2_demo_direction(
+            self.kernel_root,
+            direction="tfim-benchmark-first",
+            updated_by="test-suite",
+        )
+
+        payload = consult_canonical_l2(
+            self.kernel_root,
+            query_text="Benchmark-first validation",
+            retrieval_profile="l1_provisional_understanding",
+            max_primary_hits=1,
+        )
+
+        expanded_ids = {row["id"] for row in payload["expanded_hits"]}
+        paths_by_target = {row["target_id"]: row for row in payload["traversal_paths"]}
+        warning_path = paths_by_target["warning_note:tfim-dense-ed-finite-size-limit"]
+        self.assertIn("warning_note:tfim-dense-ed-finite-size-limit", expanded_ids)
+        self.assertEqual(warning_path["path_depth"], 2)
+        self.assertEqual(warning_path["path_relations"], ["supports", "warned_by"])
+        self.assertEqual(payload["traversal_summary"]["max_depth_reached"], 2)
 
     def test_staging_entry_is_recorded_and_can_be_optionally_retrieved(self) -> None:
         seed_l2_demo_direction(

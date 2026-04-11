@@ -56,6 +56,106 @@
         "type": "string"
       }
     },
+    "traversal_paths": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "target_id",
+          "path_depth",
+          "path",
+          "path_relations",
+          "path_node_ids"
+        ],
+        "properties": {
+          "target_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path_depth": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "path": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "from_id",
+                "relation",
+                "to_id"
+              ],
+              "properties": {
+                "from_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "relation": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "to_id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "path_relations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "path_node_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "retrieval_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_traversal_depth",
+        "max_expanded_hits",
+        "expanded_hit_count",
+        "max_depth_reached",
+        "edge_types_used"
+      ],
+      "properties": {
+        "max_traversal_depth": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_expanded_hits": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "expanded_hit_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "max_depth_reached": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "edge_types_used": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
     "result_summary": {
       "type": "string",
       "minLength": 1

@@ -170,6 +170,7 @@
         "enum": [
           "atomic_note",
           "concept",
+          "physical_picture",
           "definition_card",
           "notation_card",
           "equation_card",

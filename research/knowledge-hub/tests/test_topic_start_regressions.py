@@ -309,6 +309,8 @@ class TopicStartRegressionTests(unittest.TestCase):
         self.assertIn("weak coupling", json.dumps(l1_source_intake["regime_rows"]))
         self.assertIn("zero temperature", json.dumps(l1_source_intake["regime_rows"]))
         self.assertEqual(l1_source_intake["reading_depth_rows"][0]["reading_depth"], "full_read")
+        self.assertEqual(l1_source_intake["method_specificity_rows"][0]["method_family"], "formal_derivation")
+        self.assertEqual(l1_source_intake["method_specificity_rows"][0]["specificity_tier"], "high")
 
     def test_source_backed_topic_start_surfaces_contradiction_and_notation_tension(self) -> None:
         topic_slug = "demo-topic"
@@ -369,11 +371,13 @@ class TopicStartRegressionTests(unittest.TestCase):
         l1_source_intake = payload["research_question_contract"]["l1_source_intake"]
         self.assertTrue(l1_source_intake["contradiction_candidates"])
         self.assertTrue(l1_source_intake["notation_tension_candidates"])
+        self.assertTrue(l1_source_intake["method_specificity_rows"])
         self.assertTrue(any(row["detail"] == "strong coupling vs weak coupling" for row in l1_source_intake["contradiction_candidates"]))
         self.assertTrue(any(row["existing_symbol"] == "H" and row["incoming_symbol"] == "K" for row in l1_source_intake["notation_tension_candidates"]))
         note_text = Path(payload["research_question_contract_note_path"]).read_text(encoding="utf-8")
         self.assertIn("## Contradiction candidates", note_text)
         self.assertIn("## Notation-alignment tension", note_text)
+        self.assertIn("## Method specificity", note_text)
 
 
 if __name__ == "__main__":

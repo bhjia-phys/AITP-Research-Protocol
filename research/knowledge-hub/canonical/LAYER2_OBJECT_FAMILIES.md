@@ -417,6 +417,25 @@ Do not use for:
 - run-local TODOs,
 - unresolved blockers that still need investigation.
 
+### 23. `physical_picture`
+
+Use for:
+- stable physics intuition that is worth reusing,
+- heuristic pictures that clarify why a route or object matters,
+- bounded informal models that are more than a broad concept note but less
+  than a theorem or derivation object.
+
+`payload` should usually include:
+- `picture`
+- `intuition_scope`
+- `supports_units`
+- `known_limits`
+
+Do not use for:
+- vague inspiration notes with no bounded scope,
+- theorem statements or proof fragments,
+- runtime steering or collaborator preference notes.
+
 ## Family-selection rule
 
 Prefer the narrowest type that matches the object's real reusable role.

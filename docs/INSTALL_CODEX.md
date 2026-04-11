@@ -17,6 +17,9 @@ python -m pip install -e research/knowledge-hub
 aitp doctor
 ```
 
+The runtime requirements in `research/knowledge-hub/requirements.txt` now use
+bounded version ranges rather than fully open-ended dependency specifiers.
+
 If this machine previously used an older workspace-backed editable install,
 first converge the local install:
 
@@ -88,6 +91,17 @@ aitp doctor --json
 ```
 
 That report should show Codex as the current baseline runtime.
+It should also expose `control_plane_contracts` and
+`control_plane_surfaces`, which point at the unified architecture docs and the
+runtime audit/status commands for live topics.
+
+Useful follow-up commands once a topic exists:
+
+```bash
+aitp capability-audit --topic-slug <topic_slug>
+aitp paired-backend-audit --topic-slug <topic_slug>
+aitp h-plane-audit --topic-slug <topic_slug>
+```
 
 ## Manual fallback
 

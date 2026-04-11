@@ -27,6 +27,7 @@
       "type": "string",
       "enum": [
         "concept",
+        "physical_picture",
         "definition_card",
         "notation_card",
         "equation_card",

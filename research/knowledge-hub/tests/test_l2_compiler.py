@@ -17,7 +17,7 @@ def _bootstrap_path() -> None:
 
 _bootstrap_path()
 
-from knowledge_hub.l2_compiler import materialize_workspace_memory_map
+from knowledge_hub.l2_compiler import materialize_workspace_graph_report, materialize_workspace_memory_map
 
 
 class L2CompilerTests(unittest.TestCase):
@@ -158,3 +158,41 @@ class L2CompilerTests(unittest.TestCase):
         self.assertIn("## Reuse Families", markdown)
         self.assertIn("workflow:gw-check", markdown)
         self.assertIn("topic_skill_projection:demo-route", markdown)
+
+    def test_materialize_workspace_graph_report_writes_navigation_pages(self) -> None:
+        self._write_unit("concepts", "concept:green-function", "concept", "Green function", "Core concept.")
+        self._write_unit("workflows", "workflow:gw-check", "workflow", "GW check", "Reusable workflow.")
+        self._write_unit("methods", "method:rpa-fit", "method", "RPA fit", "Reusable method.")
+        self._write_unit("warning-notes", "warning_note:scope-trap", "warning_note", "Scope trap", "Portable warning.")
+        (self.canonical_root / "edges.jsonl").write_text(
+            "\n".join(
+                [
+                    json.dumps({"source": "workflow:gw-check", "relation": "uses_method", "target": "method:rpa-fit"}),
+                    json.dumps({"source": "workflow:gw-check", "relation": "warned_by", "target": "warning_note:scope-trap"}),
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        result = materialize_workspace_graph_report(self.kernel_root)
+        payload = result["payload"]
+
+        self.assertTrue(Path(result["json_path"]).exists())
+        self.assertTrue(Path(result["markdown_path"]).exists())
+        self.assertTrue(Path(result["navigation_index_path"]).exists())
+        self.assertGreaterEqual(result["navigation_page_count"], 4)
+        self.assertEqual(payload["hub_units"][0]["unit_id"], "workflow:gw-check")
+        self.assertEqual(payload["hub_units"][0]["degree"], 2)
+        self.assertEqual(payload["summary"]["connected_unit_count"], 3)
+        self.assertEqual(payload["summary"]["isolated_unit_count"], 1)
+
+        navigation_index = Path(result["navigation_index_path"]).read_text(encoding="utf-8")
+        self.assertIn("[[workflow--gw-check|GW check]]", navigation_index)
+
+        workflow_page = Path(result["navigation_root"]) / "workflow--gw-check.md"
+        self.assertTrue(workflow_page.exists())
+        workflow_markdown = workflow_page.read_text(encoding="utf-8")
+        self.assertIn("## Outgoing Relations", workflow_markdown)
+        self.assertIn("[[method--rpa-fit|RPA fit]]", workflow_markdown)
+        self.assertIn("[[warning_note--scope-trap|Scope trap]]", workflow_markdown)

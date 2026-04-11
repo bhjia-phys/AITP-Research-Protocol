@@ -8,6 +8,7 @@ from typing import Any
 from .aitp_service import AITPService
 from .cli_compat_handler import dispatch_compat_command, emit_payload, register_compat_commands
 from .cli_frontdoor_handler import dispatch_frontdoor_command, register_frontdoor_commands
+from .cli_review_handler import dispatch_review_command, register_review_commands
 from .decision_point_handler import (
     emit_decision_point,
     get_all_decision_points,
@@ -15,9 +16,11 @@ from .decision_point_handler import (
     resolve_decision_point,
 )
 from .decision_trace_handler import record_decision_trace
-from .l2_staging import stage_provisional_l2_entry
 from .session_chronicle_handler import finalize_chronicle, get_latest_chronicle, start_chronicle
 from .topic_replay import materialize_topic_replay_bundle
+from .cli_l2_graph_handler import dispatch_l2_graph_command, register_l2_graph_commands
+from .cli_l2_compiler_handler import dispatch_l2_compiler_command, register_l2_compiler_commands
+from .cli_source_catalog_handler import dispatch_source_catalog_command, register_source_catalog_commands
 
 
 def _emit(payload: dict[str, Any], as_json: bool) -> None:
@@ -207,68 +210,29 @@ def build_parser() -> argparse.ArgumentParser:
     capability_audit.add_argument("--updated-by", default="aitp-cli")
     capability_audit.add_argument("--json", action="store_true")
 
-    coverage_audit = subparsers.add_parser(
-        "coverage-audit",
-        help="Record theory coverage, notation, derivation, and consensus artifacts for a candidate",
+    paired_backend_audit = subparsers.add_parser(
+        "paired-backend-audit",
+        help="Audit paired-backend alignment, drift semantics, and backend debt state",
     )
-    coverage_audit.add_argument("--topic-slug", required=True)
-    coverage_audit.add_argument("--candidate-id", required=True)
-    coverage_audit.add_argument("--run-id")
-    coverage_audit.add_argument("--updated-by", default="aitp-cli")
-    coverage_audit.add_argument("--source-section", action="append", default=[])
-    coverage_audit.add_argument("--covered-section", action="append", default=[])
-    coverage_audit.add_argument("--equation-label", action="append", default=[])
-    coverage_audit.add_argument("--notation-binding", action="append", default=[], type=_parse_notation_binding)
-    coverage_audit.add_argument("--derivation-node", action="append", default=[])
-    coverage_audit.add_argument("--agent-vote", action="append", default=[], type=_parse_agent_vote)
-    coverage_audit.add_argument("--consensus-status", default="unanimous")
-    coverage_audit.add_argument("--critical-unit-recall", type=float, default=1.0)
-    coverage_audit.add_argument("--missing-anchor-count", type=int, default=0)
-    coverage_audit.add_argument("--skeptic-major-gap-count", type=int, default=0)
-    coverage_audit.add_argument("--supporting-regression-question-id", action="append", default=[])
-    coverage_audit.add_argument("--supporting-oracle-id", action="append", default=[])
-    coverage_audit.add_argument("--supporting-regression-run-id", action="append", default=[])
-    coverage_audit.add_argument("--promotion-blocker", action="append", default=[])
-    coverage_audit.add_argument("--followup-gap-id", action="append", default=[])
-    coverage_audit.add_argument("--split-required", action="store_true")
-    coverage_audit.add_argument("--cited-recovery-required", action="store_true")
-    coverage_audit.add_argument("--topic-completion-status")
-    coverage_audit.add_argument("--notes")
-    coverage_audit.add_argument("--json", action="store_true")
+    paired_backend_audit.add_argument("--topic-slug", required=True)
+    paired_backend_audit.add_argument("--backend-id", default="backend:theoretical-physics-knowledge-network")
+    paired_backend_audit.add_argument("--updated-by", default="aitp-cli")
+    paired_backend_audit.add_argument("--json", action="store_true")
 
-    formal_theory_audit = subparsers.add_parser(
-        "formal-theory-audit",
-        help="Record durable faithfulness, comparator, provenance, and prerequisite-closure audits for a candidate",
+    h_plane_audit = subparsers.add_parser(
+        "h-plane-audit",
+        help="Audit unified H-plane steering, checkpoint, registry, and approval state",
     )
-    formal_theory_audit.add_argument("--topic-slug", required=True)
-    formal_theory_audit.add_argument("--candidate-id", required=True)
-    formal_theory_audit.add_argument("--run-id")
-    formal_theory_audit.add_argument("--updated-by", default="aitp-cli")
-    formal_theory_audit.add_argument("--formal-theory-role", required=True)
-    formal_theory_audit.add_argument("--statement-graph-role", required=True)
-    formal_theory_audit.add_argument("--definition-trust-tier")
-    formal_theory_audit.add_argument("--target-statement-id")
-    formal_theory_audit.add_argument("--statement-graph-parent", action="append", default=[])
-    formal_theory_audit.add_argument("--statement-graph-child", action="append", default=[])
-    formal_theory_audit.add_argument("--informal-statement")
-    formal_theory_audit.add_argument("--formal-target")
-    formal_theory_audit.add_argument("--faithfulness-status", default="pending")
-    formal_theory_audit.add_argument("--faithfulness-strategy")
-    formal_theory_audit.add_argument("--faithfulness-notes")
-    formal_theory_audit.add_argument("--comparator-audit-status", default="pending")
-    formal_theory_audit.add_argument("--comparator-risk", action="append", default=[])
-    formal_theory_audit.add_argument("--nearby-variant", action="append", default=[], type=_parse_nearby_variant)
-    formal_theory_audit.add_argument("--comparator-notes")
-    formal_theory_audit.add_argument("--provenance-kind", default="generated_from_scratch")
-    formal_theory_audit.add_argument("--attribution-requirement", action="append", default=[])
-    formal_theory_audit.add_argument("--provenance-source", action="append", default=[])
-    formal_theory_audit.add_argument("--provenance-notes")
-    formal_theory_audit.add_argument("--prerequisite-closure-status", default="pending")
-    formal_theory_audit.add_argument("--lean-prerequisite-id", action="append", default=[])
-    formal_theory_audit.add_argument("--supporting-obligation-id", action="append", default=[])
-    formal_theory_audit.add_argument("--formalization-blocker", action="append", default=[])
-    formal_theory_audit.add_argument("--prerequisite-notes")
-    formal_theory_audit.add_argument("--json", action="store_true")
+    h_plane_audit.add_argument("--topic-slug", required=True)
+    h_plane_audit.add_argument("--updated-by", default="aitp-cli")
+    h_plane_audit.add_argument("--json", action="store_true")
+
+    register_review_commands(
+        subparsers,
+        parse_notation_binding=_parse_notation_binding,
+        parse_agent_vote=_parse_agent_vote,
+        parse_nearby_variant=_parse_nearby_variant,
+    )
 
     loop = subparsers.add_parser("loop", help="Run the safe AITP auto-continue loop")
     loop.add_argument("--topic")
@@ -304,6 +268,14 @@ def build_parser() -> argparse.ArgumentParser:
     status.add_argument("--updated-by", default="aitp-cli")
     status.add_argument("--json", action="store_true")
 
+    layer_graph = subparsers.add_parser(
+        "layer-graph",
+        help="Materialize and inspect the iterative topic layer graph for the current topic",
+    )
+    layer_graph.add_argument("--topic-slug", required=True)
+    layer_graph.add_argument("--updated-by", default="aitp-cli")
+    layer_graph.add_argument("--json", action="store_true")
+
     next_cmd = subparsers.add_parser("next", help="Show the next bounded action and mandatory read set")
     next_cmd.add_argument("--topic-slug", required=True)
     next_cmd.add_argument("--updated-by", default="aitp-cli")
@@ -325,7 +297,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     verify = subparsers.add_parser("verify", help="Prepare a validation contract for a bounded verification mode")
     verify.add_argument("--topic-slug", required=True)
-    verify.add_argument("--mode", choices=["proof", "comparison", "numeric", "topic-completion"], required=True)
+    verify.add_argument("--mode", choices=["proof", "comparison", "numeric", "analytical", "topic-completion"], required=True)
     verify.add_argument("--updated-by", default="aitp-cli")
     verify.add_argument("--json", action="store_true")
 
@@ -402,15 +374,8 @@ def build_parser() -> argparse.ArgumentParser:
     replay_topic.add_argument("--topic-slug", required=True)
     replay_topic.add_argument("--json", action="store_true")
 
-    stage_l2 = subparsers.add_parser("stage-l2-provisional", help="Write provisional L2-adjacent output into canonical staging")
-    stage_l2.add_argument("--topic-slug", required=True)
-    stage_l2.add_argument("--entry-kind", required=True)
-    stage_l2.add_argument("--title", required=True)
-    stage_l2.add_argument("--summary", required=True)
-    stage_l2.add_argument("--source-artifact-path", action="append", default=[])
-    stage_l2.add_argument("--notes")
-    stage_l2.add_argument("--updated-by", default="aitp-cli")
-    stage_l2.add_argument("--json", action="store_true")
+    register_l2_graph_commands(subparsers)
+    register_source_catalog_commands(subparsers)
 
     focus_topic = subparsers.add_parser("focus-topic", help="Move registry focus to a specific topic")
     focus_topic.add_argument("--topic-slug", required=True)
@@ -450,6 +415,14 @@ def build_parser() -> argparse.ArgumentParser:
     clear_topic_dependencies.add_argument("--updated-by", default="aitp-cli")
     clear_topic_dependencies.add_argument("--human-request")
     clear_topic_dependencies.add_argument("--json", action="store_true")
+
+    prune_compat_surfaces = subparsers.add_parser(
+        "prune-compat-surfaces",
+        help="Remove compatibility-only runtime surfaces once primary surfaces exist",
+    )
+    prune_compat_surfaces.add_argument("--topic-slug", required=True)
+    prune_compat_surfaces.add_argument("--updated-by", default="aitp-cli")
+    prune_compat_surfaces.add_argument("--json", action="store_true")
 
     emit_decision = subparsers.add_parser("emit-decision", help="Emit a durable Phase 6 decision point")
     emit_decision.add_argument("--topic-slug", required=True)
@@ -579,6 +552,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     register_compat_commands(subparsers)
     register_frontdoor_commands(subparsers)
+    register_l2_compiler_commands(subparsers)
 
     return parser
 
@@ -870,67 +844,29 @@ def main() -> int:
         _emit(payload, args.json)
         return 0 if payload.get("overall_status") == "ready" else 1
 
-    if args.command == "coverage-audit":
-        payload = service.audit_theory_coverage(
+    if args.command == "paired-backend-audit":
+        payload = service.paired_backend_audit(
             topic_slug=args.topic_slug,
-            candidate_id=args.candidate_id,
-            run_id=args.run_id,
+            backend_id=args.backend_id,
             updated_by=args.updated_by,
-            source_sections=args.source_section,
-            covered_sections=args.covered_section,
-            equation_labels=args.equation_label,
-            notation_bindings=args.notation_binding,
-            derivation_nodes=args.derivation_node,
-            agent_votes=args.agent_vote,
-            consensus_status=args.consensus_status,
-            critical_unit_recall=args.critical_unit_recall,
-            missing_anchor_count=args.missing_anchor_count,
-            skeptic_major_gap_count=args.skeptic_major_gap_count,
-            supporting_regression_question_ids=args.supporting_regression_question_id,
-            supporting_oracle_ids=args.supporting_oracle_id,
-            supporting_regression_run_ids=args.supporting_regression_run_id,
-            promotion_blockers=args.promotion_blocker,
-            split_required=args.split_required,
-            cited_recovery_required=args.cited_recovery_required,
-            followup_gap_ids=args.followup_gap_id,
-            topic_completion_status=args.topic_completion_status,
-            notes=args.notes,
         )
         _emit(payload, args.json)
-        return 0 if payload.get("coverage_status") == "pass" else 1
+        return 0
 
-    if args.command == "formal-theory-audit":
-        payload = service.audit_formal_theory(
+    if args.command == "h-plane-audit":
+        payload = service.h_plane_audit(
             topic_slug=args.topic_slug,
-            candidate_id=args.candidate_id,
-            run_id=args.run_id,
             updated_by=args.updated_by,
-            formal_theory_role=args.formal_theory_role,
-            statement_graph_role=args.statement_graph_role,
-            definition_trust_tier=args.definition_trust_tier,
-            target_statement_id=args.target_statement_id,
-            statement_graph_parents=args.statement_graph_parent,
-            statement_graph_children=args.statement_graph_child,
-            informal_statement=args.informal_statement,
-            formal_target=args.formal_target,
-            faithfulness_status=args.faithfulness_status,
-            faithfulness_strategy=args.faithfulness_strategy,
-            faithfulness_notes=args.faithfulness_notes,
-            comparator_audit_status=args.comparator_audit_status,
-            comparator_risks=args.comparator_risk,
-            nearby_variants=args.nearby_variant,
-            comparator_notes=args.comparator_notes,
-            provenance_kind=args.provenance_kind,
-            attribution_requirements=args.attribution_requirement,
-            provenance_sources=args.provenance_source,
-            provenance_notes=args.provenance_notes,
-            prerequisite_closure_status=args.prerequisite_closure_status,
-            lean_prerequisite_ids=args.lean_prerequisite_id,
-            supporting_obligation_ids=args.supporting_obligation_id,
-            formalization_blockers=args.formalization_blocker,
-            prerequisite_notes=args.prerequisite_notes,
         )
         _emit(payload, args.json)
+        return 0
+
+    review_payload = dispatch_review_command(args, service)
+    if review_payload is not None:
+        payload = review_payload
+        _emit(payload, args.json)
+        if args.command == "coverage-audit":
+            return 0 if payload.get("coverage_status") == "pass" else 1
         return 0 if payload.get("overall_status") == "ready" else 1
 
     if args.command == "loop":
@@ -968,6 +904,14 @@ def main() -> int:
 
     if args.command == "status":
         payload = service.topic_status(
+            topic_slug=args.topic_slug,
+            updated_by=args.updated_by,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "layer-graph":
+        payload = service.topic_layer_graph(
             topic_slug=args.topic_slug,
             updated_by=args.updated_by,
         )
@@ -1082,18 +1026,19 @@ def main() -> int:
         _emit(payload, args.json)
         return 0
 
-    if args.command == "stage-l2-provisional":
-        payload = stage_provisional_l2_entry(
-            service.kernel_root,
-            topic_slug=args.topic_slug,
-            entry_kind=args.entry_kind,
-            title=args.title,
-            summary=args.summary,
-            source_artifact_paths=args.source_artifact_path,
-            notes=args.notes,
-            staged_by=args.updated_by,
-        )
-        _emit(payload, args.json)
+    l2_graph_payload = dispatch_l2_graph_command(args, service)
+    if l2_graph_payload is not None:
+        _emit(l2_graph_payload, args.json)
+        return 0
+
+    source_catalog_payload = dispatch_source_catalog_command(args, service)
+    if source_catalog_payload is not None:
+        _emit(source_catalog_payload, args.json)
+        return 0
+
+    l2_compiler_payload = dispatch_l2_compiler_command(args, service)
+    if l2_compiler_payload is not None:
+        _emit(l2_compiler_payload, args.json)
         return 0
 
     if args.command == "focus-topic":
@@ -1149,6 +1094,14 @@ def main() -> int:
             topic_slug=args.topic_slug,
             updated_by=args.updated_by,
             human_request=args.human_request,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "prune-compat-surfaces":
+        payload = service.prune_compat_surfaces(
+            topic_slug=args.topic_slug,
+            updated_by=args.updated_by,
         )
         _emit(payload, args.json)
         return 0

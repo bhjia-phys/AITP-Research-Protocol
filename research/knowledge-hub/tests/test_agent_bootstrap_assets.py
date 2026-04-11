@@ -85,6 +85,25 @@ class AgentBootstrapAssetTests(unittest.TestCase):
         self.assertIn("aitp doctor --json", opencode_install)
         self.assertIn("runtime_convergence_after.front_door_runtimes_converged", migrate_doc)
 
+    def test_control_plane_docs_publish_audit_entrypoints_and_doctor_fields(self) -> None:
+        root_readme = (self.repo_root / "README.md").read_text(encoding="utf-8")
+        kernel_readme = (self.repo_root / "research" / "knowledge-hub" / "README.md").read_text(encoding="utf-8")
+        codex_install = (self.repo_root / "docs" / "INSTALL_CODEX.md").read_text(encoding="utf-8")
+        claude_install = (self.repo_root / "docs" / "INSTALL_CLAUDE_CODE.md").read_text(encoding="utf-8")
+        opencode_install = (self.repo_root / "docs" / "INSTALL_OPENCODE.md").read_text(encoding="utf-8")
+
+        self.assertIn("aitp capability-audit --topic-slug <topic_slug>", root_readme)
+        self.assertIn("aitp paired-backend-audit --topic-slug <topic_slug>", root_readme)
+        self.assertIn("aitp h-plane-audit --topic-slug <topic_slug>", root_readme)
+        self.assertIn("aitp paired-backend-audit --topic-slug <topic_slug>", kernel_readme)
+        self.assertIn("aitp h-plane-audit --topic-slug <topic_slug>", kernel_readme)
+        self.assertIn("control_plane_contracts", codex_install)
+        self.assertIn("control_plane_surfaces", codex_install)
+        self.assertIn("control_plane_contracts", claude_install)
+        self.assertIn("control_plane_surfaces", claude_install)
+        self.assertIn("control_plane_contracts", opencode_install)
+        self.assertIn("control_plane_surfaces", opencode_install)
+
     def test_kernel_boundary_docs_reference_extracted_modules(self) -> None:
         kernel_readme = (self.repo_root / "research" / "knowledge-hub" / "README.md").read_text(encoding="utf-8")
         architecture_doc = (self.repo_root / "docs" / "architecture.md").read_text(encoding="utf-8")
@@ -97,6 +116,9 @@ class AgentBootstrapAssetTests(unittest.TestCase):
         self.assertIn("topic_shell_support.py", kernel_readme)
         self.assertIn("followup_support.py", kernel_readme)
         self.assertIn("cli_frontdoor_handler.py", kernel_readme)
+        self.assertIn("control_plane_support.py", kernel_readme)
+        self.assertIn("paired_backend_support.py", kernel_readme)
+        self.assertIn("h_plane_support.py", kernel_readme)
         self.assertIn("frontdoor_support.py", architecture_doc)
         self.assertIn("agent_install_support.py", architecture_doc)
         self.assertIn("kernel_templates.py", architecture_doc)
@@ -105,6 +127,9 @@ class AgentBootstrapAssetTests(unittest.TestCase):
         self.assertIn("topic_shell_support.py", architecture_doc)
         self.assertIn("followup_support.py", architecture_doc)
         self.assertIn("cli_frontdoor_handler.py", architecture_doc)
+        self.assertIn("control_plane_support.py", architecture_doc)
+        self.assertIn("paired_backend_support.py", architecture_doc)
+        self.assertIn("h_plane_support.py", architecture_doc)
 
     def test_multi_topic_runtime_docs_are_linked_and_present(self) -> None:
         root_readme = (self.repo_root / "README.md").read_text(encoding="utf-8")

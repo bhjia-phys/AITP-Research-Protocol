@@ -145,6 +145,7 @@ scripts\aitp-local.cmd doctor
 
 Then install the platform surface you actually use:
 
+- Start here: [`docs/INSTALL.md`](docs/INSTALL.md)
 - Codex: follow [`./.codex/INSTALL.md`](.codex/INSTALL.md)
 - OpenCode: follow [`./.opencode/INSTALL.md`](.opencode/INSTALL.md)
 - Claude Code: follow [`docs/INSTALL_CLAUDE_CODE.md`](docs/INSTALL_CLAUDE_CODE.md)
@@ -394,6 +395,9 @@ aitp loop --topic-slug <topic_slug> --human-request "<task>" --max-auto-steps 1
 # inspect the shell before continuing
 aitp status --topic-slug <topic_slug>
 aitp next --topic-slug <topic_slug>
+aitp capability-audit --topic-slug <topic_slug>
+aitp paired-backend-audit --topic-slug <topic_slug>
+aitp h-plane-audit --topic-slug <topic_slug>
 
 # run one bounded shell-driven step
 aitp work --topic-slug <topic_slug> --question "<task>" --max-auto-steps 1
@@ -412,6 +416,20 @@ aitp reintegrate-followup --topic-slug <parent_topic_slug> --child-topic-slug <c
 
 # export Lean-ready declaration packets
 aitp lean-bridge --topic-slug <topic_slug> --candidate-id <candidate_id>
+
+# work on bounded L2 MVP memory without bypassing promotion gates
+aitp seed-l2-direction --direction tfim-benchmark-first
+aitp consult-l2 --query-text "TFIM exact diagonalization benchmark workflow" --retrieval-profile l3_candidate_formation
+aitp compile-l2-map
+aitp compile-l2-graph-report
+aitp audit-l2-hygiene
+
+# inspect cross-topic Layer 0 source reuse
+aitp compile-source-catalog
+aitp trace-source-citations --canonical-source-id source_identity:doi:10-1000-shared-paper
+aitp compile-source-family --source-type paper
+aitp export-source-bibtex --canonical-source-id source_identity:doi:10-1000-shared-paper --include-neighbors
+aitp import-bibtex-sources --topic-slug <topic_slug> --bibtex-path <path-to-bib-file>
 
 # continue an existing topic without re-bootstrap
 aitp resume --topic-slug <topic_slug> --human-request "<task>"
@@ -568,6 +586,18 @@ That is the machine-local truth surface for:
 - OpenCode preferred-versus-compatibility readiness
 - OpenClaw specialized-lane visibility
 
+It also exposes:
+
+- `control_plane_contracts`
+- `control_plane_surfaces`
+
+Those fields point operators at the control-plane architecture docs plus the
+runtime audit/status entrypoints:
+
+- `aitp capability-audit --topic-slug <topic_slug>`
+- `aitp paired-backend-audit --topic-slug <topic_slug>`
+- `aitp h-plane-audit --topic-slug <topic_slug>`
+
 Current automation target:
 
 - high-automation research collaboration, not fake full autonomy;
@@ -579,6 +609,7 @@ Current automation target:
 
 For platform-specific install steps, see:
 
+- [`docs/INSTALL.md`](docs/INSTALL.md)
 - [`docs/INSTALL_CODEX.md`](docs/INSTALL_CODEX.md)
 - [`docs/INSTALL_OPENCODE.md`](docs/INSTALL_OPENCODE.md)
 - [`docs/INSTALL_CLAUDE_CODE.md`](docs/INSTALL_CLAUDE_CODE.md)
@@ -607,6 +638,19 @@ It is not trusted to:
 - silently redefine scope, observables, or deliverables mid-run;
 - substitute polished prose or missing execution evidence for declared checks;
 - promote material into `L2` without an explicit gate.
+
+## Public Acceptance Checks
+
+The standalone kernel also ships bounded acceptance scripts for real protocol
+surfaces. Two relevant examples for current source and intake maturity are:
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_source_catalog_acceptance.py --json
+python research/knowledge-hub/runtime/scripts/run_l1_method_specificity_acceptance.py --json
+```
+
+The second script is the bounded `L1` intake check for
+`method_specificity_rows` through production `status --json`.
 
 ## Repository Map
 
@@ -666,6 +710,7 @@ Kernel contract surface:
 
 Install guides:
 
+- [`docs/INSTALL.md`](docs/INSTALL.md)
 - [`docs/MIGRATE_LOCAL_INSTALL.md`](docs/MIGRATE_LOCAL_INSTALL.md)
 - [`docs/INSTALL_CODEX.md`](docs/INSTALL_CODEX.md)
 - [`docs/INSTALL_OPENCLAW.md`](docs/INSTALL_OPENCLAW.md)

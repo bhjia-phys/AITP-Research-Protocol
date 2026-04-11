@@ -8,24 +8,31 @@ import tempfile
 import unittest
 from pathlib import Path
 
+PACKAGE_ROOT = Path(__file__).resolve().parents[1]
+if str(PACKAGE_ROOT) not in sys.path:
+    sys.path.insert(0, str(PACKAGE_ROOT))
+
+from tests_support import copy_canonical_tree, copy_kernel_schema_files, copy_runtime_schema_files, make_temp_kernel
+
 
 class AITPCLIE2ETests(unittest.TestCase):
     def setUp(self) -> None:
         self.package_root = Path(__file__).resolve().parents[1]
         self.repo_root = Path(__file__).resolve().parents[3]
-        self._tmpdir = tempfile.TemporaryDirectory()
-        self.kernel_root = Path(self._tmpdir.name) / "kernel"
-        shutil.copytree(self.package_root / "canonical", self.kernel_root / "canonical", dirs_exist_ok=True)
-        shutil.copytree(self.package_root / "schemas", self.kernel_root / "schemas", dirs_exist_ok=True)
-        (self.kernel_root / "runtime" / "schemas").mkdir(parents=True, exist_ok=True)
-        bundle_schema = self.package_root / "runtime" / "schemas" / "progressive-disclosure-runtime-bundle.schema.json"
-        (self.kernel_root / "runtime" / "schemas" / bundle_schema.name).write_text(
-            bundle_schema.read_text(encoding="utf-8"),
-            encoding="utf-8",
+        self.fixture = make_temp_kernel("aitp-cli-e2e-")
+        self.kernel_root = self.fixture.kernel_root
+        copy_canonical_tree(self.package_root, self.kernel_root)
+        for schema_path in (self.package_root / "schemas").iterdir():
+            if schema_path.is_file():
+                copy_kernel_schema_files(self.package_root, self.kernel_root, schema_path.name)
+        copy_runtime_schema_files(
+            self.package_root,
+            self.kernel_root,
+            "progressive-disclosure-runtime-bundle.schema.json",
         )
 
     def tearDown(self) -> None:
-        self._tmpdir.cleanup()
+        self.fixture.cleanup()
 
     def _run_cli(self, *args: str) -> subprocess.CompletedProcess[str]:
         command = [
@@ -45,6 +52,33 @@ class AITPCLIE2ETests(unittest.TestCase):
             text=True,
             check=False,
         )
+
+    def _write_topic_state(
+        self,
+        topic_slug: str,
+        *,
+        updated_at: str,
+        latest_run_id: str,
+        resume_stage: str = "L3",
+    ) -> Path:
+        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": topic_slug,
+                    "updated_at": updated_at,
+                    "latest_run_id": latest_run_id,
+                    "resume_stage": resume_stage,
+                    "summary": f"Summary for {topic_slug}.",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return runtime_root
 
     def test_stage_negative_result_human_output_and_writeback(self) -> None:
         completed = self._run_cli(
@@ -86,6 +120,100 @@ class AITPCLIE2ETests(unittest.TestCase):
             "prefer bounded benchmark-first routes",
             payload["collaborator_memory"]["preferences"],
         )
+
+    def test_record_taste_and_taste_profile_cli_paths(self) -> None:
+        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "run-001",
+                    "resume_stage": "L3",
+                    "research_mode": "formal_derivation",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        recorded = self._run_cli(
+            "record-taste",
+            "--topic-slug",
+            "demo-topic",
+            "--kind",
+            "formalism",
+            "--summary",
+            "Prefer operator-algebra notation first.",
+            "--formalism",
+            "operator_algebra",
+            "--json",
+        )
+        self.assertEqual(recorded.returncode, 0, msg=recorded.stderr)
+        recorded_payload = json.loads(recorded.stdout)
+        self.assertEqual(recorded_payload["research_taste_entry"]["taste_kind"], "formalism")
+        self.assertTrue(Path(recorded_payload["research_taste_entries_path"]).exists())
+
+        profiled = self._run_cli(
+            "taste-profile",
+            "--topic-slug",
+            "demo-topic",
+            "--json",
+        )
+        self.assertEqual(profiled.returncode, 0, msg=profiled.stderr)
+        profile_payload = json.loads(profiled.stdout)
+        self.assertEqual(profile_payload["research_taste"]["status"], "available")
+        self.assertEqual(profile_payload["research_taste"]["formalism_preferences"], ["operator_algebra"])
+        self.assertTrue(Path(profile_payload["research_taste_path"]).exists())
+        self.assertTrue(Path(profile_payload["research_taste_note_path"]).exists())
+
+    def test_record_negative_result_and_scratch_log_cli_paths(self) -> None:
+        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "run-001",
+                    "resume_stage": "L3",
+                    "research_mode": "formal_derivation",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        recorded = self._run_cli(
+            "record-negative-result",
+            "--topic-slug",
+            "demo-topic",
+            "--summary",
+            "The portability extrapolation failed outside the bounded regime.",
+            "--failure-kind",
+            "regime_mismatch",
+            "--json",
+        )
+        self.assertEqual(recorded.returncode, 0, msg=recorded.stderr)
+        recorded_payload = json.loads(recorded.stdout)
+        self.assertEqual(recorded_payload["scratchpad_entry"]["entry_kind"], "negative_result")
+        self.assertTrue(Path(recorded_payload["scratchpad_entries_path"]).exists())
+
+        scratch_log = self._run_cli(
+            "scratch-log",
+            "--topic-slug",
+            "demo-topic",
+            "--json",
+        )
+        self.assertEqual(scratch_log.returncode, 0, msg=scratch_log.stderr)
+        scratch_payload = json.loads(scratch_log.stdout)
+        self.assertEqual(scratch_payload["scratchpad"]["status"], "active")
+        self.assertEqual(scratch_payload["scratchpad"]["negative_result_count"], 1)
+        self.assertTrue(Path(scratch_payload["scratchpad_path"]).exists())
+        self.assertTrue(Path(scratch_payload["scratchpad_note_path"]).exists())
 
     def test_status_json_exposes_source_intelligence(self) -> None:
         runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
@@ -185,6 +313,811 @@ class AITPCLIE2ETests(unittest.TestCase):
         self.assertEqual(payload["source_intelligence"]["canonical_source_ids"][0], "source_identity:doi:10-1000-demo")
         self.assertEqual(payload["source_intelligence"]["cross_topic_match_count"], 1)
         self.assertEqual(payload["source_intelligence"]["source_neighbors"][0]["relation_kind"], "shared_reference")
+        self.assertEqual(payload["source_intelligence"]["fidelity_summary"]["strongest_tier"], "peer_reviewed")
+        self.assertEqual(
+            payload["active_research_contract"]["l1_source_intake"]["method_specificity_rows"][0]["method_family"],
+            "unspecified_method",
+        )
+        self.assertEqual(
+            payload["active_research_contract"]["l1_source_intake"]["method_specificity_rows"][0]["specificity_tier"],
+            "low",
+        )
+
+    def test_status_json_exposes_research_judgment_signals(self) -> None:
+        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "run-001",
+                    "resume_stage": "L3",
+                    "research_mode": "formal_derivation",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Continue the derivation route.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:proof",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:proof",
+                    "status": "pending",
+                    "action_type": "proof_review",
+                    "summary": "Check sign conventions before combining the derivation branches.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        collaborator_memory_path = self.kernel_root / "runtime" / "collaborator_memory.jsonl"
+        collaborator_memory_path.parent.mkdir(parents=True, exist_ok=True)
+        collaborator_memory_path.write_text(
+            "\n".join(
+                [
+                    json.dumps(
+                        {
+                            "memory_id": "collab-stuckness-demo",
+                            "recorded_at": "2026-04-11T10:00:00+08:00",
+                            "memory_kind": "stuckness",
+                            "summary": "The derivation keeps stalling at the sign-convention merge point.",
+                            "topic_slug": "demo-topic",
+                            "run_id": "run-001",
+                            "tags": ["formal-theory"],
+                            "related_topic_slugs": ["demo-topic"],
+                            "updated_by": "human",
+                        },
+                        ensure_ascii=True,
+                    ),
+                    json.dumps(
+                        {
+                            "memory_id": "collab-surprise-demo",
+                            "recorded_at": "2026-04-11T10:05:00+08:00",
+                            "memory_kind": "surprise",
+                            "summary": "The weak-coupling route unexpectedly preserved the target symmetry.",
+                            "topic_slug": "demo-topic",
+                            "run_id": "run-001",
+                            "tags": ["analytical"],
+                            "related_topic_slugs": ["demo-topic"],
+                            "updated_by": "human",
+                        },
+                        ensure_ascii=True,
+                    ),
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        feedback_root = self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001"
+        feedback_root.mkdir(parents=True, exist_ok=True)
+        (feedback_root / "strategy_memory.jsonl").write_text(
+            json.dumps(
+                {
+                    "strategy_id": "strategy:demo-proof",
+                    "timestamp": "2026-04-11T09:00:00+08:00",
+                    "topic_slug": "demo-topic",
+                    "run_id": "run-001",
+                    "strategy_type": "verification_guardrail",
+                    "summary": "Check sign conventions before combining derivation branches.",
+                    "outcome": "helpful",
+                    "confidence": 0.81,
+                    "lane": "formal_theory",
+                    "reuse_conditions": ["combining derivation branches", "sign conventions"],
+                    "do_not_apply_when": [],
+                    "input_context": {},
+                    "evidence_refs": [],
+                },
+                ensure_ascii=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        completed = self._run_cli(
+            "status",
+            "--topic-slug",
+            "demo-topic",
+            "--json",
+        )
+
+        self.assertEqual(completed.returncode, 0, msg=completed.stderr)
+        payload = json.loads(completed.stdout)
+        self.assertEqual(payload["research_judgment"]["status"], "signals_active")
+        self.assertEqual(payload["research_judgment"]["stuckness"]["status"], "active")
+        self.assertEqual(payload["research_judgment"]["surprise"]["status"], "active")
+        self.assertEqual(payload["topic_synopsis"]["runtime_focus"]["momentum_status"], "queued")
+
+    def test_layer_graph_command_uses_real_service_path(self) -> None:
+        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "run-001",
+                    "resume_stage": "L3",
+                    "last_materialized_stage": "L4",
+                    "research_mode": "formal_derivation",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Continue the bounded proof review after the returned result.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:return",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:return",
+                    "status": "pending",
+                    "action_type": "proof_review",
+                    "summary": "Inspect the returned result and continue the bounded proof review.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        completed = self._run_cli(
+            "layer-graph",
+            "--topic-slug",
+            "demo-topic",
+            "--json",
+        )
+
+        self.assertEqual(completed.returncode, 0, msg=completed.stderr)
+        payload = json.loads(completed.stdout)
+        self.assertEqual(payload["layer_graph"]["current_node_id"], "L3-R")
+        self.assertEqual(payload["layer_graph"]["return_law"]["required_return_node"], "L3-R")
+        self.assertTrue(Path(payload["layer_graph_path"]).exists())
+        self.assertTrue(Path(payload["layer_graph_note_path"]).exists())
+
+    def test_analytical_review_cli_writes_artifact_and_becomes_primary_bundle_surface(self) -> None:
+        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "run-001",
+                    "resume_stage": "L3",
+                    "research_mode": "theory_synthesis",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Run an analytical review for the active topic.",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        feedback_root = self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001"
+        feedback_root.mkdir(parents=True, exist_ok=True)
+        (feedback_root / "candidate_ledger.jsonl").write_text(
+            json.dumps(
+                {
+                    "candidate_id": "candidate:demo-candidate",
+                    "candidate_type": "concept",
+                    "title": "Demo Analytical Concept",
+                    "summary": "A bounded concept for analytical-review testing.",
+                    "topic_slug": "demo-topic",
+                    "run_id": "run-001",
+                    "origin_refs": [],
+                    "question": "Does the analytical route stay source-backed?",
+                    "assumptions": ["Weak-coupling regime only."],
+                    "proposed_validation_route": "analytical",
+                    "intended_l2_targets": ["concept:demo-analytical-concept"],
+                    "status": "ready_for_validation",
+                },
+                ensure_ascii=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        source_root = self.kernel_root / "source-layer" / "topics" / "demo-topic"
+        source_root.mkdir(parents=True, exist_ok=True)
+        (source_root / "source_index.jsonl").write_text(
+            json.dumps(
+                {
+                    "source_id": "paper:demo-source",
+                    "source_type": "paper",
+                    "title": "Demo source",
+                    "summary": "Demo summary for analytical review.",
+                },
+                ensure_ascii=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        reviewed = self._run_cli(
+            "analytical-review",
+            "--topic-slug",
+            "demo-topic",
+            "--candidate-id",
+            "candidate:demo-candidate",
+            "--check",
+            "limiting_case=weak-coupling:passed:Matches the known free limit.",
+            "--source-anchor",
+            "paper:demo-source#sec:intro",
+            "--assumption",
+            "assumption:weak-coupling-regime",
+            "--regime-note",
+            "Weak-coupling only.",
+            "--reading-depth",
+            "targeted",
+            "--json",
+        )
+        self.assertEqual(reviewed.returncode, 0, msg=reviewed.stderr)
+        reviewed_payload = json.loads(reviewed.stdout)
+        self.assertEqual(reviewed_payload["overall_status"], "ready")
+        self.assertTrue(Path(reviewed_payload["paths"]["analytical_review"]).exists())
+
+        verified = self._run_cli(
+            "verify",
+            "--topic-slug",
+            "demo-topic",
+            "--mode",
+            "analytical",
+            "--json",
+        )
+        self.assertEqual(verified.returncode, 0, msg=verified.stderr)
+        bundle_path = runtime_root / "validation_review_bundle.active.json"
+        self.assertTrue(bundle_path.exists())
+        bundle_payload = json.loads(bundle_path.read_text(encoding="utf-8"))
+        self.assertEqual(bundle_payload["validation_mode"], "analytical")
+        self.assertEqual(bundle_payload["primary_review_kind"], "analytical_review")
+
+    def test_seed_l2_direction_and_consult_l2_cli_json_path(self) -> None:
+        seeded = self._run_cli(
+            "seed-l2-direction",
+            "--direction",
+            "tfim-benchmark-first",
+            "--json",
+        )
+        self.assertEqual(seeded.returncode, 0, msg=seeded.stderr)
+        seed_payload = json.loads(seeded.stdout)
+        self.assertEqual(seed_payload["direction"], "tfim-benchmark-first")
+
+        consulted = self._run_cli(
+            "consult-l2",
+            "--query-text",
+            "TFIM exact diagonalization benchmark workflow",
+            "--retrieval-profile",
+            "l3_candidate_formation",
+            "--max-primary-hits",
+            "2",
+            "--json",
+        )
+        self.assertEqual(consulted.returncode, 0, msg=consulted.stderr)
+        consult_payload = json.loads(consulted.stdout)
+        primary_ids = {row["id"] for row in consult_payload["primary_hits"]}
+        expanded_ids = {row["id"] for row in consult_payload["expanded_hits"]}
+        self.assertEqual(consult_payload["retrieval_profile"], "l3_candidate_formation")
+        self.assertIn("physical_picture:tfim-weak-coupling-benchmark-intuition", primary_ids | expanded_ids)
+        self.assertIn("traversal_summary", consult_payload)
+        self.assertGreaterEqual(consult_payload["traversal_summary"]["max_depth_reached"], 1)
+
+    def test_consult_l2_can_write_protocol_artifacts_via_cli(self) -> None:
+        seeded = self._run_cli(
+            "seed-l2-direction",
+            "--direction",
+            "tfim-benchmark-first",
+            "--json",
+        )
+        self.assertEqual(seeded.returncode, 0, msg=seeded.stderr)
+
+        consulted = self._run_cli(
+            "consult-l2",
+            "--query-text",
+            "Benchmark-first validation",
+            "--retrieval-profile",
+            "l1_provisional_understanding",
+            "--topic-slug",
+            "demo-topic",
+            "--stage",
+            "L3",
+            "--run-id",
+            "run-001",
+            "--record-consultation",
+            "--json",
+        )
+        self.assertEqual(consulted.returncode, 0, msg=consulted.stderr)
+        consult_payload = json.loads(consulted.stdout)
+        consultation = consult_payload["consultation"]
+        self.assertTrue(Path(consultation["consultation_request_path"]).exists())
+        self.assertTrue(Path(consultation["consultation_result_path"]).exists())
+        self.assertTrue(Path(consultation["consultation_application_path"]).exists())
+        result_payload = json.loads(Path(consultation["consultation_result_path"]).read_text(encoding="utf-8"))
+        self.assertEqual(result_payload["retrieval_summary"]["max_depth_reached"], 2)
+
+    def test_compile_l2_map_and_audit_l2_hygiene_cli_json_path(self) -> None:
+        seeded = self._run_cli(
+            "seed-l2-direction",
+            "--direction",
+            "tfim-benchmark-first",
+            "--json",
+        )
+        self.assertEqual(seeded.returncode, 0, msg=seeded.stderr)
+
+        compiled = self._run_cli(
+            "compile-l2-map",
+            "--json",
+        )
+        self.assertEqual(compiled.returncode, 0, msg=compiled.stderr)
+        compile_payload = json.loads(compiled.stdout)
+        self.assertTrue(Path(compile_payload["json_path"]).exists())
+        self.assertTrue(Path(compile_payload["markdown_path"]).exists())
+        self.assertGreaterEqual(compile_payload["payload"]["summary"]["total_units"], 9)
+
+        hygiene = self._run_cli(
+            "audit-l2-hygiene",
+            "--json",
+        )
+        self.assertEqual(hygiene.returncode, 0, msg=hygiene.stderr)
+        hygiene_payload = json.loads(hygiene.stdout)
+        self.assertTrue(Path(hygiene_payload["json_path"]).exists())
+        self.assertTrue(Path(hygiene_payload["markdown_path"]).exists())
+        self.assertGreaterEqual(hygiene_payload["payload"]["summary"]["total_units"], 9)
+
+    def test_compile_l2_graph_report_cli_json_path(self) -> None:
+        seeded = self._run_cli(
+            "seed-l2-direction",
+            "--direction",
+            "tfim-benchmark-first",
+            "--json",
+        )
+        self.assertEqual(seeded.returncode, 0, msg=seeded.stderr)
+
+        reported = self._run_cli(
+            "compile-l2-graph-report",
+            "--json",
+        )
+        self.assertEqual(reported.returncode, 0, msg=reported.stderr)
+        report_payload = json.loads(reported.stdout)
+        self.assertTrue(Path(report_payload["json_path"]).exists())
+        self.assertTrue(Path(report_payload["markdown_path"]).exists())
+        self.assertTrue(Path(report_payload["navigation_index_path"]).exists())
+        self.assertGreaterEqual(report_payload["navigation_page_count"], 9)
+        self.assertEqual(report_payload["payload"]["hub_units"][0]["unit_id"], "workflow:tfim-benchmark-workflow")
+
+    def test_compile_source_catalog_cli_json_path(self) -> None:
+        topic_a_root = self.kernel_root / "source-layer" / "topics" / "topic-a"
+        topic_b_root = self.kernel_root / "source-layer" / "topics" / "topic-b"
+        topic_a_root.mkdir(parents=True, exist_ok=True)
+        topic_b_root.mkdir(parents=True, exist_ok=True)
+        (topic_a_root / "source_index.jsonl").write_text(
+            json.dumps(
+                {
+                    "source_id": "paper:shared-a",
+                    "source_type": "paper",
+                    "title": "Shared paper",
+                    "summary": "Shared source summary.",
+                    "canonical_source_id": "source_identity:doi:10-1000-shared-paper",
+                    "references": ["doi:10-1000-neighbor-paper"],
+                },
+                ensure_ascii=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (topic_b_root / "source_index.jsonl").write_text(
+            "\n".join(
+                [
+                    json.dumps(
+                        {
+                            "source_id": "paper:shared-b",
+                            "source_type": "paper",
+                            "title": "Shared paper mirror",
+                            "summary": "Same paper in another topic.",
+                            "canonical_source_id": "source_identity:doi:10-1000-shared-paper",
+                            "references": [],
+                        },
+                        ensure_ascii=True,
+                    ),
+                    json.dumps(
+                        {
+                            "source_id": "paper:neighbor",
+                            "source_type": "paper",
+                            "title": "Neighbor paper",
+                            "summary": "Neighbor source summary.",
+                            "canonical_source_id": "source_identity:doi:10-1000-neighbor-paper",
+                            "references": [],
+                        },
+                        ensure_ascii=True,
+                    ),
+                ]
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        completed = self._run_cli(
+            "compile-source-catalog",
+            "--json",
+        )
+        self.assertEqual(completed.returncode, 0, msg=completed.stderr)
+        payload = json.loads(completed.stdout)
+        self.assertTrue(Path(payload["json_path"]).exists())
+        self.assertTrue(Path(payload["markdown_path"]).exists())
+        self.assertEqual(payload["payload"]["summary"]["multi_topic_source_count"], 1)
+        self.assertEqual(payload["payload"]["sources"][0]["canonical_source_id"], "source_identity:doi:10-1000-shared-paper")
+
+    def test_trace_source_citations_and_compile_source_family_cli_json_path(self) -> None:
+        topic_a_root = self.kernel_root / "source-layer" / "topics" / "topic-a"
+        topic_b_root = self.kernel_root / "source-layer" / "topics" / "topic-b"
+        topic_c_root = self.kernel_root / "source-layer" / "topics" / "topic-c"
+        for root in (topic_a_root, topic_b_root, topic_c_root):
+            root.mkdir(parents=True, exist_ok=True)
+        (topic_a_root / "source_index.jsonl").write_text(
+            json.dumps(
+                {
+                    "source_id": "paper:shared-a",
+                    "source_type": "paper",
+                    "title": "Shared paper",
+                    "summary": "Shared source summary.",
+                    "canonical_source_id": "source_identity:doi:10-1000-shared-paper",
+                    "references": ["doi:10-1000-neighbor-paper"],
+                },
+                ensure_ascii=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (topic_b_root / "source_index.jsonl").write_text(
+            json.dumps(
+                {
+                    "source_id": "paper:shared-b",
+                    "source_type": "paper",
+                    "title": "Shared paper mirror",
+                    "summary": "Same paper in another topic.",
+                    "canonical_source_id": "source_identity:doi:10-1000-shared-paper",
+                    "references": [],
+                },
+                ensure_ascii=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (topic_c_root / "source_index.jsonl").write_text(
+            json.dumps(
+                {
+                    "source_id": "paper:neighbor",
+                    "source_type": "paper",
+                    "title": "Neighbor paper",
+                    "summary": "Neighbor source summary.",
+                    "canonical_source_id": "source_identity:doi:10-1000-neighbor-paper",
+                    "references": ["doi:10-1000-shared-paper"],
+                },
+                ensure_ascii=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        traced = self._run_cli(
+            "trace-source-citations",
+            "--canonical-source-id",
+            "source_identity:doi:10-1000-shared-paper",
+            "--json",
+        )
+        self.assertEqual(traced.returncode, 0, msg=traced.stderr)
+        trace_payload = json.loads(traced.stdout)
+        self.assertTrue(Path(trace_payload["json_path"]).exists())
+        self.assertTrue(Path(trace_payload["markdown_path"]).exists())
+        self.assertEqual(trace_payload["payload"]["summary"]["incoming_link_count"], 1)
+
+        family = self._run_cli(
+            "compile-source-family",
+            "--source-type",
+            "paper",
+            "--json",
+        )
+        self.assertEqual(family.returncode, 0, msg=family.stderr)
+        family_payload = json.loads(family.stdout)
+        self.assertTrue(Path(family_payload["json_path"]).exists())
+        self.assertTrue(Path(family_payload["markdown_path"]).exists())
+        self.assertEqual(family_payload["payload"]["summary"]["multi_topic_source_count"], 1)
+
+    def test_export_and_import_source_bibtex_cli_json_path(self) -> None:
+        topic_a_root = self.kernel_root / "source-layer" / "topics" / "topic-a"
+        topic_b_root = self.kernel_root / "source-layer" / "topics" / "topic-b"
+        for root in (topic_a_root, topic_b_root):
+            root.mkdir(parents=True, exist_ok=True)
+        (topic_a_root / "source_index.jsonl").write_text(
+            json.dumps(
+                {
+                    "source_id": "paper:shared-a",
+                    "source_type": "paper",
+                    "title": "Shared paper",
+                    "summary": "Shared source summary.",
+                    "canonical_source_id": "source_identity:doi:10-1000-shared-paper",
+                    "references": ["doi:10-1000-neighbor-paper"],
+                    "provenance": {
+                        "doi": "10.1000/shared-paper",
+                        "authors": ["Ada Lovelace"],
+                        "year": "1937",
+                        "journal": "Journal of Shared Papers",
+                        "abs_url": "https://doi.org/10.1000/shared-paper",
+                    },
+                },
+                ensure_ascii=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (topic_b_root / "source_index.jsonl").write_text(
+            json.dumps(
+                {
+                    "source_id": "paper:neighbor",
+                    "source_type": "paper",
+                    "title": "Neighbor paper",
+                    "summary": "Neighbor source summary.",
+                    "canonical_source_id": "source_identity:doi:10-1000-neighbor-paper",
+                    "references": ["doi:10-1000-shared-paper"],
+                    "provenance": {
+                        "doi": "10.1000/neighbor-paper",
+                        "authors": ["Emmy Noether"],
+                        "year": "1941",
+                        "journal": "Neighbor Letters",
+                        "abs_url": "https://doi.org/10.1000/neighbor-paper",
+                    },
+                },
+                ensure_ascii=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        exported = self._run_cli(
+            "export-source-bibtex",
+            "--canonical-source-id",
+            "source_identity:doi:10-1000-shared-paper",
+            "--include-neighbors",
+            "--json",
+        )
+        self.assertEqual(exported.returncode, 0, msg=exported.stderr)
+        export_payload = json.loads(exported.stdout)
+        self.assertTrue(Path(export_payload["json_path"]).exists())
+        self.assertTrue(Path(export_payload["markdown_path"]).exists())
+        self.assertTrue(Path(export_payload["bibtex_path"]).exists())
+        self.assertEqual(export_payload["payload"]["summary"]["entry_count"], 2)
+
+        bib_path = self.kernel_root / "imports" / "demo-import.bib"
+        bib_path.parent.mkdir(parents=True, exist_ok=True)
+        bib_path.write_text(
+            "\n".join(
+                [
+                    "@article{new-paper,",
+                    "  title = {New imported paper},",
+                    "  author = {Chen Ning Yang and Emmy Noether},",
+                    "  year = {1942},",
+                    "  doi = {10.1000/new-imported-paper},",
+                    "  url = {https://doi.org/10.1000/new-imported-paper},",
+                    "  abstract = {Imported from BibTeX.}",
+                    "}",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        imported = self._run_cli(
+            "import-bibtex-sources",
+            "--topic-slug",
+            "demo-topic",
+            "--bibtex-path",
+            str(bib_path),
+            "--json",
+        )
+        self.assertEqual(imported.returncode, 0, msg=imported.stderr)
+        import_payload = json.loads(imported.stdout)
+        self.assertTrue(Path(import_payload["json_path"]).exists())
+        self.assertTrue(Path(import_payload["markdown_path"]).exists())
+        self.assertTrue(Path(import_payload["source_index_path"]).exists())
+        self.assertEqual(import_payload["payload"]["summary"]["imported_entry_count"], 1)
+
+    def test_topics_and_current_topic_commands_use_real_service_paths(self) -> None:
+        self._write_topic_state(
+            "alpha-topic",
+            updated_at="2026-04-11T10:00:00+08:00",
+            latest_run_id="alpha-run",
+        )
+        self._write_topic_state(
+            "beta-topic",
+            updated_at="2026-04-11T11:00:00+08:00",
+            latest_run_id="beta-run",
+        )
+
+        topics = self._run_cli("topics", "--json")
+        self.assertEqual(topics.returncode, 0, msg=topics.stderr)
+        topics_payload = json.loads(topics.stdout)
+        self.assertEqual(topics_payload["topic_count"], 2)
+        self.assertEqual(
+            {row["topic_slug"] for row in topics_payload["topics"]},
+            {"alpha-topic", "beta-topic"},
+        )
+        self.assertTrue(Path(topics_payload["active_topics_path"]).exists())
+        self.assertTrue(Path(topics_payload["active_topics_note_path"]).exists())
+
+        focused = self._run_cli("focus-topic", "--topic-slug", "beta-topic", "--json")
+        self.assertEqual(focused.returncode, 0, msg=focused.stderr)
+        focused_payload = json.loads(focused.stdout)
+        self.assertEqual(focused_payload["status"], "focused")
+        self.assertEqual(focused_payload["focused_topic_slug"], "beta-topic")
+
+        current = self._run_cli("current-topic", "--json")
+        self.assertEqual(current.returncode, 0, msg=current.stderr)
+        current_payload = json.loads(current.stdout)
+        self.assertEqual(current_payload["current_topic"]["topic_slug"], "beta-topic")
+        self.assertEqual(current_payload["current_topic"]["runtime_root"], "runtime/topics/beta-topic")
+        self.assertTrue((self.kernel_root / "runtime" / "current_topic.json").exists())
+        self.assertTrue((self.kernel_root / "runtime" / "current_topic.md").exists())
+
+    def test_multi_topic_management_commands_use_real_service_paths(self) -> None:
+        self._write_topic_state(
+            "alpha-topic",
+            updated_at="2026-04-11T10:00:00+08:00",
+            latest_run_id="alpha-run",
+        )
+        self._write_topic_state(
+            "beta-topic",
+            updated_at="2026-04-11T11:00:00+08:00",
+            latest_run_id="beta-run",
+        )
+
+        focused = self._run_cli("focus-topic", "--topic-slug", "alpha-topic", "--json")
+        self.assertEqual(focused.returncode, 0, msg=focused.stderr)
+        self.assertEqual(json.loads(focused.stdout)["focused_topic_slug"], "alpha-topic")
+
+        paused = self._run_cli("pause-topic", "--topic-slug", "alpha-topic", "--json")
+        self.assertEqual(paused.returncode, 0, msg=paused.stderr)
+        paused_payload = json.loads(paused.stdout)
+        self.assertEqual(paused_payload["status"], "paused")
+        self.assertEqual(paused_payload["focused_topic_slug"], "beta-topic")
+
+        resumed = self._run_cli("resume-topic", "--topic-slug", "alpha-topic", "--json")
+        self.assertEqual(resumed.returncode, 0, msg=resumed.stderr)
+        resumed_payload = json.loads(resumed.stdout)
+        self.assertEqual(resumed_payload["status"], "ready")
+        self.assertEqual(resumed_payload["focused_topic_slug"], "alpha-topic")
+
+        blocked = self._run_cli(
+            "block-topic",
+            "--topic-slug",
+            "alpha-topic",
+            "--blocked-by",
+            "beta-topic",
+            "--reason",
+            "Need beta first",
+            "--json",
+        )
+        self.assertEqual(blocked.returncode, 0, msg=blocked.stderr)
+        blocked_payload = json.loads(blocked.stdout)
+        self.assertEqual(blocked_payload["status"], "dependency_blocked")
+        self.assertEqual(blocked_payload["blocked_by"], ["beta-topic"])
+        self.assertEqual(blocked_payload["focused_topic_slug"], "beta-topic")
+
+        unblocked = self._run_cli(
+            "unblock-topic",
+            "--topic-slug",
+            "alpha-topic",
+            "--blocked-by",
+            "beta-topic",
+            "--json",
+        )
+        self.assertEqual(unblocked.returncode, 0, msg=unblocked.stderr)
+        unblocked_payload = json.loads(unblocked.stdout)
+        self.assertEqual(unblocked_payload["status"], "dependency_cleared")
+        self.assertEqual(unblocked_payload["blocked_by"], [])
+
+        reblocked = self._run_cli(
+            "block-topic",
+            "--topic-slug",
+            "alpha-topic",
+            "--blocked-by",
+            "beta-topic",
+            "--reason",
+            "Need beta first",
+            "--json",
+        )
+        self.assertEqual(reblocked.returncode, 0, msg=reblocked.stderr)
+
+        cleared = self._run_cli(
+            "clear-topic-dependencies",
+            "--topic-slug",
+            "alpha-topic",
+            "--json",
+        )
+        self.assertEqual(cleared.returncode, 0, msg=cleared.stderr)
+        cleared_payload = json.loads(cleared.stdout)
+        self.assertEqual(cleared_payload["status"], "dependencies_cleared")
+        self.assertEqual(cleared_payload["blocked_by"], [])
+
+    def test_prune_compat_surfaces_command_uses_real_service_path(self) -> None:
+        topic_root = self._write_topic_state(
+            "demo-topic",
+            updated_at="2026-04-11T12:00:00+08:00",
+            latest_run_id="demo-run",
+        )
+        (topic_root / "topic_dashboard.md").write_text("# Dashboard\n", encoding="utf-8")
+        (topic_root / "runtime_protocol.generated.md").write_text("# Runtime protocol\n", encoding="utf-8")
+        (topic_root / "agent_brief.md").write_text("# Brief\n", encoding="utf-8")
+        (topic_root / "operator_console.md").write_text("# Console\n", encoding="utf-8")
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "current_topic.json").write_text(
+            json.dumps({"topic_slug": "demo-topic"}, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "current_topic.md").write_text("# Current topic\n", encoding="utf-8")
+
+        pruned = self._run_cli(
+            "prune-compat-surfaces",
+            "--topic-slug",
+            "demo-topic",
+            "--json",
+        )
+
+        self.assertEqual(pruned.returncode, 0, msg=pruned.stderr)
+        payload = json.loads(pruned.stdout)
+        self.assertEqual(payload["status"], "pruned")
+        self.assertEqual(
+            {row["surface"] for row in payload["removed_surfaces"]},
+            {"agent_brief", "operator_console", "current_topic_note"},
+        )
+        self.assertFalse((topic_root / "agent_brief.md").exists())
+        self.assertFalse((topic_root / "operator_console.md").exists())
+        self.assertFalse((runtime_root / "current_topic.md").exists())
 
 
 if __name__ == "__main__":

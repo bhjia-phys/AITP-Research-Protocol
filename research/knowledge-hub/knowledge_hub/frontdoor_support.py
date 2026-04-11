@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from .runtime_support_matrix import build_runtime_support_matrix
+from .subprocess_error_support import format_subprocess_failure
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -270,6 +271,64 @@ def runtime_convergence_summary(doctor_payload: dict[str, Any]) -> dict[str, Any
     }
 
 
+def control_plane_contracts(service: Any) -> dict[str, dict[str, str]]:
+    paths = {
+        "unified_architecture": service.repo_root / "docs" / "AITP_UNIFIED_RESEARCH_ARCHITECTURE.md",
+        "architecture_vision": service.repo_root / "docs" / "V142_ARCHITECTURE_VISION.md",
+        "paired_backend_contract": service.kernel_root
+        / "canonical"
+        / "backends"
+        / "THEORETICAL_PHYSICS_PAIRED_BACKEND_CONTRACT.md",
+        "paired_backend_maintenance_protocol": service.kernel_root
+        / "canonical"
+        / "L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md",
+    }
+    return {
+        name: {"path": str(path), "status": "present" if path.exists() else "missing"}
+        for name, path in paths.items()
+    }
+
+
+def control_plane_surfaces() -> dict[str, dict[str, str]]:
+    return {
+        "doctor_json": {
+            "command": "aitp doctor --json",
+            "status": "present",
+            "detail": "Inspect install readiness, governance docs, and runtime parity.",
+        },
+        "status": {
+            "command": "aitp status --topic-slug <topic_slug>",
+            "status": "present",
+            "detail": "Inspect the topic shell, runtime contract, and control-plane truth.",
+        },
+        "layer_graph": {
+            "command": "aitp layer-graph --topic-slug <topic_slug>",
+            "status": "present",
+            "detail": "Inspect the iterative layer graph, L3 subplanes, and L4 return law.",
+        },
+        "next": {
+            "command": "aitp next --topic-slug <topic_slug>",
+            "status": "present",
+            "detail": "Inspect the next bounded action and required reads.",
+        },
+        "capability_audit": {
+            "command": "aitp capability-audit --topic-slug <topic_slug>",
+            "status": "present",
+            "detail": "Inspect integrated runtime, control-plane, and capability state.",
+        },
+        "paired_backend_audit": {
+            "command": "aitp paired-backend-audit --topic-slug <topic_slug>",
+            "status": "present",
+            "detail": "Inspect paired-backend alignment, drift semantics, and backend debt.",
+        },
+        "h_plane_audit": {
+            "command": "aitp h-plane-audit --topic-slug <topic_slug>",
+            "status": "present",
+            "detail": "Inspect steering, checkpoints, registry focus, and approval state.",
+        },
+    }
+
+
 def ensure_cli_installed(service: Any, *, workspace_root: str | None = None) -> dict[str, Any]:
     command_path = shutil.which("aitp")
     mcp_path = shutil.which("aitp-mcp")
@@ -389,6 +448,8 @@ def ensure_cli_installed(service: Any, *, workspace_root: str | None = None) -> 
             name: {"path": str(path), "status": "present" if path.exists() else "missing"}
             for name, path in contract_paths.items()
         },
+        "control_plane_contracts": control_plane_contracts(service),
+        "control_plane_surfaces": control_plane_surfaces(),
     }
 
 
@@ -435,7 +496,15 @@ def migrate_local_install(
         install_cmd = [sys.executable, "-m", "pip", "install", "-e", str(canonical_package_root)]
         install_run = subprocess.run(install_cmd, check=False, capture_output=True, text=True)
         if install_run.returncode != 0:
-            raise RuntimeError(install_run.stderr.strip() or install_run.stdout.strip() or "pip install failed")
+            raise RuntimeError(
+                format_subprocess_failure(
+                    install_cmd,
+                    returncode=install_run.returncode,
+                    stdout=install_run.stdout,
+                    stderr=install_run.stderr,
+                    context="migrate-local-install pip install",
+                )
+            )
         pip_actions.append(
             {
                 "step": "install_canonical_aitp_kernel",

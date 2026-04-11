@@ -137,6 +137,46 @@ class L2BackendContractTests(unittest.TestCase):
         self.assertIn("compiled `L2` helper views", communication_contract)
         self.assertIn("Derived compiled `L2` helper surfaces", architecture_doc)
 
+    def test_l2_mvp_contract_and_family_docs_activate_physical_picture(self) -> None:
+        mvp_contract = (self.kernel_root / "canonical" / "L2_MVP_CONTRACT.md").read_text(encoding="utf-8")
+        family_doc = (self.kernel_root / "canonical" / "LAYER2_OBJECT_FAMILIES.md").read_text(encoding="utf-8")
+        canonical_readme = (self.kernel_root / "canonical" / "README.md").read_text(encoding="utf-8")
+
+        self.assertIn("physical_picture", mvp_contract)
+        self.assertNotIn("`physical_picture` is RESERVED by the M1 contract", mvp_contract)
+        self.assertIn("### 23. `physical_picture`", family_doc)
+        self.assertIn("physical_picture", canonical_readme)
+
+    def test_l2_mvp_commands_and_acceptance_are_documented(self) -> None:
+        root_readme = (self.kernel_root.parents[1] / "README.md").read_text(encoding="utf-8")
+        kernel_readme = (self.kernel_root / "README.md").read_text(encoding="utf-8")
+        runtime_readme = (self.kernel_root / "runtime" / "README.md").read_text(encoding="utf-8")
+        runbook = (self.kernel_root / "runtime" / "AITP_TEST_RUNBOOK.md").read_text(encoding="utf-8")
+
+        self.assertIn("aitp seed-l2-direction --direction tfim-benchmark-first", root_readme)
+        self.assertIn("aitp consult-l2 --query-text", root_readme)
+        self.assertIn("aitp compile-l2-graph-report", root_readme)
+        self.assertIn("aitp seed-l2-direction --direction tfim-benchmark-first", kernel_readme)
+        self.assertIn("aitp compile-l2-map", kernel_readme)
+        self.assertIn("aitp compile-l2-graph-report", kernel_readme)
+        self.assertIn("aitp audit-l2-hygiene", kernel_readme)
+        self.assertIn("run_l2_mvp_direction_acceptance.py", runtime_readme)
+        self.assertIn("workspace_graph_report.json|md", runtime_readme)
+        self.assertIn("derived_navigation/index.md", runtime_readme)
+        self.assertIn("run_l2_mvp_direction_acceptance.py", runbook)
+        self.assertIn("compile-l2-graph-report", runbook)
+        self.assertIn("workspace_graph_report.json|md", runbook)
+        self.assertIn("derived_navigation/index.md", runbook)
+
+    def test_l2_mvp_acceptance_script_covers_graph_report_outputs(self) -> None:
+        script = (
+            self.kernel_root / "runtime" / "scripts" / "run_l2_mvp_direction_acceptance.py"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("compile-l2-graph-report", script)
+        self.assertIn("navigation_index_path", script)
+        self.assertIn("workspace_graph_report.json", script)
+
     def test_l2_staging_protocol_and_public_readme_reference_final_v15_surfaces(self) -> None:
         staging_protocol_path = self.kernel_root / "canonical" / "L2_STAGING_PROTOCOL.md"
         kernel_readme = (self.kernel_root / "README.md").read_text(encoding="utf-8")

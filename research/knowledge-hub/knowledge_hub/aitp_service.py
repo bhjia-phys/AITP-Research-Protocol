@@ -54,15 +54,29 @@ from .runtime_bundle_support import (
     materialize_session_start_contract,
     runtime_protocol_markdown,
 )
+from .collaborator_profile_support import load_collaborator_profile
+from .exploration_session_support import build_exploration_promotion_request, build_exploration_session_payload, load_exploration_session, materialize_exploration_promotion_request, materialize_exploration_session
+from .mode_learning_support import load_mode_learning
+from .research_trajectory_support import load_research_trajectory
+from .research_taste_support import (
+    record_research_taste_payload,
+    topic_research_taste_payload,
+)
+from .scratchpad_support import (
+    record_negative_result_payload,
+    record_scratch_note_payload,
+    topic_scratchpad_payload,
+)
+from .l2_consultation_support import build_l2_consultation_record, consultation_projection_path
 from .topic_shell_support import (
     compute_topic_completion_payload,
     derive_idea_packet,
     derive_open_gap_summary,
     derive_operator_checkpoint,
-    derive_topic_status_explainability,
     ensure_topic_shell_surfaces,
     render_topic_dashboard_markdown,
 )
+from .topic_status_explainability_support import derive_topic_status_explainability
 from .followup_support import (
     apply_candidate_split_contract,
     buffer_entry_ready_for_reactivation,
@@ -111,6 +125,14 @@ from .runtime_projection_handler import (
     write_topic_skill_projection,
     write_topic_synopsis,
 )
+from .compat_surface_cleanup_support import prune_compat_surfaces as perform_prune_compat_surfaces
+from .runtime_path_support import resolve_runtime_reference_path
+from .subprocess_error_support import format_subprocess_failure
+from .topic_runtime_surface_support import (
+    materialize_layer_graph_artifact,
+    runtime_surface_roles,
+    topic_layer_graph_payload,
+)
 from .tpkn_bridge import (
     build_supporting_question_oracle_unit,
     build_supporting_regression_question_unit,
@@ -132,16 +154,19 @@ from .runtime_support_matrix import build_runtime_support_matrix
 from .validation_review_service import ValidationReviewService
 from .auto_action_support import execute_auto_actions
 from .auto_promotion_support import auto_promote_candidate
+from .analytical_review_support import audit_analytical_review as perform_analytical_review_audit
 from .candidate_promotion_support import promote_candidate
-from .formal_theory_audit_support import audit_formal_theory
+from .formal_theory_audit_support import audit_formal_theory as perform_formal_theory_audit
 from .lean_bridge_support import materialize_lean_bridge
+from .h_plane_support import h_plane_audit as perform_h_plane_audit
+from .paired_backend_support import paired_backend_audit as perform_paired_backend_audit
 from .capability_audit_support import capability_audit as perform_capability_audit
 from .chat_session_support import (
     route_codex_chat_request as route_chat_request,
     start_chat_session as start_codex_chat_session,
 )
 from .source_distillation_support import distill_from_sources
-from .theory_coverage_audit_support import audit_theory_coverage
+from .theory_coverage_audit_support import audit_theory_coverage as perform_theory_coverage_audit
 from .topic_loop_support import run_topic_loop as execute_topic_loop
 from .topic_skill_projection_support import derive_topic_skill_projection
 from .promotion_gate_support import (
@@ -153,6 +178,12 @@ from .promotion_gate_support import (
     request_promotion,
     write_promotion_gate,
 )
+from .l2_graph import consult_canonical_l2, seed_l2_demo_direction
+from .l2_compiler import materialize_workspace_graph_report, materialize_workspace_memory_map
+from .l2_hygiene import materialize_workspace_hygiene_report
+from .source_catalog import materialize_source_catalog, materialize_source_citation_traversal, materialize_source_family_report
+from .source_bibtex_support import import_bibtex_sources as materialize_bibtex_source_import, materialize_source_bibtex_export
+from .semantic_routing import canonical_validation_mode
 
 
 def _looks_like_repo_root(path: Path) -> bool:
@@ -331,8 +362,15 @@ class AITPService:
     def _run(self, argv: list[str]) -> subprocess.CompletedProcess[str]:
         completed = subprocess.run(argv, check=False, capture_output=True, text=True)
         if completed.returncode != 0:
-            message = completed.stderr.strip() or completed.stdout.strip() or "unknown error"
-            raise RuntimeError(message)
+            raise RuntimeError(
+                format_subprocess_failure(
+                    argv,
+                    returncode=completed.returncode,
+                    stdout=completed.stdout,
+                    stderr=completed.stderr,
+                    context="aitp-service command",
+                )
+            )
         return completed
 
     def _format_command(self, argv: list[str]) -> str:
@@ -710,38 +748,6 @@ class AITPService:
     def _gap_map_path(self, topic_slug: str) -> Path:
         return self._runtime_root(topic_slug) / "gap_map.md"
 
-    def _runtime_surface_roles(self, topic_slug: str) -> dict[str, Any]:
-        runtime_root = self._runtime_root(topic_slug)
-        validation_review_bundle_paths = self._validation_review_bundle_paths(topic_slug)
-        topic_completion_paths = self._topic_completion_paths(topic_slug)
-        return {
-            "primary": {
-                "runtime_machine": self._relativize(self._topic_synopsis_path(topic_slug)),
-                "runtime_human": self._relativize(self._topic_dashboard_path(topic_slug)),
-                "review_machine": self._relativize(validation_review_bundle_paths["json"]),
-                "review_human": self._relativize(validation_review_bundle_paths["note"]),
-                "registry_machine": self._relativize(self._active_topics_registry_paths()["json"]),
-                "registry_human": self._relativize(self._active_topics_registry_paths()["note"]),
-            },
-            "derived": {
-                "startup_bundle_machine": self._relativize(runtime_root / "runtime_protocol.generated.json"),
-                "startup_bundle_human": self._relativize(runtime_root / "runtime_protocol.generated.md"),
-            },
-            "compatibility": {
-                "current_topic_machine": self._relativize(self._current_topic_memory_paths()["json"]),
-                "current_topic_human": self._relativize(self._current_topic_memory_paths()["note"]),
-                "operator_console": self._relativize(runtime_root / "operator_console.md"),
-                "agent_brief": self._relativize(runtime_root / "agent_brief.md"),
-            },
-            "supporting": {
-                "research_question_human": self._relativize(self._research_question_contract_paths(topic_slug)["note"]),
-                "validation_contract_human": self._relativize(self._validation_contract_paths(topic_slug)["note"]),
-                "promotion_readiness_human": self._relativize(self._promotion_readiness_path(topic_slug)),
-                "gap_map_human": self._relativize(self._gap_map_path(topic_slug)),
-                "topic_completion_human": self._relativize(topic_completion_paths["note"]),
-            },
-        }
-
     def _followup_gap_writeback_paths(self, topic_slug: str) -> dict[str, Path]:
         runtime_root = self._runtime_root(topic_slug)
         return {
@@ -865,11 +871,8 @@ class AITPService:
 
     def _validation_mode_for_template(self, template_mode: str | None) -> str:
         normalized = str(template_mode or "").strip().lower()
-        if normalized == "formal_theory":
-            return "formal"
-        if normalized == "toy_numeric":
-            return "numerical"
-        return "hybrid"
+        return "formal" if normalized == "formal_theory" else "numerical" if normalized == "toy_numeric" else "hybrid"
+    def _validation_mode_for_modes(self, *, template_mode: str | None, research_mode: str | None) -> str: return canonical_validation_mode(template_mode, research_mode)
 
     def _lane_for_modes(self, *, template_mode: str | None, research_mode: str | None) -> str:
         normalized_template = str(template_mode or "").strip().lower()
@@ -1320,6 +1323,16 @@ class AITPService:
             "collaborator_memory_note_path": str(self._collaborator_memory_paths()["note"]),
             "collaborator_memory_entry": row,
         }
+
+    def record_research_taste(self, **kwargs: Any) -> dict[str, Any]: return record_research_taste_payload(self, **kwargs)
+
+    def topic_research_taste(self, *, topic_slug: str, updated_by: str = "aitp-cli") -> dict[str, Any]: return topic_research_taste_payload(self, topic_slug=topic_slug, updated_by=updated_by)
+
+    def record_scratch_note(self, **kwargs: Any) -> dict[str, Any]: return record_scratch_note_payload(self, **kwargs)
+
+    def record_negative_result(self, **kwargs: Any) -> dict[str, Any]: return record_negative_result_payload(self, **kwargs)
+
+    def topic_scratchpad(self, *, topic_slug: str, updated_by: str = "aitp-cli") -> dict[str, Any]: return topic_scratchpad_payload(self, topic_slug=topic_slug, updated_by=updated_by)
 
     def _load_operation_manifests(self, topic_slug: str, run_id: str | None) -> list[dict[str, Any]]:
         resolved_run_id = str(run_id or "").strip()
@@ -2018,6 +2031,7 @@ class AITPService:
             current_route_choice = explainability.get("current_route_choice") or {}
             last_evidence_return = explainability.get("last_evidence_return") or {}
             active_human_need = explainability.get("active_human_need") or {}
+            research_judgment = explainability.get("research_judgment") or {}
             lines.extend(
                 [
                     "",
@@ -2027,6 +2041,7 @@ class AITPService:
                     f"- Current route: {current_route_choice.get('selected_action_summary') or '(none)'}",
                     f"- Last evidence: {last_evidence_return.get('summary') or '(none)'}",
                     f"- Human need: {active_human_need.get('summary') or '(none)'}",
+                    f"- Research judgment: {research_judgment.get('summary') or '(none)'}",
                 ]
             )
         write_text(operator_console_path, "\n".join(lines).rstrip() + "\n")
@@ -3049,6 +3064,40 @@ class AITPService:
             load_profile=load_profile,
         )
 
+    def _exploration_current_topic_context(self) -> dict[str, str] | None:
+        payload = read_json(self._current_topic_memory_paths()["json"]) or {}
+        topic_slug = str(payload.get("topic_slug") or "").strip()
+        if not topic_slug or not (self._runtime_root(topic_slug) / "topic_state.json").exists():
+            return None
+        return {
+            "topic_slug": topic_slug,
+            "note_path": str(payload.get("current_topic_note_path") or self._relativize(self._current_topic_memory_paths()["note"])),
+            "summary": str(payload.get("summary") or "").strip(),
+        }
+
+    def explore(self, *, task: str, updated_by: str = "aitp-explore") -> dict[str, Any]:
+        normalized_task = str(task or "").strip()
+        if not normalized_task:
+            raise ValueError("task must not be empty")
+        current_topic = self._exploration_current_topic_context() or {}
+        payload = build_exploration_session_payload(
+            exploration_id=f"explore-{bounded_slugify(normalized_task, max_length=24)}-{bounded_slugify(now_iso(), max_length=24)}",
+            task=normalized_task,
+            updated_at=now_iso(),
+            updated_by=updated_by,
+            current_topic_slug=str(current_topic.get("topic_slug") or "").strip() or None,
+            current_topic_note_path=str(current_topic.get("note_path") or "").strip() or None,
+            current_topic_summary=str(current_topic.get("summary") or "").strip() or None,
+        )
+        return materialize_exploration_session(kernel_root=self.kernel_root, payload=payload)
+
+    def promote_exploration(self, *, exploration_id: str, explicit_current_topic: bool = False, explicit_topic_slug: str | None = None, explicit_topic: str | None = None, updated_by: str = "aitp-explore") -> dict[str, Any]:
+        exploration = load_exploration_session(kernel_root=self.kernel_root, exploration_id=exploration_id)
+        target_mode = "current_topic" if explicit_current_topic or (not explicit_topic_slug and not explicit_topic and exploration.get("current_topic_slug")) else ("topic_slug" if explicit_topic_slug else ("topic" if explicit_topic else "new_topic"))
+        promoted_session = self.start_chat_session(task=str(exploration.get("task") or ""), explicit_topic_slug=explicit_topic_slug, explicit_topic=explicit_topic, explicit_current_topic=target_mode == "current_topic", updated_by=updated_by, max_auto_steps=0)
+        payload = build_exploration_promotion_request(exploration_payload=exploration, updated_at=now_iso(), updated_by=updated_by, target_mode=target_mode, promoted_session=promoted_session)
+        return materialize_exploration_promotion_request(kernel_root=self.kernel_root, exploration_id=exploration_id, payload=payload)
+
     def _parse_human_steering_request(self, human_request: str | None) -> dict[str, Any]:
         raw_request = str(human_request or "").strip()
         if not raw_request:
@@ -3793,6 +3842,7 @@ class AITPService:
             "provenance_review": packet_root / "provenance_review.json",
             "prerequisite_closure_review": packet_root / "prerequisite_closure_review.json",
             "formal_theory_review": packet_root / "formal_theory_review.json",
+            "analytical_review": packet_root / "analytical_review.json",
             "merge_report": packet_root / "merge_report.json",
             "auto_promotion_report": packet_root / "auto_promotion_report.json",
         }
@@ -3894,13 +3944,13 @@ class AITPService:
         index_rows.append(index_entry)
         write_jsonl(paths["index"], index_rows)
 
-        if run_id:
-            if stage == "L1":
-                projection_path = self.kernel_root / "intake" / "topics" / topic_slug / "l2_consultation_log.jsonl"
-            elif stage == "L3":
-                projection_path = self._feedback_run_root(topic_slug, run_id) / "l2_consultation_log.jsonl"
-            else:
-                projection_path = self._validation_run_root(topic_slug, run_id) / "l2_consultation_log.jsonl"
+        projection_path = consultation_projection_path(
+            self.kernel_root,
+            topic_slug=topic_slug,
+            stage=stage,
+            run_id=run_id,
+        )
+        if projection_path is not None:
             projection_rows = read_jsonl(projection_path)
             projection_rows.append(
                 {
@@ -4513,7 +4563,7 @@ class AITPService:
             "operator_status": str(previous.get("operator_status") or "").strip(),
             "priority": self._coerce_priority(previous.get("priority")),
             "last_activity": updated_at,
-            "runtime_root": str(self._runtime_root(topic_slug)),
+            "runtime_root": self._relativize(self._runtime_root(topic_slug)),
             "lane": str(synopsis.get("lane") or topic_state.get("research_mode") or "").strip(),
             "resume_stage": str(topic_state.get("resume_stage") or "").strip(),
             "run_id": str(topic_state.get("latest_run_id") or "").strip(),
@@ -4751,6 +4801,7 @@ class AITPService:
                 {
                     **row,
                     "topic_slug": topic_slug,
+                    "runtime_root": self._relativize(resolved_runtime_root) if (resolved_runtime_root := resolve_runtime_reference_path(row.get("runtime_root"), kernel_root=self.kernel_root, repo_root=self.repo_root)) else "",
                     "priority": self._coerce_priority(row.get("priority")),
                     "blocked_by": [item for item in (row.get("blocked_by") or []) if str(item).strip()],
                     "blocked_by_details": self._normalize_blocked_by_details(row.get("blocked_by_details") or []),
@@ -4820,8 +4871,31 @@ class AITPService:
         summary_override: str | None = None,
     ) -> dict[str, Any]:
         topic_state = self.get_runtime_state(topic_slug)
-        synopsis = read_json(self._runtime_root(topic_slug) / "topic_synopsis.json") or {}
+        runtime_root = self._runtime_root(topic_slug)
+        synopsis = read_json(runtime_root / "topic_synopsis.json") or {}
         runtime_focus = synopsis.get("runtime_focus") or {}
+        collaborator_profile = load_collaborator_profile(
+            runtime_root,
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        ) or {
+            "status": "absent",
+            "summary": "No collaborator profile is currently recorded for this topic.",
+            "path": self._relativize(runtime_root / "collaborator_profile.active.json"),
+            "note_path": self._relativize(runtime_root / "collaborator_profile.active.md"),
+        }
+        research_trajectory = load_research_trajectory(runtime_root, topic_slug=topic_slug, updated_by=updated_by) or {
+            "status": "absent",
+            "summary": "No research trajectory is currently recorded for this topic.",
+            "path": self._relativize(runtime_root / "research_trajectory.active.json"),
+            "note_path": self._relativize(runtime_root / "research_trajectory.active.md"),
+        }
+        mode_learning = load_mode_learning(runtime_root, topic_slug=topic_slug, updated_by=updated_by) or {
+            "status": "absent",
+            "summary": "No mode learning is currently recorded for this topic.",
+            "path": self._relativize(runtime_root / "mode_learning.active.json"),
+            "note_path": self._relativize(runtime_root / "mode_learning.active.md"),
+        }
         return {
             "topic_slug": topic_slug,
             "updated_at": updated_at or now_iso(),
@@ -4829,7 +4903,7 @@ class AITPService:
             "source": source,
             "run_id": str(topic_state.get("latest_run_id") or ""),
             "resume_stage": str(topic_state.get("resume_stage") or ""),
-            "runtime_root": str(self._runtime_root(topic_slug)),
+            "runtime_root": self._relativize(runtime_root),
             "human_request": str(human_request or "").strip(),
             "summary": str(
                 summary_override
@@ -4839,6 +4913,24 @@ class AITPService:
                 or topic_state.get("resume_reason")
                 or ""
             ),
+            "collaborator_profile_status": str(collaborator_profile.get("status") or "absent"),
+            "collaborator_profile_summary": str(collaborator_profile.get("summary") or ""),
+            "collaborator_profile_path": str(
+                collaborator_profile.get("path")
+                or self._relativize(runtime_root / "collaborator_profile.active.json")
+            ),
+            "collaborator_profile_note_path": str(
+                collaborator_profile.get("note_path")
+                or self._relativize(runtime_root / "collaborator_profile.active.md")
+            ),
+            "research_trajectory_status": str(research_trajectory.get("status") or "absent"),
+            "research_trajectory_summary": str(research_trajectory.get("summary") or ""),
+            "research_trajectory_path": str(research_trajectory.get("path") or self._relativize(runtime_root / "research_trajectory.active.json")),
+            "research_trajectory_note_path": str(research_trajectory.get("note_path") or self._relativize(runtime_root / "research_trajectory.active.md")),
+            "mode_learning_status": str(mode_learning.get("status") or "absent"),
+            "mode_learning_summary": str(mode_learning.get("summary") or ""),
+            "mode_learning_path": str(mode_learning.get("path") or self._relativize(runtime_root / "mode_learning.active.json")),
+            "mode_learning_note_path": str(mode_learning.get("note_path") or self._relativize(runtime_root / "mode_learning.active.md")),
         }
 
     def _write_current_topic_memory(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -5082,14 +5174,7 @@ class AITPService:
             "current_topic_memory": current_projection,
         }
 
-    def clear_topic_dependency(
-        self,
-        *,
-        topic_slug: str,
-        blocked_by_topic_slug: str,
-        updated_by: str = "aitp-cli",
-        human_request: str | None = None,
-    ) -> dict[str, Any]:
+    def clear_topic_dependency(self, *, topic_slug: str, blocked_by_topic_slug: str, updated_by: str = "aitp-cli", human_request: str | None = None) -> dict[str, Any]:
         registry = self._load_active_topics_registry()
         if registry is None:
             raise FileNotFoundError("Active topics registry has not been materialized yet.")
@@ -5126,13 +5211,7 @@ class AITPService:
             "current_topic_memory": current_projection,
         }
 
-    def clear_all_topic_dependencies(
-        self,
-        *,
-        topic_slug: str,
-        updated_by: str = "aitp-cli",
-        human_request: str | None = None,
-    ) -> dict[str, Any]:
+    def clear_all_topic_dependencies(self, *, topic_slug: str, updated_by: str = "aitp-cli", human_request: str | None = None) -> dict[str, Any]:
         registry = self._load_active_topics_registry()
         if registry is None:
             raise FileNotFoundError("Active topics registry has not been materialized yet.")
@@ -5167,6 +5246,9 @@ class AITPService:
             "active_topics_path": str(self._active_topics_registry_paths()["json"]),
             "current_topic_memory": current_projection,
         }
+
+    def prune_compat_surfaces(self, *, topic_slug: str, updated_by: str = "aitp-cli") -> dict[str, Any]:
+        return perform_prune_compat_surfaces(self, topic_slug=topic_slug, updated_by=updated_by)
 
     def _derive_current_topic_memory_from_registry(self, registry: dict[str, Any]) -> dict[str, Any] | None:
         focused_topic_slug = str(registry.get("focused_topic_slug") or "").strip()
@@ -5287,7 +5369,11 @@ class AITPService:
             "blocked_by_dependency",
         }:
             return status or "ineligible"
-        runtime_root = Path(str(row.get("runtime_root") or "").strip()) if str(row.get("runtime_root") or "").strip() else None
+        runtime_root = resolve_runtime_reference_path(
+            row.get("runtime_root"),
+            kernel_root=self.kernel_root,
+            repo_root=self.repo_root,
+        )
         if runtime_root is None or not (runtime_root / "topic_state.json").exists():
             return "missing_runtime_state"
         return None
@@ -5492,17 +5578,27 @@ class AITPService:
         )
         bundle = read_json(Path(protocol_paths["runtime_protocol_path"])) or {}
         topic_state = read_json(self._runtime_root(topic_slug) / "topic_state.json") or {}
+        layer_graph = materialize_layer_graph_artifact(self, topic_slug=topic_slug, topic_state=topic_state, bundle=bundle, updated_by=updated_by)
         return {
             "topic_slug": topic_slug,
             "load_profile": str(bundle.get("load_profile") or topic_state.get("load_profile") or "light"),
             "runtime_protocol_path": protocol_paths["runtime_protocol_path"],
             "runtime_protocol_note_path": protocol_paths["runtime_protocol_note_path"],
-            "primary_runtime_surfaces": self._runtime_surface_roles(topic_slug),
+            "primary_runtime_surfaces": runtime_surface_roles(self, topic_slug),
             "topic_state": topic_state,
+            "layer_graph": layer_graph,
+            "control_plane": bundle.get("control_plane") or {},
+            "h_plane": bundle.get("h_plane") or {},
             "topic_synopsis": bundle.get("topic_synopsis") or {},
             "source_intelligence": bundle.get("source_intelligence") or {},
             "pending_decisions": bundle.get("pending_decisions") or {},
             "promotion_readiness": bundle.get("promotion_readiness") or {},
+            "collaborator_profile": bundle.get("collaborator_profile") or {},
+            "research_trajectory": bundle.get("research_trajectory") or {},
+            "mode_learning": bundle.get("mode_learning") or {},
+            "research_judgment": bundle.get("research_judgment") or {},
+            "research_taste": bundle.get("research_taste") or {},
+            "scratchpad": bundle.get("scratchpad") or {},
             "topic_skill_projection": bundle.get("topic_skill_projection") or {},
         }
 
@@ -5519,6 +5615,7 @@ class AITPService:
         )
         bundle = read_json(Path(protocol_paths["runtime_protocol_path"])) or {}
         topic_state = read_json(self._runtime_root(topic_slug) / "topic_state.json") or {}
+        layer_graph = materialize_layer_graph_artifact(self, topic_slug=topic_slug, topic_state=topic_state, bundle=bundle, updated_by=updated_by)
         minimal = bundle.get("minimal_execution_brief") or {}
         return {
             "topic_slug": topic_slug,
@@ -5531,9 +5628,12 @@ class AITPService:
             "selected_action_summary": minimal.get("selected_action_summary"),
             "runtime_protocol_path": protocol_paths["runtime_protocol_path"],
             "runtime_protocol_note_path": protocol_paths["runtime_protocol_note_path"],
-            "primary_runtime_surfaces": self._runtime_surface_roles(topic_slug),
+            "primary_runtime_surfaces": runtime_surface_roles(self, topic_slug),
             "topic_state": topic_state,
             "topic_state_explainability": (topic_state.get("status_explainability") or {}),
+            "layer_graph": layer_graph,
+            "control_plane": bundle.get("control_plane") or {},
+            "h_plane": bundle.get("h_plane") or {},
             "dependency_state": bundle.get("dependency_state") or self._topic_dependency_state(topic_slug),
             "topic_synopsis": bundle.get("topic_synopsis") or {},
             "source_intelligence": bundle.get("source_intelligence") or {},
@@ -5545,11 +5645,25 @@ class AITPService:
             "promotion_readiness": bundle.get("promotion_readiness") or {},
             "open_gap_summary": bundle.get("open_gap_summary") or {},
             "strategy_memory": bundle.get("strategy_memory") or {},
+            "collaborator_profile": bundle.get("collaborator_profile") or {},
+            "research_trajectory": bundle.get("research_trajectory") or {},
+            "mode_learning": bundle.get("mode_learning") or {},
+            "research_judgment": bundle.get("research_judgment") or {},
+            "research_taste": bundle.get("research_taste") or {},
+            "scratchpad": bundle.get("scratchpad") or {},
             "topic_skill_projection": bundle.get("topic_skill_projection") or {},
             "topic_completion": bundle.get("topic_completion") or {},
             "lean_bridge": bundle.get("lean_bridge") or {},
             "must_read_now": bundle.get("must_read_now") or [],
         }
+
+    def topic_layer_graph(
+        self,
+        *,
+        topic_slug: str,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        return topic_layer_graph_payload(self, topic_slug=topic_slug, updated_by=updated_by)
 
     def topic_next(
         self,
@@ -5574,13 +5688,21 @@ class AITPService:
             "must_read_now": bundle.get("must_read_now") or [],
             "may_defer_until_trigger": bundle.get("may_defer_until_trigger") or [],
             "escalation_triggers": bundle.get("escalation_triggers") or [],
-            "primary_runtime_surfaces": self._runtime_surface_roles(topic_slug),
+            "control_plane": bundle.get("control_plane") or {},
+            "h_plane": bundle.get("h_plane") or {},
+            "primary_runtime_surfaces": runtime_surface_roles(self, topic_slug),
             "topic_synopsis": bundle.get("topic_synopsis") or {},
             "source_intelligence": bundle.get("source_intelligence") or {},
             "validation_review_bundle": bundle.get("validation_review_bundle") or {},
             "pending_decisions": bundle.get("pending_decisions") or {},
             "open_gap_summary": bundle.get("open_gap_summary") or {},
             "strategy_memory": bundle.get("strategy_memory") or {},
+            "collaborator_profile": bundle.get("collaborator_profile") or {},
+            "research_trajectory": bundle.get("research_trajectory") or {},
+            "mode_learning": bundle.get("mode_learning") or {},
+            "research_judgment": bundle.get("research_judgment") or {},
+            "research_taste": bundle.get("research_taste") or {},
+            "scratchpad": bundle.get("scratchpad") or {},
             "topic_skill_projection": bundle.get("topic_skill_projection") or {},
             "topic_completion": bundle.get("topic_completion") or {},
             "runtime_protocol_note_path": protocol_paths["runtime_protocol_note_path"],
@@ -5703,6 +5825,11 @@ class AITPService:
                     "Require declared tolerances or qualitative agreement criteria.",
                     "Reject narrative-only claims that lack result artifacts or route receipts.",
                 ],
+            },
+            "analytical": {
+                "validation_mode": "analytical",
+                "verification_focus": "Validate the active topic against analytical checks such as limiting cases, dimensional consistency, symmetry, and source-backed self-consistency.",
+                "required_checks": ["Record at least one explicit limiting-case, dimensional, symmetry, or consistency check as a durable artifact.", "Tie each analytical check to a source-backed assumption, regime, or prior result instead of free-floating prose.", "Reject analytical claims that do not leave a durable artifact naming the exact check and outcome."],
             },
             "topic-completion": {
                 "validation_mode": "hybrid",
@@ -6131,125 +6258,14 @@ class AITPService:
             },
         }
 
-    def audit_theory_coverage(
-        self,
-        *,
-        topic_slug: str,
-        candidate_id: str,
-        run_id: str | None = None,
-        updated_by: str = "aitp-cli",
-        source_sections: list[str] | None = None,
-        covered_sections: list[str] | None = None,
-        equation_labels: list[str] | None = None,
-        notation_bindings: list[dict[str, str]] | None = None,
-        derivation_nodes: list[str] | None = None,
-        derivation_edges: list[dict[str, str]] | None = None,
-        agent_votes: list[dict[str, str]] | None = None,
-        consensus_status: str = "unanimous",
-        critical_unit_recall: float = 1.0,
-        missing_anchor_count: int = 0,
-        skeptic_major_gap_count: int = 0,
-        supporting_regression_question_ids: list[str] | None = None,
-        supporting_oracle_ids: list[str] | None = None,
-        supporting_regression_run_ids: list[str] | None = None,
-        promotion_blockers: list[str] | None = None,
-        split_required: bool | None = None,
-        cited_recovery_required: bool | None = None,
-        followup_gap_ids: list[str] | None = None,
-        topic_completion_status: str | None = None,
-        notes: str | None = None,
-    ) -> dict[str, Any]:
-        return audit_theory_coverage(
-            self,
-            topic_slug=topic_slug,
-            candidate_id=candidate_id,
-            run_id=run_id,
-            updated_by=updated_by,
-            source_sections=source_sections,
-            covered_sections=covered_sections,
-            equation_labels=equation_labels,
-            notation_bindings=notation_bindings,
-            derivation_nodes=derivation_nodes,
-            derivation_edges=derivation_edges,
-            agent_votes=agent_votes,
-            consensus_status=consensus_status,
-            critical_unit_recall=critical_unit_recall,
-            missing_anchor_count=missing_anchor_count,
-            skeptic_major_gap_count=skeptic_major_gap_count,
-            supporting_regression_question_ids=supporting_regression_question_ids,
-            supporting_oracle_ids=supporting_oracle_ids,
-            supporting_regression_run_ids=supporting_regression_run_ids,
-            promotion_blockers=promotion_blockers,
-            split_required=split_required,
-            cited_recovery_required=cited_recovery_required,
-            followup_gap_ids=followup_gap_ids,
-            topic_completion_status=topic_completion_status,
-            notes=notes,
-        )
+    def audit_theory_coverage(self, **kwargs: Any) -> dict[str, Any]:
+        return perform_theory_coverage_audit(self, **kwargs)
 
-    def audit_formal_theory(
-        self,
-        *,
-        topic_slug: str,
-        candidate_id: str,
-        run_id: str | None = None,
-        updated_by: str = "aitp-cli",
-        formal_theory_role: str = "trusted_target",
-        statement_graph_role: str = "target_statement",
-        definition_trust_tier: str | None = None,
-        target_statement_id: str | None = None,
-        statement_graph_parents: list[str] | None = None,
-        statement_graph_children: list[str] | None = None,
-        informal_statement: str | None = None,
-        formal_target: str | None = None,
-        faithfulness_status: str = "pending",
-        faithfulness_strategy: str | None = None,
-        faithfulness_notes: str | None = None,
-        comparator_audit_status: str = "pending",
-        comparator_risks: list[str] | None = None,
-        nearby_variants: list[dict[str, str]] | None = None,
-        comparator_notes: str | None = None,
-        provenance_kind: str = "generated_from_scratch",
-        attribution_requirements: list[str] | None = None,
-        provenance_sources: list[str] | None = None,
-        provenance_notes: str | None = None,
-        prerequisite_closure_status: str = "pending",
-        lean_prerequisite_ids: list[str] | None = None,
-        supporting_obligation_ids: list[str] | None = None,
-        formalization_blockers: list[str] | None = None,
-        prerequisite_notes: str | None = None,
-    ) -> dict[str, Any]:
-        return audit_formal_theory(
-            self,
-            topic_slug=topic_slug,
-            candidate_id=candidate_id,
-            run_id=run_id,
-            updated_by=updated_by,
-            formal_theory_role=formal_theory_role,
-            statement_graph_role=statement_graph_role,
-            definition_trust_tier=definition_trust_tier,
-            target_statement_id=target_statement_id,
-            statement_graph_parents=statement_graph_parents,
-            statement_graph_children=statement_graph_children,
-            informal_statement=informal_statement,
-            formal_target=formal_target,
-            faithfulness_status=faithfulness_status,
-            faithfulness_strategy=faithfulness_strategy,
-            faithfulness_notes=faithfulness_notes,
-            comparator_audit_status=comparator_audit_status,
-            comparator_risks=comparator_risks,
-            nearby_variants=nearby_variants,
-            comparator_notes=comparator_notes,
-            provenance_kind=provenance_kind,
-            attribution_requirements=attribution_requirements,
-            provenance_sources=provenance_sources,
-            provenance_notes=provenance_notes,
-            prerequisite_closure_status=prerequisite_closure_status,
-            lean_prerequisite_ids=lean_prerequisite_ids,
-            supporting_obligation_ids=supporting_obligation_ids,
-            formalization_blockers=formalization_blockers,
-            prerequisite_notes=prerequisite_notes,
-        )
+    def audit_formal_theory(self, **kwargs: Any) -> dict[str, Any]:
+        return perform_formal_theory_audit(self, **kwargs)
+
+    def audit_analytical_review(self, **kwargs: Any) -> dict[str, Any]:
+        return perform_analytical_review_audit(self, **kwargs)
 
     def scaffold_operation(
         self,
@@ -6436,6 +6452,32 @@ class AITPService:
         updated_by: str = "aitp-cli",
     ) -> dict[str, Any]:
         return perform_capability_audit(
+            self,
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+
+    def paired_backend_audit(
+        self,
+        *,
+        topic_slug: str,
+        backend_id: str | None = None,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        return perform_paired_backend_audit(
+            self,
+            topic_slug=topic_slug,
+            backend_id=backend_id,
+            updated_by=updated_by,
+        )
+
+    def h_plane_audit(
+        self,
+        *,
+        topic_slug: str,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        return perform_h_plane_audit(
             self,
             topic_slug=topic_slug,
             updated_by=updated_by,
@@ -6682,3 +6724,75 @@ class AITPService:
             agents=agents,
             with_mcp=with_mcp,
         )
+
+    def seed_l2_direction(
+        self,
+        *,
+        direction: str,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        return seed_l2_demo_direction(
+            self.kernel_root,
+            direction=direction,
+            updated_by=updated_by,
+        )
+
+    def consult_l2(self, *, query_text: str, retrieval_profile: str, max_primary_hits: int | None = None, include_staging: bool = False, topic_slug: str | None = None, stage: str = "L3", run_id: str | None = None, updated_by: str = "aitp-cli", record_consultation: bool = False) -> dict[str, Any]:
+        resolved_max_primary_hits = 1 if record_consultation and max_primary_hits is None else max_primary_hits
+        payload = consult_canonical_l2(self.kernel_root, query_text=query_text, retrieval_profile=retrieval_profile, max_primary_hits=resolved_max_primary_hits, include_staging=include_staging)
+        if not record_consultation:
+            return payload
+
+        resolved_topic_slug = str(topic_slug or "").strip()
+        if not resolved_topic_slug:
+            raise ValueError("topic_slug is required when record_consultation=True")
+        if stage not in {"L1", "L3", "L4"}:
+            raise ValueError(f"Unsupported consultation stage: {stage}")
+        resolved_run_id = self._resolve_run_id(resolved_topic_slug, run_id) if stage in {"L3", "L4"} else run_id
+        if stage in {"L3", "L4"} and not resolved_run_id:
+            raise ValueError(f"run_id is required to record {stage} consultations for {resolved_topic_slug}")
+        consultation_slug = bounded_slugify(f"l2-{resolved_topic_slug}-{stage}-{resolved_run_id or 'standalone'}-{query_text}-{now_iso()}", max_length=48)
+        record_payload = build_l2_consultation_record(
+            kernel_root=self.kernel_root,
+            topic_slug=resolved_topic_slug,
+            stage=stage,
+            run_id=resolved_run_id,
+            query_text=query_text,
+            retrieval_profile=retrieval_profile,
+            dashboard_path=self._topic_dashboard_path(resolved_topic_slug),
+            context_id=f"context:l2-consult-{bounded_slugify(resolved_topic_slug, max_length=24)}",
+            payload=payload,
+            relativize=self._relativize,
+        )
+        consultation_paths = self._record_l2_consultation(
+            topic_slug=resolved_topic_slug,
+            stage=stage,
+            run_id=resolved_run_id,
+            consultation_slug=consultation_slug,
+            purpose=f"Consult canonical L2 memory during {stage} work and preserve the retrieval context as a durable artifact.",
+            query_text=query_text,
+            requested_by=updated_by,
+            produced_by=updated_by,
+            written_by=updated_by,
+            retrieval_profile=retrieval_profile,
+            **record_payload["record_args"],
+        )
+        result_path = Path(consultation_paths["consultation_result_path"])
+        result_payload = {**(read_json(result_path) or {}), "traversal_paths": record_payload["traversal_paths"], "retrieval_summary": record_payload["retrieval_summary"]}
+        write_json(result_path, result_payload)
+        return {**payload, "consultation": consultation_paths}
+
+    def compile_l2_workspace_map(self) -> dict[str, Any]:
+        return materialize_workspace_memory_map(self.kernel_root)
+
+    def compile_source_catalog(self) -> dict[str, Any]: return materialize_source_catalog(self.kernel_root)
+    def trace_source_citations(self, *, canonical_source_id: str) -> dict[str, Any]: return materialize_source_citation_traversal(self.kernel_root, canonical_source_id=canonical_source_id)
+    def compile_source_family(self, *, source_type: str) -> dict[str, Any]: return materialize_source_family_report(self.kernel_root, source_type=source_type)
+    def export_source_bibtex(self, *, canonical_source_id: str, include_neighbors: bool = False) -> dict[str, Any]: return materialize_source_bibtex_export(self.kernel_root, canonical_source_id=canonical_source_id, include_neighbors=include_neighbors)
+    def import_bibtex_sources(self, *, topic_slug: str, bibtex_path: str, updated_by: str) -> dict[str, Any]: return materialize_bibtex_source_import(self.kernel_root, topic_slug=topic_slug, bibtex_path=bibtex_path, updated_by=updated_by)
+
+    def compile_l2_graph_report(self) -> dict[str, Any]:
+        return materialize_workspace_graph_report(self.kernel_root)
+
+    def audit_l2_hygiene(self) -> dict[str, Any]:
+        return materialize_workspace_hygiene_report(self.kernel_root)

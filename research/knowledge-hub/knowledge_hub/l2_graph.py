@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections import deque
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -12,6 +13,7 @@ from jsonschema import Draft202012Validator
 CANONICAL_DIR_BY_TYPE = {
     "atomic_note": "atomic-notes",
     "concept": "concepts",
+    "physical_picture": "physical-pictures",
     "claim_card": "claim-cards",
     "derivation_object": "derivation-objects",
     "method": "methods",
@@ -68,6 +70,19 @@ def _tokenize(text: str) -> list[str]:
 
 def _relative(path: Path, root: Path) -> str:
     return str(path.relative_to(root)).replace("\\", "/")
+
+
+def _edge_endpoints(edge: dict[str, Any]) -> tuple[str, str, str]:
+    relation = str(edge.get("relation") or edge.get("edge_type") or edge.get("kind") or edge.get("type") or "").strip()
+    from_id = str(edge.get("from_id") or edge.get("source") or "").strip()
+    to_id = str(edge.get("to_id") or edge.get("target") or "").strip()
+    return relation, from_id, to_id
+
+
+def _path_node_ids(path: list[dict[str, str]]) -> list[str]:
+    if not path:
+        return []
+    return [path[0]["from_id"], *[step["to_id"] for step in path]]
 
 
 def _unit_path(kernel_root: Path, unit_id: str, unit_type: str) -> Path:
@@ -177,6 +192,31 @@ def _tfim_units(updated_by: str, timestamp: str) -> list[dict[str, Any]]:
             dependencies=[],
             related_units=["claim_card:tfim-benchmark-before-portability-claim"],
             payload={"definition": "Validation posture that promotes the exact benchmark before portability."},
+            updated_by=updated_by,
+            timestamp=timestamp,
+        ),
+        _base_unit(
+            unit_id="physical_picture:tfim-weak-coupling-benchmark-intuition",
+            unit_type="physical_picture",
+            title="TFIM weak-coupling benchmark intuition",
+            summary="Weak-coupling physical picture for why the TFIM exact diagonalization benchmark workflow is a useful first bounded route.",
+            tags=["tfim", "physical-picture", "weak-coupling", "benchmark-first"],
+            assumptions=["The tiny exact benchmark is being used as route intuition rather than a full theory claim."],
+            dependencies=[
+                "concept:tfim-transverse-field-ising-model",
+                "method:tfim-exact-diagonalization-helper",
+            ],
+            related_units=[
+                "workflow:tfim-benchmark-workflow",
+                "claim_card:tfim-benchmark-before-portability-claim",
+                "warning_note:tfim-dense-ed-finite-size-limit",
+            ],
+            payload={
+                "picture": "Use the small exact benchmark as a weak-coupling route intuition before making broader portability claims.",
+                "intuition_scope": "bounded TFIM benchmark-first route",
+                "supports_units": ["workflow:tfim-benchmark-workflow", "claim_card:tfim-benchmark-before-portability-claim"],
+                "known_limits": ["finite-size only", "not a proof of broader code portability"],
+            },
             updated_by=updated_by,
             timestamp=timestamp,
         ),
@@ -298,6 +338,9 @@ def _tfim_edges() -> list[dict[str, Any]]:
         {"edge_id": "workflow-depends-on-tfim", "from_id": "workflow:tfim-benchmark-workflow", "relation": "depends_on", "to_id": "concept:tfim-transverse-field-ising-model", "evidence_refs": ["runtime/scripts/run_tfim_benchmark_code_method_acceptance.py"], "notes": "The workflow is TFIM-specific."},
         {"edge_id": "workflow-depends-on-benchmark-first", "from_id": "workflow:tfim-benchmark-workflow", "relation": "depends_on", "to_id": "concept:tfim-benchmark-first-validation", "evidence_refs": ["README.md"], "notes": "The workflow uses the benchmark-first posture."},
         {"edge_id": "workflow-warned-by-finite-size-limit", "from_id": "workflow:tfim-benchmark-workflow", "relation": "warned_by", "to_id": "warning_note:tfim-dense-ed-finite-size-limit", "evidence_refs": ["validation/tools/tfim_exact_diagonalization.py"], "notes": "The workflow carries the finite-size warning."},
+        {"edge_id": "physical-picture-depends-on-workflow", "from_id": "physical_picture:tfim-weak-coupling-benchmark-intuition", "relation": "depends_on", "to_id": "workflow:tfim-benchmark-workflow", "evidence_refs": ["README.md"], "notes": "The intuition is tied to the bounded workflow."},
+        {"edge_id": "physical-picture-uses-ed-helper", "from_id": "physical_picture:tfim-weak-coupling-benchmark-intuition", "relation": "uses_method", "to_id": "method:tfim-exact-diagonalization-helper", "evidence_refs": ["validation/tools/tfim_exact_diagonalization.py"], "notes": "The intuition depends on the exact diagonalization helper."},
+        {"edge_id": "physical-picture-warned-by-finite-size-limit", "from_id": "physical_picture:tfim-weak-coupling-benchmark-intuition", "relation": "warned_by", "to_id": "warning_note:tfim-dense-ed-finite-size-limit", "evidence_refs": ["validation/tools/tfim_exact_diagonalization.py"], "notes": "The intuition stays under the same finite-size warning."},
         {"edge_id": "projection-depends-on-workflow", "from_id": "topic_skill_projection:tfim-benchmark-first-route", "relation": "depends_on", "to_id": "workflow:tfim-benchmark-workflow", "evidence_refs": ["runtime/scripts/run_tfim_benchmark_code_method_acceptance.py"], "notes": "The route capsule depends on the workflow."},
         {"edge_id": "projection-uses-ed-helper", "from_id": "topic_skill_projection:tfim-benchmark-first-route", "relation": "uses_method", "to_id": "method:tfim-exact-diagonalization-helper", "evidence_refs": ["runtime/scripts/run_tfim_benchmark_code_method_acceptance.py"], "notes": "The route capsule reuses the helper."},
         {"edge_id": "projection-warned-by-finite-size-limit", "from_id": "topic_skill_projection:tfim-benchmark-first-route", "relation": "warned_by", "to_id": "warning_note:tfim-dense-ed-finite-size-limit", "evidence_refs": ["validation/tools/tfim_exact_diagonalization.py"], "notes": "The route capsule includes the finite-size warning."},
@@ -481,6 +524,8 @@ def consult_canonical_l2(
     preferred_types = set(profile.get("preferred_unit_types") or [])
     edge_expansion = set(profile.get("edge_expansion") or [])
     limit = int(max_primary_hits or profile.get("max_primary_hits") or 8)
+    max_traversal_depth = int(profile.get("max_traversal_depth") or 1)
+    max_expanded_hits = int(profile.get("max_expanded_hits") or max(limit, 8))
     index_rows = read_jsonl(index_path)
     edge_rows = read_jsonl(canonical_root / "edges.jsonl")
     row_by_id = {str(row["id"]): row for row in index_rows}
@@ -504,27 +549,83 @@ def consult_canonical_l2(
     primary_hits = scored[:limit]
     primary_ids = {str(row["id"]) for row in primary_hits}
 
-    expanded_hits: list[dict[str, Any]] = []
-    seen: set[str] = set()
+    adjacency: dict[str, list[tuple[str, dict[str, str]]]] = {}
     expanded_edge_types: list[str] = []
     for edge in edge_rows:
-        relation = str(edge.get("relation") or "")
-        if relation not in edge_expansion:
+        relation, from_id, to_id = _edge_endpoints(edge)
+        if relation not in edge_expansion or not from_id or not to_id:
             continue
-        from_id = str(edge.get("from_id") or "")
-        to_id = str(edge.get("to_id") or "")
-        if from_id in primary_ids and to_id not in primary_ids and to_id in row_by_id:
-            if to_id not in seen:
-                seen.add(to_id)
-                expanded_hits.append({**row_by_id[to_id], "via_relation": relation, "via_id": from_id})
-            if relation not in expanded_edge_types:
-                expanded_edge_types.append(relation)
-        if to_id in primary_ids and from_id not in primary_ids and from_id in row_by_id:
-            if from_id not in seen:
-                seen.add(from_id)
-                expanded_hits.append({**row_by_id[from_id], "via_relation": relation, "via_id": to_id})
-            if relation not in expanded_edge_types:
-                expanded_edge_types.append(relation)
+        if from_id not in row_by_id or to_id not in row_by_id:
+            continue
+        adjacency.setdefault(from_id, []).append(
+            (
+                to_id,
+                {"from_id": from_id, "relation": relation, "to_id": to_id},
+            )
+        )
+        adjacency.setdefault(to_id, []).append(
+            (
+                from_id,
+                {"from_id": to_id, "relation": relation, "to_id": from_id},
+            )
+        )
+        if relation not in expanded_edge_types:
+            expanded_edge_types.append(relation)
+
+    for node_id in adjacency:
+        adjacency[node_id].sort(key=lambda item: (item[1]["relation"], item[0]))
+
+    traversal_paths_by_target: dict[str, list[dict[str, str]]] = {}
+    best_depth: dict[str, int] = {node_id: 0 for node_id in primary_ids}
+    queue: deque[tuple[str, list[dict[str, str]]]] = deque((node_id, []) for node_id in sorted(primary_ids))
+    while queue and len(traversal_paths_by_target) < max_expanded_hits:
+        current_id, current_path = queue.popleft()
+        current_depth = len(current_path)
+        if current_depth >= max_traversal_depth:
+            continue
+        for next_id, step in adjacency.get(current_id, []):
+            next_depth = current_depth + 1
+            if next_id in primary_ids:
+                continue
+            existing_depth = best_depth.get(next_id)
+            if existing_depth is not None and next_depth >= existing_depth:
+                continue
+            next_path = [*current_path, step]
+            best_depth[next_id] = next_depth
+            traversal_paths_by_target[next_id] = next_path
+            if next_depth < max_traversal_depth:
+                queue.append((next_id, next_path))
+
+    expanded_hits: list[dict[str, Any]] = []
+    traversal_paths: list[dict[str, Any]] = []
+    for target_id, path in sorted(
+        traversal_paths_by_target.items(),
+        key=lambda item: (len(item[1]), item[0]),
+    ):
+        if target_id not in row_by_id:
+            continue
+        last_step = path[-1]
+        expanded_hits.append(
+            {
+                **row_by_id[target_id],
+                "via_relation": last_step["relation"],
+                "via_id": last_step["from_id"],
+                "traversal_depth": len(path),
+                "path_relations": [step["relation"] for step in path],
+                "path_node_ids": _path_node_ids(path),
+            }
+        )
+        traversal_paths.append(
+            {
+                "target_id": target_id,
+                "path_depth": len(path),
+                "path": path,
+                "path_relations": [step["relation"] for step in path],
+                "path_node_ids": _path_node_ids(path),
+            }
+        )
+        if len(expanded_hits) >= max_expanded_hits:
+            break
 
     staged_hits: list[dict[str, Any]] = []
     if include_staging:
@@ -544,6 +645,14 @@ def consult_canonical_l2(
         "expanded_hits": expanded_hits,
         "staged_hits": staged_hits,
         "expanded_edge_types": expanded_edge_types,
+        "traversal_paths": traversal_paths,
+        "traversal_summary": {
+            "max_traversal_depth": max_traversal_depth,
+            "max_expanded_hits": max_expanded_hits,
+            "expanded_hit_count": len(expanded_hits),
+            "max_depth_reached": max((row["path_depth"] for row in traversal_paths), default=0),
+            "edge_types_used": expanded_edge_types,
+        },
         "index_count": len(index_rows),
         "edge_count": len(edge_rows),
     }

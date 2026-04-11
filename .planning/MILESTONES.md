@@ -13,34 +13,45 @@ Completed milestone chain:
 - `v1.34` implemented
 - `v1.35` implemented
 - `v1.36` implemented
+- `v1.37` implemented
+- `v1.38` implemented
+- `v1.39` implemented
+- `v1.40` implemented
+- `v1.41` implemented
+- `v1.42` implemented
+- `v1.43` implemented
+- `v1.44` implemented
+- `v1.45` implemented
+- `v1.46` implemented
+- `v1.47` implemented
+- `v1.48` implemented
+- `v1.49` implemented
+- `v1.50` implemented
+- `v1.51` implemented
+- `v1.52` implemented
+- `v1.53` implemented
+- `v1.54` implemented
+- `v1.55` implemented
+- `v1.56` implemented
+- `v1.57` implemented
+- `v1.58` implemented
+- `v1.59` implemented
+- `v1.60` implemented
+- `v1.61` implemented
+- `v1.62` implemented
+- `v1.63` implemented
+- `v1.64` implemented
 
 ## Latest Closed Milestone
 
-- `v1.36` `L0 L1 Source Intelligence And Physicist-Grade Intake` implemented
+- `v1.64` `L1 Method Specificity Surface` implemented
 
-## Why `v1.36` Existed
+## Current Active Milestone
 
-After `v1.35`, AITP could route work more honestly, but it still lacked the
-front-side substrate quality that a real theoretical-physics collaborator needs:
-
-- durable source identity across related topics
-- usable citation/source-neighbor intelligence
-- stronger assumption/regime/reading-depth intake
-- contradiction- and notation-sensitive intake honesty
-- runtime/topic read paths that actually expose those stronger `L0/L1` signals
-
-## What `v1.36` Delivered
-
-- stronger `L0` source identity and citation/source-neighbor signals
-- durable `l1_source_intake` for assumptions, regimes, reading depth,
-  contradictions, and notation tension
-- runtime/topic read paths that expose source intelligence instead of hiding it
-  in internal artifacts
-- maintainability-preserving helper extraction while the full
-  `research/knowledge-hub` suite stayed green
+- none
 
 ## Current Status
 
-- `v1.36` closed and archived
-- no active milestone is open yet
-- next command boundary: `$gsd-new-milestone`
+- `v1.36` through `v1.64` closed and archived
+- no active milestone is currently open
+- next command boundary: choose and plan the next milestone

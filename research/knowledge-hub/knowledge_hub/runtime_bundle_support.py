@@ -1,30 +1,24 @@
 from __future__ import annotations
-
 import json
 import re
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-
+from .collaborator_profile_support import append_collaborator_profile_markdown, collaborator_profile_must_read_entry, normalize_collaborator_profile_for_bundle
 from .decision_point_handler import get_all_decision_points, list_pending_decision_points
 from .decision_trace_handler import get_decision_traces
+from .control_plane_support import build_runtime_bundle_control_plane, control_note_override_active, control_plane_markdown_lines
+from .h_plane_support import build_h_plane_payload
 from .kernel_templates import render_session_start_note
 from .mode_envelope_support import decision_override_read, dedupe_surface_entries, light_profile_primary_reads, runtime_mode_markdown_lines, runtime_mode_payload_fragment
-from .runtime_read_path_support import (
-    append_l1_source_intake_markdown,
-    append_source_intelligence_markdown,
-    build_active_research_contract_payload,
-    empty_l1_source_intake,
-    empty_source_intelligence,
-    normalized_source_intelligence,
-)
-from .runtime_projection_handler import (
-    build_knowledge_packets_from_candidates,
-    write_pending_decisions_projection,
-    write_promotion_readiness_projection,
-    write_promotion_trace,
-    write_topic_synopsis,
-)
+from .paired_backend_support import build_runtime_backend_bridges
+from .research_trajectory_support import append_research_trajectory_markdown, normalize_research_trajectory_for_bundle, research_trajectory_must_read_entry
+from .mode_learning_support import append_mode_learning_markdown, normalize_mode_learning_for_bundle, mode_learning_must_read_entry
+from .research_judgment_runtime_support import append_research_judgment_markdown, decision_surface_snapshot, normalize_research_judgment_for_bundle, research_judgment_must_read_entry
+from .research_taste_support import append_research_taste_markdown, normalize_research_taste_for_bundle, research_taste_must_read_entry
+from .scratchpad_support import append_scratchpad_markdown, normalize_scratchpad_for_bundle, scratchpad_must_read_entry
+from .runtime_read_path_support import append_l1_source_intake_markdown, append_source_intelligence_markdown, build_active_research_contract_payload, empty_l1_source_intake, empty_source_intelligence, normalized_source_intelligence
+from .runtime_projection_handler import build_knowledge_packets_from_candidates, write_pending_decisions_projection, write_promotion_readiness_projection, write_promotion_trace, write_topic_synopsis
 def _read_json(path: Path) -> dict[str, Any] | None:
     if not path.exists():
         return None
@@ -65,7 +59,10 @@ def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
     validation_review_bundle = payload.get("validation_review_bundle") or {}
     open_gap_summary = payload.get("open_gap_summary") or {}
     strategy_memory = payload.get("strategy_memory") or {}
+    collaborator_profile = payload.get("collaborator_profile") or {}; research_trajectory = payload.get("research_trajectory") or {}; mode_learning = payload.get("mode_learning") or {}
+    research_judgment = payload.get("research_judgment") or {}; research_taste = payload.get("research_taste") or {}; scratchpad = payload.get("scratchpad") or {}
     source_intelligence = payload.get("source_intelligence") or {}
+    control_plane = payload.get("control_plane") or {}
     topic_skill_projection = payload.get("topic_skill_projection") or {}
     topic_completion = payload.get("topic_completion") or {}
     lean_bridge = payload.get("lean_bridge") or {}
@@ -99,41 +96,39 @@ def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
     ]
     append_source_intelligence_markdown(lines, source_intelligence)
     lines.extend(
-        [
-        "",
-        "## Runtime truth model",
-        "",
-        f"- Machine synopsis: `{topic_synopsis.get('path') or '(missing)'}`",
-        f"- Primary human render: `runtime/topics/{payload['topic_slug']}/topic_dashboard.md`",
-        f"- Focus state source: `{truth_sources.get('topic_state_path') or '(missing)'}`",
-        f"- Research contract source: `{truth_sources.get('research_question_contract_path') or '(missing)'}`",
-        f"- Next-action source: `{truth_sources.get('next_action_surface_path') or '(missing)'}`",
-        f"- Human-need source: `{truth_sources.get('human_need_surface_path') or '(none)'}`",
-        f"- Dependency source: `{truth_sources.get('dependency_registry_path') or '(missing)'}`",
-        f"- Promotion-readiness source: `{truth_sources.get('promotion_readiness_path') or '(missing)'}`",
-        f"- Promotion-gate source: `{truth_sources.get('promotion_gate_path') or '(none)'}`",
-        "",
-        "## Pending decisions",
-        "",
-        f"- Projection path: `{pending_decisions.get('path') or '(missing)'}`",
-        f"- Pending count: `{pending_decisions.get('pending_count') or 0}`",
-        f"- Blocking count: `{pending_decisions.get('blocking_count') or 0}`",
-        f"- Latest resolved trace: `{pending_decisions.get('latest_resolved_trace_ref') or '(none)'}`",
-        "",
-        f"{pending_decisions.get('latest_resolved_summary') or '(no resolved decision trace recorded)'}",
-        "",
-        "## Active research contract",
-        "",
-        f"- Question id: `{active_research_contract.get('question_id') or '(missing)'}`",
-        f"- Title: `{active_research_contract.get('title') or '(missing)'}`",
-        f"- Status: `{active_research_contract.get('status') or '(missing)'}`",
-        f"- Template mode: `{active_research_contract.get('template_mode') or '(missing)'}`",
-        f"- Validation mode: `{active_research_contract.get('validation_mode') or '(missing)'}`",
-        f"- Contract JSON: `{active_research_contract.get('path') or '(missing)'}`",
-        f"- Contract note: `{active_research_contract.get('note_path') or '(missing)'}`",
-        "",
-        f"{active_research_contract.get('question') or '(missing)'}",
-    ]
+        ["", *control_plane_markdown_lines(control_plane), "## Runtime truth model", ""]
+        + [
+            f"- Machine synopsis: `{topic_synopsis.get('path') or '(missing)'}`",
+            f"- Primary human render: `runtime/topics/{payload['topic_slug']}/topic_dashboard.md`",
+            f"- Focus state source: `{truth_sources.get('topic_state_path') or '(missing)'}`",
+            f"- Research contract source: `{truth_sources.get('research_question_contract_path') or '(missing)'}`",
+            f"- Next-action source: `{truth_sources.get('next_action_surface_path') or '(missing)'}`",
+            f"- Human-need source: `{truth_sources.get('human_need_surface_path') or '(none)'}`",
+            f"- Dependency source: `{truth_sources.get('dependency_registry_path') or '(missing)'}`",
+            f"- Promotion-readiness source: `{truth_sources.get('promotion_readiness_path') or '(missing)'}`",
+            f"- Promotion-gate source: `{truth_sources.get('promotion_gate_path') or '(none)'}`",
+            "",
+            "## Pending decisions",
+            "",
+            f"- Projection path: `{pending_decisions.get('path') or '(missing)'}`",
+            f"- Pending count: `{pending_decisions.get('pending_count') or 0}`",
+            f"- Blocking count: `{pending_decisions.get('blocking_count') or 0}`",
+            f"- Latest resolved trace: `{pending_decisions.get('latest_resolved_trace_ref') or '(none)'}`",
+            "",
+            f"{pending_decisions.get('latest_resolved_summary') or '(no resolved decision trace recorded)'}",
+            "",
+            "## Active research contract",
+            "",
+            f"- Question id: `{active_research_contract.get('question_id') or '(missing)'}`",
+            f"- Title: `{active_research_contract.get('title') or '(missing)'}`",
+            f"- Status: `{active_research_contract.get('status') or '(missing)'}`",
+            f"- Template mode: `{active_research_contract.get('template_mode') or '(missing)'}`",
+            f"- Validation mode: `{active_research_contract.get('validation_mode') or '(missing)'}`",
+            f"- Contract JSON: `{active_research_contract.get('path') or '(missing)'}`",
+            f"- Contract note: `{active_research_contract.get('note_path') or '(missing)'}`",
+            "",
+            f"{active_research_contract.get('question') or '(missing)'}",
+        ]
     )
     append_l1_source_intake_markdown(lines, active_research_contract)
     lines.extend(
@@ -253,6 +248,7 @@ def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
         lines.extend(["", "## Strategy guidance", ""])
         for item in strategy_memory.get("guidance") or []:
             lines.append(f"- {item}")
+    append_collaborator_profile_markdown(lines, collaborator_profile); append_research_trajectory_markdown(lines, research_trajectory); append_mode_learning_markdown(lines, mode_learning); append_research_judgment_markdown(lines, research_judgment); append_research_taste_markdown(lines, research_taste); append_scratchpad_markdown(lines, scratchpad)
     if topic_skill_projection.get("required_first_routes"):
         lines.extend(["", "## Projection route guidance", ""])
         for item in topic_skill_projection.get("required_first_routes") or []:
@@ -447,6 +443,10 @@ def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
             f"- Decision contract status: `{decision_surface.get('decision_contract_status') or '(missing)'}`",
             f"- Control note path: `{decision_surface.get('control_note_path') or '(missing)'}`",
             f"- Selected action: `{decision_surface.get('selected_action_id') or '(missing)'}`",
+            f"- Momentum: `{decision_surface.get('momentum_status') or '(missing)'}`",
+            f"- Stuckness: `{decision_surface.get('stuckness_status') or '(missing)'}`",
+            f"- Surprise: `{decision_surface.get('surprise_status') or '(missing)'}`",
+            f"- Research judgment note: `{decision_surface.get('research_judgment_note_path') or '(missing)'}`",
             "",
             "## Pending actions snapshot",
             "",
@@ -494,25 +494,7 @@ def materialize_runtime_protocol_bundle(
         queue_rows,
         decision_surface,
     )
-    backend_bridges: list[dict[str, Any]] = []
-    for row in topic_state.get("backend_bridges") or []:
-        if not isinstance(row, dict):
-            continue
-        backend_bridges.append(
-            {
-                "backend_id": str(row.get("backend_id") or "").strip() or "(missing)",
-                "title": str(row.get("title") or row.get("backend_id") or "").strip() or "(missing)",
-                "backend_type": str(row.get("backend_type") or "").strip() or "(missing)",
-                "status": str(row.get("status") or "").strip() or "(missing)",
-                "card_status": str(row.get("card_status") or "").strip() or "(missing)",
-                "card_path": str(row.get("card_path") or "").strip() or None,
-                "backend_root": str(row.get("backend_root") or "").strip() or None,
-                "artifact_kinds": self._dedupe_strings(list(row.get("artifact_kinds") or [])),
-                "canonical_targets": self._dedupe_strings(list(row.get("canonical_targets") or [])),
-                "l0_registration_script": str(row.get("l0_registration_script") or "").strip() or None,
-                "source_count": int(row.get("source_count") or 0),
-            }
-        )
+    backend_bridges = build_runtime_backend_bridges(self, topic_slug=topic_slug, topic_state=topic_state)
     shell_surfaces = self.ensure_topic_shell_surfaces(
         topic_slug=topic_slug,
         updated_by=updated_by,
@@ -613,6 +595,8 @@ def materialize_runtime_protocol_bundle(
     )
     dependency_state = shell_surfaces.get("dependency_state") or self._topic_dependency_state(topic_slug)
     topic_status_explainability = shell_surfaces.get("topic_state_explainability") or {}
+    research_judgment = normalize_research_judgment_for_bundle(self, shell_surfaces=shell_surfaces, topic_slug=topic_slug, runtime_root=runtime_root, latest_run_id=latest_run_id, updated_by=updated_by); research_taste = normalize_research_taste_for_bundle(self, shell_surfaces=shell_surfaces, runtime_root=runtime_root, topic_slug=topic_slug, updated_by=updated_by); scratchpad = normalize_scratchpad_for_bundle(self, shell_surfaces=shell_surfaces, runtime_root=runtime_root, topic_slug=topic_slug, updated_by=updated_by)
+    collaborator_profile = normalize_collaborator_profile_for_bundle(self, shell_surfaces=shell_surfaces, runtime_root=runtime_root, topic_slug=topic_slug, updated_by=updated_by); research_trajectory = normalize_research_trajectory_for_bundle(self, shell_surfaces=shell_surfaces, runtime_root=runtime_root, topic_slug=topic_slug, updated_by=updated_by); mode_learning = normalize_mode_learning_for_bundle(self, shell_surfaces=shell_surfaces, runtime_root=runtime_root, topic_slug=topic_slug, updated_by=updated_by)
     runtime_focus = dict(
         shell_surfaces.get("runtime_focus")
         or self._topic_synopsis_runtime_focus(
@@ -738,18 +722,12 @@ def materialize_runtime_protocol_bundle(
     section_formalization_note = self._relativize(
         self.kernel_root / "SECTION_FORMALIZATION_PROTOCOL.md"
     )
-    formal_theory_active = (
-        str(active_research_contract.get("research_mode") or "").strip() == "formal_derivation"
-        or str(active_research_contract.get("template_mode") or "").strip() == "formal_theory"
-    )
-    control_note_path = str(
-        (topic_state.get("pointers") or {}).get("control_note_path")
-        or self._relativize(runtime_root / "control_note.md")
-    )
+    formal_theory_active = str(active_research_contract.get("research_mode") or "").strip() == "formal_derivation" or str(active_research_contract.get("template_mode") or "").strip() == "formal_theory"
+    control_note_path = str((topic_state.get("pointers") or {}).get("control_note_path") or self._relativize(runtime_root / "control_note.md"))
     topic_synopsis_path = self._relativize(self._topic_synopsis_path(topic_slug))
-    control_note_status = str(decision_surface.get("control_note_status") or "missing")
-    decision_contract_status = str(decision_surface.get("decision_contract_status") or "missing")
-    decision_override_active = control_note_status in {"active_redirect", "stop"} or decision_contract_status != "missing"
+    decision_override_active = control_note_override_active(decision_surface)
+    research_judgment_read = research_judgment_must_read_entry(research_judgment); research_taste_read = research_taste_must_read_entry(research_taste); scratchpad_read = scratchpad_must_read_entry(scratchpad)
+    collaborator_profile_read = collaborator_profile_must_read_entry(collaborator_profile); research_trajectory_read = research_trajectory_must_read_entry(research_trajectory); mode_learning_read = mode_learning_must_read_entry(mode_learning)
     must_read_now: list[dict[str, str]] = []
     if resolved_load_profile == "light":
         must_read_now.extend(
@@ -867,6 +845,8 @@ def materialize_runtime_protocol_bundle(
                 "reason": "Global research-contract, bounded-action, and anti-proxy validation guardrails for non-trivial work.",
             }
         )
+    for entry in (collaborator_profile_read, research_trajectory_read, mode_learning_read, research_judgment_read, research_taste_read, scratchpad_read):
+        if entry is not None: must_read_now.append(entry)
     may_defer_until_trigger: list[dict[str, str]] = []
     must_read_paths = {item["path"] for item in must_read_now}
     for candidate, trigger, reason in (
@@ -1446,6 +1426,21 @@ def materialize_runtime_protocol_bundle(
         may_defer_until_trigger=may_defer_until_trigger,
         escalation_triggers=escalation_triggers,
     )
+    control_plane_payload = build_runtime_bundle_control_plane(
+        topic_state=topic_state,
+        topic_synopsis=topic_synopsis_written["topic_synopsis"],
+        runtime_mode_payload=runtime_mode_payload,
+        operator_checkpoint=operator_checkpoint,
+        decision_override_active=decision_override_active,
+    )
+    h_plane_payload = build_h_plane_payload(
+        self,
+        topic_slug=topic_slug,
+        topic_state=topic_state,
+        operator_checkpoint=operator_checkpoint,
+        promotion_gate=promotion_gate,
+        updated_by=updated_by,
+    )
 
     payload = {
         "$schema": "https://aitp.local/schemas/progressive-disclosure-runtime-bundle.schema.json",
@@ -1460,6 +1455,8 @@ def materialize_runtime_protocol_bundle(
         "research_mode": topic_state.get("research_mode") or active_research_contract.get("research_mode"),
         "load_profile": resolved_load_profile,
         **runtime_mode_payload,
+        "control_plane": control_plane_payload,
+        "h_plane": h_plane_payload,
         "topic_synopsis": {
             **topic_synopsis_written["topic_synopsis"],
             "path": self._relativize(Path(topic_synopsis_written["path"])),
@@ -1477,6 +1474,11 @@ def materialize_runtime_protocol_bundle(
         "open_gap_summary": open_gap_summary,
         "dependency_state": dependency_state,
         "strategy_memory": strategy_memory,
+        "collaborator_profile": collaborator_profile,
+        "research_trajectory": research_trajectory, "mode_learning": mode_learning,
+        "research_judgment": research_judgment,
+        "research_taste": research_taste,
+        "scratchpad": scratchpad,
         "topic_skill_projection": topic_skill_projection,
         "topic_completion": topic_completion,
         "lean_bridge": lean_bridge,
@@ -1558,13 +1560,11 @@ def materialize_runtime_protocol_bundle(
             "generated_contract_path": queue_surface.get("generated_contract_path"),
             "generated_contract_note_path": queue_surface.get("generated_contract_note_path"),
         },
-        "decision_surface": {
-            "decision_mode": decision_surface.get("decision_mode"),
-            "decision_source": decision_surface.get("decision_source"),
-            "decision_contract_status": decision_surface.get("decision_contract_status"),
-            "control_note_path": decision_surface.get("control_note_path"),
-            "selected_action_id": decision_surface.get("selected_action_id"),
-        },
+        "decision_surface": decision_surface_snapshot(
+            decision_surface,
+            runtime_focus,
+            research_judgment,
+        ),
         "pending_actions": [
             {
                 "action_id": str(row.get("action_id") or ""),
@@ -1671,6 +1671,9 @@ def materialize_session_start_contract(
     )
     idea_packet_path = self._normalize_artifact_path((runtime_bundle.get("idea_packet") or {}).get("path"))
     idea_packet_note_path = self._normalize_artifact_path((runtime_bundle.get("idea_packet") or {}).get("note_path"))
+    collaborator_profile_path = self._normalize_artifact_path((runtime_bundle.get("collaborator_profile") or {}).get("path"))
+    collaborator_profile_note_path = self._normalize_artifact_path((runtime_bundle.get("collaborator_profile") or {}).get("note_path"))
+    research_trajectory_path = self._normalize_artifact_path((runtime_bundle.get("research_trajectory") or {}).get("path")); research_trajectory_note_path = self._normalize_artifact_path((runtime_bundle.get("research_trajectory") or {}).get("note_path")); mode_learning_path = self._normalize_artifact_path((runtime_bundle.get("mode_learning") or {}).get("path")); mode_learning_note_path = self._normalize_artifact_path((runtime_bundle.get("mode_learning") or {}).get("note_path"))
     innovation_direction_path = self._normalize_artifact_path(
         steering_artifacts.get("innovation_direction_path") or pointers.get("innovation_direction_path")
     )
@@ -1807,6 +1810,10 @@ def materialize_session_start_contract(
             "current_topic_note_path": self._normalize_artifact_path(
                 (loop_payload.get("current_topic_memory") or {}).get("current_topic_note_path")
             ),
+            "collaborator_profile_path": collaborator_profile_path,
+            "collaborator_profile_note_path": collaborator_profile_note_path,
+            "research_trajectory_path": research_trajectory_path,
+            "research_trajectory_note_path": research_trajectory_note_path, "mode_learning_path": mode_learning_path, "mode_learning_note_path": mode_learning_note_path,
             "operator_checkpoint_path": operator_checkpoint_path,
             "operator_checkpoint_note_path": operator_checkpoint_note_path,
             "idea_packet_path": idea_packet_path,

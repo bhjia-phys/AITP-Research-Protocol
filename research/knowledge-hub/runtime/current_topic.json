@@ -5,7 +5,7 @@
   "source": "active-topics-registry",
   "run_id": "2026-04-10-162810-tfim-code-method",
   "resume_stage": "L1",
-  "runtime_root": "D:\\BaiduSyncdisk\\repos\\_worktrees\\aitp-v137-v142-remediation\\research\\knowledge-hub\\runtime\\topics\\tfim-benchmark-first-code-method-acceptance",
+  "runtime_root": "runtime/topics/tfim-benchmark-first-code-method-acceptance",
   "human_request": "Keep the benchmark-first route bounded, prefer the small exact TFIM result, and treat broader workflow changes as downstream of the benchmark gate.",
   "summary": "Stage `L1`; next `No explicit pending actions were found; inspect the runtime resume state.`; human need `none`; last evidence `none`."
 }

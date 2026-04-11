@@ -111,6 +111,11 @@ The research layers are stabilized by explicit contracts:
 
 These contracts are the public interface between agents and the research state.
 
+The public schema tree lives in `schemas/`.
+The installable runtime mirrors shared schemas in `research/knowledge-hub/schemas/`.
+Use the root tree for repository-level public protocol authority, and use the
+runtime package tree for installable mirrors plus runtime-local contracts.
+
 For non-trivial topics, the public contracts should also carry enough
 research-flow structure to resist scope drift and fake completion:
 
@@ -158,7 +163,9 @@ The same maintainability rule now applies to kernel entry surfaces:
 - `aitp_service.py` should increasingly act as a façade over focused helper
   modules such as `frontdoor_support.py`, `agent_install_support.py`,
   `kernel_templates.py`, `kernel_markdown_renderers.py`,
-  `runtime_bundle_support.py`, `topic_shell_support.py`,
+  `runtime_bundle_support.py`, `control_plane_support.py`,
+  `paired_backend_support.py`, `h_plane_support.py`,
+  `topic_shell_support.py`,
   `source_distillation_support.py`, `topic_loop_support.py`,
   `chat_session_support.py`, `capability_audit_support.py`,
   `followup_support.py`, `auto_promotion_support.py`,

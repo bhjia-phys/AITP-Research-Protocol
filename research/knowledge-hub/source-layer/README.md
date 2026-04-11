@@ -15,6 +15,11 @@ Layer 0 is the callable source substrate of AITP:
 - `topics/<topic_slug>/source_index.jsonl`
 - `topics/<topic_slug>/sources/<source_slug>/`
 - `global_index.jsonl`
+- `compiled/source_catalog.json|md`
+- `compiled/citation_traversals/`
+- `compiled/source_families/`
+- `compiled/bibtex_exports/`
+- `compiled/bibtex_imports/`
 - `scripts/register_arxiv_source.py`
 - `scripts/backfill_topic_sources.py`
 
@@ -66,3 +71,10 @@ That is acceptable for now as long as:
 - each registration remains explicit,
 - provenance stays intact,
 - later deduplication can be added without losing source identity.
+
+The current bounded compiled surfaces now make that reuse easier to inspect:
+- `compiled/source_catalog.json|md`
+- `compiled/citation_traversals/`
+- `compiled/source_families/`
+- `compiled/bibtex_exports/`
+- `compiled/bibtex_imports/`

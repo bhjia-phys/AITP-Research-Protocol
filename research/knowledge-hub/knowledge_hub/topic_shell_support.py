@@ -18,6 +18,17 @@ from .l1_source_intake_support import (
     source_intelligence_paths,
     source_intelligence_payload,
 )
+from .collaborator_profile_support import materialize_collaborator_profile_surface
+from .mode_learning_support import materialize_mode_learning_surface
+from .research_taste_support import (
+    dashboard_research_taste_lines,
+)
+from .scratchpad_support import materialize_scratchpad_surface, scratchpad_dashboard_lines
+from .topic_dashboard_surface_support import finalize_topic_shell_outputs, materialize_research_state_surfaces
+from .research_trajectory_support import materialize_research_trajectory_surface
+from .research_judgment_runtime_support import (
+    dashboard_research_judgment_lines,
+)
 from .runtime_projection_handler import write_topic_skill_projection
 def _read_json(path: Path) -> dict[str, Any] | None:
     if not path.exists():
@@ -593,121 +604,6 @@ def derive_operator_checkpoint(
         superseded_payload["updated_by"] = updated_by
     return payload, superseded_payload
 
-def derive_topic_status_explainability(
-    self,
-    *,
-    topic_slug: str,
-    topic_state: dict[str, Any],
-    interaction_state: dict[str, Any],
-    selected_pending_action: dict[str, Any] | None,
-    idea_packet: dict[str, Any],
-    operator_checkpoint: dict[str, Any],
-    open_gap_summary: dict[str, Any],
-    validation_contract: dict[str, Any],
-) -> dict[str, Any]:
-    decision_surface = interaction_state.get("decision_surface") or {}
-    queue_surface = interaction_state.get("action_queue_surface") or {}
-    pointers = topic_state.get("pointers") or {}
-    selected_action_summary = str((selected_pending_action or {}).get("summary") or "").strip()
-    selected_action_type = str((selected_pending_action or {}).get("action_type") or "").strip()
-    selected_action_id = str((selected_pending_action or {}).get("action_id") or "").strip()
-    selected_action_auto_runnable = bool((selected_pending_action or {}).get("auto_runnable"))
-    current_route_choice = {
-        "resume_stage": str(topic_state.get("resume_stage") or ""),
-        "decision_source": str(decision_surface.get("decision_source") or ""),
-        "queue_source": str(queue_surface.get("queue_source") or ""),
-        "selected_action_id": selected_action_id or None,
-        "selected_action_type": selected_action_type or None,
-        "selected_action_summary": selected_action_summary or None,
-        "selected_action_auto_runnable": selected_action_auto_runnable,
-        "selected_validation_route_path": self._normalize_artifact_path(
-            pointers.get("selected_validation_route_path")
-        ),
-        "next_action_decision_note_path": self._normalize_artifact_path(
-            pointers.get("next_action_decision_note_path")
-            or decision_surface.get("next_action_decision_note_path")
-        ),
-    }
-    last_evidence_return = self._derive_last_evidence_return(
-        topic_state=topic_state,
-        validation_contract=validation_contract,
-    )
-
-    active_human_need: dict[str, Any]
-    blocker_summary: list[str]
-    if str(operator_checkpoint.get("status") or "").strip() == "requested":
-        blocker_summary = self._dedupe_strings(list(operator_checkpoint.get("blocker_summary") or []))
-        active_human_need = {
-            "status": "requested",
-            "kind": str(operator_checkpoint.get("checkpoint_kind") or ""),
-            "path": self._normalize_artifact_path(operator_checkpoint.get("note_path")),
-            "summary": str(operator_checkpoint.get("question") or ""),
-        }
-        why_this_topic_is_here = (
-            (blocker_summary[0] if blocker_summary else "")
-            or str(operator_checkpoint.get("question") or "").strip()
-            or "AITP paused at an active operator checkpoint."
-        )
-    elif str(idea_packet.get("status") or "").strip() == "needs_clarification":
-        blocker_summary = self._dedupe_strings(
-            list(idea_packet.get("clarification_questions") or [])
-            or [f"Missing idea-packet fields: {', '.join(idea_packet.get('missing_fields') or []) or '(none)'}"]
-        )
-        active_human_need = {
-            "status": "requested",
-            "kind": "idea_packet_clarification",
-            "path": self._normalize_artifact_path(idea_packet.get("note_path")),
-            "summary": str(idea_packet.get("status_reason") or ""),
-        }
-        why_this_topic_is_here = (
-            (blocker_summary[0] if blocker_summary else "")
-            or str(idea_packet.get("status_reason") or "").strip()
-            or "AITP is holding at the research-intent gate."
-        )
-    else:
-        blocker_summary = self._dedupe_strings(list(open_gap_summary.get("blockers") or []))
-        active_human_need = {
-            "status": "none",
-            "kind": "none",
-            "path": None,
-            "summary": "No active human checkpoint is currently blocking the bounded loop.",
-        }
-        why_this_topic_is_here = (
-            (blocker_summary[0] if blocker_summary else "")
-            or (
-                f"The topic is currently following `{selected_action_summary}` at stage "
-                f"`{topic_state.get('resume_stage') or '(missing)'}`."
-                if selected_action_summary
-                else ""
-            )
-            or str(topic_state.get("resume_reason") or "").strip()
-            or "AITP is holding the current bounded route defined by the runtime state."
-        )
-
-    next_bounded_action = {
-        "status": "selected" if selected_action_summary else "missing",
-        "action_id": selected_action_id or None,
-        "action_type": selected_action_type or None,
-        "summary": selected_action_summary or "No bounded action is currently selected.",
-        "auto_runnable": selected_action_auto_runnable,
-    }
-    return {
-        "topic_slug": topic_slug,
-        "current_status_summary": (
-            f"Stage `{topic_state.get('resume_stage') or '(missing)'}`; "
-            f"next `{next_bounded_action['summary']}`; "
-            f"human need `{active_human_need['kind']}`; "
-            f"last evidence `{last_evidence_return['kind']}`."
-        ),
-        "why_this_topic_is_here": why_this_topic_is_here,
-        "current_route_choice": current_route_choice,
-        "last_evidence_return": last_evidence_return,
-        "active_human_need": active_human_need,
-        "blocker_summary": blocker_summary,
-        "next_bounded_action": next_bounded_action,
-        "updated_at": _now_iso(),
-    }
-
 def render_topic_dashboard_markdown(
     self,
     *,
@@ -737,6 +633,9 @@ def render_topic_dashboard_markdown(
     current_route_choice = topic_status_explainability.get("current_route_choice") or {}
     last_evidence_return = topic_status_explainability.get("last_evidence_return") or {}
     active_human_need = topic_status_explainability.get("active_human_need") or {}
+    research_judgment = topic_status_explainability.get("research_judgment") or {}
+    research_taste = topic_status_explainability.get("research_taste") or {}
+    scratchpad = topic_status_explainability.get("scratchpad") or {}
     blocker_summary = runtime_focus.get("blocker_summary") or topic_status_explainability.get("blocker_summary") or []
     lines = [
         "# Topic dashboard",
@@ -809,6 +708,9 @@ def render_topic_dashboard_markdown(
         "",
         f"{current_route_choice.get('selected_action_summary') or '(none)'}",
         "",
+        *dashboard_research_judgment_lines(research_judgment),
+        *dashboard_research_taste_lines(research_taste),
+        *scratchpad_dashboard_lines(scratchpad),
         "## Last evidence return",
         "",
         f"- Status: `{last_evidence_return.get('status') or '(missing)'}`",
@@ -898,10 +800,9 @@ def render_topic_dashboard_markdown(
     if source_intelligence.get("source_neighbors"):
         lines.extend(["", "## Source neighbors", ""])
         for row in source_intelligence.get("source_neighbors") or []:
-            lines.append(
-                f"- `{row.get('source_id') or '(missing)'}` ~ `{row.get('neighbor_source_id') or '(missing)'}` "
-                f"via `{row.get('relation_kind') or '(missing)'}`"
-            )
+            lines.append(f"- `{row.get('source_id') or '(missing)'}` ~ `{row.get('neighbor_source_id') or '(missing)'}` via `{row.get('relation_kind') or '(missing)'}`")
+    fidelity_summary = source_intelligence.get("fidelity_summary") or {}
+    lines.extend(["", "## Source fidelity", "", f"- Strongest=`{fidelity_summary.get('strongest_tier') or 'unknown'}`; Weakest=`{fidelity_summary.get('weakest_tier') or 'unknown'}`; Counts=`{', '.join(f'{key}={value}' for key, value in (fidelity_summary.get('counts_by_tier') or {}).items()) or '(none)'}`"])
     lines.extend([
         "",
         "## Immediate next actions",
@@ -1192,7 +1093,7 @@ def ensure_topic_shell_surfaces(
     ).strip()
     validation_mode = str(
         existing_validation.get("validation_mode")
-        or self._validation_mode_for_template(template_mode)
+        or self._validation_mode_for_modes(template_mode=template_mode, research_mode=research_mode)
     ).strip()
     title = self._coalesce_string(
         existing_research.get("title"),
@@ -1457,6 +1358,14 @@ def ensure_topic_shell_surfaces(
         research_contract=research_contract,
         validation_contract=validation_contract,
     )
+    collaborator_profile_paths, collaborator_profile = materialize_collaborator_profile_surface(
+        self,
+        runtime_root=runtime_root,
+        topic_slug=topic_slug,
+        updated_by=updated_by,
+    )
+    research_trajectory_paths, research_trajectory = materialize_research_trajectory_surface(self, runtime_root=runtime_root, topic_slug=topic_slug, updated_by=updated_by)
+    mode_learning_paths, mode_learning = materialize_mode_learning_surface(self, runtime_root=runtime_root, topic_slug=topic_slug, updated_by=updated_by)
     topic_skill_projection = self._derive_topic_skill_projection(
         topic_slug=topic_slug,
         updated_by=updated_by,
@@ -1553,51 +1462,54 @@ def ensure_topic_shell_surfaces(
         open_gap_summary=open_gap_summary,
         validation_contract=validation_contract,
     )
-    runtime_focus = self._topic_synopsis_runtime_focus(
-        topic_state=resolved_topic_state,
+    research_judgment_paths, research_judgment, research_taste_paths, research_taste = materialize_research_state_surfaces(
+        self,
+        runtime_root=runtime_root,
+        topic_slug=topic_slug,
+        latest_run_id=latest_run_id,
+        updated_by=updated_by,
         topic_status_explainability=topic_status_explainability,
+        selected_pending_action=selected_pending_action,
+        open_gap_summary=open_gap_summary,
+        strategy_memory=strategy_memory,
         dependency_state=dependency_state,
-        promotion_readiness=promotion_readiness,
+        gap_map_path=gap_map_path,
     )
+    scratchpad_paths, scratchpad = materialize_scratchpad_surface(self, runtime_root=runtime_root, topic_slug=topic_slug, updated_by=updated_by)
+    topic_status_explainability["scratchpad"] = scratchpad
+    runtime_focus = self._topic_synopsis_runtime_focus(topic_state=resolved_topic_state, topic_status_explainability=topic_status_explainability, dependency_state=dependency_state, promotion_readiness=promotion_readiness)
     topic_state_path = runtime_root / "topic_state.json"
     if topic_state_path.exists() and resolved_topic_state:
-        resolved_topic_state = dict(resolved_topic_state)
-        resolved_topic_state["status_explainability"] = topic_status_explainability
+        resolved_topic_state = {**dict(resolved_topic_state), "status_explainability": topic_status_explainability}
         _write_json(topic_state_path, resolved_topic_state)
-    _write_text(
-        dashboard_path,
-        self._render_topic_dashboard_markdown(
-            topic_slug=topic_slug,
-            topic_state=resolved_topic_state,
-            source_intelligence=source_intelligence_surface,
-            runtime_focus=runtime_focus,
-            selected_pending_action=selected_pending_action,
-            pending_actions=pending_actions,
-            idea_packet=idea_packet,
-            operator_checkpoint=operator_checkpoint_surface,
-            topic_status_explainability=topic_status_explainability,
-            research_contract=research_contract,
-            validation_contract=validation_contract,
-            validation_review_bundle={
-                **validation_review_bundle,
-                "path": validation_review_bundle_json_ref,
-                "note_path": validation_review_bundle_note_ref,
-            },
-            promotion_readiness=promotion_readiness,
-            open_gap_summary=open_gap_summary,
-            strategy_memory=strategy_memory,
-            topic_skill_projection=topic_skill_projection_surface,
-            topic_completion=topic_completion,
-            lean_bridge=lean_bridge,
-            dependency_state=dependency_state,
-        ),
-    )
-    _write_text(readiness_path, self._render_promotion_readiness_markdown(promotion_readiness))
-    _write_text(gap_map_path, self._render_gap_map_markdown(open_gap_summary))
-    self._refresh_operator_console_checkpoint_section(
+    finalize_topic_shell_outputs(
+        self,
+        dashboard_path=dashboard_path,
         topic_slug=topic_slug,
+        topic_state=resolved_topic_state,
+        source_intelligence=source_intelligence_surface,
+        runtime_focus=runtime_focus,
+        selected_pending_action=selected_pending_action,
+        pending_actions=pending_actions,
+        idea_packet=idea_packet,
         operator_checkpoint=operator_checkpoint_surface,
         topic_status_explainability=topic_status_explainability,
+        research_contract=research_contract,
+        validation_contract=validation_contract,
+        validation_review_bundle={
+            **validation_review_bundle,
+            "path": validation_review_bundle_json_ref,
+            "note_path": validation_review_bundle_note_ref,
+        },
+        promotion_readiness=promotion_readiness,
+        readiness_path=readiness_path,
+        open_gap_summary=open_gap_summary,
+        gap_map_path=gap_map_path,
+        strategy_memory=strategy_memory,
+        topic_skill_projection=topic_skill_projection_surface,
+        topic_completion=topic_completion,
+        lean_bridge=lean_bridge,
+        dependency_state=dependency_state,
     )
     return {
         "research_question_contract_path": str(research_paths["json"]),
@@ -1606,6 +1518,20 @@ def ensure_topic_shell_surfaces(
         "validation_contract_note_path": str(validation_paths["note"]),
         "validation_review_bundle_path": str(validation_review_bundle_paths["json"]),
         "validation_review_bundle_note_path": str(validation_review_bundle_paths["note"]),
+        "collaborator_profile_path": str(collaborator_profile_paths["json"]),
+        "collaborator_profile_note_path": str(collaborator_profile_paths["note"]),
+        "research_trajectory_path": str(research_trajectory_paths["json"]),
+        "research_trajectory_note_path": str(research_trajectory_paths["note"]),
+        "mode_learning_path": str(mode_learning_paths["json"]),
+        "mode_learning_note_path": str(mode_learning_paths["note"]),
+        "research_judgment_path": str(research_judgment_paths["json"]),
+        "research_judgment_note_path": str(research_judgment_paths["note"]),
+        "research_taste_path": str(research_taste_paths["json"]),
+        "research_taste_note_path": str(research_taste_paths["note"]),
+        "research_taste_entries_path": str(research_taste_paths["entries"]),
+        "scratchpad_path": str(scratchpad_paths["json"]),
+        "scratchpad_note_path": str(scratchpad_paths["note"]),
+        "scratchpad_entries_path": str(scratchpad_paths["entries"]),
         "idea_packet_path": str(idea_packet_paths["json"]),
         "idea_packet_note_path": str(idea_packet_paths["note"]),
         "operator_checkpoint_path": operator_checkpoint_paths_written["operator_checkpoint_path"],
@@ -1634,6 +1560,12 @@ def ensure_topic_shell_surfaces(
             "path": validation_review_bundle_json_ref,
             "note_path": validation_review_bundle_note_ref,
         },
+        "collaborator_profile": collaborator_profile,
+        "research_trajectory": research_trajectory,
+        "mode_learning": mode_learning,
+        "research_judgment": research_judgment,
+        "research_taste": research_taste,
+        "scratchpad": scratchpad,
         "idea_packet": idea_packet,
         "operator_checkpoint": operator_checkpoint_surface,
         "topic_state_explainability": topic_status_explainability,

@@ -59,6 +59,29 @@ CONTRADICTION_PAIRS = (
     ("zero temperature", "finite temperature"),
 )
 
+FIDELITY_RANK = {
+    "peer_reviewed": 4,
+    "preprint": 3,
+    "local_note": 2,
+    "web": 1,
+    "unknown": 0,
+}
+
+METHOD_SPECIFICITY_RULES = (
+    ("formal_derivation", "high", ("we derive", "derivation", "theorem", "lemma", "proof obligation", "we prove", "proof")),
+    (
+        "numerical_benchmark",
+        "high",
+        ("benchmark", "exact diagonalization", "simulation", "numerically", "monte carlo", "finite-size scaling"),
+    ),
+    (
+        "implementation_workflow",
+        "high",
+        ("implementation", "algorithm", "workflow", "pipeline", "code path", "script", "solver"),
+    ),
+    ("survey_overview", "low", ("survey", "overview", "review", "perspective", "introduction")),
+)
+
 
 def _slugify(text: str) -> str:
     lowered = text.lower()
@@ -205,6 +228,21 @@ def detect_regimes(*, text: str) -> list[str]:
     return [phrase for phrase in REGIME_PATTERNS if phrase in lowered]
 
 
+def infer_method_specificity(*, text: str, source_type: str) -> tuple[str, str, str]:
+    lowered = str(text or "").lower()
+    for family, tier, needles in METHOD_SPECIFICITY_RULES:
+        for needle in needles:
+            if needle in lowered:
+                return family, tier, needle
+
+    normalized_source_type = str(source_type or "").strip().lower()
+    if normalized_source_type in {"benchmark", "code", "implementation", "numerical", "experiment"}:
+        return "numerical_benchmark", "medium", normalized_source_type
+    if normalized_source_type in {"thesis", "paper", "article", "book", "lecture", "derivation"}:
+        return "unspecified_method", "low", normalized_source_type or "source_type"
+    return "unspecified_method", "low", normalized_source_type or "summary"
+
+
 def infer_reading_depth_label(
     *,
     source_type: str,
@@ -313,6 +351,28 @@ def detect_notation_tension_candidates(
     return tensions
 
 
+def infer_source_fidelity(
+    *,
+    source_type: str,
+    provenance: dict[str, Any] | None,
+    canonical_source_id: str,
+) -> tuple[str, str]:
+    provenance = provenance or {}
+    canonical_source_id = str(canonical_source_id or "").strip()
+    lower_source_type = str(source_type or "").strip().lower()
+    abs_url = str(provenance.get("abs_url") or "").strip().lower()
+    source_url = str(provenance.get("source_url") or "").strip().lower()
+    if canonical_source_id.startswith("source_identity:doi:") or normalize_doi(str(provenance.get("doi") or "")):
+        return "peer_reviewed", "canonical_doi_identity"
+    if canonical_source_id.startswith("source_identity:arxiv:") or "arxiv.org" in abs_url or "arxiv.org" in source_url:
+        return "preprint", "arxiv_identity"
+    if lower_source_type == "local_note":
+        return "local_note", "local_note_source"
+    if lower_source_type in {"web", "website", "blog", "web_note"}:
+        return "web", "web_source"
+    return "unknown", "source_type_only"
+
+
 def build_source_intelligence(
     *,
     topic_slug: str,
@@ -335,6 +395,7 @@ def build_source_intelligence(
 
     citation_edges: list[dict[str, Any]] = []
     source_neighbors: list[dict[str, Any]] = []
+    fidelity_rows: list[dict[str, str]] = []
     seen_neighbor_keys: set[tuple[str, str, str]] = set()
 
     local_rows: list[dict[str, Any]] = []
@@ -355,6 +416,21 @@ def build_source_intelligence(
                     title=str(row.get("title") or ""),
                     summary=str(row.get("summary") or ""),
                 ),
+            }
+        )
+    for row in local_rows:
+        fidelity_tier, fidelity_basis = infer_source_fidelity(
+            source_type=str(row.get("source_type") or ""),
+            provenance=row.get("provenance") if isinstance(row.get("provenance"), dict) else {},
+            canonical_source_id=str(row.get("canonical_source_id") or ""),
+        )
+        fidelity_rows.append(
+            {
+                "source_id": str(row.get("source_id") or ""),
+                "canonical_source_id": str(row.get("canonical_source_id") or ""),
+                "source_type": str(row.get("source_type") or ""),
+                "fidelity_tier": fidelity_tier,
+                "fidelity_basis": fidelity_basis,
             }
         )
 
@@ -429,10 +505,27 @@ def build_source_intelligence(
             if row.get("cross_topic")
         }
     )
+    counts_by_tier: dict[str, int] = {}
+    for row in fidelity_rows:
+        tier = str(row.get("fidelity_tier") or "unknown")
+        counts_by_tier[tier] = counts_by_tier.get(tier, 0) + 1
+    tiers_present = [tier for tier, count in counts_by_tier.items() if count > 0]
+    strongest_tier = max(tiers_present, key=lambda item: (FIDELITY_RANK.get(item, -1), item), default="unknown")
+    weakest_tier = min(tiers_present, key=lambda item: (FIDELITY_RANK.get(item, 99), item), default="unknown")
+    counts_by_tier = dict(
+        sorted(counts_by_tier.items(), key=lambda item: (-FIDELITY_RANK.get(item[0], -1), item[0]))
+    )
 
     return {
         "canonical_source_ids": canonical_source_ids,
         "cross_topic_match_count": cross_topic_match_count,
+        "fidelity_rows": fidelity_rows,
+        "fidelity_summary": {
+            "source_count": len(fidelity_rows),
+            "counts_by_tier": counts_by_tier,
+            "strongest_tier": strongest_tier,
+            "weakest_tier": weakest_tier,
+        },
         "citation_edges": citation_edges,
         "source_neighbors": source_neighbors,
         "neighbor_signal_count": len(source_neighbors),

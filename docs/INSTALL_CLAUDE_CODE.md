@@ -17,6 +17,9 @@ python -m pip install -e research/knowledge-hub
 aitp doctor
 ```
 
+The runtime requirements in `research/knowledge-hub/requirements.txt` now use
+bounded version ranges rather than fully open-ended dependency specifiers.
+
 If this machine previously used an older workspace-backed editable install,
 first converge the local install:
 
@@ -78,6 +81,18 @@ Claude Code should now:
 Use `aitp doctor --json` to verify not just file presence but also whether the
 Claude bootstrap assets still match the canonical hook files and whether
 `.claude/settings.json` still wires the expected SessionStart command.
+The same JSON report now also exposes `control_plane_contracts` and
+`control_plane_surfaces` so Claude-side operators can find the unified
+architecture docs plus the runtime audit/status commands that inspect live
+topics.
+
+Useful follow-up commands once a topic exists:
+
+```bash
+aitp capability-audit --topic-slug <topic_slug>
+aitp paired-backend-audit --topic-slug <topic_slug>
+aitp h-plane-audit --topic-slug <topic_slug>
+```
 
 If you are migrating from an older setup, remove any legacy `.claude/commands/aitp*.md`
 bundle so SessionStart bootstrap is the only default entry.

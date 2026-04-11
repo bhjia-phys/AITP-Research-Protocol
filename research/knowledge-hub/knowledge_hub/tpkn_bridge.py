@@ -12,6 +12,7 @@ from typing import Any
 
 AITP_TO_TPKN_TYPE = {
     "concept": "concept",
+    "physical_picture": "concept",
     "definition_card": "definition",
     "notation_card": "notation",
     "equation_card": "equation",
@@ -36,6 +37,7 @@ AITP_TO_TPKN_TYPE = {
 
 AITP_ID_PREFIX_TO_TPKN_TYPE = {
     "concept": "concept",
+    "physical_picture": "concept",
     "definition_card": "definition",
     "notation_card": "notation",
     "equation_card": "equation",

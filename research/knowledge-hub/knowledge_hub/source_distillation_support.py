@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .source_intelligence import detect_assumptions, detect_regimes, infer_reading_depth_label
+from .source_intelligence import detect_assumptions, detect_regimes, infer_method_specificity, infer_reading_depth_label
 
 _FORMAL_SOURCE_TYPES = {"paper", "thesis", "article", "local_note", "book", "lecture", "derivation"}
 _NUMERICAL_SOURCE_TYPES = {"benchmark", "code", "implementation", "numerical", "experiment"}
@@ -26,6 +26,7 @@ def _empty_l1_source_intake() -> dict[str, Any]:
         "assumption_rows": [],
         "regime_rows": [],
         "reading_depth_rows": [],
+        "method_specificity_rows": [],
     }
 
 
@@ -182,6 +183,7 @@ def _build_l1_source_intake(
     assumption_rows: list[dict[str, str]] = []
     regime_rows: list[dict[str, str]] = []
     reading_depth_rows: list[dict[str, str]] = []
+    method_specificity_rows: list[dict[str, str]] = []
     counted_sources: set[str] = set()
 
     for row in source_rows:
@@ -222,6 +224,24 @@ def _build_l1_source_intake(
                     "basis": basis,
                 }
             )
+            method_family, specificity_tier, specificity_needle = infer_method_specificity(
+                text=analysis_text,
+                source_type=source_type,
+            )
+            method_specificity_rows.append(
+                {
+                    "source_id": source_id,
+                    "source_title": title,
+                    "source_type": source_type,
+                    "method_family": method_family,
+                    "specificity_tier": specificity_tier,
+                    "reading_depth": reading_depth,
+                    "evidence_excerpt": _excerpt_for_signal(
+                        text=analysis_text,
+                        needle=specificity_needle or title or summary,
+                    ),
+                }
+            )
         if not analysis_text:
             continue
         for assumption in detect_assumptions(text=analysis_text):
@@ -254,6 +274,10 @@ def _build_l1_source_intake(
         "reading_depth_rows": _dedupe_rows(
             reading_depth_rows,
             key_fields=("source_id", "reading_depth", "basis"),
+        ),
+        "method_specificity_rows": _dedupe_rows(
+            method_specificity_rows,
+            key_fields=("source_id", "method_family", "specificity_tier"),
         ),
     }
 

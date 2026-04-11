@@ -18,6 +18,12 @@ def _bootstrap_path() -> None:
 
 _bootstrap_path()
 
+from tests_support import (  # noqa: E402
+    copy_kernel_schema_files,
+    copy_runtime_schema_files,
+    make_temp_kernel,
+    write_protocol_placeholders,
+)
 from knowledge_hub.aitp_service import AITPService  # noqa: E402
 from knowledge_hub.mode_envelope_support import build_runtime_mode_contract  # noqa: E402
 from knowledge_hub.runtime_projection_handler import (  # noqa: E402
@@ -32,31 +38,27 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
     def setUp(self) -> None:
         self.repo_root = Path(__file__).resolve().parents[3]
         self.package_root = Path(__file__).resolve().parents[1]
-        self.temp_root = Path(tempfile.mkdtemp(prefix="aitp-runtime-profiles-"))
-        self.kernel_root = self.temp_root / "kernel"
-        (self.kernel_root / "schemas").mkdir(parents=True, exist_ok=True)
-        (self.kernel_root / "runtime" / "schemas").mkdir(parents=True, exist_ok=True)
-        for name in (
+        self.fixture = make_temp_kernel("aitp-runtime-profiles-")
+        self.kernel_root = self.fixture.kernel_root
+        copy_kernel_schema_files(
+            self.package_root,
+            self.kernel_root,
             "topic-synopsis.schema.json",
             "knowledge-packet.schema.json",
             "promotion-trace.schema.json",
             "topic-skill-projection.schema.json",
-        ):
-            source = self.package_root / "schemas" / name
-            target = self.kernel_root / "schemas" / name
-            target.write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
-
-        bundle_schema = self.package_root / "runtime" / "schemas" / "progressive-disclosure-runtime-bundle.schema.json"
-        (self.kernel_root / "runtime" / "schemas" / "progressive-disclosure-runtime-bundle.schema.json").write_text(
-            bundle_schema.read_text(encoding="utf-8"),
-            encoding="utf-8",
         )
-        for protocol_name in (
+        copy_runtime_schema_files(
+            self.package_root,
+            self.kernel_root,
+            "progressive-disclosure-runtime-bundle.schema.json",
+        )
+        write_protocol_placeholders(
+            self.kernel_root,
             "RESEARCH_EXECUTION_GUARDRAILS.md",
             "FORMAL_THEORY_UPSTREAM_REFERENCE_PROTOCOL.md",
             "SECTION_FORMALIZATION_PROTOCOL.md",
-        ):
-            (self.kernel_root / protocol_name).write_text(f"# {protocol_name}\n", encoding="utf-8")
+        )
 
         self.runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
         self.runtime_root.mkdir(parents=True, exist_ok=True)
@@ -64,6 +66,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             json.dumps(
                 {
                     "topic_slug": "demo-topic",
+                    "task_type": "open_exploration",
                     "resume_stage": "L3",
                     "last_materialized_stage": "L3",
                     "latest_run_id": "run-001",
@@ -112,7 +115,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.service = AITPService(kernel_root=self.kernel_root, repo_root=self.repo_root)
 
     def tearDown(self) -> None:
-        shutil.rmtree(self.temp_root)
+        self.fixture.cleanup()
 
     def _write_surface(self, relative_path: str, content: str) -> str:
         path = self.kernel_root / relative_path
@@ -387,6 +390,17 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                         "basis": "metadata_link",
                     }
                 ],
+                "method_specificity_rows": [
+                    {
+                        "source_id": "paper:demo-source",
+                        "source_title": "Demo Source",
+                        "source_type": "paper",
+                        "method_family": "numerical_benchmark",
+                        "specificity_tier": "high",
+                        "reading_depth": "abstract_only",
+                        "evidence_excerpt": "Benchmark first.",
+                    }
+                ],
             },
             "runtime_focus": {
                 "summary": "Stage `L3`; next `Run the smallest exact benchmark first.`; human need `none`; last evidence `none`.",
@@ -405,6 +419,10 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "dependency_status": "clear",
                 "dependency_summary": "No active topic dependencies.",
                 "promotion_status": "not_ready",
+                "momentum_status": "queued",
+                "stuckness_status": "none",
+                "surprise_status": "none",
+                "judgment_summary": "Momentum `queued`; stuckness `none`; surprise `none`.",
             },
             "truth_sources": {
                 "topic_state_path": "runtime/topics/demo-topic/topic_state.json",
@@ -594,6 +612,16 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertIsNone(bundle["active_submode"])
         self.assertEqual(bundle["mode_envelope"]["mode"], "explore")
         self.assertEqual(bundle["mode_envelope"]["load_profile"], "light")
+        self.assertIn("control_plane", bundle)
+        self.assertEqual(bundle["control_plane"]["task_type"], "open_exploration")
+        self.assertEqual(bundle["control_plane"]["lane"], bundle["topic_synopsis"]["lane"])
+        self.assertEqual(bundle["control_plane"]["layer"], "L3")
+        self.assertEqual(bundle["control_plane"]["mode"], bundle["runtime_mode"])
+        self.assertEqual(
+            bundle["control_plane"]["transition"]["transition_kind"],
+            bundle["transition_posture"]["transition_kind"],
+        )
+        self.assertEqual(bundle["control_plane"]["h_plane"]["checkpoint_status"], "answered")
         self.assertEqual(bundle["mode_envelope"]["minimum_mandatory_context"][0]["path"], "runtime/topics/demo-topic/topic_dashboard.md")
         self.assertIn("L3 -> L0", bundle["mode_envelope"]["allowed_backedges"])
         self.assertEqual(bundle["transition_posture"]["transition_kind"], "boundary_hold")
@@ -675,6 +703,17 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                     "basis": "metadata_link",
                 }
             ],
+            "method_specificity_rows": [
+                {
+                    "source_id": "paper:demo-source",
+                    "source_title": "Demo Source",
+                    "source_type": "paper",
+                    "method_family": "numerical_benchmark",
+                    "specificity_tier": "high",
+                    "reading_depth": "abstract_only",
+                    "evidence_excerpt": "Exact benchmark workflow.",
+                }
+            ],
         }
         with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
             with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
@@ -694,9 +733,14 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             bundle["topic_synopsis"]["l1_source_intake"]["reading_depth_rows"][0]["reading_depth"],
             "abstract_only",
         )
+        self.assertEqual(
+            bundle["active_research_contract"]["l1_source_intake"]["method_specificity_rows"][0]["method_family"],
+            "numerical_benchmark",
+        )
         note_text = Path(result["runtime_protocol_note_path"]).read_text(encoding="utf-8")
         self.assertIn("## L1 source intake", note_text)
         self.assertIn("## Source-backed regimes", note_text)
+        self.assertIn("## Method specificity", note_text)
 
     def test_runtime_bundle_projects_source_intelligence_into_read_path(self) -> None:
         shell_surfaces = self._shell_surfaces()
@@ -713,6 +757,21 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "summary": "1 canonical source id, 1 citation edge, 1 neighbor signal, 1 cross-topic match.",
             "canonical_source_ids": ["source_identity:doi:10-1000-demo"],
             "cross_topic_match_count": 1,
+            "fidelity_rows": [
+                {
+                    "source_id": "paper:demo-source",
+                    "canonical_source_id": "source_identity:doi:10-1000-demo",
+                    "source_type": "paper",
+                    "fidelity_tier": "peer_reviewed",
+                    "fidelity_basis": "canonical_doi_identity",
+                }
+            ],
+            "fidelity_summary": {
+                "source_count": 1,
+                "counts_by_tier": {"peer_reviewed": 1},
+                "strongest_tier": "peer_reviewed",
+                "weakest_tier": "peer_reviewed",
+            },
             "citation_edges": [
                 {
                     "source_id": "paper:demo-source",
@@ -750,8 +809,10 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertEqual(bundle["source_intelligence"]["canonical_source_ids"][0], "source_identity:doi:10-1000-demo")
         self.assertEqual(bundle["source_intelligence"]["cross_topic_match_count"], 1)
         self.assertEqual(bundle["source_intelligence"]["source_neighbors"][0]["relation_kind"], "shared_reference")
+        self.assertEqual(bundle["source_intelligence"]["fidelity_summary"]["strongest_tier"], "peer_reviewed")
         note_text = Path(result["runtime_protocol_note_path"]).read_text(encoding="utf-8")
         self.assertIn("## Source intelligence", note_text)
+        self.assertIn("## Source fidelity", note_text)
         self.assertIn("shared_reference", note_text)
 
     def test_runtime_bundle_auto_escalates_to_full_for_mismatch_requests(self) -> None:
@@ -772,6 +833,164 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertIn("validation_review_bundle.active.md", json.dumps(bundle["must_read_now"]))
         self.assertNotIn("operator_console.md", json.dumps(bundle["must_read_now"]))
         self.assertNotIn("agent_brief.md", json.dumps(bundle["must_read_now"]))
+
+    def test_runtime_bundle_enriches_paired_backend_bridge_entries(self) -> None:
+        shell_surfaces = self._shell_surfaces()
+        (self.runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "task_type": "open_exploration",
+                    "resume_stage": "L3",
+                    "last_materialized_stage": "L3",
+                    "latest_run_id": "run-001",
+                    "research_mode": "toy_model",
+                    "backend_bridges": [
+                        {
+                            "backend_id": "backend:theoretical-physics-brain",
+                            "title": "Theoretical Physics Brain",
+                            "backend_type": "human_note_library",
+                            "status": "active",
+                            "card_status": "present",
+                            "card_path": "canonical/backends/theoretical-physics-brain.json",
+                            "backend_root": "/tmp/brain",
+                            "artifact_kinds": ["formal_theory_note"],
+                            "canonical_targets": ["concept"],
+                            "l0_registration_script": "source-layer/scripts/register_local_note_source.py",
+                            "source_count": 1,
+                        },
+                        {
+                            "backend_id": "backend:theoretical-physics-knowledge-network",
+                            "title": "Theoretical Physics Knowledge Network",
+                            "backend_type": "mixed_local_library",
+                            "status": "active",
+                            "card_status": "present",
+                            "card_path": "canonical/backends/theoretical-physics-knowledge-network.json",
+                            "backend_root": "/tmp/tpkn",
+                            "artifact_kinds": ["typed_unit"],
+                            "canonical_targets": ["concept"],
+                            "l0_registration_script": "source-layer/scripts/register_local_note_source.py",
+                            "source_count": 1,
+                        },
+                    ],
+                    "pointers": {"control_note_path": "runtime/topics/demo-topic/control_note.md"},
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        backends_root = self.kernel_root / "canonical" / "backends"
+        backends_root.mkdir(parents=True, exist_ok=True)
+        (backends_root / "theoretical-physics-brain.json").write_text(
+            json.dumps({"backend_id": "backend:theoretical-physics-brain", "title": "Theoretical Physics Brain"}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        (backends_root / "theoretical-physics-knowledge-network.json").write_text(
+            json.dumps({"backend_id": "backend:theoretical-physics-knowledge-network", "title": "Theoretical Physics Knowledge Network"}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        (backends_root / "THEORETICAL_PHYSICS_PAIRED_BACKEND_CONTRACT.md").write_text("# Pair contract\n", encoding="utf-8")
+        (self.kernel_root / "canonical" / "L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md").write_text("# Maintenance\n", encoding="utf-8")
+
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
+                result = self.service._materialize_runtime_protocol_bundle(
+                    topic_slug="demo-topic",
+                    updated_by="test",
+                    human_request="inspect paired backend alignment",
+                    load_profile="light",
+                )
+
+        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        pair_rows = {row["backend_id"]: row for row in bundle["backend_bridges"]}
+        self.assertEqual(pair_rows["backend:theoretical-physics-brain"]["pairing_role"], "operator_primary")
+        self.assertEqual(
+            pair_rows["backend:theoretical-physics-brain"]["paired_backend_id"],
+            "backend:theoretical-physics-knowledge-network",
+        )
+        self.assertEqual(pair_rows["backend:theoretical-physics-brain"]["pairing_status"], "paired_active")
+        self.assertEqual(pair_rows["backend:theoretical-physics-brain"]["drift_status"], "audit_required")
+        self.assertEqual(pair_rows["backend:theoretical-physics-brain"]["backend_debt_status"], "unassessed")
+        self.assertTrue(pair_rows["backend:theoretical-physics-brain"]["semantic_separation"]["promotion"]["distinct_from_sync"])
+
+    def test_runtime_bundle_exposes_unified_h_plane_surface(self) -> None:
+        shell_surfaces = self._shell_surfaces()
+        (self.runtime_root / "control_note.md").write_text(
+            "---\n"
+            "directive: human_redirect\n"
+            "summary: Redirect toward theorem-facing route.\n"
+            "---\n",
+            encoding="utf-8",
+        )
+        (self.runtime_root / "innovation_direction.md").write_text("# Direction\n", encoding="utf-8")
+        (self.runtime_root / "innovation_decisions.jsonl").write_text(
+            json.dumps({"decision": "redirect", "summary": "Redirect toward theorem-facing route."}, ensure_ascii=True) + "\n",
+            encoding="utf-8",
+        )
+        (self.kernel_root / "runtime" / "active_topics.json").write_text(
+            json.dumps(
+                {
+                    "registry_version": 1,
+                    "focused_topic_slug": "demo-topic",
+                    "updated_at": "2026-04-11T02:30:00+08:00",
+                    "updated_by": "test",
+                    "source": "test",
+                    "topics": [
+                        {
+                            "topic_slug": "demo-topic",
+                            "status": "active",
+                            "operator_status": "paused",
+                            "priority": 0,
+                            "last_activity": "2026-04-11T02:30:00+08:00",
+                            "runtime_root": str(self.runtime_root),
+                            "lane": "toy_numeric",
+                            "resume_stage": "L3",
+                            "run_id": "run-001",
+                            "projection_status": "missing",
+                            "projection_note_path": None,
+                            "blocked_by": [],
+                            "blocked_by_details": [],
+                            "focus_state": "focused",
+                            "summary": "Paused for review.",
+                            "human_request": "",
+                        }
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (self.runtime_root / "promotion_gate.json").write_text(
+            json.dumps(
+                {
+                    "status": "approved",
+                    "candidate_id": "candidate:demo",
+                    "backend_id": "backend:theoretical-physics-knowledge-network",
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
+                result = self.service._materialize_runtime_protocol_bundle(
+                    topic_slug="demo-topic",
+                    updated_by="test",
+                    human_request="redirect and pause this topic",
+                    load_profile="light",
+                )
+
+        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        self.assertIn("h_plane", bundle)
+        self.assertEqual(bundle["h_plane"]["steering"]["status"], "active_redirect")
+        self.assertEqual(bundle["h_plane"]["checkpoint"]["status"], "answered")
+        self.assertEqual(bundle["h_plane"]["approval"]["status"], "approved")
+        self.assertEqual(bundle["h_plane"]["registry"]["operator_status"], "paused")
+        self.assertEqual(bundle["h_plane"]["registry"]["focus_state"], "focused")
 
     def test_build_runtime_mode_contract_classifies_verify_and_promote_modes(self) -> None:
         verify_contract = build_runtime_mode_contract(
@@ -825,6 +1044,12 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 status_payload = self.service.topic_status(topic_slug="demo-topic")
 
         roles = status_payload["primary_runtime_surfaces"]
+        self.assertIn("control_plane", status_payload)
+        self.assertIn("h_plane", status_payload)
+        self.assertEqual(status_payload["control_plane"]["task_type"], "open_exploration")
+        self.assertEqual(status_payload["control_plane"]["lane"], status_payload["topic_synopsis"]["lane"])
+        self.assertEqual(status_payload["control_plane"]["layer"], status_payload["current_stage"])
+        self.assertEqual(status_payload["control_plane"]["mode"], "explore")
         self.assertEqual(roles["primary"]["runtime_machine"], "runtime/topics/demo-topic/topic_synopsis.json")
         self.assertEqual(roles["primary"]["runtime_human"], "runtime/topics/demo-topic/topic_dashboard.md")
         self.assertEqual(
@@ -834,6 +1059,71 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertEqual(roles["compatibility"]["current_topic_machine"], "runtime/current_topic.json")
         self.assertEqual(roles["compatibility"]["operator_console"], "runtime/topics/demo-topic/operator_console.md")
         self.assertEqual(status_payload["must_read_now"][0]["path"], "runtime/topics/demo-topic/topic_dashboard.md")
+
+    def test_topic_status_materializes_layer_graph_surface(self) -> None:
+        (self.runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "task_type": "open_exploration",
+                    "resume_stage": "L3",
+                    "last_materialized_stage": "L4",
+                    "latest_run_id": "run-001",
+                    "research_mode": "formal_derivation",
+                    "pointers": {
+                        "control_note_path": "runtime/topics/demo-topic/control_note.md"
+                    },
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (self.runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Continue the bounded proof review after the returned result.",
+                    "action_queue_surface": {},
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:return",
+                        "decision_source": "heuristic",
+                    },
+                    "human_edit_surfaces": [],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (self.runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:return",
+                    "action_type": "proof_review",
+                    "summary": "Inspect the returned result and continue the bounded proof review.",
+                    "status": "pending",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                    "handler_args": {"run_id": "run-001"},
+                },
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        shell_surfaces = self._shell_surfaces()
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
+                status_payload = self.service.topic_status(topic_slug="demo-topic")
+
+        self.assertEqual(status_payload["layer_graph"]["current_node_id"], "L3-R")
+        self.assertEqual(status_payload["layer_graph"]["return_law"]["required_return_node"], "L3-R")
+        self.assertEqual(
+            status_payload["primary_runtime_surfaces"]["derived"]["layer_graph_human"],
+            "runtime/topics/demo-topic/layer_graph.generated.md",
+        )
+        self.assertTrue((self.runtime_root / "layer_graph.generated.json").exists())
+        self.assertTrue((self.runtime_root / "layer_graph.generated.md").exists())
 
 
 if __name__ == "__main__":

@@ -16,14 +16,9 @@ M1 freezes the following node families as the Layer 2 MVP surface:
 - `physical_picture`
 - `warning_note`
 
-Within the current contract sources, `concept`, `theorem_card`, `method`,
-`assumption_card`, and `warning_note` are the active typed vocabulary already
-represented by the current canonical-unit schema and Layer 2 typed-family docs.
-
-`physical_picture` is RESERVED by the M1 contract and is NOT yet active in the
-current canonical-unit schema or the current typed L2 vocabulary. M1 freezes it
-as intended vocabulary only, so downstream docs can name the target shape
-without claiming present-day canonical storage support.
+Within the current production contract sources, all six MVP families above are
+active typed vocabulary represented by the canonical-unit schema, backend
+targets, Layer 2 typed-family docs, and the bounded MVP graph helper path.
 
 ## Immediate next extension family
 
@@ -53,13 +48,10 @@ These edge families are the minimum reusable relation set for semantically meani
 ## Activation rule
 
 M1 freezes the contract.
-That means the node and edge families above are the declared intended Layer 2
-MVP vocabulary, but M1 does not claim that every reserved family already has
-current schema support, current object-family support, seeded graph data,
-traversal infrastructure, or populated retrieval built around it.
+That means the node and edge families above are the declared active Layer 2
+MVP vocabulary for the current bounded implementation.
 
-M2 activates schema/object-family support plus seeded graph data, traversal,
-and populated retrieval on top of this frozen contract.
-Until then, new work may reference the frozen vocabulary, but it should not
-silently expand the contract or imply current canonical storage support without
-an explicit follow-on decision.
+M1 still does not claim broad graph maturity, multi-backend federation, or a
+rich populated knowledge network. It claims only that the MVP vocabulary is now
+real production contract surface and that one bounded seeded direction may rely
+on it honestly.

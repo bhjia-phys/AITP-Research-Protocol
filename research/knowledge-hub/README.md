@@ -42,6 +42,8 @@ workspace just to run `aitp`.
 On Windows, the local launchers inject `research\knowledge-hub` onto
 `PYTHONPATH`, so the repo can run natively even before you choose a permanent
 Python install layout.
+The runtime requirements now use bounded version ranges in `requirements.txt`
+instead of fully open-ended dependency specifiers.
 
 `aitp doctor` should also report the fixed layer roots and key contract files so
 you can verify that the standalone install is structurally complete.
@@ -49,6 +51,9 @@ That protocol report now includes the deeper proof/gap/fusion/verification
 governance surfaces in addition to the layer map and routing basics.
 Topic-completion and regression-governed promotion are part of that public
 surface rather than topic-local convention.
+`aitp doctor --json` now also exposes `control_plane_contracts` and
+`control_plane_surfaces` so operators can find the unified architecture docs
+and the audit/status commands that inspect live control-plane state.
 
 ## Kernel Boundaries
 
@@ -67,6 +72,12 @@ Current extracted boundaries include:
   - pure markdown and note renderers for contracts, promotion/gap notes, Lean packets, and control/current-topic surfaces
 - `knowledge_hub/runtime_bundle_support.py`
   - progressive-disclosure runtime bundle and session-start contract materialization
+- `knowledge_hub/control_plane_support.py`
+  - unified control-plane payload assembly plus markdown and audit helpers
+- `knowledge_hub/paired_backend_support.py`
+  - paired-backend alignment, drift-audit, and backend-bridge enrichment helpers
+- `knowledge_hub/h_plane_support.py`
+  - explicit `H-plane` payload assembly plus audit artifact writers
 - `knowledge_hub/topic_shell_support.py`
   - topic-shell assembly, shell-surface derivation, and dashboard materialization
 - `knowledge_hub/source_distillation_support.py`
@@ -119,6 +130,16 @@ aitp collaborator-memory --topic-slug <topic_slug>
 aitp record-collaborator-memory --memory-kind preference --summary "<summary>"
 aitp replay-topic --topic-slug <topic_slug>
 aitp stage-l2-provisional --topic-slug <topic_slug> --entry-kind <kind> --title "<title>" --summary "<summary>"
+aitp seed-l2-direction --direction tfim-benchmark-first
+aitp consult-l2 --query-text "TFIM exact diagonalization benchmark workflow" --retrieval-profile l3_candidate_formation
+aitp compile-l2-map
+aitp compile-l2-graph-report
+aitp audit-l2-hygiene
+aitp compile-source-catalog
+aitp trace-source-citations --canonical-source-id source_identity:doi:10-1000-shared-paper
+aitp compile-source-family --source-type paper
+aitp export-source-bibtex --canonical-source-id source_identity:doi:10-1000-shared-paper --include-neighbors
+aitp import-bibtex-sources --topic-slug <topic_slug> --bibtex-path <path-to-bib-file>
 aitp topics
 aitp focus-topic --topic-slug <topic_slug>
 aitp pause-topic --topic-slug <topic_slug>
@@ -134,8 +155,11 @@ aitp operation-init --topic-slug <topic_slug> --run-id <run_id> --title "<operat
 aitp operation-update --topic-slug <topic_slug> --run-id <run_id> --operation "<operation>" --baseline-status passed
 aitp trust-audit --topic-slug <topic_slug> --run-id <run_id>
 aitp capability-audit --topic-slug <topic_slug>
+aitp paired-backend-audit --topic-slug <topic_slug>
+aitp h-plane-audit --topic-slug <topic_slug>
 aitp coverage-audit --topic-slug <topic_slug> --candidate-id <candidate_id> --source-section <section> --covered-section <section>
 aitp formal-theory-audit --topic-slug <topic_slug> --candidate-id <candidate_id> --formal-theory-role trusted_target --statement-graph-role target_statement
+aitp analytical-review --topic-slug <topic_slug> --candidate-id <candidate_id> --check limiting_case=weak-coupling:passed:Matches-the-known-limit
 aitp request-promotion --topic-slug <topic_slug> --candidate-id <candidate_id>
 aitp approve-promotion --topic-slug <topic_slug> --candidate-id <candidate_id>
 aitp promote --topic-slug <topic_slug> --candidate-id <candidate_id> --target-backend-root <tpkn_root>
@@ -318,6 +342,8 @@ Layer 2 now also has three operator-facing derived or quarantine surfaces:
 
 - compiled helper surfaces under `canonical/compiled/`
   - current seed: `workspace_memory_map.json|md`
+  - current seed: `workspace_graph_report.json|md`
+  - current seed: `derived_navigation/index.md`
 - hygiene reports under `canonical/hygiene/`
   - current seed: `workspace_hygiene_report.json|md`
 - provisional staging under `canonical/staging/`
@@ -341,9 +367,29 @@ scientific memory:
 
 - `runtime/collaborator_memory.jsonl`
 - `runtime/collaborator_memory.md`
+- `runtime/topics/<topic_slug>/collaborator_profile.active.json|md`
+- `runtime/topics/<topic_slug>/research_trajectory.active.json|md`
+- `runtime/topics/<topic_slug>/mode_learning.active.json|md`
+- `runtime/topics/<topic_slug>/research_judgment.active.json|md`
 
 Those surfaces are for collaborator preference, trajectory, and working-style
-memory only. They are not `L2`, not promotion input, and not scientific truth.
+memory, restart continuity, reusable route learning, plus the derived judgment
+summary that feeds runtime decision surfaces. They are not `L2`, not promotion
+input, and not scientific truth.
+
+For low-bureaucracy speculative work, the runtime now also supports a separate
+lightweight exploration carrier:
+
+- `runtime/explorations/<exploration_id>/explore_session.json|md`
+- `runtime/explorations/<exploration_id>/promotion_request.json|md`
+
+Use:
+
+- `aitp explore "<task>"`
+- `aitp promote-exploration --exploration-id <exploration_id> --current-topic`
+
+when you want a first-class speculative path before deciding whether the idea
+deserves full topic bootstrap.
 
 ## Validation
 
@@ -362,6 +408,14 @@ research/knowledge-hub/runtime/scripts/run_tpkn_formal_auto_promotion_smoke.sh
 python research/knowledge-hub/runtime/scripts/run_witten_topological_phases_formal_closure_acceptance.py --json
 python research/knowledge-hub/runtime/scripts/run_jones_chapter4_finite_product_formal_closure_acceptance.py --json
 python research/knowledge-hub/runtime/scripts/run_scrpa_thesis_topic_acceptance.py --json
+python research/knowledge-hub/runtime/scripts/run_scrpa_control_plane_acceptance.py --json
+python research/knowledge-hub/runtime/scripts/run_l2_mvp_direction_acceptance.py --json
+python research/knowledge-hub/runtime/scripts/run_source_catalog_acceptance.py --json
+python research/knowledge-hub/runtime/scripts/run_l1_method_specificity_acceptance.py --json
+python research/knowledge-hub/runtime/scripts/run_analytical_judgment_surface_acceptance.py --json
+python research/knowledge-hub/runtime/scripts/run_collaborator_continuity_acceptance.py --json
+python research/knowledge-hub/runtime/scripts/run_quick_exploration_acceptance.py --json
+python research/knowledge-hub/runtime/scripts/run_dependency_contract_acceptance.py --json
 python research/knowledge-hub/runtime/scripts/run_tfim_benchmark_code_method_acceptance.py --json
 ```
 
@@ -391,6 +445,59 @@ formal-theory lane, stays in the light runtime profile, materializes the new
 projection surfaces, and keeps the first honest next step at the thesis-to-L0
 source-recovery boundary instead of pretending numerical closure already
 exists.
+
+The scRPA control-plane acceptance script is the real-topic governance closure
+check for the current control-plane milestone: it opens the same thesis-backed
+topic class, materializes steering plus registry state, verifies
+`aitp doctor --json` control-plane fields, and then runs production
+`status`, `capability-audit`, `paired-backend-audit`, and `h-plane-audit`
+surfaces while checking their durable runtime artifacts.
+
+The isolated L2 MVP direction acceptance script is the bounded knowledge-memory
+closure check for the current `v1.45` milestone: it seeds the TFIM MVP
+direction through production CLI, retrieves the seeded `physical_picture`,
+compiles the workspace memory map, compiles the human-facing graph report and
+derived navigation pages, audits L2 hygiene, and verifies those artifacts on an
+isolated temp kernel root instead of mutating repo runtime state.
+
+The source catalog acceptance script is the bounded Layer 0 reuse check for the
+current `v1.46` plus `v1.63` BibTeX surface: it compiles the global source
+catalog, traces one bounded citation neighborhood, compiles one source-family
+reuse report, exports one bounded BibTeX neighborhood, imports one bounded
+BibTeX file back into Layer 0, checks runtime `status --json` source-fidelity
+output, and verifies those artifacts on an isolated temp kernel root.
+
+The L1 method-specificity acceptance script is the bounded `v1.64` intake
+surface check: it uses production `status --json` on an isolated temp kernel
+root, verifies that `method_specificity_rows` are materialized inside
+`l1_source_intake`, and checks that the same surface is visible in
+`research_question.contract.md` and the runtime protocol note.
+
+The analytical-judgment acceptance script is the bounded `v1.47` closure path
+for the new analytical-review plus research-judgment surfaces: it runs
+production `analytical-review`, production `verify --mode analytical`, then
+production `status --json` on an isolated temp kernel root and checks that
+`analytical_review` becomes the primary review bundle while
+`research_judgment.active.json|md` and runtime judgment signals are visible.
+
+The collaborator-continuity acceptance script is the bounded `v1.48` closure
+path for collaborator profile, trajectory continuity, and mode learning: it
+seeds runtime-side collaborator memory plus strategy memory on an isolated temp
+kernel root, then runs production `focus-topic`, `status --json`,
+`current-topic --json`, and `session-start --json`, checking that the three
+continuity surfaces remain visible through real restart paths.
+
+The quick-exploration acceptance script is the bounded `v1.49` closure path for
+low-bureaucracy exploration: it runs production `explore --json`, verifies the
+lightweight artifact-footprint surface, then runs production
+`promote-exploration --current-topic --json`, checking that quick exploration
+promotes through a durable request artifact into a bounded `session-start`
+contract instead of silently bootstrapping the full topic loop.
+
+The dependency-contract acceptance script is the bounded `v1.50` packaging
+closure path: it builds the kernel wheel through `pip wheel --no-deps` and
+checks that the generated wheel metadata exposes bounded `Requires-Dist`
+entries for runtime dependencies plus the declared `Requires-Python` floor.
 
 The TFIM code-method acceptance script is the bounded code-backed benchmark
 lane: it runs the public exact-diagonalization helper on the tiny TFIM config,

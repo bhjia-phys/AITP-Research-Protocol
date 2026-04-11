@@ -55,6 +55,22 @@ hiding those rules inside handler code.
   - primary machine-readable `L4` review bundle for the active topic/run before specialist review files are inspected
 - `topics/<topic_slug>/validation_review_bundle.active.md`
   - primary human-readable `L4` review bundle
+- `topics/<topic_slug>/research_judgment.active.json`
+  - machine-readable momentum / stuckness / surprise judgment surface for the active bounded route
+- `topics/<topic_slug>/research_judgment.active.md`
+  - human-readable research judgment summary with durable signal refs
+- `topics/<topic_slug>/collaborator_profile.active.json`
+  - machine-readable topic-scoped collaborator profile derived from runtime collaborator memory
+- `topics/<topic_slug>/collaborator_profile.active.md`
+  - human-readable collaborator profile summary for restart continuity
+- `topics/<topic_slug>/research_trajectory.active.json`
+  - machine-readable recent trajectory continuity surface derived from trajectory memory
+- `topics/<topic_slug>/research_trajectory.active.md`
+  - human-readable recent trajectory carryover summary
+- `topics/<topic_slug>/mode_learning.active.json`
+  - machine-readable learned route and lane guidance derived from durable strategy-memory rows
+- `topics/<topic_slug>/mode_learning.active.md`
+  - human-readable mode-learning guidance for restart and route reuse
 - `topics/<topic_slug>/runtime_protocol.generated.json`
   - derived progressive-disclosure bundle for external executors and session bootstrap
 - `topics/<topic_slug>/runtime_protocol.generated.md`
@@ -103,6 +119,14 @@ hiding those rules inside handler code.
   - protocol-native workspace-level catalog of mature reusable route capsules grouped by family/lane
 - `topic_family_reuse.md`
   - human-readable topic-family reuse catalog with family rules and anti-proxy boundaries
+- `explorations/<exploration_id>/explore_session.json`
+  - machine-readable lightweight exploration session that skips full topic bootstrap
+- `explorations/<exploration_id>/explore_session.md`
+  - human-readable quick-exploration session note
+- `explorations/<exploration_id>/promotion_request.json`
+  - machine-readable promotion request from quick exploration into full topic work
+- `explorations/<exploration_id>/promotion_request.md`
+  - human-readable promotion request note
 - `collaborator_memory.jsonl`
   - append-only runtime-side collaborator memory ledger for preference, trajectory, and working-style memory
 - `collaborator_memory.md`
@@ -146,6 +170,9 @@ Treat runtime surfaces by role, not by filename age.
 |------|----------|---------|
 | Primary runtime truth | `topic_synopsis.json`, `topic_dashboard.md` | The main machine/human answer pair for current-topic runtime status |
 | Primary review truth | `validation_review_bundle.active.json`, `validation_review_bundle.active.md` | The main `L4` review entry pair before opening deeper review-support surfaces |
+| Judgment truth | `research_judgment.active.json`, `research_judgment.active.md` | The bounded momentum / stuckness / surprise pair that keeps decision surfaces reviewable |
+| Continuity truth | `collaborator_profile.active.json|md`, `research_trajectory.active.json|md`, `mode_learning.active.json|md` | Restart-facing collaborator continuity surfaces derived from durable runtime memory |
+| Quick exploration | `runtime/explorations/<exploration_id>/explore_session.json|md`, `promotion_request.json|md` | Lightweight speculative session carrier and explicit promotion path into full topic work |
 | Primary workspace registry | `active_topics.json`, `active_topics.md` | The authoritative multi-topic workspace state |
 | Protocol-native reuse surface | `topic_family_reuse.json`, `topic_family_reuse.md` | Workspace-level catalog of mature reusable route capsules grouped by family/lane |
 | Derived startup bundle | `runtime_protocol.generated.json`, `runtime_protocol.generated.md` | A startup/read-order bundle derived from the primary runtime truths |
@@ -171,6 +198,10 @@ Migration notes for the demoted surfaces live at:
 - `topic_dashboard.md` is the primary human render for that synopsis.
 - `runtime_protocol.generated.{json,md}` is a derived startup bundle, not a peer source of truth.
 - `validation_review_bundle.active.{json,md}` is the primary `L4` review entry surface; specialist review files remain supporting artifacts.
+- `research_judgment.active.json|md` is a derived runtime judgment surface built from durable runtime, strategy-memory, and collaborator-memory artifacts; it is reviewable guidance, not scientific truth.
+- `collaborator_profile.active.json|md`, `research_trajectory.active.json|md`, and `mode_learning.active.json|md` are derived continuity surfaces for restart guidance; they are not canonical scientific memory and they do not bypass trust gates.
+- `runtime/explorations/<exploration_id>/explore_session.json|md` is a lightweight speculative carrier, not a full topic shell.
+- `promotion_request.json|md` under that exploration root is the explicit boundary where quick exploration promotes into normal topic work.
 - `current_topic.{json,md}` is a compatibility projection, not the authoritative workspace registry.
 - `topic_family_reuse.{json,md}` is the protocol-native reuse surface; it summarizes mature route capsules but does not itself bypass trust gates or current-topic choice.
 - `collaborator_memory.jsonl|md` is runtime-side collaborator memory, not canonical scientific memory, not `L2`, and not a promotion surface.
@@ -344,6 +375,81 @@ workflow claim is allowed.
 The analogous future formal-theory seed should follow the same rule: a runtime
 projection may tell the next agent what to read and how to enter the route, but
 it must not be mistaken for proof closure or theorem certification.
+
+For an isolated bounded `L2` MVP direction acceptance pass, run:
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_l2_mvp_direction_acceptance.py --json
+```
+
+That acceptance script uses a temporary kernel root, seeds the TFIM MVP
+direction through production CLI, retrieves the seeded `physical_picture`,
+compiles `workspace_memory_map.json|md`, compiles
+`workspace_graph_report.json|md` plus `derived_navigation/index.md`, audits
+`workspace_hygiene_report.json|md`, and verifies those artifacts without
+touching repo runtime state.
+
+For an isolated bounded Layer 0 source-catalog acceptance pass, run:
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_source_catalog_acceptance.py --json
+```
+
+That acceptance script uses a temporary kernel root, compiles
+`source_catalog.json|md`, traces one bounded citation neighborhood, compiles
+one source-family reuse report, exports one bounded BibTeX neighborhood,
+imports one bounded BibTeX file back into Layer 0, checks runtime
+source-fidelity status output, and verifies those artifacts without touching
+repo runtime state.
+
+For an isolated bounded L1 method-specificity acceptance pass, run:
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_l1_method_specificity_acceptance.py --json
+```
+
+That acceptance script uses a temporary kernel root, runs production
+`status --json`, verifies that `method_specificity_rows` are materialized
+inside `l1_source_intake`, and checks that the same surface is visible in
+`research_question.contract.md` and the runtime protocol note.
+
+For an isolated bounded analytical-review plus research-judgment acceptance
+pass, run:
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_analytical_judgment_surface_acceptance.py --json
+```
+
+That acceptance script uses a temporary kernel root, runs production
+`analytical-review`, production `verify --mode analytical`, then production
+`status --json`, and verifies that `analytical_review` becomes the primary
+review bundle while `research_judgment.active.json|md` and runtime momentum /
+stuckness / surprise signals are visible.
+
+For an isolated bounded collaborator-continuity acceptance pass, run:
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_collaborator_continuity_acceptance.py --json
+```
+
+That acceptance script uses a temporary kernel root, seeds runtime-side
+collaborator memory plus strategy memory, then runs production `focus-topic`,
+production `status --json`, production `current-topic --json`, and production
+`session-start --json`, verifying that `collaborator_profile.active.json|md`,
+`research_trajectory.active.json|md`, and `mode_learning.active.json|md` are
+all visible through the real continuity surfaces.
+
+For an isolated bounded quick-exploration acceptance pass, run:
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_quick_exploration_acceptance.py --json
+```
+
+That acceptance script uses a temporary kernel root, runs production
+`explore --json`, verifies the lightweight artifact-footprint surface, then
+runs production `promote-exploration --current-topic --json` and checks that
+promotion writes a durable request artifact plus a bounded `session-start`
+contract for the current topic.
 
 For the minimal closed-loop v1, the external executor returns one JSON artifact at:
 

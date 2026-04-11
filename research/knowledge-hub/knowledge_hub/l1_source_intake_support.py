@@ -34,6 +34,7 @@ def empty_l1_source_intake() -> dict[str, Any]:
         "assumption_rows": [],
         "regime_rows": [],
         "reading_depth_rows": [],
+        "method_specificity_rows": [],
         "notation_rows": [],
         "contradiction_candidates": [],
         "notation_tension_candidates": [],
@@ -57,6 +58,12 @@ def render_source_intelligence_markdown(payload: dict[str, Any]) -> str:
         f"- Citation edge count: `{len(payload.get('citation_edges') or [])}`",
         f"- Neighbor signal count: `{payload.get('neighbor_signal_count') or 0}`",
         f"- Cross-topic match count: `{payload.get('cross_topic_match_count') or 0}`",
+        "",
+        "## Source fidelity",
+        "",
+        f"- Strongest tier: `{((payload.get('fidelity_summary') or {}).get('strongest_tier') or 'unknown')}`",
+        f"- Weakest tier: `{((payload.get('fidelity_summary') or {}).get('weakest_tier') or 'unknown')}`",
+        f"- Counts by tier: `{', '.join(f'{key}={value}' for key, value in ((payload.get('fidelity_summary') or {}).get('counts_by_tier') or {}).items()) or '(none)'}`",
         "",
         "## Citation edges",
         "",
@@ -134,6 +141,37 @@ def _normalize_reading_depth_rows(rows: Any) -> list[dict[str, str]]:
                 "source_type": str(row.get("source_type") or "").strip(),
                 "reading_depth": reading_depth,
                 "basis": basis or "summary_only",
+            }
+        )
+    return normalized
+
+
+def _normalize_method_specificity_rows(rows: Any) -> list[dict[str, str]]:
+    if not isinstance(rows, list):
+        return []
+    normalized: list[dict[str, str]] = []
+    seen: set[tuple[str, str, str]] = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        source_id = str(row.get("source_id") or "").strip()
+        method_family = str(row.get("method_family") or "").strip()
+        specificity_tier = str(row.get("specificity_tier") or "").strip()
+        if not source_id or not method_family or not specificity_tier:
+            continue
+        key = (source_id.lower(), method_family.lower(), specificity_tier.lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        normalized.append(
+            {
+                "source_id": source_id,
+                "source_title": str(row.get("source_title") or "").strip(),
+                "source_type": str(row.get("source_type") or "").strip(),
+                "method_family": method_family,
+                "specificity_tier": specificity_tier,
+                "reading_depth": str(row.get("reading_depth") or "").strip() or "skim",
+                "evidence_excerpt": str(row.get("evidence_excerpt") or "").strip(),
             }
         )
     return normalized
@@ -249,6 +287,7 @@ def normalize_l1_source_intake(payload: Any) -> dict[str, Any]:
         "assumption_rows": _normalize_l1_intake_rows(payload.get("assumption_rows"), required_field="assumption"),
         "regime_rows": _normalize_l1_intake_rows(payload.get("regime_rows"), required_field="regime"),
         "reading_depth_rows": _normalize_reading_depth_rows(payload.get("reading_depth_rows")),
+        "method_specificity_rows": _normalize_method_specificity_rows(payload.get("method_specificity_rows")),
         "notation_rows": _normalize_notation_rows(payload.get("notation_rows")),
         "contradiction_candidates": _normalize_contradiction_candidates(payload.get("contradiction_candidates")),
         "notation_tension_candidates": _normalize_notation_tension_candidates(payload.get("notation_tension_candidates")),
@@ -271,6 +310,7 @@ def coalesce_l1_source_intake(existing: Any, default: dict[str, Any]) -> dict[st
             "assumption_rows",
             "regime_rows",
             "reading_depth_rows",
+            "method_specificity_rows",
             "notation_rows",
             "contradiction_candidates",
             "notation_tension_candidates",
@@ -442,7 +482,8 @@ def source_intelligence_payload(*, kernel_root: Path, topic_slug: str, source_ro
             f"{len(intelligence.get('canonical_source_ids') or [])} canonical source ids, "
             f"{citation_edge_count} citation edges, "
             f"{neighbor_signal_count} neighbor signals, "
-            f"{cross_topic_match_count} cross-topic matches."
+            f"{cross_topic_match_count} cross-topic matches. "
+            f"Strongest fidelity={((intelligence.get('fidelity_summary') or {}).get('strongest_tier') or 'unknown')}."
         ),
         **intelligence,
     }
@@ -464,6 +505,16 @@ def l1_context_lines(l1_source_intake: dict[str, Any]) -> list[str]:
                 depth_summary.append(f"{source_id}={reading_depth}")
         if depth_summary:
             lines.append(f"Recorded reading depth: {', '.join(depth_summary)}")
+    if l1_source_intake.get("method_specificity_rows"):
+        labels = []
+        for row in l1_source_intake["method_specificity_rows"][:4]:
+            source_id = str(row.get("source_id") or "").strip()
+            method_family = str(row.get("method_family") or "").strip()
+            specificity_tier = str(row.get("specificity_tier") or "").strip()
+            if source_id and method_family and specificity_tier:
+                labels.append(f"{source_id}={method_family}/{specificity_tier}")
+        if labels:
+            lines.append(f"Source-backed method specificity: {', '.join(labels)}")
     return lines
 
 
@@ -493,6 +544,19 @@ def l1_open_ambiguity_lines(l1_source_intake: dict[str, Any]) -> list[str]:
         ]
         if labels:
             lines.append(f"Reading-depth limits still apply for: {', '.join(labels)}")
+    low_specificity_rows = [
+        row
+        for row in l1_source_intake.get("method_specificity_rows") or []
+        if str(row.get("specificity_tier") or "").strip() == "low"
+    ]
+    if low_specificity_rows:
+        labels = [
+            f"{row['source_id']}={row['method_family']}/{row['specificity_tier']}"
+            for row in low_specificity_rows[:4]
+            if str(row.get("source_id") or "").strip() and str(row.get("method_family") or "").strip()
+        ]
+        if labels:
+            lines.append(f"Method-specificity limits still apply for: {', '.join(labels)}")
     for row in l1_source_intake.get("contradiction_candidates") or []:
         detail = str(row.get("detail") or "").strip()
         if detail:

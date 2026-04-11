@@ -204,3 +204,107 @@ Pass condition:
 - the runtime stays in the `light` profile
 - a coding operation manifest exists and passes the baseline-first trust audit
 - run-local strategy memory is recorded and surfaced through runtime status
+
+## 12. Isolated acceptance: L2 MVP direction
+
+Use this when you want a bounded proof that the MVP `L2` memory surface is
+operational without mutating repo runtime state.
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_l2_mvp_direction_acceptance.py --json
+```
+
+Pass condition:
+- the TFIM MVP direction is seeded through production CLI
+- `consult-l2` returns the seeded `physical_picture`
+- `compile-l2-map` writes `workspace_memory_map.json|md`
+- `compile-l2-graph-report` writes `workspace_graph_report.json|md`
+- `compile-l2-graph-report` writes `derived_navigation/index.md`
+- `audit-l2-hygiene` writes `workspace_hygiene_report.json|md`
+- the acceptance runs on an isolated temp kernel root
+
+## 13. Isolated acceptance: source catalog and citation reuse
+
+Use this when you want a bounded proof that the Layer 0 source-reuse surface is
+operational without mutating repo runtime state.
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_source_catalog_acceptance.py --json
+```
+
+Pass condition:
+- `compile-source-catalog` writes `source_catalog.json|md`
+- `trace-source-citations` writes one bounded traversal artifact
+- `compile-source-family` writes one family reuse artifact
+- `export-source-bibtex` writes one bounded `.bib` export artifact
+- `import-bibtex-sources` writes one bounded Layer 0 import report and source row
+- `status --json` surfaces source fidelity for the active topic
+- the acceptance runs on an isolated temp kernel root
+
+## 14. Isolated acceptance: analytical review and research judgment
+
+## 13.5. Isolated acceptance: L1 method specificity
+
+Use this when you want one bounded proof that source-backed method specificity
+is visible through the real runtime status surface.
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_l1_method_specificity_acceptance.py --json
+```
+
+Pass condition:
+- `status --json` surfaces `method_specificity_rows` inside `l1_source_intake`
+- at least one `formal_derivation` or `numerical_benchmark` row appears
+- `research_question.contract.md` includes a `## Method specificity` section
+- the runtime protocol note also includes `## Method specificity`
+- the acceptance runs on an isolated temp kernel root
+
+## 14. Isolated acceptance: analytical review and research judgment
+
+Use this when you want one bounded proof that analytical review and
+research-judgment runtime surfaces are both live through production CLI.
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_analytical_judgment_surface_acceptance.py --json
+```
+
+Pass condition:
+- `analytical-review` writes a durable `analytical_review.json`
+- `verify --mode analytical` makes `analytical_review` the primary review bundle surface
+- `status --json` surfaces `research_judgment.active.json|md`
+- runtime focus exposes `momentum`, `stuckness`, and `surprise`
+- the acceptance runs on an isolated temp kernel root
+
+## 15. Isolated acceptance: collaborator continuity
+
+Use this when you want one bounded proof that collaborator continuity surfaces
+are live through production CLI restart paths.
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_collaborator_continuity_acceptance.py --json
+```
+
+Pass condition:
+- `focus-topic` materializes current-topic compatibility state
+- `status --json` surfaces `collaborator_profile.active.json|md`
+- `status --json` surfaces `research_trajectory.active.json|md`
+- `status --json` surfaces `mode_learning.active.json|md`
+- `current-topic --json` exposes continuity summaries for all three surfaces
+- `session-start --json` carries continuity note paths into session-start artifacts
+- the acceptance runs on an isolated temp kernel root
+
+## 16. Isolated acceptance: quick exploration
+
+Use this when you want one bounded proof that lightweight exploration is a
+first-class path and can promote into normal topic work explicitly.
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_quick_exploration_acceptance.py --json
+```
+
+Pass condition:
+- `explore --json` writes `runtime/explorations/<exploration_id>/explore_session.json|md`
+- quick exploration reports a lighter artifact footprint than full topic bootstrap
+- `promote-exploration --current-topic --json` writes `promotion_request.json|md`
+- promotion materializes a bounded `session-start` contract for the target topic
+- the acceptance runs on an isolated temp kernel root

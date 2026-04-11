@@ -74,7 +74,8 @@
         "source_count",
         "assumption_rows",
         "regime_rows",
-        "reading_depth_rows"
+        "reading_depth_rows",
+        "method_specificity_rows"
       ],
       "properties": {
         "source_count": {
@@ -199,6 +200,57 @@
               "basis": {
                 "type": "string",
                 "minLength": 1
+              }
+            }
+          }
+        },
+        "method_specificity_rows": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source_id",
+              "source_title",
+              "source_type",
+              "method_family",
+              "specificity_tier",
+              "reading_depth",
+              "evidence_excerpt"
+            ],
+            "properties": {
+              "source_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "source_title": {
+                "type": "string"
+              },
+              "source_type": {
+                "type": "string"
+              },
+              "method_family": {
+                "type": "string",
+                "minLength": 1
+              },
+              "specificity_tier": {
+                "type": "string",
+                "enum": [
+                  "high",
+                  "medium",
+                  "low"
+                ]
+              },
+              "reading_depth": {
+                "type": "string",
+                "enum": [
+                  "full_read",
+                  "abstract_only",
+                  "skim"
+                ]
+              },
+              "evidence_excerpt": {
+                "type": "string"
               }
             }
           }
@@ -406,7 +458,11 @@
         "last_evidence_summary",
         "dependency_status",
         "dependency_summary",
-        "promotion_status"
+        "promotion_status",
+        "momentum_status",
+        "stuckness_status",
+        "surprise_status",
+        "judgment_summary"
       ],
       "properties": {
         "summary": {
@@ -474,6 +530,22 @@
           "minLength": 1
         },
         "promotion_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "momentum_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stuckness_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "surprise_status": {
+          "type": "string",
+          "minLength": 1
+        },
+        "judgment_summary": {
           "type": "string",
           "minLength": 1
         }

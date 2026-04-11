@@ -53,6 +53,8 @@ def canonical_validation_mode(template_mode: str | None, research_mode: str | No
         return "formal"
     if normalized_research in {"toy_model", "first_principles"}:
         return "numerical"
+    if normalized_research == "theory_synthesis":
+        return "analytical"
     if normalized_research and normalized_research != "exploratory_general":
         return "hybrid"
     if normalized_template == "formal_theory":

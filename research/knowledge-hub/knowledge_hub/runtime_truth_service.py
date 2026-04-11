@@ -19,6 +19,7 @@ class RuntimeTruthService:
         next_bounded_action = topic_status_explainability.get("next_bounded_action") or {}
         active_human_need = topic_status_explainability.get("active_human_need") or {}
         last_evidence_return = topic_status_explainability.get("last_evidence_return") or {}
+        research_judgment = topic_status_explainability.get("research_judgment") or {}
         next_action_summary = (
             str(next_bounded_action.get("summary") or "").strip()
             or "No bounded action is currently selected."
@@ -43,6 +44,16 @@ class RuntimeTruthService:
         dependency_summary = str(dependency_state.get("summary") or "").strip()
         if not dependency_summary:
             dependency_summary = "No dependency state recorded."
+        default_momentum_status = "unknown"
+        if str(active_human_need.get("status") or "").strip() == "requested":
+            default_momentum_status = "held"
+        elif str(last_evidence_return.get("kind") or "").strip() not in {"", "none"}:
+            default_momentum_status = "advancing"
+        elif str(next_bounded_action.get("action_id") or "").strip():
+            default_momentum_status = "queued"
+        default_judgment_summary = (
+            f"Momentum `{default_momentum_status}`; stuckness `none`; surprise `none`."
+        )
         return {
             "summary": summary,
             "why_this_topic_is_here": why_this_topic_is_here,
@@ -60,6 +71,10 @@ class RuntimeTruthService:
             "dependency_status": str(dependency_state.get("status") or "none"),
             "dependency_summary": dependency_summary,
             "promotion_status": str(promotion_readiness.get("status") or "not_ready"),
+            "momentum_status": str((research_judgment.get("momentum") or {}).get("status") or default_momentum_status),
+            "stuckness_status": str((research_judgment.get("stuckness") or {}).get("status") or "none"),
+            "surprise_status": str((research_judgment.get("surprise") or {}).get("status") or "none"),
+            "judgment_summary": str(research_judgment.get("summary") or default_judgment_summary),
         }
 
     def topic_synopsis_truth_sources(

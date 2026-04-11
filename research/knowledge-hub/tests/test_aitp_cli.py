@@ -54,6 +54,12 @@ class AITPCLITests(unittest.TestCase):
         capability_args = parser.parse_args(["capability-audit", "--topic-slug", "demo-topic"])
         self.assertEqual(capability_args.command, "capability-audit")
 
+        paired_backend_args = parser.parse_args(["paired-backend-audit", "--topic-slug", "demo-topic"])
+        self.assertEqual(paired_backend_args.command, "paired-backend-audit")
+
+        h_plane_args = parser.parse_args(["h-plane-audit", "--topic-slug", "demo-topic"])
+        self.assertEqual(h_plane_args.command, "h-plane-audit")
+
     def test_topic_shell_commands_are_registered(self) -> None:
         parser = aitp_cli.build_parser()
 
@@ -73,6 +79,9 @@ class AITPCLITests(unittest.TestCase):
 
         status_args = parser.parse_args(["status", "--topic-slug", "demo-topic"])
         self.assertEqual(status_args.command, "status")
+
+        layer_graph_args = parser.parse_args(["layer-graph", "--topic-slug", "demo-topic"])
+        self.assertEqual(layer_graph_args.command, "layer-graph")
 
         next_args = parser.parse_args(["next", "--topic-slug", "demo-topic"])
         self.assertEqual(next_args.command, "next")
@@ -94,6 +103,9 @@ class AITPCLITests(unittest.TestCase):
         verify_args = parser.parse_args(["verify", "--topic-slug", "demo-topic", "--mode", "proof"])
         self.assertEqual(verify_args.command, "verify")
         self.assertEqual(verify_args.mode, "proof")
+        analytical_verify_args = parser.parse_args(["verify", "--topic-slug", "demo-topic", "--mode", "analytical"])
+        self.assertEqual(analytical_verify_args.command, "verify")
+        self.assertEqual(analytical_verify_args.mode, "analytical")
 
         complete_args = parser.parse_args(["complete-topic", "--topic-slug", "demo-topic"])
         self.assertEqual(complete_args.command, "complete-topic")
@@ -135,6 +147,59 @@ class AITPCLITests(unittest.TestCase):
         self.assertEqual(collaborator_memory_args.command, "collaborator-memory")
         self.assertEqual(collaborator_memory_args.topic_slug, "demo-topic")
 
+        scratch_log_args = parser.parse_args(["scratch-log", "--topic-slug", "demo-topic"])
+        self.assertEqual(scratch_log_args.command, "scratch-log")
+        self.assertEqual(scratch_log_args.topic_slug, "demo-topic")
+
+        record_scratch_args = parser.parse_args(
+            [
+                "record-scratch-note",
+                "--topic-slug",
+                "demo-topic",
+                "--kind",
+                "route_comparison",
+                "--summary",
+                "Compare the theorem-facing and benchmark-first routes.",
+            ]
+        )
+        self.assertEqual(record_scratch_args.command, "record-scratch-note")
+        self.assertEqual(record_scratch_args.kind, "route_comparison")
+
+        negative_result_args = parser.parse_args(
+            [
+                "record-negative-result",
+                "--topic-slug",
+                "demo-topic",
+                "--summary",
+                "The portability extrapolation failed.",
+                "--failure-kind",
+                "regime_mismatch",
+            ]
+        )
+        self.assertEqual(negative_result_args.command, "record-negative-result")
+        self.assertEqual(negative_result_args.failure_kind, "regime_mismatch")
+
+        taste_profile_args = parser.parse_args(["taste-profile", "--topic-slug", "demo-topic"])
+        self.assertEqual(taste_profile_args.command, "taste-profile")
+        self.assertEqual(taste_profile_args.topic_slug, "demo-topic")
+
+        record_taste_args = parser.parse_args(
+            [
+                "record-taste",
+                "--topic-slug",
+                "demo-topic",
+                "--kind",
+                "formalism",
+                "--summary",
+                "Prefer operator-algebra notation first.",
+                "--formalism",
+                "operator_algebra",
+            ]
+        )
+        self.assertEqual(record_taste_args.command, "record-taste")
+        self.assertEqual(record_taste_args.kind, "formalism")
+        self.assertEqual(record_taste_args.formalism, ["operator_algebra"])
+
         record_collaborator_args = parser.parse_args(
             [
                 "record-collaborator-memory",
@@ -172,6 +237,92 @@ class AITPCLITests(unittest.TestCase):
         self.assertEqual(stage_args.command, "stage-l2-provisional")
         self.assertEqual(stage_args.entry_kind, "workflow_draft")
 
+        seed_args = parser.parse_args(["seed-l2-direction", "--direction", "tfim-benchmark-first"])
+        self.assertEqual(seed_args.command, "seed-l2-direction")
+        self.assertEqual(seed_args.direction, "tfim-benchmark-first")
+
+        consult_args = parser.parse_args(
+            [
+                "consult-l2",
+                "--query-text",
+                "TFIM exact diagonalization benchmark workflow",
+                "--retrieval-profile",
+                "l3_candidate_formation",
+                "--max-primary-hits",
+                "2",
+                "--include-staging",
+            ]
+        )
+        self.assertEqual(consult_args.command, "consult-l2")
+        self.assertEqual(consult_args.retrieval_profile, "l3_candidate_formation")
+        self.assertTrue(consult_args.include_staging)
+
+        consult_record_args = parser.parse_args(
+            [
+                "consult-l2",
+                "--query-text",
+                "Benchmark-first validation",
+                "--retrieval-profile",
+                "l1_provisional_understanding",
+                "--topic-slug",
+                "demo-topic",
+                "--stage",
+                "L3",
+                "--run-id",
+                "run-001",
+                "--record-consultation",
+            ]
+        )
+        self.assertEqual(consult_record_args.topic_slug, "demo-topic")
+        self.assertEqual(consult_record_args.stage, "L3")
+        self.assertTrue(consult_record_args.record_consultation)
+
+        compile_args = parser.parse_args(["compile-l2-map"])
+        self.assertEqual(compile_args.command, "compile-l2-map")
+
+        graph_report_args = parser.parse_args(["compile-l2-graph-report"])
+        self.assertEqual(graph_report_args.command, "compile-l2-graph-report")
+
+        source_catalog_args = parser.parse_args(["compile-source-catalog"])
+        self.assertEqual(source_catalog_args.command, "compile-source-catalog")
+
+        trace_source_args = parser.parse_args(
+            ["trace-source-citations", "--canonical-source-id", "source_identity:doi:10-1000-shared-paper"]
+        )
+        self.assertEqual(trace_source_args.command, "trace-source-citations")
+        self.assertEqual(trace_source_args.canonical_source_id, "source_identity:doi:10-1000-shared-paper")
+
+        source_family_args = parser.parse_args(["compile-source-family", "--source-type", "paper"])
+        self.assertEqual(source_family_args.command, "compile-source-family")
+        self.assertEqual(source_family_args.source_type, "paper")
+
+        export_bibtex_args = parser.parse_args(
+            [
+                "export-source-bibtex",
+                "--canonical-source-id",
+                "source_identity:doi:10-1000-shared-paper",
+                "--include-neighbors",
+            ]
+        )
+        self.assertEqual(export_bibtex_args.command, "export-source-bibtex")
+        self.assertTrue(export_bibtex_args.include_neighbors)
+
+        import_bibtex_args = parser.parse_args(
+            [
+                "import-bibtex-sources",
+                "--topic-slug",
+                "demo-topic",
+                "--bibtex-path",
+                "demo-import.bib",
+            ]
+        )
+        self.assertEqual(import_bibtex_args.command, "import-bibtex-sources")
+        self.assertEqual(import_bibtex_args.topic_slug, "demo-topic")
+        self.assertEqual(import_bibtex_args.bibtex_path, "demo-import.bib")
+
+        hygiene_args = parser.parse_args(["audit-l2-hygiene"])
+        self.assertEqual(hygiene_args.command, "audit-l2-hygiene")
+
         focus_args = parser.parse_args(["focus-topic", "--topic-slug", "demo-topic"])
         self.assertEqual(focus_args.command, "focus-topic")
         self.assertEqual(focus_args.topic_slug, "demo-topic")
@@ -200,6 +351,15 @@ class AITPCLITests(unittest.TestCase):
         self.assertEqual(session_start_args.task, "继续这个 topic，方向改成 X")
         self.assertFalse(session_start_args.current_topic)
         self.assertEqual(session_start_args.load_profile, "auto")
+
+        explore_args = parser.parse_args(["explore", "Sketch a speculative route without full topic bootstrap"])
+        self.assertEqual(explore_args.command, "explore")
+        self.assertEqual(explore_args.task, "Sketch a speculative route without full topic bootstrap")
+
+        promote_exploration_args = parser.parse_args(["promote-exploration", "--exploration-id", "explore-demo", "--current-topic"])
+        self.assertEqual(promote_exploration_args.command, "promote-exploration")
+        self.assertEqual(promote_exploration_args.exploration_id, "explore-demo")
+        self.assertTrue(promote_exploration_args.current_topic)
 
         loop_with_profile = parser.parse_args(
             ["loop", "--topic-slug", "demo-topic", "--load-profile", "light", "--max-auto-steps", "1"]
@@ -327,6 +487,361 @@ class AITPCLITests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         mock_service.get_current_topic_memory.assert_called_once()
 
+    def test_main_dispatches_paired_backend_audit(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.paired_backend_audit.return_value = {"pairing_status": "paired_active"}
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "paired-backend-audit", "--topic-slug", "demo-topic"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.paired_backend_audit.assert_called_once_with(
+            topic_slug="demo-topic",
+            backend_id="backend:theoretical-physics-knowledge-network",
+            updated_by="aitp-cli",
+        )
+
+    def test_main_dispatches_h_plane_audit(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.h_plane_audit.return_value = {"overall_status": "active_human_control"}
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "h-plane-audit", "--topic-slug", "demo-topic"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.h_plane_audit.assert_called_once_with(
+            topic_slug="demo-topic",
+            updated_by="aitp-cli",
+        )
+
+    def test_main_dispatches_layer_graph(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.topic_layer_graph.return_value = {"topic_slug": "demo-topic", "layer_graph": {"current_node_id": "L3-R"}}
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "layer-graph", "--topic-slug", "demo-topic"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.topic_layer_graph.assert_called_once_with(
+            topic_slug="demo-topic",
+            updated_by="aitp-cli",
+        )
+
+    def test_main_dispatches_taste_profile(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.topic_research_taste.return_value = {"topic_slug": "demo-topic", "research_taste": {"status": "available"}}
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "taste-profile", "--topic-slug", "demo-topic"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.topic_research_taste.assert_called_once_with(
+            topic_slug="demo-topic",
+            updated_by="aitp-cli",
+        )
+
+    def test_main_dispatches_record_taste(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.record_research_taste.return_value = {"topic_slug": "demo-topic", "research_taste_entry": {"taste_kind": "formalism"}}
+            mock_factory.return_value = mock_service
+            with patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp",
+                    "record-taste",
+                    "--topic-slug",
+                    "demo-topic",
+                    "--kind",
+                    "formalism",
+                    "--summary",
+                    "Prefer operator-algebra notation first.",
+                    "--formalism",
+                    "operator_algebra",
+                ],
+            ):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.record_research_taste.assert_called_once()
+
+    def test_main_dispatches_scratch_log(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.topic_scratchpad.return_value = {"topic_slug": "demo-topic", "scratchpad": {"status": "active"}}
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "scratch-log", "--topic-slug", "demo-topic"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.topic_scratchpad.assert_called_once_with(
+            topic_slug="demo-topic",
+            updated_by="aitp-cli",
+        )
+
+    def test_main_dispatches_record_scratch_note(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.record_scratch_note.return_value = {"topic_slug": "demo-topic", "scratchpad_entry": {"entry_kind": "route_comparison"}}
+            mock_factory.return_value = mock_service
+            with patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp",
+                    "record-scratch-note",
+                    "--topic-slug",
+                    "demo-topic",
+                    "--kind",
+                    "route_comparison",
+                    "--summary",
+                    "Compare the theorem-facing and benchmark-first routes.",
+                ],
+            ):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.record_scratch_note.assert_called_once()
+
+    def test_main_dispatches_record_negative_result(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.record_negative_result.return_value = {"topic_slug": "demo-topic", "scratchpad_entry": {"entry_kind": "negative_result"}}
+            mock_factory.return_value = mock_service
+            with patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp",
+                    "record-negative-result",
+                    "--topic-slug",
+                    "demo-topic",
+                    "--summary",
+                    "The portability extrapolation failed.",
+                    "--failure-kind",
+                    "regime_mismatch",
+                ],
+            ):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.record_negative_result.assert_called_once()
+
+    def test_main_dispatches_seed_l2_direction(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.seed_l2_direction.return_value = {"direction": "tfim-benchmark-first"}
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "seed-l2-direction", "--direction", "tfim-benchmark-first"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.seed_l2_direction.assert_called_once_with(
+            direction="tfim-benchmark-first",
+            updated_by="aitp-cli",
+        )
+
+    def test_main_dispatches_consult_l2(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.consult_l2.return_value = {"retrieval_profile": "l3_candidate_formation"}
+            mock_factory.return_value = mock_service
+            with patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp",
+                    "consult-l2",
+                    "--query-text",
+                    "TFIM exact diagonalization benchmark workflow",
+                    "--retrieval-profile",
+                    "l3_candidate_formation",
+                    "--max-primary-hits",
+                    "2",
+                    "--include-staging",
+                ],
+            ):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.consult_l2.assert_called_once_with(
+            query_text="TFIM exact diagonalization benchmark workflow",
+            retrieval_profile="l3_candidate_formation",
+            max_primary_hits=2,
+            include_staging=True,
+            topic_slug=None,
+            stage="L3",
+            run_id=None,
+            updated_by="aitp-cli",
+            record_consultation=False,
+        )
+
+    def test_main_dispatches_consult_l2_with_recorded_consultation(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.consult_l2.return_value = {"consultation": {"consultation_index_path": "x"}}
+            mock_factory.return_value = mock_service
+            with patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp",
+                    "consult-l2",
+                    "--query-text",
+                    "Benchmark-first validation",
+                    "--retrieval-profile",
+                    "l1_provisional_understanding",
+                    "--topic-slug",
+                    "demo-topic",
+                    "--stage",
+                    "L3",
+                    "--run-id",
+                    "run-001",
+                    "--record-consultation",
+                ],
+            ):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.consult_l2.assert_called_once_with(
+            query_text="Benchmark-first validation",
+            retrieval_profile="l1_provisional_understanding",
+            max_primary_hits=None,
+            include_staging=False,
+            topic_slug="demo-topic",
+            stage="L3",
+            run_id="run-001",
+            updated_by="aitp-cli",
+            record_consultation=True,
+        )
+
+    def test_main_dispatches_compile_l2_map(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.compile_l2_workspace_map.return_value = {"json_path": "compiled/map.json"}
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "compile-l2-map"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.compile_l2_workspace_map.assert_called_once_with()
+
+    def test_main_dispatches_compile_l2_graph_report(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.compile_l2_graph_report.return_value = {"json_path": "compiled/graph-report.json"}
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "compile-l2-graph-report"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.compile_l2_graph_report.assert_called_once_with()
+
+    def test_main_dispatches_compile_source_catalog(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.compile_source_catalog.return_value = {"json_path": "source-layer/compiled/source_catalog.json"}
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "compile-source-catalog"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.compile_source_catalog.assert_called_once_with()
+
+    def test_main_dispatches_trace_source_citations(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.trace_source_citations.return_value = {"json_path": "source-layer/compiled/citation_traversals/shared.json"}
+            mock_factory.return_value = mock_service
+            with patch.object(
+                sys,
+                "argv",
+                ["aitp", "trace-source-citations", "--canonical-source-id", "source_identity:doi:10-1000-shared-paper"],
+            ):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.trace_source_citations.assert_called_once_with(
+            canonical_source_id="source_identity:doi:10-1000-shared-paper",
+        )
+
+    def test_main_dispatches_compile_source_family(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.compile_source_family.return_value = {"json_path": "source-layer/compiled/source_families/paper.json"}
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "compile-source-family", "--source-type", "paper"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.compile_source_family.assert_called_once_with(source_type="paper")
+
+    def test_main_dispatches_export_source_bibtex(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.export_source_bibtex.return_value = {"bibtex_path": "source-layer/compiled/bibtex_exports/shared.bib"}
+            mock_factory.return_value = mock_service
+            with patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp",
+                    "export-source-bibtex",
+                    "--canonical-source-id",
+                    "source_identity:doi:10-1000-shared-paper",
+                    "--include-neighbors",
+                ],
+            ):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.export_source_bibtex.assert_called_once_with(
+            canonical_source_id="source_identity:doi:10-1000-shared-paper",
+            include_neighbors=True,
+        )
+
+    def test_main_dispatches_import_bibtex_sources(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.import_bibtex_sources.return_value = {"source_index_path": "source-layer/topics/demo-topic/source_index.jsonl"}
+            mock_factory.return_value = mock_service
+            with patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp",
+                    "import-bibtex-sources",
+                    "--topic-slug",
+                    "demo-topic",
+                    "--bibtex-path",
+                    "demo-import.bib",
+                ],
+            ):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.import_bibtex_sources.assert_called_once_with(
+            topic_slug="demo-topic",
+            bibtex_path="demo-import.bib",
+            updated_by="aitp-cli",
+        )
+
+    def test_main_dispatches_audit_l2_hygiene(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.audit_l2_hygiene.return_value = {"json_path": "hygiene/report.json"}
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "audit-l2-hygiene"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.audit_l2_hygiene.assert_called_once_with()
+
     def test_main_dispatches_collaborator_memory_commands(self) -> None:
         with patch.object(aitp_cli, "_service_from_args") as mock_factory:
             mock_service = MagicMock()
@@ -384,7 +899,7 @@ class AITPCLITests(unittest.TestCase):
             mock_factory.return_value = mock_service
             with patch.object(
                 aitp_cli,
-                "stage_provisional_l2_entry",
+                "dispatch_l2_graph_command",
                 return_value={"entry": {"entry_id": "staging:demo"}},
             ) as mock_stage:
                 with patch.object(
@@ -474,6 +989,28 @@ class AITPCLITests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         mock_service.start_chat_session.assert_called_once()
         self.assertEqual(mock_service.start_chat_session.call_args.kwargs["load_profile"], "light")
+
+    def test_main_dispatches_explore(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.explore.return_value = {"status": "lightweight_open"}
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "explore", "Sketch a speculative route without full topic bootstrap"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.explore.assert_called_once()
+
+    def test_main_dispatches_promote_exploration(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.promote_exploration.return_value = {"target_mode": "current_topic"}
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "promote-exploration", "--exploration-id", "explore-demo", "--current-topic"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.promote_exploration.assert_called_once()
 
     def test_main_dispatches_resume_with_load_profile(self) -> None:
         with patch.object(aitp_cli, "_service_from_args") as mock_factory:
@@ -705,6 +1242,33 @@ class AITPCLITests(unittest.TestCase):
         self.assertEqual(formal_theory_args.formal_theory_role, "trusted_target")
         self.assertEqual(formal_theory_args.attribution_requirement[0], "Preserve source citation.")
 
+        analytical_review_args = parser.parse_args(
+            [
+                "analytical-review",
+                "--topic-slug",
+                "demo-topic",
+                "--candidate-id",
+                "candidate:demo",
+                "--check",
+                "limiting_case=weak-coupling:passed:Matches the known free limit.",
+                "--check",
+                "symmetry=particle-hole:passed:Preserves the expected discrete symmetry.",
+                "--source-anchor",
+                "paper:demo-source#sec:intro",
+                "--assumption",
+                "assumption:weak-coupling-regime",
+                "--regime-note",
+                "Restricted to the weak-coupling regime declared in the source.",
+                "--reading-depth",
+                "targeted",
+            ]
+        )
+        self.assertEqual(analytical_review_args.command, "analytical-review")
+        self.assertEqual(analytical_review_args.check[0]["kind"], "limiting_case")
+        self.assertEqual(analytical_review_args.check[0]["status"], "passed")
+        self.assertEqual(analytical_review_args.source_anchor[0], "paper:demo-source#sec:intro")
+        self.assertEqual(analytical_review_args.reading_depth, "targeted")
+
         auto_promote_args = parser.parse_args(
             [
                 "auto-promote",
@@ -754,6 +1318,40 @@ class AITPCLITests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         mock_service.audit_formal_theory.assert_called_once()
+
+    def test_main_dispatches_analytical_review(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.audit_analytical_review.return_value = {"overall_status": "ready"}
+            mock_factory.return_value = mock_service
+            with patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp",
+                    "analytical-review",
+                    "--topic-slug",
+                    "demo-topic",
+                    "--candidate-id",
+                    "candidate:demo",
+                    "--check",
+                    "limiting_case=weak-coupling:passed:Matches the known free limit.",
+                    "--check",
+                    "dimensional_consistency=gap-scaling:passed:Units remain dimensionless after rescaling.",
+                    "--source-anchor",
+                    "paper:demo-source#sec:intro",
+                    "--assumption",
+                    "assumption:weak-coupling-regime",
+                    "--regime-note",
+                    "Bounded to the weak-coupling regime recorded in the source.",
+                    "--reading-depth",
+                    "targeted",
+                ],
+            ):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.audit_analytical_review.assert_called_once()
 
     def test_install_agent_accepts_claude_code(self) -> None:
         parser = aitp_cli.build_parser()

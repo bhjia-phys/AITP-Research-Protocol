@@ -10,6 +10,7 @@ def empty_l1_source_intake() -> dict[str, Any]:
         "assumption_rows": [],
         "regime_rows": [],
         "reading_depth_rows": [],
+        "method_specificity_rows": [],
     }
 
 
@@ -19,6 +20,13 @@ def empty_source_intelligence(*, topic_slug: str) -> dict[str, Any]:
         "summary": "No source-intelligence signals are currently recorded for this topic.",
         "canonical_source_ids": [],
         "cross_topic_match_count": 0,
+        "fidelity_rows": [],
+        "fidelity_summary": {
+            "source_count": 0,
+            "counts_by_tier": {},
+            "strongest_tier": "unknown",
+            "weakest_tier": "unknown",
+        },
         "citation_edges": [],
         "source_neighbors": [],
         "neighbor_signal_count": 0,
@@ -66,6 +74,15 @@ def append_l1_source_intake_markdown(lines: list[str], payload: dict[str, Any]) 
             )
         else:
             lines.append(f"- {row}")
+    lines.extend(["", "## Method specificity", ""])
+    for row in l1_source_intake.get("method_specificity_rows") or ["(none)"]:
+        if isinstance(row, dict):
+            lines.append(
+                f"- `{row.get('source_id') or '(missing)'}` [{row.get('reading_depth') or 'skim'}]: "
+                f"`{row.get('method_family') or '(missing)'}` / `{row.get('specificity_tier') or '(missing)'}`"
+            )
+        else:
+            lines.append(f"- {row}")
 
 
 def append_source_intelligence_markdown(lines: list[str], payload: dict[str, Any]) -> None:
@@ -82,6 +99,17 @@ def append_source_intelligence_markdown(lines: list[str], payload: dict[str, Any
             f"- Cross-topic matches: `{payload.get('cross_topic_match_count') or 0}`",
             "",
             payload.get("summary") or "(missing)",
+        ]
+    )
+    fidelity_summary = payload.get("fidelity_summary") or {}
+    lines.extend(
+        [
+            "",
+            "## Source fidelity",
+            "",
+            f"- Strongest tier: `{fidelity_summary.get('strongest_tier') or 'unknown'}`",
+            f"- Weakest tier: `{fidelity_summary.get('weakest_tier') or 'unknown'}`",
+            f"- Counts by tier: `{', '.join(f'{key}={value}' for key, value in (fidelity_summary.get('counts_by_tier') or {}).items()) or '(none)'}`",
         ]
     )
     if payload.get("source_neighbors"):

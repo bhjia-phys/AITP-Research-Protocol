@@ -26,6 +26,7 @@ Core docs:
 Store only material that is worth reusing across topics or runs:
 - atomic notes as a transitional fallback for sharply scoped reusable units,
 - concept notes,
+- physical-picture notes,
 - claim cards,
 - derivation objects,
 - method notes,
@@ -38,6 +39,7 @@ Store only material that is worth reusing across topics or runs:
 Typed families:
 - `atomic_note`
 - `concept`
+- `physical_picture`
 - `claim_card`
 - `derivation_object`
 - `method`

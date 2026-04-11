@@ -4,6 +4,7 @@
     "l1_provisional_understanding": {
       "preferred_unit_types": [
         "concept",
+        "physical_picture",
         "definition_card",
         "notation_card",
         "equation_card",
@@ -29,7 +30,9 @@
         "specializes",
         "generalizes"
       ],
-      "max_primary_hits": 8
+      "max_primary_hits": 8,
+      "max_traversal_depth": 2,
+      "max_expanded_hits": 12
     },
     "l3_candidate_formation": {
       "preferred_unit_types": [
@@ -37,6 +40,7 @@
         "proof_fragment",
         "derivation_step",
         "method",
+        "physical_picture",
         "topic_skill_projection",
         "derivation_object",
         "workflow",
@@ -62,7 +66,9 @@
         "bridged_to",
         "warned_by"
       ],
-      "max_primary_hits": 10
+      "max_primary_hits": 10,
+      "max_traversal_depth": 2,
+      "max_expanded_hits": 16
     },
     "l4_adjudication": {
       "preferred_unit_types": [
@@ -75,6 +81,7 @@
         "topic_skill_projection",
         "claim_card",
         "warning_note",
+        "physical_picture",
         "concept",
         "derivation_object"
       ],
@@ -96,7 +103,9 @@
         "warned_by",
         "applies_in_regime"
       ],
-      "max_primary_hits": 12
+      "max_primary_hits": 12,
+      "max_traversal_depth": 2,
+      "max_expanded_hits": 16
     }
   }
 }

@@ -6,6 +6,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .control_plane_support import build_control_plane_audit_section
+from .h_plane_support import build_h_plane_audit_section, build_h_plane_payload
+from .paired_backend_support import build_paired_backend_audit_payload
+
 
 _RUNTIME_AUDIT_FILENAMES = (
     "topic_state.json",
@@ -149,6 +153,9 @@ def _capability_recommendations(
     runtime_section: dict[str, dict[str, str]],
     layer_section: dict[str, dict[str, str]],
     capability_specific: dict[str, dict[str, str]],
+    control_plane_section: dict[str, dict[str, Any]],
+    h_plane_section: dict[str, dict[str, Any]],
+    paired_backend_section: dict[str, dict[str, Any]],
     latest_run_id: str | None,
 ) -> list[str]:
     recommendations: list[str] = []
@@ -160,6 +167,12 @@ def _capability_recommendations(
         recommendations.append("Run `aitp audit --topic-slug <topic_slug> --phase entry` to restore conformance visibility.")
     if capability_specific["operation_trust"]["status"] != "present" and latest_run_id:
         recommendations.append("Run `aitp trust-audit --topic-slug <topic_slug> --run-id <run_id>` after creating operation manifests.")
+    if control_plane_section["status"]["status"] != "present":
+        recommendations.append("Refresh topic status so the unified control-plane projection is materialized.")
+    if h_plane_section["status"]["status"] != "present":
+        recommendations.append("Run `aitp h-plane-audit --topic-slug <topic_slug>` after steering or approval artifacts are materialized.")
+    if paired_backend_section["status"]["status"] == "missing":
+        recommendations.append("Run `aitp paired-backend-audit --topic-slug <topic_slug>` after paired backend bridges are declared.")
     if runtime_section["skill_discovery.json"]["status"] != "present":
         recommendations.append("If a capability gap exists, run `aitp loop ... --skill-query ...` to materialize skill discovery.")
     return recommendations
@@ -170,8 +183,15 @@ def _overall_status(
     runtime_section: dict[str, dict[str, str]],
     layer_section: dict[str, dict[str, str]],
     capability_specific: dict[str, dict[str, str]],
+    control_plane_section: dict[str, dict[str, Any]],
+    h_plane_section: dict[str, dict[str, Any]],
+    paired_backend_section: dict[str, dict[str, Any]],
 ) -> str:
     if runtime_section["topic_state.json"]["status"] != "present":
+        return "missing_runtime"
+    if control_plane_section["status"]["status"] != "present":
+        return "missing_runtime"
+    if h_plane_section["status"]["status"] != "present":
         return "missing_runtime"
     if layer_section["L2"]["status"] != "present":
         return "missing_layers"
@@ -192,6 +212,52 @@ def capability_audit(
     runtime_section = _runtime_section(runtime_root)
     layer_section = _layer_section(self.kernel_root, topic_slug)
     integration_section = _integration_section()
+    control_plane_payload: dict[str, Any] = {}
+    if runtime_section["topic_state.json"]["status"] == "present":
+        try:
+            status_payload = self.topic_status(topic_slug=topic_slug, updated_by=updated_by)
+            control_plane_payload = status_payload.get("control_plane") or {}
+        except FileNotFoundError:
+            control_plane_payload = {}
+    control_plane_section = build_control_plane_audit_section(control_plane_payload)
+    h_plane_payload = build_h_plane_payload(
+        self,
+        topic_slug=topic_slug,
+        topic_state=topic_state,
+        operator_checkpoint=(status_payload.get("operator_checkpoint") or {}) if runtime_section["topic_state.json"]["status"] == "present" else {},
+        promotion_gate=self._load_promotion_gate(topic_slug) or {},
+        updated_by=updated_by,
+    )
+    h_plane_section = build_h_plane_audit_section(h_plane_payload)
+    paired_backend_payload = build_paired_backend_audit_payload(
+        self,
+        topic_slug=topic_slug,
+        topic_state=topic_state,
+        backend_id="backend:theoretical-physics-knowledge-network",
+        updated_by=updated_by,
+    )
+    paired_backend_section = {
+        "status": {
+            "status": "present" if paired_backend_payload.get("pairing_status") else "missing",
+            "detail": str(paired_backend_payload.get("pairing_status") or ""),
+        },
+        "drift_status": {
+            "status": "present" if paired_backend_payload.get("drift_status") else "missing",
+            "detail": str(paired_backend_payload.get("drift_status") or ""),
+        },
+        "backend_debt_status": {
+            "status": "present" if paired_backend_payload.get("backend_debt_status") else "missing",
+            "detail": str(paired_backend_payload.get("backend_debt_status") or ""),
+        },
+        "pair_contract": {
+            "status": "present" if paired_backend_payload.get("pair_contract_path") else "missing",
+            "path": paired_backend_payload.get("pair_contract_path") or "",
+        },
+        "maintenance_protocol": {
+            "status": "present" if paired_backend_payload.get("maintenance_protocol_path") else "missing",
+            "path": paired_backend_payload.get("maintenance_protocol_path") or "",
+        },
+    }
     capability_specific = _capability_specific(
         self,
         topic_slug=topic_slug,
@@ -203,6 +269,9 @@ def capability_audit(
         runtime_section=runtime_section,
         layer_section=layer_section,
         capability_specific=capability_specific,
+        control_plane_section=control_plane_section,
+        h_plane_section=h_plane_section,
+        paired_backend_section=paired_backend_section,
         latest_run_id=latest_run_id,
     )
     payload = {
@@ -213,11 +282,17 @@ def capability_audit(
             runtime_section=runtime_section,
             layer_section=layer_section,
             capability_specific=capability_specific,
+            control_plane_section=control_plane_section,
+            h_plane_section=h_plane_section,
+            paired_backend_section=paired_backend_section,
         ),
         "sections": {
             "runtime": runtime_section,
             "layers": layer_section,
             "integrations": integration_section,
+            "control_plane": control_plane_section,
+            "h_plane": h_plane_section,
+            "paired_backends": paired_backend_section,
             "capabilities": capability_specific,
         },
         "recommendations": recommendations,
