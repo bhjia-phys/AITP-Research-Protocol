@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import io
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
 
 import sys
@@ -1358,6 +1360,100 @@ class AITPCLITests(unittest.TestCase):
         args = parser.parse_args(["install-agent", "--agent", "claude-code"])
         self.assertEqual(args.command, "install-agent")
         self.assertEqual(args.agent, "claude-code")
+
+    def test_doctor_human_output_summarizes_front_door_runtimes(self) -> None:
+        doctor_payload = {
+            "overall_status": "mixed_install",
+            "package": {"status": "canonical_editable_install", "version": "0.4.0"},
+            "layer_roots": {"L0": {"status": "present"}},
+            "protocol_contracts": {"layer_map": {"status": "present"}},
+            "runtime_convergence": {
+                "front_door_runtimes": ["codex", "claude_code", "opencode"],
+                "front_door_runtimes_converged": False,
+                "front_door_ready_runtimes": ["codex"],
+                "front_door_non_ready_runtimes": ["claude_code", "opencode"],
+            },
+            "full_convergence_repair": {
+                "status": "recommended",
+                "command": 'aitp migrate-local-install --workspace-root "D:\\Theoretical-Physics" --json',
+            },
+            "runtime_support_matrix": {
+                "specialized_lanes": ["openclaw"],
+                "runtimes": {
+                    "codex": {
+                        "display_name": "Codex",
+                        "status": "ready",
+                        "maturity_class": "baseline",
+                        "preferred_entry": "native `using-aitp` skill discovery",
+                        "issues": [],
+                        "remediation": {"status": "none_required", "issue_hints": []},
+                    },
+                    "claude_code": {
+                        "display_name": "Claude Code",
+                        "status": "stale",
+                        "maturity_class": "parity_target",
+                        "preferred_entry": "Claude SessionStart bootstrap",
+                        "issues": ["runtime_skill_missing"],
+                        "remediation": {
+                            "status": "required",
+                            "command": "aitp install-agent --agent claude-code --scope user",
+                            "doc_path": "docs/INSTALL_CLAUDE_CODE.md",
+                            "issue_hints": [
+                                {
+                                    "issue": "runtime_skill_missing",
+                                    "hint": "Run `aitp install-agent --agent claude-code --scope user` to refresh Claude Code SessionStart assets.",
+                                }
+                            ],
+                        },
+                    },
+                    "opencode": {
+                        "display_name": "OpenCode",
+                        "status": "partial",
+                        "maturity_class": "parity_target",
+                        "preferred_entry": "OpenCode plugin bootstrap",
+                        "issues": ["opencode_config_missing"],
+                        "remediation": {
+                            "status": "required",
+                            "command": 'aitp migrate-local-install --workspace-root "D:\\Theoretical-Physics" --agent opencode --json',
+                            "doc_path": "docs/INSTALL_OPENCODE.md",
+                            "issue_hints": [
+                                {
+                                    "issue": "opencode_config_missing",
+                                    "hint": 'Run `aitp migrate-local-install --workspace-root "D:\\Theoretical-Physics" --json` to enable the canonical OpenCode plugin path.',
+                                }
+                            ],
+                        },
+                    },
+                    "openclaw": {
+                        "display_name": "OpenClaw",
+                        "status": "ready",
+                        "maturity_class": "specialized_lane",
+                        "preferred_entry": 'aitp loop --topic-slug <topic_slug> --human-request "<task>"',
+                        "issues": [],
+                        "remediation": {"status": "none_required", "issue_hints": []},
+                    },
+                },
+            },
+        }
+
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.ensure_cli_installed.return_value = doctor_payload
+            mock_factory.return_value = mock_service
+            stream = io.StringIO()
+            with patch.object(sys, "argv", ["aitp", "doctor"]):
+                with redirect_stdout(stream):
+                    exit_code = aitp_cli.main()
+
+        output = stream.getvalue()
+        self.assertEqual(exit_code, 0)
+        self.assertIn("AITP Doctor", output)
+        self.assertIn("Front-door convergence: no", output)
+        self.assertIn("Full repair: aitp migrate-local-install", output)
+        self.assertIn("Claude Code: stale", output)
+        self.assertIn("Repair: aitp install-agent --agent claude-code --scope user", output)
+        self.assertIn("Machine view: aitp doctor --json", output)
+        self.assertNotIn("runtime support matrix:", output.lower())
 
     def test_migrate_local_install_and_doctor_workspace_flags_are_registered(self) -> None:
         parser = aitp_cli.build_parser()

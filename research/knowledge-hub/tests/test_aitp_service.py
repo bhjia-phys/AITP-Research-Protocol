@@ -3971,18 +3971,21 @@ class AITPServiceTests(unittest.TestCase):
             "using_skill_path": "C:\\Users\\demo\\.claude\\skills\\using-aitp\\SKILL.md",
             "runtime_skill_path": "C:\\Users\\demo\\.claude\\skills\\aitp-runtime\\SKILL.md",
             "session_start_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start",
+            "session_start_python_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start.py",
             "hook_wrapper_path": "C:\\Users\\demo\\.claude\\hooks\\run-hook.cmd",
             "hooks_manifest_path": "C:\\Users\\demo\\.claude\\hooks\\hooks.json",
             "settings_path": "C:\\Users\\demo\\.claude\\settings.json",
             "using_skill": True,
             "runtime_skill": True,
             "session_start_hook": True,
+            "session_start_python_hook": True,
             "hook_wrapper": True,
             "hooks_manifest": True,
             "settings": True,
             "using_skill_matches_canonical": True,
             "runtime_skill_matches_canonical": True,
             "session_start_hook_matches_canonical": True,
+            "session_start_python_hook_matches_canonical": True,
             "hook_wrapper_matches_canonical": True,
             "hooks_manifest_matches_canonical": True,
             "settings_has_expected_session_start_command": True,
@@ -4027,6 +4030,11 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(matrix["runtimes"]["opencode"]["status"], "ready")
         self.assertEqual(matrix["runtimes"]["openclaw"]["maturity_class"], "specialized_lane")
         self.assertTrue(matrix["runtimes"]["claude_code"]["surface_checks"]["settings_has_expected_session_start_command"])
+        self.assertEqual(matrix["runtimes"]["codex"]["remediation"]["status"], "none_required")
+        self.assertEqual(matrix["runtimes"]["claude_code"]["remediation"]["status"], "none_required")
+        self.assertEqual(matrix["runtimes"]["opencode"]["remediation"]["status"], "none_required")
+        self.assertTrue(payload["runtime_convergence"]["front_door_runtimes_converged"])
+        self.assertEqual(payload["full_convergence_repair"]["status"], "none_required")
 
     def test_doctor_runtime_support_matrix_reports_partial_front_doors_honestly(self) -> None:
         codex_status = {
@@ -4041,18 +4049,21 @@ class AITPServiceTests(unittest.TestCase):
             "using_skill_path": "C:\\Users\\demo\\.claude\\skills\\using-aitp\\SKILL.md",
             "runtime_skill_path": "C:\\Users\\demo\\.claude\\skills\\aitp-runtime\\SKILL.md",
             "session_start_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start",
+            "session_start_python_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start.py",
             "hook_wrapper_path": "C:\\Users\\demo\\.claude\\hooks\\run-hook.cmd",
             "hooks_manifest_path": "C:\\Users\\demo\\.claude\\hooks\\hooks.json",
             "settings_path": "C:\\Users\\demo\\.claude\\settings.json",
             "using_skill": True,
             "runtime_skill": False,
             "session_start_hook": False,
+            "session_start_python_hook": False,
             "hook_wrapper": False,
             "hooks_manifest": False,
             "settings": False,
             "using_skill_matches_canonical": True,
             "runtime_skill_matches_canonical": False,
             "session_start_hook_matches_canonical": False,
+            "session_start_python_hook_matches_canonical": False,
             "hook_wrapper_matches_canonical": False,
             "hooks_manifest_matches_canonical": False,
             "settings_has_expected_session_start_command": False,
@@ -4099,9 +4110,14 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(matrix["codex"]["status"], "ready")
         self.assertEqual(matrix["claude_code"]["status"], "stale")
         self.assertIn("legacy_claude_commands_present", matrix["claude_code"]["issues"])
+        self.assertEqual(matrix["claude_code"]["remediation"]["command"], "aitp install-agent --agent claude-code --scope user")
         self.assertEqual(matrix["opencode"]["status"], "missing")
         self.assertIn("opencode_config_missing", matrix["opencode"]["issues"])
+        self.assertEqual(matrix["opencode"]["remediation"]["status"], "required")
         self.assertEqual(matrix["openclaw"]["status"], "missing")
+        self.assertIn("claude_hook_surface_stale", payload["issues"])
+        self.assertIn("opencode_plugin_surface_missing", payload["issues"])
+        self.assertFalse(payload["runtime_convergence"]["front_door_runtimes_converged"])
 
     def test_doctor_runtime_support_matrix_reports_stale_claude_surfaces(self) -> None:
         codex_status = {
@@ -4116,18 +4132,21 @@ class AITPServiceTests(unittest.TestCase):
             "using_skill_path": "C:\\Users\\demo\\.claude\\skills\\using-aitp\\SKILL.md",
             "runtime_skill_path": "C:\\Users\\demo\\.claude\\skills\\aitp-runtime\\SKILL.md",
             "session_start_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start",
+            "session_start_python_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start.py",
             "hook_wrapper_path": "C:\\Users\\demo\\.claude\\hooks\\run-hook.cmd",
             "hooks_manifest_path": "C:\\Users\\demo\\.claude\\hooks\\hooks.json",
             "settings_path": "C:\\Users\\demo\\.claude\\settings.json",
             "using_skill": True,
             "runtime_skill": True,
             "session_start_hook": True,
+            "session_start_python_hook": True,
             "hook_wrapper": True,
             "hooks_manifest": True,
             "settings": True,
             "using_skill_matches_canonical": True,
             "runtime_skill_matches_canonical": True,
             "session_start_hook_matches_canonical": False,
+            "session_start_python_hook_matches_canonical": True,
             "hook_wrapper_matches_canonical": True,
             "hooks_manifest_matches_canonical": True,
             "settings_has_expected_session_start_command": False,
@@ -4162,6 +4181,8 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(claude_row["status"], "stale")
         self.assertIn("session_start_hook_matches_canonical_stale", claude_row["issues"])
         self.assertIn("settings_session_start_command_mismatch", claude_row["issues"])
+        self.assertEqual(claude_row["remediation"]["doc_path"], "docs/INSTALL_CLAUDE_CODE.md")
+        self.assertEqual(claude_row["remediation"]["status"], "required")
 
     def test_doctor_runtime_support_matrix_reports_ready_opencode_compatibility_surface(self) -> None:
         codex_status = {
@@ -4176,18 +4197,21 @@ class AITPServiceTests(unittest.TestCase):
             "using_skill_path": "C:\\Users\\demo\\.claude\\skills\\using-aitp\\SKILL.md",
             "runtime_skill_path": "C:\\Users\\demo\\.claude\\skills\\aitp-runtime\\SKILL.md",
             "session_start_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start",
+            "session_start_python_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start.py",
             "hook_wrapper_path": "C:\\Users\\demo\\.claude\\hooks\\run-hook.cmd",
             "hooks_manifest_path": "C:\\Users\\demo\\.claude\\hooks\\hooks.json",
             "settings_path": "C:\\Users\\demo\\.claude\\settings.json",
             "using_skill": True,
             "runtime_skill": True,
             "session_start_hook": True,
+            "session_start_python_hook": True,
             "hook_wrapper": True,
             "hooks_manifest": True,
             "settings": True,
             "using_skill_matches_canonical": True,
             "runtime_skill_matches_canonical": True,
             "session_start_hook_matches_canonical": True,
+            "session_start_python_hook_matches_canonical": True,
             "hook_wrapper_matches_canonical": True,
             "hooks_manifest_matches_canonical": True,
             "settings_has_expected_session_start_command": True,
@@ -4238,6 +4262,8 @@ class AITPServiceTests(unittest.TestCase):
         opencode_row = payload["runtime_support_matrix"]["runtimes"]["opencode"]
         self.assertEqual(opencode_row["status"], "ready")
         self.assertIn("Workspace-local compatibility bootstrap is present", " ".join(opencode_row["notes"]))
+        self.assertEqual(opencode_row["remediation"]["status"], "recommended")
+        self.assertIn("aitp migrate-local-install", opencode_row["remediation"]["command"])
 
     def test_doctor_runtime_support_matrix_reports_partial_opencode_workspace_install(self) -> None:
         codex_status = {
@@ -4252,18 +4278,21 @@ class AITPServiceTests(unittest.TestCase):
             "using_skill_path": "C:\\Users\\demo\\.claude\\skills\\using-aitp\\SKILL.md",
             "runtime_skill_path": "C:\\Users\\demo\\.claude\\skills\\aitp-runtime\\SKILL.md",
             "session_start_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start",
+            "session_start_python_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start.py",
             "hook_wrapper_path": "C:\\Users\\demo\\.claude\\hooks\\run-hook.cmd",
             "hooks_manifest_path": "C:\\Users\\demo\\.claude\\hooks\\hooks.json",
             "settings_path": "C:\\Users\\demo\\.claude\\settings.json",
             "using_skill": True,
             "runtime_skill": True,
             "session_start_hook": True,
+            "session_start_python_hook": True,
             "hook_wrapper": True,
             "hooks_manifest": True,
             "settings": True,
             "using_skill_matches_canonical": True,
             "runtime_skill_matches_canonical": True,
             "session_start_hook_matches_canonical": True,
+            "session_start_python_hook_matches_canonical": True,
             "hook_wrapper_matches_canonical": True,
             "hooks_manifest_matches_canonical": True,
             "settings_has_expected_session_start_command": True,
@@ -4314,6 +4343,7 @@ class AITPServiceTests(unittest.TestCase):
         opencode_row = payload["runtime_support_matrix"]["runtimes"]["opencode"]
         self.assertEqual(opencode_row["status"], "partial")
         self.assertIn("workspace_using_skill_missing", opencode_row["issues"])
+        self.assertIn("aitp migrate-local-install", opencode_row["remediation"]["command"])
 
     def test_doctor_runtime_support_matrix_reports_stale_opencode_config(self) -> None:
         codex_status = {
@@ -4328,18 +4358,21 @@ class AITPServiceTests(unittest.TestCase):
             "using_skill_path": "C:\\Users\\demo\\.claude\\skills\\using-aitp\\SKILL.md",
             "runtime_skill_path": "C:\\Users\\demo\\.claude\\skills\\aitp-runtime\\SKILL.md",
             "session_start_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start",
+            "session_start_python_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start.py",
             "hook_wrapper_path": "C:\\Users\\demo\\.claude\\hooks\\run-hook.cmd",
             "hooks_manifest_path": "C:\\Users\\demo\\.claude\\hooks\\hooks.json",
             "settings_path": "C:\\Users\\demo\\.claude\\settings.json",
             "using_skill": True,
             "runtime_skill": True,
             "session_start_hook": True,
+            "session_start_python_hook": True,
             "hook_wrapper": True,
             "hooks_manifest": True,
             "settings": True,
             "using_skill_matches_canonical": True,
             "runtime_skill_matches_canonical": True,
             "session_start_hook_matches_canonical": True,
+            "session_start_python_hook_matches_canonical": True,
             "hook_wrapper_matches_canonical": True,
             "hooks_manifest_matches_canonical": True,
             "settings_has_expected_session_start_command": True,
@@ -4378,6 +4411,8 @@ class AITPServiceTests(unittest.TestCase):
         opencode_row = payload["runtime_support_matrix"]["runtimes"]["opencode"]
         self.assertEqual(opencode_row["status"], "stale")
         self.assertIn("noncanonical_aitp_plugin_entries_present", opencode_row["issues"])
+        self.assertEqual(opencode_row["remediation"]["status"], "required")
+        self.assertIn("aitp migrate-local-install", opencode_row["remediation"]["command"])
 
     def test_doctor_detects_mixed_install_signals(self) -> None:
         workspace_root = self.root / "Theoretical-Physics"
@@ -4403,6 +4438,9 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("stale_cli", payload["issues"])
         self.assertIn("legacy_workspace_entrypoints_present", payload["issues"])
         self.assertIn("runtime_support_matrix", payload)
+        self.assertIn("runtime_convergence", payload)
+        self.assertEqual(payload["package"]["status"], "stale_editable_install")
+        self.assertEqual(payload["full_convergence_repair"]["status"], "recommended")
 
     def test_migrate_local_install_moves_workspace_legacy_and_records_pip_actions(self) -> None:
         workspace_root = self.root / "Theoretical-Physics"
@@ -7869,27 +7907,32 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("SKILL.md", installed_paths)
         self.assertIn("AITP_MCP_SETUP.md", installed_paths)
         self.assertIn("session-start", installed_paths)
+        self.assertIn("session-start.py", installed_paths)
         self.assertIn("run-hook.cmd", installed_paths)
         self.assertIn("hooks.json", installed_paths)
         self.assertIn("settings.json", installed_paths)
         claude_using_skill_path = claude_target / ".claude" / "skills" / "using-aitp" / "SKILL.md"
         claude_skill_path = claude_target / ".claude" / "skills" / "aitp-runtime" / "SKILL.md"
         claude_hook_path = claude_target / ".claude" / "hooks" / "session-start"
+        claude_python_hook_path = claude_target / ".claude" / "hooks" / "session-start.py"
         claude_run_hook_path = claude_target / ".claude" / "hooks" / "run-hook.cmd"
         claude_hooks_json_path = claude_target / ".claude" / "hooks" / "hooks.json"
         claude_settings_path = claude_target / ".claude" / "settings.json"
         canonical_claude_hook = (self.package_root.parent.parent / "hooks" / "session-start").read_text(encoding="utf-8")
+        canonical_claude_python_hook = (self.package_root.parent.parent / "hooks" / "session-start.py").read_text(encoding="utf-8")
         canonical_claude_run_hook = (self.package_root.parent.parent / "hooks" / "run-hook.cmd").read_text(encoding="utf-8")
         canonical_claude_hooks_json = (self.package_root.parent.parent / "hooks" / "hooks.json").read_text(encoding="utf-8")
         self.assertTrue(claude_using_skill_path.exists())
         self.assertTrue(claude_skill_path.exists())
         self.assertTrue(claude_hook_path.exists())
+        self.assertTrue(claude_python_hook_path.exists())
         self.assertTrue(claude_run_hook_path.exists())
         self.assertTrue(claude_hooks_json_path.exists())
         self.assertTrue(claude_settings_path.exists())
         self.assertEqual(claude_using_skill_path.read_text(encoding="utf-8"), canonical_using_skill)
         self.assertEqual(claude_skill_path.read_text(encoding="utf-8"), canonical_runtime_skill)
         self.assertEqual(claude_hook_path.read_text(encoding="utf-8"), canonical_claude_hook)
+        self.assertEqual(claude_python_hook_path.read_text(encoding="utf-8"), canonical_claude_python_hook)
         self.assertEqual(claude_run_hook_path.read_text(encoding="utf-8"), canonical_claude_run_hook)
         self.assertEqual(claude_hooks_json_path.read_text(encoding="utf-8"), canonical_claude_hooks_json)
         settings_payload = json.loads(claude_settings_path.read_text(encoding="utf-8"))

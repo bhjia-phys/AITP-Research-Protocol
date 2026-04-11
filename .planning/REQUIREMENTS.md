@@ -1,35 +1,51 @@
-# Requirements: v1.64 L1 Method Specificity Surface
+# Requirements: v1.65 Installation And Adoption Readiness
 
 ## Milestone Goal
 
-Close the first still-missing production slice of backlog `999.27` by giving
-AITP a real L1 method-specificity surface on top of the already-implemented
-assumption, regime, reading-depth, notation, and contradiction paths.
+Turn the install/adoption backlog cluster into one coherent first-use surface
+across Codex, Claude Code, and OpenCode by hardening install verification,
+shared quickstart proof, and Windows-native bootstrap behavior.
 
 ## Active Requirements
 
-### Method Specificity Extraction
+### Install Verification
 
-- [x] `REQ-MSPEC-01`: AITP records source-backed `method_specificity_rows`
-  inside `l1_source_intake` during real topic-shell distillation.
-- [x] `REQ-MSPEC-02`: each method-specificity row captures a bounded method
-  family, a specificity tier, and evidence excerpt tied to source-backed text
-  rather than free-floating heuristics.
+- [ ] `REQ-ADOPT-01`: `aitp doctor` reports front-door readiness for Codex,
+  Claude Code, and OpenCode through one consistent remediation contract.
+- [ ] `REQ-ADOPT-02`: `aitp doctor --json` exposes machine-readable convergence
+  and per-runtime repair surfaces that can be used in CI and migration flows.
 
-### Runtime And Acceptance Surface
+### Shared First-Run Path
 
-- [x] `REQ-MSPEC-03`: topic-shell markdown, runtime bundle, and `status --json`
-  expose the method-specificity surface through real production paths.
-- [x] `REQ-MSPEC-04`: an isolated acceptance path proves the surface through a
-  real CLI/runtime entrypoint and durable artifacts.
+- [ ] `REQ-QUICK-01`: one tutorial-grade quickstart takes a new user from
+  install verification to a real `bootstrap -> loop -> status` proof.
+- [ ] `REQ-QUICK-02`: the shared quickstart is backed by one isolated
+  acceptance path that runs the real production CLI on a temp kernel root.
 
-### Documentation And Acceptance
+### Windows-Native Robustness
 
-- [x] `REQ-MSPEC-05`: public docs, contract tests, and the new acceptance path
-  document the method-specificity surface honestly as a first production slice
-  of `999.27`.
+- [ ] `REQ-WIN-01`: Windows-native Claude Code bootstrap no longer assumes bash
+  as the default SessionStart dependency.
+- [ ] `REQ-WIN-02`: Codex, Claude Code, and OpenCode install docs expose
+  Windows-native install, verify, and first-run commands without POSIX-only
+  assumptions.
+- [ ] `REQ-WIN-03`: repo-local launchers provide a no-WSL fallback for the
+  shared first-run path on Windows.
 
 ### Verification
 
-- [x] `REQ-VERIFY-01`: the milestone closes with targeted regressions,
-  maintainability-budget verification, and a green full knowledge-hub suite.
+- [ ] `REQ-VERIFY-01`: the milestone closes with targeted install/adoption
+  regressions, acceptance coverage, and a green full knowledge-hub suite.
+
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| REQ-ADOPT-01 | Phase 127 | Pending |
+| REQ-ADOPT-02 | Phase 127 | Pending |
+| REQ-QUICK-01 | Phase 128 | Pending |
+| REQ-QUICK-02 | Phase 128 | Pending |
+| REQ-WIN-01 | Phase 129 | Pending |
+| REQ-WIN-02 | Phase 129 | Pending |
+| REQ-WIN-03 | Phase 129 | Pending |
+| REQ-VERIFY-01 | Phase 130 | Pending |

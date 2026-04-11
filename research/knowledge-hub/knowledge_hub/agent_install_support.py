@@ -276,6 +276,56 @@ exit 0
 """
 
 
+def claude_session_start_python_hook_template() -> str:
+    return """#!/usr/bin/env python
+\"\"\"Claude Code SessionStart hook for AITP.\"\"\"
+
+from __future__ import annotations
+
+import json
+import os
+import sys
+from pathlib import Path
+
+
+def main() -> int:
+    script_dir = Path(__file__).resolve().parent
+    plugin_root = Path(os.environ.get(\"CLAUDE_PLUGIN_ROOT\") or (script_dir / \"..\")).resolve()
+    skill_path = plugin_root / \"skills\" / \"using-aitp\" / \"SKILL.md\"
+
+    if skill_path.exists():
+        using_aitp_content = skill_path.read_text(encoding=\"utf-8\")
+    else:
+        using_aitp_content = f\"Error reading using-aitp skill from {skill_path}\"
+
+    session_context = (
+        \"<EXTREMELY_IMPORTANT>\\n\"
+        \"You are in an AITP-enabled Claude Code session.\\n\\n\"
+        \"**Below is the full content of the using-aitp skill. It is already loaded. Do not load using-aitp again.**\\n\\n\"
+        f\"{using_aitp_content}\\n\"
+        \"</EXTREMELY_IMPORTANT>\"
+    )
+
+    if os.environ.get(\"CLAUDE_PLUGIN_ROOT\"):
+        payload = {
+            \"hookSpecificOutput\": {
+                \"hookEventName\": \"SessionStart\",
+                \"additionalContext\": session_context,
+            }
+        }
+    else:
+        payload = {\"additional_context\": session_context}
+
+    json.dump(payload, sys.stdout, ensure_ascii=False, indent=2)
+    sys.stdout.write(\"\\n\")
+    return 0
+
+
+if __name__ == \"__main__\":
+    raise SystemExit(main())
+"""
+
+
 def claude_hook_wrapper_template() -> str:
     return """: << 'CMDBLOCK'
 @echo off
@@ -285,6 +335,26 @@ if \"%~1\"==\"\" (
 )
 
 set \"HOOK_DIR=%~dp0\"
+set \"PYTHON_HOOK=%HOOK_DIR%%~1.py\"
+
+if exist \"%PYTHON_HOOK%\" (
+    if defined AITP_PYTHON (
+        \"%AITP_PYTHON%\" \"%PYTHON_HOOK%\" %2 %3 %4 %5 %6 %7 %8 %9
+        exit /b %ERRORLEVEL%
+    )
+
+    where python >NUL 2>NUL
+    if %ERRORLEVEL% equ 0 (
+        python \"%PYTHON_HOOK%\" %2 %3 %4 %5 %6 %7 %8 %9
+        exit /b %ERRORLEVEL%
+    )
+
+    where py >NUL 2>NUL
+    if %ERRORLEVEL% equ 0 (
+        py -3 \"%PYTHON_HOOK%\" %2 %3 %4 %5 %6 %7 %8 %9
+        exit /b %ERRORLEVEL%
+    )
+)
 
 if exist \"C:\\Program Files\\Git\\bin\\bash.exe\" (
     \"C:\\Program Files\\Git\\bin\\bash.exe\" \"%HOOK_DIR%%~1\" %2 %3 %4 %5 %6 %7 %8 %9
@@ -359,6 +429,17 @@ def install_claude_session_start_hook(
         ),
     )
 
+    session_start_python_path = hook_root / "session-start.py"
+    if session_start_python_path.exists() and not force:
+        raise FileExistsError(f"Refusing to overwrite {session_start_python_path}")
+    _write_text(
+        session_start_python_path,
+        service._canonical_repo_asset_text(
+            "hooks/session-start.py",
+            fallback_text=claude_session_start_python_hook_template(),
+        ),
+    )
+
     run_hook_path = hook_root / "run-hook.cmd"
     if run_hook_path.exists() and not force:
         raise FileExistsError(f"Refusing to overwrite {run_hook_path}")
@@ -411,6 +492,7 @@ def install_claude_session_start_hook(
 
     return [
         {"agent": "claude-code", "path": str(session_start_path), "kind": "hook"},
+        {"agent": "claude-code", "path": str(session_start_python_path), "kind": "hook-python"},
         {"agent": "claude-code", "path": str(run_hook_path), "kind": "hook-wrapper"},
         {"agent": "claude-code", "path": str(hooks_json_path), "kind": "hook-manifest"},
         {"agent": "claude-code", "path": str(settings_path), "kind": "hook-config"},

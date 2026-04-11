@@ -51,6 +51,9 @@ That protocol report now includes the deeper proof/gap/fusion/verification
 governance surfaces in addition to the layer map and routing basics.
 Topic-completion and regression-governed promotion are part of that public
 surface rather than topic-local convention.
+Its human-readable form now summarizes the Codex/Claude Code/OpenCode front
+door first, and its JSON form now exposes `runtime_convergence`,
+`full_convergence_repair`, and per-runtime `remediation` contracts.
 `aitp doctor --json` now also exposes `control_plane_contracts` and
 `control_plane_surfaces` so operators can find the unified architecture docs
 and the audit/status commands that inspect live control-plane state.
@@ -107,6 +110,8 @@ Current extracted boundaries include:
 - `knowledge_hub/cli_frontdoor_handler.py`
   - the front-door CLI command family:
     `session-start`, `install-agent`, `migrate-local-install`, and `doctor`
+- `hooks/session-start.py`
+  - Python SessionStart sidecar used by the Windows-native Claude Code hook path before any bash fallback
 - `runtime/scripts/orchestrator_contract_support.py`
   - contract-aware queue shaping, checkpoint append gating, and runtime-appended action assembly support for `orchestrate_topic.py`
 - `runtime/scripts/interaction_surface_support.py`
@@ -414,6 +419,7 @@ python research/knowledge-hub/runtime/scripts/run_source_catalog_acceptance.py -
 python research/knowledge-hub/runtime/scripts/run_l1_method_specificity_acceptance.py --json
 python research/knowledge-hub/runtime/scripts/run_analytical_judgment_surface_acceptance.py --json
 python research/knowledge-hub/runtime/scripts/run_collaborator_continuity_acceptance.py --json
+python research/knowledge-hub/runtime/scripts/run_first_run_topic_acceptance.py --json
 python research/knowledge-hub/runtime/scripts/run_quick_exploration_acceptance.py --json
 python research/knowledge-hub/runtime/scripts/run_dependency_contract_acceptance.py --json
 python research/knowledge-hub/runtime/scripts/run_tfim_benchmark_code_method_acceptance.py --json
@@ -486,6 +492,12 @@ seeds runtime-side collaborator memory plus strategy memory on an isolated temp
 kernel root, then runs production `focus-topic`, `status --json`,
 `current-topic --json`, and `session-start --json`, checking that the three
 continuity surfaces remain visible through real restart paths.
+
+The first-run topic acceptance script is the bounded install-to-use proof for
+the shared quickstart path: it uses an isolated temp kernel root, runs
+production `bootstrap --json`, production `loop --json`, then production
+`status --json`, and checks that a real topic shell, loop state, and runtime
+protocol all survive the first-run `bootstrap -> loop -> status` path.
 
 The quick-exploration acceptance script is the bounded `v1.49` closure path for
 low-bureaucracy exploration: it runs production `explore --json`, verifies the
