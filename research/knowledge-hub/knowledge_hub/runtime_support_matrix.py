@@ -35,6 +35,86 @@ def _repair_contract(
     }
 
 
+def _deep_execution_acceptance_command(runtime_id: str) -> str:
+    return f"python research/knowledge-hub/runtime/scripts/run_runtime_parity_acceptance.py --runtime {runtime_id} --json"
+
+
+def _deep_execution_expected_artifacts() -> list[str]:
+    return [
+        "runtime/topics/<topic_slug>/topic_state.json",
+        "runtime/topics/<topic_slug>/loop_state.json",
+        "runtime/topics/<topic_slug>/runtime_protocol.generated.json",
+        "runtime/topics/<topic_slug>/runtime_protocol.generated.md",
+        "status --json selected_action_id",
+    ]
+
+
+def _deep_execution_row(
+    runtime_id: str,
+    front_door_row: dict[str, Any],
+    *,
+    baseline_runtime: str,
+    parity_targets: list[str],
+) -> dict[str, Any]:
+    remediation = front_door_row.get("remediation") or {}
+    display_name = str(front_door_row.get("display_name") or runtime_id)
+    maturity_class = str(front_door_row.get("maturity_class") or "")
+    front_door_status = str(front_door_row.get("status") or "unknown")
+    entry_surface = str(front_door_row.get("preferred_entry") or "")
+    acceptance_command = _deep_execution_acceptance_command(runtime_id) if runtime_id != "openclaw" else ""
+    expected_artifacts = _deep_execution_expected_artifacts() if acceptance_command else []
+
+    if runtime_id == baseline_runtime:
+        status = "baseline_ready" if front_door_status == "ready" else "front_door_blocked"
+        baseline_relationship = "baseline"
+        blockers = [] if status == "baseline_ready" else [f"front_door_status:{front_door_status}"]
+        notes = [
+            "Current deep-execution baseline for this milestone.",
+            "Use this artifact bar when later parity-target probes claim equivalence.",
+        ]
+        if blockers:
+            notes.append("Repair the front-door surface before trusting deep-execution comparisons.")
+    elif runtime_id in parity_targets:
+        baseline_relationship = "parity_target"
+        if front_door_status == "ready":
+            status = "probe_pending"
+            blockers = ["runtime_specific_probe_not_implemented"]
+            notes = [
+                "Front-door install/bootstrap readiness is already green.",
+                "Deep-execution parity is still unmeasured until the dedicated runtime probe lands.",
+            ]
+        else:
+            status = "front_door_blocked"
+            blockers = [f"front_door_status:{front_door_status}", "runtime_specific_probe_not_implemented"]
+            notes = [
+                "Deep-execution parity is blocked because the front-door surface is not yet clean.",
+                "Install/bootstrap remediation must land before runtime-equivalence claims are believable.",
+            ]
+    else:
+        status = "deferred"
+        baseline_relationship = "deferred_specialized_lane"
+        blockers = ["deferred_from_v1.67_scope"]
+        notes = [
+            "Specialized lane is intentionally outside the current cross-runtime deep-execution parity scope.",
+        ]
+
+    return {
+        "display_name": display_name,
+        "status": status,
+        "maturity_class": maturity_class,
+        "baseline_relationship": baseline_relationship,
+        "front_door_status": front_door_status,
+        "entry_surface": entry_surface,
+        "acceptance_command": acceptance_command,
+        "status_field": f"runtime_support_matrix.deep_execution_parity.runtimes.{runtime_id}.status",
+        "expected_artifacts": expected_artifacts,
+        "blockers": blockers,
+        "repair_command": str(remediation.get("command") or ""),
+        "doc_path": str(remediation.get("doc_path") or ""),
+        "notes": notes,
+    }
+
+
 def _codex_runtime_row(
     *,
     codex_path: str,
@@ -437,6 +517,9 @@ def build_runtime_support_matrix(
     opencode_status: dict[str, Any],
 ) -> dict[str, Any]:
     legacy_command_rows = [str(path) for path in legacy_claude_commands]
+    baseline_runtime = "codex"
+    parity_targets = ["claude_code", "opencode"]
+    specialized_lanes = ["openclaw"]
     runtimes = {
         "codex": _codex_runtime_row(
             codex_path=str(codex_path or ""),
@@ -458,9 +541,25 @@ def build_runtime_support_matrix(
             workspace_root=workspace_root,
         ),
     }
+    deep_execution_parity = {
+        "baseline_runtime": baseline_runtime,
+        "parity_targets": parity_targets,
+        "deferred_lanes": specialized_lanes,
+        "scoped_runtimes": [baseline_runtime, *parity_targets],
+        "runtimes": {
+            runtime_id: _deep_execution_row(
+                runtime_id,
+                row,
+                baseline_runtime=baseline_runtime,
+                parity_targets=parity_targets,
+            )
+            for runtime_id, row in runtimes.items()
+        },
+    }
     return {
-        "baseline_runtime": "codex",
-        "parity_targets": ["claude_code", "opencode"],
-        "specialized_lanes": ["openclaw"],
+        "baseline_runtime": baseline_runtime,
+        "parity_targets": parity_targets,
+        "specialized_lanes": specialized_lanes,
         "runtimes": runtimes,
+        "deep_execution_parity": deep_execution_parity,
     }

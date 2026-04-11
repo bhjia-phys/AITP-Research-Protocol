@@ -75,6 +75,28 @@ def _doctor_runtime_lines(runtime_key: str, row: dict[str, Any], *, indent: int 
     return lines
 
 
+def _doctor_deep_execution_lines(runtime_key: str, row: dict[str, Any], *, indent: int = 2) -> list[str]:
+    prefix = " " * indent
+    detail_prefix = " " * (indent + 2)
+    relationship = str(row.get("baseline_relationship") or row.get("maturity_class") or "runtime").replace("_", " ").strip()
+    display_name = str(row.get("display_name") or runtime_key)
+    status = str(row.get("status") or "unknown")
+    lines = [f"{prefix}- {display_name}: {status} [{relationship}]"]
+    acceptance_command = str(row.get("acceptance_command") or "").strip()
+    if acceptance_command:
+        lines.append(f"{detail_prefix}Acceptance: {acceptance_command}")
+    front_door_status = str(row.get("front_door_status") or "").strip()
+    if front_door_status and front_door_status != "ready":
+        lines.append(f"{detail_prefix}Front door: {front_door_status}")
+    blockers = list(row.get("blockers") or [])
+    if blockers:
+        lines.append(f"{detail_prefix}Blockers: {', '.join(str(blocker) for blocker in blockers)}")
+    repair_command = str(row.get("repair_command") or "").strip()
+    if repair_command:
+        lines.append(f"{detail_prefix}Repair: {repair_command}")
+    return lines
+
+
 def _render_doctor_payload(payload: dict[str, Any]) -> list[str]:
     lines = ["AITP Doctor", ""]
     lines.append(f"Overall: {payload.get('overall_status', 'unknown')}")
@@ -134,6 +156,45 @@ def _render_doctor_payload(payload: dict[str, Any]) -> list[str]:
         for runtime_key in specialized_lanes:
             row = runtime_rows.get(runtime_key) or {}
             lines.extend(_doctor_runtime_lines(runtime_key, row))
+
+    deep_execution_summary = payload.get("deep_execution_parity") or {}
+    deep_execution_matrix = (payload.get("runtime_support_matrix") or {}).get("deep_execution_parity") or {}
+    if deep_execution_summary:
+        baseline_runtime = str(deep_execution_summary.get("baseline_runtime") or "")
+        baseline_status = str(deep_execution_summary.get("baseline_status") or "unknown")
+        pending_targets = list(deep_execution_summary.get("pending_targets") or [])
+        blocked_targets = list(deep_execution_summary.get("blocked_targets") or [])
+        summary_line = "Deep-execution parity: "
+        summary_line += "yes" if deep_execution_summary.get("parity_targets_converged") else "no"
+        detail_parts: list[str] = []
+        if baseline_runtime:
+            detail_parts.append(f"baseline: {baseline_runtime}={baseline_status}")
+        if pending_targets:
+            detail_parts.append(f"pending: {', '.join(str(item) for item in pending_targets)}")
+        if blocked_targets:
+            detail_parts.append(f"blocked: {', '.join(str(item) for item in blocked_targets)}")
+        if detail_parts:
+            summary_line += f" ({'; '.join(detail_parts)})"
+        lines.append(summary_line)
+
+        scoped_runtimes = list(
+            deep_execution_matrix.get("scoped_runtimes")
+            or [baseline_runtime, *list(deep_execution_summary.get("parity_targets") or [])]
+        )
+        deep_rows = deep_execution_matrix.get("runtimes") or {}
+        if scoped_runtimes:
+            lines.append("")
+            lines.append("Deep-execution runtimes:")
+            for runtime_key in scoped_runtimes:
+                row = deep_rows.get(runtime_key) or {}
+                lines.extend(_doctor_deep_execution_lines(runtime_key, row))
+        deferred_lanes = list(deep_execution_matrix.get("deferred_lanes") or [])
+        if deferred_lanes:
+            lines.append("")
+            lines.append("Deep-execution deferred lanes:")
+            for runtime_key in deferred_lanes:
+                row = deep_rows.get(runtime_key) or {}
+                lines.extend(_doctor_deep_execution_lines(runtime_key, row))
 
     lines.append("")
     lines.append("Machine view: aitp doctor --json")

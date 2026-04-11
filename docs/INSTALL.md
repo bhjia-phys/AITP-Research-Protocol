@@ -67,19 +67,28 @@ aitp doctor --json
 
 `aitp doctor` now renders a front-door install summary for Codex, Claude Code,
 and OpenCode, while treating OpenClaw as a specialized lane.
+That readiness view is about install/bootstrap truth. It is not the same thing
+as deep-execution parity.
 
 For machine-readable verification, inspect:
 
 - `runtime_convergence.front_door_runtimes_converged`
+- `deep_execution_parity.baseline_status`
+- `deep_execution_parity.pending_targets`
 - `full_convergence_repair.command`
 - `runtime_support_matrix.runtimes.codex.status`
 - `runtime_support_matrix.runtimes.claude_code.status`
 - `runtime_support_matrix.runtimes.opencode.status`
 - `runtime_support_matrix.runtimes.<runtime>.remediation`
+- `runtime_support_matrix.deep_execution_parity.runtimes.<runtime>.status`
 
 If a runtime is not `ready`, use that runtime's
 `runtime_support_matrix.runtimes.<runtime>.remediation.command`, then rerun
 `runtime_support_matrix.runtimes.<runtime>.remediation.followup_command`.
+
+If a runtime is front-door `ready` but still not deep-execution equivalent to
+Codex, inspect the shared parity harness command from
+`runtime_support_matrix.deep_execution_parity.runtimes.<runtime>.acceptance_command`.
 
 Use the runtime-specific install docs above when you need platform-specific
 bootstrap details after the shared kernel install succeeds.

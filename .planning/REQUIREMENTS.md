@@ -10,10 +10,10 @@ OpenClaw explicitly deferred as a specialized lane.
 
 ### Parity Contract
 
-- [ ] `REQ-PARITY-01`: the repository distinguishes install/front-door
+- [x] `REQ-PARITY-01`: the repository distinguishes install/front-door
   readiness from deep-execution readiness through one explicit runtime parity
   contract instead of treating a green `doctor` row as sufficient proof.
-- [ ] `REQ-PARITY-02`: Codex remains the declared baseline runtime with one
+- [x] `REQ-PARITY-02`: Codex remains the declared baseline runtime with one
   bounded real-topic execution lane and artifact-quality bar that parity
   targets must be compared against.
 
@@ -38,8 +38,8 @@ OpenClaw explicitly deferred as a specialized lane.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REQ-PARITY-01 | Phase 134 | Pending |
-| REQ-PARITY-02 | Phase 134 | Pending |
+| REQ-PARITY-01 | Phase 134 | Complete |
+| REQ-PARITY-02 | Phase 134 | Complete |
 | REQ-PARITY-03 | Phase 135 | Pending |
 | REQ-PARITY-04 | Phase 136 | Pending |
 | REQ-VERIFY-01 | Phase 137 | Pending |

@@ -110,6 +110,8 @@ class AgentBootstrapAssetTests(unittest.TestCase):
         self.assertIn("Current baseline", root_readme)
         self.assertIn("Parity target", root_readme)
         self.assertIn("Specialized lane", root_readme)
+        self.assertIn("front-door readiness only", root_readme)
+        self.assertIn("deep_execution_parity", root_readme)
         self.assertIn("aitp doctor --json", root_readme)
         self.assertIn("runtime_convergence", root_readme)
         self.assertIn("full_convergence_repair", root_readme)
@@ -117,6 +119,7 @@ class AgentBootstrapAssetTests(unittest.TestCase):
         self.assertIn("scripts\\aitp-local.cmd bootstrap", root_readme)
         self.assertIn("scripts\\aitp-local.cmd doctor", install_index)
         self.assertIn("runtime_convergence.front_door_runtimes_converged", install_index)
+        self.assertIn("runtime_support_matrix.deep_execution_parity.runtimes.<runtime>.status", install_index)
         self.assertIn("runtime_support_matrix.runtimes.<runtime>.remediation", install_index)
         self.assertIn("current baseline runtime", codex_install)
         self.assertIn("runtime_support_matrix.runtimes.codex.remediation", codex_install)
@@ -137,6 +140,15 @@ class AgentBootstrapAssetTests(unittest.TestCase):
         self.assertIn("scripts\\aitp-local.cmd install-agent --agent opencode --scope project --target-root D:\\theory-workspace", opencode_install)
         self.assertIn("scripts\\aitp-local.cmd install-agent --agent opencode --scope user", opencode_install)
         self.assertIn("runtime_convergence_after.front_door_runtimes_converged", migrate_doc)
+
+    def test_runtime_parity_harness_is_documented_in_runtime_docs(self) -> None:
+        runtime_readme = (self.repo_root / "research" / "knowledge-hub" / "runtime" / "README.md").read_text(encoding="utf-8")
+        runbook = (self.repo_root / "research" / "knowledge-hub" / "runtime" / "AITP_TEST_RUNBOOK.md").read_text(encoding="utf-8")
+
+        self.assertIn("run_runtime_parity_acceptance.py", runtime_readme)
+        self.assertIn("run_runtime_parity_acceptance.py", runbook)
+        self.assertIn("deep-execution parity", runtime_readme)
+        self.assertIn("Codex baseline", runbook)
 
     def test_control_plane_docs_publish_audit_entrypoints_and_doctor_fields(self) -> None:
         root_readme = (self.repo_root / "README.md").read_text(encoding="utf-8")

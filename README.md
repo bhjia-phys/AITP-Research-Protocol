@@ -157,12 +157,16 @@ Run `aitp doctor --json` to check what is converged on your machine.
 Current baseline: Codex.
 Parity target: Claude Code and OpenCode.
 Specialized lane: OpenClaw.
+`aitp doctor` reports front-door readiness only. Deep-execution parity is a
+separate surface.
 
 The machine-readable install view exposes:
 
 - `runtime_convergence`
+- `deep_execution_parity`
 - `full_convergence_repair`
 - `runtime_support_matrix.runtimes.<runtime>.remediation`
+- `runtime_support_matrix.deep_execution_parity.runtimes.<runtime>.status`
 
 Windows local-checkout note:
 

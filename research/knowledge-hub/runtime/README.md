@@ -464,6 +464,19 @@ runtime itself. The goal is to prove that the published `aitp-kernel`
 distribution works outside a repo checkout instead of only inside editable-
 install development flows.
 
+For the shared deep-execution parity harness, run:
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_runtime_parity_acceptance.py --runtime codex --json
+```
+
+That harness defines the artifact-level bar for `v1.67` runtime parity work.
+At this stage it proves the Codex baseline path and emits the shared report
+shape that later Claude Code and OpenCode runtime probes must satisfy. The
+important boundary is that front-door install readiness and deep-execution
+parity are different surfaces: a green `doctor` row is not, by itself, proof
+that a runtime matches the Codex execution baseline.
+
 For an isolated bounded quick-exploration acceptance pass, run:
 
 ```bash

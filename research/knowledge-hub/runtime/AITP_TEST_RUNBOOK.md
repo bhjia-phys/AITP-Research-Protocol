@@ -340,3 +340,20 @@ Pass condition:
 - `aitp doctor --json` materializes the bundle into isolated `AITP_HOME/kernel`
 - `bootstrap --json`, `loop --json`, and `status --json` all succeed from the
   installed wheel under isolated roots, not through repo-local `PYTHONPATH`
+
+## 19. Shared acceptance: runtime deep-execution parity baseline
+
+Use this when you want one bounded proof of the current Codex baseline for
+deep-execution parity work.
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_runtime_parity_acceptance.py --runtime codex --json
+```
+
+Pass condition:
+- the report status is `baseline_ready`
+- the report records Codex as the baseline runtime for parity work
+- the checked artifacts include `topic_state`, `loop_state`, and
+  `runtime_protocol.generated.json|md`
+- the report stays explicit that front-door readiness and deep-execution parity
+  are different surfaces

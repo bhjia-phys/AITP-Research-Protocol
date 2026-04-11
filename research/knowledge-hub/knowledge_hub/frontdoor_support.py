@@ -317,6 +317,38 @@ def runtime_convergence_summary(doctor_payload: dict[str, Any]) -> dict[str, Any
     }
 
 
+def deep_execution_parity_summary(doctor_payload: dict[str, Any]) -> dict[str, Any]:
+    matrix = doctor_payload.get("runtime_support_matrix") or {}
+    deep_execution = matrix.get("deep_execution_parity") or {}
+    runtime_rows = deep_execution.get("runtimes") or {}
+    status_by_runtime = {
+        runtime: str((row or {}).get("status") or "unknown")
+        for runtime, row in runtime_rows.items()
+    }
+    baseline_runtime = str(deep_execution.get("baseline_runtime") or "")
+    parity_targets = list(deep_execution.get("parity_targets") or [])
+    verified_targets = [runtime for runtime in parity_targets if status_by_runtime.get(runtime) == "parity_verified"]
+    pending_targets = [runtime for runtime in parity_targets if status_by_runtime.get(runtime) != "parity_verified"]
+    blocked_targets = [runtime for runtime in parity_targets if status_by_runtime.get(runtime) == "front_door_blocked"]
+    ready_for_probe_targets = [
+        runtime
+        for runtime in parity_targets
+        if status_by_runtime.get(runtime) in {"probe_pending", "parity_verified"}
+    ]
+    return {
+        "baseline_runtime": baseline_runtime,
+        "baseline_status": status_by_runtime.get(baseline_runtime, "unknown"),
+        "parity_targets": parity_targets,
+        "parity_targets_converged": bool(parity_targets) and not pending_targets,
+        "status_by_runtime": status_by_runtime,
+        "verified_targets": verified_targets,
+        "pending_targets": pending_targets,
+        "blocked_targets": blocked_targets,
+        "ready_for_probe_targets": ready_for_probe_targets,
+        "deferred_lanes": list(deep_execution.get("deferred_lanes") or []),
+    }
+
+
 def control_plane_contracts(service: Any) -> dict[str, dict[str, str]]:
     paths = {
         "unified_architecture": service.repo_root / "docs" / "AITP_UNIFIED_RESEARCH_ARCHITECTURE.md",
@@ -483,6 +515,7 @@ def ensure_cli_installed(service: Any, *, workspace_root: str | None = None) -> 
     elif opencode_runtime_status == "stale":
         issues.append("opencode_plugin_surface_stale")
     runtime_convergence = runtime_convergence_summary({"runtime_support_matrix": runtime_support_matrix})
+    deep_execution_parity = deep_execution_parity_summary({"runtime_support_matrix": runtime_support_matrix})
     overall_status = "clean" if not issues else "mixed_install"
     return {
         "overall_status": overall_status,
@@ -520,6 +553,7 @@ def ensure_cli_installed(service: Any, *, workspace_root: str | None = None) -> 
         "legacy_workspace_entrypoints": [str(path) for path in legacy_entrypoints],
         "runtime_support_matrix": runtime_support_matrix,
         "runtime_convergence": runtime_convergence,
+        "deep_execution_parity": deep_execution_parity,
         "full_convergence_repair": {
             "status": "none_required" if overall_status == "clean" else "recommended",
             "command": (

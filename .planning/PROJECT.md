@@ -52,7 +52,7 @@ it still does **not** mean the broader AITP architecture is finished.
 
 - Active milestone: `v1.67` `Cross-Runtime Deep Execution Parity`
 - Latest closed milestone: `v1.66` `PyPI Publishable Package`
-- Next boundary: execute Phase `134`
+- Next boundary: plan Phase `135`
 
 ## Current Milestone: v1.67 Cross-Runtime Deep Execution Parity
 
@@ -283,7 +283,7 @@ already-shipped surfaces.
 This does **not** mean AITP is finished.
 
 It means `v1.67` is now the active runtime-parity milestone and the next step
-is executing Phase `134` without reopening `999.48` through `999.51`.
+is planning Phase `135` without reopening `999.48` through `999.51`.
 
 ---
 *Last updated: 2026-04-11 after opening v1.67 Cross-Runtime Deep Execution Parity*

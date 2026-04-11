@@ -1389,6 +1389,45 @@ class AITPCLITests(unittest.TestCase):
             },
             "runtime_support_matrix": {
                 "specialized_lanes": ["openclaw"],
+                "deep_execution_parity": {
+                    "baseline_runtime": "codex",
+                    "parity_targets": ["claude_code", "opencode"],
+                    "deferred_lanes": ["openclaw"],
+                    "runtimes": {
+                        "codex": {
+                            "display_name": "Codex",
+                            "status": "baseline_ready",
+                            "maturity_class": "baseline",
+                            "baseline_relationship": "baseline",
+                            "acceptance_command": "python research/knowledge-hub/runtime/scripts/run_runtime_parity_acceptance.py --runtime codex --json",
+                            "blockers": [],
+                        },
+                        "claude_code": {
+                            "display_name": "Claude Code",
+                            "status": "probe_pending",
+                            "maturity_class": "parity_target",
+                            "baseline_relationship": "parity_target",
+                            "acceptance_command": "python research/knowledge-hub/runtime/scripts/run_runtime_parity_acceptance.py --runtime claude_code --json",
+                            "blockers": ["runtime_specific_probe_not_implemented"],
+                        },
+                        "opencode": {
+                            "display_name": "OpenCode",
+                            "status": "front_door_blocked",
+                            "maturity_class": "parity_target",
+                            "baseline_relationship": "parity_target",
+                            "acceptance_command": "python research/knowledge-hub/runtime/scripts/run_runtime_parity_acceptance.py --runtime opencode --json",
+                            "blockers": ["front_door_status:partial", "runtime_specific_probe_not_implemented"],
+                        },
+                        "openclaw": {
+                            "display_name": "OpenClaw",
+                            "status": "deferred",
+                            "maturity_class": "specialized_lane",
+                            "baseline_relationship": "deferred_specialized_lane",
+                            "acceptance_command": "",
+                            "blockers": ["deferred_from_v1.67_scope"],
+                        },
+                    },
+                },
                 "runtimes": {
                     "codex": {
                         "display_name": "Codex",
@@ -1444,6 +1483,15 @@ class AITPCLITests(unittest.TestCase):
                     },
                 },
             },
+            "deep_execution_parity": {
+                "baseline_runtime": "codex",
+                "baseline_status": "baseline_ready",
+                "parity_targets": ["claude_code", "opencode"],
+                "parity_targets_converged": False,
+                "verified_targets": [],
+                "pending_targets": ["claude_code", "opencode"],
+                "blocked_targets": ["opencode"],
+            },
         }
 
         with patch.object(aitp_cli, "_service_from_args") as mock_factory:
@@ -1460,6 +1508,11 @@ class AITPCLITests(unittest.TestCase):
         self.assertIn("AITP Doctor", output)
         self.assertIn("Package: canonical_editable_install (aitp 0.4.0)", output)
         self.assertIn("Front-door convergence: no", output)
+        self.assertIn("Deep-execution parity: no", output)
+        self.assertIn("Codex: baseline_ready", output)
+        self.assertIn("Acceptance: python research/knowledge-hub/runtime/scripts/run_runtime_parity_acceptance.py --runtime codex --json", output)
+        self.assertIn("Claude Code: probe_pending", output)
+        self.assertIn("OpenCode: front_door_blocked", output)
         self.assertIn("Full repair: aitp migrate-local-install", output)
         self.assertIn("Claude Code: stale", output)
         self.assertIn("Repair: aitp install-agent --agent claude-code --scope user", output)
