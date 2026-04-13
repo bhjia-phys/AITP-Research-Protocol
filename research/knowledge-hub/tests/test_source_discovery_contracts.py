@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -134,6 +135,21 @@ class SourceDiscoveryContractTests(unittest.TestCase):
     def test_register_arxiv_source_refreshes_runtime_status_surfaces_when_topic_runtime_exists(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             knowledge_root = Path(tmpdir) / "kernel"
+            shutil.copytree(self.kernel_root / "schemas", knowledge_root / "schemas", dirs_exist_ok=True)
+            shutil.copytree(self.kernel_root / "runtime" / "schemas", knowledge_root / "runtime" / "schemas", dirs_exist_ok=True)
+            shutil.copytree(self.kernel_root / "runtime" / "scripts", knowledge_root / "runtime" / "scripts", dirs_exist_ok=True)
+            for name in (
+                "closed_loop_policies.json",
+                "research_mode_profiles.json",
+                "CONTROL_NOTE_CONTRACT.md",
+                "DECLARATIVE_RUNTIME_CONTRACTS.md",
+                "DEFERRED_RUNTIME_CONTRACTS.md",
+                "INNOVATION_DIRECTION_TEMPLATE.md",
+                "PROGRESSIVE_DISCLOSURE_PROTOCOL.md",
+            ):
+                target = knowledge_root / "runtime" / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(self.kernel_root / "runtime" / name, target)
             runtime_root = knowledge_root / "runtime" / "topics" / "demo-topic"
             runtime_root.mkdir(parents=True, exist_ok=True)
             (runtime_root / "topic_state.json").write_text(
@@ -149,6 +165,11 @@ class SourceDiscoveryContractTests(unittest.TestCase):
                     indent=2,
                 )
                 + "\n",
+                encoding="utf-8",
+            )
+            (knowledge_root / "runtime").mkdir(parents=True, exist_ok=True)
+            (knowledge_root / "runtime" / "current_topic.json").write_text(
+                json.dumps({"topic_slug": "demo-topic"}, ensure_ascii=True, indent=2) + "\n",
                 encoding="utf-8",
             )
             metadata_override = self._metadata_override()
@@ -169,6 +190,21 @@ class SourceDiscoveryContractTests(unittest.TestCase):
             self.assertGreaterEqual(int(runtime_status_sync["source_count"] or 0), 1)
             self.assertTrue(Path(runtime_status_sync["runtime_protocol_path"]).exists())
             self.assertTrue(Path(runtime_status_sync["runtime_protocol_note_path"]).exists())
+
+            refreshed_topic_state = json.loads((runtime_root / "topic_state.json").read_text(encoding="utf-8"))
+            self.assertGreaterEqual(int(refreshed_topic_state.get("source_count") or 0), 1)
+            self.assertEqual(
+                str(((refreshed_topic_state.get("layer_status") or {}).get("L0") or {}).get("status") or ""),
+                "present",
+            )
+            self.assertGreaterEqual(
+                int((((refreshed_topic_state.get("layer_status") or {}).get("L0") or {}).get("source_count") or 0)),
+                1,
+            )
+            current_topic_payload = json.loads((knowledge_root / "runtime" / "current_topic.json").read_text(encoding="utf-8"))
+            self.assertEqual(current_topic_payload["topic_slug"], "demo-topic")
+            active_topics_payload = json.loads((knowledge_root / "runtime" / "active_topics.json").read_text(encoding="utf-8"))
+            self.assertEqual(active_topics_payload["focused_topic_slug"], "demo-topic")
 
     def test_register_arxiv_source_cli_defaults_to_download_with_metadata_only_opt_out(self) -> None:
         parser = self.register_module.build_parser()

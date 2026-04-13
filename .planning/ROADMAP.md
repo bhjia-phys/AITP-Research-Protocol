@@ -2,13 +2,13 @@
 
 ## Result
 
-Milestone in progress.
+Milestone phase work complete. Lifecycle closure is next.
 
 ## Phases
 
-- [ ] **Phase 177: Post-Registration Runtime State Coherence** *(Axis 1 + Axis 3)*
-- [ ] **Phase 177.1: Post-Registration Next-Action Reselection** *(Axis 2 + Axis 4)*
-- [ ] **Phase 177.2: Fresh First-Use Post-Registration Replay Proof** *(Axis 4 + Axis 5)*
+- [x] **Phase 177: Post-Registration Runtime State Coherence** *(Axis 1 + Axis 3)*
+- [x] **Phase 177.1: Post-Registration Next-Action Reselection** *(Axis 2 + Axis 4)*
+- [x] **Phase 177.2: Fresh First-Use Post-Registration Replay Proof** *(Axis 4 + Axis 5)*
 
 ## Target Outcome
 
@@ -21,7 +21,7 @@ Milestone in progress.
 
 ## Next Step
 
-Start Phase 177.
+Run milestone audit / archive for `v2.3`.
 
 ### Phase 177: Post-Registration Runtime State Coherence
 
@@ -41,7 +41,7 @@ missing-L0 fields.
 
 Plans:
 
-- [ ] `177-01` Refresh runtime state and topic projections after first-source registration
+- [x] `177-01` Refresh runtime state and topic projections after first-source registration
 
 ### Phase 177.1: Post-Registration Next-Action Reselection
 
@@ -60,7 +60,7 @@ handoff into the next bounded research step once the first source has landed.
 
 Plans:
 
-- [ ] `177.1-01` Reselect bounded next actions after first-source registration
+- [x] `177.1-01` Reselect bounded next actions after first-source registration
 
 ### Phase 177.2: Fresh First-Use Post-Registration Replay Proof
 
@@ -78,4 +78,4 @@ transitions into a non-stale post-registration route with durable receipts.
 
 Plans:
 
-- [ ] `177.2-01` Replay a fresh first-use lane through post-registration route transition
+- [x] `177.2-01` Replay a fresh first-use lane through post-registration route transition

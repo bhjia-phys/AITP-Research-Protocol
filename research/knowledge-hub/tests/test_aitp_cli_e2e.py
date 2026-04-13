@@ -364,6 +364,9 @@ class AITPCLIE2ETests(unittest.TestCase):
             ),
             1,
         )
+        post_registration_summary = str(payload["status_after_registration"].get("selected_action_summary") or "")
+        self.assertNotIn("discover_and_register.py", post_registration_summary)
+        self.assertNotIn("register_arxiv_source.py", post_registration_summary)
 
     def test_record_collaborator_memory_json_and_human_paths(self) -> None:
         human = self._run_cli(

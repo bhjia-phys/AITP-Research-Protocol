@@ -583,6 +583,45 @@ class AITPService:
             "note": runtime_root / "current_topic.md",
         }
 
+    def _sync_topic_state_source_presence(
+        self,
+        *,
+        topic_slug: str,
+        topic_state: dict[str, Any],
+        bundle: dict[str, Any],
+        updated_by: str,
+    ) -> dict[str, Any]:
+        updated_state = dict(topic_state or {})
+        topic_synopsis = bundle.get("topic_synopsis") or {}
+        active_research_contract = bundle.get("active_research_contract") or {}
+        l1_source_intake = (
+            topic_synopsis.get("l1_source_intake")
+            or active_research_contract.get("l1_source_intake")
+            or {}
+        )
+        source_count = int(l1_source_intake.get("source_count") or 0)
+        backend_bridge_count = int(updated_state.get("backend_bridge_count") or 0)
+        source_index_path = (
+            self.kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl"
+        )
+        pointers = dict(updated_state.get("pointers") or {})
+        pointers["l0_source_index_path"] = (
+            self._relativize(source_index_path) if source_index_path.exists() else None
+        )
+        layer_status = dict(updated_state.get("layer_status") or {})
+        layer_status["L0"] = {
+            "status": "present" if source_count > 0 else "missing",
+            "source_count": source_count,
+            "backend_bridge_count": backend_bridge_count,
+        }
+        updated_state["source_count"] = source_count
+        updated_state["pointers"] = pointers
+        updated_state["layer_status"] = layer_status
+        updated_state["updated_at"] = now_iso()
+        updated_state["updated_by"] = updated_by
+        write_json(self._runtime_root(topic_slug) / "topic_state.json", updated_state)
+        return updated_state
+
     def _collaborator_memory_paths(self) -> dict[str, Path]:
         runtime_root = self.kernel_root / "runtime"
         return {
@@ -6875,6 +6914,12 @@ class AITPService:
         bundle = read_json(Path(protocol_paths["runtime_protocol_path"])) or {}
         topic_state = (
             read_json(self._runtime_root(topic_slug) / "topic_state.json") or {}
+        )
+        topic_state = self._sync_topic_state_source_presence(
+            topic_slug=topic_slug,
+            topic_state=topic_state,
+            bundle=bundle,
+            updated_by=updated_by,
         )
         layer_graph = materialize_layer_graph_artifact(
             self,

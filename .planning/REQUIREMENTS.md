@@ -10,25 +10,25 @@ old L0 handoff and move onto the next bounded research step honestly.
 
 ### Runtime State Coherence
 
-- [ ] `PRC-01`: after first-source registration, runtime `topic_state`
+- [x] `PRC-01`: after first-source registration, runtime `topic_state`
   counters and `layer_status.L0` reflect source presence instead of stale zero
   or missing values.
 
-- [ ] `PRC-02`: active-topic and current-topic projections stay aligned with
+- [x] `PRC-02`: active-topic and current-topic projections stay aligned with
   the refreshed post-registration runtime state.
 
 ### Next-Action Reselection
 
-- [ ] `PRC-03`: once at least one source is present and no explicit L0 blocker
+- [x] `PRC-03`: once at least one source is present and no explicit L0 blocker
   remains, `status`, `next`, runtime protocol, and dashboard surfaces no longer
   point back to raw source-registration handoff text.
 
-- [ ] `PRC-04`: the post-registration route change is driven by durable state
+- [x] `PRC-04`: the post-registration route change is driven by durable state
   and bounded planner rules, not a hidden manual workaround.
 
 ### Replayable Proof
 
-- [ ] `PRC-05`: one replayable fresh first-use lane proves post-registration
+- [x] `PRC-05`: one replayable fresh first-use lane proves post-registration
   runtime-state coherence and next-action reselection with durable receipts.
 
 ## Out of Scope
@@ -44,11 +44,11 @@ old L0 handoff and move onto the next bounded research step honestly.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PRC-01 | Phase 177 | Pending |
-| PRC-02 | Phase 177 | Pending |
-| PRC-03 | Phase 177.1 | Pending |
-| PRC-04 | Phase 177.1 | Pending |
-| PRC-05 | Phase 177.2 | Pending |
+| PRC-01 | Phase 177 | Done |
+| PRC-02 | Phase 177 | Done |
+| PRC-03 | Phase 177.1 | Done |
+| PRC-04 | Phase 177.1 | Done |
+| PRC-05 | Phase 177.2 | Done |
 
 **Coverage:**
 - v1 requirements: 5 total

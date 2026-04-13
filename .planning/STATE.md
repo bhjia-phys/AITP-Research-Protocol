@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Post-Registration Route Coherence
 status: milestone_active
-stopped_at: "Milestone created; Phase 177 next"
-last_updated: "2026-04-14T05:30:17+08:00"
+stopped_at: "Phase 177.2 complete; milestone lifecycle next"
+last_updated: "2026-04-14T05:33:01+08:00"
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 3
   total_plans: 3
-  completed_plans: 0
+  completed_plans: 3
 ---
 
 # Project State
@@ -40,9 +40,10 @@ across all layers again.
 - older closed milestone: `v2.0` `Three-Lane Real-Topic Natural-Language E2E`
 - `v2.2` proved the first-use route through new-topic entry, Windows-safe
   registration, and immediate post-registration source visibility
-- the next remaining first-use blocker is route coherence after registration,
-  not source entry itself
-- immediate next step: start Phase `177`
+- Phase `177` now closes persisted runtime-state coherence after registration
+- Phase `177.1` now closes stale post-registration next-action selection
+- Phase `177.2` now closes the replayable bounded proof of that transition
+- immediate next step: audit and archive milestone `v2.3`
 
 ## Accumulated Context
 

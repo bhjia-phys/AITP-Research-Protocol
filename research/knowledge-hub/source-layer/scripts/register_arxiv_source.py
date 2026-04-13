@@ -251,6 +251,16 @@ def sync_runtime_status_after_registration(
 
     service = AITPService(kernel_root=knowledge_root, repo_root=REPO_ROOT)
     human_request = f"Registered source {source_id}; refresh runtime status surfaces."
+    service.refresh_runtime_context(
+        topic_slug=topic_slug,
+        updated_by=updated_by,
+        human_request=human_request,
+    )
+    service.orchestrate(
+        topic_slug=topic_slug,
+        updated_by=updated_by,
+        human_request=human_request,
+    )
     payload = service.refresh_runtime_context(
         topic_slug=topic_slug,
         updated_by=updated_by,

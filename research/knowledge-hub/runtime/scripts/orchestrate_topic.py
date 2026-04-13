@@ -626,13 +626,23 @@ def prune_obsolete_actions(knowledge_root: Path, topic_state: dict, queue: list[
     completion_payload = load_json(runtime_root / TOPIC_COMPLETION_FILENAME) or {}
     completion_status = str(completion_payload.get("status") or "").strip()
     latest_run_id = str(topic_state.get("latest_run_id") or "").strip()
+    source_count = int(topic_state.get("source_count") or 0)
 
     filtered: list[dict] = []
     for row in queue:
         action_type = str(row.get("action_type") or "").strip()
+        action_summary = str(row.get("summary") or "").strip().lower()
         queue_source = str(row.get("queue_source") or "").strip()
         handler_args = row.get("handler_args") or {}
         action_run_id = str(handler_args.get("run_id") or "").strip()
+
+        if (
+            source_count > 0
+            and action_type == "l0_source_expansion"
+            and "discover_and_register.py" in action_summary
+            and "register_arxiv_source.py" in action_summary
+        ):
+            continue
 
         if gate_status == "promoted":
             if action_type == "auto_promote_candidate":
@@ -1038,6 +1048,23 @@ def materialize_action_queue(
         runtime_contract,
         declared_contract_used=bool(queue_meta.get("declared_contract_used")),
     )
+
+    if not queue and int(topic_state.get("source_count") or 0) > 0:
+        queue.append(
+            {
+                "action_id": f"action:{topic_state['topic_slug']}:inspect-l1-vault",
+                "topic_slug": topic_state["topic_slug"],
+                "resume_stage": topic_state["resume_stage"],
+                "status": "pending",
+                "action_type": "inspect_resume_state",
+                "summary": "Inspect the compiled L1 vault before continuing.",
+                "auto_runnable": False,
+                "handler": None,
+                "handler_args": {},
+                "queue_source": queue_meta.get("queue_source") or "runtime_appended",
+                "declared_contract_path": queue_meta.get("declared_contract_path"),
+            }
+        )
 
     if not queue:
         queue.append(

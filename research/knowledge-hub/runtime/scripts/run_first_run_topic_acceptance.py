@@ -280,6 +280,12 @@ def main() -> int:
             >= 1,
             "status after registration should expose at least one registered source immediately.",
         )
+        post_registration_summary = str(status_after_registration.get("selected_action_summary") or "")
+        check(
+            "discover_and_register.py" not in post_registration_summary
+            and "register_arxiv_source.py" not in post_registration_summary,
+            "status after registration should move off the stale L0 source handoff wording.",
+        )
 
     payload = {
         "work_root": str(work_root),

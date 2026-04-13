@@ -2,7 +2,7 @@
 
 ## v2.3 Post-Registration Route Coherence (Active)
 
-**Phases completed:** 0 / 3 phases, 0 / 3 plans
+**Phases completed:** 3 / 3 phases, 3 / 3 plans
 
 **Milestone goal:**
 
@@ -19,6 +19,12 @@
 
 - milestone scoped from the remaining accepted open gap in `v2.2`: stale
   post-registration next-action wording after the first source already landed
+- Phase `177` now aligns persisted runtime state with refreshed source-aware
+  status surfaces after registration
+- Phase `177.1` now reroutes the first post-registration action away from the
+  stale bootstrap L0 handoff
+- Phase `177.2` now proves the bounded post-registration route transition on a
+  replayable first-use lane
 
 ---
 
