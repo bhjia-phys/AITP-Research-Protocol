@@ -6,7 +6,7 @@ Milestone in progress.
 
 ## Phases
 
-- [ ] **Phase 169: L2 Canonical Schema Extension** *(Axis 3 + Axis 2)*
+- [x] **Phase 169: L2 Canonical Schema Extension** *(Axis 3 + Axis 2)*
 - [ ] **Phase 169.1: L2 Promotion Bridge Code** *(Axis 2 + Axis 3)*
 - [ ] **Phase 169.2: HCI Foundation** *(Axis 4)*
 
@@ -24,7 +24,7 @@ Milestone in progress.
 
 ## Next Step
 
-Start Phase 169.
+Start Phase 169.1.
 
 ### Phase 169: L2 Canonical Schema Extension
 
@@ -56,7 +56,7 @@ proof schemas that currently exist only as Python dicts.
 
 Plans:
 
-- [ ] `169-01` Add `negative_result` to canonical-unit.schema.json and create
+- [x] `169-01` Add `negative_result` to canonical-unit.schema.json and create
   runtime proof schemas
 
 ### Phase 169.1: L2 Promotion Bridge Code

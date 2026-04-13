@@ -1,0 +1,272 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aitp.local/schemas/statement-compilation-packet.schema.json",
+  "title": "AITP Statement Compilation Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "compilation_version",
+    "topic_slug",
+    "run_id",
+    "candidate_id",
+    "candidate_type",
+    "title",
+    "status",
+    "primary_statement_kind",
+    "primary_identifier",
+    "assistant_targets",
+    "declaration_count",
+    "proof_hole_count",
+    "dependency_ids",
+    "notation_bindings",
+    "equation_labels",
+    "declarations",
+    "proof_repair_plan_path",
+    "theory_packet_refs",
+    "updated_at",
+    "updated_by"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://aitp.local/schemas/statement-compilation-packet.schema.json"
+    },
+    "compilation_version": {
+      "const": 1
+    },
+    "topic_slug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "candidate_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "candidate_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ready",
+        "needs_repair"
+      ]
+    },
+    "primary_statement_kind": {
+      "type": "string",
+      "enum": [
+        "definition",
+        "axiom",
+        "theorem",
+        "lemma",
+        "conjecture"
+      ]
+    },
+    "primary_identifier": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assistant_targets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assistant",
+          "kind",
+          "status",
+          "reason"
+        ],
+        "properties": {
+          "assistant": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "proof_assistant",
+              "verifier"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "declaration_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "proof_hole_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "dependency_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "notation_bindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "symbol",
+          "meaning"
+        ],
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "minLength": 1
+          },
+          "meaning": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "equation_labels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "declarations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "declaration_id",
+          "statement_kind",
+          "declaration_role",
+          "identifier",
+          "signature",
+          "natural_language_statement",
+          "dependency_ids",
+          "source_anchor_ids",
+          "temporary_proof_holes"
+        ],
+        "properties": {
+          "declaration_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "statement_kind": {
+            "type": "string",
+            "enum": [
+              "definition",
+              "axiom",
+              "theorem",
+              "lemma",
+              "conjecture"
+            ]
+          },
+          "declaration_role": {
+            "type": "string",
+            "minLength": 1
+          },
+          "identifier": {
+            "type": "string",
+            "minLength": 1
+          },
+          "signature": {
+            "type": "string",
+            "minLength": 1
+          },
+          "natural_language_statement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dependency_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "source_anchor_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "temporary_proof_holes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "proof_repair_plan_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "theory_packet_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "coverage_ledger",
+        "structure_map",
+        "notation_table",
+        "derivation_graph",
+        "regression_gate"
+      ],
+      "properties": {
+        "coverage_ledger": {
+          "type": "string",
+          "minLength": 1
+        },
+        "structure_map": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notation_table": {
+          "type": "string",
+          "minLength": 1
+        },
+        "derivation_graph": {
+          "type": "string",
+          "minLength": 1
+        },
+        "regression_gate": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_by": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

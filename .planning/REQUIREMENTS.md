@@ -12,11 +12,11 @@ incomplete — not the science.
 
 ### Canonical Schema Extension
 
-- [ ] `REQ-PROMO-01`: `canonical-unit.schema.json` includes `negative_result`
+- [x] `REQ-PROMO-01`: `canonical-unit.schema.json` includes `negative_result`
   in the `unit_type` enum so that validated negative outcomes have a
   staging→canonical promotion path.
 
-- [ ] `REQ-PROMO-02`: three runtime proof schemas exist as formal JSON schemas
+- [x] `REQ-PROMO-02`: three runtime proof schemas exist as formal JSON schemas
   in `research/knowledge-hub/schemas/`:
   - `lean-ready-packet.schema.json`
   - `proof-repair-plan.schema.json`
@@ -84,8 +84,8 @@ incomplete — not the science.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REQ-PROMO-01 | Phase 169 | Pending |
-| REQ-PROMO-02 | Phase 169 | Pending |
+| REQ-PROMO-01 | Phase 169 | Complete |
+| REQ-PROMO-02 | Phase 169 | Complete |
 | REQ-PROMO-03 | Phase 169.1 | Pending |
 | REQ-PROMO-04 | Phase 169.1 | Pending |
 | REQ-PROMO-05 | Phase 169.1 | Pending |

@@ -17,7 +17,7 @@ def _bootstrap_path() -> None:
 _bootstrap_path()
 
 from knowledge_hub.aitp_service import read_jsonl
-from knowledge_hub.l2_graph import consult_canonical_l2, seed_l2_demo_direction, stage_l2_insight
+from knowledge_hub.l2_graph import consult_canonical_l2, materialize_canonical_index, seed_l2_demo_direction, stage_l2_insight
 
 
 class L2GraphActivationTests(unittest.TestCase):
@@ -167,6 +167,67 @@ class L2GraphActivationTests(unittest.TestCase):
         self.assertIn("portability extrapolation", stage_payload["failed_route"])
         self.assertIn("narrower bounded benchmark claim", stage_payload["next_implication"])
         self.assertEqual(staged_row["failure_kind"], "regime_mismatch")
+
+    def test_materialize_canonical_index_includes_negative_result_units(self) -> None:
+        unit_path = self.kernel_root / "canonical" / "negative-results" / "negative_result--tfim-portability-failure.json"
+        unit_path.parent.mkdir(parents=True, exist_ok=True)
+        unit_path.write_text(
+            """
+{
+  "id": "negative_result:tfim-portability-failure",
+  "unit_type": "negative_result",
+  "title": "TFIM portability failure",
+  "summary": "The bounded benchmark did not justify a broader portability claim.",
+  "maturity": "validated",
+  "created_at": "2026-04-14T00:00:00+00:00",
+  "updated_at": "2026-04-14T00:00:00+00:00",
+  "topic_completion_status": "promotion-blocked",
+  "tags": ["tfim", "negative-result"],
+  "assumptions": ["The failed extrapolation is still reusable knowledge."],
+  "regime": {
+    "domain": "tfim benchmark route",
+    "approximations": ["tiny-system exact diagonalization"],
+    "scale": "bounded benchmark",
+    "boundary_conditions": ["small finite-size run"],
+    "exclusions": ["broad portability claim"]
+  },
+  "scope": {
+    "applies_to": ["bounded benchmark critique"],
+    "out_of_scope": ["full solver invalidation"]
+  },
+  "provenance": {
+    "source_ids": ["source:demo"],
+    "l1_artifacts": ["intake/topics/demo-topic/vault/wiki/source-intake.md"],
+    "l3_runs": ["run:demo"],
+    "l4_checks": ["check:demo"],
+    "citations": ["demo citation"]
+  },
+  "promotion": {
+    "route": "L3->L4->L2",
+    "promoted_by": "test-suite",
+    "promoted_at": "2026-04-14T00:00:00+00:00",
+    "review_status": "accepted",
+    "rationale": "Negative results need a canonical home."
+  },
+  "dependencies": [],
+  "related_units": [],
+  "payload": {
+    "failure_kind": "regime_mismatch",
+    "failed_route": "benchmark-first portability extrapolation",
+    "next_implication": "Return to a narrower bounded claim."
+  }
+}
+""".strip()
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = materialize_canonical_index(self.kernel_root)
+        index_rows = read_jsonl(self.kernel_root / "canonical" / "index.jsonl")
+
+        self.assertGreaterEqual(payload["row_count"], 1)
+        self.assertIn("negative_result", {row["unit_type"] for row in index_rows})
+        self.assertIn("negative_result:tfim-portability-failure", {row["id"] for row in index_rows})
 
 
 if __name__ == "__main__":

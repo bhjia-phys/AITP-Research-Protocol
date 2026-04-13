@@ -78,8 +78,8 @@ it still does **not** mean the broader AITP architecture is finished.
 
 - Active milestone: `v1.95` `L2 Promotion Pipeline Closure`
 - Latest closed milestone: `v1.94` `L4 Analytical Cross-Check Surface`
-- Next boundary: start Phase `169` `L2 Canonical Schema Extension` and close
-  the broken `L4 -> L2` promotion path before claiming broader E2E closure
+- Next boundary: start Phase `169.1` `L2 Promotion Bridge Code` now that the
+  canonical schema and package proof-schema surfaces are in place
 
 ## Current Milestone: v1.95 L2 Promotion Pipeline Closure
 

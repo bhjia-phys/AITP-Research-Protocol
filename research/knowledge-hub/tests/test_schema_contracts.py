@@ -81,6 +81,7 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIn("proof_fragment", unit_types)
         self.assertIn("topic_skill_projection", unit_types)
         self.assertIn("physical_picture", unit_types)
+        self.assertIn("negative_result", unit_types)
         maturity_states = set(payload["properties"]["maturity"]["enum"])
         self.assertIn("auto_validated", maturity_states)
         route_states = set(payload["properties"]["promotion"]["properties"]["route"]["enum"])
@@ -201,6 +202,18 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIn("proof_holes", proof_repair_payload["required"])
         self.assertEqual(statement_compilation_active_payload["properties"]["compilation_version"]["const"], 1)
         self.assertIn("needs_repair_count", statement_compilation_active_payload["required"])
+
+    def test_package_schema_mirrors_include_runtime_proof_packets(self) -> None:
+        lean_ready_payload = self._read_json("schemas/lean-ready-packet.schema.json")
+        statement_compilation_payload = self._read_json("schemas/statement-compilation-packet.schema.json")
+        proof_repair_payload = self._read_json("schemas/proof-repair-plan.schema.json")
+
+        self.assertEqual(lean_ready_payload["properties"]["bridge_version"]["const"], 1)
+        self.assertIn("proof_obligation_count", lean_ready_payload["required"])
+        self.assertEqual(statement_compilation_payload["properties"]["compilation_version"]["const"], 1)
+        self.assertIn("declarations", statement_compilation_payload["required"])
+        self.assertEqual(proof_repair_payload["properties"]["plan_version"]["const"], 1)
+        self.assertIn("proof_holes", proof_repair_payload["required"])
 
     def test_progressive_disclosure_runtime_schema_exposes_stable_trigger_contract(self) -> None:
         payload = self._read_json("runtime/schemas/progressive-disclosure-runtime-bundle.schema.json")
