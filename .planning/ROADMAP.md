@@ -6,7 +6,7 @@ Milestone in progress.
 
 ## Phases
 
-- [ ] **Phase 174: Formal-Theory Real-Topic Natural-Language Dialogue Proof** *(Axis 2 + Axis 5)*
+- [x] **Phase 174: Formal-Theory Real-Topic Natural-Language Dialogue Proof** *(Axis 2 + Axis 5)*
 - [ ] **Phase 174.1: Toy-Model Real-Topic Natural-Language Dialogue Proof** *(Axis 2 + Axis 5)*
 - [ ] **Phase 174.2: First-Principles Real-Topic Natural-Language Dialogue Proof And Cross-Lane Report** *(Axis 4 + Axis 5)*
 
@@ -21,7 +21,7 @@ Milestone in progress.
 
 ## Next Step
 
-Start Phase 174.
+Start Phase 174.1.
 
 ### Phase 174: Formal-Theory Real-Topic Natural-Language Dialogue Proof
 
@@ -39,7 +39,7 @@ baseline through a real natural-language dialogue without hidden seed state.
 
 Plans:
 
-- [ ] `174-01` Run one real natural-language dialogue proof for the formal-theory baseline
+- [x] `174-01` Run one real natural-language dialogue proof for the formal-theory baseline
 
 ### Phase 174.1: Toy-Model Real-Topic Natural-Language Dialogue Proof
 

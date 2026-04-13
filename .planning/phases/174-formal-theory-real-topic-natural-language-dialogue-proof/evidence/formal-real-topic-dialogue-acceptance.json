@@ -1,0 +1,62 @@
+{
+  "status": "success",
+  "topic_slug": "fresh-jones-finite-dimensional-factor-closure",
+  "dialogue_inputs": {
+    "topic": "Fresh Jones finite-dimensional factor closure",
+    "question": "I want to study one bounded Jones / von Neumann algebra result and check whether the public AITP front door can carry that real natural-language request into a trusted formal-theory L2 landing without pretending to formalize the whole book.",
+    "human_request": "Help me work on a bounded von Neumann algebra / Jones finite-factor question through the public front door, and keep the route tied to one already-proved positive formal result instead of widening into whole-book formalization."
+  },
+  "bootstrap": {
+    "topic": "Fresh Jones finite-dimensional factor closure",
+    "question": "I want to study one bounded Jones / von Neumann algebra result and check whether the public AITP front door can carry that real natural-language request into a trusted formal-theory L2 landing without pretending to formalize the whole book.",
+    "topic_slug": "fresh-jones-finite-dimensional-factor-closure",
+    "research_mode": "formal_derivation",
+    "runtime_protocol": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\runtime\\topics\\fresh-jones-finite-dimensional-factor-closure\\runtime_protocol.generated.json"
+  },
+  "entry_artifacts": {
+    "bootstrap_topic_state": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\runtime\\topics\\fresh-jones-finite-dimensional-factor-closure\\topic_state.json",
+    "interaction_state": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\runtime\\topics\\fresh-jones-finite-dimensional-factor-closure\\interaction_state.json",
+    "research_question_contract": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\runtime\\topics\\fresh-jones-finite-dimensional-factor-closure\\research_question.contract.json",
+    "runtime_protocol_note": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\runtime\\topics\\fresh-jones-finite-dimensional-factor-closure\\runtime_protocol.generated.md"
+  },
+  "repo_local_l2": {
+    "workspace_memory_map": {
+      "json_path": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\canonical\\compiled\\workspace_memory_map.json",
+      "markdown_path": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\canonical\\compiled\\workspace_memory_map.md"
+    },
+    "workspace_graph_report": {
+      "json_path": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\canonical\\compiled\\workspace_graph_report.json",
+      "markdown_path": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\canonical\\compiled\\workspace_graph_report.md"
+    },
+    "workspace_knowledge_report": {
+      "json_path": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\canonical\\compiled\\workspace_knowledge_report.json",
+      "markdown_path": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\canonical\\compiled\\workspace_knowledge_report.md"
+    },
+    "consultation": {
+      "query_text": "Jones finite product theorem packet",
+      "retrieval_profile": "l3_candidate_formation",
+      "ids": [
+        "claim_card:tfim-benchmark-before-portability-claim",
+        "concept:tfim-benchmark-first-validation",
+        "concept:tfim-transverse-field-ising-model",
+        "method:tfim-exact-diagonalization-helper",
+        "physical_picture:tfim-weak-coupling-benchmark-intuition",
+        "proof_fragment:jones-codrestrict-comp-subtype-construction-recipe",
+        "theorem:jones-ch4-finite-product",
+        "topic_skill_projection:fresh-jones-finite-dimensional-factor-closure",
+        "topic_skill_projection:jones-von-neumann-algebras",
+        "topic_skill_projection:tfim-benchmark-first-route",
+        "warning_note:tfim-dense-ed-finite-size-limit",
+        "workflow:tfim-benchmark-workflow"
+      ]
+    }
+  },
+  "artifacts": {
+    "bootstrap_topic_state": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\runtime\\topics\\fresh-jones-finite-dimensional-factor-closure\\topic_state.json",
+    "bootstrap_runtime_protocol": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\runtime\\topics\\fresh-jones-finite-dimensional-factor-closure\\runtime_protocol.generated.json",
+    "source_index": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\source-layer\\topics\\fresh-jones-finite-dimensional-factor-closure\\source_index.jsonl",
+    "workspace_memory_map": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\canonical\\compiled\\workspace_memory_map.json",
+    "workspace_graph_report": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\canonical\\compiled\\workspace_graph_report.json",
+    "workspace_knowledge_report": "C:\\Users\\samur\\AppData\\Local\\Temp\\frtd-7d584lrm\\knowledge-hub\\canonical\\compiled\\workspace_knowledge_report.json"
+  }
+}

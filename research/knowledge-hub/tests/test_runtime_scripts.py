@@ -2100,6 +2100,45 @@ class RuntimeScriptTests(unittest.TestCase):
             ).exists()
         )
 
+    def test_formal_real_topic_dialogue_acceptance_script_runs_on_isolated_work_root(self) -> None:
+        module = _load_module(
+            "aitp_formal_real_topic_dialogue_acceptance_test",
+            "runtime/scripts/run_formal_real_topic_dialogue_acceptance.py",
+        )
+        work_root = Path(self._tmpdir.name) / "frtd"
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_formal_real_topic_dialogue_acceptance.py",
+                "--work-root",
+                str(work_root),
+                "--json",
+            ],
+        ):
+            exit_code = module.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(
+            (
+                work_root
+                / "knowledge-hub"
+                / "canonical"
+                / "theorem-cards"
+                / "theorem_card--jones-ch4-finite-product.json"
+            ).exists()
+        )
+        self.assertTrue(
+            any(
+                (
+                    work_root
+                    / "knowledge-hub"
+                    / "runtime"
+                    / "topics"
+                ).glob("*/interaction_state.json")
+            )
+        )
+
     def test_l1_progressive_reading_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l1-progressive-reading-acceptance"
         with patch.object(

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Three-Lane Real-Topic Natural-Language E2E
 status: milestone_active
-stopped_at: "Milestone v2.0 started; Phase 174 next"
-last_updated: "2026-04-14T04:30:00+08:00"
+stopped_at: "Phase 174 complete; Phase 174.1 next"
+last_updated: "2026-04-14T04:45:00+08:00"
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 0
+  completed_plans: 1
 ---
 
 # Project State
@@ -37,8 +37,9 @@ retrieval surfaces before widening back out to more modes and topic paradigms.
 - latest closed milestone: `v1.99` `LibRPA QSGW Positive L0 To L2 Closure`
 - previous closed milestone: `v1.98` `Toy Model Positive L0 To L2 Closure`
 - older closed milestone: `v1.97` `First Positive L0 To L2 Closure`
-- the three bounded positive baselines are now closed
-- immediate next step: start Phase `174` and run the formal-theory real-topic
+- Phase `174` proved the formal-theory baseline can be entered through a real
+  natural-language front-door request without hidden seed state
+- immediate next step: start Phase `174.1` and run the toy-model real-topic
   natural-language dialogue proof
 
 ## Accumulated Context
