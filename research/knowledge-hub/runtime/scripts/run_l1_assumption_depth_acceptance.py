@@ -218,6 +218,27 @@ def main() -> int:
         "Expected the metadata-only paper source to register as abstract_only.",
     )
     check(contradiction_candidates, "Expected at least one contradiction candidate.")
+    first_contradiction = contradiction_candidates[0]
+    check(
+        str(first_contradiction.get("comparison_basis") or "") == "regime_rows",
+        "Expected contradiction rows to expose the comparison basis.",
+    )
+    check(
+        str(first_contradiction.get("source_basis_type") or "") == "regime",
+        "Expected contradiction rows to expose the source-side basis type.",
+    )
+    check(
+        str(first_contradiction.get("against_basis_type") or "") == "regime",
+        "Expected contradiction rows to expose the compared-side basis type.",
+    )
+    check(
+        "strong coupling" in str(first_contradiction.get("source_basis_summary") or ""),
+        "Expected contradiction rows to keep the source-side basis summary explicit.",
+    )
+    check(
+        "weak coupling" in str(first_contradiction.get("against_basis_summary") or ""),
+        "Expected contradiction rows to keep the compared-side basis summary explicit.",
+    )
 
     research_text = research_contract_note.read_text(encoding="utf-8")
     dashboard_text = topic_dashboard_note.read_text(encoding="utf-8")

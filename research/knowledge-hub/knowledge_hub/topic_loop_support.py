@@ -34,6 +34,12 @@ def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
     )
 
 
+def _read_json(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def _bootstrap_loop_context(
     self,
     *,
@@ -300,6 +306,11 @@ def _finalize_loop_outcome(
         applied_max_auto_steps=applied_max_auto_steps,
         auto_step_budget_reason=auto_step_budget_reason,
     )
+    runtime_bundle = _read_json(Path(protocol_paths["runtime_protocol_path"])) or {}
+    loop_state["loop_detection"] = runtime_bundle.get("loop_detection") or {}
+    _write_json(loop_state_path, loop_state)
+    history_rows[-1] = loop_state
+    _write_jsonl(loop_history_path, history_rows)
     return {
         "topic_slug": topic_slug,
         "run_id": run_id,

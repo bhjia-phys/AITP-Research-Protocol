@@ -281,38 +281,61 @@ def detect_contradiction_candidates(
     assumptions: list[str],
     regimes: list[str],
 ) -> list[dict[str, str]]:
-    incoming_text = " ".join(list(assumptions) + list(regimes)).lower()
     candidates: list[dict[str, str]] = []
-    seen: set[tuple[str, str]] = set()
+    seen: set[tuple[str, str, str, str, str]] = set()
+    incoming_assumptions = [str(item).strip() for item in assumptions if str(item).strip()]
+    incoming_regimes = [str(item).strip() for item in regimes if str(item).strip()]
+    incoming_rows = [("assumption", row) for row in incoming_assumptions] + [
+        ("regime", row) for row in incoming_regimes
+    ]
     for row in existing_rows:
-        existing_text = " ".join(list(row.get("assumptions") or []) + list(row.get("regimes") or [])).lower()
-        if not existing_text:
-            continue
+        existing_assumptions = [str(item).strip() for item in (row.get("assumptions") or []) if str(item).strip()]
+        existing_regimes = [str(item).strip() for item in (row.get("regimes") or []) if str(item).strip()]
+        existing_rows_with_kind = [("assumption", item) for item in existing_assumptions] + [
+            ("regime", item) for item in existing_regimes
+        ]
         for left, right in CONTRADICTION_PAIRS:
-            if left in incoming_text and right in existing_text:
-                key = (str(row.get("source_id") or ""), f"{left} vs {right}")
-                if key in seen:
+            for incoming_kind, incoming_value in incoming_rows:
+                incoming_text = incoming_value.lower()
+                if left not in incoming_text and right not in incoming_text:
                     continue
-                seen.add(key)
-                candidates.append(
-                    {
-                        "kind": "assumption_conflict",
-                        "against_source_id": str(row.get("source_id") or ""),
-                        "detail": f"{left} vs {right}",
-                    }
-                )
-            elif right in incoming_text and left in existing_text:
-                key = (str(row.get("source_id") or ""), f"{right} vs {left}")
-                if key in seen:
-                    continue
-                seen.add(key)
-                candidates.append(
-                    {
-                        "kind": "assumption_conflict",
-                        "against_source_id": str(row.get("source_id") or ""),
-                        "detail": f"{right} vs {left}",
-                    }
-                )
+                for existing_kind, existing_value in existing_rows_with_kind:
+                    existing_text = existing_value.lower()
+                    if left in incoming_text and right in existing_text:
+                        source_basis = incoming_value
+                        against_basis = existing_value
+                        detail = f"{left} vs {right}"
+                    elif right in incoming_text and left in existing_text:
+                        source_basis = incoming_value
+                        against_basis = existing_value
+                        detail = f"{right} vs {left}"
+                    else:
+                        continue
+                    kind = "regime_mismatch" if "regime" in {incoming_kind, existing_kind} else "assumption_conflict"
+                    key = (
+                        str(row.get("source_id") or ""),
+                        detail,
+                        incoming_kind,
+                        incoming_value.lower(),
+                        existing_value.lower(),
+                    )
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    candidates.append(
+                        {
+                            "kind": kind,
+                            "against_source_id": str(row.get("source_id") or ""),
+                            "detail": detail,
+                            "comparison_basis": "regime_rows"
+                            if "regime" in {incoming_kind, existing_kind}
+                            else "assumption_rows",
+                            "source_basis_type": incoming_kind,
+                            "source_basis_summary": source_basis,
+                            "against_basis_type": existing_kind,
+                            "against_basis_summary": against_basis,
+                        }
+                    )
     return candidates
 
 

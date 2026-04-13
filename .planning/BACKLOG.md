@@ -383,7 +383,9 @@ export so literature navigation matches how physicists actually work.
 contradictory assumptions instead of shallow keyword extraction alone.
 **Status:** First production slice implemented in `v1.64`
 (`method_specificity_rows`, runtime/status exposure, and isolated acceptance).
-Broader intake maturity remains open.
+Broader intake maturity remains open. The contradiction-adjudication remainder
+landed in `v1.93`; further work would now be broader intake maturity beyond the
+contradiction surface itself.
 **Source:** L0-L4 layer audit 2026-04-07
 **Context:** `.planning/backlog/999.27-l1-assumption-extraction-reading-depth/`
 
@@ -402,6 +404,8 @@ Broader scratch-mode work remains open.
 
 **Goal:** Add limiting-case, dimensional, symmetry, cross-reference, and
 self-consistency validation modes alongside current numerical execution checks.
+**Status:** First production slice implemented in `v1.47`; broader analytical
+validation maturity is now promoted into `v1.94`.
 **Source:** L0-L4 layer audit 2026-04-07
 **Context:** `.planning/backlog/999.29-l4-analytical-validation/`
 
@@ -805,6 +809,8 @@ Python exceptions.
 **Goal:** Make `--download-source` the default; add `--metadata-only` for
 explicit lightweight registration.
 **Problem:** Default is metadata-only; most registered papers have no content.
+**Status:** Implemented in `v1.92` Phase `166.1`
+**Plan:** `166.1-01`
 **Files:** `register_arxiv_source.py`
 **Source:** HCI gap analysis 2026-04-13
 
@@ -1015,6 +1021,21 @@ MIT License — must preserve copyright notices and license text.
 **Phase:** 165.5 (plan 165.5-01 — done early to ensure compliance from start)
 **Files:** All new files from 999.79–999.84, existing `NOTICE` or `LICENSE` file
 **Source:** MIT License compliance requirement 2026-04-14
+
+### 999.86: Concrete L0 Source-Acquisition Handoff After Public Bootstrap
+
+**Goal:** When a fresh public bootstrap honestly returns a topic to `L0 source
+expansion`, the selected next action should point to the concrete shipped source
+entry surfaces (`discover_and_register.py`, `register_arxiv_source.py`,
+`ARXIV_FIRST_SOURCE_INTAKE.md`) instead of generic prose about converting the
+topic statement into sources and candidates.
+**Axis:** A4 (human experience) + A2 (L0→L1 connection)
+**Status:** Implemented in `v1.92` Phase `166`
+**Phase:** `166`
+**Plan:** `166-01`
+**Files:** `topic_shell_support.py`, `runtime_bundle_support.py`,
+  `topic_dashboard_surface_support.py`, related CLI/runtime tests
+**Source:** public-front-door closure run 2026-04-13
 
 ## wow-harness Comparison Summary (2026-04-13)
 

@@ -70,6 +70,18 @@ class AITPCodexTests(unittest.TestCase):
                 "artifacts": {
                     "runtime_protocol_note_path": "/tmp/runtime/demo-topic/runtime_protocol.generated.md",
                 },
+                "theory_context_injection": {
+                    "status": "active",
+                    "fragments": [
+                        {
+                            "fragment_id": "theory-context:notation:demo-topic",
+                            "kind": "notation_bindings",
+                            "summary": "Notation bindings for the bounded theorem packet: H = Hamiltonian.",
+                            "path": "/tmp/runtime/demo-topic/context_fragments/theory-context-notation.md",
+                            "delivery_status": "inject_now",
+                        }
+                    ],
+                },
             },
         }
         prompt = aitp_codex.build_codex_prompt(payload)
@@ -83,6 +95,8 @@ class AITPCodexTests(unittest.TestCase):
         self.assertIn("Autonomous continuation", prompt)
         self.assertIn("continuous_iterative_verify", prompt)
         self.assertIn("applied auto-step budget: `16`", prompt)
+        self.assertIn("/tmp/runtime/demo-topic/context_fragments/theory-context-notation.md", prompt)
+        self.assertIn("Theory context injection", prompt)
         self.assertIn("Continue the topic", prompt)
 
     def test_parser_accepts_topic_slug_and_task(self) -> None:

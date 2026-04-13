@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .obsidian_graph_export import materialize_obsidian_concept_graph_export
+from .l1_source_intake_support import l1_contradiction_summary_lines
 
 
 def now_iso() -> str:
@@ -287,6 +288,9 @@ def _render_source_intake_markdown(
             )
         else:
             lines.append(f"- {row}")
+    lines.extend(["", "## Contradictions", ""])
+    for row in l1_contradiction_summary_lines(l1_source_intake) or ["(none)"]:
+        lines.append(f"- {row}")
     lines.extend(["", "## Concept graph", ""])
     concept_graph = l1_source_intake.get("concept_graph") or {}
     lines.append(

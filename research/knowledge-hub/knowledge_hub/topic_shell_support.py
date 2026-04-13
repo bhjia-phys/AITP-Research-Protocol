@@ -42,6 +42,7 @@ from .graph_analysis_tools import (
     render_graph_analysis_markdown,
     write_graph_analysis_history,
 )
+from .validation_review_service import analytical_cross_check_markdown_lines
 def _read_json(path: Path) -> dict[str, Any] | None:
     if not path.exists():
         return None
@@ -647,6 +648,7 @@ def render_topic_dashboard_markdown(
     selected_action_summary = str(runtime_focus.get("next_action_summary") or "").strip()
     if not selected_action_summary:
         selected_action_summary = str((selected_pending_action or {}).get("summary") or "").strip() or "(none)"
+    l0_source_handoff = runtime_focus.get("l0_source_handoff") or {}
     current_route_choice = topic_status_explainability.get("current_route_choice") or {}
     last_evidence_return = topic_status_explainability.get("last_evidence_return") or {}
     active_human_need = topic_status_explainability.get("active_human_need") or {}
@@ -767,6 +769,25 @@ def render_topic_dashboard_markdown(
         "## L1 intake honesty",
         "",
     ]
+    if l0_source_handoff:
+        lines[730:730] = [
+            "## L0 source handoff",
+            "",
+            f"- Status: `{l0_source_handoff.get('status') or '(missing)'}`",
+            f"- Summary: {l0_source_handoff.get('summary') or '(missing)'}",
+            f"- Primary lane: `{l0_source_handoff.get('primary_path') or '(missing)'}`",
+            f"- Use when: {l0_source_handoff.get('primary_when') or '(missing)'}",
+            "",
+            "### Alternate entries",
+            "",
+        ] + [
+            f"- `{row.get('path') or '(missing)'}`: {row.get('when') or '(missing)'}"
+            if isinstance(row, dict)
+            else f"- {row}"
+            for row in (l0_source_handoff.get("alternate_entries") or ["(none)"])
+        ] + [
+            "",
+        ]
     for item in graph_analysis.get("connections") or ["(none)"]:
         if item == (graph_analysis.get("connections") or [None])[0]:
             lines.extend(["### Graph connections", ""])
@@ -824,6 +845,9 @@ def render_topic_dashboard_markdown(
         "## Blocker summary",
         "",
     ])
+    lines.extend(analytical_cross_check_markdown_lines(validation_review_bundle.get("analytical_cross_check_surface") or {}))
+    if validation_review_bundle.get("analytical_cross_check_surface"):
+        lines.append("")
     for item in blocker_summary or ["(none)"]:
         lines.append(f"- {item}")
     lines.extend([

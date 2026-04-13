@@ -110,7 +110,14 @@
               "against_source_title",
               "against_source_type",
               "against_reading_depth",
-              "detail"
+              "detail",
+              "comparison_basis",
+              "source_basis_type",
+              "source_basis_summary",
+              "source_evidence_excerpt",
+              "against_basis_type",
+              "against_basis_summary",
+              "against_evidence_excerpt"
             ],
             "properties": {
               "kind": { "type": "string", "minLength": 1 },
@@ -123,6 +130,14 @@
               "against_source_type": { "type": "string" },
               "against_reading_depth": { "type": "string", "enum": ["full_read", "abstract_only", "skim"] },
               "detail": { "type": "string", "minLength": 1 }
+              ,
+              "comparison_basis": { "type": "string", "minLength": 1 },
+              "source_basis_type": { "type": "string", "minLength": 1 },
+              "source_basis_summary": { "type": "string", "minLength": 1 },
+              "source_evidence_excerpt": { "type": "string", "minLength": 1 },
+              "against_basis_type": { "type": "string", "minLength": 1 },
+              "against_basis_summary": { "type": "string", "minLength": 1 },
+              "against_evidence_excerpt": { "type": "string", "minLength": 1 }
             }
           }
         },

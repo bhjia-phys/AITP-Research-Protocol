@@ -474,9 +474,9 @@ def discover_and_register(
     preferred_arxiv_id: str,
     select_index: int,
     registered_by: str,
-    download_source: bool,
-    force: bool,
-    skip_intake_projection: bool,
+    download_source: bool = True,
+    force: bool = False,
+    skip_intake_projection: bool = False,
     skip_enrichment: bool = False,
     enrichment_override: dict[str, Any] | None = None,
     skip_graph_build: bool = False,
@@ -703,7 +703,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--preferred-arxiv-id", default="")
     parser.add_argument("--select-index", type=int, default=0)
     parser.add_argument("--registered-by", default="codex")
-    parser.add_argument("--download-source", action="store_true")
+    download_group = parser.add_mutually_exclusive_group()
+    download_group.add_argument("--download-source", dest="download_source", action="store_true")
+    download_group.add_argument("--metadata-only", dest="download_source", action="store_false")
+    parser.set_defaults(download_source=True)
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--skip-intake-projection", action="store_true")
     parser.add_argument("--skip-enrichment", action="store_true")

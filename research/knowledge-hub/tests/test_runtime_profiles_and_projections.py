@@ -392,6 +392,113 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
     def _deferred_paths(self, bundle: dict[str, object]) -> list[str]:
         return [str(row["path"]) for row in bundle["may_defer_until_trigger"]]
 
+    def _write_loop_retry_events(
+        self,
+        *,
+        candidate_id: str = "candidate:demo-theorem",
+        attempts: int = 3,
+    ) -> None:
+        metrics_path = self.runtime_root / "theory_operations.jsonl"
+        rows: list[dict[str, object]] = []
+        for attempt_index in range(2, attempts + 1):
+            rows.append(
+                {
+                    "schema_version": 1,
+                    "event_id": f"event:loop-retry:{attempt_index}",
+                    "topic_slug": "demo-topic",
+                    "run_id": "run-001",
+                    "operation_kind": "derivation_retry",
+                    "status": "active",
+                    "candidate_id": candidate_id,
+                    "candidate_type": "theorem_card",
+                    "phase": "",
+                    "summary": f"Repeated blocked theorem-facing attempt {attempt_index}.",
+                    "blocker_tags": [
+                        "prerequisite_closure_incomplete",
+                        "formalization_blockers_present",
+                        "retry_source:formal_theory_audit",
+                    ],
+                    "source_paths": [
+                        "validation/topics/demo-topic/runs/run-001/theory-packets/candidate-demo-theorem/formal_theory_review.json"
+                    ],
+                    "metric_values": {
+                        "attempt_index": attempt_index,
+                        "source_operation_kind": "formal_theory_audit",
+                    },
+                    "recorded_at": f"2026-04-13T10:0{attempt_index}:00+08:00",
+                    "recorded_by": "test",
+                }
+            )
+        metrics_path.write_text(
+            "".join(json.dumps(row, ensure_ascii=True, separators=(",", ":")) + "\n" for row in rows),
+            encoding="utf-8",
+        )
+
+    def _write_theory_packet_artifacts(self, *, candidate_id: str = "candidate:demo-theorem") -> dict[str, str]:
+        packet_root = (
+            self.kernel_root
+            / "validation"
+            / "topics"
+            / "demo-topic"
+            / "runs"
+            / "run-001"
+            / "theory-packets"
+            / "candidate-demo-theorem"
+        )
+        packet_root.mkdir(parents=True, exist_ok=True)
+        notation_table = packet_root / "notation_table.json"
+        notation_table.write_text(
+            json.dumps(
+                {
+                    "candidate_id": candidate_id,
+                    "status": "captured",
+                    "bindings": [
+                        {"symbol": "H", "meaning": "Hamiltonian"},
+                        {"symbol": "Z", "meaning": "Center"},
+                    ],
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        prerequisite_review = packet_root / "prerequisite_closure_review.json"
+        prerequisite_review.write_text(
+            json.dumps(
+                {
+                    "candidate_id": candidate_id,
+                    "status": "closed",
+                    "lean_prerequisite_ids": ["lemma:demo-prereq"],
+                    "blocking_reasons": [],
+                    "notes": "Prerequisites are closed for the bounded theorem packet.",
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        formal_review = packet_root / "formal_theory_review.json"
+        formal_review.write_text(
+            json.dumps(
+                {
+                    "candidate_id": candidate_id,
+                    "overall_status": "ready",
+                    "prerequisite_closure_status": "closed",
+                    "lean_prerequisite_ids": ["lemma:demo-prereq"],
+                    "formalization_blockers": [],
+                    "prerequisite_notes": "Bounded theorem packet is prerequisite-closed.",
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return {
+            "notation_table": str(notation_table),
+            "prerequisite_closure_review": str(prerequisite_review),
+            "formal_theory_review": str(formal_review),
+        }
+
     def test_new_projection_schemas_validate_and_are_mirrored(self) -> None:
         for name in ("topic-synopsis", "knowledge-packet", "promotion-trace", "topic-skill-projection"):
             public_path = self.repo_root / "schemas" / f"{name}.schema.json"
@@ -962,6 +1069,287 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         note_text = Path(result["runtime_protocol_note_path"]).read_text(encoding="utf-8")
         self.assertIn("## Graph analysis", note_text)
         self.assertIn("Anyon condensation", note_text)
+
+    def test_runtime_bundle_exposes_theory_context_fragment_map_for_formal_theory_work(self) -> None:
+        (self.runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "task_type": "open_exploration",
+                    "resume_stage": "L4",
+                    "last_materialized_stage": "L4",
+                    "latest_run_id": "run-001",
+                    "research_mode": "formal_derivation",
+                    "pointers": {
+                        "control_note_path": "runtime/topics/demo-topic/control_note.md"
+                    },
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        self._rewrite_action_queue(
+            "formal_theory_revision",
+            "Revise the bounded theorem-facing packet and its supporting theory artifacts.",
+            handler_args={"run_id": "run-001", "candidate_id": "candidate:demo-theorem"},
+        )
+        packet_paths = self._write_theory_packet_artifacts()
+        shell_surfaces = self._shell_surfaces()
+        shell_surfaces["research_question_contract"]["template_mode"] = "formal_theory"
+        shell_surfaces["research_question_contract"]["research_mode"] = "formal_derivation"
+        shell_surfaces["validation_contract"]["validation_mode"] = "formal"
+        shell_surfaces["validation_review_bundle"] = {
+            **dict(shell_surfaces["validation_review_bundle"]),
+            "status": "ready",
+            "primary_review_kind": "formal_theory_review",
+            "candidate_ids": ["candidate:demo-theorem"],
+            "specialist_artifacts": [
+                {
+                    "candidate_id": "candidate:demo-theorem",
+                    "candidate_type": "theorem_card",
+                    "artifact_kind": "formal_theory_review",
+                    "path": "validation/topics/demo-topic/runs/run-001/theory-packets/candidate-demo-theorem/formal_theory_review.json",
+                    "status": "ready",
+                }
+            ],
+            "summary": "Formal theory review is the primary theorem-facing review entry point.",
+        }
+        shell_surfaces["statement_compilation"] = {
+            **dict(shell_surfaces["statement_compilation"]),
+            "status": "ready",
+            "summary": "Statement compilation is active for the bounded theorem packet.",
+            "packet_count": 1,
+            "path": "runtime/topics/demo-topic/statement_compilation.active.md",
+        }
+        shell_surfaces["lean_bridge"] = {
+            **dict(shell_surfaces["lean_bridge"]),
+            "status": "ready",
+            "summary": "Lean bridge packet is ready for the bounded theorem packet.",
+            "packet_count": 1,
+            "path": "runtime/topics/demo-topic/lean_bridge.active.md",
+        }
+        self._write_surface(
+            "runtime/topics/demo-topic/topic_skill_projection.active.json",
+            json.dumps(
+                {
+                    "id": "topic_skill_projection:demo-topic",
+                    "topic_slug": "demo-topic",
+                    "source_topic_slug": "demo-topic",
+                    "run_id": "run-001",
+                    "title": "Demo theorem projection",
+                    "summary": "Reusable theorem-facing route memory for the bounded demo theorem.",
+                    "lane": "formal_theory",
+                    "status": "available",
+                    "status_reason": "Projection is available.",
+                    "candidate_id": "candidate:demo-theorem",
+                    "intended_l2_target": "topic_skill_projection:demo-topic",
+                    "entry_signals": ["lane=formal_theory"],
+                    "required_first_reads": ["runtime/topics/demo-topic/research_question.contract.md"],
+                    "required_first_routes": ["Read the theorem-facing review packet before changing the route."],
+                    "benchmark_first_rules": [],
+                    "operator_checkpoint_rules": [],
+                    "operation_trust_requirements": [],
+                    "strategy_guidance": [],
+                    "forbidden_proxies": [],
+                    "derived_from_artifacts": [packet_paths["formal_theory_review"]],
+                    "updated_at": "2026-04-13T10:00:00+08:00",
+                    "updated_by": "test",
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+        self._write_surface(
+            "runtime/topics/demo-topic/topic_skill_projection.active.md",
+            "# Demo theorem projection\n",
+        )
+        shell_surfaces["topic_skill_projection"] = {
+            "id": "topic_skill_projection:demo-topic",
+            "topic_slug": "demo-topic",
+            "source_topic_slug": "demo-topic",
+            "run_id": "run-001",
+            "title": "Demo theorem projection",
+            "summary": "Reusable theorem-facing route memory for the bounded demo theorem.",
+            "lane": "formal_theory",
+            "status": "available",
+            "status_reason": "Projection is available.",
+            "candidate_id": "candidate:demo-theorem",
+            "intended_l2_target": "topic_skill_projection:demo-topic",
+            "entry_signals": ["lane=formal_theory"],
+            "required_first_reads": ["runtime/topics/demo-topic/research_question.contract.md"],
+            "required_first_routes": ["Read the theorem-facing review packet before changing the route."],
+            "benchmark_first_rules": [],
+            "operator_checkpoint_rules": [],
+            "operation_trust_requirements": [],
+            "strategy_guidance": [],
+            "forbidden_proxies": [],
+            "derived_from_artifacts": [
+                "validation/topics/demo-topic/runs/run-001/theory-packets/candidate-demo-theorem/formal_theory_review.json"
+            ],
+            "path": "runtime/topics/demo-topic/topic_skill_projection.active.json",
+            "note_path": "runtime/topics/demo-topic/topic_skill_projection.active.md",
+            "updated_at": "2026-04-13T10:00:00+08:00",
+            "updated_by": "test",
+        }
+        candidate_rows = [
+            {
+                "candidate_id": "candidate:demo-theorem",
+                "candidate_type": "theorem_card",
+                "title": "Demo theorem",
+                "summary": "Bounded theorem packet.",
+                "formal_theory_review_overall_status": "ready",
+                "topic_completion_status": "promotion-ready",
+            }
+        ]
+
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            with patch.object(self.service, "_candidate_rows_for_run", return_value=candidate_rows):
+                result = self.service._materialize_runtime_protocol_bundle(
+                    topic_slug="demo-topic",
+                    updated_by="test",
+                    human_request="Continue the bounded theorem-facing revision lane.",
+                    load_profile="full",
+                )
+
+        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        injection = bundle["theory_context_injection"]
+        self.assertEqual(injection["status"], "active")
+        self.assertEqual(injection["session_ttl_seconds"], 3600)
+        self.assertIn("runtime/topics/demo-topic/statement_compilation.active.md", injection["active_target_paths"])
+        self.assertIn("runtime/topics/demo-topic/topic_skill_projection.active.md", injection["active_target_paths"])
+        fragment_kinds = {row["kind"] for row in injection["fragments"]}
+        self.assertEqual(
+            fragment_kinds,
+            {"notation_bindings", "prerequisite_closure", "relevant_l2_units"},
+        )
+        notation_fragment = next(row for row in injection["fragments"] if row["kind"] == "notation_bindings")
+        self.assertIn("H = Hamiltonian", notation_fragment["summary"])
+        self.assertIn(
+            "validation/topics/demo-topic/runs/run-001/theory-packets/candidate-demo-theorem/notation_table.json",
+            notation_fragment["source_paths"],
+        )
+        self.assertTrue((self.kernel_root / notation_fragment["path"]).exists())
+
+        schema = json.loads(
+            (self.kernel_root / "runtime" / "schemas" / "progressive-disclosure-runtime-bundle.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        jsonschema.validate(bundle, schema)
+
+    def test_runtime_bundle_surfaces_active_loop_detection_after_repeated_theorem_retries(self) -> None:
+        (self.runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "task_type": "open_exploration",
+                    "resume_stage": "L4",
+                    "last_materialized_stage": "L4",
+                    "latest_run_id": "run-001",
+                    "research_mode": "formal_derivation",
+                    "pointers": {
+                        "control_note_path": "runtime/topics/demo-topic/control_note.md"
+                    },
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        self._rewrite_action_queue(
+            "proof_review",
+            "Continue the bounded theorem-facing proof review for the same candidate.",
+            handler_args={"run_id": "run-001", "candidate_id": "candidate:demo-theorem"},
+        )
+        self._write_loop_retry_events(attempts=3)
+        shell_surfaces = self._shell_surfaces()
+        shell_surfaces["research_question_contract"]["template_mode"] = "formal_theory"
+        shell_surfaces["research_question_contract"]["research_mode"] = "formal_derivation"
+        shell_surfaces["validation_contract"]["validation_mode"] = "formal"
+
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
+                result = self.service._materialize_runtime_protocol_bundle(
+                    topic_slug="demo-topic",
+                    updated_by="test",
+                    human_request="Continue the bounded theorem-facing proof review for the same candidate.",
+                    load_profile="full",
+                )
+
+        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        loop_detection = bundle["loop_detection"]
+        self.assertEqual(loop_detection["status"], "active")
+        self.assertEqual(loop_detection["retry_threshold"], 3)
+        self.assertEqual(loop_detection["retry_count"], 3)
+        self.assertEqual(loop_detection["candidate_id"], "candidate:demo-theorem")
+        self.assertEqual(loop_detection["source_operation_kind"], "formal_theory_audit")
+        self.assertEqual(loop_detection["suggestion_kind"], "prerequisite_closure")
+        self.assertIn("decompose", loop_detection["strategy_change_suggestion"].lower())
+        self.assertTrue(loop_detection["note_path"].endswith("loop_detection.md"))
+        self.assertIn(loop_detection["note_path"], self._must_read_paths(bundle))
+        self.assertTrue((self.kernel_root / loop_detection["note_path"]).exists())
+        note_text = Path(result["runtime_protocol_note_path"]).read_text(encoding="utf-8")
+        self.assertIn("## Loop detection", note_text)
+
+    def test_runtime_bundle_surfaces_protocol_manifest_drift_for_verify_mode(self) -> None:
+        (self.runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "task_type": "open_exploration",
+                    "resume_stage": "L4",
+                    "last_materialized_stage": "L4",
+                    "latest_run_id": "run-001",
+                    "research_mode": "formal_derivation",
+                    "pointers": {
+                        "control_note_path": "runtime/topics/demo-topic/control_note.md"
+                    },
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        self._rewrite_action_queue(
+            "proof_review",
+            "Continue the bounded theorem-facing proof review for the current candidate.",
+            handler_args={"run_id": "run-001", "candidate_id": "candidate:demo-theorem"},
+        )
+        shell_surfaces = self._shell_surfaces()
+        shell_surfaces["research_question_contract"]["template_mode"] = "formal_theory"
+        shell_surfaces["research_question_contract"]["research_mode"] = "formal_derivation"
+        shell_surfaces["validation_contract"]["validation_mode"] = "formal"
+        Path(str(shell_surfaces["validation_contract_note_path"])).unlink()
+
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
+                result = self.service._materialize_runtime_protocol_bundle(
+                    topic_slug="demo-topic",
+                    updated_by="test",
+                    human_request="Continue the bounded theorem-facing proof review for the current candidate.",
+                    load_profile="full",
+                )
+
+        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        manifest = bundle["protocol_manifest"]
+        self.assertEqual(manifest["overall_status"], "fail")
+        self.assertEqual(manifest["declared_state"], "verifying")
+        self.assertIn("runtime/topics/demo-topic/validation_contract.active.md", manifest["missing_paths"])
+        self.assertTrue(manifest["note_path"].endswith("protocol_manifest.active.md"))
+        self.assertIn(manifest["note_path"], self._must_read_paths(bundle))
+        self.assertTrue((self.kernel_root / manifest["path"]).exists())
+        self.assertTrue((self.kernel_root / manifest["note_path"]).exists())
+        note_text = Path(self.kernel_root / manifest["note_path"]).read_text(encoding="utf-8")
+        self.assertIn("validation_contract.active.md", note_text)
+        self.assertIn("verifying", note_text)
+
+        schema = json.loads(
+            (self.kernel_root / "runtime" / "schemas" / "progressive-disclosure-runtime-bundle.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        jsonschema.validate(bundle, schema)
 
     def test_runtime_bundle_auto_escalates_to_full_for_mismatch_requests(self) -> None:
         shell_surfaces = self._shell_surfaces()

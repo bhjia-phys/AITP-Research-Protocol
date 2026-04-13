@@ -28,6 +28,13 @@ from .runtime_projection_handler import (
     write_promotion_trace,
     write_topic_synopsis,
 )
+from .theory_context_injection import (
+    apply_theory_context_session_dedup,
+    build_theory_context_injection,
+)
+from .loop_detection_support import materialize_loop_detection
+from .protocol_manifest import materialize_protocol_manifest, protocol_manifest_must_read_entry
+from .validation_review_service import analytical_cross_check_markdown_lines
 
 
 def _human_interaction_posture_from_bundle(runtime_bundle: dict[str, Any]) -> dict[str, Any]:
@@ -172,6 +179,7 @@ def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
     load_profile = str(payload.get("load_profile") or "light")
     topic_synopsis = payload.get("topic_synopsis") or {}
     runtime_focus = topic_synopsis.get("runtime_focus") or {}
+    l0_source_handoff = runtime_focus.get("l0_source_handoff") or {}
     truth_sources = topic_synopsis.get("truth_sources") or {}
     pending_decisions = payload.get("pending_decisions") or {}
     minimal = payload.get("minimal_execution_brief") or {}
@@ -186,6 +194,9 @@ def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
     research_judgment = payload.get("research_judgment") or {}; research_taste = payload.get("research_taste") or {}; scratchpad = payload.get("scratchpad") or {}
     source_intelligence = payload.get("source_intelligence") or {}
     graph_analysis = payload.get("graph_analysis") or {}
+    theory_context_injection = payload.get("theory_context_injection") or {}
+    loop_detection = payload.get("loop_detection") or {}
+    protocol_manifest = payload.get("protocol_manifest") or {}
     control_plane = payload.get("control_plane") or {}
     topic_skill_projection = payload.get("topic_skill_projection") or {}
     topic_completion = payload.get("topic_completion") or {}
@@ -247,8 +258,92 @@ def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
         "",
         f"{runtime_focus.get('summary') or topic_synopsis.get('next_action_summary') or '(missing)'}",
     ]
+    if l0_source_handoff:
+        lines.extend(
+            [
+                "",
+                "## L0 source handoff",
+                "",
+                f"- Status: `{l0_source_handoff.get('status') or '(missing)'}`",
+                f"- Summary: {l0_source_handoff.get('summary') or '(missing)'}",
+                f"- Primary lane: `{l0_source_handoff.get('primary_path') or '(missing)'}`",
+                f"- Use when: {l0_source_handoff.get('primary_when') or '(missing)'}",
+                "",
+                "### Alternate entries",
+                "",
+            ]
+        )
+        for row in l0_source_handoff.get("alternate_entries") or ["(none)"]:
+            if isinstance(row, dict):
+                lines.append(
+                    f"- `{row.get('path') or '(missing)'}`: {row.get('when') or '(missing)'}"
+                )
+            else:
+                lines.append(f"- {row}")
     append_source_intelligence_markdown(lines, source_intelligence)
     append_graph_analysis_markdown(lines, graph_analysis)
+    lines.extend(
+        [
+            "",
+            "## Theory context injection",
+            "",
+            f"- Status: `{theory_context_injection.get('status') or '(missing)'}`",
+            f"- Session TTL seconds: `{theory_context_injection.get('session_ttl_seconds') or 0}`",
+            f"- Session state path: `{theory_context_injection.get('session_state_path') or '(missing)'}`",
+            "",
+            "### Active target paths",
+            "",
+        ]
+    )
+    for item in theory_context_injection.get("active_target_paths") or ["(none)"]:
+        lines.append(f"- `{item}`" if item != "(none)" else "- (none)")
+    lines.extend(["", "### Context fragments", ""])
+    if theory_context_injection.get("fragments"):
+        for row in theory_context_injection.get("fragments") or []:
+            lines.append(
+                f"- `{row.get('kind') or '(missing)'}` path=`{row.get('path') or '(missing)'}` summary=`{row.get('summary') or '(missing)'}`"
+            )
+    else:
+        lines.append("- (none)")
+    lines.extend(
+        [
+            "",
+            "## Loop detection",
+            "",
+            f"- Status: `{loop_detection.get('status') or '(missing)'}`",
+            f"- Retry threshold: `{loop_detection.get('retry_threshold') or 0}`",
+            f"- Retry count: `{loop_detection.get('retry_count') or 0}`",
+            f"- Candidate id: `{loop_detection.get('candidate_id') or '(none)'}`",
+            f"- Source operation kind: `{loop_detection.get('source_operation_kind') or '(none)'}`",
+            f"- Suggestion kind: `{loop_detection.get('suggestion_kind') or '(none)'}`",
+            f"- Note path: `{loop_detection.get('note_path') or '(missing)'}`",
+            "",
+            f"{loop_detection.get('summary') or '(missing)'}",
+            "",
+        ]
+    )
+    for item in loop_detection.get("recommended_actions") or ["(none)"]:
+        if item == (loop_detection.get("recommended_actions") or ["(none)"])[0]:
+            lines.extend(["### Recommended actions", ""])
+        lines.append(f"- {item}" if item != "(none)" else "- (none)")
+    lines.extend(
+        [
+            "",
+            "## Protocol manifest",
+            "",
+            f"- Declared state: `{protocol_manifest.get('declared_state') or '(missing)'}`",
+            f"- Overall status: `{protocol_manifest.get('overall_status') or '(missing)'}`",
+            f"- Missing artifact count: `{protocol_manifest.get('missing_artifact_count') or 0}`",
+            f"- Manifest note: `{protocol_manifest.get('note_path') or '(missing)'}`",
+            "",
+            f"{protocol_manifest.get('summary') or '(missing)'}",
+            "",
+            "### Missing paths",
+            "",
+        ]
+    )
+    for item in protocol_manifest.get("missing_paths") or ["(none)"]:
+        lines.append(f"- `{item}`" if item != "(none)" else "- (none)")
     lines.extend(
         ["", *control_plane_markdown_lines(control_plane), "## Runtime truth model", ""]
         + [
@@ -335,6 +430,8 @@ def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
             f"- Bundle note: `{validation_review_bundle.get('note_path') or '(missing)'}`",
             "",
             f"{validation_review_bundle.get('summary') or '(missing)'}",
+            "",
+            *analytical_cross_check_markdown_lines(validation_review_bundle.get("analytical_cross_check_surface") or {}),
             "",
             "## Promotion readiness",
             "",
@@ -815,6 +912,25 @@ def materialize_runtime_protocol_bundle(
         )
     )
     candidate_rows = self._candidate_rows_for_run(topic_slug, latest_run_id)
+    theory_context_injection = build_theory_context_injection(
+        self,
+        topic_slug=topic_slug,
+        latest_run_id=latest_run_id or None,
+        lane=lane,
+        validation_review_bundle=validation_review_bundle,
+        statement_compilation=statement_compilation,
+        lean_bridge=lean_bridge,
+        topic_skill_projection=topic_skill_projection,
+        selected_pending_action=selected_pending_action,
+        candidate_rows=candidate_rows,
+    )
+    loop_detection = materialize_loop_detection(
+        self,
+        topic_slug=topic_slug,
+        updated_by=updated_by,
+        lane=lane,
+        selected_pending_action=selected_pending_action,
+    )
     knowledge_packets = build_knowledge_packets_from_candidates(
         topic_slug,
         candidate_rows,
@@ -1154,6 +1270,13 @@ def materialize_runtime_protocol_bundle(
         )
     for entry in (collaborator_profile_read, research_trajectory_read, mode_learning_read, research_judgment_read, research_taste_read, scratchpad_read):
         if entry is not None: must_read_now.append(entry)
+    if str(loop_detection.get("status") or "") == "active" and str(loop_detection.get("note_path") or "").strip():
+        must_read_now.append(
+            {
+                "path": str(loop_detection.get("note_path") or ""),
+                "reason": "Repeated theorem-facing retries crossed the loop-detection threshold. Read this intervention note before repeating the same approach.",
+            }
+        )
     may_defer_until_trigger: list[dict[str, str]] = []
     must_read_paths = {item["path"] for item in must_read_now}
     for candidate, trigger, reason in (
@@ -1734,6 +1857,21 @@ def materialize_runtime_protocol_bundle(
         escalation_triggers=escalation_triggers,
         human_request=human_request,
     )
+    protocol_manifest = materialize_protocol_manifest(
+        self,
+        topic_slug=topic_slug,
+        topic_state=topic_state,
+        runtime_mode=str(runtime_mode_preview.get("runtime_mode") or ""),
+        active_submode=str(runtime_mode_preview.get("active_submode") or ""),
+        promotion_gate=promotion_gate,
+        topic_completion=topic_completion,
+        active_research_contract=active_research_contract,
+        shell_surfaces=shell_surfaces,
+        updated_by=updated_by,
+    )
+    manifest_read = protocol_manifest_must_read_entry(protocol_manifest)
+    if manifest_read is not None:
+        must_read_now.append(manifest_read)
     escalation_triggers = filter_escalation_triggers_for_mode(
         runtime_mode=str(runtime_mode_preview.get("runtime_mode") or ""),
         escalation_triggers=escalation_triggers,
@@ -1838,6 +1976,9 @@ def materialize_runtime_protocol_bundle(
         "validation_review_bundle": validation_review_bundle,
         "source_intelligence": source_intelligence,
         "graph_analysis": graph_analysis,
+        "theory_context_injection": theory_context_injection,
+        "loop_detection": loop_detection,
+        "protocol_manifest": protocol_manifest,
         "open_gap_summary": open_gap_summary,
         "dependency_state": dependency_state,
         "strategy_memory": strategy_memory,
@@ -2031,6 +2172,12 @@ def materialize_session_start_contract(
         applied_max_auto_steps=applied_max_auto_steps,
         budget_reason=auto_step_budget_reason,
     )
+    theory_context_injection = apply_theory_context_session_dedup(
+        self,
+        topic_slug=topic_slug,
+        payload=runtime_bundle.get("theory_context_injection") or {},
+        updated_by=updated_by,
+    )
 
     must_read_now: list[dict[str, str]] = []
     seen_paths: set[str] = set()
@@ -2048,6 +2195,13 @@ def materialize_session_start_contract(
     )
     for item in runtime_bundle.get("must_read_now") or []:
         _append_read(item.get("path"), str(item.get("reason") or "").strip())
+    for row in theory_context_injection.get("fragments") or []:
+        if str(row.get("delivery_status") or "").strip() != "inject_now":
+            continue
+        _append_read(
+            row.get("path"),
+            f"Theory context injection ({row.get('kind') or 'theory_context'}) before editing theorem-facing artifacts. {row.get('summary') or ''}".strip(),
+        )
 
     control_note_path = self._normalize_artifact_path(
         steering_artifacts.get("control_note_path") or pointers.get("control_note_path")
@@ -2230,6 +2384,7 @@ def materialize_session_start_contract(
             "direction": steering_artifacts.get("direction"),
             "summary": steering_artifacts.get("summary"),
         },
+        "theory_context_injection": theory_context_injection,
     }
     _write_json(session_paths["json"], payload)
     _write_text(session_paths["note"], render_session_start_note(payload))

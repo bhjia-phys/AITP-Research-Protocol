@@ -126,12 +126,17 @@ def _capability_specific(
     topic_state: dict[str, Any] | None,
     latest_run_id: str | None,
     runtime_root: Path,
+    protocol_manifest: dict[str, Any] | None,
 ) -> dict[str, dict[str, str]]:
     trust_audit_path = (
         self._trust_audit_path(topic_slug, latest_run_id)
         if latest_run_id
         else runtime_root / "missing-trust-audit.json"
     )
+    missing_paths = ", ".join(str(item) for item in ((protocol_manifest or {}).get("missing_paths") or []) if str(item).strip())
+    manifest_detail = str((protocol_manifest or {}).get("summary") or "protocol manifest not materialized")
+    if missing_paths:
+        manifest_detail = f"{manifest_detail} Missing: {missing_paths}."
     return {
         "latest_run": {
             "status": "present" if latest_run_id else "missing",
@@ -144,6 +149,11 @@ def _capability_specific(
         "topic_state_resume_stage": {
             "status": "present" if topic_state else "missing",
             "detail": str((topic_state or {}).get("resume_stage")) if topic_state else "topic_state.json missing",
+        },
+        "protocol_manifest": {
+            "status": str((protocol_manifest or {}).get("overall_status") or "missing"),
+            "detail": manifest_detail,
+            "path": str((protocol_manifest or {}).get("path") or ""),
         },
     }
 
@@ -167,6 +177,10 @@ def _capability_recommendations(
         recommendations.append("Run `aitp audit --topic-slug <topic_slug> --phase entry` to restore conformance visibility.")
     if capability_specific["operation_trust"]["status"] != "present" and latest_run_id:
         recommendations.append("Run `aitp trust-audit --topic-slug <topic_slug> --run-id <run_id>` after creating operation manifests.")
+    if capability_specific["protocol_manifest"]["status"] == "fail":
+        recommendations.append(
+            "Repair protocol-manifest drift so the declared runtime state and required artifact surfaces agree again."
+        )
     if control_plane_section["status"]["status"] != "present":
         recommendations.append("Refresh topic status so the unified control-plane projection is materialized.")
     if h_plane_section["status"]["status"] != "present":
@@ -197,6 +211,8 @@ def _overall_status(
         return "missing_layers"
     if capability_specific["operation_trust"]["status"] != "present":
         return "missing_trust"
+    if capability_specific["protocol_manifest"]["status"] == "fail":
+        return "drift_detected"
     return "ready"
 
 
@@ -213,12 +229,15 @@ def capability_audit(
     layer_section = _layer_section(self.kernel_root, topic_slug)
     integration_section = _integration_section()
     control_plane_payload: dict[str, Any] = {}
+    protocol_manifest: dict[str, Any] = {}
     if runtime_section["topic_state.json"]["status"] == "present":
         try:
             status_payload = self.topic_status(topic_slug=topic_slug, updated_by=updated_by)
             control_plane_payload = status_payload.get("control_plane") or {}
+            protocol_manifest = status_payload.get("protocol_manifest") or {}
         except FileNotFoundError:
             control_plane_payload = {}
+            protocol_manifest = {}
     control_plane_section = build_control_plane_audit_section(control_plane_payload)
     h_plane_payload = build_h_plane_payload(
         self,
@@ -264,6 +283,7 @@ def capability_audit(
         topic_state=topic_state,
         latest_run_id=latest_run_id,
         runtime_root=runtime_root,
+        protocol_manifest=protocol_manifest,
     )
     recommendations = _capability_recommendations(
         runtime_section=runtime_section,

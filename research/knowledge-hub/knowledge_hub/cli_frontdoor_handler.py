@@ -58,6 +58,7 @@ def register_frontdoor_commands(subparsers: argparse._SubParsersAction[Any]) -> 
     install.add_argument("--agent", choices=["codex", "openclaw", "opencode", "claude-code", "all"], required=True)
     install.add_argument("--scope", choices=["user", "project"], default="user")
     install.add_argument("--target-root")
+    install.add_argument("--mcp-profile", choices=["full", "review", "skeptic"], default="full")
     install.add_argument("--no-force", action="store_true")
     install.add_argument("--no-mcp", action="store_true")
     install.add_argument("--json", action="store_true")
@@ -114,6 +115,7 @@ def dispatch_frontdoor_command(args: argparse.Namespace, service: Any) -> dict[s
             target_root=args.target_root,
             force=not args.no_force,
             install_mcp=not args.no_mcp,
+            mcp_profile=args.mcp_profile,
         )
 
     if args.command == "migrate-local-install":

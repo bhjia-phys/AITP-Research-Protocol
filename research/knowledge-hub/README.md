@@ -542,6 +542,10 @@ python research/knowledge-hub/source-layer/scripts/discover_and_register.py \
   --query "<natural-language query>"
 ```
 
+For direct arXiv registration, `source-layer/scripts/register_arxiv_source.py`
+now attempts source acquisition by default. Use `--metadata-only` only when the
+lightweight registration path is explicitly desired.
+
 The L1 method-specificity acceptance script is the bounded `v1.64` intake
 surface check: it uses production `status --json` on an isolated temp kernel
 root, verifies that `method_specificity_rows` are materialized inside

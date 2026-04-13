@@ -407,3 +407,53 @@ class TopicReplayTests(unittest.TestCase):
         self.assertIn("topic_skill_projection_path", missing)
         self.assertIn("transition_history_path", missing)
         self.assertIn("promotion_gate_path", missing)
+
+    def test_materialize_topic_replay_bundle_surfaces_l0_source_handoff(self) -> None:
+        (self.topic_root / "topic_synopsis.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": self.topic_slug,
+                    "title": "Demo Topic",
+                    "question": "What should the operator do next?",
+                    "lane": "formal_theory",
+                    "human_request": "Recover sources first.",
+                    "next_action_summary": "Return to L0 source expansion.",
+                    "open_gap_summary": "Source recovery remains active.",
+                    "runtime_focus": {
+                        "l0_source_handoff": {
+                            "status": "needs_sources",
+                            "summary": "Start with discovery, then fall back to direct arXiv registration when an id is known.",
+                            "primary_path": "source-layer/scripts/discover_and_register.py",
+                            "primary_when": "Use when you have a topic query rather than a fixed arXiv id.",
+                            "alternate_entries": [
+                                {
+                                    "path": "source-layer/scripts/register_arxiv_source.py",
+                                    "when": "Use when the arXiv id is already known."
+                                },
+                                {
+                                    "path": "intake/ARXIV_FIRST_SOURCE_INTAKE.md",
+                                    "when": "Use for the exact command forms and intake workflow."
+                                }
+                            ]
+                        }
+                    }
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        result = materialize_topic_replay_bundle(self.kernel_root, self.topic_slug)
+        payload = result["payload"]
+        markdown = Path(result["markdown_path"]).read_text(encoding="utf-8")
+
+        self.assertEqual(payload["current_position"]["l0_source_handoff_summary"], "Start with discovery, then fall back to direct arXiv registration when an id is known.")
+        self.assertEqual(payload["l0_source_handoff"]["primary_path"], "source-layer/scripts/discover_and_register.py")
+        self.assertEqual(payload["l0_source_handoff"]["alternate_entries"][0]["path"], "source-layer/scripts/register_arxiv_source.py")
+        self.assertEqual(payload["l0_source_handoff"]["alternate_entries"][1]["path"], "intake/ARXIV_FIRST_SOURCE_INTAKE.md")
+        self.assertIn("## L0 source handoff", markdown)
+        self.assertIn("source-layer/scripts/discover_and_register.py", markdown)
+        self.assertIn("source-layer/scripts/register_arxiv_source.py", markdown)
+        self.assertIn("intake/ARXIV_FIRST_SOURCE_INTAKE.md", markdown)

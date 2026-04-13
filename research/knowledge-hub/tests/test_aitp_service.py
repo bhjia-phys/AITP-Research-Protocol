@@ -278,6 +278,78 @@ class _IterativeVerifyLoopStubService(_LoopStubService):
         }
 
 
+class _LoopDetectionStubService(_LoopStubService):
+    def orchestrate(self, **kwargs):  # noqa: ANN003
+        payload = super().orchestrate(**kwargs)
+        topic_slug = kwargs.get("topic_slug") or "demo-topic"
+        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": topic_slug,
+                    "latest_run_id": "2026-03-13-demo",
+                    "resume_stage": "L4",
+                    "research_mode": "formal_derivation",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:proof",
+                    "status": "pending",
+                    "auto_runnable": False,
+                    "action_type": "proof_review",
+                    "summary": "Continue the bounded theorem-facing proof review for the same candidate.",
+                    "handler_args": {"run_id": "2026-03-13-demo", "candidate_id": "candidate:demo-theorem"},
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        rows = []
+        for attempt_index in (2, 3):
+            rows.append(
+                {
+                    "schema_version": 1,
+                    "event_id": f"event:loop-retry:{attempt_index}",
+                    "topic_slug": topic_slug,
+                    "run_id": "2026-03-13-demo",
+                    "operation_kind": "derivation_retry",
+                    "status": "active",
+                    "candidate_id": "candidate:demo-theorem",
+                    "candidate_type": "theorem_card",
+                    "phase": "",
+                    "summary": f"Repeated blocked theorem-facing attempt {attempt_index}.",
+                    "blocker_tags": [
+                        "prerequisite_closure_incomplete",
+                        "formalization_blockers_present",
+                        "retry_source:formal_theory_audit",
+                    ],
+                    "source_paths": [
+                        "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-theorem/formal_theory_review.json"
+                    ],
+                    "metric_values": {
+                        "attempt_index": attempt_index,
+                        "source_operation_kind": "formal_theory_audit",
+                    },
+                    "recorded_at": f"2026-04-13T10:0{attempt_index}:00+08:00",
+                    "recorded_by": "test",
+                }
+            )
+        (runtime_root / "theory_operations.jsonl").write_text(
+            "".join(json.dumps(row, ensure_ascii=True, separators=(",", ":")) + "\n" for row in rows),
+            encoding="utf-8",
+        )
+        return payload
+
+
 class _SteeringLoopStubService(AITPService):
     def __init__(self, *args, **kwargs):  # noqa: ANN002, ANN003
         super().__init__(*args, **kwargs)
@@ -2502,16 +2574,34 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["idea_packet"]["status"], "approved_for_execution")
         self.assertEqual(payload["operator_checkpoint"]["status"], "cancelled")
         self.assertIn("topic_state_explainability", payload)
+        self.assertEqual(
+            payload["runtime_focus"]["l0_source_handoff"]["primary_path"],
+            "source-layer/scripts/discover_and_register.py",
+        )
         self.assertEqual(payload["validation_contract"]["status"], "deferred")
         self.assertTrue(payload["open_gap_summary"]["requires_l0_return"])
         dashboard_text = Path(payload["topic_dashboard_path"]).read_text(encoding="utf-8")
         review_text = Path(payload["validation_review_bundle_note_path"]).read_text(encoding="utf-8")
         gap_text = Path(payload["gap_map_path"]).read_text(encoding="utf-8")
+        status_payload = self.service.topic_status(topic_slug="demo-topic", updated_by="aitp-cli")
+        runtime_note = Path(status_payload["runtime_protocol_note_path"]).read_text(encoding="utf-8")
         self.assertIn("Idea packet", dashboard_text)
         self.assertIn("operator_checkpoint.active.md", dashboard_text)
         self.assertIn("## Validation review bundle", dashboard_text)
         self.assertIn("## Last evidence return", dashboard_text)
         self.assertIn("## Active human need", dashboard_text)
+        self.assertIn("## L0 source handoff", dashboard_text)
+        self.assertIn("source-layer/scripts/discover_and_register.py", dashboard_text)
+        self.assertIn("source-layer/scripts/register_arxiv_source.py", dashboard_text)
+        self.assertIn("intake/ARXIV_FIRST_SOURCE_INTAKE.md", dashboard_text)
+        self.assertEqual(
+            status_payload["topic_synopsis"]["runtime_focus"]["l0_source_handoff"]["primary_path"],
+            "source-layer/scripts/discover_and_register.py",
+        )
+        self.assertIn("## L0 source handoff", runtime_note)
+        self.assertIn("source-layer/scripts/discover_and_register.py", runtime_note)
+        self.assertIn("source-layer/scripts/register_arxiv_source.py", runtime_note)
+        self.assertIn("intake/ARXIV_FIRST_SOURCE_INTAKE.md", runtime_note)
         self.assertIn("return to L0", dashboard_text)
         self.assertIn("Primary L4 review surface", review_text)
         self.assertIn("return to L0", gap_text)
@@ -3112,12 +3202,41 @@ class AITPServiceTests(unittest.TestCase):
             topic_slug="demo-topic",
             updated_by="aitp-cli",
         )
+        status_payload = self.service.topic_status(topic_slug="demo-topic")
 
         l1_source_intake = payload["research_question_contract"]["l1_source_intake"]
         self.assertEqual(len(l1_source_intake["notation_rows"]), 2)
         self.assertEqual(len(l1_source_intake["contradiction_candidates"]), 1)
         self.assertEqual(len(l1_source_intake["notation_tension_candidates"]), 1)
         self.assertEqual(len(l1_source_intake["method_specificity_rows"]), 2)
+        self.assertEqual(
+            l1_source_intake["contradiction_candidates"][0]["comparison_basis"],
+            "regime_rows",
+        )
+        self.assertEqual(
+            l1_source_intake["contradiction_candidates"][0]["source_basis_type"],
+            "regime",
+        )
+        self.assertIn(
+            "strong coupling",
+            l1_source_intake["contradiction_candidates"][0]["source_basis_summary"],
+        )
+        self.assertEqual(
+            l1_source_intake["contradiction_candidates"][0]["against_basis_type"],
+            "regime",
+        )
+        self.assertIn(
+            "weak coupling",
+            l1_source_intake["contradiction_candidates"][0]["against_basis_summary"],
+        )
+        self.assertIn(
+            "strong coupling",
+            l1_source_intake["contradiction_candidates"][0]["source_evidence_excerpt"],
+        )
+        self.assertIn(
+            "weak coupling",
+            l1_source_intake["contradiction_candidates"][0]["against_evidence_excerpt"],
+        )
         self.assertEqual(
             l1_source_intake["contradiction_candidates"][0]["detail"],
             "strong coupling vs weak coupling",
@@ -3130,6 +3249,18 @@ class AITPServiceTests(unittest.TestCase):
             "Contradiction candidate: strong coupling vs weak coupling",
             json.dumps(payload["research_question_contract"]["open_ambiguities"]),
         )
+        research_note = Path(payload["research_question_contract_note_path"]).read_text(encoding="utf-8")
+        dashboard_note = Path(payload["topic_dashboard_path"]).read_text(encoding="utf-8")
+        runtime_note = Path(status_payload["runtime_protocol_note_path"]).read_text(encoding="utf-8")
+        wiki_note = Path(payload["l1_vault_wiki_source_intake_path"]).read_text(encoding="utf-8")
+        self.assertIn("regime_rows", research_note)
+        self.assertIn("strong coupling", research_note)
+        self.assertIn("weak coupling", research_note)
+        self.assertIn("regime_rows", dashboard_note)
+        self.assertIn("regime_rows", runtime_note)
+        self.assertIn("## Contradictions", wiki_note)
+        self.assertIn("strong coupling", wiki_note)
+        self.assertIn("weak coupling", wiki_note)
         self.assertTrue(
             any(
                 "Method-specificity limits still apply" in item
@@ -3638,6 +3769,126 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("## Human interaction posture", session_note)
         self.assertIn("waiting on clarification", session_note)
         self.assertIn("## Autonomous continuation", session_note)
+
+    def test_session_start_injects_theory_context_once_per_session_ttl_window(self) -> None:
+        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        fragment_path = runtime_root / "context_fragments" / "theory-context-notation.md"
+        fragment_path.parent.mkdir(parents=True, exist_ok=True)
+        fragment_path.write_text("# Theory notation context\n", encoding="utf-8")
+        session_state_path = runtime_root / "theory_context_injection.session.json"
+        runtime_protocol_path = runtime_root / "runtime_protocol.generated.json"
+        runtime_protocol_note_path = runtime_root / "runtime_protocol.generated.md"
+        runtime_protocol_path.write_text(
+            json.dumps(
+                {
+                    "human_interaction_posture": {
+                        "overall_status": "steady",
+                        "requires_human_input_now": False,
+                        "steering_status": "none",
+                        "checkpoint_status": "answered",
+                        "approval_status": "not_requested",
+                        "summary": "No active human checkpoint is currently blocking the bounded loop.",
+                        "next_action": "Continue the bounded theorem-facing route.",
+                    },
+                    "autonomy_posture": {
+                        "mode": "continuous_bounded_loop",
+                        "runtime_mode": "verify",
+                        "active_submode": None,
+                        "can_continue_without_human": True,
+                        "summary": "Continue the theorem-facing route.",
+                        "stop_conditions": ["human checkpoint becomes active"],
+                        "requested_max_auto_steps": 4,
+                        "applied_max_auto_steps": 4,
+                        "budget_reason": "",
+                    },
+                    "theory_context_injection": {
+                        "status": "active",
+                        "session_ttl_seconds": 3600,
+                        "session_state_path": "runtime/topics/demo-topic/theory_context_injection.session.json",
+                        "active_target_paths": ["runtime/topics/demo-topic/statement_compilation.active.md"],
+                        "fragments": [
+                            {
+                                "fragment_id": "theory-context:notation:demo-topic",
+                                "kind": "notation_bindings",
+                                "summary": "Notation bindings for the bounded theorem packet: H = Hamiltonian.",
+                                "path": "runtime/topics/demo-topic/context_fragments/theory-context-notation.md",
+                                "source_paths": [
+                                    "validation/topics/demo-topic/runs/run-001/theory-packets/candidate-demo/notation_table.json"
+                                ],
+                                "target_paths": ["runtime/topics/demo-topic/statement_compilation.active.md"],
+                            }
+                        ],
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        runtime_protocol_note_path.write_text("# Runtime protocol\n", encoding="utf-8")
+
+        loop_payload = {
+            "topic_slug": "demo-topic",
+            "runtime_protocol": {
+                "runtime_protocol_path": str(runtime_protocol_path),
+                "runtime_protocol_note_path": str(runtime_protocol_note_path),
+            },
+            "loop_state": {
+                "entry_conformance": "pass",
+                "exit_conformance": "pass",
+                "capability_status": "ready",
+                "trust_status": "pass",
+            },
+            "steering_artifacts": {},
+            "bootstrap": {"topic_state": {"pointers": {}}},
+            "current_topic_memory": {},
+        }
+        routing = {
+            "route": "explicit_topic_slug",
+            "reason": "Caller supplied an explicit topic slug.",
+            "topic_slug": "demo-topic",
+            "topic": None,
+        }
+
+        first = self.service._materialize_session_start_contract(
+            task="Continue the bounded theorem-facing route.",
+            routing=routing,
+            loop_payload=loop_payload,
+            updated_by="aitp-session-start",
+        )
+        first_paths = [row["path"] for row in first["must_read_now"]]
+        self.assertIn("runtime/topics/demo-topic/context_fragments/theory-context-notation.md", first_paths)
+        self.assertEqual(first["theory_context_injection"]["fragments"][0]["delivery_status"], "inject_now")
+        self.assertTrue(session_state_path.exists())
+
+        second = self.service._materialize_session_start_contract(
+            task="Continue the bounded theorem-facing route.",
+            routing=routing,
+            loop_payload=loop_payload,
+            updated_by="aitp-session-start",
+        )
+        second_paths = [row["path"] for row in second["must_read_now"]]
+        self.assertNotIn("runtime/topics/demo-topic/context_fragments/theory-context-notation.md", second_paths)
+        self.assertEqual(
+            second["theory_context_injection"]["fragments"][0]["delivery_status"],
+            "suppressed_recently_injected",
+        )
+
+        session_state = json.loads(session_state_path.read_text(encoding="utf-8"))
+        session_state["fragments"]["theory-context:notation:demo-topic"]["dedup_until"] = "2000-01-01T00:00:00+00:00"
+        session_state_path.write_text(json.dumps(session_state, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+
+        third = self.service._materialize_session_start_contract(
+            task="Continue the bounded theorem-facing route.",
+            routing=routing,
+            loop_payload=loop_payload,
+            updated_by="aitp-session-start",
+        )
+        third_paths = [row["path"] for row in third["must_read_now"]]
+        self.assertIn("runtime/topics/demo-topic/context_fragments/theory-context-notation.md", third_paths)
+        self.assertEqual(third["theory_context_injection"]["fragments"][0]["delivery_status"], "inject_now")
 
     def test_answer_operator_checkpoint_updates_ledger_and_operator_console(self) -> None:
         runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
@@ -4187,6 +4438,60 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn(
             payload["sections"]["runtime"]["validation_review_bundle.active.json"]["status"],
             {"present", "missing"},
+        )
+
+    def test_capability_audit_reports_protocol_manifest_drift(self) -> None:
+        runtime_root = self._write_runtime_state()
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "task_type": "open_exploration",
+                    "latest_run_id": "2026-03-13-demo",
+                    "resume_stage": "L4",
+                    "last_materialized_stage": "L4",
+                    "research_mode": "formal_derivation",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        self.service.scaffold_operation(
+            topic_slug="demo-topic",
+            run_id="2026-03-13-demo",
+            title="Formal verification baseline",
+            kind="formal",
+        )
+        self.service.update_operation(
+            topic_slug="demo-topic",
+            run_id="2026-03-13-demo",
+            operation="Formal verification baseline",
+            baseline_status="passed",
+        )
+        self.service.audit_operation_trust(
+            topic_slug="demo-topic",
+            run_id="2026-03-13-demo",
+        )
+        shell_surfaces = self.service.ensure_topic_shell_surfaces(topic_slug="demo-topic", updated_by="aitp-cli")
+        Path(shell_surfaces["validation_contract_note_path"]).unlink()
+        shell_surfaces["research_question_contract"]["template_mode"] = "formal_theory"
+        shell_surfaces["research_question_contract"]["research_mode"] = "formal_derivation"
+        shell_surfaces["validation_contract"]["validation_mode"] = "formal"
+
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            payload = self.service.capability_audit(topic_slug="demo-topic")
+
+        self.assertEqual(payload["overall_status"], "drift_detected")
+        self.assertEqual(payload["sections"]["capabilities"]["protocol_manifest"]["status"], "fail")
+        self.assertIn(
+            "validation_contract.active.md",
+            payload["sections"]["capabilities"]["protocol_manifest"]["detail"],
+        )
+        self.assertTrue(payload["sections"]["capabilities"]["protocol_manifest"]["path"].endswith("protocol_manifest.active.json"))
+        self.assertTrue(
+            (self.kernel_root / payload["sections"]["capabilities"]["protocol_manifest"]["path"]).exists()
         )
 
     def test_paired_backend_audit_reports_theoretical_pair(self) -> None:
@@ -5673,6 +5978,20 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["auto_actions"]["executed"][0]["status"], "completed")
         self.assertTrue(Path(payload["runtime_protocol"]["runtime_protocol_path"]).exists())
         self.assertTrue(Path(payload["runtime_protocol"]["runtime_protocol_note_path"]).exists())
+
+    def test_run_topic_loop_carries_active_loop_detection_into_loop_state(self) -> None:
+        service = _LoopDetectionStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)
+        payload = service.run_topic_loop(
+            topic_slug="demo-topic",
+            human_request="continue the same bounded proof review",
+            max_auto_steps=1,
+        )
+
+        loop_state = json.loads(Path(payload["loop_state_path"]).read_text(encoding="utf-8"))
+        self.assertIn("loop_detection", loop_state)
+        self.assertEqual(loop_state["loop_detection"]["status"], "active")
+        self.assertEqual(loop_state["loop_detection"]["retry_count"], 3)
+        self.assertTrue(loop_state["loop_detection"]["note_path"].endswith("loop_detection.md"))
 
     def test_latest_topic_slug_uses_runtime_topic_index(self) -> None:
         topic_index_path = self.kernel_root / "runtime" / "topic_index.jsonl"
@@ -7920,10 +8239,10 @@ class AITPServiceTests(unittest.TestCase):
                     "notes": "Matches the known free limit from the source.",
                 },
                 {
-                    "kind": "dimensional_consistency",
-                    "label": "gap-scaling",
+                    "kind": "source_cross_reference",
+                    "label": "intro-vs-appendix",
                     "status": "passed",
-                    "notes": "Units remain dimensionless after rescaling.",
+                    "notes": "Cross-referenced source sections agree on the bounded limit.",
                 },
             ],
             source_anchors=["paper:demo-source#sec:intro"],
@@ -7941,6 +8260,20 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(review_payload["reading_depth"], "targeted")
         self.assertEqual(review_payload["source_anchors"], ["paper:demo-source#sec:intro"])
         self.assertEqual(review_payload["checks"][0]["kind"], "limiting_case")
+        self.assertEqual(
+            review_payload["checks"][0]["source_anchors"],
+            ["paper:demo-source#sec:intro"],
+        )
+        self.assertEqual(
+            review_payload["checks"][0]["assumption_refs"],
+            ["assumption:weak-coupling-regime"],
+        )
+        self.assertEqual(
+            review_payload["checks"][0]["regime_note"],
+            "Bounded to the weak-coupling regime recorded in the source.",
+        )
+        self.assertEqual(review_payload["checks"][0]["reading_depth"], "targeted")
+        self.assertEqual(review_payload["checks"][1]["kind"], "source_cross_reference")
 
         candidate_rows = [
             json.loads(line)
@@ -8041,6 +8374,12 @@ class AITPServiceTests(unittest.TestCase):
                     "label": "weak-coupling",
                     "status": "passed",
                     "notes": "Matches the source-backed limit.",
+                },
+                {
+                    "kind": "source_cross_reference",
+                    "label": "intro-vs-appendix",
+                    "status": "passed",
+                    "notes": "Cross-referenced source sections agree on the bounded limit.",
                 }
             ],
             source_anchors=["paper:demo-source#sec:intro"],
@@ -8061,13 +8400,43 @@ class AITPServiceTests(unittest.TestCase):
             self.kernel_root / "runtime" / "topics" / "demo-topic" / "validation_review_bundle.active.md"
         )
         review_bundle = json.loads(review_bundle_path.read_text(encoding="utf-8"))
+        status_payload = self.service.topic_status(topic_slug="demo-topic", updated_by="test")
         self.assertEqual(verification_payload["validation_contract"]["validation_mode"], "analytical")
+        self.assertTrue(
+            any(
+                "source-cross-reference" in item
+                for item in verification_payload["validation_contract"]["required_checks"]
+            )
+        )
         self.assertEqual(review_bundle["validation_mode"], "analytical")
         self.assertEqual(review_bundle["primary_review_kind"], "analytical_review")
+        self.assertEqual(review_bundle["analytical_cross_check_surface"]["status"], "ready")
+        self.assertEqual(
+            review_bundle["analytical_cross_check_surface"]["check_rows"][0]["kind"],
+            "limiting_case",
+        )
+        self.assertEqual(
+            review_bundle["analytical_cross_check_surface"]["check_rows"][1]["kind"],
+            "source_cross_reference",
+        )
+        self.assertEqual(
+            review_bundle["analytical_cross_check_surface"]["check_rows"][0]["source_anchors"],
+            ["paper:demo-source#sec:intro"],
+        )
+        self.assertEqual(
+            status_payload["validation_review_bundle"]["analytical_cross_check_surface"]["check_rows"][1]["kind"],
+            "source_cross_reference",
+        )
         artifact_kinds = {row["artifact_kind"] for row in review_bundle["specialist_artifacts"]}
         self.assertIn("analytical_review", artifact_kinds)
         self.assertIn("coverage_ledger", artifact_kinds)
-        self.assertIn("analytical_review", review_note_path.read_text(encoding="utf-8"))
+        review_note = review_note_path.read_text(encoding="utf-8")
+        runtime_note = Path(status_payload["runtime_protocol_note_path"]).read_text(encoding="utf-8")
+        self.assertIn("analytical_review", review_note)
+        self.assertIn("## Analytical cross-check surface", review_note)
+        self.assertIn("source_cross_reference", review_note)
+        self.assertIn("## Analytical cross-check surface", runtime_note)
+        self.assertIn("source_cross_reference", runtime_note)
 
     def test_render_validation_review_bundle_markdown_lists_entrypoints_and_artifacts(self) -> None:
         markdown = self.service._render_validation_review_bundle_markdown(
@@ -9705,3 +10074,37 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("mcpServers", claude_mcp_payload)
         self.assertIn("aitp", claude_mcp_payload["mcpServers"])
         self.assertFalse((claude_target / ".claude" / "commands").exists())
+
+    def test_install_agent_writes_review_profile_mcp_entries(self) -> None:
+        opencode_target = self.root / "opencode-review-workspace"
+        opencode_result = self.service.install_agent(
+            agent="opencode",
+            scope="user",
+            target_root=str(opencode_target),
+            mcp_profile="review",
+        )
+
+        opencode_config_path = opencode_target / ".opencode" / "opencode.json"
+        opencode_payload = json.loads(opencode_config_path.read_text(encoding="utf-8"))
+        self.assertIn("aitp-review", opencode_payload["mcp"])
+        self.assertNotIn("aitp", opencode_payload["mcp"])
+        self.assertEqual(opencode_payload["mcp"]["aitp-review"]["environment"]["AITP_MCP_PROFILE"], "review")
+        self.assertIn("AITP_MCP_SETUP.md", {Path(item["path"]).name for item in opencode_result["installed"]})
+        review_setup_text = (
+            opencode_target / ".opencode" / "skills" / "aitp-runtime" / "AITP_MCP_SETUP.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("`aitp-review`", review_setup_text)
+
+        claude_target = self.root / "claude-review-workspace"
+        self.service.install_agent(
+            agent="claude-code",
+            scope="user",
+            target_root=str(claude_target),
+            mcp_profile="review",
+        )
+
+        claude_mcp_config_path = claude_target / ".claude.json"
+        claude_payload = json.loads(claude_mcp_config_path.read_text(encoding="utf-8"))
+        self.assertIn("aitp-review", claude_payload["mcpServers"])
+        self.assertNotIn("aitp", claude_payload["mcpServers"])
+        self.assertEqual(claude_payload["mcpServers"]["aitp-review"]["env"]["AITP_MCP_PROFILE"], "review")

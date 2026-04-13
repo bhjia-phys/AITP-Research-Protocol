@@ -67,6 +67,8 @@ The previously scoped GSD mainline is implemented through:
 - `v1.88`
 - `v1.89`
 - `v1.90`
+- `v1.91`
+- `v1.92`
 
 That closes the current bounded chain through the first operator-visible
 hypothesis route-transition-authority surface, but
@@ -74,11 +76,76 @@ it still does **not** mean the broader AITP architecture is finished.
 
 ## Current Focus
 
-- Active milestone: `v1.91` `Real Topic L0 To L2 End-To-End Validation`
-- Latest closed milestone: `v1.90` `Hypothesis Route Transition Authority Surface`
-- Next boundary: execute Phase `165`
+- Active milestone: none
+- Latest closed milestone: `v1.94` `L4 Analytical Cross-Check Surface`
+- Next boundary: define the next bounded milestone rather than reopen the now
+  closed analytical cross-check slice casually
 
-## Current Milestone: v1.91 Real Topic L0 To L2 End-To-End Validation
+## Latest Closed Milestone: v1.94 L4 Analytical Cross-Check Surface
+
+**Goal:** Close the broader post-`v1.47` analytical-validation remainder by
+making bounded analytical checks explicit, durable, and visible on the runtime
+read path.
+
+**Target features:**
+- analytical check rows for limiting-case, dimensional, symmetry,
+  self-consistency, and source-cross-reference validation
+- richer analytical review context including source anchors and regime or
+  assumption basis
+- analytical cross-check parity across runtime-facing read surfaces
+- one bounded analytical proof lane
+
+**Key context:**
+- `v1.47` already shipped analytical review as a first-class production mode
+- `v1.93` made contradiction visibility explicit, which naturally raises the bar
+  for what analytical validation should surface next
+- this milestone stays focused on bounded analytical cross-check visibility, not
+  on symbolic algebra or automatic route mutation
+
+## Previous Closed Milestone: v1.93 L1 Contradiction Adjudication Surface
+
+**Goal:** Close the broader post-`v1.70` contradiction-adjudication remainder
+by making incompatible source claims explicit inside `L1` intake and exposing
+that contradiction surface on the runtime read path.
+
+**Delivered features:**
+- richer contradiction rows with bounded comparison basis and side-specific
+  summaries
+- contradiction parity across `status`, `runtime_protocol`, dashboard, and `L1`
+  vault source-intake
+- one dedicated bounded contradiction-aware proof lane
+
+**Explicitly deferred from this milestone:**
+- full scientific adjudication of which source is correct
+- automatic queue-level contradiction rerouting
+- broader analytical validation beyond contradiction visibility
+
+## Previous Closed Milestone: v1.92 Public Front Door Source Handoff
+
+**Goal:** Close the next post-`v1.91` usability gap by turning the honest
+public-front-door return to `L0` into one concrete source-acquisition handoff
+and making the default arXiv registration path contentful enough to be useful
+immediately.
+
+**Delivered features:**
+- one concrete `L0` source-acquisition next step after a fresh public
+  `bootstrap`
+- matching `status`, `runtime_protocol`, and `replay-topic` source-handoff
+  surfaces
+- contentful-by-default arXiv registration with explicit `--metadata-only`
+  opt-out
+- one bounded fresh-topic proof of
+  `bootstrap -> concrete source handoff -> source registration`
+
+**Explicitly deferred from this milestone:**
+- broader `L0` discovery/provider expansion beyond the shipped arXiv-first
+  entry surfaces
+- automatic source acquisition or any fake progress when a topic still lacks
+  sources
+- broader HCI, recovery, and collaboration backlog items outside this bounded
+  milestone
+
+## Previous Closed Milestone: v1.91 Real Topic L0 To L2 End-To-End Validation
 
 **Goal:** Close the next post-`v1.90` maturity gap by proving whether the
 current AITP implementation is genuinely useful on a real topic from an
@@ -93,7 +160,8 @@ initial idea through one honest bounded research outcome.
 
 Current phase status inside `v1.91`:
 
-- Phase `165` is now planned and ready for execution
+- Phases `165` through `165.6` are now implemented, audited, and ready for
+  archive
 
 **Explicitly deferred from this milestone:**
 - multi-user feedback collection beyond the first primary operator run
@@ -101,8 +169,10 @@ Current phase status inside `v1.91`:
   real-topic run
 - whole-topic statement-compilation or formalization claims before the real
   run says they are needed
+- more concrete `L0` source-acquisition guidance after public bootstrap
+- broader proof-engineering memory distillation beyond the first Jones seed
 
-## Latest Closed Milestone: v1.90 Hypothesis Route Transition Authority Surface
+## Previous Closed Milestone: v1.90 Hypothesis Route Transition Authority Surface
 
 **Goal:** Close the next post-`v1.89` research-control gap by turning
 transition commitment into one explicit authority surface instead of leaving
@@ -590,6 +660,7 @@ already-shipped surfaces.
 - `.planning/milestones/v1.88-MILESTONE-AUDIT.md`
 - `.planning/milestones/v1.89-MILESTONE-AUDIT.md`
 - `.planning/milestones/v1.90-MILESTONE-AUDIT.md`
+- `.planning/milestones/v1.91-MILESTONE-AUDIT.md`
 
 ## Latest Integrated Regression Evidence
 
@@ -732,13 +803,27 @@ already-shipped surfaces.
   - `python -m unittest discover -s research/knowledge-hub/tests -v`
   - result: `367 tests passed`
 
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition:**
+1. move newly validated scope into milestone history
+2. record fresh decisions or constraints that change later planning
+3. surface any new deferred scope explicitly instead of hiding it in chat
+
+**After each milestone:**
+1. promote the next bounded milestone into `Current Milestone`
+2. refresh active focus and latest-closed context
+3. keep the maturity ladder and honesty boundary aligned with real shipped state
+
 ## Immediate Reality Check
 
 This does **not** mean AITP is finished.
 
-It means `v1.91` is now the active real-topic end-to-end validation milestone
-and the next step is Phase `165`, not inventing another local protocol surface
-before the current implementation is tested on a real idea.
+It means `v1.91` is now archived on a green baseline and the next step is
+choosing the next bounded milestone rather than reopening its already-shipped
+closure chain casually.
 
 ---
-*Last updated: 2026-04-12 after closing v1.90 and opening v1.91*
+*Last updated: 2026-04-13 after closing milestone v1.94*

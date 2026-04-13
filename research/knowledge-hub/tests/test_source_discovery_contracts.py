@@ -5,6 +5,8 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
+from unittest import mock
 
 
 def _load_module(module_name: str, relative_path: str):
@@ -38,6 +40,186 @@ class SourceDiscoveryContractTests(unittest.TestCase):
             "build_concept_graph_module",
             "source-layer/scripts/build_concept_graph.py",
         )
+
+    def _metadata_override(self) -> dict[str, object]:
+        return {
+            "arxiv_id": "2401.00001v2",
+            "title": "Topological Order and Anyon Condensation",
+            "summary": "A direct match for topological order and anyon condensation discovery.",
+            "published": "2024-01-03T00:00:00Z",
+            "updated": "2024-01-05T00:00:00Z",
+            "authors": ["Primary Author", "Secondary Author"],
+            "identifier": "https://arxiv.org/abs/2401.00001v2",
+            "abs_url": "https://arxiv.org/abs/2401.00001v2",
+            "pdf_url": "https://arxiv.org/pdf/2401.00001.pdf",
+            "source_url": "https://example.invalid/2401.00001v2.tar",
+        }
+
+    def _discovery_candidate(self) -> dict[str, object]:
+        return {
+            "provider": "search_results_json",
+            "provider_position": 0,
+            "arxiv_id": "2401.00001v2",
+            "title": "Topological Order and Anyon Condensation",
+            "summary": "A direct match for topological order and anyon condensation discovery.",
+            "published": "2024-01-03T00:00:00Z",
+            "updated": "2024-01-04T00:00:00Z",
+            "authors": ["Primary Author", "Secondary Author"],
+            "identifier": "https://arxiv.org/abs/2401.00001v2",
+            "abs_url": "https://arxiv.org/abs/2401.00001v2",
+            "pdf_url": "https://arxiv.org/pdf/2401.00001.pdf",
+            "source_url": "https://example.invalid/2401.00001v2.tar",
+            "provider_score": 0.91,
+            "raw": {},
+        }
+
+    def test_register_arxiv_source_defaults_to_contentful_acquisition(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            knowledge_root = Path(tmpdir) / "kernel"
+            with mock.patch.object(self.register_module, "fetch_url", side_effect=OSError("offline fixture")):
+                registration = self.register_module.register_arxiv_source(
+                    knowledge_root=knowledge_root,
+                    topic_slug="demo-topic",
+                    arxiv_id="2401.00001v2",
+                    registered_by="unit-test",
+                    metadata_override=self._metadata_override(),
+                    skip_enrichment=True,
+                    skip_graph_build=True,
+                )
+
+            self.assertEqual(registration["download_status"], "failed")
+            self.assertEqual(registration["extraction_status"], "skipped")
+            snapshot_text = registration["layer0_snapshot"].read_text(encoding="utf-8")
+            self.assertIn("Source bundle download: failed", snapshot_text)
+
+    def test_register_arxiv_source_cli_defaults_to_download_with_metadata_only_opt_out(self) -> None:
+        parser = self.register_module.build_parser()
+
+        default_args = parser.parse_args(
+            ["--topic-slug", "demo-topic", "--arxiv-id", "2401.00001v2"]
+        )
+        self.assertTrue(default_args.download_source)
+
+        metadata_only_args = parser.parse_args(
+            [
+                "--topic-slug",
+                "demo-topic",
+                "--arxiv-id",
+                "2401.00001v2",
+                "--metadata-only",
+            ]
+        )
+        self.assertFalse(metadata_only_args.download_source)
+
+        compatibility_args = parser.parse_args(
+            [
+                "--topic-slug",
+                "demo-topic",
+                "--arxiv-id",
+                "2401.00001v2",
+                "--download-source",
+            ]
+        )
+        self.assertTrue(compatibility_args.download_source)
+
+    def test_discovery_bridge_defaults_to_contentful_forwarding(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            knowledge_root = Path(tmpdir) / "kernel"
+            captured: dict[str, object] = {}
+
+            def fake_register_arxiv_source(**kwargs):
+                captured.update(kwargs)
+                source_root = (
+                    kwargs["knowledge_root"]
+                    / "source-layer"
+                    / "topics"
+                    / kwargs["topic_slug"]
+                    / "sources"
+                    / "paper-topological-order-and-anyon-condensation-2401-00001"
+                )
+                source_root.mkdir(parents=True, exist_ok=True)
+                source_json = source_root / "source.json"
+                source_json.write_text("{}\n", encoding="utf-8")
+                snapshot = source_root / "snapshot.md"
+                snapshot.write_text("# snapshot\n", encoding="utf-8")
+                return {
+                    "layer0_source_json": source_json,
+                    "layer0_snapshot": snapshot,
+                    "intake_projection_root": None,
+                    "download_status": "downloaded",
+                    "extraction_status": "extracted",
+                    "download_error": "",
+                    "enrichment_status": "skipped",
+                    "enrichment_receipt_path": None,
+                    "enrichment_error": "",
+                    "graph_build_status": "skipped",
+                    "concept_graph_path": None,
+                    "concept_graph_relative_path": "",
+                    "graph_receipt_path": None,
+                    "graph_error": "",
+                }
+
+            with (
+                mock.patch.object(
+                    self.module,
+                    "execute_provider",
+                    return_value=(
+                        {"provider": "search_results_json", "result_count": 1},
+                        [self._discovery_candidate()],
+                    ),
+                ),
+                mock.patch.object(
+                    self.module,
+                    "load_register_module",
+                    return_value=SimpleNamespace(register_arxiv_source=fake_register_arxiv_source),
+                ),
+            ):
+                self.module.discover_and_register(
+                    knowledge_root=knowledge_root,
+                    topic_slug="demo-topic",
+                    query="topological order anyon condensation",
+                    provider_chain=["search_results_json"],
+                    search_results_json=None,
+                    max_results=5,
+                    deepxiv_bin="deepxiv",
+                    preferred_arxiv_id="",
+                    select_index=0,
+                    registered_by="unit-test",
+                    force=False,
+                    skip_intake_projection=True,
+                    skip_enrichment=True,
+                    skip_graph_build=True,
+                )
+
+            self.assertTrue(captured["download_source"])
+
+    def test_discovery_bridge_cli_defaults_to_download_with_metadata_only_opt_out(self) -> None:
+        parser = self.module.build_parser()
+
+        default_args = parser.parse_args(["--topic-slug", "demo-topic", "--query", "anyon condensation"])
+        self.assertTrue(default_args.download_source)
+
+        metadata_only_args = parser.parse_args(
+            [
+                "--topic-slug",
+                "demo-topic",
+                "--query",
+                "anyon condensation",
+                "--metadata-only",
+            ]
+        )
+        self.assertFalse(metadata_only_args.download_source)
+
+        compatibility_args = parser.parse_args(
+            [
+                "--topic-slug",
+                "demo-topic",
+                "--query",
+                "anyon condensation",
+                "--download-source",
+            ]
+        )
+        self.assertTrue(compatibility_args.download_source)
 
     def test_discovery_bridge_selects_and_registers_offline_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -117,6 +299,7 @@ class SourceDiscoveryContractTests(unittest.TestCase):
         runtime_readme = (self.kernel_root / "runtime" / "README.md").read_text(encoding="utf-8")
         runbook = (self.kernel_root / "runtime" / "AITP_TEST_RUNBOOK.md").read_text(encoding="utf-8")
         l0_doc = (self.kernel_root / "L0_SOURCE_LAYER.md").read_text(encoding="utf-8")
+        intake_runbook = (self.kernel_root / "intake" / "ARXIV_FIRST_SOURCE_INTAKE.md").read_text(encoding="utf-8")
         source_layer_readme = (self.kernel_root / "source-layer" / "README.md").read_text(encoding="utf-8")
         notice = (self.repo_root / "NOTICE").read_text(encoding="utf-8")
 
@@ -134,6 +317,8 @@ class SourceDiscoveryContractTests(unittest.TestCase):
         self.assertIn("discover_and_register.py", l0_doc)
         self.assertIn("enrich_with_deepxiv.py", l0_doc)
         self.assertIn("build_concept_graph.py", l0_doc)
+        self.assertIn("--metadata-only", intake_runbook)
+        self.assertNotIn("--download-source", intake_runbook)
         self.assertIn("discover_and_register.py", source_layer_readme)
         self.assertIn("enrich_with_deepxiv.py", source_layer_readme)
         self.assertIn("build_concept_graph.py", source_layer_readme)
