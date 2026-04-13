@@ -54,8 +54,17 @@ Typical usage:
 python3 source-layer/scripts/register_arxiv_source.py \
   --topic-slug <topic_slug> \
   --arxiv-id <arxiv_id> \
+  --registered-by codex
+```
+
+Lightweight metadata-only usage:
+
+```bash
+python3 source-layer/scripts/register_arxiv_source.py \
+  --topic-slug <topic_slug> \
+  --arxiv-id <arxiv_id> \
   --registered-by codex \
-  --download-source
+  --metadata-only
 ```
 
 The old path remains available as a compatibility wrapper:

@@ -132,6 +132,7 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIn("stuckness_status", runtime_focus)
         self.assertIn("surprise_status", runtime_focus)
         self.assertIn("judgment_summary", runtime_focus)
+        self.assertIn("l0_source_handoff", runtime_focus)
         truth_sources = payload["properties"]["truth_sources"]["properties"]
         self.assertIn("topic_state_path", truth_sources)
         self.assertIn("next_action_surface_path", truth_sources)
@@ -222,6 +223,7 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIn("scratchpad", payload["properties"])
         self.assertIn("open_gap_summary", payload["properties"])
         self.assertIn("dependency_state", payload["properties"])
+        self.assertIn("protocol_manifest", payload["properties"])
         self.assertIn("topic_completion", payload["properties"])
         self.assertIn("statement_compilation", payload["properties"])
         self.assertIn("lean_bridge", payload["properties"])
@@ -314,11 +316,29 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIn("repair_kind", route_transition_repair)
         self.assertIn("primary_repair_ref", route_transition_repair)
         self.assertIn("repair_artifact_refs", route_transition_repair)
+        validation_review_bundle = payload["properties"]["validation_review_bundle"]["properties"]
+        self.assertIn("analytical_cross_check_surface", validation_review_bundle)
+        analytical_surface = payload["$defs"]["analytical_cross_check_surface"]["properties"]
+        self.assertIn("status", analytical_surface)
+        self.assertIn("candidate_id", analytical_surface)
+        self.assertIn("check_rows", analytical_surface)
+        analytical_row = payload["$defs"]["analytical_cross_check_row"]["properties"]
+        self.assertIn("kind", analytical_row)
+        self.assertIn("source_anchors", analytical_row)
+        self.assertIn("assumption_refs", analytical_row)
+        self.assertIn("regime_note", analytical_row)
+        self.assertIn("reading_depth", analytical_row)
+        self.assertIn("notes", analytical_row)
         route_transition_escalation = payload["$defs"]["route_transition_escalation"]["properties"]
         self.assertIn("escalation_status", route_transition_escalation)
         self.assertIn("repair_status", route_transition_escalation)
         self.assertIn("repair_kind", route_transition_escalation)
         self.assertIn("primary_repair_ref", route_transition_escalation)
+        protocol_manifest = payload["$defs"]["protocol_manifest"]["properties"]
+        self.assertIn("declared_state", protocol_manifest)
+        self.assertIn("overall_status", protocol_manifest)
+        self.assertIn("missing_paths", protocol_manifest)
+        self.assertIn("state_catalog", protocol_manifest)
         self.assertIn("checkpoint_status", route_transition_escalation)
         self.assertIn("checkpoint_kind", route_transition_escalation)
         self.assertIn("checkpoint_ref", route_transition_escalation)
@@ -382,6 +402,7 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIn("stuckness_status", runtime_focus)
         self.assertIn("surprise_status", runtime_focus)
         self.assertIn("judgment_summary", runtime_focus)
+        self.assertIn("l0_source_handoff", runtime_focus)
         decision_surface = payload["properties"]["decision_surface"]["properties"]
         self.assertIn("momentum_status", decision_surface)
         self.assertIn("stuckness_status", decision_surface)
@@ -414,6 +435,14 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIn("contradiction_candidates", intake)
         self.assertIn("notation_tension_candidates", intake)
         self.assertIn("concept_graph", intake)
+        contradiction_candidate = payload["$defs"]["l1_contradiction_candidate"]["properties"]
+        self.assertIn("comparison_basis", contradiction_candidate)
+        self.assertIn("source_basis_type", contradiction_candidate)
+        self.assertIn("source_basis_summary", contradiction_candidate)
+        self.assertIn("source_evidence_excerpt", contradiction_candidate)
+        self.assertIn("against_basis_type", contradiction_candidate)
+        self.assertIn("against_basis_summary", contradiction_candidate)
+        self.assertIn("against_evidence_excerpt", contradiction_candidate)
         retrieval_profiles = self._read_json("canonical/retrieval_profiles.json")
         l3_types = set(retrieval_profiles["profiles"]["l3_candidate_formation"]["preferred_unit_types"])
         l4_types = set(retrieval_profiles["profiles"]["l4_adjudication"]["preferred_unit_types"])

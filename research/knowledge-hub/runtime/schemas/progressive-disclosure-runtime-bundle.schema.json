@@ -27,6 +27,9 @@
     "topic_synopsis",
     "source_intelligence",
     "graph_analysis",
+    "theory_context_injection",
+    "loop_detection",
+    "protocol_manifest",
     "pending_decisions",
     "active_research_contract",
     "idea_packet",
@@ -751,6 +754,56 @@
             "judgment_summary": {
               "type": "string",
               "minLength": 1
+            },
+            "l0_source_handoff": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "status",
+                "summary",
+                "primary_path",
+                "primary_when",
+                "alternate_entries"
+              ],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "summary": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "primary_path": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "primary_when": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "alternate_entries": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "path",
+                      "when"
+                    ],
+                    "properties": {
+                      "path": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "when": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         },
@@ -833,6 +886,15 @@
     },
     "graph_analysis": {
       "$ref": "#/$defs/graph_analysis"
+    },
+    "theory_context_injection": {
+      "$ref": "#/$defs/theory_context_injection"
+    },
+    "loop_detection": {
+      "$ref": "#/$defs/loop_detection"
+    },
+    "protocol_manifest": {
+      "$ref": "#/$defs/protocol_manifest"
     },
     "pending_decisions": {
       "type": "object",
@@ -1426,6 +1488,9 @@
               "status": {"type": "string", "minLength": 1}
             }
           }
+        },
+        "analytical_cross_check_surface": {
+          "$ref": "#/$defs/analytical_cross_check_surface"
         },
         "summary": {
           "type": "string",
@@ -2935,6 +3000,72 @@
         }
       }
     },
+    "analytical_cross_check_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "label",
+        "status",
+        "notes",
+        "source_anchors",
+        "assumption_refs",
+        "regime_note",
+        "reading_depth"
+      ],
+      "properties": {
+        "kind": {"type": "string", "minLength": 1},
+        "label": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "minLength": 1},
+        "notes": {"type": "string"},
+        "source_anchors": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "assumption_refs": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "regime_note": {"type": "string"},
+        "reading_depth": {"type": "string", "minLength": 1}
+      }
+    },
+    "analytical_cross_check_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "candidate_id",
+        "candidate_type",
+        "path",
+        "summary",
+        "check_count",
+        "passed_check_count",
+        "failed_check_count",
+        "blocked_check_count",
+        "blocking_reasons",
+        "check_rows"
+      ],
+      "properties": {
+        "status": {"type": "string", "minLength": 1},
+        "candidate_id": {"type": "string", "minLength": 1},
+        "candidate_type": {"type": "string"},
+        "path": {"type": "string", "minLength": 1},
+        "summary": {"type": "string"},
+        "check_count": {"type": "integer", "minimum": 0},
+        "passed_check_count": {"type": "integer", "minimum": 0},
+        "failed_check_count": {"type": "integer", "minimum": 0},
+        "blocked_check_count": {"type": "integer", "minimum": 0},
+        "blocking_reasons": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "check_rows": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/analytical_cross_check_row"}
+        }
+      }
+    },
     "lean_bridge": {
       "type": "object",
       "additionalProperties": false,
@@ -3552,6 +3683,72 @@
     }
   },
   "$defs": {
+    "analytical_cross_check_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "label",
+        "status",
+        "notes",
+        "source_anchors",
+        "assumption_refs",
+        "regime_note",
+        "reading_depth"
+      ],
+      "properties": {
+        "kind": {"type": "string", "minLength": 1},
+        "label": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "minLength": 1},
+        "notes": {"type": "string"},
+        "source_anchors": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "assumption_refs": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "regime_note": {"type": "string"},
+        "reading_depth": {"type": "string", "minLength": 1}
+      }
+    },
+    "analytical_cross_check_surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "candidate_id",
+        "candidate_type",
+        "path",
+        "summary",
+        "check_count",
+        "passed_check_count",
+        "failed_check_count",
+        "blocked_check_count",
+        "blocking_reasons",
+        "check_rows"
+      ],
+      "properties": {
+        "status": {"type": "string", "minLength": 1},
+        "candidate_id": {"type": "string", "minLength": 1},
+        "candidate_type": {"type": "string"},
+        "path": {"type": "string", "minLength": 1},
+        "summary": {"type": "string"},
+        "check_count": {"type": "integer", "minimum": 0},
+        "passed_check_count": {"type": "integer", "minimum": 0},
+        "failed_check_count": {"type": "integer", "minimum": 0},
+        "blocked_check_count": {"type": "integer", "minimum": 0},
+        "blocking_reasons": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "check_rows": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/analytical_cross_check_row"}
+        }
+      }
+    },
     "source_intelligence": {
       "type": "object",
       "additionalProperties": false,
@@ -3681,6 +3878,489 @@
         "history_path": {
           "type": "string",
           "minLength": 1
+        }
+      }
+    },
+    "theory_context_injection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "session_ttl_seconds",
+        "session_state_path",
+        "active_target_paths",
+        "fragments"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "inactive"
+          ]
+        },
+        "session_ttl_seconds": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "session_state_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_by": {
+          "type": "string"
+        },
+        "active_target_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "injected_now_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "suppressed_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "fragments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/theory_context_fragment"
+          }
+        }
+      }
+    },
+    "theory_context_fragment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fragment_id",
+        "kind",
+        "summary",
+        "path",
+        "source_paths",
+        "target_paths"
+      ],
+      "properties": {
+        "fragment_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "notation_bindings",
+            "prerequisite_closure",
+            "relevant_l2_units"
+          ]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "json_path": {
+          "type": "string"
+        },
+        "source_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "target_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "delivery_status": {
+          "type": "string",
+          "enum": [
+            "inject_now",
+            "suppressed_recently_injected"
+          ]
+        },
+        "dedup_until": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "binding_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "prerequisite_status": {
+          "type": "string"
+        },
+        "prerequisite_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unit_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "loop_detection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "topic_slug",
+        "status",
+        "retry_threshold",
+        "retry_count",
+        "candidate_id",
+        "candidate_type",
+        "source_operation_kind",
+        "blocker_tags",
+        "suggestion_kind",
+        "strategy_change_suggestion",
+        "recommended_actions",
+        "evidence_event_ids",
+        "path",
+        "note_path",
+        "updated_at",
+        "updated_by",
+        "summary"
+      ],
+      "properties": {
+        "topic_slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "clear",
+            "active"
+          ]
+        },
+        "retry_threshold": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "retry_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "candidate_id": {
+          "type": "string"
+        },
+        "candidate_type": {
+          "type": "string"
+        },
+        "source_operation_kind": {
+          "type": "string"
+        },
+        "blocker_tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "suggestion_kind": {
+          "type": "string",
+          "enum": [
+            "none",
+            "source_recovery",
+            "prerequisite_closure",
+            "change_strategy"
+          ]
+        },
+        "strategy_change_suggestion": {
+          "type": "string"
+        },
+        "recommended_actions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "evidence_event_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "protocol_manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_version",
+        "topic_slug",
+        "declared_state",
+        "declared_state_reason",
+        "overall_status",
+        "missing_artifact_count",
+        "missing_artifact_ids",
+        "missing_paths",
+        "active_requirements",
+        "state_catalog",
+        "state_inputs",
+        "summary",
+        "path",
+        "note_path",
+        "updated_at",
+        "updated_by"
+      ],
+      "properties": {
+        "manifest_version": {
+          "type": "integer",
+          "const": 1
+        },
+        "topic_slug": {
+          "type": "string",
+          "minLength": 1
+        },
+        "declared_state": {
+          "type": "string",
+          "enum": [
+            "bootstrapped",
+            "exploring",
+            "verifying",
+            "promoting",
+            "completed"
+          ]
+        },
+        "declared_state_reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "overall_status": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail"
+          ]
+        },
+        "missing_artifact_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missing_artifact_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "missing_paths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "active_requirements": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/protocol_manifest_requirement"
+          }
+        },
+        "state_catalog": {
+          "$ref": "#/$defs/protocol_manifest_state_catalog"
+        },
+        "state_inputs": {
+          "$ref": "#/$defs/protocol_manifest_state_inputs"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "note_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_by": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "protocol_manifest_requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifact_id",
+        "label",
+        "path",
+        "status",
+        "reason",
+        "required_in_states"
+      ],
+      "properties": {
+        "artifact_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "present",
+            "missing"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required_in_states": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "bootstrapped",
+              "exploring",
+              "verifying",
+              "promoting",
+              "completed"
+            ]
+          }
+        }
+      }
+    },
+    "protocol_manifest_state_catalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "bootstrapped",
+        "exploring",
+        "verifying",
+        "promoting",
+        "completed"
+      ],
+      "properties": {
+        "bootstrapped": {
+          "$ref": "#/$defs/protocol_manifest_state"
+        },
+        "exploring": {
+          "$ref": "#/$defs/protocol_manifest_state"
+        },
+        "verifying": {
+          "$ref": "#/$defs/protocol_manifest_state"
+        },
+        "promoting": {
+          "$ref": "#/$defs/protocol_manifest_state"
+        },
+        "completed": {
+          "$ref": "#/$defs/protocol_manifest_state"
+        }
+      }
+    },
+    "protocol_manifest_state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "required_artifact_ids"
+      ],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "required_artifact_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "protocol_manifest_state_inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resume_stage",
+        "last_materialized_stage",
+        "runtime_mode",
+        "active_submode",
+        "promotion_gate_status",
+        "topic_completion_status",
+        "research_mode"
+      ],
+      "properties": {
+        "resume_stage": {
+          "type": "string"
+        },
+        "last_materialized_stage": {
+          "type": "string"
+        },
+        "runtime_mode": {
+          "type": "string"
+        },
+        "active_submode": {
+          "type": "string"
+        },
+        "promotion_gate_status": {
+          "type": "string"
+        },
+        "topic_completion_status": {
+          "type": "string"
+        },
+        "research_mode": {
+          "type": "string"
         }
       }
     },
@@ -5926,7 +6606,14 @@
         "against_source_title",
         "against_source_type",
         "against_reading_depth",
-        "detail"
+        "detail",
+        "comparison_basis",
+        "source_basis_type",
+        "source_basis_summary",
+        "source_evidence_excerpt",
+        "against_basis_type",
+        "against_basis_summary",
+        "against_evidence_excerpt"
       ],
       "properties": {
         "kind": {
@@ -5970,6 +6657,34 @@
           ]
         },
         "detail": {
+          "type": "string",
+          "minLength": 1
+        },
+        "comparison_basis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_basis_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_basis_summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_evidence_excerpt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "against_basis_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "against_basis_summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "against_evidence_excerpt": {
           "type": "string",
           "minLength": 1
         }

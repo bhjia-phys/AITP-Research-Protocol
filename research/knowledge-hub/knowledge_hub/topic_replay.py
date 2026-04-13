@@ -58,6 +58,8 @@ def build_topic_replay_bundle(kernel_root: Path, topic_slug: str) -> dict[str, A
         raise FileNotFoundError(f"Missing runtime topic root: {topic_root}")
 
     synopsis = read_json(topic_root / "topic_synopsis.json") or {}
+    runtime_focus = synopsis.get("runtime_focus") or {}
+    l0_source_handoff = runtime_focus.get("l0_source_handoff") or {}
     topic_state = read_json(topic_root / "topic_state.json") or {}
     research_question = read_json(topic_root / "research_question.contract.json") or {}
     review_bundle = read_json(topic_root / "validation_review_bundle.active.json") or {}
@@ -198,6 +200,7 @@ def build_topic_replay_bundle(kernel_root: Path, topic_slug: str) -> dict[str, A
             ((next_action.get("selected_action") or {}).get("summary")),
             ((topic_state.get("status_explainability") or {}).get("next_bounded_action") or {}).get("summary"),
         ),
+        "l0_source_handoff_summary": _first_text(l0_source_handoff.get("summary")),
         "open_gap_summary": _first_text(synopsis.get("open_gap_summary"), topic_completion.get("summary")),
         "latest_transition_reason": _first_text(((transition_history.get("latest_transition") or {}).get("reason"))),
         "latest_demotion_reason": _first_text(((transition_history.get("latest_demotion") or {}).get("reason"))),
@@ -352,6 +355,7 @@ def build_topic_replay_bundle(kernel_root: Path, topic_slug: str) -> dict[str, A
         "route_transition_authority": route_transition_authority,
         "competing_hypotheses": competing_hypotheses,
         "reading_path": reading_path,
+        "l0_source_handoff": l0_source_handoff,
         "authoritative_artifacts": authoritative_artifacts,
         "missing_artifacts": missing_artifacts,
     }
@@ -360,6 +364,7 @@ def build_topic_replay_bundle(kernel_root: Path, topic_slug: str) -> dict[str, A
 def render_topic_replay_bundle_markdown(payload: dict[str, Any]) -> str:
     overview = payload.get("overview") or {}
     current = payload.get("current_position") or {}
+    l0_source_handoff = payload.get("l0_source_handoff") or {}
     conclusions = payload.get("conclusions") or {}
     lines = [
         "# Topic Replay Bundle",
@@ -382,6 +387,7 @@ def render_topic_replay_bundle_markdown(payload: dict[str, Any]) -> str:
         f"- Latest run id: `{current.get('latest_run_id') or '(missing)'}`",
         f"- Status summary: {current.get('status_summary') or '(missing)' }",
         f"- Next action summary: {current.get('next_action_summary') or '(missing)' }",
+        f"- L0 source handoff summary: {current.get('l0_source_handoff_summary') or '(none recorded)' }",
         f"- Open gap summary: {current.get('open_gap_summary') or '(none recorded)' }",
         f"- Latest transition reason: {current.get('latest_transition_reason') or '(none recorded)' }",
         f"- Latest demotion reason: {current.get('latest_demotion_reason') or '(none recorded)' }",
@@ -432,6 +438,28 @@ def render_topic_replay_bundle_markdown(payload: dict[str, Any]) -> str:
         f"- Route-transition-authority status: `{conclusions.get('route_transition_authority_status') or '(none)'}`",
         "",
     ]
+    if l0_source_handoff:
+        lines.extend(
+            [
+                "## L0 source handoff",
+                "",
+                f"- Status: `{l0_source_handoff.get('status') or '(missing)'}`",
+                f"- Summary: {l0_source_handoff.get('summary') or '(missing)'}",
+                f"- Primary lane: `{l0_source_handoff.get('primary_path') or '(missing)'}`",
+                f"- Use when: {l0_source_handoff.get('primary_when') or '(missing)'}",
+                "",
+                "### Alternate entries",
+                "",
+            ]
+        )
+        for row in l0_source_handoff.get("alternate_entries") or ["(none)"]:
+            if isinstance(row, dict):
+                lines.append(
+                    f"- `{row.get('path') or '(missing)'}`: {row.get('when') or '(missing)'}"
+                )
+            else:
+                lines.append(f"- {row}")
+        lines.append("")
 
     for row in payload.get("competing_hypotheses") or []:
         lines.append(

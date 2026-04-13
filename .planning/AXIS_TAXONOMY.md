@@ -189,7 +189,7 @@ Some items naturally span two axes. Tag with primary axis first:
 | 999.77 | Derivation Loop Detection | A4 (execution strategy) | open |
 | 999.78 | Manifest-as-Truth | A3 (data recording) | open |
 
-### Items 999.79–999.85 (DeepXiv + Graphify integration)
+### Items 999.79–999.86 (DeepXiv + Graphify integration and post-E2E follow-up)
 
 | Item | Title | Axis | Status |
 |------|-------|------|--------|
@@ -200,6 +200,7 @@ Some items naturally span two axes. Tag with primary axis first:
 | 999.83 | Graph Analysis Tools L1→L2 | A2 (L1→L2) | open → Phase 165.5 |
 | 999.84 | Obsidian Concept Graph Export | A1 (L1) | open → Phase 165.5 |
 | 999.85 | MIT Attribution | A3 (license metadata) | open → Phase 165.5 |
+| 999.86 | Concrete L0 Source Handoff | A4 (human exp) + A2 (L0→L1) | implemented → Phase 166 |
 
 ### ROADMAP Phases
 
@@ -211,15 +212,18 @@ Some items naturally span two axes. Tag with primary axis first:
 | 165.3 | HCI Foundation | A4 (human exp) |
 | 165.4 | Agent Governance | A5 |
 | 165.5 | L0/L1 Integration: DeepXiv + Graphify | A1 (L0+L1) + A2 (L0→L1) |
+| 165.6 | Public Front Door Real-Topic Proof | A4 (human exp) + A2 (L0→L1) |
+| 166 | Public Front Door L0 Source Handoff | A4 (human exp) + A2 (L0→L1) |
+| 166.1 | Contentful Source Registration Default | A1 (L0) + A2 (L0→L1) |
 
 ## Verification: Axis Coverage
 
-Every backlog item (999.1–999.85) and every ROADMAP phase maps to at least
+Every backlog item (999.1–999.86) and every ROADMAP phase maps to at least
 one axis. No orphans. Items that span two axes are tagged with primary first.
 
 ### Open items by axis (priority order):
 
-- **A4 (human experience)**: 999.60–999.63, 999.65–999.70 (7 items) — highest priority
+- **A4 (human experience)**: 999.60–999.63, 999.65–999.70 (10 items) — highest priority
 - **A5 (agent governance)**: 999.64, 999.73–999.75 (4 items) — second priority
 - **A1 (layer-internal)**: 999.1, 999.27, 999.29, 999.40, 999.46, 999.71, 999.79, 999.80, 999.81, 999.84 (10 items)
 - **A2 (inter-layer)**: 999.30, 999.33, 999.41, 999.47, 999.82, 999.83 (6 items)

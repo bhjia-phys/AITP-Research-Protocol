@@ -360,7 +360,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--topic-slug", required=True)
     parser.add_argument("--arxiv-id", required=True)
     parser.add_argument("--registered-by", default="codex")
-    parser.add_argument("--download-source", action="store_true")
+    download_group = parser.add_mutually_exclusive_group()
+    download_group.add_argument("--download-source", dest="download_source", action="store_true")
+    download_group.add_argument("--metadata-only", dest="download_source", action="store_false")
+    parser.set_defaults(download_source=True)
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--skip-intake-projection", action="store_true")
     parser.add_argument("--skip-enrichment", action="store_true")
@@ -378,7 +381,7 @@ def register_arxiv_source(
     topic_slug: str,
     arxiv_id: str,
     registered_by: str = "codex",
-    download_source: bool = False,
+    download_source: bool = True,
     force: bool = False,
     skip_intake_projection: bool = False,
     metadata_override: dict[str, Any] | None = None,

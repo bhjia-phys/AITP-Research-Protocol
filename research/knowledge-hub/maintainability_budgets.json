@@ -10,15 +10,15 @@
   "watchlist": {
     "research/knowledge-hub/knowledge_hub/aitp_service.py": {
       "category": "critical_service",
-      "max_lines": 7400,
+      "max_lines": 7600,
       "max_longest_function_lines": 170,
-      "reason": "This file still mixes runtime truth, registry, projection, install, promotion, steering, and remaining orchestration concerns. Front-door support, agent-install support, template rendering, pure markdown rendering, the runtime-bundle/session-start boundary, the topic-shell assembly boundary, the source-distillation boundary, the topic-loop boundary, the chat-routing/session-start boundary, the capability-audit boundary, and the follow-up/closed-loop boundary have now moved out, and future milestones should keep shrinking it instead of letting it grow back."
+      "reason": "This file still mixes runtime truth, registry, projection, install, promotion, steering, and remaining orchestration concerns. Front-door support, agent-install support, template rendering, pure markdown rendering, the runtime-bundle/session-start boundary, the topic-shell assembly boundary, the source-distillation boundary, the topic-loop boundary, the chat-routing/session-start boundary, the capability-audit boundary, the follow-up/closed-loop boundary, and the new theory-metrics analysis boundary have now moved out. The small headroom increase covers the remaining façade hooks; future milestones should keep shrinking it instead of letting it grow back."
     },
     "research/knowledge-hub/knowledge_hub/runtime_bundle_support.py": {
       "category": "runtime_bundle_support",
-      "max_lines": 2300,
+      "max_lines": 2380,
       "max_longest_function_lines": 1350,
-      "reason": "This support module intentionally holds the progressive-disclosure runtime bundle and session-start materialization boundary. It is allowed to stay large temporarily, but future phases should keep splitting orchestration concerns instead of growing it further."
+      "reason": "This support module intentionally holds the progressive-disclosure runtime bundle and session-start materialization boundary. The small headroom increase covers the new theory-context injection, loop-detection, and protocol-manifest governance surfaces; future phases should keep splitting orchestration concerns instead of growing it further."
     },
     "research/knowledge-hub/knowledge_hub/topic_shell_support.py": {
       "category": "topic_shell_support",

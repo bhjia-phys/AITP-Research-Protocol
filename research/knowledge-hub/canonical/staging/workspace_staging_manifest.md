@@ -1,6 +1,6 @@
 # Workspace Staging Manifest
 
-- Generated at: `2026-04-11T19:14:59+08:00`
+- Generated at: `2026-04-13T12:09:27+08:00`
 - Source contract: `canonical/L2_STAGING_PROTOCOL.md`
 - Total entries: `12`
 
@@ -12,8 +12,8 @@
 
 ## Counts By Kind
 
+- `concept`: `1`
 - `negative_result`: `5`
-- `unknown`: `1`
 - `workflow_draft`: `6`
 
 ## Entries
@@ -29,7 +29,7 @@
 - `staging:phase138-test-contradiction-aitp-cli-e2e-beo7dvwo` topic=`global` kind=`negative_result` status=`staged` path=`canonical/staging/entries/staging--phase138-test-contradiction-aitp-cli-e2e-beo7dvwo.json`
 - `staging:phase138-test-contradiction-aitp-cli-e2e-nna0xm3v` topic=`global` kind=`negative_result` status=`staged` path=`canonical/staging/entries/staging--phase138-test-contradiction-aitp-cli-e2e-nna0xm3v.json`
 - `staging:phase138-test-contradiction-aitp-cli-e2e-yd9ud3qx` topic=`global` kind=`negative_result` status=`staged` path=`canonical/staging/entries/staging--phase138-test-contradiction-aitp-cli-e2e-yd9ud3qx.json`
-- `staging:weak-coupling-tfim-picture` topic=`` kind=`` status=`staged` path=``
+- `staging:weak-coupling-tfim-picture` topic=`` kind=`concept` status=`staged` path=`canonical/staging/entries/staging--weak-coupling-tfim-picture.json`
 
 ## Rule
 

@@ -1408,7 +1408,7 @@ class AITPCLITests(unittest.TestCase):
                 "--check",
                 "limiting_case=weak-coupling:passed:Matches the known free limit.",
                 "--check",
-                "symmetry=particle-hole:passed:Preserves the expected discrete symmetry.",
+                "source_cross_reference=intro-vs-appendix:passed:Cross-referenced source sections agree on the bounded limit.",
                 "--source-anchor",
                 "paper:demo-source#sec:intro",
                 "--assumption",
@@ -1422,6 +1422,7 @@ class AITPCLITests(unittest.TestCase):
         self.assertEqual(analytical_review_args.command, "analytical-review")
         self.assertEqual(analytical_review_args.check[0]["kind"], "limiting_case")
         self.assertEqual(analytical_review_args.check[0]["status"], "passed")
+        self.assertEqual(analytical_review_args.check[1]["kind"], "source_cross_reference")
         self.assertEqual(analytical_review_args.source_anchor[0], "paper:demo-source#sec:intro")
         self.assertEqual(analytical_review_args.reading_depth, "targeted")
 
@@ -1562,6 +1563,13 @@ class AITPCLITests(unittest.TestCase):
         args = parser.parse_args(["install-agent", "--agent", "claude-code"])
         self.assertEqual(args.command, "install-agent")
         self.assertEqual(args.agent, "claude-code")
+
+    def test_install_agent_accepts_mcp_profile(self) -> None:
+        parser = aitp_cli.build_parser()
+        args = parser.parse_args(["install-agent", "--agent", "claude-code", "--mcp-profile", "review"])
+        self.assertEqual(args.command, "install-agent")
+        self.assertEqual(args.agent, "claude-code")
+        self.assertEqual(args.mcp_profile, "review")
 
     def test_version_flag_reports_package_version(self) -> None:
         stream = io.StringIO()

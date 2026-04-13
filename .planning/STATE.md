@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.91
-milestone_name: Real Topic L0 To L2 End-To-End Validation
+milestone: v1.95
+milestone_name: L2 Promotion Pipeline Closure
 status: milestone_active
-stopped_at: "Added Phase 165.5 (L0/L1 Deep Integration: DeepXiv + Graphify) with 7 backlog items 999.79–999.85"
-last_updated: "2026-04-14T12:00:00+08:00"
+stopped_at: "Milestone v1.95 started; Phase 169 not started"
+last_updated: "2026-04-14T10:00:00+08:00"
 last_activity: 2026-04-14
 progress:
-  total_phases: 5
+  total_phases: 3
   completed_phases: 0
-  total_plans: 5
+  total_plans: 3
   completed_plans: 0
   percent: 0
 ---
@@ -18,17 +18,29 @@ progress:
 
 ## Current Position
 
-Status: milestone `v1.91` active; Phase 165.5 (L0/L1 Deep Integration) added to
-  ROADMAP with 3 plans covering DeepXiv progressive reading enrichment,
-  Graphify-adapted concept graph construction, progressive reading in L1
-  distillation, graph-based intake extension, analysis tools for L1→L2, Obsidian
-  export, and MIT attribution. Backlog items 999.79–999.85 created.
+Status: milestone `v1.95` `L2 Promotion Pipeline Closure` is active. No phases
+started yet.
+
+**Root cause context (from E2E gap diagnosis):**
+
+Two Jones E2E runs reached L4 (Lean compilation succeeded) but never landed in
+L2 because the promotion pipeline's last segment is incomplete:
+
+- `canonical-unit.schema.json` is missing `negative_result` in the `unit_type`
+  enum — validated but negative outcomes have no staging→canonical path
+- runtime proof schemas (`lean-ready-packet`, `proof-repair-plan`,
+  `statement-compilation-packet`) exist in validation/ but have no promotion
+  bridge into L2 canonical knowledge
+- `candidate_promotion_support.py`, `auto_promotion_support.py`, and
+  `promotion_gate_support.py` do not load or forward runtime schema context
+  during promotion
+
+The science is validated. The engineering pipe is broken at L4→L2.
 
 ## Immediate Next Step
 
-- current milestone: `v1.91` `Real Topic L0 To L2 End-To-End Validation`
-- next phase boundary: execute Phase `165`, then `165.1`, `165.2`, `165.3`,
-  `165.4`, `165.5`
+- active milestone: `v1.95` `L2 Promotion Pipeline Closure`
+- start with Phase `169` `L2 Canonical Schema Extension`
 
 ## Accumulated Context
 
@@ -36,7 +48,7 @@ Status: milestone `v1.91` active; Phase 165.5 (L0/L1 Deep Integration) added to
 
 **Canonical reference**: `.planning/AXIS_TAXONOMY.md` — contains axis
 definitions, intent-signal keywords, decision tree, and complete
-backlog-to-axis mapping (999.1–999.78 + all ROADMAP phases). GSD agents
+backlog-to-axis mapping (999.1–999.86 + all ROADMAP phases). GSD agents
 MUST consult this file when classifying new work.
 
 All future AITP work is organized along five axes:
@@ -58,11 +70,17 @@ cross-cutting).
 
 ### Roadmap Evolution
 
-- `v1.90` is now archived after shipping explicit hypothesis-aware route
-  transition-authority visibility
-- Phase `165` is promoted into the new active milestone `v1.91`
-- `v1.91` centers the next scope on real-topic utility validation and explicit
-  GSD issue capture instead of inventing more local protocol surface first
+- `v1.91` is now archived after proving one honest real-topic public-front-door
+  run and converting its remaining friction into routed follow-up work
+- Phase `166` is promoted into the new active milestone `v1.92`
+- `v1.92` stays narrow: concrete `L0` source handoff first, contentful arXiv
+  registration second
+- `v1.93` now promotes the broader contradiction-adjudication remainder from
+  `L1` intake maturity into one bounded milestone
+- `v1.94` now promotes the broader post-baseline analytical-validation
+  remainder into one bounded milestone
+- `v1.95` now closes the L4→L2 promotion pipeline gap discovered during Jones
+  E2E testing — the pipeline's engineering (not the science) is what failed
 - Comprehensive HCI gap analysis (2026-04-13) identified 30 issues across 6
   tiers; all captured as 999.60–999.70 in BACKLOG.md
 - wow-harness comparison (2026-04-13) identified 6 borrowable patterns; all
@@ -124,3 +142,12 @@ register_arxiv_source.py → enrich_with_deepxiv.py → build_concept_graph.py �
 ```
 Phase 165.5 covers this with 3 plans and 7 backlog items (999.79–999.85).
 Depends on Phase 165.2 (mode-aware runtime) for progressive reading integration.
+
+### Public Front Door Closure (2026-04-13)
+
+- `.planning/phases/165.6/evidence/jones-von-neumann-algebras-public-entry/`
+  now proves one real topic entered through the public front door with a fresh
+  slug
+- the bounded result was an honest return to `L0 source expansion`, not a fake
+  theorem-facing success claim
+- one remaining non-blocking HCI debt from that run is routed to `BACKLOG 999.86`

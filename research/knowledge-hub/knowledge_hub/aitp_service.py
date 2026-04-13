@@ -16,6 +16,7 @@ from urllib.parse import urlparse
 
 from .decision_point_handler import get_all_decision_points, list_pending_decision_points
 from .decision_trace_handler import get_decision_traces
+from .aitp_mcp_profiles import normalize_mcp_profile, server_name_for_mcp_profile
 from .agent_install_support import (
     agent_hidden_root as resolve_agent_hidden_root,
     install_agent as perform_install_agent,
@@ -170,6 +171,18 @@ from .capability_audit_support import capability_audit as perform_capability_aud
 from .chat_session_support import (
     route_codex_chat_request as route_chat_request,
     start_chat_session as start_codex_chat_session,
+)
+from .theory_metrics import (
+    candidate_metric_context,
+    analyze_theory_metrics as perform_theory_metrics_analysis,
+    record_analytical_review_metric,
+    record_candidate_promotion_metric,
+    record_conformance_metric,
+    record_coverage_metric,
+    record_formal_theory_metric,
+    record_promotion_gate_metric,
+    record_theory_operation_metric as perform_record_theory_operation_metric,
+    record_topic_completion_metric,
 )
 from .source_distillation_support import distill_from_sources
 from .theory_coverage_audit_support import audit_theory_coverage as perform_theory_coverage_audit
@@ -436,8 +449,15 @@ class AITPService:
             "PYTHONPATH": self._runtime_pythonpath(),
         }
 
-    def _mcp_environment(self) -> dict[str, str]:
-        return self._runtime_environment()
+    def _mcp_environment(self, *, mcp_profile: str = "full") -> dict[str, str]:
+        environment = dict(self._runtime_environment())
+        resolved_profile = normalize_mcp_profile(mcp_profile)
+        if resolved_profile != "full":
+            environment["AITP_MCP_PROFILE"] = resolved_profile
+        return environment
+
+    def _mcp_server_name(self, mcp_profile: str = "full") -> str:
+        return server_name_for_mcp_profile(mcp_profile)
 
     def _resolve_aitp_mcp_command(self) -> list[str]:
         installed = shutil.which("aitp-mcp")
@@ -863,6 +883,18 @@ class AITPService:
 
     def _load_runtime_policy(self) -> dict[str, Any]:
         return read_json(self._runtime_policy_path()) or {}
+
+    def analyze_theory_metrics(
+        self,
+        *,
+        topic_slug: str | None = None,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        return perform_theory_metrics_analysis(
+            self,
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
 
     def _theory_formal_candidate_types(self) -> set[str]:
         runtime_policy = self._load_runtime_policy().get("auto_promotion_policy") or {}
@@ -4606,16 +4638,17 @@ class AITPService:
             lines.append("")
         return "\n".join(lines)
 
-    def _codex_mcp_setup_markdown(self) -> str:
-        command = ["codex", "mcp", "add", "aitp"]
-        for key, value in self._mcp_environment().items():
+    def _codex_mcp_setup_markdown(self, *, mcp_profile: str = "full") -> str:
+        server_name = self._mcp_server_name(mcp_profile)
+        command = ["codex", "mcp", "add", server_name]
+        for key, value in self._mcp_environment(mcp_profile=mcp_profile).items():
             command.extend(["--env", f"{key}={value}"])
         command.extend(["--", *self._resolve_aitp_mcp_command()])
         return "\n".join(
             [
                 "# Codex MCP setup",
                 "",
-                "Run this once to register the installable AITP MCP server with Codex:",
+                f"Run this once to register the installable `{server_name}` MCP server with Codex:",
                 "",
                 "```bash",
                 self._format_command(command),
@@ -4624,18 +4657,19 @@ class AITPService:
                 "Verify with:",
                 "",
                 "```bash",
-                "codex mcp get aitp",
+                f"codex mcp get {server_name}",
                 "```",
                 "",
             ]
         )
 
-    def _openclaw_mcp_setup_markdown(self, *, scope: str) -> str:
-        command = ["mcporter", "config", "add", "aitp"]
+    def _openclaw_mcp_setup_markdown(self, *, scope: str, mcp_profile: str = "full") -> str:
+        server_name = self._mcp_server_name(mcp_profile)
+        command = ["mcporter", "config", "add", server_name]
         command.extend(["--command", self._resolve_aitp_mcp_command()[0]])
         for arg in self._resolve_aitp_mcp_command()[1:]:
             command.extend(["--arg", arg])
-        for key, value in self._mcp_environment().items():
+        for key, value in self._mcp_environment(mcp_profile=mcp_profile).items():
             command.extend(["--env", f"{key}={value}"])
         command.extend(["--scope", "home" if scope == "user" else "project"])
         return "\n".join(
@@ -4651,13 +4685,20 @@ class AITPService:
                 "Verify with:",
                 "",
                 "```bash",
-                "mcporter config get aitp --json",
+                f"mcporter config get {server_name} --json",
                 "```",
                 "",
             ]
         )
 
-    def _opencode_mcp_setup_markdown(self, *, scope: str, target_root: str | None) -> str:
+    def _opencode_mcp_setup_markdown(
+        self,
+        *,
+        scope: str,
+        target_root: str | None,
+        mcp_profile: str = "full",
+    ) -> str:
+        server_name = self._mcp_server_name(mcp_profile)
         if target_root:
             config_path = resolve_agent_hidden_root(
                 target_root=target_root,
@@ -4675,7 +4716,7 @@ class AITPService:
             [
                 "# OpenCode MCP setup",
                 "",
-                "OpenCode should expose an `aitp` local MCP server entry.",
+                f"OpenCode should expose an `{server_name}` local MCP server entry.",
                 "",
                 "Expected config path:",
                 "",
@@ -4686,7 +4727,14 @@ class AITPService:
             ]
         )
 
-    def _claude_mcp_setup_markdown(self, *, scope: str, target_root: str | None) -> str:
+    def _claude_mcp_setup_markdown(
+        self,
+        *,
+        scope: str,
+        target_root: str | None,
+        mcp_profile: str = "full",
+    ) -> str:
+        server_name = self._mcp_server_name(mcp_profile)
         if target_root:
             target_path = Path(target_root)
             fake_home = target_path.parent if target_path.name == ".claude" else target_path
@@ -4702,15 +4750,15 @@ class AITPService:
             "add-json",
             "-s",
             "project" if scope == "project" else "user",
-            "aitp",
-            json.dumps(self._claude_mcp_entry(), ensure_ascii=True, separators=(",", ":")),
+            server_name,
+            json.dumps(self._claude_mcp_entry(mcp_profile=mcp_profile), ensure_ascii=True, separators=(",", ":")),
         ]
 
         return "\n".join(
             [
                 "# Claude Code MCP setup",
                 "",
-                "Claude Code should expose an `aitp` MCP server so AITP runtime actions are available as native structured tools.",
+                f"Claude Code should expose an `{server_name}` MCP server so AITP runtime actions are available as native structured tools.",
                 "",
                 "Expected config path:",
                 "",
@@ -4731,21 +4779,21 @@ class AITPService:
             ]
         )
 
-    def _opencode_mcp_entry(self) -> dict[str, Any]:
+    def _opencode_mcp_entry(self, *, mcp_profile: str = "full") -> dict[str, Any]:
         return {
             "type": "local",
             "command": self._resolve_aitp_mcp_command(),
             "enabled": True,
             "timeout": 120000,
-            "environment": self._mcp_environment(),
+            "environment": self._mcp_environment(mcp_profile=mcp_profile),
         }
 
-    def _claude_mcp_entry(self) -> dict[str, Any]:
+    def _claude_mcp_entry(self, *, mcp_profile: str = "full") -> dict[str, Any]:
         command = self._resolve_aitp_mcp_command()
         return {
             "command": command[0],
             "args": command[1:],
-            "env": self._mcp_environment(),
+            "env": self._mcp_environment(mcp_profile=mcp_profile),
         }
 
     def _write_json_file(self, path: Path, payload: dict[str, Any]) -> None:
@@ -5995,6 +6043,7 @@ class AITPService:
             "graph_analysis": bundle.get("graph_analysis") or {},
             "pending_decisions": bundle.get("pending_decisions") or {},
             "promotion_readiness": bundle.get("promotion_readiness") or {},
+            "protocol_manifest": bundle.get("protocol_manifest") or {},
             "collaborator_profile": bundle.get("collaborator_profile") or {},
             "research_trajectory": bundle.get("research_trajectory") or {},
             "mode_learning": bundle.get("mode_learning") or {},
@@ -6048,6 +6097,7 @@ class AITPService:
             "operator_checkpoint": bundle.get("operator_checkpoint") or {},
             "validation_review_bundle": bundle.get("validation_review_bundle") or {},
             "promotion_readiness": bundle.get("promotion_readiness") or {},
+            "protocol_manifest": bundle.get("protocol_manifest") or {},
             "open_gap_summary": bundle.get("open_gap_summary") or {},
             "strategy_memory": bundle.get("strategy_memory") or {},
             "collaborator_profile": bundle.get("collaborator_profile") or {},
@@ -6102,6 +6152,7 @@ class AITPService:
             "graph_analysis": bundle.get("graph_analysis") or {},
             "validation_review_bundle": bundle.get("validation_review_bundle") or {},
             "pending_decisions": bundle.get("pending_decisions") or {},
+            "protocol_manifest": bundle.get("protocol_manifest") or {},
             "open_gap_summary": bundle.get("open_gap_summary") or {},
             "strategy_memory": bundle.get("strategy_memory") or {},
             "collaborator_profile": bundle.get("collaborator_profile") or {},
@@ -6236,8 +6287,8 @@ class AITPService:
             },
             "analytical": {
                 "validation_mode": "analytical",
-                "verification_focus": "Validate the active topic against analytical checks such as limiting cases, dimensional consistency, symmetry, and source-backed self-consistency.",
-                "required_checks": ["Record at least one explicit limiting-case, dimensional, symmetry, or consistency check as a durable artifact.", "Tie each analytical check to a source-backed assumption, regime, or prior result instead of free-floating prose.", "Reject analytical claims that do not leave a durable artifact naming the exact check and outcome."],
+                "verification_focus": "Validate the active topic against analytical checks such as limiting cases, dimensional consistency, symmetry, source-backed self-consistency, and source-cross-reference agreement.",
+                "required_checks": ["Record at least one explicit limiting-case, dimensional, symmetry, self-consistency, or source-cross-reference check as a durable artifact.", "Tie each analytical check to a source-backed assumption, regime, or prior result instead of free-floating prose.", "Reject analytical claims that do not leave a durable artifact naming the exact check and outcome."],
             },
             "topic-completion": {
                 "validation_mode": "hybrid",
@@ -6318,6 +6369,15 @@ class AITPService:
             "topic_completion_path": str(paths["json"]),
             "topic_completion_note_path": str(paths["note"]),
         }
+        record_topic_completion_metric(
+            self,
+            topic_slug=topic_slug,
+            run_id=resolved_run_id,
+            updated_by=updated_by,
+            payload=payload,
+            json_path=paths["json"],
+            note_path=paths["note"],
+        )
         if refresh_runtime_bundle:
             result["runtime_protocol"] = self._materialize_runtime_protocol_bundle(
                 topic_slug=topic_slug,
@@ -6533,7 +6593,7 @@ class AITPService:
         runtime_root = self._runtime_root(topic_slug)
         state = read_json(runtime_root / "conformance_state.json")
         report_path = runtime_root / "conformance_report.md"
-        return {
+        result = {
             "topic_slug": topic_slug,
             "phase": phase,
             "command": command,
@@ -6541,6 +6601,15 @@ class AITPService:
             "conformance_state": state,
             "conformance_report_path": str(report_path),
         }
+        record_conformance_metric(
+            self,
+            topic_slug=topic_slug,
+            phase=phase,
+            updated_by=updated_by,
+            state=state,
+            report_path=report_path,
+        )
+        return result
 
     def scaffold_baseline(
         self,
@@ -6703,13 +6772,93 @@ class AITPService:
         }
 
     def audit_theory_coverage(self, **kwargs: Any) -> dict[str, Any]:
-        return perform_theory_coverage_audit(self, **kwargs)
+        topic_slug = str(kwargs.get("topic_slug") or "").strip()
+        candidate_id = str(kwargs.get("candidate_id") or "").strip()
+        resolved_run_id, candidate_type = candidate_metric_context(
+            self,
+            topic_slug=topic_slug,
+            run_id=kwargs.get("run_id"),
+            candidate_id=candidate_id,
+        )
+        try:
+            result = perform_theory_coverage_audit(self, **kwargs)
+        except Exception as exc:
+            if topic_slug:
+                perform_record_theory_operation_metric(
+                    self,
+                    topic_slug=topic_slug,
+                    run_id=resolved_run_id,
+                    operation_kind="theory_coverage_audit",
+                    status="error",
+                    updated_by=str(kwargs.get("updated_by") or "aitp-cli"),
+                    candidate_id=candidate_id or None,
+                    candidate_type=candidate_type or None,
+                    blocker_tags=["coverage_audit_error"],
+                    summary=str(exc),
+                )
+            raise
+        record_coverage_metric(
+            self,
+            topic_slug=topic_slug,
+            run_id=resolved_run_id,
+            updated_by=str(kwargs.get("updated_by") or "aitp-cli"),
+            candidate_id=candidate_id,
+            candidate_type=candidate_type,
+            result=result,
+        )
+        return result
 
     def audit_formal_theory(self, **kwargs: Any) -> dict[str, Any]:
-        return perform_formal_theory_audit(self, **kwargs)
+        topic_slug = str(kwargs.get("topic_slug") or "").strip()
+        candidate_id = str(kwargs.get("candidate_id") or "").strip()
+        resolved_run_id, candidate_type = candidate_metric_context(
+            self,
+            topic_slug=topic_slug,
+            run_id=kwargs.get("run_id"),
+            candidate_id=candidate_id,
+        )
+        try:
+            result = perform_formal_theory_audit(self, **kwargs)
+        except Exception as exc:
+            if topic_slug:
+                perform_record_theory_operation_metric(
+                    self,
+                    topic_slug=topic_slug,
+                    run_id=resolved_run_id,
+                    operation_kind="formal_theory_audit",
+                    status="error",
+                    updated_by=str(kwargs.get("updated_by") or "aitp-cli"),
+                    candidate_id=candidate_id or None,
+                    candidate_type=candidate_type or None,
+                    blocker_tags=["formal_theory_audit_error"],
+                    summary=str(exc),
+                )
+            raise
+        record_formal_theory_metric(
+            self,
+            topic_slug=topic_slug,
+            run_id=resolved_run_id,
+            updated_by=str(kwargs.get("updated_by") or "aitp-cli"),
+            candidate_id=candidate_id,
+            candidate_type=candidate_type,
+            result=result,
+        )
+        return result
 
     def audit_analytical_review(self, **kwargs: Any) -> dict[str, Any]:
-        return perform_analytical_review_audit(self, **kwargs)
+        result = perform_analytical_review_audit(self, **kwargs)
+        topic_slug = str(kwargs.get("topic_slug") or "").strip()
+        resolved_run_id = self._resolve_run_id(topic_slug, kwargs.get("run_id")) if topic_slug else None
+        if topic_slug:
+            record_analytical_review_metric(
+                self,
+                topic_slug=topic_slug,
+                run_id=resolved_run_id,
+                updated_by=str(kwargs.get("updated_by") or "aitp-cli"),
+                candidate_id=str(kwargs.get("candidate_id") or "").strip() or None,
+                result=result,
+            )
+        return result
 
     def scaffold_operation(
         self,
@@ -6939,7 +7088,7 @@ class AITPService:
         requested_by: str = "aitp-cli",
         notes: str | None = None,
     ) -> dict[str, Any]:
-        return request_promotion(
+        result = request_promotion(
             self,
             topic_slug=topic_slug,
             candidate_id=candidate_id,
@@ -6950,6 +7099,19 @@ class AITPService:
             requested_by=requested_by,
             notes=notes,
         )
+        record_promotion_gate_metric(
+            self,
+            topic_slug=topic_slug,
+            run_id=str(result.get("run_id") or self._resolve_run_id(topic_slug, run_id) or "").strip() or None,
+            candidate_id=candidate_id,
+            candidate_type=str(result.get("candidate_type") or "").strip() or None,
+            updated_by=requested_by,
+            operation_kind="promotion_request",
+            status=str(result.get("status") or "unknown"),
+            summary=f"Promotion request {str(result.get('status') or 'unknown')} for {candidate_id}.",
+            metric_values={"route": route},
+        )
+        return result
 
     def approve_promotion(
         self,
@@ -6961,7 +7123,7 @@ class AITPService:
         notes: str | None = None,
         human_modifications: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
-        return approve_promotion(
+        result = approve_promotion(
             self,
             topic_slug=topic_slug,
             candidate_id=candidate_id,
@@ -6970,6 +7132,19 @@ class AITPService:
             notes=notes,
             human_modifications=human_modifications,
         )
+        record_promotion_gate_metric(
+            self,
+            topic_slug=topic_slug,
+            run_id=str(result.get("run_id") or self._resolve_run_id(topic_slug, run_id) or "").strip() or None,
+            candidate_id=candidate_id,
+            candidate_type=str(result.get("candidate_type") or "").strip() or None,
+            updated_by=approved_by,
+            operation_kind="promotion_approve",
+            status=str(result.get("status") or "unknown"),
+            summary=f"Promotion approval {str(result.get('status') or 'unknown')} for {candidate_id}.",
+            metric_values={"human_modification_count": len(human_modifications or [])},
+        )
+        return result
 
     def reject_promotion(
         self,
@@ -6980,7 +7155,7 @@ class AITPService:
         rejected_by: str = "aitp-cli",
         notes: str | None = None,
     ) -> dict[str, Any]:
-        return reject_promotion(
+        result = reject_promotion(
             self,
             topic_slug=topic_slug,
             candidate_id=candidate_id,
@@ -6988,6 +7163,19 @@ class AITPService:
             rejected_by=rejected_by,
             notes=notes,
         )
+        record_promotion_gate_metric(
+            self,
+            topic_slug=topic_slug,
+            run_id=str(result.get("run_id") or self._resolve_run_id(topic_slug, run_id) or "").strip() or None,
+            candidate_id=candidate_id,
+            candidate_type=str(result.get("candidate_type") or "").strip() or None,
+            updated_by=rejected_by,
+            operation_kind="promotion_reject",
+            status=str(result.get("status") or "unknown"),
+            blocker_tags=["promotion_rejected"],
+            summary=f"Promotion rejected for {candidate_id}.",
+        )
+        return result
 
     def promote_candidate(
         self,
@@ -7010,26 +7198,60 @@ class AITPService:
         coverage_summary: dict[str, Any] | None = None,
         consensus_summary: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        return promote_candidate(
+        resolved_run_id, candidate_type = candidate_metric_context(
             self,
             topic_slug=topic_slug,
-            candidate_id=candidate_id,
             run_id=run_id,
-            promoted_by=promoted_by,
-            backend_id=backend_id,
-            target_backend_root=target_backend_root,
-            domain=domain,
-            subdomain=subdomain,
-            source_id=source_id,
-            source_section=source_section,
-            source_section_title=source_section_title,
-            notes=notes,
-            review_mode=review_mode,
-            canonical_layer=canonical_layer,
-            review_artifact_paths=review_artifact_paths,
-            coverage_summary=coverage_summary,
-            consensus_summary=consensus_summary,
+            candidate_id=candidate_id,
         )
+        try:
+            result = promote_candidate(
+                self,
+                topic_slug=topic_slug,
+                candidate_id=candidate_id,
+                run_id=run_id,
+                promoted_by=promoted_by,
+                backend_id=backend_id,
+                target_backend_root=target_backend_root,
+                domain=domain,
+                subdomain=subdomain,
+                source_id=source_id,
+                source_section=source_section,
+                source_section_title=source_section_title,
+                notes=notes,
+                review_mode=review_mode,
+                canonical_layer=canonical_layer,
+                review_artifact_paths=review_artifact_paths,
+                coverage_summary=coverage_summary,
+                consensus_summary=consensus_summary,
+            )
+        except Exception as exc:
+            record_candidate_promotion_metric(
+                self,
+                topic_slug=topic_slug,
+                run_id=resolved_run_id,
+                updated_by=promoted_by,
+                candidate_id=candidate_id,
+                candidate_type=candidate_type or None,
+                operation_kind="candidate_promotion",
+                status="error",
+                summary=str(exc),
+                blocker_tags=["promotion_execution_failed"],
+            )
+            raise
+        record_candidate_promotion_metric(
+            self,
+            topic_slug=topic_slug,
+            run_id=resolved_run_id,
+            updated_by=promoted_by,
+            candidate_id=candidate_id,
+            candidate_type=candidate_type or None,
+            operation_kind="candidate_promotion",
+            status="promoted",
+            result=result,
+            summary=f"Candidate promotion completed for {candidate_id}.",
+        )
+        return result
 
     def auto_promote_candidate(
         self,
@@ -7047,21 +7269,55 @@ class AITPService:
         source_section_title: str | None = None,
         notes: str | None = None,
     ) -> dict[str, Any]:
-        return auto_promote_candidate(
+        resolved_run_id, candidate_type = candidate_metric_context(
             self,
             topic_slug=topic_slug,
-            candidate_id=candidate_id,
             run_id=run_id,
-            promoted_by=promoted_by,
-            backend_id=backend_id,
-            target_backend_root=target_backend_root,
-            domain=domain,
-            subdomain=subdomain,
-            source_id=source_id,
-            source_section=source_section,
-            source_section_title=source_section_title,
-            notes=notes,
+            candidate_id=candidate_id,
         )
+        try:
+            result = auto_promote_candidate(
+                self,
+                topic_slug=topic_slug,
+                candidate_id=candidate_id,
+                run_id=run_id,
+                promoted_by=promoted_by,
+                backend_id=backend_id,
+                target_backend_root=target_backend_root,
+                domain=domain,
+                subdomain=subdomain,
+                source_id=source_id,
+                source_section=source_section,
+                source_section_title=source_section_title,
+                notes=notes,
+            )
+        except Exception as exc:
+            record_candidate_promotion_metric(
+                self,
+                topic_slug=topic_slug,
+                run_id=resolved_run_id,
+                updated_by=promoted_by,
+                candidate_id=candidate_id,
+                candidate_type=candidate_type or None,
+                operation_kind="candidate_auto_promotion",
+                status="error",
+                summary=str(exc),
+                blocker_tags=["auto_promotion_failed"],
+            )
+            raise
+        record_candidate_promotion_metric(
+            self,
+            topic_slug=topic_slug,
+            run_id=resolved_run_id,
+            updated_by=promoted_by,
+            candidate_id=candidate_id,
+            candidate_type=candidate_type or None,
+            operation_kind="candidate_auto_promotion",
+            status="promoted",
+            result=result,
+            summary=f"Auto promotion completed for {candidate_id}.",
+        )
+        return result
 
     def run_topic_loop(
         self,
@@ -7124,6 +7380,7 @@ class AITPService:
         target_root: str | None = None,
         force: bool = True,
         install_mcp: bool = True,
+        mcp_profile: str = "full",
     ) -> dict[str, Any]:
         return perform_install_agent(
             self,
@@ -7132,6 +7389,7 @@ class AITPService:
             target_root=target_root,
             force=force,
             install_mcp=install_mcp,
+            mcp_profile=mcp_profile,
         )
 
     def _install_one_agent(
@@ -7142,6 +7400,7 @@ class AITPService:
         target_root: str | None,
         force: bool,
         install_mcp: bool,
+        mcp_profile: str = "full",
     ) -> list[dict[str, str]]:
         return perform_install_one_agent(
             self,
@@ -7150,6 +7409,7 @@ class AITPService:
             target_root=target_root,
             force=force,
             install_mcp=install_mcp,
+            mcp_profile=mcp_profile,
         )
 
     def ensure_cli_installed(self, *, workspace_root: str | None = None) -> dict[str, Any]:

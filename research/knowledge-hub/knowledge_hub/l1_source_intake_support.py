@@ -223,7 +223,7 @@ def _normalize_contradiction_candidates(rows: Any) -> list[dict[str, str]]:
     if not isinstance(rows, list):
         return []
     normalized: list[dict[str, str]] = []
-    seen: set[tuple[str, str, str]] = set()
+    seen: set[tuple[str, str, str, str, str]] = set()
     for row in rows:
         if not isinstance(row, dict):
             continue
@@ -232,7 +232,24 @@ def _normalize_contradiction_candidates(rows: Any) -> list[dict[str, str]]:
         detail = str(row.get("detail") or "").strip()
         if not source_id or not against_source_id or not detail:
             continue
-        key = (source_id.lower(), against_source_id.lower(), detail.lower())
+        comparison_basis = str(row.get("comparison_basis") or "").strip() or "assumption_rows"
+        source_basis_type = str(row.get("source_basis_type") or "").strip() or "assumption"
+        source_basis_summary = str(row.get("source_basis_summary") or "").strip() or detail
+        against_basis_type = str(row.get("against_basis_type") or "").strip() or "assumption"
+        against_basis_summary = str(row.get("against_basis_summary") or "").strip() or detail
+        if comparison_basis == "regime_rows":
+            source_basis_type = "regime"
+            against_basis_type = "regime"
+        elif comparison_basis == "assumption_rows":
+            source_basis_type = "assumption"
+            against_basis_type = "assumption"
+        key = (
+            source_id.lower(),
+            against_source_id.lower(),
+            detail.lower(),
+            source_basis_summary.lower(),
+            against_basis_summary.lower(),
+        )
         if key in seen:
             continue
         seen.add(key)
@@ -248,6 +265,14 @@ def _normalize_contradiction_candidates(rows: Any) -> list[dict[str, str]]:
                 "against_source_type": str(row.get("against_source_type") or "").strip(),
                 "against_reading_depth": str(row.get("against_reading_depth") or "").strip() or "skim",
                 "detail": detail,
+                "comparison_basis": comparison_basis,
+                "source_basis_type": source_basis_type,
+                "source_basis_summary": source_basis_summary,
+                "source_evidence_excerpt": str(row.get("source_evidence_excerpt") or "").strip() or source_basis_summary,
+                "against_basis_type": against_basis_type,
+                "against_basis_summary": against_basis_summary,
+                "against_evidence_excerpt": str(row.get("against_evidence_excerpt") or "").strip()
+                or against_basis_summary,
             }
         )
     return normalized
@@ -504,7 +529,10 @@ def coalesce_l1_source_intake(existing: Any, default: dict[str, Any]) -> dict[st
 
 
 def _summary_excerpt(row: dict[str, Any]) -> str:
-    return re.sub(r"\s+", " ", str(row.get("summary") or "").strip())[:220]
+    summary = str(row.get("summary") or row.get("summary_text") or "").strip()
+    if not summary:
+        summary = str(row.get("source_title") or "").strip()
+    return re.sub(r"\s+", " ", summary)[:220]
 
 
 def derive_l1_conflict_intake(source_rows: list[dict[str, Any]], l1_source_intake: dict[str, Any]) -> dict[str, Any]:
@@ -525,7 +553,7 @@ def derive_l1_conflict_intake(source_rows: list[dict[str, Any]], l1_source_intak
             regimes_by_source.setdefault(source_id, []).append(str(row.get("regime") or "").strip())
 
     notation_rows: list[dict[str, str]] = []
-    contradiction_candidates: list[dict[str, str]] = []
+    contradiction_candidates_by_key: dict[tuple[str, str, str], dict[str, str]] = {}
     notation_tension_candidates: list[dict[str, str]] = []
     processed_rows: list[dict[str, Any]] = []
     processed_by_source: dict[str, dict[str, Any]] = {}
@@ -560,20 +588,36 @@ def derive_l1_conflict_intake(source_rows: list[dict[str, Any]], l1_source_intak
         ):
             against_source_id = str(candidate.get("against_source_id") or "").strip()
             against_row = processed_by_source.get(against_source_id, {})
-            contradiction_candidates.append(
-                {
-                    "kind": str(candidate.get("kind") or "").strip() or "assumption_conflict",
-                    "source_id": source_id,
-                    "source_title": source_title,
-                    "source_type": source_type,
-                    "reading_depth": reading_depth,
-                    "against_source_id": against_source_id,
-                    "against_source_title": str(against_row.get("source_title") or "").strip(),
-                    "against_source_type": str(against_row.get("source_type") or "").strip(),
-                    "against_reading_depth": str(against_row.get("reading_depth") or "").strip() or "skim",
-                    "detail": str(candidate.get("detail") or "").strip(),
-                }
+            contradiction_row = {
+                "kind": str(candidate.get("kind") or "").strip() or "assumption_conflict",
+                "source_id": source_id,
+                "source_title": source_title,
+                "source_type": source_type,
+                "reading_depth": reading_depth,
+                "against_source_id": against_source_id,
+                "against_source_title": str(against_row.get("source_title") or "").strip(),
+                "against_source_type": str(against_row.get("source_type") or "").strip(),
+                "against_reading_depth": str(against_row.get("reading_depth") or "").strip() or "skim",
+                "detail": str(candidate.get("detail") or "").strip(),
+                "comparison_basis": str(candidate.get("comparison_basis") or "").strip() or "assumption_rows",
+                "source_basis_type": str(candidate.get("source_basis_type") or "").strip() or "assumption",
+                "source_basis_summary": str(candidate.get("source_basis_summary") or "").strip(),
+                "source_evidence_excerpt": excerpt,
+                "against_basis_type": str(candidate.get("against_basis_type") or "").strip() or "assumption",
+                "against_basis_summary": str(candidate.get("against_basis_summary") or "").strip(),
+                "against_evidence_excerpt": _summary_excerpt(against_row),
+            }
+            contradiction_key = (
+                source_id,
+                against_source_id,
+                str(contradiction_row.get("detail") or "").strip(),
             )
+            existing_row = contradiction_candidates_by_key.get(contradiction_key)
+            if existing_row is None or (
+                contradiction_row["comparison_basis"] == "regime_rows"
+                and existing_row.get("comparison_basis") != "regime_rows"
+            ):
+                contradiction_candidates_by_key[contradiction_key] = contradiction_row
 
         for tension in detect_notation_tension_candidates(
             existing_rows=processed_rows,
@@ -601,6 +645,7 @@ def derive_l1_conflict_intake(source_rows: list[dict[str, Any]], l1_source_intak
             "source_id": source_id,
             "source_title": source_title,
             "source_type": source_type,
+            "summary_text": str(row.get("summary") or "").strip(),
             "reading_depth": reading_depth,
             "assumptions": assumptions_by_source.get(source_id, []),
             "regimes": regimes_by_source.get(source_id, []),
@@ -611,7 +656,9 @@ def derive_l1_conflict_intake(source_rows: list[dict[str, Any]], l1_source_intak
 
     return {
         "notation_rows": _normalize_notation_rows(notation_rows),
-        "contradiction_candidates": _normalize_contradiction_candidates(contradiction_candidates),
+        "contradiction_candidates": _normalize_contradiction_candidates(
+            list(contradiction_candidates_by_key.values())
+        ),
         "notation_tension_candidates": _normalize_notation_tension_candidates(notation_tension_candidates),
     }
 
@@ -792,10 +839,20 @@ def l1_contradiction_summary_lines(l1_source_intake: dict[str, Any]) -> list[str
         against_source_id = str(row.get("against_source_id") or "").strip()
         reading_depth = str(row.get("reading_depth") or "").strip() or "skim"
         against_reading_depth = str(row.get("against_reading_depth") or "").strip() or "skim"
+        comparison_basis = str(row.get("comparison_basis") or "").strip() or "assumption_rows"
+        source_basis_summary = str(row.get("source_basis_summary") or "").strip()
+        against_basis_summary = str(row.get("against_basis_summary") or "").strip()
         if detail and source_id and against_source_id:
-            lines.append(
-                f"{detail} (`{source_id}`[{reading_depth}] vs `{against_source_id}`[{against_reading_depth}])"
+            line = (
+                f"{detail} (`{source_id}`[{reading_depth}] vs `{against_source_id}`[{against_reading_depth}]) "
+                f"basis=`{comparison_basis}`"
             )
+            if source_basis_summary or against_basis_summary:
+                line += (
+                    f"; current=`{source_basis_summary or '(missing)'}`"
+                    f"; compared=`{against_basis_summary or '(missing)'}`"
+                )
+            lines.append(line)
     return lines
 
 

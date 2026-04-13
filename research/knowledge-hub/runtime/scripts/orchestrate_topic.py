@@ -183,7 +183,7 @@ def ensure_topic_shell(knowledge_root: Path, topic_slug: str, statement: str | N
             )
             write_text(
                 run_root / "next_actions.md",
-                "# Next actions\n\n1. Convert the topic statement into explicit source and candidate artifacts.\n",
+                "# Next actions\n\n1. Start with source-layer/scripts/discover_and_register.py when you have a topic query; if you already know the arXiv id, use source-layer/scripts/register_arxiv_source.py and intake/ARXIV_FIRST_SOURCE_INTAKE.md.\n",
             )
 
 

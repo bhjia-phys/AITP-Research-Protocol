@@ -1,5 +1,111 @@
 # Milestones
 
+## v1.95 L2 Promotion Pipeline Closure (Active)
+
+**Phases completed:** 0 / 3 phases, 0 / 3 plans
+
+**Milestone goal:**
+
+- close the L4→L2 promotion pipeline gap discovered during Jones E2E testing
+- extend canonical schema so `negative_result` has a promotion path
+- create runtime proof schemas and wire promotion bridge code
+- make three targeted HCI improvements for better E2E test ergonomics
+
+**Key accomplishments:**
+
+- (milestone in progress)
+
+---
+
+## v1.94 L4 Analytical Cross-Check Surface (Shipped: 2026-04-13)
+
+**Phases completed:** 2 phases, 2 plans, milestone audit passed
+
+**Milestone goal:**
+
+- record bounded analytical checks as first-class rows
+- carry exact source anchors and assumption or regime context with each check
+- expose analytical cross-checks on runtime-facing read paths and close with a
+  bounded proof lane
+
+**Key accomplishments:**
+
+- analytical validation now records row-first bounded check entries including
+  `source_cross_reference`
+- runtime-facing read paths now expose a structured analytical cross-check
+  surface through the existing validation review bundle
+- the milestone closes with a dedicated analytical cross-check proof lane
+- the older analytical judgment runtime lane remains compatible after the
+  runtime-surface expansion
+
+---
+
+## v1.93 L1 Contradiction Adjudication Surface (Shipped: 2026-04-13)
+
+**Phases completed:** 2 phases, 2 plans, milestone audit passed
+
+**Milestone goal:**
+
+- make contradictory or mutually incompatible source claims explicit in `L1`
+  intake
+- carry bounded comparison context with each contradiction row so the operator
+  can judge why the conflict was surfaced
+- expose the contradiction surface on runtime read paths and close with one
+  bounded proof lane
+
+**Key accomplishments:**
+
+- contradiction rows are now richer, source-backed, and pairwise
+- contradiction parity now survives across runtime/read-path surfaces
+- the milestone closes with a dedicated contradiction-aware proof lane
+
+---
+
+## v1.92 Public Front Door Source Handoff (Shipped: 2026-04-13)
+
+**Phases completed:** 2 phases, 2 plans, milestone audit passed
+
+**Milestone goal:**
+
+- turn the honest post-bootstrap return to `L0` into one concrete
+  source-acquisition handoff
+- keep `status`, `runtime_protocol`, and `replay-topic` aligned on that
+  handoff surface
+- make arXiv registration contentful-by-default so following the handoff is
+  useful immediately
+
+**Key accomplishments:**
+
+- the public front door now exposes one concrete `L0` source-acquisition lane
+  instead of generic prose
+- dashboard, runtime protocol, and replay now share one explicit
+  `l0_source_handoff` truth surface
+- arXiv registration and discovery-driven registration now attempt content
+  acquisition by default with `--metadata-only` as the explicit opt-out
+- one fresh-topic proof now lands
+  `bootstrap -> concrete handoff -> registration`
+
+---
+
+## v1.91 Real Topic L0 To L2 End-To-End Validation (Shipped: 2026-04-13)
+
+**Phases completed:** 7 phases, 3 plan files, milestone audit passed
+
+**Key accomplishments:**
+
+- one honest real-topic Jones route now has durable postmortem and issue-ledger
+  evidence instead of chat-only conclusions
+- `proof_fragment` now has a schema, a Jones bootstrap seed, and the first
+  canonical proof-fragment instance
+- mode-aware runtime behavior, human-readable front-door surfaces, and
+  mechanical governance all landed as routed follow-up to the real-topic run
+- `L0 -> L1` now includes DeepXiv-style enrichment, concept graphs,
+  progressive reading, graph analysis, and Obsidian-compatible export
+- the public AITP front door now has a fresh real-topic proof with an honest
+  bounded return-to-`L0` outcome
+
+---
+
 ## v1.90 Hypothesis Route Transition Authority Surface (Shipped: 2026-04-12)
 
 **Phases completed:** 1 phase, 1 plan, 2 tasks
@@ -320,17 +426,18 @@ Completed milestone chain:
 - `v1.88` implemented
 - `v1.89` implemented
 - `v1.90` implemented
+- `v1.91` implemented
 
 ## Latest Closed Milestone
 
-- `v1.90` `Hypothesis Route Transition Authority Surface` implemented
+- `v1.94` `L4 Analytical Cross-Check Surface` implemented
 
 ## Current Active Milestone
 
-- `v1.91` `Real Topic L0 To L2 End-To-End Validation`
+- `v1.95` `L2 Promotion Pipeline Closure` — 3 phases, 0 completed
 
 ## Current Status
 
-- `v1.36` through `v1.90` are closed and archived
-- `v1.91` is now open for the real-topic end-to-end validation gap
-- next command boundary: execute Phase `165`
+- `v1.36` through `v1.94` are closed and archived or ready for archive lookup
+- `v1.95` is active with 3 phases (169, 169.1, 169.2)
+- next command boundary: `$gsd-execute-phase 169`

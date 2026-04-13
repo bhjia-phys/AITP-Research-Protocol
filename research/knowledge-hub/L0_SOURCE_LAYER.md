@@ -98,6 +98,10 @@ The current helper for this policy lives at:
 - `intake/scripts/register_arxiv_source.py` as a compatibility wrapper
 - `intake/ARXIV_FIRST_SOURCE_INTAKE.md`
 
+Normal arXiv registration now attempts source acquisition by default.
+Use `--metadata-only` only when the lightweight metadata path is explicitly
+desired.
+
 ## 5b. Discovery before registration
 
 When the operator has a natural-language query rather than a fixed arXiv id,

@@ -27,6 +27,37 @@ def _parse(result: str) -> dict:
     return payload
 
 
+READ_ONLY_PROFILE_TOOLS = {
+    "aitp_describe_mcp_profile",
+    "aitp_get_runtime_state",
+    "aitp_list_tool_manifest",
+}
+
+WRITE_PROFILE_TOOLS = {
+    "aitp_bootstrap_topic",
+    "aitp_resume_topic",
+    "aitp_scaffold_baseline",
+    "aitp_scaffold_atomic_understanding",
+    "aitp_scaffold_operation",
+    "aitp_update_operation",
+    "aitp_audit_operation_trust",
+    "aitp_audit_capability",
+    "aitp_audit_theory_coverage",
+    "aitp_audit_formal_theory",
+    "aitp_complete_topic",
+    "aitp_update_followup_return",
+    "aitp_reintegrate_followup",
+    "aitp_prepare_lean_bridge",
+    "aitp_request_promotion",
+    "aitp_approve_promotion",
+    "aitp_reject_promotion",
+    "aitp_promote_candidate",
+    "aitp_auto_promote_candidate",
+    "aitp_run_topic_loop",
+    "aitp_install_agent_wrapper",
+}
+
+
 class _AITPStubSuccess:
     def orchestrate(self, **kwargs):  # noqa: ANN003
         return {"topic_slug": kwargs.get("topic_slug") or "demo-topic"}
@@ -145,6 +176,22 @@ class _AITPStubFailure:
 
 
 class AITPMCPServerTests(unittest.TestCase):
+    def test_review_and_skeptic_profiles_register_only_read_only_tools(self) -> None:
+        full_server = aitp_mcp_server.build_mcp_server("full")
+        review_server = aitp_mcp_server.build_mcp_server("review")
+        skeptic_server = aitp_mcp_server.build_mcp_server("skeptic")
+
+        full_tools = set(full_server._tool_manager._tools)
+        review_tools = set(review_server._tool_manager._tools)
+        skeptic_tools = set(skeptic_server._tool_manager._tools)
+
+        self.assertTrue(READ_ONLY_PROFILE_TOOLS.issubset(full_tools))
+        self.assertTrue(WRITE_PROFILE_TOOLS.issubset(full_tools))
+        self.assertEqual(review_tools, READ_ONLY_PROFILE_TOOLS)
+        self.assertEqual(skeptic_tools, READ_ONLY_PROFILE_TOOLS)
+        self.assertFalse(review_tools & WRITE_PROFILE_TOOLS)
+        self.assertFalse(skeptic_tools & WRITE_PROFILE_TOOLS)
+
     def test_aitp_tools_return_success_payloads(self) -> None:
         with patch.object(aitp_mcp_server, "service", _AITPStubSuccess()):
             bootstrap = _parse(aitp_mcp_server.aitp_bootstrap_topic(topic_slug="demo-topic"))
@@ -391,7 +438,7 @@ class AITPMCPServerTests(unittest.TestCase):
                                     "next_bounded_action": {
                                         "action_id": "action:demo-topic:01",
                                         "action_type": "l0_source_expansion",
-                                        "summary": "Convert the topic statement into explicit source and candidate artifacts.",
+                                        "summary": "Start with source-layer/scripts/discover_and_register.py when you have a topic query; if you already know the arXiv id, use source-layer/scripts/register_arxiv_source.py and intake/ARXIV_FIRST_SOURCE_INTAKE.md.",
                                         "auto_runnable": False,
                                     }
                                 }
@@ -431,6 +478,9 @@ class AITPMCPServerTests(unittest.TestCase):
         self.assertEqual(loop["status"], "success")
         self.assertIn("selected_action", loop)
         self.assertEqual(loop["selected_action"]["action_type"], "l0_source_expansion")
+        self.assertIn("discover_and_register.py", loop["selected_action"]["summary"])
+        self.assertIn("register_arxiv_source.py", loop["selected_action"]["summary"])
+        self.assertIn("ARXIV_FIRST_SOURCE_INTAKE.md", loop["selected_action"]["summary"])
         self.assertIn("human_interaction_posture", loop)
         self.assertIn("autonomy_posture", loop)
         self.assertEqual(loop["autonomy_posture"]["mode"], "continuous_bounded_loop")

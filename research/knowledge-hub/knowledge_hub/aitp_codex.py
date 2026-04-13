@@ -131,11 +131,32 @@ def build_codex_prompt(payload: dict[str, Any]) -> str:
     session_start_contract_path = session_start.get("session_start_contract_path") or "(missing)"
     human_interaction_posture = session_start.get("human_interaction_posture") or {}
     autonomy_posture = session_start.get("autonomy_posture") or {}
+    theory_context_injection = session_start.get("theory_context_injection") or {}
+    injected_theory_fragments = [
+        row
+        for row in theory_context_injection.get("fragments") or []
+        if str((row or {}).get("delivery_status") or "").strip() == "inject_now"
+    ]
     runtime_protocol_note_path = (
         ((session_start.get("artifacts") or {}).get("runtime_protocol_note_path"))
         or (payload.get("runtime_protocol") or {}).get("runtime_protocol_note_path")
         or bootstrap["runtime_root"] + "/runtime_protocol.generated.md"
     )
+    startup_artifacts = [
+        session_start_note_path,
+        runtime_protocol_note_path,
+        session_start_contract_path,
+        files["agent_brief"],
+        files["operator_console"],
+        files["conformance_report"],
+        payload["loop_state_path"],
+        capability_report_path,
+        trust_report_path,
+        innovation_direction_path,
+        innovation_decisions_path,
+        control_note_path,
+        *[str(row.get("path") or "(missing)") for row in injected_theory_fragments],
+    ]
 
     lines = [
         "Use the installed `aitp-runtime` skill and stay inside AITP.",
@@ -145,51 +166,50 @@ def build_codex_prompt(payload: dict[str, Any]) -> str:
         f"Runtime root: `{bootstrap['runtime_root']}`",
         "",
         "Start by reading these artifacts:",
-        f"- `{session_start_note_path}`",
-        f"- `{runtime_protocol_note_path}`",
-        f"- `{session_start_contract_path}`",
-        f"- `{files['agent_brief']}`",
-        f"- `{files['operator_console']}`",
-        f"- `{files['conformance_report']}`",
-        f"- `{payload['loop_state_path']}`",
-        f"- `{capability_report_path}`",
-        f"- `{trust_report_path}`",
-        f"- `{innovation_direction_path}`",
-        f"- `{innovation_decisions_path}`",
-        f"- `{control_note_path}`",
-        "",
-        "Current AITP state:",
-        f"- conformance: `{loop_state['exit_conformance']}`",
-        f"- capability: `{loop_state['capability_status']}`",
-        f"- trust: `{loop_state['trust_status']}`",
-        "",
-        "Human interaction posture:",
-        f"- requires human input now: `{str(bool(human_interaction_posture.get('requires_human_input_now'))).lower()}`",
-        f"- summary: {human_interaction_posture.get('summary') or '(missing)'}",
-        f"- next action: {human_interaction_posture.get('next_action') or '(missing)'}",
-        "",
-        "Autonomous continuation:",
-        f"- mode: `{autonomy_posture.get('mode') or '(missing)'}`",
-        f"- summary: {autonomy_posture.get('summary') or '(missing)'}",
-        f"- applied auto-step budget: `{autonomy_posture.get('applied_max_auto_steps') if autonomy_posture.get('applied_max_auto_steps') is not None else '(none)'}`",
-        "",
-        "Session-start rule:",
-        "- do not skip the durable session-start contract; it is the authoritative translation of the user's chat request into routing, current-topic resolution, and immediate startup order",
-        "",
-        "Steering rule:",
-        "- if innovation direction or control note was auto-materialized from the human request, treat those durable files as the authoritative translation of that request before touching the queue",
-        "",
-        "Hard rules:",
-        "- treat runtime and validation artifacts as source of truth",
-        (
-            f"- do not trust or promote reusable operations until `aitp trust-audit --topic-slug {topic_slug} "
-            f"--run-id {run_id}` passes"
-        ),
-        "- if you change reusable operations, update the operation manifest and rerun trust-audit",
-        f"- close with `aitp audit --topic-slug {topic_slug} --phase exit`",
-        "",
-        f"Continue the task now: {loop_state['human_request']}",
     ]
+    lines.extend([f"- `{item}`" for item in startup_artifacts])
+    if injected_theory_fragments:
+        lines.extend(["", "Theory context injection:"])
+        lines.extend(
+            f"- [{row.get('kind') or 'theory_context'}] {row.get('summary') or '(missing)'}"
+            for row in injected_theory_fragments
+        )
+    lines.extend(
+        [
+            "",
+            "Current AITP state:",
+            f"- conformance: `{loop_state['exit_conformance']}`",
+            f"- capability: `{loop_state['capability_status']}`",
+            f"- trust: `{loop_state['trust_status']}`",
+            "",
+            "Human interaction posture:",
+            f"- requires human input now: `{str(bool(human_interaction_posture.get('requires_human_input_now'))).lower()}`",
+            f"- summary: {human_interaction_posture.get('summary') or '(missing)'}",
+            f"- next action: {human_interaction_posture.get('next_action') or '(missing)'}",
+            "",
+            "Autonomous continuation:",
+            f"- mode: `{autonomy_posture.get('mode') or '(missing)'}`",
+            f"- summary: {autonomy_posture.get('summary') or '(missing)'}",
+            f"- applied auto-step budget: `{autonomy_posture.get('applied_max_auto_steps') if autonomy_posture.get('applied_max_auto_steps') is not None else '(none)'}`",
+            "",
+            "Session-start rule:",
+            "- do not skip the durable session-start contract; it is the authoritative translation of the user's chat request into routing, current-topic resolution, and immediate startup order",
+            "",
+            "Steering rule:",
+            "- if innovation direction or control note was auto-materialized from the human request, treat those durable files as the authoritative translation of that request before touching the queue",
+            "",
+            "Hard rules:",
+            "- treat runtime and validation artifacts as source of truth",
+            (
+                f"- do not trust or promote reusable operations until `aitp trust-audit --topic-slug {topic_slug} "
+                f"--run-id {run_id}` passes"
+            ),
+            "- if you change reusable operations, update the operation manifest and rerun trust-audit",
+            f"- close with `aitp audit --topic-slug {topic_slug} --phase exit`",
+            "",
+            f"Continue the task now: {loop_state['human_request']}",
+        ]
+    )
     return "\n".join(lines)
 
 

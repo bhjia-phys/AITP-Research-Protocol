@@ -198,6 +198,46 @@ class RuntimeScriptTests(unittest.TestCase):
             "aitp_hypothesis_route_transition_authority_acceptance_test",
             "runtime/scripts/run_hypothesis_route_transition_authority_acceptance.py",
         )
+        self.first_run_topic_acceptance = _load_module(
+            "aitp_first_run_topic_acceptance_test",
+            "runtime/scripts/run_first_run_topic_acceptance.py",
+        )
+
+    def test_ensure_topic_shell_seeds_concrete_l0_source_handoff_after_bootstrap(self) -> None:
+        self.orchestrate_topic.ensure_topic_shell(
+            self.knowledge_root,
+            "demo-topic",
+            "Recover the missing source chain for the topic.",
+            "Demo Topic",
+        )
+
+        run_root = self.knowledge_root / "feedback" / "topics" / "demo-topic" / "runs"
+        next_actions_files = sorted(run_root.glob("*-bootstrap/next_actions.md"))
+        self.assertEqual(len(next_actions_files), 1)
+        next_actions_text = next_actions_files[0].read_text(encoding="utf-8")
+
+        self.assertIn("source-layer/scripts/discover_and_register.py", next_actions_text)
+        self.assertIn("source-layer/scripts/register_arxiv_source.py", next_actions_text)
+        self.assertIn("intake/ARXIV_FIRST_SOURCE_INTAKE.md", next_actions_text)
+
+    def test_first_run_acceptance_parser_supports_registration_continuation(self) -> None:
+        parser = self.first_run_topic_acceptance.build_parser()
+        args = parser.parse_args(
+            [
+                "--topic-slug",
+                "fresh-demo-topic",
+                "--register-arxiv-id",
+                "2401.00001v2",
+                "--registration-metadata-json",
+                "metadata.json",
+                "--use-package-root-as-kernel",
+            ]
+        )
+
+        self.assertEqual(args.topic_slug, "fresh-demo-topic")
+        self.assertEqual(args.register_arxiv_id, "2401.00001v2")
+        self.assertEqual(args.registration_metadata_json, "metadata.json")
+        self.assertTrue(args.use_package_root_as_kernel)
 
     def tearDown(self) -> None:
         self._tmpdir.cleanup()
@@ -1809,6 +1849,73 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "research_question.contract.md").exists())
         self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "topic_dashboard.md").exists())
         self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "source-intake.md").exists())
+
+    def test_l1_contradiction_surface_acceptance_script_runs_on_isolated_work_root(self) -> None:
+        module = _load_module(
+            "aitp_l1_contradiction_surface_acceptance_test",
+            "runtime/scripts/run_l1_contradiction_surface_acceptance.py",
+        )
+        work_root = Path(self._tmpdir.name) / "l1-contradiction-surface-acceptance"
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_l1_contradiction_surface_acceptance.py",
+                "--work-root",
+                str(work_root),
+                "--json",
+            ],
+        ):
+            exit_code = module.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "research_question.contract.md").exists())
+        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "topic_dashboard.md").exists())
+        self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "source-intake.md").exists())
+
+    def test_analytical_cross_check_surface_acceptance_script_runs_on_isolated_work_root(self) -> None:
+        module = _load_module(
+            "aitp_analytical_cross_check_surface_acceptance_test",
+            "runtime/scripts/run_analytical_cross_check_surface_acceptance.py",
+        )
+        work_root = Path(self._tmpdir.name) / "analytical-cross-check-surface-acceptance"
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_analytical_cross_check_surface_acceptance.py",
+                "--work-root",
+                str(work_root),
+                "--json",
+            ],
+        ):
+            exit_code = module.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "validation_review_bundle.active.md").exists())
+        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "runtime_protocol.generated.md").exists())
+
+    def test_analytical_judgment_surface_acceptance_script_runs_on_isolated_work_root(self) -> None:
+        module = _load_module(
+            "aitp_analytical_judgment_surface_acceptance_test",
+            "runtime/scripts/run_analytical_judgment_surface_acceptance.py",
+        )
+        work_root = Path(self._tmpdir.name) / "analytical-judgment-surface-acceptance"
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_analytical_judgment_surface_acceptance.py",
+                "--work-root",
+                str(work_root),
+                "--json",
+            ],
+        ):
+            exit_code = module.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "validation_review_bundle.active.md").exists())
+        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "runtime_protocol.generated.md").exists())
 
     def test_l1_progressive_reading_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l1-progressive-reading-acceptance"

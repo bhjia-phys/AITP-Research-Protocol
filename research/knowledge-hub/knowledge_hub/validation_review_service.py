@@ -4,6 +4,63 @@ from pathlib import Path
 from typing import Any, Callable
 
 
+def _string_list(values: Any) -> list[str]:
+    if isinstance(values, (str, bytes)):
+        values = [values]
+    if not isinstance(values, list):
+        return []
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for raw in values:
+        text = str(raw or "").strip()
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        normalized.append(text)
+    return normalized
+
+
+def analytical_cross_check_markdown_lines(surface: dict[str, Any]) -> list[str]:
+    if not surface:
+        return []
+    lines = [
+        "## Analytical cross-check surface",
+        "",
+        f"- Status: `{surface.get('status') or '(missing)'}`",
+        f"- Candidate id: `{surface.get('candidate_id') or '(missing)'}`",
+        f"- Candidate type: `{surface.get('candidate_type') or '(missing)'}`",
+        f"- Review path: `{surface.get('path') or '(missing)'}`",
+        f"- Check count: `{surface.get('check_count') or 0}`",
+        f"- Passed: `{surface.get('passed_check_count') or 0}`",
+        f"- Failed: `{surface.get('failed_check_count') or 0}`",
+        f"- Blocked: `{surface.get('blocked_check_count') or 0}`",
+        "",
+        surface.get("summary") or "(missing)",
+        "",
+        "### Check rows",
+        "",
+    ]
+    check_rows = surface.get("check_rows") or []
+    if not check_rows:
+        lines.append("- `(none)`")
+    for row in check_rows:
+        lines.append(
+            f"- `{row.get('kind') or '(missing)'}` `{row.get('label') or '(missing)'}` "
+            f"status=`{row.get('status') or '(missing)'}` depth=`{row.get('reading_depth') or '(missing)'}`"
+        )
+        lines.append(
+            f"  anchors=`{', '.join(row.get('source_anchors') or []) or '(none)'}` "
+            f"assumptions=`{', '.join(row.get('assumption_refs') or []) or '(none)'}`"
+        )
+        lines.append(
+            f"  regime=`{row.get('regime_note') or '(none)'}` notes=`{row.get('notes') or '(none)'}`"
+        )
+    lines.extend(["", "### Blocking reasons", ""])
+    for item in surface.get("blocking_reasons") or ["(none)"]:
+        lines.append(f"- {item}")
+    return lines
+
+
 class ValidationReviewService:
     def __init__(
         self,
@@ -94,6 +151,11 @@ class ValidationReviewService:
             latest_run_id=latest_run_id,
             candidate_rows=candidate_rows,
         )
+        analytical_cross_check_surface = self._derive_analytical_cross_check_surface(
+            topic_slug=topic_slug,
+            latest_run_id=latest_run_id,
+            candidate_rows=candidate_rows,
+        )
         candidate_ids = self._service._dedupe_strings(
             [str(row.get("candidate_id") or "") for row in candidate_rows if str(row.get("candidate_id") or "").strip()]
         )
@@ -149,7 +211,7 @@ class ValidationReviewService:
             if promotion_gate_paths["json"].exists()
             else None,
         }
-        return {
+        bundle = {
             "bundle_kind": "validation_review_bundle",
             "topic_slug": topic_slug,
             "run_id": latest_run_id,
@@ -167,6 +229,57 @@ class ValidationReviewService:
             "updated_at": self._now_iso(),
             "updated_by": updated_by,
         }
+        if analytical_cross_check_surface:
+            bundle["analytical_cross_check_surface"] = analytical_cross_check_surface
+        return bundle
+
+    def _derive_analytical_cross_check_surface(
+        self,
+        *,
+        topic_slug: str,
+        latest_run_id: str,
+        candidate_rows: list[dict[str, Any]],
+    ) -> dict[str, Any] | None:
+        if not latest_run_id:
+            return None
+        for row in candidate_rows:
+            candidate_id = str(row.get("candidate_id") or "").strip()
+            if not candidate_id:
+                continue
+            review_path = self._service._theory_packet_paths(topic_slug, latest_run_id, candidate_id)["analytical_review"]
+            if not review_path.exists():
+                continue
+            payload = self._read_json(review_path) or {}
+            if not payload:
+                continue
+            check_rows = [
+                {
+                    "kind": str(item.get("kind") or ""),
+                    "label": str(item.get("label") or ""),
+                    "status": str(item.get("status") or ""),
+                    "notes": str(item.get("notes") or ""),
+                    "source_anchors": _string_list(item.get("source_anchors")),
+                    "assumption_refs": _string_list(item.get("assumption_refs")),
+                    "regime_note": str(item.get("regime_note") or ""),
+                    "reading_depth": str(item.get("reading_depth") or ""),
+                }
+                for item in (payload.get("checks") or [])
+                if isinstance(item, dict)
+            ]
+            return {
+                "status": str(payload.get("overall_status") or "unknown"),
+                "candidate_id": candidate_id,
+                "candidate_type": str(row.get("candidate_type") or ""),
+                "path": self._service._relativize(review_path),
+                "summary": str(payload.get("summary") or ""),
+                "check_count": int(payload.get("check_count") or len(check_rows)),
+                "passed_check_count": int(payload.get("passed_check_count") or 0),
+                "failed_check_count": int(payload.get("failed_check_count") or 0),
+                "blocked_check_count": int(payload.get("blocked_check_count") or 0),
+                "blocking_reasons": _string_list(payload.get("blocking_reasons")),
+                "check_rows": check_rows,
+            }
+        return None
 
     def render_validation_review_bundle_markdown(self, payload: dict[str, Any]) -> str:
         lines = [
@@ -205,6 +318,7 @@ class ValidationReviewService:
         lines.extend(["", "## Blockers", ""])
         for item in payload.get("blockers") or ["(none)"]:
             lines.append(f"- {item}")
+        lines.extend(["", *analytical_cross_check_markdown_lines(payload.get("analytical_cross_check_surface") or {})])
         lines.extend(["", "## Specialist artifacts", ""])
         if payload.get("specialist_artifacts"):
             for row in payload.get("specialist_artifacts") or []:

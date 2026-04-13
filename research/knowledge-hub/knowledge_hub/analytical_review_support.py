@@ -10,6 +10,7 @@ ALLOWED_ANALYTICAL_CHECK_KINDS = {
     "dimensional_consistency",
     "symmetry",
     "self_consistency",
+    "source_cross_reference",
 }
 ALLOWED_ANALYTICAL_CHECK_STATUSES = {
     "passed",
@@ -30,8 +31,31 @@ def _now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
 
 
-def _normalize_checks(checks: list[dict[str, Any]] | None) -> list[dict[str, str]]:
-    normalized: list[dict[str, str]] = []
+def _dedupe_strings(values: Any) -> list[str]:
+    if isinstance(values, (str, bytes)):
+        values = [values]
+    if not isinstance(values, list):
+        return []
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for raw in values:
+        text = str(raw or "").strip()
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        normalized.append(text)
+    return normalized
+
+
+def _normalize_checks(
+    checks: list[dict[str, Any]] | None,
+    *,
+    default_source_anchors: list[str],
+    default_assumption_refs: list[str],
+    default_regime_note: str,
+    default_reading_depth: str,
+) -> list[dict[str, Any]]:
+    normalized: list[dict[str, Any]] = []
     for row in checks or []:
         kind = str(row.get("kind") or "").strip()
         label = str(row.get("label") or "").strip()
@@ -55,6 +79,14 @@ def _normalize_checks(checks: list[dict[str, Any]] | None) -> list[dict[str, str
                 "label": label,
                 "status": status,
                 "notes": notes,
+                "source_anchors": _dedupe_strings(row.get("source_anchors"))
+                or list(default_source_anchors),
+                "assumption_refs": _dedupe_strings(row.get("assumption_refs"))
+                or list(default_assumption_refs),
+                "regime_note": str(row.get("regime_note") or "").strip() or default_regime_note,
+                "reading_depth": _normalize_reading_depth(
+                    str(row.get("reading_depth") or "").strip() or default_reading_depth
+                ),
             }
         )
     return normalized
@@ -69,17 +101,14 @@ def _normalize_reading_depth(reading_depth: str | None) -> str:
 
 def _compute_blocking_reasons(
     *,
-    checks: list[dict[str, str]],
-    source_anchors: list[str],
-    assumption_refs: list[str],
-    regime_note: str,
+    checks: list[dict[str, Any]],
 ) -> list[str]:
     blockers: list[str] = []
     if not checks:
         blockers.append("missing_analytical_checks")
-    if not source_anchors:
+    if any(not row.get("source_anchors") for row in checks):
         blockers.append("missing_source_anchors")
-    if not assumption_refs and not regime_note:
+    if any(not row.get("assumption_refs") and not row.get("regime_note") for row in checks):
         blockers.append("missing_assumption_or_regime_context")
     if not any(row["status"] == "passed" for row in checks):
         blockers.append("no_passed_analytical_check")
@@ -99,7 +128,7 @@ def _compute_blocking_reasons(
 def _default_summary(
     *,
     overall_status: str,
-    checks: list[dict[str, str]],
+    checks: list[dict[str, Any]],
     source_anchors: list[str],
 ) -> str:
     if checks:
@@ -111,6 +140,39 @@ def _default_summary(
     return "Analytical review is blocked because no durable analytical checks were recorded."
 
 
+def _rollup_source_anchors(checks: list[dict[str, Any]]) -> list[str]:
+    anchors: list[str] = []
+    for row in checks:
+        anchors.extend(_dedupe_strings(row.get("source_anchors")))
+    return _dedupe_strings(anchors)
+
+
+def _rollup_assumption_refs(checks: list[dict[str, Any]]) -> list[str]:
+    assumptions: list[str] = []
+    for row in checks:
+        assumptions.extend(_dedupe_strings(row.get("assumption_refs")))
+    return _dedupe_strings(assumptions)
+
+
+def _rollup_regime_note(checks: list[dict[str, Any]]) -> str:
+    notes = [
+        str(row.get("regime_note") or "").strip()
+        for row in checks
+        if str(row.get("regime_note") or "").strip()
+    ]
+    return "; ".join(_dedupe_strings(notes))
+
+
+def _rollup_reading_depth(checks: list[dict[str, Any]], *, fallback: str) -> str:
+    reading_depths = [
+        str(row.get("reading_depth") or "").strip()
+        for row in checks
+        if str(row.get("reading_depth") or "").strip()
+    ]
+    deduped = _dedupe_strings(reading_depths)
+    return deduped[0] if deduped else fallback
+
+
 def _update_candidate_after_review(
     self,
     *,
@@ -120,7 +182,7 @@ def _update_candidate_after_review(
     candidate: dict[str, Any],
     packet_paths: dict[str, Path],
     overall_status: str,
-    checks: list[dict[str, str]],
+    checks: list[dict[str, Any]],
     source_anchors: list[str],
 ) -> None:
     updated_candidate = dict(candidate)
@@ -154,16 +216,26 @@ def audit_analytical_review(
         raise FileNotFoundError(f"Unable to resolve a validation run for topic {topic_slug}")
 
     candidate = self._load_candidate(topic_slug, resolved_run_id, candidate_id)
-    normalized_checks = _normalize_checks(checks)
     normalized_source_anchors = self._dedupe_strings(source_anchors)
     normalized_assumption_refs = self._dedupe_strings(assumption_refs)
     normalized_regime_note = str(regime_note or "").strip()
     normalized_reading_depth = _normalize_reading_depth(reading_depth)
+    normalized_checks = _normalize_checks(
+        checks,
+        default_source_anchors=normalized_source_anchors,
+        default_assumption_refs=normalized_assumption_refs,
+        default_regime_note=normalized_regime_note,
+        default_reading_depth=normalized_reading_depth,
+    )
+    normalized_source_anchors = _rollup_source_anchors(normalized_checks)
+    normalized_assumption_refs = _rollup_assumption_refs(normalized_checks)
+    normalized_regime_note = _rollup_regime_note(normalized_checks)
+    normalized_reading_depth = _rollup_reading_depth(
+        normalized_checks,
+        fallback=normalized_reading_depth,
+    )
     blocking_reasons = _compute_blocking_reasons(
         checks=normalized_checks,
-        source_anchors=normalized_source_anchors,
-        assumption_refs=normalized_assumption_refs,
-        regime_note=normalized_regime_note,
     )
     overall_status = "ready" if not blocking_reasons else "blocked"
     updated_at = _now_iso()

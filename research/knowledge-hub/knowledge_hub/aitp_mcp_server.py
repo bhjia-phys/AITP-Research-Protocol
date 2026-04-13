@@ -1,25 +1,56 @@
 from __future__ import annotations
 
 import json
+import os
 import traceback
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from mcp.server.fastmcp import FastMCP
 
-from .aitp_service import AITPService
-from .bundle_support import PACKAGE_DISTRIBUTION_NAME
-
-
-mcp = FastMCP(
-    PACKAGE_DISTRIBUTION_NAME,
-    instructions=(
-        "AITP kernel tools for orchestrating topic runs, reading runtime state, "
-        "scaffolding trust gates, auditing conformance, and installing agent wrappers."
-    ),
+from .aitp_mcp_profiles import (
+    build_profile_tool_manifest,
+    normalize_mcp_profile,
+    profile_instructions,
+    server_name_for_mcp_profile,
+    tool_allowed_in_profile,
 )
+from .aitp_service import AITPService
 
 service = AITPService()
+ACTIVE_MCP_PROFILE = normalize_mcp_profile(os.environ.get("AITP_MCP_PROFILE"))
+AITP_MCP_TOOL_ACCESS: dict[str, str] = {}
+AITP_MCP_TOOL_FUNCTIONS: list[Callable[..., str]] = []
+
+
+def aitp_tool(*, access: str) -> Callable[[Callable[..., str]], Callable[..., str]]:
+    normalized_access = str(access).strip().lower()
+    if normalized_access not in {"read", "write"}:
+        raise ValueError(f"Unsupported MCP tool access mode: {access}")
+
+    def decorator(func: Callable[..., str]) -> Callable[..., str]:
+        AITP_MCP_TOOL_ACCESS[func.__name__] = normalized_access
+        AITP_MCP_TOOL_FUNCTIONS.append(func)
+        return func
+
+    return decorator
+
+
+def build_mcp_server(profile: str | None = None) -> FastMCP:
+    resolved_profile = normalize_mcp_profile(profile)
+    server = FastMCP(
+        server_name_for_mcp_profile(resolved_profile),
+        instructions=profile_instructions(resolved_profile),
+    )
+    for func in AITP_MCP_TOOL_FUNCTIONS:
+        access = AITP_MCP_TOOL_ACCESS[func.__name__]
+        if tool_allowed_in_profile(func.__name__, access, resolved_profile):
+            server.add_tool(func)
+    return server
+
+
+def _tool_manifest(profile: str | None = None) -> dict[str, Any]:
+    return build_profile_tool_manifest(profile, AITP_MCP_TOOL_ACCESS)
 
 
 def _ok(**payload: object) -> str:
@@ -125,7 +156,32 @@ def _compact_loop_result(result: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-@mcp.tool()
+@aitp_tool(access="read")
+def aitp_describe_mcp_profile(profile: str | None = None) -> str:
+    """Describe the active or requested AITP MCP profile and whether it is read-only."""
+    try:
+        manifest = _tool_manifest(profile or ACTIVE_MCP_PROFILE)
+        return _ok(
+            profile=manifest["profile"],
+            server_name=manifest["server_name"],
+            read_only=manifest["read_only"],
+            allowed_tool_count=len(manifest["allowed_tools"]),
+            blocked_tool_count=len(manifest["blocked_tools"]),
+        )
+    except Exception as exc:  # noqa: BLE001
+        return _err(str(exc))
+
+
+@aitp_tool(access="read")
+def aitp_list_tool_manifest(profile: str | None = None) -> str:
+    """Show the MCP tool manifest for the active or requested AITP profile."""
+    try:
+        return _ok(manifest=_tool_manifest(profile or ACTIVE_MCP_PROFILE))
+    except Exception as exc:  # noqa: BLE001
+        return _err(str(exc))
+
+
+@aitp_tool(access="write")
 def aitp_bootstrap_topic(
     topic: str | None = None,
     topic_slug: str | None = None,
@@ -157,7 +213,7 @@ def aitp_bootstrap_topic(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_resume_topic(
     topic_slug: str,
     run_id: str | None = None,
@@ -181,7 +237,7 @@ def aitp_resume_topic(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="read")
 def aitp_get_runtime_state(topic_slug: str) -> str:
     """Read the runtime topic_state.json for an AITP topic."""
     try:
@@ -190,7 +246,7 @@ def aitp_get_runtime_state(topic_slug: str) -> str:
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_audit_conformance(topic_slug: str, phase: str = "entry", updated_by: str = "aitp-mcp") -> str:
     """Run the AITP conformance audit for a topic."""
     try:
@@ -200,7 +256,7 @@ def aitp_audit_conformance(topic_slug: str, phase: str = "entry", updated_by: st
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_scaffold_baseline(
     topic_slug: str,
     run_id: str,
@@ -228,7 +284,7 @@ def aitp_scaffold_baseline(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_scaffold_atomic_understanding(
     topic_slug: str,
     run_id: str,
@@ -250,7 +306,7 @@ def aitp_scaffold_atomic_understanding(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_scaffold_operation(
     topic_slug: str,
     run_id: str | None,
@@ -284,7 +340,7 @@ def aitp_scaffold_operation(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_update_operation(
     topic_slug: str,
     run_id: str | None,
@@ -318,7 +374,7 @@ def aitp_update_operation(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_audit_operation_trust(
     topic_slug: str,
     run_id: str | None = None,
@@ -336,7 +392,7 @@ def aitp_audit_operation_trust(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_audit_capability(
     topic_slug: str,
     updated_by: str = "aitp-mcp",
@@ -352,7 +408,7 @@ def aitp_audit_capability(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_audit_theory_coverage(
     topic_slug: str,
     candidate_id: str,
@@ -410,7 +466,7 @@ def aitp_audit_theory_coverage(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_audit_formal_theory(
     topic_slug: str,
     candidate_id: str,
@@ -478,7 +534,7 @@ def aitp_audit_formal_theory(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_complete_topic(
     topic_slug: str,
     run_id: str | None = None,
@@ -496,7 +552,7 @@ def aitp_complete_topic(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_update_followup_return(
     topic_slug: str,
     return_status: str,
@@ -524,7 +580,7 @@ def aitp_update_followup_return(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_reintegrate_followup(
     topic_slug: str,
     child_topic_slug: str,
@@ -544,7 +600,7 @@ def aitp_reintegrate_followup(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_prepare_lean_bridge(
     topic_slug: str,
     run_id: str | None = None,
@@ -564,7 +620,7 @@ def aitp_prepare_lean_bridge(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_request_promotion(
     topic_slug: str,
     candidate_id: str,
@@ -594,7 +650,7 @@ def aitp_request_promotion(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_approve_promotion(
     topic_slug: str,
     candidate_id: str,
@@ -618,7 +674,7 @@ def aitp_approve_promotion(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_reject_promotion(
     topic_slug: str,
     candidate_id: str,
@@ -642,7 +698,7 @@ def aitp_reject_promotion(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_promote_candidate(
     topic_slug: str,
     candidate_id: str,
@@ -678,7 +734,7 @@ def aitp_promote_candidate(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_auto_promote_candidate(
     topic_slug: str,
     candidate_id: str,
@@ -714,7 +770,7 @@ def aitp_auto_promote_candidate(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_run_topic_loop(
     topic_slug: str | None = None,
     topic: str | None = None,
@@ -744,13 +800,14 @@ def aitp_run_topic_loop(
         return _err(str(exc))
 
 
-@mcp.tool()
+@aitp_tool(access="write")
 def aitp_install_agent_wrapper(
     agent: str,
     scope: str = "user",
     target_root: str | None = None,
     force: bool = True,
     install_mcp: bool = True,
+    mcp_profile: str = "full",
 ) -> str:
     """Install AITP wrapper files for Codex, OpenClaw, or OpenCode."""
     try:
@@ -760,10 +817,14 @@ def aitp_install_agent_wrapper(
             target_root=target_root,
             force=force,
             install_mcp=install_mcp,
+            mcp_profile=mcp_profile,
         )
         return _ok(**result)
     except Exception as exc:  # noqa: BLE001
         return _err(str(exc))
+
+
+mcp = build_mcp_server(ACTIVE_MCP_PROFILE)
 
 
 def main() -> None:
