@@ -80,11 +80,34 @@ it still does **not** mean the broader AITP architecture is finished.
 
 ## Current Focus
 
-- Active milestone: none
+- Active milestone: `v1.97` `First Positive L0 To L2 Closure`
 - Latest closed milestone: `v1.96` `Real Topic Promotion E2E Proof`
-- Next boundary: start `v1.97` and land one authoritative positive unit in
-  canonical `L2`, then harden L2 compiler and consultation surfaces around
+- Next boundary: start Phase `171` and land one authoritative positive unit in
+  canonical `L2`, then harden the L2 compiler and consultation surfaces around
   real positive/negative coexistence
+
+## Current Milestone: v1.97 First Positive L0 To L2 Closure
+
+**Goal:** land one fresh positive authoritative unit in canonical `L2` through
+the public AITP route, then make the surrounding L2 surfaces trustworthy enough
+to serve as the baseline for later multi-mode closure.
+
+**Target features:**
+- one fresh `formal_derivation` topic reaches authoritative canonical `L2`
+  instead of stopping at `L3`
+- compiled L2 and consultation surfaces expose the same promoted unit and
+  authority state
+- one replayable acceptance lane proves the full positive route mechanically
+- explicit carry-over blockers are written for `toy_model` and
+  `first_principles`
+
+**Key context:**
+- `v1.96` proved the public front door and the negative-result route honestly,
+  but not positive authoritative L2 landing
+- the most mature positive lane is still the formal von-Neumann / Jones family,
+  so it should close first
+- after one trustworthy positive L2 landing exists, widening back to more modes
+  and topic paradigms becomes much less speculative
 
 ## Latest Closed Milestone: v1.96 Real Topic Promotion E2E Proof
 

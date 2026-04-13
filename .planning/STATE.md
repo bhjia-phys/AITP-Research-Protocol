@@ -1,46 +1,41 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.96
-milestone_name: Real Topic Promotion E2E Proof
-status: milestone_archived
-stopped_at: "Milestone v1.96 archived; waiting for next milestone start"
-last_updated: "2026-04-14T22:35:00+08:00"
+milestone: v1.97
+milestone_name: First Positive L0 To L2 Closure
+status: milestone_active
+stopped_at: "Milestone v1.97 started; Phase 171 not started"
+last_updated: "2026-04-14T22:55:00+08:00"
 last_activity: 2026-04-14
 progress:
   total_phases: 3
-  completed_phases: 3
+  completed_phases: 0
   total_plans: 3
-  completed_plans: 3
-  percent: 100
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Current Position
 
-Status: milestone `v1.96` `Real Topic Promotion E2E Proof` is archived.
+Status: milestone `v1.97` `First Positive L0 To L2 Closure` is active. No
+phases started yet.
 
-**Completed phases:**
+**Why this milestone exists:**
 
-- **Phase 170:** Three research-mode positive promotion proof — Lane A
-  (formal_derivation / von Neumann algebras), Lane B (toy_model / HS model),
-  Lane C (first_principles / LibRPA QSGW). All three topics bootstrapped
-  through public front door with 27/27 conformance.
+`v1.96` proved the public front door and negative-result route honestly, but it
+did **not** land any positive authoritative unit in canonical `L2`. That means
+AITP still lacks one fresh positive proof that the current public route can
+actually finish in trusted L2 knowledge.
 
-- **Phase 170.1:** Negative-result promotion proof — HS model OTOC Lyapunov
-  exponent failure. Topic bootstrapped through public front door, negative
-  result recorded via scratchpad, staged into L2, compiled as
-  `contradiction_watch`. All 8 acceptance criteria met. Evidence, RUNBOOK-D,
-  and SUMMARY written.
-
-- **Phase 170.2:** E2E Evidence and Regression Closure — durable receipts for
-  all four lanes, master regression runbook (RUNBOOK-E), cross-lane postmortem
-  with honest scope assessment. All 8 acceptance criteria met.
+The next bounded step is therefore to close the **most mature** positive lane
+first, and use that real landing to harden the L2 compiler, consultation, and
+retrieval surfaces before widening back out to more modes and topic paradigms.
 
 ## Immediate Next Step
 
-- start the next bounded milestone around one full positive `L0 -> L2`
-  promotion and L2 surface hardening
+- active milestone: `v1.97` `First Positive L0 To L2 Closure`
+- start with Phase `171` `Formal Positive Lane To Authoritative L2`
 
 ## Accumulated Context
 
@@ -82,8 +77,10 @@ cross-cutting).
 - `v1.95` now closes the L4→L2 promotion pipeline gap discovered during Jones
   E2E testing — the pipeline's engineering (not the science) is what failed
 - `v1.96` now promotes the deferred full-proof remainder from `v1.95`: one
-  real-topic positive L2 promotion proof and one honest negative-result L2
-  promotion proof
+  three-mode front-door bootstrap proof plus one honest negative-result L2
+  proof
+- `v1.97` now narrows back down to the first real positive authoritative L2
+  landing so L2 itself becomes trustworthy before broader multi-mode closure
 - Comprehensive HCI gap analysis (2026-04-13) identified 30 issues across 6
   tiers; all captured as 999.60–999.70 in BACKLOG.md
 - wow-harness comparison (2026-04-13) identified 6 borrowable patterns; all

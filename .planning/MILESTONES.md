@@ -1,5 +1,24 @@
 # Milestones
 
+## v1.97 First Positive L0 To L2 Closure (Active)
+
+**Phases completed:** 0 / 3 phases, 0 / 3 plans
+
+**Milestone goal:**
+
+- land one fresh positive authoritative unit in canonical `L2` through the
+  public AITP route
+- harden compiled L2 and consultation surfaces around real
+  positive/negative coexistence
+- close with replayable evidence and explicit blocker routing for the deferred
+  `toy_model` and `first_principles` lanes
+
+**Key accomplishments:**
+
+- (milestone in progress)
+
+---
+
 ## v1.96 Real Topic Promotion E2E Proof (Shipped: 2026-04-14)
 
 **Phases completed:** 3 / 3 phases, 3 / 3 plans
