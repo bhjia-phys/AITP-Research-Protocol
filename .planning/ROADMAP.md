@@ -1,79 +1,126 @@
-# Roadmap: v1.94 L4 Analytical Cross-Check Surface
+# Roadmap: v1.95 L2 Promotion Pipeline Closure
 
 ## Result
 
-`v1.94` closed successfully.
+Milestone in progress.
 
 ## Phases
 
-- [x] **Phase 168: Analytical Check Rows And Review Contract Expansion** *(Axis 1 + Axis 2)*
-- [x] **Phase 168.1: Analytical Runtime Surface And Proof Lane** *(Axis 2 + Axis 4)*
+- [ ] **Phase 169: L2 Canonical Schema Extension** *(Axis 3 + Axis 2)*
+- [ ] **Phase 169.1: L2 Promotion Bridge Code** *(Axis 2 + Axis 3)*
+- [ ] **Phase 169.2: HCI Foundation** *(Axis 4)*
 
 ## Target Outcome
 
-- analytical validation records explicit bounded check rows instead of only a
-  flatter aggregate review artifact
-- each analytical check keeps the source anchors, assumption or regime context,
-  and per-check status needed for human judgment
-- runtime-facing read paths expose the same analytical cross-check surface
-- one bounded analytical proof lane closes the milestone
+- L4→L2 promotion pipeline is structurally complete: every unit type that can
+  reach L4 (including `negative_result`) has a defined staging→canonical path
+- runtime proof schemas (`lean-ready-packet`, `proof-repair-plan`,
+  `statement-compilation-packet`) have promotion bridges so validated proof
+  artifacts can land in L2 canonical knowledge
+- the three promotion support modules load runtime schema context during
+  promotion decisions
+- one bounded HCI improvement makes the operator experience of AITP's status
+  output and first-time bootstrap less hostile
 
 ## Next Step
 
-Start the next milestone with `$gsd-new-milestone`.
+Start Phase 169.
 
-### Phase 168: Analytical Check Rows And Review Contract Expansion
+### Phase 169: L2 Canonical Schema Extension
 
-**Axis:** Axis 1 (`L4` internal) + Axis 2 (`L4 -> runtime artifacts`)
+**Axis:** Axis 3 (schema evolution, data recording) + Axis 2 (inter-layer
+connection)
 
-**Goal:** Expand the analytical review contract so bounded analytical checks are
- first-class rows with explicit context instead of only a flatter aggregate
- review payload.
+**Goal:** Extend the canonical schema so every unit type that reaches L4 has a
+valid `unit_type` enum entry, and create JSON schemas for the three runtime
+proof schemas that currently exist only as Python dicts.
 
 **Motivation:**
 
-- `v1.47` made analytical review a first-class production mode, but broader
-  analytical validation beyond the baseline review artifact remains open
-- `v1.93` now makes contradiction visibility explicit, which creates a natural
-  downstream need for stronger analytical cross-check surfaces
-- the next bounded improvement should make analytical validation easier to read,
-  replay, and compare without reopening the symbolic backend question
+- Two Jones E2E runs proved the science works (Lean compilation succeeds at L4)
+  but the pipeline breaks at promotion because `canonical-unit.schema.json` does
+  not include `negative_result` in its `unit_type` enum
+- runtime proof artifacts (`lean-ready-packet`, `proof-repair-plan`,
+  `statement-compilation-packet`) exist as ad-hoc Python dicts in the validation
+  layer but have no formal schema and no promotion path into canonical L2
+- without these schema fixes, no E2E run can ever reach L2 regardless of how
+  good the science is
 
 **Requirements:**
 
-- `REQ-ANX-01`
-- `REQ-ANX-02`
+- `REQ-PROMO-01`
+- `REQ-PROMO-02`
 
-**Depends on:** `v1.93`
+**Depends on:** `v1.94`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `168-01` Add explicit analytical check rows and richer review contract context
+- [ ] `169-01` Add `negative_result` to canonical-unit.schema.json and create
+  runtime proof schemas
 
-### Phase 168.1: Analytical Runtime Surface And Proof Lane
+### Phase 169.1: L2 Promotion Bridge Code
 
-**Axis:** Axis 2 (`L4 -> runtime read path`) + Axis 4 (human experience)
+**Axis:** Axis 2 (inter-layer connection) + Axis 3 (data recording)
 
-**Goal:** Surface the richer analytical cross-check contract on runtime/read
-paths and leave one bounded analytical proof lane.
+**Goal:** Wire the three promotion support modules to load and forward runtime
+schema context during L4→L2 promotion, and create a dedicated
+`runtime_schema_promotion_bridge.py` that translates runtime proof artifacts into
+canonical L2 units.
 
 **Motivation:**
 
-- analytical check rows are only useful if they survive into the runtime
-  surfaces humans actually read
-- the milestone should close on one bounded proof lane rather than on contract
-  claims alone
+- `candidate_promotion_support.py` `_resolve_promotion_context()` (lines 170-230)
+  does not load runtime schemas
+- `auto_promotion_support.py` `_validate_auto_promotion()` (lines 58-105) does
+  not check runtime schema validity
+- `promotion_gate_support.py` `request_promotion()` (lines 214-281) does not
+  include runtime schema paths in the gate payload
+- the promotion pipeline has the schema structure (from Phase 169) but no code
+  that actually uses it
 
 **Requirements:**
 
-- `REQ-ANX-03`
-- `REQ-VERIFY-01`
+- `REQ-PROMO-03`
+- `REQ-PROMO-04`
+- `REQ-PROMO-05`
+- `REQ-PROMO-06`
 
-**Depends on:** Phase `168`
+**Depends on:** Phase `169`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `168.1-01` Surface analytical cross-check rows across runtime read paths
-  and prove one bounded analytical lane
+- [ ] `169.1-01` Add runtime schema loading and bridging to all three promotion
+  support modules
+
+### Phase 169.2: HCI Foundation
+
+**Axis:** Axis 4 (global infrastructure, human experience)
+
+**Goal:** Make three targeted HCI improvements so that the next E2E test run
+has a better operator experience: structured status output, a zero-config
+introductory command, and post-bootstrap action guidance.
+
+**Motivation:**
+
+- BACKLOG 999.60: `aitp status` outputs 40+ sections with no hierarchy —
+  impossible to scan
+- BACKLOG 999.61: no `aitp hello` or equivalent zero-config entry point for
+  new users
+- BACKLOG 999.86: after bootstrap, the operator sees no suggested next action
+- these are the three highest-severity HCI gaps that directly affect E2E test
+  ergonomics
+
+**Requirements:**
+
+- `REQ-HCI-01`
+- `REQ-HCI-02`
+
+**Depends on:** `v1.94` (independent of Phase 169/169.1)
+**Plans:** 1 plan
+
+Plans:
+
+- [ ] `169.2-01` Add structured status output, hello command, and post-bootstrap
+  action guidance

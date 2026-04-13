@@ -76,10 +76,32 @@ it still does **not** mean the broader AITP architecture is finished.
 
 ## Current Focus
 
-- Active milestone: none
+- Active milestone: `v1.95` `L2 Promotion Pipeline Closure`
 - Latest closed milestone: `v1.94` `L4 Analytical Cross-Check Surface`
-- Next boundary: define the next bounded milestone rather than reopen the now
-  closed analytical cross-check slice casually
+- Next boundary: start Phase `169` `L2 Canonical Schema Extension` and close
+  the broken `L4 -> L2` promotion path before claiming broader E2E closure
+
+## Current Milestone: v1.95 L2 Promotion Pipeline Closure
+
+**Goal:** Close the L4→L2 promotion pipeline gap so E2E research runs that
+already validate at `L4` can actually land their results in canonical `L2`
+knowledge.
+
+**Target features:**
+- extend canonical schema so `negative_result` and runtime proof artifacts have
+  a real promotion path
+- wire promotion support modules to load runtime schema context and bridge
+  runtime proof artifacts into canonical `L2` units
+- make the next E2E run easier to operate through bounded status, hello, and
+  next-action guidance improvements
+
+**Key context:**
+- two Jones E2E runs already reached `L4`; the blocker is promotion
+  engineering, not scientific validation
+- root causes are missing canonical enum coverage, missing formal runtime proof
+  schemas, and missing bridge wiring in promotion helpers
+- keep this milestone bounded to pipeline closure and minimal operator
+  ergonomics rather than reopening already-shipped analytical surfaces
 
 ## Latest Closed Milestone: v1.94 L4 Analytical Cross-Check Surface
 
@@ -821,9 +843,9 @@ This document evolves at phase transitions and milestone boundaries.
 
 This does **not** mean AITP is finished.
 
-It means `v1.91` is now archived on a green baseline and the next step is
-choosing the next bounded milestone rather than reopening its already-shipped
-closure chain casually.
+It means `v1.94` is archived on a green baseline and `v1.95` is now the active
+bounded closure target, starting with Phase `169` instead of reopening the
+already-shipped analytical surface casually.
 
 ---
-*Last updated: 2026-04-13 after closing milestone v1.94*
+*Last updated: 2026-04-14 after starting milestone v1.95*

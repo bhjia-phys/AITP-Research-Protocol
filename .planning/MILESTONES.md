@@ -1,5 +1,22 @@
 # Milestones
 
+## v1.95 L2 Promotion Pipeline Closure (Active)
+
+**Phases completed:** 0 / 3 phases, 0 / 3 plans
+
+**Milestone goal:**
+
+- close the L4→L2 promotion pipeline gap discovered during Jones E2E testing
+- extend canonical schema so `negative_result` has a promotion path
+- create runtime proof schemas and wire promotion bridge code
+- make three targeted HCI improvements for better E2E test ergonomics
+
+**Key accomplishments:**
+
+- (milestone in progress)
+
+---
+
 ## v1.94 L4 Analytical Cross-Check Surface (Shipped: 2026-04-13)
 
 **Phases completed:** 2 phases, 2 plans, milestone audit passed
@@ -417,10 +434,10 @@ Completed milestone chain:
 
 ## Current Active Milestone
 
-- none — start the next milestone with `$gsd-new-milestone`
+- `v1.95` `L2 Promotion Pipeline Closure` — 3 phases, 0 completed
 
 ## Current Status
 
 - `v1.36` through `v1.94` are closed and archived or ready for archive lookup
-- no active milestone is open after closing `v1.94`
-- next command boundary: `$gsd-new-milestone`
+- `v1.95` is active with 3 phases (169, 169.1, 169.2)
+- next command boundary: `$gsd-execute-phase 169`

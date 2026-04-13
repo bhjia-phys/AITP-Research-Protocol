@@ -1,30 +1,46 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.94
-milestone_name: L4 Analytical Cross-Check Surface
+milestone: v1.95
+milestone_name: L2 Promotion Pipeline Closure
 status: milestone_active
-stopped_at: "Milestone v1.94 complete; next milestone not started yet"
-last_updated: "2026-04-13T13:49:15.9427692+08:00"
-last_activity: 2026-04-13
+stopped_at: "Milestone v1.95 started; Phase 169 not started"
+last_updated: "2026-04-14T10:00:00+08:00"
+last_activity: 2026-04-14
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 3
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Current Position
 
-Status: milestone `v1.94` is closed on a green bounded baseline. No new
-milestone has been started yet.
+Status: milestone `v1.95` `L2 Promotion Pipeline Closure` is active. No phases
+started yet.
+
+**Root cause context (from E2E gap diagnosis):**
+
+Two Jones E2E runs reached L4 (Lean compilation succeeded) but never landed in
+L2 because the promotion pipeline's last segment is incomplete:
+
+- `canonical-unit.schema.json` is missing `negative_result` in the `unit_type`
+  enum — validated but negative outcomes have no staging→canonical path
+- runtime proof schemas (`lean-ready-packet`, `proof-repair-plan`,
+  `statement-compilation-packet`) exist in validation/ but have no promotion
+  bridge into L2 canonical knowledge
+- `candidate_promotion_support.py`, `auto_promotion_support.py`, and
+  `promotion_gate_support.py` do not load or forward runtime schema context
+  during promotion
+
+The science is validated. The engineering pipe is broken at L4→L2.
 
 ## Immediate Next Step
 
-- latest closed milestone: `v1.94` `L4 Analytical Cross-Check Surface`
-- next step: `$gsd-new-milestone`
+- active milestone: `v1.95` `L2 Promotion Pipeline Closure`
+- start with Phase `169` `L2 Canonical Schema Extension`
 
 ## Accumulated Context
 
@@ -63,6 +79,8 @@ cross-cutting).
   `L1` intake maturity into one bounded milestone
 - `v1.94` now promotes the broader post-baseline analytical-validation
   remainder into one bounded milestone
+- `v1.95` now closes the L4→L2 promotion pipeline gap discovered during Jones
+  E2E testing — the pipeline's engineering (not the science) is what failed
 - Comprehensive HCI gap analysis (2026-04-13) identified 30 issues across 6
   tiers; all captured as 999.60–999.70 in BACKLOG.md
 - wow-harness comparison (2026-04-13) identified 6 borrowable patterns; all

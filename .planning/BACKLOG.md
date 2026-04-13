@@ -1055,6 +1055,152 @@ Both are trust-boundary systems, but wow-harness's approach is more
 deterministic and zero-LLM-cost for mechanical checks. The borrowable insight:
 use mechanical checks first, LLM evaluation only when mechanical passes.
 
+## AI Scientist Benchmark Alignment (2026-04-14)
+
+**Source**: AI Scientist Benchmark PDF — a structured framework for evaluating
+AI research capabilities along two axes: paper search (expert-level literature
+relevance grading) and paper understanding (structured knowledge extraction
+with conditions, motivations, and open problems).
+
+**Core insight**: The benchmark defines a granular knowledge-extraction standard
+that AITP's current L0/L1/L3 layers do not yet match. Specifically:
+- source-item has no relevance tier or role labels
+- candidate-claim has no knowledge type distinction (conclusion vs motivation vs open problem)
+- candidate-claim does not require conditions/assumptions
+- evidence tracing is section-level, not sentence-level
+- L4 validation has no condition-understanding completeness dimension
+
+These gaps mean AITP's knowledge extraction is structurally weaker than what
+the benchmark treats as the minimum for evaluating AI research competence.
+
+**Milestone proposal**: `.planning/backlog/999.87-ai-scientist-benchmark-alignment/CONTEXT.md`
+— proposed `v1.96` with 5 phases (A–E), dependency graph, and success criteria.
+
+**Borrowable patterns (999.87–999.92)**:
+
+### 999.87: Source Relevance Tier and Role Labels
+
+**Goal:** Add expert-grade relevance classification to `source-item.schema.json`.
+Introduce a five-tier relevance scale (`canonical`, `must_read`,
+`strongly_relevant`, `useful`, `irrelevant`) and an open vocabulary of role
+labels (`foundational`, `key_result`, `modern_reference`, `review`,
+`technical_tool`, `limitation`, `application_connection`) so that L0 sources
+carry structured relevance metadata beyond simple acquire/pending status.
+
+**Motivation:** AITP's L0 currently distinguishes acquired vs pending sources
+but provides no structured judgment about which sources are core, which are
+supplementary, and which serve specific roles (foundational, technical tool,
+review, etc.). This means the L0→L1 transition treats all acquired sources
+equally, which is not how researchers actually triage literature.
+
+**Axis:** A1 (L0 internal capability) + A2 (L0→L1 connection — relevance
+tier directly informs which sources deserve deep L1 reading)
+**Files:** `schemas/source-item.schema.json`, runtime mirror, L0 intake
+helpers, `source_catalog_support.py`, runtime bundle surfaces
+**Source:** AI Scientist Benchmark §3.4 (relevance tiers 3+/3/2/1/0) and
+§3.6 (role labels)
+
+### 999.88: Candidate Knowledge Type Trichotomy
+
+**Goal:** Extend `candidate-claim.schema.json` with a `knowledge_type` field
+that distinguishes three categories of extractable knowledge:
+- `conclusion` — what the paper establishes, under what conditions
+- `motivation_insight` — why the paper is worth doing, what difficulty it
+  targets, what the central idea or conceptual transformation is
+- `open_problem` — where the paper stops, what the most important next step is
+
+Each type would carry type-specific required fields (e.g., conclusions require
+`conditions_and_assumptions`; open problems require `boundary_origin`).
+
+**Motivation:** AITP's L3 candidate claims are currently flat — all claims are
+treated identically regardless of whether they represent an established result,
+a motivating insight, or an unsolved problem. The benchmark's trichotomy is
+more aligned with how researchers actually organize their knowledge and would
+enable type-specific validation in L4.
+
+**Axis:** A1 (L3 internal — candidate type discrimination) + A2 (L3→L4 —
+type-specific validation paths)
+**Files:** `schemas/candidate-claim.schema.json`, runtime mirror, candidate
+production helpers, validation contract surfaces
+**Source:** AI Scientist Benchmark §4.2 (three extraction categories)
+
+### 999.89: Mandatory Conditions and Assumptions on Conclusions
+
+**Goal:** Make `conditions_and_assumptions` a required field for all
+candidate claims of type `conclusion`. The field must explicitly state the
+regime, model assumptions, parameter ranges, or other prerequisites under
+which the claimed result holds. Claims without this field should fail schema
+validation.
+
+**Motivation:** The benchmark's strongest design choice is requiring every
+conclusion to state its conditions. This directly serves AITP Charter Article
+2 (evidence hierarchy) — without condition tracking, "theoretical conclusion"
+and "approximation valid only in a specific regime" are indistinguishable.
+Current AITP candidate-claim has no such field, so L4 audits cannot check
+whether the agent understood the scope of a result.
+
+**Axis:** A1 (L1/L3 internal — extraction quality) + A2 (L3→L4 — condition
+completeness as a validation dimension)
+**Files:** `schemas/candidate-claim.schema.json`, runtime mirror, candidate
+production helpers, L4 validation surfaces
+**Source:** AI Scientist Benchmark §4.5.1 (conditions/assumptions mandatory
+field)
+
+### 999.90: Sentence-Level Evidence Anchoring
+
+**Goal:** Add sentence-level evidence anchoring to the L1 vault intake path.
+Each extracted knowledge unit should carry 1–3 sentence identifiers that
+constitute the minimal necessary evidence for that extraction. This refines
+AITP's current section-level source tracing to the sentence level.
+
+**Motivation:** The benchmark requires evidence sentence IDs for every
+annotated knowledge unit. AITP's current source tracing operates at section
+granularity. Sentence-level anchoring makes L4 audits mechanical (does the
+claim follow from these sentences?) and directly supports the "evidence before
+confidence" charter principle.
+
+**Axis:** A1 (L1 internal — extraction precision) + A3 (data recording —
+evidence traceability)
+**Files:** L1 vault intake helpers, `l1_source_intake` path, source trace
+schema, validation surfaces
+**Source:** AI Scientist Benchmark §4.5.1 (evidence sentences, 1–3 IDs)
+
+### 999.91: Multi-Reviewer L4 Cross-Validation Protocol
+
+**Goal:** Introduce a multi-reviewer cross-validation mechanism in L4. When a
+candidate claim reaches L4 validation, it should be evaluated by at least two
+independent reviewer passes (e.g., different LLM calls with different system
+prompts). Claims where reviewers disagree should be flagged for human
+escalation. Higher-importance claims get weighted more in the aggregate score.
+
+**Motivation:** The benchmark uses three fixed AI reviewer models to evaluate
+consistency with expert annotations, weighting higher-importance items more.
+AITP's current L4 is single-path. Multi-reviewer cross-validation would make
+the L4→L2 promotion gate more robust and catch single-reviewer blind spots.
+
+**Axis:** A1 (L4 internal — validation quality) + A2 (L4→L2 — gate robustness)
+**Files:** L4 validation contract, validation helpers, promotion gate surfaces
+**Source:** AI Scientist Benchmark §5 (three fixed AI reviewers, importance
+weighting)
+
+### 999.92: Expert Annotation Attachment on L2 Knowledge
+
+**Goal:** Allow L2 promoted knowledge items to carry structured expert
+annotations — including relevance tier, role labels, short comments, and key
+points — that were either provided by the human during the promotion gate or
+imported from external benchmark data. This makes L2 knowledge traceable to
+human expert judgment rather than only AI-generated summaries.
+
+**Motivation:** The benchmark's expert annotations are themselves high-value
+data. If AITP can attach expert-level annotations to L2 items, then promoted
+knowledge becomes anchored to human judgment rather than purely AI-synthesized
+summaries. This directly improves L2 reusability and trustworthiness.
+
+**Axis:** A2 (L4→L2 — promotion enrichment) + A4 (human experience —
+annotation workflow)
+**Files:** L2 compiler helpers, promotion contract, `knowledge-packet.schema.json`
+**Source:** AI Scientist Benchmark §4.5 (structured annotation template)
+
 ## Legacy Note
 
 ### Legacy: L2 Knowledge Compiler And Hygiene
