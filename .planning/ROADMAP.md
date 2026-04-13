@@ -1,4 +1,4 @@
-# Roadmap: v2.5 Staged-L2 Review Reentry Coherence
+# Roadmap: v2.6 Staged-L2 Post-Review Advancement
 
 ## Result
 
@@ -6,76 +6,75 @@ Milestone phase work complete. Lifecycle closure is next.
 
 ## Phases
 
-- [x] **Phase 179: Control-Note Reentry Demotion** *(Axis 4 + Axis 2)*
-- [x] **Phase 179.1: Public Staged-L2 Reentry Surface Coherence** *(Axis 4 + Axis 5)*
-- [x] **Phase 179.2: Fresh Staged-L2 Reentry Replay Proof** *(Axis 4 + Axis 3)*
+- [x] **Phase 180: Staged-L2 Review Advancement Rule** *(Axis 2 + Axis 4)*
+- [x] **Phase 180.1: Public Post-Review Route Advancement** *(Axis 4 + Axis 5)*
+- [x] **Phase 180.2: Fresh Post-Review Advancement Replay Proof** *(Axis 4 + Axis 3)*
 
 ## Target Outcome
 
-- benign `continue` steering no longer leaves staged-L2 review reentry in an
-  `active_human_control` posture
-- public `next`, `status`, and dashboard surfaces foreground the staged-L2
-  review workflow itself while that benign steering remains durable
-- one replayable fresh-topic proof shows the same topic can continue from
-  staged-L2 review under non-blocking `continue` steering
+- once staged-L2 review has already been surfaced, a later benign `continue`
+  no longer leaves the same topic on that static review summary forever
+- queue materialization and public `next` / `status` now advance onto one
+  bounded post-review consultation step against topic-local staged `L2` memory
+- one replayable fresh-topic proof records that advancement beyond staged-L2
+  review on the same bounded route
 
 ## Next Step
 
-Run milestone audit / archive for `v2.5`.
+Run milestone audit / archive for `v2.6`.
 
-### Phase 179: Continue-Steering Neutrality
+### Phase 180: Staged-L2 Review Advancement Rule
 
-**Axis:** Axis 4 (human experience) + Axis 2 (inter-layer connection)
+**Axis:** Axis 2 (inter-layer connection) + Axis 4 (human experience)
 
-**Goal:** make benign `continue` steering stop surfacing as blocking
-human-control state after the first staged-L2 review point is reached.
+**Goal:** make a later bounded `continue` advance beyond the static staged-L2
+review summary into one bounded post-review consultation step.
 
 **Requirements:**
 
-- `SRR-01`
-- `SRR-02`
+- `PRA-01`
+- `PRA-02`
 
-**Depends on:** `v2.4`
+**Depends on:** `v2.5`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `179-01` Neutralize benign continue-steering control-note residue after staged-L2 follow-through
+- [x] `180-01` Advance later continue decisions beyond static staged-L2 review into one topic-local consultation step
 
-### Phase 179.1: Public Staged-L2 Reentry Surface Coherence
+### Phase 180.1: Public Post-Review Route Advancement
 
 **Axis:** Axis 4 (human evidence) + Axis 5 (agent-facing steering)
 
-**Goal:** make public `next`, `status`, and dashboard surfaces point at staged-L2
-review artifacts as the primary reentry surface once the first follow-through
-has already landed and benign steering remains durable.
+**Goal:** make public `next` and `status` advance beyond staged-L2 review onto
+the same bounded post-review consultation step.
 
 **Requirements:**
 
-- `SRR-03`
+- `PRA-03`
 
-**Depends on:** Phase `179`
+**Depends on:** Phase `180`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `179.1-01` Refocus public reentry surfaces onto staged-L2 review after the first follow-through
+- [x] `180.1-01` Align public next-action surfaces on the bounded post-review consultation step
 
-### Phase 179.2: Fresh Staged-L2 Reentry Replay Proof
+### Phase 180.2: Fresh Post-Review Advancement Replay Proof
 
 **Axis:** Axis 4 (human evidence) + Axis 3 (data recording)
 
 **Goal:** close the milestone with one replayable fresh-topic proof that the
-same topic can continue from staged-L2 review under non-blocking `continue`
-steering.
+same topic can advance beyond staged-L2 review after a later benign
+`continue`.
 
 **Requirements:**
 
-- `SRR-04`
+- `PRA-04`
 
-**Depends on:** Phase `179.1`
+**Depends on:** Phase `180.1`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `179.2-01` Replay fresh staged-L2 review reentry on the same topic under benign continue steering and retain durable receipts
+- [x] `180.2-01` Capture the replayable third-continue advancement beyond staged-L2 review

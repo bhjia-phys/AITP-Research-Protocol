@@ -1,6 +1,35 @@
 # Milestones
 
-## v2.5 Staged-L2 Review Reentry Coherence (Active)
+## v2.6 Staged-L2 Post-Review Advancement (Active)
+
+**Phases completed:** 3 / 3 phases, 3 / 3 plans
+
+**Milestone goal:**
+
+- make a later benign `continue` stop leaving the same fresh topic on the
+  static staged-`L2` review summary forever
+
+- keep `next`, `status`, and dashboard surfaces aligned on one bounded
+  post-review consultation step against topic-local staged `L2` memory
+
+- close with one replayable fresh-topic proof that the same topic can advance
+  beyond staged-`L2` review after that later `continue`
+
+**Key accomplishments:**
+
+- milestone scoped from the remaining operator-visible gap after `v2.5`: a
+  later benign `continue` could still leave the topic on
+  `Inspect the current L2 staging manifest before continuing.`
+- Phase `180` now advances queue materialization onto one bounded
+  topic-local staged-memory consultation step
+- Phase `180.1` now proves public `next` and `status` advance onto the same
+  post-review route
+- Phase `180.2` now closes the milestone with one replayable fresh-topic
+  advancement packet beyond staged-L2 review
+
+---
+
+## v2.5 Staged-L2 Review Reentry Coherence (Shipped: 2026-04-14)
 
 **Phases completed:** 3 / 3 phases, 3 / 3 plans
 
@@ -783,14 +812,15 @@ Completed milestone chain:
 
 ## Latest Closed Milestone
 
-- `v2.0` `Three-Lane Real-Topic Natural-Language E2E` shipped
+- `v2.5` `Staged-L2 Review Reentry Coherence` shipped
 
 ## Current Active Milestone
 
-- `v2.1` `L2 Real-Topic Relevance Hardening`
+- `v2.6` `Staged-L2 Post-Review Advancement`
 
 ## Current Status
 
-- `v1.36` through `v2.0` are closed and archived or ready for archive lookup
-- active work has moved into milestone `v2.1`
-- next command boundary: discuss or plan Phase `175`
+- `v1.36` through `v2.5` are closed and archived or ready for archive lookup
+- active work has moved into milestone `v2.6`
+- next command boundary: audit / archive `v2.6` or promote the next bounded
+  post-review candidate-selection gap

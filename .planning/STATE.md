@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.5
-milestone_name: Staged-L2 Review Reentry Coherence
+milestone: v2.6
+milestone_name: Staged-L2 Post-Review Advancement
 status: milestone_active
-stopped_at: "Phase 179.2 complete; milestone lifecycle next"
-last_updated: "2026-04-14T06:45:00+08:00"
+stopped_at: "Phase 180.2 complete; milestone lifecycle next"
+last_updated: "2026-04-14T07:21:35+08:00"
 progress:
   total_phases: 3
   completed_phases: 3
@@ -16,37 +16,39 @@ progress:
 
 ## Current Position
 
-Status: milestone `v2.5` `Staged-L2 Review Reentry Coherence` is active. Phase
+Status: milestone `v2.6` `Staged-L2 Post-Review Advancement` is active. Phase
 work is complete and milestone lifecycle closure is next.
 
 **Why this milestone exists:**
 
-`v2.4` closed the first fresh-topic L1->L2 follow-through baseline and proved
-that public `consult-l2` can already retrieve the topic-local staged row. A
-follow-up probe without any explicit stop intent still showed one remaining
-operator-visible mismatch: a benign `continue` steering request leaves
-`h_plane.overall_status = active_human_control` even though the next bounded
-route is already staged-L2 review.
+`v2.5` closed staged-L2 review reentry posture coherence and proved that a
+benign `continue` request no longer surfaces false human-control blockage. A
+follow-up probe still showed one remaining bounded route gap: once staged-L2
+review is already visible, another later `continue` leaves the same topic on
+that static review summary instead of advancing to the next bounded
+post-review step.
 
-That bounded step is now closed. The next step is milestone audit / archive,
-then promotion of the next gap that appears after staged-L2 review reentry.
+That bounded advancement step is now closed. The next step is milestone audit /
+archive, then promotion of the next gap that appears after post-review
+consultation becomes stable.
 
 ## Immediate Next Step
 
-- active milestone: `v2.5` `Staged-L2 Review Reentry Coherence`
-- latest closed milestone: `v2.4` `First L1 To L2 Follow-Through Coherence`
-- previous closed milestone: `v2.3` `Post-Registration Route Coherence`
-- older closed milestone: `v2.2` `Fresh-Topic First-Use Reliability`
-- `v2.4` proved the fresh topic can reach staged-L2 review and public
-  `consult-l2` can return the topic-local staged row
-- a follow-up probe with a benign `continue` request showed
-  `h_plane.overall_status = active_human_control` even though `next` already
-  points at staged-L2 review
-- Phase `179` now closes benign continue-steering neutrality at the H-plane
-  level
-- Phase `179.1` now closes public staged-L2 reentry surface coherence
-- Phase `179.2` now closes the replayable fresh-topic reentry proof
-- immediate next step: audit and archive milestone `v2.5`
+- active milestone: `v2.6` `Staged-L2 Post-Review Advancement`
+- latest closed milestone: `v2.5` `Staged-L2 Review Reentry Coherence`
+- previous closed milestone: `v2.4` `First L1 To L2 Follow-Through Coherence`
+- older closed milestone: `v2.3` `Post-Registration Route Coherence`
+- `v2.5` proved the same fresh topic can reenter from staged-L2 review under
+  benign `continue` steering without false human blockage
+- a follow-up probe with another later `continue` still left the queue on
+  `Inspect the current L2 staging manifest before continuing.`
+- Phase `180` now advances that later continue onto one bounded topic-local
+  staged-memory consultation step
+- Phase `180.1` now aligns public `next` and `status` on the same advanced
+  route
+- Phase `180.2` now closes the replayable fresh-topic proof for advancement
+  beyond staged-L2 review
+- immediate next step: audit and archive milestone `v2.6`
 
 ## Accumulated Context
 
@@ -131,3 +133,7 @@ cross-cutting).
 - `v2.5` now promotes the remaining bounded follow-through friction from the
   `v2.4` replay: benign continue steering still leaves a misleading
   human-control posture during staged-L2 review reentry
+- `v2.6` now promotes the next bounded gap from the repaired `v2.5` reentry
+  baseline: after staged-L2 review becomes stable, a later `continue` must
+  advance onto one bounded post-review consultation step instead of stalling
+  on the same review summary

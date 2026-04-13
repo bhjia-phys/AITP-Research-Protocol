@@ -80,6 +80,8 @@ The previously scoped GSD mainline is implemented through:
 - `v2.1`
 - `v2.2`
 - `v2.3`
+- `v2.4`
+- `v2.5`
 
 That closes the current bounded chain through the first three-lane real-topic
 natural-language dialogue proof across formal, toy-model, and
@@ -89,37 +91,58 @@ architecture is finished.
 
 ## Current Focus
 
-- Active milestone: `v2.5` `Staged-L2 Review Reentry Coherence`
-- Latest closed milestone: `v2.4` `First L1 To L2 Follow-Through Coherence`
-- Next boundary: make benign `continue` steering stop surfacing as blocking
-  human control after the fresh topic reaches staged-`L2` review
+- Active milestone: `v2.6` `Staged-L2 Post-Review Advancement`
+- Latest closed milestone: `v2.5` `Staged-L2 Review Reentry Coherence`
+- Next boundary: make a later benign `continue` advance beyond static
+  staged-`L2` review into one bounded post-review consultation step
 
-## Current Milestone: v2.5 Staged-L2 Review Reentry Coherence
+## Current Milestone: v2.6 Staged-L2 Post-Review Advancement
+
+**Goal:** make post-review continuation trustworthy enough that, once staged-`L2`
+review is already visible on a fresh topic, a later benign `continue`
+advances to one bounded topic-local staged-memory consultation step instead of
+stalling on the same review summary forever.
+
+**Target features:**
+- detect when a later `continue` decision is newer than the latest topic-local
+  staged entry and advance beyond static staged-L2 review
+- keep public `next`, `status`, and dashboard surfaces aligned on the same
+  bounded post-review consultation step
+- close with one replayable fresh-topic proof that the same topic advances
+  beyond staged-L2 review after that later `continue`
+
+**Key context:**
+- `v2.5` closed staged-L2 reentry posture coherence and proved that benign
+  `continue` steering no longer creates false human blockage
+- a follow-up probe still left the same topic on
+  `Inspect the current L2 staging manifest before continuing.` after another
+  later `continue`
+- the next bottleneck is therefore advancing beyond staged-L2 review itself,
+  not reopening earlier registration, staging quality, or H-plane neutrality
+  work
+
+## Latest Closed Milestone: v2.5 Staged-L2 Review Reentry Coherence
 
 **Goal:** make staged-`L2` review reentry trustworthy enough that, after the
 first fresh-topic L1->L2 follow-through lands, benign `continue` steering no
 longer leaves the topic in a misleading human-control posture and public
 surfaces stay focused on the review workflow itself.
 
-**Target features:**
-- neutralize non-directive `continue` steering so it does not mark the topic as
-  blocked human control after staged-L2 review
-- keep public `next`, `status`, and dashboard surfaces aligned on staged-L2
-  review as the primary reentry surface while that benign steering persists
-- close with one replayable fresh-topic proof that the same topic can continue
-  from staged-L2 review under non-blocking `continue` steering
+**Delivered features:**
+- benign `continue_recorded` steering no longer promotes the topic into false
+  blocking human-control posture
+- public `next`, `status`, and dashboard surfaces stay aligned on staged-L2
+  review under that benign reentry steering
+- one replayable fresh-topic proof now shows the same topic can reenter from
+  staged-L2 review under non-blocking `continue` steering
 
 **Key context:**
-- `v2.4` closed the first fresh-topic L1->L2 follow-through baseline and
-  proved that public `consult-l2` can already retrieve topic-local staged hits
-- a follow-up probe without any explicit stop intent still left
-  `h_plane.overall_status = active_human_control` after a benign `continue`
-  steering request
-- the next bottleneck is therefore neutralizing benign steering/control-note
-  residue during staged-L2 review reentry, not a return to earlier source
-  intake or staging quality work
+- `v2.4` had already closed the first fresh-topic L1->L2 follow-through and
+  advanced onto staged-L2 review
+- `v2.5` closed the remaining same-topic reentry posture gap without
+  pretending that later post-review advancement was already solved
 
-## Latest Closed Milestone: v2.4 First L1 To L2 Follow-Through Coherence
+## Previous Closed Milestone: v2.4 First L1 To L2 Follow-Through Coherence
 
 **Goal:** make the first post-registration L1->L2 follow-through trustworthy
 enough that a fresh topic can execute one bounded `literature_intake_stage`,
@@ -1091,4 +1114,4 @@ QSGW` lanes instead of re-litigating whether AITP already has a trustworthy
 positive canonical-L2 path.
 
 ---
-*Last updated: 2026-04-14 after starting milestone v2.5*
+*Last updated: 2026-04-14 after starting milestone v2.6*

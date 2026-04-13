@@ -1,53 +1,51 @@
-# Requirements: v2.5 Staged-L2 Review Reentry Coherence
+# Requirements: v2.6 Staged-L2 Post-Review Advancement
 
 ## Milestone Goal
 
-Make staged-`L2` review reentry coherent enough that, after the first
-fresh-topic L1->L2 follow-through lands, benign `continue` steering no longer
-looks like blocking human control and public surfaces stay focused on the
-review workflow itself.
+Make post-review continuation coherent enough that, once staged-`L2` review is
+already visible on a fresh topic, a later benign `continue` advances to one
+bounded topic-local staged-memory consultation step instead of stalling on the
+same review summary forever.
 
 ## Active Requirements
 
-### Continue-Steering Neutrality
+### Queue Advancement Beyond Review
 
-- [x] `SRR-01`: after the first fresh-topic L1->L2 follow-through lands,
-  benign `continue` steering does not leave `h_plane` or equivalent operator
-  posture surfaces in a blocking human-control state.
+- [x] `PRA-01`: once a later `continue` decision is newer than the latest
+  topic-local staged entry, queue materialization no longer leaves the topic on
+  `Inspect the current L2 staging manifest before continuing.`
 
-- [x] `SRR-02`: `open_next` / equivalent primary reentry pointers continue to
-  target staged-L2 review even while durable `continue` steering artifacts
-  remain present.
+- [x] `PRA-02`: under that same condition, the bounded route advances to
+  `Consult the topic-local staged L2 memory and choose one bounded candidate before deeper execution.`
 
-### Public Reentry Surface Coherence
+### Public Surface Advancement
 
-- [x] `SRR-03`: public `next`, `status`, and dashboard surfaces remain aligned
-  on the staged-L2 review reentry point under non-blocking `continue`
-  steering.
+- [x] `PRA-03`: public `next`, `status`, and equivalent dashboard surfaces
+  stay aligned on the same post-review consultation step.
 
 ### Replayable Proof
 
-- [x] `SRR-04`: one replayable fresh-topic proof shows the same topic can
-  continue from staged-L2 review under benign `continue` steering without
-  surfacing false human-control blockage.
+- [x] `PRA-04`: one replayable fresh-topic proof shows the same topic can
+  advance beyond staged-L2 review into the bounded post-review consultation
+  step after a later benign `continue`.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Reopening first-source registration or first literature staging from `v2.4` | treat `v2.4` as the current baseline unless a fresh regression appears |
-| Broad multi-lane real-topic widening across formal, toy, and first-principles routes | `v2.5` stays on same-topic reentry posture after staged-L2 review |
-| Promotion / authoritative writeback of the staged rows | reentry posture must be coherent before later promotion work widens again |
-| Deep verification-route selection or execution handoff after reentry | keep the milestone bounded to the immediate staged-L2 review continuation |
+| Reopening benign continue neutrality from `v2.5` | treat `v2.5` reentry posture as the new baseline unless a fresh regression appears |
+| Human promotion / authoritative writeback of staged rows | `v2.6` only reaches the bounded post-review consultation handoff |
+| Full candidate execution, validation-route choice, or deeper run execution | keep the milestone bounded to the first advancement beyond staged-L2 review |
+| Broad three-lane scientific widening across formal, toy, and first-principles routes | defer until this post-review advancement step is mechanically stable |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SRR-01 | Phase 179 | Done |
-| SRR-02 | Phase 179 | Done |
-| SRR-03 | Phase 179.1 | Done |
-| SRR-04 | Phase 179.2 | Done |
+| PRA-01 | Phase 180 | Done |
+| PRA-02 | Phase 180 | Done |
+| PRA-03 | Phase 180.1 | Done |
+| PRA-04 | Phase 180.2 | Done |
 
 **Coverage:**
 - v1 requirements: 4 total
