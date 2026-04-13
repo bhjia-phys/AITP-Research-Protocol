@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 import hashlib
 import json
 from pathlib import Path
@@ -121,6 +122,94 @@ def topic_has_staged_entries(
         if str(payload.get("topic_slug") or "").strip() == topic_slug:
             return True
     return False
+
+
+def _parse_iso_timestamp(value: str) -> datetime | None:
+    cleaned = str(value or "").strip()
+    if not cleaned:
+        return None
+    try:
+        return datetime.fromisoformat(cleaned)
+    except ValueError:
+        return None
+
+
+def latest_topic_local_staged_entry_updated_at(
+    *,
+    knowledge_root: Path,
+    topic_slug: str,
+) -> datetime | None:
+    entries_root = knowledge_root / "canonical" / "staging" / "entries"
+    if not entries_root.exists():
+        return None
+    latest: datetime | None = None
+    for path in sorted(entries_root.glob("*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        if str(payload.get("topic_slug") or "").strip() != topic_slug:
+            continue
+        candidate = _parse_iso_timestamp(str(payload.get("updated_at") or payload.get("created_at") or ""))
+        if candidate is None:
+            continue
+        if latest is None or candidate > latest:
+            latest = candidate
+    return latest
+
+
+def latest_continue_decision_updated_at(
+    *,
+    knowledge_root: Path,
+    topic_slug: str,
+) -> datetime | None:
+    decisions_path = knowledge_root / "runtime" / "topics" / topic_slug / "innovation_decisions.jsonl"
+    if not decisions_path.exists():
+        return None
+    latest: datetime | None = None
+    for raw_line in decisions_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if str(payload.get("decision") or "").strip() != "continue":
+            continue
+        candidate = _parse_iso_timestamp(str(payload.get("updated_at") or ""))
+        if candidate is None:
+            continue
+        if latest is None or candidate > latest:
+            latest = candidate
+    return latest
+
+
+def should_advance_past_staged_l2_review(
+    *,
+    knowledge_root: Path,
+    topic_slug: str,
+    runtime_contract: dict | None,
+) -> bool:
+    if not runtime_contract:
+        return False
+    if str(runtime_contract.get("runtime_mode") or "").strip() != "explore":
+        return False
+    if str(runtime_contract.get("active_submode") or "").strip() != "literature":
+        return False
+    latest_staged = latest_topic_local_staged_entry_updated_at(
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    )
+    if latest_staged is None:
+        return False
+    latest_continue = latest_continue_decision_updated_at(
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    )
+    if latest_continue is None:
+        return False
+    return latest_continue > latest_staged
 
 
 def _queue_shaping_block_policy() -> dict[str, bool]:

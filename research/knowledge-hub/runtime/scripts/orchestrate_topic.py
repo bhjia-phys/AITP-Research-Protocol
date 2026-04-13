@@ -33,6 +33,7 @@ from orchestrator_contract_support import (
     queue_rows_from_pending_actions,
     queue_shaping_policy_from_contract_artifacts,
     reorder_queue_with_runtime_contract,
+    should_advance_past_staged_l2_review,
     topic_has_staged_entries,
 )
 
@@ -1053,6 +1054,27 @@ def materialize_action_queue(
     )
 
     if not queue and int(topic_state.get("source_count") or 0) > 0:
+        if should_advance_past_staged_l2_review(
+            knowledge_root=knowledge_root,
+            topic_slug=str(topic_state.get("topic_slug") or "").strip(),
+            runtime_contract=runtime_contract,
+        ):
+            queue.append(
+                {
+                    "action_id": f"action:{topic_state['topic_slug']}:consult-staged-l2",
+                    "topic_slug": topic_state["topic_slug"],
+                    "resume_stage": topic_state["resume_stage"],
+                    "status": "pending",
+                    "action_type": "consultation_followup",
+                    "summary": "Consult the topic-local staged L2 memory and choose one bounded candidate before deeper execution.",
+                    "auto_runnable": False,
+                    "handler": None,
+                    "handler_args": {},
+                    "queue_source": queue_meta.get("queue_source") or "runtime_appended",
+                    "declared_contract_path": queue_meta.get("declared_contract_path"),
+                }
+            )
+            return queue, queue_meta
         fallback_summary = "Inspect the compiled L1 vault before continuing."
         if topic_has_staged_entries(
             knowledge_root=knowledge_root,
