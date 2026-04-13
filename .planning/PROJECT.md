@@ -81,12 +81,11 @@ it still does **not** mean the broader AITP architecture is finished.
 
 ## Current Focus
 
-- Active milestone: `v1.99` `LibRPA QSGW Positive L0 To L2 Closure`
-- Latest closed milestone: `v1.98` `Toy Model Positive L0 To L2 Closure`
-- Next boundary: land one bounded `LibRPA QSGW`
-  first-principles / code-method unit in authoritative canonical `L2`
+- Latest closed milestone: `v1.99` `LibRPA QSGW Positive L0 To L2 Closure`
+- Next boundary: run broad real-topic natural-language dialogue tests across
+  the three closed baselines
 
-## Current Milestone: v1.99 LibRPA QSGW Positive L0 To L2 Closure
+## Latest Closed Milestone: v1.99 LibRPA QSGW Positive L0 To L2 Closure
 
 **Goal:** carry one bounded `LibRPA QSGW` first-principles / code-method
 result from the public AITP front door into authoritative canonical `L2`, then
@@ -107,10 +106,10 @@ baseline.
 - `v1.97` closed the first trustworthy formal-theory positive-L2 baseline
 - `v1.98` closed the bounded HS toy-model positive-L2 baseline and its honest
   coexistence with the shipped HS negative-result route
-- the remaining unclosed user-requested lane is the `LibRPA QSGW`
-  first-principles / large-codebase / algorithm-development route
+- `v1.99` closed the remaining bounded `LibRPA QSGW`
+  first-principles / code-method positive-L2 lane
 
-## Latest Closed Milestone: v1.98 Toy Model Positive L0 To L2 Closure
+## Previous Closed Milestone: v1.98 Toy Model Positive L0 To L2 Closure
 
 **Goal:** carry one bounded positive `HS model` toy-model result from the
 public AITP front door into authoritative canonical `L2`, then prove it can

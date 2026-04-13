@@ -1,22 +1,30 @@
 # Milestones
 
-## v1.99 LibRPA QSGW Positive L0 To L2 Closure (Active)
+## v1.99 LibRPA QSGW Positive L0 To L2 Closure (Shipped: 2026-04-14)
 
-**Phases completed:** 0 / 3 phases, 0 / 3 plans
+**Phases completed:** 3 / 3 phases, 3 / 3 plans
 
 **Milestone goal:**
 
 - ingest one bounded `LibRPA QSGW` first-principles / code-method lane as
   first-class AITP knowledge
+
 - choose one honest positive QSGW workflow or algorithmic target with an
   explicit benchmark, convergence, or trust contract
+
 - land one authoritative `LibRPA QSGW` unit in canonical `L2`
 - close with replay receipts and explicit three-lane convergence notes for the
   formal, toy-model, and first-principles baselines
 
 **Key accomplishments:**
 
-- (milestone in progress)
+- one bounded `LibRPA QSGW` code-method / first-principles target now has an
+  explicit codebase/workflow trust contract on a fresh public-front-door topic
+- that bounded `LibRPA QSGW` positive target now lands in authoritative
+  canonical `L2` as
+  `claim:librpa-qsgw-deterministic-reduction-consistency-core`
+- the formal-theory, toy-model, and first-principles directions now each have
+  a bounded positive authoritative-L2 baseline
 
 ---
 

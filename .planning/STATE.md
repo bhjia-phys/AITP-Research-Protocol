@@ -2,9 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.99
 milestone_name: LibRPA QSGW Positive L0 To L2 Closure
-status: milestone_active
-stopped_at: "All v1.99 phases complete; milestone lifecycle next"
-last_updated: "2026-04-14T04:05:00+08:00"
+status: milestone_complete
+last_updated: "2026-04-14T04:20:00+08:00"
 progress:
   total_phases: 3
   completed_phases: 3
@@ -16,9 +15,9 @@ progress:
 
 ## Current Position
 
-Status: milestone `v1.99` `LibRPA QSGW Positive L0 To L2 Closure` is active.
-Requirements and roadmap are being reset around the remaining
-first-principles / code-method lane.
+Status: milestone `v1.99` `LibRPA QSGW Positive L0 To L2 Closure` is complete
+and archived. The next step is opening the broad three-lane real-topic testing
+milestone.
 
 **Why this milestone exists:**
 
@@ -33,17 +32,21 @@ retrieval surfaces before widening back out to more modes and topic paradigms.
 
 ## Immediate Next Step
 
-- active milestone: `v1.99` `LibRPA QSGW Positive L0 To L2 Closure`
-- latest closed milestone: `v1.98` `Toy Model Positive L0 To L2 Closure`
-- previous closed milestone: `v1.97` `First Positive L0 To L2 Closure`
+- latest closed milestone: `v1.99` `LibRPA QSGW Positive L0 To L2 Closure`
+- previous closed milestone: `v1.98` `Toy Model Positive L0 To L2 Closure`
+- older closed milestone: `v1.97` `First Positive L0 To L2 Closure`
 - Phase `173` chose one bounded positive `LibRPA QSGW` target:
   the deterministic-reduction thread-consistency core on the
   `H2O/really_tight iter=10` reference workflow
+
 - Phase `173.1` promoted that bounded target into authoritative canonical `L2`
   as `claim:librpa-qsgw-deterministic-reduction-consistency-core`
+
 - Phase `173.2` replayed the positive `LibRPA QSGW` proof and made the
   three-lane convergence baseline explicit
-- immediate next step: run milestone `v1.99` lifecycle handling
+
+- immediate next step: start the three-lane real-topic natural-language
+  dialogue milestone
 
 ## Accumulated Context
 
