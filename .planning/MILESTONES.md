@@ -1,6 +1,6 @@
 # Milestones
 
-## v2.0 Three-Lane Real-Topic Natural-Language E2E (Active)
+## v2.0 Three-Lane Real-Topic Natural-Language E2E (Shipped: 2026-04-14)
 
 **Phases completed:** 3 / 3 phases, 3 / 3 plans
 
@@ -8,8 +8,10 @@
 
 - run real natural-language dialogue tests against the closed formal-theory,
   toy-model, and first-principles baselines
+
 - prove the public AITP front door can steer each lane honestly without hidden
   seed state
+
 - close with a cross-lane comparative report of success boundaries, remaining
   blockers, and next widening decisions
 
@@ -18,12 +20,15 @@
 - the formal-theory baseline now has one real natural-language dialogue proof
   that preserves the Jones / von Neumann request through runtime steering
   artifacts
+
 - the toy-model baseline now has one real natural-language dialogue proof that
   preserves the HS-like chaos-window request while landing the same bounded
   authoritative-L2 claim
+
 - the first-principles baseline now has one real natural-language dialogue
   proof that preserves the bounded LibRPA QSGW request while landing the same
   authoritative-L2 claim
+
 - one honest cross-lane report now compares the three dialogue-proof lanes and
   leaves their remaining widening blockers explicit
 
@@ -49,9 +54,11 @@
 
 - one bounded `LibRPA QSGW` code-method / first-principles target now has an
   explicit codebase/workflow trust contract on a fresh public-front-door topic
+
 - that bounded `LibRPA QSGW` positive target now lands in authoritative
   canonical `L2` as
   `claim:librpa-qsgw-deterministic-reduction-consistency-core`
+
 - the formal-theory, toy-model, and first-principles directions now each have
   a bounded positive authoritative-L2 baseline
 
@@ -631,14 +638,14 @@ Completed milestone chain:
 
 ## Latest Closed Milestone
 
-- `v1.99` `LibRPA QSGW Positive L0 To L2 Closure` shipped
+- `v2.0` `Three-Lane Real-Topic Natural-Language E2E` shipped
 
 ## Current Active Milestone
 
-- `v2.0` `Three-Lane Real-Topic Natural-Language E2E`
+- none
 
 ## Current Status
 
-- `v1.36` through `v1.99` are closed and archived or ready for archive lookup
-- all three phases of active milestone `v2.0` are complete
-- next command boundary: `$gsd-complete-milestone`
+- `v1.36` through `v2.0` are closed and archived or ready for archive lookup
+- the repository is between milestones after archiving `v2.0`
+- next command boundary: `$gsd-new-milestone`

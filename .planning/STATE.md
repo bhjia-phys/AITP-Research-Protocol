@@ -1,24 +1,24 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.0
-milestone_name: Three-Lane Real-Topic Natural-Language E2E
-status: milestone_active
-stopped_at: "Phase 174.2 complete; milestone lifecycle next"
-last_updated: "2026-04-14T04:24:00+08:00"
+milestone: none
+milestone_name: none
+status: between_milestones
+stopped_at: "Milestone v2.0 archived; next boundary is planning the next milestone"
+last_updated: "2026-04-14T04:30:00+08:00"
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 3
-  completed_plans: 3
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
 
 ## Current Position
 
-Status: milestone `v2.0` `Three-Lane Real-Topic Natural-Language E2E` is
-active. The next step is proving the three closed baselines through real
-natural-language dialogue.
+Status: the repository is now between milestones after archiving `v2.0`
+`Three-Lane Real-Topic Natural-Language E2E`. The next step is choosing the
+next bounded milestone from the now-explicit cross-lane widening blockers.
 
 **Why this milestone exists:**
 
@@ -33,20 +33,14 @@ retrieval surfaces before widening back out to more modes and topic paradigms.
 
 ## Immediate Next Step
 
-- active milestone: `v2.0` `Three-Lane Real-Topic Natural-Language E2E`
-- latest closed milestone: `v1.99` `LibRPA QSGW Positive L0 To L2 Closure`
-- previous closed milestone: `v1.98` `Toy Model Positive L0 To L2 Closure`
-- older closed milestone: `v1.97` `First Positive L0 To L2 Closure`
-- Phase `174` proved the formal-theory baseline can be entered through a real
-  natural-language front-door request without hidden seed state
-- Phase `174.1` proved the toy-model baseline can be entered through a real
-  natural-language front-door request while staying tied to the bounded
-  HS-like finite-size positive core
-- Phase `174.2` proved the first-principles baseline can be entered through a
-  real natural-language front-door request while staying tied to the bounded
-  LibRPA QSGW deterministic-reduction consistency core
-- immediate next step: run the milestone lifecycle: audit, complete, and
-  cleanup
+- active milestone: none
+- latest closed milestone: `v2.0` `Three-Lane Real-Topic Natural-Language E2E`
+- previous closed milestone: `v1.99` `LibRPA QSGW Positive L0 To L2 Closure`
+- older closed milestone: `v1.98` `Toy Model Positive L0 To L2 Closure`
+- `v2.0` proved bounded real natural-language dialogue entry for the formal,
+  toy-model, and first-principles lanes
+- immediate next step: start the next milestone definition cycle with
+  `$gsd-new-milestone`
 
 ## Accumulated Context
 

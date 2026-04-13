@@ -81,18 +81,18 @@ it still does **not** mean the broader AITP architecture is finished.
 
 ## Current Focus
 
-- Active milestone: `v2.0` `Three-Lane Real-Topic Natural-Language E2E`
-- Latest closed milestone: `v1.99` `LibRPA QSGW Positive L0 To L2 Closure`
-- Next boundary: run broad real-topic natural-language dialogue tests across
-  the three closed baselines
+- Active milestone: none
+- Latest closed milestone: `v2.0` `Three-Lane Real-Topic Natural-Language E2E`
+- Next boundary: plan the next bounded milestone from the cross-lane dialogue
+  blockers and widening decisions
 
-## Current Milestone: v2.0 Three-Lane Real-Topic Natural-Language E2E
+## Latest Closed Milestone: v2.0 Three-Lane Real-Topic Natural-Language E2E
 
 **Goal:** prove that the public AITP front door can steer all three closed
 research directions through real natural-language dialogue without hidden seed
 artifacts or authority drift.
 
-**Target features:**
+**Delivered features:**
 - one real natural-language dialogue proof for the formal-theory baseline
 - one real natural-language dialogue proof for the toy-model baseline
 - one real natural-language dialogue proof for the first-principles /
@@ -105,10 +105,12 @@ artifacts or authority drift.
 - `v1.98` closed the bounded HS toy-model positive-L2 baseline
 - `v1.99` closed the bounded `LibRPA QSGW` first-principles / code-method
   positive-L2 baseline
-- the next frontier is not another bounded lane closure; it is cross-lane
-  real-topic natural-language testing
+- `v2.0` closes the first honest real-dialogue proof across all three
+  user-requested research directions
+- the next frontier is not another baseline closure; it is deciding which
+  widening blocker to attack next
 
-## Latest Closed Milestone: v1.99 LibRPA QSGW Positive L0 To L2 Closure
+## Previous Closed Milestone: v1.99 LibRPA QSGW Positive L0 To L2 Closure
 
 **Goal:** carry one bounded `LibRPA QSGW` first-principles / code-method
 result from the public AITP front door into authoritative canonical `L2`, then
@@ -969,4 +971,4 @@ QSGW` lanes instead of re-litigating whether AITP already has a trustworthy
 positive canonical-L2 path.
 
 ---
-*Last updated: 2026-04-14 after starting milestone v1.98*
+*Last updated: 2026-04-14 after completing milestone v2.0*
