@@ -7271,6 +7271,33 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(routing["route"], "request_current_topic_reference")
         self.assertEqual(routing["topic_slug"], remembered_topic)
 
+    def test_route_codex_chat_request_from_scratch_new_research_program_outranks_current_topic_memory(self) -> None:
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        remembered_topic = "fresh-jones-finite-dimensional-factor-closure"
+        remembered_runtime_root = self.kernel_root / "runtime" / "topics" / remembered_topic
+        remembered_runtime_root.mkdir(parents=True, exist_ok=True)
+        (remembered_runtime_root / "topic_state.json").write_text(
+            json.dumps({"topic_slug": remembered_topic}, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "current_topic.json").write_text(
+            json.dumps({"topic_slug": remembered_topic}, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+        routing = self.service.route_codex_chat_request(
+            task=(
+                "Please start a new research program from scratch on "
+                "measurement-induced algebraic transition and observer algebras, "
+                "keep the run bounded and autonomous after bootstrap, and do not continue the current topic."
+            ),
+        )
+
+        self.assertEqual(routing["route"], "request_new_topic")
+        self.assertEqual(routing["topic"], "measurement-induced algebraic transition and observer algebras")
+        self.assertIsNone(routing["topic_slug"])
+
     def test_route_codex_chat_request_matches_named_existing_slug(self) -> None:
         topic_index_path = self.kernel_root / "runtime" / "topic_index.jsonl"
         topic_index_path.parent.mkdir(parents=True, exist_ok=True)
@@ -7490,6 +7517,37 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["topic_slug"], "jones-von-neumann-algebras-2")
         self.assertEqual(service.orchestrate_calls[0]["topic_slug"], "jones-von-neumann-algebras-2")
         self.assertEqual(service.orchestrate_calls[0]["topic"], "Jones von Neumann algebras")
+
+    def test_start_chat_session_from_scratch_request_allocates_new_topic_even_with_current_topic_memory(self) -> None:
+        runtime_root = self.kernel_root / "runtime"
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        remembered_topic = "fresh-jones-finite-dimensional-factor-closure"
+        remembered_runtime_root = self.kernel_root / "runtime" / "topics" / remembered_topic
+        remembered_runtime_root.mkdir(parents=True, exist_ok=True)
+        (remembered_runtime_root / "topic_state.json").write_text(
+            json.dumps({"topic_slug": remembered_topic}, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "current_topic.json").write_text(
+            json.dumps({"topic_slug": remembered_topic}, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+        service = _SteeringLoopStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)
+        payload = service.start_chat_session(
+            task=(
+                "Please start a new research program from scratch on "
+                "measurement-induced algebraic transition and observer algebras, "
+                "keep the run bounded and autonomous after bootstrap, and do not continue the current topic."
+            ),
+        )
+
+        self.assertEqual(payload["routing"]["route"], "request_new_topic")
+        self.assertEqual(payload["routing"]["topic"], "measurement-induced algebraic transition and observer algebras")
+        self.assertEqual(payload["topic_slug"], "measurement-induced-algebraic-transition-and-observer-algebras")
+        session_contract = json.loads(Path(payload["session_start_contract_path"]).read_text(encoding="utf-8"))
+        self.assertEqual(session_contract["routing"]["route"], "request_new_topic")
+        self.assertEqual(session_contract["routing"]["topic_slug"], "measurement-induced-algebraic-transition-and-observer-algebras")
 
     def test_run_topic_loop_tail_syncs_after_budget_exhaustion(self) -> None:
         service = _TailSyncLoopStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)

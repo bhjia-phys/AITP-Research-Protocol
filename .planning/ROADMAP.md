@@ -1,86 +1,84 @@
-# Roadmap: v2.1 L2 Real-Topic Relevance Hardening
+# Roadmap: v2.2 Fresh-Topic First-Use Reliability
 
 ## Result
 
-Milestone phase work complete. Lifecycle closure is next.
+Milestone in progress.
 
 ## Phases
 
-- [x] **Phase 175: Staging Provenance And Noise Suppression** *(Axis 1 + Axis 3)*
-- [x] **Phase 175.1: Topic-Local Consultation Relevance Ordering** *(Axis 1 + Axis 2)*
-- [x] **Phase 175.2: Multi-Paper Real-Topic L2 Relevance Proof** *(Axis 4 + Axis 5)*
+- [x] **Phase 176: New-Topic Session-Start Routing Hardening** *(Axis 4 + Axis 5)*
+- [ ] **Phase 176.1: Windows Source Registration Path And Status Coherence** *(Axis 1 + Axis 4)*
+- [ ] **Phase 176.2: Fresh Real-Topic First-Use Replay Proof** *(Axis 4 + Axis 5)*
 
 ## Target Outcome
 
-- fresh-topic staged rows carry cleaner reusable knowledge instead of noisy
-  generic notation and weak method artifacts
-- fresh-topic staged rows preserve correct source provenance across multi-paper
-  intake
-- fresh-topic `consult-l2` primary hits favor the locally relevant topic rows
-  over unrelated canonical carryover when the query clearly targets the new
-  topic
-- the milestone ends with one replayable multi-paper proof package and explicit
-  non-claims
+- explicit natural-language "start a new topic" requests allocate fresh topics
+  instead of silently reopening stale current-topic memory
+- first-source registration on Windows survives long real-topic slugs and long
+  paper titles without non-credible operator workarounds
+- `aitp status` and related topic-state surfaces become coherent immediately
+  after first-source registration
+- the milestone ends with one replayable fresh real-topic first-use proof
+  package and explicit non-claims
 
 ## Next Step
 
-Run milestone audit / archive for `v2.1`.
+Start Phase 176.1.
 
-### Phase 175: Staging Provenance And Noise Suppression
+### Phase 176: New-Topic Session-Start Routing Hardening
 
-**Axis:** Axis 1 (layer-internal optimization) + Axis 3 (data recording)
+**Axis:** Axis 4 (human experience) + Axis 5 (agent-facing steering)
 
-**Goal:** harden literature-intake staging so reusable rows stay clean and keep
-the true source provenance before they reach consultation or downstream `L2`
-surfaces.
+**Goal:** make fresh natural-language topic-start requests reliably outrank
+stale current-topic continuation when the operator explicitly asks to begin a
+new research topic.
 
 **Requirements:**
 
-- `L2H-01`
-- `L2H-02`
+- `FTF-01`
+- `FTF-02`
 
-**Depends on:** `v2.0`
+**Depends on:** `v2.1`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `175-01` Suppress noisy staged rows and preserve true source provenance
+- [x] `176-01` Fix fresh-topic intent routing so explicit new-topic requests do not reopen current topics
 
-### Phase 175.1: Topic-Local Consultation Relevance Ordering
+### Phase 176.1: Windows Source Registration Path And Status Coherence
 
-**Axis:** Axis 1 (layer-internal optimization) + Axis 2 (inter-layer connection)
+**Axis:** Axis 1 (layer-internal optimization) + Axis 4 (human experience)
 
-**Goal:** improve `consult-l2` ranking so clear fresh-topic queries surface the
-most relevant local staged or canonical rows before unrelated carryover from
-other topics.
+**Goal:** make first-source registration survive long Windows paths and keep
+status-facing `L0` state coherent immediately after successful registration.
 
 **Requirements:**
 
-- `L2H-03`
+- `FTF-03`
+- `FTF-04`
 
-**Depends on:** Phase `175`
+**Depends on:** Phase `176`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `175.1-01` Raise topic-local staged relevance above unrelated canonical carryover
+- [ ] `176.1-01` Shorten Windows source paths and synchronize status after registration
 
-### Phase 175.2: Multi-Paper Real-Topic L2 Relevance Proof
+### Phase 176.2: Fresh Real-Topic First-Use Replay Proof
 
 **Axis:** Axis 4 (human evidence) + Axis 5 (agent-facing steering)
 
-**Goal:** prove the bounded `L2` hardening slice on one replayable multi-paper
-real-topic acceptance lane, then close with durable receipts and explicit
-non-claims.
+**Goal:** replay one fresh real-topic first-use lane from natural-language
+topic start through first-source registration and honest status readback, then
+close with durable receipts and explicit non-claims.
 
 **Requirements:**
 
-- `L2H-04`
-- `L2H-05`
+- `FTF-05`
 
-**Depends on:** Phase `175.1`
+**Depends on:** Phase `176.1`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `175.2-01` Replay the multi-paper real-topic proof and close the milestone honestly
+- [ ] `176.2-01` Replay a fresh real-topic first-use proof from session-start through first source registration

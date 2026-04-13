@@ -3359,7 +3359,7 @@ class AITPService:
         cleaned = raw_value
         cleaned = re.sub(r"^[\s\"'“”‘’`]+", "", cleaned)
         cleaned = re.split(
-            r"(?:\n|[，,;；]\s*(?:先做|先从|先|然后|并且|并|first|then|and)\s*)",
+            r"(?:\n|[，,;；]\s*(?:先做|先从|先|然后|并且|并|不要|别|first|then|and|keep|but|while|do\s+not|don't)\s*)",
             cleaned,
             maxsplit=1,
             flags=re.IGNORECASE,
@@ -3393,6 +3393,8 @@ class AITPService:
             r"(?:帮我|请)?(?:开|建|创建|新建|开始|启动)(?:一个)?(?:新的?)?\s*(?:topic|课题|主题)\s*[:：]?\s*(?P<title>.+)",
             r"(?:new topic|start a new topic|open a new topic|create a new topic)\s*[:：]?\s*(?P<title>.+)",
             r"(?:start|open|create|begin|launch)\s+(?:a\s+)?(?:brand[-\s]+new|new)\s+(?:research\s+)?topic(?:\s+named)?\s*[:：]?\s*(?P<title>.+)",
+            r"(?:start|open|create|begin|launch)\s+(?:a\s+)?(?:brand[-\s]+new|new)\s+(?:research\s+)?(?:program|project)(?:\s+from\s+scratch)?(?:\s+(?:on|about|around))?\s*(?P<title>.+)",
+            r"(?:帮我|请)?(?:从头开始|从零开始|重新开始)(?:做|开|启动|开始)?(?:一个)?(?:新的?)?(?:研究(?:项目|计划)?|topic|课题|主题)(?:\s*(?:关于|围绕))?\s*[:：]?\s*(?P<title>.+)",
         )
         for pattern in patterns:
             match = re.search(pattern, raw_request, flags=re.IGNORECASE)

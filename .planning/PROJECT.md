@@ -77,47 +77,69 @@ The previously scoped GSD mainline is implemented through:
 - `v1.98`
 - `v1.99`
 - `v2.0`
+- `v2.1`
 
 That closes the current bounded chain through the first three-lane real-topic
 natural-language dialogue proof across formal, toy-model, and
-first-principles routes, but it still does **not** mean the broader AITP
-architecture is finished.
+first-principles routes plus one fresh-topic `L2` hardening pass, but it still
+does **not** mean the broader AITP architecture is finished.
 
 ## Current Focus
 
-- Active milestone: `v2.1` `L2 Real-Topic Relevance Hardening`
-- Latest closed milestone: `v2.0` `Three-Lane Real-Topic Natural-Language E2E`
-- Next boundary: harden fresh-topic `L2` staging provenance and retrieval
-  relevance before widening the science claims again
+- Active milestone: `v2.2` `Fresh-Topic First-Use Reliability`
+- Latest closed milestone: `v2.1` `L2 Real-Topic Relevance Hardening`
+- Next boundary: restore honest fresh-topic public-entry behavior from
+  `session-start` through first-source registration before wider real-topic
+  replay resumes
 
-## Current Milestone: v2.1 L2 Real-Topic Relevance Hardening
+## Current Milestone: v2.2 Fresh-Topic First-Use Reliability
+
+**Goal:** make fresh-topic first use trustworthy enough that a new research
+request from natural language allocates the right topic, survives first-source
+registration on Windows, and surfaces honest `L0` status immediately.
+
+**Target features:**
+- make explicit "start a new topic / from scratch" requests outrank stale
+  current-topic continuation fallback
+- harden Windows source registration so long topic slugs and long paper titles
+  do not require manual path-prefix workarounds
+- make successful source registration update `aitp status` / topic-state `L0`
+  surfaces coherently
+- close with one replayable fresh real-topic first-use proof from session-start
+  through first-source registration
+
+**Key context:**
+- `v2.1` closed the fresh-topic `L2` staging and consultation hardening slice
+- the same measurement-induced / observer-algebra run still exposed two
+  first-use blockers before broader real-topic replay can be trusted:
+  `session-start` misrouting and Windows source-registration friction
+- the next bottleneck is therefore fresh-topic first-use reliability, not
+  another immediate widening of scientific claims
+
+## Latest Closed Milestone: v2.1 L2 Real-Topic Relevance Hardening
 
 **Goal:** make fresh real-topic `L2` staging and consultation trustworthy
 enough that new literature-intake topics surface the right local knowledge
 with correct provenance instead of noisy or irrelevant hits.
 
-**Target features:**
-- suppress noisy staged rows such as generic notation tokens and weak
-  `unspecified_method` entries before they reach useful `L2` surfaces
-- preserve the true source id on every staged row so fresh topics do not reuse
-  the wrong paper provenance
-- improve `consult-l2` ranking so topic-local relevant staged entries can
-  outrank unrelated canonical material for fresh local-topic queries
-- close with one replayable multi-paper real-topic acceptance lane proving both
-  provenance correctness and retrieval relevance ordering
+**Delivered features:**
+- suppression of obvious staging noise such as generic notation tokens and weak
+  `unspecified_method` rows
+- preservation of true per-entry source provenance across fresh-topic
+  multi-paper staging
+- topic-local staged rows can now outrank unrelated canonical carryover on the
+  primary consultation surface for the bounded fresh-topic case
+- one replayable multi-paper real-topic proof package now shows the hardening
+  slice mechanically
 
 **Key context:**
-- `v2.0` proved the public front door can steer all three closed research
-  directions through bounded real natural-language dialogue
-- the next bottleneck is not lane steering but `L2` knowledge quality on fresh
-  real-topic literature intake
-- the measurement-induced / observer-algebra topic surfaced exactly this gap:
-  noisy staging rows, wrong source provenance, and irrelevant primary
-  consultation hits
-- related front-door and Windows-first-use regressions remain pending, but this
-  milestone stays bounded to `L2` hardening first
+- `v2.0` had already shown the three closed lanes can be entered through real
+  dialogue, but a fresh measurement-induced topic exposed `L2` quality gaps on
+  the literature fast path
+- `v2.1` closes those bounded `L2` gaps without pretending the broader
+  first-use or scientific-widening problems are already solved
 
-## Latest Closed Milestone: v2.0 Three-Lane Real-Topic Natural-Language E2E
+## Previous Closed Milestone: v2.0 Three-Lane Real-Topic Natural-Language E2E
 
 **Goal:** prove that the public AITP front door can steer all three closed
 research directions through real natural-language dialogue without hidden seed

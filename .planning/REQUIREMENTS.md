@@ -1,56 +1,56 @@
-# Requirements: v2.1 L2 Real-Topic Relevance Hardening
+# Requirements: v2.2 Fresh-Topic First-Use Reliability
 
 ## Milestone Goal
 
-Make fresh real-topic `L2` staging and consultation trustworthy enough that
-newly ingested literature surfaces the right local knowledge with correct
-provenance instead of noisy staged rows or irrelevant primary hits.
+Make fresh-topic public entry reliable enough that a real new topic can be
+opened from natural language, register its first source on Windows without
+path failure, and surface honest `L0` status immediately after first-use
+actions.
 
 ## Active Requirements
 
-### Staging Quality
+### Front Door Routing
 
-- [x] `L2H-01`: literature-intake staging suppresses generic notation tokens
-  and weak method rows that do not represent reusable knowledge.
+- [x] `FTF-01`: `aitp session-start "<natural-language request>"` recognizes
+  explicit new-topic intent and allocates a fresh topic instead of reopening
+  current-topic memory.
 
-- [x] `L2H-02`: every staged row preserves the true source id of the paper or
-  note it came from, even when multiple related papers are registered into the
-  same topic.
+- [x] `FTF-02`: the new-topic route leaves durable routing evidence showing
+  why fresh-topic intent beat current-topic continuation fallback.
 
-### Retrieval Relevance
+### Source Registration Reliability
 
-- [x] `L2H-03`: `consult-l2` can rank topic-local relevant staged or canonical
-  entries above unrelated canonical material when the query clearly targets a
-  fresh local topic.
+- [ ] `FTF-03`: first-source registration survives long Windows topic slug +
+  paper-title combinations without requiring a manual `\\?\` path workaround.
 
-### Replayable Proof
+- [ ] `FTF-04`: after successful source registration, status-facing `L0`
+  counters and source presence are immediately coherent, or one explicit sync
+  step is enforced and reflected honestly.
 
-- [x] `L2H-04`: one replayable real-topic acceptance lane registers multiple
-  related papers into one topic and proves both provenance correctness and
-  consultation relevance ordering.
+### Replayable First-Use Proof
 
-- [x] `L2H-05`: the milestone closes with durable receipts, a runbook, and
-  explicit non-claims about what `L2` hardening this bounded slice does not yet
-  solve.
+- [ ] `FTF-05`: one replayable fresh real-topic acceptance lane proves
+  new-topic routing, first-source registration, and honest status coherence
+  from the public front door.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Fixing fresh-topic `session-start` misrouting | important front-door regression, but keep `v2.1` bounded to `L2` hardening first |
-| Windows long-path source registration and immediate status-sync repair | separate first-use / L0 surface hardening slice |
-| Broad benchmark-alignment schema overhaul (`999.87`–`999.92`) | too wide for the first post-`v2.0` bounded milestone |
-| Widening any of the formal, toy-model, or first-principles science claims | `v2.1` is about `L2` quality, not new scientific closure |
+| Reopening the bounded `L2` hardening slice from `v2.1` | treat `v2.1` as the current truth unless a fresh regression appears |
+| Broad benchmark-alignment schema overhaul (`999.87`–`999.92`) | still too wide for the immediate first-use reliability slice |
+| New authoritative scientific claims in formal, toy-model, or first-principles lanes | `v2.2` is about honest first-use routing and source-state coherence |
+| General retrieval redesign beyond first-use status and routing | keep the milestone bounded to fresh-topic entry reliability |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| L2H-01 | Phase 175 | Done |
-| L2H-02 | Phase 175 | Done |
-| L2H-03 | Phase 175.1 | Done |
-| L2H-04 | Phase 175.2 | Done |
-| L2H-05 | Phase 175.2 | Done |
+| FTF-01 | Phase 176 | Done |
+| FTF-02 | Phase 176 | Done |
+| FTF-03 | Phase 176.1 | Pending |
+| FTF-04 | Phase 176.1 | Pending |
+| FTF-05 | Phase 176.2 | Pending |
 
 **Coverage:**
 - v1 requirements: 5 total

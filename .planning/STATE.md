@@ -1,50 +1,49 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.1
-milestone_name: L2 Real-Topic Relevance Hardening
+milestone: v2.2
+milestone_name: Fresh-Topic First-Use Reliability
 status: milestone_active
-stopped_at: "Phase 175.2 complete; milestone lifecycle next"
-last_updated: "2026-04-14T05:01:46+08:00"
+stopped_at: "Phase 176 complete; Phase 176.1 next"
+last_updated: "2026-04-14T05:14:24+08:00"
 progress:
   total_phases: 3
-  completed_phases: 3
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 3
+  completed_plans: 1
 ---
 
 # Project State
 
 ## Current Position
 
-Status: milestone `v2.1` `L2 Real-Topic Relevance Hardening` has all roadmap
-phases closed. The next step is milestone lifecycle closure and archiving.
+Status: milestone `v2.2` `Fresh-Topic First-Use Reliability` is active. The
+next step is restoring honest fresh-topic public-entry behavior before broader
+real-topic replay widens again.
 
 **Why this milestone exists:**
 
-`v1.96` proved the public front door and negative-result route honestly, but it
-did **not** land any positive authoritative unit in canonical `L2`. That means
-AITP still lacks one fresh positive proof that the current public route can
-actually finish in trusted L2 knowledge.
+`v2.1` closed the bounded `L2` hardening slice for fresh-topic multi-paper
+intake, but the same real-topic measurement-induced / observer-algebra run also
+showed that the front door can still misroute an explicit new-topic request and
+that Windows first-source registration can fail or leave status surfaces stale.
 
-The next bounded step is therefore to close the **most mature** positive lane
-first, and use that real landing to harden the L2 compiler, consultation, and
-retrieval surfaces before widening back out to more modes and topic paradigms.
+The next bounded step is therefore to repair first-use reliability before
+claiming that broader real-topic natural-language replay is trustworthy across
+all layers again.
 
 ## Immediate Next Step
 
-- active milestone: `v2.1` `L2 Real-Topic Relevance Hardening`
-- latest closed milestone: `v2.0` `Three-Lane Real-Topic Natural-Language E2E`
-- previous closed milestone: `v1.99` `LibRPA QSGW Positive L0 To L2 Closure`
-- older closed milestone: `v1.98` `Toy Model Positive L0 To L2 Closure`
-- `v2.0` proved bounded real natural-language dialogue entry for the formal,
-  toy-model, and first-principles lanes
-- Phase `175` hardened literature-intake staging by suppressing obvious noise
-  rows and preserving per-entry source provenance
-- Phase `175.1` raised topic-local staged relevance so explicit fresh-topic
-  consultation can surface the local staged row on the primary surface
-- Phase `175.2` now closes the multi-paper real-topic proof lane with durable
-  replay receipts for provenance correctness and local consultation ordering
-- immediate next step: audit and archive milestone `v2.1`
+- active milestone: `v2.2` `Fresh-Topic First-Use Reliability`
+- latest closed milestone: `v2.1` `L2 Real-Topic Relevance Hardening`
+- previous closed milestone: `v2.0` `Three-Lane Real-Topic Natural-Language E2E`
+- older closed milestone: `v1.99` `LibRPA QSGW Positive L0 To L2 Closure`
+- `v2.1` proved the bounded fresh-topic `L2` staging and consultation
+  hardening slice on a replayable multi-paper lane
+- Phase `176` now closes the fresh-topic `session-start` misrouting regression
+  for bounded "from scratch" requests
+- the remaining first-use blocker is Windows source registration and status
+  coherence after successful registration
+- immediate next step: start Phase `176.1`
 
 ## Accumulated Context
 
@@ -54,6 +53,8 @@ retrieval surfaces before widening back out to more modes and topic paradigms.
   `fix-new-topic-session-start-misrouting`,
   `shorten-windows-source-layer-paths-and-sync-status`,
   `harden-l2-staging-provenance-and-retrieval-relevance`
+- `harden-l2-staging-provenance-and-retrieval-relevance` is now effectively
+  closed by `v2.1`, but the todo parking lot has not been cleaned yet
 
 ### 5-Axis Advancement Framework (2026-04-13)
 
@@ -107,6 +108,14 @@ cross-cutting).
 
 - `v1.97` now narrows back down to the first real positive authoritative L2
   landing so L2 itself becomes trustworthy before broader multi-mode closure
+
+- `v2.1` now closes the bounded fresh-topic `L2` hardening slice: clean staged
+  rows, correct per-entry provenance, and one replayable multi-paper relevance
+  proof
+
+- `v2.2` now promotes the remaining fresh-topic front-door regressions from the
+  same real-topic run: new-topic `session-start` routing plus Windows
+  first-source registration and status coherence
 
 - Phase `171` now proves one fresh formal-theory theorem can land in
   authoritative canonical `L2` with repo-local compile and `consult-l2`

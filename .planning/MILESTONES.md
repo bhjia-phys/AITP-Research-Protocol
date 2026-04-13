@@ -1,6 +1,31 @@
 # Milestones
 
-## v2.1 L2 Real-Topic Relevance Hardening (Active)
+## v2.2 Fresh-Topic First-Use Reliability (Active)
+
+**Phases completed:** 1 / 3 phases, 1 / 3 plans
+
+**Milestone goal:**
+
+- make explicit fresh-topic natural-language `session-start` requests allocate
+  new topics instead of reopening stale current-topic memory
+
+- make first-source registration on Windows survive long real-topic slugs and
+  keep `L0` status coherent immediately after registration
+
+- close with a replayable fresh real-topic first-use proof from session-start
+  through first source registration
+
+**Key accomplishments:**
+
+- milestone scoped from the real measurement-induced / observer-algebra run
+  that exposed front-door misrouting and first-use Windows friction after the
+  `v2.1` `L2` hardening slice
+- Phase `176` now makes bounded "from scratch" fresh-topic requests allocate a
+  new topic instead of reopening stale current-topic memory
+
+---
+
+## v2.1 L2 Real-Topic Relevance Hardening (Shipped: 2026-04-14)
 
 **Phases completed:** 3 / 3 phases, 3 / 3 plans
 
