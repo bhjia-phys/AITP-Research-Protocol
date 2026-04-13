@@ -81,12 +81,11 @@ it still does **not** mean the broader AITP architecture is finished.
 
 ## Current Focus
 
-- Active milestone: `v1.98` `Toy Model Positive L0 To L2 Closure`
-- Latest closed milestone: `v1.97` `First Positive L0 To L2 Closure`
-- Next boundary: run milestone lifecycle for `v1.98`, then widen to the
-  deferred `LibRPA QSGW` first-principles / code-method lane
+- Latest closed milestone: `v1.98` `Toy Model Positive L0 To L2 Closure`
+- Next boundary: start the deferred `LibRPA QSGW`
+  first-principles / code-method positive-L2 lane
 
-## Current Milestone: v1.98 Toy Model Positive L0 To L2 Closure
+## Latest Closed Milestone: v1.98 Toy Model Positive L0 To L2 Closure
 
 **Goal:** carry one bounded positive `HS model` toy-model result from the
 public AITP front door into authoritative canonical `L2`, then prove it can
@@ -101,17 +100,17 @@ coexist honestly with the already-shipped HS negative-result route.
 - compiled L2 and `consult-l2` expose that positive unit while keeping the
   existing HS negative-result route explicit
 
-**Phase-level status:** all three roadmap phases are complete; milestone
-lifecycle is next.
+**Phase-level status:** all three roadmap phases are complete and the milestone
+is archived.
 
 **Key context:**
 - `v1.97` closed the first trustworthy formal-theory positive-L2 baseline
-- the next bounded widening step should stay within the user-requested
-  `HS model` toy-model lane instead of opening both deferred lanes at once
-- the existing HS negative-result route gives this milestone a real built-in
-  coexistence and honesty check
+- `v1.98` closed the bounded HS toy-model positive-L2 baseline and its honest
+  coexistence with the shipped HS negative-result route
+- the next bounded widening step should move to the user-requested
+  `LibRPA QSGW` first-principles / code-method lane
 
-## Latest Closed Milestone: v1.97 First Positive L0 To L2 Closure
+## Previous Closed Milestone: v1.97 First Positive L0 To L2 Closure
 
 **Goal:** land one fresh positive authoritative unit in canonical `L2` through
 the public AITP route, then make the surrounding L2 surfaces trustworthy enough

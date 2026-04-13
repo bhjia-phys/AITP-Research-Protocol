@@ -1,6 +1,6 @@
 # Milestones
 
-## v1.98 Toy Model Positive L0 To L2 Closure (Active)
+## v1.98 Toy Model Positive L0 To L2 Closure (Shipped: 2026-04-14)
 
 **Phases completed:** 3 / 3 phases, 3 / 3 plans
 
@@ -9,8 +9,10 @@
 - land one bounded positive `HS model` unit in canonical `L2`
 - close the positive toy-model lane with an explicit benchmark or convergence
   contract before promotion
+
 - prove honest coexistence between the new positive `HS model` route and the
   existing HS negative-result route
+
 - keep the deferred `LibRPA QSGW` first-principles lane explicit but out of
   scope for this bounded step
 
@@ -18,10 +20,13 @@
 
 - one bounded HS-like toy-model target now has an explicit benchmark-backed
   target contract on a fresh public-front-door topic shell
+
 - that bounded HS-like positive target now lands in authoritative canonical
   `L2` as `claim:hs-like-chaos-window-finite-size-core`
+
 - the authoritative HS positive claim and the shipped HS negative-result route
   now coexist honestly on the same compiled and consultation surfaces
+
 - explicit carry-over notes now isolate the deferred `LibRPA QSGW`
   first-principles / code-method lane as the next bounded widening target
 
@@ -35,8 +40,10 @@
 
 - land one fresh positive authoritative unit in canonical `L2` through the
   public AITP route
+
 - harden compiled L2 and consultation surfaces around real
   positive/negative coexistence
+
 - close with replayable evidence and explicit blocker routing for the deferred
   `toy_model` and `first_principles` lanes
 
@@ -44,11 +51,14 @@
 
 - one fresh formal-theory topic now lands a bounded theorem in authoritative
   canonical `L2`
+
 - repo-local compiled reports and `consult-l2` now agree on that positive
   authoritative landing
+
 - authoritative positive rows and staged `contradiction_watch` rows now
   coexist on the same compiled and consultation surfaces without authority
   drift
+
 - replay receipts and deferred lane routing now exist for the user-requested
   `HS model` and `LibRPA QSGW` widening work
 
@@ -62,6 +72,7 @@
 
 - prove one real-topic positive promotion from the public front door into
   canonical `L2`
+
 - prove one honest `negative_result` promotion into canonical `L2`
 - close both lanes with durable replay and postmortem evidence
 
@@ -69,10 +80,13 @@
 
 - three fresh public-front-door topics now have durable bootstrap receipts
   across `formal_derivation`, `toy_model`, and `first_principles`
+
 - the HS-model OTOC failure now lands durably as `negative_result` staging and
   compiles as `contradiction_watch`
+
 - all four proof lanes now have receipts, runbooks, and a cross-lane
   postmortem
+
 - the milestone closed honestly without pretending any positive lane had yet
   reached authoritative canonical `L2`
 
@@ -93,11 +107,14 @@
 
 - `negative_result` now has an active canonical schema path instead of stopping
   at staging-only vocabulary
+
 - the runtime proof packet contracts now also ship in the package-local
   `research/knowledge-hub/schemas/` surface for downstream promotion code
+
 - Layer 2 canonical index materialization now recognizes negative-result units
 - promotion gates and auto-promotion now expose and validate runtime proof
   packet schema context through a dedicated bridge module
+
 - the human front door now has tiered `status`, a zero-config `hello`, and a
   durable post-bootstrap next-action hint
 
@@ -118,8 +135,10 @@
 
 - analytical validation now records row-first bounded check entries including
   `source_cross_reference`
+
 - runtime-facing read paths now expose a structured analytical cross-check
   surface through the existing validation review bundle
+
 - the milestone closes with a dedicated analytical cross-check proof lane
 - the older analytical judgment runtime lane remains compatible after the
   runtime-surface expansion
@@ -134,8 +153,10 @@
 
 - make contradictory or mutually incompatible source claims explicit in `L1`
   intake
+
 - carry bounded comparison context with each contradiction row so the operator
   can judge why the conflict was surfaced
+
 - expose the contradiction surface on runtime read paths and close with one
   bounded proof lane
 
@@ -155,8 +176,10 @@
 
 - turn the honest post-bootstrap return to `L0` into one concrete
   source-acquisition handoff
+
 - keep `status`, `runtime_protocol`, and `replay-topic` aligned on that
   handoff surface
+
 - make arXiv registration contentful-by-default so following the handoff is
   useful immediately
 
@@ -164,10 +187,13 @@
 
 - the public front door now exposes one concrete `L0` source-acquisition lane
   instead of generic prose
+
 - dashboard, runtime protocol, and replay now share one explicit
   `l0_source_handoff` truth surface
+
 - arXiv registration and discovery-driven registration now attempt content
   acquisition by default with `--metadata-only` as the explicit opt-out
+
 - one fresh-topic proof now lands
   `bootstrap -> concrete handoff -> registration`
 
@@ -181,12 +207,16 @@
 
 - one honest real-topic Jones route now has durable postmortem and issue-ledger
   evidence instead of chat-only conclusions
+
 - `proof_fragment` now has a schema, a Jones bootstrap seed, and the first
   canonical proof-fragment instance
+
 - mode-aware runtime behavior, human-readable front-door surfaces, and
   mechanical governance all landed as routed follow-up to the real-topic run
+
 - `L0 -> L1` now includes DeepXiv-style enrichment, concept graphs,
   progressive reading, graph analysis, and Obsidian-compatible export
+
 - the public AITP front door now has a fresh real-topic proof with an honest
   bounded return-to-`L0` outcome
 
@@ -201,9 +231,11 @@
 - `route_transition_authority` now surfaces whether a committed route is still
   waiting on commitment, still pending authority, or already authoritative
   across current-topic truth surfaces
+
 - runtime status, the runtime protocol note, and replay now expose
   post-commitment authority state without replacing transition commitment or
   helper mechanisms
+
 - one isolated acceptance lane now proves route-transition-authority
   visibility stays declarative and does not widen into fresh runtime mutation
 
@@ -218,9 +250,11 @@
 - `route_transition_commitment` now surfaces whether a resumed route is still
   waiting on resumption, still pending commitment, or already the durable
   committed bounded lane
+
 - runtime status, the runtime protocol note, and replay now expose
   post-resumption commitment state without replacing transition resumption or
   helper mechanisms
+
 - one isolated acceptance lane now proves route-transition-commitment
   visibility stays declarative and does not widen into fresh runtime mutation
 
@@ -234,9 +268,11 @@
 
 - `route_transition_resumption` now surfaces whether ready follow-through is
   still waiting, still pending, or already durably resumed on the bounded route
+
 - runtime status, the runtime protocol note, and replay now expose
   post-followthrough re-entry state without replacing transition follow-through
   or helper mechanisms
+
 - one isolated acceptance lane now proves route-transition-resumption
   visibility stays declarative and does not widen into fresh runtime mutation
 
@@ -250,9 +286,11 @@
 
 - `route_transition_followthrough` now surfaces whether bounded transition work
   stays held by clearance or is ready to resume from an authoritative ref
+
 - runtime status, the runtime protocol note, and replay now expose
   post-clearance next-step state without replacing transition clearance or
   helper mechanisms
+
 - one isolated acceptance lane now proves route-transition-followthrough
   visibility stays declarative and does not widen into fresh runtime mutation
 
@@ -266,9 +304,11 @@
 
 - `route_transition_clearance` now surfaces whether a bounded escalated
   transition is still waiting, blocked on a checkpoint, or already released
+
 - runtime status, the runtime protocol note, and replay now expose
   checkpoint-mediated release state without replacing transition escalation or
   helper mechanisms
+
 - one isolated acceptance lane now proves route-transition-clearance
   visibility stays declarative and does not widen into fresh runtime mutation
 
@@ -282,8 +322,10 @@
 
 - `route_transition_escalation` now surfaces whether a bounded repair stays
   local, recommends a checkpoint, or is already backed by an active checkpoint
+
 - runtime status, the runtime protocol note, and replay now expose escalation
   state without replacing transition repair or helper mechanisms
+
 - one isolated acceptance lane now proves route-transition-escalation
   visibility stays declarative and does not widen into fresh runtime mutation
 
@@ -297,8 +339,10 @@
 
 - `route_transition_resolution` now synthesizes transition intent, transition
   receipt, and active-route alignment into one resolved handoff outcome
+
 - runtime status, the runtime protocol note, and replay now expose the resolved
   transition outcome without replacing transition receipt or helper mechanisms
+
 - one isolated acceptance lane now proves route-transition-resolution
   visibility stays declarative and does not widen into fresh runtime mutation
 
@@ -312,8 +356,10 @@
 
 - `route_transition_receipt` now surfaces whether intended bounded handoff has
   been durably recorded
+
 - runtime status, the runtime protocol note, and replay now expose the durable
   receipt location without replacing transition intent or helper mechanisms
+
 - one isolated acceptance lane now proves route-transition-receipt visibility
   stays declarative and does not widen into fresh runtime mutation
 
@@ -327,8 +373,10 @@
 
 - `route_transition_intent` now surfaces the declarative source route and
   target route after the bounded transition gate
+
 - runtime status, the runtime protocol note, and replay now expose transition
   intent status without replacing the transition gate or helper mechanisms
+
 - one isolated acceptance lane now proves route-transition-intent visibility
   stays declarative and does not mutate runtime state
 
@@ -342,9 +390,11 @@
 
 - `route_transition_gate` now surfaces blocked versus available versus
   checkpoint-required yielding
+
 - runtime status, the runtime protocol note, and replay now expose the gate
   artifact and transition-gate status without replacing route choice or helper
   mechanisms
+
 - one isolated acceptance lane now proves route-transition-gate visibility
   stays declarative and does not mutate runtime state
 
@@ -360,6 +410,7 @@
 - runtime status, the runtime protocol note, and replay now expose route-choice
   status and both bounded options without replacing current-route-choice or
   helper mechanisms
+
 - one isolated acceptance lane now proves route choice visibility stays
   declarative and does not mutate runtime state
 
@@ -373,9 +424,11 @@
 
 - `route_handoff` now surfaces one primary parked-route handoff candidate plus
   explicit keep-parked decisions
+
 - runtime status, the runtime protocol note, and replay now expose the handoff
   candidate count and handoff candidate id without replacing re-entry or helper
   mechanisms
+
 - one isolated acceptance lane now proves handoff visibility stays declarative
   and does not mutate runtime state
 
@@ -389,9 +442,11 @@
 
 - `route_reentry` now surfaces deferred waiting conditions plus follow-up
   return readiness directly on parked hypotheses
+
 - runtime status, the runtime protocol note, and replay now expose the
   re-entry-ready count and parked-route condition summaries without replacing
   deferred or follow-up helper mechanisms
+
 - one isolated acceptance lane now proves re-entry visibility stays
   declarative and does not auto-reactivate the deferred route or write a
   reintegration receipt
@@ -406,9 +461,11 @@
 
 - `route_activation` now surfaces the active local hypothesis, its bounded next
   action, and the parked-route obligation lanes directly
+
 - runtime status, the runtime protocol note, and replay now expose parked-route
   counts and obligations without replacing the queue, deferred buffer, or
   follow-up subtopics
+
 - one isolated acceptance lane now proves route activation stays declarative
   and does not auto-spawn a follow-up topic directory
 
@@ -423,6 +480,7 @@
 - each competing hypothesis now carries explicit branch-routing metadata
 - `status --json`, the runtime protocol note, and replay now expose the active
   branch hypothesis plus parked-route ids and counts
+
 - one isolated acceptance lane now proves routing coexists with steering,
   deferred parking, and follow-up subtopics
 
