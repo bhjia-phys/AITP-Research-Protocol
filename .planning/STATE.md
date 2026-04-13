@@ -1,49 +1,52 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.4
-milestone_name: First L1 To L2 Follow-Through Coherence
+milestone: v2.5
+milestone_name: Staged-L2 Review Reentry Coherence
 status: milestone_active
-stopped_at: "Phase 178.1 complete; Phase 178.2 next"
-last_updated: "2026-04-14T06:30:00+08:00"
+stopped_at: "Phase 179.2 complete; milestone lifecycle next"
+last_updated: "2026-04-14T06:45:00+08:00"
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
 
 ## Current Position
 
-Status: milestone `v2.4` `First L1 To L2 Follow-Through Coherence` is active.
-The next step is closing the durable replay receipt for the first fresh-topic
-L1->L2 follow-through.
+Status: milestone `v2.5` `Staged-L2 Review Reentry Coherence` is active. Phase
+work is complete and milestone lifecycle closure is next.
 
 **Why this milestone exists:**
 
-`v2.3` closed the bounded post-registration route-selection gap, but the next
-fresh replay still exposed one remaining operator-visible problem: after the
-first `literature_intake_stage` actually lands, route surfaces could still
-behave as though the first L1->L2 step had not happened.
+`v2.4` closed the first fresh-topic L1->L2 follow-through baseline and proved
+that public `consult-l2` can already retrieve the topic-local staged row. A
+follow-up probe without any explicit stop intent still showed one remaining
+operator-visible mismatch: a benign `continue` steering request leaves
+`h_plane.overall_status = active_human_control` even though the next bounded
+route is already staged-L2 review.
 
-The next bounded step is therefore to make the first post-registration L1->L2
-follow-through durable before widening back out to broader real-topic replay.
+That bounded step is now closed. The next step is milestone audit / archive,
+then promotion of the next gap that appears after staged-L2 review reentry.
 
 ## Immediate Next Step
 
-- active milestone: `v2.4` `First L1 To L2 Follow-Through Coherence`
-- latest closed milestone: `v2.3` `Post-Registration Route Coherence`
-- previous closed milestone: `v2.2` `Fresh-Topic First-Use Reliability`
-- older closed milestone: `v2.1` `L2 Real-Topic Relevance Hardening`
-- `v2.3` proved the fresh lane can move off stale L0 source-registration text
-  once a first source exists
-- Phase `178` now closes stable recognition of one completed
-  `literature_intake_stage` so the same candidate set does not requeue forever
-- Phase `178.1` now proves on an isolated fresh-topic lane that first-source
-  registration can continue through one bounded L1->L2 stage and return a
-  topic-local staged consultation hit
-- immediate next step: capture the durable replay receipt for Phase `178.2`
+- active milestone: `v2.5` `Staged-L2 Review Reentry Coherence`
+- latest closed milestone: `v2.4` `First L1 To L2 Follow-Through Coherence`
+- previous closed milestone: `v2.3` `Post-Registration Route Coherence`
+- older closed milestone: `v2.2` `Fresh-Topic First-Use Reliability`
+- `v2.4` proved the fresh topic can reach staged-L2 review and public
+  `consult-l2` can return the topic-local staged row
+- a follow-up probe with a benign `continue` request showed
+  `h_plane.overall_status = active_human_control` even though `next` already
+  points at staged-L2 review
+- Phase `179` now closes benign continue-steering neutrality at the H-plane
+  level
+- Phase `179.1` now closes public staged-L2 reentry surface coherence
+- Phase `179.2` now closes the replayable fresh-topic reentry proof
+- immediate next step: audit and archive milestone `v2.5`
 
 ## Accumulated Context
 
@@ -125,3 +128,6 @@ cross-cutting).
 - `v2.4` now promotes the next bounded gap from the repaired `v2.3` route: the
   first fresh-topic L1->L2 follow-through must land once, advance to staged-L2
   review, and become mechanically replayable
+- `v2.5` now promotes the remaining bounded follow-through friction from the
+  `v2.4` replay: benign continue steering still leaves a misleading
+  human-control posture during staged-L2 review reentry

@@ -89,36 +89,60 @@ architecture is finished.
 
 ## Current Focus
 
-- Active milestone: `v2.4` `First L1 To L2 Follow-Through Coherence`
-- Latest closed milestone: `v2.3` `Post-Registration Route Coherence`
-- Next boundary: make the first fresh-topic L1->L2 follow-through land once,
-  then surface staged-`L2` review and topic-local staged retrieval honestly
+- Active milestone: `v2.5` `Staged-L2 Review Reentry Coherence`
+- Latest closed milestone: `v2.4` `First L1 To L2 Follow-Through Coherence`
+- Next boundary: make benign `continue` steering stop surfacing as blocking
+  human control after the fresh topic reaches staged-`L2` review
 
-## Current Milestone: v2.4 First L1 To L2 Follow-Through Coherence
+## Current Milestone: v2.5 Staged-L2 Review Reentry Coherence
+
+**Goal:** make staged-`L2` review reentry trustworthy enough that, after the
+first fresh-topic L1->L2 follow-through lands, benign `continue` steering no
+longer leaves the topic in a misleading human-control posture and public
+surfaces stay focused on the review workflow itself.
+
+**Target features:**
+- neutralize non-directive `continue` steering so it does not mark the topic as
+  blocked human control after staged-L2 review
+- keep public `next`, `status`, and dashboard surfaces aligned on staged-L2
+  review as the primary reentry surface while that benign steering persists
+- close with one replayable fresh-topic proof that the same topic can continue
+  from staged-L2 review under non-blocking `continue` steering
+
+**Key context:**
+- `v2.4` closed the first fresh-topic L1->L2 follow-through baseline and
+  proved that public `consult-l2` can already retrieve topic-local staged hits
+- a follow-up probe without any explicit stop intent still left
+  `h_plane.overall_status = active_human_control` after a benign `continue`
+  steering request
+- the next bottleneck is therefore neutralizing benign steering/control-note
+  residue during staged-L2 review reentry, not a return to earlier source
+  intake or staging quality work
+
+## Latest Closed Milestone: v2.4 First L1 To L2 Follow-Through Coherence
 
 **Goal:** make the first post-registration L1->L2 follow-through trustworthy
 enough that a fresh topic can execute one bounded `literature_intake_stage`,
 stop repeating it once it lands, and advance onto staged-`L2` review instead
 of looping forever on the same action.
 
-**Target features:**
-- persist a stable identity for the current literature-intake candidate set so
-  the first successful fresh-topic stage does not immediately requeue itself
-- advance post-follow-through `status`, `next`, and must-read surfaces onto an
-  explicit staged-`L2` review point
-- prove on one isolated fresh-topic lane that `consult_l2(include_staging=True)`
-  can retrieve the topic-local staged entry after that first follow-through
+**Delivered features:**
+- literature-intake candidate sets now persist a stable completion identity so
+  the same fresh-topic stage no longer requeues forever
+- post-follow-through route surfaces now advance onto staged-`L2` review and
+  keep the literature-focused context envelope active
+- one isolated fresh-topic proof now shows `register -> stage -> staged-L2
+  review`, and `consult_l2(include_staging=True)` returns the topic-local
+  staged row
+- one durable replay packet now records that bounded baseline under `.planning/`
 
 **Key context:**
-- `v2.3` closed the post-registration route-selection gap but did not yet prove
-  that the next L1->L2 step advances honestly after it executes once
-- a fresh replay exposed the remaining gap: the first
-  `literature_intake_stage` could land, yet route surfaces still behaved as if
-  nothing had happened
-- the next bottleneck is therefore first L1->L2 follow-through coherence, not
-  broader cross-lane scientific widening
+- `v2.3` closed post-registration route selection, but not the first L1->L2
+  follow-through after that route became available
+- `v2.4` closed that first fresh-topic follow-through baseline without
+  pretending that later reentry and continuation surfaces were already solved
 
-## Latest Closed Milestone: v2.3 Post-Registration Route Coherence
+## Previous Closed Milestone: v2.3 Post-Registration Route Coherence
 
 **Goal:** make the first post-registration transition trustworthy enough that,
 once a first source lands, runtime state and next-action surfaces move onto the
@@ -1067,4 +1091,4 @@ QSGW` lanes instead of re-litigating whether AITP already has a trustworthy
 positive canonical-L2 path.
 
 ---
-*Last updated: 2026-04-14 after starting milestone v2.4*
+*Last updated: 2026-04-14 after starting milestone v2.5*

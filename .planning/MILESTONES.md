@@ -1,8 +1,37 @@
 # Milestones
 
-## v2.4 First L1 To L2 Follow-Through Coherence (Active)
+## v2.5 Staged-L2 Review Reentry Coherence (Active)
 
-**Phases completed:** 2 / 3 phases, 2 / 2 completed plans
+**Phases completed:** 3 / 3 phases, 3 / 3 plans
+
+**Milestone goal:**
+
+- make benign `continue` steering stop surfacing as blocking human-control
+  state after the first fresh-topic staged-`L2` review point is reached
+
+- keep `next`, `status`, and dashboard reentry surfaces focused on the staged-L2
+  review workflow itself while neutral `continue` steering remains durable
+
+- close with one replayable fresh-topic proof that the same topic can continue
+  from staged-`L2` review under non-blocking `continue` steering
+
+**Key accomplishments:**
+
+- milestone scoped from the remaining operator-visible gap after `v2.4`: even
+  a benign `continue` steering request could leave
+  `h_plane.overall_status = active_human_control` after staged-L2 review
+- Phase `179` now treats benign `continue_recorded` steering as visible but
+  non-blocking
+- Phase `179.1` now proves public `next` and `status` stay aligned on
+  staged-L2 review under benign `continue` steering
+- Phase `179.2` now closes the milestone with one replayable fresh-topic
+  staged-L2 reentry packet
+
+---
+
+## v2.4 First L1 To L2 Follow-Through Coherence (Shipped: 2026-04-14)
+
+**Phases completed:** 3 / 3 phases, 3 / 3 plans
 
 **Milestone goal:**
 
@@ -27,6 +56,8 @@
 - Phase `178.1` now proves, on an isolated fresh-topic lane, that first-source
   registration can continue through one bounded `literature_intake_stage` and
   produce topic-local staged consultation hits
+- Phase `178.2` now closes the milestone with one durable replay packet for
+  the fresh-topic `register -> stage -> staging review` baseline
 
 ---
 

@@ -1,57 +1,55 @@
-# Requirements: v2.4 First L1 To L2 Follow-Through Coherence
+# Requirements: v2.5 Staged-L2 Review Reentry Coherence
 
 ## Milestone Goal
 
-Make the first post-registration L1->L2 follow-through coherent enough that a
-fresh topic can execute one bounded `literature_intake_stage`, stop repeating
-it once it lands, and surface staged `L2` review plus topic-local staged
-retrieval honestly.
+Make staged-`L2` review reentry coherent enough that, after the first
+fresh-topic L1->L2 follow-through lands, benign `continue` steering no longer
+looks like blocking human control and public surfaces stay focused on the
+review workflow itself.
 
 ## Active Requirements
 
-### Stable Literature-Stage Recognition
+### Continue-Steering Neutrality
 
-- [x] `FLC-01`: a completed `literature_intake_stage` persists a stable
-  signature or equivalent durable identity for the current fresh-topic
-  candidate set.
+- [x] `SRR-01`: after the first fresh-topic L1->L2 follow-through lands,
+  benign `continue` steering does not leave `h_plane` or equivalent operator
+  posture surfaces in a blocking human-control state.
 
-- [x] `FLC-02`: once the same fresh-topic candidate set is already staged, the
-  route no longer requeues the identical `literature_intake_stage`.
+- [x] `SRR-02`: `open_next` / equivalent primary reentry pointers continue to
+  target staged-L2 review even while durable `continue` steering artifacts
+  remain present.
 
-- [x] `FLC-03`: after the first bounded L1->L2 stage lands, the next-action
-  surface advances to a staged-`L2` review summary and keeps that review point
-  inside the literature-focused runtime context.
+### Public Reentry Surface Coherence
 
-### Fresh Follow-Through Proof
+- [x] `SRR-03`: public `next`, `status`, and dashboard surfaces remain aligned
+  on the staged-L2 review reentry point under non-blocking `continue`
+  steering.
 
-- [x] `FLC-04`: one isolated fresh-topic acceptance lane proves
-  `bootstrap -> register first source -> literature_intake_stage -> staging
-  review`, and `consult_l2(include_staging=True)` returns topic-local staged
-  hits from that lane.
+### Replayable Proof
 
-- [ ] `FLC-05`: one durable replay receipt packet records the same fresh-topic
-  follow-through baseline for milestone closure.
+- [x] `SRR-04`: one replayable fresh-topic proof shows the same topic can
+  continue from staged-L2 review under benign `continue` steering without
+  surfacing false human-control blockage.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Broad scientific closure across the three research lanes | `v2.4` stays on the first fresh-topic L1->L2 follow-through, not multi-lane widening |
-| Reopening `v2.3` post-registration next-action reselection | treat `v2.3` as the current baseline unless a fresh regression appears |
-| Human promotion / authoritative `L2` writeback for the new staged rows | this milestone only closes the first provisional staged-`L2` follow-through |
-| Cross-lane natural-language replay beyond the single fresh-topic baseline | defer until this bounded L1->L2 follow-through is mechanically closed |
+| Reopening first-source registration or first literature staging from `v2.4` | treat `v2.4` as the current baseline unless a fresh regression appears |
+| Broad multi-lane real-topic widening across formal, toy, and first-principles routes | `v2.5` stays on same-topic reentry posture after staged-L2 review |
+| Promotion / authoritative writeback of the staged rows | reentry posture must be coherent before later promotion work widens again |
+| Deep verification-route selection or execution handoff after reentry | keep the milestone bounded to the immediate staged-L2 review continuation |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FLC-01 | Phase 178 | Done |
-| FLC-02 | Phase 178 | Done |
-| FLC-03 | Phase 178 | Done |
-| FLC-04 | Phase 178.1 | Done |
-| FLC-05 | Phase 178.2 | Planned |
+| SRR-01 | Phase 179 | Done |
+| SRR-02 | Phase 179 | Done |
+| SRR-03 | Phase 179.1 | Done |
+| SRR-04 | Phase 179.2 | Done |
 
 **Coverage:**
-- v1 requirements: 5 total
-- mapped to phases: 5
+- v1 requirements: 4 total
+- mapped to phases: 4
 - unmapped: 0

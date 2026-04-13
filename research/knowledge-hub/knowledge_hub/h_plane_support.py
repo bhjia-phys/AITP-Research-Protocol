@@ -115,8 +115,14 @@ def build_h_plane_payload(
         "approved_by": str(promotion_gate.get("approved_by") or ""),
     }
     registry = _registry_details(self, topic_slug)
+    blocking_steering_statuses = {
+        "active_redirect",
+        "paused_by_control_note",
+        "active_pause",
+        "active_stop",
+    }
     active_human_control = (
-        steering["status"] != "none"
+        steering["status"] in blocking_steering_statuses
         or checkpoint["status"] == "requested"
         or approval["status"] in {"pending_human_approval", "approved"}
         or registry["operator_status"] == "paused"

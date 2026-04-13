@@ -207,6 +207,10 @@ class RuntimeScriptTests(unittest.TestCase):
             "aitp_first_source_followthrough_acceptance_test",
             "runtime/scripts/run_first_source_followthrough_acceptance.py",
         )
+        self.staged_l2_reentry_acceptance = _load_module(
+            "aitp_staged_l2_reentry_acceptance_test",
+            "runtime/scripts/run_staged_l2_reentry_acceptance.py",
+        )
 
     def test_ensure_topic_shell_seeds_concrete_l0_source_handoff_after_bootstrap(self) -> None:
         self.orchestrate_topic.ensure_topic_shell(
@@ -345,6 +349,59 @@ class RuntimeScriptTests(unittest.TestCase):
             ],
         ):
             exit_code = self.first_source_followthrough_acceptance.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue((work_root / "kernel" / "canonical" / "staging" / "workspace_staging_manifest.json").exists())
+        self.assertTrue((work_root / "kernel" / "runtime" / "topics").exists())
+
+    def test_staged_l2_reentry_acceptance_script_runs_on_isolated_work_root(self) -> None:
+        work_root = Path(self._tmpdir.name) / "staged-l2-reentry-acceptance"
+        tar_path = Path(self._tmpdir.name) / "reentry-source.tar"
+        tex_path = Path(self._tmpdir.name) / "reentry-paper.tex"
+        metadata_path = Path(self._tmpdir.name) / "reentry-metadata.json"
+
+        tex_path.write_text(
+            "\\documentclass{article}\n\\begin{document}demo\\end{document}\n",
+            encoding="utf-8",
+        )
+        with tarfile.open(tar_path, "w") as archive:
+            archive.add(tex_path, arcname="paper.tex")
+        metadata_path.write_text(
+            json.dumps(
+                {
+                    "arxiv_id": "2401.00001v2",
+                    "title": "Topological Order and Anyon Condensation",
+                    "summary": "A direct match for topological order and anyon condensation discovery.",
+                    "published": "2024-01-03T00:00:00Z",
+                    "updated": "2024-01-05T00:00:00Z",
+                    "authors": ["Primary Author", "Secondary Author"],
+                    "identifier": "https://arxiv.org/abs/2401.00001v2",
+                    "abs_url": "https://arxiv.org/abs/2401.00001v2",
+                    "pdf_url": "https://arxiv.org/pdf/2401.00001.pdf",
+                    "source_url": tar_path.as_uri(),
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_staged_l2_reentry_acceptance.py",
+                "--work-root",
+                str(work_root),
+                "--register-arxiv-id",
+                "2401.00001v2",
+                "--registration-metadata-json",
+                str(metadata_path),
+                "--json",
+            ],
+        ):
+            exit_code = self.staged_l2_reentry_acceptance.main()
 
         self.assertEqual(exit_code, 0)
         self.assertTrue((work_root / "kernel" / "canonical" / "staging" / "workspace_staging_manifest.json").exists())

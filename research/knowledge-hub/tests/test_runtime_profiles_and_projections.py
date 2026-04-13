@@ -1703,6 +1703,33 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertEqual(bundle["h_plane"]["registry"]["operator_status"], "paused")
         self.assertEqual(bundle["h_plane"]["registry"]["focus_state"], "focused")
 
+    def test_runtime_bundle_treats_continue_recorded_h_plane_as_steady(self) -> None:
+        shell_surfaces = self._shell_surfaces()
+        (self.runtime_root / "control_note.md").write_text(
+            "---\n"
+            "summary: Continue the active topic under the current operator steering.\n"
+            "---\n",
+            encoding="utf-8",
+        )
+        (self.runtime_root / "innovation_direction.md").write_text("# Direction\n", encoding="utf-8")
+        (self.runtime_root / "innovation_decisions.jsonl").write_text(
+            json.dumps({"decision": "continue", "summary": "Continue the active topic under the current operator steering."}, ensure_ascii=True) + "\n",
+            encoding="utf-8",
+        )
+
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
+                result = self.service._materialize_runtime_protocol_bundle(
+                    topic_slug="demo-topic",
+                    updated_by="test",
+                    human_request="continue this topic",
+                    load_profile="light",
+                )
+
+        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        self.assertEqual(bundle["h_plane"]["steering"]["status"], "continue_recorded")
+        self.assertEqual(bundle["h_plane"]["overall_status"], "steady")
+
     def test_build_runtime_mode_contract_classifies_verify_and_promote_modes(self) -> None:
         verify_contract = build_runtime_mode_contract(
             resume_stage="L4",

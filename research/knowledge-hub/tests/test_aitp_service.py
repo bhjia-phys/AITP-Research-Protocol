@@ -4650,6 +4650,32 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["registry"]["focus_state"], "focused")
         self.assertEqual(payload["registry"]["operator_status"], "paused")
 
+    def test_h_plane_audit_treats_continue_recorded_as_steady(self) -> None:
+        runtime_root = self._write_runtime_state()
+        (runtime_root / "control_note.md").write_text(
+            "---\n"
+            "summary: Continue the active topic under the current operator steering.\n"
+            "---\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "innovation_direction.md").write_text("# Direction\n", encoding="utf-8")
+        (runtime_root / "innovation_decisions.jsonl").write_text(
+            json.dumps(
+                {
+                    "decision": "continue",
+                    "summary": "Continue the active topic under the current operator steering.",
+                },
+                ensure_ascii=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.h_plane_audit(topic_slug="demo-topic")
+
+        self.assertEqual(payload["steering"]["status"], "continue_recorded")
+        self.assertEqual(payload["overall_status"], "steady")
+
     def test_seed_l2_direction_materializes_mvp_graph_units(self) -> None:
         self._prepare_l2_graph_kernel()
         payload = self.service.seed_l2_direction(

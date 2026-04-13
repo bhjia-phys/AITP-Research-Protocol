@@ -1,0 +1,437 @@
+{
+  "work_root": "C:\\Users\\samur\\AppData\\Local\\Temp\\aitp-first-source-followthrough-acceptance-f6fjcknl",
+  "kernel_root": "C:\\Users\\samur\\AppData\\Local\\Temp\\aitp-first-source-followthrough-acceptance-f6fjcknl\\kernel",
+  "topic_slug": "jones-chapter-4-finite-dimensional-backbone",
+  "post_registration_summary": "Stage bounded literature-intake units from the current L1 vault into L2 staging.",
+  "post_followthrough_summary": "Inspect the current L2 staging manifest before continuing.",
+  "must_read_now": [
+    {
+      "path": "runtime\\topics\\jones-chapter-4-finite-dimensional-backbone\\control_note.md",
+      "reason": "Human steering or a declared decision override is active. Read this before trusting heuristic queue flow."
+    },
+    {
+      "path": "runtime/topics/jones-chapter-4-finite-dimensional-backbone/topic_dashboard.md",
+      "reason": "Primary human runtime surface for the current topic. Read this first for the bounded status, next action, and blockers."
+    },
+    {
+      "path": "runtime/topics/jones-chapter-4-finite-dimensional-backbone/research_question.contract.md",
+      "reason": "Active research question, scope, and deliverables for ordinary topic work."
+    },
+    {
+      "path": "runtime/topics/jones-chapter-4-finite-dimensional-backbone/graph_analysis.md",
+      "reason": "Current graph-analysis summary for cross-source bridges, question seeds, and recent graph drift."
+    },
+    {
+      "path": "intake/topics/jones-chapter-4-finite-dimensional-backbone/vault/wiki/home.md",
+      "reason": "Current L1 vault wiki page for literature-intake extraction and bounded source distillation."
+    },
+    {
+      "path": "intake/topics/jones-chapter-4-finite-dimensional-backbone/vault/wiki/source-intake.md",
+      "reason": "Current L1 vault wiki page for literature-intake extraction and bounded source distillation."
+    },
+    {
+      "path": "intake/topics/jones-chapter-4-finite-dimensional-backbone/vault/wiki/open-questions.md",
+      "reason": "Current L1 vault wiki page for literature-intake extraction and bounded source distillation."
+    },
+    {
+      "path": "intake/topics/jones-chapter-4-finite-dimensional-backbone/vault/wiki/runtime-bridge.md",
+      "reason": "Current L1 vault wiki page for literature-intake extraction and bounded source distillation."
+    },
+    {
+      "path": "intake/topics/jones-chapter-4-finite-dimensional-backbone/vault/wiki/concept-graph/index.md",
+      "reason": "Current L1 vault wiki page for literature-intake extraction and bounded source distillation."
+    },
+    {
+      "path": "canonical/staging/workspace_staging_manifest.json",
+      "reason": "Current staging manifest for duplicate checks and fast-path L2 writeback visibility."
+    },
+    {
+      "path": "canonical/index.jsonl",
+      "reason": "Current canonical L2 index for checking whether the source-backed knowledge already exists."
+    }
+  ],
+  "followthrough_auto_actions": {
+    "queue_path": "C:\\Users\\samur\\AppData\\Local\\Temp\\aitp-first-source-followthrough-acceptance-f6fjcknl\\kernel\\runtime\\topics\\jones-chapter-4-finite-dimensional-backbone\\action_queue.jsonl",
+    "executed": [
+      {
+        "action_id": "action:jones-chapter-4-finite-dimensional-backbone:literature-intake-stage:01",
+        "action_type": "literature_intake_stage",
+        "status": "completed",
+        "result": {
+          "source_slug": "paper-topological-order-and-anyon-condensation-2401-00001",
+          "candidate_signature": "10febd344568dad69154ce8df6ef2656b57016f9",
+          "staging": {
+            "topic_slug": "jones-chapter-4-finite-dimensional-backbone",
+            "source_slug": "paper-topological-order-and-anyon-condensation-2401-00001",
+            "entry_count": 1,
+            "entries": [
+              {
+                "entry_id": "staging:topological-order-and-anyon-condensation-notation-match",
+                "title": "Topological Order and Anyon Condensation notation `match`",
+                "summary": "In Topological Order and Anyon Condensation, `match` denotes topological order and anyon condensation discovery. Evidence: A direct match for topological order and anyon condensation discovery.",
+                "candidate_unit_type": "concept",
+                "trust_surface": "staging",
+                "status": "staged",
+                "tags": [
+                  "literature-intake",
+                  "notation-binding",
+                  "symbol:match",
+                  "reading-depth:full-read",
+                  "source:paper-topological-order-and-anyon-condensation-2401-00001"
+                ],
+                "source_refs": [
+                  "paper:topological-order-and-anyon-condensation-2401-00001"
+                ],
+                "assumptions": [],
+                "linked_unit_ids": [],
+                "contradicts_unit_ids": [],
+                "integration_summary": "Staged from L1 literature intake for source `paper-topological-order-and-anyon-condensation-2401-00001`.",
+                "failure_kind": "",
+                "failed_route": "",
+                "next_implication": "",
+                "scope_note": "",
+                "topic_slug": "jones-chapter-4-finite-dimensional-backbone",
+                "provenance": {
+                  "source_id": "paper:topological-order-and-anyon-condensation-2401-00001",
+                  "source_slug": "paper-topological-order-and-anyon-condensation-2401-00001",
+                  "source_title": "Topological Order and Anyon Condensation",
+                  "literature_stage_signature": "10febd344568dad69154ce8df6ef2656b57016f9",
+                  "literature_intake_fast_path": true,
+                  "vault_wiki_paths": [
+                    "intake/topics/jones-chapter-4-finite-dimensional-backbone/vault/wiki/home.md",
+                    "intake/topics/jones-chapter-4-finite-dimensional-backbone/vault/wiki/source-intake.md",
+                    "intake/topics/jones-chapter-4-finite-dimensional-backbone/vault/wiki/open-questions.md",
+                    "intake/topics/jones-chapter-4-finite-dimensional-backbone/vault/wiki/runtime-bridge.md",
+                    "intake/topics/jones-chapter-4-finite-dimensional-backbone/vault/wiki/concept-graph/index.md"
+                  ]
+                },
+                "created_at": "2026-04-13T22:31:56+00:00",
+                "updated_at": "2026-04-13T22:31:56+00:00",
+                "created_by": "aitp-cli",
+                "notes": "This staging entry came from the literature-intake fast path and still requires a later full audit."
+              }
+            ],
+            "manifest_json_path": "C:\\Users\\samur\\AppData\\Local\\Temp\\aitp-first-source-followthrough-acceptance-f6fjcknl\\kernel\\canonical\\staging\\workspace_staging_manifest.json",
+            "manifest_markdown_path": "C:\\Users\\samur\\AppData\\Local\\Temp\\aitp-first-source-followthrough-acceptance-f6fjcknl\\kernel\\canonical\\staging\\workspace_staging_manifest.md",
+            "manifest": {
+              "kind": "l2_workspace_staging_manifest",
+              "manifest_version": 1,
+              "generated_at": "2026-04-14T06:31:56+08:00",
+              "source_contract_path": "canonical/L2_STAGING_PROTOCOL.md",
+              "summary": {
+                "total_entries": 31,
+                "counts_by_status": {
+                  "dismissed": 0,
+                  "reviewed": 0,
+                  "staged": 31
+                },
+                "counts_by_kind": {
+                  "bridge_note": 1,
+                  "concept": 7,
+                  "concept_note": 1,
+                  "method": 9,
+                  "negative_result": 6,
+                  "warning_note": 1,
+                  "workflow_draft": 6
+                },
+                "counts_by_topic": {
+                  "demo-topic": 6,
+                  "global": 6,
+                  "jones-chapter-4-finite-dimensional-backbone": 1,
+                  "measurement-induced-algebraic-transition-and-observer-algebras": 17,
+                  "unknown": 1
+                }
+              },
+              "entries": [
+                {
+                  "entry_id": "staging:demo-topic-workflow-draft-1b93bab2",
+                  "topic_slug": "demo-topic",
+                  "entry_kind": "workflow_draft",
+                  "status": "staged",
+                  "title": "Phase138 test compiled note kernel",
+                  "path": "canonical/staging/entries/demo-topic-workflow-draft-1b93bab2.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:demo-topic-workflow-draft-211bd4f2",
+                  "topic_slug": "demo-topic",
+                  "entry_kind": "workflow_draft",
+                  "status": "staged",
+                  "title": "Phase138 test compiled note aitp-cli-e2e-yd9ud3qx",
+                  "path": "canonical/staging/entries/demo-topic-workflow-draft-211bd4f2.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:demo-topic-workflow-draft-314dd989",
+                  "topic_slug": "demo-topic",
+                  "entry_kind": "workflow_draft",
+                  "status": "staged",
+                  "title": "Knowledge report provisional note knowledge-acceptance",
+                  "path": "canonical/staging/entries/demo-topic-workflow-draft-314dd989.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:demo-topic-workflow-draft-58fc2075",
+                  "topic_slug": "demo-topic",
+                  "entry_kind": "workflow_draft",
+                  "status": "staged",
+                  "title": "Phase138 test compiled note aitp-cli-e2e-beo7dvwo",
+                  "path": "canonical/staging/entries/demo-topic-workflow-draft-58fc2075.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:demo-topic-workflow-draft-7909d741",
+                  "topic_slug": "demo-topic",
+                  "entry_kind": "workflow_draft",
+                  "status": "staged",
+                  "title": "Knowledge report provisional note aitp-l2-knowledge-report-acceptance-wmv5fkem",
+                  "path": "canonical/staging/entries/demo-topic-workflow-draft-7909d741.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:demo-topic-workflow-draft-aed07b94",
+                  "topic_slug": "demo-topic",
+                  "entry_kind": "workflow_draft",
+                  "status": "staged",
+                  "title": "Phase138 test compiled note aitp-cli-e2e-nna0xm3v",
+                  "path": "canonical/staging/entries/demo-topic-workflow-draft-aed07b94.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:measurement-induced-algebraic-transition-and-observer-algebras-bridge-note-3120e9bf",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "bridge_note",
+                  "status": "staged",
+                  "title": "Observer-accessible subalgebra bridge for monitored transitions",
+                  "path": "canonical/staging/entries/measurement-induced-algebraic-transition-and-observer-algebras-bridge-note-3120e9bf.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:measurement-induced-algebraic-transition-and-observer-algebras-concept-note-8fe6c641",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "concept_note",
+                  "status": "staged",
+                  "title": "Operator-spectrum and entanglement-Hamiltonian route to algebraic reformulation",
+                  "path": "canonical/staging/entries/measurement-induced-algebraic-transition-and-observer-algebras-concept-note-8fe6c641.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:measurement-induced-algebraic-transition-and-observer-algebras-warning-note-ab600629",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "warning_note",
+                  "status": "staged",
+                  "title": "Do not equate MIPT with a von Neumann factor transition",
+                  "path": "canonical/staging/entries/measurement-induced-algebraic-transition-and-observer-algebras-warning-note-ab600629.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:a-critical-state-under-weak-measurement-is-not-critical-unspecified-method-method-signal",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "method",
+                  "status": "staged",
+                  "title": "A critical state under weak measurement is not critical unspecified_method method signal",
+                  "path": "canonical/staging/entries/staging--a-critical-state-under-weak-measurement-is-not-critical-unspecified-method-method-signal.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:an-algebra-of-observables-for-de-sitter-space-notation-entropy",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "concept",
+                  "status": "staged",
+                  "title": "An Algebra of Observables for de Sitter Space notation `entropy`",
+                  "path": "canonical/staging/entries/staging--an-algebra-of-observables-for-de-sitter-space-notation-entropy.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:an-algebra-of-observables-for-de-sitter-space-notation-observables",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "concept",
+                  "status": "staged",
+                  "title": "An Algebra of Observables for de Sitter Space notation `observables`",
+                  "path": "canonical/staging/entries/staging--an-algebra-of-observables-for-de-sitter-space-notation-observables.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:an-algebra-of-observables-for-de-sitter-space-unspecified-method-method-signal",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "method",
+                  "status": "staged",
+                  "title": "An Algebra of Observables for de Sitter Space unspecified_method method signal",
+                  "path": "canonical/staging/entries/staging--an-algebra-of-observables-for-de-sitter-space-unspecified-method-method-signal.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:entanglement-and-charge-sharpening-transitions-in-u-1-symmetric-monitored-quantum-circuits-unspecified-method-method-signal",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "method",
+                  "status": "staged",
+                  "title": "Entanglement and charge-sharpening transitions in U(1) symmetric monitored quantum circuits unspecified_method method signal",
+                  "path": "canonical/staging/entries/staging--entanglement-and-charge-sharpening-transitions-in-u-1-symmetric-monitored-quantum-circuits-unspecified-method-method-signal.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:hs-model-otoc-lyapunov-exponent-regime-mismatch",
+                  "topic_slug": "global",
+                  "entry_kind": "negative_result",
+                  "status": "staged",
+                  "title": "HS model OTOC Lyapunov exponent: regime mismatch",
+                  "path": "canonical/staging/entries/staging--hs-model-otoc-lyapunov-exponent-regime-mismatch.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:implication-of-dressed-form-of-relational-observable-on-von-neumann-algebra-unspecified-method-method-signal",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "method",
+                  "status": "staged",
+                  "title": "Implication of dressed form of relational observable on von Neumann algebra unspecified_method method signal",
+                  "path": "canonical/staging/entries/staging--implication-of-dressed-form-of-relational-observable-on-von-neumann-algebra-unspecified-method-method-signal.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:knowledge-report-contradiction-aitp-l2-knowledge-report-acceptance-wmv5fkem",
+                  "topic_slug": "global",
+                  "entry_kind": "negative_result",
+                  "status": "staged",
+                  "title": "Knowledge report contradiction aitp-l2-knowledge-report-acceptance-wmv5fkem",
+                  "path": "canonical/staging/entries/staging--knowledge-report-contradiction-aitp-l2-knowledge-report-acceptance-wmv5fkem.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:knowledge-report-contradiction-knowledge-acceptance",
+                  "topic_slug": "global",
+                  "entry_kind": "negative_result",
+                  "status": "staged",
+                  "title": "Knowledge report contradiction knowledge-acceptance",
+                  "path": "canonical/staging/entries/staging--knowledge-report-contradiction-knowledge-acceptance.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-implementation-workflow-method-signal",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "method",
+                  "status": "staged",
+                  "title": "Measurement-induced entanglement phase transitions in variational quantum circuits implementation_workflow method signal",
+                  "path": "canonical/staging/entries/staging--measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-implementation-workflow-method-signal.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:measurement-induced-phase-transitions-in-the-dynamics-of-entanglement-notation-classes",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "concept",
+                  "status": "staged",
+                  "title": "Measurement-Induced Phase Transitions in the Dynamics of Entanglement notation `classes`",
+                  "path": "canonical/staging/entries/staging--measurement-induced-phase-transitions-in-the-dynamics-of-entanglement-notation-classes.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:measurement-induced-phase-transitions-in-the-dynamics-of-entanglement-unspecified-method-method-signal",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "method",
+                  "status": "staged",
+                  "title": "Measurement-Induced Phase Transitions in the Dynamics of Entanglement unspecified_method method signal",
+                  "path": "canonical/staging/entries/staging--measurement-induced-phase-transitions-in-the-dynamics-of-entanglement-unspecified-method-method-signal.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:operator-scaling-dimensions-and-multifractality-at-measurement-induced-transitions-notation-studied",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "concept",
+                  "status": "staged",
+                  "title": "Operator scaling dimensions and multifractality at measurement-induced transitions notation `studied`",
+                  "path": "canonical/staging/entries/staging--operator-scaling-dimensions-and-multifractality-at-measurement-induced-transitions-notation-studied.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:operator-scaling-dimensions-and-multifractality-at-measurement-induced-transitions-unspecified-method-method-signal",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "method",
+                  "status": "staged",
+                  "title": "Operator scaling dimensions and multifractality at measurement-induced transitions unspecified_method method signal",
+                  "path": "canonical/staging/entries/staging--operator-scaling-dimensions-and-multifractality-at-measurement-induced-transitions-unspecified-method-method-signal.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:phase138-test-contradiction-aitp-cli-e2e-beo7dvwo",
+                  "topic_slug": "global",
+                  "entry_kind": "negative_result",
+                  "status": "staged",
+                  "title": "Phase138 test contradiction aitp-cli-e2e-beo7dvwo",
+                  "path": "canonical/staging/entries/staging--phase138-test-contradiction-aitp-cli-e2e-beo7dvwo.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:phase138-test-contradiction-aitp-cli-e2e-nna0xm3v",
+                  "topic_slug": "global",
+                  "entry_kind": "negative_result",
+                  "status": "staged",
+                  "title": "Phase138 test contradiction aitp-cli-e2e-nna0xm3v",
+                  "path": "canonical/staging/entries/staging--phase138-test-contradiction-aitp-cli-e2e-nna0xm3v.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:phase138-test-contradiction-aitp-cli-e2e-yd9ud3qx",
+                  "topic_slug": "global",
+                  "entry_kind": "negative_result",
+                  "status": "staged",
+                  "title": "Phase138 test contradiction aitp-cli-e2e-yd9ud3qx",
+                  "path": "canonical/staging/entries/staging--phase138-test-contradiction-aitp-cli-e2e-yd9ud3qx.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:quantum-fields-and-local-measurements-notation-considered",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "concept",
+                  "status": "staged",
+                  "title": "Quantum fields and local measurements notation `considered`",
+                  "path": "canonical/staging/entries/staging--quantum-fields-and-local-measurements-notation-considered.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:quantum-fields-and-local-measurements-unspecified-method-method-signal",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "method",
+                  "status": "staged",
+                  "title": "Quantum fields and local measurements unspecified_method method signal",
+                  "path": "canonical/staging/entries/staging--quantum-fields-and-local-measurements-unspecified-method-method-signal.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:quantum-gravity-observables-observation-algebras-and-mathematical-structure-unspecified-method-method-signal",
+                  "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+                  "entry_kind": "method",
+                  "status": "staged",
+                  "title": "Quantum gravity observables: observation, algebras, and mathematical structure unspecified_method method signal",
+                  "path": "canonical/staging/entries/staging--quantum-gravity-observables-observation-algebras-and-mathematical-structure-unspecified-method-method-signal.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:topological-order-and-anyon-condensation-notation-match",
+                  "topic_slug": "jones-chapter-4-finite-dimensional-backbone",
+                  "entry_kind": "concept",
+                  "status": "staged",
+                  "title": "Topological Order and Anyon Condensation notation `match`",
+                  "path": "canonical/staging/entries/staging--topological-order-and-anyon-condensation-notation-match.json",
+                  "authoritative": false
+                },
+                {
+                  "entry_id": "staging:weak-coupling-tfim-picture",
+                  "topic_slug": "",
+                  "entry_kind": "concept",
+                  "status": "staged",
+                  "title": "Weak-coupling TFIM picture",
+                  "path": "canonical/staging/entries/staging--weak-coupling-tfim-picture.json",
+                  "authoritative": false
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "remaining_pending": 1
+  },
+  "consult_after_followthrough": {
+    "staged_hit_count": 1,
+    "topic_local_staged_hit_count": 1
+  }
+}

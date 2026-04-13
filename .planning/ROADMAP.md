@@ -1,85 +1,81 @@
-# Roadmap: v2.4 First L1 To L2 Follow-Through Coherence
+# Roadmap: v2.5 Staged-L2 Review Reentry Coherence
 
 ## Result
 
-Milestone active. Phase `178.2` is next.
+Milestone phase work complete. Lifecycle closure is next.
 
 ## Phases
 
-- [x] **Phase 178: Stable Literature-Stage Completion Recognition** *(Axis 1 + Axis 2)*
-- [x] **Phase 178.1: Fresh First-Source Follow-Through Acceptance** *(Axis 4 + Axis 5)*
-- [ ] **Phase 178.2: Fresh First L1 To L2 Replay Receipt** *(Axis 4 + Axis 3)*
+- [x] **Phase 179: Control-Note Reentry Demotion** *(Axis 4 + Axis 2)*
+- [x] **Phase 179.1: Public Staged-L2 Reentry Surface Coherence** *(Axis 4 + Axis 5)*
+- [x] **Phase 179.2: Fresh Staged-L2 Reentry Replay Proof** *(Axis 4 + Axis 3)*
 
 ## Target Outcome
 
-- once a fresh-topic `literature_intake_stage` completes, the same candidate
-  set no longer requeues as though nothing happened
-- post-follow-through `status`, `next`, and must-read surfaces advance onto a
-  bounded staged-`L2` review point instead of repeating the first L1->L2 step
-- one isolated fresh-topic acceptance proves the lane can go from first-source
-  registration into staged `L2` visibility and topic-local staged retrieval
-- the milestone closes with one durable replay receipt for that first
-  post-registration L1->L2 follow-through
+- benign `continue` steering no longer leaves staged-L2 review reentry in an
+  `active_human_control` posture
+- public `next`, `status`, and dashboard surfaces foreground the staged-L2
+  review workflow itself while that benign steering remains durable
+- one replayable fresh-topic proof shows the same topic can continue from
+  staged-L2 review under non-blocking `continue` steering
 
 ## Next Step
 
-Execute Phase `178.2` to capture the durable replay receipt and close the
-bounded follow-through milestone.
+Run milestone audit / archive for `v2.5`.
 
-### Phase 178: Stable Literature-Stage Completion Recognition
+### Phase 179: Continue-Steering Neutrality
 
-**Axis:** Axis 1 (layer-internal optimization) + Axis 2 (inter-layer connection)
+**Axis:** Axis 4 (human experience) + Axis 2 (inter-layer connection)
 
-**Goal:** make one completed fresh-topic `literature_intake_stage` persist
-enough state that the route no longer immediately requeues the same L1->L2
-step.
+**Goal:** make benign `continue` steering stop surfacing as blocking
+human-control state after the first staged-L2 review point is reached.
 
 **Requirements:**
 
-- `FLC-01`
-- `FLC-02`
-- `FLC-03`
+- `SRR-01`
+- `SRR-02`
 
-**Depends on:** `v2.3`
+**Depends on:** `v2.4`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `178-01` Stabilize first literature-intake completion so queue selection advances to staged-L2 review
+- [x] `179-01` Neutralize benign continue-steering control-note residue after staged-L2 follow-through
 
-### Phase 178.1: Fresh First-Source Follow-Through Acceptance
+### Phase 179.1: Public Staged-L2 Reentry Surface Coherence
 
 **Axis:** Axis 4 (human evidence) + Axis 5 (agent-facing steering)
 
-**Goal:** prove on one isolated fresh-topic lane that first-source registration
-can continue through exactly one bounded literature-intake auto step and then
-surface staged `L2` review plus topic-local staged consultation.
+**Goal:** make public `next`, `status`, and dashboard surfaces point at staged-L2
+review artifacts as the primary reentry surface once the first follow-through
+has already landed and benign steering remains durable.
 
 **Requirements:**
 
-- `FLC-04`
+- `SRR-03`
 
-**Depends on:** Phase `178`
+**Depends on:** Phase `179`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `178.1-01` Add and verify a fresh-topic follow-through acceptance script for the first L1->L2 step
+- [x] `179.1-01` Refocus public reentry surfaces onto staged-L2 review after the first follow-through
 
-### Phase 178.2: Fresh First L1 To L2 Replay Receipt
+### Phase 179.2: Fresh Staged-L2 Reentry Replay Proof
 
 **Axis:** Axis 4 (human evidence) + Axis 3 (data recording)
 
-**Goal:** close the milestone with one durable receipt packet that records the
-fresh-topic `register -> literature_intake_stage -> staging review` baseline.
+**Goal:** close the milestone with one replayable fresh-topic proof that the
+same topic can continue from staged-L2 review under non-blocking `continue`
+steering.
 
 **Requirements:**
 
-- `FLC-05`
+- `SRR-04`
 
-**Depends on:** Phase `178.1`
+**Depends on:** Phase `179.1`
 **Plans:** 1 plan
 
 Plans:
 
-- [ ] `178.2-01` Capture the durable replay receipt for the fresh first-source follow-through baseline
+- [x] `179.2-01` Replay fresh staged-L2 review reentry on the same topic under benign continue steering and retain durable receipts
