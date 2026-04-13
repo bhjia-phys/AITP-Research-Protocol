@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.98
 milestone_name: Toy Model Positive L0 To L2 Closure
 status: milestone_active
-stopped_at: "Milestone v1.98 started; Phase 172 not started"
-last_updated: "2026-04-14T02:24:00+08:00"
+stopped_at: "Phase 172 complete; Phase 172.1 next"
+last_updated: "2026-04-14T02:34:06+08:00"
 last_activity: 2026-04-14
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 33
 ---
 
 # Project State
@@ -19,7 +19,7 @@ progress:
 ## Current Position
 
 Status: milestone `v1.98` `Toy Model Positive L0 To L2 Closure` is active.
-No phases have started yet.
+Phase `172` is complete and Phase `172.1` is next.
 
 **Why this milestone exists:**
 
@@ -36,8 +36,11 @@ retrieval surfaces before widening back out to more modes and topic paradigms.
 
 - active milestone: `v1.98` `Toy Model Positive L0 To L2 Closure`
 - latest closed milestone: `v1.97` `First Positive L0 To L2 Closure`
-- immediate next step: start Phase `172` and choose one bounded positive
-  `HS model` target plus its benchmark or convergence contract
+- Phase `172` chose the benchmark-backed bounded positive target
+  `candidate:hs-chaos-window-finite-size-core` on a fresh `toy_model` topic
+  shell and kept exact HS `alpha = 2` as the explicit negative comparator
+- immediate next step: start Phase `172.1` and promote that bounded target
+  into authoritative canonical `L2`
 
 ## Accumulated Context
 

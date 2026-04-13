@@ -11,11 +11,11 @@ from the already-shipped HS negative-result route.
 
 ### Positive HS-Lane Closure
 
-- [ ] `REQ-HS-01`: one fresh `toy_model` topic enters through the public front
+- [x] `REQ-HS-01`: one fresh `toy_model` topic enters through the public front
   door and is narrowed to one bounded positive `HS model` target that is
   distinct from the already-proven OTOC mismatch failure route.
 
-- [ ] `REQ-HS-02`: one explicit convergence, benchmark, or analytic-trust
+- [x] `REQ-HS-02`: one explicit convergence, benchmark, or analytic-trust
   contract proves the chosen positive `HS model` target is honest enough for
   promotion instead of being inferred from bootstrap or prose alone.
 
@@ -50,8 +50,8 @@ from the already-shipped HS negative-result route.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REQ-HS-01 | Phase 172 | Pending |
-| REQ-HS-02 | Phase 172 | Pending |
+| REQ-HS-01 | Phase 172 | Done |
+| REQ-HS-02 | Phase 172 | Done |
 | REQ-HS-03 | Phase 172.1 | Pending |
 | REQ-HS-04 | Phase 172.1 / 172.2 | Pending |
 | REQ-HS-05 | Phase 172.2 | Pending |

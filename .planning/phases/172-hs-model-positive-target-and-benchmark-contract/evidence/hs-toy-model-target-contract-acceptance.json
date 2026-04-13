@@ -1,0 +1,307 @@
+{
+  "status": "success",
+  "topic_slug": "hs-like-finite-size-chaos-window-core",
+  "run_id": "2026-04-14-023405-bootstrap",
+  "work_root": "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt",
+  "kernel_root": "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub",
+  "source_seed": {
+    "reference_topic_slug": "haldane-shastry-chaos-transition",
+    "target_topic_slug": "hs-like-finite-size-chaos-window-core",
+    "target_root": "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub\\source-layer\\topics\\hs-like-finite-size-chaos-window-core",
+    "source_count": 8
+  },
+  "entry_audit": {
+    "topic_slug": "hs-like-finite-size-chaos-window-core",
+    "phase": "entry",
+    "command": [
+      "C:\\Program Files\\Python312\\python.exe",
+      "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub\\runtime\\scripts\\audit_topic_conformance.py",
+      "--topic-slug",
+      "hs-like-finite-size-chaos-window-core",
+      "--phase",
+      "entry",
+      "--updated-by",
+      "hs-toy-model-target-contract-acceptance"
+    ],
+    "stdout": "Conformance audit pass for hs-like-finite-size-chaos-window-core",
+    "conformance_state": {
+      "topic_slug": "hs-like-finite-size-chaos-window-core",
+      "phase": "entry",
+      "updated_at": "2026-04-14T02:34:06+08:00",
+      "updated_by": "hs-toy-model-target-contract-acceptance",
+      "overall_status": "pass",
+      "checks": [
+        {
+          "code": "topic_state_present",
+          "description": "topic_state.json exists and is readable.",
+          "status": "pass"
+        },
+        {
+          "code": "resume_present",
+          "description": "resume.md exists.",
+          "status": "pass"
+        },
+        {
+          "code": "action_queue_present",
+          "description": "action_queue.jsonl exists and is non-empty.",
+          "status": "pass"
+        },
+        {
+          "code": "agent_brief_present",
+          "description": "agent_brief.md exists.",
+          "status": "pass"
+        },
+        {
+          "code": "interaction_state_present",
+          "description": "interaction_state.json exists and is readable.",
+          "status": "pass"
+        },
+        {
+          "code": "operator_console_present",
+          "description": "operator_console.md exists.",
+          "status": "pass"
+        },
+        {
+          "code": "unfinished_work_present",
+          "description": "unfinished_work.json exists and is readable.",
+          "status": "pass"
+        },
+        {
+          "code": "unfinished_work_note_present",
+          "description": "unfinished_work.md exists.",
+          "status": "pass"
+        },
+        {
+          "code": "next_action_decision_present",
+          "description": "next_action_decision.json exists and is readable.",
+          "status": "pass"
+        },
+        {
+          "code": "next_action_decision_note_present",
+          "description": "next_action_decision.md exists.",
+          "status": "pass"
+        },
+        {
+          "code": "action_queue_contract_generated_present",
+          "description": "action_queue_contract.generated.json exists and is readable.",
+          "status": "pass"
+        },
+        {
+          "code": "action_queue_contract_generated_note_present",
+          "description": "action_queue_contract.generated.md exists.",
+          "status": "pass"
+        },
+        {
+          "code": "resume_stage_declared",
+          "description": "topic_state.json declares a resume stage.",
+          "status": "pass"
+        },
+        {
+          "code": "layer_pointers_present",
+          "description": "topic_state.json exposes layer pointers.",
+          "status": "pass"
+        },
+        {
+          "code": "research_mode_declared",
+          "description": "topic_state.json declares the active research mode.",
+          "status": "pass"
+        },
+        {
+          "code": "executor_kind_declared",
+          "description": "topic_state.json declares the active executor kind.",
+          "status": "pass"
+        },
+        {
+          "code": "trajectory_log_declared",
+          "description": "A result-manifested closed-loop run declares a trajectory log pointer.",
+          "status": "pass"
+        },
+        {
+          "code": "failure_classification_declared",
+          "description": "A result-manifested closed-loop run declares a failure-classification pointer.",
+          "status": "pass"
+        },
+        {
+          "code": "human_request_declared",
+          "description": "interaction_state.json records the human-facing request.",
+          "status": "pass"
+        },
+        {
+          "code": "human_edit_surfaces_present",
+          "description": "interaction_state.json exposes editable surfaces by layer.",
+          "status": "pass"
+        },
+        {
+          "code": "delivery_contract_present",
+          "description": "interaction_state.json declares the delivery contract.",
+          "status": "pass"
+        },
+        {
+          "code": "capability_protocol_declared",
+          "description": "interaction_state.json points to the skill-adaptation protocol.",
+          "status": "pass"
+        },
+        {
+          "code": "decision_surface_declared",
+          "description": "interaction_state.json declares the decision-surface artifacts.",
+          "status": "pass"
+        },
+        {
+          "code": "action_queue_surface_declared",
+          "description": "interaction_state.json declares the generated action-queue contract snapshot.",
+          "status": "pass"
+        },
+        {
+          "code": "decision_policy_declared",
+          "description": "next_action_decision.json declares the decision policy.",
+          "status": "pass"
+        },
+        {
+          "code": "decision_mode_declared",
+          "description": "next_action_decision.json declares the active decision mode.",
+          "status": "pass"
+        },
+        {
+          "code": "decision_action_resolves",
+          "description": "Selected decision action resolves to an action_queue entry when present.",
+          "status": "pass"
+        }
+      ],
+      "mechanical_completion_preflight": {
+        "status": "pass",
+        "llm_audit_eligible": true,
+        "run_id": "2026-04-14-023405-bootstrap",
+        "operation_count": 0,
+        "unresolved_gap_count": 0,
+        "pending_followup_count": 0,
+        "checks": [
+          {
+            "code": "operations_baseline_confirmed",
+            "status": "pass",
+            "summary": "All discovered operation manifests have a mechanically accepted baseline status."
+          },
+          {
+            "code": "unresolved_gaps_clear",
+            "status": "pass",
+            "summary": "No unresolved candidate or follow-up gap debt is currently recorded."
+          },
+          {
+            "code": "pending_followups_clear",
+            "status": "pass",
+            "summary": "No pending manual or child follow-up work remains."
+          }
+        ],
+        "blocking_reasons": [],
+        "operations": []
+      }
+    },
+    "conformance_report_path": "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub\\runtime\\topics\\hs-like-finite-size-chaos-window-core\\conformance_report.md"
+  },
+  "target_contract": {
+    "json_path": "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub\\runtime\\topics\\hs-like-finite-size-chaos-window-core\\hs_positive_target_contract.json",
+    "markdown_path": "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub\\runtime\\topics\\hs-like-finite-size-chaos-window-core\\hs_positive_target_contract.md",
+    "payload": {
+      "contract_kind": "hs_toy_model_positive_target",
+      "status": "chosen",
+      "topic_slug": "hs-like-finite-size-chaos-window-core",
+      "run_id": "2026-04-14-023405-bootstrap",
+      "research_mode": "toy_model",
+      "source_topic_slug": "haldane-shastry-chaos-transition",
+      "target_candidate": {
+        "candidate_id": "candidate:hs-chaos-window-finite-size-core",
+        "candidate_type": "claim_card",
+        "title": "HS-like Finite-Size Chaos Window Robust Core",
+        "summary": "Bounded claim-card candidate: under the benchmark-calibrated finite-size ED protocol, the robust HS-like chaos window is 0.4 <= alpha <= 1.0, while alpha = 2.0 and alpha >= 2.4 remain excluded from the chaotic regime.",
+        "supporting_regression_question_ids": [
+          "regression_question:locate-hs-chaos-window-robust-core"
+        ],
+        "supporting_oracle_ids": [
+          "question_oracle:locate-hs-chaos-window-robust-core"
+        ],
+        "supporting_regression_run_ids": [
+          "regression_run:hs-fisher-ed-benchmark-recheck-2026-03-24"
+        ]
+      },
+      "benchmark_contract": {
+        "evidence_basis": [
+          "benchmark-calibrated finite-size Fisher ED protocol",
+          "benchmark-calibrated OTOC observable",
+          "paper-convention Krylov observable",
+          "supporting gap-ratio evidence only as secondary support"
+        ],
+        "rules": [
+          "Treat only the robust core window `0.4 <= alpha <= 1.0` as the positive target.",
+          "Do not promote the weaker `1.2 <= alpha <= 1.4` shoulder as part of this bounded claim.",
+          "Do not reinterpret the exact HS `alpha = 2` point as a positive chaos result.",
+          "Do not claim thermodynamic closure, operator independence, or larger-system continuation from this contract."
+        ]
+      },
+      "negative_comparator": {
+        "entry_id": "staging:hs-model-otoc-lyapunov-exponent-regime-mismatch",
+        "title": "HS model OTOC Lyapunov exponent: regime mismatch",
+        "reason": "Exact HS `alpha = 2` remains an explicit negative comparator, not part of the positive target."
+      },
+      "excluded_claims": [
+        "exact HS `alpha = 2` exhibits positive OTOC Lyapunov chaos",
+        "the weak `1.2 <= alpha <= 1.4` shoulder is already robust enough for promotion",
+        "the bounded finite-size core closes the whole topic in the thermodynamic limit",
+        "operator robustness or larger-system continuation are already proved"
+      ],
+      "source_refs": [
+        "local_note:hs-chaos-window-verdict",
+        "local_note:public-benchmark-gate-and-hs-like-recheck",
+        "local_note:otoc-and-krylov-evidence-chain-for-the-hs-like-model",
+        "local_note:integrable-anchors-and-exclusion-logic-for-hs-like-chain"
+      ],
+      "updated_at": "2026-04-14T02:34:06+08:00",
+      "updated_by": "hs-toy-model-target-contract-acceptance"
+    }
+  },
+  "trust_gate": {
+    "baseline_summary": "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub\\validation\\topics\\hs-like-finite-size-chaos-window-core\\runs\\2026-04-14-023405-bootstrap\\baseline_summary.md",
+    "operation_manifest": "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub\\validation\\topics\\hs-like-finite-size-chaos-window-core\\runs\\2026-04-14-023405-bootstrap\\operations\\hs-like-finite-size-cha-f870c427\\operation_manifest.json",
+    "operation_summary": "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub\\validation\\topics\\hs-like-finite-size-chaos-window-core\\runs\\2026-04-14-023405-bootstrap\\operations\\hs-like-finite-size-cha-f870c427\\operation_summary.md",
+    "operation_manifest_payload": {
+      "operation_id": "operation:hs-like-finite-size-chaos-window-positive-target-contract",
+      "topic_slug": "hs-like-finite-size-chaos-window-core",
+      "run_id": "2026-04-14-023405-bootstrap",
+      "title": "HS-like finite-size chaos-window positive target contract",
+      "kind": "numerical",
+      "summary": "The fresh toy-model topic now carries one bounded HS-like positive target contract backed by the existing benchmark-calibrated finite-size evidence chain.",
+      "notes": "Exact HS alpha=2 remains negative comparator; 1.2<=alpha<=1.4 shoulder remains excluded from the bounded positive target.",
+      "baseline_required": true,
+      "baseline_status": "passed",
+      "atomic_understanding_required": false,
+      "atomic_understanding_status": "not_required",
+      "references": [
+        "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub\\runtime\\topics\\hs-like-finite-size-chaos-window-core\\hs_positive_target_contract.json",
+        "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub\\runtime\\topics\\hs-like-finite-size-chaos-window-core\\hs_positive_target_contract.md"
+      ],
+      "source_paths": [
+        "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub\\source-layer\\topics\\hs-like-finite-size-chaos-window-core\\source_index.jsonl"
+      ],
+      "artifact_paths": [
+        "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub\\runtime\\topics\\hs-like-finite-size-chaos-window-core\\hs_positive_target_contract.json",
+        "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub\\runtime\\topics\\hs-like-finite-size-chaos-window-core\\hs_positive_target_contract.md"
+      ],
+      "created_at": "2026-04-14T02:34:06+08:00",
+      "updated_at": "2026-04-14T02:34:06+08:00",
+      "updated_by": "hs-toy-model-target-contract-acceptance"
+    },
+    "trust_audit_path": "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub\\validation\\topics\\hs-like-finite-size-chaos-window-core\\runs\\2026-04-14-023405-bootstrap\\trust_audit.json",
+    "overall_status": "pass"
+  },
+  "strategy_memory": {
+    "path": "C:\\Users\\samur\\AppData\\Local\\Temp\\hstc-6ef6b0kt\\knowledge-hub\\feedback\\topics\\hs-like-finite-size-chaos-window-core\\runs\\2026-04-14-023405-bootstrap\\strategy_memory.jsonl",
+    "status": "available"
+  },
+  "checks": {
+    "research_mode": "toy_model",
+    "candidate_id": "candidate:hs-chaos-window-finite-size-core",
+    "candidate_status": "ready_for_validation",
+    "candidate_type": "claim_card",
+    "trust_status": "pass",
+    "exit_conformance": "pass",
+    "source_count": 8
+  }
+}

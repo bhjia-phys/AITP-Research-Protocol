@@ -23,7 +23,7 @@ Milestone in progress.
 
 ## Next Step
 
-Start Phase 172.
+Start Phase 172.1.
 
 ### Phase 172: HS Model Positive Target And Benchmark Contract
 
@@ -52,7 +52,7 @@ promotion claim.
 
 Plans:
 
-- [ ] `172-01` Choose one bounded positive HS-model target and close its
+- [x] `172-01` Choose one bounded positive HS-model target and close its
   benchmark or convergence contract
 
 ### Phase 172.1: HS Model Positive Promotion To Authoritative L2
