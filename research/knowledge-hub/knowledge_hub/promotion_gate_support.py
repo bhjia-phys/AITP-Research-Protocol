@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .runtime_schema_promotion_bridge import collect_runtime_schema_context
 from .runtime_projection_handler import append_transition_history
 
 
@@ -133,6 +134,9 @@ def promotion_gate_markdown(payload: dict[str, Any]) -> str:
     lines.extend(["", "## Promotion blockers", ""])
     for blocker in payload.get("promotion_blockers") or ["(none)"]:
         lines.append(f"- {blocker}")
+    lines.extend(["", "## Runtime Schema Context", ""])
+    for artifact_type in payload.get("runtime_schema_types") or ["(none)"]:
+        lines.append(f"- `{artifact_type}`")
     lines.extend(["", "## Human modifications", ""])
     for row in payload.get("human_modifications") or ["(none)"]:
         if isinstance(row, dict):
@@ -211,6 +215,12 @@ def request_promotion(
     if not resolved_run_id:
         raise FileNotFoundError(f"Unable to resolve a feedback/validation run for topic {topic_slug}")
     candidate = self._load_candidate(topic_slug, resolved_run_id, candidate_id)
+    runtime_schema_context = collect_runtime_schema_context(
+        self,
+        topic_slug=topic_slug,
+        run_id=resolved_run_id,
+        candidate_id=candidate_id,
+    )
     gate_payload = {
         "topic_slug": topic_slug,
         "run_id": resolved_run_id,
@@ -241,6 +251,10 @@ def request_promotion(
         "supporting_regression_run_ids": self._dedupe_strings(
             list(candidate.get("supporting_regression_run_ids") or [])
         ),
+        "runtime_schema_types": list(runtime_schema_context.get("artifact_types") or []),
+        "runtime_schema_paths": dict(runtime_schema_context.get("schema_paths") or {}),
+        "runtime_artifact_paths": dict(runtime_schema_context.get("artifact_paths") or {}),
+        "runtime_schema_context": runtime_schema_context,
         "promotion_blockers": self._dedupe_strings(list(candidate.get("promotion_blockers") or [])),
         "split_required": _as_bool(candidate.get("split_required")),
         "cited_recovery_required": _as_bool(candidate.get("cited_recovery_required")),

@@ -7,7 +7,7 @@ Milestone in progress.
 ## Phases
 
 - [x] **Phase 169: L2 Canonical Schema Extension** *(Axis 3 + Axis 2)*
-- [ ] **Phase 169.1: L2 Promotion Bridge Code** *(Axis 2 + Axis 3)*
+- [x] **Phase 169.1: L2 Promotion Bridge Code** *(Axis 2 + Axis 3)*
 - [ ] **Phase 169.2: HCI Foundation** *(Axis 4)*
 
 ## Target Outcome
@@ -24,7 +24,7 @@ Milestone in progress.
 
 ## Next Step
 
-Start Phase 169.1.
+Start Phase 169.2.
 
 ### Phase 169: L2 Canonical Schema Extension
 
@@ -91,7 +91,7 @@ canonical L2 units.
 
 Plans:
 
-- [ ] `169.1-01` Add runtime schema loading and bridging to all three promotion
+- [x] `169.1-01` Add runtime schema loading and bridging to all three promotion
   support modules
 
 ### Phase 169.2: HCI Foundation

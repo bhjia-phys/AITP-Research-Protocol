@@ -3,23 +3,23 @@ gsd_state_version: 1.0
 milestone: v1.95
 milestone_name: L2 Promotion Pipeline Closure
 status: milestone_active
-stopped_at: "Completed Phase 169; Phase 169.1 not started"
-last_updated: "2026-04-14T11:30:00+08:00"
+stopped_at: "Completed Phase 169.1; Phase 169.2 not started"
+last_updated: "2026-04-14T12:10:00+08:00"
 last_activity: 2026-04-14
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 2
+  percent: 67
 ---
 
 # Project State
 
 ## Current Position
 
-Status: milestone `v1.95` `L2 Promotion Pipeline Closure` is active. Phase
-`169` is complete; Phase `169.1` has not started yet.
+Status: milestone `v1.95` `L2 Promotion Pipeline Closure` is active. Phases
+`169` and `169.1` are complete; Phase `169.2` has not started yet.
 
 **Root cause context (from E2E gap diagnosis):**
 
@@ -40,7 +40,7 @@ The science is validated. The engineering pipe is broken at L4→L2.
 ## Immediate Next Step
 
 - active milestone: `v1.95` `L2 Promotion Pipeline Closure`
-- continue with Phase `169.1` `L2 Promotion Bridge Code`
+- continue with Phase `169.2` `HCI Foundation`
 
 ## Accumulated Context
 

@@ -26,19 +26,19 @@ incomplete — not the science.
 
 ### Promotion Bridge Code
 
-- [ ] `REQ-PROMO-03`: `candidate_promotion_support.py` `_resolve_promotion_context()`
+- [x] `REQ-PROMO-03`: `candidate_promotion_support.py` `_resolve_promotion_context()`
   loads runtime proof schemas and includes their field definitions in the
   promotion context payload.
 
-- [ ] `REQ-PROMO-04`: `auto_promotion_support.py` `_validate_auto_promotion()`
+- [x] `REQ-PROMO-04`: `auto_promotion_support.py` `_validate_auto_promotion()`
   checks that runtime proof schema fields are present and valid before approving
   auto-promotion.
 
-- [ ] `REQ-PROMO-05`: `promotion_gate_support.py` `request_promotion()` includes
+- [x] `REQ-PROMO-05`: `promotion_gate_support.py` `request_promotion()` includes
   runtime schema paths in the gate payload so downstream consumers can verify
   the promotion provenance.
 
-- [ ] `REQ-PROMO-06`: a new `runtime_schema_promotion_bridge.py` module
+- [x] `REQ-PROMO-06`: a new `runtime_schema_promotion_bridge.py` module
   translates runtime proof artifacts (lean-ready-packet, proof-repair-plan,
   statement-compilation-packet) into canonical L2 units by mapping runtime
   fields to canonical fields according to the schemas created in REQ-PROMO-02.
@@ -86,10 +86,10 @@ incomplete — not the science.
 |-------------|-------|--------|
 | REQ-PROMO-01 | Phase 169 | Complete |
 | REQ-PROMO-02 | Phase 169 | Complete |
-| REQ-PROMO-03 | Phase 169.1 | Pending |
-| REQ-PROMO-04 | Phase 169.1 | Pending |
-| REQ-PROMO-05 | Phase 169.1 | Pending |
-| REQ-PROMO-06 | Phase 169.1 | Pending |
+| REQ-PROMO-03 | Phase 169.1 | Complete |
+| REQ-PROMO-04 | Phase 169.1 | Complete |
+| REQ-PROMO-05 | Phase 169.1 | Complete |
+| REQ-PROMO-06 | Phase 169.1 | Complete |
 | REQ-HCI-01 | Phase 169.2 | Pending |
 | REQ-HCI-02 | Phase 169.2 | Pending |
 

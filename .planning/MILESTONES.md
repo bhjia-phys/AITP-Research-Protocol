@@ -2,7 +2,7 @@
 
 ## v1.95 L2 Promotion Pipeline Closure (Active)
 
-**Phases completed:** 1 / 3 phases, 1 / 3 plans
+**Phases completed:** 2 / 3 phases, 2 / 3 plans
 
 **Milestone goal:**
 
@@ -18,6 +18,8 @@
 - the runtime proof packet contracts now also ship in the package-local
   `research/knowledge-hub/schemas/` surface for downstream promotion code
 - Layer 2 canonical index materialization now recognizes negative-result units
+- promotion gates and auto-promotion now expose and validate runtime proof
+  packet schema context through a dedicated bridge module
 
 ---
 
@@ -438,10 +440,10 @@ Completed milestone chain:
 
 ## Current Active Milestone
 
-- `v1.95` `L2 Promotion Pipeline Closure` — 3 phases, 1 completed
+- `v1.95` `L2 Promotion Pipeline Closure` — 3 phases, 2 completed
 
 ## Current Status
 
 - `v1.36` through `v1.94` are closed and archived or ready for archive lookup
 - `v1.95` is active with 3 phases (169, 169.1, 169.2)
-- next command boundary: `$gsd-execute-phase 169.1`
+- next command boundary: `$gsd-execute-phase 169.2`
