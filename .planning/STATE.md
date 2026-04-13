@@ -1,46 +1,39 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: none
+milestone: v1.96
+milestone_name: Real Topic Promotion E2E Proof
 status: milestone_active
-stopped_at: "Milestone v1.95 complete; next milestone not started yet"
-last_updated: "2026-04-14T12:45:00+08:00"
+stopped_at: "Milestone v1.96 started; Phase 170 not started"
+last_updated: "2026-04-14T13:10:00+08:00"
 last_activity: 2026-04-14
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
-  total_plans: 0
+  total_plans: 3
   completed_plans: 0
-  percent: 100
+  percent: 0
 ---
 
 # Project State
 
 ## Current Position
 
-Status: milestone `v1.95` is closed on a green bounded baseline. No new
-milestone has been started yet.
+Status: milestone `v1.96` `Real Topic Promotion E2E Proof` is active. No
+phases started yet.
 
-**Root cause context (from E2E gap diagnosis):**
+**Why this milestone exists:**
 
-Two Jones E2E runs reached L4 (Lean compilation succeeded) but never landed in
-L2 because the promotion pipeline's last segment is incomplete:
+`v1.95` repaired the engineering gaps that previously blocked promotion into
+canonical `L2`, but it did not itself prove one full real-topic positive route
+or one honest `negative_result` route all the way into `L2`.
 
-- `canonical-unit.schema.json` is missing `negative_result` in the `unit_type`
-  enum — validated but negative outcomes have no staging→canonical path
-- runtime proof schemas (`lean-ready-packet`, `proof-repair-plan`,
-  `statement-compilation-packet`) exist in validation/ but have no promotion
-  bridge into L2 canonical knowledge
-- `candidate_promotion_support.py`, `auto_promotion_support.py`, and
-  `promotion_gate_support.py` do not load or forward runtime schema context
-  during promotion
-
-The science is validated. The engineering pipe is broken at L4→L2.
+The science/pipeline boundary now shifts from "repair the pipe" to "prove the
+pipe carries real topic work honestly."
 
 ## Immediate Next Step
 
-- latest closed milestone: `v1.95` `L2 Promotion Pipeline Closure`
-- next step: `$gsd-new-milestone`
+- active milestone: `v1.96` `Real Topic Promotion E2E Proof`
+- start with Phase `170` `Positive Promotion Proof Lane`
 
 ## Accumulated Context
 
@@ -81,6 +74,9 @@ cross-cutting).
   remainder into one bounded milestone
 - `v1.95` now closes the L4→L2 promotion pipeline gap discovered during Jones
   E2E testing — the pipeline's engineering (not the science) is what failed
+- `v1.96` now promotes the deferred full-proof remainder from `v1.95`: one
+  real-topic positive L2 promotion proof and one honest negative-result L2
+  promotion proof
 - Comprehensive HCI gap analysis (2026-04-13) identified 30 issues across 6
   tiers; all captured as 999.60–999.70 in BACKLOG.md
 - wow-harness comparison (2026-04-13) identified 6 borrowable patterns; all

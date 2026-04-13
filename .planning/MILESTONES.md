@@ -1,5 +1,22 @@
 # Milestones
 
+## v1.96 Real Topic Promotion E2E Proof (Active)
+
+**Phases completed:** 0 / 3 phases, 0 / 3 plans
+
+**Milestone goal:**
+
+- prove one real-topic positive promotion from the public front door into
+  canonical `L2`
+- prove one honest `negative_result` promotion into canonical `L2`
+- close both lanes with durable replay and postmortem evidence
+
+**Key accomplishments:**
+
+- (milestone in progress)
+
+---
+
 ## v1.95 L2 Promotion Pipeline Closure (Shipped: 2026-04-14)
 
 **Phases completed:** 3 / 3 phases, 3 / 3 plans
@@ -438,14 +455,15 @@ Completed milestone chain:
 
 ## Latest Closed Milestone
 
-- `v1.94` `L4 Analytical Cross-Check Surface` implemented
+- `v1.95` `L2 Promotion Pipeline Closure` implemented
 
 ## Current Active Milestone
 
-- none — start the next milestone with `$gsd-new-milestone`
+- `v1.96` `Real Topic Promotion E2E Proof` — 3 phases, 0 completed
 
 ## Current Status
 
 - `v1.36` through `v1.94` are closed and archived or ready for archive lookup
 - `v1.95` is now closed on a green bounded baseline
-- next command boundary: `$gsd-new-milestone`
+- `v1.96` is active with 3 phases (170, 170.1, 170.2)
+- next command boundary: `$gsd-plan-phase 170`

@@ -1,103 +1,66 @@
-# Requirements: v1.95 L2 Promotion Pipeline Closure
+# Requirements: v1.96 Real Topic Promotion E2E Proof
 
 ## Milestone Goal
 
-Close the L4→L2 promotion pipeline gap so that E2E research runs that validate
-at L4 can actually land their results in L2 canonical knowledge. The gap was
-discovered during two Jones E2E runs: both reached L4 (Lean compilation
-succeeded) but could not promote to L2 because the pipeline's engineering is
-incomplete — not the science.
+Prove that the repaired promotion path works on real bounded topic work by
+landing one positive result and one honest negative result into canonical `L2`
+through the public AITP route.
 
-## Archived Requirements
+## Active Requirements
 
-### Canonical Schema Extension
+### Positive Promotion Proof
 
-- [x] `REQ-PROMO-01`: `canonical-unit.schema.json` includes `negative_result`
-  in the `unit_type` enum so that validated negative outcomes have a
-  staging→canonical promotion path.
+- [ ] `REQ-E2E-01`: one fresh public-front-door topic run travels from
+  `bootstrap` through bounded validation and promotes one validated bounded
+  result into canonical `L2` with a durable backend receipt.
 
-- [x] `REQ-PROMO-02`: three runtime proof schemas exist as formal JSON schemas
-  in `research/knowledge-hub/schemas/`:
-  - `lean-ready-packet.schema.json`
-  - `proof-repair-plan.schema.json`
-  - `statement-compilation-packet.schema.json`
-  Each schema defines the minimal fields needed to translate a runtime proof
-  artifact into a canonical L2 unit.
+- [ ] `REQ-E2E-02`: runtime/read-path surfaces (`status`, runtime protocol,
+  dashboard, replay, and promotion gate) expose the same positive promotion
+  receipt so the operator can see that the real-topic result actually landed.
 
-### Promotion Bridge Code
+### Negative-Result Proof
 
-- [x] `REQ-PROMO-03`: `candidate_promotion_support.py` `_resolve_promotion_context()`
-  loads runtime proof schemas and includes their field definitions in the
-  promotion context payload.
+- [ ] `REQ-E2E-03`: one bounded failed route promotes into canonical
+  `negative_result` with durable receipt instead of stopping in runtime-only or
+  chat-only state.
 
-- [x] `REQ-PROMO-04`: `auto_promotion_support.py` `_validate_auto_promotion()`
-  checks that runtime proof schema fields are present and valid before approving
-  auto-promotion.
+### Verification And Evidence
 
-- [x] `REQ-PROMO-05`: `promotion_gate_support.py` `request_promotion()` includes
-  runtime schema paths in the gate payload so downstream consumers can verify
-  the promotion provenance.
-
-- [x] `REQ-PROMO-06`: a new `runtime_schema_promotion_bridge.py` module
-  translates runtime proof artifacts (lean-ready-packet, proof-repair-plan,
-  statement-compilation-packet) into canonical L2 units by mapping runtime
-  fields to canonical fields according to the schemas created in REQ-PROMO-02.
-
-### HCI Foundation
-
-- [x] `REQ-HCI-01`: `aitp status` output is structured into at most 3 tiers
-  (summary → key sections → full detail) instead of a flat 40+ section dump.
-  The operator can scan the summary tier in under 5 seconds.
-
-- [x] `REQ-HCI-02`: an `aitp hello` (or equivalent zero-config introductory
-  command) exists and prints: current topic status, suggested next action, and
-  a one-line pointer to documentation. After bootstrap, the runtime state
-  includes a `next_action_hint` field pointing to the most likely next step.
+- [ ] `REQ-E2E-04`: the milestone closes with automated or runbook-backed
+  proof lanes for both the positive and negative-result promotion routes, plus
+  durable postmortem evidence that records what still failed or remained manual.
 
 ## v2 Requirements
 
-### Full E2E Proof
+### Broader Knowledge-Extraction Alignment
 
-- `REQ-PROMO-V2-01`: one complete E2E topic run promotes a validated proof
-  artifact all the way from L0 through L4 to L2 canonical knowledge.
-- `REQ-PROMO-V2-02`: `negative_result` promotion path is exercised in an E2E
-  test where a hypothesis is honestly refuted and the negative outcome lands
-  in L2.
-
-### Broader HCI
-
-- `REQ-HCI-V2-01`: PyPI package, 5-minute quickstart, and Windows path
-  handling (BACKLOG 999.48–999.51).
-- `REQ-HCI-V2-02`: CLI command groups and terminology cleanup (BACKLOG 999.62–999.63).
+- `REQ-BENCH-01`: source relevance tiers and role labels align AITP's `L0/L1`
+  extraction quality with the AI Scientist benchmark proposal.
+- `REQ-BENCH-02`: candidate knowledge types, conditions, sentence-level
+  evidence, and multi-reviewer L4 checks are promoted after the real promotion
+  proof is closed.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Full E2E proof run | Depends on this milestone's pipeline fixes first |
-| PyPI packaging and install verification | BACKLOG 999.48–999.49, separate milestone |
-| DeepXiv/Graphify integration | Already routed to Phase 165.5 |
-| Symbolic algebra backend | Not a pipeline question |
-| Strategy memory seeding | Already done in Phase 165.1 |
+| AI Scientist benchmark-alignment rollout | Keep this milestone focused on proving the repaired promotion route first |
+| Broad HCI or packaging cleanup | `v1.95` already handled the bounded front-door improvements |
+| New symbolic or formal backends | This milestone is about route proof, not backend expansion |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REQ-PROMO-01 | Phase 169 | Satisfied |
-| REQ-PROMO-02 | Phase 169 | Satisfied |
-| REQ-PROMO-03 | Phase 169.1 | Satisfied |
-| REQ-PROMO-04 | Phase 169.1 | Satisfied |
-| REQ-PROMO-05 | Phase 169.1 | Satisfied |
-| REQ-PROMO-06 | Phase 169.1 | Satisfied |
-| REQ-HCI-01 | Phase 169.2 | Satisfied |
-| REQ-HCI-02 | Phase 169.2 | Satisfied |
+| REQ-E2E-01 | Phase 170 | Pending |
+| REQ-E2E-02 | Phase 170 | Pending |
+| REQ-E2E-03 | Phase 170.1 | Pending |
+| REQ-E2E-04 | Phase 170.2 | Pending |
 
 **Coverage:**
-- v1 requirements: 8 total
-- Mapped to phases: 8
+- v1 requirements: 4 total
+- Mapped to phases: 4
 - Unmapped: 0
 
 ---
-*Requirements defined: 2026-04-14*
-*Archived after milestone closure on 2026-04-14.*
+*Requirements defined: 2026-04-14 after closing milestone v1.95*

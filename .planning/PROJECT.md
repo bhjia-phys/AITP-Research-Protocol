@@ -79,10 +79,33 @@ it still does **not** mean the broader AITP architecture is finished.
 
 ## Current Focus
 
-- Active milestone: none
+- Active milestone: `v1.96` `Real Topic Promotion E2E Proof`
 - Latest closed milestone: `v1.95` `L2 Promotion Pipeline Closure`
-- Next boundary: define the next bounded milestone rather than reopening the
-  now closed promotion-pipeline slice casually
+- Next boundary: start Phase `170` `Positive Promotion Proof Lane` and prove
+  the repaired promotion pipeline on one real bounded topic before broadening
+  to farther benchmark-alignment work
+
+## Current Milestone: v1.96 Real Topic Promotion E2E Proof
+
+**Goal:** Prove that a fresh real-topic route can travel from the public AITP
+front door through bounded validation and land in canonical `L2`, and that one
+honest failed route can also land as canonical `negative_result`.
+
+**Target features:**
+- one fresh public-front-door topic run promotes a validated bounded result
+  into canonical `L2` with durable backend receipt
+- one bounded failed route promotes into canonical `negative_result` instead of
+  stopping at runtime or chat-only residue
+- both proof lanes leave durable acceptance and postmortem evidence so future
+  regressions are mechanical instead of anecdotal
+
+**Key context:**
+- `v1.95` closed the promotion-pipeline engineering gaps but intentionally left
+  the full real-topic proof as deferred work
+- the next milestone must convert the repaired path into evidence, not just
+  keep adding latent capability surfaces
+- benchmark-alignment and broader extraction upgrades stay valuable, but they
+  should follow after the repaired end-to-end route is actually proven
 
 ## Latest Closed Milestone: v1.95 L2 Promotion Pipeline Closure
 
@@ -846,9 +869,9 @@ This document evolves at phase transitions and milestone boundaries.
 
 This does **not** mean AITP is finished.
 
-It means `v1.95` is archived on a green baseline and the next step is choosing
-the next bounded milestone rather than reopening its already-shipped closure
-chain casually.
+It means `v1.95` is archived on a green baseline and `v1.96` is now the active
+bounded closure target, starting with a real promotion proof rather than
+reopening the already-shipped pipeline-repair slice casually.
 
 ---
-*Last updated: 2026-04-14 after closing milestone v1.95*
+*Last updated: 2026-04-14 after starting milestone v1.96*
