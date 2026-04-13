@@ -25,6 +25,21 @@ def load_operator_checkpoint(
     return load_json(knowledge_root / "runtime" / "topics" / topic_slug / "operator_checkpoint.active.json")
 
 
+def load_consultation_followup_selection(
+    *,
+    load_json: Callable[[Path], dict | None],
+    knowledge_root: Path,
+    topic_slug: str,
+) -> dict | None:
+    return load_json(
+        knowledge_root
+        / "runtime"
+        / "topics"
+        / topic_slug
+        / "consultation_followup_selection.active.json"
+    )
+
+
 def preferred_action_types_from_runtime_contract(runtime_contract: dict | None) -> list[str]:
     if not runtime_contract:
         return []

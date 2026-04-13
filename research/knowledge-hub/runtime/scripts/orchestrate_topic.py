@@ -22,6 +22,7 @@ from interaction_surface_support import (
 )
 from orchestrator_contract_support import (
     append_closed_loop_actions,
+    load_consultation_followup_selection,
     append_literature_followup_actions,
     append_runtime_helper_actions,
     compute_literature_intake_stage_signature,
@@ -1054,6 +1055,44 @@ def materialize_action_queue(
     )
 
     if not queue and int(topic_state.get("source_count") or 0) > 0:
+        selection_payload = load_consultation_followup_selection(
+            load_json=load_json,
+            knowledge_root=knowledge_root,
+            topic_slug=str(topic_state.get("topic_slug") or "").strip(),
+        )
+        if (
+            isinstance(selection_payload, dict)
+            and str(selection_payload.get("status") or "").strip() == "selected"
+        ):
+            selected_candidate_id = str(
+                selection_payload.get("selected_candidate_id") or ""
+            ).strip()
+            selected_candidate_path = str(
+                selection_payload.get("selected_candidate_path") or ""
+            ).strip()
+            queue.append(
+                {
+                    "action_id": f"action:{topic_state['topic_slug']}:selected-consultation-candidate",
+                    "topic_slug": topic_state["topic_slug"],
+                    "resume_stage": topic_state["resume_stage"],
+                    "status": "pending",
+                    "action_type": "selected_consultation_candidate_followup",
+                    "summary": (
+                        f"Review the selected staged candidate `{selected_candidate_id}` "
+                        "and decide whether to split, validate, or promote it before deeper execution."
+                    ),
+                    "auto_runnable": False,
+                    "handler": None,
+                    "handler_args": {
+                        "run_id": topic_state.get("latest_run_id"),
+                        "candidate_id": selected_candidate_id,
+                        "candidate_path": selected_candidate_path,
+                    },
+                    "queue_source": queue_meta.get("queue_source") or "runtime_appended",
+                    "declared_contract_path": queue_meta.get("declared_contract_path"),
+                }
+            )
+            return queue, queue_meta
         if should_advance_past_staged_l2_review(
             knowledge_root=knowledge_root,
             topic_slug=str(topic_state.get("topic_slug") or "").strip(),
@@ -1067,9 +1106,9 @@ def materialize_action_queue(
                     "status": "pending",
                     "action_type": "consultation_followup",
                     "summary": "Consult the topic-local staged L2 memory and choose one bounded candidate before deeper execution.",
-                    "auto_runnable": False,
+                    "auto_runnable": True,
                     "handler": None,
-                    "handler_args": {},
+                    "handler_args": {"run_id": topic_state.get("latest_run_id")},
                     "queue_source": queue_meta.get("queue_source") or "runtime_appended",
                     "declared_contract_path": queue_meta.get("declared_contract_path"),
                 }

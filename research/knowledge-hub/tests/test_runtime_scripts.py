@@ -1132,6 +1132,100 @@ class RuntimeScriptTests(unittest.TestCase):
             "Consult the topic-local staged L2 memory and choose one bounded candidate before deeper execution.",
         )
 
+    def test_materialize_action_queue_advances_to_selected_consultation_candidate_when_selection_exists(self) -> None:
+        runtime_payload = {
+            "runtime_mode": "explore",
+            "active_submode": "literature",
+            "transition_posture": {
+                "transition_kind": "boundary_hold",
+                "triggered_by": [],
+            },
+            "active_research_contract": {
+                "l1_source_intake": {
+                    "source_count": 1,
+                    "method_specificity_rows": [
+                        {
+                            "source_id": "paper:weak-coupling",
+                            "source_title": "Weak coupling closure",
+                            "source_type": "paper",
+                            "method_family": "formal_derivation",
+                            "specificity_tier": "high",
+                            "reading_depth": "full_read",
+                            "evidence_excerpt": "Derives the bounded closure in weak coupling.",
+                        }
+                    ],
+                    "contradiction_candidates": [],
+                }
+            },
+        }
+        self._write_json(
+            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            runtime_payload,
+        )
+        signature = self.orchestrate_topic.compute_literature_intake_stage_signature(runtime_payload)
+        self._write_json(
+            "canonical/staging/entries/staging--demo-topic-existing.json",
+            {
+                "entry_id": "staging:demo-topic-existing",
+                "topic_slug": "demo-topic",
+                "entry_kind": "claim_card",
+                "candidate_unit_type": "claim_card",
+                "title": "Existing staged literature unit",
+                "summary": "Existing staged literature unit.",
+                "status": "staged",
+                "authoritative": False,
+                "updated_at": "2026-04-14T06:00:00+08:00",
+                "path": "canonical/staging/entries/staging--demo-topic-existing.json",
+                "note_path": "canonical/staging/entries/staging--demo-topic-existing.md",
+                "provenance": {
+                    "literature_stage_signature": signature,
+                },
+            },
+        )
+        self._write_jsonl(
+            "runtime/topics/demo-topic/innovation_decisions.jsonl",
+            [
+                {
+                    "decision_id": "innovation-decision:demo-topic:continue",
+                    "topic_slug": "demo-topic",
+                    "updated_at": "2026-04-14T06:05:00+08:00",
+                    "decision": "continue",
+                    "summary": "Continue the active topic under the current operator steering.",
+                }
+            ],
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/consultation_followup_selection.active.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "selected",
+                "selected_candidate_id": "staging:demo-topic-existing",
+                "selected_candidate_path": "canonical/staging/entries/staging--demo-topic-existing.json",
+                "selection_reason": "Selected the first topic-local staged hit from the bounded consultation result.",
+            },
+        )
+
+        queue, _ = self.orchestrate_topic.materialize_action_queue(
+            {
+                "topic_slug": "demo-topic",
+                "latest_run_id": "2026-03-13-demo",
+                "resume_stage": "L1",
+                "source_count": 1,
+                "pending_actions": [],
+            },
+            [],
+            self.knowledge_root / "runtime" / "scripts" / "discover_external_skills.py",
+            self.knowledge_root / "runtime" / "scripts" / "advance_closed_loop.py",
+            self.knowledge_root / "runtime" / "scripts" / "handoff_execution.py",
+            self.knowledge_root / "runtime" / "scripts" / "run_literature_followup.py",
+            self.knowledge_root,
+        )
+
+        self.assertEqual(queue[0]["action_type"], "selected_consultation_candidate_followup")
+        self.assertIn("Review the selected staged candidate", queue[0]["summary"])
+        self.assertEqual(queue[0]["handler_args"]["candidate_id"], "staging:demo-topic-existing")
+
     def test_materialize_action_queue_prefers_promotion_review_in_promote_mode(self) -> None:
         self._write_json(
             "runtime/topics/demo-topic/runtime_protocol.generated.json",
