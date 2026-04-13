@@ -2,7 +2,7 @@
 
 ## v2.1 L2 Real-Topic Relevance Hardening (Active)
 
-**Phases completed:** 0 / 3 phases, 0 / 3 plans
+**Phases completed:** 3 / 3 phases, 3 / 3 plans
 
 **Milestone goal:**
 
@@ -21,6 +21,9 @@
   source provenance on the literature fast path
 - Phase `175.1` now lets explicit topic-local staged rows compete on the
   primary consultation surface instead of hiding only in secondary staged hits
+- Phase `175.2` now proves, on a replayable multi-paper fresh-topic lane, that
+  two distinct paper sources survive staging and the local staged bridge note
+  outranks unrelated canonical carryover on the primary consultation surface
 
 ---
 

@@ -2331,6 +2331,28 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "graph_analysis.json").exists())
         self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "graph_analysis.md").exists())
 
+    def test_multi_paper_l2_relevance_acceptance_script_runs_on_isolated_work_root(self) -> None:
+        module = _load_module(
+            "aitp_multi_paper_l2_relevance_acceptance_test",
+            "runtime/scripts/run_multi_paper_l2_relevance_acceptance.py",
+        )
+        work_root = Path(self._tmpdir.name) / "multi-paper-l2-relevance-acceptance"
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_multi_paper_l2_relevance_acceptance.py",
+                "--work-root",
+                str(work_root),
+                "--json",
+            ],
+        ):
+            exit_code = module.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue((work_root / "kernel" / "canonical" / "staging" / "workspace_staging_manifest.json").exists())
+        self.assertTrue((work_root / "kernel" / "canonical" / "compiled" / "workspace_knowledge_report.json").exists())
+
     def test_l1_graph_obsidian_export_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l1-graph-obsidian-export-acceptance"
         with patch.object(

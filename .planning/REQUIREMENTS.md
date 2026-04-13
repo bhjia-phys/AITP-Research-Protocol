@@ -10,7 +10,6 @@ provenance instead of noisy staged rows or irrelevant primary hits.
 
 ### Staging Quality
 
-- [ ] `L2H-01`: literature-intake staging suppresses generic notation tokens
 - [x] `L2H-01`: literature-intake staging suppresses generic notation tokens
   and weak method rows that do not represent reusable knowledge.
 
@@ -26,11 +25,11 @@ provenance instead of noisy staged rows or irrelevant primary hits.
 
 ### Replayable Proof
 
-- [ ] `L2H-04`: one replayable real-topic acceptance lane registers multiple
+- [x] `L2H-04`: one replayable real-topic acceptance lane registers multiple
   related papers into one topic and proves both provenance correctness and
   consultation relevance ordering.
 
-- [ ] `L2H-05`: the milestone closes with durable receipts, a runbook, and
+- [x] `L2H-05`: the milestone closes with durable receipts, a runbook, and
   explicit non-claims about what `L2` hardening this bounded slice does not yet
   solve.
 
@@ -50,8 +49,8 @@ provenance instead of noisy staged rows or irrelevant primary hits.
 | L2H-01 | Phase 175 | Done |
 | L2H-02 | Phase 175 | Done |
 | L2H-03 | Phase 175.1 | Done |
-| L2H-04 | Phase 175.2 | Pending |
-| L2H-05 | Phase 175.2 | Pending |
+| L2H-04 | Phase 175.2 | Done |
+| L2H-05 | Phase 175.2 | Done |
 
 **Coverage:**
 - v1 requirements: 5 total

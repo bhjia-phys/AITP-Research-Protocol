@@ -1,0 +1,1186 @@
+{
+  "status": "success",
+  "work_root": "C:\\Users\\samur\\AppData\\Local\\Temp\\aitp-multi-paper-l2-relevance-ft9h3ky1",
+  "kernel_root": "C:\\Users\\samur\\AppData\\Local\\Temp\\aitp-multi-paper-l2-relevance-ft9h3ky1\\kernel",
+  "topic_slug": "fresh-measurement-induced-observer-algebra-relevance-proof",
+  "query_text": "measurement induced observer algebra bridge",
+  "checks": {
+    "staged_entry_count": 2,
+    "staged_source_ids": [
+      "source:factor-type-warning-paper",
+      "source:measurement-induced-bridge-paper"
+    ],
+    "primary_hit_id": "staging:measurement-induced-observer-algebra-bridge-note",
+    "primary_hit_trust_surface": "staging",
+    "unrelated_canonical_id": "concept:observer-algebra-carryover"
+  },
+  "artifacts": {
+    "workspace_staging_manifest": "C:\\Users\\samur\\AppData\\Local\\Temp\\aitp-multi-paper-l2-relevance-ft9h3ky1\\kernel\\canonical\\staging\\workspace_staging_manifest.json",
+    "workspace_staging_note": "C:\\Users\\samur\\AppData\\Local\\Temp\\aitp-multi-paper-l2-relevance-ft9h3ky1\\kernel\\canonical\\staging\\workspace_staging_manifest.md",
+    "workspace_knowledge_report": "C:\\Users\\samur\\AppData\\Local\\Temp\\aitp-multi-paper-l2-relevance-ft9h3ky1\\kernel\\canonical\\compiled\\workspace_knowledge_report.json",
+    "workspace_knowledge_report_note": "C:\\Users\\samur\\AppData\\Local\\Temp\\aitp-multi-paper-l2-relevance-ft9h3ky1\\kernel\\canonical\\compiled\\workspace_knowledge_report.md"
+  },
+  "consultation": {
+    "query_text": "measurement induced observer algebra bridge",
+    "retrieval_profile": "l1_provisional_understanding",
+    "topic_slug": "fresh-measurement-induced-observer-algebra-relevance-proof",
+    "primary_hits": [
+      {
+        "id": "staging:measurement-induced-observer-algebra-bridge-note",
+        "unit_id": "staging:measurement-induced-observer-algebra-bridge-note",
+        "unit_type": "concept",
+        "object_type": "concept",
+        "title": "Measurement-induced observer algebra bridge note",
+        "summary": "Fresh local staged note connecting measurement-induced transitions and observer algebras.",
+        "path": "canonical/staging/entries/staging--measurement-induced-observer-algebra-bridge-note.json",
+        "topic_slug": "fresh-measurement-induced-observer-algebra-relevance-proof",
+        "trust_surface": "staging",
+        "authority_level": "non_authoritative_staging",
+        "score": 9.5,
+        "matched_terms": [
+          "algebra",
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "id": "staging:do-not-equate-measurement-induced-transition-with-factor-type-phase",
+        "unit_id": "staging:do-not-equate-measurement-induced-transition-with-factor-type-phase",
+        "unit_type": "warning_note",
+        "object_type": "warning_note",
+        "title": "Do not equate measurement-induced transition with factor-type phase",
+        "summary": "The local paper set does not justify a direct von Neumann factor-type identification for monitored phases.",
+        "path": "canonical/staging/entries/staging--do-not-equate-measurement-induced-transition-with-factor-type-phase.json",
+        "topic_slug": "fresh-measurement-induced-observer-algebra-relevance-proof",
+        "trust_surface": "staging",
+        "authority_level": "non_authoritative_staging",
+        "score": 8.5,
+        "matched_terms": [
+          "algebra",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "unit_id": "concept:observer-algebra-carryover",
+        "id": "concept:observer-algebra-carryover",
+        "unit_type": "concept",
+        "title": "Observer algebra carryover concept",
+        "summary": "Older canonical material about observer algebra bridge structure from an unrelated topic.",
+        "tags": [
+          "observer-algebra",
+          "bridge",
+          "carryover"
+        ],
+        "assumptions": [],
+        "regime": {
+          "domain": "unrelated canonical topic",
+          "approximations": [],
+          "scale": "bounded",
+          "boundary_conditions": [],
+          "exclusions": []
+        },
+        "scope": {
+          "applies_to": [
+            "unrelated canonical carryover"
+          ],
+          "out_of_scope": [
+            "fresh local topic routing"
+          ]
+        },
+        "dependencies": [],
+        "related_units": [],
+        "warning_tags": [],
+        "validation_tags": [],
+        "path": "canonical/concepts/concept--observer-algebra-carryover.json",
+        "search_terms": "Observer algebra carryover concept Older canonical material about observer algebra bridge structure from an unrelated topic. observer-algebra bridge carryover ",
+        "trust_surface": "canonical",
+        "score": 3.5,
+        "matched_terms": [
+          "algebra",
+          "bridge",
+          "observer"
+        ]
+      }
+    ],
+    "expanded_hits": [
+      {
+        "unit_id": "topic_skill_projection:tfim-benchmark-first-route",
+        "id": "topic_skill_projection:tfim-benchmark-first-route",
+        "unit_type": "topic_skill_projection",
+        "title": "TFIM benchmark-first route",
+        "summary": "Reusable route capsule for the bounded TFIM exact benchmark workflow and its limitation note.",
+        "tags": [
+          "tfim",
+          "topic-skill-projection",
+          "benchmark-first"
+        ],
+        "assumptions": [
+          "The route stays bounded to the public exact benchmark."
+        ],
+        "regime": {
+          "domain": "tfim benchmark-first seed",
+          "approximations": [
+            "tiny exact benchmark"
+          ],
+          "scale": "smoke-test",
+          "boundary_conditions": [
+            "bounded public route"
+          ],
+          "exclusions": [
+            "large-scale numerics",
+            "broad portability claims"
+          ]
+        },
+        "scope": {
+          "applies_to": [
+            "bounded TFIM benchmark memory"
+          ],
+          "out_of_scope": [
+            "full many-body closure"
+          ]
+        },
+        "dependencies": [
+          "workflow:tfim-benchmark-workflow",
+          "method:tfim-exact-diagonalization-helper"
+        ],
+        "related_units": [
+          "warning_note:tfim-dense-ed-finite-size-limit",
+          "claim_card:tfim-benchmark-before-portability-claim",
+          "bridge:tfim-toy-model-code-method-bridge"
+        ],
+        "warning_tags": [],
+        "validation_tags": [],
+        "path": "canonical/topic-skill-projections/topic_skill_projection--tfim-benchmark-first-route.json",
+        "search_terms": "TFIM benchmark-first route Reusable route capsule for the bounded TFIM exact benchmark workflow and its limitation note. tfim topic-skill-projection benchmark-first The route stays bounded to the public exact benchmark.",
+        "via_relation": "supports",
+        "via_id": "bridge:tfim-toy-model-code-method-bridge",
+        "traversal_depth": 1,
+        "path_relations": [
+          "supports"
+        ],
+        "path_node_ids": [
+          "bridge:tfim-toy-model-code-method-bridge",
+          "topic_skill_projection:tfim-benchmark-first-route"
+        ]
+      },
+      {
+        "unit_id": "warning_note:tfim-dense-ed-finite-size-limit",
+        "id": "warning_note:tfim-dense-ed-finite-size-limit",
+        "unit_type": "warning_note",
+        "title": "Dense exact diagonalization finite-size limit",
+        "summary": "The public TFIM helper is only a tiny-system benchmark gate and not a scalable solver claim.",
+        "tags": [
+          "tfim",
+          "warning",
+          "finite-size"
+        ],
+        "assumptions": [
+          "Dense exact diagonalization does not scale to larger systems in this route."
+        ],
+        "regime": {
+          "domain": "tfim benchmark-first seed",
+          "approximations": [
+            "tiny exact benchmark"
+          ],
+          "scale": "smoke-test",
+          "boundary_conditions": [
+            "bounded public route"
+          ],
+          "exclusions": [
+            "large-scale numerics",
+            "broad portability claims"
+          ]
+        },
+        "scope": {
+          "applies_to": [
+            "bounded TFIM benchmark memory"
+          ],
+          "out_of_scope": [
+            "full many-body closure"
+          ]
+        },
+        "dependencies": [
+          "method:tfim-exact-diagonalization-helper"
+        ],
+        "related_units": [
+          "workflow:tfim-benchmark-workflow",
+          "claim_card:tfim-benchmark-before-portability-claim"
+        ],
+        "warning_tags": [
+          "finite-size",
+          "benchmark-only",
+          "non-scalable"
+        ],
+        "validation_tags": [],
+        "path": "canonical/warning-notes/warning_note--tfim-dense-ed-finite-size-limit.json",
+        "search_terms": "Dense exact diagonalization finite-size limit The public TFIM helper is only a tiny-system benchmark gate and not a scalable solver claim. tfim warning finite-size Dense exact diagonalization does not scale to larger systems in this route.",
+        "via_relation": "warned_by",
+        "via_id": "topic_skill_projection:tfim-benchmark-first-route",
+        "traversal_depth": 2,
+        "path_relations": [
+          "supports",
+          "warned_by"
+        ],
+        "path_node_ids": [
+          "bridge:tfim-toy-model-code-method-bridge",
+          "topic_skill_projection:tfim-benchmark-first-route",
+          "warning_note:tfim-dense-ed-finite-size-limit"
+        ]
+      }
+    ],
+    "staged_hits": [
+      {
+        "entry_id": "staging:a-critical-state-under-weak-measurement-is-not-critical-unspecified-method-method-signal",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "method",
+        "candidate_unit_type": "method",
+        "title": "A critical state under weak measurement is not critical unspecified_method method signal",
+        "summary": "A critical state under weak measurement is not critical currently reads as `unspecified_method` with `low` specificity at `full_read` depth. Evidence: Critical systems host nontrivial entanglement structure that is generally sensitive to additional couplings. In the present work, we study the effect of weak measurements on the entanglement Hamiltonian of massless free",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--a-critical-state-under-weak-measurement-is-not-critical-unspecified-method-method-signal.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "literature-intake",
+          "method-family:unspecified-method",
+          "specificity:low",
+          "reading-depth:full-read",
+          "source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035"
+        ],
+        "source_refs": [
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+        ],
+        "provenance": {
+          "literature_intake_fast_path": true,
+          "source_slug": "paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035",
+          "vault_wiki_paths": [
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+          ]
+        },
+        "search_terms": "A critical state under weak measurement is not critical unspecified_method method signal A critical state under weak measurement is not critical currently reads as `unspecified_method` with `low` specificity at `full_read` depth. Evidence: Critical systems host nontrivial entanglement structure that is generally sensitive to additional couplings. In the present work, we study the effect of weak measurements on the entanglement Hamiltonian of massless free method literature-intake method-family:unspecified-method specificity:low reading-depth:full-read source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md  This staging entry came from the literature-intake fast path and still requires a later full audit.   paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 ",
+        "created_at": "2026-04-13T18:07:17+00:00",
+        "updated_at": "2026-04-13T18:07:17+00:00",
+        "score": 4.0,
+        "matched_terms": [
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:an-algebra-of-observables-for-de-sitter-space-notation-entropy",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "concept",
+        "candidate_unit_type": "concept",
+        "title": "An Algebra of Observables for de Sitter Space notation `entropy`",
+        "summary": "In An Algebra of Observables for de Sitter Space, `entropy` denotes a state of suc. Evidence: We describe an algebra of observables for a static patch in de Sitter space, with operators gravitationally dressed to the worldline of an observer. The algebra is a von Neumann algebra of Type II$_1$. There is a natural",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--an-algebra-of-observables-for-de-sitter-space-notation-entropy.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "literature-intake",
+          "notation-binding",
+          "symbol:entropy",
+          "reading-depth:full-read",
+          "source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035"
+        ],
+        "source_refs": [
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+        ],
+        "provenance": {
+          "literature_intake_fast_path": true,
+          "source_slug": "paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035",
+          "vault_wiki_paths": [
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+          ]
+        },
+        "search_terms": "An Algebra of Observables for de Sitter Space notation `entropy` In An Algebra of Observables for de Sitter Space, `entropy` denotes a state of suc. Evidence: We describe an algebra of observables for a static patch in de Sitter space, with operators gravitationally dressed to the worldline of an observer. The algebra is a von Neumann algebra of Type II$_1$. There is a natural concept literature-intake notation-binding symbol:entropy reading-depth:full-read source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md  This staging entry came from the literature-intake fast path and still requires a later full audit.   paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 ",
+        "created_at": "2026-04-13T18:07:17+00:00",
+        "updated_at": "2026-04-13T18:07:17+00:00",
+        "score": 5.5,
+        "matched_terms": [
+          "algebra",
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:an-algebra-of-observables-for-de-sitter-space-notation-observables",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "concept",
+        "candidate_unit_type": "concept",
+        "title": "An Algebra of Observables for de Sitter Space notation `observables`",
+        "summary": "In An Algebra of Observables for de Sitter Space, `observables` denotes a static patch in de Sitter space. Evidence: We describe an algebra of observables for a static patch in de Sitter space, with operators gravitationally dressed to the worldline of an observer. The algebra is a von Neumann algebra of Type II$_1$. There is a natural",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--an-algebra-of-observables-for-de-sitter-space-notation-observables.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "literature-intake",
+          "notation-binding",
+          "symbol:observables",
+          "reading-depth:full-read",
+          "source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035"
+        ],
+        "source_refs": [
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+        ],
+        "provenance": {
+          "literature_intake_fast_path": true,
+          "source_slug": "paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035",
+          "vault_wiki_paths": [
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+          ]
+        },
+        "search_terms": "An Algebra of Observables for de Sitter Space notation `observables` In An Algebra of Observables for de Sitter Space, `observables` denotes a static patch in de Sitter space. Evidence: We describe an algebra of observables for a static patch in de Sitter space, with operators gravitationally dressed to the worldline of an observer. The algebra is a von Neumann algebra of Type II$_1$. There is a natural concept literature-intake notation-binding symbol:observables reading-depth:full-read source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md  This staging entry came from the literature-intake fast path and still requires a later full audit.   paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 ",
+        "created_at": "2026-04-13T18:07:17+00:00",
+        "updated_at": "2026-04-13T18:07:17+00:00",
+        "score": 5.5,
+        "matched_terms": [
+          "algebra",
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:an-algebra-of-observables-for-de-sitter-space-unspecified-method-method-signal",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "method",
+        "candidate_unit_type": "method",
+        "title": "An Algebra of Observables for de Sitter Space unspecified_method method signal",
+        "summary": "An Algebra of Observables for de Sitter Space currently reads as `unspecified_method` with `low` specificity at `full_read` depth. Evidence: We describe an algebra of observables for a static patch in de Sitter space, with operators gravitationally dressed to the worldline of an observer. The algebra is a von Neumann algebra of Type II$_1$. There is a natural",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--an-algebra-of-observables-for-de-sitter-space-unspecified-method-method-signal.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "literature-intake",
+          "method-family:unspecified-method",
+          "specificity:low",
+          "reading-depth:full-read",
+          "source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035"
+        ],
+        "source_refs": [
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+        ],
+        "provenance": {
+          "literature_intake_fast_path": true,
+          "source_slug": "paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035",
+          "vault_wiki_paths": [
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+          ]
+        },
+        "search_terms": "An Algebra of Observables for de Sitter Space unspecified_method method signal An Algebra of Observables for de Sitter Space currently reads as `unspecified_method` with `low` specificity at `full_read` depth. Evidence: We describe an algebra of observables for a static patch in de Sitter space, with operators gravitationally dressed to the worldline of an observer. The algebra is a von Neumann algebra of Type II$_1$. There is a natural method literature-intake method-family:unspecified-method specificity:low reading-depth:full-read source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md  This staging entry came from the literature-intake fast path and still requires a later full audit.   paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 ",
+        "created_at": "2026-04-13T18:07:17+00:00",
+        "updated_at": "2026-04-13T18:07:17+00:00",
+        "score": 5.0,
+        "matched_terms": [
+          "algebra",
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:do-not-equate-measurement-induced-transition-with-factor-type-phase",
+        "topic_slug": "fresh-measurement-induced-observer-algebra-relevance-proof",
+        "entry_kind": "warning_note",
+        "candidate_unit_type": "warning_note",
+        "title": "Do not equate measurement-induced transition with factor-type phase",
+        "summary": "The local paper set does not justify a direct von Neumann factor-type identification for monitored phases.",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--do-not-equate-measurement-induced-transition-with-factor-type-phase.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "measurement-induced",
+          "warning",
+          "observer-algebra",
+          "literature-intake",
+          "source:paper-factor-type-warning"
+        ],
+        "source_refs": [
+          "source:factor-type-warning-paper"
+        ],
+        "provenance": {
+          "source_id": "source:factor-type-warning-paper",
+          "source_slug": "paper-factor-type-warning",
+          "source_title": "Factor-type warning paper",
+          "literature_intake_fast_path": true,
+          "vault_wiki_paths": []
+        },
+        "search_terms": "Do not equate measurement-induced transition with factor-type phase The local paper set does not justify a direct von Neumann factor-type identification for monitored phases. warning_note measurement-induced warning observer-algebra literature-intake source:paper-factor-type-warning source:factor-type-warning-paper  This staging entry came from the literature-intake fast path and still requires a later full audit. source:factor-type-warning-paper Factor-type warning paper paper-factor-type-warning ",
+        "created_at": "2026-04-13T21:01:10+00:00",
+        "updated_at": "2026-04-13T21:01:10+00:00",
+        "score": 4.5,
+        "matched_terms": [
+          "algebra",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:entanglement-and-charge-sharpening-transitions-in-u-1-symmetric-monitored-quantum-circuits-unspecified-method-method-signal",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "method",
+        "candidate_unit_type": "method",
+        "title": "Entanglement and charge-sharpening transitions in U(1) symmetric monitored quantum circuits unspecified_method method signal",
+        "summary": "Entanglement and charge-sharpening transitions in U(1) symmetric monitored quantum circuits currently reads as `unspecified_method` with `low` specificity at `abstract_only` depth. Evidence: Monitored quantum circuits can exhibit an entanglement transition as a function of the rate of measurements, stemming from the competition between scrambling unitary dynamics and disentangling projective measurements. We",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--entanglement-and-charge-sharpening-transitions-in-u-1-symmetric-monitored-quantum-circuits-unspecified-method-method-signal.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "literature-intake",
+          "method-family:unspecified-method",
+          "specificity:low",
+          "reading-depth:abstract-only",
+          "source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035"
+        ],
+        "source_refs": [
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+        ],
+        "provenance": {
+          "literature_intake_fast_path": true,
+          "source_slug": "paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035",
+          "vault_wiki_paths": [
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+          ]
+        },
+        "search_terms": "Entanglement and charge-sharpening transitions in U(1) symmetric monitored quantum circuits unspecified_method method signal Entanglement and charge-sharpening transitions in U(1) symmetric monitored quantum circuits currently reads as `unspecified_method` with `low` specificity at `abstract_only` depth. Evidence: Monitored quantum circuits can exhibit an entanglement transition as a function of the rate of measurements, stemming from the competition between scrambling unitary dynamics and disentangling projective measurements. We method literature-intake method-family:unspecified-method specificity:low reading-depth:abstract-only source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md  This staging entry came from the literature-intake fast path and still requires a later full audit.   paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 ",
+        "created_at": "2026-04-13T18:07:17+00:00",
+        "updated_at": "2026-04-13T18:07:17+00:00",
+        "score": 4.0,
+        "matched_terms": [
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:implication-of-dressed-form-of-relational-observable-on-von-neumann-algebra-unspecified-method-method-signal",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "method",
+        "candidate_unit_type": "method",
+        "title": "Implication of dressed form of relational observable on von Neumann algebra unspecified_method method signal",
+        "summary": "Implication of dressed form of relational observable on von Neumann algebra currently reads as `unspecified_method` with `low` specificity at `abstract_only` depth. Evidence: In quantum gravity, physically meaningful operator is required to be invariant under the diffeomorphisms. Such gauge invariant operator is typically given by the relational observable, the operator localized in relation",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--implication-of-dressed-form-of-relational-observable-on-von-neumann-algebra-unspecified-method-method-signal.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "literature-intake",
+          "method-family:unspecified-method",
+          "specificity:low",
+          "reading-depth:abstract-only",
+          "source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035"
+        ],
+        "source_refs": [
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+        ],
+        "provenance": {
+          "literature_intake_fast_path": true,
+          "source_slug": "paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035",
+          "vault_wiki_paths": [
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+          ]
+        },
+        "search_terms": "Implication of dressed form of relational observable on von Neumann algebra unspecified_method method signal Implication of dressed form of relational observable on von Neumann algebra currently reads as `unspecified_method` with `low` specificity at `abstract_only` depth. Evidence: In quantum gravity, physically meaningful operator is required to be invariant under the diffeomorphisms. Such gauge invariant operator is typically given by the relational observable, the operator localized in relation method literature-intake method-family:unspecified-method specificity:low reading-depth:abstract-only source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md  This staging entry came from the literature-intake fast path and still requires a later full audit.   paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 ",
+        "created_at": "2026-04-13T18:07:17+00:00",
+        "updated_at": "2026-04-13T18:07:17+00:00",
+        "score": 5.0,
+        "matched_terms": [
+          "algebra",
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:measurement-induced-algebraic-transition-and-observer-algebras-bridge-note-3120e9bf",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "bridge_note",
+        "candidate_unit_type": "bridge_note",
+        "title": "Observer-accessible subalgebra bridge for monitored transitions",
+        "summary": "Current source-backed route suggests bridging MIPT to quantum-gravity observer algebras through measurements-as-instruments on observer-accessible subalgebras, rather than through an immediate claim that monitored phases are themselves von Neumann factor-type phases.",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/measurement-induced-algebraic-transition-and-observer-algebras-bridge-note-3120e9bf.json",
+        "note_path": "canonical/staging/entries/measurement-induced-algebraic-transition-and-observer-algebras-bridge-note-3120e9bf.md",
+        "failure_kind": "",
+        "source_artifact_paths": [
+          "source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-quantum-fields-and-local-measurements-1810-06512/source.json",
+          "source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-operator-scaling-dimensions-and-multifractality-at-measurement-induced-transitions-2107-03393/source.json",
+          "source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-an-algebra-of-observables-for-de-sitter-space-2206-10780/source.json",
+          "source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-quantum-gravity-observables-observation-algebras-and-mathematical-structure-2505-22708/source.json"
+        ],
+        "tags": [],
+        "source_refs": [],
+        "provenance": {},
+        "search_terms": "Observer-accessible subalgebra bridge for monitored transitions Current source-backed route suggests bridging MIPT to quantum-gravity observer algebras through measurements-as-instruments on observer-accessible subalgebras, rather than through an immediate claim that monitored phases are themselves von Neumann factor-type phases. bridge_note    Bridge candidate distilled from current topic scratchpad and registered sources.    source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-quantum-fields-and-local-measurements-1810-06512/source.json source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-operator-scaling-dimensions-and-multifractality-at-measurement-induced-transitions-2107-03393/source.json source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-an-algebra-of-observables-for-de-sitter-space-2206-10780/source.json source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-quantum-gravity-observables-observation-algebras-and-mathematical-structure-2505-22708/source.json",
+        "created_at": "2026-04-14T02:11:18+08:00",
+        "updated_at": "2026-04-14T02:11:18+08:00",
+        "score": 5.0,
+        "matched_terms": [
+          "algebra",
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:measurement-induced-algebraic-transition-and-observer-algebras-concept-note-8fe6c641",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "concept_note",
+        "candidate_unit_type": "concept_note",
+        "title": "Operator-spectrum and entanglement-Hamiltonian route to algebraic reformulation",
+        "summary": "For this topic, the most credible algebraic foothold inside MIPT is not factor type but the pair of diagnostics formed by operator scaling / multifractality and the entanglement-Hamiltonian response to weak measurement. These observables can anchor a later algebraic reformulation before any comparison with quantum-gravity observer algebras.",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/measurement-induced-algebraic-transition-and-observer-algebras-concept-note-8fe6c641.json",
+        "note_path": "canonical/staging/entries/measurement-induced-algebraic-transition-and-observer-algebras-concept-note-8fe6c641.md",
+        "failure_kind": "",
+        "source_artifact_paths": [
+          "source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-operator-scaling-dimensions-and-multifractality-at-measurement-induced-transitions-2107-03393/source.json",
+          "source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-a-critical-state-under-weak-measurement-is-not-critical-2411-13705/source.json"
+        ],
+        "tags": [],
+        "source_refs": [],
+        "provenance": {},
+        "search_terms": "Operator-spectrum and entanglement-Hamiltonian route to algebraic reformulation For this topic, the most credible algebraic foothold inside MIPT is not factor type but the pair of diagnostics formed by operator scaling / multifractality and the entanglement-Hamiltonian response to weak measurement. These observables can anchor a later algebraic reformulation before any comparison with quantum-gravity observer algebras. concept_note    This provisional concept captures the strongest operator-algebra-adjacent signal presently available from the monitored-circuit side.    source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-operator-scaling-dimensions-and-multifractality-at-measurement-induced-transitions-2107-03393/source.json source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-a-critical-state-under-weak-measurement-is-not-critical-2411-13705/source.json",
+        "created_at": "2026-04-14T02:11:19+08:00",
+        "updated_at": "2026-04-14T02:11:19+08:00",
+        "score": 4.0,
+        "matched_terms": [
+          "algebra",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:measurement-induced-algebraic-transition-and-observer-algebras-warning-note-ab600629",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "warning_note",
+        "candidate_unit_type": "warning_note",
+        "title": "Do not equate MIPT with a von Neumann factor transition",
+        "summary": "The current topic sources support entanglement, operator-scaling, and entanglement-Hamiltonian diagnostics for monitored dynamics, while the quantum-gravity sources discuss observer or relational observable algebras with explicit von Neumann-algebra structure. No registered source currently warrants a direct factor-type identification for MIPT phases.",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/measurement-induced-algebraic-transition-and-observer-algebras-warning-note-ab600629.json",
+        "note_path": "canonical/staging/entries/measurement-induced-algebraic-transition-and-observer-algebras-warning-note-ab600629.md",
+        "failure_kind": "",
+        "source_artifact_paths": [
+          "runtime/topics/measurement-induced-algebraic-transition-and-observer-algebras/scratchpad.active.json",
+          "source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-measurement-induced-phase-transitions-in-the-dynamics-of-entanglement-1808-05953/source.json",
+          "source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-a-critical-state-under-weak-measurement-is-not-critical-2411-13705/source.json",
+          "source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-implication-of-dressed-form-of-relational-observable-on-von-neumann-algebra-2603-25990/source.json"
+        ],
+        "tags": [],
+        "source_refs": [],
+        "provenance": {},
+        "search_terms": "Do not equate MIPT with a von Neumann factor transition The current topic sources support entanglement, operator-scaling, and entanglement-Hamiltonian diagnostics for monitored dynamics, while the quantum-gravity sources discuss observer or relational observable algebras with explicit von Neumann-algebra structure. No registered source currently warrants a direct factor-type identification for MIPT phases. warning_note    Bounded negative-result warning from the current source set.    runtime/topics/measurement-induced-algebraic-transition-and-observer-algebras/scratchpad.active.json source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-measurement-induced-phase-transitions-in-the-dynamics-of-entanglement-1808-05953/source.json source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-a-critical-state-under-weak-measurement-is-not-critical-2411-13705/source.json source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/paper-implication-of-dressed-form-of-relational-observable-on-von-neumann-algebra-2603-25990/source.json",
+        "created_at": "2026-04-14T02:11:19+08:00",
+        "updated_at": "2026-04-14T02:11:19+08:00",
+        "score": 4.5,
+        "matched_terms": [
+          "algebra",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-implementation-workflow-method-signal",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "method",
+        "candidate_unit_type": "method",
+        "title": "Measurement-induced entanglement phase transitions in variational quantum circuits implementation_workflow method signal",
+        "summary": "Measurement-induced entanglement phase transitions in variational quantum circuits currently reads as `implementation_workflow` with `high` specificity at `abstract_only` depth. Evidence: Variational quantum algorithms (VQAs), which classically optimize a parametrized quantum circuit to solve a computational task, p",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-implementation-workflow-method-signal.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "literature-intake",
+          "method-family:implementation-workflow",
+          "specificity:high",
+          "reading-depth:abstract-only",
+          "source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035"
+        ],
+        "source_refs": [
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+        ],
+        "provenance": {
+          "literature_intake_fast_path": true,
+          "source_slug": "paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035",
+          "vault_wiki_paths": [
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+          ]
+        },
+        "search_terms": "Measurement-induced entanglement phase transitions in variational quantum circuits implementation_workflow method signal Measurement-induced entanglement phase transitions in variational quantum circuits currently reads as `implementation_workflow` with `high` specificity at `abstract_only` depth. Evidence: Variational quantum algorithms (VQAs), which classically optimize a parametrized quantum circuit to solve a computational task, p method literature-intake method-family:implementation-workflow specificity:high reading-depth:abstract-only source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md  This staging entry came from the literature-intake fast path and still requires a later full audit.   paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 ",
+        "created_at": "2026-04-13T18:07:17+00:00",
+        "updated_at": "2026-04-13T18:07:17+00:00",
+        "score": 4.0,
+        "matched_terms": [
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:measurement-induced-observer-algebra-bridge-note",
+        "topic_slug": "fresh-measurement-induced-observer-algebra-relevance-proof",
+        "entry_kind": "concept",
+        "candidate_unit_type": "concept",
+        "title": "Measurement-induced observer algebra bridge note",
+        "summary": "Fresh local staged note connecting measurement-induced transitions and observer algebras.",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--measurement-induced-observer-algebra-bridge-note.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "measurement-induced",
+          "observer-algebra",
+          "bridge",
+          "literature-intake",
+          "source:paper-measurement-induced-bridge"
+        ],
+        "source_refs": [
+          "source:measurement-induced-bridge-paper"
+        ],
+        "provenance": {
+          "source_id": "source:measurement-induced-bridge-paper",
+          "source_slug": "paper-measurement-induced-bridge",
+          "source_title": "Measurement-induced observer algebra bridge paper",
+          "literature_intake_fast_path": true,
+          "vault_wiki_paths": []
+        },
+        "search_terms": "Measurement-induced observer algebra bridge note Fresh local staged note connecting measurement-induced transitions and observer algebras. concept measurement-induced observer-algebra bridge literature-intake source:paper-measurement-induced-bridge source:measurement-induced-bridge-paper  This staging entry came from the literature-intake fast path and still requires a later full audit. source:measurement-induced-bridge-paper Measurement-induced observer algebra bridge paper paper-measurement-induced-bridge ",
+        "created_at": "2026-04-13T21:01:10+00:00",
+        "updated_at": "2026-04-13T21:01:10+00:00",
+        "score": 5.5,
+        "matched_terms": [
+          "algebra",
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:measurement-induced-phase-transitions-in-the-dynamics-of-entanglement-notation-classes",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "concept",
+        "candidate_unit_type": "concept",
+        "title": "Measurement-Induced Phase Transitions in the Dynamics of Entanglement notation `classes`",
+        "summary": "In Measurement-Induced Phase Transitions in the Dynamics of Entanglement, `classes` denotes many-body systems whose unitary evolution is punctuated by projective measurements. Evidence: We define dynamical universality classes for many-body systems whose unitary evolution is punctuated by projective measurements. In cases where such measurements occur randomly at a finite rate $p$ for each degree of fre",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--measurement-induced-phase-transitions-in-the-dynamics-of-entanglement-notation-classes.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "literature-intake",
+          "notation-binding",
+          "symbol:classes",
+          "reading-depth:full-read",
+          "source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035"
+        ],
+        "source_refs": [
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+        ],
+        "provenance": {
+          "literature_intake_fast_path": true,
+          "source_slug": "paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035",
+          "vault_wiki_paths": [
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+          ]
+        },
+        "search_terms": "Measurement-Induced Phase Transitions in the Dynamics of Entanglement notation `classes` In Measurement-Induced Phase Transitions in the Dynamics of Entanglement, `classes` denotes many-body systems whose unitary evolution is punctuated by projective measurements. Evidence: We define dynamical universality classes for many-body systems whose unitary evolution is punctuated by projective measurements. In cases where such measurements occur randomly at a finite rate $p$ for each degree of fre concept literature-intake notation-binding symbol:classes reading-depth:full-read source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md  This staging entry came from the literature-intake fast path and still requires a later full audit.   paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 ",
+        "created_at": "2026-04-13T18:07:17+00:00",
+        "updated_at": "2026-04-13T18:07:17+00:00",
+        "score": 4.5,
+        "matched_terms": [
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:measurement-induced-phase-transitions-in-the-dynamics-of-entanglement-unspecified-method-method-signal",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "method",
+        "candidate_unit_type": "method",
+        "title": "Measurement-Induced Phase Transitions in the Dynamics of Entanglement unspecified_method method signal",
+        "summary": "Measurement-Induced Phase Transitions in the Dynamics of Entanglement currently reads as `unspecified_method` with `low` specificity at `full_read` depth. Evidence: We define dynamical universality classes for many-body systems whose unitary evolution is punctuated by projective measurements. In cases where such measurements occur randomly at a finite rate $p$ for each degree of fre",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--measurement-induced-phase-transitions-in-the-dynamics-of-entanglement-unspecified-method-method-signal.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "literature-intake",
+          "method-family:unspecified-method",
+          "specificity:low",
+          "reading-depth:full-read",
+          "source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035"
+        ],
+        "source_refs": [
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+        ],
+        "provenance": {
+          "literature_intake_fast_path": true,
+          "source_slug": "paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035",
+          "vault_wiki_paths": [
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+          ]
+        },
+        "search_terms": "Measurement-Induced Phase Transitions in the Dynamics of Entanglement unspecified_method method signal Measurement-Induced Phase Transitions in the Dynamics of Entanglement currently reads as `unspecified_method` with `low` specificity at `full_read` depth. Evidence: We define dynamical universality classes for many-body systems whose unitary evolution is punctuated by projective measurements. In cases where such measurements occur randomly at a finite rate $p$ for each degree of fre method literature-intake method-family:unspecified-method specificity:low reading-depth:full-read source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md  This staging entry came from the literature-intake fast path and still requires a later full audit.   paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 ",
+        "created_at": "2026-04-13T18:07:17+00:00",
+        "updated_at": "2026-04-13T18:07:17+00:00",
+        "score": 4.0,
+        "matched_terms": [
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:operator-scaling-dimensions-and-multifractality-at-measurement-induced-transitions-notation-studied",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "concept",
+        "candidate_unit_type": "concept",
+        "title": "Operator scaling dimensions and multifractality at measurement-induced transitions notation `studied`",
+        "summary": "In Operator scaling dimensions and multifractality at measurement-induced transitions, `studied` denotes various types of dynamics. Evidence: Repeated local measurements of quantum many body systems can induce a phase transition in their entanglement structure. These measurement-induced phase transitions (MIPTs) have been studied for various types of dynamics,",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--operator-scaling-dimensions-and-multifractality-at-measurement-induced-transitions-notation-studied.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "literature-intake",
+          "notation-binding",
+          "symbol:studied",
+          "reading-depth:abstract-only",
+          "source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035"
+        ],
+        "source_refs": [
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+        ],
+        "provenance": {
+          "literature_intake_fast_path": true,
+          "source_slug": "paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035",
+          "vault_wiki_paths": [
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+          ]
+        },
+        "search_terms": "Operator scaling dimensions and multifractality at measurement-induced transitions notation `studied` In Operator scaling dimensions and multifractality at measurement-induced transitions, `studied` denotes various types of dynamics. Evidence: Repeated local measurements of quantum many body systems can induce a phase transition in their entanglement structure. These measurement-induced phase transitions (MIPTs) have been studied for various types of dynamics, concept literature-intake notation-binding symbol:studied reading-depth:abstract-only source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md  This staging entry came from the literature-intake fast path and still requires a later full audit.   paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 ",
+        "created_at": "2026-04-13T18:07:17+00:00",
+        "updated_at": "2026-04-13T18:07:17+00:00",
+        "score": 4.5,
+        "matched_terms": [
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:operator-scaling-dimensions-and-multifractality-at-measurement-induced-transitions-unspecified-method-method-signal",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "method",
+        "candidate_unit_type": "method",
+        "title": "Operator scaling dimensions and multifractality at measurement-induced transitions unspecified_method method signal",
+        "summary": "Operator scaling dimensions and multifractality at measurement-induced transitions currently reads as `unspecified_method` with `low` specificity at `abstract_only` depth. Evidence: Repeated local measurements of quantum many body systems can induce a phase transition in their entanglement structure. These measurement-induced phase transitions (MIPTs) have been studied for various types of dynamics,",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--operator-scaling-dimensions-and-multifractality-at-measurement-induced-transitions-unspecified-method-method-signal.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "literature-intake",
+          "method-family:unspecified-method",
+          "specificity:low",
+          "reading-depth:abstract-only",
+          "source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035"
+        ],
+        "source_refs": [
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+        ],
+        "provenance": {
+          "literature_intake_fast_path": true,
+          "source_slug": "paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035",
+          "vault_wiki_paths": [
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+          ]
+        },
+        "search_terms": "Operator scaling dimensions and multifractality at measurement-induced transitions unspecified_method method signal Operator scaling dimensions and multifractality at measurement-induced transitions currently reads as `unspecified_method` with `low` specificity at `abstract_only` depth. Evidence: Repeated local measurements of quantum many body systems can induce a phase transition in their entanglement structure. These measurement-induced phase transitions (MIPTs) have been studied for various types of dynamics, method literature-intake method-family:unspecified-method specificity:low reading-depth:abstract-only source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md  This staging entry came from the literature-intake fast path and still requires a later full audit.   paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 ",
+        "created_at": "2026-04-13T18:07:17+00:00",
+        "updated_at": "2026-04-13T18:07:17+00:00",
+        "score": 4.0,
+        "matched_terms": [
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:quantum-fields-and-local-measurements-notation-considered",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "concept",
+        "candidate_unit_type": "concept",
+        "title": "Quantum fields and local measurements notation `considered`",
+        "summary": "In Quantum fields and local measurements, `considered` denotes quantum field theory on curved spacetimes. Evidence: The measurement process is considered for quantum field theory on curved spacetimes. Measurements are carried out on one QFT, the \"system\", using another, the \"probe\" via a dynamical coupling of \"system\" and \"probe\" in a",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--quantum-fields-and-local-measurements-notation-considered.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "literature-intake",
+          "notation-binding",
+          "symbol:considered",
+          "reading-depth:full-read",
+          "source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035"
+        ],
+        "source_refs": [
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+        ],
+        "provenance": {
+          "literature_intake_fast_path": true,
+          "source_slug": "paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035",
+          "vault_wiki_paths": [
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+          ]
+        },
+        "search_terms": "Quantum fields and local measurements notation `considered` In Quantum fields and local measurements, `considered` denotes quantum field theory on curved spacetimes. Evidence: The measurement process is considered for quantum field theory on curved spacetimes. Measurements are carried out on one QFT, the \"system\", using another, the \"probe\" via a dynamical coupling of \"system\" and \"probe\" in a concept literature-intake notation-binding symbol:considered reading-depth:full-read source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md  This staging entry came from the literature-intake fast path and still requires a later full audit.   paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 ",
+        "created_at": "2026-04-13T18:07:17+00:00",
+        "updated_at": "2026-04-13T18:07:17+00:00",
+        "score": 4.5,
+        "matched_terms": [
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:quantum-fields-and-local-measurements-unspecified-method-method-signal",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "method",
+        "candidate_unit_type": "method",
+        "title": "Quantum fields and local measurements unspecified_method method signal",
+        "summary": "Quantum fields and local measurements currently reads as `unspecified_method` with `low` specificity at `full_read` depth. Evidence: The measurement process is considered for quantum field theory on curved spacetimes. Measurements are carried out on one QFT, the \"system\", using another, the \"probe\" via a dynamical coupling of \"system\" and \"probe\" in a",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--quantum-fields-and-local-measurements-unspecified-method-method-signal.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "literature-intake",
+          "method-family:unspecified-method",
+          "specificity:low",
+          "reading-depth:full-read",
+          "source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035"
+        ],
+        "source_refs": [
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+        ],
+        "provenance": {
+          "literature_intake_fast_path": true,
+          "source_slug": "paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035",
+          "vault_wiki_paths": [
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+          ]
+        },
+        "search_terms": "Quantum fields and local measurements unspecified_method method signal Quantum fields and local measurements currently reads as `unspecified_method` with `low` specificity at `full_read` depth. Evidence: The measurement process is considered for quantum field theory on curved spacetimes. Measurements are carried out on one QFT, the \"system\", using another, the \"probe\" via a dynamical coupling of \"system\" and \"probe\" in a method literature-intake method-family:unspecified-method specificity:low reading-depth:full-read source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md  This staging entry came from the literature-intake fast path and still requires a later full audit.   paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 ",
+        "created_at": "2026-04-13T18:07:17+00:00",
+        "updated_at": "2026-04-13T18:07:17+00:00",
+        "score": 4.0,
+        "matched_terms": [
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      },
+      {
+        "entry_id": "staging:quantum-gravity-observables-observation-algebras-and-mathematical-structure-unspecified-method-method-signal",
+        "topic_slug": "measurement-induced-algebraic-transition-and-observer-algebras",
+        "entry_kind": "method",
+        "candidate_unit_type": "method",
+        "title": "Quantum gravity observables: observation, algebras, and mathematical structure unspecified_method method signal",
+        "summary": "Quantum gravity observables: observation, algebras, and mathematical structure currently reads as `unspecified_method` with `low` specificity at `abstract_only` depth. Evidence: The questions of describing observables and observation in quantum gravity appear to be centrally important to its physics. A relational approach holds significant promise, and a classification of different types of rela",
+        "trust_surface": "staging",
+        "status": "staged",
+        "authoritative": false,
+        "path": "canonical/staging/entries/staging--quantum-gravity-observables-observation-algebras-and-mathematical-structure-unspecified-method-method-signal.json",
+        "note_path": "",
+        "failure_kind": "",
+        "source_artifact_paths": [],
+        "tags": [
+          "literature-intake",
+          "method-family:unspecified-method",
+          "specificity:low",
+          "reading-depth:abstract-only",
+          "source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035"
+        ],
+        "source_refs": [
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+          "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+        ],
+        "provenance": {
+          "literature_intake_fast_path": true,
+          "source_slug": "paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035",
+          "vault_wiki_paths": [
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md",
+            "intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md"
+          ]
+        },
+        "search_terms": "Quantum gravity observables: observation, algebras, and mathematical structure unspecified_method method signal Quantum gravity observables: observation, algebras, and mathematical structure currently reads as `unspecified_method` with `low` specificity at `abstract_only` depth. Evidence: The questions of describing observables and observation in quantum gravity appear to be centrally important to its physics. A relational approach holds significant promise, and a classification of different types of rela method literature-intake method-family:unspecified-method specificity:low reading-depth:abstract-only source:paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/home.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/source-intake.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/open-questions.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/runtime-bridge.md intake/topics/measurement-induced-algebraic-transition-and-observer-algebras/vault/wiki/concept-graph/index.md  This staging entry came from the literature-intake fast path and still requires a later full audit.   paper-measurement-induced-entanglement-phase-transitions-in-variational-quantum-circuits-2111-08035 ",
+        "created_at": "2026-04-13T18:07:17+00:00",
+        "updated_at": "2026-04-13T18:07:17+00:00",
+        "score": 4.0,
+        "matched_terms": [
+          "bridge",
+          "induced",
+          "measurement",
+          "observer"
+        ]
+      }
+    ],
+    "expanded_edge_types": [
+      "supports",
+      "warned_by"
+    ],
+    "traversal_paths": [
+      {
+        "target_id": "topic_skill_projection:tfim-benchmark-first-route",
+        "path_depth": 1,
+        "path": [
+          {
+            "from_id": "bridge:tfim-toy-model-code-method-bridge",
+            "relation": "supports",
+            "to_id": "topic_skill_projection:tfim-benchmark-first-route"
+          }
+        ],
+        "path_relations": [
+          "supports"
+        ],
+        "path_node_ids": [
+          "bridge:tfim-toy-model-code-method-bridge",
+          "topic_skill_projection:tfim-benchmark-first-route"
+        ]
+      },
+      {
+        "target_id": "warning_note:tfim-dense-ed-finite-size-limit",
+        "path_depth": 2,
+        "path": [
+          {
+            "from_id": "bridge:tfim-toy-model-code-method-bridge",
+            "relation": "supports",
+            "to_id": "topic_skill_projection:tfim-benchmark-first-route"
+          },
+          {
+            "from_id": "topic_skill_projection:tfim-benchmark-first-route",
+            "relation": "warned_by",
+            "to_id": "warning_note:tfim-dense-ed-finite-size-limit"
+          }
+        ],
+        "path_relations": [
+          "supports",
+          "warned_by"
+        ],
+        "path_node_ids": [
+          "bridge:tfim-toy-model-code-method-bridge",
+          "topic_skill_projection:tfim-benchmark-first-route",
+          "warning_note:tfim-dense-ed-finite-size-limit"
+        ]
+      }
+    ],
+    "traversal_summary": {
+      "max_traversal_depth": 2,
+      "max_expanded_hits": 12,
+      "expanded_hit_count": 2,
+      "max_depth_reached": 2,
+      "edge_types_used": [
+        "supports",
+        "warned_by"
+      ]
+    },
+    "index_count": 15,
+    "edge_count": 15
+  }
+}

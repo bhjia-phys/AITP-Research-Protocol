@@ -3,22 +3,21 @@ gsd_state_version: 1.0
 milestone: v2.1
 milestone_name: L2 Real-Topic Relevance Hardening
 status: milestone_active
-stopped_at: "Phase 175.1 complete; Phase 175.2 next"
-last_updated: "2026-04-14T04:58:00+08:00"
+stopped_at: "Phase 175.2 complete; milestone lifecycle next"
+last_updated: "2026-04-14T05:01:46+08:00"
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
 
 ## Current Position
 
-Status: milestone `v2.1` `L2 Real-Topic Relevance Hardening` is active. The
-next step is hardening fresh-topic `L2` staging provenance and consultation
-relevance before widening research claims again.
+Status: milestone `v2.1` `L2 Real-Topic Relevance Hardening` has all roadmap
+phases closed. The next step is milestone lifecycle closure and archiving.
 
 **Why this milestone exists:**
 
@@ -43,10 +42,9 @@ retrieval surfaces before widening back out to more modes and topic paradigms.
   rows and preserving per-entry source provenance
 - Phase `175.1` raised topic-local staged relevance so explicit fresh-topic
   consultation can surface the local staged row on the primary surface
-- `v2.1` now narrows to the final proof slice: one multi-paper real-topic
-  acceptance lane for provenance and relevance ordering
-- immediate next step: start Phase `175.2` and replay the bounded multi-paper
-  real-topic proof package
+- Phase `175.2` now closes the multi-paper real-topic proof lane with durable
+  replay receipts for provenance correctness and local consultation ordering
+- immediate next step: audit and archive milestone `v2.1`
 
 ## Accumulated Context
 

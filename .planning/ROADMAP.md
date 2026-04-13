@@ -2,13 +2,13 @@
 
 ## Result
 
-Milestone in progress.
+Milestone phase work complete. Lifecycle closure is next.
 
 ## Phases
 
 - [x] **Phase 175: Staging Provenance And Noise Suppression** *(Axis 1 + Axis 3)*
 - [x] **Phase 175.1: Topic-Local Consultation Relevance Ordering** *(Axis 1 + Axis 2)*
-- [ ] **Phase 175.2: Multi-Paper Real-Topic L2 Relevance Proof** *(Axis 4 + Axis 5)*
+- [x] **Phase 175.2: Multi-Paper Real-Topic L2 Relevance Proof** *(Axis 4 + Axis 5)*
 
 ## Target Outcome
 
@@ -24,7 +24,7 @@ Milestone in progress.
 
 ## Next Step
 
-Start Phase 175.2.
+Run milestone audit / archive for `v2.1`.
 
 ### Phase 175: Staging Provenance And Noise Suppression
 
@@ -83,4 +83,4 @@ non-claims.
 
 Plans:
 
-- [ ] `175.2-01` Replay the multi-paper real-topic proof and close the milestone honestly
+- [x] `175.2-01` Replay the multi-paper real-topic proof and close the milestone honestly
