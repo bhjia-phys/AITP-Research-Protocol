@@ -53,7 +53,8 @@
         "equivalence_map",
         "symbol_binding",
         "validation_pattern",
-        "warning_note"
+        "warning_note",
+        "negative_result"
       ]
     },
     "title": {

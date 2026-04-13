@@ -127,24 +127,41 @@ class AITPCLIE2ETests(unittest.TestCase):
             (self.kernel_root / "canonical" / "staging" / "entries" / "staging--portability-route-failed.json").exists()
         )
 
-    def test_hello_cli_json_path_creates_demo_topic_and_status(self) -> None:
+    def test_hello_cli_json_path_returns_welcome_when_no_topic_exists(self) -> None:
         self._prepare_first_run_kernel()
 
         completed = self._run_cli(
             "hello",
-            "--topic",
-            "Demo topic",
-            "--question",
-            "What is the first bounded question?",
             "--json",
         )
         self.assertEqual(completed.returncode, 0, msg=completed.stderr)
         payload = json.loads(completed.stdout)
-        self.assertEqual(payload["topic_slug"], "demo-topic")
+        self.assertEqual(payload["mode"], "welcome")
         self.assertTrue(str(payload["install"]["overall_status"]))
-        self.assertEqual(payload["topic"]["topic_slug"], "demo-topic")
+        self.assertIn("aitp bootstrap", payload["suggested_command"])
+
+    def test_hello_cli_json_path_uses_current_topic_when_available(self) -> None:
+        self._prepare_first_run_kernel()
+
+        bootstrap = self._run_cli(
+            "bootstrap",
+            "--topic",
+            "Demo topic",
+            "--statement",
+            "What is the first bounded question?",
+            "--json",
+        )
+        self.assertEqual(bootstrap.returncode, 0, msg=bootstrap.stderr)
+
+        completed = self._run_cli(
+            "hello",
+            "--json",
+        )
+        self.assertEqual(completed.returncode, 0, msg=completed.stderr)
+        payload = json.loads(completed.stdout)
+        self.assertEqual(payload["mode"], "current_topic")
+        self.assertEqual(payload["topic_slug"], "demo-topic")
         self.assertEqual(payload["status"]["topic_slug"], "demo-topic")
-        self.assertTrue(Path(payload["topic"]["files"]["topic_state"]).exists())
         self.assertTrue(Path(payload["status"]["runtime_protocol_note_path"]).exists())
 
     def test_help_cli_human_paths(self) -> None:
@@ -204,6 +221,7 @@ class AITPCLIE2ETests(unittest.TestCase):
         self.assertEqual(topic_slug, "jones-chapter-4-finite-dimensional-backbone")
         self.assertTrue(Path(bootstrap_payload["files"]["topic_state"]).exists())
         self.assertTrue(Path(bootstrap_payload["files"]["runtime_protocol"]).exists())
+        self.assertIn("next_action_hint", bootstrap_payload)
 
         loop = self._run_cli(
             "loop",

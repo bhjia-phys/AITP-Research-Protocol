@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .runtime_projection_handler import append_transition_history
+from .runtime_schema_promotion_bridge import collect_runtime_schema_context
 from .tpkn_bridge import (
     build_supporting_question_oracle_unit,
     build_supporting_regression_question_unit,
@@ -197,6 +198,12 @@ def _resolve_promotion_context(
             list(candidate.get("promotion_blockers") or []) or bool(candidate.get("cited_recovery_required"))
         ),
     }
+    runtime_schema_context = collect_runtime_schema_context(
+        self,
+        topic_slug=topic_slug,
+        run_id=resolved_run_id,
+        candidate_id=candidate_id,
+    )
 
     return {
         "gate_payload": gate_payload,
@@ -226,6 +233,7 @@ def _resolve_promotion_context(
         "packet_paths": packet_paths,
         "review_artifacts_payload": review_artifacts_payload,
         "regression_summary": regression_summary,
+        "runtime_schema_context": runtime_schema_context,
         "coverage_summary": coverage_summary,
         "consensus_summary": consensus_summary,
     }

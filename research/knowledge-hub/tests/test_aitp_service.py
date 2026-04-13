@@ -7719,6 +7719,50 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(gate_payload["approved_by"], "aitp-cli")
         self.assertEqual(gate_payload["approval_change_kind"], "approved_as_submitted")
 
+    def test_request_promotion_includes_runtime_schema_context_when_runtime_packets_exist(self) -> None:
+        self._write_runtime_state()
+        self._write_candidate()
+        self.service.audit_theory_coverage(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+            source_sections=["sec:intro", "sec:result"],
+            covered_sections=["sec:intro", "sec:result"],
+            equation_labels=["eq:1"],
+            notation_bindings=[{"symbol": "H", "meaning": "Hamiltonian"}],
+            derivation_nodes=["def:h", "eq:1"],
+            agent_votes=[{"role": "skeptic", "verdict": "no_major_gap", "notes": ""}],
+            consensus_status="unanimous",
+            critical_unit_recall=1.0,
+            missing_anchor_count=0,
+            skeptic_major_gap_count=0,
+            supporting_regression_question_ids=["regression_question:demo-definition"],
+            supporting_oracle_ids=["question_oracle:demo-definition"],
+            supporting_regression_run_ids=["regression_run:demo-definition"],
+        )
+        self.service.prepare_statement_compilation(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+        )
+        self.service.prepare_lean_bridge(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+        )
+
+        requested = self.service.request_promotion(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+            backend_id="backend:theoretical-physics-knowledge-network",
+        )
+
+        self.assertEqual(
+            set(requested["runtime_schema_types"]),
+            {"statement-compilation-packet", "proof-repair-plan", "lean-ready-packet"},
+        )
+        self.assertTrue(requested["runtime_schema_context"]["all_valid"])
+        self.assertIn("lean-ready-packet", requested["runtime_schema_paths"])
+        self.assertIn("proof-repair-plan", requested["runtime_schema_paths"])
+        self.assertIn("statement-compilation-packet", requested["runtime_schema_paths"])
+
     def test_approve_promotion_can_record_human_modifications(self) -> None:
         self._write_runtime_state()
         self._write_candidate()
@@ -8118,6 +8162,54 @@ class AITPServiceTests(unittest.TestCase):
             if line.strip()
         ]
         self.assertEqual(candidate_rows[0]["status"], "auto_promoted")
+
+    def test_auto_promote_candidate_rejects_invalid_runtime_schema_artifact(self) -> None:
+        self._write_runtime_state()
+        self._write_candidate()
+        self._write_tpkn_backend_card(allows_auto=True)
+        tpkn_root = self._write_fake_tpkn_repo()
+        self.service.audit_theory_coverage(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+            source_sections=["sec:intro", "sec:result"],
+            covered_sections=["sec:intro", "sec:result"],
+            equation_labels=["eq:1"],
+            notation_bindings=[{"symbol": "H", "meaning": "Hamiltonian"}],
+            derivation_nodes=["def:h", "eq:1"],
+            agent_votes=[{"role": "skeptic", "verdict": "no_major_gap", "notes": ""}],
+            consensus_status="unanimous",
+            critical_unit_recall=1.0,
+            missing_anchor_count=0,
+            skeptic_major_gap_count=0,
+            supporting_regression_question_ids=["regression_question:demo-definition"],
+            supporting_oracle_ids=["question_oracle:demo-definition"],
+            supporting_regression_run_ids=["regression_run:demo-definition"],
+        )
+        self.service.prepare_statement_compilation(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+        )
+        self.service.prepare_lean_bridge(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+        )
+        lean_packet_path = self.service._lean_bridge_packet_paths(
+            "demo-topic",
+            "2026-03-13-demo",
+            "candidate:demo-candidate",
+        )["json"]
+        lean_payload = json.loads(lean_packet_path.read_text(encoding="utf-8"))
+        lean_payload.pop("declaration_name")
+        lean_packet_path.write_text(json.dumps(lean_payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+
+        with self.assertRaisesRegex(PermissionError, "runtime schema"):
+            self.service.auto_promote_candidate(
+                topic_slug="demo-topic",
+                candidate_id="candidate:demo-candidate",
+                target_backend_root=str(tpkn_root),
+                domain="demo-domain",
+                subdomain="demo-subdomain",
+            )
 
     def test_audit_formal_theory_writes_review_artifacts_and_updates_candidate(self) -> None:
         self._write_runtime_state()

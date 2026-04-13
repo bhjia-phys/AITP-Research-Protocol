@@ -1,0 +1,199 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aitp.local/schemas/lean-ready-packet.schema.json",
+  "title": "AITP Lean Ready Packet",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "bridge_version",
+    "topic_slug",
+    "run_id",
+    "candidate_id",
+    "candidate_type",
+    "status",
+    "namespace",
+    "declaration_kind",
+    "declaration_name",
+    "statement_text",
+    "dependency_ids",
+    "equation_labels",
+    "regression_gate_status",
+    "notation_bindings",
+    "proof_obligations",
+    "proof_obligation_count",
+    "proof_obligations_path",
+    "proof_state_path",
+    "statement_compilation_path",
+    "proof_repair_plan_path",
+    "theory_packet_refs",
+    "lean_skeleton_lines",
+    "updated_at",
+    "updated_by"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://aitp.local/schemas/lean-ready-packet.schema.json"
+    },
+    "bridge_version": {
+      "const": 1
+    },
+    "topic_slug": {
+      "type": "string",
+      "minLength": 1
+    },
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "candidate_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "candidate_type": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ready",
+        "needs_refinement"
+      ]
+    },
+    "namespace": {
+      "type": "string",
+      "minLength": 1
+    },
+    "declaration_kind": {
+      "type": "string",
+      "enum": [
+        "def",
+        "axiom",
+        "theorem",
+        "lemma"
+      ]
+    },
+    "declaration_name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "statement_text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dependency_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "equation_labels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "regression_gate_status": {
+      "type": "string",
+      "minLength": 1
+    },
+    "notation_bindings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "symbol",
+          "meaning"
+        ],
+        "properties": {
+          "symbol": {
+            "type": "string",
+            "minLength": 1
+          },
+          "meaning": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "proof_obligations": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "proof_obligation_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "proof_obligations_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "proof_state_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "statement_compilation_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "proof_repair_plan_path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "theory_packet_refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "coverage_ledger",
+        "structure_map",
+        "notation_table",
+        "derivation_graph",
+        "regression_gate"
+      ],
+      "properties": {
+        "coverage_ledger": {
+          "type": "string",
+          "minLength": 1
+        },
+        "structure_map": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notation_table": {
+          "type": "string",
+          "minLength": 1
+        },
+        "derivation_graph": {
+          "type": "string",
+          "minLength": 1
+        },
+        "regression_gate": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "lean_skeleton_lines": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_by": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

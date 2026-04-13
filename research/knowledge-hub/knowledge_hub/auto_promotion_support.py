@@ -5,6 +5,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .runtime_schema_promotion_bridge import collect_runtime_schema_context
+
 
 def _read_json(path: Path) -> dict[str, Any] | None:
     if not path.exists():
@@ -102,6 +104,14 @@ def _validate_auto_promotion(
             raise FileNotFoundError("Missing theory packet artifacts for auto promotion: formal_theory_review")
         if str(formal_theory_review.get("overall_status") or "") != "ready":
             raise PermissionError("Auto promotion requires a ready formal_theory_review.json status.")
+    runtime_schema_context = collect_runtime_schema_context(
+        self,
+        topic_slug=str(candidate.get("topic_slug") or ""),
+        run_id=str(candidate.get("run_id") or ""),
+        candidate_id=str(candidate.get("candidate_id") or ""),
+    )
+    if not runtime_schema_context["all_valid"]:
+        raise PermissionError("Auto promotion is blocked by invalid runtime schema artifacts.")
 
 
 def _build_gate_payload(

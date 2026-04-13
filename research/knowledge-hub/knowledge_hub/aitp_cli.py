@@ -325,6 +325,7 @@ def build_parser() -> argparse.ArgumentParser:
     status = subparsers.add_parser("status", help="Show topic shell status and active research contract")
     status.add_argument("--topic-slug", required=True)
     status.add_argument("--updated-by", default="aitp-cli")
+    status.add_argument("--verbose", action="store_true")
     status.add_argument("--full", action="store_true")
     status.add_argument("--json", action="store_true")
 
@@ -1032,6 +1033,8 @@ def _main_with_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -
                 _emit_text(render_topic_status_payload(payload))
             else:
                 _emit_text(rendered)
+        elif args.verbose:
+            _emit_text(render_topic_status_payload(payload, tier="verbose"))
         else:
             _emit_text(render_topic_status_payload(payload))
         return 0

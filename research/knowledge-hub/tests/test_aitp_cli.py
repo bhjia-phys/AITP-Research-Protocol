@@ -105,6 +105,8 @@ class AITPCLITests(unittest.TestCase):
 
         status_args = parser.parse_args(["status", "--topic-slug", "demo-topic"])
         self.assertEqual(status_args.command, "status")
+        status_verbose_args = parser.parse_args(["status", "--topic-slug", "demo-topic", "--verbose"])
+        self.assertTrue(status_verbose_args.verbose)
         status_full_args = parser.parse_args(["status", "--topic-slug", "demo-topic", "--full"])
         self.assertTrue(status_full_args.full)
 
@@ -1752,12 +1754,17 @@ class AITPCLITests(unittest.TestCase):
                 "current_stage": "L1",
                 "research_mode": "formal_derivation",
                 "selected_action_summary": "Inspect the graph export before continuing.",
+                "next_action_hint": "Run 'aitp next --topic-slug demo-topic' to inspect the bounded action queue.",
                 "runtime_protocol_note_path": str(runtime_root / "runtime_protocol.generated.md"),
                 "must_read_now": [
                     {"path": "runtime/topics/demo-topic/topic_dashboard.md"},
                     {"path": "runtime/topics/demo-topic/research_question.contract.md"},
                 ],
                 "open_gap_summary": {"status": "clear"},
+                "promotion_readiness": {"status": "not_requested"},
+                "topic_completion": {"status": "not_assessed"},
+                "statement_compilation": {"status": "empty"},
+                "lean_bridge": {"status": "empty"},
                 "primary_runtime_surfaces": {
                     "primary": {
                         "runtime_human": "runtime/topics/demo-topic/topic_dashboard.md",
@@ -1788,6 +1795,11 @@ class AITPCLITests(unittest.TestCase):
                     with redirect_stdout(status_stream):
                         status_exit = aitp_cli.main()
 
+                verbose_stream = io.StringIO()
+                with patch.object(sys, "argv", ["aitp", "status", "--topic-slug", "demo-topic", "--verbose"]):
+                    with redirect_stdout(verbose_stream):
+                        verbose_exit = aitp_cli.main()
+
                 next_stream = io.StringIO()
                 with patch.object(sys, "argv", ["aitp", "next", "--topic-slug", "demo-topic"]):
                     with redirect_stdout(next_stream):
@@ -1799,17 +1811,24 @@ class AITPCLITests(unittest.TestCase):
                         full_exit = aitp_cli.main()
 
         self.assertEqual(status_exit, 0)
+        self.assertEqual(verbose_exit, 0)
         self.assertEqual(next_exit, 0)
         self.assertEqual(full_exit, 0)
         status_output = status_stream.getvalue()
+        verbose_output = verbose_stream.getvalue()
         next_output = next_stream.getvalue()
         full_output = full_stream.getvalue()
         self.assertIn("AITP Status", status_output)
         self.assertIn("Topic: Demo Topic", status_output)
+        self.assertIn("Topic slug: demo-topic", status_output)
         self.assertIn("Stage: L1", status_output)
-        self.assertIn("Now: Inspect the graph export before continuing.", status_output)
-        self.assertIn("Blocked: none", status_output)
+        self.assertIn("Status: active", status_output)
+        self.assertIn("Next: Inspect the graph export before continuing.", status_output)
         self.assertIn("Machine view: aitp status --topic-slug demo-topic --json", status_output)
+        self.assertIn("Key sections", verbose_output)
+        self.assertIn("Mode: formal_derivation", verbose_output)
+        self.assertIn("Promotion readiness: not_requested", verbose_output)
+        self.assertIn("Topic completion: not_assessed", verbose_output)
         self.assertIn("AITP Next", next_output)
         self.assertIn("Do: Inspect the graph export before continuing.", next_output)
         self.assertIn("Read now: runtime/topics/demo-topic/topic_dashboard.md", next_output)

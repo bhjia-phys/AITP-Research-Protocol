@@ -230,27 +230,55 @@ def _looks_like_doctor_payload(payload: Any) -> bool:
     return isinstance(payload, dict) and "overall_status" in payload and "runtime_support_matrix" in payload and "package" in payload
 
 
-def render_topic_status_payload(payload: dict[str, Any]) -> str:
+def _topic_status_word(payload: dict[str, Any]) -> str:
+    completion_status = str(((payload.get("topic_completion") or {}).get("status")) or "").strip().lower()
+    gap_status = str(((payload.get("open_gap_summary") or {}).get("status")) or "").strip().lower()
+    stage = str(payload.get("current_stage") or "").strip().lower()
+    if completion_status in {"promoted", "complete", "completed"} or stage in {"l5", "complete", "completed"}:
+        return "complete"
+    if gap_status and gap_status not in {"clear", "unknown", "none", "not_applicable"}:
+        return "blocked"
+    return "active"
+
+
+def render_topic_status_payload(payload: dict[str, Any], *, tier: str = "summary") -> str:
     topic = str(payload.get("title") or payload.get("topic_slug") or "(missing)")
     stage = str(payload.get("current_stage") or "(missing)")
     mode = str(payload.get("research_mode") or "(missing)")
-    current = str(payload.get("selected_action_summary") or "(no selected action)")
+    current = str(payload.get("selected_action_summary") or payload.get("next_action_hint") or "(no selected action)")
+    next_action_hint = str(payload.get("next_action_hint") or "").strip()
     must_read_now = list(payload.get("must_read_now") or [])
     read_now = str((must_read_now[0] or {}).get("path") or "(none)") if must_read_now else "(none)"
     gap_status = str(((payload.get("open_gap_summary") or {}).get("status")) or "").strip() or "unknown"
     blocked = "none" if gap_status in {"clear", "unknown"} else gap_status.replace("_", " ")
     topic_slug = str(payload.get("topic_slug") or "").strip() or "<topic_slug>"
+    status_word = _topic_status_word(payload)
     lines = [
         "AITP Status",
         "",
         f"Topic: {topic}",
+        f"Topic slug: {topic_slug}",
         f"Stage: {stage}",
-        f"Mode: {mode}",
-        f"Now: {current}",
-        f"Read now: {read_now}",
-        f"Blocked: {blocked}",
+        f"Status: {status_word}",
+        f"Next: {current}",
         f"Machine view: aitp status --topic-slug {topic_slug} --json",
     ]
+    if tier == "verbose":
+        lines.extend(
+            [
+                "",
+                "Key sections",
+                "",
+                f"Mode: {mode}",
+                f"Read now: {read_now}",
+                f"Blocked: {blocked}",
+                f"Hint: {next_action_hint or '(none)'}",
+                f"Promotion readiness: {str(((payload.get('promotion_readiness') or {}).get('status')) or '(missing)')}",
+                f"Topic completion: {str(((payload.get('topic_completion') or {}).get('status')) or '(missing)')}",
+                f"Statement compilation: {str(((payload.get('statement_compilation') or {}).get('status')) or '(missing)')}",
+                f"Lean bridge: {str(((payload.get('lean_bridge') or {}).get('status')) or '(missing)')}",
+            ]
+        )
     return "\n".join(lines).rstrip()
 
 
@@ -274,20 +302,33 @@ def render_topic_next_payload(payload: dict[str, Any]) -> str:
 
 
 def render_hello_payload(payload: dict[str, Any]) -> str:
+    mode = str(payload.get("mode") or "welcome")
     topic_slug = str(payload.get("topic_slug") or "").strip() or "<topic_slug>"
     install_status = str(((payload.get("install") or {}).get("overall_status")) or "unknown")
-    topic = payload.get("topic") or {}
     status = payload.get("status") or {}
-    title = str((topic.get("topic_state") or {}).get("topic_slug") or topic_slug).replace("-", " ").strip().title() or topic_slug
-    next_step = str(status.get("selected_action_summary") or "(missing)")
+    title = str(payload.get("topic_title") or topic_slug).replace("-", " ").strip().title() or topic_slug
+    next_step = str(status.get("selected_action_summary") or payload.get("suggested_command") or "(missing)")
+    if mode == "current_topic":
+        lines = [
+            "AITP Hello",
+            "",
+            f"Install check: {install_status}",
+            f"Topic: {title}",
+            f"Topic slug: {topic_slug}",
+            f"Next step: {next_step}",
+            f"Docs: {str(payload.get('docs_hint') or 'research/knowledge-hub/README.md')}",
+            "Machine view: aitp hello --json",
+        ]
+        return "\n".join(lines).rstrip()
     lines = [
         "AITP Hello",
         "",
         f"Install check: {install_status}",
-        f"Topic: {title}",
-        f"Topic slug: {topic_slug}",
-        f"Next step: {next_step}",
-        f"Machine view: aitp hello --topic \"{str(payload.get('requested_topic') or 'Demo topic')}\" --json",
+        "Status: no active topic",
+        "AITP helps turn one bounded research topic into an auditable runtime loop.",
+        f"First step: {next_step}",
+        f"Docs: {str(payload.get('docs_hint') or 'research/knowledge-hub/README.md')}",
+        "Machine view: aitp hello --json",
     ]
     return "\n".join(lines).rstrip()
 

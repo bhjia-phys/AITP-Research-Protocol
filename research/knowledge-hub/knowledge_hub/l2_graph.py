@@ -24,6 +24,7 @@ CANONICAL_DIR_BY_TYPE = {
     "example_card": "examples",
     "validation_pattern": "validation-patterns",
     "warning_note": "warning-notes",
+    "negative_result": "negative-results",
 }
 
 

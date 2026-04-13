@@ -5987,26 +5987,33 @@ class AITPService:
         local_note_paths: list[str] | None = None,
     ) -> dict[str, Any]:
         install_payload = self.ensure_cli_installed()
-        topic_payload = self.new_topic(
-            topic=topic,
-            question=question,
-            mode=mode,
-            updated_by=updated_by,
-            arxiv_ids=arxiv_ids,
-            local_note_paths=local_note_paths,
-            human_request=question,
-        )
-        status_payload = self.topic_status(
-            topic_slug=topic_payload["topic_slug"],
-            updated_by=updated_by,
-        )
+        try:
+            current_topic = self.get_current_topic_memory()
+        except FileNotFoundError:
+            current_topic = {}
+        current_topic_slug = str(current_topic.get("topic_slug") or "").strip()
+        if current_topic_slug:
+            status_payload = self.topic_status(
+                topic_slug=current_topic_slug,
+                updated_by=updated_by,
+            )
+            return {
+                "mode": "current_topic",
+                "topic_slug": current_topic_slug,
+                "topic_title": str(current_topic.get("title") or current_topic_slug),
+                "install": install_payload,
+                "current_topic_memory": current_topic,
+                "status": status_payload,
+                "docs_hint": "research/knowledge-hub/README.md",
+            }
         return {
-            "topic_slug": topic_payload["topic_slug"],
+            "mode": "welcome",
+            "topic_slug": "",
             "requested_topic": topic,
             "requested_question": question,
             "install": install_payload,
-            "topic": topic_payload,
-            "status": status_payload,
+            "suggested_command": f'aitp bootstrap --topic "{topic}" --statement "{question}"',
+            "docs_hint": "research/knowledge-hub/README.md",
         }
 
     def refresh_runtime_context(
@@ -6077,6 +6084,7 @@ class AITPService:
             "selected_action_id": minimal.get("selected_action_id"),
             "selected_action_type": minimal.get("selected_action_type"),
             "selected_action_summary": minimal.get("selected_action_summary"),
+            "next_action_hint": str(topic_state.get("next_action_hint") or ""),
             "runtime_protocol_path": protocol_paths["runtime_protocol_path"],
             "runtime_protocol_note_path": protocol_paths["runtime_protocol_note_path"],
             "primary_runtime_surfaces": runtime_surface_roles(self, topic_slug),
@@ -6542,6 +6550,13 @@ class AITPService:
             updated_by=updated_by,
             human_request=human_request,
         )
+        topic_state = self.get_runtime_state(resolved_topic_slug)
+        next_action_hint = (
+            f"Run 'aitp status --topic-slug {resolved_topic_slug}' to inspect the topic, "
+            f"or 'aitp loop --topic-slug {resolved_topic_slug}' to continue the bounded loop."
+        )
+        topic_state["next_action_hint"] = next_action_hint
+        write_json(runtime_root / "topic_state.json", topic_state)
         return {
             "topic_slug": resolved_topic_slug,
             "command": command,
@@ -6574,7 +6589,8 @@ class AITPService:
                 "promotion_readiness": str(self._promotion_readiness_path(resolved_topic_slug)),
                 "gap_map": str(self._gap_map_path(resolved_topic_slug)),
             },
-            "topic_state": self.get_runtime_state(resolved_topic_slug),
+            "topic_state": topic_state,
+            "next_action_hint": next_action_hint,
             "conformance_state": read_json(runtime_root / "conformance_state.json"),
         }
 
