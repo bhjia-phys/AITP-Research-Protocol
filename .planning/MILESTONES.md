@@ -1,5 +1,27 @@
 # Milestones
 
+## v2.1 L2 Real-Topic Relevance Hardening (Active)
+
+**Phases completed:** 0 / 3 phases, 0 / 3 plans
+
+**Milestone goal:**
+
+- harden fresh-topic `L2` staging so reusable knowledge rows carry clean
+  content and correct source provenance
+
+- improve consultation ranking so fresh real-topic local relevance can beat
+  unrelated canonical carryover when the query clearly targets the new topic
+
+- close with a replayable multi-paper acceptance proof for provenance and
+  retrieval ordering
+
+**Key accomplishments:**
+
+- Phase `175` now suppresses obvious staging noise and preserves true per-entry
+  source provenance on the literature fast path
+
+---
+
 ## v2.0 Three-Lane Real-Topic Natural-Language E2E (Shipped: 2026-04-14)
 
 **Phases completed:** 3 / 3 phases, 3 / 3 plans
@@ -642,10 +664,10 @@ Completed milestone chain:
 
 ## Current Active Milestone
 
-- none
+- `v2.1` `L2 Real-Topic Relevance Hardening`
 
 ## Current Status
 
 - `v1.36` through `v2.0` are closed and archived or ready for archive lookup
-- the repository is between milestones after archiving `v2.0`
-- next command boundary: `$gsd-new-milestone`
+- active work has moved into milestone `v2.1`
+- next command boundary: discuss or plan Phase `175`

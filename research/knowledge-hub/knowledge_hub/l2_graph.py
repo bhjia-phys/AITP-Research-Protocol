@@ -499,6 +499,8 @@ def stage_l2_insight(
                     failure_kind or "",
                     failed_route or "",
                     next_implication or "",
+                    str((provenance or {}).get("source_id") or ""),
+                    str((provenance or {}).get("source_title") or ""),
                     str((provenance or {}).get("source_slug") or ""),
                     " ".join(str(item) for item in ((provenance or {}).get("vault_wiki_paths") or [])),
                 ]

@@ -141,6 +141,52 @@ class LiteratureIntakeSupportTests(unittest.TestCase):
         manifest = materialize_workspace_staging_manifest(self.kernel_root)["payload"]
         self.assertEqual(manifest["summary"]["counts_by_kind"]["physical_picture"], 1)
 
+    def test_stage_literature_units_preserves_per_entry_source_provenance(self) -> None:
+        payload = stage_literature_units(
+            self.kernel_root,
+            topic_slug="demo-topic",
+            source_slug="batch-source",
+            candidate_units=[
+                {
+                    "candidate_unit_type": "concept",
+                    "title": "Paper A regime signal",
+                    "summary": "A bounded regime signal from paper A.",
+                    "source_refs": ["source:paper-a"],
+                    "provenance": {
+                        "source_id": "source:paper-a",
+                        "source_slug": "paper-a",
+                        "source_title": "Paper A",
+                    },
+                },
+                {
+                    "candidate_unit_type": "concept",
+                    "title": "Paper B regime signal",
+                    "summary": "A bounded regime signal from paper B.",
+                    "source_refs": ["source:paper-b"],
+                    "provenance": {
+                        "source_id": "source:paper-b",
+                        "source_slug": "paper-b",
+                        "source_title": "Paper B",
+                    },
+                },
+            ],
+            created_by="test-suite",
+        )
+
+        entry_by_title = {entry["title"]: entry for entry in payload["entries"]}
+        paper_a = entry_by_title["Paper A regime signal"]
+        paper_b = entry_by_title["Paper B regime signal"]
+
+        self.assertIn("source:paper-a", paper_a["tags"])
+        self.assertNotIn("source:paper-b", paper_a["tags"])
+        self.assertEqual(paper_a["provenance"]["source_id"], "source:paper-a")
+        self.assertEqual(paper_a["provenance"]["source_slug"], "paper-a")
+
+        self.assertIn("source:paper-b", paper_b["tags"])
+        self.assertNotIn("source:paper-a", paper_b["tags"])
+        self.assertEqual(paper_b["provenance"]["source_id"], "source:paper-b")
+        self.assertEqual(paper_b["provenance"]["source_slug"], "paper-b")
+
     def test_workspace_manifest_derives_kind_from_schema_backed_staging_entries(self) -> None:
         stage_literature_units(
             self.kernel_root,
@@ -389,6 +435,82 @@ class LiteratureIntakeSupportTests(unittest.TestCase):
         self.assertTrue(any("Graph diff surfaced" in row["title"] for row in payload["candidate_units"]))
         self.assertTrue(any("Graph diff retired" in row["title"] for row in payload["candidate_units"]))
         self.assertTrue(any("graph-diff" in (row.get("tags") or []) for row in payload["candidate_units"]))
+
+    def test_derive_literature_stage_payload_skips_generic_notation_and_weak_method_rows(self) -> None:
+        payload = derive_literature_stage_payload_from_runtime_payload(
+            topic_slug="demo-topic",
+            runtime_payload={
+                "active_research_contract": {
+                    "l1_source_intake": {
+                        "assumption_rows": [],
+                        "regime_rows": [],
+                        "reading_depth_rows": [],
+                        "method_specificity_rows": [
+                            {
+                                "source_id": "paper:noise-paper",
+                                "source_title": "Noise paper",
+                                "source_type": "paper",
+                                "method_family": "unspecified_method",
+                                "specificity_tier": "surface_hint",
+                                "reading_depth": "preview_only",
+                                "evidence_excerpt": "We studied several cases.",
+                            },
+                            {
+                                "source_id": "paper:real-paper",
+                                "source_title": "Real paper",
+                                "source_type": "paper",
+                                "method_family": "tensor_network",
+                                "specificity_tier": "explicit",
+                                "reading_depth": "full_read",
+                                "evidence_excerpt": "We use a tensor-network transfer-matrix construction.",
+                            },
+                        ],
+                        "notation_rows": [
+                            {
+                                "source_id": "paper:noise-paper",
+                                "source_title": "Noise paper",
+                                "source_type": "paper",
+                                "symbol": "classes",
+                                "meaning": "classes",
+                                "reading_depth": "preview_only",
+                                "evidence_excerpt": "The classes considered are broad.",
+                            },
+                            {
+                                "source_id": "paper:real-paper",
+                                "source_title": "Real paper",
+                                "source_type": "paper",
+                                "symbol": "K",
+                                "meaning": "the transfer kernel",
+                                "reading_depth": "full_read",
+                                "evidence_excerpt": "K denotes the transfer kernel.",
+                            },
+                        ],
+                        "contradiction_candidates": [],
+                        "notation_tension_candidates": [],
+                        "concept_graph": {
+                            "nodes": [],
+                            "edges": [],
+                            "hyperedges": [],
+                            "communities": [],
+                            "god_nodes": [],
+                        },
+                    },
+                    "l1_vault": {
+                        "wiki": {
+                            "page_paths": [
+                                "intake/topics/demo-topic/vault/wiki/source-intake.md",
+                            ]
+                        }
+                    },
+                }
+            },
+        )
+
+        titles = [row["title"] for row in payload["candidate_units"]]
+        self.assertIn("Real paper tensor_network method signal", titles)
+        self.assertIn("Real paper notation `K`", titles)
+        self.assertNotIn("Noise paper unspecified_method method signal", titles)
+        self.assertNotIn("Noise paper notation `classes`", titles)
 
     def test_derive_literature_stage_payload_adds_shared_community_bridge_units(self) -> None:
         payload = derive_literature_stage_payload_from_runtime_payload(

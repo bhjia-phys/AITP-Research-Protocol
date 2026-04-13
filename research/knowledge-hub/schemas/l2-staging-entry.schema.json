@@ -116,6 +116,12 @@
         "literature_intake_fast_path": {
           "type": "boolean"
         },
+        "source_id": {
+          "type": "string"
+        },
+        "source_title": {
+          "type": "string"
+        },
         "source_slug": {
           "type": "string"
         },

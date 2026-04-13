@@ -1,24 +1,24 @@
 ---
 gsd_state_version: 1.0
-milestone: none
-milestone_name: none
-status: between_milestones
-stopped_at: "Milestone v2.0 archived; next boundary is planning the next milestone"
-last_updated: "2026-04-14T04:30:00+08:00"
+milestone: v2.1
+milestone_name: L2 Real-Topic Relevance Hardening
+status: milestone_active
+stopped_at: "Phase 175 complete; Phase 175.1 next"
+last_updated: "2026-04-14T04:47:00+08:00"
 progress:
-  total_phases: 0
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_phases: 3
+  completed_phases: 1
+  total_plans: 3
+  completed_plans: 1
 ---
 
 # Project State
 
 ## Current Position
 
-Status: the repository is now between milestones after archiving `v2.0`
-`Three-Lane Real-Topic Natural-Language E2E`. The next step is choosing the
-next bounded milestone from the now-explicit cross-lane widening blockers.
+Status: milestone `v2.1` `L2 Real-Topic Relevance Hardening` is active. The
+next step is hardening fresh-topic `L2` staging provenance and consultation
+relevance before widening research claims again.
 
 **Why this milestone exists:**
 
@@ -33,14 +33,18 @@ retrieval surfaces before widening back out to more modes and topic paradigms.
 
 ## Immediate Next Step
 
-- active milestone: none
+- active milestone: `v2.1` `L2 Real-Topic Relevance Hardening`
 - latest closed milestone: `v2.0` `Three-Lane Real-Topic Natural-Language E2E`
 - previous closed milestone: `v1.99` `LibRPA QSGW Positive L0 To L2 Closure`
 - older closed milestone: `v1.98` `Toy Model Positive L0 To L2 Closure`
 - `v2.0` proved bounded real natural-language dialogue entry for the formal,
   toy-model, and first-principles lanes
-- immediate next step: start the next milestone definition cycle with
-  `$gsd-new-milestone`
+- Phase `175` hardened literature-intake staging by suppressing obvious noise
+  rows and preserving per-entry source provenance
+- `v2.1` now narrows to the next remaining bottleneck: topic-local
+  consultation relevance ordering in `L2`
+- immediate next step: start Phase `175.1` and raise topic-local relevance
+  above unrelated canonical carryover
 
 ## Accumulated Context
 

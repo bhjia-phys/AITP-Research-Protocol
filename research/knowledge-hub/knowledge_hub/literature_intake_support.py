@@ -16,6 +16,17 @@ ALLOWED_LITERATURE_UNIT_TYPES = {
     "claim_card",
     "workflow",
 }
+GENERIC_NOTATION_TOKENS = {
+    "class",
+    "classes",
+    "considered",
+    "consider",
+    "study",
+    "studied",
+    "system",
+    "systems",
+}
+WEAK_METHOD_FAMILIES = {"unspecified_method", "unknown", "generic_method"}
 
 
 def _slugify_token(value: str) -> str:
@@ -35,6 +46,50 @@ def _dedupe_strings(values: list[str] | None) -> list[str]:
             seen.add(value)
             deduped.append(value)
     return deduped
+
+
+def _source_slug_from_id(source_id: str) -> str:
+    return _slugify_token(source_id)
+
+
+def _source_payload(*, source_id: str, source_title: str) -> dict[str, Any]:
+    resolved_source_id = str(source_id or "").strip()
+    resolved_source_title = str(source_title or resolved_source_id or "Current source").strip()
+    return {
+        "source_refs": [resolved_source_id] if resolved_source_id else [],
+        "provenance": {
+            "source_id": resolved_source_id,
+            "source_slug": _source_slug_from_id(resolved_source_id) if resolved_source_id else "",
+            "source_title": resolved_source_title,
+        },
+    }
+
+
+def _is_generic_notation_token(value: str) -> bool:
+    token = _slugify_token(value).replace("-", "_")
+    return token in GENERIC_NOTATION_TOKENS
+
+
+def _should_stage_method_row(*, method_family: str, specificity_tier: str) -> bool:
+    normalized_family = str(method_family or "").strip().lower()
+    normalized_specificity = str(specificity_tier or "").strip().lower()
+    if normalized_family in WEAK_METHOD_FAMILIES:
+        return False
+    if normalized_specificity in {"surface_hint", "unknown"} and normalized_family in {"method", "analysis"}:
+        return False
+    return True
+
+
+def _should_stage_notation_row(*, symbol: str, meaning: str) -> bool:
+    resolved_symbol = str(symbol or "").strip()
+    resolved_meaning = str(meaning or "").strip()
+    if not resolved_symbol or not resolved_meaning:
+        return False
+    if _is_generic_notation_token(resolved_symbol):
+        return False
+    if _is_generic_notation_token(resolved_meaning):
+        return False
+    return True
 
 
 def _graph_diff_labels(diff: dict[str, Any], side: str) -> list[str]:
@@ -93,6 +148,7 @@ def _derive_candidate_units_from_runtime_payload(
                 ),
                 "wiki_page_paths": wiki_page_paths,
                 "assumptions": [assumption],
+                **_source_payload(source_id=source_id, source_title=source_title),
             }
         )
 
@@ -122,6 +178,7 @@ def _derive_candidate_units_from_runtime_payload(
                     ]
                 ),
                 "wiki_page_paths": wiki_page_paths,
+                **_source_payload(source_id=source_id, source_title=source_title),
             }
         )
 
@@ -132,6 +189,8 @@ def _derive_candidate_units_from_runtime_payload(
         source_title = str(row.get("source_title") or source_id or "Current source").strip()
         method_family = str(row.get("method_family") or "unspecified_method").strip()
         specificity_tier = str(row.get("specificity_tier") or "unknown").strip()
+        if not _should_stage_method_row(method_family=method_family, specificity_tier=specificity_tier):
+            continue
         reading_depth = str(row.get("reading_depth") or "unknown").strip()
         evidence_excerpt = str(row.get("evidence_excerpt") or "").strip()
         summary = (
@@ -154,6 +213,7 @@ def _derive_candidate_units_from_runtime_payload(
                     ]
                 ),
                 "wiki_page_paths": wiki_page_paths,
+                **_source_payload(source_id=source_id, source_title=source_title),
             }
         )
 
@@ -164,7 +224,7 @@ def _derive_candidate_units_from_runtime_payload(
         source_title = str(row.get("source_title") or source_id or "Current source").strip()
         symbol = str(row.get("symbol") or "").strip()
         meaning = str(row.get("meaning") or "").strip()
-        if not symbol or not meaning:
+        if not _should_stage_notation_row(symbol=symbol, meaning=meaning):
             continue
         reading_depth = str(row.get("reading_depth") or "unknown").strip()
         evidence_excerpt = str(row.get("evidence_excerpt") or "").strip()
@@ -185,6 +245,7 @@ def _derive_candidate_units_from_runtime_payload(
                     ]
                 ),
                 "wiki_page_paths": wiki_page_paths,
+                **_source_payload(source_id=source_id, source_title=source_title),
             }
         )
 
@@ -214,6 +275,7 @@ def _derive_candidate_units_from_runtime_payload(
                     ]
                 ),
                 "wiki_page_paths": wiki_page_paths,
+                **_source_payload(source_id=source_id, source_title=source_title),
             }
         )
 
@@ -245,6 +307,7 @@ def _derive_candidate_units_from_runtime_payload(
                     ]
                 ),
                 "wiki_page_paths": wiki_page_paths,
+                **_source_payload(source_id=source_id, source_title=source_title),
             }
         )
 
@@ -424,6 +487,15 @@ def stage_literature_units(
         unit_provenance = unit.get("provenance") or {}
         if not isinstance(unit_provenance, dict):
             unit_provenance = {}
+        unit_source_id = str(unit_provenance.get("source_id") or "").strip()
+        unit_source_title = str(unit_provenance.get("source_title") or "").strip()
+        unit_source_slug = (
+            str(unit.get("source_slug") or unit_provenance.get("source_slug") or "").strip()
+            or (_source_slug_from_id(unit_source_id) if unit_source_id else "")
+            or resolved_source_slug
+        )
+        if unit_source_id and unit_source_id not in source_refs:
+            source_refs = [unit_source_id, *source_refs]
         entry = stage_l2_insight(
             resolved_kernel_root,
             title=title,
@@ -431,7 +503,7 @@ def stage_literature_units(
             candidate_unit_type=candidate_unit_type,
             tags=_dedupe_strings(
                 [str(item) for item in (unit.get("tags") or [])]
-                + ["literature-intake", f"source:{resolved_source_slug}"]
+                + ["literature-intake", f"source:{unit_source_slug}"]
             ),
             source_refs=source_refs,
             created_by=created_by,
@@ -445,7 +517,9 @@ def stage_literature_units(
             provenance={
                 **unit_provenance,
                 "literature_intake_fast_path": True,
-                "source_slug": resolved_source_slug,
+                "source_id": unit_source_id,
+                "source_title": unit_source_title,
+                "source_slug": unit_source_slug,
                 "vault_wiki_paths": wiki_page_paths,
             },
         )

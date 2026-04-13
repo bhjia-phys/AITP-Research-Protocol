@@ -74,17 +74,48 @@ The previously scoped GSD mainline is implemented through:
 - `v1.95`
 - `v1.96`
 - `v1.97`
+- `v1.98`
+- `v1.99`
+- `v2.0`
 
-That closes the current bounded chain through the first operator-visible
-hypothesis route-transition-authority surface, but
-it still does **not** mean the broader AITP architecture is finished.
+That closes the current bounded chain through the first three-lane real-topic
+natural-language dialogue proof across formal, toy-model, and
+first-principles routes, but it still does **not** mean the broader AITP
+architecture is finished.
 
 ## Current Focus
 
-- Active milestone: none
+- Active milestone: `v2.1` `L2 Real-Topic Relevance Hardening`
 - Latest closed milestone: `v2.0` `Three-Lane Real-Topic Natural-Language E2E`
-- Next boundary: plan the next bounded milestone from the cross-lane dialogue
-  blockers and widening decisions
+- Next boundary: harden fresh-topic `L2` staging provenance and retrieval
+  relevance before widening the science claims again
+
+## Current Milestone: v2.1 L2 Real-Topic Relevance Hardening
+
+**Goal:** make fresh real-topic `L2` staging and consultation trustworthy
+enough that new literature-intake topics surface the right local knowledge
+with correct provenance instead of noisy or irrelevant hits.
+
+**Target features:**
+- suppress noisy staged rows such as generic notation tokens and weak
+  `unspecified_method` entries before they reach useful `L2` surfaces
+- preserve the true source id on every staged row so fresh topics do not reuse
+  the wrong paper provenance
+- improve `consult-l2` ranking so topic-local relevant staged entries can
+  outrank unrelated canonical material for fresh local-topic queries
+- close with one replayable multi-paper real-topic acceptance lane proving both
+  provenance correctness and retrieval relevance ordering
+
+**Key context:**
+- `v2.0` proved the public front door can steer all three closed research
+  directions through bounded real natural-language dialogue
+- the next bottleneck is not lane steering but `L2` knowledge quality on fresh
+  real-topic literature intake
+- the measurement-induced / observer-algebra topic surfaced exactly this gap:
+  noisy staging rows, wrong source provenance, and irrelevant primary
+  consultation hits
+- related front-door and Windows-first-use regressions remain pending, but this
+  milestone stays bounded to `L2` hardening first
 
 ## Latest Closed Milestone: v2.0 Three-Lane Real-Topic Natural-Language E2E
 
@@ -971,4 +1002,4 @@ QSGW` lanes instead of re-litigating whether AITP already has a trustworthy
 positive canonical-L2 path.
 
 ---
-*Last updated: 2026-04-14 after completing milestone v2.0*
+*Last updated: 2026-04-14 after starting milestone v2.1*
