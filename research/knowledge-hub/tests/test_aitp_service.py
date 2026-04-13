@@ -24,6 +24,7 @@ _bootstrap_path()
 
 from knowledge_hub.aitp_service import AITPService
 from knowledge_hub.aitp_codex import build_codex_prompt, build_parser as build_codex_parser
+from knowledge_hub.literature_intake_support import compute_literature_intake_stage_signature
 
 
 class _LoopStubService(AITPService):
@@ -9859,6 +9860,104 @@ class AITPServiceTests(unittest.TestCase):
             encoding="utf-8",
         )
         runtime_protocol_note.write_text("# Runtime protocol\n", encoding="utf-8")
+
+        with patch.object(
+            self.service,
+            "_materialize_runtime_protocol_bundle",
+            return_value={
+                "runtime_protocol_path": str(runtime_protocol_json),
+                "runtime_protocol_note_path": str(runtime_protocol_note),
+            },
+        ):
+            payload = self.service._execute_auto_actions(
+                topic_slug=topic_slug,
+                updated_by="aitp-cli",
+                max_auto_steps=1,
+                default_skill_queries=None,
+            )
+
+        self.assertEqual(payload["executed"], [])
+        queue_rows = [json.loads(line) for line in queue_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        self.assertFalse(any(row["action_type"] == "literature_intake_stage" for row in queue_rows))
+
+    def test_execute_auto_actions_skips_repeated_literature_intake_stage_when_matching_stage_exists(self) -> None:
+        topic_slug = "demo-topic"
+        runtime_root = self._write_runtime_state(topic_slug=topic_slug)
+        queue_path = runtime_root / "action_queue.jsonl"
+        queue_path.write_text("", encoding="utf-8")
+        runtime_protocol_json = runtime_root / "runtime_protocol.generated.json"
+        runtime_protocol_note = runtime_root / "runtime_protocol.generated.md"
+        runtime_payload = {
+            "runtime_mode": "explore",
+            "active_submode": "literature",
+            "transition_posture": {
+                "transition_kind": "boundary_hold",
+                "triggered_by": [],
+            },
+            "active_research_contract": {
+                "l1_source_intake": {
+                    "source_count": 1,
+                    "assumption_rows": [],
+                    "regime_rows": [],
+                    "reading_depth_rows": [],
+                    "method_specificity_rows": [
+                        {
+                            "source_id": "paper:weak-coupling",
+                            "source_title": "Weak coupling closure",
+                            "source_type": "paper",
+                            "method_family": "formal_derivation",
+                            "specificity_tier": "high",
+                            "reading_depth": "full_read",
+                            "evidence_excerpt": "Derives the bounded closure in weak coupling.",
+                        }
+                    ],
+                    "notation_rows": [],
+                    "contradiction_candidates": [],
+                    "notation_tension_candidates": [],
+                },
+                "l1_vault": {
+                    "topic_slug": topic_slug,
+                    "wiki": {
+                        "page_paths": [
+                            "intake/topics/demo-topic/vault/wiki/home.md",
+                            "intake/topics/demo-topic/vault/wiki/source-intake.md",
+                        ]
+                    },
+                },
+            },
+        }
+        runtime_protocol_json.write_text(
+            json.dumps(runtime_payload, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        runtime_protocol_note.write_text("# Runtime protocol\n", encoding="utf-8")
+
+        signature = compute_literature_intake_stage_signature(runtime_payload)
+        staged_entry_path = self.kernel_root / "canonical" / "staging" / "entries" / "staging--demo-topic-existing.json"
+        staged_entry_path.parent.mkdir(parents=True, exist_ok=True)
+        staged_entry_path.write_text(
+            json.dumps(
+                {
+                    "entry_id": "staging:demo-topic-existing",
+                    "topic_slug": topic_slug,
+                    "entry_kind": "claim_card",
+                    "candidate_unit_type": "claim_card",
+                    "title": "Existing staged literature unit",
+                    "summary": "Existing staged literature unit.",
+                    "status": "staged",
+                    "authoritative": False,
+                    "path": "canonical/staging/entries/staging--demo-topic-existing.json",
+                    "note_path": "canonical/staging/entries/staging--demo-topic-existing.md",
+                    "provenance": {
+                        "literature_stage_signature": signature,
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
 
         with patch.object(
             self.service,

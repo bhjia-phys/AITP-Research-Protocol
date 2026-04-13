@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 from typing import Any, Callable
 
@@ -57,6 +59,68 @@ def preferred_action_types_from_runtime_contract(runtime_contract: dict | None) 
     if runtime_mode == "explore" and active_submode == "literature":
         return ["literature_intake_stage"]
     return []
+
+
+def compute_literature_intake_stage_signature(runtime_contract: dict | None) -> str:
+    payload = runtime_contract or {}
+    active_research_contract = payload.get("active_research_contract") or {}
+    signature_payload = {
+        "runtime_mode": str(payload.get("runtime_mode") or "").strip(),
+        "active_submode": str(payload.get("active_submode") or "").strip(),
+        "l1_source_intake": active_research_contract.get("l1_source_intake") or {},
+        "graph_analysis_diff": ((payload.get("graph_analysis") or {}).get("diff") or {}),
+    }
+    encoded = json.dumps(
+        signature_payload,
+        ensure_ascii=True,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha1(encoded).hexdigest()
+
+
+def topic_has_matching_literature_stage(
+    *,
+    knowledge_root: Path,
+    topic_slug: str,
+    candidate_signature: str,
+) -> bool:
+    if not candidate_signature:
+        return False
+    entries_root = knowledge_root / "canonical" / "staging" / "entries"
+    if not entries_root.exists():
+        return False
+    for path in sorted(entries_root.glob("*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        if str(payload.get("topic_slug") or "").strip() != topic_slug:
+            continue
+        provenance = payload.get("provenance") or {}
+        if not isinstance(provenance, dict):
+            continue
+        if str(provenance.get("literature_stage_signature") or "").strip() == candidate_signature:
+            return True
+    return False
+
+
+def topic_has_staged_entries(
+    *,
+    knowledge_root: Path,
+    topic_slug: str,
+) -> bool:
+    entries_root = knowledge_root / "canonical" / "staging" / "entries"
+    if not entries_root.exists():
+        return False
+    for path in sorted(entries_root.glob("*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            continue
+        if str(payload.get("topic_slug") or "").strip() == topic_slug:
+            return True
+    return False
 
 
 def _queue_shaping_block_policy() -> dict[str, bool]:
@@ -227,6 +291,7 @@ def maybe_append_literature_intake_stage_action(
     *,
     topic_state: dict[str, Any],
     runtime_contract: dict | None,
+    knowledge_root: Path,
     queue_meta: dict[str, Any],
     queue_shaping_policy: dict[str, bool],
 ) -> None:
@@ -237,6 +302,13 @@ def maybe_append_literature_intake_stage_action(
     if str(runtime_contract.get("active_submode") or "").strip() != "literature":
         return
     if any(str(row.get("action_type") or "").strip() == "literature_intake_stage" for row in queue):
+        return
+    candidate_signature = compute_literature_intake_stage_signature(runtime_contract)
+    if topic_has_matching_literature_stage(
+        knowledge_root=knowledge_root,
+        topic_slug=str(topic_state.get("topic_slug") or "").strip(),
+        candidate_signature=candidate_signature,
+    ):
         return
     active_research_contract = runtime_contract.get("active_research_contract") or {}
     l1_source_intake = active_research_contract.get("l1_source_intake") or {}
@@ -262,7 +334,7 @@ def maybe_append_literature_intake_stage_action(
             "summary": "Stage bounded literature-intake units from the current L1 vault into L2 staging.",
             "auto_runnable": True,
             "handler": None,
-            "handler_args": {},
+            "handler_args": {"candidate_signature": candidate_signature},
             "queue_source": "runtime_appended",
             "declared_contract_path": queue_meta.get("declared_contract_path"),
         }

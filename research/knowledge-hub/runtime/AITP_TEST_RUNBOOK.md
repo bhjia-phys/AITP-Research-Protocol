@@ -826,6 +826,26 @@ Pass condition:
 - the runtime protocol survives all three commands
 - the acceptance runs on an isolated temp kernel root
 
+## 17.1 Isolated acceptance: first-source follow-through into staged L2
+
+Use this when you want one bounded proof that the same fresh-topic lane can
+continue one honest step past first-source registration and surface the staged
+L2 review point instead of repeating literature-intake staging forever.
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_first_source_followthrough_acceptance.py --json
+```
+
+Pass condition:
+- the fresh-topic lane still reaches the post-registration
+  `literature_intake_stage` follow-through step
+- one bounded `literature_intake_stage` auto action completes successfully
+- `status --json` then advances to `Inspect the current L2 staging manifest
+  before continuing.`
+- the workspace staging manifest exists under `canonical/staging/`
+- `consult_l2(include_staging=True)` returns at least one staged hit from the
+  current fresh topic
+
 ## 18. Isolated acceptance: public install smoke
 
 Use this when you want one bounded proof that the published-style

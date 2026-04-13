@@ -79,6 +79,7 @@ The previously scoped GSD mainline is implemented through:
 - `v2.0`
 - `v2.1`
 - `v2.2`
+- `v2.3`
 
 That closes the current bounded chain through the first three-lane real-topic
 natural-language dialogue proof across formal, toy-model, and
@@ -88,34 +89,56 @@ architecture is finished.
 
 ## Current Focus
 
-- Active milestone: `v2.3` `Post-Registration Route Coherence`
-- Latest closed milestone: `v2.2` `Fresh-Topic First-Use Reliability`
-- Next boundary: make post-registration first-use route selection honest before
-  wider real-topic replay resumes
+- Active milestone: `v2.4` `First L1 To L2 Follow-Through Coherence`
+- Latest closed milestone: `v2.3` `Post-Registration Route Coherence`
+- Next boundary: make the first fresh-topic L1->L2 follow-through land once,
+  then surface staged-`L2` review and topic-local staged retrieval honestly
 
-## Current Milestone: v2.3 Post-Registration Route Coherence
+## Current Milestone: v2.4 First L1 To L2 Follow-Through Coherence
+
+**Goal:** make the first post-registration L1->L2 follow-through trustworthy
+enough that a fresh topic can execute one bounded `literature_intake_stage`,
+stop repeating it once it lands, and advance onto staged-`L2` review instead
+of looping forever on the same action.
+
+**Target features:**
+- persist a stable identity for the current literature-intake candidate set so
+  the first successful fresh-topic stage does not immediately requeue itself
+- advance post-follow-through `status`, `next`, and must-read surfaces onto an
+  explicit staged-`L2` review point
+- prove on one isolated fresh-topic lane that `consult_l2(include_staging=True)`
+  can retrieve the topic-local staged entry after that first follow-through
+
+**Key context:**
+- `v2.3` closed the post-registration route-selection gap but did not yet prove
+  that the next L1->L2 step advances honestly after it executes once
+- a fresh replay exposed the remaining gap: the first
+  `literature_intake_stage` could land, yet route surfaces still behaved as if
+  nothing had happened
+- the next bottleneck is therefore first L1->L2 follow-through coherence, not
+  broader cross-lane scientific widening
+
+## Latest Closed Milestone: v2.3 Post-Registration Route Coherence
 
 **Goal:** make the first post-registration transition trustworthy enough that,
 once a first source lands, runtime state and next-action surfaces move onto the
 right bounded follow-up step instead of repeating the old L0 source handoff.
 
-**Target features:**
-- refresh runtime `topic_state` / `layer_status` source fields after
-  registration so they stop carrying stale zero-source state
-- reselect bounded next actions after first-source registration so `status`,
-  `next`, runtime protocol, and dashboard surfaces stop advertising raw
-  source-registration handoff text
-- close with one replayable first-use proof of the post-registration route
-  transition
+**Delivered features:**
+- runtime `topic_state` / `layer_status` source fields now refresh after first
+  registration instead of carrying stale zero-source state
+- post-registration route selection now moves off the raw source-registration
+  handoff text onto the next bounded research step
+- one replayable fresh first-use proof package now shows that
+  post-registration transition mechanically
 
 **Key context:**
 - `v2.2` closed fresh-topic entry and first-source registration reliability
-- the remaining bounded first-use gap is not source entry itself but route
-  coherence immediately after registration
-- the next bottleneck is therefore post-registration planner coherence, not a
-  broader scientific-widening claim
+- `v2.3` closed the remaining immediate post-registration planner coherence
+  gap without pretending that the first L1->L2 follow-through was already
+  solved
 
-## Latest Closed Milestone: v2.2 Fresh-Topic First-Use Reliability
+## Previous Closed Milestone: v2.2 Fresh-Topic First-Use Reliability
 
 **Goal:** make fresh-topic public entry reliable enough that a real new topic
 can be opened from natural language, register its first source on Windows
@@ -1044,4 +1067,4 @@ QSGW` lanes instead of re-litigating whether AITP already has a trustworthy
 positive canonical-L2 path.
 
 ---
-*Last updated: 2026-04-14 after starting milestone v2.1*
+*Last updated: 2026-04-14 after starting milestone v2.4*

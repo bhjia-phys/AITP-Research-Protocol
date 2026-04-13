@@ -183,6 +183,9 @@ def _select_active_submode(
 ) -> str | None:
     if runtime_mode == "verify" and bool(active_triggers & _VERIFY_TRIGGERS):
         return "iterative_verify"
+    lowered_summary = selected_action_summary.lower()
+    if runtime_mode == "explore" and "l2 staging manifest" in lowered_summary:
+        return "literature"
     if runtime_mode == "explore" and _detect_literature_intake_intent(
         selected_action_type,
         selected_action_summary,

@@ -1,6 +1,36 @@
 # Milestones
 
-## v2.3 Post-Registration Route Coherence (Active)
+## v2.4 First L1 To L2 Follow-Through Coherence (Active)
+
+**Phases completed:** 2 / 3 phases, 2 / 2 completed plans
+
+**Milestone goal:**
+
+- make the first fresh-topic `literature_intake_stage` stop repeating once the
+  same candidate set has already landed in staged `L2`
+
+- make post-follow-through `status`, `next`, and must-read surfaces advance
+  onto staged-`L2` review instead of staying on the same first L1->L2 action
+
+- close with one durable replay receipt for the bounded fresh-topic
+  `register -> stage -> staging review` lane
+
+**Key accomplishments:**
+
+- milestone scoped from the remaining first-use gap after `v2.3`: the first
+  post-registration L1->L2 follow-through executed, but the route did not yet
+  recognize that completion durably
+- Phase `178` now persists stable literature-stage identity and prevents the
+  same fresh-topic candidate set from requeueing forever
+- Phase `178` now advances the next bounded action onto staged-`L2` review and
+  keeps that review inside the literature-focused context envelope
+- Phase `178.1` now proves, on an isolated fresh-topic lane, that first-source
+  registration can continue through one bounded `literature_intake_stage` and
+  produce topic-local staged consultation hits
+
+---
+
+## v2.3 Post-Registration Route Coherence (Shipped: 2026-04-14)
 
 **Phases completed:** 3 / 3 phases, 3 / 3 plans
 

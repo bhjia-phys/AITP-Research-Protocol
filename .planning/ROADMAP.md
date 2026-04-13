@@ -1,81 +1,85 @@
-# Roadmap: v2.3 Post-Registration Route Coherence
+# Roadmap: v2.4 First L1 To L2 Follow-Through Coherence
 
 ## Result
 
-Milestone phase work complete. Lifecycle closure is next.
+Milestone active. Phase `178.2` is next.
 
 ## Phases
 
-- [x] **Phase 177: Post-Registration Runtime State Coherence** *(Axis 1 + Axis 3)*
-- [x] **Phase 177.1: Post-Registration Next-Action Reselection** *(Axis 2 + Axis 4)*
-- [x] **Phase 177.2: Fresh First-Use Post-Registration Replay Proof** *(Axis 4 + Axis 5)*
+- [x] **Phase 178: Stable Literature-Stage Completion Recognition** *(Axis 1 + Axis 2)*
+- [x] **Phase 178.1: Fresh First-Source Follow-Through Acceptance** *(Axis 4 + Axis 5)*
+- [ ] **Phase 178.2: Fresh First L1 To L2 Replay Receipt** *(Axis 4 + Axis 3)*
 
 ## Target Outcome
 
-- runtime state and layer-status counters reflect first-source presence
-  immediately after registration
-- post-registration `status`, `next`, runtime protocol, and dashboard surfaces
-  move off the stale L0 source-handoff wording once a source already exists
-- the milestone ends with one replayable fresh first-use proof of the
-  post-registration route transition
+- once a fresh-topic `literature_intake_stage` completes, the same candidate
+  set no longer requeues as though nothing happened
+- post-follow-through `status`, `next`, and must-read surfaces advance onto a
+  bounded staged-`L2` review point instead of repeating the first L1->L2 step
+- one isolated fresh-topic acceptance proves the lane can go from first-source
+  registration into staged `L2` visibility and topic-local staged retrieval
+- the milestone closes with one durable replay receipt for that first
+  post-registration L1->L2 follow-through
 
 ## Next Step
 
-Run milestone audit / archive for `v2.3`.
+Execute Phase `178.2` to capture the durable replay receipt and close the
+bounded follow-through milestone.
 
-### Phase 177: Post-Registration Runtime State Coherence
+### Phase 178: Stable Literature-Stage Completion Recognition
 
-**Axis:** Axis 1 (layer-internal optimization) + Axis 3 (data recording)
+**Axis:** Axis 1 (layer-internal optimization) + Axis 2 (inter-layer connection)
 
-**Goal:** make post-registration runtime state record first-source presence
-honestly so later route selection no longer reads stale zero-source or
-missing-L0 fields.
+**Goal:** make one completed fresh-topic `literature_intake_stage` persist
+enough state that the route no longer immediately requeues the same L1->L2
+step.
 
 **Requirements:**
 
-- `PRC-01`
-- `PRC-02`
+- `FLC-01`
+- `FLC-02`
+- `FLC-03`
 
-**Depends on:** `v2.2`
+**Depends on:** `v2.3`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `177-01` Refresh runtime state and topic projections after first-source registration
+- [x] `178-01` Stabilize first literature-intake completion so queue selection advances to staged-L2 review
 
-### Phase 177.1: Post-Registration Next-Action Reselection
-
-**Axis:** Axis 2 (inter-layer connection) + Axis 4 (human experience)
-
-**Goal:** make post-registration route selection move from the initial L0
-handoff into the next bounded research step once the first source has landed.
-
-**Requirements:**
-
-- `PRC-03`
-- `PRC-04`
-
-**Depends on:** Phase `177`
-**Plans:** 1 plan
-
-Plans:
-
-- [x] `177.1-01` Reselect bounded next actions after first-source registration
-
-### Phase 177.2: Fresh First-Use Post-Registration Replay Proof
+### Phase 178.1: Fresh First-Source Follow-Through Acceptance
 
 **Axis:** Axis 4 (human evidence) + Axis 5 (agent-facing steering)
 
-**Goal:** replay one fresh first-use lane and prove that registration now
-transitions into a non-stale post-registration route with durable receipts.
+**Goal:** prove on one isolated fresh-topic lane that first-source registration
+can continue through exactly one bounded literature-intake auto step and then
+surface staged `L2` review plus topic-local staged consultation.
 
 **Requirements:**
 
-- `PRC-05`
+- `FLC-04`
 
-**Depends on:** Phase `177.1`
+**Depends on:** Phase `178`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `177.2-01` Replay a fresh first-use lane through post-registration route transition
+- [x] `178.1-01` Add and verify a fresh-topic follow-through acceptance script for the first L1->L2 step
+
+### Phase 178.2: Fresh First L1 To L2 Replay Receipt
+
+**Axis:** Axis 4 (human evidence) + Axis 3 (data recording)
+
+**Goal:** close the milestone with one durable receipt packet that records the
+fresh-topic `register -> literature_intake_stage -> staging review` baseline.
+
+**Requirements:**
+
+- `FLC-05`
+
+**Depends on:** Phase `178.1`
+**Plans:** 1 plan
+
+Plans:
+
+- [ ] `178.2-01` Capture the durable replay receipt for the fresh first-source follow-through baseline

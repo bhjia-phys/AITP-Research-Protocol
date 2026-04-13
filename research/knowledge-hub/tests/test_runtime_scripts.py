@@ -203,6 +203,10 @@ class RuntimeScriptTests(unittest.TestCase):
             "aitp_first_run_topic_acceptance_test",
             "runtime/scripts/run_first_run_topic_acceptance.py",
         )
+        self.first_source_followthrough_acceptance = _load_module(
+            "aitp_first_source_followthrough_acceptance_test",
+            "runtime/scripts/run_first_source_followthrough_acceptance.py",
+        )
 
     def test_ensure_topic_shell_seeds_concrete_l0_source_handoff_after_bootstrap(self) -> None:
         self.orchestrate_topic.ensure_topic_shell(
@@ -292,6 +296,59 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertTrue((work_root / "kernel" / "runtime" / "topics").exists())
         self.assertTrue((work_root / "kernel" / "source-layer" / "topics").exists())
+
+    def test_first_source_followthrough_acceptance_script_runs_on_isolated_work_root(self) -> None:
+        work_root = Path(self._tmpdir.name) / "first-source-followthrough-acceptance"
+        tar_path = Path(self._tmpdir.name) / "followthrough-source.tar"
+        tex_path = Path(self._tmpdir.name) / "followthrough-paper.tex"
+        metadata_path = Path(self._tmpdir.name) / "followthrough-metadata.json"
+
+        tex_path.write_text(
+            "\\documentclass{article}\n\\begin{document}demo\\end{document}\n",
+            encoding="utf-8",
+        )
+        with tarfile.open(tar_path, "w") as archive:
+            archive.add(tex_path, arcname="paper.tex")
+        metadata_path.write_text(
+            json.dumps(
+                {
+                    "arxiv_id": "2401.00001v2",
+                    "title": "Topological Order and Anyon Condensation",
+                    "summary": "A direct match for topological order and anyon condensation discovery.",
+                    "published": "2024-01-03T00:00:00Z",
+                    "updated": "2024-01-05T00:00:00Z",
+                    "authors": ["Primary Author", "Secondary Author"],
+                    "identifier": "https://arxiv.org/abs/2401.00001v2",
+                    "abs_url": "https://arxiv.org/abs/2401.00001v2",
+                    "pdf_url": "https://arxiv.org/pdf/2401.00001.pdf",
+                    "source_url": tar_path.as_uri(),
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_first_source_followthrough_acceptance.py",
+                "--work-root",
+                str(work_root),
+                "--register-arxiv-id",
+                "2401.00001v2",
+                "--registration-metadata-json",
+                str(metadata_path),
+                "--json",
+            ],
+        ):
+            exit_code = self.first_source_followthrough_acceptance.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue((work_root / "kernel" / "canonical" / "staging" / "workspace_staging_manifest.json").exists())
+        self.assertTrue((work_root / "kernel" / "runtime" / "topics").exists())
 
     def tearDown(self) -> None:
         self._tmpdir.cleanup()
@@ -739,6 +796,76 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertEqual(queue[0]["action_type"], "literature_intake_stage")
         self.assertEqual(queue[0]["queue_source"], "runtime_appended")
         self.assertTrue(queue[0]["auto_runnable"])
+
+    def test_materialize_action_queue_advances_to_staging_review_after_matching_literature_stage(self) -> None:
+        runtime_payload = {
+            "runtime_mode": "explore",
+            "active_submode": "literature",
+            "transition_posture": {
+                "transition_kind": "boundary_hold",
+                "triggered_by": [],
+            },
+            "active_research_contract": {
+                "l1_source_intake": {
+                    "source_count": 1,
+                    "method_specificity_rows": [
+                        {
+                            "source_id": "paper:weak-coupling",
+                            "source_title": "Weak coupling closure",
+                            "source_type": "paper",
+                            "method_family": "formal_derivation",
+                            "specificity_tier": "high",
+                            "reading_depth": "full_read",
+                            "evidence_excerpt": "Derives the bounded closure in weak coupling.",
+                        }
+                    ],
+                    "contradiction_candidates": [],
+                }
+            },
+        }
+        self._write_json(
+            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            runtime_payload,
+        )
+        signature = self.orchestrate_topic.compute_literature_intake_stage_signature(runtime_payload)
+        self._write_json(
+            "canonical/staging/entries/staging--demo-topic-existing.json",
+            {
+                "entry_id": "staging:demo-topic-existing",
+                "topic_slug": "demo-topic",
+                "entry_kind": "claim_card",
+                "candidate_unit_type": "claim_card",
+                "title": "Existing staged literature unit",
+                "summary": "Existing staged literature unit.",
+                "status": "staged",
+                "authoritative": False,
+                "path": "canonical/staging/entries/staging--demo-topic-existing.json",
+                "note_path": "canonical/staging/entries/staging--demo-topic-existing.md",
+                "provenance": {
+                    "literature_stage_signature": signature,
+                },
+            },
+        )
+
+        queue, _ = self.orchestrate_topic.materialize_action_queue(
+            {
+                "topic_slug": "demo-topic",
+                "latest_run_id": "2026-03-13-demo",
+                "resume_stage": "L1",
+                "source_count": 1,
+                "pending_actions": [],
+            },
+            [],
+            self.knowledge_root / "runtime" / "scripts" / "discover_external_skills.py",
+            self.knowledge_root / "runtime" / "scripts" / "advance_closed_loop.py",
+            self.knowledge_root / "runtime" / "scripts" / "handoff_execution.py",
+            self.knowledge_root / "runtime" / "scripts" / "run_literature_followup.py",
+            self.knowledge_root,
+        )
+
+        self.assertFalse(any(row["action_type"] == "literature_intake_stage" for row in queue))
+        self.assertEqual(queue[0]["action_type"], "inspect_resume_state")
+        self.assertEqual(queue[0]["summary"], "Inspect the current L2 staging manifest before continuing.")
 
     def test_materialize_action_queue_prefers_promotion_review_in_promote_mode(self) -> None:
         self._write_json(

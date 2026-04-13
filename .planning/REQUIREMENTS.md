@@ -1,54 +1,55 @@
-# Requirements: v2.3 Post-Registration Route Coherence
+# Requirements: v2.4 First L1 To L2 Follow-Through Coherence
 
 ## Milestone Goal
 
-Make post-registration first-use routing coherent enough that, once the first
-source has landed, runtime state and next-action surfaces stop advertising the
-old L0 handoff and move onto the next bounded research step honestly.
+Make the first post-registration L1->L2 follow-through coherent enough that a
+fresh topic can execute one bounded `literature_intake_stage`, stop repeating
+it once it lands, and surface staged `L2` review plus topic-local staged
+retrieval honestly.
 
 ## Active Requirements
 
-### Runtime State Coherence
+### Stable Literature-Stage Recognition
 
-- [x] `PRC-01`: after first-source registration, runtime `topic_state`
-  counters and `layer_status.L0` reflect source presence instead of stale zero
-  or missing values.
+- [x] `FLC-01`: a completed `literature_intake_stage` persists a stable
+  signature or equivalent durable identity for the current fresh-topic
+  candidate set.
 
-- [x] `PRC-02`: active-topic and current-topic projections stay aligned with
-  the refreshed post-registration runtime state.
+- [x] `FLC-02`: once the same fresh-topic candidate set is already staged, the
+  route no longer requeues the identical `literature_intake_stage`.
 
-### Next-Action Reselection
+- [x] `FLC-03`: after the first bounded L1->L2 stage lands, the next-action
+  surface advances to a staged-`L2` review summary and keeps that review point
+  inside the literature-focused runtime context.
 
-- [x] `PRC-03`: once at least one source is present and no explicit L0 blocker
-  remains, `status`, `next`, runtime protocol, and dashboard surfaces no longer
-  point back to raw source-registration handoff text.
+### Fresh Follow-Through Proof
 
-- [x] `PRC-04`: the post-registration route change is driven by durable state
-  and bounded planner rules, not a hidden manual workaround.
+- [x] `FLC-04`: one isolated fresh-topic acceptance lane proves
+  `bootstrap -> register first source -> literature_intake_stage -> staging
+  review`, and `consult_l2(include_staging=True)` returns topic-local staged
+  hits from that lane.
 
-### Replayable Proof
-
-- [x] `PRC-05`: one replayable fresh first-use lane proves post-registration
-  runtime-state coherence and next-action reselection with durable receipts.
+- [ ] `FLC-05`: one durable replay receipt packet records the same fresh-topic
+  follow-through baseline for milestone closure.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Reopening fresh-topic routing or Windows path overflow from `v2.2` | treat `v2.2` as the current baseline unless a fresh regression appears |
-| New scientific closure claims across formal, toy-model, or first-principles lanes | `v2.3` is still infrastructure-facing route coherence work |
-| Broad planner redesign beyond the first post-registration step | keep the milestone tied to the immediate first-use route transition |
-| Benchmark-alignment schema overhaul (`999.87`–`999.92`) | still too wide for this bounded repair |
+| Broad scientific closure across the three research lanes | `v2.4` stays on the first fresh-topic L1->L2 follow-through, not multi-lane widening |
+| Reopening `v2.3` post-registration next-action reselection | treat `v2.3` as the current baseline unless a fresh regression appears |
+| Human promotion / authoritative `L2` writeback for the new staged rows | this milestone only closes the first provisional staged-`L2` follow-through |
+| Cross-lane natural-language replay beyond the single fresh-topic baseline | defer until this bounded L1->L2 follow-through is mechanically closed |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PRC-01 | Phase 177 | Done |
-| PRC-02 | Phase 177 | Done |
-| PRC-03 | Phase 177.1 | Done |
-| PRC-04 | Phase 177.1 | Done |
-| PRC-05 | Phase 177.2 | Done |
+| FLC-01 | Phase 178 | Done |
+| FLC-02 | Phase 178 | Done |
+| FLC-03 | Phase 178 | Done |
+| FLC-04 | Phase 178.1 | Done |
+| FLC-05 | Phase 178.2 | Planned |
 
 **Coverage:**
 - v1 requirements: 5 total

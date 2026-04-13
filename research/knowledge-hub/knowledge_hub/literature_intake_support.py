@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 from typing import Any
 
@@ -95,6 +97,23 @@ def _should_stage_notation_row(*, symbol: str, meaning: str) -> bool:
 def _graph_diff_labels(diff: dict[str, Any], side: str) -> list[str]:
     side_payload = diff.get(side) or {}
     return _dedupe_strings([str(item) for item in (side_payload.get("node_labels") or [])])
+
+
+def compute_literature_intake_stage_signature(runtime_payload: dict[str, Any]) -> str:
+    active_research_contract = runtime_payload.get("active_research_contract") or {}
+    signature_payload = {
+        "runtime_mode": str(runtime_payload.get("runtime_mode") or "").strip(),
+        "active_submode": str(runtime_payload.get("active_submode") or "").strip(),
+        "l1_source_intake": active_research_contract.get("l1_source_intake") or {},
+        "graph_analysis_diff": ((runtime_payload.get("graph_analysis") or {}).get("diff") or {}),
+    }
+    encoded = json.dumps(
+        signature_payload,
+        ensure_ascii=True,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha1(encoded).hexdigest()
 
 
 def _derive_candidate_units_from_runtime_payload(

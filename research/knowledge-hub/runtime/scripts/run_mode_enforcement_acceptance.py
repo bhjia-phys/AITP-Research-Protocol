@@ -60,11 +60,26 @@ def copy_kernel_contracts(package_root: Path, kernel_root: Path) -> None:
     shutil.copytree(package_root / "schemas", kernel_root / "schemas", dirs_exist_ok=True)
     shutil.copytree(package_root / "runtime" / "schemas", kernel_root / "runtime" / "schemas", dirs_exist_ok=True)
     shutil.copytree(package_root / "runtime" / "scripts", kernel_root / "runtime" / "scripts", dirs_exist_ok=True)
+    for name in (
+        "closed_loop_policies.json",
+        "research_mode_profiles.json",
+        "CONTROL_NOTE_CONTRACT.md",
+        "DECLARATIVE_RUNTIME_CONTRACTS.md",
+        "DEFERRED_RUNTIME_CONTRACTS.md",
+        "INNOVATION_DIRECTION_TEMPLATE.md",
+        "PROGRESSIVE_DISCLOSURE_PROTOCOL.md",
+    ):
+        target = kernel_root / "runtime" / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(package_root / "runtime" / name, target)
     (kernel_root / "intake").mkdir(parents=True, exist_ok=True)
     shutil.copyfile(package_root / "intake" / "L1_VAULT_PROTOCOL.md", kernel_root / "intake" / "L1_VAULT_PROTOCOL.md")
     (kernel_root / "RESEARCH_EXECUTION_GUARDRAILS.md").write_text("# Guardrails\n", encoding="utf-8")
     (kernel_root / "FORMAL_THEORY_UPSTREAM_REFERENCE_PROTOCOL.md").write_text("# Upstream\n", encoding="utf-8")
     (kernel_root / "SECTION_FORMALIZATION_PROTOCOL.md").write_text("# Section formalization\n", encoding="utf-8")
+    exploration_window = package_root / "exploration_window.json"
+    if exploration_window.exists():
+        shutil.copy2(exploration_window, kernel_root / "exploration_window.json")
 
 
 def seed_runtime_topic(

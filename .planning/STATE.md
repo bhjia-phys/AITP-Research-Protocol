@@ -1,49 +1,49 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.3
-milestone_name: Post-Registration Route Coherence
+milestone: v2.4
+milestone_name: First L1 To L2 Follow-Through Coherence
 status: milestone_active
-stopped_at: "Phase 177.2 complete; milestone lifecycle next"
-last_updated: "2026-04-14T05:33:01+08:00"
+stopped_at: "Phase 178.1 complete; Phase 178.2 next"
+last_updated: "2026-04-14T06:30:00+08:00"
 progress:
   total_phases: 3
-  completed_phases: 3
+  completed_phases: 2
   total_plans: 3
-  completed_plans: 3
+  completed_plans: 2
 ---
 
 # Project State
 
 ## Current Position
 
-Status: milestone `v2.3` `Post-Registration Route Coherence` is active. The
-next step is making the first post-registration route transition honest before
-broader real-topic replay widens again.
+Status: milestone `v2.4` `First L1 To L2 Follow-Through Coherence` is active.
+The next step is closing the durable replay receipt for the first fresh-topic
+L1->L2 follow-through.
 
 **Why this milestone exists:**
 
-`v2.2` closed the bounded first-use reliability slice through fresh-topic
-routing, Windows-safe registration, and immediate source-count visibility, but
-the same first-use replay still leaves one remaining operator-visible gap:
-post-registration next-action surfaces can keep pointing back to the old L0
-source-handoff wording even after a source already exists.
+`v2.3` closed the bounded post-registration route-selection gap, but the next
+fresh replay still exposed one remaining operator-visible problem: after the
+first `literature_intake_stage` actually lands, route surfaces could still
+behave as though the first L1->L2 step had not happened.
 
-The next bounded step is therefore to make the first post-registration route
-transition coherent before claiming that broader real-topic replay is honest
-across all layers again.
+The next bounded step is therefore to make the first post-registration L1->L2
+follow-through durable before widening back out to broader real-topic replay.
 
 ## Immediate Next Step
 
-- active milestone: `v2.3` `Post-Registration Route Coherence`
-- latest closed milestone: `v2.2` `Fresh-Topic First-Use Reliability`
-- previous closed milestone: `v2.1` `L2 Real-Topic Relevance Hardening`
-- older closed milestone: `v2.0` `Three-Lane Real-Topic Natural-Language E2E`
-- `v2.2` proved the first-use route through new-topic entry, Windows-safe
-  registration, and immediate post-registration source visibility
-- Phase `177` now closes persisted runtime-state coherence after registration
-- Phase `177.1` now closes stale post-registration next-action selection
-- Phase `177.2` now closes the replayable bounded proof of that transition
-- immediate next step: audit and archive milestone `v2.3`
+- active milestone: `v2.4` `First L1 To L2 Follow-Through Coherence`
+- latest closed milestone: `v2.3` `Post-Registration Route Coherence`
+- previous closed milestone: `v2.2` `Fresh-Topic First-Use Reliability`
+- older closed milestone: `v2.1` `L2 Real-Topic Relevance Hardening`
+- `v2.3` proved the fresh lane can move off stale L0 source-registration text
+  once a first source exists
+- Phase `178` now closes stable recognition of one completed
+  `literature_intake_stage` so the same candidate set does not requeue forever
+- Phase `178.1` now proves on an isolated fresh-topic lane that first-source
+  registration can continue through one bounded L1->L2 stage and return a
+  topic-local staged consultation hit
+- immediate next step: capture the durable replay receipt for Phase `178.2`
 
 ## Accumulated Context
 
@@ -122,3 +122,6 @@ cross-cutting).
 
 - `v2.3` now promotes the remaining bounded first-use gap from that same
   replay: post-registration route and next-action coherence
+- `v2.4` now promotes the next bounded gap from the repaired `v2.3` route: the
+  first fresh-topic L1->L2 follow-through must land once, advance to staged-L2
+  review, and become mechanically replayable

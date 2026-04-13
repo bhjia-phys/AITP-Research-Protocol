@@ -24,6 +24,7 @@ from orchestrator_contract_support import (
     append_closed_loop_actions,
     append_literature_followup_actions,
     append_runtime_helper_actions,
+    compute_literature_intake_stage_signature,
     enrich_queue_meta,
     load_operator_checkpoint,
     load_runtime_contract,
@@ -32,6 +33,7 @@ from orchestrator_contract_support import (
     queue_rows_from_pending_actions,
     queue_shaping_policy_from_contract_artifacts,
     reorder_queue_with_runtime_contract,
+    topic_has_staged_entries,
 )
 
 NEXT_ACTIONS_CONTRACT_FILENAME = "next_actions.contract.json"
@@ -990,6 +992,7 @@ def materialize_action_queue(
         queue,
         topic_state=topic_state,
         runtime_contract=runtime_contract,
+        knowledge_root=knowledge_root,
         queue_meta=queue_meta,
         queue_shaping_policy=queue_shaping_policy,
     )
@@ -1050,6 +1053,12 @@ def materialize_action_queue(
     )
 
     if not queue and int(topic_state.get("source_count") or 0) > 0:
+        fallback_summary = "Inspect the compiled L1 vault before continuing."
+        if topic_has_staged_entries(
+            knowledge_root=knowledge_root,
+            topic_slug=str(topic_state.get("topic_slug") or "").strip(),
+        ):
+            fallback_summary = "Inspect the current L2 staging manifest before continuing."
         queue.append(
             {
                 "action_id": f"action:{topic_state['topic_slug']}:inspect-l1-vault",
@@ -1057,7 +1066,7 @@ def materialize_action_queue(
                 "resume_stage": topic_state["resume_stage"],
                 "status": "pending",
                 "action_type": "inspect_resume_state",
-                "summary": "Inspect the compiled L1 vault before continuing.",
+                "summary": fallback_summary,
                 "auto_runnable": False,
                 "handler": None,
                 "handler_args": {},

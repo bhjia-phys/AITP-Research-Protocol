@@ -226,9 +226,11 @@ from .promotion_gate_support import (
 )
 from .l2_graph import consult_canonical_l2, seed_l2_demo_direction
 from .literature_intake_support import (
+    compute_literature_intake_stage_signature,
     derive_literature_stage_payload_from_runtime_payload,
     stage_literature_units,
 )
+from .l2_staging import load_staging_entries
 from .l2_compiler import (
     materialize_workspace_graph_report,
     materialize_workspace_knowledge_report,
@@ -4456,6 +4458,24 @@ class AITPService:
             "note": runtime_root / "runtime_protocol.generated.md",
         }
 
+    def _topic_has_matching_literature_stage(
+        self,
+        *,
+        topic_slug: str,
+        candidate_signature: str,
+    ) -> bool:
+        if not candidate_signature:
+            return False
+        for row in load_staging_entries(self.kernel_root):
+            if str(row.get("topic_slug") or "").strip() != topic_slug:
+                continue
+            provenance = row.get("provenance") or {}
+            if not isinstance(provenance, dict):
+                continue
+            if str(provenance.get("literature_stage_signature") or "").strip() == candidate_signature:
+                return True
+        return False
+
     def _load_candidate(
         self, topic_slug: str, run_id: str, candidate_id: str
     ) -> dict[str, Any]:
@@ -4959,6 +4979,12 @@ class AITPService:
         candidate_units = list(stage_payload.get("candidate_units") or [])
         if not candidate_units:
             return queue_rows
+        candidate_signature = compute_literature_intake_stage_signature(runtime_payload)
+        if self._topic_has_matching_literature_stage(
+            topic_slug=topic_slug,
+            candidate_signature=candidate_signature,
+        ):
+            return queue_rows
 
         queue_rows.insert(
             0,
@@ -4972,6 +4998,7 @@ class AITPService:
                 "auto_runnable": True,
                 "handler_args": {
                     "source_slug": stage_payload.get("source_slug") or topic_slug,
+                    "candidate_signature": candidate_signature,
                     "candidate_units": candidate_units,
                 },
                 "queue_source": "runtime_appended",
@@ -4989,6 +5016,7 @@ class AITPService:
     ) -> dict[str, Any]:
         handler_args = row.get("handler_args") or {}
         source_slug = str(handler_args.get("source_slug") or "").strip()
+        candidate_signature = str(handler_args.get("candidate_signature") or "").strip()
         candidate_units = handler_args.get("candidate_units") or []
         if not isinstance(candidate_units, list):
             candidate_units = []
@@ -5007,23 +5035,41 @@ class AITPService:
                 or str(derived_stage_payload.get("source_slug") or "").strip()
             )
             candidate_units = list(derived_stage_payload.get("candidate_units") or [])
+            if not candidate_signature:
+                candidate_signature = compute_literature_intake_stage_signature(protocol_payload)
         if not candidate_units:
             raise RuntimeError(
                 "No candidate_units provided or derivable for literature_intake_stage."
             )
         source_slug = source_slug or topic_slug
+        if not candidate_signature:
+            protocol_payload = read_json(self._runtime_protocol_paths(topic_slug)["json"]) or {}
+            candidate_signature = compute_literature_intake_stage_signature(protocol_payload)
+
+        enriched_candidate_units: list[dict[str, Any]] = []
+        for item in candidate_units:
+            if not isinstance(item, dict):
+                continue
+            enriched = dict(item)
+            provenance = enriched.get("provenance") or {}
+            if not isinstance(provenance, dict):
+                provenance = {}
+            enriched["provenance"] = {
+                **provenance,
+                "literature_stage_signature": candidate_signature,
+            }
+            enriched_candidate_units.append(enriched)
 
         staging = stage_literature_units(
             self.kernel_root,
             topic_slug=topic_slug,
             source_slug=source_slug,
-            candidate_units=[
-                dict(item) for item in candidate_units if isinstance(item, dict)
-            ],
+            candidate_units=enriched_candidate_units,
             created_by=updated_by,
         )
         return {
             "source_slug": source_slug,
+            "candidate_signature": candidate_signature,
             "staging": staging,
         }
 

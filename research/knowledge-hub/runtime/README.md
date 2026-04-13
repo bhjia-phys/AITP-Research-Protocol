@@ -789,6 +789,21 @@ For an isolated bounded first-run topic acceptance pass, run:
 python research/knowledge-hub/runtime/scripts/run_first_run_topic_acceptance.py --json
 ```
 
+For the next bounded fresh-topic follow-through after first-source registration,
+run:
+
+```bash
+python research/knowledge-hub/runtime/scripts/run_first_source_followthrough_acceptance.py --json
+```
+
+That acceptance script replays the same fresh bootstrap and first-source
+registration lane, then executes exactly one bounded `literature_intake_stage`
+auto step and proves that runtime status advances onto L2 staging review rather
+than repeating the same L1->L2 action forever. It also checks that the
+workspace staging manifest becomes the foreground read surface and that
+`consult_l2(include_staging=True)` can retrieve the freshly staged topic-local
+row.
+
 That acceptance script uses a temporary kernel root, runs production
 `bootstrap --json`, production `loop --json`, then production `status --json`,
 and checks that the shared `bootstrap -> loop -> status` quickstart path keeps

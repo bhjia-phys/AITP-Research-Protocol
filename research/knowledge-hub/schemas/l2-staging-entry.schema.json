@@ -125,6 +125,9 @@
         "source_slug": {
           "type": "string"
         },
+        "literature_stage_signature": {
+          "type": "string"
+        },
         "vault_wiki_paths": {
           "type": "array",
           "items": {
