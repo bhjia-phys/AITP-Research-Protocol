@@ -237,6 +237,7 @@ def main() -> int:
     ensure_exists(Path(status_payload["runtime_protocol_note_path"]))
 
     registration_payload = None
+    status_after_registration = None
     if args.register_arxiv_id:
         metadata_json = (
             Path(args.registration_metadata_json).expanduser().resolve()
@@ -252,6 +253,33 @@ def main() -> int:
         )
         ensure_exists(Path(registration_payload["layer0_source_json"]))
         ensure_exists(Path(registration_payload["layer0_snapshot"]))
+        check(
+            str((registration_payload.get("runtime_status_sync") or {}).get("status") or "") == "refreshed",
+            "registration should refresh runtime status surfaces when the topic runtime already exists.",
+        )
+        status_after_registration = run_cli_json(
+            package_root=package_root,
+            kernel_root=kernel_root,
+            repo_root=repo_root,
+            args=[
+                "status",
+                "--topic-slug",
+                args.topic_slug,
+                "--json",
+            ],
+        )
+        check(
+            int(
+                (
+                    ((status_after_registration.get("active_research_contract") or {}).get("l1_source_intake") or {}).get(
+                        "source_count"
+                    )
+                    or 0
+                )
+            )
+            >= 1,
+            "status after registration should expose at least one registered source immediately.",
+        )
 
     payload = {
         "work_root": str(work_root),
@@ -262,6 +290,8 @@ def main() -> int:
     }
     if registration_payload is not None:
         payload["registration"] = registration_payload
+    if status_after_registration is not None:
+        payload["status_after_registration"] = status_after_registration
     if args.json:
         print(json.dumps(payload, ensure_ascii=True, indent=2))
     else:

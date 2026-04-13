@@ -2,13 +2,13 @@
 
 ## Result
 
-Milestone in progress.
+Milestone phase work complete. Lifecycle closure is next.
 
 ## Phases
 
 - [x] **Phase 176: New-Topic Session-Start Routing Hardening** *(Axis 4 + Axis 5)*
-- [ ] **Phase 176.1: Windows Source Registration Path And Status Coherence** *(Axis 1 + Axis 4)*
-- [ ] **Phase 176.2: Fresh Real-Topic First-Use Replay Proof** *(Axis 4 + Axis 5)*
+- [x] **Phase 176.1: Windows Source Registration Path And Status Coherence** *(Axis 1 + Axis 4)*
+- [x] **Phase 176.2: Fresh Real-Topic First-Use Replay Proof** *(Axis 4 + Axis 5)*
 
 ## Target Outcome
 
@@ -23,7 +23,7 @@ Milestone in progress.
 
 ## Next Step
 
-Start Phase 176.1.
+Run milestone audit / archive for `v2.2`.
 
 ### Phase 176: New-Topic Session-Start Routing Hardening
 
@@ -62,7 +62,7 @@ status-facing `L0` state coherent immediately after successful registration.
 
 Plans:
 
-- [ ] `176.1-01` Shorten Windows source paths and synchronize status after registration
+- [x] `176.1-01` Shorten Windows source paths and synchronize status after registration
 
 ### Phase 176.2: Fresh Real-Topic First-Use Replay Proof
 
@@ -81,4 +81,4 @@ close with durable receipts and explicit non-claims.
 
 Plans:
 
-- [ ] `176.2-01` Replay a fresh real-topic first-use proof from session-start through first source registration
+- [x] `176.2-01` Replay a fresh real-topic first-use proof from session-start through first source registration

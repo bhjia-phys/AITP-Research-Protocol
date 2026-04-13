@@ -92,6 +92,84 @@ class SourceDiscoveryContractTests(unittest.TestCase):
             snapshot_text = registration["layer0_snapshot"].read_text(encoding="utf-8")
             self.assertIn("Source bundle download: failed", snapshot_text)
 
+    def test_register_arxiv_source_uses_short_stable_source_directory_slug_for_long_titles(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            knowledge_root = Path(tmpdir) / "kernel"
+            metadata_override = {
+                "arxiv_id": "2401.00001v2",
+                "title": (
+                    "Measurement-induced algebraic transitions and observer algebras with "
+                    "long-form bounded operator-structure notes for Windows path stress"
+                ),
+                "summary": "A long-title fixture for Windows path stress.",
+                "published": "2024-01-03T00:00:00Z",
+                "updated": "2024-01-05T00:00:00Z",
+                "authors": ["Primary Author"],
+                "identifier": "https://arxiv.org/abs/2401.00001v2",
+                "abs_url": "https://arxiv.org/abs/2401.00001v2",
+                "pdf_url": "https://arxiv.org/pdf/2401.00001.pdf",
+                "source_url": "https://arxiv.org/e-print/2401.00001v2",
+            }
+
+            registration = self.register_module.register_arxiv_source(
+                knowledge_root=knowledge_root,
+                topic_slug="measurement-induced-algebraic-transition-and-observer-algebras",
+                arxiv_id="2401.00001v2",
+                registered_by="unit-test",
+                metadata_override=metadata_override,
+                download_source=False,
+                skip_enrichment=True,
+                skip_graph_build=True,
+            )
+
+            source_slug = registration["source_slug"]
+            self.assertRegex(source_slug, r"^paper-2401-00001-[0-9a-f]{8}$")
+            self.assertLessEqual(len(source_slug), 25)
+            self.assertEqual(registration["layer0_source_root"].name, source_slug)
+            self.assertEqual(
+                registration["layer0_source_root"].relative_to(knowledge_root).as_posix(),
+                f"source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/{source_slug}",
+            )
+
+    def test_register_arxiv_source_refreshes_runtime_status_surfaces_when_topic_runtime_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            knowledge_root = Path(tmpdir) / "kernel"
+            runtime_root = knowledge_root / "runtime" / "topics" / "demo-topic"
+            runtime_root.mkdir(parents=True, exist_ok=True)
+            (runtime_root / "topic_state.json").write_text(
+                json.dumps(
+                    {
+                        "topic_slug": "demo-topic",
+                        "resume_stage": "L3",
+                        "latest_run_id": "run-001",
+                        "research_mode": "exploratory_general",
+                        "updated_at": "2026-04-14T00:00:00+08:00",
+                    },
+                    ensure_ascii=True,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            metadata_override = self._metadata_override()
+
+            registration = self.register_module.register_arxiv_source(
+                knowledge_root=knowledge_root,
+                topic_slug="demo-topic",
+                arxiv_id="2401.00001v2",
+                registered_by="unit-test",
+                metadata_override=metadata_override,
+                download_source=False,
+                skip_enrichment=True,
+                skip_graph_build=True,
+            )
+
+            runtime_status_sync = registration["runtime_status_sync"]
+            self.assertEqual(runtime_status_sync["status"], "refreshed")
+            self.assertGreaterEqual(int(runtime_status_sync["source_count"] or 0), 1)
+            self.assertTrue(Path(runtime_status_sync["runtime_protocol_path"]).exists())
+            self.assertTrue(Path(runtime_status_sync["runtime_protocol_note_path"]).exists())
+
     def test_register_arxiv_source_cli_defaults_to_download_with_metadata_only_opt_out(self) -> None:
         parser = self.register_module.build_parser()
 

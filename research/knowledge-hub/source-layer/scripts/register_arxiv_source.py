@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import importlib.util
 import json
 import re
+import sys
 import tarfile
 import textwrap
 import urllib.error
@@ -19,6 +21,8 @@ from typing import Any
 
 
 ATOM_NS = {"atom": "http://www.w3.org/2005/Atom"}
+PACKAGE_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[4]
 
 
 def now_iso() -> str:
@@ -30,6 +34,15 @@ def slugify(text: str) -> str:
     text = re.sub(r"[^a-z0-9]+", "-", text)
     text = re.sub(r"-+", "-", text).strip("-")
     return text or "arxiv-paper"
+
+
+def bounded_slugify(text: str, *, max_length: int = 24) -> str:
+    slug = slugify(text)
+    if len(slug) <= max_length:
+        return slug
+    digest = hashlib.sha1(slug.encode("utf-8")).hexdigest()[:8]
+    head = slug[: max(8, max_length - len(digest) - 1)].rstrip("-")
+    return f"{head}-{digest}"
 
 
 def short_summary(text: str, limit: int = 260) -> str:
@@ -193,6 +206,89 @@ def load_graph_module(script_path: Path):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def build_source_slug(metadata: dict[str, Any]) -> str:
+    base_id = bounded_slugify(
+        str(metadata.get("base_id") or metadata.get("versioned_id") or ""),
+        max_length=20,
+    )
+    digest_input = "|".join(
+        [
+            str(metadata.get("title") or ""),
+            str(metadata.get("versioned_id") or ""),
+            str(metadata.get("abs_url") or ""),
+        ]
+    )
+    digest = hashlib.sha1(digest_input.encode("utf-8")).hexdigest()[:8]
+    if base_id:
+        return f"paper-{base_id}-{digest}"
+    return f"paper-{digest}"
+
+
+def sync_runtime_status_after_registration(
+    *,
+    knowledge_root: Path,
+    topic_slug: str,
+    source_id: str,
+    updated_by: str,
+) -> dict[str, Any]:
+    topic_state_path = knowledge_root / "runtime" / "topics" / topic_slug / "topic_state.json"
+    if not topic_state_path.exists():
+        return {
+            "status": "skipped",
+            "reason": "runtime_topic_missing",
+            "runtime_protocol_path": "",
+            "runtime_protocol_note_path": "",
+            "source_count": 0,
+            "source_intelligence_summary": "",
+        }
+
+    if str(PACKAGE_ROOT) not in sys.path:
+        sys.path.insert(0, str(PACKAGE_ROOT))
+
+    from knowledge_hub.aitp_service import AITPService
+
+    service = AITPService(kernel_root=knowledge_root, repo_root=REPO_ROOT)
+    human_request = f"Registered source {source_id}; refresh runtime status surfaces."
+    payload = service.refresh_runtime_context(
+        topic_slug=topic_slug,
+        updated_by=updated_by,
+        human_request=human_request,
+    )
+    current_topic_payload = load_json(knowledge_root / "runtime" / "current_topic.json") or {}
+    if str(current_topic_payload.get("topic_slug") or "").strip() == topic_slug:
+        service.remember_current_topic(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+            source="source-registration-sync",
+            human_request=human_request,
+        )
+    else:
+        service._sync_active_topics_registry(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+            source="source-registration-sync",
+            human_request=human_request,
+            focus=False,
+        )
+    return {
+        "status": "refreshed",
+        "reason": "runtime_topic_present",
+        "runtime_protocol_path": str(payload["runtime_protocol_path"]),
+        "runtime_protocol_note_path": str(payload["runtime_protocol_note_path"]),
+        "source_count": int(
+            (
+                ((payload.get("topic_synopsis") or {}).get("l1_source_intake") or {}).get(
+                    "source_count"
+                )
+                or 0
+            )
+        ),
+        "source_intelligence_summary": str(
+            (payload.get("source_intelligence") or {}).get("summary") or ""
+        ),
+    }
 
 
 def ensure_topic_manifest(topic_root: Path, topic_slug: str, created_at: str) -> None:
@@ -396,7 +492,7 @@ def register_arxiv_source(
         if metadata_override is not None
         else fetch_metadata(arxiv_id)
     )
-    source_slug = f"paper-{slugify(metadata['title'])}-{metadata['base_id'].replace('.', '-')}"
+    source_slug = build_source_slug(metadata)
 
     source_layer_topic_root = knowledge_root / "source-layer" / "topics" / topic_slug
     layer0_source_root = source_layer_topic_root / "sources" / source_slug
@@ -568,6 +664,13 @@ def register_arxiv_source(
             graph_build_status = "failed"
             graph_error = str(exc)
 
+    runtime_status_sync = sync_runtime_status_after_registration(
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+        source_id=source_id,
+        updated_by=registered_by,
+    )
+
     return {
         "status": "registered",
         "knowledge_root": knowledge_root,
@@ -593,6 +696,7 @@ def register_arxiv_source(
         "concept_graph_relative_path": concept_graph_relative_path,
         "graph_receipt_path": graph_receipt_path,
         "graph_error": graph_error,
+        "runtime_status_sync": runtime_status_sync,
     }
 
 
@@ -664,6 +768,7 @@ def main() -> int:
             "concept_graph_relative_path": result["concept_graph_relative_path"],
             "graph_receipt_path": str(result["graph_receipt_path"]) if result["graph_receipt_path"] is not None else "",
             "graph_error": result["graph_error"],
+            "runtime_status_sync": result["runtime_status_sync"],
         }
         print(json.dumps(payload, ensure_ascii=True, indent=2))
         return 0

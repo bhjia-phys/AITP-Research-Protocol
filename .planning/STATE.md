@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v2.2
 milestone_name: Fresh-Topic First-Use Reliability
 status: milestone_active
-stopped_at: "Phase 176 complete; Phase 176.1 next"
-last_updated: "2026-04-14T05:14:24+08:00"
+stopped_at: "Phase 176.2 complete; milestone lifecycle next"
+last_updated: "2026-04-14T05:33:01+08:00"
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 3
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 3
 ---
 
 # Project State
@@ -41,9 +41,11 @@ all layers again.
   hardening slice on a replayable multi-paper lane
 - Phase `176` now closes the fresh-topic `session-start` misrouting regression
   for bounded "from scratch" requests
-- the remaining first-use blocker is Windows source registration and status
-  coherence after successful registration
-- immediate next step: start Phase `176.1`
+- Phase `176.1` now closes Windows-safe source-path shortening and immediate
+  post-registration source-count visibility
+- Phase `176.2` now closes the bounded first-use replay proof from bootstrap
+  through registration and immediate status readback
+- immediate next step: audit and archive milestone `v2.2`
 
 ## Accumulated Context
 

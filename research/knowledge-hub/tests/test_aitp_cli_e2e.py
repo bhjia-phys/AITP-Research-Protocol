@@ -352,6 +352,18 @@ class AITPCLIE2ETests(unittest.TestCase):
         self.assertEqual(payload["registration"]["download_status"], "downloaded")
         self.assertEqual(payload["registration"]["extraction_status"], "extracted")
         self.assertTrue(Path(payload["registration"]["layer0_source_json"]).exists())
+        self.assertIn("status_after_registration", payload)
+        self.assertGreaterEqual(
+            int(
+                (
+                    (payload["status_after_registration"].get("active_research_contract") or {})
+                    .get("l1_source_intake")
+                    or {}
+                ).get("source_count")
+                or 0
+            ),
+            1,
+        )
 
     def test_record_collaborator_memory_json_and_human_paths(self) -> None:
         human = self._run_cli(

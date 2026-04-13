@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import sys
+import tarfile
 import tempfile
 import unittest
 from pathlib import Path
@@ -238,6 +239,59 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertEqual(args.register_arxiv_id, "2401.00001v2")
         self.assertEqual(args.registration_metadata_json, "metadata.json")
         self.assertTrue(args.use_package_root_as_kernel)
+
+    def test_first_run_acceptance_script_runs_registration_and_refreshes_status(self) -> None:
+        work_root = Path(self._tmpdir.name) / "first-run-registration-acceptance"
+        tar_path = Path(self._tmpdir.name) / "source.tar"
+        tex_path = Path(self._tmpdir.name) / "paper.tex"
+        metadata_path = Path(self._tmpdir.name) / "metadata.json"
+
+        tex_path.write_text(
+            "\\documentclass{article}\n\\begin{document}demo\\end{document}\n",
+            encoding="utf-8",
+        )
+        with tarfile.open(tar_path, "w") as archive:
+            archive.add(tex_path, arcname="paper.tex")
+        metadata_path.write_text(
+            json.dumps(
+                {
+                    "arxiv_id": "2401.00001v2",
+                    "title": "Topological Order and Anyon Condensation",
+                    "summary": "A direct match for topological order and anyon condensation discovery.",
+                    "published": "2024-01-03T00:00:00Z",
+                    "updated": "2024-01-05T00:00:00Z",
+                    "authors": ["Primary Author", "Secondary Author"],
+                    "identifier": "https://arxiv.org/abs/2401.00001v2",
+                    "abs_url": "https://arxiv.org/abs/2401.00001v2",
+                    "pdf_url": "https://arxiv.org/pdf/2401.00001.pdf",
+                    "source_url": tar_path.as_uri(),
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_first_run_topic_acceptance.py",
+                "--work-root",
+                str(work_root),
+                "--register-arxiv-id",
+                "2401.00001v2",
+                "--registration-metadata-json",
+                str(metadata_path),
+                "--json",
+            ],
+        ):
+            exit_code = self.first_run_topic_acceptance.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue((work_root / "kernel" / "runtime" / "topics").exists())
+        self.assertTrue((work_root / "kernel" / "source-layer" / "topics").exists())
 
     def tearDown(self) -> None:
         self._tmpdir.cleanup()

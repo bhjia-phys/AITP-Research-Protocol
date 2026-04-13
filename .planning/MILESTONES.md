@@ -2,7 +2,7 @@
 
 ## v2.2 Fresh-Topic First-Use Reliability (Active)
 
-**Phases completed:** 1 / 3 phases, 1 / 3 plans
+**Phases completed:** 3 / 3 phases, 3 / 3 plans
 
 **Milestone goal:**
 
@@ -22,6 +22,10 @@
   `v2.1` `L2` hardening slice
 - Phase `176` now makes bounded "from scratch" fresh-topic requests allocate a
   new topic instead of reopening stale current-topic memory
+- Phase `176.1` now shortens first-source registration paths and refreshes
+  runtime/status surfaces immediately after registration
+- Phase `176.2` now proves the bounded first-use lane mechanically from fresh
+  bootstrap through registration and immediate post-registration status replay
 
 ---
 

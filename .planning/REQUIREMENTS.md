@@ -20,16 +20,16 @@ actions.
 
 ### Source Registration Reliability
 
-- [ ] `FTF-03`: first-source registration survives long Windows topic slug +
+- [x] `FTF-03`: first-source registration survives long Windows topic slug +
   paper-title combinations without requiring a manual `\\?\` path workaround.
 
-- [ ] `FTF-04`: after successful source registration, status-facing `L0`
+- [x] `FTF-04`: after successful source registration, status-facing `L0`
   counters and source presence are immediately coherent, or one explicit sync
   step is enforced and reflected honestly.
 
 ### Replayable First-Use Proof
 
-- [ ] `FTF-05`: one replayable fresh real-topic acceptance lane proves
+- [x] `FTF-05`: one replayable fresh real-topic acceptance lane proves
   new-topic routing, first-source registration, and honest status coherence
   from the public front door.
 
@@ -48,9 +48,9 @@ actions.
 |-------------|-------|--------|
 | FTF-01 | Phase 176 | Done |
 | FTF-02 | Phase 176 | Done |
-| FTF-03 | Phase 176.1 | Pending |
-| FTF-04 | Phase 176.1 | Pending |
-| FTF-05 | Phase 176.2 | Pending |
+| FTF-03 | Phase 176.1 | Done |
+| FTF-04 | Phase 176.1 | Done |
+| FTF-05 | Phase 176.2 | Done |
 
 **Coverage:**
 - v1 requirements: 5 total
