@@ -9722,6 +9722,78 @@ class AITPServiceTests(unittest.TestCase):
         queue_row = json.loads(queue_path.read_text(encoding="utf-8").splitlines()[0])
         self.assertEqual(queue_row["status"], "completed")
 
+    def test_execute_auto_actions_runs_consultation_followup_and_writes_selection_artifact(self) -> None:
+        topic_slug = "demo-topic"
+        runtime_root = self._write_runtime_state(topic_slug=topic_slug)
+        queue_path = runtime_root / "action_queue.jsonl"
+        queue_path.write_text(
+            json.dumps(
+                {
+                    "action_id": f"action:{topic_slug}:consult-staged-l2",
+                    "status": "pending",
+                    "auto_runnable": True,
+                    "action_type": "consultation_followup",
+                    "summary": "Consult the topic-local staged L2 memory and choose one bounded candidate before deeper execution.",
+                    "handler_args": {"run_id": "2026-03-13-demo"},
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        runtime_protocol_json = runtime_root / "runtime_protocol.generated.json"
+        runtime_protocol_note = runtime_root / "runtime_protocol.generated.md"
+        runtime_protocol_json.write_text(
+            json.dumps(
+                {
+                    "runtime_mode": "explore",
+                    "active_submode": None,
+                    "transition_posture": {
+                        "transition_kind": "boundary_hold",
+                        "triggered_by": [],
+                    },
+                    "active_research_contract": {
+                        "l1_source_intake": {
+                            "source_count": 1,
+                            "assumption_rows": [],
+                            "regime_rows": [],
+                            "reading_depth_rows": [],
+                            "method_specificity_rows": [],
+                            "notation_rows": [],
+                            "contradiction_candidates": [],
+                            "notation_tension_candidates": [],
+                        }
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        runtime_protocol_note.write_text("# Runtime protocol\n", encoding="utf-8")
+
+        with patch.object(
+            self.service,
+            "_materialize_runtime_protocol_bundle",
+            return_value={
+                "runtime_protocol_path": str(runtime_protocol_json),
+                "runtime_protocol_note_path": str(runtime_protocol_note),
+            },
+        ):
+            payload = self.service._execute_auto_actions(
+                topic_slug=topic_slug,
+                updated_by="aitp-cli",
+                max_auto_steps=1,
+                default_skill_queries=None,
+            )
+
+        self.assertEqual(len(payload["executed"]), 1)
+        self.assertEqual(payload["executed"][0]["action_type"], "consultation_followup")
+        self.assertEqual(payload["executed"][0]["status"], "completed")
+        self.assertTrue((runtime_root / "consultation_followup_selection.active.json").exists())
+
     def test_execute_auto_actions_appends_and_runs_literature_intake_stage(self) -> None:
         topic_slug = "demo-topic"
         runtime_root = self._write_runtime_state(topic_slug=topic_slug)

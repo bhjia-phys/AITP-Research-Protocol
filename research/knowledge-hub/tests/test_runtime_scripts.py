@@ -464,6 +464,72 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertTrue((work_root / "kernel" / "canonical" / "staging" / "workspace_staging_manifest.json").exists())
         self.assertTrue((work_root / "kernel" / "runtime" / "topics").exists())
 
+    def test_consultation_followup_selection_acceptance_script_runs_on_isolated_work_root(self) -> None:
+        work_root = Path(self._tmpdir.name) / "consultation-followup-selection-acceptance"
+        tar_path = Path(self._tmpdir.name) / "consultation-followup-source.tar"
+        tex_path = Path(self._tmpdir.name) / "consultation-followup-paper.tex"
+        metadata_path = Path(self._tmpdir.name) / "consultation-followup-metadata.json"
+
+        tex_path.write_text(
+            "\\documentclass{article}\n\\begin{document}demo\\end{document}\n",
+            encoding="utf-8",
+        )
+        with tarfile.open(tar_path, "w") as archive:
+            archive.add(tex_path, arcname="paper.tex")
+        metadata_path.write_text(
+            json.dumps(
+                {
+                    "arxiv_id": "2401.00001v2",
+                    "title": "Topological Order and Anyon Condensation",
+                    "summary": "A direct match for topological order and anyon condensation discovery.",
+                    "published": "2024-01-03T00:00:00Z",
+                    "updated": "2024-01-05T00:00:00Z",
+                    "authors": ["Primary Author", "Secondary Author"],
+                    "identifier": "https://arxiv.org/abs/2401.00001v2",
+                    "abs_url": "https://arxiv.org/abs/2401.00001v2",
+                    "pdf_url": "https://arxiv.org/pdf/2401.00001.pdf",
+                    "source_url": tar_path.as_uri(),
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        module = _load_module(
+            "aitp_consultation_followup_selection_acceptance_test",
+            "runtime/scripts/run_consultation_followup_selection_acceptance.py",
+        )
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_consultation_followup_selection_acceptance.py",
+                "--work-root",
+                str(work_root),
+                "--register-arxiv-id",
+                "2401.00001v2",
+                "--registration-metadata-json",
+                str(metadata_path),
+                "--json",
+            ],
+        ):
+            exit_code = module.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue((work_root / "kernel" / "runtime" / "topics").exists())
+        self.assertTrue(
+            (
+                work_root
+                / "kernel"
+                / "runtime"
+                / "topics"
+                / "jones-chapter-4-finite-dimensional-backbone"
+                / "consultation_followup_selection.active.json"
+            ).exists()
+        )
+
     def tearDown(self) -> None:
         self._tmpdir.cleanup()
 
