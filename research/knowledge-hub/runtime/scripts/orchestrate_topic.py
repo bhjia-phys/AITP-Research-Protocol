@@ -23,9 +23,11 @@ from interaction_surface_support import (
 from orchestrator_contract_support import (
     append_closed_loop_actions,
     consultation_followup_ready_for_auto_run,
+    derive_post_promotion_followup,
     derive_selected_candidate_promotion_gate,
     derive_selected_candidate_route_choice,
     load_consultation_followup_selection,
+    load_post_promotion_followup,
     load_selected_candidate_promotion_gate,
     load_selected_candidate_route_choice,
     append_literature_followup_actions,
@@ -39,8 +41,11 @@ from orchestrator_contract_support import (
     queue_rows_from_pending_actions,
     queue_shaping_policy_from_contract_artifacts,
     reorder_queue_with_runtime_contract,
+    render_post_promotion_followup_markdown,
     render_selected_candidate_promotion_gate_markdown,
     render_selected_candidate_route_choice_markdown,
+    post_promotion_followup_paths,
+    post_promotion_followup_ready_for_materialization,
     selected_candidate_promotion_gate_paths,
     selected_candidate_promotion_gate_ready_for_materialization,
     should_advance_past_staged_l2_review,
@@ -1230,6 +1235,24 @@ def materialize_action_queue(
                             or not followup_count_matches
                             or str(completion_payload.get("status") or "") != "promoted"
                         )
+                        post_promotion_followup = load_post_promotion_followup(
+                            load_json=load_json,
+                            knowledge_root=knowledge_root,
+                            topic_slug=str(topic_state.get("topic_slug") or "").strip(),
+                        )
+                        if post_promotion_followup is None and post_promotion_followup_ready_for_materialization(
+                            load_json=load_json,
+                            knowledge_root=knowledge_root,
+                            topic_slug=str(topic_state.get("topic_slug") or "").strip(),
+                        ):
+                            post_promotion_followup = derive_post_promotion_followup(
+                                load_json=load_json,
+                                knowledge_root=knowledge_root,
+                                topic_slug=str(topic_state.get("topic_slug") or "").strip(),
+                                updated_by=str(topic_state.get("updated_by") or "codex"),
+                            )
+                            if isinstance(post_promotion_followup, dict):
+                                queue_meta["post_promotion_followup_payload"] = post_promotion_followup
                         if completion_stale:
                             queue.append(
                                 {
@@ -1246,6 +1269,31 @@ def materialize_action_queue(
                                     "handler": None,
                                     "handler_args": {
                                         "run_id": topic_state.get("latest_run_id"),
+                                    },
+                                    "queue_source": queue_meta.get("queue_source") or "runtime_appended",
+                                    "declared_contract_path": queue_meta.get("declared_contract_path"),
+                                }
+                            )
+                        elif isinstance(post_promotion_followup, dict):
+                            queue.append(
+                                {
+                                    "action_id": f"action:{topic_state['topic_slug']}:post-promotion-followup",
+                                    "topic_slug": topic_state["topic_slug"],
+                                    "resume_stage": "L4",
+                                    "status": "pending",
+                                    "action_type": str(
+                                        post_promotion_followup.get("chosen_action_type") or ""
+                                    ).strip(),
+                                    "summary": str(
+                                        post_promotion_followup.get("chosen_action_summary") or ""
+                                    ).strip(),
+                                    "auto_runnable": False,
+                                    "handler": None,
+                                    "handler_args": {
+                                        "run_id": topic_state.get("latest_run_id"),
+                                        "candidate_id": str(
+                                            post_promotion_followup.get("candidate_id") or ""
+                                        ).strip(),
                                     },
                                     "queue_source": queue_meta.get("queue_source") or "runtime_appended",
                                     "declared_contract_path": queue_meta.get("declared_contract_path"),
@@ -1561,6 +1609,17 @@ def main() -> int:
         write_text(
             promotion_gate_paths["note"],
             render_selected_candidate_promotion_gate_markdown(promotion_gate_payload),
+        )
+    post_promotion_followup_payload = queue_meta.get("post_promotion_followup_payload")
+    if isinstance(post_promotion_followup_payload, dict):
+        followup_paths = post_promotion_followup_paths(
+            knowledge_root=knowledge_root,
+            topic_slug=topic_slug,
+        )
+        write_json(followup_paths["json"], post_promotion_followup_payload)
+        write_text(
+            followup_paths["note"],
+            render_post_promotion_followup_markdown(post_promotion_followup_payload),
         )
     write_jsonl(topic_runtime_root / "action_queue.jsonl", action_queue)
     queue_contract_snapshot = build_action_queue_contract_snapshot(

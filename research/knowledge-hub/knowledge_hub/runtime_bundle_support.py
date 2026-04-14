@@ -1287,6 +1287,10 @@ def materialize_runtime_protocol_bundle(
         (topic_state.get("pointers") or {}).get("selected_candidate_route_choice_note_path")
         or ""
     ).strip()
+    post_promotion_followup_note_path = str(
+        (topic_state.get("pointers") or {}).get("post_promotion_followup_note_path")
+        or ""
+    ).strip()
     if (
         str((selected_pending_action or {}).get("action_type") or "").strip()
         == "selected_consultation_candidate_followup"
@@ -1322,6 +1326,20 @@ def materialize_runtime_protocol_bundle(
             },
         )
         must_read_paths.add(selected_candidate_route_choice_note_path)
+    if (
+        str((selected_pending_action or {}).get("action_type") or "").strip()
+        in {"review_topic_completion_blockers", "inspect_topic_completion"}
+        and post_promotion_followup_note_path
+        and post_promotion_followup_note_path not in must_read_paths
+    ):
+        must_read_now.insert(
+            0,
+            {
+                "path": post_promotion_followup_note_path,
+                "reason": "Read the durable post-promotion followup before reopening another bounded route after Layer 2 writeback.",
+            },
+        )
+        must_read_paths.add(post_promotion_followup_note_path)
     for candidate, trigger, reason in (
         (
             "interaction_state.json",

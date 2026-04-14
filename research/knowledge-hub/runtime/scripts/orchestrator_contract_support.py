@@ -615,6 +615,169 @@ def render_selected_candidate_promotion_gate_markdown(payload: dict[str, Any]) -
     )
 
 
+def load_post_promotion_followup(
+    *,
+    load_json: Callable[[Path], dict | None],
+    knowledge_root: Path,
+    topic_slug: str,
+) -> dict | None:
+    return load_json(
+        knowledge_root
+        / "runtime"
+        / "topics"
+        / topic_slug
+        / "post_promotion_followup.active.json"
+    )
+
+
+def post_promotion_followup_ready_for_materialization(
+    *,
+    load_json: Callable[[Path], dict | None],
+    knowledge_root: Path,
+    topic_slug: str,
+) -> bool:
+    if load_post_promotion_followup(
+        load_json=load_json,
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    ):
+        return False
+    promotion_gate = load_selected_candidate_promotion_gate(
+        load_json=load_json,
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    ) or {}
+    if str(promotion_gate.get("status") or "").strip() != "promoted":
+        return False
+    completion_payload = load_json(
+        knowledge_root / "runtime" / "topics" / topic_slug / "topic_completion.json"
+    ) or {}
+    if str(completion_payload.get("status") or "").strip() != "promoted":
+        return False
+    next_action_decision = load_json(
+        knowledge_root / "runtime" / "topics" / topic_slug / "next_action_decision.json"
+    ) or {}
+    selected_action = next_action_decision.get("selected_action") or {}
+    if str(selected_action.get("action_type") or "").strip() != "inspect_resume_state":
+        return False
+    promoted_cutoff = _parse_iso_timestamp(
+        str(promotion_gate.get("promoted_at") or promotion_gate.get("updated_at") or "")
+    )
+    if promoted_cutoff is None:
+        return False
+    return count_continue_decisions_after(
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+        cutoff=promoted_cutoff,
+    ) >= 2
+
+
+def post_promotion_followup_paths(
+    *,
+    knowledge_root: Path,
+    topic_slug: str,
+) -> dict[str, Path]:
+    runtime_root = knowledge_root / "runtime" / "topics" / topic_slug
+    return {
+        "json": runtime_root / "post_promotion_followup.active.json",
+        "note": runtime_root / "post_promotion_followup.active.md",
+    }
+
+
+def derive_post_promotion_followup(
+    *,
+    load_json: Callable[[Path], dict | None],
+    knowledge_root: Path,
+    topic_slug: str,
+    updated_by: str,
+) -> dict | None:
+    promotion_gate = load_selected_candidate_promotion_gate(
+        load_json=load_json,
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    ) or {}
+    if str(promotion_gate.get("status") or "").strip() != "promoted":
+        return None
+    completion_payload = load_json(
+        knowledge_root / "runtime" / "topics" / topic_slug / "topic_completion.json"
+    ) or {}
+    if str(completion_payload.get("status") or "").strip() != "promoted":
+        return None
+    blocked_checks = [
+        {
+            "check": str(row.get("check") or "").strip(),
+            "status": str(row.get("status") or "").strip(),
+            "summary": str(row.get("summary") or "").strip(),
+        }
+        for row in (completion_payload.get("completion_gate_checks") or [])
+        if isinstance(row, dict) and str(row.get("status") or "").strip() == "blocked"
+    ]
+    if blocked_checks:
+        chosen_action_type = "review_topic_completion_blockers"
+        blocker_summary = "; ".join(
+            row["summary"] for row in blocked_checks[:3] if str(row.get("summary") or "").strip()
+        )
+        chosen_action_summary = (
+            "Review post-promotion completion blockers before opening another bounded route: "
+            + (blocker_summary or "topic-completion still records unresolved blocker checks.")
+        )
+        followup_reason = (
+            "Layer 2 writeback is complete, so the next honest bounded work is to review the remaining "
+            "topic-completion blockers instead of repeating a generic resume-state inspection."
+        )
+    else:
+        chosen_action_type = "inspect_topic_completion"
+        chosen_action_summary = (
+            "Inspect the current promoted topic-completion surface before opening another bounded route."
+        )
+        followup_reason = (
+            "Layer 2 writeback is complete and no explicit blocker checks remain, so the next honest bounded "
+            "work is to inspect the promoted topic-completion surface directly."
+        )
+    return {
+        "topic_slug": topic_slug,
+        "run_id": str(completion_payload.get("run_id") or promotion_gate.get("run_id") or "").strip(),
+        "status": "selected",
+        "candidate_id": str(promotion_gate.get("candidate_id") or "").strip(),
+        "promotion_gate_status": str(promotion_gate.get("status") or "").strip(),
+        "topic_completion_status": str(completion_payload.get("status") or "").strip(),
+        "blocked_checks": blocked_checks,
+        "chosen_action_type": chosen_action_type,
+        "chosen_action_summary": chosen_action_summary,
+        "followup_reason": followup_reason,
+        "updated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "updated_by": updated_by,
+    }
+
+
+def render_post_promotion_followup_markdown(payload: dict[str, Any]) -> str:
+    lines = [
+        "# Post-Promotion Followup",
+        "",
+        f"- Topic slug: `{payload.get('topic_slug') or '(missing)'}`",
+        f"- Run id: `{payload.get('run_id') or '(missing)'}`",
+        f"- Candidate id: `{payload.get('candidate_id') or '(missing)'}`",
+        f"- Promotion gate status: `{payload.get('promotion_gate_status') or '(missing)'}`",
+        f"- Topic-completion status: `{payload.get('topic_completion_status') or '(missing)'}`",
+        f"- Chosen action type: `{payload.get('chosen_action_type') or '(missing)'}`",
+        f"- Chosen action summary: {payload.get('chosen_action_summary') or '(missing)'}",
+        f"- Followup reason: {payload.get('followup_reason') or '(missing)'}",
+        "",
+        "## Blocked Checks",
+        "",
+    ]
+    blocked_checks = payload.get("blocked_checks") or []
+    if blocked_checks:
+        for row in blocked_checks:
+            lines.append(
+                f"- `{row.get('check') or '(missing)'}` status=`{row.get('status') or '(missing)'}`: {row.get('summary') or '(missing)'}"
+            )
+    else:
+        lines.append("- (none)")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def should_advance_past_staged_l2_review(
     *,
     knowledge_root: Path,
