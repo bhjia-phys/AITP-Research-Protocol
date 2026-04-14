@@ -40,6 +40,21 @@ def load_consultation_followup_selection(
     )
 
 
+def load_selected_candidate_route_choice(
+    *,
+    load_json: Callable[[Path], dict | None],
+    knowledge_root: Path,
+    topic_slug: str,
+) -> dict | None:
+    return load_json(
+        knowledge_root
+        / "runtime"
+        / "topics"
+        / topic_slug
+        / "selected_candidate_route_choice.active.json"
+    )
+
+
 def preferred_action_types_from_runtime_contract(runtime_contract: dict | None) -> list[str]:
     if not runtime_contract:
         return []
@@ -254,6 +269,119 @@ def consultation_followup_ready_for_auto_run(
         cutoff=latest_staged,
     )
     return continue_count >= 2
+
+
+def selected_candidate_route_choice_ready_for_materialization(
+    *,
+    load_json: Callable[[Path], dict | None],
+    knowledge_root: Path,
+    topic_slug: str,
+) -> bool:
+    selection_payload = load_consultation_followup_selection(
+        load_json=load_json,
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    )
+    if not selection_payload or str(selection_payload.get("status") or "").strip() != "selected":
+        return False
+    next_action_decision = load_json(
+        knowledge_root / "runtime" / "topics" / topic_slug / "next_action_decision.json"
+    )
+    if not next_action_decision:
+        return False
+    selected_action = next_action_decision.get("selected_action") or {}
+    if str(selected_action.get("action_type") or "").strip() != "selected_consultation_candidate_followup":
+        return False
+    latest_staged = latest_topic_local_staged_entry_updated_at(
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    )
+    continue_count = count_continue_decisions_after(
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+        cutoff=latest_staged,
+    )
+    return continue_count >= 3
+
+
+def selected_candidate_route_choice_paths(
+    *,
+    knowledge_root: Path,
+    topic_slug: str,
+) -> dict[str, Path]:
+    runtime_root = knowledge_root / "runtime" / "topics" / topic_slug
+    return {
+        "json": runtime_root / "selected_candidate_route_choice.active.json",
+        "note": runtime_root / "selected_candidate_route_choice.active.md",
+    }
+
+
+def derive_selected_candidate_route_choice(
+    *,
+    load_json: Callable[[Path], dict | None],
+    knowledge_root: Path,
+    topic_slug: str,
+    updated_by: str,
+) -> dict | None:
+    selection_payload = load_consultation_followup_selection(
+        load_json=load_json,
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    )
+    if not selection_payload or str(selection_payload.get("status") or "").strip() != "selected":
+        return None
+    selected_candidate_path = str(selection_payload.get("selected_candidate_path") or "").strip()
+    if not selected_candidate_path:
+        return None
+    candidate_payload = load_json(knowledge_root / selected_candidate_path)
+    if not candidate_payload:
+        return None
+    candidate_id = str(selection_payload.get("selected_candidate_id") or "").strip()
+    candidate_unit_type = str(
+        candidate_payload.get("candidate_unit_type") or candidate_payload.get("entry_kind") or ""
+    ).strip()
+    if candidate_unit_type in {"warning_note", "negative_result"}:
+        chosen_action_type = "select_validation_route"
+        chosen_action_summary = (
+            f"Choose the first validation route for selected staged candidate `{candidate_id}` before deeper execution."
+        )
+        route_choice_reason = (
+            "Selected staged warning-side units should first enter explicit validation-route choice."
+        )
+    else:
+        chosen_action_type = "l2_promotion_review"
+        chosen_action_summary = (
+            f"Review Layer 2 promotion for selected staged candidate `{candidate_id}` before deeper execution."
+        )
+        route_choice_reason = (
+            "Selected staged reusable units should first enter bounded Layer 2 promotion review."
+        )
+    return {
+        "topic_slug": topic_slug,
+        "run_id": str(selection_payload.get("run_id") or "").strip() or None,
+        "status": "selected",
+        "selected_candidate_id": candidate_id,
+        "selected_candidate_path": selected_candidate_path,
+        "selected_candidate_title": str(selection_payload.get("selected_candidate_title") or "").strip(),
+        "selected_candidate_unit_type": candidate_unit_type,
+        "chosen_action_type": chosen_action_type,
+        "chosen_action_summary": chosen_action_summary,
+        "route_choice_reason": route_choice_reason,
+        "updated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "updated_by": updated_by,
+    }
+
+
+def render_selected_candidate_route_choice_markdown(payload: dict[str, Any]) -> str:
+    return (
+        "# Selected Candidate Route Choice\n\n"
+        f"- Status: `{payload.get('status') or 'missing'}`\n"
+        f"- Selected candidate: `{payload.get('selected_candidate_id') or '(missing)'}`\n"
+        f"- Candidate unit type: `{payload.get('selected_candidate_unit_type') or '(missing)'}`\n"
+        f"- Chosen action type: `{payload.get('chosen_action_type') or '(missing)'}`\n"
+        f"- Chosen action summary: {payload.get('chosen_action_summary') or '(missing)'}\n"
+        f"- Route choice reason: {payload.get('route_choice_reason') or '(missing)'}\n"
+    )
 
 
 def should_advance_past_staged_l2_review(

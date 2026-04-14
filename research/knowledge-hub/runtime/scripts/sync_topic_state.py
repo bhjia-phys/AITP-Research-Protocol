@@ -385,6 +385,12 @@ def main() -> int:
     selected_consultation_candidate_note_path = (
         topic_runtime_root / "consultation_followup_selection.active.md"
     )
+    selected_candidate_route_choice_path = (
+        topic_runtime_root / "selected_candidate_route_choice.active.json"
+    )
+    selected_candidate_route_choice_note_path = (
+        topic_runtime_root / "selected_candidate_route_choice.active.md"
+    )
 
     l0_source_rows = read_jsonl(l0_source_index_path)
     intake_status = read_json(intake_status_path)
@@ -639,6 +645,14 @@ def main() -> int:
             ),
             "selected_consultation_candidate_note_path": relative_path(
                 selected_consultation_candidate_note_path,
+                knowledge_root,
+            ),
+            "selected_candidate_route_choice_path": relative_path(
+                selected_candidate_route_choice_path,
+                knowledge_root,
+            ),
+            "selected_candidate_route_choice_note_path": relative_path(
+                selected_candidate_route_choice_note_path,
                 knowledge_root,
             ),
             "control_note_path": control_note_rel,

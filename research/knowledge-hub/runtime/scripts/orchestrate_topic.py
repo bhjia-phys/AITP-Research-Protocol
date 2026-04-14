@@ -23,7 +23,9 @@ from interaction_surface_support import (
 from orchestrator_contract_support import (
     append_closed_loop_actions,
     consultation_followup_ready_for_auto_run,
+    derive_selected_candidate_route_choice,
     load_consultation_followup_selection,
+    load_selected_candidate_route_choice,
     append_literature_followup_actions,
     append_runtime_helper_actions,
     compute_literature_intake_stage_signature,
@@ -35,7 +37,10 @@ from orchestrator_contract_support import (
     queue_rows_from_pending_actions,
     queue_shaping_policy_from_contract_artifacts,
     reorder_queue_with_runtime_contract,
+    render_selected_candidate_route_choice_markdown,
     should_advance_past_staged_l2_review,
+    selected_candidate_route_choice_paths,
+    selected_candidate_route_choice_ready_for_materialization,
     topic_has_staged_entries,
 )
 
@@ -1065,6 +1070,45 @@ def materialize_action_queue(
             isinstance(selection_payload, dict)
             and str(selection_payload.get("status") or "").strip() == "selected"
         ):
+            route_choice_payload = load_selected_candidate_route_choice(
+                load_json=load_json,
+                knowledge_root=knowledge_root,
+                topic_slug=str(topic_state.get("topic_slug") or "").strip(),
+            )
+            if route_choice_payload is None and selected_candidate_route_choice_ready_for_materialization(
+                load_json=load_json,
+                knowledge_root=knowledge_root,
+                topic_slug=str(topic_state.get("topic_slug") or "").strip(),
+            ):
+                route_choice_payload = derive_selected_candidate_route_choice(
+                    load_json=load_json,
+                    knowledge_root=knowledge_root,
+                    topic_slug=str(topic_state.get("topic_slug") or "").strip(),
+                    updated_by=str(topic_state.get("updated_by") or "codex"),
+                )
+                if isinstance(route_choice_payload, dict):
+                    queue_meta["selected_candidate_route_choice_payload"] = route_choice_payload
+            if isinstance(route_choice_payload, dict):
+                queue.append(
+                    {
+                        "action_id": f"action:{topic_state['topic_slug']}:selected-candidate-route-choice",
+                        "topic_slug": topic_state["topic_slug"],
+                        "resume_stage": topic_state["resume_stage"],
+                        "status": "pending",
+                        "action_type": str(route_choice_payload.get("chosen_action_type") or "").strip(),
+                        "summary": str(route_choice_payload.get("chosen_action_summary") or "").strip(),
+                        "auto_runnable": False,
+                        "handler": None,
+                        "handler_args": {
+                            "run_id": topic_state.get("latest_run_id"),
+                            "candidate_id": str(route_choice_payload.get("selected_candidate_id") or "").strip(),
+                            "candidate_path": str(route_choice_payload.get("selected_candidate_path") or "").strip(),
+                        },
+                        "queue_source": queue_meta.get("queue_source") or "runtime_appended",
+                        "declared_contract_path": queue_meta.get("declared_contract_path"),
+                    }
+                )
+                return queue, queue_meta
             selected_candidate_id = str(
                 selection_payload.get("selected_candidate_id") or ""
             ).strip()
@@ -1314,6 +1358,17 @@ def main() -> int:
         literature_followup_script,
         knowledge_root,
     )
+    route_choice_payload = queue_meta.get("selected_candidate_route_choice_payload")
+    if isinstance(route_choice_payload, dict):
+        route_choice_paths = selected_candidate_route_choice_paths(
+            knowledge_root=knowledge_root,
+            topic_slug=topic_slug,
+        )
+        write_json(route_choice_paths["json"], route_choice_payload)
+        write_text(
+            route_choice_paths["note"],
+            render_selected_candidate_route_choice_markdown(route_choice_payload),
+        )
     write_jsonl(topic_runtime_root / "action_queue.jsonl", action_queue)
     queue_contract_snapshot = build_action_queue_contract_snapshot(
         topic_state,

@@ -1283,6 +1283,10 @@ def materialize_runtime_protocol_bundle(
         (topic_state.get("pointers") or {}).get("selected_consultation_candidate_note_path")
         or ""
     ).strip()
+    selected_candidate_route_choice_note_path = str(
+        (topic_state.get("pointers") or {}).get("selected_candidate_route_choice_note_path")
+        or ""
+    ).strip()
     if (
         str((selected_pending_action or {}).get("action_type") or "").strip()
         == "selected_consultation_candidate_followup"
@@ -1297,6 +1301,20 @@ def materialize_runtime_protocol_bundle(
             },
         )
         must_read_paths.add(selected_consultation_candidate_note_path)
+    if (
+        str((selected_pending_action or {}).get("action_type") or "").strip()
+        in {"l2_promotion_review", "select_validation_route"}
+        and selected_candidate_route_choice_note_path
+        and selected_candidate_route_choice_note_path not in must_read_paths
+    ):
+        must_read_now.insert(
+            0,
+            {
+                "path": selected_candidate_route_choice_note_path,
+                "reason": "Read the durable selected-candidate route choice before deeper execution continues.",
+            },
+        )
+        must_read_paths.add(selected_candidate_route_choice_note_path)
     for candidate, trigger, reason in (
         (
             "interaction_state.json",
