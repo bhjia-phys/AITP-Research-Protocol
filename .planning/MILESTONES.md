@@ -1,6 +1,34 @@
 # Milestones
 
-## v2.7 Consultation-Followup Selection Closure (Active)
+## v2.8 Selected-Candidate Route Choice Closure (Active)
+
+**Phases completed:** 0 / 3 phases, 0 / 3 plans
+
+**Milestone goal:**
+
+- make the selected staged-candidate route derive one bounded deeper route
+  instead of leaving the topic on the candidate-summary placeholder
+
+- keep `next`, `status`, and dashboard surfaces aligned on that first deeper
+  route choice
+
+- close with one replayable fresh-topic proof that the same topic can advance
+  beyond selected-candidate summary into the first deeper route choice
+
+**Key accomplishments:**
+
+- milestone scoped from the remaining operator-visible gap after `v2.7`: the
+  same fresh topic can already reach one selected staged candidate, but the
+  loop still cannot derive the first deeper route choice from it
+- Phase `182` is planned to derive and persist one bounded route choice from
+  the selected staged candidate
+- Phase `182.1` is planned to advance public surfaces onto that chosen route
+- Phase `182.2` is planned to close the milestone with one replayable
+  fifth-continue packet
+
+---
+
+## v2.7 Consultation-Followup Selection Closure (Shipped: 2026-04-14)
 
 **Phases completed:** 3 / 3 phases, 3 / 3 plans
 
@@ -841,15 +869,14 @@ Completed milestone chain:
 
 ## Latest Closed Milestone
 
-- `v2.6` `Staged-L2 Post-Review Advancement` shipped
+- `v2.7` `Consultation-Followup Selection Closure` shipped
 
 ## Current Active Milestone
 
-- `v2.7` `Consultation-Followup Selection Closure`
+- `v2.8` `Selected-Candidate Route Choice Closure`
 
 ## Current Status
 
-- `v1.36` through `v2.6` are closed and archived or ready for archive lookup
-- active work has moved into milestone `v2.7`
-- next command boundary: audit / archive `v2.7` or promote the next bounded
-  post-selection candidate-execution gap
+- `v1.36` through `v2.7` are closed and archived or ready for archive lookup
+- active work has moved into milestone `v2.8`
+- next command boundary: execute Phase `182` for post-selection route choice

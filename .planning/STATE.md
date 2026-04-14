@@ -1,53 +1,53 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.7
-milestone_name: Consultation-Followup Selection Closure
+milestone: v2.8
+milestone_name: Selected-Candidate Route Choice Closure
 status: milestone_active
-stopped_at: "Phase 181.2 complete; milestone lifecycle next"
-last_updated: "2026-04-14T08:04:00+08:00"
+stopped_at: "Milestone planned; Phase 182 execution next"
+last_updated: "2026-04-14T08:18:00+08:00"
 progress:
   total_phases: 3
-  completed_phases: 3
+  completed_phases: 0
   total_plans: 3
-  completed_plans: 3
+  completed_plans: 0
 ---
 
 # Project State
 
 ## Current Position
 
-Status: milestone `v2.7` `Consultation-Followup Selection Closure` is active. Phase
-work is complete and milestone lifecycle closure is next.
+Status: milestone `v2.8` `Selected-Candidate Route Choice Closure` is active.
+Planning is complete and phase execution is next.
 
 **Why this milestone exists:**
 
-`v2.6` closed the first advancement beyond staged-L2 review and proved the
-same topic can reach a bounded post-review consultation route. A follow-up
-probe still showed one remaining bounded route gap: once
-`consultation_followup` becomes the selected route, the loop can surface that
-route but cannot yet execute it or advance onto a selected staged candidate.
+`v2.7` closed consultation-followup selection and proved the same fresh topic
+can already execute post-review consultation, write a durable selection
+artifact, and advance onto one selected staged candidate. A follow-up probe
+still showed one remaining bounded route gap: once
+`selected_consultation_candidate_followup` becomes the selected route, the
+loop still cannot derive the first deeper route choice from that selected
+candidate.
 
-That bounded consultation-followup closure step is now closed. The next step is
-milestone audit / archive, then promotion of the next gap that appears after
-candidate-specific post-review follow-up becomes stable.
+That bounded post-selection route-choice step is now the active milestone.
+Execution should start with Phase `182`.
 
 ## Immediate Next Step
 
-- active milestone: `v2.7` `Consultation-Followup Selection Closure`
-- latest closed milestone: `v2.6` `Staged-L2 Post-Review Advancement`
-- previous closed milestone: `v2.5` `Staged-L2 Review Reentry Coherence`
-- older closed milestone: `v2.4` `First L1 To L2 Follow-Through Coherence`
-- `v2.6` proved the same fresh topic can advance from staged-L2 review onto
-  a bounded post-review consultation route
-- a follow-up probe still left that consultation route visible but
+- active milestone: `v2.8` `Selected-Candidate Route Choice Closure`
+- latest closed milestone: `v2.7` `Consultation-Followup Selection Closure`
+- previous closed milestone: `v2.6` `Staged-L2 Post-Review Advancement`
+- older closed milestone: `v2.5` `Staged-L2 Review Reentry Coherence`
+- `v2.7` proved the same fresh topic can execute consultation-followup and
+  advance onto one selected staged candidate
+- a follow-up probe still left that selected candidate route visible but
   non-executable inside the bounded loop
-- Phase `181` now executes consultation-followup and records durable selection
-  artifacts
-- Phase `181.1` now advances queue materialization and public surfaces onto the
-  selected staged candidate
-- Phase `181.2` now closes the replayable fresh-topic proof for
-  consultation-followup selection closure
-- immediate next step: audit and archive milestone `v2.7`
+- Phase `182` should now derive and persist one first deeper route choice from
+  the selected staged candidate
+- Phase `182.1` should then align public surfaces on that deeper route
+- Phase `182.2` should close the milestone with one replayable fifth-continue
+  proof
+- immediate next step: execute Phase `182`
 
 ## Accumulated Context
 
@@ -141,3 +141,7 @@ cross-cutting).
   the loop must execute it, record a durable selection artifact, and advance to
   one selected staged candidate instead of remaining on generic consult
   language
+- `v2.8` now promotes the next bounded gap from the repaired `v2.7`
+  selection baseline: once a selected staged candidate becomes the selected
+  route, the loop must derive one bounded deeper route choice instead of
+  stalling on the candidate summary

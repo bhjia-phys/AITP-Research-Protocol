@@ -83,6 +83,7 @@ The previously scoped GSD mainline is implemented through:
 - `v2.4`
 - `v2.5`
 - `v2.6`
+- `v2.7`
 
 That closes the current bounded chain through the first three-lane real-topic
 natural-language dialogue proof across formal, toy-model, and
@@ -92,12 +93,36 @@ architecture is finished.
 
 ## Current Focus
 
-- Active milestone: `v2.7` `Consultation-Followup Selection Closure`
-- Latest closed milestone: `v2.6` `Staged-L2 Post-Review Advancement`
-- Next boundary: make the post-review consultation route executable and advance
-  it onto one bounded selected staged candidate
+- Active milestone: `v2.8` `Selected-Candidate Route Choice Closure`
+- Latest closed milestone: `v2.7` `Consultation-Followup Selection Closure`
+- Next boundary: derive one bounded deeper route from the selected staged
+  candidate
 
-## Current Milestone: v2.7 Consultation-Followup Selection Closure
+## Current Milestone: v2.8 Selected-Candidate Route Choice Closure
+
+**Goal:** make post-selection continuation trustworthy enough that, once a
+selected staged candidate becomes the selected route on a fresh topic, the loop
+derives one bounded deeper route choice instead of stalling on the
+candidate-summary placeholder.
+
+**Target features:**
+- derive one bounded route choice such as split, validate, or promote once the
+  selected staged candidate becomes the selected route
+- keep public `next`, `status`, and dashboard surfaces aligned on that deeper
+  route choice instead of the candidate-summary placeholder
+- close with one replayable fresh-topic proof that the same topic advances from
+  selected-candidate summary onto the first deeper route choice
+
+**Key context:**
+- `v2.7` closed consultation-followup execution and candidate selection, so the
+  same topic can already reach one selected staged candidate honestly
+- a follow-up probe still showed that the loop cannot derive the first deeper
+  route once `selected_consultation_candidate_followup` becomes the selected
+  action
+- the next bottleneck is therefore route choice after candidate selection, not
+  earlier consultation or staged-L2 closure work
+
+## Latest Closed Milestone: v2.7 Consultation-Followup Selection Closure
 
 **Goal:** make post-review consultation trustworthy enough that, once
 `consultation_followup` becomes the selected route on a fresh topic, the loop
@@ -105,26 +130,22 @@ can execute that consultation, write a durable selection artifact, and advance
 to one selected topic-local staged candidate instead of stalling on generic
 consult language.
 
-**Target features:**
-- execute one bounded topic-local `consult-l2(record_consultation=True)` step
-  once the consultation-followup route is selected and the operator continues
-  again
-- keep public `next`, `status`, and dashboard surfaces aligned on one selected
-  topic-local staged candidate after that consultation lands
-- close with one replayable fresh-topic proof that the same topic advances from
-  post-review consultation onto candidate-specific follow-up
+**Delivered features:**
+- the bounded loop now executes one topic-local `consult-l2` step once the
+  consultation-followup route is surfaced and the operator continues again
+- that consultation step now writes durable consultation and selection artifacts
+- queue materialization and public `next` / `status` now advance onto one
+  selected topic-local staged candidate
+- one replayable fresh-topic proof now closes that consultation-followup
+  selection baseline
 
 **Key context:**
-- `v2.6` closed the first advancement beyond staged-L2 review and proved that
-  public surfaces can already reach a bounded post-review consultation route
-- a follow-up probe still showed that the loop cannot execute that
-  consultation-followup step or advance from it onto a selected staged
-  candidate
-- the next bottleneck is therefore candidate-selection closure after
-  consultation, not reopening earlier registration, staging quality, or H-plane
-  neutrality work
+- `v2.6` had already closed the first post-review consultation surface
+- `v2.7` closed the remaining consultation-followup execution and
+  candidate-selection gap without pretending that route choice after selection
+  was already solved
 
-## Latest Closed Milestone: v2.6 Staged-L2 Post-Review Advancement
+## Previous Closed Milestone: v2.6 Staged-L2 Post-Review Advancement
 
 **Goal:** make post-review continuation trustworthy enough that, once staged-`L2`
 review is already visible on a fresh topic, a later benign `continue`
@@ -1138,4 +1159,4 @@ QSGW` lanes instead of re-litigating whether AITP already has a trustworthy
 positive canonical-L2 path.
 
 ---
-*Last updated: 2026-04-14 after starting milestone v2.7*
+*Last updated: 2026-04-14 after starting milestone v2.8*

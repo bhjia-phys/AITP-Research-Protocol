@@ -1,81 +1,80 @@
-# Roadmap: v2.7 Consultation-Followup Selection Closure
+# Roadmap: v2.8 Selected-Candidate Route Choice Closure
 
 ## Result
 
-Milestone phase work complete. Lifecycle closure is next.
+Milestone planned. Phase execution is next.
 
 ## Phases
 
-- [x] **Phase 181: Consultation-Followup Auto Execution** *(Axis 2 + Axis 4)*
-- [x] **Phase 181.1: Selected Candidate Route Advancement** *(Axis 4 + Axis 5)*
-- [x] **Phase 181.2: Fresh Consultation-Followup Selection Replay Proof** *(Axis 4 + Axis 3)*
+- [ ] **Phase 182: Selected-Candidate Route Choice** *(Axis 2 + Axis 4)*
+- [ ] **Phase 182.1: Public Post-Selection Route Advancement** *(Axis 4 + Axis 5)*
+- [ ] **Phase 182.2: Fresh Post-Selection Route Choice Replay Proof** *(Axis 4 + Axis 3)*
 
 ## Target Outcome
 
-- once post-review consultation becomes the selected route, the loop can now
-  execute that route instead of stalling on a visible-but-non-executable step
-- the same consultation step now writes durable consultation and selection
-  artifacts, then advances public `next` / `status` onto one selected
-  topic-local staged candidate
-- one replayable fresh-topic proof records the fourth bounded continue step
-  from staged-L2 review into candidate-specific follow-up
+- once a selected staged candidate becomes the selected route, the same topic
+  no longer stalls on that candidate-summary placeholder forever
+- the bounded loop now derives one first deeper route choice from the selected
+  candidate and public `next` / `status` expose that new route
+- one replayable fresh-topic proof records the fifth bounded continue step from
+  selected-candidate summary into the first deeper route choice
 
 ## Next Step
 
-Run milestone audit / archive for `v2.7`.
+Plan / execute Phase `182`.
 
-### Phase 181: Consultation-Followup Auto Execution
+### Phase 182: Selected-Candidate Route Choice
 
 **Axis:** Axis 2 (inter-layer connection) + Axis 4 (human experience)
 
-**Goal:** make the post-review consultation step executable and durable once it
-becomes the selected route on the same fresh topic.
+**Goal:** derive one bounded deeper route from the selected staged candidate so
+the loop can move beyond the candidate-summary placeholder.
 
 **Requirements:**
 
-- `CFS-01`
-- `CFS-02`
+- `RCC-01`
+- `RCC-02`
 
-**Depends on:** `v2.6`
+**Depends on:** `v2.7`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `181-01` Execute consultation-followup through the bounded auto-action lane and retain durable selection artifacts
+- [ ] `182-01` Derive and persist one bounded route choice from the selected consultation candidate
 
-### Phase 181.1: Selected Candidate Route Advancement
+### Phase 182.1: Public Post-Selection Route Advancement
 
 **Axis:** Axis 4 (human evidence) + Axis 5 (agent-facing steering)
 
-**Goal:** make queue materialization and public surfaces advance from generic
-consultation-followup to one selected staged-candidate follow-up.
+**Goal:** make public `next` and `status` advance from selected-candidate
+summary to the same first deeper route choice.
 
 **Requirements:**
 
-- `CFS-03`
+- `RCC-03`
 
-**Depends on:** Phase `181`
+**Depends on:** Phase `182`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `181.1-01` Advance queue and public surfaces onto the selected consultation candidate
+- [ ] `182.1-01` Align public surfaces on the first deeper route chosen after selected-candidate closure
 
-### Phase 181.2: Fresh Consultation-Followup Selection Replay Proof
+### Phase 182.2: Fresh Post-Selection Route Choice Replay Proof
 
 **Axis:** Axis 4 (human evidence) + Axis 3 (data recording)
 
 **Goal:** close the milestone with one replayable fresh-topic proof that the
-same topic can execute consultation-followup, write the selection artifact, and
-advance onto the selected staged candidate.
+same topic can advance beyond selected-candidate summary into one bounded
+deeper route choice.
 
 **Requirements:**
 
-- `CFS-04`
+- `RCC-04`
 
-**Depends on:** Phase `181.1`
+**Depends on:** Phase `182.1`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `181.2-01` Capture the replayable fresh-topic consultation-followup selection closure packet
+- [ ] `182.2-01` Capture the replayable fifth-continue advancement beyond selected-candidate summary
