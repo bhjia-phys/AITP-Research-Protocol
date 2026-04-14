@@ -384,6 +384,237 @@ def render_selected_candidate_route_choice_markdown(payload: dict[str, Any]) -> 
     )
 
 
+def load_selected_candidate_promotion_gate(
+    *,
+    load_json: Callable[[Path], dict | None],
+    knowledge_root: Path,
+    topic_slug: str,
+) -> dict | None:
+    selection_payload = load_consultation_followup_selection(
+        load_json=load_json,
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    ) or {}
+    route_choice_payload = load_selected_candidate_route_choice(
+        load_json=load_json,
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    ) or {}
+    selected_candidate_id = str(
+        route_choice_payload.get("selected_candidate_id")
+        or selection_payload.get("selected_candidate_id")
+        or ""
+    ).strip()
+    gate_payload = load_json(
+        knowledge_root / "runtime" / "topics" / topic_slug / "promotion_gate.json"
+    )
+    if not gate_payload:
+        return None
+    if selected_candidate_id and str(gate_payload.get("candidate_id") or "").strip() != selected_candidate_id:
+        return None
+    return gate_payload
+
+
+def selected_candidate_promotion_gate_ready_for_materialization(
+    *,
+    load_json: Callable[[Path], dict | None],
+    knowledge_root: Path,
+    topic_slug: str,
+) -> bool:
+    route_choice_payload = load_selected_candidate_route_choice(
+        load_json=load_json,
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    )
+    if not route_choice_payload:
+        return False
+    if str(route_choice_payload.get("chosen_action_type") or "").strip() != "l2_promotion_review":
+        return False
+    if load_selected_candidate_promotion_gate(
+        load_json=load_json,
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    ):
+        return False
+    next_action_decision = load_json(
+        knowledge_root / "runtime" / "topics" / topic_slug / "next_action_decision.json"
+    )
+    if not next_action_decision:
+        return False
+    selected_action = next_action_decision.get("selected_action") or {}
+    if str(selected_action.get("action_type") or "").strip() != "l2_promotion_review":
+        return False
+    latest_staged = latest_topic_local_staged_entry_updated_at(
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    )
+    continue_count = count_continue_decisions_after(
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+        cutoff=latest_staged,
+    )
+    return continue_count >= 4
+
+
+def selected_candidate_promotion_gate_paths(
+    *,
+    knowledge_root: Path,
+    topic_slug: str,
+) -> dict[str, Path]:
+    runtime_root = knowledge_root / "runtime" / "topics" / topic_slug
+    return {
+        "json": runtime_root / "promotion_gate.json",
+        "note": runtime_root / "promotion_gate.md",
+    }
+
+
+def derive_selected_candidate_promotion_gate(
+    *,
+    load_json: Callable[[Path], dict | None],
+    knowledge_root: Path,
+    topic_slug: str,
+    requested_by: str,
+) -> dict | None:
+    route_choice_payload = load_selected_candidate_route_choice(
+        load_json=load_json,
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    )
+    if not route_choice_payload:
+        return None
+    if str(route_choice_payload.get("chosen_action_type") or "").strip() != "l2_promotion_review":
+        return None
+    selected_candidate_path = str(route_choice_payload.get("selected_candidate_path") or "").strip()
+    if not selected_candidate_path:
+        return None
+    candidate_payload = load_json(knowledge_root / selected_candidate_path)
+    if not candidate_payload:
+        return None
+    selection_payload = load_consultation_followup_selection(
+        load_json=load_json,
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    ) or {}
+    requested_at = datetime.now().astimezone().isoformat(timespec="seconds")
+
+    def _dedupe_strings(rows: object) -> list[str]:
+        ordered: list[str] = []
+        seen: set[str] = set()
+        if not isinstance(rows, list):
+            return ordered
+        for item in rows:
+            cleaned = str(item or "").strip()
+            if not cleaned or cleaned in seen:
+                continue
+            seen.add(cleaned)
+            ordered.append(cleaned)
+        return ordered
+
+    candidate_id = str(
+        route_choice_payload.get("selected_candidate_id")
+        or selection_payload.get("selected_candidate_id")
+        or candidate_payload.get("entry_id")
+        or ""
+    ).strip()
+    candidate_type = str(
+        candidate_payload.get("candidate_unit_type")
+        or candidate_payload.get("entry_kind")
+        or "staged_unit"
+    ).strip()
+    title = str(
+        route_choice_payload.get("selected_candidate_title")
+        or selection_payload.get("selected_candidate_title")
+        or candidate_payload.get("title")
+        or candidate_id
+    ).strip()
+    summary = str(candidate_payload.get("summary") or route_choice_payload.get("chosen_action_summary") or "").strip()
+    provenance = candidate_payload.get("provenance") or {}
+    return {
+        "topic_slug": topic_slug,
+        "run_id": str(route_choice_payload.get("run_id") or selection_payload.get("run_id") or "").strip(),
+        "candidate_id": candidate_id,
+        "candidate_type": candidate_type,
+        "title": title,
+        "summary": summary,
+        "route": "selected_candidate_promotion_review",
+        "status": "pending_human_approval",
+        "intended_l2_targets": _dedupe_strings(candidate_payload.get("intended_l2_targets")),
+        "backend_id": str(provenance.get("backend_id") or candidate_payload.get("backend_id") or "").strip(),
+        "target_backend_root": str(
+            provenance.get("backend_root") or candidate_payload.get("target_backend_root") or ""
+        ).strip(),
+        "review_mode": "human",
+        "canonical_layer": "L2",
+        "coverage_status": str(candidate_payload.get("coverage_status") or "not_audited"),
+        "consensus_status": str(candidate_payload.get("consensus_status") or "not_requested"),
+        "regression_gate_status": str(candidate_payload.get("regression_gate_status") or "not_audited"),
+        "topic_completion_status": str(candidate_payload.get("topic_completion_status") or "not_assessed"),
+        "source_layer": "L2_staging",
+        "requested_destination_layer": "L2",
+        "resolved_destination_layer": None,
+        "approval_change_kind": "pending_review",
+        "human_modifications": [],
+        "supporting_regression_question_ids": _dedupe_strings(
+            candidate_payload.get("supporting_regression_question_ids")
+        ),
+        "supporting_oracle_ids": _dedupe_strings(candidate_payload.get("supporting_oracle_ids")),
+        "supporting_regression_run_ids": _dedupe_strings(
+            candidate_payload.get("supporting_regression_run_ids")
+        ),
+        "runtime_schema_types": [],
+        "runtime_schema_paths": {},
+        "runtime_artifact_paths": {},
+        "runtime_schema_context": {
+            "status": "not_materialized",
+            "source": "selected_candidate_route_choice",
+        },
+        "promotion_blockers": _dedupe_strings(candidate_payload.get("promotion_blockers")),
+        "split_required": bool(candidate_payload.get("split_required")),
+        "cited_recovery_required": bool(candidate_payload.get("cited_recovery_required")),
+        "followup_gap_ids": _dedupe_strings(candidate_payload.get("followup_gap_ids")),
+        "merge_outcome": "pending",
+        "requested_by": requested_by,
+        "requested_at": requested_at,
+        "approved_by": None,
+        "approved_at": None,
+        "rejected_by": None,
+        "rejected_at": None,
+        "promoted_by": None,
+        "promoted_at": None,
+        "promoted_units": [],
+        "notes": (
+            "Auto-materialized from the selected staged candidate route choice so the first "
+            "promotion-review gate is explicit and durable."
+        ),
+    }
+
+
+def render_selected_candidate_promotion_gate_markdown(payload: dict[str, Any]) -> str:
+    return (
+        "# L2 Promotion Gate\n\n"
+        f"- Topic slug: `{payload.get('topic_slug') or '(missing)'}`\n"
+        f"- Run id: `{payload.get('run_id') or '(missing)'}`\n"
+        f"- Candidate id: `{payload.get('candidate_id') or '(missing)'}`\n"
+        f"- Candidate type: `{payload.get('candidate_type') or '(missing)'}`\n"
+        f"- Status: `{payload.get('status') or '(missing)'}`\n"
+        f"- Route: `{payload.get('route') or '(missing)'}`\n"
+        f"- Requested by: `{payload.get('requested_by') or '(missing)'}` at `{payload.get('requested_at') or '(missing)'}`\n"
+        f"- Review mode: `{payload.get('review_mode') or '(missing)'}`\n"
+        f"- Canonical layer: `{payload.get('canonical_layer') or '(missing)'}`\n"
+        f"- Source layer: `{payload.get('source_layer') or '(missing)'}`\n"
+        f"- Split required: `{payload.get('split_required')}`\n"
+        f"- Cited recovery required: `{payload.get('cited_recovery_required')}`\n"
+        "\n"
+        "## Candidate Summary\n\n"
+        f"{payload.get('summary') or '(missing)'}\n\n"
+        "## Promotion Blockers\n\n"
+        + "".join(f"- {blocker}\n" for blocker in (payload.get("promotion_blockers") or ["(none)"]))
+        + "\n"
+        "## Operator Rule\n\n"
+        "- L2 promotion is blocked until a human explicitly approves or rejects this gate.\n"
+    )
+
+
 def should_advance_past_staged_l2_review(
     *,
     knowledge_root: Path,

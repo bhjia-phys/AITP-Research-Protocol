@@ -84,6 +84,7 @@ The previously scoped GSD mainline is implemented through:
 - `v2.5`
 - `v2.6`
 - `v2.7`
+- `v2.8`
 
 That closes the current bounded chain through the first three-lane real-topic
 natural-language dialogue proof across formal, toy-model, and
@@ -93,36 +94,58 @@ architecture is finished.
 
 ## Current Focus
 
-- Active milestone: `v2.8` `Selected-Candidate Route Choice Closure`
-- Latest closed milestone: `v2.7` `Consultation-Followup Selection Closure`
-- Next boundary: derive one bounded deeper route from the selected staged
-  candidate
+- Active milestone: `v2.9` `Promotion-Review Gate Closure`
+- Latest closed milestone: `v2.8` `Selected-Candidate Route Choice Closure`
+- Next boundary: materialize one explicit promotion-review gate from the chosen
+  route
 
-## Current Milestone: v2.8 Selected-Candidate Route Choice Closure
+## Current Milestone: v2.9 Promotion-Review Gate Closure
+
+**Goal:** make post-route continuation trustworthy enough that, once
+`l2_promotion_review` becomes the selected route on a fresh topic, the loop
+materializes one explicit promotion-review gate instead of stalling on the
+summary placeholder.
+
+**Target features:**
+- materialize one explicit promotion-review gate from the selected staged
+  candidate once `l2_promotion_review` becomes the selected route
+- keep public `next`, `status`, and dashboard surfaces aligned on that gate
+  instead of the summary placeholder
+- close with one replayable fresh-topic proof that the same topic advances from
+  promotion-review summary onto the explicit gate
+
+**Key context:**
+- `v2.8` closed selected-candidate route choice, so the same topic can already
+  reach `l2_promotion_review` honestly on the bounded baseline
+- a follow-up probe still showed that the loop cannot materialize the explicit
+  promotion-review gate once that route becomes selected
+- the next bottleneck is therefore promotion-review gate materialization, not
+  earlier consultation or route-choice closure work
+
+## Latest Closed Milestone: v2.8 Selected-Candidate Route Choice Closure
 
 **Goal:** make post-selection continuation trustworthy enough that, once a
 selected staged candidate becomes the selected route on a fresh topic, the loop
 derives one bounded deeper route choice instead of stalling on the
 candidate-summary placeholder.
 
-**Target features:**
-- derive one bounded route choice such as split, validate, or promote once the
-  selected staged candidate becomes the selected route
-- keep public `next`, `status`, and dashboard surfaces aligned on that deeper
-  route choice instead of the candidate-summary placeholder
-- close with one replayable fresh-topic proof that the same topic advances from
-  selected-candidate summary onto the first deeper route choice
+**Delivered features:**
+- the bounded loop now derives one first deeper route choice from the selected
+  staged candidate
+- that route choice now writes durable
+  `selected_candidate_route_choice.active.json|md`
+- public `next` / `status` now advance from selected-candidate summary onto
+  `l2_promotion_review`
+- one replayable fresh-topic proof now closes that post-selection route-choice
+  baseline
 
 **Key context:**
-- `v2.7` closed consultation-followup execution and candidate selection, so the
-  same topic can already reach one selected staged candidate honestly
-- a follow-up probe still showed that the loop cannot derive the first deeper
-  route once `selected_consultation_candidate_followup` becomes the selected
-  action
-- the next bottleneck is therefore route choice after candidate selection, not
-  earlier consultation or staged-L2 closure work
+- `v2.7` had already closed consultation-followup execution and candidate
+  selection
+- `v2.8` closed the remaining route-choice gap without pretending that the
+  selected promotion-review route itself was already executable
 
-## Latest Closed Milestone: v2.7 Consultation-Followup Selection Closure
+## Previous Closed Milestone: v2.7 Consultation-Followup Selection Closure
 
 **Goal:** make post-review consultation trustworthy enough that, once
 `consultation_followup` becomes the selected route on a fresh topic, the loop
@@ -1159,4 +1182,4 @@ QSGW` lanes instead of re-litigating whether AITP already has a trustworthy
 positive canonical-L2 path.
 
 ---
-*Last updated: 2026-04-14 after starting milestone v2.8*
+*Last updated: 2026-04-14 after starting milestone v2.9*

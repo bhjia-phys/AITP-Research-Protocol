@@ -1,8 +1,34 @@
 # Milestones
 
-## v2.8 Selected-Candidate Route Choice Closure (Active)
+## v2.9 Promotion-Review Gate Closure (Active)
 
 **Phases completed:** 0 / 3 phases, 0 / 3 plans
+
+**Milestone goal:**
+
+- make the selected `l2_promotion_review` route materialize one explicit
+  promotion-review gate instead of leaving the topic on the summary placeholder
+
+- keep `next`, `status`, and dashboard surfaces aligned on that explicit gate
+
+- close with one replayable fresh-topic proof that the same topic can advance
+  beyond promotion-review summary into the explicit gate
+
+**Key accomplishments:**
+
+- milestone scoped from the remaining operator-visible gap after `v2.8`: the
+  same fresh topic can already reach `l2_promotion_review`, but the loop still
+  cannot materialize the explicit promotion-review gate from that route
+- Phase `183` is planned to materialize one explicit promotion-review gate
+- Phase `183.1` is planned to advance public surfaces onto that gate
+- Phase `183.2` is planned to close the milestone with one replayable
+  sixth-continue packet
+
+---
+
+## v2.8 Selected-Candidate Route Choice Closure (Shipped: 2026-04-14)
+
+**Phases completed:** 3 / 3 phases, 3 / 3 plans
 
 **Milestone goal:**
 
@@ -19,12 +45,12 @@
 
 - milestone scoped from the remaining operator-visible gap after `v2.7`: the
   same fresh topic can already reach one selected staged candidate, but the
-  loop still cannot derive the first deeper route choice from it
-- Phase `182` is planned to derive and persist one bounded route choice from
-  the selected staged candidate
-- Phase `182.1` is planned to advance public surfaces onto that chosen route
-- Phase `182.2` is planned to close the milestone with one replayable
-  fifth-continue packet
+  loop still could not derive the first deeper route choice from it
+- Phase `182` now derives and persists one bounded route choice from the
+  selected staged candidate
+- Phase `182.1` now advances public surfaces onto that chosen route
+- Phase `182.2` now closes the milestone with one replayable fresh-topic
+  route-choice packet
 
 ---
 
@@ -869,14 +895,14 @@ Completed milestone chain:
 
 ## Latest Closed Milestone
 
-- `v2.7` `Consultation-Followup Selection Closure` shipped
+- `v2.8` `Selected-Candidate Route Choice Closure` shipped
 
 ## Current Active Milestone
 
-- `v2.8` `Selected-Candidate Route Choice Closure`
+- `v2.9` `Promotion-Review Gate Closure`
 
 ## Current Status
 
-- `v1.36` through `v2.7` are closed and archived or ready for archive lookup
-- active work has moved into milestone `v2.8`
-- next command boundary: execute Phase `182` for post-selection route choice
+- `v1.36` through `v2.8` are closed and archived or ready for archive lookup
+- active work has moved into milestone `v2.9`
+- next command boundary: execute Phase `183` for promotion-review gate closure

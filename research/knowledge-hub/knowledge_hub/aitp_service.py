@@ -685,6 +685,13 @@ class AITPService:
             "note": runtime_root / "promotion_gate.md",
         }
 
+    def _selected_candidate_promotion_bridge_paths(self, topic_slug: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        return {
+            "json": runtime_root / "selected_candidate_promotion_bridge.active.json",
+            "note": runtime_root / "selected_candidate_promotion_bridge.active.md",
+        }
+
     def _promotion_gate_log_path(self, topic_slug: str, run_id: str) -> Path:
         return (
             self._validation_run_root(topic_slug, run_id) / "promotion_gate_log.jsonl"
@@ -4535,6 +4542,11 @@ class AITPService:
         for row in rows:
             if str(row.get("candidate_id") or "").strip() == candidate_id:
                 return row
+        bridge_payload = read_json(
+            self._selected_candidate_promotion_bridge_paths(topic_slug)["json"]
+        ) or {}
+        if str(bridge_payload.get("candidate_id") or "").strip() == candidate_id:
+            return bridge_payload
         raise FileNotFoundError(
             f"Candidate {candidate_id} not found for topic {topic_slug} run {run_id}"
         )
@@ -8433,6 +8445,15 @@ class AITPService:
             result=result,
             summary=f"Candidate promotion completed for {candidate_id}.",
         )
+        runtime_policy_path = self.kernel_root / "runtime" / "closed_loop_policies.json"
+        orchestrate_script = self._kernel_script("runtime/scripts/orchestrate_topic.py")
+        if runtime_policy_path.exists() and orchestrate_script.exists():
+            result["orchestrated_runtime"] = self.orchestrate(
+                topic_slug=topic_slug,
+                run_id=resolved_run_id,
+                updated_by=promoted_by,
+                human_request=notes or f"Refresh runtime surfaces after promoting {candidate_id}.",
+            )
         return result
 
     def auto_promote_candidate(

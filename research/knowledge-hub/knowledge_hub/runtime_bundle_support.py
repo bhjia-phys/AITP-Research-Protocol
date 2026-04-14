@@ -1303,7 +1303,14 @@ def materialize_runtime_protocol_bundle(
         must_read_paths.add(selected_consultation_candidate_note_path)
     if (
         str((selected_pending_action or {}).get("action_type") or "").strip()
-        in {"l2_promotion_review", "select_validation_route"}
+        in {
+            "l2_promotion_review",
+            "request_promotion",
+            "approve_promotion",
+            "promote_candidate",
+            "auto_promote_candidate",
+            "select_validation_route",
+        }
         and selected_candidate_route_choice_note_path
         and selected_candidate_route_choice_note_path not in must_read_paths
     ):

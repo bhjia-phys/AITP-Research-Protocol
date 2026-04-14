@@ -1545,6 +1545,81 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertIn("promotion_intent", active_triggers)
         self.assertNotIn("verification_route_selection", active_triggers)
 
+    def test_full_promote_mode_keeps_selected_candidate_route_choice_as_supporting_evidence(self) -> None:
+        shell_surfaces = self._shell_surfaces()
+        topic_state = json.loads((self.runtime_root / "topic_state.json").read_text(encoding="utf-8"))
+        topic_state["pointers"] = {
+            **(topic_state.get("pointers") or {}),
+            "selected_candidate_route_choice_note_path": "runtime/topics/demo-topic/selected_candidate_route_choice.active.md",
+            "selected_candidate_route_choice_path": "runtime/topics/demo-topic/selected_candidate_route_choice.active.json",
+        }
+        (self.runtime_root / "topic_state.json").write_text(
+            json.dumps(topic_state, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        (self.runtime_root / "promotion_gate.json").write_text(
+            json.dumps(
+                {
+                    "status": "pending_human_approval",
+                    "candidate_id": "staging:demo-topic-existing",
+                    "candidate_type": "concept",
+                    "backend_id": "backend:demo",
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (self.runtime_root / "promotion_gate.md").write_text("# Promotion gate\n", encoding="utf-8")
+        (self.runtime_root / "selected_candidate_route_choice.active.json").write_text(
+            json.dumps(
+                {
+                    "selected_candidate_id": "staging:demo-topic-existing",
+                    "chosen_action_type": "l2_promotion_review",
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (self.runtime_root / "selected_candidate_route_choice.active.md").write_text(
+            "# Selected candidate route choice\n",
+            encoding="utf-8",
+        )
+        self._rewrite_action_queue(
+            "approve_promotion",
+            "Review the pending promotion gate for the selected staged candidate before any Layer 2 writeback.",
+            handler_args={"run_id": "run-001", "candidate_id": "staging:demo-topic-existing"},
+        )
+        self._rewrite_interaction_state(
+            {
+                "human_request": "review the pending promotion gate",
+                "action_queue_surface": {},
+                "decision_surface": {},
+                "human_edit_surfaces": [],
+                "closed_loop": {},
+            }
+        )
+
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
+                result = self.service._materialize_runtime_protocol_bundle(
+                    topic_slug="demo-topic",
+                    updated_by="test",
+                    human_request="review the pending promotion gate",
+                    load_profile="full",
+                )
+
+        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        must_read_paths = self._must_read_paths(bundle)
+
+        self.assertEqual(bundle["runtime_mode"], "promote")
+        self.assertIn("runtime/topics/demo-topic/promotion_gate.md", must_read_paths)
+        self.assertIn(
+            "runtime/topics/demo-topic/selected_candidate_route_choice.active.md",
+            must_read_paths,
+        )
+
     def test_runtime_bundle_enriches_paired_backend_bridge_entries(self) -> None:
         shell_surfaces = self._shell_surfaces()
         (self.runtime_root / "topic_state.json").write_text(

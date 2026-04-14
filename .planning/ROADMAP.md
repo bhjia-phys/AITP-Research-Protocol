@@ -1,80 +1,80 @@
-# Roadmap: v2.8 Selected-Candidate Route Choice Closure
+# Roadmap: v2.9 Promotion-Review Gate Closure
 
 ## Result
 
-Milestone planned. Phase execution is next.
+Milestone execution complete. Audit / archive is next.
 
 ## Phases
 
-- [ ] **Phase 182: Selected-Candidate Route Choice** *(Axis 2 + Axis 4)*
-- [ ] **Phase 182.1: Public Post-Selection Route Advancement** *(Axis 4 + Axis 5)*
-- [ ] **Phase 182.2: Fresh Post-Selection Route Choice Replay Proof** *(Axis 4 + Axis 3)*
+- [x] **Phase 183: Promotion-Review Gate Materialization** *(Axis 2 + Axis 4)*
+- [x] **Phase 183.1: Public Promotion-Review Gate Surface** *(Axis 4 + Axis 5)*
+- [x] **Phase 183.2: Fresh Promotion-Review Gate Replay Proof** *(Axis 4 + Axis 3)*
 
 ## Target Outcome
 
-- once a selected staged candidate becomes the selected route, the same topic
-  no longer stalls on that candidate-summary placeholder forever
-- the bounded loop now derives one first deeper route choice from the selected
-  candidate and public `next` / `status` expose that new route
-- one replayable fresh-topic proof records the fifth bounded continue step from
-  selected-candidate summary into the first deeper route choice
+- once `l2_promotion_review` becomes the selected route, the same topic no
+  longer stalls on that promotion-review summary forever
+- the bounded loop now materializes one explicit promotion-review gate and
+  public `next` / `status` expose that gate
+- one replayable fresh-topic proof records the sixth bounded continue step from
+  promotion-review summary into the explicit gate
 
 ## Next Step
 
-Plan / execute Phase `182`.
+Audit / archive milestone `v2.9`, then plan the next bounded gap after explicit promotion-gate materialization.
 
-### Phase 182: Selected-Candidate Route Choice
+### Phase 183: Promotion-Review Gate Materialization
 
 **Axis:** Axis 2 (inter-layer connection) + Axis 4 (human experience)
 
-**Goal:** derive one bounded deeper route from the selected staged candidate so
-the loop can move beyond the candidate-summary placeholder.
+**Goal:** materialize one explicit promotion-review gate once
+`l2_promotion_review` becomes the selected route.
 
 **Requirements:**
 
-- `RCC-01`
-- `RCC-02`
+- `PRG-01`
+- `PRG-02`
 
-**Depends on:** `v2.7`
+**Depends on:** `v2.8`
 **Plans:** 1 plan
 
 Plans:
 
-- [ ] `182-01` Derive and persist one bounded route choice from the selected consultation candidate
+- [x] `183-01` Materialize one explicit promotion-review gate from the selected staged candidate
 
-### Phase 182.1: Public Post-Selection Route Advancement
+### Phase 183.1: Public Promotion-Review Gate Surface
 
 **Axis:** Axis 4 (human evidence) + Axis 5 (agent-facing steering)
 
-**Goal:** make public `next` and `status` advance from selected-candidate
-summary to the same first deeper route choice.
+**Goal:** make public `next` and `status` advance from promotion-review summary
+to the same explicit promotion-review gate.
 
 **Requirements:**
 
-- `RCC-03`
+- `PRG-03`
 
-**Depends on:** Phase `182`
+**Depends on:** Phase `183`
 **Plans:** 1 plan
 
 Plans:
 
-- [ ] `182.1-01` Align public surfaces on the first deeper route chosen after selected-candidate closure
+- [x] `183.1-01` Align public surfaces on the explicit promotion-review gate
 
-### Phase 182.2: Fresh Post-Selection Route Choice Replay Proof
+### Phase 183.2: Fresh Promotion-Review Gate Replay Proof
 
 **Axis:** Axis 4 (human evidence) + Axis 3 (data recording)
 
 **Goal:** close the milestone with one replayable fresh-topic proof that the
-same topic can advance beyond selected-candidate summary into one bounded
-deeper route choice.
+same topic can advance beyond promotion-review summary into one explicit
+promotion-review gate.
 
 **Requirements:**
 
-- `RCC-04`
+- `PRG-04`
 
-**Depends on:** Phase `182.1`
+**Depends on:** Phase `183.1`
 **Plans:** 1 plan
 
 Plans:
 
-- [ ] `182.2-01` Capture the replayable fifth-continue advancement beyond selected-candidate summary
+- [x] `183.2-01` Capture the replayable sixth-continue advancement beyond promotion-review summary

@@ -1,62 +1,62 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.8
-milestone_name: Selected-Candidate Route Choice Closure
+milestone: v2.9
+milestone_name: Promotion-Review Gate Closure
 status: milestone_active
-stopped_at: "Milestone planned; Phase 182 execution next"
-last_updated: "2026-04-14T08:18:00+08:00"
+stopped_at: "All v2.9 phases executed; milestone audit / archive next"
+last_updated: "2026-04-14T09:21:35+08:00"
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 3
   total_plans: 3
-  completed_plans: 0
+  completed_plans: 3
 ---
 
 # Project State
 
 ## Current Position
 
-Status: milestone `v2.8` `Selected-Candidate Route Choice Closure` is active.
-Planning is complete and phase execution is next.
+Status: milestone `v2.9` `Promotion-Review Gate Closure` is active.
+All planned phases are now executed and verified. Milestone audit / archive is next.
 
 **Why this milestone exists:**
 
-`v2.7` closed consultation-followup selection and proved the same fresh topic
-can already execute post-review consultation, write a durable selection
-artifact, and advance onto one selected staged candidate. A follow-up probe
-still showed one remaining bounded route gap: once
-`selected_consultation_candidate_followup` becomes the selected route, the
-loop still cannot derive the first deeper route choice from that selected
-candidate.
+`v2.8` closed selected-candidate route choice and proved the same fresh topic
+can already advance beyond candidate-summary placeholder into a first deeper
+route. A follow-up probe still showed one remaining bounded route gap: once
+`l2_promotion_review` becomes the selected route, the loop still cannot
+materialize the first explicit promotion-review gate from that route.
 
-That bounded post-selection route-choice step is now the active milestone.
-Execution should start with Phase `182`.
+That bounded promotion-review gate step is now closed at the execution level.
+The next procedural step is milestone audit / archive before promoting the next
+bounded gap.
 
 ## Immediate Next Step
 
-- active milestone: `v2.8` `Selected-Candidate Route Choice Closure`
-- latest closed milestone: `v2.7` `Consultation-Followup Selection Closure`
-- previous closed milestone: `v2.6` `Staged-L2 Post-Review Advancement`
-- older closed milestone: `v2.5` `Staged-L2 Review Reentry Coherence`
-- `v2.7` proved the same fresh topic can execute consultation-followup and
-  advance onto one selected staged candidate
-- a follow-up probe still left that selected candidate route visible but
+- active milestone: `v2.9` `Promotion-Review Gate Closure`
+- latest closed milestone: `v2.8` `Selected-Candidate Route Choice Closure`
+- previous closed milestone: `v2.7` `Consultation-Followup Selection Closure`
+- older closed milestone: `v2.6` `Staged-L2 Post-Review Advancement`
+- `v2.8` proved the same fresh topic can derive one first deeper route choice
+  from the selected staged candidate
+- a follow-up probe still left `l2_promotion_review` visible but
   non-executable inside the bounded loop
-- Phase `182` should now derive and persist one first deeper route choice from
-  the selected staged candidate
-- Phase `182.1` should then align public surfaces on that deeper route
-- Phase `182.2` should close the milestone with one replayable fifth-continue
-  proof
-- immediate next step: execute Phase `182`
+- Phase `183` materialized one explicit promotion-review gate from the selected
+  staged candidate
+- Phase `183.1` aligned public surfaces on that gate while keeping the route
+  choice note as supporting evidence
+- Phase `183.2` closed the milestone with one replayable sixth-continue proof
+- immediate next step: audit / archive milestone `v2.9`
 
 ## Accumulated Context
 
 ### Pending Todos
 
-- 3 pending todos captured on 2026-04-13:
+- 4 pending todos captured on 2026-04-13:
   `fix-new-topic-session-start-misrouting`,
   `shorten-windows-source-layer-paths-and-sync-status`,
-  `harden-l2-staging-provenance-and-retrieval-relevance`
+  `harden-l2-staging-provenance-and-retrieval-relevance`,
+  `force-l4-execution-after-l3-planning`
 - `harden-l2-staging-provenance-and-retrieval-relevance` is now effectively
   closed by `v2.1`, but the todo parking lot has not been cleaned yet
 - `fix-new-topic-session-start-misrouting` and
@@ -141,6 +141,14 @@ cross-cutting).
   the loop must execute it, record a durable selection artifact, and advance to
   one selected staged candidate instead of remaining on generic consult
   language
+- `v2.8` now promotes the next bounded gap from the repaired `v2.7`
+  selection baseline: once a selected staged candidate becomes the selected
+  route, the loop must derive one bounded deeper route choice instead of
+  stalling on the candidate summary
+- `v2.9` now promotes the next bounded gap from the repaired `v2.8`
+  route-choice baseline: once `l2_promotion_review` becomes the selected route,
+  the loop must materialize one explicit promotion-review gate instead of
+  stalling on the summary
 - `v2.8` now promotes the next bounded gap from the repaired `v2.7`
   selection baseline: once a selected staged candidate becomes the selected
   route, the loop must derive one bounded deeper route choice instead of
