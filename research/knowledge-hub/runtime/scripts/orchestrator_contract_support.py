@@ -778,6 +778,169 @@ def render_post_promotion_followup_markdown(payload: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def load_post_promotion_blocker_route_choice(
+    *,
+    load_json: Callable[[Path], dict | None],
+    knowledge_root: Path,
+    topic_slug: str,
+) -> dict | None:
+    return load_json(
+        knowledge_root
+        / "runtime"
+        / "topics"
+        / topic_slug
+        / "post_promotion_blocker_route_choice.active.json"
+    )
+
+
+def post_promotion_blocker_route_choice_ready_for_materialization(
+    *,
+    load_json: Callable[[Path], dict | None],
+    knowledge_root: Path,
+    topic_slug: str,
+) -> bool:
+    if load_post_promotion_blocker_route_choice(
+        load_json=load_json,
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+    ):
+        return False
+    next_action_decision = load_json(
+        knowledge_root / "runtime" / "topics" / topic_slug / "next_action_decision.json"
+    ) or {}
+    selected_action = next_action_decision.get("selected_action") or {}
+    if str(selected_action.get("action_type") or "").strip() != "review_topic_completion_blockers":
+        return False
+    promoted_cutoff = _parse_iso_timestamp(
+        str(
+            (load_selected_candidate_promotion_gate(
+                load_json=load_json,
+                knowledge_root=knowledge_root,
+                topic_slug=topic_slug,
+            ) or {}).get("promoted_at")
+            or ""
+        )
+    )
+    if promoted_cutoff is None:
+        return False
+    return count_continue_decisions_after(
+        knowledge_root=knowledge_root,
+        topic_slug=topic_slug,
+        cutoff=promoted_cutoff,
+    ) >= 3
+
+
+def post_promotion_blocker_route_choice_paths(
+    *,
+    knowledge_root: Path,
+    topic_slug: str,
+) -> dict[str, Path]:
+    runtime_root = knowledge_root / "runtime" / "topics" / topic_slug
+    return {
+        "json": runtime_root / "post_promotion_blocker_route_choice.active.json",
+        "note": runtime_root / "post_promotion_blocker_route_choice.active.md",
+    }
+
+
+def derive_post_promotion_blocker_route_choice(
+    *,
+    load_json: Callable[[Path], dict | None],
+    knowledge_root: Path,
+    topic_slug: str,
+    updated_by: str,
+) -> dict | None:
+    completion_payload = load_json(
+        knowledge_root / "runtime" / "topics" / topic_slug / "topic_completion.json"
+    ) or {}
+    statement_compilation = load_json(
+        knowledge_root / "runtime" / "topics" / topic_slug / "statement_compilation.active.json"
+    ) or {}
+    lean_bridge = load_json(
+        knowledge_root / "runtime" / "topics" / topic_slug / "lean_bridge.active.json"
+    ) or {}
+    blocked_checks = [
+        {
+            "check": str(row.get("check") or "").strip(),
+            "status": str(row.get("status") or "").strip(),
+            "summary": str(row.get("summary") or "").strip(),
+        }
+        for row in (completion_payload.get("completion_gate_checks") or [])
+        if isinstance(row, dict) and str(row.get("status") or "").strip() == "blocked"
+    ]
+    candidate_id = ""
+    for packet in (statement_compilation.get("packets") or []):
+        candidate_id = str(packet.get("candidate_id") or "").strip()
+        if candidate_id:
+            break
+    if not candidate_id:
+        for packet in (lean_bridge.get("packets") or []):
+            candidate_id = str(packet.get("candidate_id") or "").strip()
+            if candidate_id:
+                break
+    statement_status = str(statement_compilation.get("status") or "").strip()
+    lean_status = str(lean_bridge.get("status") or "").strip()
+    if statement_status in {"needs_repair", "ready"}:
+        chosen_action_type = "review_statement_compilation"
+        chosen_action_summary = (
+            "Review the statement-compilation packet for the promoted candidate before reopening a broader route."
+        )
+        route_reason = (
+            "Topic-completion still records blocked regression-support checks, and the first concrete post-blocker "
+            "surface is the statement-compilation packet that already exposes the remaining proof holes."
+        )
+    elif lean_status in {"needs_refinement", "ready"}:
+        chosen_action_type = "review_lean_bridge"
+        chosen_action_summary = (
+            "Review the Lean-bridge packet for the promoted candidate before reopening a broader route."
+        )
+        route_reason = (
+            "Topic-completion still records blocked regression-support checks, and the next concrete post-blocker "
+            "surface is the Lean-bridge packet with explicit proof obligations."
+        )
+    else:
+        return None
+    return {
+        "topic_slug": topic_slug,
+        "run_id": str(completion_payload.get("run_id") or "").strip(),
+        "status": "selected",
+        "candidate_id": candidate_id,
+        "blocked_checks": blocked_checks,
+        "statement_compilation_status": statement_status,
+        "lean_bridge_status": lean_status,
+        "chosen_action_type": chosen_action_type,
+        "chosen_action_summary": chosen_action_summary,
+        "route_reason": route_reason,
+        "updated_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "updated_by": updated_by,
+    }
+
+
+def render_post_promotion_blocker_route_choice_markdown(payload: dict[str, Any]) -> str:
+    lines = [
+        "# Post-Promotion Blocker Route Choice",
+        "",
+        f"- Topic slug: `{payload.get('topic_slug') or '(missing)'}`",
+        f"- Run id: `{payload.get('run_id') or '(missing)'}`",
+        f"- Candidate id: `{payload.get('candidate_id') or '(missing)'}`",
+        f"- Statement compilation status: `{payload.get('statement_compilation_status') or '(missing)'}`",
+        f"- Lean bridge status: `{payload.get('lean_bridge_status') or '(missing)'}`",
+        f"- Chosen action type: `{payload.get('chosen_action_type') or '(missing)'}`",
+        f"- Chosen action summary: {payload.get('chosen_action_summary') or '(missing)'}",
+        f"- Route reason: {payload.get('route_reason') or '(missing)'}",
+        "",
+        "## Blocked Checks",
+        "",
+    ]
+    for row in payload.get("blocked_checks") or []:
+        lines.append(
+            f"- `{row.get('check') or '(missing)'}` status=`{row.get('status') or '(missing)'}`: {row.get('summary') or '(missing)'}"
+        )
+    if not payload.get("blocked_checks"):
+        lines.append("- (none)")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def should_advance_past_staged_l2_review(
     *,
     knowledge_root: Path,

@@ -1896,6 +1896,181 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertIsInstance(followup_payload, dict)
         self.assertEqual(followup_payload["chosen_action_type"], "review_topic_completion_blockers")
 
+    def test_materialize_action_queue_advances_beyond_topic_completion_blocker_review(self) -> None:
+        self._write_json(
+            "runtime/topics/demo-topic/consultation_followup_selection.active.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "selected",
+                "selected_candidate_id": "staging:demo-topic-existing",
+                "selected_candidate_title": "Existing staged literature unit",
+                "selected_candidate_path": "canonical/staging/entries/staging--demo-topic-existing.json",
+                "selected_candidate_trust_surface": "staging",
+                "selected_candidate_topic_slug": "demo-topic",
+                "selection_reason": "Selected the first topic-local staged hit from the bounded consultation result.",
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/selected_candidate_route_choice.active.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "selected",
+                "selected_candidate_id": "staging:demo-topic-existing",
+                "selected_candidate_path": "canonical/staging/entries/staging--demo-topic-existing.json",
+                "selected_candidate_title": "Existing staged literature unit",
+                "selected_candidate_unit_type": "concept",
+                "chosen_action_type": "l2_promotion_review",
+                "chosen_action_summary": "Review Layer 2 promotion for selected staged candidate `staging:demo-topic-existing` before deeper execution.",
+                "route_choice_reason": "Selected staged reusable units should first enter bounded Layer 2 promotion review.",
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/promotion_gate.json",
+            {
+                "status": "promoted",
+                "candidate_id": "staging:demo-topic-existing",
+                "promoted_at": "2026-04-14T06:09:00+08:00",
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/topic_completion.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "promoted",
+                "candidate_count": 1,
+                "followup_subtopic_count": 0,
+                "completion_gate_checks": [
+                    {
+                        "check": "regression_questions_present",
+                        "status": "blocked",
+                        "summary": "No stable regression question ids are attached to the active topic.",
+                    }
+                ],
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/post_promotion_followup.active.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "selected",
+                "candidate_id": "staging:demo-topic-existing",
+                "promotion_gate_status": "promoted",
+                "topic_completion_status": "promoted",
+                "blocked_checks": [
+                    {
+                        "check": "regression_questions_present",
+                        "status": "blocked",
+                        "summary": "No stable regression question ids are attached to the active topic.",
+                    }
+                ],
+                "chosen_action_type": "review_topic_completion_blockers",
+                "chosen_action_summary": "Review post-promotion completion blockers before opening another bounded route: No stable regression question ids are attached to the active topic.",
+                "followup_reason": "Layer 2 writeback is complete, so the next honest bounded work is to review the remaining topic-completion blockers instead of repeating a generic resume-state inspection.",
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/next_action_decision.json",
+            {
+                "topic_slug": "demo-topic",
+                "updated_at": "2026-04-14T06:11:30+08:00",
+                "selected_action": {
+                    "action_type": "review_topic_completion_blockers",
+                },
+            },
+        )
+        self._write_jsonl(
+            "runtime/topics/demo-topic/innovation_decisions.jsonl",
+            [
+                {
+                    "decision_id": "innovation-decision:demo-topic:continue-01",
+                    "topic_slug": "demo-topic",
+                    "updated_at": "2026-04-14T06:10:00+08:00",
+                    "decision": "continue",
+                    "summary": "Continue after promoted writeback.",
+                },
+                {
+                    "decision_id": "innovation-decision:demo-topic:continue-02",
+                    "topic_slug": "demo-topic",
+                    "updated_at": "2026-04-14T06:11:00+08:00",
+                    "decision": "continue",
+                    "summary": "Continue after promoted writeback inspection.",
+                },
+                {
+                    "decision_id": "innovation-decision:demo-topic:continue-03",
+                    "topic_slug": "demo-topic",
+                    "updated_at": "2026-04-14T06:12:00+08:00",
+                    "decision": "continue",
+                    "summary": "Continue after reviewing topic-completion blockers.",
+                },
+            ],
+        )
+        self._write_jsonl(
+            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            [
+                {
+                    "candidate_id": "staging:demo-topic-existing",
+                    "candidate_type": "concept",
+                    "status": "promoted",
+                    "summary": "Existing staged literature unit.",
+                    "title": "Existing staged literature unit",
+                    "supporting_regression_question_ids": [],
+                    "supporting_oracle_ids": [],
+                    "supporting_regression_run_ids": [],
+                }
+            ],
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/statement_compilation.active.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "needs_repair",
+                "packet_count": 1,
+                "ready_packet_count": 0,
+                "needs_repair_count": 1,
+                "packets": [
+                    {
+                        "candidate_id": "staging:demo-topic-existing",
+                        "candidate_type": "concept",
+                        "statement_kind": "definition",
+                        "status": "needs_repair",
+                        "proof_hole_count": 2,
+                    }
+                ],
+            },
+        )
+
+        with patch.object(
+            self.orchestrate_topic,
+            "append_runtime_helper_actions",
+            side_effect=lambda queue, **kwargs: None,
+        ):
+            queue, queue_meta = self.orchestrate_topic.materialize_action_queue(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "2026-03-13-demo",
+                    "resume_stage": "L2",
+                    "source_count": 1,
+                    "pending_actions": [],
+                },
+                [],
+                self.knowledge_root / "runtime" / "scripts" / "discover_external_skills.py",
+                self.knowledge_root / "runtime" / "scripts" / "advance_closed_loop.py",
+                self.knowledge_root / "runtime" / "scripts" / "handoff_execution.py",
+                self.knowledge_root / "runtime" / "scripts" / "run_literature_followup.py",
+                self.knowledge_root,
+            )
+
+        self.assertEqual(queue[0]["action_type"], "review_statement_compilation")
+        self.assertIn("statement-compilation", queue[0]["summary"])
+        blocker_route_payload = queue_meta.get("post_promotion_blocker_route_choice_payload")
+        self.assertIsInstance(blocker_route_payload, dict)
+        self.assertEqual(blocker_route_payload["chosen_action_type"], "review_statement_compilation")
+
     def test_materialize_action_queue_prefers_promotion_review_in_promote_mode(self) -> None:
         self._write_json(
             "runtime/topics/demo-topic/runtime_protocol.generated.json",

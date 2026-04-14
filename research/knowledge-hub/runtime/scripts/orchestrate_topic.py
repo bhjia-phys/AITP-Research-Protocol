@@ -24,9 +24,11 @@ from orchestrator_contract_support import (
     append_closed_loop_actions,
     consultation_followup_ready_for_auto_run,
     derive_post_promotion_followup,
+    derive_post_promotion_blocker_route_choice,
     derive_selected_candidate_promotion_gate,
     derive_selected_candidate_route_choice,
     load_consultation_followup_selection,
+    load_post_promotion_blocker_route_choice,
     load_post_promotion_followup,
     load_selected_candidate_promotion_gate,
     load_selected_candidate_route_choice,
@@ -41,9 +43,12 @@ from orchestrator_contract_support import (
     queue_rows_from_pending_actions,
     queue_shaping_policy_from_contract_artifacts,
     reorder_queue_with_runtime_contract,
+    render_post_promotion_blocker_route_choice_markdown,
     render_post_promotion_followup_markdown,
     render_selected_candidate_promotion_gate_markdown,
     render_selected_candidate_route_choice_markdown,
+    post_promotion_blocker_route_choice_paths,
+    post_promotion_blocker_route_choice_ready_for_materialization,
     post_promotion_followup_paths,
     post_promotion_followup_ready_for_materialization,
     selected_candidate_promotion_gate_paths,
@@ -1275,6 +1280,50 @@ def materialize_action_queue(
                                 }
                             )
                         elif isinstance(post_promotion_followup, dict):
+                            blocker_route_choice_payload = load_post_promotion_blocker_route_choice(
+                                load_json=load_json,
+                                knowledge_root=knowledge_root,
+                                topic_slug=str(topic_state.get("topic_slug") or "").strip(),
+                            )
+                            if blocker_route_choice_payload is None and post_promotion_blocker_route_choice_ready_for_materialization(
+                                load_json=load_json,
+                                knowledge_root=knowledge_root,
+                                topic_slug=str(topic_state.get("topic_slug") or "").strip(),
+                            ):
+                                blocker_route_choice_payload = derive_post_promotion_blocker_route_choice(
+                                    load_json=load_json,
+                                    knowledge_root=knowledge_root,
+                                    topic_slug=str(topic_state.get("topic_slug") or "").strip(),
+                                    updated_by=str(topic_state.get("updated_by") or "codex"),
+                                )
+                                if isinstance(blocker_route_choice_payload, dict):
+                                    queue_meta["post_promotion_blocker_route_choice_payload"] = blocker_route_choice_payload
+                            if isinstance(blocker_route_choice_payload, dict):
+                                queue.append(
+                                    {
+                                        "action_id": f"action:{topic_state['topic_slug']}:post-promotion-blocker-route-choice",
+                                        "topic_slug": topic_state["topic_slug"],
+                                        "resume_stage": "L4",
+                                        "status": "pending",
+                                        "action_type": str(
+                                            blocker_route_choice_payload.get("chosen_action_type") or ""
+                                        ).strip(),
+                                        "summary": str(
+                                            blocker_route_choice_payload.get("chosen_action_summary") or ""
+                                        ).strip(),
+                                        "auto_runnable": False,
+                                        "handler": None,
+                                        "handler_args": {
+                                            "run_id": topic_state.get("latest_run_id"),
+                                            "candidate_id": str(
+                                                blocker_route_choice_payload.get("candidate_id") or ""
+                                            ).strip(),
+                                        },
+                                        "queue_source": queue_meta.get("queue_source") or "runtime_appended",
+                                        "declared_contract_path": queue_meta.get("declared_contract_path"),
+                                    }
+                                )
+                                return queue, queue_meta
                             queue.append(
                                 {
                                     "action_id": f"action:{topic_state['topic_slug']}:post-promotion-followup",
@@ -1620,6 +1669,17 @@ def main() -> int:
         write_text(
             followup_paths["note"],
             render_post_promotion_followup_markdown(post_promotion_followup_payload),
+        )
+    blocker_route_choice_payload = queue_meta.get("post_promotion_blocker_route_choice_payload")
+    if isinstance(blocker_route_choice_payload, dict):
+        blocker_paths = post_promotion_blocker_route_choice_paths(
+            knowledge_root=knowledge_root,
+            topic_slug=topic_slug,
+        )
+        write_json(blocker_paths["json"], blocker_route_choice_payload)
+        write_text(
+            blocker_paths["note"],
+            render_post_promotion_blocker_route_choice_markdown(blocker_route_choice_payload),
         )
     write_jsonl(topic_runtime_root / "action_queue.jsonl", action_queue)
     queue_contract_snapshot = build_action_queue_contract_snapshot(

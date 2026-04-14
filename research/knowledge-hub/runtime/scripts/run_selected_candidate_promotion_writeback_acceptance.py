@@ -305,6 +305,41 @@ def main() -> int:
         str(status_after_post_inspect.get("selected_action_type") or "") == "review_topic_completion_blockers",
         "Expected `status` to advance from generic post-promotion inspect into explicit topic-completion blocker review.",
     )
+    post_blocker_loop = run_cli_json(
+        package_root=package_root,
+        kernel_root=kernel_root,
+        repo_root=repo_root,
+        args=[
+            "loop",
+            "--topic-slug",
+            args.topic_slug,
+            "--human-request",
+            "Continue after reviewing topic-completion blockers.",
+            "--max-auto-steps",
+            "1",
+            "--json",
+        ],
+    )
+    next_after_blocker_review = run_cli_json(
+        package_root=package_root,
+        kernel_root=kernel_root,
+        repo_root=repo_root,
+        args=["next", "--topic-slug", args.topic_slug, "--json"],
+    )
+    status_after_blocker_review = run_cli_json(
+        package_root=package_root,
+        kernel_root=kernel_root,
+        repo_root=repo_root,
+        args=["status", "--topic-slug", args.topic_slug, "--json"],
+    )
+    check(
+        str(next_after_blocker_review.get("selected_action_type") or "") == "review_statement_compilation",
+        "Expected `next` to advance from topic-completion blocker review into explicit statement-compilation review.",
+    )
+    check(
+        str(status_after_blocker_review.get("selected_action_type") or "") == "review_statement_compilation",
+        "Expected `status` to advance from topic-completion blocker review into explicit statement-compilation review.",
+    )
 
     payload = {
         "work_root": str(work_root),
@@ -323,6 +358,9 @@ def main() -> int:
         "post_inspect_loop": post_inspect_loop,
         "next_after_post_inspect": next_after_post_inspect,
         "status_after_post_inspect": status_after_post_inspect,
+        "post_blocker_loop": post_blocker_loop,
+        "next_after_blocker_review": next_after_blocker_review,
+        "status_after_blocker_review": status_after_blocker_review,
     }
     if args.json:
         print(json.dumps(payload, ensure_ascii=True, indent=2))

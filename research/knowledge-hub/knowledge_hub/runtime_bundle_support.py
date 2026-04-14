@@ -1291,6 +1291,10 @@ def materialize_runtime_protocol_bundle(
         (topic_state.get("pointers") or {}).get("post_promotion_followup_note_path")
         or ""
     ).strip()
+    post_promotion_blocker_route_choice_note_path = str(
+        (topic_state.get("pointers") or {}).get("post_promotion_blocker_route_choice_note_path")
+        or ""
+    ).strip()
     if (
         str((selected_pending_action or {}).get("action_type") or "").strip()
         == "selected_consultation_candidate_followup"
@@ -1340,6 +1344,47 @@ def materialize_runtime_protocol_bundle(
             },
         )
         must_read_paths.add(post_promotion_followup_note_path)
+    if (
+        str((selected_pending_action or {}).get("action_type") or "").strip()
+        in {"review_statement_compilation", "review_lean_bridge"}
+        and post_promotion_blocker_route_choice_note_path
+        and post_promotion_blocker_route_choice_note_path not in must_read_paths
+    ):
+        must_read_now.insert(
+            0,
+            {
+                "path": post_promotion_blocker_route_choice_note_path,
+                "reason": "Read the durable blocker-route choice before opening statement-compilation or Lean-bridge review after post-promotion completion blockers.",
+            },
+        )
+        must_read_paths.add(post_promotion_blocker_route_choice_note_path)
+    selected_action_type = str((selected_pending_action or {}).get("action_type") or "").strip()
+    if (
+        selected_action_type == "review_statement_compilation"
+        and str(statement_compilation.get("path") or "").strip()
+        and str(statement_compilation.get("path") or "").strip() not in must_read_paths
+    ):
+        must_read_now.insert(
+            0,
+            {
+                "path": str(statement_compilation.get("path") or "").strip(),
+                "reason": "Read the active statement-compilation packet set before reviewing the promoted candidate's proof holes.",
+            },
+        )
+        must_read_paths.add(str(statement_compilation.get("path") or "").strip())
+    if (
+        selected_action_type == "review_lean_bridge"
+        and str(lean_bridge.get("path") or "").strip()
+        and str(lean_bridge.get("path") or "").strip() not in must_read_paths
+    ):
+        must_read_now.insert(
+            0,
+            {
+                "path": str(lean_bridge.get("path") or "").strip(),
+                "reason": "Read the active Lean-bridge packet set before reviewing the promoted candidate's remaining proof obligations.",
+            },
+        )
+        must_read_paths.add(str(lean_bridge.get("path") or "").strip())
     for candidate, trigger, reason in (
         (
             "interaction_state.json",
