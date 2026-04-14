@@ -22,6 +22,7 @@ from interaction_surface_support import (
 )
 from orchestrator_contract_support import (
     append_closed_loop_actions,
+    consultation_followup_ready_for_auto_run,
     load_consultation_followup_selection,
     append_literature_followup_actions,
     append_runtime_helper_actions,
@@ -1098,6 +1099,11 @@ def materialize_action_queue(
             topic_slug=str(topic_state.get("topic_slug") or "").strip(),
             runtime_contract=runtime_contract,
         ):
+            consultation_auto_runnable = consultation_followup_ready_for_auto_run(
+                load_json=load_json,
+                knowledge_root=knowledge_root,
+                topic_slug=str(topic_state.get("topic_slug") or "").strip(),
+            )
             queue.append(
                 {
                     "action_id": f"action:{topic_state['topic_slug']}:consult-staged-l2",
@@ -1106,7 +1112,7 @@ def materialize_action_queue(
                     "status": "pending",
                     "action_type": "consultation_followup",
                     "summary": "Consult the topic-local staged L2 memory and choose one bounded candidate before deeper execution.",
-                    "auto_runnable": True,
+                    "auto_runnable": consultation_auto_runnable,
                     "handler": None,
                     "handler_args": {"run_id": topic_state.get("latest_run_id")},
                     "queue_source": queue_meta.get("queue_source") or "runtime_appended",
