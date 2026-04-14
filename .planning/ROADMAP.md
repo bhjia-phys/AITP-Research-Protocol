@@ -1,4 +1,4 @@
-# Roadmap: v2.6 Staged-L2 Post-Review Advancement
+# Roadmap: v2.7 Consultation-Followup Selection Closure
 
 ## Result
 
@@ -6,75 +6,76 @@ Milestone phase work complete. Lifecycle closure is next.
 
 ## Phases
 
-- [x] **Phase 180: Staged-L2 Review Advancement Rule** *(Axis 2 + Axis 4)*
-- [x] **Phase 180.1: Public Post-Review Route Advancement** *(Axis 4 + Axis 5)*
-- [x] **Phase 180.2: Fresh Post-Review Advancement Replay Proof** *(Axis 4 + Axis 3)*
+- [x] **Phase 181: Consultation-Followup Auto Execution** *(Axis 2 + Axis 4)*
+- [x] **Phase 181.1: Selected Candidate Route Advancement** *(Axis 4 + Axis 5)*
+- [x] **Phase 181.2: Fresh Consultation-Followup Selection Replay Proof** *(Axis 4 + Axis 3)*
 
 ## Target Outcome
 
-- once staged-L2 review has already been surfaced, a later benign `continue`
-  no longer leaves the same topic on that static review summary forever
-- queue materialization and public `next` / `status` now advance onto one
-  bounded post-review consultation step against topic-local staged `L2` memory
-- one replayable fresh-topic proof records that advancement beyond staged-L2
-  review on the same bounded route
+- once post-review consultation becomes the selected route, the loop can now
+  execute that route instead of stalling on a visible-but-non-executable step
+- the same consultation step now writes durable consultation and selection
+  artifacts, then advances public `next` / `status` onto one selected
+  topic-local staged candidate
+- one replayable fresh-topic proof records the fourth bounded continue step
+  from staged-L2 review into candidate-specific follow-up
 
 ## Next Step
 
-Run milestone audit / archive for `v2.6`.
+Run milestone audit / archive for `v2.7`.
 
-### Phase 180: Staged-L2 Review Advancement Rule
+### Phase 181: Consultation-Followup Auto Execution
 
 **Axis:** Axis 2 (inter-layer connection) + Axis 4 (human experience)
 
-**Goal:** make a later bounded `continue` advance beyond the static staged-L2
-review summary into one bounded post-review consultation step.
+**Goal:** make the post-review consultation step executable and durable once it
+becomes the selected route on the same fresh topic.
 
 **Requirements:**
 
-- `PRA-01`
-- `PRA-02`
+- `CFS-01`
+- `CFS-02`
 
-**Depends on:** `v2.5`
+**Depends on:** `v2.6`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `180-01` Advance later continue decisions beyond static staged-L2 review into one topic-local consultation step
+- [x] `181-01` Execute consultation-followup through the bounded auto-action lane and retain durable selection artifacts
 
-### Phase 180.1: Public Post-Review Route Advancement
+### Phase 181.1: Selected Candidate Route Advancement
 
 **Axis:** Axis 4 (human evidence) + Axis 5 (agent-facing steering)
 
-**Goal:** make public `next` and `status` advance beyond staged-L2 review onto
-the same bounded post-review consultation step.
+**Goal:** make queue materialization and public surfaces advance from generic
+consultation-followup to one selected staged-candidate follow-up.
 
 **Requirements:**
 
-- `PRA-03`
+- `CFS-03`
 
-**Depends on:** Phase `180`
+**Depends on:** Phase `181`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `180.1-01` Align public next-action surfaces on the bounded post-review consultation step
+- [x] `181.1-01` Advance queue and public surfaces onto the selected consultation candidate
 
-### Phase 180.2: Fresh Post-Review Advancement Replay Proof
+### Phase 181.2: Fresh Consultation-Followup Selection Replay Proof
 
 **Axis:** Axis 4 (human evidence) + Axis 3 (data recording)
 
 **Goal:** close the milestone with one replayable fresh-topic proof that the
-same topic can advance beyond staged-L2 review after a later benign
-`continue`.
+same topic can execute consultation-followup, write the selection artifact, and
+advance onto the selected staged candidate.
 
 **Requirements:**
 
-- `PRA-04`
+- `CFS-04`
 
-**Depends on:** Phase `180.1`
+**Depends on:** Phase `181.1`
 **Plans:** 1 plan
 
 Plans:
 
-- [x] `180.2-01` Capture the replayable third-continue advancement beyond staged-L2 review
+- [x] `181.2-01` Capture the replayable fresh-topic consultation-followup selection closure packet

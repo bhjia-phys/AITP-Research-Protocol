@@ -1,51 +1,55 @@
-# Requirements: v2.6 Staged-L2 Post-Review Advancement
+# Requirements: v2.7 Consultation-Followup Selection Closure
 
 ## Milestone Goal
 
-Make post-review continuation coherent enough that, once staged-`L2` review is
-already visible on a fresh topic, a later benign `continue` advances to one
-bounded topic-local staged-memory consultation step instead of stalling on the
-same review summary forever.
+Make post-review consultation coherent enough that, once
+`consultation_followup` becomes the selected route on a fresh topic, the loop
+can execute that consultation, write a durable selection artifact, and advance
+onto one selected topic-local staged candidate instead of stalling on the
+generic consult prompt.
 
 ## Active Requirements
 
-### Queue Advancement Beyond Review
+### Executable Consultation-Followup
 
-- [x] `PRA-01`: once a later `continue` decision is newer than the latest
-  topic-local staged entry, queue materialization no longer leaves the topic on
-  `Inspect the current L2 staging manifest before continuing.`
+- [x] `CFS-01`: once `consultation_followup` has been surfaced and the operator
+  continues again, the bounded loop can execute one topic-local
+  `consult-l2(record_consultation=True)` step.
 
-- [x] `PRA-02`: under that same condition, the bounded route advances to
-  `Consult the topic-local staged L2 memory and choose one bounded candidate before deeper execution.`
+- [x] `CFS-02`: that consultation-followup step writes durable consultation and
+  selection artifacts rather than remaining an in-memory or prose-only step.
 
-### Public Surface Advancement
+### Candidate-Specific Route Advancement
 
-- [x] `PRA-03`: public `next`, `status`, and equivalent dashboard surfaces
-  stay aligned on the same post-review consultation step.
+- [x] `CFS-03`: once a bounded topic-local staged candidate has been selected,
+  queue materialization and public `next` / `status` advance to a
+  candidate-specific follow-up action rather than staying on generic
+  consultation-followup language.
 
 ### Replayable Proof
 
-- [x] `PRA-04`: one replayable fresh-topic proof shows the same topic can
-  advance beyond staged-L2 review into the bounded post-review consultation
-  step after a later benign `continue`.
+- [x] `CFS-04`: one replayable fresh-topic proof shows the same topic can
+  execute consultation-followup, materialize the selection artifact, and
+  advance onto the selected staged candidate while the earlier staged-L2
+  baselines still pass.
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| Reopening benign continue neutrality from `v2.5` | treat `v2.5` reentry posture as the new baseline unless a fresh regression appears |
-| Human promotion / authoritative writeback of staged rows | `v2.6` only reaches the bounded post-review consultation handoff |
-| Full candidate execution, validation-route choice, or deeper run execution | keep the milestone bounded to the first advancement beyond staged-L2 review |
-| Broad three-lane scientific widening across formal, toy, and first-principles routes | defer until this post-review advancement step is mechanically stable |
+| Reopening staged-L2 post-review advancement from `v2.6` | treat the `v2.6` consultation surface as the new baseline unless a fresh regression appears |
+| Automatic validation-route choice, candidate execution, or promotion | `v2.7` stops at bounded candidate selection and route advancement |
+| Global canonical candidate auto-selection | keep the milestone honest by selecting only topic-local staged hits automatically |
+| Broad three-lane scientific widening across formal, toy, and first-principles routes | defer until post-review candidate choice is mechanically stable |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PRA-01 | Phase 180 | Done |
-| PRA-02 | Phase 180 | Done |
-| PRA-03 | Phase 180.1 | Done |
-| PRA-04 | Phase 180.2 | Done |
+| CFS-01 | Phase 181 | Done |
+| CFS-02 | Phase 181 | Done |
+| CFS-03 | Phase 181.1 | Done |
+| CFS-04 | Phase 181.2 | Done |
 
 **Coverage:**
 - v1 requirements: 4 total

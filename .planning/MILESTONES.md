@@ -1,6 +1,35 @@
 # Milestones
 
-## v2.6 Staged-L2 Post-Review Advancement (Active)
+## v2.7 Consultation-Followup Selection Closure (Active)
+
+**Phases completed:** 3 / 3 phases, 3 / 3 plans
+
+**Milestone goal:**
+
+- make the post-review consultation route executable instead of leaving it as a
+  visible-but-non-executable next action
+
+- keep `next`, `status`, and dashboard surfaces aligned on one selected
+  topic-local staged candidate after that consultation lands
+
+- close with one replayable fresh-topic proof that the same topic can execute
+  consultation-followup and advance onto candidate-specific follow-up
+
+**Key accomplishments:**
+
+- milestone scoped from the remaining operator-visible gap after `v2.6`: the
+  route could already surface `consultation_followup`, but the loop still could
+  not execute it
+- Phase `181` now executes `consultation_followup` and writes durable
+  consultation / selection artifacts
+- Phase `181.1` now advances queue materialization and public surfaces onto the
+  selected staged candidate
+- Phase `181.2` now closes the milestone with one replayable fresh-topic
+  consultation-followup selection packet
+
+---
+
+## v2.6 Staged-L2 Post-Review Advancement (Shipped: 2026-04-14)
 
 **Phases completed:** 3 / 3 phases, 3 / 3 plans
 
@@ -812,15 +841,15 @@ Completed milestone chain:
 
 ## Latest Closed Milestone
 
-- `v2.5` `Staged-L2 Review Reentry Coherence` shipped
+- `v2.6` `Staged-L2 Post-Review Advancement` shipped
 
 ## Current Active Milestone
 
-- `v2.6` `Staged-L2 Post-Review Advancement`
+- `v2.7` `Consultation-Followup Selection Closure`
 
 ## Current Status
 
-- `v1.36` through `v2.5` are closed and archived or ready for archive lookup
-- active work has moved into milestone `v2.6`
-- next command boundary: audit / archive `v2.6` or promote the next bounded
-  post-review candidate-selection gap
+- `v1.36` through `v2.6` are closed and archived or ready for archive lookup
+- active work has moved into milestone `v2.7`
+- next command boundary: audit / archive `v2.7` or promote the next bounded
+  post-selection candidate-execution gap

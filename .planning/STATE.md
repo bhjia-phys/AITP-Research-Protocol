@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.6
-milestone_name: Staged-L2 Post-Review Advancement
+milestone: v2.7
+milestone_name: Consultation-Followup Selection Closure
 status: milestone_active
-stopped_at: "Phase 180.2 complete; milestone lifecycle next"
-last_updated: "2026-04-14T07:21:35+08:00"
+stopped_at: "Phase 181.2 complete; milestone lifecycle next"
+last_updated: "2026-04-14T08:04:00+08:00"
 progress:
   total_phases: 3
   completed_phases: 3
@@ -16,39 +16,38 @@ progress:
 
 ## Current Position
 
-Status: milestone `v2.6` `Staged-L2 Post-Review Advancement` is active. Phase
+Status: milestone `v2.7` `Consultation-Followup Selection Closure` is active. Phase
 work is complete and milestone lifecycle closure is next.
 
 **Why this milestone exists:**
 
-`v2.5` closed staged-L2 review reentry posture coherence and proved that a
-benign `continue` request no longer surfaces false human-control blockage. A
-follow-up probe still showed one remaining bounded route gap: once staged-L2
-review is already visible, another later `continue` leaves the same topic on
-that static review summary instead of advancing to the next bounded
-post-review step.
+`v2.6` closed the first advancement beyond staged-L2 review and proved the
+same topic can reach a bounded post-review consultation route. A follow-up
+probe still showed one remaining bounded route gap: once
+`consultation_followup` becomes the selected route, the loop can surface that
+route but cannot yet execute it or advance onto a selected staged candidate.
 
-That bounded advancement step is now closed. The next step is milestone audit /
-archive, then promotion of the next gap that appears after post-review
-consultation becomes stable.
+That bounded consultation-followup closure step is now closed. The next step is
+milestone audit / archive, then promotion of the next gap that appears after
+candidate-specific post-review follow-up becomes stable.
 
 ## Immediate Next Step
 
-- active milestone: `v2.6` `Staged-L2 Post-Review Advancement`
-- latest closed milestone: `v2.5` `Staged-L2 Review Reentry Coherence`
-- previous closed milestone: `v2.4` `First L1 To L2 Follow-Through Coherence`
-- older closed milestone: `v2.3` `Post-Registration Route Coherence`
-- `v2.5` proved the same fresh topic can reenter from staged-L2 review under
-  benign `continue` steering without false human blockage
-- a follow-up probe with another later `continue` still left the queue on
-  `Inspect the current L2 staging manifest before continuing.`
-- Phase `180` now advances that later continue onto one bounded topic-local
-  staged-memory consultation step
-- Phase `180.1` now aligns public `next` and `status` on the same advanced
-  route
-- Phase `180.2` now closes the replayable fresh-topic proof for advancement
-  beyond staged-L2 review
-- immediate next step: audit and archive milestone `v2.6`
+- active milestone: `v2.7` `Consultation-Followup Selection Closure`
+- latest closed milestone: `v2.6` `Staged-L2 Post-Review Advancement`
+- previous closed milestone: `v2.5` `Staged-L2 Review Reentry Coherence`
+- older closed milestone: `v2.4` `First L1 To L2 Follow-Through Coherence`
+- `v2.6` proved the same fresh topic can advance from staged-L2 review onto
+  a bounded post-review consultation route
+- a follow-up probe still left that consultation route visible but
+  non-executable inside the bounded loop
+- Phase `181` now executes consultation-followup and records durable selection
+  artifacts
+- Phase `181.1` now advances queue materialization and public surfaces onto the
+  selected staged candidate
+- Phase `181.2` now closes the replayable fresh-topic proof for
+  consultation-followup selection closure
+- immediate next step: audit and archive milestone `v2.7`
 
 ## Accumulated Context
 
@@ -137,3 +136,8 @@ cross-cutting).
   baseline: after staged-L2 review becomes stable, a later `continue` must
   advance onto one bounded post-review consultation step instead of stalling
   on the same review summary
+- `v2.7` now promotes the next bounded gap from the repaired `v2.6`
+  consultation baseline: once consultation-followup becomes the selected route,
+  the loop must execute it, record a durable selection artifact, and advance to
+  one selected staged candidate instead of remaining on generic consult
+  language
