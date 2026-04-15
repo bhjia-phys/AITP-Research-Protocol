@@ -3531,9 +3531,15 @@ class AITPServiceTests(unittest.TestCase):
             "strong coupling",
             l1_source_intake["contradiction_candidates"][0]["source_evidence_excerpt"],
         )
+        self.assertTrue(
+            l1_source_intake["contradiction_candidates"][0]["source_evidence_sentence_ids"]
+        )
         self.assertIn(
             "weak coupling",
             l1_source_intake["contradiction_candidates"][0]["against_evidence_excerpt"],
+        )
+        self.assertTrue(
+            l1_source_intake["contradiction_candidates"][0]["against_evidence_sentence_ids"]
         )
         self.assertEqual(
             l1_source_intake["contradiction_candidates"][0]["detail"],

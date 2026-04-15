@@ -320,10 +320,16 @@ def _normalize_contradiction_candidates(rows: Any) -> list[dict[str, str]]:
                 "source_basis_type": source_basis_type,
                 "source_basis_summary": source_basis_summary,
                 "source_evidence_excerpt": str(row.get("source_evidence_excerpt") or "").strip() or source_basis_summary,
+                "source_evidence_sentence_ids": normalize_evidence_sentence_ids(
+                    row.get("source_evidence_sentence_ids")
+                ),
                 "against_basis_type": against_basis_type,
                 "against_basis_summary": against_basis_summary,
                 "against_evidence_excerpt": str(row.get("against_evidence_excerpt") or "").strip()
                 or against_basis_summary,
+                "against_evidence_sentence_ids": normalize_evidence_sentence_ids(
+                    row.get("against_evidence_sentence_ids")
+                ),
             }
         )
     return normalized
@@ -656,9 +662,17 @@ def derive_l1_conflict_intake(source_rows: list[dict[str, Any]], l1_source_intak
                 "source_basis_type": str(candidate.get("source_basis_type") or "").strip() or "assumption",
                 "source_basis_summary": str(candidate.get("source_basis_summary") or "").strip(),
                 "source_evidence_excerpt": excerpt,
+                "source_evidence_sentence_ids": evidence_sentence_ids_for_text(
+                    text=text,
+                    needle=str(candidate.get("source_basis_summary") or "").strip() or excerpt,
+                ),
                 "against_basis_type": str(candidate.get("against_basis_type") or "").strip() or "assumption",
                 "against_basis_summary": str(candidate.get("against_basis_summary") or "").strip(),
                 "against_evidence_excerpt": _summary_excerpt(against_row),
+                "against_evidence_sentence_ids": evidence_sentence_ids_for_text(
+                    text=str(against_row.get("summary_text") or "").strip(),
+                    needle=str(candidate.get("against_basis_summary") or "").strip() or _summary_excerpt(against_row),
+                ),
             }
             contradiction_key = (
                 source_id,

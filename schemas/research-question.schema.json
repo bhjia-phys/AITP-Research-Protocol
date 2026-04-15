@@ -147,9 +147,17 @@
               "source_basis_type": { "type": "string", "minLength": 1 },
               "source_basis_summary": { "type": "string", "minLength": 1 },
               "source_evidence_excerpt": { "type": "string", "minLength": 1 },
+              "source_evidence_sentence_ids": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
               "against_basis_type": { "type": "string", "minLength": 1 },
               "against_basis_summary": { "type": "string", "minLength": 1 },
-              "against_evidence_excerpt": { "type": "string", "minLength": 1 }
+              "against_evidence_excerpt": { "type": "string", "minLength": 1 },
+              "against_evidence_sentence_ids": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              }
             }
           }
         },
