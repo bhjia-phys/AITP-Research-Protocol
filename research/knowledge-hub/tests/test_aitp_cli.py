@@ -1798,6 +1798,71 @@ class AITPCLITests(unittest.TestCase):
         doctor_args = parser.parse_args(["doctor", "--workspace-root", "D:\\BaiduSyncdisk\\Theoretical-Physics"])
         self.assertEqual(doctor_args.command, "doctor")
         self.assertEqual(doctor_args.workspace_root, "D:\\BaiduSyncdisk\\Theoretical-Physics")
+        strict_doctor_args = parser.parse_args(["doctor", "--strict-l0l1"])
+        self.assertTrue(strict_doctor_args.strict_l0l1)
+
+    def test_doctor_strict_l0l1_returns_nonzero_when_codex_guardrails_are_not_hard_enough(self) -> None:
+        doctor_payload = {
+            "overall_status": "mixed_install",
+            "package": {"name": "aitp", "status": "canonical_editable_install", "version": "0.4.1"},
+            "layer_roots": {"L0": {"status": "present"}},
+            "protocol_contracts": {"layer_map": {"status": "present"}},
+            "runtime_convergence": {
+                "front_door_runtimes": ["codex", "claude_code", "opencode"],
+                "front_door_runtimes_converged": False,
+                "front_door_ready_runtimes": ["claude_code", "opencode"],
+                "front_door_non_ready_runtimes": ["codex"],
+            },
+            "runtime_support_matrix": {
+                "baseline_runtime": "codex",
+                "specialized_lanes": ["openclaw"],
+                "deep_execution_parity": {"baseline_runtime": "codex", "parity_targets": [], "runtimes": {}},
+                "runtimes": {
+                    "codex": {
+                        "display_name": "Codex",
+                        "status": "partial",
+                        "maturity_class": "baseline",
+                        "preferred_entry": "native `using-aitp` skill discovery",
+                        "issues": ["bootstrap_receipt_missing"],
+                        "surface_checks": {"bootstrap_receipt_present": False},
+                        "remediation": {
+                            "status": "required",
+                            "command": 'aitp-codex --dry-run "continue this topic"',
+                            "issue_hints": [],
+                        },
+                    }
+                },
+            },
+            "deep_execution_parity": {
+                "baseline_runtime": "codex",
+                "baseline_status": "front_door_blocked",
+                "parity_targets": [],
+                "parity_targets_converged": True,
+                "verified_targets": [],
+                "pending_targets": [],
+                "blocked_targets": [],
+            },
+            "full_convergence_repair": {"status": "recommended", "command": "aitp doctor --json"},
+            "strict_l0_l1": {
+                "status": "fail",
+                "blockers": ["codex_bootstrap_receipt_missing"],
+                "summary": "Codex can still bypass part of the intended L0-L1 AITP entry contract.",
+            },
+        }
+
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.ensure_cli_installed.return_value = doctor_payload
+            mock_factory.return_value = mock_service
+            stream = io.StringIO()
+            with patch.object(sys, "argv", ["aitp", "doctor", "--strict-l0l1"]):
+                with redirect_stdout(stream):
+                    exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 2)
+        output = stream.getvalue()
+        self.assertIn("Strict L0-L1 hardening: fail", output)
+        self.assertIn("codex_bootstrap_receipt_missing", output)
 
     def test_main_renders_compact_human_status_and_next_and_full_dashboard(self) -> None:
         with patch.object(aitp_cli, "_service_from_args") as mock_factory:

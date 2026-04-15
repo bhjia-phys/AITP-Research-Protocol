@@ -446,6 +446,33 @@ def runtime_convergence_summary(doctor_payload: dict[str, Any]) -> dict[str, Any
     }
 
 
+def strict_l0_l1_summary(doctor_payload: dict[str, Any]) -> dict[str, Any]:
+    matrix = doctor_payload.get("runtime_support_matrix") or {}
+    codex_row = (matrix.get("runtimes") or {}).get("codex") or {}
+    surface_checks = codex_row.get("surface_checks") or {}
+    blockers: list[str] = []
+    if str(codex_row.get("status") or "") != "ready":
+        blockers.append("codex_frontdoor_not_ready")
+    if not bool(surface_checks.get("bootstrap_receipt_present")):
+        blockers.append("codex_bootstrap_receipt_missing")
+    elif not bool(surface_checks.get("bootstrap_receipt_parse_ok")):
+        blockers.append("codex_bootstrap_receipt_invalid")
+    elif not bool(surface_checks.get("bootstrap_receipt_matches_expected")):
+        blockers.append("codex_bootstrap_receipt_stale")
+    return {
+        "status": "pass" if not blockers else "fail",
+        "baseline_runtime": str(matrix.get("baseline_runtime") or ""),
+        "codex_status": str(codex_row.get("status") or "unknown"),
+        "front_door_converged": bool((doctor_payload.get("runtime_convergence") or {}).get("front_door_runtimes_converged")),
+        "blockers": blockers,
+        "summary": (
+            "Current Codex front-door constraints are hard enough for L0-L1 topic work."
+            if not blockers
+            else "Codex can still bypass part of the intended L0-L1 AITP entry contract."
+        ),
+    }
+
+
 def deep_execution_parity_summary(doctor_payload: dict[str, Any]) -> dict[str, Any]:
     matrix = doctor_payload.get("runtime_support_matrix") or {}
     deep_execution = matrix.get("deep_execution_parity") or {}
@@ -648,7 +675,7 @@ def ensure_cli_installed(service: Any, *, workspace_root: str | None = None) -> 
     runtime_convergence = runtime_convergence_summary({"runtime_support_matrix": runtime_support_matrix})
     deep_execution_parity = deep_execution_parity_summary({"runtime_support_matrix": runtime_support_matrix})
     overall_status = "clean" if not issues else "mixed_install"
-    return {
+    payload = {
         "overall_status": overall_status,
         "issues": issues,
         "aitp": command_path,
@@ -706,6 +733,8 @@ def ensure_cli_installed(service: Any, *, workspace_root: str | None = None) -> 
         "control_plane_contracts": control_plane_contracts(service),
         "control_plane_surfaces": control_plane_surfaces(),
     }
+    payload["strict_l0_l1"] = strict_l0_l1_summary(payload)
+    return payload
 
 
 def migrate_local_install(

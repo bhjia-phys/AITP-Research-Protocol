@@ -5967,6 +5967,10 @@ class AITPServiceTests(unittest.TestCase):
             "runtime_skill_present": True,
             "using_skill_matches_canonical": True,
             "runtime_skill_matches_canonical": True,
+            "bootstrap_receipt_path": "C:\\Users\\demo\\.codex\\aitp_bootstrap_receipt.json",
+            "bootstrap_receipt_present": True,
+            "bootstrap_receipt_parse_ok": True,
+            "bootstrap_receipt_matches_expected": True,
         }
         claude_status = {
             "using_skill_path": "C:\\Users\\demo\\.claude\\skills\\using-aitp\\SKILL.md",
@@ -6052,6 +6056,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["deep_execution_parity"]["ready_for_probe_targets"], ["claude_code", "opencode"])
         self.assertTrue(payload["runtime_convergence"]["front_door_runtimes_converged"])
         self.assertEqual(payload["full_convergence_repair"]["status"], "none_required")
+        self.assertEqual(payload["strict_l0_l1"]["status"], "pass")
 
     def test_doctor_runtime_support_matrix_reports_partial_front_doors_honestly(self) -> None:
         codex_status = {
@@ -6225,6 +6230,8 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("bootstrap_receipt_missing", codex_row["issues"])
         self.assertEqual(codex_row["remediation"]["status"], "required")
         self.assertFalse(payload["runtime_convergence"]["front_door_runtimes_converged"])
+        self.assertEqual(payload["strict_l0_l1"]["status"], "fail")
+        self.assertIn("codex_bootstrap_receipt_missing", payload["strict_l0_l1"]["blockers"])
 
     def test_doctor_runtime_support_matrix_reports_stale_claude_surfaces(self) -> None:
         codex_status = {

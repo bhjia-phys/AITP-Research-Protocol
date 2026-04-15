@@ -1427,6 +1427,9 @@ def _main_with_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -
     frontdoor_payload = dispatch_frontdoor_command(args, service)
     if frontdoor_payload is not None:
         _emit(frontdoor_payload, args.json)
+        if args.command == "doctor" and getattr(args, "strict_l0l1", False):
+            strict_status = str((frontdoor_payload.get("strict_l0_l1") or {}).get("status") or "fail")
+            return 0 if strict_status == "pass" else 2
         return 0
 
     if args.command == "request-promotion":

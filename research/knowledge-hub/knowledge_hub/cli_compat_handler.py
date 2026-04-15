@@ -424,6 +424,15 @@ def _render_doctor_payload(payload: dict[str, Any]) -> list[str]:
             )
         )
 
+    strict_l0_l1 = payload.get("strict_l0_l1") or {}
+    if strict_l0_l1:
+        strict_status = str(strict_l0_l1.get("status") or "unknown")
+        strict_line = f"Strict L0-L1 hardening: {strict_status}"
+        blockers = [str(item) for item in strict_l0_l1.get("blockers") or [] if str(item).strip()]
+        if blockers:
+            strict_line += f" ({', '.join(blockers)})"
+        lines.append(strict_line)
+
     full_repair = payload.get("full_convergence_repair") or {}
     if str(full_repair.get("status") or "") != "none_required":
         command = str(full_repair.get("command") or "").strip()
