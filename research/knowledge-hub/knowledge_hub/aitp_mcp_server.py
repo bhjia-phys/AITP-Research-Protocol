@@ -54,6 +54,12 @@ def _sanitize_tool_schema(schema: dict[str, Any] | list[Any] | Any) -> dict[str,
                 del schema[key]
             else:
                 schema[key] = _sanitize_tool_schema(schema[key])
+        # FastMCP drops properties whose names collide with JSON Schema keywords
+        # (e.g. 'title'). Re-insert them so required matches properties.
+        if "required" in schema and "properties" in schema:
+            for field in schema["required"]:
+                if field not in schema["properties"]:
+                    schema["properties"][field] = {"type": "string"}
         return schema
     elif isinstance(schema, list):
         return [_sanitize_tool_schema(item) for item in schema]
