@@ -3210,6 +3210,7 @@ class AITPServiceTests(unittest.TestCase):
         research_note = Path(payload["research_question_contract_note_path"]).read_text(encoding="utf-8")
         self.assertIn("page_type: topic_home", home_text)
         self.assertIn("[[source-intake|Source Intake]]", home_text)
+        self.assertIn("[[source-bridge|Source Bridge]]", home_text)
         self.assertIn("research_question.contract.md", bridge_text)
         self.assertIn("control_note.md", bridge_text)
         self.assertIn("operator_console.md", bridge_text)
@@ -3218,6 +3219,22 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("## L1 vault", research_note)
         source_intake_note = Path(payload["l1_vault_wiki_source_intake_path"]).read_text(encoding="utf-8")
         self.assertIn("sentence ids=", source_intake_note)
+        source_bridge_refs = {
+            row["kind"]: row["path"]
+            for row in l1_vault["compatibility_refs"]
+            if isinstance(row, dict)
+        }
+        self.assertIn("source_anchor_index_json", source_bridge_refs)
+        self.assertIn("source_anchor_bridge_note", source_bridge_refs)
+        source_bridge_note = self.kernel_root / source_bridge_refs["source_anchor_bridge_note"]
+        source_anchor_index = self.kernel_root / source_bridge_refs["source_anchor_index_json"]
+        self.assertTrue(source_bridge_note.exists())
+        self.assertTrue(source_anchor_index.exists())
+        source_bridge_text = source_bridge_note.read_text(encoding="utf-8")
+        self.assertIn("Source Anchor Bridge", source_bridge_text)
+        self.assertIn("thesis:demo-source", source_bridge_text)
+        self.assertIn("source.json", source_bridge_text)
+        self.assertIn("snapshot.md", source_bridge_text)
 
     def test_ensure_topic_shell_surfaces_projects_l1_concept_graph_into_contract_and_notes(self) -> None:
         runtime_root = self._write_runtime_state()

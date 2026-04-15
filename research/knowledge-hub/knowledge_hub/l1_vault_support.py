@@ -5,6 +5,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
+from .l1_source_bridge_support import (
+    build_l1_source_anchor_index,
+    render_l1_source_bridge_markdown,
+)
 from .obsidian_graph_export import materialize_obsidian_concept_graph_export
 from .l1_source_intake_support import l1_contradiction_summary_lines
 from .topic_truth_root_support import compatibility_projection_path, layer_root
@@ -92,10 +96,21 @@ def _build_raw_sources(
     for row in source_rows:
         source_id = str(row.get("source_id") or "").strip()
         source_slug = source_id.replace(":", "-") if source_id else "source"
+        source_dir = topic_root / "sources" / source_slug
+        source_json_path = source_dir / "source.json"
         snapshot_path = topic_root / "sources" / source_slug / "snapshot.md"
+        locator = row.get("locator") or {}
+        if not isinstance(locator, dict):
+            locator = {}
         provenance = row.get("provenance") or {}
         if not isinstance(provenance, dict):
             provenance = {}
+        source_json_ref = str(
+            row.get("source_json_path")
+            or locator.get("local_path")
+            or relativize(source_json_path)
+        ).strip()
+        snapshot_ref = str(locator.get("snapshot_path") or relativize(snapshot_path)).strip()
         raw_sources.append(
             {
                 "source_id": source_id,
@@ -103,7 +118,10 @@ def _build_raw_sources(
                 "title": str(row.get("title") or "").strip(),
                 "summary": str(row.get("summary") or "").strip(),
                 "source_index_path": relativize(topic_root / "source_index.jsonl"),
-                "snapshot_path": relativize(snapshot_path) if snapshot_path.exists() else "",
+                "source_json_path": source_json_ref,
+                "source_json_status": "available" if source_json_path.exists() else "expected_but_missing",
+                "snapshot_path": snapshot_ref,
+                "snapshot_status": "available" if snapshot_path.exists() else "expected_but_missing",
                 "absolute_path": str(provenance.get("absolute_path") or "").strip(),
                 "abs_url": str(provenance.get("abs_url") or "").strip(),
                 "canonical_source_id": str(row.get("canonical_source_id") or "").strip(),
@@ -136,7 +154,8 @@ def _render_raw_manifest_markdown(payload: dict[str, Any]) -> str:
             [
                 f"- `{row.get('source_id') or '(missing)'}` type=`{row.get('source_type') or '(missing)'}`",
                 f"  - title: {row.get('title') or '(missing)'}",
-                f"  - snapshot: `{row.get('snapshot_path') or '(none)'}`",
+                f"  - source.json: `{row.get('source_json_path') or '(none)'}` status=`{row.get('source_json_status') or 'missing'}`",
+                f"  - snapshot: `{row.get('snapshot_path') or '(none)'}` status=`{row.get('snapshot_status') or 'missing'}`",
                 f"  - absolute_path: `{row.get('absolute_path') or '(none)'}`",
                 f"  - abs_url: `{row.get('abs_url') or '(none)'}`",
             ]
@@ -177,6 +196,7 @@ def _render_wiki_schema_markdown(
                 "",
                 "- `home.md` -> topic overview and navigation page",
                 "- `source-intake.md` -> assumptions, regimes, reading depth, and method specificity",
+                "- `source-bridge.md` -> sparse L1 anchors back to concrete L0 source artifacts",
                 "- `open-questions.md` -> ambiguity and uncertainty page",
                 "- `runtime-bridge.md` -> compatibility/runtime bridge page",
                 f"- `{concept_graph_index_path}` -> concept-graph index page plus community folders of node notes",
@@ -185,6 +205,7 @@ def _render_wiki_schema_markdown(
                 "",
                 f"- Use {_wiki_link('home', 'Home')} as the local root page.",
                 f"- Link sibling wiki pages with wikilinks such as {_wiki_link('source-intake', 'Source Intake')}.",
+                f"- Link sparse bridge pages with wikilinks such as {_wiki_link('source-bridge', 'Source Bridge')}.",
                 f"- Link concept-graph notes with wikilinks such as {_wiki_link('concept-graph/index', 'Concept Graph')}.",
                 "- Link output and runtime files with explicit relative paths when they live outside `wiki/`.",
                 "",
@@ -207,6 +228,7 @@ def _render_wiki_home_markdown(
     research_mode: str,
     source_count: int,
     concept_graph_index_path: str,
+    source_bridge_note_path: str,
     output_digest_note_path: str,
     flowback_note_path: str,
     updated_at: str,
@@ -229,9 +251,11 @@ def _render_wiki_home_markdown(
                 "",
                 f"- {_wiki_link('schema', 'Vault Schema')}",
                 f"- {_wiki_link('source-intake', 'Source Intake')}",
+                f"- {_wiki_link('source-bridge', 'Source Bridge')}",
                 f"- {_wiki_link('open-questions', 'Open Questions')}",
                 f"- {_wiki_link('runtime-bridge', 'Runtime Bridge')}",
                 f"- Concept Graph: `{concept_graph_index_path}`",
+                f"- Source bridge note: `{source_bridge_note_path}`",
                 f"- Output digest: `{output_digest_note_path}`",
                 f"- Flowback log: `{flowback_note_path}`",
                 "",
@@ -512,8 +536,10 @@ def materialize_l1_vault(
     wiki_schema_path = wiki_root / "schema.md"
     wiki_home_path = wiki_root / "home.md"
     wiki_source_intake_path = wiki_root / "source-intake.md"
+    wiki_source_bridge_path = wiki_root / "source-bridge.md"
     wiki_open_questions_path = wiki_root / "open-questions.md"
     wiki_runtime_bridge_path = wiki_root / "runtime-bridge.md"
+    source_anchor_index_path = output_root / "source_anchor_index.json"
     output_digest_path = output_root / "current-query.json"
     output_digest_note_path = output_root / "current-query.md"
     flowback_log_path = output_root / "flowback.jsonl"
@@ -549,6 +575,27 @@ def materialize_l1_vault(
     write_json(raw_manifest_json_path, raw_manifest_payload)
     write_text(raw_manifest_note_path, _render_raw_manifest_markdown(raw_manifest_payload))
 
+    source_anchor_index_payload = build_l1_source_anchor_index(
+        kernel_root=kernel_root,
+        topic_slug=topic_slug,
+        raw_sources=raw_sources,
+        l1_source_intake=research_contract.get("l1_source_intake") or {},
+        source_intelligence=source_intelligence,
+        updated_at=updated_at,
+        updated_by=updated_by,
+    )
+    write_json(source_anchor_index_path, source_anchor_index_payload)
+    write_text(
+        wiki_source_bridge_path,
+        render_l1_source_bridge_markdown(
+            source_anchor_index_payload,
+            topic_slug=topic_slug,
+            source_anchor_index_path="../output/source_anchor_index.json",
+            updated_at=updated_at,
+            updated_by=updated_by,
+        ),
+    )
+
     compatibility_refs = [
         {
             "kind": "research_question_contract_json",
@@ -569,6 +616,16 @@ def materialize_l1_vault(
             "kind": "operator_console",
             "path": relativize(operator_console_path),
             "status": "available" if operator_console_path.exists() else "expected_but_missing",
+        },
+        {
+            "kind": "source_anchor_index_json",
+            "path": relativize(source_anchor_index_path),
+            "status": "available",
+        },
+        {
+            "kind": "source_anchor_bridge_note",
+            "path": relativize(wiki_source_bridge_path),
+            "status": "available",
         },
     ]
 
@@ -669,6 +726,7 @@ def materialize_l1_vault(
             research_mode=str(research_contract.get("research_mode") or "").strip(),
             source_count=int(((research_contract.get("l1_source_intake") or {}).get("source_count")) or 0),
             concept_graph_index_path=str(concept_graph_export_payload.get("index_path") or "concept-graph/index.md"),
+            source_bridge_note_path="source-bridge.md",
             output_digest_note_path="../output/current-query.md",
             flowback_note_path="../output/flowback.md",
             updated_at=updated_at,
@@ -721,10 +779,11 @@ def materialize_l1_vault(
         "wiki": {
             "schema_path": relativize(wiki_schema_path),
             "home_page_path": relativize(wiki_home_path),
-            "page_count": 4 + int((concept_graph_export_payload.get("summary") or {}).get("page_count") or 0),
+            "page_count": 5 + int((concept_graph_export_payload.get("summary") or {}).get("page_count") or 0),
             "page_paths": [
                 relativize(wiki_home_path),
                 relativize(wiki_source_intake_path),
+                relativize(wiki_source_bridge_path),
                 relativize(wiki_open_questions_path),
                 relativize(wiki_runtime_bridge_path),
                 str(concept_graph_export_payload.get("index_path") or ""),
@@ -756,8 +815,10 @@ def materialize_l1_vault(
         "wiki_home_path": str(wiki_home_path),
         "wiki_schema_path": str(wiki_schema_path),
         "wiki_source_intake_path": str(wiki_source_intake_path),
+        "wiki_source_bridge_path": str(wiki_source_bridge_path),
         "wiki_open_questions_path": str(wiki_open_questions_path),
         "wiki_runtime_bridge_path": str(wiki_runtime_bridge_path),
+        "source_anchor_index_path": str(source_anchor_index_path),
         "output_digest_path": str(output_digest_path),
         "output_digest_note_path": str(output_digest_note_path),
         "flowback_log_path": str(flowback_log_path),
