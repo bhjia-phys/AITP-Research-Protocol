@@ -8475,6 +8475,80 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("topics/demo-topic/runtime/session_start.generated.md", payload["missing_paths"])
         self.assertFalse(self.service._validation_contract_paths("demo-topic")["json"].exists())
 
+    def test_assess_topic_completion_returns_required_read_gate_before_materializing_when_reads_are_unacknowledged(self) -> None:
+        self._write_runtime_state()
+        self._materialize_required_read_session(
+            must_read_paths=["topics/demo-topic/runtime/topic_dashboard.md"],
+        )
+
+        payload = self.service.assess_topic_completion(
+            topic_slug="demo-topic",
+        )
+
+        self.assertTrue(payload["needs_ack"])
+        self.assertEqual(payload["gate_kind"], "must_read_ack")
+        self.assertFalse(self.service._topic_completion_paths("demo-topic")["json"].exists())
+
+    def test_prepare_statement_compilation_returns_required_read_gate_before_materializing_when_reads_are_unacknowledged(self) -> None:
+        self._write_runtime_state()
+        self._materialize_required_read_session(
+            must_read_paths=["topics/demo-topic/runtime/topic_dashboard.md"],
+        )
+
+        payload = self.service.prepare_statement_compilation(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+        )
+
+        self.assertTrue(payload["needs_ack"])
+        self.assertEqual(payload["gate_kind"], "must_read_ack")
+        self.assertFalse(self.service._statement_compilation_active_paths("demo-topic")["json"].exists())
+
+    def test_prepare_lean_bridge_returns_required_read_gate_before_materializing_when_reads_are_unacknowledged(self) -> None:
+        self._write_runtime_state()
+        self._materialize_required_read_session(
+            must_read_paths=["topics/demo-topic/runtime/topic_dashboard.md"],
+        )
+
+        payload = self.service.prepare_lean_bridge(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+        )
+
+        self.assertTrue(payload["needs_ack"])
+        self.assertEqual(payload["gate_kind"], "must_read_ack")
+        self.assertFalse(self.service._lean_bridge_active_paths("demo-topic")["json"].exists())
+
+    def test_select_lean_bridge_export_target_returns_required_read_gate_before_materializing_when_reads_are_unacknowledged(self) -> None:
+        self._write_runtime_state(run_id="run-001")
+        self._materialize_required_read_session(
+            must_read_paths=["topics/demo-topic/runtime/topic_dashboard.md"],
+        )
+
+        payload = self.service.select_lean_bridge_export_target(
+            topic_slug="demo-topic",
+            run_id="run-001",
+        )
+
+        self.assertTrue(payload["needs_ack"])
+        self.assertEqual(payload["gate_kind"], "must_read_ack")
+        self.assertFalse(self.service._lean_bridge_export_target_paths("demo-topic")["json"].exists())
+
+    def test_run_lean_bridge_export_check_returns_required_read_gate_before_materializing_when_reads_are_unacknowledged(self) -> None:
+        self._write_runtime_state(run_id="run-001")
+        self._materialize_required_read_session(
+            must_read_paths=["topics/demo-topic/runtime/topic_dashboard.md"],
+        )
+
+        payload = self.service.run_lean_bridge_export_check(
+            topic_slug="demo-topic",
+            run_id="run-001",
+        )
+
+        self.assertTrue(payload["needs_ack"])
+        self.assertEqual(payload["gate_kind"], "must_read_ack")
+        self.assertFalse(self.service._lean_bridge_export_check_paths("demo-topic")["json"].exists())
+
     def test_start_chat_session_allocates_fresh_slug_for_explicit_new_topic_collision(self) -> None:
         existing_slug = "jones-von-neumann-algebras"
         existing_runtime_root = self._runtime_root(existing_slug)
@@ -8785,6 +8859,7 @@ class AITPServiceTests(unittest.TestCase):
             supporting_oracle_ids=["question_oracle:demo-definition"],
             supporting_regression_run_ids=["regression_run:demo-definition"],
         )
+        self._ack_current_required_reads()
         self.service.prepare_statement_compilation(
             topic_slug="demo-topic",
             candidate_id="candidate:demo-candidate",
@@ -8869,6 +8944,7 @@ class AITPServiceTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
+        self._ack_current_required_reads()
 
         payload = self.service.assess_topic_completion(
             topic_slug="demo-topic",
@@ -9378,6 +9454,7 @@ class AITPServiceTests(unittest.TestCase):
             supporting_oracle_ids=["question_oracle:demo-definition"],
             supporting_regression_run_ids=["regression_run:demo-definition"],
         )
+        self._ack_current_required_reads()
         self.service.prepare_statement_compilation(
             topic_slug="demo-topic",
             candidate_id="candidate:demo-candidate",
@@ -10346,6 +10423,7 @@ class AITPServiceTests(unittest.TestCase):
             supporting_oracle_ids=["question_oracle:demo-definition"],
             supporting_regression_run_ids=["regression_run:demo-definition"],
         )
+        self._ack_current_required_reads()
 
         compilation = service.prepare_statement_compilation(
             topic_slug="demo-topic",
@@ -10431,6 +10509,7 @@ class AITPServiceTests(unittest.TestCase):
             supporting_oracle_ids=["question_oracle:demo-definition"],
             supporting_regression_run_ids=["regression_run:demo-definition"],
         )
+        self._ack_current_required_reads()
 
         completion = service.assess_topic_completion(topic_slug="demo-topic")
         self.assertEqual(completion["status"], "promotion-ready")
@@ -10502,6 +10581,7 @@ class AITPServiceTests(unittest.TestCase):
     def test_prepare_lean_bridge_marks_packet_needs_refinement_when_theory_packet_is_incomplete(self) -> None:
         self._write_runtime_state()
         self._write_candidate()
+        self._ack_current_required_reads()
 
         lean_bridge = self.service.prepare_lean_bridge(
             topic_slug="demo-topic",
@@ -10570,6 +10650,7 @@ class AITPServiceTests(unittest.TestCase):
             lean_prerequisite_ids=["physlib:demo-prereq"],
             supporting_obligation_ids=["proof_obligation:demo-formal-export"],
         )
+        self._ack_current_required_reads()
 
         payload = self.service.select_lean_bridge_export_target(
             topic_slug="demo-topic",
@@ -10600,6 +10681,7 @@ class AITPServiceTests(unittest.TestCase):
             intended_l2_target="theorem:demo-formal-export",
             title="Demo Formal Export Target",
         )
+        self._ack_current_required_reads()
 
         payload = self.service.select_lean_bridge_export_target(
             topic_slug="demo-topic",
@@ -10663,6 +10745,7 @@ class AITPServiceTests(unittest.TestCase):
             "from pathlib import Path\nimport sys\nPath(sys.argv[-1]).read_text(encoding='utf-8')\nraise SystemExit(0)\n",
             encoding="utf-8",
         )
+        self._ack_current_required_reads()
 
         payload = self.service.run_lean_bridge_export_check(
             topic_slug="demo-topic",
@@ -10726,6 +10809,7 @@ class AITPServiceTests(unittest.TestCase):
             "import sys\nprint('type mismatch at demo_formal_export', file=sys.stderr)\nraise SystemExit(1)\n",
             encoding="utf-8",
         )
+        self._ack_current_required_reads()
 
         payload = self.service.run_lean_bridge_export_check(
             topic_slug="demo-topic",

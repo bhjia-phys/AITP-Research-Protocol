@@ -1336,24 +1336,21 @@ def ensure_topic_shell_surfaces(
         pending_actions=pending_actions,
         selected_pending_action=selected_pending_action,
     )
-    topic_completion = self.assess_topic_completion(
+    topic_completion = self._materialize_topic_completion_surface(
         topic_slug=topic_slug,
         run_id=latest_run_id or None,
         updated_by=updated_by,
-        refresh_runtime_bundle=False,
     )
     dependency_state = self._topic_dependency_state(topic_slug)
-    statement_compilation = self.prepare_statement_compilation(
+    statement_compilation = self._materialize_statement_compilation_surface(
         topic_slug=topic_slug,
         run_id=latest_run_id or None,
         updated_by=updated_by,
-        refresh_runtime_bundle=False,
     )
-    lean_bridge = self.prepare_lean_bridge(
+    lean_bridge = self._materialize_lean_bridge_surface(
         topic_slug=topic_slug,
         run_id=latest_run_id or None,
         updated_by=updated_by,
-        refresh_runtime_bundle=False,
     )
     followup_reintegration_paths = self._write_followup_reintegration_rows(
         topic_slug,

@@ -8626,13 +8626,12 @@ class AITPService:
             "runtime_protocol": protocol_paths,
         }
 
-    def assess_topic_completion(
+    def _materialize_topic_completion_surface(
         self,
         *,
         topic_slug: str,
         run_id: str | None = None,
         updated_by: str = "aitp-cli",
-        refresh_runtime_bundle: bool = True,
     ) -> dict[str, Any]:
         resolved_run_id = self._resolve_run_id(topic_slug, run_id)
         candidate_rows = self._candidate_rows_for_run(topic_slug, resolved_run_id)
@@ -8658,6 +8657,27 @@ class AITPService:
             payload=payload,
             json_path=paths["json"],
             note_path=paths["note"],
+        )
+        return result
+
+    def assess_topic_completion(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None = None,
+        updated_by: str = "aitp-cli",
+        refresh_runtime_bundle: bool = True,
+    ) -> dict[str, Any]:
+        gate = self.require_topic_ready_for_deeper_execution(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        if gate is not None:
+            return gate
+        result = self._materialize_topic_completion_surface(
+            topic_slug=topic_slug,
+            run_id=run_id,
+            updated_by=updated_by,
         )
         if refresh_runtime_bundle:
             result["runtime_protocol"] = self._materialize_runtime_protocol_bundle(
@@ -8708,14 +8728,13 @@ class AITPService:
             updated_by=updated_by,
         )
 
-    def prepare_lean_bridge(
+    def _materialize_lean_bridge_surface(
         self,
         *,
         topic_slug: str,
         run_id: str | None = None,
         candidate_id: str | None = None,
         updated_by: str = "aitp-cli",
-        refresh_runtime_bundle: bool = True,
     ) -> dict[str, Any]:
         resolved_run_id = self._resolve_run_id(topic_slug, run_id)
         candidate_rows = self._candidate_rows_for_run(topic_slug, resolved_run_id)
@@ -8733,7 +8752,29 @@ class AITPService:
             updated_by=updated_by,
             candidate_id=candidate_id,
         )
-        result = dict(payload)
+        return dict(payload)
+
+    def prepare_lean_bridge(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None = None,
+        candidate_id: str | None = None,
+        updated_by: str = "aitp-cli",
+        refresh_runtime_bundle: bool = True,
+    ) -> dict[str, Any]:
+        gate = self.require_topic_ready_for_deeper_execution(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        if gate is not None:
+            return gate
+        result = self._materialize_lean_bridge_surface(
+            topic_slug=topic_slug,
+            run_id=run_id,
+            updated_by=updated_by,
+            candidate_id=candidate_id,
+        )
         if refresh_runtime_bundle:
             result["runtime_protocol"] = self._materialize_runtime_protocol_bundle(
                 topic_slug=topic_slug,
@@ -8750,6 +8791,12 @@ class AITPService:
         updated_by: str = "aitp-cli",
         refresh_runtime_bundle: bool = True,
     ) -> dict[str, Any]:
+        gate = self.require_topic_ready_for_deeper_execution(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        if gate is not None:
+            return gate
         resolved_run_id = self._resolve_run_id(topic_slug, run_id)
         candidate_rows = self._candidate_rows_for_run(topic_slug, resolved_run_id)
 
@@ -8906,6 +8953,12 @@ class AITPService:
         updated_by: str = "aitp-cli",
         refresh_runtime_bundle: bool = True,
     ) -> dict[str, Any]:
+        gate = self.require_topic_ready_for_deeper_execution(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        if gate is not None:
+            return gate
         export_paths = self._lean_bridge_export_target_paths(topic_slug)
         export_target = read_json(export_paths["json"])
         if export_target is None or (
@@ -9020,14 +9073,13 @@ class AITPService:
             )
         return result
 
-    def prepare_statement_compilation(
+    def _materialize_statement_compilation_surface(
         self,
         *,
         topic_slug: str,
         run_id: str | None = None,
         candidate_id: str | None = None,
         updated_by: str = "aitp-cli",
-        refresh_runtime_bundle: bool = True,
     ) -> dict[str, Any]:
         resolved_run_id = self._resolve_run_id(topic_slug, run_id)
         candidate_rows = self._candidate_rows_for_run(topic_slug, resolved_run_id)
@@ -9038,7 +9090,29 @@ class AITPService:
             updated_by=updated_by,
             candidate_id=candidate_id,
         )
-        result = dict(payload)
+        return dict(payload)
+
+    def prepare_statement_compilation(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None = None,
+        candidate_id: str | None = None,
+        updated_by: str = "aitp-cli",
+        refresh_runtime_bundle: bool = True,
+    ) -> dict[str, Any]:
+        gate = self.require_topic_ready_for_deeper_execution(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        if gate is not None:
+            return gate
+        result = self._materialize_statement_compilation_surface(
+            topic_slug=topic_slug,
+            run_id=run_id,
+            updated_by=updated_by,
+            candidate_id=candidate_id,
+        )
         if refresh_runtime_bundle:
             result["runtime_protocol"] = self._materialize_runtime_protocol_bundle(
                 topic_slug=topic_slug,
