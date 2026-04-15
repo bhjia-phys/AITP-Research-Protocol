@@ -64,6 +64,28 @@ def _emit_topic_popup_gate(
     return 2 if blocking else 0
 
 
+def _emit_required_read_gate(
+    service: AITPService,
+    *,
+    topic_slug: str | None,
+    updated_by: str,
+    as_json: bool,
+    blocking: bool = False,
+) -> int | None:
+    normalized_topic_slug = str(topic_slug or "").strip()
+    if not normalized_topic_slug:
+        return None
+    gate_payload = service.topic_required_read_gate(topic_slug=normalized_topic_slug, updated_by=updated_by)
+    if not isinstance(gate_payload, dict) or not gate_payload.get("needs_ack"):
+        return None
+    if as_json:
+        _emit(gate_payload, True)
+    else:
+        _emit_text(str(gate_payload.get("markdown") or ""))
+        print(f"\nResolve with: aitp ack-read --topic-slug {normalized_topic_slug} --all-current")
+    return 2 if blocking else 0
+
+
 def _read_relative_human_surface(service: AITPService, relative_path: str) -> str | None:
     target = str(relative_path or "").strip()
     if not target:
@@ -363,6 +385,14 @@ def build_parser() -> argparse.ArgumentParser:
     popup.add_argument("--resolved-by", default="human")
     popup.add_argument("--updated-by", default="aitp-cli")
     popup.add_argument("--json", action="store_true")
+
+    ack_read = subparsers.add_parser("ack-read", help="Acknowledge current required-read surfaces for one topic")
+    ack_read.add_argument("--topic-slug", required=True)
+    ack_read_group = ack_read.add_mutually_exclusive_group(required=True)
+    ack_read_group.add_argument("--all-current", action="store_true")
+    ack_read_group.add_argument("--path", action="append", default=[])
+    ack_read.add_argument("--updated-by", default="aitp-cli")
+    ack_read.add_argument("--json", action="store_true")
 
     resolve_checkpoint = subparsers.add_parser(
         "resolve-checkpoint",
@@ -1123,6 +1153,16 @@ def _main_with_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -
                 print(f"\nResolve with: aitp popup --topic-slug {args.topic_slug} --choice <index>")
         return 0
 
+    if args.command == "ack-read":
+        payload = service.acknowledge_required_reads(
+            topic_slug=args.topic_slug,
+            paths=args.path,
+            all_current=args.all_current,
+            updated_by=args.updated_by,
+        )
+        _emit(payload, args.json)
+        return 0
+
     if args.command == "resolve-checkpoint":
         payload = service.resolve_operator_checkpoint(
             topic_slug=args.topic_slug,
@@ -1171,6 +1211,15 @@ def _main_with_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -
         )
         if popup_exit is not None:
             return popup_exit
+        required_read_exit = _emit_required_read_gate(
+            service,
+            topic_slug=args.topic_slug,
+            updated_by=args.updated_by,
+            as_json=args.json,
+            blocking=True,
+        )
+        if required_read_exit is not None:
+            return required_read_exit
         payload = service.work_topic(
             topic=args.topic,
             topic_slug=args.topic_slug,
@@ -1200,6 +1249,15 @@ def _main_with_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -
         )
         if popup_exit is not None:
             return popup_exit
+        required_read_exit = _emit_required_read_gate(
+            service,
+            topic_slug=args.topic_slug,
+            updated_by=args.updated_by,
+            as_json=args.json,
+            blocking=True,
+        )
+        if required_read_exit is not None:
+            return required_read_exit
         payload = service.prepare_verification(
             topic_slug=args.topic_slug,
             mode=args.mode,
@@ -1218,6 +1276,15 @@ def _main_with_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -
         )
         if popup_exit is not None:
             return popup_exit
+        required_read_exit = _emit_required_read_gate(
+            service,
+            topic_slug=args.topic_slug,
+            updated_by=args.updated_by,
+            as_json=args.json,
+            blocking=True,
+        )
+        if required_read_exit is not None:
+            return required_read_exit
         payload = service.assess_topic_completion(
             topic_slug=args.topic_slug,
             run_id=args.run_id,
@@ -1236,6 +1303,15 @@ def _main_with_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -
         )
         if popup_exit is not None:
             return popup_exit
+        required_read_exit = _emit_required_read_gate(
+            service,
+            topic_slug=args.topic_slug,
+            updated_by=args.updated_by,
+            as_json=args.json,
+            blocking=True,
+        )
+        if required_read_exit is not None:
+            return required_read_exit
         payload = service.reintegrate_followup_subtopic(
             topic_slug=args.topic_slug,
             child_topic_slug=args.child_topic_slug,
@@ -1255,6 +1331,15 @@ def _main_with_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -
         )
         if popup_exit is not None:
             return popup_exit
+        required_read_exit = _emit_required_read_gate(
+            service,
+            topic_slug=args.topic_slug,
+            updated_by=args.updated_by,
+            as_json=args.json,
+            blocking=True,
+        )
+        if required_read_exit is not None:
+            return required_read_exit
         payload = service.update_followup_return_packet(
             topic_slug=args.topic_slug,
             run_id=args.run_id,
@@ -1278,6 +1363,15 @@ def _main_with_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -
         )
         if popup_exit is not None:
             return popup_exit
+        required_read_exit = _emit_required_read_gate(
+            service,
+            topic_slug=args.topic_slug,
+            updated_by=args.updated_by,
+            as_json=args.json,
+            blocking=True,
+        )
+        if required_read_exit is not None:
+            return required_read_exit
         payload = service.prepare_lean_bridge(
             topic_slug=args.topic_slug,
             run_id=args.run_id,
@@ -1297,6 +1391,15 @@ def _main_with_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -
         )
         if popup_exit is not None:
             return popup_exit
+        required_read_exit = _emit_required_read_gate(
+            service,
+            topic_slug=args.topic_slug,
+            updated_by=args.updated_by,
+            as_json=args.json,
+            blocking=True,
+        )
+        if required_read_exit is not None:
+            return required_read_exit
         payload = service.prepare_statement_compilation(
             topic_slug=args.topic_slug,
             run_id=args.run_id,

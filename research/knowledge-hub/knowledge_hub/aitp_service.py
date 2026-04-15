@@ -740,6 +740,9 @@ class AITPService:
             "note": runtime_root / "session_start.generated.md",
         }
 
+    def _required_read_receipts_path(self, topic_slug: str) -> Path:
+        return self._runtime_root(topic_slug) / "required_read_receipts.jsonl"
+
     def _control_note_path(self, topic_slug: str) -> Path:
         return self._runtime_root(topic_slug) / "control_note.md"
 
@@ -796,6 +799,168 @@ class AITPService:
         path = Path(raw).expanduser()
         if path.is_absolute():
             return path
+        return self.kernel_root / path
+
+    def _session_start_payload_for_required_reads(self, topic_slug: str) -> dict[str, Any]:
+        payload = read_json(self._session_start_paths(topic_slug)["json"])
+        if payload is None:
+            payload = read_json(self._runtime_root(topic_slug) / "session_start.generated.json")
+        return payload or {}
+
+    def _required_read_paths_from_session(self, payload: dict[str, Any]) -> list[str]:
+        artifacts = payload.get("artifacts") or {}
+        required_paths = [
+            self._normalize_artifact_path(artifacts.get("session_start_note_path")),
+            self._normalize_artifact_path(artifacts.get("runtime_protocol_note_path")),
+        ]
+        for row in payload.get("must_read_now") or []:
+            if isinstance(row, dict):
+                required_paths.append(self._normalize_artifact_path(row.get("path")))
+        return self._dedupe_strings([str(item) for item in required_paths if str(item or "").strip()])
+
+    def _render_required_read_gate_markdown(self, payload: dict[str, Any]) -> str:
+        if not payload.get("needs_ack"):
+            return "# Required reads\n\nNo active required-read gate is currently blocking deeper execution.\n"
+        lines = [
+            "# Required reads",
+            "",
+            "Acknowledge the current startup reads before continuing deeper execution.",
+            "",
+            f"- Topic slug: `{payload.get('topic_slug') or '(missing)'}`",
+            f"- Required generation: `{payload.get('generation') or '(missing)'}`",
+            f"- Receipt path: `{payload.get('receipt_path') or '(missing)'}`",
+            "",
+            "## Missing paths",
+            "",
+        ]
+        for path in payload.get("missing_paths") or ["(none)"]:
+            lines.append(f"- `{path}`" if path != "(none)" else "- (none)")
+        lines.extend(
+            [
+                "",
+                "Resolve with:",
+                "",
+                f"`aitp ack-read --topic-slug {payload.get('topic_slug') or '<topic_slug>'} --all-current`",
+                "",
+            ]
+        )
+        return "\n".join(lines)
+
+    def topic_required_read_gate(
+        self,
+        *,
+        topic_slug: str,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        session_payload = self._session_start_payload_for_required_reads(topic_slug)
+        if not session_payload:
+            payload = {
+                "topic_slug": topic_slug,
+                "updated_by": updated_by,
+                "gate_kind": "none",
+                "needs_ack": False,
+                "generation": "",
+                "required_paths": [],
+                "acknowledged_paths": [],
+                "missing_paths": [],
+                "receipt_path": self._relativize(self._required_read_receipts_path(topic_slug)),
+            }
+            payload["markdown"] = self._render_required_read_gate_markdown(payload)
+            return payload
+
+        generation = str(session_payload.get("updated_at") or "").strip()
+        required_paths = self._required_read_paths_from_session(session_payload)
+        receipt_path = self._required_read_receipts_path(topic_slug)
+        acknowledged_paths = self._dedupe_strings(
+            [
+                self._normalize_artifact_path(row.get("path"))
+                for row in read_jsonl(receipt_path)
+                if str(row.get("generation") or "").strip() == generation
+                and self._normalize_artifact_path(row.get("path"))
+            ]
+        )
+        missing_paths = [path for path in required_paths if path not in acknowledged_paths]
+        payload = {
+            "topic_slug": topic_slug,
+            "updated_by": updated_by,
+            "gate_kind": "must_read_ack",
+            "needs_ack": bool(missing_paths),
+            "generation": generation,
+            "required_paths": required_paths,
+            "acknowledged_paths": acknowledged_paths,
+            "missing_paths": missing_paths,
+            "receipt_path": self._relativize(receipt_path),
+        }
+        payload["markdown"] = self._render_required_read_gate_markdown(payload)
+        return payload
+
+    def acknowledge_required_reads(
+        self,
+        *,
+        topic_slug: str,
+        paths: list[str] | None = None,
+        all_current: bool = False,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        gate = self.topic_required_read_gate(topic_slug=topic_slug, updated_by=updated_by)
+        if not gate.get("generation"):
+            return {
+                "topic_slug": topic_slug,
+                "receipt_path": gate.get("receipt_path"),
+                "acknowledged_count": 0,
+                "acknowledged_paths": [],
+                "remaining_missing_count": 0,
+                "remaining_missing_paths": [],
+                "generation": "",
+            }
+
+        target_paths = (
+            list(gate.get("missing_paths") or [])
+            if all_current
+            else self._dedupe_strings(
+                [
+                    str(self._normalize_artifact_path(path) or "").strip()
+                    for path in (paths or [])
+                    if str(self._normalize_artifact_path(path) or "").strip()
+                ]
+            )
+        )
+        existing_rows = read_jsonl(self._required_read_receipts_path(topic_slug))
+        existing_keys = {
+            (
+                str(row.get("generation") or "").strip(),
+                str(self._normalize_artifact_path(row.get("path")) or "").strip(),
+            )
+            for row in existing_rows
+        }
+        new_rows: list[dict[str, Any]] = []
+        for path in target_paths:
+            key = (str(gate.get("generation") or "").strip(), path)
+            if key in existing_keys:
+                continue
+            existing_keys.add(key)
+            new_rows.append(
+                {
+                    "ack_id": f"required-read:{topic_slug}:{bounded_slugify(path, max_length=48)}",
+                    "topic_slug": topic_slug,
+                    "generation": str(gate.get("generation") or "").strip(),
+                    "path": path,
+                    "acknowledged_at": now_iso(),
+                    "updated_by": updated_by,
+                }
+            )
+        if new_rows:
+            write_jsonl(self._required_read_receipts_path(topic_slug), [*existing_rows, *new_rows])
+        refreshed = self.topic_required_read_gate(topic_slug=topic_slug, updated_by=updated_by)
+        return {
+            "topic_slug": topic_slug,
+            "receipt_path": refreshed.get("receipt_path"),
+            "generation": str(gate.get("generation") or "").strip(),
+            "acknowledged_count": len(new_rows),
+            "acknowledged_paths": [str(row.get("path") or "").strip() for row in new_rows],
+            "remaining_missing_count": len(refreshed.get("missing_paths") or []),
+            "remaining_missing_paths": list(refreshed.get("missing_paths") or []),
+        }
         for root in (self.kernel_root, self.repo_root):
             candidate = (root / path).resolve()
             if candidate.exists():

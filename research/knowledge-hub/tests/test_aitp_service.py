@@ -8293,6 +8293,66 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("mode_learning_note_path", session_contract["artifacts"])
         self.assertIn("runtime_protocol.generated.md", Path(payload["session_start_note_path"]).read_text(encoding="utf-8"))
 
+    def test_required_read_gate_blocks_until_current_session_reads_are_acknowledged(self) -> None:
+        runtime_root = self.service._runtime_root("demo-topic")
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        session_start_json = runtime_root / "session_start.generated.json"
+        session_start_note = runtime_root / "session_start.generated.md"
+        runtime_protocol_note = runtime_root / "runtime_protocol.generated.md"
+        topic_dashboard = runtime_root / "topic_dashboard.md"
+        contract_note = runtime_root / "research_question.contract.md"
+        for path in (session_start_note, runtime_protocol_note, topic_dashboard, contract_note):
+            path.write_text(f"# {path.name}\n", encoding="utf-8")
+        session_start_json.write_text(
+            json.dumps(
+                {
+                    "updated_at": "2026-04-16T10:00:00+08:00",
+                    "artifacts": {
+                        "session_start_note_path": "topics/demo-topic/runtime/session_start.generated.md",
+                        "runtime_protocol_note_path": "topics/demo-topic/runtime/runtime_protocol.generated.md",
+                    },
+                    "must_read_now": [
+                        {
+                            "path": "topics/demo-topic/runtime/topic_dashboard.md",
+                            "reason": "Primary human surface.",
+                        },
+                        {
+                            "path": "topics/demo-topic/runtime/research_question.contract.md",
+                            "reason": "Question contract.",
+                        },
+                    ],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        gate = self.service.topic_required_read_gate(topic_slug="demo-topic")
+        self.assertTrue(gate["needs_ack"])
+        self.assertEqual(
+            gate["missing_paths"],
+            [
+                "topics/demo-topic/runtime/session_start.generated.md",
+                "topics/demo-topic/runtime/runtime_protocol.generated.md",
+                "topics/demo-topic/runtime/topic_dashboard.md",
+                "topics/demo-topic/runtime/research_question.contract.md",
+            ],
+        )
+
+        ack = self.service.acknowledge_required_reads(
+            topic_slug="demo-topic",
+            all_current=True,
+            updated_by="test",
+        )
+        self.assertEqual(ack["acknowledged_count"], 4)
+        self.assertEqual(ack["remaining_missing_count"], 0)
+
+        gate_after = self.service.topic_required_read_gate(topic_slug="demo-topic")
+        self.assertFalse(gate_after["needs_ack"])
+        self.assertEqual(gate_after["missing_paths"], [])
+
     def test_start_chat_session_allocates_fresh_slug_for_explicit_new_topic_collision(self) -> None:
         existing_slug = "jones-von-neumann-algebras"
         existing_runtime_root = self._runtime_root(existing_slug)

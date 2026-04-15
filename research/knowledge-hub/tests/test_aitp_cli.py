@@ -1800,6 +1800,9 @@ class AITPCLITests(unittest.TestCase):
         self.assertEqual(doctor_args.workspace_root, "D:\\BaiduSyncdisk\\Theoretical-Physics")
         strict_doctor_args = parser.parse_args(["doctor", "--strict-l0l1"])
         self.assertTrue(strict_doctor_args.strict_l0l1)
+        ack_read_args = parser.parse_args(["ack-read", "--topic-slug", "demo-topic", "--all-current"])
+        self.assertEqual(ack_read_args.command, "ack-read")
+        self.assertTrue(ack_read_args.all_current)
 
     def test_doctor_strict_l0l1_returns_nonzero_when_codex_guardrails_are_not_hard_enough(self) -> None:
         doctor_payload = {
@@ -1981,6 +1984,31 @@ class AITPCLITests(unittest.TestCase):
         self.assertIn("Resolve with: aitp popup --topic-slug demo-topic --choice <index>", output)
         mock_service.work_topic.assert_not_called()
 
+    def test_main_blocks_work_when_required_reads_are_unacknowledged(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.topic_popup.return_value = {"needs_popup": False, "markdown": ""}
+            mock_service.topic_required_read_gate.return_value = {
+                "needs_ack": True,
+                "markdown": "# Required reads\n\nAcknowledge the current startup reads before continuing.",
+            }
+            mock_factory.return_value = mock_service
+
+            stream = io.StringIO()
+            with patch.object(
+                sys,
+                "argv",
+                ["aitp", "work", "--topic-slug", "demo-topic", "--question", "Continue the topic"],
+            ):
+                with redirect_stdout(stream):
+                    exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 2)
+        output = stream.getvalue()
+        self.assertIn("# Required reads", output)
+        self.assertIn("Resolve with: aitp ack-read --topic-slug demo-topic --all-current", output)
+        mock_service.work_topic.assert_not_called()
+
     def test_main_blocks_verify_with_popup_gate_in_json_mode(self) -> None:
         with patch.object(aitp_cli, "_service_from_args") as mock_factory:
             mock_service = MagicMock()
@@ -2005,6 +2033,27 @@ class AITPCLITests(unittest.TestCase):
         self.assertIn('"needs_popup": true', output.lower())
         self.assertIn('"popup_kind": "operator_checkpoint"', output)
         mock_service.prepare_verification.assert_not_called()
+
+    def test_main_dispatches_ack_read(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.acknowledge_required_reads.return_value = {
+                "topic_slug": "demo-topic",
+                "acknowledged_count": 4,
+                "remaining_missing_count": 0,
+            }
+            mock_factory.return_value = mock_service
+
+            with patch.object(sys, "argv", ["aitp", "ack-read", "--topic-slug", "demo-topic", "--all-current"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.acknowledge_required_reads.assert_called_once_with(
+            topic_slug="demo-topic",
+            paths=[],
+            all_current=True,
+            updated_by="aitp-cli",
+        )
 
     def test_main_dispatches_hello(self) -> None:
         with patch.object(aitp_cli, "_service_from_args") as mock_factory:
