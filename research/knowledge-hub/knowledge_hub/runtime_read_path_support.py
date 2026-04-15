@@ -2338,6 +2338,8 @@ def append_l1_source_intake_markdown(lines: list[str], payload: dict[str, Any]) 
             )
             if row.get("evidence_excerpt"):
                 lines.append(f"  evidence: {row.get('evidence_excerpt')}")
+            if row.get("evidence_sentence_ids"):
+                lines.append(f"  sentence ids: {', '.join(row.get('evidence_sentence_ids') or [])}")
         else:
             lines.append(f"- {row}")
     lines.extend(["", "## Source-backed regimes", ""])
@@ -2349,6 +2351,8 @@ def append_l1_source_intake_markdown(lines: list[str], payload: dict[str, Any]) 
             )
             if row.get("evidence_excerpt"):
                 lines.append(f"  evidence: {row.get('evidence_excerpt')}")
+            if row.get("evidence_sentence_ids"):
+                lines.append(f"  sentence ids: {', '.join(row.get('evidence_sentence_ids') or [])}")
         else:
             lines.append(f"- {row}")
     lines.extend(["", "## Reading depth", ""])
@@ -2369,6 +2373,8 @@ def append_l1_source_intake_markdown(lines: list[str], payload: dict[str, Any]) 
             )
             if row.get("evidence_excerpt"):
                 lines.append(f"  evidence: {row.get('evidence_excerpt')}")
+            if row.get("evidence_sentence_ids"):
+                lines.append(f"  sentence ids: {', '.join(row.get('evidence_sentence_ids') or [])}")
         else:
             lines.append(f"- {row}")
     lines.extend(["", "## Reading-depth limits", ""])

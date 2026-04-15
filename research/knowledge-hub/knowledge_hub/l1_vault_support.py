@@ -277,6 +277,8 @@ def _render_source_intake_markdown(
             lines.append(
                 f"- `{row.get('source_id') or '(missing)'}` [{row.get('reading_depth') or 'skim'}]: {row.get('assumption') or '(missing)'}"
             )
+            if row.get("evidence_sentence_ids"):
+                lines.append(f"  sentence ids=`{', '.join(row.get('evidence_sentence_ids') or [])}`")
         else:
             lines.append(f"- {row}")
     lines.extend(["", "## Regimes", ""])
@@ -285,6 +287,8 @@ def _render_source_intake_markdown(
             lines.append(
                 f"- `{row.get('source_id') or '(missing)'}` [{row.get('reading_depth') or 'skim'}]: {row.get('regime') or '(missing)'}"
             )
+            if row.get("evidence_sentence_ids"):
+                lines.append(f"  sentence ids=`{', '.join(row.get('evidence_sentence_ids') or [])}`")
         else:
             lines.append(f"- {row}")
     lines.extend(["", "## Reading depth", ""])
@@ -301,6 +305,8 @@ def _render_source_intake_markdown(
             lines.append(
                 f"- `{row.get('source_id') or '(missing)'}`: `{row.get('method_family') or '(missing)'}` / `{row.get('specificity_tier') or '(missing)'}`"
             )
+            if row.get("evidence_sentence_ids"):
+                lines.append(f"  sentence ids=`{', '.join(row.get('evidence_sentence_ids') or [])}`")
         else:
             lines.append(f"- {row}")
     lines.extend(["", "## Contradictions", ""])

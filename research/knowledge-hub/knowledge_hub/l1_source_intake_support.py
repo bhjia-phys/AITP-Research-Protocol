@@ -28,6 +28,47 @@ def _dedupe_strings(values: list[str]) -> list[str]:
     return ordered
 
 
+def _sentence_units(text: str) -> list[str]:
+    units: list[str] = []
+    for raw_part in re.split(r"(?<=[.!?])\s+|\n+", str(text or "").strip()):
+        normalized = re.sub(r"\s+", " ", raw_part).strip()
+        if normalized:
+            units.append(normalized)
+    return units
+
+
+def evidence_sentence_ids_for_text(
+    *,
+    text: str,
+    needle: str,
+    max_ids: int = 3,
+) -> list[str]:
+    units = _sentence_units(text)
+    if not units:
+        return []
+    normalized_needle = re.sub(r"\s+", " ", str(needle or "").strip()).lower()
+    if normalized_needle:
+        matched = [
+            f"s{index:03d}"
+            for index, unit in enumerate(units, start=1)
+            if normalized_needle in unit.lower()
+        ]
+        if matched:
+            return matched[:max_ids]
+    return [f"s001"]
+
+
+def normalize_evidence_sentence_ids(values: Any) -> list[str]:
+    if not isinstance(values, list):
+        return []
+    normalized: list[str] = []
+    for value in values:
+        token = str(value or "").strip()
+        if token:
+            normalized.append(token)
+    return _dedupe_strings(normalized)
+
+
 def _empty_l1_concept_graph() -> dict[str, Any]:
     return {
         "nodes": [],
@@ -130,6 +171,7 @@ def _normalize_l1_intake_rows(rows: Any, *, required_field: str) -> list[dict[st
                 required_field: payload_value,
                 "reading_depth": str(row.get("reading_depth") or "").strip() or "skim",
                 "evidence_excerpt": str(row.get("evidence_excerpt") or "").strip(),
+                "evidence_sentence_ids": normalize_evidence_sentence_ids(row.get("evidence_sentence_ids")),
             }
         )
     return normalized
@@ -190,6 +232,7 @@ def _normalize_method_specificity_rows(rows: Any) -> list[dict[str, str]]:
                 "specificity_tier": specificity_tier,
                 "reading_depth": str(row.get("reading_depth") or "").strip() or "skim",
                 "evidence_excerpt": str(row.get("evidence_excerpt") or "").strip(),
+                "evidence_sentence_ids": normalize_evidence_sentence_ids(row.get("evidence_sentence_ids")),
             }
         )
     return normalized
@@ -221,6 +264,7 @@ def _normalize_notation_rows(rows: Any) -> list[dict[str, str]]:
                 "meaning": meaning,
                 "reading_depth": str(row.get("reading_depth") or "").strip() or "skim",
                 "evidence_excerpt": str(row.get("evidence_excerpt") or "").strip(),
+                "evidence_sentence_ids": normalize_evidence_sentence_ids(row.get("evidence_sentence_ids")),
             }
         )
     return normalized
@@ -576,6 +620,7 @@ def derive_l1_conflict_intake(source_rows: list[dict[str, Any]], l1_source_intak
         notation_candidates = detect_notation_candidates(text=text)
         excerpt = _summary_excerpt(row)
         for candidate in notation_candidates:
+            evidence_needle = str(candidate.get("meaning") or candidate.get("symbol") or source_title).strip()
             notation_rows.append(
                 {
                     "source_id": source_id,
@@ -585,6 +630,7 @@ def derive_l1_conflict_intake(source_rows: list[dict[str, Any]], l1_source_intak
                     "meaning": str(candidate.get("meaning") or "").strip(),
                     "reading_depth": reading_depth,
                     "evidence_excerpt": excerpt,
+                    "evidence_sentence_ids": evidence_sentence_ids_for_text(text=text, needle=evidence_needle),
                 }
             )
 

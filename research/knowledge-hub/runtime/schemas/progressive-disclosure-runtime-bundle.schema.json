@@ -3804,6 +3804,15 @@
         "fidelity_summary": {
           "$ref": "#/$defs/source_fidelity_summary"
         },
+        "relevance_rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/source_relevance_row"
+          }
+        },
+        "relevance_summary": {
+          "$ref": "#/$defs/source_relevance_summary"
+        },
         "citation_edges": {
           "type": "array",
           "items": {
@@ -4636,6 +4645,86 @@
         "weakest_tier": {
           "type": "string",
           "minLength": 1
+        }
+      }
+    },
+    "source_relevance_row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_id",
+        "canonical_source_id",
+        "source_type",
+        "relevance_tier",
+        "relevance_basis",
+        "role_labels"
+      ],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "canonical_source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relevance_tier": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relevance_basis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role_labels": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "source_relevance_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_count",
+        "counts_by_tier",
+        "strongest_tier",
+        "weakest_tier",
+        "role_label_counts"
+      ],
+      "properties": {
+        "source_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "counts_by_tier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "strongest_tier": {
+          "type": "string",
+          "minLength": 1
+        },
+        "weakest_tier": {
+          "type": "string",
+          "minLength": 1
+        },
+        "role_label_counts": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
         }
       }
     },
@@ -6436,6 +6525,13 @@
         },
         "evidence_excerpt": {
           "type": "string"
+        },
+        "evidence_sentence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },
@@ -6475,6 +6571,13 @@
         },
         "evidence_excerpt": {
           "type": "string"
+        },
+        "evidence_sentence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },
@@ -6558,6 +6661,13 @@
         },
         "evidence_excerpt": {
           "type": "string"
+        },
+        "evidence_sentence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },
@@ -6602,6 +6712,13 @@
         },
         "evidence_excerpt": {
           "type": "string"
+        },
+        "evidence_sentence_ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         }
       }
     },

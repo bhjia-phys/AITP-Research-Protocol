@@ -870,6 +870,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                     "assumption": "Benchmark first.",
                     "reading_depth": "abstract_only",
                     "evidence_excerpt": "Benchmark first.",
+                    "evidence_sentence_ids": ["s001"],
                 }
             ],
             "regime_rows": [
@@ -880,6 +881,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                     "regime": "weak coupling",
                     "reading_depth": "abstract_only",
                     "evidence_excerpt": "weak coupling",
+                    "evidence_sentence_ids": ["s002"],
                 }
             ],
             "reading_depth_rows": [
@@ -900,6 +902,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                     "specificity_tier": "high",
                     "reading_depth": "abstract_only",
                     "evidence_excerpt": "Exact benchmark workflow.",
+                    "evidence_sentence_ids": ["s003"],
                 }
             ],
         }
@@ -925,10 +928,15 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             bundle["active_research_contract"]["l1_source_intake"]["method_specificity_rows"][0]["method_family"],
             "numerical_benchmark",
         )
+        self.assertEqual(
+            bundle["active_research_contract"]["l1_source_intake"]["assumption_rows"][0]["evidence_sentence_ids"][0],
+            "s001",
+        )
         note_text = Path(result["runtime_protocol_note_path"]).read_text(encoding="utf-8")
         self.assertIn("## L1 source intake", note_text)
         self.assertIn("## Source-backed regimes", note_text)
         self.assertIn("## Method specificity", note_text)
+        self.assertIn("sentence ids:", note_text)
 
     def test_runtime_bundle_projects_source_intelligence_into_read_path(self) -> None:
         shell_surfaces = self._shell_surfaces()

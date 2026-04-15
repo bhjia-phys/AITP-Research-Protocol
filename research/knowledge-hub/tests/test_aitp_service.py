@@ -3076,8 +3076,11 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(l1_source_intake["source_count"], 1)
         self.assertEqual(l1_source_intake["assumption_rows"][0]["source_id"], "thesis:demo-source")
         self.assertEqual(l1_source_intake["assumption_rows"][0]["reading_depth"], "full_read")
+        self.assertTrue(l1_source_intake["assumption_rows"][0]["evidence_sentence_ids"])
+        self.assertTrue(all(item.startswith("s") for item in l1_source_intake["assumption_rows"][0]["evidence_sentence_ids"]))
         self.assertTrue(any(row["regime"] == "weak coupling" for row in l1_source_intake["regime_rows"]))
         self.assertTrue(any(row["regime"] == "zero temperature" for row in l1_source_intake["regime_rows"]))
+        self.assertTrue(l1_source_intake["method_specificity_rows"][0]["evidence_sentence_ids"])
         self.assertEqual(l1_source_intake["method_specificity_rows"][0]["method_family"], "formal_derivation")
         self.assertEqual(l1_source_intake["method_specificity_rows"][0]["specificity_tier"], "high")
         research_note = Path(payload["research_question_contract_note_path"]).read_text(encoding="utf-8")
@@ -3085,6 +3088,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("## Source-backed assumptions", research_note)
         self.assertIn("## Reading depth", research_note)
         self.assertIn("## Method specificity", research_note)
+        self.assertIn("sentence ids:", research_note)
 
     def test_ensure_topic_shell_surfaces_materializes_l1_vault_and_flowback(self) -> None:
         shutil.copytree(
@@ -3212,6 +3216,8 @@ class AITPServiceTests(unittest.TestCase):
         self.assertGreaterEqual(len(flowback_rows), 4)
         self.assertTrue(all(row["status"] == "applied" for row in flowback_rows))
         self.assertIn("## L1 vault", research_note)
+        source_intake_note = Path(payload["l1_vault_wiki_source_intake_path"]).read_text(encoding="utf-8")
+        self.assertIn("sentence ids=", source_intake_note)
 
     def test_ensure_topic_shell_surfaces_projects_l1_concept_graph_into_contract_and_notes(self) -> None:
         runtime_root = self._write_runtime_state()
