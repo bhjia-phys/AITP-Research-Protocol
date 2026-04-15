@@ -1,0 +1,85 @@
+{
+  "id": "proof_fragment:finite-dimensional-block-centralizer-diagonal-block-compression-decomposition",
+  "unit_type": "proof_fragment",
+  "title": "Finite-dimensional block-centralizer diagonal block-compression decomposition",
+  "summary": "Reusable Jones-local proof fragment for the diagonal block-compression decomposition used inside the current finite-product theorem packet.",
+  "maturity": "human_promoted",
+  "created_at": "2026-04-15T15:10:00+08:00",
+  "updated_at": "2026-04-15T15:10:00+08:00",
+  "topic_completion_status": "promotion-ready",
+  "tags": [
+    "jones",
+    "proof-fragment",
+    "chapter-4",
+    "block-compression",
+    "finite-dimensional"
+  ],
+  "assumptions": [
+    "The ambient object is already the finite-dimensional block centralizer from the bounded Jones route."
+  ],
+  "regime": {
+    "domain": "Jones Chapter 4 finite-dimensional block-centralizer lane",
+    "approximations": [
+      "bounded theorem packet",
+      "local decomposition fragment"
+    ],
+    "scale": "bounded local proof fragment",
+    "boundary_conditions": [
+      "the current route stays on the finite-dimensional packet",
+      "the fragment is reused inside the theorem-facing packet rather than as a standalone classification theorem"
+    ],
+    "exclusions": [
+      "full theorem packaging",
+      "stronger algebra-level product equivalence"
+    ]
+  },
+  "scope": {
+    "applies_to": [
+      "the diagonal block-compression decomposition used by the current Jones finite-product packet"
+    ],
+    "out_of_scope": [
+      "proofs that still need a different ambient centralizer object"
+    ]
+  },
+  "provenance": {
+    "source_ids": [
+      "local_note:jones-von-neumann-algebras-definition-packet"
+    ],
+    "backend_refs": [
+      "backend:theoretical-physics-knowledge-network"
+    ],
+    "l1_artifacts": [
+      "source-layer/topics/fresh-jones-finite-dimensional-factor-closure/sources/local-note-readme/source.json",
+      "source-layer/topics/fresh-jones-finite-dimensional-factor-closure/sources/local-note-readme/snapshot.md"
+    ],
+    "l3_runs": [
+      "feedback/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/candidate_ledger.jsonl"
+    ],
+    "l4_checks": [
+      "validation/topics/jones-von-neumann-algebras/runs/2026-04-14-021711-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/formal_theory_review.json",
+      "validation/topics/jones-von-neumann-algebras/runs/2026-04-14-021711-jones-ch4-fp/statement-compilation/candidate-jones-ch4-fin-50e7c38d/statement_compilation.md"
+    ],
+    "citations": [
+      "chapter-4/multiplicity-and-finite-dimensional-von-neumann-algebras"
+    ]
+  },
+  "promotion": {
+    "route": "L3->L4->L2",
+    "review_mode": "human",
+    "canonical_layer": "L2",
+    "promoted_by": "codex",
+    "promoted_at": "2026-04-15T15:10:00+08:00",
+    "review_status": "accepted",
+    "rationale": "Promote the diagonal block-compression fragment as a reusable Jones-local sub-result so theorem retrieval can expand into local supporting structure."
+  },
+  "dependencies": [
+    "concept:jones-block-centralizer"
+  ],
+  "related_units": [
+    "theorem:jones-ch4-finite-product",
+    "theorem:finite-dimensional-block-centralizer-is-linear-product-of-block-fiber-type-i-factors"
+  ],
+  "payload": {
+    "goal": "Expose the diagonal block-compression decomposition as a reusable local proof fragment inside the Jones finite-product route."
+  }
+}
