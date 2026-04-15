@@ -486,6 +486,8 @@ class AITPService:
             repo_candidate = (self.repo_root / "research" / "knowledge-hub").resolve()
             if _looks_like_kernel_root(repo_candidate):
                 self.kernel_root = repo_candidate
+        self._read_json = read_json
+        self._read_jsonl = read_jsonl
         self._runtime_truth_service = RuntimeTruthService(self)
         self._validation_review_service = ValidationReviewService(
             self,
@@ -7840,6 +7842,440 @@ class AITPService:
             load_profile=load_profile,
         )
 
+    def _selected_action_invites_execution(
+        self,
+        *,
+        validation_mode: str,
+        action_type: str,
+        action_summary: str,
+    ) -> bool:
+        if validation_mode == "numerical":
+            return True
+        if action_type in {
+            "select_validation_route",
+            "materialize_execution_task",
+            "dispatch_execution_task",
+            "await_execution_result",
+        }:
+            return True
+        lowered = action_summary.lower()
+        return any(
+            marker in lowered
+            for marker in (
+                "run ",
+                "benchmark",
+                "execute",
+                "execution lane",
+                "dispatch",
+                "reproduce",
+                "numerical",
+            )
+        )
+
+    def _research_mode_for_validation_mode(
+        self,
+        validation_mode: str,
+        topic_state: dict[str, Any],
+    ) -> str:
+        existing = str(topic_state.get("research_mode") or "").strip()
+        if existing in {
+            "exploratory_general",
+            "first_principles",
+            "toy_model",
+            "formal_derivation",
+        }:
+            return existing
+        if validation_mode == "numerical":
+            return "first_principles"
+        if validation_mode == "formal":
+            return "formal_derivation"
+        return "exploratory_general"
+
+    def _execution_surface_for_validation_mode(self, validation_mode: str) -> str:
+        if validation_mode == "numerical":
+            return "numerical"
+        if validation_mode == "formal":
+            return "formal"
+        if validation_mode == "analytical":
+            return "symbolic"
+        return "human_review"
+
+    def _candidate_id_for_validation_contract(
+        self,
+        topic_slug: str,
+        validation_contract: dict[str, Any],
+    ) -> str:
+        for value in validation_contract.get("target_claim_ids") or []:
+            cleaned = str(value or "").strip()
+            if cleaned.startswith("candidate:"):
+                return cleaned
+        validation_mode = str(validation_contract.get("validation_mode") or "validation").strip()
+        return f"candidate:{bounded_slugify(f'{topic_slug}-{validation_mode}')}"
+
+    def _first_existing_validation_task_path(self, execution_tasks_dir: Path) -> Path | None:
+        candidate_dirs = [execution_tasks_dir]
+        compatibility_dir = compatibility_projection_path(execution_tasks_dir)
+        if compatibility_dir is not None and compatibility_dir not in candidate_dirs:
+            candidate_dirs.append(compatibility_dir)
+        for root in candidate_dirs:
+            if root.exists():
+                existing = sorted(root.glob("*.json"))
+                if existing:
+                    return existing[0]
+        return None
+
+    def _materialize_minimum_l4_package(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None,
+        updated_by: str,
+        validation_contract: dict[str, Any],
+        shell_surfaces: dict[str, Any],
+        topic_state: dict[str, Any],
+    ) -> dict[str, Any]:
+        if not run_id:
+            return {
+                "status": "not_materialized",
+                "reason": "A run-local L4 package requires a resolved run id.",
+                "execution_artifact_kind": "missing",
+                "artifact_refs": [],
+            }
+
+        paths = self._minimum_l4_package_paths(topic_slug, run_id)
+        runtime_root = self._runtime_root(topic_slug)
+        interaction_state = read_json(runtime_root / "interaction_state.json") or {}
+        queue_rows = read_jsonl(runtime_root / "action_queue.jsonl")
+        _, selected_pending_action = self._pending_action_context(
+            queue_rows,
+            interaction_state.get("decision_surface") if isinstance(interaction_state, dict) else {},
+        )
+        selected_action_id = str((selected_pending_action or {}).get("action_id") or "").strip()
+        selected_action_type = str((selected_pending_action or {}).get("action_type") or "").strip()
+        selected_action_summary = str((selected_pending_action or {}).get("summary") or "").strip()
+        if not selected_action_summary:
+            selected_action_summary = str(validation_contract.get("verification_focus") or "").strip()
+        validation_mode = str(validation_contract.get("validation_mode") or "hybrid").strip()
+        research_mode = self._research_mode_for_validation_mode(validation_mode, topic_state)
+        checkpoint = shell_surfaces.get("operator_checkpoint") or {}
+        review_bundle = shell_surfaces.get("validation_review_bundle") or {}
+        research_contract = shell_surfaces.get("research_question_contract") or {}
+        candidate_id = self._candidate_id_for_validation_contract(topic_slug, validation_contract)
+
+        validation_plan_ref = self._relativize(paths["validation_plan"])
+        derivation_process_ref = self._relativize(paths["derivation_process"])
+        adjudication_note_ref = self._relativize(paths["adjudication_note"])
+        review_bundle_ref = self._normalize_artifact_path(
+            shell_surfaces.get("validation_review_bundle_note_path")
+            or self._validation_review_bundle_paths(topic_slug)["note"]
+        )
+        validation_contract_note_ref = self._relativize(self._validation_contract_paths(topic_slug)["note"])
+        research_contract_note_ref = self._relativize(self._research_question_contract_paths(topic_slug)["note"])
+        checkpoint_note_ref = self._normalize_artifact_path(
+            shell_surfaces.get("operator_checkpoint_note_path")
+            or self._operator_checkpoint_paths(topic_slug)["note"]
+        )
+
+        existing_runtime_execution_task = runtime_root / "execution_task.json"
+        execution_artifact_kind = "execution_deferral"
+        execution_artifact_path = paths["execution_deferral"]
+        execution_artifact_ref = self._relativize(execution_artifact_path)
+
+        if read_json(existing_runtime_execution_task) is not None:
+            execution_artifact_kind = "execution_task"
+            execution_artifact_path = existing_runtime_execution_task
+            execution_artifact_ref = self._relativize(existing_runtime_execution_task)
+        else:
+            existing_task_path = self._first_existing_validation_task_path(paths["execution_tasks_dir"])
+            if existing_task_path is not None:
+                execution_artifact_kind = "execution_task"
+                execution_artifact_path = existing_task_path
+                execution_artifact_ref = self._relativize(existing_task_path)
+            elif self._selected_action_invites_execution(
+                validation_mode=validation_mode,
+                action_type=selected_action_type,
+                action_summary=selected_action_summary,
+            ):
+                task_id = bounded_slugify(f"{topic_slug}-{validation_mode}-seed-task")
+                task_path = paths["execution_tasks_dir"] / f"{task_id}.json"
+                task_ref = self._relativize(task_path)
+                task_payload = {
+                    "task_id": task_id,
+                    "validation_note": validation_plan_ref,
+                    "candidate_id": candidate_id,
+                    "research_mode": research_mode,
+                    "surface": self._execution_surface_for_validation_mode(validation_mode),
+                    "status": "planned",
+                    "input_artifacts": self._dedupe_strings(
+                        [
+                            validation_contract_note_ref,
+                            review_bundle_ref or "",
+                            research_contract_note_ref,
+                        ]
+                    ),
+                    "planned_outputs": [
+                        self._relativize(
+                            paths["run_root"] / "results" / f"{task_id}-summary.md"
+                        )
+                    ],
+                    "pass_conditions": list(validation_contract.get("required_checks") or [])
+                    or [
+                        "Write a durable result artifact for the selected bounded validation lane."
+                    ],
+                    "failure_signals": list(validation_contract.get("failure_modes") or [])
+                    or [
+                        "The declared result artifact is missing or contradicts the bounded validation plan."
+                    ],
+                    "assigned_runtime": "codex",
+                    "executor_kind": "codex_cli",
+                    "reasoning_profile": "high" if validation_mode in {"formal", "numerical"} else "medium",
+                    "reproducibility_requirements": [
+                        "Persist configs, assumptions, and emitted result artifacts for this run."
+                    ],
+                    "required_human_notes": [
+                        "L4 note: summarize what was run and what remains unvalidated."
+                    ],
+                    "result_artifacts": [],
+                    "summary": selected_action_summary
+                    or str(validation_contract.get("verification_focus") or "").strip()
+                    or f"Seed the first bounded {validation_mode} validation lane.",
+                    "run_id": run_id,
+                    "route_id": f"route:{topic_slug}:{bounded_slugify(validation_mode or 'validation')}",
+                    "source_action_id": selected_action_id,
+                    "source_execution_task_path": task_ref,
+                    "workspace_root": self.kernel_root.name,
+                    "where_to_run": self.kernel_root.name,
+                    "allowed_input_artifacts": self._dedupe_strings(
+                        [
+                            validation_contract_note_ref,
+                            review_bundle_ref or "",
+                            research_contract_note_ref,
+                        ]
+                    ),
+                    "result_writeback_path": self._relativize(
+                        paths["run_root"] / "returned_execution_result.json"
+                    ),
+                    "result_template_path": self._relativize(
+                        self.kernel_root
+                        / "validation"
+                        / "templates"
+                        / "execution-result.template.json"
+                    ),
+                    "execution_notes_dir": self._relativize(
+                        paths["run_root"] / "execution_notes"
+                    ),
+                    "trajectory_log_path": self._relativize(
+                        paths["run_root"] / "results" / "trajectory_log.jsonl"
+                    ),
+                    "trajectory_note_path": self._relativize(
+                        paths["run_root"] / "results" / "trajectory_log.md"
+                    ),
+                    "failure_classification_path": self._relativize(
+                        paths["run_root"] / "results" / "failure_classification.json"
+                    ),
+                    "failure_classification_note_path": self._relativize(
+                        paths["run_root"] / "results" / "failure_classification.md"
+                    ),
+                    "needs_human_confirm": True,
+                    "auto_dispatch_allowed": False,
+                    "allow_web_search": False,
+                    "materialized_at": now_iso(),
+                    "materialized_by": updated_by,
+                    "human_summary": selected_action_summary
+                    or str(validation_contract.get("verification_focus") or "").strip()
+                    or f"Seed the first bounded {validation_mode} validation lane.",
+                }
+                write_json(task_path, task_payload)
+                execution_artifact_kind = "execution_task"
+                execution_artifact_path = task_path
+                execution_artifact_ref = task_ref
+            else:
+                write_text(
+                    paths["execution_deferral"],
+                    "\n".join(
+                        [
+                            "# Execution deferral",
+                            "",
+                            f"- Topic slug: `{topic_slug}`",
+                            f"- Run id: `{run_id}`",
+                            f"- Validation mode: `{validation_mode or '(missing)'}`",
+                            f"- Selected action: {selected_action_summary or '(missing)' }",
+                            "",
+                            "Execution is deferred because the current bounded plan does not yet define a concrete execution lane.",
+                            "",
+                            "## What is missing",
+                            "",
+                            "- A bounded benchmark, execution, or route-selection step that can be compiled into an auditable execution task.",
+                            "- A concrete external-runtime or local execution choice, if the next step is materially executable.",
+                            "",
+                            "## Continue by",
+                            "",
+                            "- Tightening the current validation route until one bounded execution lane is explicit.",
+                            "- Or keeping the work in proof/derivation review until an execution lane becomes honest.",
+                            "",
+                        ]
+                    )
+                    + "\n",
+                )
+
+        write_text(
+            paths["validation_plan"],
+            "\n".join(
+                [
+                    "# Validation plan",
+                    "",
+                    f"- Topic slug: `{topic_slug}`",
+                    f"- Run id: `{run_id}`",
+                    f"- Validation id: `{validation_contract.get('validation_id') or '(missing)'}`",
+                    f"- Validation mode: `{validation_mode or '(missing)'}`",
+                    f"- Status: `{validation_contract.get('status') or '(missing)'}`",
+                    f"- Selected action: {selected_action_summary or '(missing)'}",
+                    f"- Validation contract: `{validation_contract_note_ref}`",
+                    f"- Review bundle: `{review_bundle_ref or '(missing)'}`",
+                    f"- Operator checkpoint: `{checkpoint_note_ref or '(none)'}`",
+                    f"- Execution artifact: `{execution_artifact_ref}`",
+                    "",
+                    "## Focus",
+                    "",
+                    f"- {validation_contract.get('verification_focus') or '(missing)'}",
+                    "",
+                    "## Required checks",
+                    "",
+                ]
+                + [
+                    f"- {item}"
+                    for item in (validation_contract.get("required_checks") or ["(none declared)"])
+                ]
+                + [
+                    "",
+                    "## Target claims",
+                    "",
+                ]
+                + [
+                    f"- `{item}`"
+                    for item in (validation_contract.get("target_claim_ids") or ["(none declared)"])
+                ]
+                + [
+                    "",
+                    "## Acceptance posture",
+                    "",
+                    f"- Accept: {validation_contract.get('acceptance_rule') or '(missing)'}",
+                    f"- Reject: {validation_contract.get('rejection_rule') or '(missing)'}",
+                    "",
+                ]
+            )
+            + "\n",
+        )
+        write_text(
+            paths["derivation_process"],
+            "\n".join(
+                [
+                    "# Derivation process",
+                    "",
+                    f"- Topic slug: `{topic_slug}`",
+                    f"- Run id: `{run_id}`",
+                    f"- Research question: {research_contract.get('question') or '(missing)'}",
+                    f"- Selected action: {selected_action_summary or '(missing)'}",
+                    "",
+                    "## Bounded objective",
+                    "",
+                    f"- {validation_contract.get('verification_focus') or '(missing)'}",
+                    "",
+                    "## Assumptions and regimes",
+                    "",
+                ]
+                + [
+                    f"- {item}"
+                    for item in (
+                        list(research_contract.get("scope") or [])
+                        or list(validation_contract.get("gap_followups") or [])
+                        or ["Keep assumptions and regime limits explicit here."]
+                    )
+                ]
+                + [
+                    "",
+                    "## Planned local steps",
+                    "",
+                    "1. Restate the bounded target in run-local terms.",
+                    "2. Record each non-trivial step, check, or execution dependency explicitly.",
+                    "3. Leave unresolved gaps visible instead of smoothing them into prose.",
+                    "",
+                    "## Open gaps",
+                    "",
+                ]
+                + [
+                    f"- {item}"
+                    for item in (
+                        list(validation_contract.get("gap_followups") or [])
+                        or ["(none declared yet)"]
+                    )
+                ]
+                + [
+                    "",
+                ]
+            )
+            + "\n",
+        )
+        write_text(
+            paths["adjudication_note"],
+            "\n".join(
+                [
+                    "# Adjudication note",
+                    "",
+                    f"- Topic slug: `{topic_slug}`",
+                    f"- Run id: `{run_id}`",
+                    f"- Validation mode: `{validation_mode or '(missing)'}`",
+                    f"- Review bundle status: `{review_bundle.get('status') or 'not_materialized'}`",
+                    f"- Operator checkpoint status: `{checkpoint.get('status') or 'missing'}`",
+                    f"- Execution artifact: `{execution_artifact_ref}`",
+                    "",
+                    "## Current verdict posture",
+                    "",
+                    "- Default verdict: `deferred` until the bounded L4 plan produces durable evidence or an explicit blocking decision.",
+                    "",
+                    "## Current blockers",
+                    "",
+                ]
+                + [
+                    f"- {item}"
+                    for item in (
+                        list(checkpoint.get("blocker_summary") or [])
+                        or list(validation_contract.get("open_review_questions") or [])
+                        or ["No explicit blocker has been written yet."]
+                    )
+                ]
+                + [
+                    "",
+                    "## Next adjudication move",
+                    "",
+                    f"- Use `{validation_plan_ref}` as the primary L4 plan surface.",
+                    f"- Use `{execution_artifact_ref}` as the current execution-side commitment or explicit deferral.",
+                    f"- Do not promote or declare closure until the required checks leave durable evidence.",
+                    "",
+                ]
+            )
+            + "\n",
+        )
+
+        artifact_refs = self._dedupe_strings(
+            [
+                validation_plan_ref,
+                derivation_process_ref,
+                execution_artifact_ref,
+                adjudication_note_ref,
+            ]
+        )
+        return {
+            "status": "materialized",
+            "run_id": run_id,
+            "validation_plan_path": str(paths["validation_plan"]),
+            "derivation_process_path": str(paths["derivation_process"]),
+            "execution_artifact_kind": execution_artifact_kind,
+            "execution_artifact_path": str(execution_artifact_path),
+            "adjudication_note_path": str(paths["adjudication_note"]),
+            "artifact_refs": artifact_refs,
+        }
+
     def prepare_verification(
         self,
         *,
@@ -7927,6 +8363,18 @@ class AITPService:
                     if str(row.get("candidate_id") or "").strip()
                 ]
             )
+        l4_package = self._materialize_minimum_l4_package(
+            topic_slug=topic_slug,
+            run_id=latest_run_id or None,
+            updated_by=updated_by,
+            validation_contract=validation_contract,
+            shell_surfaces=shell_surfaces,
+            topic_state=self.get_runtime_state(topic_slug),
+        )
+        validation_contract["artifacts"] = self._dedupe_strings(
+            list(validation_contract.get("artifacts") or [])
+            + list(l4_package.get("artifact_refs") or [])
+        )
         write_json(validation_paths["json"], validation_contract)
         write_text(
             validation_paths["note"],
@@ -7942,6 +8390,7 @@ class AITPService:
             "validation_contract_path": str(validation_paths["json"]),
             "validation_contract_note_path": str(validation_paths["note"]),
             "validation_contract": validation_contract,
+            "l4_package": l4_package,
             "runtime_protocol": protocol_paths,
         }
 
