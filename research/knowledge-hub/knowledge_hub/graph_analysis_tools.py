@@ -7,6 +7,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .topic_truth_root_support import compatibility_projection_path
+
 
 def _normalize_text(value: Any) -> str:
     return re.sub(r"\s+", " ", str(value or "")).strip()
@@ -605,7 +607,6 @@ def write_graph_analysis_history(
     *,
     payload: dict[str, Any],
 ) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
     history_row = {
         "topic_slug": payload.get("topic_slug"),
         "updated_at": payload.get("updated_at"),
@@ -613,5 +614,12 @@ def write_graph_analysis_history(
         "summary": payload.get("summary") or {},
         "diff": payload.get("diff") or _zero_graph_diff(),
     }
+    rendered = json.dumps(history_row, ensure_ascii=True, separators=(",", ":")) + "\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps(history_row, ensure_ascii=True, separators=(",", ":")) + "\n")
+        handle.write(rendered)
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        with compatibility_path.open("a", encoding="utf-8") as handle:
+            handle.write(rendered)

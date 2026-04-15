@@ -44,23 +44,33 @@ from .graph_analysis_tools import (
 )
 from .validation_review_service import analytical_cross_check_markdown_lines
 from .topic_truth_root_support import compatibility_projection_path
+
+
+def _newer_projection_target(path: Path) -> Path:
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is None or not compatibility_path.exists():
+        return path
+    if not path.exists():
+        return compatibility_path
+    try:
+        if compatibility_path.stat().st_mtime > path.stat().st_mtime:
+            return compatibility_path
+    except OSError:
+        return path
+    return path
+
+
 def _read_json(path: Path) -> dict[str, Any] | None:
-    target = path
+    target = _newer_projection_target(path)
     if not target.exists():
-        compatibility_path = compatibility_projection_path(path)
-        if compatibility_path is None or not compatibility_path.exists():
-            return None
-        target = compatibility_path
+        return None
     return json.loads(target.read_text(encoding="utf-8"))
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
-    target = path
+    target = _newer_projection_target(path)
     if not target.exists():
-        compatibility_path = compatibility_projection_path(path)
-        if compatibility_path is None or not compatibility_path.exists():
-            return []
-        target = compatibility_path
+        return []
     rows: list[dict[str, Any]] = []
     for raw_line in target.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()

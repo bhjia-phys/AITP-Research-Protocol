@@ -7,7 +7,7 @@ from typing import Any, Callable
 
 from .obsidian_graph_export import materialize_obsidian_concept_graph_export
 from .l1_source_intake_support import l1_contradiction_summary_lines
-from .topic_truth_root_support import layer_root
+from .topic_truth_root_support import compatibility_projection_path, layer_root
 
 
 def now_iso() -> str:
@@ -15,19 +15,33 @@ def now_iso() -> str:
 
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
+    rendered = json.dumps(payload, ensure_ascii=True, indent=2) + "\n"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
     body = "\n".join(json.dumps(row, ensure_ascii=True) for row in rows)
-    path.write_text((body + "\n") if body else "", encoding="utf-8")
+    rendered = (body + "\n") if body else ""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(text, encoding="utf-8")
 
 
 def _dedupe_strings(values: list[str]) -> list[str]:
