@@ -13,6 +13,10 @@ It is intentionally runtime-neutral:
 
 If you have not installed AITP yet, start with [`docs/INSTALL.md`](INSTALL.md).
 
+By default, AITP keeps your durable personal topic state in `~/.aitp/kernel`
+(`%USERPROFILE%\\.aitp\\kernel` on Windows). If you want this quickstart to use
+an explicit kernel location, add `--kernel-root <path>` to the commands below.
+
 ## 1. Verify the install
 
 From a clean shell:
@@ -56,6 +60,7 @@ Use a real topic statement rather than a synthetic demo shell:
 
 ```bash
 aitp bootstrap \
+  --kernel-root ~/.aitp/kernel \
   --topic "Jones Chapter 4 finite-dimensional backbone" \
   --statement "Start from the finite-dimensional backbone and record the first honest closure target."
 ```
@@ -63,7 +68,7 @@ aitp bootstrap \
 Windows-native one-line equivalent:
 
 ```cmd
-scripts\aitp-local.cmd bootstrap --topic "Jones Chapter 4 finite-dimensional backbone" --statement "Start from the finite-dimensional backbone and record the first honest closure target."
+scripts\aitp-local.cmd bootstrap --kernel-root %USERPROFILE%\.aitp\kernel --topic "Jones Chapter 4 finite-dimensional backbone" --statement "Start from the finite-dimensional backbone and record the first honest closure target."
 ```
 
 What this should do:
@@ -76,6 +81,7 @@ What this should do:
 
 ```bash
 aitp loop \
+  --kernel-root ~/.aitp/kernel \
   --topic-slug jones-chapter-4-finite-dimensional-backbone \
   --human-request "Continue with the first bounded route and stop before expensive execution." \
   --max-auto-steps 1
@@ -84,7 +90,7 @@ aitp loop \
 Windows-native one-line equivalent:
 
 ```cmd
-scripts\aitp-local.cmd loop --topic-slug jones-chapter-4-finite-dimensional-backbone --human-request "Continue with the first bounded route and stop before expensive execution." --max-auto-steps 1
+scripts\aitp-local.cmd loop --kernel-root %USERPROFILE%\.aitp\kernel --topic-slug jones-chapter-4-finite-dimensional-backbone --human-request "Continue with the first bounded route and stop before expensive execution." --max-auto-steps 1
 ```
 
 What this should do:
@@ -96,13 +102,13 @@ What this should do:
 ## 4. Inspect what happened
 
 ```bash
-aitp status --topic-slug jones-chapter-4-finite-dimensional-backbone
+aitp status --kernel-root ~/.aitp/kernel --topic-slug jones-chapter-4-finite-dimensional-backbone
 ```
 
 Windows-native one-line equivalent:
 
 ```cmd
-scripts\aitp-local.cmd status --topic-slug jones-chapter-4-finite-dimensional-backbone
+scripts\aitp-local.cmd status --kernel-root %USERPROFILE%\.aitp\kernel --topic-slug jones-chapter-4-finite-dimensional-backbone
 ```
 
 You should now be able to see:
@@ -114,7 +120,7 @@ You should now be able to see:
 If you want the next bounded action without the larger status packet, run:
 
 ```bash
-aitp next --topic-slug jones-chapter-4-finite-dimensional-backbone
+aitp next --kernel-root ~/.aitp/kernel --topic-slug jones-chapter-4-finite-dimensional-backbone
 ```
 
 ## Runtime Notes

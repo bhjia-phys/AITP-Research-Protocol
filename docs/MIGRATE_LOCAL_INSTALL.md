@@ -16,6 +16,11 @@ aitp --version
 aitp doctor
 ```
 
+For both the public-package path and the editable local-dev path, the durable
+home for your private topic state should be `~/.aitp/kernel`
+(`%USERPROFILE%\\.aitp\\kernel` on Windows). The repo itself should stay public
+project material, not the long-term home of your personal research data.
+
 Use the rest of this guide only when you want to keep a canonical local
 checkout plus its agent surfaces.
 
@@ -106,6 +111,7 @@ still need manual follow-up.
 
 - This migration preserves the `Theoretical-Physics` workspace as the working directory you use day to day.
 - What changes is the underlying AITP install source and the active local agent-entry surfaces.
+- Your personal kernel should continue to live at `~/.aitp/kernel` unless you intentionally override it with `--kernel-root`.
 - This does not remove AITP compatibility entrypoints such as `aitp-codex` from the package itself. It only removes old local front-door surfaces from the active workspace path.
 - This command is intentionally repo-backed. For a clean public-package path,
   prefer `python -m pip install aitp-kernel` instead of reinstalling the editable repo.

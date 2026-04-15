@@ -24,6 +24,12 @@ Common prerequisites:
 - Python 3.10+
 - the runtime surface you actually want to use locally
 - Git only if you choose a repo-backed adapter or contributor workflow
+- your durable personal kernel should live under `~/.aitp/kernel`
+
+The default user-facing install expects your local topic state, runtime
+projections, and private research data to live under `~/.aitp/kernel`
+(`%USERPROFILE%\\.aitp\\kernel` on Windows).
+The repo itself should stay project code, protocol, and public docs only.
 
 The runtime package currently declares `python_requires=">=3.10"` in
 `research/knowledge-hub/setup.py`.
@@ -39,6 +45,8 @@ aitp doctor
 
 That path is still the right one for runtime development, local patching, and
 repo-backed adapter workflows.
+Keep your day-to-day research kernel outside the repo and point local commands
+at it with `--kernel-root` when you do not want to use the default user kernel.
 
 ## Pick your runtime
 

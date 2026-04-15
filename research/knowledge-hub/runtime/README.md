@@ -146,9 +146,9 @@ hiding those rules inside handler code.
 - `collaborator_memory.md`
   - human-readable collaborator-memory projection; not canonical scientific memory
 - `current_topic.json`
-  - focused-topic compatibility projection for current-topic flows
+  - focused-topic compatibility projection for current-topic flows; local to the active kernel and not a repo-tracked truth surface
 - `current_topic.md`
-  - human-readable focused-topic compatibility note
+  - human-readable focused-topic compatibility note; local to the active kernel and not a repo-tracked truth surface
 - `scripts/sync_topic_state.py`
   - helper that materializes the runtime state from existing layer artifacts
 - `topics/<topic_slug>/runtime/action_queue.jsonl`
@@ -217,6 +217,9 @@ Migration notes for the demoted surfaces live at:
 - `runtime/explorations/<exploration_id>/explore_session.json|md` is a lightweight speculative carrier, not a full topic shell.
 - `promotion_request.json|md` under that exploration root is the explicit boundary where quick exploration promotes into normal topic work.
 - `current_topic.{json,md}` is a compatibility projection, not the authoritative workspace registry.
+- `current_topic.{json,md}` should normally live only in the active kernel
+  (for example `~/.aitp/kernel`) and should not be treated as public repo
+  content.
 - `topic_family_reuse.{json,md}` is the protocol-native reuse surface; it summarizes mature route capsules but does not itself bypass trust gates or current-topic choice.
 - `collaborator_memory.jsonl|md` is runtime-side collaborator memory, not canonical scientific memory, not `L2`, and not a promotion surface.
 - `operator_console.md` and `agent_brief.md` are compatibility surfaces, not the primary runtime read path.

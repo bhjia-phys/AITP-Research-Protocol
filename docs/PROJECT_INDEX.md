@@ -62,6 +62,8 @@ The runtime is the engine that materializes topic state, selects next actions, a
 
 Topic-owned truth is converging on `topics/<slug>/`, with runtime-facing state under `topics/<slug>/runtime/`.
 For operator-facing truth, Markdown is the human authority; JSON and JSONL stay machine-facing companions.
+Local research state belongs in the user kernel, typically `~/.aitp/kernel`;
+the git repo should stay code, protocol, and public docs.
 
 | Surface | File | Purpose | Audience |
 |---|---|---|---|
@@ -79,7 +81,7 @@ For operator-facing truth, Markdown is the human authority; JSON and JSONL stay 
 | **Failure classification** | `topics/<slug>/runtime/failure_classification.json` | Classified failure types | Agent |
 | **Topic index** | `topic_index.jsonl` | Registry of all topics | Agent |
 | **Active topics** | `active_topics.json` | Authoritative list of active topics | Agent |
-| **Current topic** | `current_topic.json` | Compatibility projection | Agent |
+| **Current topic** | `current_topic.json` | Local-only compatibility projection | Agent |
 
 ### Runtime Control Contracts
 

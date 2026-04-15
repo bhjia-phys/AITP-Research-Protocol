@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
 import sys
 import unittest
 
@@ -42,20 +43,59 @@ class RuntimePathHygieneContractTests(unittest.TestCase):
             "runtime/scripts/orchestrator_contract_support.py",
         )
 
-    def test_checked_in_current_topic_uses_repo_relative_runtime_root(self) -> None:
-        current_topic_path = self.repo_root / "research" / "knowledge-hub" / "runtime" / "current_topic.json"
-        current_topic_note_path = self.repo_root / "research" / "knowledge-hub" / "runtime" / "current_topic.md"
+    def test_repo_gitignore_declares_local_generated_runtime_surfaces(self) -> None:
+        gitignore_text = (self.repo_root / ".gitignore").read_text(encoding="utf-8")
 
-        payload = json.loads(current_topic_path.read_text(encoding="utf-8"))
-        note_text = current_topic_note_path.read_text(encoding="utf-8")
+        for snippet in (
+            "research/knowledge-hub/runtime/current_topic.json",
+            "research/knowledge-hub/runtime/current_topic.md",
+            "research/knowledge-hub/runtime/theory_metrics/",
+            "research/knowledge-hub/canonical/compiled/",
+            "research/knowledge-hub/canonical/hygiene/",
+            "research/knowledge-hub/canonical/index.jsonl",
+            "research/knowledge-hub/canonical/edges.jsonl",
+            "research/knowledge-hub/canonical/staging/entries/",
+            "research/knowledge-hub/canonical/staging/staging_index.jsonl",
+            "research/knowledge-hub/canonical/staging/workspace_staging_manifest.json",
+            "research/knowledge-hub/canonical/staging/workspace_staging_manifest.md",
+            "research/knowledge-hub/topics/",
+        ):
+            self.assertIn(snippet, gitignore_text)
 
-        self.assertEqual(
-            payload["runtime_root"],
-            f"topics/{payload['topic_slug']}/runtime",
+    def test_local_generated_runtime_surfaces_are_not_git_tracked(self) -> None:
+        local_only_paths = (
+            "research/knowledge-hub/runtime/current_topic.json",
+            "research/knowledge-hub/runtime/current_topic.md",
+            "research/knowledge-hub/runtime/theory_metrics/analysis.latest.json",
+            "research/knowledge-hub/runtime/theory_metrics/analysis.latest.md",
+            "research/knowledge-hub/runtime/theory_metrics/theory_operations.jsonl",
+            "research/knowledge-hub/canonical/compiled/workspace_graph_report.json",
+            "research/knowledge-hub/canonical/compiled/workspace_graph_report.md",
+            "research/knowledge-hub/canonical/compiled/workspace_knowledge_report.json",
+            "research/knowledge-hub/canonical/compiled/workspace_knowledge_report.md",
+            "research/knowledge-hub/canonical/compiled/workspace_memory_map.json",
+            "research/knowledge-hub/canonical/compiled/workspace_memory_map.md",
+            "research/knowledge-hub/canonical/compiled/derived_navigation/index.md",
+            "research/knowledge-hub/canonical/index.jsonl",
+            "research/knowledge-hub/canonical/edges.jsonl",
+            "research/knowledge-hub/canonical/staging/entries/demo-topic-workflow-draft-1b93bab2.json",
+            "research/knowledge-hub/canonical/staging/staging_index.jsonl",
+            "research/knowledge-hub/canonical/staging/workspace_staging_manifest.json",
+            "research/knowledge-hub/canonical/staging/workspace_staging_manifest.md",
         )
-        self.assertIn(f"Runtime root: `topics/{payload['topic_slug']}/runtime`", note_text)
-        self.assertNotIn("D:\\", payload["runtime_root"])
-        self.assertNotIn("D:\\", note_text)
+
+        for relative_path in local_only_paths:
+            completed = subprocess.run(
+                ["git", "ls-files", "--error-unmatch", "--", relative_path],
+                cwd=self.repo_root,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(
+                completed.returncode,
+                0,
+                msg=f"Expected `{relative_path}` to remain local-only, but git still tracks it.",
+            )
 
     def test_runtime_read_path_defaults_use_topic_truth_root_refs(self) -> None:
         source_intelligence = empty_source_intelligence(topic_slug="demo-topic")
@@ -238,6 +278,18 @@ class RuntimePathHygieneContractTests(unittest.TestCase):
         self.assertIn("JSON remains the machine-facing companion", steering_doc)
         self.assertIn("topic-owned truth root", workflow_doc)
         self.assertIn("TOPIC_TRUTH_ROOT_CONTRACT.md", project_index)
+
+    def test_install_docs_make_local_kernel_and_public_repo_boundary_explicit(self) -> None:
+        install_doc = (self.repo_root / "docs" / "INSTALL.md").read_text(encoding="utf-8")
+        quickstart_doc = (self.repo_root / "docs" / "QUICKSTART.md").read_text(encoding="utf-8")
+        migration_doc = (self.repo_root / "docs" / "MIGRATE_LOCAL_INSTALL.md").read_text(encoding="utf-8")
+        project_index = (self.repo_root / "docs" / "PROJECT_INDEX.md").read_text(encoding="utf-8")
+
+        self.assertIn("`~/.aitp/kernel`", install_doc)
+        self.assertIn("repo itself should stay project code, protocol, and public docs only", install_doc)
+        self.assertIn("`--kernel-root <path>`", quickstart_doc)
+        self.assertIn("`~/.aitp/kernel`", migration_doc)
+        self.assertIn("local-only compatibility projection", project_index.lower())
 
     def test_active_runtime_contract_docs_follow_truth_root_and_markdown_authority(self) -> None:
         checks = {
