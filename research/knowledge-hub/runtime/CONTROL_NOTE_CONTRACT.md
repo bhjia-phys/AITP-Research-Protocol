@@ -26,7 +26,7 @@ allow_override_unfinished: true
 target_action_id: action:my-topic:02
 target_action_summary: Prepare the new validation route
 target_artifacts:
-  - feedback/topics/my-topic/runs/2026-03-15-run/next_actions.md
+  - topics/my-topic/L3/runs/2026-03-15-run/next_actions.md
 stop_conditions:
   - Wait until the operator confirms the observable family
 summary: Redirect the topic toward the new validation route.

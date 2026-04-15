@@ -20,3 +20,5 @@ During Claude Code topic work:
 3. non-trivial checkpoints should become decision points and later decision traces, not only chat prose;
 4. session summaries should be written back as chronicles so operator questions can be answered from runtime state;
 5. "AITP pause" means Claude asks the human in chat and records the checkpoint, not that a background controller exists.
+6. inspect active human-choice surfaces with `aitp interaction --topic-slug <topic_slug> --json` or the native AITP MCP tool surface;
+7. when the active surface is a formal decision point, answer it with `aitp resolve-decision ...`; when it is an operator checkpoint, answer it with `aitp resolve-checkpoint ...` and add a comment when the choice needs extra steering detail.

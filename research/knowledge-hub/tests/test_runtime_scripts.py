@@ -588,9 +588,9 @@ class RuntimeScriptTests(unittest.TestCase):
             (
                 work_root
                 / "kernel"
-                / "runtime"
                 / "topics"
                 / "jones-chapter-4-finite-dimensional-backbone"
+                / "runtime"
                 / "selected_candidate_route_choice.active.json"
             ).exists()
         )
@@ -1767,6 +1767,305 @@ class RuntimeScriptTests(unittest.TestCase):
 
         self.assertNotEqual(queue[0]["action_type"], "assess_topic_completion")
 
+    def test_materialize_action_queue_advances_beyond_post_promotion_inspect_after_later_continue(self) -> None:
+        self._write_json(
+            "runtime/topics/demo-topic/consultation_followup_selection.active.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "selected",
+                "selected_candidate_id": "staging:demo-topic-existing",
+                "selected_candidate_title": "Existing staged literature unit",
+                "selected_candidate_path": "canonical/staging/entries/staging--demo-topic-existing.json",
+                "selected_candidate_trust_surface": "staging",
+                "selected_candidate_topic_slug": "demo-topic",
+                "selection_reason": "Selected the first topic-local staged hit from the bounded consultation result.",
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/selected_candidate_route_choice.active.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "selected",
+                "selected_candidate_id": "staging:demo-topic-existing",
+                "selected_candidate_path": "canonical/staging/entries/staging--demo-topic-existing.json",
+                "selected_candidate_title": "Existing staged literature unit",
+                "selected_candidate_unit_type": "concept",
+                "chosen_action_type": "l2_promotion_review",
+                "chosen_action_summary": "Review Layer 2 promotion for selected staged candidate `staging:demo-topic-existing` before deeper execution.",
+                "route_choice_reason": "Selected staged reusable units should first enter bounded Layer 2 promotion review.",
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/promotion_gate.json",
+            {
+                "status": "promoted",
+                "candidate_id": "staging:demo-topic-existing",
+                "promoted_at": "2026-04-14T06:09:00+08:00",
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/topic_completion.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "promoted",
+                "candidate_count": 1,
+                "followup_subtopic_count": 0,
+                "updated_at": "2026-04-14T06:09:00+08:00",
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/statement_compilation.active.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "needs_repair",
+                "packet_count": 1,
+                "ready_packet_count": 0,
+                "needs_repair_count": 1,
+                "packets": [
+                    {
+                        "candidate_id": "staging:demo-topic-existing",
+                        "status": "needs_repair",
+                    }
+                ],
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/lean_bridge.active.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "needs_refinement",
+                "packet_count": 1,
+                "ready_packet_count": 0,
+                "needs_refinement_count": 1,
+                "packets": [
+                    {
+                        "candidate_id": "staging:demo-topic-existing",
+                        "status": "needs_refinement",
+                    }
+                ],
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/next_action_decision.json",
+            {
+                "topic_slug": "demo-topic",
+                "updated_at": "2026-04-14T06:10:00+08:00",
+                "selected_action": {
+                    "action_type": "inspect_resume_state",
+                },
+            },
+        )
+        self._write_jsonl(
+            "runtime/topics/demo-topic/innovation_decisions.jsonl",
+            [
+                {
+                    "decision_id": "innovation-decision:demo-topic:continue-01",
+                    "topic_slug": "demo-topic",
+                    "updated_at": "2026-04-14T06:10:00+08:00",
+                    "decision": "continue",
+                    "summary": "Continue after post-promotion inspection.",
+                },
+                {
+                    "decision_id": "innovation-decision:demo-topic:continue-02",
+                    "topic_slug": "demo-topic",
+                    "updated_at": "2026-04-14T06:11:00+08:00",
+                    "decision": "continue",
+                    "summary": "Continue into the first post-promotion formalization follow-up.",
+                },
+            ],
+        )
+        self._write_jsonl(
+            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            [
+                {
+                    "candidate_id": "staging:demo-topic-existing",
+                    "candidate_type": "concept",
+                    "status": "promoted",
+                    "summary": "Existing staged literature unit.",
+                    "title": "Existing staged literature unit",
+                }
+            ],
+        )
+
+        queue, _ = self.orchestrate_topic.materialize_action_queue(
+            {
+                "topic_slug": "demo-topic",
+                "latest_run_id": "2026-03-13-demo",
+                "resume_stage": "L2",
+                "source_count": 1,
+                "pending_actions": [],
+            },
+            [],
+            self.knowledge_root / "runtime" / "scripts" / "discover_external_skills.py",
+            self.knowledge_root / "runtime" / "scripts" / "advance_closed_loop.py",
+            self.knowledge_root / "runtime" / "scripts" / "handoff_execution.py",
+            self.knowledge_root / "runtime" / "scripts" / "run_literature_followup.py",
+            self.knowledge_root,
+        )
+
+        self.assertEqual(queue[0]["action_type"], "prepare_lean_bridge")
+        self.assertIn("Lean bridge", queue[0]["summary"])
+        self.assertEqual(queue[0]["handler_args"]["run_id"], "2026-03-13-demo")
+
+    def test_materialize_action_queue_advances_beyond_post_promotion_formalization_after_later_continue(self) -> None:
+        self._write_json(
+            "runtime/topics/demo-topic/consultation_followup_selection.active.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "selected",
+                "selected_candidate_id": "staging:demo-topic-existing",
+                "selected_candidate_title": "Existing staged literature unit",
+                "selected_candidate_path": "canonical/staging/entries/staging--demo-topic-existing.json",
+                "selected_candidate_trust_surface": "staging",
+                "selected_candidate_topic_slug": "demo-topic",
+                "selection_reason": "Selected the first topic-local staged hit from the bounded consultation result.",
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/selected_candidate_route_choice.active.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "selected",
+                "selected_candidate_id": "staging:demo-topic-existing",
+                "selected_candidate_path": "canonical/staging/entries/staging--demo-topic-existing.json",
+                "selected_candidate_title": "Existing staged literature unit",
+                "selected_candidate_unit_type": "concept",
+                "chosen_action_type": "l2_promotion_review",
+                "chosen_action_summary": "Review Layer 2 promotion for selected staged candidate `staging:demo-topic-existing` before deeper execution.",
+                "route_choice_reason": "Selected staged reusable units should first enter bounded Layer 2 promotion review.",
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/promotion_gate.json",
+            {
+                "status": "promoted",
+                "candidate_id": "staging:demo-topic-existing",
+                "promoted_at": "2026-04-14T06:09:00+08:00",
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/topic_completion.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "promoted",
+                "candidate_count": 1,
+                "followup_subtopic_count": 0,
+                "updated_at": "2026-04-14T06:12:00+08:00",
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/statement_compilation.active.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "needs_repair",
+                "packet_count": 1,
+                "ready_packet_count": 0,
+                "needs_repair_count": 1,
+                "packets": [
+                    {
+                        "candidate_id": "staging:demo-topic-existing",
+                        "status": "needs_repair",
+                        "repair_plan_note_path": "validation/topics/demo-topic/runs/2026-03-13-demo/statement-compilation/staging-demo/proof_repair_plan.md",
+                    }
+                ],
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/lean_bridge.active.json",
+            {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "status": "needs_refinement",
+                "packet_count": 1,
+                "ready_packet_count": 0,
+                "needs_refinement_count": 1,
+                "packets": [
+                    {
+                        "candidate_id": "staging:demo-topic-existing",
+                        "status": "needs_refinement",
+                        "packet_note_path": "validation/topics/demo-topic/runs/2026-03-13-demo/lean-bridge/staging-demo/lean_ready_packet.md",
+                    }
+                ],
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/next_action_decision.json",
+            {
+                "topic_slug": "demo-topic",
+                "updated_at": "2026-04-14T06:12:00+08:00",
+                "selected_action": {
+                    "action_type": "prepare_lean_bridge",
+                },
+            },
+        )
+        self._write_jsonl(
+            "runtime/topics/demo-topic/innovation_decisions.jsonl",
+            [
+                {
+                    "decision_id": "innovation-decision:demo-topic:continue-01",
+                    "topic_slug": "demo-topic",
+                    "updated_at": "2026-04-14T06:10:00+08:00",
+                    "decision": "continue",
+                    "summary": "Continue after post-promotion inspection.",
+                },
+                {
+                    "decision_id": "innovation-decision:demo-topic:continue-02",
+                    "topic_slug": "demo-topic",
+                    "updated_at": "2026-04-14T06:11:00+08:00",
+                    "decision": "continue",
+                    "summary": "Continue into the first post-promotion formalization follow-up.",
+                },
+                {
+                    "decision_id": "innovation-decision:demo-topic:continue-03",
+                    "topic_slug": "demo-topic",
+                    "updated_at": "2026-04-14T06:13:00+08:00",
+                    "decision": "continue",
+                    "summary": "Continue from Lean-bridge refresh into explicit proof-repair review.",
+                },
+            ],
+        )
+        self._write_jsonl(
+            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            [
+                {
+                    "candidate_id": "staging:demo-topic-existing",
+                    "candidate_type": "concept",
+                    "status": "promoted",
+                    "summary": "Existing staged literature unit.",
+                    "title": "Existing staged literature unit",
+                }
+            ],
+        )
+
+        queue, _ = self.orchestrate_topic.materialize_action_queue(
+            {
+                "topic_slug": "demo-topic",
+                "latest_run_id": "2026-03-13-demo",
+                "resume_stage": "L2",
+                "source_count": 1,
+                "pending_actions": [],
+            },
+            [],
+            self.knowledge_root / "runtime" / "scripts" / "discover_external_skills.py",
+            self.knowledge_root / "runtime" / "scripts" / "advance_closed_loop.py",
+            self.knowledge_root / "runtime" / "scripts" / "handoff_execution.py",
+            self.knowledge_root / "runtime" / "scripts" / "run_literature_followup.py",
+            self.knowledge_root,
+        )
+
+        self.assertEqual(queue[0]["action_type"], "review_proof_repair_plan")
+        self.assertIn("proof-repair", queue[0]["summary"].lower())
+        self.assertEqual(queue[0]["handler_args"]["run_id"], "2026-03-13-demo")
+
     def test_materialize_action_queue_prefers_promotion_review_in_promote_mode(self) -> None:
         self._write_json(
             "runtime/topics/demo-topic/runtime_protocol.generated.json",
@@ -2057,7 +2356,7 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertNotIn("apply_candidate_split_contract", action_types)
         self.assertEqual(
             queue_meta["operator_checkpoint_path"],
-            "runtime/topics/demo-topic/operator_checkpoint.active.json",
+            "topics/demo-topic/runtime/operator_checkpoint.active.json",
         )
         self.assertIn("operator checkpoint", str(queue_meta["append_policy_reason"]).lower())
 
@@ -3259,6 +3558,36 @@ class RuntimeScriptTests(unittest.TestCase):
             )
         )
 
+    def test_real_lean_bridge_export_acceptance_script_runs_on_isolated_work_root(self) -> None:
+        module = _load_module(
+            "aitp_real_lean_bridge_export_acceptance_test",
+            "runtime/scripts/run_real_lean_bridge_export_acceptance.py",
+        )
+        work_root = Path(self._tmpdir.name) / "real-lean-export"
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_real_lean_bridge_export_acceptance.py",
+                "--work-root",
+                str(work_root),
+                "--json",
+            ],
+        ):
+            exit_code = module.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(
+            any(
+                (
+                    work_root
+                    / "knowledge-hub"
+                    / "runtime"
+                    / "topics"
+                ).glob("*/lean_bridge_export_check.active.json")
+            )
+        )
+
     def test_toy_model_real_topic_dialogue_acceptance_script_runs_on_isolated_work_root(self) -> None:
         module = _load_module(
             "aitp_toy_model_real_topic_dialogue_acceptance_test",
@@ -3433,6 +3762,44 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertTrue((work_root / "kernel" / "canonical" / "staging" / "workspace_staging_manifest.json").exists())
         self.assertTrue((work_root / "kernel" / "canonical" / "compiled" / "workspace_knowledge_report.json").exists())
+
+    def test_real_direction_corpus_growth_acceptance_script_runs_on_isolated_work_root(self) -> None:
+        module = _load_module(
+            "aitp_real_direction_corpus_growth_acceptance_test",
+            "runtime/scripts/run_real_direction_corpus_growth_acceptance.py",
+        )
+        work_root = Path(self._tmpdir.name) / "real-direction-corpus-growth-acceptance"
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "run_real_direction_corpus_growth_acceptance.py",
+                "--work-root",
+                str(work_root),
+                "--json",
+            ],
+        ):
+            exit_code = module.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(
+            (
+                work_root
+                / "kernel"
+                / "canonical"
+                / "compiled"
+                / "topic_l2_corpus_baseline--measurement-induced-algebraic-transition-and-observer-algebras.json"
+            ).exists()
+        )
+        self.assertTrue(
+            (
+                work_root
+                / "kernel"
+                / "canonical"
+                / "compiled"
+                / "topic_l2_corpus_baseline--measurement-induced-algebraic-transition-and-observer-algebras.md"
+            ).exists()
+        )
 
     def test_l1_graph_obsidian_export_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l1-graph-obsidian-export-acceptance"

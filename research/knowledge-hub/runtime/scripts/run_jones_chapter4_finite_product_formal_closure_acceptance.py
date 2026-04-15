@@ -24,6 +24,7 @@ if str(KERNEL_ROOT) not in sys.path:
     sys.path.insert(0, str(KERNEL_ROOT))
 
 from knowledge_hub.aitp_service import AITPService, bounded_slugify, write_json  # noqa: E402
+from knowledge_hub.topic_truth_root_support import compatibility_projection_path  # noqa: E402
 
 
 TOPIC_SLUG = "jones-von-neumann-algebras"
@@ -271,11 +272,13 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
+    rendered = "".join(json.dumps(row, ensure_ascii=True) + "\n" for row in rows)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        "".join(json.dumps(row, ensure_ascii=True) + "\n" for row in rows),
-        encoding="utf-8",
-    )
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def ensure_exists(path: Path) -> None:
@@ -437,7 +440,12 @@ def main() -> int:
     feedback_root = kernel_root / "feedback" / "topics" / args.topic_slug / "runs" / args.run_id
     feedback_root.mkdir(parents=True, exist_ok=True)
     candidate_ledger_path = feedback_root / "candidate_ledger.jsonl"
-    upsert_candidate_row(candidate_ledger_path, candidate_row(kernel_root, args.topic_slug, args.run_id))
+    service._replace_candidate_row(
+        args.topic_slug,
+        args.run_id,
+        CANDIDATE_ID,
+        candidate_row(kernel_root, args.topic_slug, args.run_id),
+    )
     validation_run_root = kernel_root / "validation" / "topics" / args.topic_slug / "runs" / args.run_id
     (validation_run_root / "theory-packets" / CANDIDATE_SLUG).mkdir(
         parents=True,

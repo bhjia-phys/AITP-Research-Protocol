@@ -85,9 +85,9 @@ def empty_graph_analysis(*, topic_slug: str) -> dict[str, Any]:
         "graph_snapshot": _empty_graph_snapshot(),
         "updated_at": None,
         "updated_by": "",
-        "path": f"runtime/topics/{topic_slug}/graph_analysis.json",
-        "note_path": f"runtime/topics/{topic_slug}/graph_analysis.md",
-        "history_path": f"runtime/topics/{topic_slug}/graph_analysis_history.jsonl",
+        "path": f"topics/{topic_slug}/runtime/graph_analysis.json",
+        "note_path": f"topics/{topic_slug}/runtime/graph_analysis.md",
+        "history_path": f"topics/{topic_slug}/runtime/graph_analysis_history.jsonl",
     }
 
 

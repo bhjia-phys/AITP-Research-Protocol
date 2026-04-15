@@ -7,7 +7,7 @@ does not have to live only inside Python heuristics.
 
 Path:
 
-- `feedback/topics/<topic_slug>/runs/<run_id>/next_actions.contract.json`
+- `topics/<topic_slug>/L3/runs/<run_id>/next_actions.contract.json`
 
 Purpose:
 
@@ -46,13 +46,13 @@ Rules:
 
 Keep the human explanation in:
 
-- `feedback/topics/<topic_slug>/runs/<run_id>/next_actions.contract.md`
+- `topics/<topic_slug>/L3/runs/<run_id>/next_actions.contract.md`
 
 ## 2. Runtime decision contract
 
 Path:
 
-- `runtime/topics/<topic_slug>/next_action_decision.contract.json`
+- `topics/<topic_slug>/runtime/next_action_decision.contract.json`
 
 Purpose:
 
@@ -71,7 +71,7 @@ Minimal shape:
   "requires_human_intervention": true,
   "auto_dispatch_allowed": false,
   "evidence_refs": [
-    "feedback/topics/my-topic/runs/2026-03-15-run/next_actions.md"
+    "topics/my-topic/L3/runs/2026-03-15-run/next_actions.md"
   ]
 }
 ```
@@ -88,13 +88,13 @@ Stop/pause variant:
 
 Keep the human explanation in:
 
-- `runtime/topics/<topic_slug>/next_action_decision.contract.md`
+- `topics/<topic_slug>/runtime/next_action_decision.contract.md`
 
 ## 3. Candidate split contract
 
 Path:
 
-- `feedback/topics/<topic_slug>/runs/<run_id>/candidate_split.contract.json`
+- `topics/<topic_slug>/L3/runs/<run_id>/candidate_split.contract.json`
 
 Purpose:
 
@@ -141,7 +141,7 @@ Rules:
 
 - the parent candidate must already exist in `candidate_ledger.jsonl`,
 - child candidates are appended back into the same run ledger,
-- deferred fragments move into `runtime/topics/<topic_slug>/deferred_candidates.json`,
+- deferred fragments move into `topics/<topic_slug>/runtime/deferred_candidates.json`,
 - reactivation is driven by the deferred buffer, not by prose-only notes.
 
 Schema:
@@ -152,8 +152,8 @@ Schema:
 
 Paths:
 
-- `runtime/topics/<topic_slug>/deferred_candidates.json`
-- `runtime/topics/<topic_slug>/deferred_candidates.md`
+- `topics/<topic_slug>/runtime/deferred_candidates.json`
+- `topics/<topic_slug>/runtime/deferred_candidates.md`
 
 Purpose:
 
@@ -185,7 +185,7 @@ values for the new runtime-capable flows:
 
 Path:
 
-- `runtime/topics/<topic_slug>/runtime_protocol.generated.json`
+- `topics/<topic_slug>/runtime/runtime_protocol.generated.json`
 
 Public schema:
 
@@ -227,7 +227,7 @@ Minimal shape:
     "current_stage": "L3",
     "selected_action_id": "action:my-topic:02",
     "queue_source": "declared_contract",
-    "open_next": "runtime/topics/my-topic/runtime_protocol.generated.md",
+    "open_next": "topics/my-topic/runtime/runtime_protocol.generated.md",
     "immediate_allowed_work": [
       "Continue bounded L3 work after reading the required surfaces."
     ],
@@ -242,7 +242,7 @@ Minimal shape:
       "condition": "L2 consultation materially changes route or writeback intent.",
       "required_reads": [
         "L2_CONSULTATION_PROTOCOL.md",
-        "consultation/topics/my-topic/consultation_index.jsonl"
+        "topics/my-topic/consultation/consultation_index.jsonl"
       ]
     }
   ],
@@ -252,7 +252,7 @@ Minimal shape:
       "trigger": "non_trivial_consultation",
       "paths": [
         "L2_CONSULTATION_PROTOCOL.md",
-        "consultation/topics/my-topic/consultation_index.jsonl"
+        "topics/my-topic/consultation/consultation_index.jsonl"
       ]
     }
   ]

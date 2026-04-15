@@ -223,6 +223,14 @@ from .theory_coverage_audit_support import (
 )
 from .topic_loop_support import run_topic_loop as execute_topic_loop
 from .topic_skill_projection_support import derive_topic_skill_projection
+from .topic_truth_root_support import (
+    compatibility_projection_path,
+    consultation_root as topic_consultation_root,
+    ensure_topic_truth_root,
+    layer_root as topic_layer_root,
+    runtime_root as topic_runtime_root,
+    topic_root as topic_truth_root,
+)
 from .promotion_gate_support import (
     append_promotion_gate_log,
     approve_promotion,
@@ -240,6 +248,7 @@ from .literature_intake_support import (
 )
 from .l2_staging import load_staging_entries
 from .l2_compiler import (
+    materialize_topic_l2_corpus_baseline,
     materialize_workspace_graph_report,
     materialize_workspace_knowledge_report,
     materialize_workspace_memory_map,
@@ -375,16 +384,24 @@ def bounded_slugify(text: str, *, max_length: int = 32) -> str:
 
 
 def read_json(path: Path) -> dict[str, Any] | None:
-    if not path.exists():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return None
+        target = compatibility_path
+    return json.loads(target.read_text(encoding="utf-8"))
 
 
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
-        return []
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return []
+        target = compatibility_path
     rows: list[dict[str, Any]] = []
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
+    for raw_line in target.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
         if line:
             rows.append(json.loads(line))
@@ -402,26 +419,35 @@ def as_bool(value: Any) -> bool:
 
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:
+    rendered = json.dumps(payload, ensure_ascii=True, indent=2) + "\n"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8"
-    )
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        "".join(
-            json.dumps(row, ensure_ascii=True, separators=(",", ":")) + "\n"
-            for row in rows
-        ),
-        encoding="utf-8",
+    rendered = "".join(
+        json.dumps(row, ensure_ascii=True, separators=(",", ":")) + "\n"
+        for row in rows
     )
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(text, encoding="utf-8")
 
 
 def write_executable_text(path: Path, text: str) -> None:
@@ -580,8 +606,44 @@ class AITPService:
                 return parent.parent
         return target_path
 
-    def _runtime_root(self, topic_slug: str) -> Path:
+    def _topic_root(self, topic_slug: str) -> Path:
+        return topic_truth_root(self.kernel_root, topic_slug)
+
+    def _legacy_runtime_root(self, topic_slug: str) -> Path:
         return self.kernel_root / "runtime" / "topics" / topic_slug
+
+    def _legacy_l0_root(self, topic_slug: str) -> Path:
+        return self.kernel_root / "source-layer" / "topics" / topic_slug
+
+    def _legacy_l1_root(self, topic_slug: str) -> Path:
+        return self.kernel_root / "intake" / "topics" / topic_slug
+
+    def _legacy_l3_root(self, topic_slug: str) -> Path:
+        return self.kernel_root / "feedback" / "topics" / topic_slug
+
+    def _legacy_l4_root(self, topic_slug: str) -> Path:
+        return self.kernel_root / "validation" / "topics" / topic_slug
+
+    def _legacy_consultation_root(self, topic_slug: str) -> Path:
+        return self.kernel_root / "consultation" / "topics" / topic_slug
+
+    def _l0_root(self, topic_slug: str) -> Path:
+        return topic_layer_root(self.kernel_root, topic_slug, "L0")
+
+    def _l1_root(self, topic_slug: str) -> Path:
+        return topic_layer_root(self.kernel_root, topic_slug, "L1")
+
+    def _l2_root(self, topic_slug: str) -> Path:
+        return topic_layer_root(self.kernel_root, topic_slug, "L2")
+
+    def _l3_root(self, topic_slug: str) -> Path:
+        return topic_layer_root(self.kernel_root, topic_slug, "L3")
+
+    def _l4_root(self, topic_slug: str) -> Path:
+        return topic_layer_root(self.kernel_root, topic_slug, "L4")
+
+    def _runtime_root(self, topic_slug: str) -> Path:
+        return topic_runtime_root(self.kernel_root, topic_slug)
 
     def _runtime_topic_index_path(self) -> Path:
         return self.kernel_root / "runtime" / "topic_index.jsonl"
@@ -611,9 +673,7 @@ class AITPService:
         )
         source_count = int(l1_source_intake.get("source_count") or 0)
         backend_bridge_count = int(updated_state.get("backend_bridge_count") or 0)
-        source_index_path = (
-            self.kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl"
-        )
+        source_index_path = self._l0_root(topic_slug) / "source_index.jsonl"
         pointers = dict(updated_state.get("pointers") or {})
         pointers["l0_source_index_path"] = (
             self._relativize(source_index_path) if source_index_path.exists() else None
@@ -670,10 +730,10 @@ class AITPService:
         return self._runtime_root(topic_slug) / "innovation_decisions.jsonl"
 
     def _validation_run_root(self, topic_slug: str, run_id: str) -> Path:
-        return self.kernel_root / "validation" / "topics" / topic_slug / "runs" / run_id
+        return self._l4_root(topic_slug) / "runs" / run_id
 
     def _feedback_run_root(self, topic_slug: str, run_id: str) -> Path:
-        return self.kernel_root / "feedback" / "topics" / topic_slug / "runs" / run_id
+        return self._l3_root(topic_slug) / "runs" / run_id
 
     def _candidate_ledger_path(self, topic_slug: str, run_id: str) -> Path:
         return self._feedback_run_root(topic_slug, run_id) / "candidate_ledger.jsonl"
@@ -698,7 +758,7 @@ class AITPService:
         )
 
     def _consultation_root(self, topic_slug: str) -> Path:
-        return self.kernel_root / "consultation" / "topics" / topic_slug
+        return topic_consultation_root(self.kernel_root, topic_slug)
 
     def _normalize_artifact_path(self, value: str | Path | None) -> str | None:
         raw = str(value or "").strip()
@@ -721,6 +781,7 @@ class AITPService:
             if candidate.exists():
                 return candidate
         kernel_prefixes = (
+            "topics/",
             "runtime/",
             "source-layer/",
             "intake/",
@@ -1008,6 +1069,37 @@ class AITPService:
         return {
             "json": runtime_root / "lean_bridge.active.json",
             "note": runtime_root / "lean_bridge.active.md",
+        }
+
+    def _lean_bridge_export_target_paths(self, topic_slug: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        return {
+            "json": runtime_root / "lean_bridge_export_target.active.json",
+            "note": runtime_root / "lean_bridge_export_target.active.md",
+        }
+
+    def _lean_bridge_export_check_paths(self, topic_slug: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        return {
+            "json": runtime_root / "lean_bridge_export_check.active.json",
+            "note": runtime_root / "lean_bridge_export_check.active.md",
+        }
+
+    def _lean_bridge_export_run_paths(
+        self, topic_slug: str, run_id: str, candidate_id: str
+    ) -> dict[str, Path]:
+        root = (
+            self._validation_run_root(topic_slug, run_id)
+            / "lean-export-checks"
+            / bounded_slugify(candidate_id)
+        )
+        return {
+            "root": root,
+            "module": root / "export_target.lean",
+            "stdout": root / "checker.stdout.txt",
+            "stderr": root / "checker.stderr.txt",
+            "json": root / "export_check.json",
+            "note": root / "export_check.md",
         }
 
     def _statement_compilation_active_paths(self, topic_slug: str) -> dict[str, Path]:
@@ -1375,6 +1467,9 @@ class AITPService:
             "debug_pattern",
             "resource_plan",
             "scope_control",
+            "proof_engineering",
+            "api_workaround",
+            "failure_pattern",
         }
         valid_outcomes = {"helpful", "neutral", "harmful", "inconclusive"}
         normalized_strategy_type = str(strategy_type or "").strip()
@@ -1844,6 +1939,118 @@ class AITPService:
             topic_slug, resolved_run_id, candidate_id, candidate_row
         )
         return candidate_row
+
+    def _eligible_proof_engineering_strategy_row(
+        self,
+        row: dict[str, Any],
+        *,
+        run_id: str,
+        confidence_threshold: float,
+    ) -> bool:
+        if str(row.get("run_id") or "").strip() != run_id:
+            return False
+        if str(row.get("lane") or "").strip() != "formal_theory":
+            return False
+        if str(row.get("strategy_type") or "").strip() not in {
+            "proof_engineering",
+            "api_workaround",
+            "failure_pattern",
+        }:
+            return False
+        if str(row.get("outcome") or "").strip() != "helpful":
+            return False
+        if float(row.get("confidence") or 0.0) < confidence_threshold:
+            return False
+        if not self._dedupe_strings([str(item) for item in (row.get("evidence_refs") or [])]):
+            return False
+        return bool(str(row.get("summary") or "").strip())
+
+    def _distill_proof_fragment_candidate_row(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str,
+        strategy_row: dict[str, Any],
+        updated_by: str,
+    ) -> dict[str, Any]:
+        strategy_id = str(strategy_row.get("strategy_id") or "").strip() or (
+            f"strat-{bounded_slugify(str(strategy_row.get('summary') or ''), max_length=40)}"
+        )
+        fragment_slug = bounded_slugify(
+            strategy_id.removeprefix("strat-") or strategy_id,
+            max_length=48,
+        )
+        candidate_id = f"candidate:proof-fragment-{fragment_slug}"
+        target_id = f"proof_fragment:{fragment_slug}"
+        strategy_path = str(strategy_row.get("path") or "").strip()
+        summary = str(strategy_row.get("summary") or "").strip()
+        title = f"Proof fragment candidate: {fragment_slug.replace('-', ' ')}"
+
+        origin_refs = []
+        if strategy_path:
+            origin_refs.append(
+                {
+                    "id": f"strategy_memory:{strategy_id}",
+                    "layer": "L3",
+                    "object_type": "strategy_memory",
+                    "path": strategy_path,
+                    "title": "Strategy memory",
+                    "summary": "Run-local proof-engineering strategy memory entry used as the distillation source.",
+                }
+            )
+        for index, evidence_ref in enumerate(
+            self._dedupe_strings(
+                [str(item) for item in (strategy_row.get("evidence_refs") or [])]
+            ),
+            start=1,
+        ):
+            origin_refs.append(
+                {
+                    "id": f"proof_evidence:{strategy_id}:{index}",
+                    "layer": "L4",
+                    "object_type": "runtime_proof_artifact",
+                    "path": evidence_ref,
+                    "title": "Runtime proof artifact",
+                    "summary": "Durable runtime proof artifact cited as evidence for this distilled proof fragment candidate.",
+                }
+            )
+
+        assumptions = self._dedupe_strings(
+            [str(item) for item in (strategy_row.get("reuse_conditions") or [])]
+            + ["Distilled from runtime proof-engineering memory; canonical promotion still requires explicit review."]
+        )
+        return {
+            "candidate_id": candidate_id,
+            "candidate_type": "proof_fragment",
+            "title": title,
+            "summary": summary,
+            "topic_slug": topic_slug,
+            "run_id": run_id,
+            "origin_refs": origin_refs,
+            "question": (
+                f"Should proof-engineering pattern `{strategy_id}` be promoted as reusable proof-fragment memory?"
+            ),
+            "assumptions": assumptions,
+            "proposed_validation_route": "human-reviewed proof-fragment distillation promotion",
+            "intended_l2_targets": [target_id],
+            "status": "ready_for_validation",
+            "promotion_mode": "human",
+            "topic_completion_status": "not_assessed",
+            "distillation_source_strategy_id": strategy_id,
+            "distillation_strategy_type": str(strategy_row.get("strategy_type") or "").strip(),
+            "distillation_confidence": float(strategy_row.get("confidence") or 0.0),
+            "distillation_source_path": strategy_path,
+            "reuse_conditions": self._dedupe_strings(
+                [str(item) for item in (strategy_row.get("reuse_conditions") or [])]
+            ),
+            "do_not_apply_when": self._dedupe_strings(
+                [str(item) for item in (strategy_row.get("do_not_apply_when") or [])]
+            ),
+            "evidence_refs": self._dedupe_strings(
+                [str(item) for item in (strategy_row.get("evidence_refs") or [])]
+            ),
+            "updated_by": updated_by,
+        }
 
     def _resolve_load_profile(
         self,
@@ -2460,6 +2667,7 @@ class AITPService:
         topic_slug: str,
         answer: str,
         updated_by: str = "aitp-cli",
+        resolution: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         paths = self._operator_checkpoint_paths(topic_slug)
         payload = read_json(paths["json"])
@@ -2478,6 +2686,11 @@ class AITPService:
         payload["status"] = "answered"
         payload["active"] = False
         payload["answer"] = answer_text
+        if resolution:
+            resolution_payload = dict(resolution)
+            resolution_payload.setdefault("resolved_at", answered_at)
+            resolution_payload.setdefault("resolved_by", updated_by)
+            payload["resolution"] = resolution_payload
         payload["answered_at"] = answered_at
         payload["answered_by"] = updated_by
         payload["updated_at"] = answered_at
@@ -2631,6 +2844,59 @@ class AITPService:
             "operator_checkpoint": payload,
             "topic_state_explainability": topic_status_explainability,
             "steering_artifacts": steering_artifacts,
+        }
+
+    def resolve_operator_checkpoint(
+        self,
+        *,
+        topic_slug: str,
+        option_index: int,
+        comment: str | None = None,
+        resolved_by: str = "human",
+    ) -> dict[str, Any]:
+        payload = read_json(self._operator_checkpoint_paths(topic_slug)["json"])
+        if payload is None:
+            raise FileNotFoundError(
+                f"No active operator checkpoint surface exists for topic {topic_slug}."
+            )
+        if str(payload.get("status") or "").strip() != "requested":
+            raise ValueError(
+                "Operator checkpoint is not currently in requested status."
+            )
+
+        options = payload.get("options") or []
+        if option_index < 0 or option_index >= len(options):
+            raise IndexError("option_index is out of range")
+
+        chosen_option = dict(options[option_index] or {})
+        chosen_key = str(chosen_option.get("key") or f"option-{option_index}").strip()
+        chosen_label = str(
+            chosen_option.get("label") or chosen_key or f"option-{option_index}"
+        ).strip()
+        chosen_description = str(chosen_option.get("description") or "").strip()
+        human_comment = str(comment or "").strip()
+
+        answer_text = human_comment or (
+            f"Selected `{chosen_label}`"
+            + (f": {chosen_description}" if chosen_description else "")
+        )
+        resolution = {
+            "chosen_option_index": option_index,
+            "chosen_option_key": chosen_key,
+            "chosen_option_label": chosen_label,
+            "chosen_option_description": chosen_description,
+            "human_comment": human_comment,
+        }
+        result = self.answer_operator_checkpoint(
+            topic_slug=topic_slug,
+            answer=answer_text,
+            updated_by=resolved_by,
+            resolution=resolution,
+        )
+        return {
+            **result,
+            "selected_option_index": option_index,
+            "selected_option": chosen_option,
         }
 
     def _derive_last_evidence_return(
@@ -3156,6 +3422,72 @@ class AITPService:
     def _render_proof_obligations_markdown(self, rows: list[dict[str, Any]]) -> str:
         return render_proof_obligations_markdown(rows)
 
+    def _render_lean_bridge_export_target_markdown(
+        self, payload: dict[str, Any]
+    ) -> str:
+        lines = [
+            "# Lean bridge export target",
+            "",
+            f"- Topic slug: `{payload.get('topic_slug') or '(missing)'}`",
+            f"- Run id: `{payload.get('run_id') or '(missing)'}`",
+            f"- Status: `{payload.get('status') or '(missing)'}`",
+            f"- Candidate id: `{payload.get('candidate_id') or '(none)'}`",
+            f"- Candidate type: `{payload.get('candidate_type') or '(none)'}`",
+            f"- Target statement id: `{payload.get('target_statement_id') or '(none)'}`",
+            f"- Formal target: `{payload.get('formal_target') or '(none)'}`",
+            f"- Formal review status: `{payload.get('formal_theory_review_status') or '(missing)'}`",
+            "",
+            "## Packet inputs",
+            "",
+            f"- Formal review: `{payload.get('formal_theory_review_path') or '(missing)'}`",
+            f"- Statement compilation: `{payload.get('statement_compilation_path') or '(missing)'}`",
+            f"- Proof repair plan: `{payload.get('proof_repair_plan_path') or '(missing)'}`",
+            f"- Lean-ready packet: `{payload.get('lean_ready_packet_path') or '(missing)'}`",
+            f"- Proof obligations: `{payload.get('proof_obligations_path') or '(missing)'}`",
+            f"- Proof state: `{payload.get('proof_state_path') or '(missing)'}`",
+            "",
+            "## Source ids",
+            "",
+        ]
+        for source_id in payload.get("source_ids") or ["(none)"]:
+            lines.append(f"- `{source_id}`")
+        if payload.get("selected_reason"):
+            lines.extend(["", "## Selected reason", "", str(payload.get("selected_reason") or "")])
+        if payload.get("blocking_reasons"):
+            lines.extend(["", "## Blocking reasons", ""])
+            for item in payload.get("blocking_reasons") or []:
+                lines.append(f"- {item}")
+        return "\n".join(lines).rstrip() + "\n"
+
+    def _render_lean_bridge_export_check_markdown(
+        self, payload: dict[str, Any]
+    ) -> str:
+        lines = [
+            "# Lean bridge export check",
+            "",
+            f"- Topic slug: `{payload.get('topic_slug') or '(missing)'}`",
+            f"- Run id: `{payload.get('run_id') or '(missing)'}`",
+            f"- Status: `{payload.get('status') or '(missing)'}`",
+            f"- Candidate id: `{payload.get('candidate_id') or '(none)'}`",
+            f"- Checker exit code: `{payload.get('checker_exit_code') if payload.get('checker_exit_code') is not None else '(none)'}`",
+            f"- Mismatch kind: `{payload.get('mismatch_kind') or '(none)'}`",
+            f"- Lean-ready packet: `{payload.get('lean_ready_packet_path') or '(missing)'}`",
+            f"- Export module: `{payload.get('export_module_path') or '(missing)'}`",
+            f"- Checker stdout: `{payload.get('checker_stdout_path') or '(missing)'}`",
+            f"- Checker stderr: `{payload.get('checker_stderr_path') or '(missing)'}`",
+            "",
+            "## Summary",
+            "",
+            str(payload.get("summary") or "(missing)"),
+        ]
+        if payload.get("blocking_reasons"):
+            lines.extend(["", "## Blocking reasons", ""])
+            for item in payload.get("blocking_reasons") or []:
+                lines.append(f"- {item}")
+        if payload.get("checker_stderr"):
+            lines.extend(["", "## Checker stderr", "", str(payload.get("checker_stderr") or "")])
+        return "\n".join(lines).rstrip() + "\n"
+
     def _render_proof_state_markdown(self, payload: dict[str, Any]) -> str:
         return render_proof_state_markdown(payload)
 
@@ -3386,8 +3718,21 @@ class AITPService:
         }
 
     def _ensure_runtime_root(self, topic_slug: str) -> Path:
-        runtime_root = self._runtime_root(topic_slug)
-        runtime_root.mkdir(parents=True, exist_ok=True)
+        paths = ensure_topic_truth_root(self.kernel_root, topic_slug, updated_by="aitp-service")
+        runtime_root = Path(paths["runtime_root"])
+        migration_pairs = (
+            (self._legacy_runtime_root(topic_slug), runtime_root),
+            (self._legacy_l0_root(topic_slug), self._l0_root(topic_slug)),
+            (self._legacy_l1_root(topic_slug), self._l1_root(topic_slug)),
+            (self._legacy_l3_root(topic_slug), self._l3_root(topic_slug)),
+            (self._legacy_l4_root(topic_slug), self._l4_root(topic_slug)),
+            (self._legacy_consultation_root(topic_slug), self._consultation_root(topic_slug)),
+        )
+        for legacy_root, new_root in migration_pairs:
+            if legacy_root.exists():
+                if new_root.exists() and any(new_root.iterdir()):
+                    continue
+                shutil.copytree(legacy_root, new_root, dirs_exist_ok=True)
         return runtime_root
 
     def _trim_steering_fragment(self, value: str) -> str:
@@ -3838,7 +4183,23 @@ class AITPService:
 
         direction = self._extract_direction_from_request(raw_request)
         decision: str | None = None
-        if re.search(
+        continue_requested = bool(
+            re.search(
+                r"(?:继续这个\s*topic|继续这个\s*课题|继续这个\s*主题|继续\b|接着做|continue\b|resume\b)",
+                raw_request,
+                flags=re.IGNORECASE,
+            )
+        )
+        soft_stop_bound = bool(
+            re.search(
+                r"(?:stop\s+before|before\s+expensive\s+execution|停在|先停在|先不要|先别)",
+                raw_request,
+                flags=re.IGNORECASE,
+            )
+        )
+        if continue_requested and soft_stop_bound:
+            decision = "continue"
+        elif re.search(
             r"(?:停止|先停|停下|stop\b|halt\b)", raw_request, flags=re.IGNORECASE
         ):
             decision = "stop"
@@ -3852,11 +4213,7 @@ class AITPService:
             flags=re.IGNORECASE,
         ):
             decision = "redirect"
-        elif re.search(
-            r"(?:继续这个\s*topic|继续这个\s*课题|继续这个\s*主题|继续\b|接着做|continue\b|resume\b)",
-            raw_request,
-            flags=re.IGNORECASE,
-        ):
+        elif continue_requested:
             decision = "continue"
 
         if decision is None:
@@ -5704,15 +6061,19 @@ class AITPService:
             topic_slug = str(row.get("topic_slug") or "").strip()
             if topic_slug:
                 slugs.add(topic_slug)
-        topics_root = self.kernel_root / "runtime" / "topics"
-        if topics_root.exists():
+        for topics_root, state_path_builder in (
+            (self.kernel_root / "topics", lambda path: path / "runtime" / "topic_state.json"),
+            (self.kernel_root / "runtime" / "topics", lambda path: path / "topic_state.json"),
+        ):
+            if not topics_root.exists():
+                continue
             for path in topics_root.iterdir():
                 if not path.is_dir():
                     continue
                 topic_slug = path.name.strip()
                 if not topic_slug or topic_slug.startswith("."):
                     continue
-                if (path / "topic_state.json").exists():
+                if state_path_builder(path).exists():
                     slugs.add(topic_slug)
         return sorted(slugs)
 
@@ -7205,6 +7566,63 @@ class AITPService:
             "must_read_now": bundle.get("must_read_now") or [],
         }
 
+    def topic_interaction(
+        self,
+        *,
+        topic_slug: str,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        status_payload = self.topic_status(topic_slug=topic_slug, updated_by=updated_by)
+        pending_decision_points = list_pending_decision_points(topic_slug, kernel_root=self.kernel_root)
+        operator_checkpoint = status_payload.get("operator_checkpoint") or {}
+        human_posture = status_payload.get("human_interaction_posture") or {}
+
+        primary_interaction: dict[str, Any]
+        if pending_decision_points:
+            first = dict(pending_decision_points[0])
+            primary_interaction = {
+                "kind": "decision_point",
+                **first,
+                "resolve_with": "resolve-decision",
+            }
+        elif str(operator_checkpoint.get("status") or "").strip() == "requested":
+            primary_interaction = {
+                "kind": "operator_checkpoint",
+                "checkpoint_id": operator_checkpoint.get("checkpoint_id"),
+                "checkpoint_kind": operator_checkpoint.get("checkpoint_kind"),
+                "question": operator_checkpoint.get("question"),
+                "required_response": operator_checkpoint.get("required_response"),
+                "options": list(operator_checkpoint.get("options") or []),
+                "default_option_index": operator_checkpoint.get("default_option_index"),
+                "response_channels": list(operator_checkpoint.get("response_channels") or []),
+                "evidence_refs": list(operator_checkpoint.get("evidence_refs") or []),
+                "resolve_with": "resolve-checkpoint",
+            }
+        else:
+            primary_interaction = {
+                "kind": "none",
+                "summary": "No active human-choice surface is currently blocking the bounded loop.",
+            }
+
+        return {
+            "topic_slug": topic_slug,
+            "requires_human_input_now": bool(human_posture.get("requires_human_input_now"))
+            or bool(pending_decision_points)
+            or str(operator_checkpoint.get("status") or "").strip() == "requested",
+            "human_interaction_posture": human_posture,
+            "pending_decision_points": pending_decision_points,
+            "operator_checkpoint": operator_checkpoint,
+            "primary_interaction": primary_interaction,
+            "response_tools": {
+                "inspect_interaction": "interaction",
+                "list_decisions": "list-decisions",
+                "resolve_decision": "resolve-decision",
+                "resolve_checkpoint": "resolve-checkpoint",
+            },
+            "runtime_protocol_note_path": status_payload.get("runtime_protocol_note_path"),
+            "topic_dashboard_path": (((status_payload.get("primary_runtime_surfaces") or {}).get("primary") or {}).get("runtime_human")),
+        }
+
     def topic_layer_graph(
         self,
         *,
@@ -7293,6 +7711,60 @@ class AITPService:
                 topic_slug=topic_slug,
                 updated_by=updated_by,
                 human_request=human_request,
+            )
+        return result
+
+    def distill_proof_engineering_candidates(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None = None,
+        updated_by: str = "aitp-cli",
+        confidence_threshold: float = 0.8,
+        refresh_runtime_bundle: bool = True,
+    ) -> dict[str, Any]:
+        resolved_run_id = self._resolve_run_id(topic_slug, run_id)
+        strategy_rows = self._load_strategy_memory_rows(topic_slug)
+        eligible_rows = [
+            row
+            for row in strategy_rows
+            if self._eligible_proof_engineering_strategy_row(
+                row,
+                run_id=resolved_run_id,
+                confidence_threshold=confidence_threshold,
+            )
+        ]
+
+        distilled_rows: list[dict[str, Any]] = []
+        for row in eligible_rows:
+            candidate_row = self._distill_proof_fragment_candidate_row(
+                topic_slug=topic_slug,
+                run_id=resolved_run_id,
+                strategy_row=row,
+                updated_by=updated_by,
+            )
+            self._replace_candidate_row(
+                topic_slug=topic_slug,
+                run_id=resolved_run_id,
+                candidate_id=str(candidate_row.get("candidate_id") or ""),
+                updated_row=candidate_row,
+            )
+            distilled_rows.append(candidate_row)
+
+        result = {
+            "topic_slug": topic_slug,
+            "run_id": resolved_run_id,
+            "confidence_threshold": float(confidence_threshold),
+            "distilled_candidate_ids": [
+                str(row.get("candidate_id") or "") for row in distilled_rows if str(row.get("candidate_id") or "").strip()
+            ],
+            "candidate_ledger_path": str(self._candidate_ledger_path(topic_slug, resolved_run_id)),
+            "distilled_candidates": distilled_rows,
+        }
+        if refresh_runtime_bundle:
+            result["runtime_protocol"] = self._materialize_runtime_protocol_bundle(
+                topic_slug=topic_slug,
+                updated_by=updated_by,
             )
         return result
 
@@ -7571,6 +8043,285 @@ class AITPService:
             )
         return result
 
+    def select_lean_bridge_export_target(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None = None,
+        candidate_id: str | None = None,
+        updated_by: str = "aitp-cli",
+        refresh_runtime_bundle: bool = True,
+    ) -> dict[str, Any]:
+        resolved_run_id = self._resolve_run_id(topic_slug, run_id)
+        candidate_rows = self._candidate_rows_for_run(topic_slug, resolved_run_id)
+
+        selected_context: dict[str, Any] | None = None
+        if candidate_id:
+            selected_row = next(
+                (
+                    row
+                    for row in candidate_rows
+                    if str(row.get("candidate_id") or "").strip() == str(candidate_id or "").strip()
+                ),
+                None,
+            )
+            if selected_row is not None:
+                packet_paths = self._theory_packet_paths(topic_slug, resolved_run_id, str(candidate_id))
+                review_payload = read_json(packet_paths["formal_theory_review"]) or {}
+                selected_context = {
+                    "candidate_row": selected_row,
+                    "candidate_id": str(candidate_id),
+                    "candidate_type": str(selected_row.get("candidate_type") or "").strip(),
+                    "review_path": packet_paths["formal_theory_review"],
+                    "review_payload": review_payload,
+                    "review_status": str(
+                        review_payload.get("overall_status")
+                        or selected_row.get("formal_theory_review_overall_status")
+                        or "missing"
+                    ).strip(),
+                    "completion_status": str(
+                        selected_row.get("topic_completion_status") or "not_assessed"
+                    ).strip(),
+                }
+        else:
+            selected_context = self._formal_theory_projection_candidate_context(
+                topic_slug=topic_slug,
+                run_id=resolved_run_id,
+                candidate_rows=candidate_rows,
+            )
+
+        blocking_reasons: list[str] = []
+        candidate_row = (selected_context or {}).get("candidate_row") or {}
+        selected_candidate_id = str((selected_context or {}).get("candidate_id") or "").strip()
+        review_status = str((selected_context or {}).get("review_status") or "missing").strip()
+        completion_status = str((selected_context or {}).get("completion_status") or "not_assessed").strip()
+        review_path = (selected_context or {}).get("review_path")
+        review_payload = (selected_context or {}).get("review_payload") or {}
+
+        if not selected_context:
+            blocking_reasons.append(
+                "No formal-theory candidate with durable formal review context is currently available for Lean export."
+            )
+        else:
+            if not isinstance(review_path, Path) or not review_path.exists():
+                blocking_reasons.append(
+                    "formal_theory_review.json is missing for the selected formal candidate."
+                )
+            elif review_status != "ready":
+                blocking_reasons.append(
+                    f"formal_theory_review overall_status is `{review_status or 'missing'}`, not `ready`."
+                )
+            if completion_status not in {"promotion-ready", "promoted"}:
+                blocking_reasons.append(
+                    f"topic_completion_status is `{completion_status or 'missing'}`, not `promotion-ready` or `promoted`."
+                )
+
+        packet_paths: dict[str, Path] | None = None
+        if not blocking_reasons and selected_candidate_id:
+            self.prepare_lean_bridge(
+                topic_slug=topic_slug,
+                run_id=resolved_run_id,
+                candidate_id=selected_candidate_id,
+                updated_by=updated_by,
+                refresh_runtime_bundle=False,
+            )
+            packet_paths = self._lean_bridge_packet_paths(
+                topic_slug, resolved_run_id, selected_candidate_id
+            )
+            statement_paths = self._statement_compilation_packet_paths(
+                topic_slug, resolved_run_id, selected_candidate_id
+            )
+        else:
+            statement_paths = self._statement_compilation_packet_paths(
+                topic_slug, resolved_run_id, selected_candidate_id or "candidate-missing"
+            )
+            packet_paths = self._lean_bridge_packet_paths(
+                topic_slug, resolved_run_id, selected_candidate_id or "candidate-missing"
+            )
+
+        intended_targets = self._dedupe_strings(
+            [str(item) for item in (candidate_row.get("intended_l2_targets") or [])]
+        )
+        source_ids = self._dedupe_strings(
+            [
+                str(ref.get("id") or "").strip()
+                for ref in (candidate_row.get("origin_refs") or [])
+                if isinstance(ref, dict)
+            ]
+        )
+        payload = {
+            "artifact_kind": "lean_bridge_export_target",
+            "contract_version": 1,
+            "topic_slug": topic_slug,
+            "run_id": resolved_run_id,
+            "status": "blocked" if blocking_reasons else "selected",
+            "candidate_id": selected_candidate_id,
+            "candidate_type": str(candidate_row.get("candidate_type") or "").strip(),
+            "title": str(candidate_row.get("title") or selected_candidate_id).strip(),
+            "target_statement_id": str(
+                review_payload.get("target_statement_id")
+                or (intended_targets[0] if intended_targets else "")
+            ).strip(),
+            "formal_target": str(review_payload.get("formal_target") or "").strip(),
+            "formal_theory_review_status": review_status,
+            "formal_theory_review_path": self._relativize(review_path) if isinstance(review_path, Path) and review_path.exists() else "",
+            "statement_compilation_path": self._relativize(statement_paths["json"]) if statement_paths["json"].exists() else "",
+            "proof_repair_plan_path": self._relativize(statement_paths["repair_plan"]) if statement_paths["repair_plan"].exists() else "",
+            "lean_ready_packet_path": self._relativize(packet_paths["json"]) if packet_paths["json"].exists() else "",
+            "proof_obligations_path": self._relativize(packet_paths["proof_obligations"]) if packet_paths["proof_obligations"].exists() else "",
+            "proof_state_path": self._relativize(packet_paths["proof_state"]) if packet_paths["proof_state"].exists() else "",
+            "source_ids": source_ids,
+            "selected_reason": (
+                "Selected the first ready formal-theory candidate with durable review and Lean packet inputs."
+                if not blocking_reasons and selected_candidate_id
+                else ""
+            ),
+            "blocking_reasons": blocking_reasons,
+            "updated_at": now_iso(),
+            "updated_by": updated_by,
+        }
+        export_paths = self._lean_bridge_export_target_paths(topic_slug)
+        write_json(export_paths["json"], payload)
+        write_text(
+            export_paths["note"],
+            self._render_lean_bridge_export_target_markdown(payload),
+        )
+        result = {
+            **payload,
+            "lean_bridge_export_target_path": str(export_paths["json"]),
+            "lean_bridge_export_target_note_path": str(export_paths["note"]),
+        }
+        if refresh_runtime_bundle:
+            result["runtime_protocol"] = self._materialize_runtime_protocol_bundle(
+                topic_slug=topic_slug,
+                updated_by=updated_by,
+            )
+        return result
+
+    def run_lean_bridge_export_check(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None = None,
+        candidate_id: str | None = None,
+        checker_command: list[str] | None = None,
+        updated_by: str = "aitp-cli",
+        refresh_runtime_bundle: bool = True,
+    ) -> dict[str, Any]:
+        export_paths = self._lean_bridge_export_target_paths(topic_slug)
+        export_target = read_json(export_paths["json"])
+        if export_target is None or (
+            candidate_id and str(export_target.get("candidate_id") or "").strip() != str(candidate_id).strip()
+        ):
+            export_target = self.select_lean_bridge_export_target(
+                topic_slug=topic_slug,
+                run_id=run_id,
+                candidate_id=candidate_id,
+                updated_by=updated_by,
+                refresh_runtime_bundle=False,
+            )
+
+        resolved_run_id = str(export_target.get("run_id") or self._resolve_run_id(topic_slug, run_id)).strip()
+        selected_candidate_id = str(export_target.get("candidate_id") or "").strip()
+        run_paths = self._lean_bridge_export_run_paths(
+            topic_slug,
+            resolved_run_id,
+            selected_candidate_id or "candidate-missing",
+        )
+        blocking_reasons = self._dedupe_strings(
+            [str(item) for item in (export_target.get("blocking_reasons") or [])]
+        )
+        packet_path = self._artifact_path_on_disk(export_target.get("lean_ready_packet_path"))
+        proof_obligations_path = self._artifact_path_on_disk(export_target.get("proof_obligations_path"))
+        proof_state_path = self._artifact_path_on_disk(export_target.get("proof_state_path"))
+
+        packet_payload = read_json(packet_path) if packet_path else None
+        checker_exit_code: int | None = None
+        checker_stdout = ""
+        checker_stderr = ""
+        mismatch_kind = ""
+        status = "blocked"
+        summary = "Lean bridge export check is blocked before mechanical checking can run."
+
+        if not blocking_reasons and selected_candidate_id and packet_payload is not None:
+            module_text = "\n".join(packet_payload.get("lean_skeleton_lines") or ["-- no skeleton available"]) + "\n"
+            write_text(run_paths["module"], module_text)
+            resolved_checker_command = list(checker_command or ([]))
+            if not resolved_checker_command:
+                lean_bin = shutil.which("lean")
+                if lean_bin:
+                    resolved_checker_command = [lean_bin]
+                else:
+                    blocking_reasons.append("Lean executable is unavailable on PATH.")
+            if not blocking_reasons:
+                completed = subprocess.run(
+                    [*resolved_checker_command, str(run_paths["module"])],
+                    capture_output=True,
+                    text=True,
+                    cwd=self.repo_root,
+                )
+                checker_exit_code = int(completed.returncode)
+                checker_stdout = completed.stdout or ""
+                checker_stderr = completed.stderr or ""
+                write_text(run_paths["stdout"], checker_stdout)
+                write_text(run_paths["stderr"], checker_stderr)
+                if checker_exit_code != 0:
+                    status = "mismatch_reported"
+                    mismatch_kind = "lean_type_error"
+                    summary = "Lean-facing checker reported a type or elaboration mismatch for the exported module."
+                elif int(packet_payload.get("proof_obligation_count") or 0) > 0 or str(packet_payload.get("status") or "") != "ready":
+                    status = "mismatch_reported"
+                    mismatch_kind = "proof_obligations_open"
+                    summary = "Lean-facing export remains blocked by open proof obligations even though a module skeleton was materialized."
+                else:
+                    status = "typecheck_passed"
+                    summary = "The exported Lean module skeleton passed the configured Lean-facing checker."
+
+        if blocking_reasons:
+            summary = "Lean bridge export check is blocked before mechanical checking can run."
+        report_payload = {
+            "artifact_kind": "lean_bridge_export_check",
+            "report_version": 1,
+            "topic_slug": topic_slug,
+            "run_id": resolved_run_id,
+            "candidate_id": selected_candidate_id,
+            "status": status,
+            "mismatch_kind": mismatch_kind,
+            "checker_command": list(checker_command or ([shutil.which("lean")] if shutil.which("lean") else [])),
+            "checker_exit_code": checker_exit_code,
+            "lean_ready_packet_path": str(export_target.get("lean_ready_packet_path") or ""),
+            "proof_obligations_path": str(export_target.get("proof_obligations_path") or ""),
+            "proof_state_path": str(export_target.get("proof_state_path") or ""),
+            "export_module_path": self._relativize(run_paths["module"]) if run_paths["module"].exists() else "",
+            "checker_stdout_path": self._relativize(run_paths["stdout"]) if run_paths["stdout"].exists() else "",
+            "checker_stderr_path": self._relativize(run_paths["stderr"]) if run_paths["stderr"].exists() else "",
+            "checker_stdout": checker_stdout,
+            "checker_stderr": checker_stderr,
+            "blocking_reasons": blocking_reasons,
+            "summary": summary,
+            "updated_at": now_iso(),
+            "updated_by": updated_by,
+        }
+        write_json(run_paths["json"], report_payload)
+        write_text(run_paths["note"], self._render_lean_bridge_export_check_markdown(report_payload))
+        active_paths = self._lean_bridge_export_check_paths(topic_slug)
+        write_json(active_paths["json"], report_payload)
+        write_text(active_paths["note"], self._render_lean_bridge_export_check_markdown(report_payload))
+        result = {
+            **report_payload,
+            "export_report_path": str(run_paths["json"]),
+            "export_report_note_path": str(run_paths["note"]),
+            "export_module_path": str(run_paths["module"]),
+            "checker_stdout_path": str(run_paths["stdout"]),
+            "checker_stderr_path": str(run_paths["stderr"]),
+        }
+        if refresh_runtime_bundle:
+            result["runtime_protocol"] = self._materialize_runtime_protocol_bundle(
+                topic_slug=topic_slug,
+                updated_by=updated_by,
+            )
+        return result
+
     def prepare_statement_compilation(
         self,
         *,
@@ -7623,6 +8374,10 @@ class AITPService:
         command = [
             *self._resolve_runtime_python_command(),
             str(self._kernel_script("runtime/scripts/orchestrate_topic.py")),
+            "--knowledge-root",
+            str(self.kernel_root),
+            "--repo-root",
+            str(self.repo_root),
             "--updated-by",
             updated_by,
         ]
@@ -7727,6 +8482,8 @@ class AITPService:
         command = [
             *self._resolve_runtime_python_command(),
             str(self._kernel_script("runtime/scripts/audit_topic_conformance.py")),
+            "--knowledge-root",
+            str(self.kernel_root),
             "--topic-slug",
             topic_slug,
             "--phase",
@@ -8729,6 +9486,12 @@ class AITPService:
 
     def compile_l2_workspace_map(self) -> dict[str, Any]:
         return materialize_workspace_memory_map(self.kernel_root)
+
+    def compile_topic_l2_corpus_baseline(self, *, topic_slug: str) -> dict[str, Any]:
+        return materialize_topic_l2_corpus_baseline(
+            self.kernel_root,
+            topic_slug=topic_slug,
+        )
 
     def compile_source_catalog(self) -> dict[str, Any]:
         return materialize_source_catalog(self.kernel_root)

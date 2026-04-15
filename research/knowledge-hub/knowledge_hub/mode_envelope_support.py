@@ -68,6 +68,8 @@ _VERIFY_ACTION_TYPES = {
     "materialize_execution_task",
     "dispatch_execution_task",
     "ingest_execution_result",
+    "prepare_lean_bridge",
+    "review_proof_repair_plan",
 }
 _VERIFY_TRIGGERS = {"verification_route_selection", "proof_completion_review", "contradiction_detected"}
 _LITERATURE_SOURCE_TOKENS = ("literature", "paper", "source", "arxiv", "pdf")
@@ -432,9 +434,9 @@ def _literature_wiki_paths(l1_vault: dict[str, Any]) -> list[str]:
         return page_paths
     fallback = [
         str(wiki.get("home_page_path") or ""),
-        "intake/topics/{topic_slug}/vault/wiki/source-intake.md",
-        "intake/topics/{topic_slug}/vault/wiki/open-questions.md",
-        "intake/topics/{topic_slug}/vault/wiki/runtime-bridge.md",
+        "topics/{topic_slug}/L1/vault/wiki/source-intake.md",
+        "topics/{topic_slug}/L1/vault/wiki/open-questions.md",
+        "topics/{topic_slug}/L1/vault/wiki/runtime-bridge.md",
     ]
     topic_slug = str(l1_vault.get("topic_slug") or "").strip()
     return [item.format(topic_slug=topic_slug) for item in fallback if item]

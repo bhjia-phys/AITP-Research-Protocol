@@ -15,10 +15,10 @@ def consultation_projection_path(
     if not run_id:
         return None
     if stage == "L1":
-        return kernel_root / "intake" / "topics" / topic_slug / "l2_consultation_log.jsonl"
+        return kernel_root / "topics" / topic_slug / "L1" / "l2_consultation_log.jsonl"
     if stage == "L3":
-        return kernel_root / "feedback" / "topics" / topic_slug / "runs" / run_id / "l2_consultation_log.jsonl"
-    return kernel_root / "validation" / "topics" / topic_slug / "runs" / run_id / "l2_consultation_log.jsonl"
+        return kernel_root / "topics" / topic_slug / "L3" / "runs" / run_id / "l2_consultation_log.jsonl"
+    return kernel_root / "topics" / topic_slug / "L4" / "runs" / run_id / "l2_consultation_log.jsonl"
 
 
 def build_l2_consultation_record(

@@ -43,17 +43,26 @@ from .graph_analysis_tools import (
     write_graph_analysis_history,
 )
 from .validation_review_service import analytical_cross_check_markdown_lines
+from .topic_truth_root_support import compatibility_projection_path
 def _read_json(path: Path) -> dict[str, Any] | None:
-    if not path.exists():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return None
+        target = compatibility_path
+    return json.loads(target.read_text(encoding="utf-8"))
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
-        return []
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return []
+        target = compatibility_path
     rows: list[dict[str, Any]] = []
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
+    for raw_line in target.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
         if line:
             rows.append(json.loads(line))
@@ -61,13 +70,22 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    rendered = json.dumps(payload, ensure_ascii=True, indent=2) + "\n"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def _write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(text, encoding="utf-8")
 
 
 def _now_iso() -> str:
@@ -89,6 +107,184 @@ def _as_bool(value: Any) -> bool:
     if isinstance(value, (int, float)):
         return bool(value)
     return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _checkpoint_option_set(checkpoint_kind: str | None) -> tuple[list[dict[str, str]], int | None]:
+    normalized = str(checkpoint_kind or "").strip()
+    if normalized == "scope_ambiguity":
+        return (
+            [
+                {
+                    "key": "clarify_now",
+                    "label": "Clarify now",
+                    "description": "Fill the missing topic-intent fields before deeper execution continues.",
+                },
+                {
+                    "key": "continue_with_deferred_fields",
+                    "label": "Continue with deferred fields",
+                    "description": "Proceed honestly with clarification deferred and visible in the topic state.",
+                },
+                {
+                    "key": "branch_new_topic",
+                    "label": "Branch new topic",
+                    "description": "Split the current vague direction into a separate topic branch first.",
+                },
+            ],
+            0,
+        )
+    if normalized == "promotion_approval":
+        return (
+            [
+                {
+                    "key": "approve_for_l2",
+                    "label": "Approve for L2",
+                    "description": "Allow reusable-knowledge writeback to proceed.",
+                },
+                {
+                    "key": "reject_for_now",
+                    "label": "Reject for now",
+                    "description": "Keep the candidate out of L2 until the trust boundary is stronger.",
+                },
+                {
+                    "key": "narrow_before_writeback",
+                    "label": "Narrow before writeback",
+                    "description": "Reduce scope and tighten the candidate before promotion is reconsidered.",
+                },
+            ],
+            2,
+        )
+    if normalized == "execution_lane_confirmation":
+        return (
+            [
+                {
+                    "key": "stay_local",
+                    "label": "Stay local",
+                    "description": "Keep the next execution step in the current local lane.",
+                },
+                {
+                    "key": "use_external_runtime",
+                    "label": "Use external runtime",
+                    "description": "Dispatch the next execution step to the planned external runtime or server lane.",
+                },
+                {
+                    "key": "narrow_before_dispatch",
+                    "label": "Narrow before dispatch",
+                    "description": "Reduce cost or scope before any execution lane is confirmed.",
+                },
+            ],
+            0,
+        )
+    if normalized == "contradiction_adjudication":
+        return (
+            [
+                {
+                    "key": "split_regimes",
+                    "label": "Split regimes",
+                    "description": "Treat the conflict as a regime split rather than one flattened result.",
+                },
+                {
+                    "key": "downgrade_claim",
+                    "label": "Downgrade claim",
+                    "description": "Keep the route but weaken the current candidate claim.",
+                },
+                {
+                    "key": "return_to_L0",
+                    "label": "Return to L0",
+                    "description": "Go back to source recovery before further interpretation.",
+                },
+            ],
+            0,
+        )
+    if normalized == "benchmark_or_validation_route_choice":
+        return (
+            [
+                {
+                    "key": "benchmark_first",
+                    "label": "Benchmark first",
+                    "description": "Use the smallest honest benchmark route before deeper execution.",
+                },
+                {
+                    "key": "execution_backed_validation",
+                    "label": "Execution-backed validation",
+                    "description": "Advance directly into the prepared execution-backed validation lane.",
+                },
+                {
+                    "key": "pause_and_clarify_route",
+                    "label": "Clarify route",
+                    "description": "Pause and refine the validation route before choosing one lane.",
+                },
+            ],
+            0,
+        )
+    if normalized == "resource_risk_limit_choice":
+        return (
+            [
+                {
+                    "key": "keep_small_and_safe",
+                    "label": "Keep small and safe",
+                    "description": "Stay within the smallest cost and risk envelope.",
+                },
+                {
+                    "key": "allow_broader_budget",
+                    "label": "Allow broader budget",
+                    "description": "Permit a larger execution budget or system-size envelope.",
+                },
+                {
+                    "key": "pause_until_limit_defined",
+                    "label": "Pause for limit",
+                    "description": "Do not expand until the budget or risk boundary is explicit.",
+                },
+            ],
+            0,
+        )
+    if normalized == "novelty_direction_choice":
+        return (
+            [
+                {
+                    "key": "keep_current_branch",
+                    "label": "Keep current branch",
+                    "description": "Continue with the current novelty direction.",
+                },
+                {
+                    "key": "redirect_novelty_target",
+                    "label": "Redirect novelty",
+                    "description": "Change the novelty target but keep the same topic branch.",
+                },
+                {
+                    "key": "branch_new_direction",
+                    "label": "Branch direction",
+                    "description": "Fork the new novelty direction into a separate branch.",
+                },
+            ],
+            0,
+        )
+    if normalized == "stop_continue_branch_redirect_decision":
+        return (
+            [
+                {
+                    "key": "continue",
+                    "label": "Continue",
+                    "description": "Keep the current topic moving on the active bounded route.",
+                },
+                {
+                    "key": "branch",
+                    "label": "Branch",
+                    "description": "Split the next route into a new topic branch.",
+                },
+                {
+                    "key": "redirect",
+                    "label": "Redirect",
+                    "description": "Change the active route inside the current topic.",
+                },
+                {
+                    "key": "stop",
+                    "label": "Stop",
+                    "description": "Pause or stop the topic until explicitly resumed.",
+                },
+            ],
+            0,
+        )
+    return ([], None)
 
 
 def derive_open_gap_summary(
@@ -188,7 +384,7 @@ def derive_idea_packet(
     validation_contract: dict[str, Any],
     selected_pending_action: dict[str, Any] | None,
 ) -> dict[str, Any]:
-    source_rows = _read_jsonl(self.kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl")
+    source_rows = _read_jsonl(self._l0_root(topic_slug) / "source_index.jsonl")
     request_text = (
         str(human_request or "").strip()
         or str(interaction_state.get("human_request") or "").strip()
@@ -556,6 +752,8 @@ def derive_operator_checkpoint(
         payload["response_channels"] = []
         payload["blocker_summary"] = []
         payload["evidence_refs"] = []
+        payload["options"] = []
+        payload["default_option_index"] = None
         payload["selected_action_id"] = selected_action_id or None
         payload["selected_action_summary"] = selected_action_summary or None
         payload["answer"] = payload.get("answer")
@@ -590,6 +788,8 @@ def derive_operator_checkpoint(
         "response_channels": self._dedupe_strings(response_channels),
         "blocker_summary": self._dedupe_strings(blocker_summary),
         "evidence_refs": self._dedupe_strings(evidence_refs),
+        "options": _checkpoint_option_set(checkpoint_kind)[0],
+        "default_option_index": _checkpoint_option_set(checkpoint_kind)[1],
         "selected_action_id": selected_action_id or None,
         "selected_action_summary": selected_action_summary or None,
         "answer": None,
@@ -1171,7 +1371,7 @@ def ensure_topic_shell_surfaces(
     existing_idea_packet = _read_json(idea_packet_paths["json"]) or {}
     existing_operator_checkpoint = _read_json(operator_checkpoint_paths["json"]) or {}
     existing_execution_task = _read_json(runtime_root / "execution_task.json") or {}
-    source_rows = _read_jsonl(self.kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl")
+    source_rows = _read_jsonl(self._l0_root(topic_slug) / "source_index.jsonl")
     source_intelligence = source_intelligence_payload(
         kernel_root=self.kernel_root,
         topic_slug=topic_slug,

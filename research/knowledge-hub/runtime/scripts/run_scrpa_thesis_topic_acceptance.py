@@ -164,16 +164,16 @@ def main() -> int:
     check(status_payload["topic_synopsis"]["lane"] == "formal_theory", "Expected the scRPA thesis topic to resolve to the formal_theory lane.")
     check(len(next_payload["must_read_now"]) == 2, "Expected light profile must_read_now to remain minimal.")
     check(
-        next_payload["must_read_now"][0]["path"] == f"runtime/topics/{topic_slug}/topic_dashboard.md",
+        next_payload["must_read_now"][0]["path"] == f"topics/{topic_slug}/runtime/topic_dashboard.md",
         "Expected the first light-profile read to be topic_dashboard.md.",
     )
     check(
-        next_payload["must_read_now"][1]["path"] == f"runtime/topics/{topic_slug}/research_question.contract.md",
+        next_payload["must_read_now"][1]["path"] == f"topics/{topic_slug}/runtime/research_question.contract.md",
         "Expected the second light-profile read to be research_question.contract.md.",
     )
     check(
         any(
-            row["path"] == f"runtime/topics/{topic_slug}/topic_synopsis.json"
+            row["path"] == f"topics/{topic_slug}/runtime/topic_synopsis.json"
             and row["trigger"] == "runtime_truth_audit"
             for row in next_payload["may_defer_until_trigger"]
         ),

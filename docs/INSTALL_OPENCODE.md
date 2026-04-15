@@ -92,7 +92,10 @@ OpenCode should now:
 
 - inject `using-aitp` through `experimental.chat.system.transform`;
 - register the AITP skills path through the plugin `config` hook;
-- route current-topic continuation and steering through AITP before substantive work.
+- route current-topic continuation and steering through AITP before substantive work;
+- expose interaction inspection through `aitp interaction --topic-slug <topic_slug> --json`;
+- expose formal decision resolution through `aitp resolve-decision ...`;
+- expose operator-checkpoint resolution through `aitp resolve-checkpoint ...`.
 
 Use `aitp doctor --json` to verify whether OpenCode is ready through the
 preferred `opencode.json` plugin entry or only through a partial/stale

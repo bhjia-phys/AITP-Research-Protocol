@@ -60,20 +60,23 @@ See [contracts/README.md](../contracts/README.md) and [schemas/README.md](../sch
 
 The runtime is the engine that materializes topic state, selects next actions, and coordinates sessions.
 
+Topic-owned truth is converging on `topics/<slug>/`, with runtime-facing state under `topics/<slug>/runtime/`.
+For operator-facing truth, Markdown is the human authority; JSON and JSONL stay machine-facing companions.
+
 | Surface | File | Purpose | Audience |
 |---|---|---|---|
 | **Runtime overview** | [README.md](../research/knowledge-hub/runtime/README.md) | Full surface inventory, role map, rules | Agent |
-| **Topic state** | `topics/<slug>/topic_state.json` | Machine-readable snapshot: resume stage, layer status, promotion gate, pointers | Agent |
-| **Human console** | `topics/<slug>/operator_console.md` | Immediate execution contract: do now / do not / escalate | Human, Agent |
-| **Runtime bundle** | `topics/<slug>/runtime_protocol.generated.md` | Progressive disclosure bundle: synopsis, contracts, triggers, guardrails | Agent |
-| **Next action** | `topics/<slug>/next_action_decision.json` | Authoritative decision: what to do next and why | Agent |
-| **Topic dashboard** | `topics/<slug>/topic_dashboard.md` | Primary human render of current state | Human |
-| **Action queue** | `topics/<slug>/action_queue_contract.generated.json` | Ordered list of executable actions | Agent |
-| **Unfinished work** | `topics/<slug>/unfinished_work.json` | Index of incomplete actions | Agent |
-| **Pending decisions** | `topics/<slug>/pending_decisions.json` | Unresolved decision points | Agent, Human |
-| **Decision ledger** | `topics/<slug>/decision_ledger.jsonl` | Append-only decision history | Agent |
-| **Trajectory log** | `topics/<slug>/trajectory_log.jsonl` | Human-readable execution narrative | Human |
-| **Failure classification** | `topics/<slug>/failure_classification.json` | Classified failure types | Agent |
+| **Topic state** | `topics/<slug>/runtime/topic_state.json` | Machine-readable snapshot: resume stage, layer status, promotion gate, pointers | Agent |
+| **Human console** | `topics/<slug>/runtime/operator_console.md` | Immediate execution contract: do now / do not / escalate | Human, Agent |
+| **Runtime bundle** | `topics/<slug>/runtime/runtime_protocol.generated.md` | Progressive disclosure bundle: synopsis, contracts, triggers, guardrails | Agent |
+| **Next action** | `topics/<slug>/runtime/next_action_decision.json` | Authoritative decision: what to do next and why | Agent |
+| **Topic dashboard** | `topics/<slug>/runtime/topic_dashboard.md` | Primary human render of current state | Human |
+| **Action queue** | `topics/<slug>/runtime/action_queue_contract.generated.json` | Ordered list of executable actions | Agent |
+| **Unfinished work** | `topics/<slug>/runtime/unfinished_work.json` | Index of incomplete actions | Agent |
+| **Pending decisions** | `topics/<slug>/runtime/pending_decisions.json` | Unresolved decision points | Agent, Human |
+| **Decision ledger** | `topics/<slug>/runtime/decision_ledger.jsonl` | Append-only decision history | Agent |
+| **Trajectory log** | `topics/<slug>/runtime/trajectory_log.jsonl` | Human-readable execution narrative | Human |
+| **Failure classification** | `topics/<slug>/runtime/failure_classification.json` | Classified failure types | Agent |
 | **Topic index** | `topic_index.jsonl` | Registry of all topics | Agent |
 | **Active topics** | `active_topics.json` | Authoritative list of active topics | Agent |
 | **Current topic** | `current_topic.json` | Compatibility projection | Agent |
@@ -82,6 +85,7 @@ The runtime is the engine that materializes topic state, selects next actions, a
 
 | Contract | File | Purpose |
 |---|---|---|
+| Topic truth root | [TOPIC_TRUTH_ROOT_CONTRACT.md](../research/knowledge-hub/runtime/TOPIC_TRUTH_ROOT_CONTRACT.md) | Single-topic authoritative layout; Markdown-first human truth surfaces and compatibility projection rules |
 | Control note | [CONTROL_NOTE_CONTRACT.md](../research/knowledge-hub/runtime/CONTROL_NOTE_CONTRACT.md) | Human redirects, pauses, changes scope |
 | Innovation direction | [INNOVATION_DIRECTION_TEMPLATE.md](../research/knowledge-hub/runtime/INNOVATION_DIRECTION_TEMPLATE.md) | Operator changes novelty/scope/acceptance |
 | Declarative contracts | [DECLARATIVE_RUNTIME_CONTRACTS.md](../research/knowledge-hub/runtime/DECLARATIVE_RUNTIME_CONTRACTS.md) | Action queues authored explicitly, not inferred |

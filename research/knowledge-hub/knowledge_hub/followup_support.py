@@ -320,7 +320,7 @@ def write_followup_gap_writeback_rows(self, topic_slug: str, rows: list[dict[str
     }
 
 def reactivation_context(self, topic_slug: str) -> tuple[set[str], str, set[str]]:
-    source_rows = _read_jsonl(self.kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl")
+    source_rows = _read_jsonl(self._l0_root(topic_slug) / "source_index.jsonl")
     source_ids = {
         str(row.get("source_id") or "").strip()
         for row in source_rows
@@ -715,7 +715,9 @@ def spawn_followup_subtopics(
                 human_request=human_request,
             )
             source_id = ""
-            child_source_rows = _read_jsonl(self.kernel_root / "source-layer" / "topics" / child_topic_slug / "source_index.jsonl")
+            child_source_rows = _read_jsonl(
+                self._l0_root(child_topic_slug) / "source_index.jsonl"
+            )
             if child_source_rows:
                 source_id = str(child_source_rows[-1].get("source_id") or "")
             return_packet = {

@@ -103,7 +103,7 @@ def seed_runtime_topic(
         "last_materialized_stage": last_materialized_stage or resume_stage,
         "research_mode": research_mode,
         "pointers": {
-            "control_note_path": f"runtime/topics/{topic_slug}/control_note.md",
+            "control_note_path": f"topics/{topic_slug}/runtime/control_note.md",
         },
     }
     if latest_run_id is not None:
@@ -177,8 +177,8 @@ def seed_verify_topic(kernel_root: Path) -> None:
         resume_stage="L3",
         interaction_updates={
             "closed_loop": {
-                "selected_route_path": "runtime/topics/demo-verify/selected_validation_route.md",
-                "execution_task_path": "runtime/topics/demo-verify/execution_task.md",
+                "selected_route_path": "topics/demo-verify/runtime/selected_validation_route.md",
+                "execution_task_path": "topics/demo-verify/runtime/execution_task.md",
             }
         },
     )
@@ -323,32 +323,32 @@ def main() -> int:
     discussion_must_read = path_list(discussion_bundle["must_read_now"])
     discussion_deferred = path_list(discussion_bundle["may_defer_until_trigger"])
     check(discussion_bundle["runtime_mode"] == "discussion", "Expected demo-discussion to materialize discussion mode.")
-    check("runtime/topics/demo-discussion/operator_checkpoint.active.md" in discussion_must_read, "Expected discussion mode to foreground the active operator checkpoint.")
-    check("runtime/topics/demo-discussion/idea_packet.md" in discussion_must_read, "Expected discussion mode to foreground the idea packet.")
-    check("runtime/topics/demo-discussion/validation_review_bundle.active.md" not in discussion_must_read, "Discussion mode must defer validation review.")
-    check("runtime/topics/demo-discussion/validation_review_bundle.active.md" in discussion_deferred, "Discussion mode must defer validation review into the deferred set.")
-    check("runtime/topics/demo-discussion/promotion_readiness.md" in discussion_deferred, "Discussion mode must defer promotion readiness.")
+    check("topics/demo-discussion/runtime/operator_checkpoint.active.md" in discussion_must_read, "Expected discussion mode to foreground the active operator checkpoint.")
+    check("topics/demo-discussion/runtime/idea_packet.md" in discussion_must_read, "Expected discussion mode to foreground the idea packet.")
+    check("topics/demo-discussion/runtime/validation_review_bundle.active.md" not in discussion_must_read, "Discussion mode must defer validation review.")
+    check("topics/demo-discussion/runtime/validation_review_bundle.active.md" in discussion_deferred, "Discussion mode must defer validation review into the deferred set.")
+    check("topics/demo-discussion/runtime/promotion_readiness.md" in discussion_deferred, "Discussion mode must defer promotion readiness.")
 
     explore_bundle = runtime_bundle(service, "demo-explore")
     explore_must_read = path_list(explore_bundle["must_read_now"])
     explore_deferred = path_list(explore_bundle["may_defer_until_trigger"])
     check(explore_bundle["runtime_mode"] == "explore", "Expected demo-explore to materialize explore mode.")
     check(explore_bundle.get("active_submode") is None, "Expected demo-explore to stay in the base explore mode.")
-    check("runtime/topics/demo-explore/topic_dashboard.md" in explore_must_read, "Explore mode must foreground the topic dashboard.")
-    check("runtime/topics/demo-explore/research_question.contract.md" in explore_must_read, "Explore mode must foreground the research contract.")
-    check("runtime/topics/demo-explore/validation_review_bundle.active.md" not in explore_must_read, "Explore mode must defer validation review.")
-    check("runtime/topics/demo-explore/validation_review_bundle.active.md" in explore_deferred, "Explore mode must defer validation review.")
+    check("topics/demo-explore/runtime/topic_dashboard.md" in explore_must_read, "Explore mode must foreground the topic dashboard.")
+    check("topics/demo-explore/runtime/research_question.contract.md" in explore_must_read, "Explore mode must foreground the research contract.")
+    check("topics/demo-explore/runtime/validation_review_bundle.active.md" not in explore_must_read, "Explore mode must defer validation review.")
+    check("topics/demo-explore/runtime/validation_review_bundle.active.md" in explore_deferred, "Explore mode must defer validation review.")
 
     verify_bundle = runtime_bundle(service, "demo-verify")
     verify_must_read = path_list(verify_bundle["must_read_now"])
     verify_deferred = path_list(verify_bundle["may_defer_until_trigger"])
     verify_active_triggers = active_trigger_names(verify_bundle)
     check(verify_bundle["runtime_mode"] == "verify", "Expected demo-verify to materialize verify mode.")
-    check("runtime/topics/demo-verify/validation_review_bundle.active.md" in verify_must_read, "Verify mode must foreground validation review.")
-    check("runtime/topics/demo-verify/validation_contract.active.md" in verify_must_read, "Verify mode must foreground validation contract.")
-    check("runtime/topics/demo-verify/selected_validation_route.md" in verify_must_read, "Verify mode must foreground the selected validation route.")
-    check("runtime/topics/demo-verify/execution_task.md" in verify_must_read, "Verify mode must foreground the execution task surface.")
-    check("runtime/topics/demo-verify/promotion_readiness.md" in verify_deferred, "Verify mode must defer promotion readiness.")
+    check("topics/demo-verify/runtime/validation_review_bundle.active.md" in verify_must_read, "Verify mode must foreground validation review.")
+    check("topics/demo-verify/runtime/validation_contract.active.md" in verify_must_read, "Verify mode must foreground validation contract.")
+    check("topics/demo-verify/runtime/selected_validation_route.md" in verify_must_read, "Verify mode must foreground the selected validation route.")
+    check("topics/demo-verify/runtime/execution_task.md" in verify_must_read, "Verify mode must foreground the execution task surface.")
+    check("topics/demo-verify/runtime/promotion_readiness.md" in verify_deferred, "Verify mode must defer promotion readiness.")
     check("verification_route_selection" in verify_active_triggers, "Verify mode must keep verification_route_selection active.")
     check("formal_theory_upstream_scan" not in verify_active_triggers, "Verify mode must suppress unrelated formal_theory_upstream_scan triggers.")
 
@@ -357,10 +357,10 @@ def main() -> int:
     promote_deferred = path_list(promote_bundle["may_defer_until_trigger"])
     promote_active_triggers = active_trigger_names(promote_bundle)
     check(promote_bundle["runtime_mode"] == "promote", "Expected demo-promote to materialize promote mode.")
-    check("runtime/topics/demo-promote/promotion_readiness.md" in promote_must_read, "Promote mode must foreground promotion readiness.")
-    check("runtime/topics/demo-promote/promotion_gate.md" in promote_must_read, "Promote mode must foreground the promotion gate.")
-    check("runtime/topics/demo-promote/control_note.md" not in promote_must_read, "Promote mode must defer unrelated control-note history.")
-    check("runtime/topics/demo-promote/control_note.md" in promote_deferred, "Promote mode must defer unrelated control-note history.")
+    check("topics/demo-promote/runtime/promotion_readiness.md" in promote_must_read, "Promote mode must foreground promotion readiness.")
+    check("topics/demo-promote/runtime/promotion_gate.md" in promote_must_read, "Promote mode must foreground the promotion gate.")
+    check("topics/demo-promote/runtime/control_note.md" not in promote_must_read, "Promote mode must defer unrelated control-note history.")
+    check("topics/demo-promote/runtime/control_note.md" in promote_deferred, "Promote mode must defer unrelated control-note history.")
     check("promotion_intent" in promote_active_triggers, "Promote mode must keep promotion_intent active.")
     check("verification_route_selection" not in promote_active_triggers, "Promote mode must suppress verification-route triggers.")
     check("formal_theory_upstream_scan" not in promote_active_triggers, "Promote mode must suppress unrelated formal_theory_upstream_scan triggers.")
@@ -370,11 +370,11 @@ def main() -> int:
     literature_deferred = path_list(literature_bundle["may_defer_until_trigger"])
     check(literature_bundle["runtime_mode"] == "explore", "Expected demo-literature to remain inside explore mode.")
     check(literature_bundle.get("active_submode") == "literature", "Expected demo-literature to activate the literature submode.")
-    check("intake/topics/demo-literature/vault/wiki/source-intake.md" in literature_must_read, "Literature submode must foreground the L1 source-intake wiki page.")
+    check("topics/demo-literature/L1/vault/wiki/source-intake.md" in literature_must_read, "Literature submode must foreground the L1 source-intake wiki page.")
     check("canonical/staging/workspace_staging_manifest.json" in literature_must_read, "Literature submode must foreground the workspace staging manifest.")
     check("canonical/index.jsonl" in literature_must_read, "Literature submode must foreground the canonical index.")
-    check("runtime/topics/demo-literature/validation_review_bundle.active.md" not in literature_must_read, "Literature submode must defer validation review.")
-    check("runtime/topics/demo-literature/validation_review_bundle.active.md" in literature_deferred, "Literature submode must defer validation review into the deferred set.")
+    check("topics/demo-literature/runtime/validation_review_bundle.active.md" not in literature_must_read, "Literature submode must defer validation review.")
+    check("topics/demo-literature/runtime/validation_review_bundle.active.md" in literature_deferred, "Literature submode must defer validation review into the deferred set.")
 
     literature_execution = service._execute_auto_actions(
         topic_slug="demo-literature",
@@ -433,11 +433,11 @@ def main() -> int:
             "registered_arxiv_source_id": register_payload["source_id"],
         },
         "artifacts": {
-            "discussion_runtime_protocol": str(kernel_root / "runtime" / "topics" / "demo-discussion" / "runtime_protocol.generated.json"),
-            "explore_runtime_protocol": str(kernel_root / "runtime" / "topics" / "demo-explore" / "runtime_protocol.generated.json"),
-            "verify_runtime_protocol": str(kernel_root / "runtime" / "topics" / "demo-verify" / "runtime_protocol.generated.json"),
-            "promote_runtime_protocol": str(kernel_root / "runtime" / "topics" / "demo-promote" / "runtime_protocol.generated.json"),
-            "literature_runtime_protocol": str(kernel_root / "runtime" / "topics" / "demo-literature" / "runtime_protocol.generated.json"),
+            "discussion_runtime_protocol": str(kernel_root / "topics" / "demo-discussion" / "runtime" / "runtime_protocol.generated.json"),
+            "explore_runtime_protocol": str(kernel_root / "topics" / "demo-explore" / "runtime" / "runtime_protocol.generated.json"),
+            "verify_runtime_protocol": str(kernel_root / "topics" / "demo-verify" / "runtime" / "runtime_protocol.generated.json"),
+            "promote_runtime_protocol": str(kernel_root / "topics" / "demo-promote" / "runtime" / "runtime_protocol.generated.json"),
+            "literature_runtime_protocol": str(kernel_root / "topics" / "demo-literature" / "runtime" / "runtime_protocol.generated.json"),
             "workspace_staging_manifest": str(manifest_path),
             "canonical_index": str(kernel_root / "canonical" / "index.jsonl"),
         },

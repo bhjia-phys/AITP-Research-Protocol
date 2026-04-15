@@ -30,7 +30,7 @@ from knowledge_hub.literature_intake_support import compute_literature_intake_st
 class _LoopStubService(AITPService):
     def orchestrate(self, **kwargs):  # noqa: ANN003
         topic_slug = kwargs.get("topic_slug") or "demo-topic"
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self._runtime_root(topic_slug)
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -66,7 +66,7 @@ class _LoopStubService(AITPService):
         }
 
     def audit(self, *, topic_slug: str, phase: str = "entry", updated_by: str = "aitp-cli"):
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self._runtime_root(topic_slug)
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "conformance_state.json").write_text(
             json.dumps({"overall_status": "pass"}, ensure_ascii=True, indent=2) + "\n",
@@ -79,7 +79,7 @@ class _LoopStubService(AITPService):
         }
 
     def capability_audit(self, *, topic_slug: str, updated_by: str = "aitp-cli"):
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self._runtime_root(topic_slug)
         payload = {
             "topic_slug": topic_slug,
             "overall_status": "ready",
@@ -98,18 +98,19 @@ class _LoopStubService(AITPService):
         }
 
     def audit_operation_trust(self, *, topic_slug: str, run_id: str | None = None, updated_by: str = "aitp-cli"):
+        resolved_run_id = run_id or "2026-03-13-demo"
         return {
             "topic_slug": topic_slug,
-            "run_id": run_id or "2026-03-13-demo",
+            "run_id": resolved_run_id,
             "overall_status": "pass",
             "operations": [],
             "recommendations": [],
-            "trust_audit_path": str(self.kernel_root / "validation" / "topics" / topic_slug / "runs" / "2026-03-13-demo" / "trust_audit.json"),
-            "trust_report_path": str(self.kernel_root / "validation" / "topics" / topic_slug / "runs" / "2026-03-13-demo" / "trust_audit.md"),
+            "trust_audit_path": str(self._validation_run_root(topic_slug, resolved_run_id) / "trust_audit.json"),
+            "trust_report_path": str(self._validation_run_root(topic_slug, resolved_run_id) / "trust_audit.md"),
         }
 
     def _discover_skills(self, *, topic_slug: str, queries: list[str], updated_by: str, agent_target: str = "openclaw"):
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self._runtime_root(topic_slug)
         (runtime_root / "skill_discovery.json").write_text(
             json.dumps({"queries": queries}, ensure_ascii=True, indent=2) + "\n",
             encoding="utf-8",
@@ -130,7 +131,7 @@ class _TailSyncLoopStubService(_LoopStubService):
     def orchestrate(self, **kwargs):  # noqa: ANN003
         self.orchestrate_calls += 1
         topic_slug = kwargs.get("topic_slug") or "demo-topic"
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self._runtime_root(topic_slug)
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -194,7 +195,7 @@ class _IterativeVerifyLoopStubService(_LoopStubService):
         applied_max_auto_steps: int | None = None,
         auto_step_budget_reason: str | None = None,
     ) -> dict[str, str]:
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self._runtime_root(topic_slug)
         runtime_root.mkdir(parents=True, exist_ok=True)
         protocol_paths = self._runtime_protocol_paths(topic_slug)
         payload = {
@@ -256,7 +257,7 @@ class _IterativeVerifyLoopStubService(_LoopStubService):
 
     def _execute_auto_actions(self, *, topic_slug: str, updated_by: str, max_auto_steps: int = 1, default_skill_queries=None):  # noqa: ANN003
         self.auto_action_calls += 1
-        queue_path = self.kernel_root / "runtime" / "topics" / topic_slug / "action_queue.jsonl"
+        queue_path = self._runtime_root(topic_slug) / "action_queue.jsonl"
         queue_path.parent.mkdir(parents=True, exist_ok=True)
         queue_path.write_text("", encoding="utf-8")
         if self.auto_action_calls > 6:
@@ -283,7 +284,7 @@ class _LoopDetectionStubService(_LoopStubService):
     def orchestrate(self, **kwargs):  # noqa: ANN003
         payload = super().orchestrate(**kwargs)
         topic_slug = kwargs.get("topic_slug") or "demo-topic"
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self._runtime_root(topic_slug)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
                 {
@@ -334,7 +335,7 @@ class _LoopDetectionStubService(_LoopStubService):
                         "retry_source:formal_theory_audit",
                     ],
                     "source_paths": [
-                        "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-theorem/formal_theory_review.json"
+                        "topics/demo-topic/L4/runs/2026-03-13-demo/theory-packets/candidate-demo-theorem/formal_theory_review.json"
                     ],
                     "metric_values": {
                         "attempt_index": attempt_index,
@@ -359,9 +360,9 @@ class _SteeringLoopStubService(AITPService):
     def orchestrate(self, **kwargs):  # noqa: ANN003
         self.orchestrate_calls.append(dict(kwargs))
         topic_slug = kwargs.get("topic_slug") or "demo-topic"
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self._runtime_root(topic_slug)
         runtime_root.mkdir(parents=True, exist_ok=True)
-        feedback_root = self.kernel_root / "feedback" / "topics" / topic_slug / "runs" / "2026-03-13-demo"
+        feedback_root = self._feedback_run_root(topic_slug, "2026-03-13-demo")
         feedback_root.mkdir(parents=True, exist_ok=True)
         (feedback_root / "next_actions.md").write_text(
             "1. Continue the current bounded lane.\n",
@@ -374,7 +375,7 @@ class _SteeringLoopStubService(AITPService):
                     "latest_run_id": "2026-03-13-demo",
                     "resume_stage": "L3",
                     "pointers": {
-                        "next_actions_path": f"feedback/topics/{topic_slug}/runs/2026-03-13-demo/next_actions.md",
+                        "next_actions_path": f"topics/{topic_slug}/L3/runs/2026-03-13-demo/next_actions.md",
                     },
                 },
                 ensure_ascii=True,
@@ -399,7 +400,7 @@ class _SteeringLoopStubService(AITPService):
         }
 
     def audit(self, *, topic_slug: str, phase: str = "entry", updated_by: str = "aitp-cli"):
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self._runtime_root(topic_slug)
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "conformance_state.json").write_text(
             json.dumps({"overall_status": "pass"}, ensure_ascii=True, indent=2) + "\n",
@@ -412,7 +413,7 @@ class _SteeringLoopStubService(AITPService):
         }
 
     def capability_audit(self, *, topic_slug: str, updated_by: str = "aitp-cli"):
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self._runtime_root(topic_slug)
         payload = {
             "topic_slug": topic_slug,
             "overall_status": "ready",
@@ -439,7 +440,7 @@ class _FollowupStubService(AITPService):
     def orchestrate(self, **kwargs):  # noqa: ANN003
         topic_slug = kwargs["topic_slug"]
         self.orchestrated_topics.append(topic_slug)
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self._runtime_root(topic_slug)
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -454,7 +455,7 @@ class _FollowupStubService(AITPService):
             + "\n",
             encoding="utf-8",
         )
-        source_index_path = self.kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl"
+        source_index_path = self._l0_root(topic_slug) / "source_index.jsonl"
         source_index_path.parent.mkdir(parents=True, exist_ok=True)
         arxiv_ids = kwargs.get("arxiv_ids") or []
         source_index_path.write_text(
@@ -482,7 +483,7 @@ class _TopicCreationStubService(AITPService):
         if not kwargs.get("topic_slug"):
             topic = str(kwargs.get("topic") or "demo-topic")
             topic_slug = topic.lower().replace(" ", "-")
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self._runtime_root(topic_slug)
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -534,6 +535,27 @@ class AITPServiceTests(unittest.TestCase):
     def tearDown(self) -> None:
         self._tmpdir.cleanup()
 
+    def _runtime_root(self, topic_slug: str) -> Path:
+        return self.service._runtime_root(topic_slug)
+
+    def _l0_root(self, topic_slug: str) -> Path:
+        return self.service._l0_root(topic_slug)
+
+    def _l1_root(self, topic_slug: str) -> Path:
+        return self.service._l1_root(topic_slug)
+
+    def _l3_root(self, topic_slug: str) -> Path:
+        return self.service._l3_root(topic_slug)
+
+    def _l4_root(self, topic_slug: str) -> Path:
+        return self.service._l4_root(topic_slug)
+
+    def _feedback_run_root(self, topic_slug: str, run_id: str) -> Path:
+        return self.service._feedback_run_root(topic_slug, run_id)
+
+    def _validation_run_root(self, topic_slug: str, run_id: str) -> Path:
+        return self.service._validation_run_root(topic_slug, run_id)
+
     def _make_opencode_status(self, **overrides: object) -> dict[str, object]:
         payload: dict[str, object] = {
             "config_path": "C:/Users/demo/AppData/Roaming/opencode/opencode.json",
@@ -583,7 +605,7 @@ class AITPServiceTests(unittest.TestCase):
         return payload
 
     def _write_runtime_state(self, topic_slug: str = "demo-topic", run_id: str = "2026-03-13-demo") -> Path:
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self.service._runtime_root(topic_slug)
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -648,12 +670,12 @@ class AITPServiceTests(unittest.TestCase):
                         "promotion_status": "not_ready",
                     },
                     "truth_sources": {
-                        "topic_state_path": f"runtime/topics/{topic_slug}/topic_state.json",
-                        "research_question_contract_path": f"runtime/topics/{topic_slug}/research_question.contract.json",
-                        "next_action_surface_path": f"runtime/topics/{topic_slug}/action_queue.jsonl",
+                        "topic_state_path": f"topics/{topic_slug}/runtime/topic_state.json",
+                        "research_question_contract_path": f"topics/{topic_slug}/runtime/research_question.contract.json",
+                        "next_action_surface_path": f"topics/{topic_slug}/runtime/action_queue.jsonl",
                         "human_need_surface_path": None,
                         "dependency_registry_path": "runtime/active_topics.json",
-                        "promotion_readiness_path": f"runtime/topics/{topic_slug}/promotion_readiness.json",
+                        "promotion_readiness_path": f"topics/{topic_slug}/runtime/promotion_readiness.json",
                         "promotion_gate_path": None,
                     },
                     "next_action_summary": summary,
@@ -684,7 +706,7 @@ class AITPServiceTests(unittest.TestCase):
                     "candidate_id": f"candidate:{topic_slug}-projection",
                     "intended_l2_target": f"topic_skill_projection:{topic_slug}",
                     "entry_signals": [f"lane={lane}"],
-                    "required_first_reads": [f"runtime/topics/{topic_slug}/research_question.contract.md"],
+                    "required_first_reads": [f"topics/{topic_slug}/runtime/research_question.contract.md"],
                     "required_first_routes": required_first_routes or [],
                     "benchmark_first_rules": [],
                     "operator_checkpoint_rules": [],
@@ -714,7 +736,7 @@ class AITPServiceTests(unittest.TestCase):
         intended_l2_target: str = "concept:demo-promoted-concept",
         title: str = "Demo Promoted Concept",
     ) -> Path:
-        feedback_root = self.kernel_root / "feedback" / "topics" / topic_slug / "runs" / run_id
+        feedback_root = self.service._feedback_run_root(topic_slug, run_id)
         feedback_root.mkdir(parents=True, exist_ok=True)
         ledger_path = feedback_root / "candidate_ledger.jsonl"
         row = {
@@ -729,7 +751,7 @@ class AITPServiceTests(unittest.TestCase):
                     "id": "paper:demo-source",
                     "layer": "L0",
                     "object_type": "source",
-                    "path": "source-layer/topics/demo-topic/source_index.jsonl",
+                    "path": f"topics/{topic_slug}/L0/source_index.jsonl",
                     "title": "Demo Source",
                     "summary": "Public source entry for promotion testing.",
                 }
@@ -741,7 +763,7 @@ class AITPServiceTests(unittest.TestCase):
             "status": "ready_for_validation",
         }
         ledger_path.write_text(json.dumps(row, ensure_ascii=True) + "\n", encoding="utf-8")
-        source_root = self.kernel_root / "source-layer" / "topics" / topic_slug
+        source_root = self.service._l0_root(topic_slug)
         source_root.mkdir(parents=True, exist_ok=True)
         (source_root / "source_index.jsonl").write_text(
             json.dumps(
@@ -775,7 +797,7 @@ class AITPServiceTests(unittest.TestCase):
         run_id: str = "2026-03-13-demo",
         queue_rows: list[dict[str, object]] | None = None,
     ) -> Path:
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self.service._runtime_root(topic_slug)
         runtime_root.mkdir(parents=True, exist_ok=True)
         if queue_rows is None:
             queue_rows = [
@@ -797,8 +819,8 @@ class AITPServiceTests(unittest.TestCase):
                     "research_mode": "formal_theory",
                     "active_executor_kind": "codex",
                     "pointers": {
-                        "research_question_contract_path": f"runtime/topics/{topic_slug}/research_question.contract.json",
-                        "validation_contract_path": f"runtime/topics/{topic_slug}/validation_contract.active.json",
+                        "research_question_contract_path": f"topics/{topic_slug}/runtime/research_question.contract.json",
+                        "validation_contract_path": f"topics/{topic_slug}/runtime/validation_contract.active.json",
                     },
                 },
                 ensure_ascii=True,
@@ -842,12 +864,12 @@ class AITPServiceTests(unittest.TestCase):
             json.dumps(
                 {
                     "human_request": "Continue the active topic carefully.",
-                    "human_edit_surfaces": ["runtime/topics/demo-topic/operator_console.md"],
+                    "human_edit_surfaces": ["topics/demo-topic/runtime/operator_console.md"],
                     "delivery_contract": {"rule": "return_updated_runtime_state"},
-                    "capability_adaptation": {"protocol_path": "runtime/topics/demo-topic/capability_protocol.md"},
-                    "decision_surface": {"next_action_decision_path": f"runtime/topics/{topic_slug}/next_action_decision.json"},
+                    "capability_adaptation": {"protocol_path": "topics/demo-topic/runtime/capability_protocol.md"},
+                    "decision_surface": {"next_action_decision_path": f"topics/{topic_slug}/runtime/next_action_decision.json"},
                     "action_queue_surface": {
-                        "generated_contract_path": f"runtime/topics/{topic_slug}/action_queue_contract.generated.json"
+                        "generated_contract_path": f"topics/{topic_slug}/runtime/action_queue_contract.generated.json"
                     },
                 },
                 ensure_ascii=True,
@@ -1284,15 +1306,15 @@ class AITPServiceTests(unittest.TestCase):
                     "human_edit_surfaces": [
                         {
                             "surface": "runtime_queue_contract",
-                            "path": "runtime/topics/demo-topic/action_queue_contract.generated.md",
+                            "path": "topics/demo-topic/runtime/action_queue_contract.generated.md",
                             "role": "editable queue contract snapshot",
                         }
                     ],
                     "action_queue_surface": {
                         "queue_source": "heuristic",
                         "declared_contract_path": None,
-                        "generated_contract_path": "runtime/topics/demo-topic/action_queue_contract.generated.json",
-                        "generated_contract_note_path": "runtime/topics/demo-topic/action_queue_contract.generated.md",
+                        "generated_contract_path": "topics/demo-topic/runtime/action_queue_contract.generated.json",
+                        "generated_contract_note_path": "topics/demo-topic/runtime/action_queue_contract.generated.md",
                     },
                     "decision_surface": {
                         "decision_mode": "continue_unfinished",
@@ -1400,11 +1422,11 @@ class AITPServiceTests(unittest.TestCase):
         )
         self.assertEqual(
             payload["topic_synopsis"]["truth_sources"]["topic_state_path"],
-            "runtime/topics/demo-topic/topic_state.json",
+            "topics/demo-topic/runtime/topic_state.json",
         )
         self.assertEqual(
             payload["topic_synopsis"]["truth_sources"]["next_action_surface_path"],
-            "runtime/topics/demo-topic/action_queue_contract.generated.json",
+            "topics/demo-topic/runtime/action_queue_contract.generated.json",
         )
         self.assertEqual(payload["minimal_execution_brief"]["selected_action_id"], "action:demo-topic:01")
         self.assertEqual(
@@ -1414,15 +1436,18 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["minimal_execution_brief"]["queue_source"], "heuristic")
         self.assertEqual(payload["load_profile"], "light")
         self.assertEqual(len(payload["must_read_now"]), 3)
-        self.assertEqual(payload["must_read_now"][0]["path"], "runtime/topics/demo-topic/topic_dashboard.md")
-        self.assertEqual(payload["must_read_now"][1]["path"], "runtime/topics/demo-topic/research_question.contract.md")
-        self.assertEqual(payload["must_read_now"][2]["path"], "runtime/topics/demo-topic/graph_analysis.md")
-        self.assertEqual(payload["minimal_execution_brief"]["open_next"], "runtime/topics/demo-topic/topic_dashboard.md")
+        self.assertEqual(payload["must_read_now"][0]["path"], "topics/demo-topic/runtime/topic_dashboard.md")
+        self.assertEqual(payload["must_read_now"][1]["path"], "topics/demo-topic/runtime/research_question.contract.md")
+        self.assertEqual(payload["must_read_now"][2]["path"], "topics/demo-topic/runtime/graph_analysis.md")
+        self.assertEqual(payload["minimal_execution_brief"]["open_next"], "topics/demo-topic/runtime/topic_dashboard.md")
         self.assertFalse(any(row["path"].endswith("operator_console.md") for row in payload["must_read_now"]))
         self.assertFalse(any(row["path"] == "RESEARCH_EXECUTION_GUARDRAILS.md" for row in payload["must_read_now"]))
         self.assertTrue(
             any(
-                row["path"] == "runtime/topics/demo-topic/topic_synopsis.json"
+                (
+                    row["path"] == "topics/demo-topic/runtime/topic_synopsis.json"
+                    or row["path"] == "topics/demo-topic/runtime/topic_synopsis.json"
+                )
                 and row["trigger"] == "runtime_truth_audit"
                 for row in payload["may_defer_until_trigger"]
             )
@@ -1492,7 +1517,7 @@ class AITPServiceTests(unittest.TestCase):
             outcome="helpful",
             confidence=0.78,
             input_context={"method_surface": "derivation"},
-            evidence_refs=["validation/topics/demo-topic/runs/2026-03-13-demo/result_summary.md"],
+            evidence_refs=["topics/demo-topic/L4/runs/2026-03-13-demo/result_summary.md"],
             reuse_conditions=["multi-source derivation merge"],
             do_not_apply_when=["single-source closed derivation"],
             human_note="Keep this as a default bounded review step.",
@@ -1507,6 +1532,31 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(rows[0]["outcome"], "helpful")
         self.assertEqual(rows[0]["lane"], "code_method")
         self.assertIn("multi-source derivation merge", rows[0]["reuse_conditions"])
+
+    def test_record_strategy_memory_accepts_proof_engineering_type(self) -> None:
+        self._write_runtime_state()
+
+        payload = self.service.record_strategy_memory(
+            topic_slug="demo-topic",
+            run_id="2026-03-13-demo",
+            strategy_type="proof_engineering",
+            summary="Prefer codRestrict plus subtype composition before searching for a direct range map.",
+            outcome="helpful",
+            confidence=0.92,
+            lane="formal_theory",
+            evidence_refs=["topics/demo-topic/L4/runs/2026-03-13-demo/statement-compilation/proof_repair_plan.md"],
+            reuse_conditions=["range-facing map construction", "submodule-backed codomain"],
+            do_not_apply_when=["whole-theorem statement packaging is the blocker"],
+            updated_by="human",
+        )
+
+        path = Path(payload["strategy_memory_path"])
+        self.assertTrue(path.exists())
+        rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["strategy_type"], "proof_engineering")
+        self.assertEqual(rows[0]["lane"], "formal_theory")
+        self.assertIn("range-facing map construction", rows[0]["reuse_conditions"])
 
     def test_record_collaborator_memory_writes_runtime_ledger_and_note(self) -> None:
         payload = self.service.record_collaborator_memory(
@@ -1704,7 +1754,7 @@ class AITPServiceTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        sibling_runtime_root = self.kernel_root / "runtime" / "topics" / "operator-algebra-notes"
+        sibling_runtime_root = self._runtime_root("operator-algebra-notes")
         sibling_runtime_root.mkdir(parents=True, exist_ok=True)
         (sibling_runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -1931,6 +1981,205 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue((self.kernel_root / payload["mode_learning"]["path"]).exists())
         self.assertTrue((self.kernel_root / payload["mode_learning"]["note_path"]).exists())
         self.assertTrue(any(row["path"].endswith("mode_learning.active.md") for row in payload["must_read_now"]))
+
+    def test_topic_status_surfaces_mode_learning_for_proof_engineering_rows(self) -> None:
+        runtime_root = self._write_runtime_state()
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "2026-03-13-demo",
+                    "resume_stage": "L4",
+                    "last_materialized_stage": "L4",
+                    "research_mode": "formal_derivation",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Continue the bounded proof-repair lane.",
+                    "action_queue_surface": {
+                        "queue_source": "heuristic",
+                    },
+                    "decision_surface": {
+                        "decision_mode": "continue_unfinished",
+                        "decision_source": "heuristic",
+                        "decision_contract_status": "missing",
+                        "control_note_path": None,
+                        "selected_action_id": "action:demo-topic:proof-repair",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:proof-repair",
+                    "status": "pending",
+                    "action_type": "review_proof_repair_plan",
+                    "summary": "Review the codRestrict proof-repair plan before opening new theorem detours.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        self.service.record_strategy_memory(
+            topic_slug="demo-topic",
+            run_id="2026-03-13-demo",
+            strategy_type="proof_engineering",
+            summary="Prefer the codRestrict-plus-subtype route before searching for a direct range equivalence.",
+            outcome="helpful",
+            confidence=0.93,
+            lane="formal_theory",
+            reuse_conditions=["range-facing linear map construction"],
+            updated_by="aitp-cli",
+        )
+        self.service.record_strategy_memory(
+            topic_slug="demo-topic",
+            run_id="2026-03-13-demo",
+            strategy_type="failure_pattern",
+            summary="Do not treat CoeFun rewrite mismatches as missing algebra when the real blocker is structure coercion.",
+            outcome="harmful",
+            confidence=0.82,
+            lane="formal_theory",
+            do_not_apply_when=["the theorem is already phrased over plain LinearMap"],
+            updated_by="aitp-cli",
+        )
+
+        payload = self.service.topic_status(topic_slug="demo-topic")
+
+        self.assertEqual(payload["mode_learning"]["status"], "available")
+        self.assertEqual(payload["mode_learning"]["preferred_lane"], "formal_theory")
+        self.assertEqual(payload["mode_learning"]["helpful_pattern_count"], 1)
+        self.assertEqual(payload["mode_learning"]["harmful_pattern_count"], 1)
+        self.assertIn("codRestrict-plus-subtype route", payload["mode_learning"]["summary"])
+        self.assertTrue(any(row["path"].endswith("mode_learning.active.md") for row in payload["must_read_now"]))
+
+    def test_distill_proof_engineering_candidates_materializes_proof_fragment_candidate(self) -> None:
+        self._write_runtime_state(run_id="run-001")
+
+        self.service.record_strategy_memory(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            strategy_id="strat-jones-codrestrict-comp-subtype",
+            strategy_type="proof_engineering",
+            summary="Use codRestrict plus subtype composition before searching for a direct range equivalence.",
+            outcome="helpful",
+            lane="formal_theory",
+            confidence=0.93,
+            evidence_refs=[
+                "topics/demo-topic/L4/runs/run-001/statement-compilation/candidate-demo/proof_repair_plan.md"
+            ],
+            reuse_conditions=["range-facing map construction", "submodule-backed codomain"],
+            do_not_apply_when=["whole-theorem packaging is the real blocker"],
+            updated_by="aitp-cli",
+        )
+
+        payload = self.service.distill_proof_engineering_candidates(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            updated_by="aitp-cli",
+        )
+
+        self.assertEqual(payload["distilled_candidate_ids"], ["candidate:proof-fragment-jones-codrestrict-comp-subtype"])
+        ledger_rows = [
+            json.loads(line)
+            for line in (
+                self.kernel_root
+                / "feedback"
+                / "topics"
+                / "demo-topic"
+                / "runs"
+                / "run-001"
+                / "candidate_ledger.jsonl"
+            ).read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        candidate_row = next(row for row in ledger_rows if row["candidate_type"] == "proof_fragment")
+        self.assertEqual(candidate_row["candidate_id"], "candidate:proof-fragment-jones-codrestrict-comp-subtype")
+        self.assertEqual(candidate_row["distillation_source_strategy_id"], "strat-jones-codrestrict-comp-subtype")
+        self.assertEqual(candidate_row["distillation_strategy_type"], "proof_engineering")
+        self.assertEqual(candidate_row["proposed_validation_route"], "human-reviewed proof-fragment distillation promotion")
+        self.assertEqual(candidate_row["status"], "ready_for_validation")
+        self.assertEqual(candidate_row["intended_l2_targets"], ["proof_fragment:jones-codrestrict-comp-subtype"])
+        self.assertTrue(any(ref["path"].endswith("strategy_memory.jsonl") for ref in candidate_row["origin_refs"]))
+
+    def test_distill_proof_engineering_candidates_skips_ineligible_rows(self) -> None:
+        self._write_runtime_state(run_id="run-001")
+
+        self.service.record_strategy_memory(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            strategy_id="strat-low-confidence",
+            strategy_type="proof_engineering",
+            summary="A low-confidence proof pattern should not distill.",
+            outcome="helpful",
+            lane="formal_theory",
+            confidence=0.65,
+            evidence_refs=[
+                "topics/demo-topic/L4/runs/run-001/statement-compilation/candidate-demo/proof_repair_plan.md"
+            ],
+            updated_by="aitp-cli",
+        )
+        self.service.record_strategy_memory(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            strategy_id="strat-no-evidence",
+            strategy_type="api_workaround",
+            summary="A missing-evidence workaround should not distill.",
+            outcome="helpful",
+            lane="formal_theory",
+            confidence=0.91,
+            updated_by="aitp-cli",
+        )
+        self.service.record_strategy_memory(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            strategy_id="strat-harmful",
+            strategy_type="failure_pattern",
+            summary="A harmful failure pattern should remain runtime-only for now.",
+            outcome="harmful",
+            lane="formal_theory",
+            confidence=0.95,
+            evidence_refs=[
+                "topics/demo-topic/L4/runs/run-001/statement-compilation/candidate-demo/proof_repair_plan.md"
+            ],
+            updated_by="aitp-cli",
+        )
+
+        payload = self.service.distill_proof_engineering_candidates(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            updated_by="aitp-cli",
+        )
+
+        self.assertEqual(payload["distilled_candidate_ids"], [])
+        ledger_path = (
+            self.kernel_root
+            / "feedback"
+            / "topics"
+            / "demo-topic"
+            / "runs"
+            / "run-001"
+            / "candidate_ledger.jsonl"
+        )
+        if ledger_path.exists():
+            ledger_rows = [json.loads(line) for line in ledger_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+            self.assertFalse(any(row.get("candidate_type") == "proof_fragment" for row in ledger_rows))
 
     def test_topic_status_surfaces_research_judgment_signals(self) -> None:
         runtime_root = self._write_runtime_state()
@@ -2261,7 +2510,7 @@ class AITPServiceTests(unittest.TestCase):
             run_id="run-001",
             operation="TFIM exact-diagonalization benchmark workflow",
             baseline_status="passed",
-            artifact_paths=["validation/topics/demo-topic/runs/run-001/results/benchmark.json"],
+            artifact_paths=["topics/demo-topic/L4/runs/run-001/results/benchmark.json"],
         )
         self.service.audit_operation_trust(
             topic_slug="demo-topic",
@@ -2275,7 +2524,7 @@ class AITPServiceTests(unittest.TestCase):
             outcome="helpful",
             lane="code_method",
             confidence=0.82,
-            evidence_refs=["validation/topics/demo-topic/runs/run-001/trust_audit.json"],
+            evidence_refs=["topics/demo-topic/L4/runs/run-001/trust_audit.json"],
         )
 
         payload = self.service.project_topic_skill(
@@ -2291,7 +2540,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("benchmark-first", projection["summary"])
         candidate_rows = [
             json.loads(line)
-            for line in (self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001" / "candidate_ledger.jsonl").read_text(encoding="utf-8").splitlines()
+            for line in (self._feedback_run_root("demo-topic", "run-001") / "candidate_ledger.jsonl").read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
         projection_row = next(row for row in candidate_rows if row["candidate_type"] == "topic_skill_projection")
@@ -2341,7 +2590,7 @@ class AITPServiceTests(unittest.TestCase):
         payload = self.service.project_topic_skill(topic_slug="demo-topic")
 
         self.assertEqual(payload["topic_skill_projection"]["status"], "blocked")
-        ledger_path = self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001" / "candidate_ledger.jsonl"
+        ledger_path = self._feedback_run_root("demo-topic", "run-001") / "candidate_ledger.jsonl"
         if ledger_path.exists():
             rows = [json.loads(line) for line in ledger_path.read_text(encoding="utf-8").splitlines() if line.strip()]
             self.assertFalse(any(row.get("candidate_type") == "topic_skill_projection" for row in rows))
@@ -2414,7 +2663,7 @@ class AITPServiceTests(unittest.TestCase):
             lane="formal_theory",
             confidence=0.81,
             evidence_refs=[
-                "validation/topics/demo-topic/runs/run-001/theory-packets/candidate-demo-candidate/formal_theory_review.json"
+                "topics/demo-topic/L4/runs/run-001/theory-packets/candidate-demo-candidate/formal_theory_review.json"
             ],
         )
 
@@ -2426,7 +2675,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue(any("formal_theory_review.json" in row for row in projection["required_first_reads"]))
         candidate_rows = [
             json.loads(line)
-            for line in (self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001" / "candidate_ledger.jsonl").read_text(encoding="utf-8").splitlines()
+            for line in (self._feedback_run_root("demo-topic", "run-001") / "candidate_ledger.jsonl").read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
         projection_row = next(row for row in candidate_rows if row["candidate_type"] == "topic_skill_projection")
@@ -2493,7 +2742,7 @@ class AITPServiceTests(unittest.TestCase):
 
         self.assertEqual(payload["topic_skill_projection"]["status"], "blocked")
         self.assertIn("formal_theory_review", payload["topic_skill_projection"]["status_reason"])
-        ledger_path = self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001" / "candidate_ledger.jsonl"
+        ledger_path = self._feedback_run_root("demo-topic", "run-001") / "candidate_ledger.jsonl"
         if ledger_path.exists():
             rows = [json.loads(line) for line in ledger_path.read_text(encoding="utf-8").splitlines() if line.strip()]
             self.assertFalse(any(row.get("candidate_type") == "topic_skill_projection" for row in rows))
@@ -2608,7 +2857,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("return to L0", gap_text)
 
     def test_ensure_topic_shell_surfaces_uses_analytical_validation_for_theory_synthesis(self) -> None:
-        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root = self._runtime_root("demo-topic")
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -2645,7 +2894,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["validation_contract"]["validation_mode"], "analytical")
 
     def test_ensure_topic_shell_surfaces_materializes_idea_packet_for_vague_topic(self) -> None:
-        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root = self.service._runtime_root("demo-topic")
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "interaction_state.json").write_text(
             json.dumps(
@@ -2677,12 +2926,54 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(idea_packet["status"], "needs_clarification")
         self.assertEqual(operator_checkpoint["status"], "requested")
         self.assertEqual(operator_checkpoint["checkpoint_kind"], "scope_ambiguity")
+        self.assertEqual(operator_checkpoint["default_option_index"], 0)
+        self.assertEqual(operator_checkpoint["options"][0]["key"], "clarify_now")
+        self.assertEqual(operator_checkpoint["options"][1]["key"], "continue_with_deferred_fields")
+        self.assertEqual(operator_checkpoint["options"][2]["key"], "branch_new_topic")
         self.assertIn("novelty_target", idea_packet["missing_fields"])
         self.assertTrue(idea_packet["clarification_questions"])
         dashboard_text = Path(payload["topic_dashboard_path"]).read_text(encoding="utf-8")
+        checkpoint_note_text = Path(payload["operator_checkpoint_note_path"]).read_text(encoding="utf-8")
         self.assertIn("needs_clarification", dashboard_text)
         self.assertIn("Idea packet summary", dashboard_text)
         self.assertIn("scope_ambiguity", dashboard_text)
+        self.assertIn("## Options", checkpoint_note_text)
+        self.assertIn("clarify_now", checkpoint_note_text)
+
+    def test_topic_interaction_surfaces_primary_operator_checkpoint(self) -> None:
+        runtime_root = self.service._runtime_root("demo-topic")
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Topological phases from modular data",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        packet = self.service.topic_interaction(topic_slug="demo-topic", updated_by="aitp-cli")
+
+        self.assertTrue(packet["requires_human_input_now"])
+        self.assertEqual(packet["primary_interaction"]["kind"], "operator_checkpoint")
+        self.assertEqual(packet["primary_interaction"]["checkpoint_kind"], "scope_ambiguity")
+        self.assertEqual(packet["primary_interaction"]["options"][0]["key"], "clarify_now")
+        self.assertEqual(packet["primary_interaction"]["default_option_index"], 0)
+        self.assertEqual(packet["primary_interaction"]["resolve_with"], "resolve-checkpoint")
+        self.assertEqual(packet["response_tools"]["resolve_checkpoint"], "resolve-checkpoint")
+
+    def test_platform_skill_templates_expose_interaction_commands(self) -> None:
+        codex_skill = self.service._codex_skill_template()
+        claude_skill = self.service._claude_code_skill_template()
+        opencode_skill = self.service._opencode_skill_template()
+
+        for text in (codex_skill, claude_skill, opencode_skill):
+            self.assertIn("aitp interaction --topic-slug <topic_slug>", text)
+            self.assertIn("aitp resolve-decision", text)
+            self.assertIn("aitp resolve-checkpoint", text)
 
     def test_ensure_topic_shell_surfaces_persists_source_backed_l1_intake(self) -> None:
         shutil.copytree(
@@ -2738,7 +3029,7 @@ class AITPServiceTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-        source_root = self.kernel_root / "source-layer" / "topics" / "demo-topic"
+        source_root = self._l0_root("demo-topic")
         source_root.mkdir(parents=True, exist_ok=True)
         thesis_path = self.root / "inputs" / "demo-source.tex"
         thesis_path.parent.mkdir(parents=True, exist_ok=True)
@@ -2851,7 +3142,7 @@ class AITPServiceTests(unittest.TestCase):
         (runtime_root / "control_note.md").write_text("# Control note\n", encoding="utf-8")
         (runtime_root / "operator_console.md").write_text("# Operator console\n", encoding="utf-8")
 
-        source_root = self.kernel_root / "source-layer" / "topics" / "demo-topic"
+        source_root = self._l0_root("demo-topic")
         source_root.mkdir(parents=True, exist_ok=True)
         thesis_path = self.root / "inputs" / "vault-source.tex"
         thesis_path.parent.mkdir(parents=True, exist_ok=True)
@@ -2970,7 +3261,7 @@ class AITPServiceTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-        source_root = self.kernel_root / "source-layer" / "topics" / "demo-topic"
+        source_root = self._l0_root("demo-topic")
         source_root.mkdir(parents=True, exist_ok=True)
         source_slug = "paper-topological-order-and-anyon-condensation-2401-00001"
         source_dir = source_root / "sources" / source_slug
@@ -2982,7 +3273,7 @@ class AITPServiceTests(unittest.TestCase):
                     "graph_version": 1,
                     "topic_slug": "demo-topic",
                     "source_id": "paper:topological-order-and-anyon-condensation-2401-00001",
-                    "source_json_path": f"source-layer/topics/demo-topic/sources/{source_slug}/source.json",
+                    "source_json_path": f"topics/demo-topic/L0/sources/{source_slug}/source.json",
                     "generated_at": "2026-04-13T00:00:00+08:00",
                     "generated_by": "test",
                     "provider": "override_json",
@@ -2993,7 +3284,7 @@ class AITPServiceTests(unittest.TestCase):
                             "node_type": "concept",
                             "confidence_tier": "EXTRACTED",
                             "confidence_score": 0.95,
-                            "evidence_refs": [f"source-layer/topics/demo-topic/sources/{source_slug}/source.json"],
+                            "evidence_refs": [f"topics/demo-topic/L0/sources/{source_slug}/source.json"],
                             "notes": "",
                         }
                     ],
@@ -3022,8 +3313,8 @@ class AITPServiceTests(unittest.TestCase):
                     "title": "Topological Order and Anyon Condensation",
                     "summary": "Topological order supports the bounded condensation route.",
                     "locator": {
-                        "local_path": f"source-layer/topics/demo-topic/sources/{source_slug}/source.json",
-                        "concept_graph_path": f"source-layer/topics/demo-topic/sources/{source_slug}/concept_graph.json",
+                        "local_path": f"topics/demo-topic/L0/sources/{source_slug}/source.json",
+                        "concept_graph_path": f"topics/demo-topic/L0/sources/{source_slug}/concept_graph.json",
                     },
                     "provenance": {
                         "abs_url": "https://example.org/topological-order",
@@ -3067,7 +3358,7 @@ class AITPServiceTests(unittest.TestCase):
         )
         (runtime_root / "runtime_protocol.generated.md").write_text("# Runtime protocol\n", encoding="utf-8")
 
-        source_root = self.kernel_root / "source-layer" / "topics" / "demo-topic"
+        source_root = self._l0_root("demo-topic")
         source_root.mkdir(parents=True, exist_ok=True)
         (source_root / "source_index.jsonl").write_text(
             json.dumps(
@@ -3166,7 +3457,7 @@ class AITPServiceTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-        source_root = self.kernel_root / "source-layer" / "topics" / "demo-topic"
+        source_root = self._l0_root("demo-topic")
         source_root.mkdir(parents=True, exist_ok=True)
         source_rows = [
             {
@@ -3317,7 +3608,7 @@ class AITPServiceTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-        demo_source_root = self.kernel_root / "source-layer" / "topics" / "demo-topic"
+        demo_source_root = self._l0_root("demo-topic")
         demo_source_root.mkdir(parents=True, exist_ok=True)
         (demo_source_root / "source_index.jsonl").write_text(
             "\n".join(
@@ -3341,7 +3632,7 @@ class AITPServiceTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        neighbor_source_root = self.kernel_root / "source-layer" / "topics" / "neighbor-topic"
+        neighbor_source_root = self._l0_root("neighbor-topic")
         neighbor_source_root.mkdir(parents=True, exist_ok=True)
         (neighbor_source_root / "source_index.jsonl").write_text(
             "\n".join(
@@ -3383,7 +3674,7 @@ class AITPServiceTests(unittest.TestCase):
             status_payload["active_research_contract"]["l1_source_intake"]["method_specificity_rows"][0]["specificity_tier"],
             "low",
         )
-        dashboard_text = (self.kernel_root / "runtime" / "topics" / "demo-topic" / "topic_dashboard.md").read_text(encoding="utf-8")
+        dashboard_text = (self._runtime_root("demo-topic") / "topic_dashboard.md").read_text(encoding="utf-8")
         self.assertIn("## Source intelligence", dashboard_text)
         self.assertIn("## Source fidelity", dashboard_text)
         protocol_text = Path(status_payload["runtime_protocol_note_path"]).read_text(encoding="utf-8")
@@ -3439,7 +3730,7 @@ class AITPServiceTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-        source_root = self.kernel_root / "source-layer" / "topics" / "demo-topic"
+        source_root = self._l0_root("demo-topic")
         source_root.mkdir(parents=True, exist_ok=True)
         source_slug = "paper-anyon-condensation-2401-00005"
         source_dir = source_root / "sources" / source_slug
@@ -3454,7 +3745,7 @@ class AITPServiceTests(unittest.TestCase):
                     "graph_version": 1,
                     "topic_slug": "demo-topic",
                     "source_id": "paper:anyon-condensation-2401-00005",
-                    "source_json_path": f"source-layer/topics/demo-topic/sources/{source_slug}/source.json",
+                    "source_json_path": f"topics/demo-topic/L0/sources/{source_slug}/source.json",
                     "generated_at": "2026-04-13T00:00:00+08:00",
                     "generated_by": "test",
                     "provider": "override_json",
@@ -3490,7 +3781,7 @@ class AITPServiceTests(unittest.TestCase):
                             "title": "Anyon condensation paper",
                             "summary": "Topological order summary.",
                             "locator": {
-                                "concept_graph_path": f"source-layer/topics/demo-topic/sources/{source_slug}/concept_graph.json",
+                                "concept_graph_path": f"topics/demo-topic/L0/sources/{source_slug}/concept_graph.json",
                             },
                             "provenance": {
                                 "abs_url": "https://example.org/anyon-condensation",
@@ -3528,7 +3819,7 @@ class AITPServiceTests(unittest.TestCase):
                     "graph_version": 1,
                     "topic_slug": "demo-topic",
                     "source_id": "note:operator-algebra",
-                    "source_json_path": f"source-layer/topics/demo-topic/sources/{note_source_slug}/source.json",
+                    "source_json_path": f"topics/demo-topic/L0/sources/{note_source_slug}/source.json",
                     "generated_at": "2026-04-14T00:00:00+08:00",
                     "generated_by": "test",
                     "provider": "override_json",
@@ -3562,7 +3853,7 @@ class AITPServiceTests(unittest.TestCase):
                     "graph_version": 1,
                     "topic_slug": "demo-topic",
                     "source_id": "paper:anyon-condensation-2401-00005",
-                    "source_json_path": f"source-layer/topics/demo-topic/sources/{source_slug}/source.json",
+                    "source_json_path": f"topics/demo-topic/L0/sources/{source_slug}/source.json",
                     "generated_at": "2026-04-14T00:00:00+08:00",
                     "generated_by": "test",
                     "provider": "override_json",
@@ -3596,7 +3887,7 @@ class AITPServiceTests(unittest.TestCase):
                     "title": "Anyon condensation paper",
                     "summary": "Anyon condensation summary.",
                     "locator": {
-                        "concept_graph_path": f"source-layer/topics/demo-topic/sources/{source_slug}/concept_graph.json",
+                        "concept_graph_path": f"topics/demo-topic/L0/sources/{source_slug}/concept_graph.json",
                     },
                     "provenance": {
                         "abs_url": "https://example.org/anyon-condensation",
@@ -3611,7 +3902,7 @@ class AITPServiceTests(unittest.TestCase):
                     "title": "Operator algebra note",
                     "summary": "Anyon condensation operator note.",
                     "locator": {
-                        "concept_graph_path": f"source-layer/topics/demo-topic/sources/{note_source_slug}/concept_graph.json",
+                        "concept_graph_path": f"topics/demo-topic/L0/sources/{note_source_slug}/concept_graph.json",
                     },
                     "provenance": {
                         "deepxiv_tldr": "Anyon condensation appears in the operator-algebra route.",
@@ -3628,7 +3919,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(second_status["graph_analysis"]["summary"]["history_length"], 2)
         self.assertEqual(second_status["graph_analysis"]["diff"]["added"]["node_count"], 2)
         self.assertEqual(second_status["graph_analysis"]["diff"]["removed"]["node_count"], 1)
-        dashboard_text = (self.kernel_root / "runtime" / "topics" / "demo-topic" / "topic_dashboard.md").read_text(encoding="utf-8")
+        dashboard_text = (self._runtime_root("demo-topic") / "topic_dashboard.md").read_text(encoding="utf-8")
         self.assertIn("## Graph analysis", dashboard_text)
         protocol_text = Path(second_status["runtime_protocol_note_path"]).read_text(encoding="utf-8")
         self.assertIn("## Graph analysis", protocol_text)
@@ -3700,7 +3991,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("limiting cases", analytical_payload["validation_contract"]["verification_focus"])
 
     def test_runtime_bundle_and_session_start_require_idea_packet_when_clarification_needed(self) -> None:
-        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root = self._runtime_root("demo-topic")
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "interaction_state.json").write_text(
             json.dumps(
@@ -3772,7 +4063,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("## Autonomous continuation", session_note)
 
     def test_session_start_injects_theory_context_once_per_session_ttl_window(self) -> None:
-        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root = self._runtime_root("demo-topic")
         runtime_root.mkdir(parents=True, exist_ok=True)
         fragment_path = runtime_root / "context_fragments" / "theory-context-notation.md"
         fragment_path.parent.mkdir(parents=True, exist_ok=True)
@@ -3806,18 +4097,18 @@ class AITPServiceTests(unittest.TestCase):
                     "theory_context_injection": {
                         "status": "active",
                         "session_ttl_seconds": 3600,
-                        "session_state_path": "runtime/topics/demo-topic/theory_context_injection.session.json",
-                        "active_target_paths": ["runtime/topics/demo-topic/statement_compilation.active.md"],
+                        "session_state_path": "topics/demo-topic/runtime/theory_context_injection.session.json",
+                        "active_target_paths": ["topics/demo-topic/runtime/statement_compilation.active.md"],
                         "fragments": [
                             {
                                 "fragment_id": "theory-context:notation:demo-topic",
                                 "kind": "notation_bindings",
                                 "summary": "Notation bindings for the bounded theorem packet: H = Hamiltonian.",
-                                "path": "runtime/topics/demo-topic/context_fragments/theory-context-notation.md",
+                                "path": "topics/demo-topic/runtime/context_fragments/theory-context-notation.md",
                                 "source_paths": [
-                                    "validation/topics/demo-topic/runs/run-001/theory-packets/candidate-demo/notation_table.json"
+                                    "topics/demo-topic/L4/runs/run-001/theory-packets/candidate-demo/notation_table.json"
                                 ],
-                                "target_paths": ["runtime/topics/demo-topic/statement_compilation.active.md"],
+                                "target_paths": ["topics/demo-topic/runtime/statement_compilation.active.md"],
                             }
                         ],
                     },
@@ -3860,7 +4151,7 @@ class AITPServiceTests(unittest.TestCase):
             updated_by="aitp-session-start",
         )
         first_paths = [row["path"] for row in first["must_read_now"]]
-        self.assertIn("runtime/topics/demo-topic/context_fragments/theory-context-notation.md", first_paths)
+        self.assertIn("topics/demo-topic/runtime/context_fragments/theory-context-notation.md", first_paths)
         self.assertEqual(first["theory_context_injection"]["fragments"][0]["delivery_status"], "inject_now")
         self.assertTrue(session_state_path.exists())
 
@@ -3871,7 +4162,7 @@ class AITPServiceTests(unittest.TestCase):
             updated_by="aitp-session-start",
         )
         second_paths = [row["path"] for row in second["must_read_now"]]
-        self.assertNotIn("runtime/topics/demo-topic/context_fragments/theory-context-notation.md", second_paths)
+        self.assertNotIn("topics/demo-topic/runtime/context_fragments/theory-context-notation.md", second_paths)
         self.assertEqual(
             second["theory_context_injection"]["fragments"][0]["delivery_status"],
             "suppressed_recently_injected",
@@ -3888,11 +4179,11 @@ class AITPServiceTests(unittest.TestCase):
             updated_by="aitp-session-start",
         )
         third_paths = [row["path"] for row in third["must_read_now"]]
-        self.assertIn("runtime/topics/demo-topic/context_fragments/theory-context-notation.md", third_paths)
+        self.assertIn("topics/demo-topic/runtime/context_fragments/theory-context-notation.md", third_paths)
         self.assertEqual(third["theory_context_injection"]["fragments"][0]["delivery_status"], "inject_now")
 
     def test_answer_operator_checkpoint_updates_ledger_and_operator_console(self) -> None:
-        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root = self.service._runtime_root("demo-topic")
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "interaction_state.json").write_text(
             json.dumps(
@@ -3934,9 +4225,59 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("## Active operator checkpoint", console_text)
         self.assertIn("`answered`", console_text)
 
+    def test_resolve_operator_checkpoint_records_selected_option_metadata(self) -> None:
+        runtime_root = self.service._runtime_root("demo-topic")
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Topological phases from modular data",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "operator_console.md").write_text("# Console\n", encoding="utf-8")
+
+        self.service.ensure_topic_shell_surfaces(
+            topic_slug="demo-topic",
+            updated_by="aitp-cli",
+        )
+
+        resolved = self.service.resolve_operator_checkpoint(
+            topic_slug="demo-topic",
+            option_index=0,
+            comment="Focus the topic on modular-invariant diagnostics first.",
+            resolved_by="human",
+        )
+
+        self.assertEqual(resolved["operator_checkpoint"]["status"], "answered")
+        self.assertEqual(
+            resolved["operator_checkpoint"]["resolution"]["chosen_option_index"], 0
+        )
+        self.assertEqual(
+            resolved["operator_checkpoint"]["resolution"]["chosen_option_key"],
+            "clarify_now",
+        )
+        self.assertEqual(
+            resolved["operator_checkpoint"]["resolution"]["human_comment"],
+            "Focus the topic on modular-invariant diagnostics first.",
+        )
+        note_text = (
+            runtime_root / "operator_checkpoint.active.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("## Resolution", note_text)
+        self.assertIn("clarify_now", note_text)
+        self.assertIn(
+            "Focus the topic on modular-invariant diagnostics first.",
+            note_text,
+        )
+
     def test_answer_operator_checkpoint_materializes_redirect_steering(self) -> None:
         runtime_root = self._write_runtime_state()
-        feedback_root = self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "2026-03-13-demo"
+        feedback_root = self.service._feedback_run_root("demo-topic", "2026-03-13-demo")
         feedback_root.mkdir(parents=True, exist_ok=True)
         next_actions_path = feedback_root / "next_actions.md"
         next_actions_path.write_text("1. Continue the current bounded lane.\n", encoding="utf-8")
@@ -3947,7 +4288,7 @@ class AITPServiceTests(unittest.TestCase):
                     "latest_run_id": "2026-03-13-demo",
                     "resume_stage": "L3",
                     "pointers": {
-                        "next_actions_path": "feedback/topics/demo-topic/runs/2026-03-13-demo/next_actions.md",
+                        "next_actions_path": "topics/demo-topic/L3/runs/2026-03-13-demo/next_actions.md",
                     },
                 },
                 ensure_ascii=True,
@@ -4019,7 +4360,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(contract_payload["actions"][0]["action_id"], "action:demo-topic:steering:operator-redirect")
         self.assertEqual(len(service.orchestrate_calls), 1)
         self.assertTrue(
-            str(service.orchestrate_calls[0].get("control_note") or "").endswith("runtime/topics/demo-topic/control_note.md")
+            str(service.orchestrate_calls[0].get("control_note") or "").endswith("topics/demo-topic/runtime/control_note.md")
         )
         self.assertEqual(answered["topic_state_explainability"]["active_human_need"]["status"], "none")
 
@@ -4049,7 +4390,7 @@ class AITPServiceTests(unittest.TestCase):
                     "action_id": "action:demo-topic:dispatch",
                     "status": "pending",
                     "action_type": "await_execution_result",
-                    "summary": "Run `runtime/topics/demo-topic/execution_task.json` in the external `codex_cli` lane and write the returned result artifact.",
+                    "summary": "Run `topics/demo-topic/runtime/execution_task.json` in the external `codex_cli` lane and write the returned result artifact.",
                     "auto_runnable": False,
                     "queue_source": "runtime_appended",
                 },
@@ -4063,7 +4404,7 @@ class AITPServiceTests(unittest.TestCase):
             json.dumps(
                 {
                     "task_id": "demo-task",
-                    "validation_note": "runtime/topics/demo-topic/validation_contract.active.md",
+                    "validation_note": "topics/demo-topic/runtime/validation_contract.active.md",
                     "candidate_id": "candidate:demo-candidate",
                     "surface": "numerical",
                     "status": "planned",
@@ -4092,6 +4433,10 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("confirm the execution lane", payload["operator_checkpoint"]["question"].lower())
         self.assertIn("chosen approach", payload["operator_checkpoint"]["required_response"].lower())
         self.assertNotIn("bounded route", payload["operator_checkpoint"]["required_response"].lower())
+        self.assertEqual(payload["operator_checkpoint"]["default_option_index"], 0)
+        self.assertEqual(payload["operator_checkpoint"]["options"][0]["key"], "stay_local")
+        self.assertEqual(payload["operator_checkpoint"]["options"][1]["key"], "use_external_runtime")
+        self.assertEqual(payload["operator_checkpoint"]["options"][2]["key"], "narrow_before_dispatch")
 
     def test_execute_auto_actions_stops_when_operator_checkpoint_is_requested(self) -> None:
         runtime_root = self._write_runtime_state()
@@ -4121,7 +4466,7 @@ class AITPServiceTests(unittest.TestCase):
                     "run_id": "2026-03-13-demo",
                     "checkpoint_kind": "execution_lane_confirmation",
                     "status": "requested",
-                    "note_path": "runtime/topics/demo-topic/operator_checkpoint.active.md",
+                    "note_path": "topics/demo-topic/runtime/operator_checkpoint.active.md",
                 },
                 ensure_ascii=True,
                 indent=2,
@@ -4302,7 +4647,7 @@ class AITPServiceTests(unittest.TestCase):
             run_id="2026-03-13-demo",
             operation="Small-system validation backend",
             baseline_status="passed",
-            artifact_paths=["validation/topics/demo-topic/runs/2026-03-13-demo/results/benchmark.json"],
+            artifact_paths=["topics/demo-topic/L4/runs/2026-03-13-demo/results/benchmark.json"],
         )
         passed = self.service.audit_operation_trust(
             topic_slug="demo-topic",
@@ -4582,7 +4927,7 @@ class AITPServiceTests(unittest.TestCase):
                     "status": "requested",
                     "checkpoint_kind": "scope_ambiguity",
                     "active": True,
-                    "note_path": "runtime/topics/demo-topic/operator_checkpoint.active.md",
+                    "note_path": "topics/demo-topic/runtime/operator_checkpoint.active.md",
                 },
                 ensure_ascii=True,
                 indent=2,
@@ -4597,7 +4942,7 @@ class AITPServiceTests(unittest.TestCase):
                     "status": "pending_human_approval",
                     "candidate_id": "candidate:demo-candidate",
                     "backend_id": "backend:theoretical-physics-knowledge-network",
-                    "note_path": "runtime/topics/demo-topic/promotion_gate.md",
+                    "note_path": "topics/demo-topic/runtime/promotion_gate.md",
                 },
                 ensure_ascii=True,
                 indent=2,
@@ -4740,7 +5085,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("traversal_paths", result_payload)
         self.assertEqual(result_payload["retrieval_summary"]["max_depth_reached"], 2)
         projection_log = (
-            self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001" / "l2_consultation_log.jsonl"
+            self._feedback_run_root("demo-topic", "run-001") / "l2_consultation_log.jsonl"
         )
         self.assertTrue(projection_log.exists())
 
@@ -4804,9 +5149,131 @@ class AITPServiceTests(unittest.TestCase):
         self.assertGreaterEqual(payload["navigation_page_count"], 9)
         self.assertEqual(payload["payload"]["hub_units"][0]["unit_id"], "workflow:tfim-benchmark-workflow")
 
+    def test_compile_topic_l2_corpus_baseline_materializes_topic_local_coverage(self) -> None:
+        topic_slug = "measurement-topic"
+        source_root = self._l0_root(topic_slug) / "sources"
+        entries_root = self.kernel_root / "canonical" / "staging" / "entries"
+        entries_root.mkdir(parents=True, exist_ok=True)
+
+        def _write_source(source_slug: str, source_id: str, title: str) -> Path:
+            source_dir = source_root / source_slug
+            source_dir.mkdir(parents=True, exist_ok=True)
+            source_path = source_dir / "source.json"
+            source_path.write_text(
+                json.dumps(
+                    {
+                        "source_id": source_id,
+                        "source_type": "paper",
+                        "title": title,
+                        "topic_slug": topic_slug,
+                        "summary": f"Registered source for {topic_slug}.",
+                    },
+                    ensure_ascii=True,
+                    indent=2,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            return source_path
+
+        source_a = _write_source(
+            "paper-measurement-bridge",
+            "paper:measurement-bridge",
+            "Measurement bridge paper",
+        )
+        source_b = _write_source(
+            "paper-observer-algebra",
+            "paper:observer-algebra",
+            "Observer algebra paper",
+        )
+
+        bridge_id = "staging:measurement-topic-bridge-note-11111111"
+        concept_id = "staging:measurement-topic-concept-note-22222222"
+        warning_id = "staging:measurement-topic-warning-note-33333333"
+        entry_rows = [
+            {
+                "entry_id": bridge_id,
+                "topic_slug": topic_slug,
+                "entry_kind": "bridge_note",
+                "status": "staged",
+                "authoritative": False,
+                "title": "Observer bridge",
+                "summary": "Bridge note between monitored dynamics and observer-accessible algebras.",
+                "path": "canonical/staging/entries/measurement-topic-bridge-note-11111111.json",
+                "note_path": "canonical/staging/entries/measurement-topic-bridge-note-11111111.md",
+                "source_artifact_paths": [
+                    "topics/measurement-topic/L0/sources/paper-measurement-bridge/source.json",
+                    "topics/measurement-topic/L0/sources/paper-observer-algebra/source.json",
+                ],
+                "tags": ["measurement-induced", "observer-algebra"],
+                "linked_unit_ids": [],
+                "contradicts_unit_ids": [],
+                "updated_at": "2026-04-16T00:00:00+00:00",
+            },
+            {
+                "entry_id": concept_id,
+                "topic_slug": topic_slug,
+                "entry_kind": "concept_note",
+                "status": "staged",
+                "authoritative": False,
+                "title": "Entanglement Hamiltonian anchor",
+                "summary": "Operator-spectrum and entanglement-Hamiltonian anchor inside the monitored lane.",
+                "path": "canonical/staging/entries/measurement-topic-concept-note-22222222.json",
+                "note_path": "canonical/staging/entries/measurement-topic-concept-note-22222222.md",
+                "source_artifact_paths": [
+                    "topics/measurement-topic/L0/sources/paper-measurement-bridge/source.json",
+                ],
+                "tags": ["measurement-induced", "entanglement-hamiltonian"],
+                "linked_unit_ids": [],
+                "contradicts_unit_ids": [],
+                "updated_at": "2026-04-16T00:00:00+00:00",
+            },
+            {
+                "entry_id": warning_id,
+                "topic_slug": topic_slug,
+                "entry_kind": "warning_note",
+                "status": "staged",
+                "authoritative": False,
+                "title": "No factor-type jump",
+                "summary": "Warning that the current corpus does not justify a factor-type phase identification.",
+                "path": "canonical/staging/entries/measurement-topic-warning-note-33333333.json",
+                "note_path": "canonical/staging/entries/measurement-topic-warning-note-33333333.md",
+                "source_artifact_paths": [
+                    "topics/measurement-topic/L0/sources/paper-observer-algebra/source.json",
+                ],
+                "tags": ["observer-algebra", "warning"],
+                "linked_unit_ids": [bridge_id],
+                "contradicts_unit_ids": [],
+                "updated_at": "2026-04-16T00:00:00+00:00",
+            },
+        ]
+        for row in entry_rows:
+            path = entries_root / Path(row["path"]).name
+            path.write_text(json.dumps(row, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+
+        payload = self.service.compile_topic_l2_corpus_baseline(topic_slug=topic_slug)
+
+        self.assertTrue(Path(payload["json_path"]).exists())
+        self.assertTrue(Path(payload["markdown_path"]).exists())
+        summary = payload["payload"]["summary"]
+        self.assertEqual(summary["topic_entry_count"], 3)
+        self.assertEqual(summary["source_anchor_count"], 2)
+        self.assertEqual(summary["multi_source_entry_count"], 1)
+        self.assertEqual(summary["connected_entry_count"], 3)
+        self.assertGreaterEqual(summary["derived_edge_count"], 7)
+        relation_kinds = {row["relation"] for row in payload["payload"]["relation_clusters"]}
+        self.assertIn("supported_by_source", relation_kinds)
+        self.assertIn("shares_source_anchor", relation_kinds)
+        self.assertIn("linked_entry", relation_kinds)
+        self.assertEqual(payload["payload"]["entry_hubs"][0]["entry_id"], bridge_id)
+        self.assertEqual(
+            {row["source_id"] for row in payload["payload"]["source_anchors"]},
+            {"paper:measurement-bridge", "paper:observer-algebra"},
+        )
+
     def test_compile_source_catalog_materializes_cross_topic_reuse(self) -> None:
-        topic_a_root = self.kernel_root / "source-layer" / "topics" / "topic-a"
-        topic_b_root = self.kernel_root / "source-layer" / "topics" / "topic-b"
+        topic_a_root = self._l0_root("topic-a")
+        topic_b_root = self._l0_root("topic-b")
         topic_a_root.mkdir(parents=True, exist_ok=True)
         topic_b_root.mkdir(parents=True, exist_ok=True)
         (topic_a_root / "source_index.jsonl").write_text(
@@ -4867,9 +5334,9 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["payload"]["sources"][0]["canonical_source_id"], "source_identity:doi:10-1000-shared-paper")
 
     def test_trace_source_citations_materializes_bounded_traversal(self) -> None:
-        topic_a_root = self.kernel_root / "source-layer" / "topics" / "topic-a"
-        topic_b_root = self.kernel_root / "source-layer" / "topics" / "topic-b"
-        topic_c_root = self.kernel_root / "source-layer" / "topics" / "topic-c"
+        topic_a_root = self._l0_root("topic-a")
+        topic_b_root = self._l0_root("topic-b")
+        topic_c_root = self._l0_root("topic-c")
         for root in (topic_a_root, topic_b_root, topic_c_root):
             root.mkdir(parents=True, exist_ok=True)
         (topic_a_root / "source_index.jsonl").write_text(
@@ -4928,8 +5395,8 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["payload"]["summary"]["incoming_link_count"], 1)
 
     def test_export_source_bibtex_materializes_bounded_bundle(self) -> None:
-        topic_a_root = self.kernel_root / "source-layer" / "topics" / "topic-a"
-        topic_b_root = self.kernel_root / "source-layer" / "topics" / "topic-b"
+        topic_a_root = self._l0_root("topic-a")
+        topic_b_root = self._l0_root("topic-b")
         for root in (topic_a_root, topic_b_root):
             root.mkdir(parents=True, exist_ok=True)
         (topic_a_root / "source_index.jsonl").write_text(
@@ -5020,8 +5487,8 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["payload"]["summary"]["imported_entry_count"], 1)
 
     def test_compile_source_family_materializes_family_reuse_report(self) -> None:
-        topic_a_root = self.kernel_root / "source-layer" / "topics" / "topic-a"
-        topic_b_root = self.kernel_root / "source-layer" / "topics" / "topic-b"
+        topic_a_root = self._l0_root("topic-a")
+        topic_b_root = self._l0_root("topic-b")
         for root in (topic_a_root, topic_b_root):
             root.mkdir(parents=True, exist_ok=True)
         (topic_a_root / "source_index.jsonl").write_text(
@@ -5078,12 +5545,7 @@ class AITPServiceTests(unittest.TestCase):
     def test_status_explainability_uses_returned_execution_result(self) -> None:
         runtime_root = self._write_runtime_state()
         returned_result_path = (
-            self.kernel_root
-            / "validation"
-            / "topics"
-            / "demo-topic"
-            / "runs"
-            / "2026-03-13-demo"
+            self._validation_run_root("demo-topic", "2026-03-13-demo")
             / "returned_execution_result.json"
         )
         returned_result_path.parent.mkdir(parents=True, exist_ok=True)
@@ -5108,7 +5570,7 @@ class AITPServiceTests(unittest.TestCase):
                     "latest_run_id": "2026-03-13-demo",
                     "resume_stage": "L3",
                     "pointers": {
-                        "returned_execution_result_path": "validation/topics/demo-topic/runs/2026-03-13-demo/returned_execution_result.json",
+                        "returned_execution_result_path": "topics/demo-topic/L4/runs/2026-03-13-demo/returned_execution_result.json",
                     },
                 },
                 ensure_ascii=True,
@@ -5124,7 +5586,7 @@ class AITPServiceTests(unittest.TestCase):
                     "decision_surface": {
                         "selected_action_id": "action:demo-topic:proof",
                         "decision_source": "heuristic",
-                        "next_action_decision_note_path": "runtime/topics/demo-topic/next_action_decision.md",
+                        "next_action_decision_note_path": "topics/demo-topic/runtime/next_action_decision.md",
                     },
                     "action_queue_surface": {
                         "queue_source": "heuristic",
@@ -6093,7 +6555,7 @@ class AITPServiceTests(unittest.TestCase):
             encoding="utf-8",
         )
         remembered_topic = "current-topic"
-        remembered_runtime_root = self.kernel_root / "runtime" / "topics" / remembered_topic
+        remembered_runtime_root = self._runtime_root(remembered_topic)
         remembered_runtime_root.mkdir(parents=True, exist_ok=True)
         (remembered_runtime_root / "topic_state.json").write_text(
             json.dumps({"topic_slug": remembered_topic}, ensure_ascii=True, indent=2) + "\n",
@@ -6116,9 +6578,9 @@ class AITPServiceTests(unittest.TestCase):
 
     def test_active_topic_record_prefers_topic_synopsis_runtime_focus_summary(self) -> None:
         topic_slug = "synopsis-topic"
-        topic_root = self.kernel_root / "runtime" / "topics" / topic_slug
-        topic_root.mkdir(parents=True, exist_ok=True)
-        (topic_root / "topic_state.json").write_text(
+        runtime_root = self._runtime_root(topic_slug)
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
             json.dumps(
                 {
                     "topic_slug": topic_slug,
@@ -6132,7 +6594,7 @@ class AITPServiceTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        (topic_root / "topic_synopsis.json").write_text(
+        (runtime_root / "topic_synopsis.json").write_text(
             json.dumps(
                 {
                     "id": f"topic_synopsis:{topic_slug}",
@@ -6161,12 +6623,12 @@ class AITPServiceTests(unittest.TestCase):
                         "promotion_status": "not_ready",
                     },
                     "truth_sources": {
-                        "topic_state_path": f"runtime/topics/{topic_slug}/topic_state.json",
-                        "research_question_contract_path": f"runtime/topics/{topic_slug}/research_question.contract.json",
-                        "next_action_surface_path": f"runtime/topics/{topic_slug}/action_queue.jsonl",
+                        "topic_state_path": f"topics/{topic_slug}/runtime/topic_state.json",
+                        "research_question_contract_path": f"topics/{topic_slug}/runtime/research_question.contract.json",
+                        "next_action_surface_path": f"topics/{topic_slug}/runtime/action_queue.jsonl",
                         "human_need_surface_path": None,
                         "dependency_registry_path": "runtime/active_topics.json",
-                        "promotion_readiness_path": f"runtime/topics/{topic_slug}/promotion_readiness.json",
+                        "promotion_readiness_path": f"topics/{topic_slug}/runtime/promotion_readiness.json",
                         "promotion_gate_path": None,
                     },
                     "next_action_summary": "This older synopsis string should not win once runtime_focus exists.",
@@ -6223,7 +6685,7 @@ class AITPServiceTests(unittest.TestCase):
         runtime_root = self.kernel_root / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         focused_topic = "registry-topic"
-        focused_runtime_root = runtime_root / "topics" / focused_topic
+        focused_runtime_root = self._runtime_root(focused_topic)
         focused_runtime_root.mkdir(parents=True, exist_ok=True)
         (focused_runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -6299,13 +6761,13 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("topic_dashboard.md", json.dumps(payload["artifact_footprint"]["avoided_full_topic_artifacts"]))
         self.assertIsNone(payload["current_topic_slug"])
         self.assertIn("aitp session-start", payload["promotion_paths"]["promote_to_new_topic_command"])
-        self.assertFalse((self.kernel_root / "runtime" / "topics").exists())
+        self.assertFalse((self.kernel_root / "topics").exists())
 
     def test_explore_uses_current_topic_context_without_rebootstrap(self) -> None:
         runtime_root = self.kernel_root / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         remembered_topic = "demo-topic"
-        remembered_runtime_root = runtime_root / "topics" / remembered_topic
+        remembered_runtime_root = self._runtime_root(remembered_topic)
         remembered_runtime_root.mkdir(parents=True, exist_ok=True)
         (remembered_runtime_root / "topic_state.json").write_text(
             json.dumps({"topic_slug": remembered_topic, "resume_stage": "L3"}, ensure_ascii=True, indent=2) + "\n",
@@ -6340,7 +6802,7 @@ class AITPServiceTests(unittest.TestCase):
         runtime_root = self.kernel_root / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         remembered_topic = "demo-topic"
-        remembered_runtime_root = runtime_root / "topics" / remembered_topic
+        remembered_runtime_root = self._runtime_root(remembered_topic)
         remembered_runtime_root.mkdir(parents=True, exist_ok=True)
         (remembered_runtime_root / "topic_state.json").write_text(
             json.dumps({"topic_slug": remembered_topic, "resume_stage": "L3"}, ensure_ascii=True, indent=2) + "\n",
@@ -6372,9 +6834,9 @@ class AITPServiceTests(unittest.TestCase):
 
     def test_build_current_topic_memory_payload_prefers_topic_synopsis_runtime_focus_summary(self) -> None:
         topic_slug = "current-synopsis-topic"
-        topic_root = self.kernel_root / "runtime" / "topics" / topic_slug
-        topic_root.mkdir(parents=True, exist_ok=True)
-        (topic_root / "topic_state.json").write_text(
+        runtime_root = self._runtime_root(topic_slug)
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
             json.dumps(
                 {
                     "topic_slug": topic_slug,
@@ -6388,7 +6850,7 @@ class AITPServiceTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        (topic_root / "topic_synopsis.json").write_text(
+        (runtime_root / "topic_synopsis.json").write_text(
             json.dumps(
                 {
                     "id": f"topic_synopsis:{topic_slug}",
@@ -6417,12 +6879,12 @@ class AITPServiceTests(unittest.TestCase):
                         "promotion_status": "not_ready",
                     },
                     "truth_sources": {
-                        "topic_state_path": f"runtime/topics/{topic_slug}/topic_state.json",
-                        "research_question_contract_path": f"runtime/topics/{topic_slug}/research_question.contract.json",
-                        "next_action_surface_path": f"runtime/topics/{topic_slug}/action_queue.jsonl",
+                        "topic_state_path": f"topics/{topic_slug}/runtime/topic_state.json",
+                        "research_question_contract_path": f"topics/{topic_slug}/runtime/research_question.contract.json",
+                        "next_action_surface_path": f"topics/{topic_slug}/runtime/action_queue.jsonl",
                         "human_need_surface_path": None,
                         "dependency_registry_path": "runtime/active_topics.json",
-                        "promotion_readiness_path": f"runtime/topics/{topic_slug}/promotion_readiness.json",
+                        "promotion_readiness_path": f"topics/{topic_slug}/runtime/promotion_readiness.json",
                         "promotion_gate_path": None,
                     },
                     "next_action_summary": "Older current-topic fallback.",
@@ -6449,9 +6911,9 @@ class AITPServiceTests(unittest.TestCase):
 
     def test_build_current_topic_memory_payload_includes_collaborator_profile_when_present(self) -> None:
         topic_slug = "profile-topic"
-        topic_root = self.kernel_root / "runtime" / "topics" / topic_slug
-        topic_root.mkdir(parents=True, exist_ok=True)
-        (topic_root / "topic_state.json").write_text(
+        runtime_root = self._runtime_root(topic_slug)
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
             json.dumps(
                 {
                     "topic_slug": topic_slug,
@@ -6464,14 +6926,14 @@ class AITPServiceTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        (topic_root / "collaborator_profile.active.json").write_text(
+        (runtime_root / "collaborator_profile.active.json").write_text(
             json.dumps(
                 {
                     "topic_slug": topic_slug,
                     "status": "available",
                     "summary": "Prefer theorem-facing routes and keep the scope bounded.",
-                    "path": f"runtime/topics/{topic_slug}/collaborator_profile.active.json",
-                    "note_path": f"runtime/topics/{topic_slug}/collaborator_profile.active.md",
+                    "path": f"topics/{topic_slug}/runtime/collaborator_profile.active.json",
+                    "note_path": f"topics/{topic_slug}/runtime/collaborator_profile.active.md",
                 },
                 ensure_ascii=True,
                 indent=2,
@@ -6479,7 +6941,7 @@ class AITPServiceTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        (topic_root / "collaborator_profile.active.md").write_text("# Collaborator profile\n", encoding="utf-8")
+        (runtime_root / "collaborator_profile.active.md").write_text("# Collaborator profile\n", encoding="utf-8")
 
         payload = self.service._build_current_topic_memory_payload(
             topic_slug=topic_slug,
@@ -6493,9 +6955,9 @@ class AITPServiceTests(unittest.TestCase):
 
     def test_build_current_topic_memory_payload_includes_research_trajectory_when_present(self) -> None:
         topic_slug = "trajectory-topic"
-        topic_root = self.kernel_root / "runtime" / "topics" / topic_slug
-        topic_root.mkdir(parents=True, exist_ok=True)
-        (topic_root / "topic_state.json").write_text(
+        runtime_root = self._runtime_root(topic_slug)
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
             json.dumps(
                 {
                     "topic_slug": topic_slug,
@@ -6508,14 +6970,14 @@ class AITPServiceTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        (topic_root / "research_trajectory.active.json").write_text(
+        (runtime_root / "research_trajectory.active.json").write_text(
             json.dumps(
                 {
                     "topic_slug": topic_slug,
                     "status": "available",
                     "summary": "Recent trajectory keeps the bounded derivation route active.",
-                    "path": f"runtime/topics/{topic_slug}/research_trajectory.active.json",
-                    "note_path": f"runtime/topics/{topic_slug}/research_trajectory.active.md",
+                    "path": f"topics/{topic_slug}/runtime/research_trajectory.active.json",
+                    "note_path": f"topics/{topic_slug}/runtime/research_trajectory.active.md",
                 },
                 ensure_ascii=True,
                 indent=2,
@@ -6523,7 +6985,7 @@ class AITPServiceTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        (topic_root / "research_trajectory.active.md").write_text("# Research trajectory\n", encoding="utf-8")
+        (runtime_root / "research_trajectory.active.md").write_text("# Research trajectory\n", encoding="utf-8")
 
         payload = self.service._build_current_topic_memory_payload(
             topic_slug=topic_slug,
@@ -6537,9 +6999,9 @@ class AITPServiceTests(unittest.TestCase):
 
     def test_build_current_topic_memory_payload_includes_mode_learning_when_present(self) -> None:
         topic_slug = "mode-topic"
-        topic_root = self.kernel_root / "runtime" / "topics" / topic_slug
-        topic_root.mkdir(parents=True, exist_ok=True)
-        (topic_root / "topic_state.json").write_text(
+        runtime_root = self._runtime_root(topic_slug)
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
             json.dumps(
                 {
                     "topic_slug": topic_slug,
@@ -6552,14 +7014,14 @@ class AITPServiceTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        (topic_root / "mode_learning.active.json").write_text(
+        (runtime_root / "mode_learning.active.json").write_text(
             json.dumps(
                 {
                     "topic_slug": topic_slug,
                     "status": "available",
                     "summary": "Mode learning favors the benchmark-first route for this topic.",
-                    "path": f"runtime/topics/{topic_slug}/mode_learning.active.json",
-                    "note_path": f"runtime/topics/{topic_slug}/mode_learning.active.md",
+                    "path": f"topics/{topic_slug}/runtime/mode_learning.active.json",
+                    "note_path": f"topics/{topic_slug}/runtime/mode_learning.active.md",
                 },
                 ensure_ascii=True,
                 indent=2,
@@ -6567,7 +7029,7 @@ class AITPServiceTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        (topic_root / "mode_learning.active.md").write_text("# Mode learning\n", encoding="utf-8")
+        (runtime_root / "mode_learning.active.md").write_text("# Mode learning\n", encoding="utf-8")
 
         payload = self.service._build_current_topic_memory_payload(
             topic_slug=topic_slug,
@@ -6620,13 +7082,13 @@ class AITPServiceTests(unittest.TestCase):
         focused_row = next(row for row in registry_payload["topics"] if row["topic_slug"] == "focused-topic")
         self.assertEqual(focused_row["focus_state"], "focused")
         self.assertEqual(focused_row["priority"], 0)
-        self.assertEqual(focused_row["runtime_root"], "runtime/topics/focused-topic")
+        self.assertEqual(focused_row["runtime_root"], "topics/focused-topic/runtime")
         self.assertEqual(payload["topic_slug"], "focused-topic")
-        self.assertEqual(payload["runtime_root"], "runtime/topics/focused-topic")
+        self.assertEqual(payload["runtime_root"], "topics/focused-topic/runtime")
         projected_payload = json.loads((runtime_root / "current_topic.json").read_text(encoding="utf-8"))
-        self.assertEqual(projected_payload["runtime_root"], "runtime/topics/focused-topic")
+        self.assertEqual(projected_payload["runtime_root"], "topics/focused-topic/runtime")
         current_topic_note = (runtime_root / "current_topic.md").read_text(encoding="utf-8")
-        self.assertIn("Runtime root: `runtime/topics/focused-topic`", current_topic_note)
+        self.assertIn("Runtime root: `topics/focused-topic/runtime`", current_topic_note)
         self.assertTrue((runtime_root / "active_topics.md").exists())
 
     def test_select_next_topic_prefers_priority_then_focus_and_reports_skips(self) -> None:
@@ -6638,7 +7100,7 @@ class AITPServiceTests(unittest.TestCase):
                 "status": "ready",
                 "priority": 1,
                 "last_activity": "2026-04-04T10:00:00+08:00",
-                "runtime_root": "runtime/topics/focused-low",
+                "runtime_root": "topics/focused-low/runtime",
                 "lane": "code_method",
                 "focus_state": "focused",
                 "projection_status": "missing",
@@ -6650,7 +7112,7 @@ class AITPServiceTests(unittest.TestCase):
                 "status": "ready",
                 "priority": 3,
                 "last_activity": "2026-04-04T09:00:00+08:00",
-                "runtime_root": "runtime/topics/priority-high",
+                "runtime_root": "topics/priority-high/runtime",
                 "lane": "formal_theory",
                 "focus_state": "background",
                 "projection_status": "missing",
@@ -6662,7 +7124,7 @@ class AITPServiceTests(unittest.TestCase):
                 "status": "paused",
                 "priority": 10,
                 "last_activity": "2026-04-04T11:00:00+08:00",
-                "runtime_root": "runtime/topics/paused-topic",
+                "runtime_root": "topics/paused-topic/runtime",
                 "lane": "code_method",
                 "focus_state": "background",
                 "projection_status": "missing",
@@ -6674,7 +7136,7 @@ class AITPServiceTests(unittest.TestCase):
                 "status": "ready",
                 "priority": 9,
                 "last_activity": "2026-04-04T12:00:00+08:00",
-                "runtime_root": "runtime/topics/dependency-topic",
+                "runtime_root": "topics/dependency-topic/runtime",
                 "lane": "code_method",
                 "focus_state": "background",
                 "projection_status": "missing",
@@ -6842,7 +7304,7 @@ class AITPServiceTests(unittest.TestCase):
             required_first_routes=["Read the theorem-facing route before reusing the proof lane."],
         )
         self._write_runtime_state(topic_slug="blocked-topic", run_id="run-blocked")
-        (runtime_root / "topics" / "blocked-topic" / "topic_skill_projection.active.json").write_text(
+        (self._runtime_root("blocked-topic") / "topic_skill_projection.active.json").write_text(
             json.dumps(
                 {
                     "id": "topic_skill_projection:blocked-topic",
@@ -6876,7 +7338,7 @@ class AITPServiceTests(unittest.TestCase):
                             "lane": "code_method",
                             "focus_state": "focused",
                             "projection_status": "available",
-                            "projection_note_path": "runtime/topics/code-family-topic/topic_skill_projection.active.md",
+                            "projection_note_path": "topics/code-family-topic/runtime/topic_skill_projection.active.md",
                             "blocked_by": [],
                             "summary": "Code family route.",
                         },
@@ -6890,7 +7352,7 @@ class AITPServiceTests(unittest.TestCase):
                             "lane": "formal_theory",
                             "focus_state": "background",
                             "projection_status": "available",
-                            "projection_note_path": "runtime/topics/formal-family-topic/topic_skill_projection.active.md",
+                            "projection_note_path": "topics/formal-family-topic/runtime/topic_skill_projection.active.md",
                             "blocked_by": [],
                             "summary": "Formal family route.",
                         },
@@ -6900,7 +7362,7 @@ class AITPServiceTests(unittest.TestCase):
                             "operator_status": "",
                             "priority": 0,
                             "last_activity": "2026-04-04T14:20:00+08:00",
-                            "runtime_root": str(runtime_root / "topics" / "blocked-topic"),
+                            "runtime_root": str(self._runtime_root("blocked-topic")),
                             "lane": "code_method",
                             "focus_state": "background",
                             "projection_status": "blocked",
@@ -6935,7 +7397,7 @@ class AITPServiceTests(unittest.TestCase):
         runtime_root = self.kernel_root / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         for topic_slug in ("alpha-topic", "beta-topic"):
-            topic_root = runtime_root / "topics" / topic_slug
+            topic_root = self._runtime_root(topic_slug)
             topic_root.mkdir(parents=True, exist_ok=True)
             (topic_root / "topic_state.json").write_text(
                 json.dumps({"topic_slug": topic_slug, "latest_run_id": "run", "resume_stage": "L3"}, ensure_ascii=True, indent=2) + "\n",
@@ -6956,7 +7418,7 @@ class AITPServiceTests(unittest.TestCase):
                             "operator_status": "",
                             "priority": 1,
                             "last_activity": "2026-04-04T14:00:00+08:00",
-                            "runtime_root": str(runtime_root / "topics" / "alpha-topic"),
+                            "runtime_root": str(self._runtime_root("alpha-topic")),
                             "lane": "code_method",
                             "focus_state": "focused",
                             "projection_status": "missing",
@@ -6969,7 +7431,7 @@ class AITPServiceTests(unittest.TestCase):
                             "operator_status": "",
                             "priority": 0,
                             "last_activity": "2026-04-04T13:00:00+08:00",
-                            "runtime_root": str(runtime_root / "topics" / "beta-topic"),
+                            "runtime_root": str(self._runtime_root("beta-topic")),
                             "lane": "formal_theory",
                             "focus_state": "background",
                             "projection_status": "missing",
@@ -6996,7 +7458,7 @@ class AITPServiceTests(unittest.TestCase):
     def test_resume_topic_focuses_the_resumed_topic(self) -> None:
         runtime_root = self.kernel_root / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
-        topic_root = runtime_root / "topics" / "alpha-topic"
+        topic_root = self._runtime_root("alpha-topic")
         topic_root.mkdir(parents=True, exist_ok=True)
         (topic_root / "topic_state.json").write_text(
             json.dumps({"topic_slug": "alpha-topic", "latest_run_id": "run", "resume_stage": "L3"}, ensure_ascii=True, indent=2) + "\n",
@@ -7048,7 +7510,7 @@ class AITPServiceTests(unittest.TestCase):
             json.dumps({"topic_slug": "alpha-topic", "updated_at": "2026-04-04T10:00:00+08:00"}, ensure_ascii=True) + "\n",
             encoding="utf-8",
         )
-        alpha_root = self.kernel_root / "runtime" / "topics" / "alpha-topic"
+        alpha_root = self._runtime_root("alpha-topic")
         alpha_root.mkdir(parents=True, exist_ok=True)
         (alpha_root / "topic_state.json").write_text(
             json.dumps({"topic_slug": "alpha-topic", "latest_run_id": "run", "resume_stage": "L3"}, ensure_ascii=True, indent=2) + "\n",
@@ -7072,7 +7534,7 @@ class AITPServiceTests(unittest.TestCase):
     def test_start_chat_session_handles_topic_management_routes_without_running_loop(self) -> None:
         runtime_root = self.kernel_root / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
-        topic_root = runtime_root / "topics" / "alpha-topic"
+        topic_root = self._runtime_root("alpha-topic")
         topic_root.mkdir(parents=True, exist_ok=True)
         (topic_root / "topic_state.json").write_text(
             json.dumps({"topic_slug": "alpha-topic", "latest_run_id": "run", "resume_stage": "L3"}, ensure_ascii=True, indent=2) + "\n",
@@ -7194,7 +7656,7 @@ class AITPServiceTests(unittest.TestCase):
                             "operator_status": "",
                             "priority": 0,
                             "last_activity": "2026-04-04T15:00:00+08:00",
-                            "runtime_root": str(runtime_root / "topics" / "alpha-topic"),
+                            "runtime_root": str(self._runtime_root("alpha-topic")),
                             "lane": "code_method",
                             "focus_state": "focused",
                             "projection_status": "missing",
@@ -7208,7 +7670,7 @@ class AITPServiceTests(unittest.TestCase):
                             "operator_status": "",
                             "priority": 0,
                             "last_activity": "2026-04-04T14:00:00+08:00",
-                            "runtime_root": str(runtime_root / "topics" / "beta-topic"),
+                            "runtime_root": str(self._runtime_root("beta-topic")),
                             "lane": "formal_theory",
                             "focus_state": "background",
                             "projection_status": "missing",
@@ -7312,7 +7774,7 @@ class AITPServiceTests(unittest.TestCase):
         runtime_root = self.kernel_root / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         remembered_topic = "demo-topic"
-        remembered_runtime_root = self.kernel_root / "runtime" / "topics" / remembered_topic
+        remembered_runtime_root = self._runtime_root(remembered_topic)
         remembered_runtime_root.mkdir(parents=True, exist_ok=True)
         (remembered_runtime_root / "topic_state.json").write_text(
             json.dumps({"topic_slug": remembered_topic}, ensure_ascii=True, indent=2) + "\n",
@@ -7334,7 +7796,7 @@ class AITPServiceTests(unittest.TestCase):
         runtime_root = self.kernel_root / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         remembered_topic = "fresh-jones-finite-dimensional-factor-closure"
-        remembered_runtime_root = self.kernel_root / "runtime" / "topics" / remembered_topic
+        remembered_runtime_root = self._runtime_root(remembered_topic)
         remembered_runtime_root.mkdir(parents=True, exist_ok=True)
         (remembered_runtime_root / "topic_state.json").write_text(
             json.dumps({"topic_slug": remembered_topic}, ensure_ascii=True, indent=2) + "\n",
@@ -7408,7 +7870,7 @@ class AITPServiceTests(unittest.TestCase):
                             "operator_status": "",
                             "priority": 0,
                             "last_activity": "2026-04-04T10:00:00+08:00",
-                            "runtime_root": str(runtime_root / "topics" / "alpha-topic"),
+                            "runtime_root": str(self._runtime_root("alpha-topic")),
                             "lane": "formal_theory",
                             "resume_stage": "L3",
                             "run_id": "run-alpha",
@@ -7424,12 +7886,12 @@ class AITPServiceTests(unittest.TestCase):
                             "operator_status": "",
                             "priority": 0,
                             "last_activity": "2026-04-04T11:00:00+08:00",
-                            "runtime_root": str(runtime_root / "topics" / "beta-topic"),
+                            "runtime_root": str(self._runtime_root("beta-topic")),
                             "lane": "code_method",
                             "resume_stage": "L3",
                             "run_id": "run-001",
                             "projection_status": "available",
-                            "projection_note_path": "runtime/topics/beta-topic/topic_skill_projection.active.md",
+                            "projection_note_path": "topics/beta-topic/runtime/topic_skill_projection.active.md",
                             "blocked_by": [],
                             "focus_state": "background",
                             "summary": "Reusable benchmark-first code route.",
@@ -7477,7 +7939,7 @@ class AITPServiceTests(unittest.TestCase):
                             "operator_status": "",
                             "priority": 0,
                             "last_activity": "2026-04-04T12:00:00+08:00",
-                            "runtime_root": str(runtime_root / "topics" / "alpha-topic"),
+                            "runtime_root": str(self._runtime_root("alpha-topic")),
                             "lane": "toy_model",
                             "resume_stage": "L3",
                             "run_id": "run-alpha",
@@ -7493,12 +7955,12 @@ class AITPServiceTests(unittest.TestCase):
                             "operator_status": "",
                             "priority": 0,
                             "last_activity": "2026-04-04T11:00:00+08:00",
-                            "runtime_root": str(runtime_root / "topics" / "beta-topic"),
+                            "runtime_root": str(self._runtime_root("beta-topic")),
                             "lane": "formal_theory",
                             "resume_stage": "L3",
                             "run_id": "run-001",
                             "projection_status": "available",
-                            "projection_note_path": "runtime/topics/beta-topic/topic_skill_projection.active.md",
+                            "projection_note_path": "topics/beta-topic/runtime/topic_skill_projection.active.md",
                             "blocked_by": [],
                             "focus_state": "background",
                             "summary": "Reusable theorem route.",
@@ -7525,7 +7987,7 @@ class AITPServiceTests(unittest.TestCase):
         runtime_root = self.kernel_root / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         remembered_topic = "demo-topic"
-        remembered_runtime_root = self.kernel_root / "runtime" / "topics" / remembered_topic
+        remembered_runtime_root = self._runtime_root(remembered_topic)
         remembered_runtime_root.mkdir(parents=True, exist_ok=True)
         (remembered_runtime_root / "topic_state.json").write_text(
             json.dumps({"topic_slug": remembered_topic}, ensure_ascii=True, indent=2) + "\n",
@@ -7557,7 +8019,7 @@ class AITPServiceTests(unittest.TestCase):
 
     def test_start_chat_session_allocates_fresh_slug_for_explicit_new_topic_collision(self) -> None:
         existing_slug = "jones-von-neumann-algebras"
-        existing_runtime_root = self.kernel_root / "runtime" / "topics" / existing_slug
+        existing_runtime_root = self._runtime_root(existing_slug)
         existing_runtime_root.mkdir(parents=True, exist_ok=True)
         (existing_runtime_root / "topic_state.json").write_text(
             json.dumps({"topic_slug": existing_slug}, ensure_ascii=True, indent=2) + "\n",
@@ -7581,7 +8043,7 @@ class AITPServiceTests(unittest.TestCase):
         runtime_root = self.kernel_root / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         remembered_topic = "fresh-jones-finite-dimensional-factor-closure"
-        remembered_runtime_root = self.kernel_root / "runtime" / "topics" / remembered_topic
+        remembered_runtime_root = self._runtime_root(remembered_topic)
         remembered_runtime_root.mkdir(parents=True, exist_ok=True)
         (remembered_runtime_root / "topic_state.json").write_text(
             json.dumps({"topic_slug": remembered_topic}, ensure_ascii=True, indent=2) + "\n",
@@ -7647,7 +8109,7 @@ class AITPServiceTests(unittest.TestCase):
             max_auto_steps=0,
         )
 
-        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root = self._runtime_root("demo-topic")
         innovation_direction_path = runtime_root / "innovation_direction.md"
         innovation_decisions_path = runtime_root / "innovation_decisions.jsonl"
         control_note_path = runtime_root / "control_note.md"
@@ -7669,7 +8131,7 @@ class AITPServiceTests(unittest.TestCase):
         innovation_note = innovation_direction_path.read_text(encoding="utf-8")
         self.assertIn("low-energy effective theory", innovation_note)
         self.assertIn("Redirect the active topic `Demo Topic` toward `low-energy effective theory`", innovation_note)
-        self.assertIn("Required deliverables: Update `runtime/topics/demo-topic/research_question.contract.md`", innovation_note)
+        self.assertIn("Required deliverables: Update `topics/demo-topic/runtime/research_question.contract.md`", innovation_note)
         self.assertIn("Do not treat renamed headings, unchanged old contracts, or narrative confidence", innovation_note)
         self.assertIn("directive: human_redirect", control_note_path.read_text(encoding="utf-8"))
         self.assertTrue((self.kernel_root / "runtime" / "current_topic.json").exists())
@@ -7680,7 +8142,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("low-energy effective theory", contract_payload["actions"][0]["summary"])
         self.assertEqual(len(service.orchestrate_calls), 2)
         self.assertTrue(
-            str(service.orchestrate_calls[1].get("control_note") or "").endswith("runtime/topics/demo-topic/control_note.md")
+            str(service.orchestrate_calls[1].get("control_note") or "").endswith("topics/demo-topic/runtime/control_note.md")
         )
 
     def test_materialize_steering_preserves_manual_innovation_direction_text(self) -> None:
@@ -7738,11 +8200,20 @@ class AITPServiceTests(unittest.TestCase):
             innovation_direction_path.read_text(encoding="utf-8"),
         )
 
+    def test_parse_human_steering_request_treats_stop_before_execution_as_continue(self) -> None:
+        payload = self.service._parse_human_steering_request(
+            "Continue with the first bounded route and stop before expensive execution."
+        )
+
+        self.assertTrue(payload["detected"])
+        self.assertEqual(payload["decision"], "continue")
+        self.assertIsNone(payload["directive"])
+
     def test_build_codex_prompt_includes_innovation_surfaces(self) -> None:
         payload = {
             "topic_slug": "demo-topic",
             "run_id": "2026-03-13-demo",
-            "loop_state_path": "runtime/topics/demo-topic/loop_state.json",
+            "loop_state_path": "topics/demo-topic/runtime/loop_state.json",
             "loop_state": {
                 "human_request": "continue the topic",
                 "exit_conformance": "pass",
@@ -7750,34 +8221,34 @@ class AITPServiceTests(unittest.TestCase):
                 "trust_status": "pass",
             },
             "bootstrap": {
-                "runtime_root": "runtime/topics/demo-topic",
+                "runtime_root": "topics/demo-topic",
                 "files": {
-                    "agent_brief": "runtime/topics/demo-topic/agent_brief.md",
-                    "operator_console": "runtime/topics/demo-topic/operator_console.md",
-                    "conformance_report": "runtime/topics/demo-topic/conformance_report.md",
+                    "agent_brief": "runtime/runtime/topics/demo-topic/agent_brief.md",
+                    "operator_console": "topics/demo-topic/runtime/operator_console.md",
+                    "conformance_report": "topics/demo-topic/runtime/conformance_report.md",
                 },
                 "topic_state": {
                     "pointers": {
-                        "control_note_path": "runtime/topics/demo-topic/control_note.md",
-                        "innovation_direction_path": "runtime/topics/demo-topic/innovation_direction.md",
-                        "innovation_decisions_path": "runtime/topics/demo-topic/innovation_decisions.jsonl",
+                        "control_note_path": "topics/demo-topic/runtime/control_note.md",
+                        "innovation_direction_path": "topics/demo-topic/runtime/innovation_direction.md",
+                        "innovation_decisions_path": "topics/demo-topic/runtime/innovation_decisions.jsonl",
                     }
                 },
             },
             "capability_audit": {
-                "capability_report_path": "runtime/topics/demo-topic/capability_report.md",
+                "capability_report_path": "topics/demo-topic/runtime/capability_report.md",
             },
             "trust_audit": {
-                "trust_report_path": "validation/topics/demo-topic/runs/2026-03-13-demo/trust_audit.md",
+                "trust_report_path": "topics/demo-topic/L4/runs/2026-03-13-demo/trust_audit.md",
             },
             "runtime_protocol": {
-                "runtime_protocol_note_path": "runtime/topics/demo-topic/runtime_protocol.generated.md",
+                "runtime_protocol_note_path": "topics/demo-topic/runtime/runtime_protocol.generated.md",
             },
             "session_start": {
-                "session_start_contract_path": "runtime/topics/demo-topic/session_start.contract.json",
-                "session_start_note_path": "runtime/topics/demo-topic/session_start.generated.md",
+                "session_start_contract_path": "topics/demo-topic/runtime/session_start.contract.json",
+                "session_start_note_path": "topics/demo-topic/runtime/session_start.generated.md",
                 "artifacts": {
-                    "runtime_protocol_note_path": "runtime/topics/demo-topic/runtime_protocol.generated.md",
+                    "runtime_protocol_note_path": "topics/demo-topic/runtime/runtime_protocol.generated.md",
                 },
             },
         }
@@ -7926,7 +8397,7 @@ class AITPServiceTests(unittest.TestCase):
             supporting_oracle_ids=["question_oracle:demo-definition"],
             supporting_regression_run_ids=["regression_run:demo-definition"],
         )
-        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root = self._runtime_root("demo-topic")
         (runtime_root / "promotion_gate.json").write_text(
             json.dumps(
                 {
@@ -8084,7 +8555,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(gate_payload["status"], "promoted")
         candidate_rows = [
             json.loads(line)
-            for line in (self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "2026-03-13-demo" / "candidate_ledger.jsonl").read_text(encoding="utf-8").splitlines()
+            for line in (self._feedback_run_root("demo-topic", "2026-03-13-demo") / "candidate_ledger.jsonl").read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
         self.assertEqual(candidate_rows[0]["status"], "promoted")
@@ -8163,7 +8634,7 @@ class AITPServiceTests(unittest.TestCase):
             run_id="run-001",
             operation="TFIM exact-diagonalization benchmark workflow",
             baseline_status="passed",
-            artifact_paths=["validation/topics/demo-topic/runs/run-001/results/benchmark.json"],
+            artifact_paths=["topics/demo-topic/L4/runs/run-001/results/benchmark.json"],
         )
         self.service.audit_operation_trust(topic_slug="demo-topic", run_id="run-001")
         self.service.record_strategy_memory(
@@ -8263,6 +8734,61 @@ class AITPServiceTests(unittest.TestCase):
                 subdomain="code-method",
             )
 
+    def test_promote_candidate_accepts_distilled_proof_fragment_candidate(self) -> None:
+        self._write_runtime_state(run_id="run-001")
+        self.service.record_strategy_memory(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            strategy_id="strat-jones-codrestrict-comp-subtype",
+            strategy_type="proof_engineering",
+            summary="Use codRestrict plus subtype composition before searching for a direct range equivalence.",
+            outcome="helpful",
+            lane="formal_theory",
+            confidence=0.93,
+            evidence_refs=[
+                "topics/demo-topic/L4/runs/run-001/statement-compilation/candidate-demo/proof_repair_plan.md"
+            ],
+            reuse_conditions=["range-facing map construction", "submodule-backed codomain"],
+            updated_by="aitp-cli",
+        )
+        distilled_payload = self.service.distill_proof_engineering_candidates(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            updated_by="aitp-cli",
+            refresh_runtime_bundle=False,
+        )
+        candidate_id = distilled_payload["distilled_candidate_ids"][0]
+
+        tpkn_root = self._write_fake_tpkn_repo()
+        self.service.request_promotion(
+            topic_slug="demo-topic",
+            candidate_id=candidate_id,
+            run_id="run-001",
+            backend_id="backend:theoretical-physics-knowledge-network",
+            target_backend_root=str(tpkn_root),
+        )
+        self.service.approve_promotion(
+            topic_slug="demo-topic",
+            candidate_id=candidate_id,
+            run_id="run-001",
+        )
+
+        payload = self.service.promote_candidate(
+            topic_slug="demo-topic",
+            candidate_id=candidate_id,
+            run_id="run-001",
+            target_backend_root=str(tpkn_root),
+            domain="demo-domain",
+            subdomain="formal-theory",
+        )
+
+        unit_path = Path(payload["target_unit_path"])
+        self.assertTrue(unit_path.exists())
+        self.assertIn("proof-fragments", str(unit_path).replace("\\", "/"))
+        unit_payload = json.loads(unit_path.read_text(encoding="utf-8"))
+        self.assertEqual(unit_payload["type"], "proof_fragment")
+        self.assertEqual(unit_payload["canonical_layer"], "L2")
+
     def test_auto_promote_candidate_writes_l2_auto_unit_and_report(self) -> None:
         self._write_runtime_state()
         self._write_candidate()
@@ -8322,7 +8848,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIsInstance(unit_payload["semi_formal_contract"], list)
         candidate_rows = [
             json.loads(line)
-            for line in (self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "2026-03-13-demo" / "candidate_ledger.jsonl").read_text(encoding="utf-8").splitlines()
+            for line in (self._feedback_run_root("demo-topic", "2026-03-13-demo") / "candidate_ledger.jsonl").read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
         self.assertEqual(candidate_rows[0]["status"], "auto_promoted")
@@ -8433,12 +8959,12 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(review_payload["overall_status"], "ready")
         self.assertEqual(
             review_payload["faithfulness_review_path"],
-            "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-candidate/faithfulness_review.json",
+            "topics/demo-topic/L4/runs/2026-03-13-demo/theory-packets/candidate-demo-candidate/faithfulness_review.json",
         )
 
         candidate_rows = [
             json.loads(line)
-            for line in (self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "2026-03-13-demo" / "candidate_ledger.jsonl").read_text(encoding="utf-8").splitlines()
+            for line in (self._feedback_run_root("demo-topic", "2026-03-13-demo") / "candidate_ledger.jsonl").read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
         self.assertEqual(candidate_rows[0]["formal_theory_review_overall_status"], "ready")
@@ -8650,10 +9176,10 @@ class AITPServiceTests(unittest.TestCase):
         )
 
         review_bundle_path = (
-            self.kernel_root / "runtime" / "topics" / "demo-topic" / "validation_review_bundle.active.json"
+            self._runtime_root("demo-topic") / "validation_review_bundle.active.json"
         )
         review_note_path = (
-            self.kernel_root / "runtime" / "topics" / "demo-topic" / "validation_review_bundle.active.md"
+            self._runtime_root("demo-topic") / "validation_review_bundle.active.md"
         )
         review_bundle = json.loads(review_bundle_path.read_text(encoding="utf-8"))
         status_payload = self.service.topic_status(topic_slug="demo-topic", updated_by="test")
@@ -8707,13 +9233,13 @@ class AITPServiceTests(unittest.TestCase):
                 "promotion_gate_status": "not_requested",
                 "summary": "Primary L4 review surface is blocked on a formal audit.",
                 "entrypoints": {
-                    "validation_contract_path": "runtime/topics/demo-topic/validation.contract.json",
-                    "validation_contract_note_path": "runtime/topics/demo-topic/validation.contract.md",
-                    "promotion_readiness_path": "runtime/topics/demo-topic/promotion_readiness.json",
-                    "promotion_readiness_note_path": "runtime/topics/demo-topic/promotion_readiness.md",
-                    "topic_completion_path": "runtime/topics/demo-topic/topic_completion.json",
-                    "topic_completion_note_path": "runtime/topics/demo-topic/topic_completion.md",
-                    "gap_map_path": "runtime/topics/demo-topic/gap_map.md",
+                    "validation_contract_path": "topics/demo-topic/runtime/validation.contract.json",
+                    "validation_contract_note_path": "topics/demo-topic/runtime/validation.contract.md",
+                    "promotion_readiness_path": "topics/demo-topic/runtime/promotion_readiness.json",
+                    "promotion_readiness_note_path": "topics/demo-topic/runtime/promotion_readiness.md",
+                    "topic_completion_path": "topics/demo-topic/runtime/topic_completion.json",
+                    "topic_completion_note_path": "topics/demo-topic/runtime/topic_completion.md",
+                    "gap_map_path": "topics/demo-topic/runtime/gap_map.md",
                     "promotion_gate_path": None,
                 },
                 "candidate_ids": ["candidate:demo-candidate"],
@@ -8723,7 +9249,7 @@ class AITPServiceTests(unittest.TestCase):
                         "artifact_kind": "formal_theory_review",
                         "candidate_id": "candidate:demo-candidate",
                         "status": "not_ready",
-                        "path": "validation/topics/demo-topic/runs/2026-04-04-demo/theory-packets/candidate-demo-candidate/formal_theory_review.json",
+                        "path": "topics/demo-topic/L4/runs/2026-04-04-demo/theory-packets/candidate-demo-candidate/formal_theory_review.json",
                     }
                 ],
             }
@@ -8795,7 +9321,7 @@ class AITPServiceTests(unittest.TestCase):
     def test_apply_candidate_split_contract_creates_children_and_deferred_buffer(self) -> None:
         self._write_runtime_state()
         self._write_candidate()
-        run_root = self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "2026-03-13-demo"
+        run_root = self.service._feedback_run_root("demo-topic", "2026-03-13-demo")
         contract_path = run_root / "candidate_split.contract.json"
         contract_path.write_text(
             json.dumps(
@@ -8867,7 +9393,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(source_row["status"], "split_into_children")
         self.assertEqual(child_row["split_parent_id"], "candidate:demo-candidate")
         deferred_payload = json.loads(
-            (self.kernel_root / "runtime" / "topics" / "demo-topic" / "deferred_candidates.json").read_text(encoding="utf-8")
+            (self.service._runtime_root("demo-topic") / "deferred_candidates.json").read_text(encoding="utf-8")
         )
         self.assertEqual(deferred_payload["entries"][0]["status"], "buffered")
         self.assertEqual(deferred_payload["entries"][0]["entry_id"], "deferred:demo-caveat")
@@ -8875,7 +9401,7 @@ class AITPServiceTests(unittest.TestCase):
     def test_apply_candidate_split_contract_preserves_existing_child_audit_fields(self) -> None:
         self._write_runtime_state()
         self._write_candidate()
-        run_root = self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "2026-03-13-demo"
+        run_root = self.service._feedback_run_root("demo-topic", "2026-03-13-demo")
         ledger_path = run_root / "candidate_ledger.jsonl"
         existing_rows = [
             json.loads(line)
@@ -8961,7 +9487,7 @@ class AITPServiceTests(unittest.TestCase):
     def test_reactivate_deferred_candidates_materializes_reactivated_candidate(self) -> None:
         self._write_runtime_state()
         self._write_candidate()
-        run_root = self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "2026-03-13-demo"
+        run_root = self._feedback_run_root("demo-topic", "2026-03-13-demo")
         contract_path = run_root / "candidate_split.contract.json"
         contract_path.write_text(
             json.dumps(
@@ -9004,7 +9530,7 @@ class AITPServiceTests(unittest.TestCase):
             encoding="utf-8",
         )
         self.service.apply_candidate_split_contract(topic_slug="demo-topic", updated_by="aitp-cli")
-        source_index_path = self.kernel_root / "source-layer" / "topics" / "demo-topic" / "source_index.jsonl"
+        source_index_path = self._l0_root("demo-topic") / "source_index.jsonl"
         source_index_path.parent.mkdir(parents=True, exist_ok=True)
         source_index_path.write_text(
             json.dumps(
@@ -9035,7 +9561,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(reactivated_row["status"], "reactivated")
         self.assertEqual(reactivated_row["reactivated_from"], "deferred:demo-reactivation")
         deferred_payload = json.loads(
-            (self.kernel_root / "runtime" / "topics" / "demo-topic" / "deferred_candidates.json").read_text(encoding="utf-8")
+            (self._runtime_root("demo-topic") / "deferred_candidates.json").read_text(encoding="utf-8")
         )
         self.assertEqual(deferred_payload["entries"][0]["status"], "reactivated")
 
@@ -9043,12 +9569,7 @@ class AITPServiceTests(unittest.TestCase):
         service = _FollowupStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)
         self._write_runtime_state()
         receipts_path = (
-            self.kernel_root
-            / "validation"
-            / "topics"
-            / "demo-topic"
-            / "runs"
-            / "2026-03-13-demo"
+            self._validation_run_root("demo-topic", "2026-03-13-demo")
             / "literature_followup_receipts.jsonl"
         )
         receipts_path.parent.mkdir(parents=True, exist_ok=True)
@@ -9083,10 +9604,10 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(len(payload["spawned_subtopics"]), 1)
         child_topic_slug = payload["spawned_subtopics"][0]["child_topic_slug"]
         self.assertIn(child_topic_slug, service.orchestrated_topics)
-        self.assertTrue((self.kernel_root / "runtime" / "topics" / child_topic_slug / "topic_state.json").exists())
+        self.assertTrue((self._runtime_root(child_topic_slug) / "topic_state.json").exists())
         ledger_rows = [
             json.loads(line)
-            for line in (self.kernel_root / "runtime" / "topics" / "demo-topic" / "followup_subtopics.jsonl").read_text(encoding="utf-8").splitlines()
+            for line in (self._runtime_root("demo-topic") / "followup_subtopics.jsonl").read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
         self.assertEqual(ledger_rows[0]["parent_topic_slug"], "demo-topic")
@@ -9115,12 +9636,7 @@ class AITPServiceTests(unittest.TestCase):
         service = _FollowupStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)
         self._write_runtime_state()
         receipts_path = (
-            self.kernel_root
-            / "validation"
-            / "topics"
-            / "demo-topic"
-            / "runs"
-            / "2026-03-13-demo"
+            self._validation_run_root("demo-topic", "2026-03-13-demo")
             / "literature_followup_receipts.jsonl"
         )
         receipts_path.parent.mkdir(parents=True, exist_ok=True)
@@ -9148,7 +9664,7 @@ class AITPServiceTests(unittest.TestCase):
         child_topic_slug = spawned["spawned_subtopics"][0]["child_topic_slug"]
         followup_rows = [
             json.loads(line)
-            for line in (self.kernel_root / "runtime" / "topics" / "demo-topic" / "followup_subtopics.jsonl").read_text(encoding="utf-8").splitlines()
+            for line in (self._runtime_root("demo-topic") / "followup_subtopics.jsonl").read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
         service.update_followup_return_packet(
@@ -9156,7 +9672,7 @@ class AITPServiceTests(unittest.TestCase):
             return_status="recovered_units",
             accepted_return_shape="recovered_units",
             return_summary="Recovered the missing proof background and bounded notation context.",
-            return_artifact_paths=["feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl"],
+            return_artifact_paths=["topics/demo-topic/L3/runs/2026-03-13-demo/candidate_ledger.jsonl"],
             updated_by="aitp-cli",
         )
 
@@ -9170,7 +9686,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue(Path(payload["followup_reintegration_path"]).exists())
         updated_rows = [
             json.loads(line)
-            for line in (self.kernel_root / "runtime" / "topics" / "demo-topic" / "followup_subtopics.jsonl").read_text(encoding="utf-8").splitlines()
+            for line in (self._runtime_root("demo-topic") / "followup_subtopics.jsonl").read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
         self.assertEqual(updated_rows[0]["status"], "reintegrated")
@@ -9187,12 +9703,7 @@ class AITPServiceTests(unittest.TestCase):
         service = _FollowupStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)
         self._write_runtime_state()
         receipts_path = (
-            self.kernel_root
-            / "validation"
-            / "topics"
-            / "demo-topic"
-            / "runs"
-            / "2026-03-13-demo"
+            self._validation_run_root("demo-topic", "2026-03-13-demo")
             / "literature_followup_receipts.jsonl"
         )
         receipts_path.parent.mkdir(parents=True, exist_ok=True)
@@ -9250,12 +9761,7 @@ class AITPServiceTests(unittest.TestCase):
         service = _FollowupStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)
         self._write_runtime_state()
         receipts_path = (
-            self.kernel_root
-            / "validation"
-            / "topics"
-            / "demo-topic"
-            / "runs"
-            / "2026-03-13-demo"
+            self._validation_run_root("demo-topic", "2026-03-13-demo")
             / "literature_followup_receipts.jsonl"
         )
         receipts_path.parent.mkdir(parents=True, exist_ok=True)
@@ -9288,7 +9794,7 @@ class AITPServiceTests(unittest.TestCase):
             accepted_return_shape="resolved_gap_update",
             return_summary="Recovered the cited definition and bounded the parent reentry target.",
             child_topic_summary="The child topic now contains the cited-definition recovery path and bounded notes.",
-            return_artifact_paths=["validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo/coverage_ledger.json"],
+            return_artifact_paths=["topics/demo-topic/L4/runs/2026-03-13-demo/theory-packets/candidate-demo/coverage_ledger.json"],
             updated_by="aitp-cli",
         )
 
@@ -9514,6 +10020,223 @@ class AITPServiceTests(unittest.TestCase):
         self.assertGreater(packet_payload["proof_obligation_count"], 0)
         self.assertEqual(packet_payload["status"], "needs_refinement")
 
+    def test_select_lean_bridge_export_target_materializes_durable_contract_for_ready_formal_candidate(self) -> None:
+        self._write_runtime_state(run_id="run-001")
+        self._write_candidate(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            candidate_type="theorem_card",
+            intended_l2_target="theorem:demo-formal-export",
+            title="Demo Formal Export Target",
+        )
+        self.service.audit_theory_coverage(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            candidate_id="candidate:demo-candidate",
+            source_sections=["sec:intro"],
+            covered_sections=["sec:intro"],
+            equation_labels=["eq:1"],
+            notation_bindings=[{"symbol": "H", "meaning": "Hamiltonian"}],
+            derivation_nodes=["def:h", "eq:1"],
+            consensus_status="unanimous",
+            critical_unit_recall=1.0,
+            missing_anchor_count=0,
+            skeptic_major_gap_count=0,
+            supporting_regression_question_ids=["regression_question:demo-formal-export"],
+            supporting_oracle_ids=["question_oracle:demo-formal-export"],
+            supporting_regression_run_ids=["regression_run:demo-formal-export"],
+            topic_completion_status="promotion-ready",
+        )
+        self.service.audit_formal_theory(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            candidate_id="candidate:demo-candidate",
+            formal_theory_role="trusted_target",
+            statement_graph_role="target_statement",
+            target_statement_id="theorem:demo-formal-export",
+            informal_statement="A bounded theorem-facing export target.",
+            formal_target="Demo.Export.demo_formal_export",
+            faithfulness_status="reviewed",
+            faithfulness_strategy="bounded theorem-facing fixture",
+            comparator_audit_status="passed",
+            provenance_kind="adapted_existing_formalization",
+            attribution_requirements=["Preserve theorem-facing source anchors."],
+            provenance_sources=["physlib:demo/export.lean@abc1234"],
+            prerequisite_closure_status="closed",
+            lean_prerequisite_ids=["physlib:demo-prereq"],
+            supporting_obligation_ids=["proof_obligation:demo-formal-export"],
+        )
+
+        payload = self.service.select_lean_bridge_export_target(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            updated_by="aitp-cli",
+        )
+
+        self.assertEqual(payload["status"], "selected")
+        self.assertEqual(payload["candidate_id"], "candidate:demo-candidate")
+        self.assertEqual(payload["target_statement_id"], "theorem:demo-formal-export")
+        contract_path = Path(payload["lean_bridge_export_target_path"])
+        note_path = Path(payload["lean_bridge_export_target_note_path"])
+        self.assertTrue(contract_path.exists())
+        self.assertTrue(note_path.exists())
+        contract_payload = json.loads(contract_path.read_text(encoding="utf-8"))
+        self.assertEqual(contract_payload["status"], "selected")
+        self.assertTrue(contract_payload["formal_theory_review_path"].endswith("formal_theory_review.json"))
+        self.assertTrue(contract_payload["lean_ready_packet_path"].endswith("lean_ready_packet.json"))
+        self.assertTrue(contract_payload["proof_obligations_path"].endswith("proof_obligations.json"))
+        self.assertTrue(contract_payload["proof_state_path"].endswith("proof_state.json"))
+
+    def test_select_lean_bridge_export_target_blocks_without_ready_formal_review(self) -> None:
+        self._write_runtime_state(run_id="run-001")
+        self._write_candidate(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            candidate_type="theorem_card",
+            intended_l2_target="theorem:demo-formal-export",
+            title="Demo Formal Export Target",
+        )
+
+        payload = self.service.select_lean_bridge_export_target(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            updated_by="aitp-cli",
+        )
+
+        self.assertEqual(payload["status"], "blocked")
+        self.assertIn("formal_theory_review", " ".join(payload["blocking_reasons"]))
+        contract_payload = json.loads(Path(payload["lean_bridge_export_target_path"]).read_text(encoding="utf-8"))
+        self.assertEqual(contract_payload["status"], "blocked")
+
+    def test_run_lean_bridge_export_check_reports_typecheck_passed_for_ready_target(self) -> None:
+        self._write_runtime_state(run_id="run-001")
+        self._write_candidate(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            candidate_type="theorem_card",
+            intended_l2_target="theorem:demo-formal-export",
+            title="Demo Formal Export Target",
+        )
+        self.service.audit_theory_coverage(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            candidate_id="candidate:demo-candidate",
+            source_sections=["sec:intro"],
+            covered_sections=["sec:intro"],
+            equation_labels=["eq:1"],
+            notation_bindings=[{"symbol": "H", "meaning": "Hamiltonian"}],
+            derivation_nodes=["def:h", "eq:1"],
+            consensus_status="unanimous",
+            critical_unit_recall=1.0,
+            missing_anchor_count=0,
+            skeptic_major_gap_count=0,
+            supporting_regression_question_ids=["regression_question:demo-formal-export"],
+            supporting_oracle_ids=["question_oracle:demo-formal-export"],
+            supporting_regression_run_ids=["regression_run:demo-formal-export"],
+            topic_completion_status="promotion-ready",
+        )
+        self.service.audit_formal_theory(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            candidate_id="candidate:demo-candidate",
+            formal_theory_role="trusted_target",
+            statement_graph_role="target_statement",
+            target_statement_id="theorem:demo-formal-export",
+            informal_statement="A bounded theorem-facing export target.",
+            formal_target="Demo.Export.demo_formal_export",
+            faithfulness_status="reviewed",
+            faithfulness_strategy="bounded theorem-facing fixture",
+            comparator_audit_status="passed",
+            provenance_kind="adapted_existing_formalization",
+            attribution_requirements=["Preserve theorem-facing source anchors."],
+            provenance_sources=["physlib:demo/export.lean@abc1234"],
+            prerequisite_closure_status="closed",
+            lean_prerequisite_ids=["physlib:demo-prereq"],
+            supporting_obligation_ids=["proof_obligation:demo-formal-export"],
+        )
+        checker_path = self.kernel_root / "fake_lean_ok.py"
+        checker_path.write_text(
+            "from pathlib import Path\nimport sys\nPath(sys.argv[-1]).read_text(encoding='utf-8')\nraise SystemExit(0)\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.run_lean_bridge_export_check(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            checker_command=[sys.executable, str(checker_path)],
+            updated_by="aitp-cli",
+        )
+
+        self.assertEqual(payload["status"], "typecheck_passed")
+        self.assertEqual(payload["checker_exit_code"], 0)
+        self.assertTrue(Path(payload["export_report_path"]).exists())
+        self.assertTrue(Path(payload["export_module_path"]).exists())
+        report_payload = json.loads(Path(payload["export_report_path"]).read_text(encoding="utf-8"))
+        self.assertEqual(report_payload["status"], "typecheck_passed")
+
+    def test_run_lean_bridge_export_check_reports_mismatch_for_checker_failure(self) -> None:
+        self._write_runtime_state(run_id="run-001")
+        self._write_candidate(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            candidate_type="theorem_card",
+            intended_l2_target="theorem:demo-formal-export",
+            title="Demo Formal Export Target",
+        )
+        self.service.audit_theory_coverage(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            candidate_id="candidate:demo-candidate",
+            source_sections=["sec:intro"],
+            covered_sections=["sec:intro"],
+            consensus_status="unanimous",
+            critical_unit_recall=1.0,
+            missing_anchor_count=0,
+            skeptic_major_gap_count=0,
+            supporting_regression_question_ids=["regression_question:demo-formal-export"],
+            supporting_oracle_ids=["question_oracle:demo-formal-export"],
+            supporting_regression_run_ids=["regression_run:demo-formal-export"],
+            topic_completion_status="promotion-ready",
+        )
+        self.service.audit_formal_theory(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            candidate_id="candidate:demo-candidate",
+            formal_theory_role="trusted_target",
+            statement_graph_role="target_statement",
+            target_statement_id="theorem:demo-formal-export",
+            informal_statement="A bounded theorem-facing export target.",
+            formal_target="Demo.Export.demo_formal_export",
+            faithfulness_status="reviewed",
+            faithfulness_strategy="bounded theorem-facing fixture",
+            comparator_audit_status="passed",
+            provenance_kind="adapted_existing_formalization",
+            attribution_requirements=["Preserve theorem-facing source anchors."],
+            provenance_sources=["physlib:demo/export.lean@abc1234"],
+            prerequisite_closure_status="closed",
+            lean_prerequisite_ids=["physlib:demo-prereq"],
+            supporting_obligation_ids=["proof_obligation:demo-formal-export"],
+        )
+        checker_path = self.kernel_root / "fake_lean_fail.py"
+        checker_path.write_text(
+            "import sys\nprint('type mismatch at demo_formal_export', file=sys.stderr)\nraise SystemExit(1)\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.run_lean_bridge_export_check(
+            topic_slug="demo-topic",
+            run_id="run-001",
+            checker_command=[sys.executable, str(checker_path)],
+            updated_by="aitp-cli",
+        )
+
+        self.assertEqual(payload["status"], "mismatch_reported")
+        self.assertEqual(payload["checker_exit_code"], 1)
+        self.assertEqual(payload["mismatch_kind"], "lean_type_error")
+        report_payload = json.loads(Path(payload["export_report_path"]).read_text(encoding="utf-8"))
+        self.assertEqual(report_payload["status"], "mismatch_reported")
+        self.assertIn("type mismatch", report_payload["checker_stderr"])
+
     def test_execute_auto_actions_supports_topic_completion_and_lean_bridge(self) -> None:
         topic_slug = "demo-topic"
         self._write_runtime_state()
@@ -9535,7 +10258,7 @@ class AITPServiceTests(unittest.TestCase):
             supporting_oracle_ids=["question_oracle:demo-definition"],
             supporting_regression_run_ids=["regression_run:demo-definition"],
         )
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self._runtime_root(topic_slug)
         queue_path = runtime_root / "action_queue.jsonl"
         queue_path.write_text(
             json.dumps(
@@ -9654,7 +10377,7 @@ class AITPServiceTests(unittest.TestCase):
     def test_execute_auto_actions_supports_literature_followup_search(self) -> None:
         topic_slug = "demo-topic"
         run_id = "2026-03-13-demo"
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self._runtime_root(topic_slug)
         runtime_root.mkdir(parents=True, exist_ok=True)
         handler_path = self.kernel_root / "runtime" / "scripts" / "fake_literature_followup.py"
         handler_path.parent.mkdir(parents=True, exist_ok=True)
@@ -9776,7 +10499,7 @@ class AITPServiceTests(unittest.TestCase):
         )
         runtime_protocol_json = runtime_root / "runtime_protocol.generated.json"
         runtime_protocol_note = runtime_root / "runtime_protocol.generated.md"
-        consultation_root = self.kernel_root / "feedback" / "topics" / topic_slug / "runs" / "2026-03-13-demo" / "consultations"
+        consultation_root = self._feedback_run_root(topic_slug, "2026-03-13-demo") / "consultations"
         consultation_root.mkdir(parents=True, exist_ok=True)
         consultation_index_path = consultation_root / "consultation_index.jsonl"
         consultation_result_path = consultation_root / "consultation_result.json"
@@ -9853,7 +10576,7 @@ class AITPServiceTests(unittest.TestCase):
     def test_run_consultation_followup_records_consultation_receipt_and_selection(self) -> None:
         topic_slug = "demo-topic"
         runtime_root = self._write_runtime_state(topic_slug=topic_slug, run_id="run-001")
-        consultation_root = self.kernel_root / "feedback" / "topics" / topic_slug / "runs" / "run-001" / "consultations"
+        consultation_root = self._feedback_run_root(topic_slug, "run-001") / "consultations"
         consultation_root.mkdir(parents=True, exist_ok=True)
         consultation_index_path = consultation_root / "consultation_index.jsonl"
         consultation_result_path = consultation_root / "consultation_result.json"
@@ -10600,3 +11323,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("aitp-review", claude_payload["mcpServers"])
         self.assertNotIn("aitp", claude_payload["mcpServers"])
         self.assertEqual(claude_payload["mcpServers"]["aitp-review"]["env"]["AITP_MCP_PROFILE"], "review")
+
+
+
+

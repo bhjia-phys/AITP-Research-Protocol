@@ -495,7 +495,7 @@ def stage_literature_units(
         source_refs = _dedupe_strings(
             [str(item) for item in (unit.get("source_refs") or [])]
             or wiki_page_paths
-            or [f"intake/topics/{resolved_topic_slug}/vault/wiki/source-intake.md"]
+            or [f"topics/{resolved_topic_slug}/L1/vault/wiki/source-intake.md"]
         )
         integration_summary = str(unit.get("integration_summary") or "").strip() or (
             f"Staged from L1 literature intake for source `{resolved_source_slug}`."

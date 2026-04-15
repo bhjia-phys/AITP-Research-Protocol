@@ -98,7 +98,10 @@ Codex should now be able to:
 - auto-trigger `using-aitp` for natural-language theory requests;
 - treat `继续这个 topic` as current-topic continuation before asking for a slug;
 - translate steering language into durable AITP steering updates;
-- follow `runtime_protocol.generated.md` after routing succeeds.
+- follow `runtime_protocol.generated.md` after routing succeeds;
+- inspect active human-choice surfaces with `aitp interaction --topic-slug <topic_slug> --json`;
+- resolve formal decision points with `aitp resolve-decision ...`;
+- resolve operator checkpoints with `aitp resolve-checkpoint ...`.
 
 Minimal sanity checks:
 

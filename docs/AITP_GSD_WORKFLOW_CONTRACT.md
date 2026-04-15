@@ -86,6 +86,8 @@ Operational rule:
 - materialize or refresh durable topic state first
 - follow `runtime_protocol.generated.md`
 - keep outputs inside `L0/L1/L3/L4` until the declared gates are satisfied
+- keep the topic-owned truth root `topics/<topic_slug>/...` authoritative for
+  research state; repo-planning files and helper projections do not replace it
 
 ## 5. Code inside a topic still belongs to AITP
 
@@ -157,6 +159,14 @@ Example:
 - promotion readiness
 - topic completion
 
+Topic rule:
+
+- the topic-owned truth root is `topics/<topic_slug>/...`
+- when a human needs to read, review, steer, or resume, Markdown surfaces in
+  that root stay authoritative
+- JSON and JSONL remain machine-facing companions for handlers, ledgers,
+  compatibility payloads, and replayable state
+
 `GSD` owns:
 
 - project and phase planning for this repository
@@ -167,9 +177,9 @@ Example:
 
 `GSD` does not replace:
 
-- `runtime/topics/<topic_slug>/**`
-- `feedback/topics/<topic_slug>/**`
-- `validation/topics/<topic_slug>/**`
+- `topics/<topic_slug>/runtime/**`
+- `topics/<topic_slug>/L3/**`
+- `topics/<topic_slug>/L4/**`
 - any other AITP research-state artifact
 
 ## 8. Recommended everyday usage

@@ -91,9 +91,10 @@ def build_mechanical_completion_preflight(
     queue_rows: list[dict],
 ) -> dict:
     run_id = str((topic_state or {}).get("latest_run_id") or "").strip()
+    topic_shell_root = topic_root.parent
 
     operations_root = (
-        knowledge_root / "validation" / "topics" / topic_slug / "runs" / run_id / "operations"
+        topic_shell_root / "L4" / "runs" / run_id / "operations"
         if run_id
         else None
     )
@@ -120,7 +121,7 @@ def build_mechanical_completion_preflight(
                 operations_missing_baseline.append(f"{title}: baseline_status={baseline_status}")
 
     candidate_rows = (
-        read_jsonl(knowledge_root / "feedback" / "topics" / topic_slug / "runs" / run_id / "candidate_ledger.jsonl")
+        read_jsonl(topic_shell_root / "L3" / "runs" / run_id / "candidate_ledger.jsonl")
         if run_id
         else []
     )
@@ -278,6 +279,7 @@ def build_report(state: dict) -> str:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--knowledge-root")
     parser.add_argument("--topic-slug", required=True)
     parser.add_argument("--phase", choices=["entry", "exit"], default="entry")
     parser.add_argument("--updated-by", default="codex")
@@ -286,8 +288,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = build_parser().parse_args()
-    knowledge_root = Path(__file__).resolve().parents[2]
-    topic_root = knowledge_root / "runtime" / "topics" / args.topic_slug
+    knowledge_root = (
+        Path(args.knowledge_root).expanduser().resolve()
+        if args.knowledge_root
+        else Path(__file__).resolve().parents[2]
+    )
+    topic_root = knowledge_root / "topics" / args.topic_slug / "runtime"
 
     topic_state = read_json(topic_root / "topic_state.json")
     interaction_state = read_json(topic_root / "interaction_state.json")

@@ -128,6 +128,8 @@ description: Route Codex research work through the AITP kernel. Use when the req
 12. If no active checkpoint is present, continue bounded execution instead of asking ritual permission again.
 13. If iterative verify is active, keep the L3-L4 loop moving until success, a real blocker, or a real human checkpoint appears.
 14. End with `aitp audit --topic-slug <topic_slug> --phase exit`.
+15. When a human-choice surface is active, inspect it with `aitp interaction --topic-slug <topic_slug>`.
+16. If the active surface is a formal decision point, answer it with `aitp resolve-decision ...`; if it is an operator checkpoint, answer it with `aitp resolve-checkpoint ...` and include a comment when the choice needs extra steering detail.
 
 ## Hard rules
 
@@ -149,6 +151,10 @@ description: Route Codex research work through the AITP kernel. Use when the req
 aitp session-start "<task>"
 aitp loop --topic-slug <topic_slug> --human-request "<task>" --skill-query "<capability gap>"
 aitp resume --topic-slug <topic_slug> --human-request "<task>"
+aitp interaction --topic-slug <topic_slug> --json
+aitp list-decisions --topic-slug <topic_slug> --pending-only --json
+aitp resolve-decision --topic-slug <topic_slug> --decision-id <decision_id> --option <index> --comment "<why>"
+aitp resolve-checkpoint --topic-slug <topic_slug> --option <index> --comment "<why>"
 aitp coverage-audit --topic-slug <topic_slug> --candidate-id <candidate_id> --source-section <section> --covered-section <section>
 aitp request-promotion --topic-slug <topic_slug> --candidate-id <candidate_id> --backend-id backend:theoretical-physics-knowledge-network
 aitp approve-promotion --topic-slug <topic_slug> --candidate-id <candidate_id>
@@ -322,6 +328,8 @@ description: Route Claude Code through the AITP runtime so natural-language rese
 10. If no active checkpoint is present, continue bounded execution instead of asking ritual permission again.
 11. If iterative verify is active, keep the bounded verify loop running until success, a real blocker, or a real human checkpoint appears.
 12. Close with `aitp audit --topic-slug <topic_slug> --phase exit`.
+13. When a human-choice surface is active, inspect it with `aitp interaction --topic-slug <topic_slug>`.
+14. If the active surface is a formal decision point, answer it with `aitp resolve-decision ...`; if it is an operator checkpoint, answer it with `aitp resolve-checkpoint ...` and include a comment when the choice needs extra steering detail.
 
 ## Hard rules
 
@@ -363,6 +371,8 @@ description: Route OpenCode through the AITP runtime so natural-language researc
 10. If no active checkpoint is present, continue bounded execution instead of asking ritual permission again.
 11. If iterative verify is active, keep the bounded verify loop running until success, a real blocker, or a real human checkpoint appears.
 12. Close with `aitp audit --topic-slug <topic_slug> --phase exit`.
+13. When a human-choice surface is active, inspect it with `aitp interaction --topic-slug <topic_slug>`.
+14. If the active surface is a formal decision point, answer it with `aitp resolve-decision ...`; if it is an operator checkpoint, answer it with `aitp resolve-checkpoint ...` and include a comment when the choice needs extra steering detail.
 
 ## Hard rules
 
@@ -391,7 +401,7 @@ Use this skill when the task belongs inside AITP rather than a free-form note wo
 aitp loop --topic-slug <topic_slug> --human-request "<task>"
 ```
 
-Then read `runtime/topics/<topic_slug>/runtime_protocol.generated.md` and follow its `Must read now` and `Escalate only when triggered` sections before acting on the queue. Do not bypass the loop and jump straight into ad hoc browsing or execution.
+Then read `topics/<topic_slug>/runtime/runtime_protocol.generated.md` and follow its `Must read now` and `Escalate only when triggered` sections before acting on the queue. Do not bypass the loop and jump straight into ad hoc browsing or execution.
 
 If the topic does not exist yet:
 

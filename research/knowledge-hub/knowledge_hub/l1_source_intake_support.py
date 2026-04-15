@@ -692,10 +692,10 @@ def _enrich_source_row_for_intelligence(row: dict[str, Any], *, topic_slug: str)
 
 def source_intelligence_payload(*, kernel_root: Path, topic_slug: str, source_rows: list[dict[str, Any]]) -> dict[str, Any]:
     local_rows = [_enrich_source_row_for_intelligence(row, topic_slug=topic_slug) for row in source_rows]
-    topics_root = kernel_root / "source-layer" / "topics"
+    topics_root = kernel_root / "topics"
     global_rows: list[dict[str, Any]] = []
-    for source_index_path in sorted(topics_root.glob("*/source_index.jsonl")):
-        indexed_topic_slug = source_index_path.parent.name
+    for source_index_path in sorted(topics_root.glob("*/L0/source_index.jsonl")):
+        indexed_topic_slug = source_index_path.parent.parent.name
         for row in _read_jsonl(source_index_path):
             global_rows.append(_enrich_source_row_for_intelligence(row, topic_slug=indexed_topic_slug))
     intelligence = build_source_intelligence(

@@ -462,6 +462,16 @@ class AITPCLITests(unittest.TestCase):
         self.assertEqual(list_args.command, "list-decisions")
         self.assertTrue(list_args.pending_only)
 
+        interaction_args = parser.parse_args(["interaction", "--topic-slug", "demo-topic", "--json"])
+        self.assertEqual(interaction_args.command, "interaction")
+        self.assertTrue(interaction_args.json)
+
+        resolve_checkpoint_args = parser.parse_args(
+            ["resolve-checkpoint", "--topic-slug", "demo-topic", "--option", "0"]
+        )
+        self.assertEqual(resolve_checkpoint_args.command, "resolve-checkpoint")
+        self.assertEqual(resolve_checkpoint_args.option, 0)
+
         trace_args = parser.parse_args(
             [
                 "trace-decision",
@@ -1223,6 +1233,51 @@ class AITPCLITests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         mock_list.assert_called_once()
         mock_factory.assert_not_called()
+
+    def test_main_dispatches_interaction_through_service(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.topic_interaction.return_value = {
+                "topic_slug": "demo-topic",
+                "primary_interaction": {"kind": "operator_checkpoint"},
+            }
+            mock_factory.return_value = mock_service
+            with patch.object(sys, "argv", ["aitp", "interaction", "--topic-slug", "demo-topic", "--json"]):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.topic_interaction.assert_called_once_with(topic_slug="demo-topic", updated_by="aitp-cli")
+
+    def test_main_dispatches_resolve_checkpoint_through_service(self) -> None:
+        with patch.object(aitp_cli, "_service_from_args") as mock_factory:
+            mock_service = MagicMock()
+            mock_service.resolve_operator_checkpoint.return_value = {
+                "operator_checkpoint": {"status": "answered"},
+            }
+            mock_factory.return_value = mock_service
+            with patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp",
+                    "resolve-checkpoint",
+                    "--topic-slug",
+                    "demo-topic",
+                    "--option",
+                    "0",
+                    "--comment",
+                    "Focus on the theorem-facing route first.",
+                ],
+            ):
+                exit_code = aitp_cli.main()
+
+        self.assertEqual(exit_code, 0)
+        mock_service.resolve_operator_checkpoint.assert_called_once_with(
+            topic_slug="demo-topic",
+            option_index=0,
+            comment="Focus on the theorem-facing route first.",
+            resolved_by="human",
+        )
 
     def test_main_dispatches_trace_decision_without_service(self) -> None:
         with patch.object(aitp_cli, "record_decision_trace", return_value={"decision_trace": {"id": "dt:demo"}}) as mock_trace:

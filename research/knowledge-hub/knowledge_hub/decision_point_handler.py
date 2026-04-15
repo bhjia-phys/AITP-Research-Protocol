@@ -10,6 +10,7 @@ import jsonschema
 
 from .bundle_support import materialized_default_user_kernel_root
 from .decision_trace_handler import record_decision_trace
+from .topic_truth_root_support import runtime_root
 
 
 def _kernel_root(kernel_root: Path | None = None) -> Path:
@@ -22,7 +23,7 @@ def _kernel_root(kernel_root: Path | None = None) -> Path:
 
 
 def _runtime_topic_root(topic_slug: str, kernel_root: Path | None = None) -> Path:
-    return _kernel_root(kernel_root) / "runtime" / "topics" / topic_slug
+    return runtime_root(_kernel_root(kernel_root), topic_slug)
 
 
 def _decision_dir(topic_slug: str, kernel_root: Path | None = None) -> Path:

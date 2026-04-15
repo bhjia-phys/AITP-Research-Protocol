@@ -7,7 +7,7 @@ The goal is to expose complexity in the order an agent actually needs it while
 preserving every hard governance constraint.
 
 The public machine-readable contract for
-`runtime/topics/<topic_slug>/runtime_protocol.generated.json` lives at:
+`topics/<topic_slug>/runtime/runtime_protocol.generated.json` lives at:
 
 - `runtime/schemas/progressive-disclosure-runtime-bundle.schema.json`
 
@@ -181,7 +181,13 @@ Mandatory deeper reads:
 
 ## 6. JSON and markdown expectations
 
-- The machine-readable JSON surface remains the durable source of truth.
+- `runtime_protocol.generated.md` is the operator-facing continuation surface.
+- Markdown is the human authority for operator-facing continuation, review, and
+  ordered read guidance.
+- `runtime_protocol.generated.json` stays semantically aligned with the
+  Markdown render.
+- JSON remains the machine-facing companion and stable schema contract for
+  executors, handlers, and replay tooling.
 - The generated JSON surface should carry
   `$schema=https://aitp.local/schemas/progressive-disclosure-runtime-bundle.schema.json`
   and `bundle_kind=progressive_disclosure_runtime_bundle`.

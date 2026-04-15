@@ -27,6 +27,8 @@ from orchestrator_contract_support import (
     derive_selected_candidate_route_choice,
     load_consultation_followup_selection,
     load_selected_candidate_promotion_gate,
+    post_promotion_formalization_followup_action,
+    post_promotion_proof_repair_review_action,
     load_selected_candidate_route_choice,
     append_literature_followup_actions,
     append_runtime_helper_actions,
@@ -73,27 +75,82 @@ def slugify(text: str) -> str:
 
 
 def write_json(path: Path, payload: dict) -> None:
+    rendered = json.dumps(payload, ensure_ascii=True, indent=2) + "\n"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def write_jsonl(path: Path, rows: list[dict]) -> None:
+    rendered = "".join(json.dumps(row, ensure_ascii=True, separators=(",", ":")) + "\n" for row in rows)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        "".join(json.dumps(row, ensure_ascii=True, separators=(",", ":")) + "\n" for row in rows),
-        encoding="utf-8",
-    )
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(text, encoding="utf-8")
+
+
+def compatibility_projection_path(path: Path) -> Path | None:
+    resolved = path.expanduser().resolve()
+    parts = resolved.parts
+    if "runtime" in parts and "topics" in parts:
+        runtime_index = parts.index("runtime")
+        if runtime_index + 2 < len(parts) and parts[runtime_index + 1] == "topics":
+            kernel_root = Path(parts[0]).joinpath(*parts[1:runtime_index])
+            topic_slug = parts[runtime_index + 2]
+            remainder = parts[runtime_index + 3 :]
+            return kernel_root / "topics" / topic_slug / "runtime" / Path(*remainder)
+    if "feedback" in parts and "topics" in parts:
+        feedback_index = parts.index("feedback")
+        if feedback_index + 2 < len(parts) and parts[feedback_index + 1] == "topics":
+            kernel_root = Path(parts[0]).joinpath(*parts[1:feedback_index])
+            topic_slug = parts[feedback_index + 2]
+            remainder = parts[feedback_index + 3 :]
+            return kernel_root / "topics" / topic_slug / "L3" / Path(*remainder)
+    if "validation" in parts and "topics" in parts:
+        validation_index = parts.index("validation")
+        if validation_index + 2 < len(parts) and parts[validation_index + 1] == "topics":
+            kernel_root = Path(parts[0]).joinpath(*parts[1:validation_index])
+            topic_slug = parts[validation_index + 2]
+            remainder = parts[validation_index + 3 :]
+            return kernel_root / "topics" / topic_slug / "L4" / Path(*remainder)
+    if "topics" in parts:
+        topics_index = parts.index("topics")
+        if topics_index + 3 < len(parts):
+            kernel_root = Path(parts[0]).joinpath(*parts[1:topics_index])
+            topic_slug = parts[topics_index + 1]
+            surface = parts[topics_index + 2]
+            remainder = parts[topics_index + 3 :]
+            if surface == "runtime":
+                return kernel_root / "runtime" / "topics" / topic_slug / Path(*remainder)
+            if surface == "L3":
+                return kernel_root / "feedback" / "topics" / topic_slug / Path(*remainder)
+            if surface == "L4":
+                return kernel_root / "validation" / "topics" / topic_slug / Path(*remainder)
+    return None
 
 
 def load_json(path: Path) -> dict | None:
-    if not path.exists():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return None
+        target = compatibility_path
+    return json.loads(target.read_text(encoding="utf-8"))
 
 
 def python_command() -> list[str]:
@@ -114,10 +171,14 @@ def python_command() -> list[str]:
 
 
 def read_jsonl(path: Path) -> list[dict]:
-    if not path.exists():
-        return []
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return []
+        target = compatibility_path
     rows: list[dict] = []
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
+    for raw_line in target.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
         if line:
             rows.append(json.loads(line))
@@ -1252,6 +1313,26 @@ def materialize_action_queue(
                                 }
                             )
                         else:
+                            proof_repair_review = post_promotion_proof_repair_review_action(
+                                load_json=load_json,
+                                knowledge_root=knowledge_root,
+                                topic_slug=topic_state["topic_slug"],
+                                topic_state=topic_state,
+                                queue_meta=queue_meta,
+                            )
+                            if proof_repair_review is not None:
+                                queue.append(proof_repair_review)
+                                return queue, queue_meta
+                            post_promotion_followup = post_promotion_formalization_followup_action(
+                                load_json=load_json,
+                                knowledge_root=knowledge_root,
+                                topic_slug=topic_state["topic_slug"],
+                                topic_state=topic_state,
+                                queue_meta=queue_meta,
+                            )
+                            if post_promotion_followup is not None:
+                                queue.append(post_promotion_followup)
+                                return queue, queue_meta
                             queue.append(
                                 {
                                     "action_id": f"action:{topic_state['topic_slug']}:post-promotion-inspect",
@@ -1427,6 +1508,8 @@ def build_agent_brief(topic_state: dict, queue: list[dict], interaction_state: d
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--knowledge-root")
+    parser.add_argument("--repo-root")
     parser.add_argument("--topic-slug")
     parser.add_argument("--topic")
     parser.add_argument("--statement")
@@ -1447,8 +1530,16 @@ def main() -> int:
     if not topic_slug:
         raise SystemExit("Provide --topic-slug or --topic.")
 
-    knowledge_root = Path(__file__).resolve().parents[2]
-    research_root = knowledge_root.parent
+    knowledge_root = (
+        Path(args.knowledge_root).expanduser().resolve()
+        if args.knowledge_root
+        else Path(__file__).resolve().parents[2]
+    )
+    research_root = (
+        Path(args.repo_root).expanduser().resolve() / "research"
+        if args.repo_root
+        else knowledge_root.parent
+    )
     ensure_topic_shell(knowledge_root, topic_slug, args.statement, args.topic)
 
     register_arxiv = knowledge_root / "source-layer" / "scripts" / "register_arxiv_source.py"

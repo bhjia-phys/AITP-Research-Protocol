@@ -60,6 +60,19 @@ Ask OpenCode for a theory task in natural language, for example:
 
 OpenCode should enter AITP before doing substantial work.
 
+When AITP says a human choice is required, inspect the active surface with:
+
+```bash
+aitp interaction --topic-slug <topic_slug> --json
+```
+
+If the active surface is a formal decision point, resolve it with:
+
+```bash
+aitp resolve-decision --topic-slug <topic_slug> --decision-id <decision_id> --option <index> --comment "<why>"
+aitp resolve-checkpoint --topic-slug <topic_slug> --option <index> --comment "<why>"
+```
+
 After the OpenCode row is `ready`, use the shared first-run guide:
 
 - [`../docs/QUICKSTART.md`](../docs/QUICKSTART.md)

@@ -7,6 +7,7 @@ from typing import Any, Callable
 
 from .obsidian_graph_export import materialize_obsidian_concept_graph_export
 from .l1_source_intake_support import l1_contradiction_summary_lines
+from .topic_truth_root_support import layer_root
 
 
 def now_iso() -> str:
@@ -58,11 +59,11 @@ def _relative_or_none(path: Path, relativize: Callable[[Path], str]) -> str | No
 
 
 def _vault_root(kernel_root: Path, topic_slug: str) -> Path:
-    return kernel_root / "intake" / "topics" / topic_slug / "vault"
+    return layer_root(kernel_root, topic_slug, "L1") / "vault"
 
 
 def _source_topic_root(kernel_root: Path, topic_slug: str) -> Path:
-    return kernel_root / "source-layer" / "topics" / topic_slug
+    return layer_root(kernel_root, topic_slug, "L0")
 
 
 def _build_raw_sources(

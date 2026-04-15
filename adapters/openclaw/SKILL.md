@@ -30,6 +30,7 @@ Use Phase 6 records during the run:
 ```bash
 aitp emit-decision --topic-slug <topic_slug> --question "<question>" --options "<json>" --blocking false
 aitp resolve-decision --topic-slug <topic_slug> --decision-id <dp_id> --option <index>
+aitp resolve-checkpoint --topic-slug <topic_slug> --option <index> --comment "<why>"
 aitp chronicle --topic-slug <topic_slug>
 ```
 

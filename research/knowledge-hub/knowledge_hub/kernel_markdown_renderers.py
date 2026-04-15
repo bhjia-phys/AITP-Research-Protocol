@@ -195,6 +195,32 @@ def render_operator_checkpoint_markdown(payload: dict[str, Any]) -> str:
     lines.extend(["", "## Evidence refs", ""])
     for item in payload.get("evidence_refs") or ["(none)"]:
         lines.append(f"- `{item}`")
+    lines.extend(["", "## Options", ""])
+    options = payload.get("options") or []
+    if options:
+        default_index = payload.get("default_option_index")
+        for index, option in enumerate(options):
+            default_marker = " default=`true`" if default_index == index else ""
+            lines.append(
+                f"- `{option.get('key') or f'option-{index}'}` label=`{option.get('label') or '(missing)'}`{default_marker}: {option.get('description') or '(missing)'}"
+            )
+    else:
+        lines.append("- (none)")
+    resolution = payload.get("resolution") or {}
+    if resolution:
+        lines.extend(["", "## Resolution", ""])
+        lines.append(
+            f"- Selected option index: `{resolution.get('chosen_option_index') if resolution.get('chosen_option_index') is not None else '(none)'}`"
+        )
+        lines.append(
+            f"- Selected option key: `{resolution.get('chosen_option_key') or '(none)'}`"
+        )
+        lines.append(
+            f"- Selected option label: `{resolution.get('chosen_option_label') or '(none)'}`"
+        )
+        lines.append(
+            f"- Human comment: {resolution.get('human_comment') or '(none)'}"
+        )
     lines.extend(["", "## Current answer", ""])
     lines.append(payload.get("answer") or "(none yet)")
     return "\n".join(lines) + "\n"

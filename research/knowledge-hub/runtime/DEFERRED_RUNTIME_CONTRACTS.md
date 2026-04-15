@@ -7,9 +7,9 @@ It is not a garbage bin and it is not a second Layer 2.
 
 ## Paths
 
-- `runtime/topics/<topic_slug>/deferred_candidates.json`
-- `runtime/topics/<topic_slug>/deferred_candidates.md`
-- optional lineage from `runtime/topics/<topic_slug>/followup_subtopics.jsonl`
+- `topics/<topic_slug>/runtime/deferred_candidates.json`
+- `topics/<topic_slug>/runtime/deferred_candidates.md`
+- optional lineage from `topics/<topic_slug>/runtime/followup_subtopics.jsonl`
 
 ## Purpose
 

@@ -16,6 +16,8 @@ def resolve_runtime_reference_path(
     if candidate.is_absolute():
         return candidate.resolve()
     normalized = raw.replace("\\", "/")
+    if normalized.startswith("topics/"):
+        return (kernel_root / Path(normalized)).resolve()
     if normalized.startswith("runtime/"):
         return (kernel_root / Path(normalized)).resolve()
     kernel_candidate = (kernel_root / candidate).resolve()

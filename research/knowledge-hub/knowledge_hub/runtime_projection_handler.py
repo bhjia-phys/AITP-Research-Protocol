@@ -8,6 +8,7 @@ from typing import Any
 import jsonschema
 
 from .bundle_support import materialized_default_user_kernel_root
+from .topic_truth_root_support import compatibility_projection_path, runtime_root
 
 
 def _kernel_root(kernel_root: Path | None = None) -> Path:
@@ -20,7 +21,7 @@ def _kernel_root(kernel_root: Path | None = None) -> Path:
 
 
 def _runtime_topic_root(topic_slug: str, kernel_root: Path | None = None) -> Path:
-    return _kernel_root(kernel_root) / "runtime" / "topics" / topic_slug
+    return runtime_root(_kernel_root(kernel_root), topic_slug)
 
 
 def _schema_path(schema_name: str, kernel_root: Path | None = None) -> Path:
@@ -28,19 +29,34 @@ def _schema_path(schema_name: str, kernel_root: Path | None = None) -> Path:
 
 
 def _read_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            raise FileNotFoundError(path)
+        target = compatibility_path
+    return json.loads(target.read_text(encoding="utf-8"))
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    rendered = json.dumps(payload, ensure_ascii=True, indent=2) + "\n"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
-        return []
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return []
+        target = compatibility_path
     rows: list[dict[str, Any]] = []
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
+    for raw_line in target.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
         if line:
             rows.append(json.loads(line))
@@ -48,16 +64,59 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
+    rendered = "".join(json.dumps(row, ensure_ascii=True, separators=(",", ":")) + "\n" for row in rows)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        "".join(json.dumps(row, ensure_ascii=True, separators=(",", ":")) + "\n" for row in rows),
-        encoding="utf-8",
-    )
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def _write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(text, encoding="utf-8")
+
+
+def _markdown_truth_note(*, artifact_kind: str, title: str, payload: dict[str, Any]) -> str:
+    topic_slug = str(payload.get("topic_slug") or "").strip() or "(missing)"
+    updated_at = str(payload.get("updated_at") or "").strip() or "(unknown)"
+    updated_by = str(payload.get("updated_by") or "").strip() or "(unknown)"
+    summary = str(
+        payload.get("summary")
+        or payload.get("next_action_summary")
+        or payload.get("question")
+        or payload.get("title")
+        or ""
+    ).strip()
+    lines = [
+        "---",
+        f"topic_slug: {topic_slug}",
+        f"artifact_kind: {artifact_kind}",
+        f"updated_at: {updated_at}",
+        f"updated_by: {updated_by}",
+        "---",
+        "",
+        f"# {title}",
+        "",
+    ]
+    if summary:
+        lines.extend(["## Summary", "", summary, ""])
+    lines.extend(
+        [
+            "## Structured Fields",
+            "",
+            "```json",
+            json.dumps(payload, ensure_ascii=True, indent=2),
+            "```",
+            "",
+        ]
+    )
+    return "\n".join(lines)
 
 
 def _validate(schema_name: str, payload: dict[str, Any], kernel_root: Path | None = None) -> None:
@@ -287,6 +346,14 @@ def write_topic_synopsis(
     _validate("topic-synopsis", payload, kernel_root)
     path = _runtime_topic_root(topic_slug, kernel_root) / "topic_synopsis.json"
     _write_json(path, payload)
+    _write_text(
+        path.with_suffix(".md"),
+        _markdown_truth_note(
+            artifact_kind="topic_synopsis",
+            title="Topic Synopsis",
+            payload=payload,
+        ),
+    )
     return {"topic_synopsis": payload, "path": str(path)}
 
 
@@ -298,6 +365,14 @@ def write_pending_decisions_projection(
 ) -> dict[str, Any]:
     path = _runtime_topic_root(topic_slug, kernel_root) / "pending_decisions.json"
     _write_json(path, payload)
+    _write_text(
+        path.with_suffix(".md"),
+        _markdown_truth_note(
+            artifact_kind="pending_decisions",
+            title="Pending Decisions",
+            payload=payload,
+        ),
+    )
     return {"pending_decisions": payload, "path": str(path)}
 
 
@@ -309,6 +384,14 @@ def write_promotion_readiness_projection(
 ) -> dict[str, Any]:
     path = _runtime_topic_root(topic_slug, kernel_root) / "promotion_readiness.json"
     _write_json(path, payload)
+    _write_text(
+        path.with_suffix(".md"),
+        _markdown_truth_note(
+            artifact_kind="promotion_readiness",
+            title="Promotion Readiness",
+            payload=payload,
+        ),
+    )
     return {"promotion_readiness": payload, "path": str(path)}
 
 

@@ -10,18 +10,18 @@ def derive_surface_roots(topic_state: dict[str, Any]) -> dict[str, str]:
     topic_slug = topic_state["topic_slug"]
     pointers = topic_state["pointers"]
     feedback_status_path = pointers.get("feedback_status_path")
-    feedback_run_root = feedback_status_path.rsplit("/", 1)[0] if feedback_status_path else f"feedback/topics/{topic_slug}"
+    feedback_run_root = feedback_status_path.rsplit("/", 1)[0] if feedback_status_path else f"topics/{topic_slug}/L3"
     promotion_decision_path = pointers.get("promotion_decision_path")
-    validation_run_root = promotion_decision_path.rsplit("/", 1)[0] if promotion_decision_path else f"validation/topics/{topic_slug}"
+    validation_run_root = promotion_decision_path.rsplit("/", 1)[0] if promotion_decision_path else f"topics/{topic_slug}/L4"
     return {
-        "L0": f"source-layer/topics/{topic_slug}",
-        "L1": f"intake/topics/{topic_slug}",
+        "L0": f"topics/{topic_slug}/L0",
+        "L1": f"topics/{topic_slug}/L1",
         "L2": "canonical",
         "L3": feedback_run_root,
         "L4_execution": validation_run_root,
         "L4_control": pointers.get("control_note_path") or "(missing)",
         "L3_action_contract": pointers.get("next_actions_contract_path") or "(missing)",
-        "runtime": f"runtime/topics/{topic_slug}",
+        "runtime": f"topics/{topic_slug}/runtime",
     }
 
 
@@ -44,14 +44,14 @@ def build_interaction_state(
 ) -> dict[str, Any]:
     pointers = topic_state["pointers"]
     surfaces = derive_surface_roots(topic_state)
-    surfaces["runtime_unfinished"] = f"runtime/topics/{topic_state['topic_slug']}/unfinished_work.md"
-    surfaces["runtime_decision"] = f"runtime/topics/{topic_state['topic_slug']}/next_action_decision.md"
+    surfaces["runtime_unfinished"] = f"topics/{topic_state['topic_slug']}/runtime/unfinished_work.md"
+    surfaces["runtime_decision"] = f"topics/{topic_state['topic_slug']}/runtime/next_action_decision.md"
     surfaces["runtime_queue_contract"] = (
-        f"runtime/topics/{topic_state['topic_slug']}/{action_queue_contract_generated_note_filename}"
+        f"topics/{topic_state['topic_slug']}/runtime/{action_queue_contract_generated_note_filename}"
     )
-    surfaces["runtime_promotion_gate"] = f"runtime/topics/{topic_state['topic_slug']}/promotion_gate.md"
-    surfaces["runtime_deferred_buffer"] = f"runtime/topics/{topic_state['topic_slug']}/{deferred_buffer_note_filename}"
-    surfaces["runtime_followup_subtopics"] = f"runtime/topics/{topic_state['topic_slug']}/{followup_subtopics_note_filename}"
+    surfaces["runtime_promotion_gate"] = f"topics/{topic_state['topic_slug']}/runtime/promotion_gate.md"
+    surfaces["runtime_deferred_buffer"] = f"topics/{topic_state['topic_slug']}/runtime/{deferred_buffer_note_filename}"
+    surfaces["runtime_followup_subtopics"] = f"topics/{topic_state['topic_slug']}/runtime/{followup_subtopics_note_filename}"
     capability_artifacts = [
         str(path)
         for filename in ("skill_discovery.json", "skill_recommendations.md")
@@ -65,7 +65,7 @@ def build_interaction_state(
     )
     surfaces["runtime_followup_gaps"] = (
         closed_loop["paths"].get("followup_gap_writeback_note_path")
-        or f"runtime/topics/{topic_state['topic_slug']}/(followup-gap-writeback-missing)"
+        or f"topics/{topic_state['topic_slug']}/runtime/(followup-gap-writeback-missing)"
     )
     decision_payload = load_json(topic_runtime_root / "next_action_decision.json") or {}
     unfinished_payload = load_json(topic_runtime_root / "unfinished_work.json") or {}
@@ -117,8 +117,8 @@ def build_interaction_state(
             {"surface": "runtime_deferred_buffer", "path": surfaces["runtime_deferred_buffer"], "role": "deferred candidate parking and reactivation buffer"},
             {"surface": "runtime_followup_subtopics", "path": surfaces["runtime_followup_subtopics"], "role": "parent-child lineage for cited-literature subtopics"},
             {"surface": "runtime_followup_gaps", "path": surfaces["runtime_followup_gaps"], "role": "structured unresolved gap ledger from closed-loop result ingest"},
-            {"surface": "runtime_trajectory", "path": closed_loop["paths"].get("trajectory_note_path") or f"runtime/topics/{topic_state['topic_slug']}/(trajectory-log-missing)", "role": "human-readable execution trajectory after result ingest"},
-            {"surface": "runtime_failure_classification", "path": closed_loop["paths"].get("failure_classification_note_path") or f"runtime/topics/{topic_state['topic_slug']}/(failure-classification-missing)", "role": "human-readable failure classification after result ingest"},
+            {"surface": "runtime_trajectory", "path": closed_loop["paths"].get("trajectory_note_path") or f"topics/{topic_state['topic_slug']}/runtime/(trajectory-log-missing)", "role": "human-readable execution trajectory after result ingest"},
+            {"surface": "runtime_failure_classification", "path": closed_loop["paths"].get("failure_classification_note_path") or f"topics/{topic_state['topic_slug']}/runtime/(failure-classification-missing)", "role": "human-readable failure classification after result ingest"},
         ],
         "capability_adaptation": {
             "protocol_path": "research/adapters/openclaw/SKILL_ADAPTATION_PROTOCOL.md",
@@ -156,14 +156,14 @@ def build_interaction_state(
             "executor_kind": topic_state.get("active_executor_kind"),
             "reasoning_profile": topic_state.get("active_reasoning_profile"),
             "failure_severity": (closed_loop.get("failure_classification") or {}).get("severity"),
-            "deferred_buffer_path": f"runtime/topics/{topic_state['topic_slug']}/{deferred_buffer_filename}",
-            "followup_subtopics_path": f"runtime/topics/{topic_state['topic_slug']}/{followup_subtopics_filename}",
+            "deferred_buffer_path": f"topics/{topic_state['topic_slug']}/runtime/{deferred_buffer_filename}",
+            "followup_subtopics_path": f"topics/{topic_state['topic_slug']}/runtime/{followup_subtopics_filename}",
         },
         "decision_surface": {
-            "unfinished_work_path": f"runtime/topics/{topic_state['topic_slug']}/unfinished_work.json",
-            "unfinished_work_note_path": f"runtime/topics/{topic_state['topic_slug']}/unfinished_work.md",
-            "next_action_decision_path": f"runtime/topics/{topic_state['topic_slug']}/next_action_decision.json",
-            "next_action_decision_note_path": f"runtime/topics/{topic_state['topic_slug']}/next_action_decision.md",
+            "unfinished_work_path": f"topics/{topic_state['topic_slug']}/runtime/unfinished_work.json",
+            "unfinished_work_note_path": f"topics/{topic_state['topic_slug']}/runtime/unfinished_work.md",
+            "next_action_decision_path": f"topics/{topic_state['topic_slug']}/runtime/next_action_decision.json",
+            "next_action_decision_note_path": f"topics/{topic_state['topic_slug']}/runtime/next_action_decision.md",
             "decision_contract_path": pointers.get("next_action_decision_contract_path"),
             "decision_mode": decision_payload.get("decision_mode"),
             "decision_source": decision_payload.get("decision_source"),
@@ -184,8 +184,8 @@ def build_interaction_state(
             "declared_contract_path": queue_meta.get("declared_contract_path"),
             "declared_contract_used": bool(queue_meta.get("declared_contract_used")),
             "declared_contract_valid": bool(queue_meta.get("declared_contract_valid")),
-            "generated_contract_path": f"runtime/topics/{topic_state['topic_slug']}/{action_queue_contract_generated_filename}",
-            "generated_contract_note_path": f"runtime/topics/{topic_state['topic_slug']}/{action_queue_contract_generated_note_filename}",
+            "generated_contract_path": f"topics/{topic_state['topic_slug']}/runtime/{action_queue_contract_generated_filename}",
+            "generated_contract_note_path": f"topics/{topic_state['topic_slug']}/runtime/{action_queue_contract_generated_note_filename}",
             "policy_note": queue_meta.get("policy_note"),
         },
         "pending_actions": queue,
@@ -320,7 +320,7 @@ def build_agent_brief(topic_state: dict[str, Any], queue: list[dict[str, Any]], 
         f"- Resume stage: `{topic_state['resume_stage']}`",
         f"- Last materialized stage: `{topic_state['last_materialized_stage']}`",
         f"- Current bounded action: `{selected_summary}`",
-        f"- Open next: `runtime/topics/{topic_state['topic_slug']}/operator_console.md`",
+        f"- Open next: `topics/{topic_state['topic_slug']}/runtime/operator_console.md`",
         f"- Source count: `{topic_state.get('source_count', 0)}`",
         f"- Latest run id: `{topic_state.get('latest_run_id') or '(none)'}`",
         f"- Research mode: `{topic_state.get('research_mode') or '(missing)'}`",
@@ -348,10 +348,10 @@ def build_agent_brief(topic_state: dict[str, Any], queue: list[dict[str, Any]], 
         f"- Consultation index: `{pointers.get('consultation_index_path') or '(missing)'}`",
         f"- Innovation direction: `{pointers.get('innovation_direction_path') or '(missing)'}`",
         f"- Innovation decisions: `{pointers.get('innovation_decisions_path') or '(missing)'}`",
-        f"- Interaction state: `runtime/topics/{topic_state['topic_slug']}/interaction_state.json`",
-        f"- Operator console: `runtime/topics/{topic_state['topic_slug']}/operator_console.md`",
-        f"- Conformance state: `runtime/topics/{topic_state['topic_slug']}/conformance_state.json`",
-        f"- Conformance report: `runtime/topics/{topic_state['topic_slug']}/conformance_report.md`",
+        f"- Interaction state: `topics/{topic_state['topic_slug']}/runtime/interaction_state.json`",
+        f"- Operator console: `topics/{topic_state['topic_slug']}/runtime/operator_console.md`",
+        f"- Conformance state: `topics/{topic_state['topic_slug']}/runtime/conformance_state.json`",
+        f"- Conformance report: `topics/{topic_state['topic_slug']}/runtime/conformance_report.md`",
         f"- Selected route: `{interaction_state.get('closed_loop', {}).get('selected_route_path') or '(missing)'}`",
         f"- Execution task: `{interaction_state.get('closed_loop', {}).get('execution_task_path') or '(missing)'}`",
         f"- Returned result contract: `{interaction_state.get('closed_loop', {}).get('returned_result_path') or '(missing)'}`",

@@ -30,6 +30,8 @@ def _parse(result: str) -> dict:
 READ_ONLY_PROFILE_TOOLS = {
     "aitp_describe_mcp_profile",
     "aitp_get_runtime_state",
+    "aitp_get_topic_interaction",
+    "aitp_list_pending_decisions",
     "aitp_list_tool_manifest",
 }
 
@@ -47,6 +49,8 @@ WRITE_PROFILE_TOOLS = {
     "aitp_complete_topic",
     "aitp_update_followup_return",
     "aitp_reintegrate_followup",
+    "aitp_resolve_pending_decision",
+    "aitp_resolve_operator_checkpoint",
     "aitp_prepare_lean_bridge",
     "aitp_request_promotion",
     "aitp_approve_promotion",
@@ -59,11 +63,25 @@ WRITE_PROFILE_TOOLS = {
 
 
 class _AITPStubSuccess:
+    kernel_root = Path(".")
+
     def orchestrate(self, **kwargs):  # noqa: ANN003
         return {"topic_slug": kwargs.get("topic_slug") or "demo-topic"}
 
     def get_runtime_state(self, topic_slug: str):
         return {"topic_slug": topic_slug, "resume_stage": "L3"}
+
+    def topic_interaction(self, *, topic_slug: str, updated_by: str = "aitp-mcp"):
+        return {
+            "topic_slug": topic_slug,
+            "requires_human_input_now": True,
+            "primary_interaction": {
+                "kind": "operator_checkpoint",
+                "question": "Clarify the bounded route.",
+                "options": [{"key": "clarify_now", "label": "Clarify now"}],
+                "default_option_index": 0,
+            },
+        }
 
     def audit(self, *, topic_slug: str, phase: str = "entry", updated_by: str = "aitp-mcp"):
         return {
@@ -71,6 +89,19 @@ class _AITPStubSuccess:
             "phase": phase,
             "updated_by": updated_by,
             "conformance_state": {"overall_status": "pass"},
+        }
+
+    def resolve_operator_checkpoint(self, *, topic_slug: str, option_index: int, comment: str | None = None, resolved_by: str = "human"):
+        return {
+            "operator_checkpoint": {
+                "topic_slug": topic_slug,
+                "status": "answered",
+                "resolution": {
+                    "chosen_option_index": option_index,
+                    "human_comment": comment or "",
+                    "resolved_by": resolved_by,
+                },
+            }
         }
 
     def scaffold_baseline(self, **kwargs):  # noqa: ANN003
@@ -120,14 +151,22 @@ class _AITPStubSuccess:
 
 
 class _AITPStubFailure:
+    kernel_root = Path(".")
+
     def orchestrate(self, **kwargs):  # noqa: ANN003
         raise RuntimeError("orchestrate boom")
 
     def get_runtime_state(self, topic_slug: str):
         raise RuntimeError("state boom")
 
+    def topic_interaction(self, *, topic_slug: str, updated_by: str = "aitp-mcp"):
+        raise RuntimeError("interaction boom")
+
     def audit(self, *, topic_slug: str, phase: str = "entry", updated_by: str = "aitp-mcp"):
         raise RuntimeError("audit boom")
+
+    def resolve_operator_checkpoint(self, *, topic_slug: str, option_index: int, comment: str | None = None, resolved_by: str = "human"):
+        raise RuntimeError("checkpoint boom")
 
     def scaffold_baseline(self, **kwargs):  # noqa: ANN003
         raise RuntimeError("baseline boom")
@@ -194,104 +233,133 @@ class AITPMCPServerTests(unittest.TestCase):
 
     def test_aitp_tools_return_success_payloads(self) -> None:
         with patch.object(aitp_mcp_server, "service", _AITPStubSuccess()):
-            bootstrap = _parse(aitp_mcp_server.aitp_bootstrap_topic(topic_slug="demo-topic"))
-            state = _parse(aitp_mcp_server.aitp_get_runtime_state("demo-topic"))
-            audit = _parse(aitp_mcp_server.aitp_audit_conformance("demo-topic", phase="exit"))
-            baseline = _parse(
-                aitp_mcp_server.aitp_scaffold_baseline(
-                    "demo-topic",
-                    "2026-03-13-demo",
-                    "Public baseline",
-                    "arXiv:0000.00000",
-                    "qualitative agreement",
-                )
-            )
-            atomize = _parse(
-                aitp_mcp_server.aitp_scaffold_atomic_understanding(
-                    "demo-topic",
-                    "2026-03-13-demo",
-                    "Finite-size spectral diagnostic",
-                )
-            )
-            operation = _parse(
-                aitp_mcp_server.aitp_scaffold_operation(
-                    "demo-topic",
-                    "2026-03-13-demo",
-                    "Small-system validation backend",
-                    "numerical",
-                )
-            )
-            update = _parse(
-                aitp_mcp_server.aitp_update_operation(
-                    "demo-topic",
-                    "2026-03-13-demo",
-                    "Small-system validation backend",
-                    baseline_status="passed",
-                )
-            )
-            trust = _parse(aitp_mcp_server.aitp_audit_operation_trust("demo-topic", "2026-03-13-demo"))
-            capability = _parse(aitp_mcp_server.aitp_audit_capability("demo-topic"))
-            coverage = _parse(
-                aitp_mcp_server.aitp_audit_theory_coverage(
-                    "demo-topic",
-                    "candidate:demo",
-                    source_sections=["sec:intro"],
-                    covered_sections=["sec:intro"],
-                )
-            )
-            formal_theory = _parse(
-                aitp_mcp_server.aitp_audit_formal_theory(
-                    "demo-topic",
-                    "candidate:demo",
-                    formal_theory_role="trusted_target",
-                    statement_graph_role="target_statement",
-                    faithfulness_status="reviewed",
-                    faithfulness_strategy="bounded source-to-target map",
-                    comparator_audit_status="passed",
-                    attribution_requirements=["Preserve source citation."],
-                    prerequisite_closure_status="closed",
-                )
-            )
-            request_promotion = _parse(
-                aitp_mcp_server.aitp_request_promotion(
-                    "demo-topic",
-                    "candidate:demo",
-                    backend_id="backend:theoretical-physics-knowledge-network",
-                )
-            )
-            approve_promotion = _parse(
-                aitp_mcp_server.aitp_approve_promotion(
-                    "demo-topic",
-                    "candidate:demo",
-                )
-            )
-            reject_promotion = _parse(
-                aitp_mcp_server.aitp_reject_promotion(
-                    "demo-topic",
-                    "candidate:demo",
-                )
-            )
-            promote_candidate = _parse(
-                aitp_mcp_server.aitp_promote_candidate(
-                    "demo-topic",
-                    "candidate:demo",
-                    target_backend_root="/tmp/tpkn",
-                )
-            )
-            auto_promote_candidate = _parse(
-                aitp_mcp_server.aitp_auto_promote_candidate(
-                    "demo-topic",
-                    "candidate:demo",
-                    target_backend_root="/tmp/tpkn",
-                )
-            )
-            loop = _parse(aitp_mcp_server.aitp_run_topic_loop(topic_slug="demo-topic"))
-            install = _parse(aitp_mcp_server.aitp_install_agent_wrapper("codex"))
+            with patch.object(aitp_mcp_server, "list_pending_decision_points", return_value=[{"id": "dp:demo"}]):
+                with patch.object(
+                    aitp_mcp_server,
+                    "resolve_decision_point",
+                    return_value={"decision_point": {"id": "dp:demo", "resolution": {"chosen_option_index": 0}}},
+                ):
+                    bootstrap = _parse(aitp_mcp_server.aitp_bootstrap_topic(topic_slug="demo-topic"))
+                    state = _parse(aitp_mcp_server.aitp_get_runtime_state("demo-topic"))
+                    interaction = _parse(aitp_mcp_server.aitp_get_topic_interaction("demo-topic"))
+                    decisions = _parse(aitp_mcp_server.aitp_list_pending_decisions("demo-topic"))
+                    resolved = _parse(aitp_mcp_server.aitp_resolve_pending_decision("demo-topic", "dp:demo", 0))
+                    resolved_checkpoint = _parse(
+                        aitp_mcp_server.aitp_resolve_operator_checkpoint(
+                            "demo-topic",
+                            0,
+                            comment="Focus on the theorem-facing route first.",
+                        )
+                    )
+                    audit = _parse(aitp_mcp_server.aitp_audit_conformance("demo-topic", phase="exit"))
+                    baseline = _parse(
+                        aitp_mcp_server.aitp_scaffold_baseline(
+                            "demo-topic",
+                            "2026-03-13-demo",
+                            "Public baseline",
+                            "arXiv:0000.00000",
+                            "qualitative agreement",
+                        )
+                    )
+                    atomize = _parse(
+                        aitp_mcp_server.aitp_scaffold_atomic_understanding(
+                            "demo-topic",
+                            "2026-03-13-demo",
+                            "Finite-size spectral diagnostic",
+                        )
+                    )
+                    operation = _parse(
+                        aitp_mcp_server.aitp_scaffold_operation(
+                            "demo-topic",
+                            "2026-03-13-demo",
+                            "Small-system validation backend",
+                            "numerical",
+                        )
+                    )
+                    update = _parse(
+                        aitp_mcp_server.aitp_update_operation(
+                            "demo-topic",
+                            "2026-03-13-demo",
+                            "Small-system validation backend",
+                            baseline_status="passed",
+                        )
+                    )
+                    trust = _parse(aitp_mcp_server.aitp_audit_operation_trust("demo-topic", "2026-03-13-demo"))
+                    capability = _parse(aitp_mcp_server.aitp_audit_capability("demo-topic"))
+                    coverage = _parse(
+                        aitp_mcp_server.aitp_audit_theory_coverage(
+                            "demo-topic",
+                            "candidate:demo",
+                            source_sections=["sec:intro"],
+                            covered_sections=["sec:intro"],
+                        )
+                    )
+                    formal_theory = _parse(
+                        aitp_mcp_server.aitp_audit_formal_theory(
+                            "demo-topic",
+                            "candidate:demo",
+                            formal_theory_role="trusted_target",
+                            statement_graph_role="target_statement",
+                            faithfulness_status="reviewed",
+                            faithfulness_strategy="bounded source-to-target map",
+                            comparator_audit_status="passed",
+                            attribution_requirements=["Preserve source citation."],
+                            prerequisite_closure_status="closed",
+                        )
+                    )
+                    request_promotion = _parse(
+                        aitp_mcp_server.aitp_request_promotion(
+                            "demo-topic",
+                            "candidate:demo",
+                            backend_id="backend:theoretical-physics-knowledge-network",
+                        )
+                    )
+                    approve_promotion = _parse(
+                        aitp_mcp_server.aitp_approve_promotion(
+                            "demo-topic",
+                            "candidate:demo",
+                        )
+                    )
+                    reject_promotion = _parse(
+                        aitp_mcp_server.aitp_reject_promotion(
+                            "demo-topic",
+                            "candidate:demo",
+                        )
+                    )
+                    promote_candidate = _parse(
+                        aitp_mcp_server.aitp_promote_candidate(
+                            "demo-topic",
+                            "candidate:demo",
+                            target_backend_root="/tmp/tpkn",
+                        )
+                    )
+                    auto_promote_candidate = _parse(
+                        aitp_mcp_server.aitp_auto_promote_candidate(
+                            "demo-topic",
+                            "candidate:demo",
+                            target_backend_root="/tmp/tpkn",
+                        )
+                    )
+                    loop = _parse(aitp_mcp_server.aitp_run_topic_loop(topic_slug="demo-topic"))
+                    install = _parse(aitp_mcp_server.aitp_install_agent_wrapper("codex"))
 
         self.assertEqual(bootstrap["status"], "success")
         self.assertEqual(bootstrap["topic_slug"], "demo-topic")
         self.assertEqual(state["status"], "success")
         self.assertEqual(state["topic_state"]["resume_stage"], "L3")
+        self.assertEqual(interaction["status"], "success")
+        self.assertEqual(interaction["primary_interaction"]["kind"], "operator_checkpoint")
+        self.assertEqual(decisions["status"], "success")
+        self.assertEqual(decisions["decision_points"][0]["id"], "dp:demo")
+        self.assertEqual(resolved["status"], "success")
+        self.assertEqual(resolved["decision_point"]["id"], "dp:demo")
+        self.assertEqual(resolved_checkpoint["status"], "success")
+        self.assertEqual(
+            resolved_checkpoint["operator_checkpoint"]["resolution"][
+                "chosen_option_index"
+            ],
+            0,
+        )
         self.assertEqual(audit["status"], "success")
         self.assertEqual(audit["conformance_state"]["overall_status"], "pass")
         self.assertEqual(baseline["status"], "success")
@@ -312,53 +380,59 @@ class AITPMCPServerTests(unittest.TestCase):
 
     def test_aitp_tools_return_error_shape_when_exceptions_occur(self) -> None:
         with patch.object(aitp_mcp_server, "service", _AITPStubFailure()):
-            results = [
-                _parse(aitp_mcp_server.aitp_bootstrap_topic(topic_slug="demo-topic")),
-                _parse(aitp_mcp_server.aitp_get_runtime_state("demo-topic")),
-                _parse(aitp_mcp_server.aitp_audit_conformance("demo-topic")),
-                _parse(
-                    aitp_mcp_server.aitp_scaffold_baseline(
-                        "demo-topic",
-                        "2026-03-13-demo",
-                        "Public baseline",
-                        "arXiv:0000.00000",
-                        "qualitative agreement",
-                    )
-                ),
-                _parse(
-                    aitp_mcp_server.aitp_scaffold_atomic_understanding(
-                        "demo-topic",
-                        "2026-03-13-demo",
-                        "Finite-size spectral diagnostic",
-                    )
-                ),
-                _parse(
-                    aitp_mcp_server.aitp_scaffold_operation(
-                        "demo-topic",
-                        "2026-03-13-demo",
-                        "Small-system validation backend",
-                        "numerical",
-                    )
-                ),
-                _parse(
-                    aitp_mcp_server.aitp_update_operation(
-                        "demo-topic",
-                        "2026-03-13-demo",
-                        "Small-system validation backend",
-                    )
-                ),
-                _parse(aitp_mcp_server.aitp_audit_operation_trust("demo-topic")),
-                _parse(aitp_mcp_server.aitp_audit_capability("demo-topic")),
-                _parse(aitp_mcp_server.aitp_audit_theory_coverage("demo-topic", "candidate:demo")),
-                _parse(aitp_mcp_server.aitp_audit_formal_theory("demo-topic", "candidate:demo")),
-                _parse(aitp_mcp_server.aitp_request_promotion("demo-topic", "candidate:demo")),
-                _parse(aitp_mcp_server.aitp_approve_promotion("demo-topic", "candidate:demo")),
-                _parse(aitp_mcp_server.aitp_reject_promotion("demo-topic", "candidate:demo")),
-                _parse(aitp_mcp_server.aitp_promote_candidate("demo-topic", "candidate:demo")),
-                _parse(aitp_mcp_server.aitp_auto_promote_candidate("demo-topic", "candidate:demo")),
-                _parse(aitp_mcp_server.aitp_run_topic_loop(topic_slug="demo-topic")),
-                _parse(aitp_mcp_server.aitp_install_agent_wrapper("codex")),
-            ]
+            with patch.object(aitp_mcp_server, "list_pending_decision_points", side_effect=RuntimeError("decisions boom")):
+                with patch.object(aitp_mcp_server, "resolve_decision_point", side_effect=RuntimeError("resolve boom")):
+                    results = [
+                        _parse(aitp_mcp_server.aitp_bootstrap_topic(topic_slug="demo-topic")),
+                        _parse(aitp_mcp_server.aitp_get_runtime_state("demo-topic")),
+                        _parse(aitp_mcp_server.aitp_get_topic_interaction("demo-topic")),
+                        _parse(aitp_mcp_server.aitp_list_pending_decisions("demo-topic")),
+                        _parse(aitp_mcp_server.aitp_resolve_pending_decision("demo-topic", "dp:demo", 0)),
+                        _parse(aitp_mcp_server.aitp_resolve_operator_checkpoint("demo-topic", 0)),
+                        _parse(aitp_mcp_server.aitp_audit_conformance("demo-topic")),
+                        _parse(
+                            aitp_mcp_server.aitp_scaffold_baseline(
+                                "demo-topic",
+                                "2026-03-13-demo",
+                                "Public baseline",
+                                "arXiv:0000.00000",
+                                "qualitative agreement",
+                            )
+                        ),
+                        _parse(
+                            aitp_mcp_server.aitp_scaffold_atomic_understanding(
+                                "demo-topic",
+                                "2026-03-13-demo",
+                                "Finite-size spectral diagnostic",
+                            )
+                        ),
+                        _parse(
+                            aitp_mcp_server.aitp_scaffold_operation(
+                                "demo-topic",
+                                "2026-03-13-demo",
+                                "Small-system validation backend",
+                                "numerical",
+                            )
+                        ),
+                        _parse(
+                            aitp_mcp_server.aitp_update_operation(
+                                "demo-topic",
+                                "2026-03-13-demo",
+                                "Small-system validation backend",
+                            )
+                        ),
+                        _parse(aitp_mcp_server.aitp_audit_operation_trust("demo-topic")),
+                        _parse(aitp_mcp_server.aitp_audit_capability("demo-topic")),
+                        _parse(aitp_mcp_server.aitp_audit_theory_coverage("demo-topic", "candidate:demo")),
+                        _parse(aitp_mcp_server.aitp_audit_formal_theory("demo-topic", "candidate:demo")),
+                        _parse(aitp_mcp_server.aitp_request_promotion("demo-topic", "candidate:demo")),
+                        _parse(aitp_mcp_server.aitp_approve_promotion("demo-topic", "candidate:demo")),
+                        _parse(aitp_mcp_server.aitp_reject_promotion("demo-topic", "candidate:demo")),
+                        _parse(aitp_mcp_server.aitp_promote_candidate("demo-topic", "candidate:demo")),
+                        _parse(aitp_mcp_server.aitp_auto_promote_candidate("demo-topic", "candidate:demo")),
+                        _parse(aitp_mcp_server.aitp_run_topic_loop(topic_slug="demo-topic")),
+                        _parse(aitp_mcp_server.aitp_install_agent_wrapper("codex")),
+                    ]
 
         for result in results:
             self.assertEqual(result["status"], "error")

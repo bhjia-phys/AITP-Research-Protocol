@@ -8,19 +8,28 @@ from typing import Any
 from .l2_staging import load_staging_entries
 from .runtime_schema_promotion_bridge import collect_runtime_schema_context
 from .runtime_projection_handler import append_transition_history
+from .topic_truth_root_support import compatibility_projection_path
 
 
 def _read_json(path: Path) -> dict[str, Any] | None:
-    if not path.exists():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return None
+        target = compatibility_path
+    return json.loads(target.read_text(encoding="utf-8"))
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
-        return []
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return []
+        target = compatibility_path
     rows: list[dict[str, Any]] = []
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
+    for raw_line in target.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
         if line:
             rows.append(json.loads(line))
@@ -28,21 +37,32 @@ def _read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    rendered = json.dumps(payload, ensure_ascii=True, indent=2) + "\n"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
+    rendered = "".join(json.dumps(row, ensure_ascii=True, separators=(",", ":")) + "\n" for row in rows)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        "".join(json.dumps(row, ensure_ascii=True, separators=(",", ":")) + "\n" for row in rows),
-        encoding="utf-8",
-    )
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def _write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(text, encoding="utf-8")
 
 
 def _now_iso() -> str:

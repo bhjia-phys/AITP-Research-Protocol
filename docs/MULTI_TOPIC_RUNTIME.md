@@ -154,7 +154,7 @@ Dependency and focus state should be visible through:
 - `aitp topics`
 - `aitp current-topic`
 - `aitp status --topic-slug <topic_slug>`
-- `runtime/topics/<topic_slug>/topic_dashboard.md`
+- `topics/<topic_slug>/runtime/topic_dashboard.md`
 
 The operator should not need to infer dependency blockage only from the fact
 that a topic was skipped.

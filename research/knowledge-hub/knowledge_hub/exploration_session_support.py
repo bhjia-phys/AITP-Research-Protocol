@@ -6,17 +6,17 @@ from typing import Any
 
 
 FULL_TOPIC_REFERENCE_ARTIFACTS = [
-    "runtime/topics/<topic_slug>/topic_state.json",
-    "runtime/topics/<topic_slug>/topic_synopsis.json",
-    "runtime/topics/<topic_slug>/topic_dashboard.md",
-    "runtime/topics/<topic_slug>/runtime_protocol.generated.json",
-    "runtime/topics/<topic_slug>/runtime_protocol.generated.md",
-    "runtime/topics/<topic_slug>/session_start.contract.json",
-    "runtime/topics/<topic_slug>/session_start.generated.md",
-    "runtime/topics/<topic_slug>/idea_packet.json",
-    "runtime/topics/<topic_slug>/idea_packet.md",
-    "runtime/topics/<topic_slug>/operator_checkpoint.active.json",
-    "runtime/topics/<topic_slug>/operator_checkpoint.active.md",
+    "topics/<topic_slug>/runtime/topic_state.json",
+    "topics/<topic_slug>/runtime/topic_synopsis.json",
+    "topics/<topic_slug>/runtime/topic_dashboard.md",
+    "topics/<topic_slug>/runtime/runtime_protocol.generated.json",
+    "topics/<topic_slug>/runtime/runtime_protocol.generated.md",
+    "topics/<topic_slug>/runtime/session_start.contract.json",
+    "topics/<topic_slug>/runtime/session_start.generated.md",
+    "topics/<topic_slug>/runtime/idea_packet.json",
+    "topics/<topic_slug>/runtime/idea_packet.md",
+    "topics/<topic_slug>/runtime/operator_checkpoint.active.json",
+    "topics/<topic_slug>/runtime/operator_checkpoint.active.md",
 ]
 
 

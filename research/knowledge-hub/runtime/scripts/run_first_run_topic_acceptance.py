@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from json import JSONDecodeError
 import shutil
 import subprocess
 import sys
@@ -54,6 +55,12 @@ def run_cli_json(*, package_root: Path, kernel_root: Path, repo_root: Path, args
         text=True,
         check=False,
     )
+    stdout = completed.stdout.strip()
+    if stdout:
+        try:
+            return json.loads(stdout)
+        except JSONDecodeError:
+            pass
     if completed.returncode != 0:
         detail = completed.stderr.strip() or completed.stdout.strip() or "unknown error"
         raise RuntimeError(f"{' '.join(command)} failed: {detail}")

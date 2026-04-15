@@ -50,6 +50,9 @@ One row per strategy event:
   - `debug_pattern`
   - `resource_plan`
   - `scope_control`
+  - `proof_engineering`
+  - `api_workaround`
+  - `failure_pattern`
 - `outcome`:
   - `helpful`
   - `neutral`

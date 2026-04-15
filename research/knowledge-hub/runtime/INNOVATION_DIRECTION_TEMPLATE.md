@@ -2,7 +2,7 @@
 
 Use this file at:
 
-- `runtime/topics/<topic_slug>/innovation_direction.md`
+- `topics/<topic_slug>/runtime/innovation_direction.md`
 
 This is the human steering companion to `control_note`.
 Use it to keep novelty intent and branch decisions explicit across loop steps.

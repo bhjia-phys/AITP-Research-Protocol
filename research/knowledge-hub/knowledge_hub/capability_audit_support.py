@@ -78,30 +78,31 @@ def _runtime_section(runtime_root: Path) -> dict[str, dict[str, str]]:
 
 
 def _layer_section(kernel_root: Path, topic_slug: str) -> dict[str, dict[str, str]]:
+    topic_root = kernel_root / "topics" / topic_slug
     return {
         "L0": {
-            "status": "present" if (kernel_root / "source-layer" / "topics" / topic_slug).exists() else "missing",
-            "path": str(kernel_root / "source-layer" / "topics" / topic_slug),
+            "status": "present" if (topic_root / "L0").exists() else "missing",
+            "path": str(topic_root / "L0"),
         },
         "L1": {
-            "status": "present" if (kernel_root / "intake" / "topics" / topic_slug).exists() else "missing",
-            "path": str(kernel_root / "intake" / "topics" / topic_slug),
+            "status": "present" if (topic_root / "L1").exists() else "missing",
+            "path": str(topic_root / "L1"),
         },
         "L2": {
             "status": "present" if (kernel_root / "canonical").exists() else "missing",
             "path": str(kernel_root / "canonical"),
         },
         "L3": {
-            "status": "present" if (kernel_root / "feedback" / "topics" / topic_slug).exists() else "missing",
-            "path": str(kernel_root / "feedback" / "topics" / topic_slug),
+            "status": "present" if (topic_root / "L3").exists() else "missing",
+            "path": str(topic_root / "L3"),
         },
         "L4": {
-            "status": "present" if (kernel_root / "validation" / "topics" / topic_slug).exists() else "missing",
-            "path": str(kernel_root / "validation" / "topics" / topic_slug),
+            "status": "present" if (topic_root / "L4").exists() else "missing",
+            "path": str(topic_root / "L4"),
         },
         "consultation": {
-            "status": "present" if (kernel_root / "consultation" / "topics" / topic_slug).exists() else "missing",
-            "path": str(kernel_root / "consultation" / "topics" / topic_slug),
+            "status": "present" if (topic_root / "consultation").exists() else "missing",
+            "path": str(topic_root / "consultation"),
         },
     }
 
@@ -126,6 +127,7 @@ def _capability_specific(
     topic_state: dict[str, Any] | None,
     latest_run_id: str | None,
     runtime_root: Path,
+    runtime_section: dict[str, dict[str, str]],
     protocol_manifest: dict[str, Any] | None,
 ) -> dict[str, dict[str, str]]:
     trust_audit_path = (
@@ -133,10 +135,30 @@ def _capability_specific(
         if latest_run_id
         else runtime_root / "missing-trust-audit.json"
     )
-    missing_paths = ", ".join(str(item) for item in ((protocol_manifest or {}).get("missing_paths") or []) if str(item).strip())
+    missing_paths = [
+        str(item)
+        for item in ((protocol_manifest or {}).get("missing_paths") or [])
+        if str(item).strip()
+    ]
+    core_runtime_manifest_files = [
+        "research_question.contract.json",
+        "research_question.contract.md",
+        "validation_contract.active.json",
+        "validation_contract.active.md",
+        "topic_dashboard.md",
+    ]
+    missing_runtime_manifest_files = [
+        name
+        for name in core_runtime_manifest_files
+        if (runtime_section.get(name) or {}).get("status") != "present"
+    ]
+    manifest_status = str((protocol_manifest or {}).get("overall_status") or "missing")
     manifest_detail = str((protocol_manifest or {}).get("summary") or "protocol manifest not materialized")
-    if missing_paths:
-        manifest_detail = f"{manifest_detail} Missing: {missing_paths}."
+    if missing_runtime_manifest_files and manifest_status != "missing":
+        manifest_status = "fail"
+    combined_missing = [*missing_paths, *missing_runtime_manifest_files]
+    if combined_missing:
+        manifest_detail = f"{manifest_detail} Missing: {', '.join(combined_missing)}."
     return {
         "latest_run": {
             "status": "present" if latest_run_id else "missing",
@@ -151,7 +173,7 @@ def _capability_specific(
             "detail": str((topic_state or {}).get("resume_stage")) if topic_state else "topic_state.json missing",
         },
         "protocol_manifest": {
-            "status": str((protocol_manifest or {}).get("overall_status") or "missing"),
+            "status": manifest_status,
             "detail": manifest_detail,
             "path": str((protocol_manifest or {}).get("path") or ""),
         },
@@ -283,6 +305,7 @@ def capability_audit(
         topic_state=topic_state,
         latest_run_id=latest_run_id,
         runtime_root=runtime_root,
+        runtime_section=runtime_section,
         protocol_manifest=protocol_manifest,
     )
     recommendations = _capability_recommendations(

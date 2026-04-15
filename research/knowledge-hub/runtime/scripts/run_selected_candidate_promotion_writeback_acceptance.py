@@ -270,6 +270,76 @@ def main() -> int:
         str(status_after_completion.get("selected_action_type") or "") != "assess_topic_completion",
         "Expected `status` to move beyond repeated topic-completion refresh once that refresh is current.",
     )
+    post_promotion_followup_loop = run_cli_json(
+        package_root=package_root,
+        kernel_root=kernel_root,
+        repo_root=repo_root,
+        args=[
+            "loop",
+            "--topic-slug",
+            args.topic_slug,
+            "--human-request",
+            "Continue from the post-promotion inspect step and expose the next bounded formalization route.",
+            "--max-auto-steps",
+            "0",
+            "--json",
+        ],
+    )
+    next_after_post_promotion_followup = run_cli_json(
+        package_root=package_root,
+        kernel_root=kernel_root,
+        repo_root=repo_root,
+        args=["next", "--topic-slug", args.topic_slug, "--json"],
+    )
+    status_after_post_promotion_followup = run_cli_json(
+        package_root=package_root,
+        kernel_root=kernel_root,
+        repo_root=repo_root,
+        args=["status", "--topic-slug", args.topic_slug, "--json"],
+    )
+    check(
+        str(next_after_post_promotion_followup.get("selected_action_type") or "") == "prepare_lean_bridge",
+        "Expected `next` to advance from post-promotion inspection into the first bounded formalization follow-up.",
+    )
+    check(
+        str(status_after_post_promotion_followup.get("selected_action_type") or "") == "prepare_lean_bridge",
+        "Expected `status` to advance from post-promotion inspection into the first bounded formalization follow-up.",
+    )
+    post_formalization_refresh_loop = run_cli_json(
+        package_root=package_root,
+        kernel_root=kernel_root,
+        repo_root=repo_root,
+        args=[
+            "loop",
+            "--topic-slug",
+            args.topic_slug,
+            "--human-request",
+            "Continue after the Lean-bridge refresh and expose the next proof-repair review step.",
+            "--max-auto-steps",
+            "1",
+            "--json",
+        ],
+    )
+    next_after_formalization_refresh = run_cli_json(
+        package_root=package_root,
+        kernel_root=kernel_root,
+        repo_root=repo_root,
+        args=["next", "--topic-slug", args.topic_slug, "--json"],
+    )
+    status_after_formalization_refresh = run_cli_json(
+        package_root=package_root,
+        kernel_root=kernel_root,
+        repo_root=repo_root,
+        args=["status", "--topic-slug", args.topic_slug, "--json"],
+    )
+    check(
+        str(next_after_formalization_refresh.get("selected_action_type") or "") == "review_proof_repair_plan",
+        "Expected `next` to advance into explicit proof-repair review after the Lean-bridge refresh runs.",
+    )
+    check(
+        str(status_after_formalization_refresh.get("selected_action_type") or "") == "review_proof_repair_plan",
+        "Expected `status` to advance into explicit proof-repair review after the Lean-bridge refresh runs.",
+    )
 
     payload = {
         "work_root": str(work_root),
@@ -285,6 +355,12 @@ def main() -> int:
         "post_completion_loop": post_completion_loop,
         "next_after_completion": next_after_completion,
         "status_after_completion": status_after_completion,
+        "post_promotion_followup_loop": post_promotion_followup_loop,
+        "next_after_post_promotion_followup": next_after_post_promotion_followup,
+        "status_after_post_promotion_followup": status_after_post_promotion_followup,
+        "post_formalization_refresh_loop": post_formalization_refresh_loop,
+        "next_after_formalization_refresh": next_after_formalization_refresh,
+        "status_after_formalization_refresh": status_after_formalization_refresh,
     }
     if args.json:
         print(json.dumps(payload, ensure_ascii=True, indent=2))

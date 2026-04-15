@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .runtime_schema_promotion_bridge import collect_runtime_schema_context
+from .topic_truth_root_support import compatibility_projection_path
 
 
 def _read_json(path: Path) -> dict[str, Any] | None:
@@ -15,8 +16,13 @@ def _read_json(path: Path) -> dict[str, Any] | None:
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    rendered = json.dumps(payload, ensure_ascii=True, indent=2) + "\n"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def _now_iso() -> str:

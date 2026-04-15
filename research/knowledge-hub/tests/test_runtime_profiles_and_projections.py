@@ -437,9 +437,9 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
     def _write_theory_packet_artifacts(self, *, candidate_id: str = "candidate:demo-theorem") -> dict[str, str]:
         packet_root = (
             self.kernel_root
-            / "validation"
             / "topics"
             / "demo-topic"
+            / "L4"
             / "runs"
             / "run-001"
             / "theory-packets"
@@ -810,19 +810,19 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertEqual(len(bundle["must_read_now"]), 3)
         self.assertEqual(bundle["must_read_now"][0]["path"], "runtime/topics/demo-topic/topic_dashboard.md")
         self.assertEqual(bundle["must_read_now"][1]["path"], "runtime/topics/demo-topic/research_question.contract.md")
-        self.assertEqual(bundle["must_read_now"][2]["path"], "runtime/topics/demo-topic/graph_analysis.md")
+        self.assertEqual(bundle["must_read_now"][2]["path"], "topics/demo-topic/runtime/graph_analysis.md")
         self.assertEqual(bundle["minimal_execution_brief"]["open_next"], "runtime/topics/demo-topic/topic_dashboard.md")
         self.assertNotIn("operator_console.md", json.dumps(bundle["must_read_now"]))
         self.assertTrue(
             any(
-                row["path"] == "runtime/topics/demo-topic/control_note.md"
+                row["path"] == "topics/demo-topic/runtime/control_note.md"
                 and row["trigger"] == "decision_override_present"
                 for row in bundle["may_defer_until_trigger"]
             )
         )
         self.assertTrue(
             any(
-                row["path"] == "runtime/topics/demo-topic/topic_synopsis.json"
+                row["path"] == "topics/demo-topic/runtime/topic_synopsis.json"
                 and row["trigger"] == "runtime_truth_audit"
                 for row in bundle["may_defer_until_trigger"]
             )
@@ -836,7 +836,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         )
         self.assertEqual(
             bundle["topic_synopsis"]["truth_sources"]["next_action_surface_path"],
-            "runtime/topics/demo-topic/action_queue.jsonl",
+            "topics/demo-topic/runtime/action_queue.jsonl",
         )
         self.assertTrue(any(row["trigger"] == "runtime_truth_audit" for row in bundle["escalation_triggers"]))
         self.assertIn("pending_decisions", bundle)
@@ -1216,8 +1216,8 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         injection = bundle["theory_context_injection"]
         self.assertEqual(injection["status"], "active")
         self.assertEqual(injection["session_ttl_seconds"], 3600)
-        self.assertIn("runtime/topics/demo-topic/statement_compilation.active.md", injection["active_target_paths"])
-        self.assertIn("runtime/topics/demo-topic/topic_skill_projection.active.md", injection["active_target_paths"])
+        self.assertIn("topics/demo-topic/runtime/statement_compilation.active.md", injection["active_target_paths"])
+        self.assertIn("topics/demo-topic/runtime/topic_skill_projection.active.md", injection["active_target_paths"])
         fragment_kinds = {row["kind"] for row in injection["fragments"]}
         self.assertEqual(
             fragment_kinds,
@@ -1226,7 +1226,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         notation_fragment = next(row for row in injection["fragments"] if row["kind"] == "notation_bindings")
         self.assertIn("H = Hamiltonian", notation_fragment["summary"])
         self.assertIn(
-            "validation/topics/demo-topic/runs/run-001/theory-packets/candidate-demo-theorem/notation_table.json",
+            "topics/demo-topic/L4/runs/run-001/theory-packets/candidate-demo-theorem/notation_table.json",
             notation_fragment["source_paths"],
         )
         self.assertTrue((self.kernel_root / notation_fragment["path"]).exists())
@@ -1420,7 +1420,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertIn("runtime/topics/demo-topic/topic_dashboard.md", must_read_paths)
         self.assertIn("runtime/topics/demo-topic/research_question.contract.md", must_read_paths)
         self.assertIn("runtime/topics/demo-topic/control_note.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/topic_synopsis.json", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/topic_synopsis.json", must_read_paths)
         self.assertNotIn("runtime/topics/demo-topic/validation_review_bundle.active.md", must_read_paths)
         self.assertNotIn("runtime/topics/demo-topic/validation_contract.active.md", must_read_paths)
         self.assertNotIn("runtime/topics/demo-topic/promotion_readiness.md", must_read_paths)
@@ -1482,6 +1482,116 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertIn("verification_route_selection", active_triggers)
         self.assertNotIn("promotion_intent", active_triggers)
 
+    def test_full_verify_mode_foregrounds_post_promotion_formalization_surfaces(self) -> None:
+        shell_surfaces = self._shell_surfaces()
+        shell_surfaces["statement_compilation"] = {
+            **dict(shell_surfaces["statement_compilation"]),
+            "status": "needs_repair",
+            "summary": "Statement compilation surfaced open proof-repair holes after the promoted writeback.",
+            "packet_count": 1,
+            "path": "runtime/topics/demo-topic/statement_compilation.active.md",
+        }
+        shell_surfaces["lean_bridge"] = {
+            **dict(shell_surfaces["lean_bridge"]),
+            "status": "needs_refinement",
+            "summary": "Lean bridge still carries proof obligations after the promoted writeback.",
+            "packet_count": 1,
+            "path": "runtime/topics/demo-topic/lean_bridge.active.md",
+        }
+        self._rewrite_action_queue(
+            "prepare_lean_bridge",
+            "Refresh Lean bridge packets and proof-state sidecars for the promoted Layer 2 candidate.",
+            handler_args={"run_id": "run-001", "candidate_id": "candidate:demo-theorem"},
+        )
+        self._rewrite_interaction_state(
+            {
+                "human_request": "continue the post-promotion formalization follow-up",
+                "action_queue_surface": {},
+                "decision_surface": {},
+                "human_edit_surfaces": [],
+                "closed_loop": {},
+            }
+        )
+
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
+                result = self.service._materialize_runtime_protocol_bundle(
+                    topic_slug="demo-topic",
+                    updated_by="test",
+                    human_request="continue the post-promotion formalization follow-up",
+                    load_profile="full",
+                )
+
+        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        must_read_paths = self._must_read_paths(bundle)
+
+        self.assertEqual(bundle["runtime_mode"], "verify")
+        self.assertIn("runtime/topics/demo-topic/statement_compilation.active.md", must_read_paths)
+        self.assertIn("runtime/topics/demo-topic/lean_bridge.active.md", must_read_paths)
+
+    def test_full_verify_mode_foregrounds_proof_repair_review_surfaces(self) -> None:
+        shell_surfaces = self._shell_surfaces()
+        shell_surfaces["statement_compilation"] = {
+            **dict(shell_surfaces["statement_compilation"]),
+            "status": "needs_repair",
+            "summary": "Statement compilation surfaced open proof-repair holes after Lean bridge refresh.",
+            "packet_count": 1,
+            "path": "runtime/topics/demo-topic/statement_compilation.active.md",
+            "packets": [
+                {
+                    "candidate_id": "candidate:demo-theorem",
+                    "repair_plan_note_path": "validation/topics/demo-topic/runs/run-001/statement-compilation/candidate-demo-theorem/proof_repair_plan.md",
+                }
+            ],
+        }
+        shell_surfaces["lean_bridge"] = {
+            **dict(shell_surfaces["lean_bridge"]),
+            "status": "needs_refinement",
+            "summary": "Lean bridge still carries proof obligations after refresh.",
+            "packet_count": 1,
+            "path": "runtime/topics/demo-topic/lean_bridge.active.md",
+            "packets": [
+                {
+                    "candidate_id": "candidate:demo-theorem",
+                    "packet_note_path": "validation/topics/demo-topic/runs/run-001/lean-bridge/candidate-demo-theorem/lean_ready_packet.md",
+                }
+            ],
+        }
+        self._rewrite_action_queue(
+            "review_proof_repair_plan",
+            "Review the proof-repair plan and Lean proof obligations for the promoted candidate before deeper formalization.",
+            handler_args={"run_id": "run-001", "candidate_id": "candidate:demo-theorem"},
+        )
+        self._rewrite_interaction_state(
+            {
+                "human_request": "review the proof-repair plan after lean-bridge refresh",
+                "action_queue_surface": {},
+                "decision_surface": {},
+                "human_edit_surfaces": [],
+                "closed_loop": {},
+            }
+        )
+
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
+                result = self.service._materialize_runtime_protocol_bundle(
+                    topic_slug="demo-topic",
+                    updated_by="test",
+                    human_request="review the proof-repair plan after lean-bridge refresh",
+                    load_profile="full",
+                )
+
+        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        must_read_paths = self._must_read_paths(bundle)
+
+        self.assertEqual(bundle["runtime_mode"], "verify")
+        self.assertIn("runtime/topics/demo-topic/statement_compilation.active.md", must_read_paths)
+        self.assertIn("runtime/topics/demo-topic/lean_bridge.active.md", must_read_paths)
+        self.assertIn(
+            "validation/topics/demo-topic/runs/run-001/statement-compilation/candidate-demo-theorem/proof_repair_plan.md",
+            must_read_paths,
+        )
+
     def test_full_promote_mode_foregrounds_gate_surfaces_and_defers_history(self) -> None:
         shell_surfaces = self._shell_surfaces()
         (self.runtime_root / "promotion_gate.json").write_text(
@@ -1531,12 +1641,12 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
 
         self.assertEqual(bundle["runtime_mode"], "promote")
         self.assertIn("runtime/topics/demo-topic/promotion_readiness.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/promotion_gate.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/promotion_gate.md", must_read_paths)
         self.assertIn("runtime/topics/demo-topic/topic_completion.md", must_read_paths)
         self.assertNotIn("runtime/topics/demo-topic/control_note.md", must_read_paths)
         self.assertNotIn("runtime/topics/demo-topic/topic_synopsis.json", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/control_note.md", deferred_paths)
-        self.assertIn("runtime/topics/demo-topic/topic_synopsis.json", deferred_paths)
+        self.assertIn("topics/demo-topic/runtime/control_note.md", deferred_paths)
+        self.assertIn("topics/demo-topic/runtime/topic_synopsis.json", deferred_paths)
         active_triggers = {
             row["trigger"]
             for row in bundle["escalation_triggers"]
@@ -1614,7 +1724,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         must_read_paths = self._must_read_paths(bundle)
 
         self.assertEqual(bundle["runtime_mode"], "promote")
-        self.assertIn("runtime/topics/demo-topic/promotion_gate.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/promotion_gate.md", must_read_paths)
         self.assertIn(
             "runtime/topics/demo-topic/selected_candidate_route_choice.active.md",
             must_read_paths,
@@ -1885,14 +1995,14 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertEqual(status_payload["control_plane"]["lane"], status_payload["topic_synopsis"]["lane"])
         self.assertEqual(status_payload["control_plane"]["layer"], status_payload["current_stage"])
         self.assertEqual(status_payload["control_plane"]["mode"], "explore")
-        self.assertEqual(roles["primary"]["runtime_machine"], "runtime/topics/demo-topic/topic_synopsis.json")
-        self.assertEqual(roles["primary"]["runtime_human"], "runtime/topics/demo-topic/topic_dashboard.md")
+        self.assertEqual(roles["primary"]["runtime_machine"], "topics/demo-topic/runtime/topic_synopsis.json")
+        self.assertEqual(roles["primary"]["runtime_human"], "topics/demo-topic/runtime/topic_dashboard.md")
         self.assertEqual(
             roles["primary"]["review_human"],
-            "runtime/topics/demo-topic/validation_review_bundle.active.md",
+            "topics/demo-topic/runtime/validation_review_bundle.active.md",
         )
         self.assertEqual(roles["compatibility"]["current_topic_machine"], "runtime/current_topic.json")
-        self.assertEqual(roles["compatibility"]["operator_console"], "runtime/topics/demo-topic/operator_console.md")
+        self.assertEqual(roles["compatibility"]["operator_console"], "topics/demo-topic/runtime/operator_console.md")
         self.assertEqual(status_payload["must_read_now"][0]["path"], "runtime/topics/demo-topic/topic_dashboard.md")
 
     def test_topic_status_materializes_layer_graph_surface(self) -> None:
@@ -1955,10 +2065,11 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertEqual(status_payload["layer_graph"]["return_law"]["required_return_node"], "L3-R")
         self.assertEqual(
             status_payload["primary_runtime_surfaces"]["derived"]["layer_graph_human"],
-            "runtime/topics/demo-topic/layer_graph.generated.md",
+            "topics/demo-topic/runtime/layer_graph.generated.md",
         )
-        self.assertTrue((self.runtime_root / "layer_graph.generated.json").exists())
-        self.assertTrue((self.runtime_root / "layer_graph.generated.md").exists())
+        truth_runtime_root = self.kernel_root / "topics" / "demo-topic" / "runtime"
+        self.assertTrue((truth_runtime_root / "layer_graph.generated.json").exists())
+        self.assertTrue((truth_runtime_root / "layer_graph.generated.md").exists())
 
 
 if __name__ == "__main__":

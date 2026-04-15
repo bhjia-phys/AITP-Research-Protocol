@@ -62,6 +62,73 @@ const auditSchema = {
   },
 } as const;
 
+const decisionsSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["topic_slug"],
+  properties: {
+    topic_slug: { type: "string", minLength: 1, maxLength: 200 },
+    pending_only: {
+      anyOf: [{ type: "boolean" }, { type: "null" }],
+      default: true,
+    },
+  },
+} as const;
+
+const resolveDecisionSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["topic_slug", "decision_id", "option"],
+  properties: {
+    topic_slug: { type: "string", minLength: 1, maxLength: 200 },
+    decision_id: { type: "string", minLength: 1, maxLength: 200 },
+    option: {
+      type: "integer",
+      minimum: 0,
+      maximum: 32,
+    },
+    comment: {
+      anyOf: [{ type: "string", minLength: 1, maxLength: 4000 }, { type: "null" }],
+      default: null,
+    },
+    resolved_by: {
+      anyOf: [{ type: "string", minLength: 1, maxLength: 200 }, { type: "null" }],
+      default: "human",
+    },
+  },
+} as const;
+
+const resolveCheckpointSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["topic_slug", "option"],
+  properties: {
+    topic_slug: { type: "string", minLength: 1, maxLength: 200 },
+    option: {
+      type: "integer",
+      minimum: 0,
+      maximum: 32,
+    },
+    comment: {
+      anyOf: [{ type: "string", minLength: 1, maxLength: 4000 }, { type: "null" }],
+      default: null,
+    },
+    resolved_by: {
+      anyOf: [{ type: "string", minLength: 1, maxLength: 200 }, { type: "null" }],
+      default: "human",
+    },
+  },
+} as const;
+
+const interactionSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["topic_slug"],
+  properties: {
+    topic_slug: { type: "string", minLength: 1, maxLength: 200 },
+  },
+} as const;
+
 const bootstrapSchema = {
   type: "object",
   additionalProperties: false,
@@ -154,6 +221,72 @@ function uniqueStrings(values: unknown): string[] {
     rows.push(trimmed);
   }
   return rows;
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function asArrayOfRecords(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is Record<string, unknown> => !!item && typeof item === "object" && !Array.isArray(item))
+    : [];
+}
+
+function buildInteractionPacket(statusEnvelope: JsonObject, decisionsEnvelope: JsonObject): JsonObject {
+  const statusResult = asRecord(statusEnvelope.result);
+  const decisionsResult = asRecord(decisionsEnvelope.result);
+  const operatorCheckpoint = asRecord(statusResult.operator_checkpoint);
+  const humanPosture = asRecord(statusResult.human_interaction_posture);
+  const pendingDecisionPoints = asArrayOfRecords(decisionsResult.decision_points);
+  const operatorCheckpointRequested = String(operatorCheckpoint.status ?? "") === "requested";
+
+  let primaryInteraction: JsonObject = {
+    kind: "none",
+    summary: "No active human-choice surface is currently blocking the bounded loop.",
+  };
+
+  if (pendingDecisionPoints.length > 0) {
+    const first = pendingDecisionPoints[0] ?? {};
+    primaryInteraction = {
+      kind: "decision_point",
+      id: first.id ?? null,
+      question: first.question ?? null,
+      blocking: Boolean(first.blocking),
+      options: first.options ?? [],
+      default_option_index: first.default_option_index ?? null,
+      resolve_with: "aitp_resolve_decision",
+    };
+  } else if (operatorCheckpointRequested) {
+    primaryInteraction = {
+      kind: "operator_checkpoint",
+      id: operatorCheckpoint.checkpoint_id ?? null,
+      checkpoint_kind: operatorCheckpoint.checkpoint_kind ?? null,
+      question: operatorCheckpoint.question ?? null,
+      required_response: operatorCheckpoint.required_response ?? null,
+      options: operatorCheckpoint.options ?? [],
+      default_option_index: operatorCheckpoint.default_option_index ?? null,
+      response_channels: operatorCheckpoint.response_channels ?? [],
+      evidence_refs: operatorCheckpoint.evidence_refs ?? [],
+      resolve_with: "aitp_resolve_checkpoint",
+    };
+  }
+
+  return {
+    topic_slug: statusResult.topic_slug ?? null,
+    requires_human_input_now:
+      Boolean(humanPosture.requires_human_input_now) || pendingDecisionPoints.length > 0 || operatorCheckpointRequested,
+    human_interaction_posture: humanPosture,
+    pending_decision_points: pendingDecisionPoints,
+    operator_checkpoint: operatorCheckpoint,
+    primary_interaction: primaryInteraction,
+    response_tools: {
+      inspect_interaction: "aitp_interaction",
+      list_decisions: "aitp_decisions",
+      resolve_decision: "aitp_resolve_decision",
+      resolve_checkpoint: "aitp_resolve_checkpoint",
+    },
+  };
 }
 
 function looksLikeWorkspaceRoot(candidate: string): boolean {
@@ -269,6 +402,34 @@ function buildTools(api: OpenClawPluginApi, config: ToolContextConfig | null | u
       },
     } as AnyAgentTool,
     {
+      name: "aitp_interaction",
+      label: "AITP Interaction",
+      description: "Return the active human-interaction packet for one topic: question, options, defaults, and how to answer.",
+      parameters: interactionSchema,
+      async execute(_toolCallId, rawParams) {
+        const params = (rawParams ?? {}) as Record<string, unknown>;
+        const topicSlug = String(params.topic_slug);
+        const statusEnvelope = await runAitp(config, "interaction", ["--topic-slug", topicSlug]);
+        const decisionsEnvelope = await runAitp(config, "list-decisions", ["--topic-slug", topicSlug, "--pending-only"]);
+        return jsonResult({
+          workspace_root: statusEnvelope.workspace_root,
+          kernel_root: statusEnvelope.kernel_root,
+          command: statusEnvelope.command,
+          result: buildInteractionPacket(
+            {
+              ...statusEnvelope,
+              result: {
+                ...(asRecord(statusEnvelope.result)),
+                operator_checkpoint: asRecord(asRecord(statusEnvelope.result).operator_checkpoint),
+                human_interaction_posture: asRecord(asRecord(statusEnvelope.result).human_interaction_posture),
+              },
+            },
+            decisionsEnvelope,
+          ),
+        });
+      },
+    } as AnyAgentTool,
+    {
       name: "aitp_audit",
       label: "AITP Audit",
       description: "Run the AITP conformance audit for a topic.",
@@ -280,6 +441,56 @@ function buildTools(api: OpenClawPluginApi, config: ToolContextConfig | null | u
           args.push("--phase", params.phase);
         }
         return jsonResult(await runAitp(config, "audit", args));
+      },
+    } as AnyAgentTool,
+    {
+      name: "aitp_decisions",
+      label: "AITP Decisions",
+      description: "List active AITP decision points so the host can render a bounded human-choice surface.",
+      parameters: decisionsSchema,
+      async execute(_toolCallId, rawParams) {
+        const params = (rawParams ?? {}) as Record<string, unknown>;
+        const args = ["--topic-slug", String(params.topic_slug)];
+        if (params.pending_only !== false) args.push("--pending-only");
+        return jsonResult(await runAitp(config, "list-decisions", args));
+      },
+    } as AnyAgentTool,
+    {
+      name: "aitp_resolve_decision",
+      label: "AITP Resolve Decision",
+      description: "Resolve one AITP decision point after the human chooses an option.",
+      parameters: resolveDecisionSchema,
+      async execute(_toolCallId, rawParams) {
+        const params = (rawParams ?? {}) as Record<string, unknown>;
+        const args = [
+          "--topic-slug",
+          String(params.topic_slug),
+          "--decision-id",
+          String(params.decision_id),
+          "--option",
+          String(params.option),
+        ];
+        if (typeof params.comment === "string" && params.comment) args.push("--comment", params.comment);
+        if (typeof params.resolved_by === "string" && params.resolved_by) args.push("--resolved-by", params.resolved_by);
+        return jsonResult(await runAitp(config, "resolve-decision", args));
+      },
+    } as AnyAgentTool,
+    {
+      name: "aitp_resolve_checkpoint",
+      label: "AITP Resolve Checkpoint",
+      description: "Resolve the active AITP operator checkpoint after the human chooses an option.",
+      parameters: resolveCheckpointSchema,
+      async execute(_toolCallId, rawParams) {
+        const params = (rawParams ?? {}) as Record<string, unknown>;
+        const args = [
+          "--topic-slug",
+          String(params.topic_slug),
+          "--option",
+          String(params.option),
+        ];
+        if (typeof params.comment === "string" && params.comment) args.push("--comment", params.comment);
+        if (typeof params.resolved_by === "string" && params.resolved_by) args.push("--resolved-by", params.resolved_by);
+        return jsonResult(await runAitp(config, "resolve-checkpoint", args));
       },
     } as AnyAgentTool,
     {
@@ -353,7 +564,7 @@ const plugin = {
   register(api: OpenClawPluginApi) {
     api.registerTool(
       (ctx) => buildTools(api, (ctx.config ?? {}) as ToolContextConfig),
-      { names: ["aitp_doctor", "aitp_state", "aitp_audit", "aitp_bootstrap", "aitp_resume", "aitp_loop"] },
+      { names: ["aitp_doctor", "aitp_state", "aitp_interaction", "aitp_audit", "aitp_decisions", "aitp_resolve_decision", "aitp_resolve_checkpoint", "aitp_bootstrap", "aitp_resume", "aitp_loop"] },
     );
     api.logger.info?.("aitp-openclaw-runtime: Registered aitp_* tools");
   },

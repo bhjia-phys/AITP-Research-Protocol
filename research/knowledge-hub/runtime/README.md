@@ -29,99 +29,99 @@ hiding those rules inside handler code.
 
 ## Layout
 
-- `topics/<topic_slug>/topic_state.json`
+- `topics/<topic_slug>/runtime/topic_state.json`
   - machine-readable topic snapshot
-- `topics/<topic_slug>/resume.md`
+- `topics/<topic_slug>/runtime/resume.md`
   - human-readable resume brief
-- `topics/<topic_slug>/interaction_state.json`
+- `topics/<topic_slug>/runtime/interaction_state.json`
   - machine-readable human-input, autonomy, and layer-edit contract
-- `topics/<topic_slug>/idea_packet.json`
+- `topics/<topic_slug>/runtime/idea_packet.json`
   - machine-readable research-intent gate for idea-first or vague-topic starts
-- `topics/<topic_slug>/idea_packet.md`
+- `topics/<topic_slug>/runtime/idea_packet.md`
   - human-readable idea packet with novelty target, non-goals, first validation route, and evidence bar
-- `topics/<topic_slug>/operator_checkpoint.active.json`
+- `topics/<topic_slug>/runtime/operator_checkpoint.active.json`
   - machine-readable active human-checkpoint surface
-- `topics/<topic_slug>/operator_checkpoint.active.md`
+- `topics/<topic_slug>/runtime/operator_checkpoint.active.md`
   - human-readable active operator checkpoint
-- `topics/<topic_slug>/operator_checkpoints.jsonl`
+- `topics/<topic_slug>/runtime/operator_checkpoints.jsonl`
   - append-only checkpoint ledger across requested/answered/superseded/cancelled states
-- `topics/<topic_slug>/operator_console.md`
+- `topics/<topic_slug>/runtime/operator_console.md`
   - legacy compatibility operator view of the active loops and editable surfaces
-- `topics/<topic_slug>/topic_synopsis.json`
+- `topics/<topic_slug>/runtime/topic_synopsis.json`
   - authoritative machine-readable runtime synopsis for operator-facing concerns such as current status summary, next action, human need, dependency posture, and truth-source paths
-- `topics/<topic_slug>/topic_dashboard.md`
+- `topics/<topic_slug>/runtime/topic_dashboard.md`
   - primary human-readable render of the runtime synopsis and explainability surface
-- `topics/<topic_slug>/validation_review_bundle.active.json`
+- `topics/<topic_slug>/runtime/validation_review_bundle.active.json`
   - primary machine-readable `L4` review bundle for the active topic/run before specialist review files are inspected
-- `topics/<topic_slug>/validation_review_bundle.active.md`
+- `topics/<topic_slug>/runtime/validation_review_bundle.active.md`
   - primary human-readable `L4` review bundle
-- `topics/<topic_slug>/research_judgment.active.json`
+- `topics/<topic_slug>/runtime/research_judgment.active.json`
   - machine-readable momentum / stuckness / surprise judgment surface for the active bounded route
-- `topics/<topic_slug>/research_judgment.active.md`
+- `topics/<topic_slug>/runtime/research_judgment.active.md`
   - human-readable research judgment summary with durable signal refs
-- `topics/<topic_slug>/collaborator_profile.active.json`
+- `topics/<topic_slug>/runtime/collaborator_profile.active.json`
   - machine-readable topic-scoped collaborator profile derived from runtime collaborator memory
-- `topics/<topic_slug>/collaborator_profile.active.md`
+- `topics/<topic_slug>/runtime/collaborator_profile.active.md`
   - human-readable collaborator profile summary for restart continuity
-- `topics/<topic_slug>/research_trajectory.active.json`
+- `topics/<topic_slug>/runtime/research_trajectory.active.json`
   - machine-readable recent trajectory continuity surface derived from trajectory memory
-- `topics/<topic_slug>/research_trajectory.active.md`
+- `topics/<topic_slug>/runtime/research_trajectory.active.md`
   - human-readable recent trajectory carryover summary
-- `topics/<topic_slug>/mode_learning.active.json`
+- `topics/<topic_slug>/runtime/mode_learning.active.json`
   - machine-readable learned route and lane guidance derived from durable strategy-memory rows
-- `topics/<topic_slug>/mode_learning.active.md`
+- `topics/<topic_slug>/runtime/mode_learning.active.md`
   - human-readable mode-learning guidance for restart and route reuse
-- `topics/<topic_slug>/runtime_protocol.generated.json`
+- `topics/<topic_slug>/runtime/runtime_protocol.generated.json`
   - derived progressive-disclosure bundle for external executors and session bootstrap
-- `topics/<topic_slug>/runtime_protocol.generated.md`
+- `topics/<topic_slug>/runtime/runtime_protocol.generated.md`
   - derived human-readable render of the progressive-disclosure bundle
-- `topics/<topic_slug>/topic_skill_projection.active.json`
+- `topics/<topic_slug>/runtime/topic_skill_projection.active.json`
   - machine-readable reusable execution projection derived from a mature topic when the lane is stable enough
-- `topics/<topic_slug>/topic_skill_projection.active.md`
+- `topics/<topic_slug>/runtime/topic_skill_projection.active.md`
   - human-readable topic-skill projection with required reads, route rules, and anti-proxy constraints
-- `topics/<topic_slug>/statement_compilation.active.json`
+- `topics/<topic_slug>/runtime/statement_compilation.active.json`
   - machine-readable statement-compilation index for bounded declaration skeletons before proof repair
-- `topics/<topic_slug>/statement_compilation.active.md`
+- `topics/<topic_slug>/runtime/statement_compilation.active.md`
   - human-readable statement-compilation summary with proof-hole counts and packet refs
-- `topics/<topic_slug>/transition_history.jsonl`
+- `topics/<topic_slug>/runtime/transition_history.jsonl`
   - append-only structured transition log for bounded forward/backward layer moves
-- `topics/<topic_slug>/transition_history.json`
+- `topics/<topic_slug>/runtime/transition_history.json`
   - machine-readable transition/demotion summary for the active topic
-- `topics/<topic_slug>/transition_history.md`
+- `topics/<topic_slug>/runtime/transition_history.md`
   - human-readable transition/demotion replay note
-- `topics/<topic_slug>/promotion_gate.json`
+- `topics/<topic_slug>/runtime/promotion_gate.json`
   - machine-readable human approval gate including optional `human_modifications`
-- `topics/<topic_slug>/promotion_gate.md`
+- `topics/<topic_slug>/runtime/promotion_gate.md`
   - human-readable approval gate note with modification summaries when approval changed the candidate
-- `topics/<topic_slug>/loop_state.json`
+- `topics/<topic_slug>/runtime/loop_state.json`
   - latest loop-level execution summary
-- `topics/<topic_slug>/loop_history.jsonl`
+- `topics/<topic_slug>/runtime/loop_history.jsonl`
   - append-only history of loop runs
-- `topics/<topic_slug>/unfinished_work.json`
+- `topics/<topic_slug>/runtime/unfinished_work.json`
   - machine-readable ordered unfinished-work index
-- `topics/<topic_slug>/unfinished_work.md`
+- `topics/<topic_slug>/runtime/unfinished_work.md`
   - human-readable unfinished-work note
-- `topics/<topic_slug>/next_action_decision.json`
+- `topics/<topic_slug>/runtime/next_action_decision.json`
   - authoritative machine-readable next-action decision
-- `topics/<topic_slug>/next_action_decision.md`
+- `topics/<topic_slug>/runtime/next_action_decision.md`
   - human-readable next-action decision note
-- `topics/<topic_slug>/action_queue_contract.generated.json`
+- `topics/<topic_slug>/runtime/action_queue_contract.generated.json`
   - generated queue-contract snapshot showing the current executable queue in declarative form
-- `topics/<topic_slug>/action_queue_contract.generated.md`
+- `topics/<topic_slug>/runtime/action_queue_contract.generated.md`
   - human-readable queue-contract snapshot
 - `schemas/progressive-disclosure-runtime-bundle.schema.json`
   - public JSON contract for `runtime_protocol.generated.json`
-- `topics/<topic_slug>/deferred_candidates.json`
+- `topics/<topic_slug>/runtime/deferred_candidates.json`
   - machine-readable deferred parking and reactivation buffer
-- `topics/<topic_slug>/deferred_candidates.md`
+- `topics/<topic_slug>/runtime/deferred_candidates.md`
   - human-readable deferred parking note
-- `topics/<topic_slug>/followup_subtopics.jsonl`
+- `topics/<topic_slug>/runtime/followup_subtopics.jsonl`
   - append-only parent/child lineage for cited-literature subtopics
-- `topics/<topic_slug>/followup_subtopics.md`
+- `topics/<topic_slug>/runtime/followup_subtopics.md`
   - human-readable follow-up subtopic index
-- `topics/<topic_slug>/conformance_state.json`
+- `topics/<topic_slug>/runtime/conformance_state.json`
   - machine-readable audit status for AITP runtime conformance
-- `topics/<topic_slug>/conformance_report.md`
+- `topics/<topic_slug>/runtime/conformance_report.md`
   - human-readable conformance report
 - `topic_index.jsonl`
   - one-row registry for the latest known state of each topic
@@ -151,21 +151,21 @@ hiding those rules inside handler code.
   - human-readable focused-topic compatibility note
 - `scripts/sync_topic_state.py`
   - helper that materializes the runtime state from existing layer artifacts
-- `topics/<topic_slug>/action_queue.jsonl`
+- `topics/<topic_slug>/runtime/action_queue.jsonl`
   - typed next-action queue derived from the current topic state
-- `topics/<topic_slug>/agent_brief.md`
+- `topics/<topic_slug>/runtime/agent_brief.md`
   - legacy compatibility execution brief for older external-execution flows
-- `topics/<topic_slug>/selected_validation_route.json`
+- `topics/<topic_slug>/runtime/selected_validation_route.json`
   - one selected validation lane for the current closed-loop step
-- `topics/<topic_slug>/execution_task.json`
+- `topics/<topic_slug>/runtime/execution_task.json`
   - concrete execution handoff artifact for the external runtime
-- `topics/<topic_slug>/execution_task.md`
+- `topics/<topic_slug>/runtime/execution_task.md`
   - human-readable execution handoff note with return-path contract
-- `topics/<topic_slug>/execution_handoff_receipts.jsonl`
+- `topics/<topic_slug>/runtime/execution_handoff_receipts.jsonl`
   - receipts for auto-dispatched external execution tasks
-- `validation/topics/<topic_slug>/runs/<run_id>/execution_notes/codex_session.json`
+- `topics/<topic_slug>/L4/runs/<run_id>/execution_notes/codex_session.json`
   - tmux-backed Codex session state for a live external execution handoff
-- `validation/topics/<topic_slug>/runs/<run_id>/execution_notes/codex_session_receipts.jsonl`
+- `topics/<topic_slug>/L4/runs/<run_id>/execution_notes/codex_session_receipts.jsonl`
   - start/wait/submit/kill receipts for the live Codex session
 - `scripts/orchestrate_topic.py`
   - internal topic bootstrap + resume orchestrator used by the public loop surface
@@ -307,7 +307,7 @@ For example, an `L4` run may end with a `deferred` verdict that sends work back 
 ## Current workflow
 
 1. run `python3 research/adapters/openclaw/scripts/aitp_loop.py --topic-slug <topic_slug> --max-steps 1`
-2. open `runtime/topics/<topic_slug>/runtime_protocol.generated.md`
+2. open `topics/<topic_slug>/runtime/runtime_protocol.generated.md`
 3. read the primary surfaces it points to first, especially `topic_dashboard.md` and `research_question.contract.md` in the light profile; only open `topic_synopsis.json`, control notes, or review surfaces when their declared trigger fires
 4. only escalate into deferred or supporting surfaces when a declared trigger fires
 5. follow `resume_stage`, `unfinished_work`, and the selected next-action decision
@@ -315,8 +315,8 @@ For example, an `L4` run may end with a `deferred` verdict that sends work back 
 
 When you want to reduce heuristic behavior further, use:
 
-- `feedback/.../next_actions.contract.json` for an explicit L3 action queue
-- `runtime/.../next_action_decision.contract.json` for an explicit next-action choice
+- `topics/<topic_slug>/L3/.../next_actions.contract.json` for an explicit L3 action queue
+- `topics/<topic_slug>/runtime/.../next_action_decision.contract.json` for an explicit next-action choice
 - `aitp steer-topic --topic-slug <topic_slug> --innovation-direction "<direction>" --decision continue`
   when the operator changes novelty direction or scope and that redirect must be durable before the loop continues
 
@@ -738,7 +738,7 @@ python research/knowledge-hub/runtime/scripts/run_l1_vault_acceptance.py --json
 ```
 
 That acceptance script uses a temporary kernel root, runs production
-`status --json`, verifies that `intake/topics/<topic_slug>/vault/raw|wiki|output`
+`status --json`, verifies that `topics/<topic_slug>/L1/vault/raw|wiki|output`
 is materialized on the topic-shell path, checks that the wiki layer stays
 Obsidian-compatible, and checks that `output/flowback.jsonl` plus the runtime
 bridge are visible through `research_question.contract.md` and the runtime
@@ -878,11 +878,11 @@ contract for the current topic.
 
 For the minimal closed-loop v1, the external executor returns one JSON artifact at:
 
-- `validation/topics/<topic_slug>/runs/<run_id>/returned_execution_result.json`
-- `validation/topics/<topic_slug>/runs/<run_id>/execution_notes/`
-- `validation/topics/<topic_slug>/runs/<run_id>/execution_notes/codex_session.json`
-- `validation/topics/<topic_slug>/runs/<run_id>/execution_notes/codex_session_receipts.jsonl`
-- `validation/topics/<topic_slug>/runs/<run_id>/literature_followup_receipts.jsonl`
+- `topics/<topic_slug>/L4/runs/<run_id>/returned_execution_result.json`
+- `topics/<topic_slug>/L4/runs/<run_id>/execution_notes/`
+- `topics/<topic_slug>/L4/runs/<run_id>/execution_notes/codex_session.json`
+- `topics/<topic_slug>/L4/runs/<run_id>/execution_notes/codex_session_receipts.jsonl`
+- `topics/<topic_slug>/L4/runs/<run_id>/literature_followup_receipts.jsonl`
 
 The current OpenClaw adapter launches `codex exec` through a tmux-backed session controller so the
 execution lane stays operator-visible even while the runtime waits for the returned result artifact.
@@ -893,7 +893,7 @@ Use:
 
 ```bash
 python3 research/adapters/openclaw/scripts/codex_session_controller.py \
-  status --metadata-path validation/topics/<topic_slug>/runs/<run_id>/execution_notes/codex_session.json
+  status --metadata-path topics/<topic_slug>/L4/runs/<run_id>/execution_notes/codex_session.json
 ```
 
 to inspect that live session, and swap `status` for `log`, `submit`, or `kill` when intervention is needed.
@@ -959,7 +959,7 @@ Store summaries, stage decisions, and exact file pointers.
 Use `runtime/CONTROL_NOTE_CONTRACT.md` when a human wants to redirect or pause
 the loop through a durable steering note.
 
-Use `runtime/topics/<topic_slug>/innovation_direction.md` plus
+Use `topics/<topic_slug>/runtime/innovation_direction.md` plus
 `innovation_decisions.jsonl` when the operator changes novelty direction,
 research scope, or acceptance posture and that change must survive a new
 session.

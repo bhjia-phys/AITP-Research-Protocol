@@ -25,7 +25,7 @@ _ISSUE_LEDGER_REF = (
 JONES_STRATEGY_MEMORY_SEEDS: list[dict[str, Any]] = [
     {
         "strategy_id": "strat-jones-codrestrict-comp-subtype",
-        "strategy_type": "search_route",
+        "strategy_type": "proof_engineering",
         "summary": (
             "Build the range-facing map in two steps: first `LinearMap.codRestrict` or "
             "`ContinuousLinearMap.codRestrict` into the proved range, then compose with "
@@ -49,7 +49,7 @@ JONES_STRATEGY_MEMORY_SEEDS: list[dict[str, Any]] = [
     },
     {
         "strategy_id": "strat-jones-clmap-coefun-linear-map-sub",
-        "strategy_type": "debug_pattern",
+        "strategy_type": "api_workaround",
         "summary": (
             "When `ContinuousLinearMap` coercions hide the `LinearMap` structure and "
             "`rw [ContinuousLinearMap.map_sub]` stops matching, pull the underlying "
@@ -73,7 +73,7 @@ JONES_STRATEGY_MEMORY_SEEDS: list[dict[str, Any]] = [
     },
     {
         "strategy_id": "strat-jones-sub-eq-zero-direction",
-        "strategy_type": "debug_pattern",
+        "strategy_type": "failure_pattern",
         "summary": (
             "For `sub_eq_zero`, remember the direction: `rw [sub_eq_zero]` rewrites "
             "`a - b = 0` to `a = b`, while `.mpr` is the reliable way to build the subtraction goal from an equality."
@@ -96,7 +96,7 @@ JONES_STRATEGY_MEMORY_SEEDS: list[dict[str, Any]] = [
     },
     {
         "strategy_id": "strat-jones-starprojection-range-instance",
-        "strategy_type": "debug_pattern",
+        "strategy_type": "api_workaround",
         "summary": (
             "If `Submodule.range_starProjection` stalls on instance inference, pass the "
             "submodule parameter explicitly with `(U := ...)` before searching for deeper math reasons."
@@ -119,7 +119,7 @@ JONES_STRATEGY_MEMORY_SEEDS: list[dict[str, Any]] = [
     },
     {
         "strategy_id": "strat-jones-ker-bridge-positive-part",
-        "strategy_type": "search_route",
+        "strategy_type": "proof_engineering",
         "summary": (
             "Use `jonesFiniteCoordinatePolarPositivePart_ker_eq_ker` as the bridge from "
             "`ker |A|` to `ker A` before unpacking kernel membership by hand."
@@ -142,7 +142,7 @@ JONES_STRATEGY_MEMORY_SEEDS: list[dict[str, Any]] = [
     },
     {
         "strategy_id": "strat-jones-have-rw-goal-shape-mismatch",
-        "strategy_type": "debug_pattern",
+        "strategy_type": "failure_pattern",
         "summary": (
             "When `show f (x - y) = 0` fails because the goal is really `f x - f y = 0`, "
             "first materialize the mapped subtraction in a `have`, then `rw` into the exact goal shape."

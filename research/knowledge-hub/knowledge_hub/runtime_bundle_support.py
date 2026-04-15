@@ -34,6 +34,7 @@ from .theory_context_injection import (
 )
 from .loop_detection_support import materialize_loop_detection
 from .protocol_manifest import materialize_protocol_manifest, protocol_manifest_must_read_entry
+from .topic_truth_root_support import compatibility_projection_path
 from .validation_review_service import analytical_cross_check_markdown_lines
 
 
@@ -150,24 +151,41 @@ def _autonomy_posture_from_bundle(
 
 
 def _read_json(path: Path) -> dict[str, Any] | None:
-    if not path.exists():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return None
+        target = compatibility_path
+    return json.loads(target.read_text(encoding="utf-8"))
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
-        return []
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return []
+        target = compatibility_path
     rows: list[dict[str, Any]] = []
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
+    for raw_line in target.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
         if line:
             rows.append(json.loads(line))
     return rows
 def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    rendered = json.dumps(payload, ensure_ascii=True, indent=2) + "\n"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 def _write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(text, encoding="utf-8")
 def _now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
 def _slugify(text: str) -> str:
@@ -348,7 +366,7 @@ def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
         ["", *control_plane_markdown_lines(control_plane), "## Runtime truth model", ""]
         + [
             f"- Machine synopsis: `{topic_synopsis.get('path') or '(missing)'}`",
-            f"- Primary human render: `runtime/topics/{payload['topic_slug']}/topic_dashboard.md`",
+            f"- Primary human render: `topics/{payload['topic_slug']}/runtime/topic_dashboard.md`",
             f"- Focus state source: `{truth_sources.get('topic_state_path') or '(missing)'}`",
             f"- Research contract source: `{truth_sources.get('research_question_contract_path') or '(missing)'}`",
             f"- Next-action source: `{truth_sources.get('next_action_surface_path') or '(missing)'}`",
@@ -444,8 +462,8 @@ def runtime_protocol_markdown(payload: dict[str, Any]) -> str:
             "",
             "## Transition history",
             "",
-            f"- JSON path: `runtime/topics/{payload['topic_slug']}/transition_history.json`",
-            f"- Note path: `runtime/topics/{payload['topic_slug']}/transition_history.md`",
+            f"- JSON path: `topics/{payload['topic_slug']}/runtime/transition_history.json`",
+            f"- Note path: `topics/{payload['topic_slug']}/runtime/transition_history.md`",
             "- Inspect these surfaces when you need the bounded forward/backward layer path instead of only the current stage snapshot.",
             "",
             "## Open gap summary",
@@ -1322,6 +1340,62 @@ def materialize_runtime_protocol_bundle(
             },
         )
         must_read_paths.add(selected_candidate_route_choice_note_path)
+    if str((selected_pending_action or {}).get("action_type") or "").strip() == "prepare_lean_bridge":
+        for candidate_path, reason in (
+            (
+                str((statement_compilation or {}).get("path") or "").strip(),
+                "Read the active statement-compilation packet summary before refreshing the post-promotion formalization lane.",
+            ),
+            (
+                str((lean_bridge or {}).get("path") or "").strip(),
+                "Read the active Lean-bridge packet summary and proof obligations before continuing formalization work.",
+            ),
+        ):
+            if candidate_path and candidate_path not in must_read_paths:
+                must_read_now.insert(
+                    0,
+                    {
+                        "path": candidate_path,
+                        "reason": reason,
+                    },
+                )
+                must_read_paths.add(candidate_path)
+    if str((selected_pending_action or {}).get("action_type") or "").strip() == "review_proof_repair_plan":
+        statement_packets = (statement_compilation or {}).get("packets") or []
+        repair_plan_note_path = str(
+            next(
+                (
+                    packet.get("repair_plan_note_path")
+                    for packet in statement_packets
+                    if str(packet.get("repair_plan_note_path") or "").strip()
+                ),
+                "",
+            )
+            or ""
+        ).strip()
+        for candidate_path, reason in (
+            (
+                str((statement_compilation or {}).get("path") or "").strip(),
+                "Read the active statement-compilation packet summary before reviewing proof-repair obligations.",
+            ),
+            (
+                str((lean_bridge or {}).get("path") or "").strip(),
+                "Read the active Lean-bridge packet summary before adjudicating the remaining proof obligations.",
+            ),
+            (
+                repair_plan_note_path,
+                "Read the current proof-repair plan before deciding how the promoted candidate should continue through formalization.",
+            ),
+        ):
+            if candidate_path and candidate_path not in must_read_paths:
+                must_read_now.insert(
+                    0,
+                    {
+                        "path": candidate_path,
+                        "reason": reason,
+                    },
+                )
+                must_read_paths.add(candidate_path)
     for candidate, trigger, reason in (
         (
             "interaction_state.json",

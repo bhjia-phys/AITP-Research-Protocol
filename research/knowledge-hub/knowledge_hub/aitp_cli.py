@@ -329,6 +329,21 @@ def build_parser() -> argparse.ArgumentParser:
     status.add_argument("--full", action="store_true")
     status.add_argument("--json", action="store_true")
 
+    interaction = subparsers.add_parser("interaction", help="Show the active human-interaction packet for one topic")
+    interaction.add_argument("--topic-slug", required=True)
+    interaction.add_argument("--updated-by", default="aitp-cli")
+    interaction.add_argument("--json", action="store_true")
+
+    resolve_checkpoint = subparsers.add_parser(
+        "resolve-checkpoint",
+        help="Resolve the active operator checkpoint for one topic",
+    )
+    resolve_checkpoint.add_argument("--topic-slug", required=True)
+    resolve_checkpoint.add_argument("--option", required=True, type=int)
+    resolve_checkpoint.add_argument("--comment")
+    resolve_checkpoint.add_argument("--resolved-by", default="human")
+    resolve_checkpoint.add_argument("--json", action="store_true")
+
     layer_graph = subparsers.add_parser(
         "layer-graph",
         help="Materialize and inspect the iterative topic layer graph for the current topic",
@@ -1037,6 +1052,24 @@ def _main_with_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -
             _emit_text(render_topic_status_payload(payload, tier="verbose"))
         else:
             _emit_text(render_topic_status_payload(payload))
+        return 0
+
+    if args.command == "interaction":
+        payload = service.topic_interaction(
+            topic_slug=args.topic_slug,
+            updated_by=args.updated_by,
+        )
+        _emit(payload, args.json)
+        return 0
+
+    if args.command == "resolve-checkpoint":
+        payload = service.resolve_operator_checkpoint(
+            topic_slug=args.topic_slug,
+            option_index=args.option,
+            comment=args.comment,
+            resolved_by=args.resolved_by,
+        )
+        _emit(payload, args.json)
         return 0
 
     if args.command == "layer-graph":

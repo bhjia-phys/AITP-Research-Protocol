@@ -167,9 +167,9 @@ def main() -> int:
 
     route_choice_path = (
         kernel_root
-        / "runtime"
         / "topics"
         / args.topic_slug
+        / "runtime"
         / "selected_candidate_route_choice.active.json"
     )
     route_choice_payload = json.loads(route_choice_path.read_text(encoding="utf-8"))

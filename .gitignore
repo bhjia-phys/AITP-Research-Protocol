@@ -9,6 +9,15 @@ research/knowledge-hub/build/
 research/knowledge-hub/*.egg-info/
 research/knowledge-hub/runtime/topics/
 research/knowledge-hub/runtime/topic_index.jsonl
+research/knowledge-hub/runtime/active_topics.json
+research/knowledge-hub/runtime/active_topics.md
+research/knowledge-hub/runtime/current_topic.json
+research/knowledge-hub/runtime/current_topic.md
+research/knowledge-hub/runtime/topic_family_reuse.json
+research/knowledge-hub/runtime/topic_family_reuse.md
+research/knowledge-hub/runtime/collaborator_memory.jsonl
+research/knowledge-hub/runtime/collaborator_memory.md
+research/knowledge-hub/runtime/theory_metrics/
 research/knowledge-hub/validation/topics/
 research/knowledge-hub/feedback/topics/
 research/knowledge-hub/consultation/topics/
@@ -17,6 +26,14 @@ research/knowledge-hub/source-layer/topics/
 research/knowledge-hub/source-layer/global_index.jsonl
 research/knowledge-hub/data/topics/
 research/knowledge-hub/data/queries/
+research/knowledge-hub/topics/
+research/knowledge-hub/canonical/compiled/
+research/knowledge-hub/canonical/hygiene/
+research/knowledge-hub/canonical/index.jsonl
+research/knowledge-hub/canonical/staging/entries/
+research/knowledge-hub/canonical/staging/staging_index.jsonl
+research/knowledge-hub/canonical/staging/workspace_staging_manifest.json
+research/knowledge-hub/canonical/staging/workspace_staging_manifest.md
 
 research/adapters/openclaw/state/
 

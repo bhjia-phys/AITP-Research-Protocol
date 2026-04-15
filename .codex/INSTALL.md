@@ -103,6 +103,19 @@ For ordinary topic work, AITP should stay in a light runtime profile unless a
 benchmark mismatch, scope change, promotion step, or explicit full check forces
 the runtime to expand.
 
+When AITP says a human choice is required, inspect the active surface with:
+
+```bash
+aitp interaction --topic-slug <topic_slug> --json
+```
+
+If the active surface is a formal decision point, resolve it with:
+
+```bash
+aitp resolve-decision --topic-slug <topic_slug> --decision-id <decision_id> --option <index> --comment "<why>"
+aitp resolve-checkpoint --topic-slug <topic_slug> --option <index> --comment "<why>"
+```
+
 This is the normal user path. `aitp session-start "<task>"` is only the manual
 fallback when native bootstrap is unavailable.
 

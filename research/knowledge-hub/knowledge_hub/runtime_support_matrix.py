@@ -41,10 +41,10 @@ def _deep_execution_acceptance_command(runtime_id: str) -> str:
 
 def _deep_execution_expected_artifacts() -> list[str]:
     return [
-        "runtime/topics/<topic_slug>/topic_state.json",
-        "runtime/topics/<topic_slug>/loop_state.json",
-        "runtime/topics/<topic_slug>/runtime_protocol.generated.json",
-        "runtime/topics/<topic_slug>/runtime_protocol.generated.md",
+        "topics/<topic_slug>/runtime/topic_state.json",
+        "topics/<topic_slug>/runtime/loop_state.json",
+        "topics/<topic_slug>/runtime/runtime_protocol.generated.json",
+        "topics/<topic_slug>/runtime/runtime_protocol.generated.md",
         "status --json selected_action_id",
     ]
 

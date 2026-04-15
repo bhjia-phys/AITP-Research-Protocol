@@ -24,11 +24,11 @@ def _slugify(text: str) -> str:
 
 
 def _source_layer_root(kernel_root: Path) -> Path:
-    return kernel_root / "source-layer"
+    return kernel_root / "topics"
 
 
 def _compiled_root(kernel_root: Path) -> Path:
-    return _source_layer_root(kernel_root) / "compiled"
+    return kernel_root / "canonical" / "compiled"
 
 
 def _bibtex_export_root(kernel_root: Path) -> Path:
@@ -92,9 +92,9 @@ def _normalize_source_row(row: dict[str, Any], *, topic_slug: str) -> dict[str, 
 
 def _load_normalized_source_rows(kernel_root: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    topics_root = _source_layer_root(kernel_root) / "topics"
-    for source_index_path in sorted(topics_root.glob("*/source_index.jsonl")):
-        topic_slug = source_index_path.parent.name
+    topics_root = _source_layer_root(kernel_root)
+    for source_index_path in sorted(topics_root.glob("*/L0/source_index.jsonl")):
+        topic_slug = source_index_path.parent.parent.name
         rows.extend(
             _normalize_source_row(row, topic_slug=topic_slug)
             for row in read_jsonl(source_index_path)

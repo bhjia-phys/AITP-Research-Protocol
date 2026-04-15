@@ -69,8 +69,8 @@ def empty_source_intelligence(*, topic_slug: str) -> dict[str, Any]:
         "citation_edges": [],
         "source_neighbors": [],
         "neighbor_signal_count": 0,
-        "path": f"runtime/topics/{topic_slug}/source_intelligence.json",
-        "note_path": f"runtime/topics/{topic_slug}/source_intelligence.md",
+        "path": _truth_runtime_ref(topic_slug, "source_intelligence.json"),
+        "note_path": _truth_runtime_ref(topic_slug, "source_intelligence.md"),
     }
 
 
@@ -95,8 +95,32 @@ def _zero_graph_diff() -> dict[str, Any]:
     }
 
 
+def _truth_runtime_ref(topic_slug: str, *parts: str) -> str:
+    if not topic_slug:
+        return ""
+    return (Path("topics") / topic_slug / "runtime" / Path(*parts)).as_posix()
+
+
+def _truth_layer_ref(topic_slug: str, layer_name: str, *parts: str) -> str:
+    if not topic_slug:
+        return ""
+    return (Path("topics") / topic_slug / layer_name / Path(*parts)).as_posix()
+
+
+def _topic_path_context(surface_root: Path) -> tuple[Path, Path, Path, str]:
+    resolved = surface_root.expanduser().resolve()
+    parts = resolved.parts
+    if resolved.name == "runtime" and len(parts) >= 3 and parts[-3] == "topics":
+        topic_folder_root = resolved.parent
+        return topic_folder_root.parents[1], topic_folder_root, resolved, topic_folder_root.name
+    if len(parts) >= 3 and parts[-3] == "runtime" and parts[-2] == "topics":
+        return resolved.parents[2], resolved, resolved, resolved.name
+    topic_slug = resolved.name
+    return resolved.parents[2], resolved, resolved, topic_slug
+
+
 def empty_l1_vault(*, topic_slug: str) -> dict[str, Any]:
-    root = f"intake/topics/{topic_slug}/vault"
+    root = _truth_layer_ref(topic_slug, "L1", "vault")
     return {
         "vault_version": 1,
         "status": "absent",
@@ -238,10 +262,12 @@ def _match_hypotheses_to_rows(
     return matches
 
 
-def _buffer_reactivation_context(topic_root: Path) -> tuple[set[str], str, set[str]]:
-    kernel_root = topic_root.parents[2]
-    topic_slug = topic_root.name
-    source_rows = _read_jsonl(kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl")
+def _buffer_reactivation_context(runtime_surface_root: Path) -> tuple[set[str], str, set[str]]:
+    kernel_root, _, runtime_root, topic_slug = _topic_path_context(runtime_surface_root)
+    source_index_path = kernel_root / "topics" / topic_slug / "L0" / "source_index.jsonl"
+    if not source_index_path.exists():
+        source_index_path = kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl"
+    source_rows = _read_jsonl(source_index_path)
     source_ids = {
         str(row.get("source_id") or "").strip()
         for row in source_rows
@@ -255,7 +281,7 @@ def _buffer_reactivation_context(topic_root: Path) -> tuple[set[str], str, set[s
     ).lower()
     child_topics = {
         str(row.get("child_topic_slug") or "").strip()
-        for row in _read_jsonl(topic_root / "followup_subtopics.jsonl")
+        for row in _read_jsonl(runtime_root / "followup_subtopics.jsonl")
         if str(row.get("child_topic_slug") or "").strip()
     }
     return source_ids, source_text, child_topics
@@ -310,14 +336,15 @@ def _reactivation_condition_summary(entry: dict[str, Any]) -> str:
     return "; ".join(parts)
 
 
-def _followup_return_packet_path(topic_root: Path, row: dict[str, Any]) -> Path | None:
+def _followup_return_packet_path(runtime_surface_root: Path, row: dict[str, Any]) -> Path | None:
     explicit = str(row.get("return_packet_path") or "").strip()
     if explicit:
         return Path(explicit)
     child_topic_slug = str(row.get("child_topic_slug") or "").strip()
     if not child_topic_slug:
         return None
-    return topic_root.parent / child_topic_slug / "followup_return_packet.json"
+    _, topic_folder_root, _, _ = _topic_path_context(runtime_surface_root)
+    return topic_folder_root.parent / child_topic_slug / "followup_return_packet.json"
 
 
 def _followup_condition_summary(row: dict[str, Any], packet: dict[str, Any] | None) -> str:
@@ -397,11 +424,11 @@ def build_route_reentry_payload(
     competing_hypotheses: list[dict[str, Any]],
     topic_root: Path,
 ) -> dict[str, Any]:
-    kernel_root = topic_root.parents[2]
+    kernel_root, _, runtime_root, _ = _topic_path_context(topic_root)
     deferred_hypotheses = hypotheses_for_route(competing_hypotheses, route_kind="deferred_buffer")
     followup_hypotheses = hypotheses_for_route(competing_hypotheses, route_kind="followup_subtopic")
 
-    deferred_buffer = _read_json(topic_root / "deferred_candidates.json") or {}
+    deferred_buffer = _read_json(runtime_root / "deferred_candidates.json") or {}
     deferred_entries = [
         row
         for row in (deferred_buffer.get("entries") or [])
@@ -412,12 +439,12 @@ def build_route_reentry_payload(
         deferred_entries,
         text_builder=_buffer_entry_match_text,
     )
-    source_ids, source_text, child_topics = _buffer_reactivation_context(topic_root)
+    source_ids, source_text, child_topics = _buffer_reactivation_context(runtime_root)
     deferred_routes: list[dict[str, Any]] = []
     for hypothesis in deferred_hypotheses:
         hypothesis_id = str(hypothesis.get("hypothesis_id") or "").strip()
         entry = deferred_matches.get(hypothesis_id)
-        support_ref = _relativize_path(topic_root / "deferred_candidates.json", root=kernel_root)
+        support_ref = _relativize_path(runtime_root / "deferred_candidates.json", root=kernel_root)
         if entry is None:
             deferred_routes.append(
                 {
@@ -477,7 +504,7 @@ def build_route_reentry_payload(
             }
         )
 
-    followup_rows = _read_jsonl(topic_root / "followup_subtopics.jsonl")
+    followup_rows = _read_jsonl(runtime_root / "followup_subtopics.jsonl")
     followup_matches = _match_hypotheses_to_rows(
         followup_hypotheses,
         followup_rows,
@@ -503,7 +530,7 @@ def build_route_reentry_payload(
                 }
             )
             continue
-        packet_path = _followup_return_packet_path(topic_root, row)
+        packet_path = _followup_return_packet_path(runtime_root, row)
         packet = _read_json(packet_path) if packet_path is not None else None
         reentry_status = _followup_return_status(packet, row)
         child_topic_slug = str(row.get("child_topic_slug") or "").strip()
@@ -873,7 +900,7 @@ def build_route_transition_receipt_payload(
     receipt_artifact_ref = str(
         transition_history.get("note_path")
         or transition_history.get("path")
-        or (f"runtime/topics/{topic_slug}/transition_history.md" if topic_slug else "")
+        or (_truth_runtime_ref(topic_slug, "transition_history.md") if topic_slug else "")
     ).strip()
     matched = _transition_receipt_matches_intent(latest_transition, route_transition_intent)
 
@@ -1536,9 +1563,9 @@ def _route_truth_surface_kind(ref: str, *, topic_slug: str) -> str:
         return "followup_subtopic"
     if "transition_history" in normalized:
         return "transition_history"
-    if topic_slug and f"runtime/topics/{topic_slug}/" in normalized:
+    if topic_slug and f"topics/{topic_slug}/runtime/" in normalized:
         return "current_topic_surface"
-    if "runtime/topics/" in normalized:
+    if "topics/" in normalized and "/runtime/" in normalized:
         return "other_topic_surface"
     return "external_or_unknown"
 
@@ -1660,11 +1687,11 @@ def _default_hypothesis_route_ref(*, topic_slug: str, route_kind: str) -> str:
     if not topic_slug:
         return ""
     if route_kind == "deferred_buffer":
-        return f"runtime/topics/{topic_slug}/deferred_candidates.json"
+        return _truth_runtime_ref(topic_slug, "deferred_candidates.json")
     if route_kind == "followup_subtopic":
-        return f"runtime/topics/{topic_slug}/followup_subtopics.jsonl"
+        return _truth_runtime_ref(topic_slug, "followup_subtopics.jsonl")
     if route_kind == "current_topic":
-        return f"runtime/topics/{topic_slug}/research_question.contract.md"
+        return _truth_runtime_ref(topic_slug, "research_question.contract.md")
     return ""
 
 
@@ -1802,7 +1829,7 @@ def build_route_activation_payload(
     ).strip()
     active_local_action_ref = str(
         current_route_choice.get("next_action_decision_note_path")
-        or (f"runtime/topics/{topic_slug}/action_queue.jsonl" if topic_slug else "")
+        or (_truth_runtime_ref(topic_slug, "action_queue.jsonl") if topic_slug else "")
     ).strip()
     return {
         "active_local_hypothesis_id": str(current_branch.get("hypothesis_id") or ""),
@@ -2522,8 +2549,14 @@ def build_active_research_contract_payload(
     shell_surfaces: dict[str, Any],
     relativize: Callable[[Path], str],
 ) -> dict[str, Any]:
-    topic_root = Path(shell_surfaces["research_question_contract_path"]).parent
-    topic_slug = str(research_contract.get("topic_slug") or "").strip() or topic_root.name
+    runtime_surface_root = Path(shell_surfaces["research_question_contract_path"]).parent
+    topic_slug = str(research_contract.get("topic_slug") or "").strip()
+    if not topic_slug:
+        topic_slug = (
+            runtime_surface_root.parent.name
+            if runtime_surface_root.name == "runtime"
+            else runtime_surface_root.name
+        )
     competing_hypotheses = normalize_competing_hypotheses(
         research_contract.get("competing_hypotheses") or [],
         topic_slug=topic_slug,
@@ -2540,7 +2573,7 @@ def build_active_research_contract_payload(
     route_reentry = build_route_reentry_payload(
         topic_slug=topic_slug,
         competing_hypotheses=competing_hypotheses,
-        topic_root=topic_root,
+        topic_root=runtime_surface_root,
     )
     route_handoff = build_route_handoff_payload(
         topic_slug=topic_slug,
@@ -2567,9 +2600,9 @@ def build_active_research_contract_payload(
     route_transition_receipt = build_route_transition_receipt_payload(
         topic_slug=topic_slug,
         route_transition_intent=route_transition_intent,
-        transition_history=_read_json(topic_root / "transition_history.json") or {
-            "path": f"runtime/topics/{topic_slug}/transition_history.json",
-            "note_path": f"runtime/topics/{topic_slug}/transition_history.md",
+        transition_history=_read_json(runtime_surface_root / "transition_history.json") or {
+            "path": _truth_runtime_ref(topic_slug, "transition_history.json"),
+            "note_path": _truth_runtime_ref(topic_slug, "transition_history.md"),
             "latest_transition": {},
         },
     )
@@ -2610,7 +2643,7 @@ def build_active_research_contract_payload(
         route_transition_followthrough=route_transition_followthrough,
         route_transition_resolution=route_transition_resolution,
         route_activation=route_activation,
-        transition_history=_read_json(topic_root / "transition_history.json") or {},
+        transition_history=_read_json(runtime_surface_root / "transition_history.json") or {},
     )
     route_transition_commitment = build_route_transition_commitment_payload(
         topic_slug=topic_slug,

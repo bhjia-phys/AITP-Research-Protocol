@@ -20,3 +20,5 @@ During Codex-driven topic work:
 3. materialize non-trivial checkpoints with `aitp emit-decision ...` and resolve them durably rather than leaving them only in chat memory;
 4. materialize paired decision traces and maintain a session chronicle so later status or "why?" questions can be answered from runtime records;
 5. treat "AITP pause" as a question to the human in chat, not as a background process or hidden controller.
+6. inspect active human-choice surfaces with `aitp interaction --topic-slug <topic_slug> --json`;
+7. when the active surface is a formal decision point, answer it with `aitp resolve-decision ...`; when it is an operator checkpoint, answer it with `aitp resolve-checkpoint ...` and add a comment when the choice needs extra steering detail.

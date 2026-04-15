@@ -11,6 +11,7 @@ import jsonschema
 from .bundle_support import materialized_default_user_kernel_root
 
 from .decision_point_handler import list_pending_decision_points
+from .topic_truth_root_support import topic_root
 
 
 def _kernel_root(kernel_root: Path | None = None) -> Path:
@@ -23,11 +24,11 @@ def _kernel_root(kernel_root: Path | None = None) -> Path:
 
 
 def _runtime_root(kernel_root: Path | None = None) -> Path:
-    return _kernel_root(kernel_root) / "runtime" / "topics"
+    return _kernel_root(kernel_root) / "topics"
 
 
 def _topic_root(topic_slug: str, kernel_root: Path | None = None) -> Path:
-    return _runtime_root(kernel_root) / topic_slug
+    return topic_root(_kernel_root(kernel_root), topic_slug) / "runtime"
 
 
 def _chronicle_dir(topic_slug: str, kernel_root: Path | None = None) -> Path:
@@ -85,7 +86,7 @@ def _chronicle_paths_from_payload(payload: dict[str, Any], kernel_root: Path | N
 
 def _find_chronicle_path(chronicle_id: str, kernel_root: Path | None = None) -> Path:
     base = f"{_safe_filename(chronicle_id)}.json"
-    for path in _runtime_root(kernel_root).glob(f"*/chronicles/{base}"):
+    for path in _runtime_root(kernel_root).glob(f"*/runtime/chronicles/{base}"):
         return path
     raise FileNotFoundError(f"chronicle not found: {chronicle_id}")
 

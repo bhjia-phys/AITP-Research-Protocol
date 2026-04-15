@@ -51,10 +51,10 @@ def acceptance_command(runtime: str) -> str:
 
 def expected_artifacts(topic_slug: str) -> list[str]:
     return [
-        f"runtime/topics/{topic_slug}/topic_state.json",
-        f"runtime/topics/{topic_slug}/loop_state.json",
-        f"runtime/topics/{topic_slug}/runtime_protocol.generated.json",
-        f"runtime/topics/{topic_slug}/runtime_protocol.generated.md",
+        f"topics/{topic_slug}/runtime/topic_state.json",
+        f"topics/{topic_slug}/runtime/loop_state.json",
+        f"topics/{topic_slug}/runtime/runtime_protocol.generated.json",
+        f"topics/{topic_slug}/runtime/runtime_protocol.generated.md",
         f"status --topic-slug {topic_slug} --json -> selected_action_id",
     ]
 

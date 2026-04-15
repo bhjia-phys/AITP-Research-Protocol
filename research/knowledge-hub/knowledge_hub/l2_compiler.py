@@ -19,6 +19,14 @@ REUSE_FAMILY_ORDER = (
     ("bridges", "bridge"),
     ("topic_skill_projections", "topic_skill_projection"),
 )
+IGNORED_FOCUS_TAG_PREFIXES = (
+    "against:",
+    "literature-intake",
+    "method-family:",
+    "reading-depth:",
+    "source:",
+    "specificity:",
+)
 
 
 def now_iso() -> str:
@@ -77,6 +85,10 @@ def _knowledge_report_path(kernel_root: Path) -> Path:
 
 def _knowledge_report_markdown_path(kernel_root: Path) -> Path:
     return _compiled_root(kernel_root) / "workspace_knowledge_report.md"
+
+
+def _topic_corpus_baseline_path(kernel_root: Path, topic_slug: str, suffix: str) -> Path:
+    return _compiled_root(kernel_root) / f"topic_l2_corpus_baseline--{_slugify(topic_slug)}.{suffix}"
 
 
 def _allowed_unit_types(canonical_root: Path) -> set[str]:
@@ -926,4 +938,454 @@ def materialize_workspace_knowledge_report(kernel_root: Path) -> dict[str, Any]:
             "derived_navigation_index": graph_report["navigation_index_path"],
             "workspace_staging_manifest": staging_manifest["markdown_path"],
         },
+    }
+
+
+def _normalize_path_string(value: Any) -> str:
+    return str(value or "").strip().replace("\\", "/")
+
+
+def _topic_source_anchors(kernel_root: Path, topic_slug: str) -> list[dict[str, Any]]:
+    source_root = kernel_root / "topics" / topic_slug / "L0" / "sources"
+    rows: list[dict[str, Any]] = []
+    if not source_root.exists():
+        return rows
+
+    for source_json_path in sorted(source_root.rglob("source.json")):
+        payload = read_json(source_json_path)
+        if not isinstance(payload, dict):
+            continue
+        source_id = str(payload.get("source_id") or "").strip()
+        title = str(payload.get("title") or "").strip()
+        if not source_id or not title:
+            continue
+        source_slug = str(source_json_path.parent.name or "").strip()
+        rows.append(
+            {
+                "source_id": source_id,
+                "source_slug": source_slug,
+                "title": title,
+                "summary": str(payload.get("summary") or "").strip(),
+                "source_type": str(payload.get("source_type") or "").strip(),
+                "path": relative_to_root(source_json_path, kernel_root),
+            }
+        )
+    return rows
+
+
+def _topic_source_anchor_maps(source_anchors: list[dict[str, Any]]) -> dict[str, dict[str, str]]:
+    by_id: dict[str, str] = {}
+    by_slug: dict[str, str] = {}
+    by_path: dict[str, str] = {}
+    by_directory: dict[str, str] = {}
+
+    for row in source_anchors:
+        source_id = str(row.get("source_id") or "").strip()
+        source_slug = str(row.get("source_slug") or "").strip()
+        normalized_path = _normalize_path_string(row.get("path"))
+        if source_id:
+            by_id[source_id] = source_id
+        if source_slug:
+            by_slug[source_slug] = source_id
+        if normalized_path:
+            by_path[normalized_path] = source_id
+            by_directory[str(Path(normalized_path).parent).replace("\\", "/")] = source_id
+
+    return {
+        "by_id": by_id,
+        "by_slug": by_slug,
+        "by_path": by_path,
+        "by_directory": by_directory,
+    }
+
+
+def _dedupe_preserve_order(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for value in values:
+        normalized = str(value or "").strip()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        ordered.append(normalized)
+    return ordered
+
+
+def _resolve_topic_entry_source_anchors(entry: dict[str, Any], source_maps: dict[str, dict[str, str]]) -> list[str]:
+    source_ids: list[str] = []
+
+    def _append(source_id: str) -> None:
+        normalized = str(source_id or "").strip()
+        if normalized:
+            source_ids.append(normalized)
+
+    for raw_path in entry.get("source_artifact_paths") or []:
+        normalized_path = _normalize_path_string(raw_path)
+        if not normalized_path:
+            continue
+        resolved = (source_maps.get("by_path") or {}).get(normalized_path)
+        if resolved:
+            _append(resolved)
+            continue
+        resolved = (source_maps.get("by_directory") or {}).get(str(Path(normalized_path).parent).replace("\\", "/"))
+        if resolved:
+            _append(resolved)
+
+    provenance = entry.get("provenance") or {}
+    provenance_source_id = str(provenance.get("source_id") or "").strip()
+    if provenance_source_id and provenance_source_id in (source_maps.get("by_id") or {}):
+        _append(provenance_source_id)
+    provenance_source_slug = str(provenance.get("source_slug") or "").strip()
+    if provenance_source_slug and provenance_source_slug in (source_maps.get("by_slug") or {}):
+        _append((source_maps.get("by_slug") or {})[provenance_source_slug])
+
+    for source_ref in entry.get("source_refs") or []:
+        normalized_ref = str(source_ref or "").strip()
+        if not normalized_ref:
+            continue
+        if normalized_ref in (source_maps.get("by_id") or {}):
+            _append(normalized_ref)
+            continue
+        normalized_ref_path = _normalize_path_string(normalized_ref)
+        if normalized_ref_path in (source_maps.get("by_path") or {}):
+            _append((source_maps.get("by_path") or {})[normalized_ref_path])
+            continue
+        normalized_directory = str(Path(normalized_ref_path).parent).replace("\\", "/")
+        if normalized_directory in (source_maps.get("by_directory") or {}):
+            _append((source_maps.get("by_directory") or {})[normalized_directory])
+
+    for tag in entry.get("tags") or []:
+        normalized_tag = str(tag or "").strip()
+        if normalized_tag.startswith("source:"):
+            source_slug = normalized_tag.split(":", 1)[1].strip()
+            resolved = (source_maps.get("by_slug") or {}).get(source_slug)
+            if resolved:
+                _append(resolved)
+
+    return _dedupe_preserve_order(source_ids)
+
+
+def _topic_focus_tags(entry: dict[str, Any]) -> list[str]:
+    tags: list[str] = []
+    for raw_tag in entry.get("tags") or []:
+        normalized = str(raw_tag or "").strip().lower()
+        if not normalized:
+            continue
+        if any(normalized.startswith(prefix) for prefix in IGNORED_FOCUS_TAG_PREFIXES):
+            continue
+        tags.append(normalized)
+    return _dedupe_preserve_order(tags)
+
+
+def _topic_entry_nodes(kernel_root: Path, topic_slug: str, source_anchors: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    source_maps = _topic_source_anchor_maps(source_anchors)
+    nodes: list[dict[str, Any]] = []
+    for entry in load_staging_entries(kernel_root):
+        if str(entry.get("topic_slug") or "").strip() != topic_slug:
+            continue
+        source_anchor_ids = _resolve_topic_entry_source_anchors(entry, source_maps)
+        nodes.append(
+            {
+                "entry_id": str(entry.get("entry_id") or ""),
+                "entry_kind": str(entry.get("entry_kind") or ""),
+                "title": str(entry.get("title") or ""),
+                "summary": str(entry.get("summary") or ""),
+                "status": str(entry.get("status") or ""),
+                "path": str(entry.get("path") or ""),
+                "source_anchor_ids": source_anchor_ids,
+                "source_anchor_count": len(source_anchor_ids),
+                "focus_tags": _topic_focus_tags(entry),
+                "linked_unit_ids": [str(item).strip() for item in (entry.get("linked_unit_ids") or []) if str(item).strip()],
+                "contradicts_unit_ids": [str(item).strip() for item in (entry.get("contradicts_unit_ids") or []) if str(item).strip()],
+                "updated_at": str(entry.get("updated_at") or ""),
+            }
+        )
+    return sorted(nodes, key=lambda row: (row["entry_kind"], row["title"], row["entry_id"]))
+
+
+def _append_topic_edge(
+    edges: list[dict[str, Any]],
+    seen: set[tuple[str, str, str]],
+    *,
+    relation: str,
+    from_id: str,
+    to_id: str,
+    symmetric: bool = False,
+    notes: str = "",
+) -> None:
+    normalized_from = str(from_id or "").strip()
+    normalized_to = str(to_id or "").strip()
+    if not normalized_from or not normalized_to or normalized_from == normalized_to:
+        return
+    if symmetric:
+        normalized_from, normalized_to = sorted([normalized_from, normalized_to])
+    key = (relation, normalized_from, normalized_to)
+    if key in seen:
+        return
+    seen.add(key)
+    edges.append(
+        {
+            "relation": relation,
+            "from_id": normalized_from,
+            "to_id": normalized_to,
+            "notes": notes,
+        }
+    )
+
+
+def build_topic_l2_corpus_baseline(kernel_root: Path, *, topic_slug: str) -> dict[str, Any]:
+    kernel_root = kernel_root.resolve()
+    source_anchors = _topic_source_anchors(kernel_root, topic_slug)
+    entry_nodes = _topic_entry_nodes(kernel_root, topic_slug, source_anchors)
+    entry_by_id = {row["entry_id"]: row for row in entry_nodes}
+    source_by_id = {row["source_id"]: row for row in source_anchors}
+
+    edges: list[dict[str, Any]] = []
+    seen_edges: set[tuple[str, str, str]] = set()
+
+    source_to_entries: dict[str, list[str]] = {}
+    tag_to_entries: dict[str, list[str]] = {}
+    for entry in entry_nodes:
+        entry_id = str(entry.get("entry_id") or "")
+        for source_id in entry.get("source_anchor_ids") or []:
+            if source_id not in source_by_id:
+                continue
+            source_to_entries.setdefault(source_id, []).append(entry_id)
+            _append_topic_edge(
+                edges,
+                seen_edges,
+                relation="supported_by_source",
+                from_id=entry_id,
+                to_id=source_id,
+                notes=f"Source anchor `{source_id}` supports this topic entry.",
+            )
+        for focus_tag in entry.get("focus_tags") or []:
+            tag_to_entries.setdefault(focus_tag, []).append(entry_id)
+        for linked_unit_id in entry.get("linked_unit_ids") or []:
+            if linked_unit_id in entry_by_id:
+                _append_topic_edge(
+                    edges,
+                    seen_edges,
+                    relation="linked_entry",
+                    from_id=entry_id,
+                    to_id=linked_unit_id,
+                    notes="Explicit topic-local staging link.",
+                )
+        for contradicts_unit_id in entry.get("contradicts_unit_ids") or []:
+            if contradicts_unit_id in entry_by_id:
+                _append_topic_edge(
+                    edges,
+                    seen_edges,
+                    relation="contradicts_entry",
+                    from_id=entry_id,
+                    to_id=contradicts_unit_id,
+                    notes="Explicit topic-local contradiction link.",
+                )
+
+    for source_id, entry_ids in sorted(source_to_entries.items()):
+        deduped_entry_ids = _dedupe_preserve_order(entry_ids)
+        for index, left_id in enumerate(deduped_entry_ids):
+            for right_id in deduped_entry_ids[index + 1 :]:
+                _append_topic_edge(
+                    edges,
+                    seen_edges,
+                    relation="shares_source_anchor",
+                    from_id=left_id,
+                    to_id=right_id,
+                    symmetric=True,
+                    notes=f"Both entries resolve to source anchor `{source_id}`.",
+                )
+
+    for focus_tag, entry_ids in sorted(tag_to_entries.items()):
+        deduped_entry_ids = _dedupe_preserve_order(entry_ids)
+        if len(deduped_entry_ids) < 2:
+            continue
+        for index, left_id in enumerate(deduped_entry_ids):
+            for right_id in deduped_entry_ids[index + 1 :]:
+                _append_topic_edge(
+                    edges,
+                    seen_edges,
+                    relation="shares_focus_tag",
+                    from_id=left_id,
+                    to_id=right_id,
+                    symmetric=True,
+                    notes=f"Both entries carry focus tag `{focus_tag}`.",
+                )
+
+    degree_by_entry: dict[str, int] = {row["entry_id"]: 0 for row in entry_nodes}
+    attached_entries_by_source: dict[str, set[str]] = {row["source_id"]: set() for row in source_anchors}
+    relation_clusters: dict[str, list[dict[str, Any]]] = {}
+    for edge in edges:
+        relation = str(edge.get("relation") or "unknown")
+        relation_clusters.setdefault(relation, []).append(edge)
+        from_id = str(edge.get("from_id") or "")
+        to_id = str(edge.get("to_id") or "")
+        if from_id in degree_by_entry:
+            degree_by_entry[from_id] += 1
+        if to_id in degree_by_entry:
+            degree_by_entry[to_id] += 1
+        if relation == "supported_by_source" and to_id in attached_entries_by_source:
+            attached_entries_by_source[to_id].add(from_id)
+
+    for row in entry_nodes:
+        row["degree"] = int(degree_by_entry.get(row["entry_id"], 0))
+
+    for row in source_anchors:
+        attached_entry_ids = sorted(attached_entries_by_source.get(row["source_id"], set()))
+        row["attached_entry_ids"] = attached_entry_ids
+        row["attached_entry_count"] = len(attached_entry_ids)
+
+    entry_hubs = sorted(
+        [
+            {
+                "entry_id": row["entry_id"],
+                "entry_kind": row["entry_kind"],
+                "title": row["title"],
+                "degree": row["degree"],
+                "source_anchor_count": row["source_anchor_count"],
+                "focus_tags": row["focus_tags"],
+                "path": row["path"],
+            }
+            for row in entry_nodes
+        ],
+        key=lambda row: (-int(row["degree"]), -int(row["source_anchor_count"]), row["entry_kind"], row["title"]),
+    )
+    isolated_entries = [
+        {
+            "entry_id": row["entry_id"],
+            "entry_kind": row["entry_kind"],
+            "title": row["title"],
+            "path": row["path"],
+        }
+        for row in entry_nodes
+        if int(row.get("degree") or 0) == 0
+    ]
+
+    entry_kind_counts: dict[str, int] = {}
+    for row in entry_nodes:
+        entry_kind = str(row.get("entry_kind") or "unknown")
+        entry_kind_counts[entry_kind] = entry_kind_counts.get(entry_kind, 0) + 1
+
+    relation_rows = [
+        {
+            "relation": relation,
+            "count": len(rows),
+            "example_edges": rows[:8],
+        }
+        for relation, rows in sorted(relation_clusters.items(), key=lambda item: (-len(item[1]), item[0]))
+    ]
+
+    return {
+        "kind": "topic_l2_corpus_baseline",
+        "compiler_version": 1,
+        "generated_at": now_iso(),
+        "source_contract_path": "canonical/L2_COMPILER_PROTOCOL.md",
+        "authority_rule": (
+            "This baseline is compiled and non-authoritative. Topic-local staging entries remain provisional; "
+            "registered source anchors are provenance support, not promoted L2 claims."
+        ),
+        "topic_slug": topic_slug,
+        "summary": {
+            "topic_entry_count": len(entry_nodes),
+            "entry_kind_counts": dict(sorted(entry_kind_counts.items())),
+            "source_anchor_count": len(source_anchors),
+            "source_backed_entry_count": sum(1 for row in entry_nodes if int(row.get("source_anchor_count") or 0) > 0),
+            "multi_source_entry_count": sum(1 for row in entry_nodes if int(row.get("source_anchor_count") or 0) > 1),
+            "derived_edge_count": len(edges),
+            "connected_entry_count": sum(1 for row in entry_nodes if int(row.get("degree") or 0) > 0),
+            "isolated_entry_count": len(isolated_entries),
+            "bridge_note_count": entry_kind_counts.get("bridge_note", 0),
+            "warning_note_count": entry_kind_counts.get("warning_note", 0),
+        },
+        "topic_entries": entry_nodes,
+        "source_anchors": sorted(source_anchors, key=lambda row: (-int(row["attached_entry_count"]), row["title"], row["source_id"])),
+        "relation_clusters": relation_rows,
+        "derived_edges": edges,
+        "entry_hubs": entry_hubs[:10],
+        "isolated_entries": isolated_entries,
+    }
+
+
+def render_topic_l2_corpus_baseline_markdown(payload: dict[str, Any]) -> str:
+    summary = payload.get("summary") or {}
+    lines = [
+        "# Topic L2 Corpus Baseline",
+        "",
+        f"- Topic slug: `{payload.get('topic_slug') or '(missing)'}`",
+        f"- Generated at: `{payload.get('generated_at') or '(missing)'}`",
+        f"- Authority rule: {payload.get('authority_rule') or '(missing)' }",
+        f"- Topic entries: `{summary.get('topic_entry_count', 0)}`",
+        f"- Source anchors: `{summary.get('source_anchor_count', 0)}`",
+        f"- Source-backed entries: `{summary.get('source_backed_entry_count', 0)}`",
+        f"- Multi-source entries: `{summary.get('multi_source_entry_count', 0)}`",
+        f"- Derived edges: `{summary.get('derived_edge_count', 0)}`",
+        f"- Connected entries: `{summary.get('connected_entry_count', 0)}`",
+        f"- Isolated entries: `{summary.get('isolated_entry_count', 0)}`",
+        f"- Bridge notes: `{summary.get('bridge_note_count', 0)}`",
+        f"- Warning notes: `{summary.get('warning_note_count', 0)}`",
+        "",
+        "## Entry Kinds",
+        "",
+    ]
+    entry_kind_counts = summary.get("entry_kind_counts") or {}
+    if entry_kind_counts:
+        for entry_kind, count in entry_kind_counts.items():
+            lines.append(f"- `{entry_kind}`: `{count}`")
+    else:
+        lines.append("- `(none)`")
+
+    lines.extend(["", "## Entry Hubs", ""])
+    entry_hubs = payload.get("entry_hubs") or []
+    if not entry_hubs:
+        lines.append("- `(none)`")
+    for row in entry_hubs:
+        lines.append(
+            f"- `{row.get('entry_id')}` {row.get('title')} "
+            f"(kind=`{row.get('entry_kind')}`, degree=`{row.get('degree', 0)}`, source_anchors=`{row.get('source_anchor_count', 0)}`)"
+        )
+
+    lines.extend(["", "## Relation Clusters", ""])
+    relation_clusters = payload.get("relation_clusters") or []
+    if not relation_clusters:
+        lines.append("- `(none)`")
+    for cluster in relation_clusters:
+        lines.append(f"### `{cluster.get('relation')}` (`{cluster.get('count', 0)}`)")
+        for edge in cluster.get("example_edges") or []:
+            lines.append(f"- `{edge.get('from_id')}` -> `{edge.get('to_id')}`")
+        lines.append("")
+
+    lines.extend(["## Source Anchors", ""])
+    source_anchors = payload.get("source_anchors") or []
+    if not source_anchors:
+        lines.append("- `(none)`")
+    for row in source_anchors:
+        lines.append(
+            f"- `{row.get('source_id')}` {row.get('title')} "
+            f"(attached_entries=`{row.get('attached_entry_count', 0)}`) `{row.get('path')}`"
+        )
+
+    lines.extend(["", "## Isolated Entries", ""])
+    isolated_entries = payload.get("isolated_entries") or []
+    if not isolated_entries:
+        lines.append("- `(none)`")
+    for row in isolated_entries:
+        lines.append(
+            f"- `{row.get('entry_id')}` {row.get('title')} "
+            f"(kind=`{row.get('entry_kind')}`) `{row.get('path')}`"
+        )
+    lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def materialize_topic_l2_corpus_baseline(kernel_root: Path, *, topic_slug: str) -> dict[str, Any]:
+    kernel_root = kernel_root.resolve()
+    payload = build_topic_l2_corpus_baseline(kernel_root, topic_slug=topic_slug)
+    json_path = _topic_corpus_baseline_path(kernel_root, topic_slug, "json")
+    markdown_path = _topic_corpus_baseline_path(kernel_root, topic_slug, "md")
+    write_json(json_path, payload)
+    write_text(markdown_path, render_topic_l2_corpus_baseline_markdown(payload))
+    return {
+        "payload": payload,
+        "json_path": str(json_path),
+        "markdown_path": str(markdown_path),
     }

@@ -103,7 +103,10 @@ Claude Code should now:
 - inject `using-aitp` at SessionStart;
 - expose an `aitp` MCP server through Claude Code's native tool layer;
 - route substantial theory work through AITP before response;
-- follow `runtime_protocol.generated.md` after routing succeeds.
+- follow `runtime_protocol.generated.md` after routing succeeds;
+- inspect active human-choice surfaces with `aitp interaction --topic-slug <topic_slug> --json` or the native AITP MCP surface;
+- resolve formal decision points with `aitp resolve-decision ...`;
+- resolve operator checkpoints with `aitp resolve-checkpoint ...`.
 
 Use `aitp doctor --json` to verify not just file presence but also whether the
 Claude bootstrap assets still match the canonical hook files and whether

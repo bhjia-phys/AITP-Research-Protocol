@@ -96,6 +96,13 @@ Keep AITP-specific research state in the inner runtime:
 - promotion and consultation artifacts,
 - gap, follow-up, and reintegration surfaces.
 
+Topic-owned research state should converge on the topic-owned truth root:
+
+- `topics/<topic_slug>/...`
+
+Within that truth root, Markdown is the human authority for operator-facing
+state, steering, review, and continuation surfaces. JSON remains the machine-facing companion for structured runtime payloads, ledgers, schemas, and adapter/resolver inputs.
+
 ## 5) Required Workstreams
 
 ### 5.1 Research Intent Gate
@@ -113,8 +120,8 @@ Required behavior:
 
 Required artifacts:
 
-- `runtime/topics/<topic_slug>/idea_packet.json`
-- `runtime/topics/<topic_slug>/idea_packet.md`
+- `topics/<topic_slug>/runtime/idea_packet.json`
+- `topics/<topic_slug>/runtime/idea_packet.md`
 
 Minimum contents:
 
@@ -146,9 +153,9 @@ Required behavior:
 
 Required artifacts:
 
-- `runtime/topics/<topic_slug>/operator_checkpoint.active.json`
-- `runtime/topics/<topic_slug>/operator_checkpoint.active.md`
-- `runtime/topics/<topic_slug>/operator_checkpoints.jsonl`
+- `topics/<topic_slug>/runtime/operator_checkpoint.active.json`
+- `topics/<topic_slug>/runtime/operator_checkpoint.active.md`
+- `topics/<topic_slug>/runtime/operator_checkpoints.jsonl`
 
 Checkpoint kinds must at minimum include:
 
@@ -183,8 +190,8 @@ Required behavior:
 
 Required artifacts:
 
-- `runtime/topics/<topic_slug>/innovation_direction.md`
-- `runtime/topics/<topic_slug>/innovation_decisions.jsonl`
+- `topics/<topic_slug>/runtime/innovation_direction.md`
+- `topics/<topic_slug>/runtime/innovation_decisions.jsonl`
 - existing `control_note.*`
 
 Division of responsibility:
@@ -239,7 +246,7 @@ Required behavior:
 
 Required artifacts:
 
-- `feedback/topics/<topic_slug>/runs/<run_id>/strategy_memory.jsonl`
+- `topics/<topic_slug>/L3/runs/<run_id>/strategy_memory.jsonl`
 
 Minimum strategy types:
 

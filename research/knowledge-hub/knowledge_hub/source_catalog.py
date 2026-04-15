@@ -39,11 +39,11 @@ def _slugify(text: str) -> str:
 
 
 def _source_layer_root(kernel_root: Path) -> Path:
-    return kernel_root / "source-layer"
+    return kernel_root / "topics"
 
 
 def _compiled_root(kernel_root: Path) -> Path:
-    return _source_layer_root(kernel_root) / "compiled"
+    return kernel_root / "canonical" / "compiled"
 
 
 def _citation_traversal_root(kernel_root: Path) -> Path:
@@ -114,12 +114,12 @@ def _enrich_source_row(row: dict[str, Any], *, topic_slug: str) -> dict[str, Any
 
 def build_source_catalog(kernel_root: Path) -> dict[str, Any]:
     kernel_root = kernel_root.resolve()
-    topics_root = _source_layer_root(kernel_root) / "topics"
+    topics_root = _source_layer_root(kernel_root)
     source_rows: list[dict[str, Any]] = []
     topic_index: list[dict[str, Any]] = []
     topic_slugs: list[str] = []
-    for source_index_path in sorted(topics_root.glob("*/source_index.jsonl")):
-        topic_slug = source_index_path.parent.name
+    for source_index_path in sorted(topics_root.glob("*/L0/source_index.jsonl")):
+        topic_slug = source_index_path.parent.parent.name
         topic_slugs.append(topic_slug)
         rows = [_enrich_source_row(row, topic_slug=topic_slug) for row in read_jsonl(source_index_path)]
         source_rows.extend(rows)

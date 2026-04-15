@@ -20,3 +20,5 @@ During OpenCode topic work:
 3. route choices, benchmark disagreements, promotion gates, and other high-impact checkpoints should be emitted as decision points;
 4. resolved checkpoints should produce decision traces, and the session should leave behind a chronicle;
 5. the adapter should treat these as normal file-backed runtime surfaces, not as a separate controller process.
+6. inspect active human-choice surfaces with `aitp interaction --topic-slug <topic_slug> --json`;
+7. use the plugin tool surface to render `primary_interaction.options` as UI choices when possible, send formal decision-point answers back through `aitp resolve-decision ...`, and send operator-checkpoint answers back through `aitp resolve-checkpoint ...`.

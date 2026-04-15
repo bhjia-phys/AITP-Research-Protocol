@@ -12,6 +12,7 @@ LEGACY_PACKAGE_DISTRIBUTION_NAMES: tuple[str, ...] = ()
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _BUNDLE_DIRNAME = "_bundle"
 _DYNAMIC_TOPIC_DIRS = (
+    Path("topics"),
     Path("runtime/topics"),
     Path("source-layer/topics"),
     Path("intake/topics"),
@@ -27,6 +28,7 @@ _BUNDLE_SOURCE_DIRS = (
     "runtime",
     "schemas",
     "source-layer",
+    "topics",
     "validation",
 )
 _EXCLUDED_TOP_LEVEL_DIRS = {
@@ -40,6 +42,7 @@ _EXCLUDED_TOP_LEVEL_DIRS = {
     "tests",
 }
 _EXCLUDED_RELATIVE_DIRS = {
+    Path("topics"),
     Path("runtime/topics"),
     Path("source-layer/topics"),
     Path("intake/topics"),

@@ -68,7 +68,7 @@ scripts\aitp-local.cmd bootstrap --topic "Jones Chapter 4 finite-dimensional bac
 
 What this should do:
 
-- create `runtime/topics/jones-chapter-4-finite-dimensional-backbone/`
+- create `topics/jones-chapter-4-finite-dimensional-backbone/runtime/`
 - materialize the first bounded research contract
 - write `runtime_protocol.generated.json|md`
 

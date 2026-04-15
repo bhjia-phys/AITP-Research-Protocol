@@ -16,6 +16,7 @@ from .aitp_mcp_profiles import (
     tool_allowed_in_profile,
 )
 from .aitp_service import AITPService
+from .decision_point_handler import list_pending_decision_points, resolve_decision_point
 
 service = AITPService()
 ACTIVE_MCP_PROFILE = normalize_mcp_profile(os.environ.get("AITP_MCP_PROFILE"))
@@ -242,6 +243,67 @@ def aitp_get_runtime_state(topic_slug: str) -> str:
     """Read the runtime topic_state.json for an AITP topic."""
     try:
         return _ok(topic_state=service.get_runtime_state(topic_slug))
+    except Exception as exc:  # noqa: BLE001
+        return _err(str(exc))
+
+
+@aitp_tool(access="read")
+def aitp_get_topic_interaction(topic_slug: str, updated_by: str = "aitp-mcp") -> str:
+    """Read the active human-interaction packet for a topic, including checkpoint options and pending decision points."""
+    try:
+        return _ok(**service.topic_interaction(topic_slug=topic_slug, updated_by=updated_by))
+    except Exception as exc:  # noqa: BLE001
+        return _err(str(exc))
+
+
+@aitp_tool(access="read")
+def aitp_list_pending_decisions(topic_slug: str) -> str:
+    """List pending durable decision points for a topic."""
+    try:
+        return _ok(decision_points=list_pending_decision_points(topic_slug, kernel_root=service.kernel_root))
+    except Exception as exc:  # noqa: BLE001
+        return _err(str(exc))
+
+
+@aitp_tool(access="write")
+def aitp_resolve_pending_decision(
+    topic_slug: str,
+    decision_id: str,
+    option: int,
+    comment: str | None = None,
+    resolved_by: str = "human",
+) -> str:
+    """Resolve one durable decision point for a topic."""
+    try:
+        payload = resolve_decision_point(
+            topic_slug,
+            decision_id,
+            option,
+            comment=comment,
+            resolved_by=resolved_by,
+            kernel_root=service.kernel_root,
+        )
+        return _ok(**payload)
+    except Exception as exc:  # noqa: BLE001
+        return _err(str(exc))
+
+
+@aitp_tool(access="write")
+def aitp_resolve_operator_checkpoint(
+    topic_slug: str,
+    option: int,
+    comment: str | None = None,
+    resolved_by: str = "human",
+) -> str:
+    """Resolve the active operator checkpoint for a topic after the human chooses an option."""
+    try:
+        payload = service.resolve_operator_checkpoint(
+            topic_slug=topic_slug,
+            option_index=option,
+            comment=comment,
+            resolved_by=resolved_by,
+        )
+        return _ok(**payload)
     except Exception as exc:  # noqa: BLE001
         return _err(str(exc))
 

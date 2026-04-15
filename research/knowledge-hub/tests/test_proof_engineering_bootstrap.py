@@ -69,6 +69,10 @@ class ProofEngineeringBootstrapTests(unittest.TestCase):
         strategy_rows = read_jsonl(Path(payload["strategy_memory_path"]))
         self.assertEqual(len(strategy_rows), len(JONES_STRATEGY_MEMORY_SEEDS))
         self.assertIn("formal_derivation", {row["lane"] for row in strategy_rows})
+        strategy_types = {row["strategy_type"] for row in strategy_rows}
+        self.assertIn("proof_engineering", strategy_types)
+        self.assertIn("api_workaround", strategy_types)
+        self.assertIn("failure_pattern", strategy_types)
         self.assertTrue(any("codRestrict" in row["summary"] for row in strategy_rows))
         self.assertTrue(any("goal shape" in row["summary"] or "show" in row["summary"] for row in strategy_rows))
 
