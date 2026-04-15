@@ -71,17 +71,92 @@ def now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
 
 
+def compatibility_projection_path(path: Path) -> Path | None:
+    resolved = path.expanduser().resolve()
+    parts = resolved.parts
+    if "runtime" in parts and "topics" in parts:
+        runtime_index = parts.index("runtime")
+        if runtime_index + 2 < len(parts) and parts[runtime_index + 1] == "topics":
+            kernel_root = Path(parts[0]).joinpath(*parts[1:runtime_index])
+            topic_slug = parts[runtime_index + 2]
+            remainder = parts[runtime_index + 3 :]
+            return kernel_root / "topics" / topic_slug / "runtime" / Path(*remainder)
+    if "feedback" in parts and "topics" in parts:
+        feedback_index = parts.index("feedback")
+        if feedback_index + 2 < len(parts) and parts[feedback_index + 1] == "topics":
+            kernel_root = Path(parts[0]).joinpath(*parts[1:feedback_index])
+            topic_slug = parts[feedback_index + 2]
+            remainder = parts[feedback_index + 3 :]
+            return kernel_root / "topics" / topic_slug / "L3" / Path(*remainder)
+    if "validation" in parts and "topics" in parts:
+        validation_index = parts.index("validation")
+        if validation_index + 2 < len(parts) and parts[validation_index + 1] == "topics":
+            kernel_root = Path(parts[0]).joinpath(*parts[1:validation_index])
+            topic_slug = parts[validation_index + 2]
+            remainder = parts[validation_index + 3 :]
+            return kernel_root / "topics" / topic_slug / "L4" / Path(*remainder)
+    if "source-layer" in parts and "topics" in parts:
+        source_index = parts.index("source-layer")
+        if source_index + 2 < len(parts) and parts[source_index + 1] == "topics":
+            kernel_root = Path(parts[0]).joinpath(*parts[1:source_index])
+            topic_slug = parts[source_index + 2]
+            remainder = parts[source_index + 3 :]
+            return kernel_root / "topics" / topic_slug / "L0" / Path(*remainder)
+    if "intake" in parts and "topics" in parts:
+        intake_index = parts.index("intake")
+        if intake_index + 2 < len(parts) and parts[intake_index + 1] == "topics":
+            kernel_root = Path(parts[0]).joinpath(*parts[1:intake_index])
+            topic_slug = parts[intake_index + 2]
+            remainder = parts[intake_index + 3 :]
+            return kernel_root / "topics" / topic_slug / "L1" / Path(*remainder)
+    if "consultation" in parts and "topics" in parts:
+        consultation_index = parts.index("consultation")
+        if consultation_index + 2 < len(parts) and parts[consultation_index + 1] == "topics":
+            kernel_root = Path(parts[0]).joinpath(*parts[1:consultation_index])
+            topic_slug = parts[consultation_index + 2]
+            remainder = parts[consultation_index + 3 :]
+            return kernel_root / "topics" / topic_slug / "consultation" / Path(*remainder)
+    if "topics" in parts:
+        topics_index = parts.index("topics")
+        if topics_index + 3 < len(parts):
+            kernel_root = Path(parts[0]).joinpath(*parts[1:topics_index])
+            topic_slug = parts[topics_index + 1]
+            surface = parts[topics_index + 2]
+            remainder = parts[topics_index + 3 :]
+            if surface == "runtime":
+                return kernel_root / "runtime" / "topics" / topic_slug / Path(*remainder)
+            if surface == "L3":
+                return kernel_root / "feedback" / "topics" / topic_slug / Path(*remainder)
+            if surface == "L4":
+                return kernel_root / "validation" / "topics" / topic_slug / Path(*remainder)
+            if surface == "L0":
+                return kernel_root / "source-layer" / "topics" / topic_slug / Path(*remainder)
+            if surface == "L1":
+                return kernel_root / "intake" / "topics" / topic_slug / Path(*remainder)
+            if surface == "consultation":
+                return kernel_root / "consultation" / "topics" / topic_slug / Path(*remainder)
+    return None
+
+
 def read_json(path: Path) -> dict | None:
-    if not path.exists():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return None
+        target = compatibility_path
+    return json.loads(target.read_text(encoding="utf-8"))
 
 
 def read_jsonl(path: Path) -> list[dict]:
-    if not path.exists():
-        return []
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return []
+        target = compatibility_path
     rows: list[dict] = []
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
+    for raw_line in target.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
         if line:
             rows.append(json.loads(line))
@@ -89,25 +164,43 @@ def read_jsonl(path: Path) -> list[dict]:
 
 
 def write_json(path: Path, payload: dict | list) -> None:
+    rendered = json.dumps(payload, ensure_ascii=True, indent=2) + "\n"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(text, encoding="utf-8")
 
 
 def append_jsonl(path: Path, row: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(row, ensure_ascii=True) + "\n")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        with compatibility_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(row, ensure_ascii=True) + "\n")
 
 
 def write_jsonl_rows(path: Path, rows: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     text = "".join(json.dumps(row, ensure_ascii=True) + "\n" for row in rows)
     path.write_text(text, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(text, encoding="utf-8")
 
 
 def relative_to_root(path: Path | None, root: Path) -> str | None:
@@ -189,12 +282,12 @@ def derive_run_id(topic_state: dict) -> str | None:
 
 
 def build_paths(knowledge_root: Path, topic_slug: str, run_id: str | None) -> dict[str, Path | None]:
-    runtime_root = knowledge_root / "runtime" / "topics" / topic_slug
+    runtime_root = knowledge_root / "topics" / topic_slug / "runtime"
     validation_run_root = (
-        knowledge_root / "validation" / "topics" / topic_slug / "runs" / run_id if run_id else None
+        knowledge_root / "topics" / topic_slug / "L4" / "runs" / run_id if run_id else None
     )
     feedback_run_root = (
-        knowledge_root / "feedback" / "topics" / topic_slug / "runs" / run_id if run_id else None
+        knowledge_root / "topics" / topic_slug / "L3" / "runs" / run_id if run_id else None
     )
     result_manifest_path = validation_run_root / "results" / "result_manifest.json" if validation_run_root else None
 
@@ -252,6 +345,7 @@ def resolve_artifact_ref(ref: str, knowledge_root: Path, validation_run_root: Pa
     if not cleaned:
         return cleaned
     if cleaned.startswith((
+        "topics/",
         "validation/",
         "feedback/",
         "runtime/",
@@ -652,8 +746,13 @@ def highest_severity(severities: list[str], default: str = "info") -> str:
 
 def load_execution_task_candidates(paths: dict[str, Path | None], knowledge_root: Path) -> list[dict]:
     execution_tasks_dir = paths["execution_tasks_dir"]
-    if execution_tasks_dir is None or not execution_tasks_dir.exists():
+    if execution_tasks_dir is None:
         return []
+    if not execution_tasks_dir.exists():
+        compatibility_dir = compatibility_projection_path(execution_tasks_dir)
+        if compatibility_dir is None or not compatibility_dir.exists():
+            return []
+        execution_tasks_dir = compatibility_dir
 
     candidates: list[dict] = []
     for task_path in sorted(execution_tasks_dir.glob("*.json")):
@@ -1130,16 +1229,26 @@ def normalize_artifact_paths(
     missing: list[str] = []
     for artifact in artifact_refs:
         canonical_ref = canonicalize_artifact_ref(artifact)
-        artifact_path = knowledge_root / canonical_ref if canonical_ref.startswith((
-            "validation/",
-            "feedback/",
-            "runtime/",
-            "source-layer/",
-            "intake/",
-            "canonical/",
-            "consultation/",
-        )) else None
-        if artifact_path is not None and artifact_path.exists():
+        artifact_path = (
+            knowledge_root / canonical_ref
+            if canonical_ref.startswith(
+                (
+                    "topics/",
+                    "validation/",
+                    "feedback/",
+                    "runtime/",
+                    "source-layer/",
+                    "intake/",
+                    "canonical/",
+                    "consultation/",
+                )
+            )
+            else None
+        )
+        compatibility_path = compatibility_projection_path(artifact_path) if artifact_path is not None else None
+        if artifact_path is not None and (
+            artifact_path.exists() or (compatibility_path is not None and compatibility_path.exists())
+        ):
             existing.append(canonical_ref)
         elif artifact_path is None:
             existing.append(canonical_ref)

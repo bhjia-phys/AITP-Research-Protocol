@@ -7,11 +7,17 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .topic_truth_root_support import compatibility_projection_path
+
 
 def _read_json(path: Path) -> dict[str, Any] | None:
-    if not path.exists():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return None
+        target = compatibility_path
+    return json.loads(target.read_text(encoding="utf-8"))
 
 
 def _now_iso() -> str:

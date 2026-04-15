@@ -71,17 +71,47 @@ def now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
 
 
+def compatibility_projection_path(path: Path) -> Path | None:
+    resolved = path.expanduser().resolve()
+    parts = resolved.parts
+    if "runtime" in parts and "topics" in parts:
+        runtime_index = parts.index("runtime")
+        if runtime_index + 2 < len(parts) and parts[runtime_index + 1] == "topics":
+            kernel_root = Path(parts[0]).joinpath(*parts[1:runtime_index])
+            topic_slug = parts[runtime_index + 2]
+            remainder = parts[runtime_index + 3 :]
+            return kernel_root / "topics" / topic_slug / "runtime" / Path(*remainder)
+    if "topics" in parts:
+        topics_index = parts.index("topics")
+        if topics_index + 3 < len(parts):
+            kernel_root = Path(parts[0]).joinpath(*parts[1:topics_index])
+            topic_slug = parts[topics_index + 1]
+            surface = parts[topics_index + 2]
+            remainder = parts[topics_index + 3 :]
+            if surface == "runtime":
+                return kernel_root / "runtime" / "topics" / topic_slug / Path(*remainder)
+    return None
+
+
 def read_json(path: Path) -> dict | None:
-    if not path.exists():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return None
+        target = compatibility_path
+    return json.loads(target.read_text(encoding="utf-8"))
 
 
 def read_jsonl(path: Path) -> list[dict]:
-    if not path.exists():
-        return []
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return []
+        target = compatibility_path
     rows: list[dict] = []
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
+    for raw_line in target.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
         if line:
             rows.append(json.loads(line))
@@ -89,13 +119,22 @@ def read_jsonl(path: Path) -> list[dict]:
 
 
 def write_json(path: Path, payload: dict | list) -> None:
+    rendered = json.dumps(payload, ensure_ascii=True, indent=2) + "\n"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(text, encoding="utf-8")
 
 
 def ensure_string_list(value: object) -> list[str]:
@@ -987,7 +1026,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = build_parser().parse_args()
     knowledge_root = Path(__file__).resolve().parents[2]
-    topic_runtime_root = knowledge_root / "runtime" / "topics" / args.topic_slug
+    topic_runtime_root = knowledge_root / "topics" / args.topic_slug / "runtime"
     topic_state = read_json(topic_runtime_root / "topic_state.json")
     if topic_state is None:
         raise SystemExit(f"Runtime topic state is missing for {args.topic_slug}")

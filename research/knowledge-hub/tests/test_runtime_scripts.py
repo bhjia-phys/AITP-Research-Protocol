@@ -2361,9 +2361,222 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertNotIn("apply_candidate_split_contract", action_types)
         self.assertEqual(
             queue_meta["operator_checkpoint_path"],
-            "runtime/topics/demo-topic/operator_checkpoint.active.json",
+            "topics/demo-topic/runtime/operator_checkpoint.active.json",
         )
         self.assertIn("operator checkpoint", str(queue_meta["append_policy_reason"]).lower())
+
+    def test_compute_closed_loop_status_reports_truth_root_runtime_paths(self) -> None:
+        self._write_json(
+            "runtime/topics/demo-topic/selected_validation_route.json",
+            {
+                "route_id": "route:demo-topic:benchmark",
+                "objective": "Run the bounded benchmark lane.",
+                "run_id": "run-001",
+                "surface": "numerical",
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/execution_task.json",
+            {
+                "task_id": "benchmark-task",
+                "validation_note": "validation/topics/demo-topic/runs/run-001/validation_note.md",
+                "candidate_id": "candidate:demo-benchmark",
+                "surface": "numerical",
+                "status": "planned",
+                "input_artifacts": [],
+                "planned_outputs": [],
+                "pass_conditions": ["Write a bounded benchmark artifact."],
+                "failure_signals": ["Benchmark artifact is missing."],
+                "assigned_runtime": "codex",
+                "result_artifacts": [],
+                "summary": "Demo benchmark task",
+                "route_id": "route:demo-topic:benchmark",
+            },
+        )
+
+        payload = self.closed_loop_v1.compute_closed_loop_status(
+            self.knowledge_root,
+            "demo-topic",
+            "run-001",
+        )
+
+        self.assertEqual(
+            payload["paths"]["selected_route_path"],
+            "topics/demo-topic/runtime/selected_validation_route.json",
+        )
+        self.assertEqual(
+            payload["paths"]["execution_task_path"],
+            "topics/demo-topic/runtime/execution_task.json",
+        )
+
+    def test_build_interaction_state_uses_truth_root_closed_loop_paths(self) -> None:
+        self._write_json(
+            "runtime/topics/demo-topic/selected_validation_route.json",
+            {
+                "route_id": "route:demo-topic:benchmark",
+                "objective": "Run the bounded benchmark lane.",
+                "run_id": "run-001",
+                "surface": "numerical",
+            },
+        )
+        self._write_json(
+            "runtime/topics/demo-topic/execution_task.json",
+            {
+                "task_id": "benchmark-task",
+                "validation_note": "validation/topics/demo-topic/runs/run-001/validation_note.md",
+                "candidate_id": "candidate:demo-benchmark",
+                "surface": "numerical",
+                "status": "planned",
+                "input_artifacts": [],
+                "planned_outputs": [],
+                "pass_conditions": ["Write a bounded benchmark artifact."],
+                "failure_signals": ["Benchmark artifact is missing."],
+                "assigned_runtime": "codex",
+                "result_artifacts": [],
+                "summary": "Demo benchmark task",
+                "route_id": "route:demo-topic:benchmark",
+            },
+        )
+
+        interaction_state = self.orchestrate_topic.build_interaction_state(
+            {
+                "topic_slug": "demo-topic",
+                "resume_stage": "L4",
+                "last_materialized_stage": "L4",
+                "latest_run_id": "run-001",
+                "updated_by": "test",
+                "pointers": {
+                    "feedback_status_path": "feedback/topics/demo-topic/runs/run-001/status.json",
+                    "promotion_decision_path": "validation/topics/demo-topic/runs/run-001/promotion_decisions.jsonl",
+                },
+            },
+            [],
+            {"queue_source": "heuristic"},
+            "Continue the bounded benchmark lane.",
+            self.knowledge_root / "topics" / "demo-topic" / "runtime",
+            self.knowledge_root,
+        )
+
+        self.assertEqual(
+            interaction_state["closed_loop"]["selected_route_path"],
+            "topics/demo-topic/runtime/selected_validation_route.json",
+        )
+        self.assertEqual(
+            interaction_state["closed_loop"]["execution_task_path"],
+            "topics/demo-topic/runtime/execution_task.json",
+        )
+
+    def test_sync_topic_state_main_materializes_truth_root_topic_state(self) -> None:
+        script_path = self.knowledge_root / "runtime" / "scripts" / "sync_topic_state.py"
+        script_path.parent.mkdir(parents=True, exist_ok=True)
+        script_path.write_text("# runtime script shim\n", encoding="utf-8")
+
+        self._write_jsonl(
+            "source-layer/topics/demo-topic/source_index.jsonl",
+            [
+                {
+                    "source_id": "paper:demo",
+                    "source_type": "paper",
+                    "title": "Demo source",
+                    "summary": "Demo summary",
+                }
+            ],
+        )
+        self._write_json(
+            "intake/topics/demo-topic/status.json",
+            {
+                "stage": "L1_active",
+                "next_stage": "L1",
+                "last_updated": "2026-03-20T10:00:00+08:00",
+            },
+        )
+        self._write_json(
+            "feedback/topics/demo-topic/runs/run-001/status.json",
+            {
+                "stage": "candidate_shaping",
+                "candidate_status": "in_progress",
+                "last_updated": "2026-03-20T10:00:00+08:00",
+            },
+        )
+        (self.knowledge_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001" / "next_actions.md").write_text(
+            "1. Continue the bounded route.\n",
+            encoding="utf-8",
+        )
+
+        with (
+            patch.object(self.sync_topic_state, "__file__", str(script_path)),
+            patch.object(
+                sys,
+                "argv",
+                [
+                    "sync_topic_state.py",
+                    "--topic-slug",
+                    "demo-topic",
+                    "--run-id",
+                    "run-001",
+                    "--updated-by",
+                    "test",
+                ],
+            ),
+        ):
+            exit_code = self.sync_topic_state.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(
+            (self.knowledge_root / "topics" / "demo-topic" / "runtime" / "topic_state.json").exists()
+        )
+
+    def test_decide_next_action_main_materializes_truth_root_decision_files(self) -> None:
+        script_path = self.knowledge_root / "runtime" / "scripts" / "decide_next_action.py"
+        script_path.parent.mkdir(parents=True, exist_ok=True)
+        script_path.write_text("# runtime script shim\n", encoding="utf-8")
+
+        self._write_json(
+            "runtime/topics/demo-topic/topic_state.json",
+            {
+                "topic_slug": "demo-topic",
+                "resume_stage": "L3",
+                "last_materialized_stage": "L3",
+                "updated_by": "test",
+                "pointers": {},
+            },
+        )
+        self._write_jsonl(
+            "runtime/topics/demo-topic/action_queue.jsonl",
+            [
+                {
+                    "action_id": "action:demo-topic:01",
+                    "status": "pending",
+                    "action_type": "manual_followup",
+                    "summary": "Continue the bounded route.",
+                    "auto_runnable": False,
+                }
+            ],
+        )
+
+        with (
+            patch.object(self.decide_next_action, "__file__", str(script_path)),
+            patch.object(
+                sys,
+                "argv",
+                [
+                    "decide_next_action.py",
+                    "--topic-slug",
+                    "demo-topic",
+                    "--updated-by",
+                    "test",
+                ],
+            ),
+        ):
+            exit_code = self.decide_next_action.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(
+            (self.knowledge_root / "topics" / "demo-topic" / "runtime" / "unfinished_work.json").exists()
+        )
+        self.assertTrue(
+            (self.knowledge_root / "topics" / "demo-topic" / "runtime" / "next_action_decision.json").exists()
+        )
 
     def test_materialize_action_queue_declared_contract_can_disable_runtime_appends_but_keep_skill_append(self) -> None:
         self._write_json(

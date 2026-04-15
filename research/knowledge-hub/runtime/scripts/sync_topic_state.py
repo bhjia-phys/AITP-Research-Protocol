@@ -35,17 +35,65 @@ def now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
 
 
+def compatibility_projection_path(path: Path) -> Path | None:
+    resolved = path.expanduser().resolve()
+    parts = resolved.parts
+    if "runtime" in parts and "topics" in parts:
+        runtime_index = parts.index("runtime")
+        if runtime_index + 2 < len(parts) and parts[runtime_index + 1] == "topics":
+            kernel_root = Path(parts[0]).joinpath(*parts[1:runtime_index])
+            topic_slug = parts[runtime_index + 2]
+            remainder = parts[runtime_index + 3 :]
+            return kernel_root / "topics" / topic_slug / "runtime" / Path(*remainder)
+    if "feedback" in parts and "topics" in parts:
+        feedback_index = parts.index("feedback")
+        if feedback_index + 2 < len(parts) and parts[feedback_index + 1] == "topics":
+            kernel_root = Path(parts[0]).joinpath(*parts[1:feedback_index])
+            topic_slug = parts[feedback_index + 2]
+            remainder = parts[feedback_index + 3 :]
+            return kernel_root / "topics" / topic_slug / "L3" / Path(*remainder)
+    if "validation" in parts and "topics" in parts:
+        validation_index = parts.index("validation")
+        if validation_index + 2 < len(parts) and parts[validation_index + 1] == "topics":
+            kernel_root = Path(parts[0]).joinpath(*parts[1:validation_index])
+            topic_slug = parts[validation_index + 2]
+            remainder = parts[validation_index + 3 :]
+            return kernel_root / "topics" / topic_slug / "L4" / Path(*remainder)
+    if "topics" in parts:
+        topics_index = parts.index("topics")
+        if topics_index + 3 < len(parts):
+            kernel_root = Path(parts[0]).joinpath(*parts[1:topics_index])
+            topic_slug = parts[topics_index + 1]
+            surface = parts[topics_index + 2]
+            remainder = parts[topics_index + 3 :]
+            if surface == "runtime":
+                return kernel_root / "runtime" / "topics" / topic_slug / Path(*remainder)
+            if surface == "L3":
+                return kernel_root / "feedback" / "topics" / topic_slug / Path(*remainder)
+            if surface == "L4":
+                return kernel_root / "validation" / "topics" / topic_slug / Path(*remainder)
+    return None
+
+
 def read_json(path: Path) -> dict | None:
-    if not path.exists():
-        return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return None
+        target = compatibility_path
+    return json.loads(target.read_text(encoding="utf-8"))
 
 
 def read_jsonl(path: Path) -> list[dict]:
-    if not path.exists():
-        return []
+    target = path
+    if not target.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return []
+        target = compatibility_path
     rows: list[dict] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in target.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if line:
             rows.append(json.loads(line))
@@ -53,19 +101,32 @@ def read_jsonl(path: Path) -> list[dict]:
 
 
 def write_json(path: Path, payload: dict) -> None:
+    rendered = json.dumps(payload, ensure_ascii=True, indent=2) + "\n"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    path.write_text(rendered, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(rendered, encoding="utf-8")
 
 
 def write_jsonl(path: Path, rows: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
     text = "".join(json.dumps(row, ensure_ascii=True, separators=(",", ":")) + "\n" for row in rows)
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(text, encoding="utf-8")
 
 
 def write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is not None and compatibility_path != path:
+        compatibility_path.parent.mkdir(parents=True, exist_ok=True)
+        compatibility_path.write_text(text, encoding="utf-8")
 
 
 def parse_next_actions(path: Path) -> list[str]:
@@ -144,8 +205,12 @@ def latest_run_id(runs_root: Path) -> str | None:
 
 
 def relative_path(path: Path | None, root: Path) -> str | None:
-    if path is None or not path.exists():
+    if path is None:
         return None
+    if not path.exists():
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is None or not compatibility_path.exists():
+            return None
     return path.relative_to(root).as_posix()
 
 
@@ -351,7 +416,7 @@ def main() -> int:
     knowledge_root = Path(__file__).resolve().parents[2]
     runtime_root = knowledge_root / "runtime"
     topic_slug = args.topic_slug
-    topic_runtime_root = runtime_root / "topics" / topic_slug
+    topic_runtime_root = knowledge_root / "topics" / topic_slug / "runtime"
     existing_topic_state = read_json(topic_runtime_root / "topic_state.json") or {}
     existing_pointers = existing_topic_state.get("pointers") or {}
 

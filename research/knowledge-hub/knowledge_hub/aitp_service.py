@@ -411,6 +411,18 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
         line = raw_line.strip()
         if line:
             rows.append(json.loads(line))
+    if rows:
+        return rows
+    if target == path:
+        compatibility_path = compatibility_projection_path(path)
+        if compatibility_path is not None and compatibility_path.exists():
+            fallback_rows: list[dict[str, Any]] = []
+            for raw_line in compatibility_path.read_text(encoding="utf-8").splitlines():
+                line = raw_line.strip()
+                if line:
+                    fallback_rows.append(json.loads(line))
+            if fallback_rows:
+                return fallback_rows
     return rows
 
 

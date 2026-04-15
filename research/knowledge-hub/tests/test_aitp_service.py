@@ -3990,6 +3990,171 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(analytical_payload["validation_contract"]["validation_mode"], "analytical")
         self.assertIn("limiting cases", analytical_payload["validation_contract"]["verification_focus"])
 
+    def test_prepare_verification_numeric_materializes_minimum_l4_bundle(self) -> None:
+        runtime_root = self._write_runtime_state(run_id="run-001")
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Run the bounded benchmark lane for the active topic.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:benchmark",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:benchmark",
+                    "status": "pending",
+                    "action_type": "manual_followup",
+                    "summary": "Run the bounded benchmark lane for the active topic.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.prepare_verification(
+            topic_slug="demo-topic",
+            mode="numeric",
+        )
+
+        l4_package = payload["l4_package"]
+        self.assertEqual(l4_package["execution_artifact_kind"], "execution_task")
+        self.assertTrue(Path(l4_package["validation_plan_path"]).exists())
+        self.assertTrue(Path(l4_package["derivation_process_path"]).exists())
+        self.assertTrue(Path(l4_package["execution_artifact_path"]).exists())
+        self.assertTrue(Path(l4_package["adjudication_note_path"]).exists())
+
+        execution_task = json.loads(
+            Path(l4_package["execution_artifact_path"]).read_text(encoding="utf-8")
+        )
+        self.assertEqual(execution_task["status"], "planned")
+        self.assertTrue(execution_task["needs_human_confirm"])
+        self.assertFalse(execution_task["auto_dispatch_allowed"])
+        self.assertEqual(execution_task["surface"], "numerical")
+
+        contract_artifacts = payload["validation_contract"]["artifacts"]
+        self.assertTrue(any(item.endswith("validation_plan.md") for item in contract_artifacts))
+        self.assertTrue(any(item.endswith("derivation_process.md") for item in contract_artifacts))
+        self.assertTrue(any(item.endswith("adjudication_note.md") for item in contract_artifacts))
+        self.assertTrue(any("/execution-tasks/" in item for item in contract_artifacts))
+
+        operator_checkpoint = json.loads(
+            (runtime_root / "operator_checkpoint.active.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(operator_checkpoint["status"], "requested")
+        self.assertEqual(
+            operator_checkpoint["checkpoint_kind"],
+            "benchmark_or_validation_route_choice",
+        )
+
+    def test_prepare_verification_proof_materializes_execution_deferral_without_concrete_lane(self) -> None:
+        runtime_root = self._write_runtime_state(run_id="run-002")
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Check the next proof fragment without opening a benchmark lane yet.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:proof",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:proof",
+                    "status": "pending",
+                    "action_type": "manual_followup",
+                    "summary": "Complete the next proof fragment review.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.prepare_verification(
+            topic_slug="demo-topic",
+            mode="proof",
+        )
+
+        l4_package = payload["l4_package"]
+        self.assertEqual(l4_package["execution_artifact_kind"], "execution_deferral")
+        self.assertTrue(Path(l4_package["validation_plan_path"]).exists())
+        self.assertTrue(Path(l4_package["derivation_process_path"]).exists())
+        self.assertTrue(Path(l4_package["execution_artifact_path"]).exists())
+        self.assertTrue(Path(l4_package["adjudication_note_path"]).exists())
+
+        execution_deferral = Path(l4_package["execution_artifact_path"]).read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("execution is deferred", execution_deferral.lower())
+        self.assertIn("proof fragment review", execution_deferral.lower())
+
+        contract_artifacts = payload["validation_contract"]["artifacts"]
+        self.assertTrue(any(item.endswith("execution_deferral.md") for item in contract_artifacts))
+        self.assertFalse(
+            any("/execution-tasks/" in item for item in contract_artifacts)
+        )
+
+    def test_load_candidate_falls_back_to_nonempty_legacy_ledger_when_truth_projection_is_empty(self) -> None:
+        run_id = "run-003"
+        truth_ledger = self.service._candidate_ledger_path("demo-topic", run_id)
+        truth_ledger.parent.mkdir(parents=True, exist_ok=True)
+        truth_ledger.write_text("", encoding="utf-8")
+
+        legacy_ledger = (
+            self.kernel_root
+            / "feedback"
+            / "topics"
+            / "demo-topic"
+            / "runs"
+            / run_id
+            / "candidate_ledger.jsonl"
+        )
+        legacy_ledger.parent.mkdir(parents=True, exist_ok=True)
+        legacy_ledger.write_text(
+            json.dumps(
+                {
+                    "candidate_id": "candidate:demo-candidate",
+                    "candidate_type": "claim_card",
+                    "topic_slug": "demo-topic",
+                    "run_id": run_id,
+                },
+                ensure_ascii=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service._load_candidate(
+            "demo-topic",
+            run_id,
+            "candidate:demo-candidate",
+        )
+
+        self.assertEqual(payload["candidate_id"], "candidate:demo-candidate")
+
     def test_runtime_bundle_and_session_start_require_idea_packet_when_clarification_needed(self) -> None:
         runtime_root = self._runtime_root("demo-topic")
         runtime_root.mkdir(parents=True, exist_ok=True)
