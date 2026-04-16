@@ -4,6 +4,7 @@ import contextlib
 import importlib.util
 import io
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -199,10 +200,10 @@ class DispatchActionQueueTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-        commands: list[list[str]] = []
+        calls: list[dict[str, object]] = []
 
         def fake_run(command, **kwargs):  # noqa: ANN001, ANN003
-            commands.append(list(command))
+            calls.append({"command": list(command), "stdin": kwargs.get("stdin")})
             return mock.Mock(returncode=0, stdout="", stderr="")
 
         buffer = io.StringIO()
@@ -224,13 +225,15 @@ class DispatchActionQueueTests(unittest.TestCase):
                     exit_code = self.module.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertEqual(len(commands), 2)
+        self.assertEqual(len(calls), 2)
+        commands = [call["command"] for call in calls]
         self.assertEqual(commands[0][0], sys.executable)
         self.assertEqual(commands[1][0], sys.executable)
         self.assertIn("dispatch_runtime_controller_action.py", commands[0][1])
         self.assertIn("--action-type", commands[0])
         self.assertIn("assess_topic_completion", commands[0])
         self.assertIn("orchestrate_topic.py", commands[1][1])
+        self.assertTrue(all(call["stdin"] is subprocess.DEVNULL for call in calls))
         queue_row = json.loads(queue_path.read_text(encoding="utf-8").splitlines()[0])
         self.assertEqual(queue_row["status"], "completed")
         receipts_path = self.runtime_root / "action_receipts.jsonl"
@@ -333,7 +336,14 @@ class ExternalSkillDiscoveryTests(unittest.TestCase):
             stdout="demo/repo@operator-skill 12 installs\n└ https://example.test/catalog\n",
             stderr="",
         )
-        with mock.patch.object(self.module.subprocess, "run", return_value=completed):
+        recorded: dict[str, object] = {}
+
+        def fake_run(command, **kwargs):  # noqa: ANN001, ANN003
+            recorded["command"] = list(command)
+            recorded["stdin"] = kwargs.get("stdin")
+            return completed
+
+        with mock.patch.object(self.module.subprocess, "run", side_effect=fake_run):
             with mock.patch.object(
                 sys,
                 "argv",
@@ -352,3 +362,148 @@ class ExternalSkillDiscoveryTests(unittest.TestCase):
         self.assertEqual(payload["overall_status"], "ready")
         self.assertEqual(payload["queries"][0]["status"], "completed")
         self.assertEqual(payload["queries"][0]["candidates"][0]["skill_name"], "operator-skill")
+        self.assertEqual(recorded["command"], ["npx", "--yes", "skills", "find", "operator algebra theorem packaging"])
+        self.assertIs(recorded["stdin"], subprocess.DEVNULL)
+
+
+class OpenClawLoopSurfaceTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._tmpdir = tempfile.TemporaryDirectory()
+        self.runtime_root = Path(self._tmpdir.name) / "runtime" / "topics" / "demo-topic"
+        self.runtime_root.mkdir(parents=True, exist_ok=True)
+
+    def tearDown(self) -> None:
+        self._tmpdir.cleanup()
+
+    def test_aitp_loop_detaches_subprocess_stdin_for_runtime_children(self) -> None:
+        module = _load_module(
+            "aitp_loop_test",
+            "research/adapters/openclaw/scripts/aitp_loop.py",
+        )
+        module.topic_runtime_root = lambda topic_slug: self.runtime_root
+
+        decision_calls = iter(
+            [
+                {
+                    "selected_action": {"action_id": "action:demo"},
+                    "auto_dispatch_allowed": True,
+                    "decision_source": "entry",
+                    "decision_mode": "auto",
+                },
+                {
+                    "selected_action": {"action_id": "action:done", "action_type": "assess_topic_completion"},
+                    "decision_source": "exit",
+                    "decision_mode": "auto",
+                },
+            ]
+        )
+        module.load_next_action_decision = lambda runtime_root: next(decision_calls)
+        module.read_jsonl = lambda path: []  # noqa: ARG005
+        module.read_json = lambda path: (  # noqa: ARG005
+            {"overall_status": "pass"}
+            if path.name in {"conformance_state.json", "trust_audit.json"}
+            else {"overall_status": "ready"}
+            if path.name == "capability_registry.json"
+            else {"latest_run_id": "run-001", "summary": "Demo summary"}
+            if path.name == "topic_state.json"
+            else {}
+        )
+        module.write_json = lambda path, payload: None  # noqa: ARG005
+        module.append_jsonl = lambda path, payload: None  # noqa: ARG005
+
+        calls: list[dict[str, object]] = []
+
+        def fake_run(command, **kwargs):  # noqa: ANN001, ANN003
+            calls.append({"command": list(command), "stdin": kwargs.get("stdin")})
+            return mock.Mock(returncode=0, stdout="", stderr="")
+
+        with mock.patch.object(module.subprocess, "run", side_effect=fake_run):
+            with mock.patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp_loop.py",
+                    "--topic-slug",
+                    "demo-topic",
+                    "--updated-by",
+                    "openclaw-test",
+                    "--max-steps",
+                    "1",
+                ],
+            ):
+                exit_code = module.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(len(calls), 3)
+        self.assertIn("orchestrate_topic.py", str(calls[0]["command"]))
+        self.assertIn("dispatch_action_queue.py", str(calls[1]["command"]))
+        self.assertIn("audit_topic_conformance.py", str(calls[2]["command"]))
+        self.assertTrue(all(call["stdin"] is subprocess.DEVNULL for call in calls))
+
+    def test_heartbeat_bridge_detaches_loop_subprocess_stdin(self) -> None:
+        module = _load_module(
+            "aitp_heartbeat_bridge_test",
+            "research/adapters/openclaw/scripts/heartbeat_bridge.py",
+        )
+        module.STOP_PATH = Path(self._tmpdir.name) / "STOP"
+        module.HEARTBEAT_STATE_PATH = Path(self._tmpdir.name) / "heartbeat_state.json"
+        module.HEARTBEAT_HISTORY_PATH = Path(self._tmpdir.name) / "heartbeat_history.jsonl"
+        module.topic_runtime_root = lambda topic_slug: self.runtime_root
+        module.read_json = lambda path: {}  # noqa: ARG005
+        module.write_heartbeat = lambda payload, append_history: None  # noqa: ARG005
+
+        recorded: dict[str, object] = {}
+
+        def fake_run(command, **kwargs):  # noqa: ANN001, ANN003
+            recorded["command"] = list(command)
+            recorded["stdin"] = kwargs.get("stdin")
+            return mock.Mock(returncode=0, stdout="", stderr="")
+
+        with mock.patch.object(module.subprocess, "run", side_effect=fake_run):
+            with mock.patch.object(
+                sys,
+                "argv",
+                [
+                    "heartbeat_bridge.py",
+                    "--topic-slug",
+                    "demo-topic",
+                    "--updated-by",
+                    "openclaw-heartbeat-test",
+                ],
+            ):
+                exit_code = module.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("aitp_loop.py", str(recorded["command"]))
+        self.assertIs(recorded["stdin"], subprocess.DEVNULL)
+
+    def test_topic_runner_detaches_loop_subprocess_stdin(self) -> None:
+        module = _load_module(
+            "aitp_topic_runner_test",
+            "research/adapters/openclaw/scripts/aitp_topic_runner.py",
+        )
+        recorded: dict[str, object] = {}
+
+        def fake_run(command, **kwargs):  # noqa: ANN001, ANN003
+            recorded["command"] = list(command)
+            recorded["stdin"] = kwargs.get("stdin")
+            return mock.Mock(returncode=0, stdout="", stderr="")
+
+        with mock.patch.object(module.subprocess, "run", side_effect=fake_run):
+            with mock.patch.object(
+                sys,
+                "argv",
+                [
+                    "aitp_topic_runner.py",
+                    "--topic-slug",
+                    "demo-topic",
+                    "--dispatch-auto",
+                    "--max-auto-actions",
+                    "2",
+                ],
+            ):
+                exit_code = module.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("aitp_loop.py", str(recorded["command"]))
+        self.assertIs(recorded["stdin"], subprocess.DEVNULL)

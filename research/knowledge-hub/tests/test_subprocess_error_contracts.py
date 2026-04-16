@@ -60,7 +60,7 @@ class SubprocessErrorContractTests(unittest.TestCase):
         workspace_root = Path(self._tmpdir.name) / "workspace"
         workspace_root.mkdir(parents=True, exist_ok=True)
 
-        def fake_run(argv, check=False, capture_output=True, text=True):  # noqa: ANN001
+        def fake_run(argv, check=False, capture_output=True, text=True, stdin=None):  # noqa: ANN001
             if argv[:4] == [sys.executable, "-m", "pip", "uninstall"]:
                 return _Completed(0, stdout="uninstalled", stderr="")
             if argv[:4] == [sys.executable, "-m", "pip", "install"]:

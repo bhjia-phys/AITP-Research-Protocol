@@ -235,7 +235,7 @@ def invoke_codex(
     env = os.environ.copy()
     env.setdefault("AITP_KERNEL_ROOT", kernel_root)
     env.setdefault("AITP_REPO_ROOT", repo_root)
-    completed = subprocess.run(command, check=False, env=env)
+    completed = subprocess.run(command, check=False, env=env, stdin=subprocess.DEVNULL)
     return completed.returncode
 
 

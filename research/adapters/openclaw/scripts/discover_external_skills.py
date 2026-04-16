@@ -90,7 +90,13 @@ def failed_query_result(
 def run_find_query(query: str) -> dict:
     command = ["npx", "--yes", "skills", "find", query]
     try:
-        completed = subprocess.run(command, check=False, capture_output=True, text=True)
+        completed = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            stdin=subprocess.DEVNULL,
+        )
     except FileNotFoundError as exc:
         return failed_query_result(
             query,

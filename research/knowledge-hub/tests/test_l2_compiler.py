@@ -41,7 +41,19 @@ class L2CompilerTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.tempdir.cleanup()
 
-    def _write_unit(self, relative_dir: str, unit_id: str, unit_type: str, title: str, summary: str) -> None:
+    def _write_unit(
+        self,
+        relative_dir: str,
+        unit_id: str,
+        unit_type: str,
+        title: str,
+        summary: str,
+        *,
+        origin_topic_refs: list[str] | None = None,
+        validation_receipts: list[str] | None = None,
+        reuse_receipts: list[str] | None = None,
+        applicable_topics: list[str] | None = None,
+    ) -> None:
         target_dir = self.canonical_root / relative_dir
         target_dir.mkdir(parents=True, exist_ok=True)
         payload = {
@@ -82,6 +94,14 @@ class L2CompilerTests(unittest.TestCase):
             },
             "dependencies": [],
             "related_units": [],
+            "origin_topic_refs": list(origin_topic_refs or []),
+            "origin_run_refs": [],
+            "validation_receipts": list(validation_receipts or []),
+            "reuse_receipts": list(reuse_receipts or []),
+            "related_consultation_refs": [],
+            "applicable_topics": list(applicable_topics or []),
+            "failed_topics": [],
+            "regime_notes": [],
             "payload": {},
         }
         (target_dir / f"{unit_id.split(':', 1)[1]}.json").write_text(
@@ -158,6 +178,150 @@ class L2CompilerTests(unittest.TestCase):
         self.assertIn("## Reuse Families", markdown)
         self.assertIn("workflow:gw-check", markdown)
         self.assertIn("topic_skill_projection:demo-route", markdown)
+
+    def test_materialize_workspace_memory_map_writes_obsidian_l2_mirror_with_topic_linked_evidence(self) -> None:
+        self._write_unit(
+            "methods",
+            "method:rpa-fit",
+            "method",
+            "RPA fit",
+            "Reusable method.",
+            origin_topic_refs=["topics/demo-topic"],
+            validation_receipts=["topics/demo-topic/L4/runs/run-001/returned_execution_result.json"],
+            reuse_receipts=["topics/other-topic/runtime/plan_reuse_context.json"],
+        )
+
+        result = materialize_workspace_memory_map(self.kernel_root)
+
+        obsidian_root = Path(result["obsidian_root"])
+        self.assertTrue(obsidian_root.exists())
+        self.assertTrue((obsidian_root / "index.md").exists())
+        self.assertTrue((obsidian_root / "families" / "methods").exists())
+
+        method_page = obsidian_root / "families" / "methods" / "method--rpa-fit.md"
+        self.assertTrue(method_page.exists())
+        method_markdown = method_page.read_text(encoding="utf-8")
+        self.assertIn("## Origin", method_markdown)
+        self.assertIn("topics/demo-topic", method_markdown)
+        self.assertIn("## Validated In Topics", method_markdown)
+        self.assertIn("returned_execution_result.json", method_markdown)
+        self.assertIn("## Reused In Topics", method_markdown)
+        self.assertIn("plan_reuse_context.json", method_markdown)
+        self.assertIn("## Canonical Links", method_markdown)
+
+    def test_materialize_workspace_memory_map_writes_obsidian_family_profile_and_topic_shelves(self) -> None:
+        self._write_unit(
+            "concepts",
+            "concept:green-function",
+            "concept",
+            "Green function",
+            "Core concept.",
+            origin_topic_refs=["topics/demo-topic"],
+            applicable_topics=["demo-topic"],
+        )
+        self._write_unit(
+            "methods",
+            "method:rpa-fit",
+            "method",
+            "RPA fit",
+            "Reusable method.",
+            origin_topic_refs=["topics/demo-topic"],
+            reuse_receipts=["topics/demo-topic/L3/runs/run-001/iterations/iteration-001/plan.contract.json"],
+            applicable_topics=["demo-topic"],
+        )
+        self._write_unit(
+            "workflows",
+            "workflow:gw-check",
+            "workflow",
+            "GW check",
+            "Reusable workflow.",
+            origin_topic_refs=["topics/demo-topic"],
+            validation_receipts=["topics/demo-topic/L4/runs/run-001/returned_execution_result.json"],
+            applicable_topics=["demo-topic"],
+        )
+
+        result = materialize_workspace_memory_map(self.kernel_root)
+
+        obsidian_root = Path(result["obsidian_root"])
+        family_index = obsidian_root / "families" / "methods" / "index.md"
+        profile_index = obsidian_root / "profiles" / "l3_plan_reuse_standard.md"
+        idea_profile = obsidian_root / "profiles" / "l3_idea_reuse_quick.md"
+        topic_index = obsidian_root / "topics" / "demo-topic.md"
+
+        self.assertTrue(family_index.exists())
+        self.assertTrue(profile_index.exists())
+        self.assertTrue(idea_profile.exists())
+        self.assertTrue(topic_index.exists())
+
+        family_markdown = family_index.read_text(encoding="utf-8")
+        self.assertIn("[[method--rpa-fit|RPA fit]]", family_markdown)
+
+        profile_markdown = profile_index.read_text(encoding="utf-8")
+        self.assertIn("[[families/methods/method--rpa-fit|RPA fit]]", profile_markdown)
+        self.assertIn("[[families/workflows/workflow--gw-check|GW check]]", profile_markdown)
+
+        idea_profile_markdown = idea_profile.read_text(encoding="utf-8")
+        self.assertIn("[[families/concepts/concept--green-function|Green function]]", idea_profile_markdown)
+        self.assertNotIn("method--rpa-fit", idea_profile_markdown)
+
+        topic_markdown = topic_index.read_text(encoding="utf-8")
+        self.assertIn("[[families/concepts/concept--green-function|Green function]]", topic_markdown)
+        self.assertIn("[[families/methods/method--rpa-fit|RPA fit]]", topic_markdown)
+        self.assertIn("returned_execution_result.json", topic_markdown)
+        self.assertIn("plan.contract.json", topic_markdown)
+
+    def test_materialize_workspace_memory_map_topic_shelf_splits_origin_validated_reused_and_failed_sections(self) -> None:
+        self._write_unit(
+            "concepts",
+            "concept:green-function",
+            "concept",
+            "Green function",
+            "Core concept.",
+            origin_topic_refs=["topics/demo-topic"],
+            applicable_topics=["demo-topic"],
+        )
+        self._write_unit(
+            "workflows",
+            "workflow:gw-check",
+            "workflow",
+            "GW check",
+            "Reusable workflow.",
+            validation_receipts=["topics/demo-topic/L4/runs/run-001/returned_execution_result.json"],
+            applicable_topics=["demo-topic"],
+        )
+        self._write_unit(
+            "methods",
+            "method:rpa-fit",
+            "method",
+            "RPA fit",
+            "Reusable method.",
+            reuse_receipts=["topics/demo-topic/L3/runs/run-001/iterations/iteration-001/plan.contract.json"],
+            applicable_topics=["demo-topic"],
+        )
+        self._write_unit(
+            "warning-notes",
+            "warning_note:scope-trap",
+            "warning_note",
+            "Scope trap",
+            "Portable warning.",
+            applicable_topics=["demo-topic"],
+        )
+        warning_path = self.canonical_root / "warning-notes" / "scope-trap.json"
+        warning_payload = json.loads(warning_path.read_text(encoding="utf-8"))
+        warning_payload["failed_topics"] = ["demo-topic"]
+        warning_path.write_text(json.dumps(warning_payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+
+        result = materialize_workspace_memory_map(self.kernel_root)
+
+        topic_markdown = (Path(result["obsidian_root"]) / "topics" / "demo-topic.md").read_text(encoding="utf-8")
+        self.assertIn("## Origin Units", topic_markdown)
+        self.assertIn("## Validated In Topic", topic_markdown)
+        self.assertIn("## Reused In Topic", topic_markdown)
+        self.assertIn("## Failed Or Limited In Topic", topic_markdown)
+        self.assertIn("[[families/concepts/concept--green-function|Green function]]", topic_markdown)
+        self.assertIn("[[families/workflows/workflow--gw-check|GW check]]", topic_markdown)
+        self.assertIn("[[families/methods/method--rpa-fit|RPA fit]]", topic_markdown)
+        self.assertIn("[[families/warning-notes/warning_note--scope-trap|Scope trap]]", topic_markdown)
 
     def test_materialize_workspace_graph_report_writes_navigation_pages(self) -> None:
         self._write_unit("concepts", "concept:green-function", "concept", "Green function", "Core concept.")

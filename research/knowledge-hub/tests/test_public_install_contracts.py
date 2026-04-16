@@ -38,7 +38,7 @@ class PublicInstallContractTests(unittest.TestCase):
     def test_pip_show_package_falls_back_to_python_when_console_entrypoint_is_not_python(self) -> None:
         commands: list[list[str]] = []
 
-        def fake_run(argv, check=False, capture_output=True, text=True):  # noqa: ANN001
+        def fake_run(argv, check=False, capture_output=True, text=True, stdin=None):  # noqa: ANN001
             commands.append(list(argv))
 
             class Result:

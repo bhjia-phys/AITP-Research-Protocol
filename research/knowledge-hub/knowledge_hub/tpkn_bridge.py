@@ -958,6 +958,7 @@ def run_tpkn_checks(tpkn_root: Path, *, scoped_paths: list[Path] | None = None) 
             capture_output=True,
             text=True,
             cwd=tpkn_root,
+            stdin=subprocess.DEVNULL,
         )
         if completed.returncode != 0:
             message = completed.stderr.strip() or completed.stdout.strip() or "unknown error"

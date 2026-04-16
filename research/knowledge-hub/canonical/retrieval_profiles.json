@@ -70,6 +70,74 @@
       "max_traversal_depth": 2,
       "max_expanded_hits": 16
     },
+    "l3_idea_reuse_quick": {
+      "preferred_unit_types": [
+        "concept",
+        "physical_picture",
+        "claim_card",
+        "validation_pattern",
+        "warning_note",
+        "negative_result",
+        "bridge"
+      ],
+      "required_fields": [
+        "unit_id",
+        "unit_type",
+        "title",
+        "summary",
+        "path",
+        "origin_topic_refs",
+        "validation_receipts",
+        "reuse_receipts"
+      ],
+      "edge_expansion": [
+        "supports",
+        "warned_by",
+        "specializes",
+        "generalizes"
+      ],
+      "max_primary_hits": 4,
+      "max_traversal_depth": 1,
+      "max_expanded_hits": 6
+    },
+    "l3_plan_reuse_standard": {
+      "preferred_unit_types": [
+        "concept",
+        "physical_picture",
+        "claim_card",
+        "validation_pattern",
+        "warning_note",
+        "negative_result",
+        "bridge",
+        "method",
+        "workflow",
+        "derivation_object",
+        "proof_fragment",
+        "example_card",
+        "topic_skill_projection"
+      ],
+      "required_fields": [
+        "unit_id",
+        "unit_type",
+        "title",
+        "summary",
+        "path",
+        "dependencies",
+        "related_units",
+        "origin_topic_refs",
+        "validation_receipts",
+        "reuse_receipts"
+      ],
+      "edge_expansion": [
+        "depends_on",
+        "uses_method",
+        "bridged_to",
+        "warned_by"
+      ],
+      "max_primary_hits": 6,
+      "max_traversal_depth": 2,
+      "max_expanded_hits": 10
+    },
     "l4_adjudication": {
       "preferred_unit_types": [
         "equation_card",

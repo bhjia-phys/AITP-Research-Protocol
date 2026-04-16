@@ -79,6 +79,10 @@ def _derived_navigation_root(kernel_root: Path) -> Path:
     return _compiled_root(kernel_root) / "derived_navigation"
 
 
+def _obsidian_l2_root(kernel_root: Path) -> Path:
+    return _compiled_root(kernel_root) / "obsidian_l2"
+
+
 def _knowledge_report_path(kernel_root: Path) -> Path:
     return _compiled_root(kernel_root) / "workspace_knowledge_report.json"
 
@@ -111,6 +115,14 @@ def _compact_unit_ref(payload: dict[str, Any], *, path: str) -> dict[str, Any]:
         "related_units": [str(item) for item in (payload.get("related_units") or []) if str(item).strip()],
         "tags": [str(item) for item in (payload.get("tags") or []) if str(item).strip()],
         "promotion_route": str(((payload.get("promotion") or {}).get("route")) or ""),
+        "origin_topic_refs": [str(item) for item in (payload.get("origin_topic_refs") or []) if str(item).strip()],
+        "origin_run_refs": [str(item) for item in (payload.get("origin_run_refs") or []) if str(item).strip()],
+        "validation_receipts": [str(item) for item in (payload.get("validation_receipts") or []) if str(item).strip()],
+        "reuse_receipts": [str(item) for item in (payload.get("reuse_receipts") or []) if str(item).strip()],
+        "related_consultation_refs": [str(item) for item in (payload.get("related_consultation_refs") or []) if str(item).strip()],
+        "applicable_topics": [str(item) for item in (payload.get("applicable_topics") or []) if str(item).strip()],
+        "failed_topics": [str(item) for item in (payload.get("failed_topics") or []) if str(item).strip()],
+        "regime_notes": [str(item) for item in (payload.get("regime_notes") or []) if str(item).strip()],
     }
 
 
@@ -243,14 +255,332 @@ def _navigation_page_name(unit_id: str, unit_type: str) -> str:
     return f"{unit_type}--{_slugify(suffix or unit_id)}.md"
 
 
+def _obsidian_page_name(unit_id: str, unit_type: str) -> str:
+    _, _, suffix = unit_id.partition(":")
+    return f"{unit_type}--{_slugify(suffix or unit_id)}.md"
+
+
 def _wiki_link(target: str, label: str) -> str:
     stem = target[:-3] if target.endswith(".md") else target
     return f"[[{stem}|{label}]]"
 
 
+def _family_dir_from_unit(unit: dict[str, Any]) -> str:
+    path = str(unit.get("path") or "")
+    parts = Path(path).parts
+    if len(parts) >= 2 and parts[0] == "canonical":
+        return parts[1]
+    unit_type = str(unit.get("unit_type") or "units")
+    return f"{unit_type}s"
+
+
+def _group_units_by_family(units: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for unit in units:
+        grouped.setdefault(_family_dir_from_unit(unit), []).append(unit)
+    return grouped
+
+
+def _topic_slugs_from_strings(values: list[str]) -> set[str]:
+    topic_slugs: set[str] = set()
+    for raw_value in values:
+        normalized = str(raw_value or "").strip()
+        if not normalized:
+            continue
+        if normalized.startswith("topics/"):
+            parts = normalized.split("/")
+            if len(parts) >= 2 and parts[1]:
+                topic_slugs.add(parts[1])
+        for match in re.finditer(r"(?:^|/)topics/([^/]+)", normalized):
+            topic_slug = str(match.group(1) or "").strip()
+            if topic_slug:
+                topic_slugs.add(topic_slug)
+    return topic_slugs
+
+
+def _topic_slugs_for_unit(unit: dict[str, Any]) -> list[str]:
+    topic_slugs = set()
+    topic_slugs.update(_topic_slugs_from_strings(list(unit.get("origin_topic_refs") or [])))
+    topic_slugs.update(_topic_slugs_from_strings(list(unit.get("origin_run_refs") or [])))
+    topic_slugs.update(_topic_slugs_from_strings(list(unit.get("validation_receipts") or [])))
+    topic_slugs.update(_topic_slugs_from_strings(list(unit.get("reuse_receipts") or [])))
+    topic_slugs.update({str(item).strip() for item in (unit.get("applicable_topics") or []) if str(item).strip()})
+    return sorted(topic_slugs)
+
+
 def _fingerprint_payload(payload: dict[str, Any]) -> str:
     raw = json.dumps(payload, ensure_ascii=True, sort_keys=True).encode("utf-8")
     return hashlib.sha1(raw).hexdigest()
+
+
+def _render_obsidian_l2_unit_markdown(unit: dict[str, Any]) -> str:
+    lines = [
+        f"# {unit.get('title') or unit.get('unit_id') or 'L2 Unit'}",
+        "",
+        f"- Unit id: `{unit.get('unit_id') or '(missing)'}`",
+        f"- Unit type: `{unit.get('unit_type') or '(missing)'}`",
+        f"- Authority level: `canonical`",
+        "",
+        "## What This Is",
+        "",
+        str(unit.get("summary") or "(missing)"),
+        "",
+        "## Why It Is Reusable",
+        "",
+        f"- Promotion route: `{unit.get('promotion_route') or '(missing)'}`",
+        f"- Maturity: `{unit.get('maturity') or '(missing)'}`",
+        "",
+        "## Origin",
+        "",
+    ]
+    for item in unit.get("origin_topic_refs") or []:
+        lines.append(f"- `{item}`")
+    for item in unit.get("origin_run_refs") or []:
+        lines.append(f"- `{item}`")
+    if not ((unit.get("origin_topic_refs") or []) or (unit.get("origin_run_refs") or [])):
+        lines.append("- `(none recorded)`")
+    lines.extend(["", "## Validated In Topics", ""])
+    for item in unit.get("validation_receipts") or []:
+        lines.append(f"- `{item}`")
+    if not (unit.get("validation_receipts") or []):
+        lines.append("- `(none recorded)`")
+    lines.extend(["", "## Reused In Topics", ""])
+    for item in unit.get("reuse_receipts") or []:
+        lines.append(f"- `{item}`")
+    if not (unit.get("reuse_receipts") or []):
+        lines.append("- `(none recorded)`")
+    lines.extend(["", "## Known Failure / Limits", ""])
+    for item in (unit.get("failed_topics") or []) + (unit.get("regime_notes") or []):
+        lines.append(f"- `{item}`")
+    if not ((unit.get("failed_topics") or []) or (unit.get("regime_notes") or [])):
+        lines.append("- `(none recorded)`")
+    lines.extend(
+        [
+            "",
+            "## Canonical Links",
+            "",
+            f"- Canonical JSON: `{unit.get('path') or '(missing)'}`",
+            "",
+        ]
+    )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _render_obsidian_family_index_markdown(family_dir: str, units: list[dict[str, Any]]) -> str:
+    lines = [
+        f"# {family_dir}",
+        "",
+        "This family shelf is derived from canonical L2 and is non-authoritative.",
+        "",
+    ]
+    for unit in sorted(units, key=lambda row: (row["title"], row["unit_id"])):
+        page_name = _obsidian_page_name(str(unit.get("unit_id") or ""), str(unit.get("unit_type") or "unit"))
+        lines.append(
+            f"- {_wiki_link(page_name, str(unit.get('title') or unit.get('unit_id') or 'unit'))} - {unit.get('summary') or '(missing)'}"
+        )
+    if not units:
+        lines.append("- `(none)`")
+    lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _render_obsidian_profile_markdown(profile_name: str, entrypoint: dict[str, Any]) -> str:
+    lines = [
+        f"# {profile_name}",
+        "",
+        "This profile shelf is derived from canonical L2 and mirrors one bounded retrieval posture.",
+        "",
+        f"- Preferred unit types: `{', '.join(entrypoint.get('preferred_unit_types') or []) or '(none)'}`",
+        f"- Available count: `{entrypoint.get('available_count') or 0}`",
+        "",
+        "## Units",
+        "",
+    ]
+    for unit in entrypoint.get("units") or []:
+        family_dir = _family_dir_from_unit(unit)
+        page_name = _obsidian_page_name(str(unit.get("unit_id") or ""), str(unit.get("unit_type") or "unit"))
+        lines.append(
+            f"- {_wiki_link(f'families/{family_dir}/{page_name}', str(unit.get('title') or unit.get('unit_id') or 'unit'))} - {unit.get('summary') or '(missing)'}"
+        )
+    if not (entrypoint.get("units") or []):
+        lines.append("- `(none)`")
+    lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _render_obsidian_topic_markdown(topic_slug: str, units: list[dict[str, Any]]) -> str:
+    def _matches(unit: dict[str, Any], section_kind: str) -> bool:
+        origin_matches = bool(
+            f"topics/{topic_slug}" in (unit.get("origin_topic_refs") or [])
+            or topic_slug in _topic_slugs_from_strings(list(unit.get("origin_run_refs") or []))
+        )
+        validated_matches = topic_slug in _topic_slugs_from_strings(list(unit.get("validation_receipts") or []))
+        reused_matches = topic_slug in _topic_slugs_from_strings(list(unit.get("reuse_receipts") or []))
+        failed_matches = topic_slug in [str(item).strip() for item in (unit.get("failed_topics") or []) if str(item).strip()]
+        applicable_matches = topic_slug in (unit.get("applicable_topics") or [])
+        if section_kind == "origin":
+            return origin_matches
+        if section_kind == "validated":
+            return validated_matches
+        if section_kind == "reused":
+            return reused_matches
+        if section_kind == "failed":
+            return failed_matches
+        return applicable_matches and not any([origin_matches, validated_matches, reused_matches, failed_matches])
+
+    def _render_unit(unit: dict[str, Any], *, include_validation: bool = False, include_reuse: bool = False, include_failed: bool = False) -> list[str]:
+        family_dir = _family_dir_from_unit(unit)
+        page_name = _obsidian_page_name(str(unit.get("unit_id") or ""), str(unit.get("unit_type") or "unit"))
+        lines = [
+            f"- {_wiki_link(f'families/{family_dir}/{page_name}', str(unit.get('title') or unit.get('unit_id') or 'unit'))}"
+        ]
+        if include_validation:
+            for receipt in unit.get("validation_receipts") or []:
+                if topic_slug in _topic_slugs_from_strings([str(receipt)]):
+                    lines.append(f"  - validation: `{receipt}`")
+        if include_reuse:
+            for receipt in unit.get("reuse_receipts") or []:
+                if topic_slug in _topic_slugs_from_strings([str(receipt)]):
+                    lines.append(f"  - reuse: `{receipt}`")
+        if include_failed:
+            for item in unit.get("failed_topics") or []:
+                if str(item).strip() == topic_slug:
+                    lines.append(f"  - failed-topic: `{item}`")
+            for item in unit.get("regime_notes") or []:
+                if topic_slug in _topic_slugs_from_strings([str(item)]) or topic_slug in str(item):
+                    lines.append(f"  - note: `{item}`")
+        return lines
+
+    lines = [
+        f"# {topic_slug}",
+        "",
+        "This topic shelf is derived from canonical L2 and groups reusable units that point back to the same topic evidence surface.",
+        "",
+        "## Origin Units",
+        "",
+    ]
+    origin_units = [unit for unit in sorted(units, key=lambda row: (row["title"], row["unit_id"])) if _matches(unit, "origin")]
+    for unit in origin_units:
+        lines.extend(_render_unit(unit))
+    if not origin_units:
+        lines.append("- `(none)`")
+    lines.extend(["", "## Validated In Topic", ""])
+    validated_units = [unit for unit in sorted(units, key=lambda row: (row["title"], row["unit_id"])) if _matches(unit, "validated")]
+    for unit in validated_units:
+        lines.extend(_render_unit(unit, include_validation=True))
+    if not validated_units:
+        lines.append("- `(none)`")
+    lines.extend(["", "## Reused In Topic", ""])
+    reused_units = [unit for unit in sorted(units, key=lambda row: (row["title"], row["unit_id"])) if _matches(unit, "reused")]
+    for unit in reused_units:
+        lines.extend(_render_unit(unit, include_reuse=True))
+    if not reused_units:
+        lines.append("- `(none)`")
+    lines.extend(["", "## Failed Or Limited In Topic", ""])
+    failed_units = [unit for unit in sorted(units, key=lambda row: (row["title"], row["unit_id"])) if _matches(unit, "failed")]
+    for unit in failed_units:
+        lines.extend(_render_unit(unit, include_failed=True))
+    if not failed_units:
+        lines.append("- `(none)`")
+    lines.extend(["", "## Other Linked Units", ""])
+    other_units = [unit for unit in sorted(units, key=lambda row: (row["title"], row["unit_id"])) if _matches(unit, "other")]
+    for unit in other_units:
+        lines.extend(_render_unit(unit))
+    if not other_units:
+        lines.append("- `(none)`")
+    lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _render_obsidian_l2_index_markdown(
+    units: list[dict[str, Any]],
+    *,
+    consultation_entrypoints: dict[str, Any],
+) -> str:
+    grouped = _group_units_by_family(units)
+    topic_slugs = sorted({topic_slug for unit in units for topic_slug in _topic_slugs_for_unit(unit)})
+    lines = [
+        "# Obsidian L2 Index",
+        "",
+        "This mirror is derived from canonical L2 and is non-authoritative.",
+        "",
+    ]
+    lines.extend(["## Families", ""])
+    for family_dir in sorted(grouped):
+        lines.append(
+            f"- {_wiki_link(f'families/{family_dir}/index.md', family_dir)} (`{len(grouped[family_dir])}` units)"
+        )
+    if not grouped:
+        lines.append("- `(none)`")
+    lines.extend(["", "## Profile Shelves", ""])
+    for profile_name in sorted(consultation_entrypoints):
+        entrypoint = consultation_entrypoints.get(profile_name) or {}
+        lines.append(
+            f"- {_wiki_link(f'profiles/{profile_name}.md', profile_name)} (`{entrypoint.get('available_count') or 0}` available)"
+        )
+    if not consultation_entrypoints:
+        lines.append("- `(none)`")
+    lines.extend(["", "## Topic Shelves", ""])
+    for topic_slug in topic_slugs:
+        lines.append(f"- {_wiki_link(f'topics/{topic_slug}.md', topic_slug)}")
+    if not topic_slugs:
+        lines.append("- `(none)`")
+    lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def materialize_obsidian_l2_mirror(kernel_root: Path, *, units: list[dict[str, Any]] | None = None) -> dict[str, Any]:
+    kernel_root = kernel_root.resolve()
+    obsidian_root = _obsidian_l2_root(kernel_root)
+    resolved_units = list(units or load_canonical_units(kernel_root))
+    retrieval_profiles = read_json(_canonical_root(kernel_root) / "retrieval_profiles.json") or {}
+    consultation_entrypoints = _consultation_entrypoints(resolved_units, retrieval_profiles)
+    grouped_units = _group_units_by_family(resolved_units)
+    readme_path = obsidian_root / "README.md"
+    index_path = obsidian_root / "index.md"
+    write_text(
+        readme_path,
+        "# Obsidian L2 Mirror\n\nThis directory is a derived, non-authoritative Markdown mirror of canonical L2.\n\nBrowse through `families/`, `profiles/`, and `topics/` depending on whether you want ontology, retrieval posture, or topic-linked evidence.\n",
+    )
+    write_text(
+        index_path,
+        _render_obsidian_l2_index_markdown(
+            resolved_units,
+            consultation_entrypoints=consultation_entrypoints,
+        ),
+    )
+    page_count = 0
+    for family_dir, family_units in sorted(grouped_units.items()):
+        write_text(
+            obsidian_root / "families" / family_dir / "index.md",
+            _render_obsidian_family_index_markdown(family_dir, family_units),
+        )
+    for unit in resolved_units:
+        family_dir = _family_dir_from_unit(unit)
+        page_name = _obsidian_page_name(str(unit.get("unit_id") or ""), str(unit.get("unit_type") or "unit"))
+        page_path = obsidian_root / "families" / family_dir / page_name
+        write_text(page_path, _render_obsidian_l2_unit_markdown(unit))
+        page_count += 1
+    for profile_name, entrypoint in sorted(consultation_entrypoints.items()):
+        write_text(
+            obsidian_root / "profiles" / f"{profile_name}.md",
+            _render_obsidian_profile_markdown(profile_name, entrypoint),
+        )
+    topic_slugs = sorted({topic_slug for unit in resolved_units for topic_slug in _topic_slugs_for_unit(unit)})
+    for topic_slug in topic_slugs:
+        write_text(
+            obsidian_root / "topics" / f"{topic_slug}.md",
+            _render_obsidian_topic_markdown(
+                topic_slug,
+                [unit for unit in resolved_units if topic_slug in _topic_slugs_for_unit(unit)],
+            ),
+        )
+    return {
+        "root": str(obsidian_root),
+        "index_path": str(index_path),
+        "readme_path": str(readme_path),
+        "page_count": page_count,
+    }
 
 
 def _consultation_profiles_by_type(retrieval_profiles: dict[str, Any]) -> dict[str, list[str]]:
@@ -499,10 +829,22 @@ def materialize_workspace_memory_map(kernel_root: Path) -> dict[str, Any]:
     md_path = compiled_root / "workspace_memory_map.md"
     write_json(json_path, payload)
     write_text(md_path, render_workspace_memory_map_markdown(payload))
+    obsidian_mirror = materialize_obsidian_l2_mirror(
+        kernel_root,
+        units=[
+            unit
+            for group in payload.get("units_by_type") or []
+            for unit in (group.get("units") or [])
+        ],
+    )
     return {
         "payload": payload,
         "json_path": str(json_path),
         "markdown_path": str(md_path),
+        "obsidian_root": obsidian_mirror["root"],
+        "obsidian_index_path": obsidian_mirror["index_path"],
+        "obsidian_readme_path": obsidian_mirror["readme_path"],
+        "obsidian_page_count": obsidian_mirror["page_count"],
     }
 
 

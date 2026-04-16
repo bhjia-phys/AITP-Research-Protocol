@@ -1668,6 +1668,7 @@ def main() -> int:
                 "--download-source",
             ],
             check=True,
+            stdin=subprocess.DEVNULL,
         )
 
     for local_note_path in args.local_note_path:
@@ -1683,6 +1684,7 @@ def main() -> int:
                 args.updated_by,
             ],
             check=True,
+            stdin=subprocess.DEVNULL,
         )
 
     sync_cmd = [
@@ -1699,7 +1701,7 @@ def main() -> int:
         sync_cmd.extend(["--control-note", args.control_note])
     if args.research_mode:
         sync_cmd.extend(["--research-mode", args.research_mode])
-    subprocess.run(sync_cmd, check=True)
+    subprocess.run(sync_cmd, check=True, stdin=subprocess.DEVNULL)
 
     topic_runtime_root = knowledge_root / "runtime" / "topics" / topic_slug
     topic_state = load_json(topic_runtime_root / "topic_state.json")
@@ -1717,7 +1719,7 @@ def main() -> int:
         ]
         for query in args.skill_query:
             skill_cmd.extend(["--query", query])
-        subprocess.run(skill_cmd, check=True)
+        subprocess.run(skill_cmd, check=True, stdin=subprocess.DEVNULL)
 
     action_queue, queue_meta = materialize_action_queue(
         topic_state,
@@ -1797,8 +1799,9 @@ def main() -> int:
             args.updated_by,
         ],
         check=True,
+        stdin=subprocess.DEVNULL,
     )
-    subprocess.run(sync_cmd, check=True)
+    subprocess.run(sync_cmd, check=True, stdin=subprocess.DEVNULL)
     topic_state = load_json(topic_runtime_root / "topic_state.json")
     if topic_state is None:
         raise SystemExit(f"Runtime state missing for topic {topic_slug} after decision refresh")
@@ -1826,6 +1829,7 @@ def main() -> int:
             args.updated_by,
         ],
         check=True,
+        stdin=subprocess.DEVNULL,
     )
 
     print(f"Orchestrated topic {topic_slug}")

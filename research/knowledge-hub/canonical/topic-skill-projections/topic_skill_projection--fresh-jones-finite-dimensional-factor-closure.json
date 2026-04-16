@@ -85,5 +85,12 @@
       "candidate_id": "candidate:topic-skill-proj-fresh-jones-finite-dimen-f1233810",
       "promotion_gate_path": "runtime/topics/fresh-jones-finite-dimensional-factor-closure/promotion_gate.json"
     }
-  }
+  },
+  "reuse_receipts": [
+    "topics/reinstall-smoke-claude/L3/runs/2026-04-16-053646-bootstrap/iterations/iteration-001/plan.contract.json",
+    "topics/reinstall-smoke-claude-concrete/L3/runs/2026-04-16-053813-bootstrap/iterations/iteration-001/plan.contract.json",
+    "topics/live-inspect-topic/L3/runs/2026-04-16-092114-bootstrap/iterations/iteration-001/plan.contract.json",
+    "topics/stream-inspect-topic/L3/runs/2026-04-16-092857-bootstrap/iterations/iteration-001/plan.contract.json",
+    "topics/popup-test/L3/runs/2026-04-16-124627-bootstrap/iterations/iteration-001/plan.contract.json"
+  ]
 }

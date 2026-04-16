@@ -42,8 +42,11 @@ from .graph_analysis_tools import (
     render_graph_analysis_markdown,
     write_graph_analysis_history,
 )
+from .l2_reuse_context_support import materialize_reuse_contexts
+from .capability_plane_support import materialize_execution_resource_context
 from .validation_review_service import analytical_cross_check_markdown_lines
 from .topic_truth_root_support import compatibility_projection_path
+from .iteration_journal_support import materialize_iteration_journal
 def _read_json(path: Path) -> dict[str, Any] | None:
     target = path
     if not target.exists():
@@ -1772,6 +1775,27 @@ def ensure_topic_shell_surfaces(
         validation_paths=validation_paths,
         execution_task=existing_execution_task,
     )
+    reuse_contexts = materialize_reuse_contexts(
+        self,
+        topic_slug=topic_slug,
+        updated_by=updated_by,
+        selected_pending_action=selected_pending_action,
+        research_contract=research_contract,
+        validation_contract=validation_contract,
+        topic_skill_projection=topic_skill_projection_surface,
+        latest_run_id=latest_run_id or None,
+    )
+    idea_reuse_context = reuse_contexts["idea"]
+    plan_reuse_context = reuse_contexts["plan"]
+    execution_resource_context = materialize_execution_resource_context(
+        self,
+        topic_slug=topic_slug,
+        updated_by=updated_by,
+        selected_pending_action=selected_pending_action,
+        research_contract=research_contract,
+        validation_contract=validation_contract,
+        topic_skill_projection=topic_skill_projection_surface,
+    )
 
     _write_json(research_paths["json"], research_contract)
     _write_text(research_paths["note"], self._render_research_question_contract_markdown(research_contract))
@@ -1861,6 +1885,25 @@ def ensure_topic_shell_surfaces(
         lean_bridge=lean_bridge,
         dependency_state=dependency_state,
     )
+    iteration_journal = materialize_iteration_journal(
+        self,
+        topic_slug=topic_slug,
+        run_id=latest_run_id or None,
+        updated_by=updated_by,
+        topic_state=resolved_topic_state,
+        selected_pending_action=selected_pending_action,
+        research_contract=research_contract,
+        validation_contract=validation_contract,
+        validation_review_bundle={
+            **validation_review_bundle,
+            "path": validation_review_bundle_json_ref,
+            "note_path": validation_review_bundle_note_ref,
+        },
+        promotion_readiness=promotion_readiness,
+        idea_reuse_context=idea_reuse_context,
+        plan_reuse_context=plan_reuse_context,
+        execution_resource_context=execution_resource_context,
+    )
     return {
         "research_question_contract_path": str(research_paths["json"]),
         "research_question_contract_note_path": str(research_paths["note"]),
@@ -1908,6 +1951,12 @@ def ensure_topic_shell_surfaces(
         "graph_analysis_history_path": str(graph_analysis_artifact_paths["history"]),
         "topic_skill_projection_path": str(topic_skill_projection_paths["json"]),
         "topic_skill_projection_note_path": str(topic_skill_projection_paths["note"]),
+        "idea_reuse_context_path": str(self._runtime_root(topic_slug) / "idea_reuse_context.json"),
+        "idea_reuse_context_note_path": str(self._runtime_root(topic_slug) / "idea_reuse_context.md"),
+        "plan_reuse_context_path": str(self._runtime_root(topic_slug) / "plan_reuse_context.json"),
+        "plan_reuse_context_note_path": str(self._runtime_root(topic_slug) / "plan_reuse_context.md"),
+        "execution_resource_context_path": str(self._runtime_root(topic_slug) / "execution_resource_context.json"),
+        "execution_resource_context_note_path": str(self._runtime_root(topic_slug) / "execution_resource_context.md"),
         "promotion_readiness_path": str(readiness_path),
         "gap_map_path": str(gap_map_path),
         "topic_completion_path": topic_completion["topic_completion_path"],
@@ -1920,6 +1969,16 @@ def ensure_topic_shell_surfaces(
         "followup_reintegration_note_path": followup_reintegration_paths["followup_reintegration_note_path"],
         "followup_gap_writeback_path": followup_gap_writeback_paths["followup_gap_writeback_path"],
         "followup_gap_writeback_note_path": followup_gap_writeback_paths["followup_gap_writeback_note_path"],
+        "iteration_journal_path": str(
+            self._feedback_run_root(topic_slug, latest_run_id) / "iteration_journal.json"
+        )
+        if latest_run_id
+        else "",
+        "iteration_journal_note_path": str(
+            self._feedback_run_root(topic_slug, latest_run_id) / "iteration_journal.md"
+        )
+        if latest_run_id
+        else "",
         "research_question_contract": research_contract,
         "l1_vault": l1_vault["payload"],
         "source_intelligence": source_intelligence_surface,
@@ -1947,6 +2006,10 @@ def ensure_topic_shell_surfaces(
         "statement_compilation": statement_compilation,
         "topic_skill_projection": topic_skill_projection_surface,
         "topic_skill_projection_candidate": topic_skill_projection_candidate,
+        "idea_reuse_context": idea_reuse_context,
+        "plan_reuse_context": plan_reuse_context,
+        "execution_resource_context": execution_resource_context,
         "topic_completion": topic_completion,
         "lean_bridge": lean_bridge,
+        "iteration_journal": iteration_journal,
     }

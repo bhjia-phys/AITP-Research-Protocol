@@ -51,6 +51,7 @@ def pip_show_package(package_name: str) -> dict[str, str]:
         check=False,
         capture_output=True,
         text=True,
+        stdin=subprocess.DEVNULL,
     )
     if completed.returncode != 0:
         return {}
@@ -723,7 +724,13 @@ def migrate_local_install(
     ):
         for uninstall_name in (PACKAGE_DISTRIBUTION_NAME, *LEGACY_PACKAGE_DISTRIBUTION_NAMES):
             uninstall_cmd = [sys.executable, "-m", "pip", "uninstall", "-y", uninstall_name]
-            uninstall_run = subprocess.run(uninstall_cmd, check=False, capture_output=True, text=True)
+            uninstall_run = subprocess.run(
+                uninstall_cmd,
+                check=False,
+                capture_output=True,
+                text=True,
+                stdin=subprocess.DEVNULL,
+            )
             pip_actions.append(
                 {
                     "step": f"uninstall_{uninstall_name.replace('-', '_')}",
@@ -734,7 +741,13 @@ def migrate_local_install(
                 }
             )
         install_cmd = [sys.executable, "-m", "pip", "install", "-e", str(canonical_package_root)]
-        install_run = subprocess.run(install_cmd, check=False, capture_output=True, text=True)
+        install_run = subprocess.run(
+            install_cmd,
+            check=False,
+            capture_output=True,
+            text=True,
+            stdin=subprocess.DEVNULL,
+        )
         if install_run.returncode != 0:
             raise RuntimeError(
                 format_subprocess_failure(

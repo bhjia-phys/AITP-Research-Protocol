@@ -53,7 +53,7 @@ def main() -> int:
         print(f"loop_command={quote_command(loop_command)}")
         return 0
 
-    return subprocess.run(loop_command, check=False).returncode
+    return subprocess.run(loop_command, check=False, stdin=subprocess.DEVNULL).returncode
 
 
 if __name__ == "__main__":

@@ -95,6 +95,14 @@ class SchemaContractTests(unittest.TestCase):
         self.assertIn("blocking_reasons", payload["properties"]["promotion"]["properties"])
         self.assertIn("cited_recovery_required", payload["properties"]["promotion"]["properties"])
         self.assertIn("followup_gap_ids", payload["properties"]["promotion"]["properties"])
+        self.assertIn("origin_topic_refs", payload["properties"])
+        self.assertIn("origin_run_refs", payload["properties"])
+        self.assertIn("validation_receipts", payload["properties"])
+        self.assertIn("reuse_receipts", payload["properties"])
+        self.assertIn("related_consultation_refs", payload["properties"])
+        self.assertIn("applicable_topics", payload["properties"])
+        self.assertIn("failed_topics", payload["properties"])
+        self.assertIn("regime_notes", payload["properties"])
 
     def test_backend_schema_requires_auto_promotion_policy_fields(self) -> None:
         payload = self._read_json("schemas/l2-backend.schema.json")
@@ -459,8 +467,14 @@ class SchemaContractTests(unittest.TestCase):
         retrieval_profiles = self._read_json("canonical/retrieval_profiles.json")
         l3_types = set(retrieval_profiles["profiles"]["l3_candidate_formation"]["preferred_unit_types"])
         l4_types = set(retrieval_profiles["profiles"]["l4_adjudication"]["preferred_unit_types"])
+        idea_reuse_types = set(retrieval_profiles["profiles"]["l3_idea_reuse_quick"]["preferred_unit_types"])
+        plan_reuse_types = set(retrieval_profiles["profiles"]["l3_plan_reuse_standard"]["preferred_unit_types"])
         self.assertIn("topic_skill_projection", l3_types)
         self.assertIn("topic_skill_projection", l4_types)
+        self.assertIn("physical_picture", idea_reuse_types)
+        self.assertNotIn("method", idea_reuse_types)
+        self.assertIn("method", plan_reuse_types)
+        self.assertIn("workflow", plan_reuse_types)
 
     def test_closed_loop_policy_candidate_statuses_match_candidate_schema(self) -> None:
         candidate_payload = self._read_json("feedback/schemas/candidate.schema.json")

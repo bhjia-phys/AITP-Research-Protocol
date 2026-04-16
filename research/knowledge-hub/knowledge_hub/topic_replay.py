@@ -68,6 +68,12 @@ def build_topic_replay_bundle(kernel_root: Path, topic_slug: str) -> dict[str, A
     next_action = read_json(topic_root / "next_action_decision.json") or {}
     transition_history = read_json(topic_root / "transition_history.json") or {}
     promotion_gate = read_json(topic_root / "promotion_gate.json") or {}
+    latest_run_id = str(topic_state.get("latest_run_id") or "").strip()
+    iteration_journal_path = (
+        kernel_root / "topics" / topic_slug / "L3" / "runs" / latest_run_id / "iteration_journal.md"
+        if latest_run_id
+        else None
+    )
     operator_checkpoint = dict(read_json(topic_root / "operator_checkpoint.active.json") or {})
     if operator_checkpoint:
         operator_checkpoint.setdefault(
@@ -302,6 +308,15 @@ def build_topic_replay_bundle(kernel_root: Path, topic_slug: str) -> dict[str, A
     add_step("Follow-up reintegration", "followup_reintegration.jsonl", "Inspect child follow-up returns that are already ready or returned with unresolved parent-side gaps.")
     add_step("Follow-up gap writeback", "followup_gap_writeback.jsonl", "Inspect unresolved child returns that have already written parent-side gap debt.")
     add_step("Validation review bundle", "validation_review_bundle.active.md", "Review the active L4 evidence and specialist artifacts when present.")
+    if iteration_journal_path is not None and iteration_journal_path.exists():
+        reading_path.append(
+            {
+                "label": "Iteration journal",
+                "path": _rel(iteration_journal_path, kernel_root),
+                "reason": "Review the run-local L3-L4 iteration trail before reconstructing the same round from scattered artifacts.",
+                "required": False,
+            }
+        )
     add_step("Topic completion", "topic_completion.md", "Check what the topic currently claims to have completed or promoted.")
     add_step("Promotion gate", "promotion_gate.md", "Inspect the current human approval gate, including any recorded human modifications.")
     add_step("Reusable projection", "topic_skill_projection.active.md", "Inspect reusable route memory when the topic already yielded a projection.")
@@ -318,6 +333,7 @@ def build_topic_replay_bundle(kernel_root: Path, topic_slug: str) -> dict[str, A
         "followup_reintegration_path": _existing_note(topic_root / "followup_reintegration.jsonl", kernel_root=kernel_root),
         "followup_gap_writeback_path": _existing_note(topic_root / "followup_gap_writeback.jsonl", kernel_root=kernel_root),
         "validation_review_bundle_path": _existing_note(topic_root / "validation_review_bundle.active.md", kernel_root=kernel_root),
+        "iteration_journal_path": _existing_note(iteration_journal_path, kernel_root=kernel_root) if iteration_journal_path is not None else None,
         "topic_completion_path": _existing_note(topic_root / "topic_completion.md", kernel_root=kernel_root),
         "promotion_gate_path": _existing_note(topic_root / "promotion_gate.md", kernel_root=kernel_root),
         "topic_skill_projection_path": _existing_note(topic_root / "topic_skill_projection.active.md", kernel_root=kernel_root),

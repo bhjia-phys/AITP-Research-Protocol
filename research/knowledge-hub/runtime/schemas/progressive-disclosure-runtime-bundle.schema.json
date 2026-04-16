@@ -33,12 +33,15 @@
     "pending_decisions",
     "active_research_contract",
     "idea_packet",
+    "idea_reuse_context",
     "operator_checkpoint",
     "validation_review_bundle",
     "promotion_readiness",
     "open_gap_summary",
     "dependency_state",
     "strategy_memory",
+    "plan_reuse_context",
+    "execution_resource_context",
     "collaborator_profile",
     "research_trajectory",
     "mode_learning",
@@ -1216,6 +1219,61 @@
         }
       }
     },
+    "idea_reuse_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context_name",
+        "topic_slug",
+        "read_depth",
+        "status",
+        "query_text",
+        "canonical_hits",
+        "staged_hits",
+        "supporting_refs",
+        "path",
+        "note_path"
+      ],
+      "properties": {
+        "context_version": {"type": "integer"},
+        "context_name": {"type": "string", "minLength": 1},
+        "topic_slug": {"type": "string", "minLength": 1},
+        "read_depth": {"type": "string", "minLength": 1},
+        "retrieval_profile": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "minLength": 1},
+        "query_text": {"type": "string"},
+        "canonical_hits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "authority_level"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "authority_level": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "staged_hits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "authority_level"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "authority_level": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "supporting_refs": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "path": {"type": "string", "minLength": 1},
+        "note_path": {"type": "string", "minLength": 1},
+        "updated_at": {"type": "string", "format": "date-time"},
+        "updated_by": {"type": "string", "minLength": 1}
+      }
+    },
     "operator_checkpoint": {
       "type": "object",
       "additionalProperties": false,
@@ -1526,6 +1584,10 @@
         }
       }
     },
+    "iteration_journal": {
+      "type": "object",
+      "description": "Optional iterative L3/L4 planning and return journal for the active run."
+    },
     "promotion_readiness": {
       "type": "object",
       "additionalProperties": false,
@@ -1774,6 +1836,107 @@
           "type": "string",
           "minLength": 1
         }
+      }
+    },
+    "plan_reuse_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context_name",
+        "topic_slug",
+        "read_depth",
+        "status",
+        "query_text",
+        "canonical_hits",
+        "staged_hits",
+        "supporting_refs",
+        "path",
+        "note_path"
+      ],
+      "properties": {
+        "context_version": {"type": "integer"},
+        "context_name": {"type": "string", "minLength": 1},
+        "topic_slug": {"type": "string", "minLength": 1},
+        "read_depth": {"type": "string", "minLength": 1},
+        "retrieval_profile": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "minLength": 1},
+        "query_text": {"type": "string"},
+        "canonical_hits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "authority_level"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "authority_level": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "staged_hits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "authority_level"],
+            "properties": {
+              "id": {"type": "string", "minLength": 1},
+              "authority_level": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "supporting_refs": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "path": {"type": "string", "minLength": 1},
+        "note_path": {"type": "string", "minLength": 1},
+        "updated_at": {"type": "string", "format": "date-time"},
+        "updated_by": {"type": "string", "minLength": 1}
+      }
+    },
+    "execution_resource_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "context_name",
+        "topic_slug",
+        "read_depth",
+        "status",
+        "query_text",
+        "recommended_server",
+        "recommended_environment",
+        "recommended_tool_ids",
+        "relevant_cards",
+        "path",
+        "note_path"
+      ],
+      "properties": {
+        "context_version": {"type": "integer"},
+        "context_name": {"type": "string", "minLength": 1},
+        "topic_slug": {"type": "string", "minLength": 1},
+        "read_depth": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "minLength": 1},
+        "query_text": {"type": "string"},
+        "recommended_server": {"type": "object"},
+        "recommended_environment": {"type": "object"},
+        "recommended_tool_ids": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "relevant_cards": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["capability_kind", "capability_id"],
+            "properties": {
+              "capability_kind": {"type": "string", "minLength": 1},
+              "capability_id": {"type": "string", "minLength": 1}
+            }
+          }
+        },
+        "path": {"type": "string", "minLength": 1},
+        "note_path": {"type": "string", "minLength": 1},
+        "updated_at": {"type": "string", "format": "date-time"},
+        "updated_by": {"type": "string", "minLength": 1}
       }
     },
     "collaborator_profile": {

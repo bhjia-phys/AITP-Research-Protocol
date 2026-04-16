@@ -140,8 +140,10 @@ The Python package `aitp-kernel` provides all runtime services. Key modules:
 | `l1_vault_support.py` | L1 three-layer vault materialization |
 | `l2_compiler.py` | L2 knowledge graph compilation |
 | `l2_graph.py` | L2 knowledge graph queries |
+| `l2_reuse_context_support.py` | Progressive L3 reuse contexts over global L2 |
 | `l2_staging.py` | L2 staging before promotion |
 | `l2_hygiene.py` | L2 canonical store hygiene |
+| `capability_plane_support.py` | Runtime capability plane for tools, servers, and environments |
 | `lean_bridge_support.py` | Lean 4 bridge for formal theory |
 | `statement_compilation_support.py` | Statement compilation before proof repair |
 | `validation_review_service.py` | L4 review bundle orchestration |
@@ -209,6 +211,7 @@ The Python package `aitp-kernel` provides all runtime services. Key modules:
 | [L2_STAGING_PROTOCOL.md](../research/knowledge-hub/canonical/L2_STAGING_PROTOCOL.md) | Staging before canonical promotion |
 | [L2_MVP_CONTRACT.md](../research/knowledge-hub/canonical/L2_MVP_CONTRACT.md) | MVP direction contracts |
 | [L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md](../research/knowledge-hub/canonical/L2_PAIRED_BACKEND_MAINTENANCE_PROTOCOL.md) | Paired backend maintenance |
+| `compiled/obsidian_l2/` | Fixed-folder Obsidian-friendly Markdown mirror over canonical L2 |
 
 ---
 

@@ -385,7 +385,13 @@ def dispatch_one(
     write_jsonl(queue_path, queue_rows)
 
     command = ALLOWLIST[dispatch_key](topic_slug, updated_by, running_row.get("handler_args") or {})
-    completed = subprocess.run(command, check=False, capture_output=True, text=True)
+    completed = subprocess.run(
+        command,
+        check=False,
+        capture_output=True,
+        text=True,
+        stdin=subprocess.DEVNULL,
+    )
     refresh_command = None
     refresh_completed = None
     if completed.returncode == 0 and dispatch_key in POST_REFRESH_HANDLERS:
@@ -430,7 +436,13 @@ def dispatch_one(
     write_jsonl(queue_path, queue_rows)
 
     if refresh_command is not None:
-        refresh_completed = subprocess.run(refresh_command, check=False, capture_output=True, text=True)
+        refresh_completed = subprocess.run(
+            refresh_command,
+            check=False,
+            capture_output=True,
+            text=True,
+            stdin=subprocess.DEVNULL,
+        )
         receipt["post_refresh_command"] = quote_command(refresh_command)
         receipt["post_refresh_exit_code"] = refresh_completed.returncode
         receipt["post_refresh_stdout_tail"] = trim_text(refresh_completed.stdout)

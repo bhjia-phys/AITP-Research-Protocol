@@ -88,5 +88,8 @@
       "finite-size only",
       "not a proof of broader code portability"
     ]
-  }
+  },
+  "reuse_receipts": [
+    "topics/reinstall-smoke-claude-concrete/L3/runs/2026-04-16-053813-bootstrap/iterations/iteration-001/plan.contract.json"
+  ]
 }

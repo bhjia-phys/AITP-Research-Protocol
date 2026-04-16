@@ -80,3 +80,26 @@ See:
 - [`AITP_MODE_ENVELOPE_PROTOCOL.md`](AITP_MODE_ENVELOPE_PROTOCOL.md)
 - [`AITP_L3_L4_ITERATIVE_VERIFY_LOOP_PROTOCOL.md`](AITP_L3_L4_ITERATIVE_VERIFY_LOOP_PROTOCOL.md)
 - [`AITP_TRANSITION_AND_BACKEDGE_PROTOCOL.md`](AITP_TRANSITION_AND_BACKEDGE_PROTOCOL.md)
+
+## 12. Markdown-first human review, thin machine contracts
+
+When a surface primarily exists so a human can review, steer, or audit a
+research run, Markdown should carry the full narrative.
+
+JSON and JSONL should remain thin companion contracts only.
+
+Use them for:
+
+- stable ids and statuses,
+- artifact paths and replay pointers,
+- deterministic machine triggers,
+- append-only ledgers,
+- staging and promotion decisions that automation must read without scraping
+  prose.
+
+Do not duplicate full research narratives, long explanations, or human-facing
+judgment in both Markdown and JSON.
+
+For iterative `L3 -> L4 -> L3` research loops, the human should be able to read
+one Markdown-first journal, while machine companions stay narrow enough to be
+validated and replayed safely.

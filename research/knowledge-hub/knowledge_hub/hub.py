@@ -443,6 +443,7 @@ print(json.dumps({{'items': items}}))
             text=True,
             timeout=90,
             env=self._zotero_env(),
+            stdin=subprocess.DEVNULL,
         )
         if proc.returncode != 0:
             raise RuntimeError(proc.stderr.strip() or "zotero semantic search failed")
@@ -468,6 +469,7 @@ print(json.dumps(engine.get_database_status()))
             text=True,
             timeout=60,
             env=self._zotero_env(),
+            stdin=subprocess.DEVNULL,
         )
         if proc.returncode != 0:
             return {

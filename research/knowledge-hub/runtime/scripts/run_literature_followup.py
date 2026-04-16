@@ -171,6 +171,7 @@ def main() -> int:
             check=False,
             capture_output=True,
             text=True,
+            stdin=subprocess.DEVNULL,
         )
         if completed.returncode == 0:
             registered_arxiv_ids.append(arxiv_id)

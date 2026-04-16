@@ -63,6 +63,34 @@ Use them for:
 
 Do not treat a machine-facing JSON file as the only durable operator surface when the workflow requires human review or steering.
 
+### 4.1 Thin machine contract rule
+
+When a topic-owned surface is primarily for human review, planning, execution
+audit, or later continuation:
+
+- the Markdown file should own the full narrative,
+- the companion JSON should stay thin and machine-facing.
+
+Thin JSON means:
+
+- stable ids,
+- status fields,
+- artifact paths,
+- machine triggers,
+- replay inputs,
+- staging or promotion decisions that automation must read deterministically.
+
+It should not carry a second copy of the full research narrative.
+
+This rule applies especially to run-local `L3 -> L4 -> L3` iteration surfaces:
+
+- detailed plans,
+- returned-result summaries,
+- synthesis and staging decisions,
+- human-audit journals.
+
+Those should be Markdown-first surfaces with thin machine companions.
+
 ## 5. Compatibility Projection Rule
 
 Legacy paths such as these may still exist during migration:

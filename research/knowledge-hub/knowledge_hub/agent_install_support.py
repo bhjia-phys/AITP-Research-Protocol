@@ -56,11 +56,17 @@ def install_codex_mcp(service: Any, *, force: bool, mcp_profile: str = "full") -
 
     server_name = service._mcp_server_name(mcp_profile)
     get_cmd = [codex, "mcp", "get", server_name]
-    exists = subprocess.run(get_cmd, check=False, capture_output=True, text=True)
+    exists = subprocess.run(get_cmd, check=False, capture_output=True, text=True, stdin=subprocess.DEVNULL)
     if exists.returncode == 0:
         if not force:
             return [{"agent": "codex", "path": str(Path.home() / ".codex" / "config.toml"), "kind": "mcp-server"}]
-        subprocess.run([codex, "mcp", "remove", server_name], check=False, capture_output=True, text=True)
+        subprocess.run(
+            [codex, "mcp", "remove", server_name],
+            check=False,
+            capture_output=True,
+            text=True,
+            stdin=subprocess.DEVNULL,
+        )
 
     add_cmd = [codex, "mcp", "add", server_name]
     for key, value in service._mcp_environment(mcp_profile=mcp_profile).items():
@@ -83,7 +89,13 @@ def install_openclaw_mcp(
 
     server_name = service._mcp_server_name(mcp_profile)
     if force:
-        subprocess.run([mcporter, "config", "remove", server_name], check=False, capture_output=True, text=True)
+        subprocess.run(
+            [mcporter, "config", "remove", server_name],
+            check=False,
+            capture_output=True,
+            text=True,
+            stdin=subprocess.DEVNULL,
+        )
 
     command = [mcporter, "config", "add", server_name, "--command", service._resolve_aitp_mcp_command()[0]]
     for arg in service._resolve_aitp_mcp_command()[1:]:

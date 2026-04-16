@@ -67,6 +67,15 @@ def runtime_surface_roles(service: Any, topic_slug: str) -> dict[str, Any]:
             "validation_contract_human": service._relativize(service._validation_contract_paths(topic_slug)["note"]),
             "promotion_readiness_human": service._relativize(service._promotion_readiness_path(topic_slug)),
             "gap_map_human": service._relativize(service._gap_map_path(topic_slug)),
+            "iteration_journal_human": service._relativize(
+                service._feedback_run_root(
+                    topic_slug,
+                    str((service.get_runtime_state(topic_slug)).get("latest_run_id") or ""),
+                )
+                / "iteration_journal.md"
+            )
+            if str((service.get_runtime_state(topic_slug)).get("latest_run_id") or "").strip()
+            else "",
             "collaborator_profile_machine": service._relativize(runtime_root / "collaborator_profile.active.json"),
             "collaborator_profile_human": service._relativize(runtime_root / "collaborator_profile.active.md"),
             "topic_completion_human": service._relativize(topic_completion_paths["note"]),

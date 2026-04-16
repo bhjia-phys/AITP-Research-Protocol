@@ -126,6 +126,8 @@ def _canonical_mirror_payload(
 
     candidate = context["candidate"]
     source_row = context.get("source_row") or {}
+    packet_paths = context["packet_paths"]
+    consultation_paths = artifacts["consultation_paths"]
     timestamp = _now_iso()
     source_artifacts = []
     locator = source_row.get("locator") or {}
@@ -143,15 +145,73 @@ def _canonical_mirror_payload(
     l4_checks = self._dedupe_strings(
         [
             self._relativize(self._promotion_gate_paths(topic_slug)["json"]),
-            self._relativize(context["packet_paths"]["merge_report"]),
-            self._relativize(Path(artifacts["consultation_paths"]["consultation_result_path"])),
-            self._relativize(context["packet_paths"]["coverage_ledger"])
-            if context["packet_paths"]["coverage_ledger"].exists()
+            self._relativize(packet_paths["merge_report"]),
+            self._relativize(Path(consultation_paths["consultation_result_path"])),
+            self._relativize(packet_paths["coverage_ledger"])
+            if packet_paths["coverage_ledger"].exists()
             else "",
-            self._relativize(context["packet_paths"]["formal_theory_review"])
-            if context["packet_paths"]["formal_theory_review"].exists()
+            self._relativize(packet_paths["formal_theory_review"])
+            if packet_paths["formal_theory_review"].exists()
             else "",
         ]
+    )
+    origin_topic_refs = self._dedupe_strings([f"topics/{topic_slug}"])
+    origin_run_refs = self._dedupe_strings(
+        [
+            self._relativize(self._feedback_run_root(topic_slug, context["resolved_run_id"])),
+            self._relativize(self._validation_run_root(topic_slug, context["resolved_run_id"])),
+            self._relativize(packet_paths["root"]),
+        ]
+    )
+    validation_receipts = self._dedupe_strings(
+        [
+            self._relativize(Path(consultation_paths["consultation_result_path"])),
+            self._relativize(packet_paths["merge_report"]),
+            self._relativize(self._promotion_gate_paths(topic_slug)["json"]),
+            self._relativize(packet_paths["regression_gate"]) if packet_paths["regression_gate"].exists() else "",
+            self._relativize(packet_paths["coverage_ledger"]) if packet_paths["coverage_ledger"].exists() else "",
+            self._relativize(packet_paths["formal_theory_review"])
+            if packet_paths["formal_theory_review"].exists()
+            else "",
+            self._relativize(packet_paths["analytical_review"]) if packet_paths["analytical_review"].exists() else "",
+            *[
+                str(path).strip()
+                for path in (context["runtime_schema_context"].get("artifact_paths") or {}).values()
+                if str(path).strip()
+            ],
+        ]
+    )
+    related_consultation_refs = self._dedupe_strings(
+        [
+            self._relativize(Path(consultation_paths["consultation_request_path"])),
+            self._relativize(Path(consultation_paths["consultation_result_path"])),
+            self._relativize(Path(consultation_paths["consultation_application_path"])),
+            self._relativize(Path(consultation_paths["consultation_index_path"])),
+        ]
+    )
+    applicable_topics = self._dedupe_strings([str(candidate.get("topic_slug") or "").strip(), topic_slug])
+    failed_topics = self._dedupe_strings(
+        [str(item) for item in (candidate.get("failed_topics") or context["regression_summary"].get("failed_topics") or [])]
+    )
+    regime_notes = self._dedupe_strings(
+        [
+            str(item) for item in (context["regression_summary"].get("blocking_reasons") or []) if str(item).strip()
+        ]
+        + [
+            f"followup-gap:{item}"
+            for item in (context["regression_summary"].get("followup_gap_ids") or [])
+            if str(item).strip()
+        ]
+        + (
+            ["split-required-before-broader-reuse"]
+            if bool(context["regression_summary"].get("split_required"))
+            else []
+        )
+        + (
+            ["citation-recovery-required-before-broader-reuse"]
+            if bool(context["regression_summary"].get("cited_recovery_required"))
+            else []
+        )
     )
 
     return {
@@ -228,6 +288,14 @@ def _canonical_mirror_payload(
                 if str(item).strip() and str(item).strip() != str(context["target_unit_id"])
             ]
         ),
+        "origin_topic_refs": origin_topic_refs,
+        "origin_run_refs": origin_run_refs,
+        "validation_receipts": validation_receipts,
+        "reuse_receipts": [],
+        "related_consultation_refs": related_consultation_refs,
+        "applicable_topics": applicable_topics,
+        "failed_topics": failed_topics,
+        "regime_notes": regime_notes,
         "related_units": self._dedupe_strings(
             [str(ref.get("id") or "").strip() for ref in (candidate.get("origin_refs") or [])]
         ),
@@ -238,9 +306,9 @@ def _canonical_mirror_payload(
             "candidate_id": candidate_id,
             "candidate_type": str(candidate.get("candidate_type") or ""),
             "source_manifest_path": str(artifacts["manifest_path"]),
-            "merge_report_path": self._relativize(context["packet_paths"]["merge_report"]),
+            "merge_report_path": self._relativize(packet_paths["merge_report"]),
             "consultation_result_path": self._relativize(
-                Path(artifacts["consultation_paths"]["consultation_result_path"])
+                Path(consultation_paths["consultation_result_path"])
             ),
             "review_artifacts": context["review_artifacts_payload"],
         },

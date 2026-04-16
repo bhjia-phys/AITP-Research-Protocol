@@ -48,6 +48,88 @@ Keep the human explanation in:
 
 - `topics/<topic_slug>/L3/runs/<run_id>/next_actions.contract.md`
 
+## 1.1 L3-L4 iteration journal contract
+
+Paths:
+
+- `topics/<topic_slug>/L3/runs/<run_id>/iteration_journal.md`
+- `topics/<topic_slug>/L3/runs/<run_id>/iteration_journal.json`
+- `topics/<topic_slug>/L3/runs/<run_id>/iterations/<iteration_id>/plan.md`
+- `topics/<topic_slug>/L3/runs/<run_id>/iterations/<iteration_id>/plan.contract.json`
+- `topics/<topic_slug>/L3/runs/<run_id>/iterations/<iteration_id>/l4_return.md`
+- `topics/<topic_slug>/L3/runs/<run_id>/iterations/<iteration_id>/l4_return.json`
+- `topics/<topic_slug>/L3/runs/<run_id>/iterations/<iteration_id>/l3_synthesis.md`
+- `topics/<topic_slug>/L3/runs/<run_id>/iterations/<iteration_id>/l3_synthesis.json`
+
+Purpose:
+
+- let one research `run` hold multiple `L3 -> L4 -> L3` cycles,
+- give humans one Markdown-first audit trail for the whole run,
+- keep machine-readable state thin enough for replay, routing, and adapter use.
+
+Journal rules:
+
+- `iteration_journal.md` is the primary human-facing run journal,
+- `iteration_journal.json` stores only run status, current iteration pointer,
+  iteration ids, and stable artifact refs,
+- each iteration folder should separate:
+  - `plan` for the detailed L3 intent,
+  - `l4_return` for the returned execution and review summary,
+  - `l3_synthesis` for the post-return interpretation and staging decision.
+
+Preferred Markdown contents:
+
+- `plan.md`
+  - research objective,
+  - detailed plan,
+  - exact server / runtime / script / parameter notes when relevant,
+  - pass conditions, failure signals, and bounded stop rules.
+- `l4_return.md`
+  - what `L4` actually returned,
+  - links to `execution_task`, `validation_review_bundle`, and
+    `returned_execution_result`,
+  - the human-readable result summary.
+- `l3_synthesis.md`
+  - whether the result is accepted,
+  - whether to continue another iteration,
+  - whether to stage provisional outputs,
+  - why that decision is honest.
+
+Thin JSON rule:
+
+- `plan.contract.json`, `l4_return.json`, and `l3_synthesis.json` should carry
+  only machine-stable ids, statuses, artifact refs, replay inputs, and staging
+  decisions.
+- They should not duplicate the full narrative already present in Markdown.
+
+Minimal `iteration_journal.json` shape:
+
+```json
+{
+  "contract_version": 1,
+  "run_id": "2026-04-16-demo",
+  "topic_slug": "my-topic",
+  "status": "iterating",
+  "current_iteration_id": "iteration-002",
+  "iteration_ids": ["iteration-001", "iteration-002"],
+  "latest_staging_decision": "defer",
+  "latest_paths": {
+    "journal_note_path": "topics/my-topic/L3/runs/2026-04-16-demo/iteration_journal.md",
+    "current_plan_path": "topics/my-topic/L3/runs/2026-04-16-demo/iterations/iteration-002/plan.contract.json",
+    "current_return_path": "topics/my-topic/L3/runs/2026-04-16-demo/iterations/iteration-002/l4_return.json",
+    "current_synthesis_path": "topics/my-topic/L3/runs/2026-04-16-demo/iterations/iteration-002/l3_synthesis.json"
+  }
+}
+```
+
+This journal layer supplements, and does not replace:
+
+- `next_actions.contract.json`,
+- `runtime/execution_task.json`,
+- `runtime/validation_review_bundle.active.json`,
+- `L4/runs/<run_id>/returned_execution_result.json`,
+- canonical staging entries.
+
 ## 2. Runtime decision contract
 
 Path:

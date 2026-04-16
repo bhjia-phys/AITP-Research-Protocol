@@ -91,6 +91,10 @@ from .consultation_followup_support import (
     render_consultation_followup_selection_markdown,
     select_bounded_consultation_candidate,
 )
+from .capability_plane_support import (
+    record_runtime_capability_declaration as persist_runtime_capability_declaration,
+    write_runtime_capability_card as persist_runtime_capability_card,
+)
 from .promotion_gate_support import (
     request_promotion,
     approve_promotion,
@@ -189,6 +193,7 @@ from .runtime_support_matrix import build_runtime_support_matrix
 from .validation_review_service import ValidationReviewService
 from .auto_action_support import execute_auto_actions
 from .auto_promotion_support import auto_promote_candidate
+from .iteration_journal_support import materialize_iteration_journal
 from .analytical_review_support import (
     audit_analytical_review as perform_analytical_review_audit,
 )
@@ -308,6 +313,7 @@ def _git_toplevel_from(path: Path) -> Path | None:
         check=False,
         capture_output=True,
         text=True,
+        stdin=subprocess.DEVNULL,
     )
     if completed.returncode != 0:
         return None
@@ -514,7 +520,15 @@ class AITPService:
         return script_path
 
     def _run(self, argv: list[str]) -> subprocess.CompletedProcess[str]:
-        completed = subprocess.run(argv, check=False, capture_output=True, text=True)
+        # Detach child stdin from MCP/CLI stdio so runtime subprocesses do not
+        # inherit an interactive pipe and stall while bootstrapping topics.
+        completed = subprocess.run(
+            argv,
+            check=False,
+            capture_output=True,
+            text=True,
+            stdin=subprocess.DEVNULL,
+        )
         if completed.returncode != 0:
             raise RuntimeError(
                 format_subprocess_failure(
@@ -1214,7 +1228,7 @@ class AITPService:
         }
 
     def _probe(self, argv: list[str]) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(argv, check=False, capture_output=True, text=True)
+        return subprocess.run(argv, check=False, capture_output=True, text=True, stdin=subprocess.DEVNULL)
 
     def _resolve_run_id(self, topic_slug: str, run_id: str | None) -> str | None:
         if run_id:
@@ -7467,6 +7481,7 @@ class AITPService:
         human_request: str | None = None,
         load_profile: str | None = None,
     ) -> dict[str, Any]:
+        existing_topic_state = self.get_runtime_state(topic_slug)
         protocol_paths = self._materialize_runtime_protocol_bundle(
             topic_slug=topic_slug,
             updated_by=updated_by,
@@ -7475,7 +7490,8 @@ class AITPService:
         )
         bundle = read_json(Path(protocol_paths["runtime_protocol_path"])) or {}
         topic_state = (
-            read_json(self._runtime_root(topic_slug) / "topic_state.json") or {}
+            read_json(self._runtime_root(topic_slug) / "topic_state.json")
+            or existing_topic_state
         )
         topic_state = self._sync_topic_state_source_presence(
             topic_slug=topic_slug,
@@ -7510,6 +7526,7 @@ class AITPService:
             "pending_decisions": bundle.get("pending_decisions") or {},
             "promotion_readiness": bundle.get("promotion_readiness") or {},
             "protocol_manifest": bundle.get("protocol_manifest") or {},
+            "iteration_journal": bundle.get("iteration_journal") or {},
             "collaborator_profile": bundle.get("collaborator_profile") or {},
             "research_trajectory": bundle.get("research_trajectory") or {},
             "mode_learning": bundle.get("mode_learning") or {},
@@ -7525,6 +7542,7 @@ class AITPService:
         topic_slug: str,
         updated_by: str = "aitp-cli",
     ) -> dict[str, Any]:
+        existing_topic_state = self.get_runtime_state(topic_slug)
         protocol_paths = self._materialize_runtime_protocol_bundle(
             topic_slug=topic_slug,
             updated_by=updated_by,
@@ -7532,7 +7550,8 @@ class AITPService:
         )
         bundle = read_json(Path(protocol_paths["runtime_protocol_path"])) or {}
         topic_state = (
-            read_json(self._runtime_root(topic_slug) / "topic_state.json") or {}
+            read_json(self._runtime_root(topic_slug) / "topic_state.json")
+            or existing_topic_state
         )
         layer_graph = materialize_layer_graph_artifact(
             self,
@@ -7582,6 +7601,7 @@ class AITPService:
             "validation_review_bundle": bundle.get("validation_review_bundle") or {},
             "promotion_readiness": bundle.get("promotion_readiness") or {},
             "protocol_manifest": bundle.get("protocol_manifest") or {},
+            "iteration_journal": bundle.get("iteration_journal") or {},
             "open_gap_summary": bundle.get("open_gap_summary") or {},
             "strategy_memory": bundle.get("strategy_memory") or {},
             "collaborator_profile": bundle.get("collaborator_profile") or {},
@@ -7603,7 +7623,28 @@ class AITPService:
         topic_slug: str,
         updated_by: str = "aitp-cli",
     ) -> dict[str, Any]:
-        status_payload = self.topic_status(topic_slug=topic_slug, updated_by=updated_by)
+        try:
+            status_payload = self.topic_status(topic_slug=topic_slug, updated_by=updated_by)
+        except FileNotFoundError:
+            runtime_root = self._runtime_root(topic_slug)
+            interaction_state = read_json(runtime_root / "interaction_state.json") or {}
+            if not interaction_state:
+                raise
+            human_request = str(interaction_state.get("human_request") or "").strip() or None
+            protocol_paths = self._materialize_runtime_protocol_bundle(
+                topic_slug=topic_slug,
+                updated_by=updated_by,
+                human_request=human_request,
+                load_profile=None,
+            )
+            bundle = read_json(Path(protocol_paths["runtime_protocol_path"])) or {}
+            status_payload = {
+                "topic_slug": topic_slug,
+                "runtime_protocol_note_path": protocol_paths["runtime_protocol_note_path"],
+                "primary_runtime_surfaces": runtime_surface_roles(self, topic_slug),
+                "human_interaction_posture": bundle.get("human_interaction_posture") or {},
+                "operator_checkpoint": bundle.get("operator_checkpoint") or {},
+            }
         pending_decision_points = list_pending_decision_points(topic_slug, kernel_root=self.kernel_root)
         operator_checkpoint = status_payload.get("operator_checkpoint") or {}
         human_posture = status_payload.get("human_interaction_posture") or {}
@@ -7660,6 +7701,7 @@ class AITPService:
         topic_slug: str,
         updated_by: str = "aitp-cli",
     ) -> dict[str, Any]:
+        self.get_runtime_state(topic_slug)
         return topic_layer_graph_payload(
             self, topic_slug=topic_slug, updated_by=updated_by
         )
@@ -7670,6 +7712,7 @@ class AITPService:
         topic_slug: str,
         updated_by: str = "aitp-cli",
     ) -> dict[str, Any]:
+        self.get_runtime_state(topic_slug)
         protocol_paths = self._materialize_runtime_protocol_bundle(
             topic_slug=topic_slug,
             updated_by=updated_by,
@@ -7989,17 +8032,37 @@ class AITPService:
         )
 
         existing_runtime_execution_task = runtime_root / "execution_task.json"
+        existing_runtime_execution_task_payload = read_json(existing_runtime_execution_task)
         execution_artifact_kind = "execution_deferral"
         execution_artifact_path = paths["execution_deferral"]
         execution_artifact_ref = self._relativize(execution_artifact_path)
+        existing_runtime_task_mismatch = bool(
+            existing_runtime_execution_task_payload
+            and selected_action_id
+            and str(
+                existing_runtime_execution_task_payload.get("source_action_id") or ""
+            ).strip()
+            and str(
+                existing_runtime_execution_task_payload.get("source_action_id") or ""
+            ).strip()
+            != selected_action_id
+        )
 
-        if read_json(existing_runtime_execution_task) is not None:
+        if existing_runtime_execution_task_payload is not None and not existing_runtime_task_mismatch:
             execution_artifact_kind = "execution_task"
             execution_artifact_path = existing_runtime_execution_task
             execution_artifact_ref = self._relativize(existing_runtime_execution_task)
         else:
             existing_task_path = self._first_existing_validation_task_path(paths["execution_tasks_dir"])
-            if existing_task_path is not None:
+            existing_task_payload = read_json(existing_task_path) if existing_task_path is not None else None
+            existing_task_mismatch = bool(
+                existing_task_payload
+                and selected_action_id
+                and str(existing_task_payload.get("source_action_id") or "").strip()
+                and str(existing_task_payload.get("source_action_id") or "").strip()
+                != selected_action_id
+            )
+            if existing_task_path is not None and not existing_task_mismatch:
                 execution_artifact_kind = "execution_task"
                 execution_artifact_path = existing_task_path
                 execution_artifact_ref = self._relativize(existing_task_path)
@@ -8008,7 +8071,8 @@ class AITPService:
                 action_type=selected_action_type,
                 action_summary=selected_action_summary,
             ):
-                task_id = bounded_slugify(f"{topic_slug}-{validation_mode}-seed-task")
+                task_seed = selected_action_id or f"{topic_slug}-{validation_mode}-seed-task"
+                task_id = bounded_slugify(task_seed.replace(":", "-"))
                 task_path = paths["execution_tasks_dir"] / f"{task_id}.json"
                 task_ref = self._relativize(task_path)
                 task_payload = {
@@ -8392,6 +8456,28 @@ class AITPService:
             validation_paths["note"],
             self._render_validation_contract_markdown(validation_contract),
         )
+        runtime_root = self._runtime_root(topic_slug)
+        interaction_state = read_json(runtime_root / "interaction_state.json") or {}
+        queue_rows = read_jsonl(runtime_root / "action_queue.jsonl")
+        _, selected_pending_action = self._pending_action_context(
+            queue_rows,
+            interaction_state.get("decision_surface") if isinstance(interaction_state, dict) else {},
+        )
+        iteration_journal = materialize_iteration_journal(
+            self,
+            topic_slug=topic_slug,
+            run_id=latest_run_id or None,
+            updated_by=updated_by,
+            topic_state=self.get_runtime_state(topic_slug),
+            selected_pending_action=selected_pending_action,
+            research_contract=shell_surfaces["research_question_contract"],
+            validation_contract=validation_contract,
+            validation_review_bundle=shell_surfaces["validation_review_bundle"],
+            promotion_readiness=shell_surfaces["promotion_readiness"],
+            idea_reuse_context=shell_surfaces.get("idea_reuse_context") or {},
+            plan_reuse_context=shell_surfaces.get("plan_reuse_context") or {},
+            execution_resource_context=shell_surfaces.get("execution_resource_context") or {},
+        )
         protocol_paths = self._materialize_runtime_protocol_bundle(
             topic_slug=topic_slug,
             updated_by=updated_by,
@@ -8403,6 +8489,7 @@ class AITPService:
             "validation_contract_note_path": str(validation_paths["note"]),
             "validation_contract": validation_contract,
             "l4_package": l4_package,
+            "iteration_journal": iteration_journal,
             "runtime_protocol": protocol_paths,
         }
 
@@ -8737,6 +8824,7 @@ class AITPService:
                     capture_output=True,
                     text=True,
                     cwd=self.repo_root,
+                    stdin=subprocess.DEVNULL,
                 )
                 checker_exit_code = int(completed.returncode)
                 checker_stdout = completed.stdout or ""
@@ -9949,6 +10037,48 @@ class AITPService:
         return seed_l2_demo_direction(
             self.kernel_root,
             direction=direction,
+            updated_by=updated_by,
+        )
+
+    def write_runtime_capability_card(
+        self,
+        *,
+        capability_kind: str,
+        capability_id: str,
+        title: str,
+        summary: str,
+        declaration_source: str,
+        properties: dict[str, Any] | None = None,
+        declaration_text: str | None = None,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        return persist_runtime_capability_card(
+            self.kernel_root,
+            capability_kind=capability_kind,
+            capability_id=capability_id,
+            title=title,
+            summary=summary,
+            declaration_source=declaration_source,
+            properties=properties,
+            declaration_text=declaration_text,
+            updated_by=updated_by,
+        )
+
+    def record_runtime_capability_declaration(
+        self,
+        *,
+        capability_kind: str,
+        declaration_text: str,
+        capability_id: str,
+        title: str,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        return persist_runtime_capability_declaration(
+            self.kernel_root,
+            capability_kind=capability_kind,
+            declaration_text=declaration_text,
+            capability_id=capability_id,
+            title=title,
             updated_by=updated_by,
         )
 

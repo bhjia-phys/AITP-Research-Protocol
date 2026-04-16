@@ -158,6 +158,7 @@ def run_openclaw(profile: str, args: list[str]) -> subprocess.CompletedProcess[s
         check=False,
         capture_output=True,
         text=True,
+        stdin=subprocess.DEVNULL,
     )
 
 

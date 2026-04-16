@@ -85,7 +85,7 @@ def monitor_commands(metadata_path: Path) -> dict[str, str]:
 
 
 def tmux_command(args: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(["tmux", *args], check=False, capture_output=True, text=True)
+    return subprocess.run(["tmux", *args], check=False, capture_output=True, text=True, stdin=subprocess.DEVNULL)
 
 
 def tmux_session_alive(session_name: str) -> bool:

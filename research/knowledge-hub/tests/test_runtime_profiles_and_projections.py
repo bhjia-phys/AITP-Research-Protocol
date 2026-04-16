@@ -1482,6 +1482,120 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertIn("verification_route_selection", active_triggers)
         self.assertNotIn("promotion_intent", active_triggers)
 
+    def test_full_verify_mode_foregrounds_iteration_journal_when_present(self) -> None:
+        shell_surfaces = self._shell_surfaces()
+        journal_note = self._write_surface(
+            "runtime/topics/demo-topic/iteration_journal.md",
+            "# Iteration journal\n",
+        )
+        journal_json = self._write_surface(
+            "runtime/topics/demo-topic/iteration_journal.json",
+            json.dumps(
+                {
+                    "contract_version": 1,
+                    "topic_slug": "demo-topic",
+                    "run_id": "run-001",
+                    "status": "iterating",
+                    "current_iteration_id": "iteration-001",
+                    "iteration_ids": ["iteration-001"],
+                },
+                indent=2,
+            )
+            + "\n",
+        )
+        shell_surfaces["iteration_journal_path"] = journal_json
+        shell_surfaces["iteration_journal_note_path"] = journal_note
+
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
+                result = self.service._materialize_runtime_protocol_bundle(
+                    topic_slug="demo-topic",
+                    updated_by="test",
+                    human_request="continue the current verification lane",
+                    load_profile="full",
+                )
+
+        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        must_read_paths = self._must_read_paths(bundle)
+
+        self.assertIn("runtime/topics/demo-topic/iteration_journal.md", must_read_paths)
+
+    def test_light_profile_foregrounds_reuse_and_execution_resource_contexts_when_present(self) -> None:
+        shell_surfaces = self._shell_surfaces()
+        idea_json = self._write_surface(
+            "runtime/topics/demo-topic/idea_reuse_context.json",
+            json.dumps({"context_name": "idea_reuse_context", "read_depth": "quick"}, indent=2) + "\n",
+        )
+        idea_note = self._write_surface(
+            "runtime/topics/demo-topic/idea_reuse_context.md",
+            "# Idea reuse context\n",
+        )
+        resource_json = self._write_surface(
+            "runtime/topics/demo-topic/execution_resource_context.json",
+            json.dumps({"context_name": "execution_resource_context", "read_depth": "standard"}, indent=2) + "\n",
+        )
+        resource_note = self._write_surface(
+            "runtime/topics/demo-topic/execution_resource_context.md",
+            "# Execution resource context\n",
+        )
+        shell_surfaces["idea_reuse_context_path"] = idea_json
+        shell_surfaces["idea_reuse_context_note_path"] = idea_note
+        shell_surfaces["plan_reuse_context_path"] = self._write_surface(
+            "runtime/topics/demo-topic/plan_reuse_context.json",
+            json.dumps({"context_name": "plan_reuse_context", "read_depth": "standard"}, indent=2) + "\n",
+        )
+        shell_surfaces["plan_reuse_context_note_path"] = self._write_surface(
+            "runtime/topics/demo-topic/plan_reuse_context.md",
+            "# Plan reuse context\n",
+        )
+        shell_surfaces["execution_resource_context_path"] = resource_json
+        shell_surfaces["execution_resource_context_note_path"] = resource_note
+        shell_surfaces["idea_reuse_context"] = {
+            "context_name": "idea_reuse_context",
+            "read_depth": "quick",
+            "status": "ready",
+            "canonical_hits": [{"id": "concept:demo", "authority_level": "canonical"}],
+            "path": "runtime/topics/demo-topic/idea_reuse_context.json",
+            "note_path": "runtime/topics/demo-topic/idea_reuse_context.md",
+        }
+        shell_surfaces["plan_reuse_context"] = {
+            "context_name": "plan_reuse_context",
+            "read_depth": "standard",
+            "status": "ready",
+            "canonical_hits": [{"id": "workflow:demo", "authority_level": "canonical"}],
+            "path": "runtime/topics/demo-topic/plan_reuse_context.json",
+            "note_path": "runtime/topics/demo-topic/plan_reuse_context.md",
+        }
+        shell_surfaces["execution_resource_context"] = {
+            "context_name": "execution_resource_context",
+            "read_depth": "standard",
+            "status": "ready",
+            "recommended_server": {"capability_id": "server:el"},
+            "recommended_tool_ids": ["tool:tfim-exact-diagonalization"],
+            "path": "runtime/topics/demo-topic/execution_resource_context.json",
+            "note_path": "runtime/topics/demo-topic/execution_resource_context.md",
+        }
+
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
+                result = self.service._materialize_runtime_protocol_bundle(
+                    topic_slug="demo-topic",
+                    updated_by="test",
+                    human_request="continue this topic",
+                    load_profile="light",
+                )
+
+        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        must_read_paths = self._must_read_paths(bundle)
+
+        self.assertIn("runtime/topics/demo-topic/idea_reuse_context.md", must_read_paths)
+        self.assertIn("runtime/topics/demo-topic/execution_resource_context.md", must_read_paths)
+        self.assertEqual(bundle["idea_reuse_context"]["read_depth"], "quick")
+        self.assertEqual(
+            bundle["execution_resource_context"]["recommended_server"]["capability_id"],
+            "server:el",
+        )
+
     def test_full_verify_mode_foregrounds_post_promotion_formalization_surfaces(self) -> None:
         shell_surfaces = self._shell_surfaces()
         shell_surfaces["statement_compilation"] = {

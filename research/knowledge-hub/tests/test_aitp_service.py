@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import shutil
 import tempfile
 import textwrap
@@ -1435,10 +1436,13 @@ class AITPServiceTests(unittest.TestCase):
         )
         self.assertEqual(payload["minimal_execution_brief"]["queue_source"], "heuristic")
         self.assertEqual(payload["load_profile"], "light")
-        self.assertEqual(len(payload["must_read_now"]), 3)
+        must_read_paths = [row["path"] for row in payload["must_read_now"]]
         self.assertEqual(payload["must_read_now"][0]["path"], "topics/demo-topic/runtime/topic_dashboard.md")
         self.assertEqual(payload["must_read_now"][1]["path"], "topics/demo-topic/runtime/research_question.contract.md")
-        self.assertEqual(payload["must_read_now"][2]["path"], "topics/demo-topic/runtime/graph_analysis.md")
+        self.assertIn("topics/demo-topic/runtime/graph_analysis.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/idea_reuse_context.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/execution_resource_context.md", must_read_paths)
+        self.assertIn("topics/demo-topic/L3/runs/2026-03-13-demo/iteration_journal.md", must_read_paths)
         self.assertEqual(payload["minimal_execution_brief"]["open_next"], "topics/demo-topic/runtime/topic_dashboard.md")
         self.assertFalse(any(row["path"].endswith("operator_console.md") for row in payload["must_read_now"]))
         self.assertFalse(any(row["path"] == "RESEARCH_EXECUTION_GUARDRAILS.md" for row in payload["must_read_now"]))
@@ -1813,6 +1817,42 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue((self.kernel_root / payload["research_trajectory"]["path"]).exists())
         self.assertTrue((self.kernel_root / payload["research_trajectory"]["note_path"]).exists())
         self.assertTrue(any(row["path"].endswith("research_trajectory.active.md") for row in payload["must_read_now"]))
+
+    def test_topic_status_raises_for_missing_topic_instead_of_materializing_scope_checkpoint(self) -> None:
+        missing_runtime_root = self.service._runtime_root("missing-topic")
+
+        with self.assertRaises(FileNotFoundError):
+            self.service.topic_status(topic_slug="missing-topic", updated_by="test")
+
+        self.assertFalse((missing_runtime_root / "topic_state.json").exists())
+        self.assertFalse((missing_runtime_root / "operator_checkpoint.active.json").exists())
+
+    def test_topic_next_raises_for_missing_topic_instead_of_materializing_shell(self) -> None:
+        missing_runtime_root = self.service._runtime_root("missing-topic")
+
+        with self.assertRaises(FileNotFoundError):
+            self.service.topic_next(topic_slug="missing-topic", updated_by="test")
+
+        self.assertFalse((missing_runtime_root / "topic_state.json").exists())
+        self.assertFalse((missing_runtime_root / "runtime_protocol.generated.json").exists())
+
+    def test_topic_layer_graph_raises_for_missing_topic_instead_of_materializing_shell(self) -> None:
+        missing_runtime_root = self.service._runtime_root("missing-topic")
+
+        with self.assertRaises(FileNotFoundError):
+            self.service.topic_layer_graph(topic_slug="missing-topic", updated_by="test")
+
+        self.assertFalse((missing_runtime_root / "topic_state.json").exists())
+        self.assertFalse((missing_runtime_root / "layer_graph.generated.json").exists())
+
+    def test_refresh_runtime_context_raises_for_missing_topic_instead_of_materializing_shell(self) -> None:
+        missing_runtime_root = self.service._runtime_root("missing-topic")
+
+        with self.assertRaises(FileNotFoundError):
+            self.service.refresh_runtime_context(topic_slug="missing-topic", updated_by="test")
+
+        self.assertFalse((missing_runtime_root / "topic_state.json").exists())
+        self.assertFalse((missing_runtime_root / "runtime_protocol.generated.json").exists())
 
     def test_topic_status_surfaces_relevant_strategy_memory(self) -> None:
         runtime_root = self._write_runtime_state()
@@ -4059,6 +4099,439 @@ class AITPServiceTests(unittest.TestCase):
             "benchmark_or_validation_route_choice",
         )
 
+    def test_prepare_verification_numeric_materializes_iteration_journal_surfaces(self) -> None:
+        runtime_root = self._write_runtime_state(run_id="run-iteration")
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Run the bounded benchmark lane for the active topic.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:benchmark",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:benchmark",
+                    "status": "pending",
+                    "action_type": "manual_followup",
+                    "summary": "Run the bounded benchmark lane for the active topic.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        self.service.prepare_verification(
+            topic_slug="demo-topic",
+            mode="numeric",
+        )
+
+        run_root = self._feedback_run_root("demo-topic", "run-iteration")
+        journal_json_path = run_root / "iteration_journal.json"
+        journal_note_path = run_root / "iteration_journal.md"
+        iteration_root = run_root / "iterations" / "iteration-001"
+
+        self.assertTrue(journal_json_path.exists())
+        self.assertTrue(journal_note_path.exists())
+        self.assertTrue((iteration_root / "plan.md").exists())
+        self.assertTrue((iteration_root / "plan.contract.json").exists())
+        self.assertTrue((iteration_root / "l4_return.md").exists())
+        self.assertTrue((iteration_root / "l4_return.json").exists())
+        self.assertTrue((iteration_root / "l3_synthesis.md").exists())
+        self.assertTrue((iteration_root / "l3_synthesis.json").exists())
+
+        journal_payload = json.loads(journal_json_path.read_text(encoding="utf-8"))
+        self.assertEqual(journal_payload["run_id"], "run-iteration")
+        self.assertEqual(journal_payload["status"], "iterating")
+        self.assertEqual(journal_payload["current_iteration_id"], "iteration-001")
+        self.assertEqual(journal_payload["iteration_ids"], ["iteration-001"])
+        self.assertTrue(
+            journal_payload["latest_paths"]["current_plan_path"].endswith(
+                "topics/demo-topic/L3/runs/run-iteration/iterations/iteration-001/plan.contract.json"
+            )
+        )
+
+        plan_payload = json.loads((iteration_root / "plan.contract.json").read_text(encoding="utf-8"))
+        self.assertEqual(plan_payload["status"], "planned")
+        self.assertEqual(plan_payload["selected_action_id"], "action:demo-topic:benchmark")
+        self.assertEqual(plan_payload["assigned_runtime"], "codex")
+        self.assertEqual(plan_payload["surface"], "numerical")
+        self.assertNotIn("plan_markdown", plan_payload)
+        self.assertNotIn("narrative", plan_payload)
+
+        journal_note = journal_note_path.read_text(encoding="utf-8")
+        self.assertIn("## Iterations", journal_note)
+        self.assertIn("iteration-001", journal_note)
+        self.assertIn("plan.md", journal_note)
+
+    def test_ensure_topic_shell_surfaces_updates_iteration_journal_from_returned_result(self) -> None:
+        runtime_root = self._write_runtime_state(run_id="run-iteration")
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Continue after inspecting the returned bounded benchmark result.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:benchmark",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:benchmark",
+                    "status": "pending",
+                    "action_type": "proof_review",
+                    "summary": "Inspect the returned benchmark result and decide whether another bounded iteration is needed.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        self.service.prepare_verification(
+            topic_slug="demo-topic",
+            mode="numeric",
+        )
+
+        returned_result_path = (
+            self._validation_run_root("demo-topic", "run-iteration")
+            / "returned_execution_result.json"
+        )
+        returned_result_path.parent.mkdir(parents=True, exist_ok=True)
+        returned_result_path.write_text(
+            json.dumps(
+                {
+                    "result_id": "result:iteration-001",
+                    "status": "partial",
+                    "summary": "The first benchmark closed one bounded observable but still leaves a larger-system comparison unresolved.",
+                    "updated_at": "2026-04-16T10:00:00+08:00",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "run-iteration",
+                    "resume_stage": "L3",
+                    "pointers": {
+                        "returned_execution_result_path": "topics/demo-topic/L4/runs/run-iteration/returned_execution_result.json",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.ensure_topic_shell_surfaces(
+            topic_slug="demo-topic",
+            updated_by="aitp-cli",
+        )
+
+        iteration_root = self._feedback_run_root("demo-topic", "run-iteration") / "iterations" / "iteration-001"
+        l4_return_payload = json.loads((iteration_root / "l4_return.json").read_text(encoding="utf-8"))
+        synthesis_payload = json.loads((iteration_root / "l3_synthesis.json").read_text(encoding="utf-8"))
+        journal_payload = json.loads(
+            (self._feedback_run_root("demo-topic", "run-iteration") / "iteration_journal.json").read_text(encoding="utf-8")
+        )
+
+        self.assertEqual(l4_return_payload["status"], "returned")
+        self.assertEqual(l4_return_payload["returned_result_status"], "partial")
+        self.assertTrue(
+            l4_return_payload["returned_execution_result_path"].endswith(
+                "topics/demo-topic/L4/runs/run-iteration/returned_execution_result.json"
+            )
+        )
+        self.assertEqual(synthesis_payload["status"], "summarized")
+        self.assertEqual(synthesis_payload["conclusion_status"], "continue_iteration")
+        self.assertEqual(synthesis_payload["staging_decision"], "defer")
+        self.assertEqual(journal_payload["latest_conclusion_status"], "continue_iteration")
+        self.assertEqual(journal_payload["latest_staging_decision"], "defer")
+        self.assertEqual(payload["iteration_journal"]["latest_conclusion_status"], "continue_iteration")
+
+        synthesis_note = (iteration_root / "l3_synthesis.md").read_text(encoding="utf-8")
+        self.assertIn("continue_iteration", synthesis_note)
+        self.assertIn("larger-system comparison unresolved", synthesis_note)
+
+    def test_ensure_topic_shell_surfaces_stages_ready_iteration_result_for_l2_review(self) -> None:
+        runtime_root = self._write_runtime_state(run_id="run-iteration")
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Review the completed bounded benchmark and preserve the conclusion for L2 review.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:benchmark",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:benchmark",
+                    "status": "pending",
+                    "action_type": "proof_review",
+                    "summary": "Inspect the completed benchmark result and preserve the conclusion for staging review.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        self.service.prepare_verification(
+            topic_slug="demo-topic",
+            mode="numeric",
+        )
+
+        returned_result_path = (
+            self._validation_run_root("demo-topic", "run-iteration")
+            / "returned_execution_result.json"
+        )
+        returned_result_path.parent.mkdir(parents=True, exist_ok=True)
+        returned_result_path.write_text(
+            json.dumps(
+                {
+                    "result_id": "result:iteration-001",
+                    "status": "success",
+                    "summary": "The bounded benchmark closed within tolerance and no further bounded rerun is required.",
+                    "updated_at": "2026-04-16T10:05:00+08:00",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "run-iteration",
+                    "resume_stage": "L3",
+                    "pointers": {
+                        "returned_execution_result_path": "topics/demo-topic/L4/runs/run-iteration/returned_execution_result.json",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.ensure_topic_shell_surfaces(
+            topic_slug="demo-topic",
+            updated_by="aitp-cli",
+        )
+
+        iteration_root = self._feedback_run_root("demo-topic", "run-iteration") / "iterations" / "iteration-001"
+        synthesis_payload = json.loads((iteration_root / "l3_synthesis.json").read_text(encoding="utf-8"))
+        journal_payload = json.loads(
+            (self._feedback_run_root("demo-topic", "run-iteration") / "iteration_journal.json").read_text(encoding="utf-8")
+        )
+
+        self.assertEqual(synthesis_payload["conclusion_status"], "ready_for_staging_review")
+        self.assertEqual(synthesis_payload["staging_decision"], "staged_provisionally")
+        self.assertEqual(journal_payload["status"], "awaiting_human_review")
+        self.assertEqual(journal_payload["latest_staging_decision"], "staged_provisionally")
+        self.assertEqual(payload["iteration_journal"]["latest_staging_decision"], "staged_provisionally")
+
+        staging_entry = synthesis_payload["staging_entry"]
+        self.assertEqual(staging_entry["entry_kind"], "iteration_result")
+        self.assertEqual(staging_entry["topic_slug"], "demo-topic")
+        self.assertEqual(
+            journal_payload["latest_staging_entry"]["entry_id"],
+            staging_entry["entry_id"],
+        )
+
+        staged_entry_path = self.kernel_root.joinpath(*str(staging_entry["path"]).split("/"))
+        self.assertTrue(staged_entry_path.exists())
+        staged_entry_payload = json.loads(staged_entry_path.read_text(encoding="utf-8"))
+        self.assertEqual(staged_entry_payload["entry_id"], staging_entry["entry_id"])
+        self.assertIn(
+            "topics/demo-topic/L4/runs/run-iteration/returned_execution_result.json",
+            staged_entry_payload["source_artifact_paths"],
+        )
+        self.assertIn(
+            "topics/demo-topic/L3/runs/run-iteration/iterations/iteration-001/l3_synthesis.md",
+            staged_entry_payload["source_artifact_paths"],
+        )
+
+        manifest_path = self.kernel_root.joinpath(*str(synthesis_payload["workspace_staging_manifest_path"]).split("/"))
+        self.assertTrue(manifest_path.exists())
+        manifest_payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(manifest_payload["summary"]["total_entries"], 1)
+        self.assertEqual(manifest_payload["entries"][0]["entry_id"], staging_entry["entry_id"])
+
+        synthesis_note = (iteration_root / "l3_synthesis.md").read_text(encoding="utf-8")
+        journal_note = (self._feedback_run_root("demo-topic", "run-iteration") / "iteration_journal.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(staging_entry["entry_id"], synthesis_note)
+        self.assertIn(staging_entry["entry_id"], journal_note)
+
+    def test_prepare_verification_opens_next_iteration_when_selected_action_changes_after_partial_return(self) -> None:
+        runtime_root = self._write_runtime_state(run_id="run-iteration")
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Run the first bounded benchmark lane.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:benchmark-1",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:benchmark-1",
+                    "status": "pending",
+                    "action_type": "manual_followup",
+                    "summary": "Run the first bounded benchmark lane.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        self.service.prepare_verification(
+            topic_slug="demo-topic",
+            mode="numeric",
+        )
+
+        returned_result_path = (
+            self._validation_run_root("demo-topic", "run-iteration")
+            / "returned_execution_result.json"
+        )
+        returned_result_path.parent.mkdir(parents=True, exist_ok=True)
+        returned_result_path.write_text(
+            json.dumps(
+                {
+                    "result_id": "result:iteration-001",
+                    "status": "partial",
+                    "summary": "The first bounded benchmark is incomplete.",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "run-iteration",
+                    "resume_stage": "L3",
+                    "pointers": {
+                        "returned_execution_result_path": "topics/demo-topic/L4/runs/run-iteration/returned_execution_result.json",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        self.service.ensure_topic_shell_surfaces(
+            topic_slug="demo-topic",
+            updated_by="aitp-cli",
+        )
+
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Run the second bounded benchmark lane after the partial return.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:benchmark-2",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:benchmark-2",
+                    "status": "pending",
+                    "action_type": "manual_followup",
+                    "summary": "Run the second bounded benchmark lane.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.prepare_verification(
+            topic_slug="demo-topic",
+            mode="numeric",
+        )
+
+        run_root = self._feedback_run_root("demo-topic", "run-iteration")
+        journal_payload = json.loads((run_root / "iteration_journal.json").read_text(encoding="utf-8"))
+        iteration_two_root = run_root / "iterations" / "iteration-002"
+        iteration_two_plan = json.loads((iteration_two_root / "plan.contract.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(journal_payload["current_iteration_id"], "iteration-002")
+        self.assertEqual(journal_payload["iteration_ids"], ["iteration-001", "iteration-002"])
+        self.assertEqual(iteration_two_plan["selected_action_id"], "action:demo-topic:benchmark-2")
+        self.assertEqual(iteration_two_plan["status"], "planned")
+        self.assertIn("benchmark-2", Path(payload["l4_package"]["execution_artifact_path"]).name)
+
     def test_prepare_verification_proof_materializes_execution_deferral_without_concrete_lane(self) -> None:
         runtime_root = self._write_runtime_state(run_id="run-002")
         (runtime_root / "interaction_state.json").write_text(
@@ -5253,6 +5726,478 @@ class AITPServiceTests(unittest.TestCase):
             self._feedback_run_root("demo-topic", "run-001") / "l2_consultation_log.jsonl"
         )
         self.assertTrue(projection_log.exists())
+
+    def test_ensure_topic_shell_surfaces_materializes_progressive_reuse_contexts_and_execution_resources(self) -> None:
+        self._prepare_l2_graph_kernel()
+        self.service.seed_l2_direction(
+            direction="tfim-benchmark-first",
+            updated_by="test-suite",
+        )
+        runtime_root = self._write_runtime_state(topic_slug="demo-topic", run_id="run-001")
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Write the bounded benchmark-first plan for this topic.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:benchmark-plan",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:benchmark-plan",
+                    "status": "pending",
+                    "action_type": "manual_followup",
+                    "summary": "Plan the benchmark-first exact diagonalization route and choose the right execution resources.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        self.kernel_root.joinpath("runtime", "capabilities", "servers").mkdir(parents=True, exist_ok=True)
+        self.kernel_root.joinpath("runtime", "capabilities", "environments").mkdir(parents=True, exist_ok=True)
+        self.kernel_root.joinpath("runtime", "capabilities", "tools").mkdir(parents=True, exist_ok=True)
+        (self.kernel_root / "runtime" / "capabilities" / "servers" / "server--el.json").write_text(
+            json.dumps(
+                {
+                    "capability_kind": "server",
+                    "capability_id": "server:el",
+                    "title": "EL HPC server",
+                    "summary": "Remote Slurm host for backend-heavy numerical runs.",
+                    "declaration_source": "human_text",
+                    "declaration_text": "EL runs backend-heavy Slurm jobs.",
+                    "status": "declared",
+                    "properties": {
+                        "host_alias": "el",
+                        "scheduler": "slurm",
+                        "allowed_workloads": ["first_principles", "code_method", "toy_model"],
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (self.kernel_root / "runtime" / "capabilities" / "environments" / "environment--el-librpa.json").write_text(
+            json.dumps(
+                {
+                    "capability_kind": "environment",
+                    "capability_id": "environment:el-librpa",
+                    "title": "EL LibRPA environment",
+                    "summary": "Conda/module environment for LibRPA-like numerical workflows.",
+                    "declaration_source": "human_text",
+                    "declaration_text": "Use this environment for backend-heavy numerical workflows.",
+                    "status": "declared",
+                    "properties": {
+                        "environment_name": "el-librpa",
+                        "allowed_workloads": ["first_principles", "code_method", "toy_model"],
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (self.kernel_root / "runtime" / "capabilities" / "tools" / "tool--tfim-ed.json").write_text(
+            json.dumps(
+                {
+                    "capability_kind": "tool",
+                    "capability_id": "tool:tfim-exact-diagonalization",
+                    "title": "TFIM exact diagonalization helper",
+                    "summary": "Bounded benchmark helper for TFIM exact diagonalization checks.",
+                    "declaration_source": "human_text",
+                    "declaration_text": "Use this helper for the benchmark-first exact diagonalization route.",
+                    "status": "declared",
+                    "properties": {
+                        "script_path": "validation/tools/tfim_exact_diagonalization.py",
+                        "allowed_workloads": ["toy_model", "code_method"],
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = self.service.ensure_topic_shell_surfaces(
+            topic_slug="demo-topic",
+            updated_by="test",
+        )
+
+        self.assertIn("idea_reuse_context", payload)
+        self.assertIn("plan_reuse_context", payload)
+        self.assertIn("execution_resource_context", payload)
+        self.assertEqual(payload["idea_reuse_context"]["read_depth"], "quick")
+        self.assertEqual(payload["plan_reuse_context"]["read_depth"], "standard")
+        self.assertEqual(payload["idea_reuse_context"]["retrieval_profile"], "l3_idea_reuse_quick")
+        self.assertEqual(payload["plan_reuse_context"]["retrieval_profile"], "l3_plan_reuse_standard")
+        self.assertTrue(payload["idea_reuse_context"]["canonical_hits"])
+        self.assertEqual(
+            payload["execution_resource_context"]["recommended_server"]["capability_id"],
+            "server:el",
+        )
+        self.assertEqual(
+            payload["execution_resource_context"]["recommended_environment"]["capability_id"],
+            "environment:el-librpa",
+        )
+        self.assertIn(
+            "tool:tfim-exact-diagonalization",
+            payload["execution_resource_context"]["recommended_tool_ids"],
+        )
+        self.assertTrue(Path(payload["idea_reuse_context_path"]).exists())
+        self.assertTrue(Path(payload["plan_reuse_context_path"]).exists())
+        self.assertTrue(Path(payload["execution_resource_context_path"]).exists())
+
+    def test_prepare_verification_plan_contract_carries_explicit_resource_refs(self) -> None:
+        self._prepare_l2_graph_kernel()
+        self.service.seed_l2_direction(
+            direction="tfim-benchmark-first",
+            updated_by="test-suite",
+        )
+        runtime_root = self._write_runtime_state(topic_slug="demo-topic", run_id="run-resources")
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Prepare the bounded benchmark verification plan.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:benchmark",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:benchmark",
+                    "status": "pending",
+                    "action_type": "manual_followup",
+                    "summary": "Run the benchmark-first exact diagonalization route.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        self.kernel_root.joinpath("runtime", "capabilities", "servers").mkdir(parents=True, exist_ok=True)
+        self.kernel_root.joinpath("runtime", "capabilities", "environments").mkdir(parents=True, exist_ok=True)
+        self.kernel_root.joinpath("runtime", "capabilities", "tools").mkdir(parents=True, exist_ok=True)
+        (self.kernel_root / "runtime" / "capabilities" / "servers" / "server--el.json").write_text(
+            json.dumps(
+                {
+                    "capability_kind": "server",
+                    "capability_id": "server:el",
+                    "title": "EL HPC server",
+                    "summary": "Remote Slurm host for backend-heavy numerical runs.",
+                    "declaration_source": "human_text",
+                    "declaration_text": "EL runs backend-heavy Slurm jobs.",
+                    "status": "declared",
+                    "properties": {"allowed_workloads": ["toy_model"]},
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (self.kernel_root / "runtime" / "capabilities" / "environments" / "environment--el-librpa.json").write_text(
+            json.dumps(
+                {
+                    "capability_kind": "environment",
+                    "capability_id": "environment:el-librpa",
+                    "title": "EL LibRPA environment",
+                    "summary": "Environment for numerical workflows.",
+                    "declaration_source": "human_text",
+                    "declaration_text": "Use this environment for benchmark-heavy jobs.",
+                    "status": "declared",
+                    "properties": {"allowed_workloads": ["toy_model"]},
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (self.kernel_root / "runtime" / "capabilities" / "tools" / "tool--tfim-ed.json").write_text(
+            json.dumps(
+                {
+                    "capability_kind": "tool",
+                    "capability_id": "tool:tfim-exact-diagonalization",
+                    "title": "TFIM exact diagonalization helper",
+                    "summary": "Bounded benchmark helper for TFIM exact diagonalization checks.",
+                    "declaration_source": "human_text",
+                    "declaration_text": "Use this helper for the benchmark route.",
+                    "status": "declared",
+                    "properties": {"allowed_workloads": ["toy_model"]},
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        self.service.prepare_verification(
+            topic_slug="demo-topic",
+            mode="numeric",
+        )
+
+        plan_payload = json.loads(
+            (
+                self._feedback_run_root("demo-topic", "run-resources")
+                / "iterations"
+                / "iteration-001"
+                / "plan.contract.json"
+            ).read_text(encoding="utf-8")
+        )
+        self.assertEqual(plan_payload["server_ref"], "server:el")
+        self.assertEqual(plan_payload["environment_ref"], "environment:el-librpa")
+        self.assertIn("tool:tfim-exact-diagonalization", plan_payload["tool_refs"])
+        self.assertEqual(
+            plan_payload["idea_reuse_context_path"],
+            "topics/demo-topic/runtime/idea_reuse_context.json",
+        )
+        self.assertEqual(
+            plan_payload["plan_reuse_context_path"],
+            "topics/demo-topic/runtime/plan_reuse_context.json",
+        )
+        self.assertIn(
+            "concept:tfim-benchmark-first-validation",
+            plan_payload["idea_reuse_unit_ids"],
+        )
+        self.assertIn(
+            "workflow:tfim-benchmark-workflow",
+            plan_payload["plan_reuse_unit_ids"],
+        )
+        self.assertEqual(
+            plan_payload["plan_reuse_note_path"],
+            "topics/demo-topic/runtime/plan_reuse_context.md",
+        )
+        self.assertTrue(plan_payload["reuse_supporting_refs"])
+
+    def test_prepare_verification_backwrites_reuse_receipts_to_canonical_l2_units(self) -> None:
+        self._prepare_l2_graph_kernel()
+        self.service.seed_l2_direction(
+            direction="tfim-benchmark-first",
+            updated_by="test-suite",
+        )
+        runtime_root = self._write_runtime_state(topic_slug="demo-topic", run_id="run-reuse")
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Prepare the bounded benchmark verification plan.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:benchmark",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:benchmark",
+                    "status": "pending",
+                    "action_type": "manual_followup",
+                    "summary": "Run the benchmark-first exact diagonalization route.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        self.service.prepare_verification(
+            topic_slug="demo-topic",
+            mode="numeric",
+        )
+
+        receipt_ref = "topics/demo-topic/L3/runs/run-reuse/iterations/iteration-001/plan.contract.json"
+        workflow_payload = json.loads(
+            (
+                self.kernel_root
+                / "canonical"
+                / "workflows"
+                / "workflow--tfim-benchmark-workflow.json"
+            ).read_text(encoding="utf-8")
+        )
+
+        self.assertIn(receipt_ref, workflow_payload["reuse_receipts"])
+        concept_receipt_hits = []
+        for concept_path in (self.kernel_root / "canonical" / "concepts").glob("*.json"):
+            concept_payload = json.loads(concept_path.read_text(encoding="utf-8"))
+            if receipt_ref in list(concept_payload.get("reuse_receipts") or []):
+                concept_receipt_hits.append(concept_path.name)
+        self.assertTrue(concept_receipt_hits)
+        consult_payload = self.service.consult_l2(
+            query_text="TFIM benchmark workflow",
+            retrieval_profile="l3_candidate_formation",
+            max_primary_hits=5,
+        )
+        workflow_row = next(
+            row for row in consult_payload["primary_hits"] if row["id"] == "workflow:tfim-benchmark-workflow"
+        )
+        self.assertIn(receipt_ref, workflow_row["reuse_receipts"])
+
+    def test_staging_backwrites_effective_reuse_receipts_to_canonical_l2_units(self) -> None:
+        self._prepare_l2_graph_kernel()
+        self.service.seed_l2_direction(
+            direction="tfim-benchmark-first",
+            updated_by="test-suite",
+        )
+        runtime_root = self._write_runtime_state(topic_slug="demo-topic", run_id="run-effective-reuse")
+        (runtime_root / "interaction_state.json").write_text(
+            json.dumps(
+                {
+                    "human_request": "Review the completed bounded benchmark and preserve the conclusion for staging review.",
+                    "decision_surface": {
+                        "selected_action_id": "action:demo-topic:benchmark",
+                        "decision_source": "heuristic",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "action_queue.jsonl").write_text(
+            json.dumps(
+                {
+                    "action_id": "action:demo-topic:benchmark",
+                    "status": "pending",
+                    "action_type": "proof_review",
+                    "summary": "Inspect the completed benchmark result and preserve the conclusion for staging review.",
+                    "auto_runnable": False,
+                    "queue_source": "heuristic",
+                },
+                ensure_ascii=True,
+                separators=(",", ":"),
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        self.service.prepare_verification(
+            topic_slug="demo-topic",
+            mode="numeric",
+        )
+
+        returned_result_path = (
+            self._validation_run_root("demo-topic", "run-effective-reuse")
+            / "returned_execution_result.json"
+        )
+        returned_result_path.parent.mkdir(parents=True, exist_ok=True)
+        returned_result_path.write_text(
+            json.dumps(
+                {
+                    "result_id": "result:iteration-001",
+                    "status": "success",
+                    "summary": "The bounded benchmark closed within tolerance and no further bounded rerun is required.",
+                    "updated_at": "2026-04-16T10:05:00+08:00",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "run-effective-reuse",
+                    "resume_stage": "L3",
+                    "pointers": {
+                        "returned_execution_result_path": "topics/demo-topic/L4/runs/run-effective-reuse/returned_execution_result.json",
+                    },
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        self.service.ensure_topic_shell_surfaces(
+            topic_slug="demo-topic",
+            updated_by="aitp-cli",
+        )
+
+        synthesis_ref = "topics/demo-topic/L3/runs/run-effective-reuse/iterations/iteration-001/l3_synthesis.json"
+        concept_payload = json.loads(
+            (
+                self.kernel_root
+                / "canonical"
+                / "concepts"
+                / "concept--tfim-benchmark-first-validation.json"
+            ).read_text(encoding="utf-8")
+        )
+        workflow_payload = json.loads(
+            (
+                self.kernel_root
+                / "canonical"
+                / "workflows"
+                / "workflow--tfim-benchmark-workflow.json"
+            ).read_text(encoding="utf-8")
+        )
+        synthesis_payload = json.loads(
+            (
+                self._feedback_run_root("demo-topic", "run-effective-reuse")
+                / "iterations"
+                / "iteration-001"
+                / "l3_synthesis.json"
+            ).read_text(encoding="utf-8")
+        )
+        staging_ref = str((synthesis_payload.get("staging_entry") or {}).get("path") or "")
+
+        self.assertIn(synthesis_ref, workflow_payload["reuse_receipts"])
+        self.assertIn(staging_ref, workflow_payload["reuse_receipts"])
+        concept_receipt_hits = []
+        for concept_path in (self.kernel_root / "canonical" / "concepts").glob("*.json"):
+            concept_payload = json.loads(concept_path.read_text(encoding="utf-8"))
+            receipts = list(concept_payload.get("reuse_receipts") or [])
+            if synthesis_ref in receipts and staging_ref in receipts:
+                concept_receipt_hits.append(concept_path.name)
+        self.assertTrue(concept_receipt_hits)
+        consult_payload = self.service.consult_l2(
+            query_text="TFIM benchmark workflow",
+            retrieval_profile="l3_candidate_formation",
+            max_primary_hits=5,
+        )
+        workflow_row = next(
+            row for row in consult_payload["primary_hits"] if row["id"] == "workflow:tfim-benchmark-workflow"
+        )
+        self.assertIn(synthesis_ref, workflow_row["reuse_receipts"])
+        self.assertIn(staging_ref, workflow_row["reuse_receipts"])
 
     def test_select_bounded_consultation_candidate_prefers_topic_local_staged_hits(self) -> None:
         from knowledge_hub.consultation_followup_support import (
@@ -6540,7 +7485,7 @@ class AITPServiceTests(unittest.TestCase):
             install_calls.append((agent, install_mcp))
             return {"installed": [{"agent": agent, "path": f"/tmp/{agent}", "kind": "skill"}]}
 
-        def fake_run(argv, check=False, capture_output=True, text=True):  # noqa: ANN001
+        def fake_run(argv, check=False, capture_output=True, text=True, stdin=None):  # noqa: ANN001
             class Result:
                 def __init__(self, returncode: int, stdout: str = "", stderr: str = "") -> None:
                     self.returncode = returncode
@@ -6633,6 +7578,33 @@ class AITPServiceTests(unittest.TestCase):
         )
         self.assertTrue(result["runtime_convergence_after"]["front_door_runtimes_converged"])
         self.assertEqual(result["runtime_convergence_after"]["ready_runtimes"], ["codex", "claude_code", "opencode"])
+
+    def test_run_detaches_child_process_stdin(self) -> None:
+        recorded: dict[str, object] = {}
+
+        def fake_run(argv, check=False, capture_output=True, text=True, stdin=None):  # noqa: ANN001
+            recorded["argv"] = argv
+            recorded["check"] = check
+            recorded["capture_output"] = capture_output
+            recorded["text"] = text
+            recorded["stdin"] = stdin
+
+            class Result:
+                returncode = 0
+                stdout = ""
+                stderr = ""
+
+            return Result()
+
+        with patch("knowledge_hub.aitp_service.subprocess.run", side_effect=fake_run):
+            completed = self.service._run(["python", "-c", "print('ok')"])
+
+        self.assertEqual(completed.returncode, 0)
+        self.assertEqual(recorded["argv"], ["python", "-c", "print('ok')"])
+        self.assertEqual(recorded["check"], False)
+        self.assertEqual(recorded["capture_output"], True)
+        self.assertEqual(recorded["text"], True)
+        self.assertIs(recorded["stdin"], subprocess.DEVNULL)
 
     def test_doctor_reports_not_installed_when_primary_distribution_missing(self) -> None:
         workspace_root = self.root / "Theoretical-Physics"
@@ -8756,6 +9728,11 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(mirror_payload["unit_type"], "concept")
         self.assertEqual(mirror_payload["promotion"]["canonical_layer"], "L2")
         self.assertIn("backend:theoretical-physics-knowledge-network", mirror_payload["provenance"]["backend_refs"])
+        self.assertEqual(mirror_payload["origin_topic_refs"], ["topics/demo-topic"])
+        self.assertIn("topics/demo-topic/L3/runs/2026-03-13-demo", mirror_payload["origin_run_refs"])
+        self.assertIn("demo-topic", mirror_payload["applicable_topics"])
+        self.assertTrue(any(item.endswith("result.json") for item in mirror_payload["validation_receipts"]))
+        self.assertTrue(any(item.endswith("request.json") for item in mirror_payload["related_consultation_refs"]))
         self.assertEqual(Path(payload["canonical_mirror_path"]), mirror_path)
 
         report_payload = self.service.compile_l2_knowledge_report()
@@ -9056,6 +10033,10 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(unit_payload["translation_readiness"], "candidate")
         self.assertIn("semi-formal AITP Layer 2 unit", unit_payload["trust_boundary"])
         self.assertIsInstance(unit_payload["semi_formal_contract"], list)
+        mirror_payload = json.loads(Path(payload["canonical_mirror_path"]).read_text(encoding="utf-8"))
+        self.assertEqual(mirror_payload["promotion"]["canonical_layer"], "L2_auto")
+        self.assertEqual(mirror_payload["origin_topic_refs"], ["topics/demo-topic"])
+        self.assertTrue(any(item.endswith("result.json") for item in mirror_payload["validation_receipts"]))
         candidate_rows = [
             json.loads(line)
             for line in (self._feedback_run_root("demo-topic", "2026-03-13-demo") / "candidate_ledger.jsonl").read_text(encoding="utf-8").splitlines()

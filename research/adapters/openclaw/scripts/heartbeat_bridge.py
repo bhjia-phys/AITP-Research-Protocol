@@ -139,7 +139,13 @@ def main() -> int:
     }
     write_heartbeat(started_payload, append_history=False)
 
-    completed = subprocess.run(command, check=False, capture_output=True, text=True)
+    completed = subprocess.run(
+        command,
+        check=False,
+        capture_output=True,
+        text=True,
+        stdin=subprocess.DEVNULL,
+    )
     loop_state = read_json(topic_runtime_root(topic_slug) / "loop_state.json") or {}
     final_payload = {
         **started_payload,

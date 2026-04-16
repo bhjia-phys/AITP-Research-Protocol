@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -232,6 +233,56 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertIn("source-layer/scripts/discover_and_register.py", next_actions_text)
         self.assertIn("source-layer/scripts/register_arxiv_source.py", next_actions_text)
         self.assertIn("intake/ARXIV_FIRST_SOURCE_INTAKE.md", next_actions_text)
+
+    def test_orchestrate_topic_main_detaches_subprocess_stdin_for_noninteractive_children(self) -> None:
+        topic_runtime_root = self.knowledge_root / "runtime" / "topics" / "demo-topic"
+        commands: list[dict[str, object]] = []
+
+        def fake_run(command, **kwargs):  # noqa: ANN001, ANN003
+            commands.append({"command": list(command), "stdin": kwargs.get("stdin")})
+            return type(
+                "_Completed",
+                (),
+                {"returncode": 0, "stdout": "", "stderr": ""},
+            )()
+
+        def fake_load_json(path: Path) -> dict | None:
+            if path == topic_runtime_root / "topic_state.json":
+                return {"summary": "Demo topic summary", "latest_run_id": "run-001"}
+            return None
+
+        with patch.object(self.orchestrate_topic, "ensure_topic_shell"):
+            with patch.object(self.orchestrate_topic, "load_json", side_effect=fake_load_json):
+                with patch.object(self.orchestrate_topic, "materialize_action_queue", return_value=([], {})):
+                    with patch.object(self.orchestrate_topic, "build_action_queue_contract_snapshot", return_value={}):
+                        with patch.object(self.orchestrate_topic, "build_interaction_state", return_value={}):
+                            with patch.object(self.orchestrate_topic, "build_operator_console", return_value="console"):
+                                with patch.object(self.orchestrate_topic, "build_agent_brief", return_value="brief"):
+                                    with patch.object(self.orchestrate_topic, "build_action_queue_contract_markdown", return_value="contract"):
+                                        with patch.object(self.orchestrate_topic, "write_json"):
+                                            with patch.object(self.orchestrate_topic, "write_jsonl"):
+                                                with patch.object(self.orchestrate_topic, "write_text"):
+                                                    with patch.object(self.orchestrate_topic.subprocess, "run", side_effect=fake_run):
+                                                        with patch.object(
+                                                            sys,
+                                                            "argv",
+                                                            [
+                                                                "orchestrate_topic.py",
+                                                                "--topic-slug",
+                                                                "demo-topic",
+                                                                "--knowledge-root",
+                                                                str(self.knowledge_root),
+                                                                "--repo-root",
+                                                                str(self.knowledge_root.parent),
+                                                                "--updated-by",
+                                                                "runtime-test",
+                                                            ],
+                                                        ):
+                                                            exit_code = self.orchestrate_topic.main()
+
+        self.assertEqual(exit_code, 0)
+        self.assertGreaterEqual(len(commands), 4)
+        self.assertTrue(all(call["stdin"] is subprocess.DEVNULL for call in commands))
 
     def test_first_run_acceptance_parser_supports_registration_continuation(self) -> None:
         parser = self.first_run_topic_acceptance.build_parser()

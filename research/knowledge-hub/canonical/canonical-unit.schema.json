@@ -347,6 +347,54 @@
         "pattern": "^[a-z][a-z0-9_]*:[a-z0-9][a-z0-9-]*$"
       }
     },
+    "origin_topic_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "origin_run_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "validation_receipts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "reuse_receipts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "related_consultation_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "applicable_topics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "failed_topics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "regime_notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "related_units": {
       "type": "array",
       "items": {

@@ -77,5 +77,10 @@
   ],
   "payload": {
     "bridge_statement": "Bounded benchmark links toy-model physics and code-method memory."
-  }
+  },
+  "reuse_receipts": [
+    "topics/live-inspect-topic/L3/runs/2026-04-16-092114-bootstrap/iterations/iteration-001/plan.contract.json",
+    "topics/stream-inspect-topic/L3/runs/2026-04-16-092857-bootstrap/iterations/iteration-001/plan.contract.json",
+    "topics/popup-test/L3/runs/2026-04-16-124627-bootstrap/iterations/iteration-001/plan.contract.json"
+  ]
 }

@@ -178,7 +178,7 @@ def main() -> int:
         print(f"exit_audit_command={quote_command(exit_audit_command)}")
         return 0
 
-    subprocess.run(orchestrate_command, check=True)
+    subprocess.run(orchestrate_command, check=True, stdin=subprocess.DEVNULL)
 
     runtime_root = topic_runtime_root(topic_slug)
     entry_decision = load_next_action_decision(runtime_root)
@@ -189,10 +189,10 @@ def main() -> int:
 
     dispatch_exit_code = 0
     if args.max_steps > 0 and decision_allows_auto_dispatch(entry_decision):
-        dispatch_completed = subprocess.run(dispatch_command, check=False)
+        dispatch_completed = subprocess.run(dispatch_command, check=False, stdin=subprocess.DEVNULL)
         dispatch_exit_code = dispatch_completed.returncode
 
-    exit_completed = subprocess.run(exit_audit_command, check=False)
+    exit_completed = subprocess.run(exit_audit_command, check=False, stdin=subprocess.DEVNULL)
     exit_decision = load_next_action_decision(runtime_root)
     selected_action = decision_selected_action(exit_decision)
     exit_conformance = str(

@@ -79,6 +79,26 @@ hiding those rules inside handler code.
   - machine-readable reusable execution projection derived from a mature topic when the lane is stable enough
 - `topics/<topic_slug>/runtime/topic_skill_projection.active.md`
   - human-readable topic-skill projection with required reads, route rules, and anti-proxy constraints
+- `topics/<topic_slug>/runtime/idea_reuse_context.json`
+  - quick progressive L2 reuse context for idea shaping and novelty checks
+- `topics/<topic_slug>/runtime/idea_reuse_context.md`
+  - human-readable quick reuse context over global canonical/staging L2 memory, currently driven by retrieval profile `l3_idea_reuse_quick`
+- `topics/<topic_slug>/runtime/plan_reuse_context.json`
+  - standard-depth reusable method/workflow context for concrete L3 planning
+- `topics/<topic_slug>/runtime/plan_reuse_context.md`
+  - human-readable standard reuse context with bounded canonical/staging hits, currently driven by retrieval profile `l3_plan_reuse_standard`
+- `topics/<topic_slug>/runtime/execution_resource_context.json`
+  - machine-readable capability summary for the currently relevant tools, servers, and environments
+- `topics/<topic_slug>/runtime/execution_resource_context.md`
+  - human-readable execution-resource read surface with explicit capability ids
+- `topics/<topic_slug>/L3/runs/<run_id>/iteration_journal.json`
+  - thin machine-facing run journal for one multi-iteration `L3 -> L4 -> L3` round
+- `topics/<topic_slug>/L3/runs/<run_id>/iteration_journal.md`
+  - primary human-readable audit journal over that run's plan, return, and synthesis continuity
+- `topics/<topic_slug>/L3/runs/<run_id>/iterations/<iteration_id>/plan.contract.json`
+  - thin machine-facing plan contract that now carries explicit `idea_reuse_context_path`, `plan_reuse_context_path`, `resource_context_path`, `server_ref`, `environment_ref`, and `tool_refs`
+- `topics/<topic_slug>/L3/runs/<run_id>/iterations/<iteration_id>/plan.md`
+  - human-readable `L3` plan note that exposes the reuse basis and execution-resource basis behind the current bounded plan
 - `topics/<topic_slug>/runtime/statement_compilation.active.json`
   - machine-readable statement-compilation index for bounded declaration skeletons before proof repair
 - `topics/<topic_slug>/runtime/statement_compilation.active.md`
@@ -109,6 +129,10 @@ hiding those rules inside handler code.
   - generated queue-contract snapshot showing the current executable queue in declarative form
 - `topics/<topic_slug>/runtime/action_queue_contract.generated.md`
   - human-readable queue-contract snapshot
+- `runtime/capabilities/registry.json`
+  - machine-readable registry of declared runtime capability cards
+- `runtime/capabilities/{tools,servers,environments,workflows}/`
+  - stable capability-card directories for human-written or natural-language-normalized execution resources
 - `schemas/progressive-disclosure-runtime-bundle.schema.json`
   - public JSON contract for `runtime_protocol.generated.json`
 - `topics/<topic_slug>/runtime/deferred_candidates.json`

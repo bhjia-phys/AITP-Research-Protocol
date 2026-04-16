@@ -187,6 +187,7 @@ def run_deepxiv_cli(*, query: str, max_results: int, deepxiv_bin: str) -> tuple[
         capture_output=True,
         text=True,
         check=False,
+        stdin=subprocess.DEVNULL,
     )
     if completed.returncode != 0:
         detail = completed.stderr.strip() or completed.stdout.strip() or "unknown error"
