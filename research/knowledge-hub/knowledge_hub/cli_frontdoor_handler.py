@@ -72,6 +72,7 @@ def register_frontdoor_commands(subparsers: argparse._SubParsersAction[Any]) -> 
 
     doctor = subparsers.add_parser("doctor", help="Show AITP CLI install status")
     doctor.add_argument("--workspace-root")
+    doctor.add_argument("--strict-l0l1", action="store_true")
     doctor.add_argument("--json", action="store_true")
 
 

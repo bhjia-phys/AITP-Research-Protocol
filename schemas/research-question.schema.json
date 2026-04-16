@@ -43,7 +43,11 @@
               "source_type": { "type": "string" },
               "assumption": { "type": "string", "minLength": 1 },
               "reading_depth": { "type": "string", "enum": ["full_read", "abstract_only", "skim"] },
-              "evidence_excerpt": { "type": "string" }
+              "evidence_excerpt": { "type": "string" },
+              "evidence_sentence_ids": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              }
             }
           }
         },
@@ -59,7 +63,11 @@
               "source_type": { "type": "string" },
               "regime": { "type": "string", "minLength": 1 },
               "reading_depth": { "type": "string", "enum": ["full_read", "abstract_only", "skim"] },
-              "evidence_excerpt": { "type": "string" }
+              "evidence_excerpt": { "type": "string" },
+              "evidence_sentence_ids": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              }
             }
           }
         },
@@ -91,7 +99,11 @@
               "symbol": { "type": "string", "minLength": 1 },
               "meaning": { "type": "string", "minLength": 1 },
               "reading_depth": { "type": "string", "enum": ["full_read", "abstract_only", "skim"] },
-              "evidence_excerpt": { "type": "string" }
+              "evidence_excerpt": { "type": "string" },
+              "evidence_sentence_ids": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              }
             }
           }
         },
@@ -135,9 +147,17 @@
               "source_basis_type": { "type": "string", "minLength": 1 },
               "source_basis_summary": { "type": "string", "minLength": 1 },
               "source_evidence_excerpt": { "type": "string", "minLength": 1 },
+              "source_evidence_sentence_ids": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              },
               "against_basis_type": { "type": "string", "minLength": 1 },
               "against_basis_summary": { "type": "string", "minLength": 1 },
-              "against_evidence_excerpt": { "type": "string", "minLength": 1 }
+              "against_evidence_excerpt": { "type": "string", "minLength": 1 },
+              "against_evidence_sentence_ids": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 }
+              }
             }
           }
         },

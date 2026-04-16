@@ -270,6 +270,10 @@ def aitp_resume_topic(
 ) -> str:
     """Resume an existing AITP topic."""
     try:
+        if hasattr(service, "topic_required_read_gate"):
+            gate = service.topic_required_read_gate(topic_slug=topic_slug, updated_by=updated_by)
+            if isinstance(gate, dict) and (gate.get("blocked") or gate.get("needs_ack")):
+                return _ok(**gate)
         result = service.orchestrate(
             topic_slug=topic_slug,
             run_id=run_id,
@@ -897,6 +901,36 @@ def aitp_get_popup(topic_slug: str, updated_by: str = "aitp-mcp") -> str:
         return _err(str(exc))
 
 
+@aitp_tool(access="read")
+def aitp_get_required_read_gate(topic_slug: str, updated_by: str = "aitp-mcp") -> str:
+    """Get the current required-read gate for a topic, if any startup reads remain unacknowledged.""" 
+    try:
+        result = service.topic_required_read_gate(topic_slug=topic_slug, updated_by=updated_by)
+        return _ok(**result)
+    except Exception as exc:  # noqa: BLE001
+        return _err(str(exc))
+
+
+@aitp_tool(access="write")
+def aitp_ack_required_reads(
+    topic_slug: str,
+    paths: list[str] | None = None,
+    all_current: bool = False,
+    updated_by: str = "aitp-mcp",
+) -> str:
+    """Acknowledge one or more required-read surfaces for the current topic startup generation."""
+    try:
+        result = service.acknowledge_required_reads(
+            topic_slug=topic_slug,
+            paths=paths or [],
+            all_current=all_current,
+            updated_by=updated_by,
+        )
+        return _ok(**result)
+    except Exception as exc:  # noqa: BLE001
+        return _err(str(exc))
+
+
 @aitp_tool(access="write")
 def aitp_resolve_popup(
     topic_slug: str,
@@ -953,6 +987,10 @@ def aitp_run_topic_loop(
 ) -> str:
     """Run the safe AITP auto-continue loop, including capability and trust audits."""
     try:
+        if hasattr(service, "topic_required_read_gate"):
+            gate = service.topic_required_read_gate(topic_slug=topic_slug or "", updated_by=updated_by)
+            if isinstance(gate, dict) and (gate.get("blocked") or gate.get("needs_ack")):
+                return _ok(**gate)
         result = service.run_topic_loop(
             topic_slug=topic_slug,
             topic=topic,

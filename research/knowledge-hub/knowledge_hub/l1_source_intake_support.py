@@ -28,6 +28,47 @@ def _dedupe_strings(values: list[str]) -> list[str]:
     return ordered
 
 
+def _sentence_units(text: str) -> list[str]:
+    units: list[str] = []
+    for raw_part in re.split(r"(?<=[.!?])\s+|\n+", str(text or "").strip()):
+        normalized = re.sub(r"\s+", " ", raw_part).strip()
+        if normalized:
+            units.append(normalized)
+    return units
+
+
+def evidence_sentence_ids_for_text(
+    *,
+    text: str,
+    needle: str,
+    max_ids: int = 3,
+) -> list[str]:
+    units = _sentence_units(text)
+    if not units:
+        return []
+    normalized_needle = re.sub(r"\s+", " ", str(needle or "").strip()).lower()
+    if normalized_needle:
+        matched = [
+            f"s{index:03d}"
+            for index, unit in enumerate(units, start=1)
+            if normalized_needle in unit.lower()
+        ]
+        if matched:
+            return matched[:max_ids]
+    return [f"s001"]
+
+
+def normalize_evidence_sentence_ids(values: Any) -> list[str]:
+    if not isinstance(values, list):
+        return []
+    normalized: list[str] = []
+    for value in values:
+        token = str(value or "").strip()
+        if token:
+            normalized.append(token)
+    return _dedupe_strings(normalized)
+
+
 def _empty_l1_concept_graph() -> dict[str, Any]:
     return {
         "nodes": [],
@@ -76,6 +117,13 @@ def render_source_intelligence_markdown(payload: dict[str, Any]) -> str:
         f"- Weakest tier: `{((payload.get('fidelity_summary') or {}).get('weakest_tier') or 'unknown')}`",
         f"- Counts by tier: `{', '.join(f'{key}={value}' for key, value in ((payload.get('fidelity_summary') or {}).get('counts_by_tier') or {}).items()) or '(none)'}`",
         "",
+        "## Source relevance",
+        "",
+        f"- Strongest tier: `{((payload.get('relevance_summary') or {}).get('strongest_tier') or 'irrelevant')}`",
+        f"- Weakest tier: `{((payload.get('relevance_summary') or {}).get('weakest_tier') or 'irrelevant')}`",
+        f"- Counts by tier: `{', '.join(f'{key}={value}' for key, value in ((payload.get('relevance_summary') or {}).get('counts_by_tier') or {}).items()) or '(none)'}`",
+        f"- Role labels: `{', '.join(f'{key}={value}' for key, value in ((payload.get('relevance_summary') or {}).get('role_label_counts') or {}).items()) or '(none)'}`",
+        "",
         "## Citation edges",
         "",
     ]
@@ -123,6 +171,7 @@ def _normalize_l1_intake_rows(rows: Any, *, required_field: str) -> list[dict[st
                 required_field: payload_value,
                 "reading_depth": str(row.get("reading_depth") or "").strip() or "skim",
                 "evidence_excerpt": str(row.get("evidence_excerpt") or "").strip(),
+                "evidence_sentence_ids": normalize_evidence_sentence_ids(row.get("evidence_sentence_ids")),
             }
         )
     return normalized
@@ -183,6 +232,7 @@ def _normalize_method_specificity_rows(rows: Any) -> list[dict[str, str]]:
                 "specificity_tier": specificity_tier,
                 "reading_depth": str(row.get("reading_depth") or "").strip() or "skim",
                 "evidence_excerpt": str(row.get("evidence_excerpt") or "").strip(),
+                "evidence_sentence_ids": normalize_evidence_sentence_ids(row.get("evidence_sentence_ids")),
             }
         )
     return normalized
@@ -214,6 +264,7 @@ def _normalize_notation_rows(rows: Any) -> list[dict[str, str]]:
                 "meaning": meaning,
                 "reading_depth": str(row.get("reading_depth") or "").strip() or "skim",
                 "evidence_excerpt": str(row.get("evidence_excerpt") or "").strip(),
+                "evidence_sentence_ids": normalize_evidence_sentence_ids(row.get("evidence_sentence_ids")),
             }
         )
     return normalized
@@ -269,10 +320,16 @@ def _normalize_contradiction_candidates(rows: Any) -> list[dict[str, str]]:
                 "source_basis_type": source_basis_type,
                 "source_basis_summary": source_basis_summary,
                 "source_evidence_excerpt": str(row.get("source_evidence_excerpt") or "").strip() or source_basis_summary,
+                "source_evidence_sentence_ids": normalize_evidence_sentence_ids(
+                    row.get("source_evidence_sentence_ids")
+                ),
                 "against_basis_type": against_basis_type,
                 "against_basis_summary": against_basis_summary,
                 "against_evidence_excerpt": str(row.get("against_evidence_excerpt") or "").strip()
                 or against_basis_summary,
+                "against_evidence_sentence_ids": normalize_evidence_sentence_ids(
+                    row.get("against_evidence_sentence_ids")
+                ),
             }
         )
     return normalized
@@ -569,6 +626,7 @@ def derive_l1_conflict_intake(source_rows: list[dict[str, Any]], l1_source_intak
         notation_candidates = detect_notation_candidates(text=text)
         excerpt = _summary_excerpt(row)
         for candidate in notation_candidates:
+            evidence_needle = str(candidate.get("meaning") or candidate.get("symbol") or source_title).strip()
             notation_rows.append(
                 {
                     "source_id": source_id,
@@ -578,6 +636,7 @@ def derive_l1_conflict_intake(source_rows: list[dict[str, Any]], l1_source_intak
                     "meaning": str(candidate.get("meaning") or "").strip(),
                     "reading_depth": reading_depth,
                     "evidence_excerpt": excerpt,
+                    "evidence_sentence_ids": evidence_sentence_ids_for_text(text=text, needle=evidence_needle),
                 }
             )
 
@@ -603,9 +662,17 @@ def derive_l1_conflict_intake(source_rows: list[dict[str, Any]], l1_source_intak
                 "source_basis_type": str(candidate.get("source_basis_type") or "").strip() or "assumption",
                 "source_basis_summary": str(candidate.get("source_basis_summary") or "").strip(),
                 "source_evidence_excerpt": excerpt,
+                "source_evidence_sentence_ids": evidence_sentence_ids_for_text(
+                    text=text,
+                    needle=str(candidate.get("source_basis_summary") or "").strip() or excerpt,
+                ),
                 "against_basis_type": str(candidate.get("against_basis_type") or "").strip() or "assumption",
                 "against_basis_summary": str(candidate.get("against_basis_summary") or "").strip(),
                 "against_evidence_excerpt": _summary_excerpt(against_row),
+                "against_evidence_sentence_ids": evidence_sentence_ids_for_text(
+                    text=str(against_row.get("summary_text") or "").strip(),
+                    needle=str(candidate.get("against_basis_summary") or "").strip() or _summary_excerpt(against_row),
+                ),
             }
             contradiction_key = (
                 source_id,

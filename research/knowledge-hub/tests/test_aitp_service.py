@@ -623,6 +623,72 @@ class AITPServiceTests(unittest.TestCase):
         )
         return runtime_root
 
+    def _materialize_required_read_session(
+        self,
+        topic_slug: str = "demo-topic",
+        *,
+        service: AITPService | None = None,
+        must_read_paths: list[str] | None = None,
+        generation: str = "2026-04-16T10:00:00+08:00",
+    ) -> dict[str, object]:
+        target_service = service or self.service
+        runtime_root = target_service._runtime_root(topic_slug)
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        session_note_path = runtime_root / "session_start.generated.md"
+        runtime_protocol_note_path = runtime_root / "runtime_protocol.generated.md"
+        session_note_path.write_text("# Session start\n", encoding="utf-8")
+        runtime_protocol_note_path.write_text("# Runtime protocol\n", encoding="utf-8")
+
+        must_read_rows: list[dict[str, str]] = []
+        for relative_path in must_read_paths or []:
+            normalized_path = str(relative_path or "").strip()
+            if not normalized_path:
+                continue
+            disk_path = self.kernel_root / normalized_path
+            disk_path.parent.mkdir(parents=True, exist_ok=True)
+            if not disk_path.exists():
+                disk_path.write_text(f"# {Path(normalized_path).name}\n", encoding="utf-8")
+            must_read_rows.append(
+                {
+                    "path": normalized_path,
+                    "reason": "Test fixture required read.",
+                }
+            )
+
+        payload: dict[str, object] = {
+            "updated_at": generation,
+            "artifacts": {
+                "session_start_note_path": f"topics/{topic_slug}/runtime/session_start.generated.md",
+                "runtime_protocol_note_path": f"topics/{topic_slug}/runtime/runtime_protocol.generated.md",
+            },
+            "must_read_now": must_read_rows,
+        }
+        session_paths = target_service._session_start_paths(topic_slug)
+        session_paths["json"].write_text(
+            json.dumps(payload, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        return payload
+
+    def _ack_current_required_reads(
+        self,
+        topic_slug: str = "demo-topic",
+        *,
+        service: AITPService | None = None,
+        must_read_paths: list[str] | None = None,
+    ) -> dict[str, object]:
+        target_service = service or self.service
+        self._materialize_required_read_session(
+            topic_slug=topic_slug,
+            service=target_service,
+            must_read_paths=must_read_paths,
+        )
+        return target_service.acknowledge_required_reads(
+            topic_slug=topic_slug,
+            all_current=True,
+            updated_by="test",
+        )
+
     def _prepare_l2_graph_kernel(self) -> None:
         shutil.copyfile(
             self.package_root / "canonical" / "canonical-unit.schema.json",
@@ -3116,8 +3182,11 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(l1_source_intake["source_count"], 1)
         self.assertEqual(l1_source_intake["assumption_rows"][0]["source_id"], "thesis:demo-source")
         self.assertEqual(l1_source_intake["assumption_rows"][0]["reading_depth"], "full_read")
+        self.assertTrue(l1_source_intake["assumption_rows"][0]["evidence_sentence_ids"])
+        self.assertTrue(all(item.startswith("s") for item in l1_source_intake["assumption_rows"][0]["evidence_sentence_ids"]))
         self.assertTrue(any(row["regime"] == "weak coupling" for row in l1_source_intake["regime_rows"]))
         self.assertTrue(any(row["regime"] == "zero temperature" for row in l1_source_intake["regime_rows"]))
+        self.assertTrue(l1_source_intake["method_specificity_rows"][0]["evidence_sentence_ids"])
         self.assertEqual(l1_source_intake["method_specificity_rows"][0]["method_family"], "formal_derivation")
         self.assertEqual(l1_source_intake["method_specificity_rows"][0]["specificity_tier"], "high")
         research_note = Path(payload["research_question_contract_note_path"]).read_text(encoding="utf-8")
@@ -3125,6 +3194,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("## Source-backed assumptions", research_note)
         self.assertIn("## Reading depth", research_note)
         self.assertIn("## Method specificity", research_note)
+        self.assertIn("sentence ids:", research_note)
 
     def test_ensure_topic_shell_surfaces_materializes_l1_vault_and_flowback(self) -> None:
         shutil.copytree(
@@ -3246,12 +3316,31 @@ class AITPServiceTests(unittest.TestCase):
         research_note = Path(payload["research_question_contract_note_path"]).read_text(encoding="utf-8")
         self.assertIn("page_type: topic_home", home_text)
         self.assertIn("[[source-intake|Source Intake]]", home_text)
+        self.assertIn("[[source-bridge|Source Bridge]]", home_text)
         self.assertIn("research_question.contract.md", bridge_text)
         self.assertIn("control_note.md", bridge_text)
         self.assertIn("operator_console.md", bridge_text)
         self.assertGreaterEqual(len(flowback_rows), 4)
         self.assertTrue(all(row["status"] == "applied" for row in flowback_rows))
         self.assertIn("## L1 vault", research_note)
+        source_intake_note = Path(payload["l1_vault_wiki_source_intake_path"]).read_text(encoding="utf-8")
+        self.assertIn("sentence ids=", source_intake_note)
+        source_bridge_refs = {
+            row["kind"]: row["path"]
+            for row in l1_vault["compatibility_refs"]
+            if isinstance(row, dict)
+        }
+        self.assertIn("source_anchor_index_json", source_bridge_refs)
+        self.assertIn("source_anchor_bridge_note", source_bridge_refs)
+        source_bridge_note = self.kernel_root / source_bridge_refs["source_anchor_bridge_note"]
+        source_anchor_index = self.kernel_root / source_bridge_refs["source_anchor_index_json"]
+        self.assertTrue(source_bridge_note.exists())
+        self.assertTrue(source_anchor_index.exists())
+        source_bridge_text = source_bridge_note.read_text(encoding="utf-8")
+        self.assertIn("Source Anchor Bridge", source_bridge_text)
+        self.assertIn("thesis:demo-source", source_bridge_text)
+        self.assertIn("source.json", source_bridge_text)
+        self.assertIn("snapshot.md", source_bridge_text)
 
     def test_ensure_topic_shell_surfaces_projects_l1_concept_graph_into_contract_and_notes(self) -> None:
         runtime_root = self._write_runtime_state()
@@ -3565,9 +3654,15 @@ class AITPServiceTests(unittest.TestCase):
             "strong coupling",
             l1_source_intake["contradiction_candidates"][0]["source_evidence_excerpt"],
         )
+        self.assertTrue(
+            l1_source_intake["contradiction_candidates"][0]["source_evidence_sentence_ids"]
+        )
         self.assertIn(
             "weak coupling",
             l1_source_intake["contradiction_candidates"][0]["against_evidence_excerpt"],
+        )
+        self.assertTrue(
+            l1_source_intake["contradiction_candidates"][0]["against_evidence_sentence_ids"]
         )
         self.assertEqual(
             l1_source_intake["contradiction_candidates"][0]["detail"],
@@ -3661,6 +3756,8 @@ class AITPServiceTests(unittest.TestCase):
                             "summary": "Runtime source summary with shared reference context.",
                             "references": ["doi:10-1000/shared"],
                             "canonical_source_id": "source_identity:doi:10-1000-demo",
+                            "relevance_tier": "canonical",
+                            "role_labels": ["foundational", "review"],
                             "provenance": {
                                 "abs_url": "https://example.org/demo",
                             },
@@ -3706,6 +3803,10 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(status_payload["source_intelligence"]["source_neighbors"][0]["relation_kind"], "shared_reference")
         self.assertEqual(status_payload["source_intelligence"]["fidelity_summary"]["strongest_tier"], "peer_reviewed")
         self.assertEqual(status_payload["source_intelligence"]["fidelity_rows"][0]["fidelity_tier"], "peer_reviewed")
+        self.assertEqual(status_payload["source_intelligence"]["relevance_rows"][0]["relevance_tier"], "canonical")
+        self.assertEqual(status_payload["source_intelligence"]["relevance_summary"]["counts_by_tier"]["canonical"], 1)
+        self.assertEqual(status_payload["source_intelligence"]["relevance_summary"]["role_label_counts"]["foundational"], 1)
+        self.assertIn("review", status_payload["source_intelligence"]["relevance_rows"][0]["role_labels"])
         self.assertEqual(
             status_payload["active_research_contract"]["l1_source_intake"]["method_specificity_rows"][0]["method_family"],
             "unspecified_method",
@@ -4013,6 +4114,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue(
             any(row["path"].endswith("research_question.contract.md") for row in status_payload["must_read_now"])
         )
+        self._ack_current_required_reads()
 
         verification_payload = self.service.prepare_verification(
             topic_slug="demo-topic",
@@ -4032,6 +4134,7 @@ class AITPServiceTests(unittest.TestCase):
 
     def test_prepare_verification_numeric_materializes_minimum_l4_bundle(self) -> None:
         runtime_root = self._write_runtime_state(run_id="run-001")
+        self._ack_current_required_reads()
         (runtime_root / "interaction_state.json").write_text(
             json.dumps(
                 {
@@ -4101,6 +4204,7 @@ class AITPServiceTests(unittest.TestCase):
 
     def test_prepare_verification_numeric_materializes_iteration_journal_surfaces(self) -> None:
         runtime_root = self._write_runtime_state(run_id="run-iteration")
+        self._ack_current_required_reads()
         (runtime_root / "interaction_state.json").write_text(
             json.dumps(
                 {
@@ -4409,6 +4513,7 @@ class AITPServiceTests(unittest.TestCase):
 
     def test_prepare_verification_opens_next_iteration_when_selected_action_changes_after_partial_return(self) -> None:
         runtime_root = self._write_runtime_state(run_id="run-iteration")
+        self._ack_current_required_reads()
         (runtime_root / "interaction_state.json").write_text(
             json.dumps(
                 {
@@ -4534,6 +4639,7 @@ class AITPServiceTests(unittest.TestCase):
 
     def test_prepare_verification_proof_materializes_execution_deferral_without_concrete_lane(self) -> None:
         runtime_root = self._write_runtime_state(run_id="run-002")
+        self._ack_current_required_reads()
         (runtime_root / "interaction_state.json").write_text(
             json.dumps(
                 {
@@ -5957,6 +6063,7 @@ class AITPServiceTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
+        self._ack_current_required_reads()
 
         self.service.prepare_verification(
             topic_slug="demo-topic",
@@ -6034,6 +6141,7 @@ class AITPServiceTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
+        self._ack_current_required_reads()
 
         self.service.prepare_verification(
             topic_slug="demo-topic",
@@ -6877,6 +6985,10 @@ class AITPServiceTests(unittest.TestCase):
             "runtime_skill_present": True,
             "using_skill_matches_canonical": True,
             "runtime_skill_matches_canonical": True,
+            "bootstrap_receipt_path": "C:\\Users\\demo\\.codex\\aitp_bootstrap_receipt.json",
+            "bootstrap_receipt_present": True,
+            "bootstrap_receipt_parse_ok": True,
+            "bootstrap_receipt_matches_expected": True,
         }
         claude_status = {
             "using_skill_path": "C:\\Users\\demo\\.claude\\skills\\using-aitp\\SKILL.md",
@@ -6962,6 +7074,10 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["deep_execution_parity"]["ready_for_probe_targets"], ["claude_code", "opencode"])
         self.assertTrue(payload["runtime_convergence"]["front_door_runtimes_converged"])
         self.assertEqual(payload["full_convergence_repair"]["status"], "none_required")
+        self.assertEqual(payload["strict_l0_l1"]["status"], "pass")
+        self.assertIn("work_topic", payload["strict_l0_l1"]["service_gate_surfaces"])
+        self.assertIn("update_followup_return_packet", payload["strict_l0_l1"]["service_gate_surfaces"])
+        self.assertEqual(payload["strict_l0_l1"]["service_gate_surface_count"], len(payload["strict_l0_l1"]["service_gate_surfaces"]))
 
     def test_doctor_runtime_support_matrix_reports_partial_front_doors_honestly(self) -> None:
         codex_status = {
@@ -7066,6 +7182,78 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("claude_frontdoor_surface_stale", payload["issues"])
         self.assertIn("opencode_plugin_surface_missing", payload["issues"])
         self.assertFalse(payload["runtime_convergence"]["front_door_runtimes_converged"])
+
+    def test_doctor_runtime_support_matrix_reports_missing_codex_bootstrap_receipt(self) -> None:
+        codex_status = {
+            "using_skill_path": "C:\\Users\\demo\\.agents\\skills\\using-aitp\\SKILL.md",
+            "runtime_skill_path": "C:\\Users\\demo\\.agents\\skills\\aitp-runtime\\SKILL.md",
+            "using_skill_present": True,
+            "runtime_skill_present": True,
+            "using_skill_matches_canonical": True,
+            "runtime_skill_matches_canonical": True,
+            "bootstrap_receipt_path": "C:\\Users\\demo\\.codex\\aitp_bootstrap_receipt.json",
+            "bootstrap_receipt_present": False,
+            "bootstrap_receipt_parse_ok": False,
+            "bootstrap_receipt_matches_expected": False,
+        }
+        claude_status = {
+            "using_skill_path": "C:\\Users\\demo\\.claude\\skills\\using-aitp\\SKILL.md",
+            "runtime_skill_path": "C:\\Users\\demo\\.claude\\skills\\aitp-runtime\\SKILL.md",
+            "session_start_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start",
+            "session_start_python_hook_path": "C:\\Users\\demo\\.claude\\hooks\\session-start.py",
+            "hook_wrapper_path": "C:\\Users\\demo\\.claude\\hooks\\run-hook.cmd",
+            "hooks_manifest_path": "C:\\Users\\demo\\.claude\\hooks\\hooks.json",
+            "settings_path": "C:\\Users\\demo\\.claude\\settings.json",
+            "using_skill": True,
+            "runtime_skill": True,
+            "session_start_hook": True,
+            "session_start_python_hook": True,
+            "hook_wrapper": True,
+            "hooks_manifest": True,
+            "settings": True,
+            "using_skill_matches_canonical": True,
+            "runtime_skill_matches_canonical": True,
+            "session_start_hook_matches_canonical": True,
+            "session_start_python_hook_matches_canonical": True,
+            "hook_wrapper_matches_canonical": True,
+            "hooks_manifest_matches_canonical": True,
+            "settings_has_expected_session_start_command": True,
+        }
+        with patch.object(
+            self.service,
+            "_pip_show_package",
+            return_value={
+                "version": "0.4.1",
+                "editable project location": str(self.service._canonical_package_root()),
+            },
+        ):
+            with patch.object(self.service, "_codex_skill_status", return_value=codex_status):
+                with patch.object(self.service, "_claude_hook_status", return_value=claude_status):
+                    with patch.object(self.service, "_claude_mcp_status", return_value=self._make_claude_mcp_status()):
+                        with patch.object(
+                            self.service,
+                            "_opencode_plugin_status",
+                            return_value=self._make_opencode_status(),
+                        ):
+                            with patch.object(self.service, "_workspace_legacy_entrypoints", return_value=[]):
+                                with patch.object(self.service, "_claude_legacy_command_paths", return_value=[]):
+                                    with patch(
+                                        "knowledge_hub.aitp_service.shutil.which",
+                                        side_effect=lambda name: {
+                                            "aitp": "C:\\temp\\aitp.exe",
+                                            "codex": "C:\\temp\\codex.exe",
+                                        }.get(name, ""),
+                                    ):
+                                        payload = self.service.ensure_cli_installed(workspace_root=str(self.root))
+
+        codex_row = payload["runtime_support_matrix"]["runtimes"]["codex"]
+        self.assertEqual(codex_row["status"], "partial")
+        self.assertIn("bootstrap_receipt_missing", codex_row["issues"])
+        self.assertEqual(codex_row["remediation"]["status"], "required")
+        self.assertFalse(payload["runtime_convergence"]["front_door_runtimes_converged"])
+        self.assertEqual(payload["strict_l0_l1"]["status"], "fail")
+        self.assertIn("codex_bootstrap_receipt_missing", payload["strict_l0_l1"]["blockers"])
+        self.assertIn("prepare_lean_bridge", payload["strict_l0_l1"]["service_gate_surfaces"])
 
     def test_doctor_runtime_support_matrix_reports_stale_claude_surfaces(self) -> None:
         codex_status = {
@@ -9154,6 +9342,254 @@ class AITPServiceTests(unittest.TestCase):
         self.assertIn("mode_learning_note_path", session_contract["artifacts"])
         self.assertIn("runtime_protocol.generated.md", Path(payload["session_start_note_path"]).read_text(encoding="utf-8"))
 
+    def test_required_read_gate_blocks_until_current_session_reads_are_acknowledged(self) -> None:
+        runtime_root = self.service._runtime_root("demo-topic")
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        session_start_json = runtime_root / "session_start.generated.json"
+        session_start_note = runtime_root / "session_start.generated.md"
+        runtime_protocol_note = runtime_root / "runtime_protocol.generated.md"
+        topic_dashboard = runtime_root / "topic_dashboard.md"
+        contract_note = runtime_root / "research_question.contract.md"
+        for path in (session_start_note, runtime_protocol_note, topic_dashboard, contract_note):
+            path.write_text(f"# {path.name}\n", encoding="utf-8")
+        session_start_json.write_text(
+            json.dumps(
+                {
+                    "updated_at": "2026-04-16T10:00:00+08:00",
+                    "artifacts": {
+                        "session_start_note_path": "topics/demo-topic/runtime/session_start.generated.md",
+                        "runtime_protocol_note_path": "topics/demo-topic/runtime/runtime_protocol.generated.md",
+                    },
+                    "must_read_now": [
+                        {
+                            "path": "topics/demo-topic/runtime/topic_dashboard.md",
+                            "reason": "Primary human surface.",
+                        },
+                        {
+                            "path": "topics/demo-topic/runtime/research_question.contract.md",
+                            "reason": "Question contract.",
+                        },
+                    ],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        gate = self.service.topic_required_read_gate(topic_slug="demo-topic")
+        self.assertTrue(gate["needs_ack"])
+        self.assertEqual(
+            gate["missing_paths"],
+            [
+                "topics/demo-topic/runtime/session_start.generated.md",
+                "topics/demo-topic/runtime/runtime_protocol.generated.md",
+                "topics/demo-topic/runtime/topic_dashboard.md",
+                "topics/demo-topic/runtime/research_question.contract.md",
+            ],
+        )
+
+        ack = self.service.acknowledge_required_reads(
+            topic_slug="demo-topic",
+            all_current=True,
+            updated_by="test",
+        )
+        self.assertEqual(ack["acknowledged_count"], 4)
+        self.assertEqual(ack["remaining_missing_count"], 0)
+
+        gate_after = self.service.topic_required_read_gate(topic_slug="demo-topic")
+        self.assertFalse(gate_after["needs_ack"])
+        self.assertEqual(gate_after["missing_paths"], [])
+
+    def test_required_read_gate_blocks_when_session_start_contract_is_missing_for_existing_topic(self) -> None:
+        runtime_root = self.service._runtime_root("demo-topic")
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps({"topic_slug": "demo-topic"}, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+        gate = self.service.topic_required_read_gate(topic_slug="demo-topic")
+        self.assertTrue(gate["blocked"])
+        self.assertEqual(gate["gate_kind"], "startup_contract_missing")
+        self.assertIn("session_start.contract.json", gate["missing_paths"][0])
+
+    def test_work_topic_returns_required_read_gate_before_direct_orchestrate_when_startup_contract_is_missing(self) -> None:
+        service = _SteeringLoopStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)
+        runtime_root = service._runtime_root("demo-topic")
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "2026-03-13-demo",
+                    "resume_stage": "L3",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = service.work_topic(
+            topic_slug="demo-topic",
+            question="Continue the bounded route.",
+            max_auto_steps=0,
+            updated_by="test",
+        )
+
+        self.assertTrue(payload["blocked"])
+        self.assertEqual(payload["gate_kind"], "startup_contract_missing")
+        self.assertEqual(service.orchestrate_calls, [])
+
+    def test_prepare_verification_returns_required_read_gate_before_materializing_when_reads_are_unacknowledged(self) -> None:
+        self._write_runtime_state()
+        self._materialize_required_read_session(
+            must_read_paths=["topics/demo-topic/runtime/topic_dashboard.md"],
+        )
+
+        payload = self.service.prepare_verification(
+            topic_slug="demo-topic",
+            mode="proof",
+        )
+
+        self.assertTrue(payload["needs_ack"])
+        self.assertEqual(payload["gate_kind"], "must_read_ack")
+        self.assertIn("topics/demo-topic/runtime/session_start.generated.md", payload["missing_paths"])
+        self.assertFalse(self.service._validation_contract_paths("demo-topic")["json"].exists())
+
+    def test_assess_topic_completion_returns_required_read_gate_before_materializing_when_reads_are_unacknowledged(self) -> None:
+        self._write_runtime_state()
+        self._materialize_required_read_session(
+            must_read_paths=["topics/demo-topic/runtime/topic_dashboard.md"],
+        )
+
+        payload = self.service.assess_topic_completion(
+            topic_slug="demo-topic",
+        )
+
+        self.assertTrue(payload["needs_ack"])
+        self.assertEqual(payload["gate_kind"], "must_read_ack")
+        self.assertFalse(self.service._topic_completion_paths("demo-topic")["json"].exists())
+
+    def test_prepare_statement_compilation_returns_required_read_gate_before_materializing_when_reads_are_unacknowledged(self) -> None:
+        self._write_runtime_state()
+        self._materialize_required_read_session(
+            must_read_paths=["topics/demo-topic/runtime/topic_dashboard.md"],
+        )
+
+        payload = self.service.prepare_statement_compilation(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+        )
+
+        self.assertTrue(payload["needs_ack"])
+        self.assertEqual(payload["gate_kind"], "must_read_ack")
+        self.assertFalse(self.service._statement_compilation_active_paths("demo-topic")["json"].exists())
+
+    def test_prepare_lean_bridge_returns_required_read_gate_before_materializing_when_reads_are_unacknowledged(self) -> None:
+        self._write_runtime_state()
+        self._materialize_required_read_session(
+            must_read_paths=["topics/demo-topic/runtime/topic_dashboard.md"],
+        )
+
+        payload = self.service.prepare_lean_bridge(
+            topic_slug="demo-topic",
+            candidate_id="candidate:demo-candidate",
+        )
+
+        self.assertTrue(payload["needs_ack"])
+        self.assertEqual(payload["gate_kind"], "must_read_ack")
+        self.assertFalse(self.service._lean_bridge_active_paths("demo-topic")["json"].exists())
+
+    def test_select_lean_bridge_export_target_returns_required_read_gate_before_materializing_when_reads_are_unacknowledged(self) -> None:
+        self._write_runtime_state(run_id="run-001")
+        self._materialize_required_read_session(
+            must_read_paths=["topics/demo-topic/runtime/topic_dashboard.md"],
+        )
+
+        payload = self.service.select_lean_bridge_export_target(
+            topic_slug="demo-topic",
+            run_id="run-001",
+        )
+
+        self.assertTrue(payload["needs_ack"])
+        self.assertEqual(payload["gate_kind"], "must_read_ack")
+        self.assertFalse(self.service._lean_bridge_export_target_paths("demo-topic")["json"].exists())
+
+    def test_run_lean_bridge_export_check_returns_required_read_gate_before_materializing_when_reads_are_unacknowledged(self) -> None:
+        self._write_runtime_state(run_id="run-001")
+        self._materialize_required_read_session(
+            must_read_paths=["topics/demo-topic/runtime/topic_dashboard.md"],
+        )
+
+        payload = self.service.run_lean_bridge_export_check(
+            topic_slug="demo-topic",
+            run_id="run-001",
+        )
+
+        self.assertTrue(payload["needs_ack"])
+        self.assertEqual(payload["gate_kind"], "must_read_ack")
+        self.assertFalse(self.service._lean_bridge_export_check_paths("demo-topic")["json"].exists())
+
+    def test_update_followup_return_packet_returns_required_read_gate_before_mutating_when_startup_contract_is_missing(self) -> None:
+        service = _FollowupStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)
+        runtime_root = service._runtime_root("child-topic")
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "child-topic",
+                    "latest_run_id": "2026-03-13-followup",
+                    "resume_stage": "L1",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = service.update_followup_return_packet(
+            topic_slug="child-topic",
+            return_status="recovered_units",
+            updated_by="test",
+        )
+
+        self.assertTrue(payload["blocked"])
+        self.assertEqual(payload["gate_kind"], "startup_contract_missing")
+        self.assertFalse(service._followup_return_packet_path("child-topic").exists())
+
+    def test_reintegrate_followup_subtopic_returns_required_read_gate_before_mutating_when_startup_contract_is_missing(self) -> None:
+        service = _FollowupStubService(kernel_root=self.kernel_root, repo_root=self.repo_root)
+        runtime_root = service._runtime_root("demo-topic")
+        runtime_root.mkdir(parents=True, exist_ok=True)
+        (runtime_root / "topic_state.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "latest_run_id": "2026-03-13-demo",
+                    "resume_stage": "L3",
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+        payload = service.reintegrate_followup_subtopic(
+            topic_slug="demo-topic",
+            child_topic_slug="child-topic",
+            updated_by="test",
+        )
+
+        self.assertTrue(payload["blocked"])
+        self.assertEqual(payload["gate_kind"], "startup_contract_missing")
+        self.assertFalse((service._runtime_root("demo-topic") / "followup_reintegration.jsonl").exists())
+
     def test_start_chat_session_allocates_fresh_slug_for_explicit_new_topic_collision(self) -> None:
         existing_slug = "jones-von-neumann-algebras"
         existing_runtime_root = self._runtime_root(existing_slug)
@@ -9464,6 +9900,7 @@ class AITPServiceTests(unittest.TestCase):
             supporting_oracle_ids=["question_oracle:demo-definition"],
             supporting_regression_run_ids=["regression_run:demo-definition"],
         )
+        self._ack_current_required_reads()
         self.service.prepare_statement_compilation(
             topic_slug="demo-topic",
             candidate_id="candidate:demo-candidate",
@@ -9548,6 +9985,7 @@ class AITPServiceTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
+        self._ack_current_required_reads()
 
         payload = self.service.assess_topic_completion(
             topic_slug="demo-topic",
@@ -10066,6 +10504,7 @@ class AITPServiceTests(unittest.TestCase):
             supporting_oracle_ids=["question_oracle:demo-definition"],
             supporting_regression_run_ids=["regression_run:demo-definition"],
         )
+        self._ack_current_required_reads()
         self.service.prepare_statement_compilation(
             topic_slug="demo-topic",
             candidate_id="candidate:demo-candidate",
@@ -10360,6 +10799,7 @@ class AITPServiceTests(unittest.TestCase):
             regime_note="Weak-coupling only.",
             reading_depth="targeted",
         )
+        self._ack_current_required_reads()
 
         verification_payload = self.service.prepare_verification(
             topic_slug="demo-topic",
@@ -10858,6 +11298,8 @@ class AITPServiceTests(unittest.TestCase):
             for line in (self._runtime_root("demo-topic") / "followup_subtopics.jsonl").read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
+        self._ack_current_required_reads(topic_slug="demo-topic", service=service)
+        self._ack_current_required_reads(topic_slug=child_topic_slug, service=service)
         service.update_followup_return_packet(
             topic_slug=child_topic_slug,
             return_status="recovered_units",
@@ -10920,6 +11362,8 @@ class AITPServiceTests(unittest.TestCase):
         )
         spawned = service.spawn_followup_subtopics(topic_slug="demo-topic", updated_by="aitp-cli")
         child_topic_slug = spawned["spawned_subtopics"][0]["child_topic_slug"]
+        self._ack_current_required_reads(topic_slug="demo-topic", service=service)
+        self._ack_current_required_reads(topic_slug=child_topic_slug, service=service)
         service.update_followup_return_packet(
             topic_slug=child_topic_slug,
             return_status="returned_with_gap",
@@ -10978,6 +11422,7 @@ class AITPServiceTests(unittest.TestCase):
         )
         spawned = service.spawn_followup_subtopics(topic_slug="demo-topic", updated_by="aitp-cli")
         child_topic_slug = spawned["spawned_subtopics"][0]["child_topic_slug"]
+        self._ack_current_required_reads(topic_slug=child_topic_slug, service=service)
 
         payload = service.update_followup_return_packet(
             topic_slug=child_topic_slug,
@@ -11033,6 +11478,7 @@ class AITPServiceTests(unittest.TestCase):
             supporting_oracle_ids=["question_oracle:demo-definition"],
             supporting_regression_run_ids=["regression_run:demo-definition"],
         )
+        self._ack_current_required_reads()
 
         compilation = service.prepare_statement_compilation(
             topic_slug="demo-topic",
@@ -11118,6 +11564,7 @@ class AITPServiceTests(unittest.TestCase):
             supporting_oracle_ids=["question_oracle:demo-definition"],
             supporting_regression_run_ids=["regression_run:demo-definition"],
         )
+        self._ack_current_required_reads()
 
         completion = service.assess_topic_completion(topic_slug="demo-topic")
         self.assertEqual(completion["status"], "promotion-ready")
@@ -11189,6 +11636,7 @@ class AITPServiceTests(unittest.TestCase):
     def test_prepare_lean_bridge_marks_packet_needs_refinement_when_theory_packet_is_incomplete(self) -> None:
         self._write_runtime_state()
         self._write_candidate()
+        self._ack_current_required_reads()
 
         lean_bridge = self.service.prepare_lean_bridge(
             topic_slug="demo-topic",
@@ -11257,6 +11705,7 @@ class AITPServiceTests(unittest.TestCase):
             lean_prerequisite_ids=["physlib:demo-prereq"],
             supporting_obligation_ids=["proof_obligation:demo-formal-export"],
         )
+        self._ack_current_required_reads()
 
         payload = self.service.select_lean_bridge_export_target(
             topic_slug="demo-topic",
@@ -11287,6 +11736,7 @@ class AITPServiceTests(unittest.TestCase):
             intended_l2_target="theorem:demo-formal-export",
             title="Demo Formal Export Target",
         )
+        self._ack_current_required_reads()
 
         payload = self.service.select_lean_bridge_export_target(
             topic_slug="demo-topic",
@@ -11350,6 +11800,7 @@ class AITPServiceTests(unittest.TestCase):
             "from pathlib import Path\nimport sys\nPath(sys.argv[-1]).read_text(encoding='utf-8')\nraise SystemExit(0)\n",
             encoding="utf-8",
         )
+        self._ack_current_required_reads()
 
         payload = self.service.run_lean_bridge_export_check(
             topic_slug="demo-topic",
@@ -11413,6 +11864,7 @@ class AITPServiceTests(unittest.TestCase):
             "import sys\nprint('type mismatch at demo_formal_export', file=sys.stderr)\nraise SystemExit(1)\n",
             encoding="utf-8",
         )
+        self._ack_current_required_reads()
 
         payload = self.service.run_lean_bridge_export_check(
             topic_slug="demo-topic",

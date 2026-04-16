@@ -60,6 +60,8 @@ def _append_l1_source_intake_markdown(lines: list[str], payload: dict[str, Any])
             )
             if row.get("evidence_excerpt"):
                 lines.append(f"  evidence: {row.get('evidence_excerpt')}")
+            if row.get("evidence_sentence_ids"):
+                lines.append(f"  sentence ids: {', '.join(row.get('evidence_sentence_ids') or [])}")
         else:
             lines.append(f"- {row}")
     lines.extend(["", "## Source-backed regimes", ""])
@@ -71,6 +73,8 @@ def _append_l1_source_intake_markdown(lines: list[str], payload: dict[str, Any])
             )
             if row.get("evidence_excerpt"):
                 lines.append(f"  evidence: {row.get('evidence_excerpt')}")
+            if row.get("evidence_sentence_ids"):
+                lines.append(f"  sentence ids: {', '.join(row.get('evidence_sentence_ids') or [])}")
         else:
             lines.append(f"- {row}")
     lines.extend(["", "## Reading depth", ""])
@@ -91,6 +95,8 @@ def _append_l1_source_intake_markdown(lines: list[str], payload: dict[str, Any])
             )
             if row.get("evidence_excerpt"):
                 lines.append(f"  evidence: {row.get('evidence_excerpt')}")
+            if row.get("evidence_sentence_ids"):
+                lines.append(f"  sentence ids: {', '.join(row.get('evidence_sentence_ids') or [])}")
         else:
             lines.append(f"- {row}")
     lines.extend(["", "## Reading-depth limits", ""])
@@ -103,6 +109,8 @@ def _append_l1_source_intake_markdown(lines: list[str], payload: dict[str, Any])
                 f"- `{row.get('source_id') or '(missing)'}` [{row.get('reading_depth') or 'skim'}]: "
                 f"`{row.get('symbol') or '(missing)'}` => `{row.get('meaning') or '(missing)'}`"
             )
+            if row.get("evidence_sentence_ids"):
+                lines.append(f"  sentence ids: {', '.join(row.get('evidence_sentence_ids') or [])}")
         else:
             lines.append(f"- {row}")
     lines.extend(["", "## Contradiction candidates", ""])

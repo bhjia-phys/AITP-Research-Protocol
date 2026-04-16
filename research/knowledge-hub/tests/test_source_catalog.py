@@ -41,6 +41,8 @@ class SourceCatalogTests(unittest.TestCase):
         summary: str,
         canonical_source_id: str | None = None,
         references: list[str] | None = None,
+        relevance_tier: str | None = None,
+        role_labels: list[str] | None = None,
     ) -> None:
         path = self.kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl"
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -57,6 +59,10 @@ class SourceCatalogTests(unittest.TestCase):
         }
         if canonical_source_id:
             payload["canonical_source_id"] = canonical_source_id
+        if relevance_tier:
+            payload["relevance_tier"] = relevance_tier
+        if role_labels is not None:
+            payload["role_labels"] = list(role_labels)
         path.write_text(existing + json.dumps(payload, ensure_ascii=True) + "\n", encoding="utf-8")
 
     def test_materialize_source_catalog_groups_cross_topic_reuse(self) -> None:
@@ -119,6 +125,45 @@ class SourceCatalogTests(unittest.TestCase):
         self.assertEqual(payload["summary"]["unique_canonical_source_count"], 0)
         markdown = Path(result["markdown_path"]).read_text(encoding="utf-8")
         self.assertIn("No source-layer topic indexes were found", markdown)
+
+    def test_materialize_source_catalog_tracks_relevance_tiers_and_role_labels(self) -> None:
+        self._write_source_row(
+            topic_slug="topic-a",
+            source_id="paper:foundational-review",
+            source_type="paper",
+            title="Foundational review paper",
+            summary="A foundational review of the topic.",
+            canonical_source_id="source_identity:doi:10-1000-foundational-review",
+            relevance_tier="canonical",
+            role_labels=["foundational", "review"],
+        )
+        self._write_source_row(
+            topic_slug="topic-b",
+            source_id="paper:key-result",
+            source_type="paper",
+            title="Modern key result paper",
+            summary="A modern key result for the topic.",
+            canonical_source_id="source_identity:doi:10-1000-modern-key-result",
+            relevance_tier="must_read",
+            role_labels=["modern_reference", "key_result"],
+        )
+
+        result = materialize_source_catalog(self.kernel_root)
+        payload = result["payload"]
+
+        self.assertEqual(payload["summary"]["relevance_summary"]["counts_by_tier"]["canonical"], 1)
+        self.assertEqual(payload["summary"]["relevance_summary"]["counts_by_tier"]["must_read"], 1)
+        self.assertEqual(payload["summary"]["relevance_summary"]["strongest_tier"], "canonical")
+        self.assertEqual(payload["summary"]["role_label_counts"]["foundational"], 1)
+        self.assertEqual(payload["summary"]["role_label_counts"]["review"], 1)
+        entry = payload["sources"][0]
+        self.assertEqual(entry["strongest_relevance_tier"], "canonical")
+        self.assertIn("foundational", entry["role_labels"])
+        self.assertIn("review", entry["role_labels"])
+        markdown = Path(result["markdown_path"]).read_text(encoding="utf-8")
+        self.assertIn("## Relevance Summary", markdown)
+        self.assertIn("canonical", markdown)
+        self.assertIn("foundational", markdown)
 
     def test_materialize_source_citation_traversal_reports_incoming_and_outgoing_links(self) -> None:
         self._write_source_row(

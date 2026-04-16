@@ -66,6 +66,23 @@ FIDELITY_RANK = {
     "web": 1,
     "unknown": 0,
 }
+RELEVANCE_RANK = {
+    "canonical": 4,
+    "must_read": 3,
+    "strongly_relevant": 2,
+    "useful": 1,
+    "irrelevant": 0,
+}
+RELEVANCE_TIERS = tuple(RELEVANCE_RANK.keys())
+ROLE_LABEL_KEYWORDS = {
+    "foundational": ("foundational", "foundation", "seminal", "classic"),
+    "key_result": ("key result", "main result", "we show", "we prove", "we derive"),
+    "modern_reference": ("modern", "recent", "state of the art", "current"),
+    "review": ("review", "survey", "overview"),
+    "technical_tool": ("algorithm", "implementation", "workflow", "tool", "benchmark", "solver"),
+    "limitation": ("limitation", "limitations", "open problem", "future work", "failure"),
+    "application_connection": ("application", "applied", "experiment", "phenomenology"),
+}
 
 METHOD_SPECIFICITY_RULES = (
     ("formal_derivation", "high", ("we derive", "derivation", "theorem", "lemma", "proof obligation", "we prove", "proof")),
@@ -100,6 +117,65 @@ def _dedupe_strings(values: list[str]) -> list[str]:
         seen.add(normalized)
         ordered.append(normalized)
     return ordered
+
+
+def normalize_role_labels(values: list[Any] | None) -> list[str]:
+    normalized: list[str] = []
+    for value in values or []:
+        token = str(value or "").strip().lower()
+        if token:
+            normalized.append(token)
+    return _dedupe_strings(normalized)
+
+
+def _valid_relevance_tier(value: Any) -> str:
+    candidate = str(value or "").strip().lower()
+    return candidate if candidate in RELEVANCE_RANK else ""
+
+
+def infer_source_relevance(
+    *,
+    source_type: str,
+    title: str,
+    summary: str,
+    provenance: dict[str, Any] | None,
+    canonical_source_id: str,
+    explicit_relevance_tier: str | None = None,
+    explicit_role_labels: list[Any] | None = None,
+) -> tuple[str, str, list[str]]:
+    provenance = provenance or {}
+    text = " ".join(
+        [
+            str(title or "").strip().lower(),
+            str(summary or "").strip().lower(),
+        ]
+    )
+    role_labels = normalize_role_labels(
+        list(explicit_role_labels or [])
+        or list(provenance.get("role_labels") or [])
+    )
+    for label, keywords in ROLE_LABEL_KEYWORDS.items():
+        if any(keyword in text for keyword in keywords):
+            role_labels = _dedupe_strings([*role_labels, label])
+
+    explicit_tier = _valid_relevance_tier(explicit_relevance_tier or provenance.get("relevance_tier"))
+    if explicit_tier:
+        return explicit_tier, "explicit_source_metadata", role_labels
+
+    lower_source_type = str(source_type or "").strip().lower()
+    if "review" in role_labels:
+        return "must_read", "review_keyword", role_labels
+    if any(keyword in text for keyword in ("foundational", "seminal", "classic")):
+        return "canonical", "foundational_keyword", role_labels
+    if lower_source_type in {"paper", "pdf"}:
+        return "strongly_relevant", "formal_source_default", role_labels
+    if lower_source_type == "local_note":
+        return "useful", "local_note_default", role_labels
+    if lower_source_type in {"url", "web_page", "video", "transcript", "conversation"}:
+        return "useful", "supplementary_source_default", role_labels
+    if canonical_source_id.startswith("source_identity:doi:") or canonical_source_id.startswith("source_identity:arxiv:"):
+        return "strongly_relevant", "canonical_identity_default", role_labels
+    return "useful", "topic_local_default", role_labels
 
 
 def normalize_arxiv_id(value: str) -> str:
@@ -419,6 +495,7 @@ def build_source_intelligence(
     citation_edges: list[dict[str, Any]] = []
     source_neighbors: list[dict[str, Any]] = []
     fidelity_rows: list[dict[str, str]] = []
+    relevance_rows: list[dict[str, Any]] = []
     seen_neighbor_keys: set[tuple[str, str, str]] = set()
 
     local_rows: list[dict[str, Any]] = []
@@ -454,6 +531,25 @@ def build_source_intelligence(
                 "source_type": str(row.get("source_type") or ""),
                 "fidelity_tier": fidelity_tier,
                 "fidelity_basis": fidelity_basis,
+            }
+        )
+        relevance_tier, relevance_basis, role_labels = infer_source_relevance(
+            source_type=str(row.get("source_type") or ""),
+            title=str(row.get("title") or ""),
+            summary=str(row.get("summary") or ""),
+            provenance=row.get("provenance") if isinstance(row.get("provenance"), dict) else {},
+            canonical_source_id=str(row.get("canonical_source_id") or ""),
+            explicit_relevance_tier=str(row.get("relevance_tier") or ""),
+            explicit_role_labels=row.get("role_labels") if isinstance(row.get("role_labels"), list) else [],
+        )
+        relevance_rows.append(
+            {
+                "source_id": str(row.get("source_id") or ""),
+                "canonical_source_id": str(row.get("canonical_source_id") or ""),
+                "source_type": str(row.get("source_type") or ""),
+                "relevance_tier": relevance_tier,
+                "relevance_basis": relevance_basis,
+                "role_labels": role_labels,
             }
         )
 
@@ -538,6 +634,30 @@ def build_source_intelligence(
     counts_by_tier = dict(
         sorted(counts_by_tier.items(), key=lambda item: (-FIDELITY_RANK.get(item[0], -1), item[0]))
     )
+    relevance_counts_by_tier: dict[str, int] = {}
+    role_label_counts: dict[str, int] = {}
+    for row in relevance_rows:
+        tier = str(row.get("relevance_tier") or "useful")
+        relevance_counts_by_tier[tier] = relevance_counts_by_tier.get(tier, 0) + 1
+        for label in row.get("role_labels") or []:
+            normalized_label = str(label or "").strip().lower()
+            if normalized_label:
+                role_label_counts[normalized_label] = role_label_counts.get(normalized_label, 0) + 1
+    relevance_tiers_present = [tier for tier, count in relevance_counts_by_tier.items() if count > 0]
+    strongest_relevance_tier = max(
+        relevance_tiers_present,
+        key=lambda item: (RELEVANCE_RANK.get(item, -1), item),
+        default="irrelevant",
+    )
+    weakest_relevance_tier = min(
+        relevance_tiers_present,
+        key=lambda item: (RELEVANCE_RANK.get(item, 99), item),
+        default="irrelevant",
+    )
+    relevance_counts_by_tier = dict(
+        sorted(relevance_counts_by_tier.items(), key=lambda item: (-RELEVANCE_RANK.get(item[0], -1), item[0]))
+    )
+    role_label_counts = dict(sorted(role_label_counts.items(), key=lambda item: (-item[1], item[0])))
 
     return {
         "canonical_source_ids": canonical_source_ids,
@@ -548,6 +668,14 @@ def build_source_intelligence(
             "counts_by_tier": counts_by_tier,
             "strongest_tier": strongest_tier,
             "weakest_tier": weakest_tier,
+        },
+        "relevance_rows": relevance_rows,
+        "relevance_summary": {
+            "source_count": len(relevance_rows),
+            "counts_by_tier": relevance_counts_by_tier,
+            "strongest_tier": strongest_relevance_tier,
+            "weakest_tier": weakest_relevance_tier,
+            "role_label_counts": role_label_counts,
         },
         "citation_edges": citation_edges,
         "source_neighbors": source_neighbors,

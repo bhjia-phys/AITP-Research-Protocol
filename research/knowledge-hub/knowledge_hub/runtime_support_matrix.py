@@ -136,6 +136,17 @@ def _codex_runtime_row(
     runtime_present = bool(codex_skill_status.get("runtime_skill_present"))
     using_matches = bool(codex_skill_status.get("using_skill_matches_canonical"))
     runtime_matches = bool(codex_skill_status.get("runtime_skill_matches_canonical"))
+    receipt_present_raw = codex_skill_status.get("bootstrap_receipt_present")
+    receipt_parse_ok_raw = codex_skill_status.get("bootstrap_receipt_parse_ok")
+    receipt_matches_raw = codex_skill_status.get("bootstrap_receipt_matches_expected")
+    receipt_enforced = (
+        receipt_present_raw is not None
+        or receipt_parse_ok_raw is not None
+        or receipt_matches_raw is not None
+    )
+    receipt_present = bool(receipt_present_raw)
+    receipt_parse_ok = bool(receipt_parse_ok_raw)
+    receipt_matches = bool(receipt_matches_raw)
 
     if not using_present:
         issues.append("using_skill_missing")
@@ -145,6 +156,13 @@ def _codex_runtime_row(
         issues.append("using_skill_stale")
     if runtime_present and not runtime_matches:
         issues.append("runtime_skill_stale")
+    if receipt_enforced:
+        if not receipt_present:
+            issues.append("bootstrap_receipt_missing")
+        elif not receipt_parse_ok:
+            issues.append("bootstrap_receipt_invalid")
+        elif not receipt_matches:
+            issues.append("bootstrap_receipt_stale")
     if not codex_path:
         issues.append("codex_cli_missing")
 
@@ -161,10 +179,15 @@ def _codex_runtime_row(
         "Current cleanest end-to-end AITP runtime path.",
         "This is the baseline lane that deeper execution still assumes most often.",
     ]
+    if receipt_enforced and "bootstrap_receipt_missing" in issues:
+        notes.append("Installed skills are present, but no Codex bootstrap receipt has been recorded yet.")
     if status != "ready":
         notes.append("Use `aitp session-start \"<task>\"` while repairing the preferred bootstrap surface.")
     repair_status = "none_required" if status == "ready" else "required"
     repair_command = "aitp install-agent --agent codex --scope user" if repair_status != "none_required" else ""
+    if receipt_enforced and issues == ["bootstrap_receipt_missing"]:
+        repair_status = "required"
+        repair_command = 'aitp-codex --dry-run "continue this topic"'
     issue_hints: list[dict[str, str]] = []
     for issue in issues:
         if issue in {"using_skill_missing", "runtime_skill_missing", "using_skill_stale", "runtime_skill_stale"}:
@@ -172,6 +195,20 @@ def _codex_runtime_row(
                 {
                     "issue": issue,
                     "hint": "Run `aitp install-agent --agent codex --scope user` to refresh the Codex skill surfaces.",
+                }
+            )
+        elif issue == "bootstrap_receipt_missing":
+            issue_hints.append(
+                {
+                    "issue": issue,
+                    "hint": "Run `aitp-codex --dry-run \"continue this topic\"` once to capture a real Codex bootstrap receipt, or use `aitp session-start \"<task>\"` until that receipt exists.",
+                }
+            )
+        elif issue in {"bootstrap_receipt_invalid", "bootstrap_receipt_stale"}:
+            issue_hints.append(
+                {
+                    "issue": issue,
+                    "hint": "Delete the stale Codex bootstrap receipt and rerun `aitp-codex --dry-run \"continue this topic\"` to regenerate it from the canonical entrypoint.",
                 }
             )
         elif issue == "codex_cli_missing":

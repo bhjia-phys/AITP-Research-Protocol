@@ -19,10 +19,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-
 ATOM_NS = {"atom": "http://www.w3.org/2005/Atom"}
 PACKAGE_ROOT = Path(__file__).resolve().parents[2]
 REPO_ROOT = Path(__file__).resolve().parents[4]
+
+if str(PACKAGE_ROOT) not in sys.path:
+    sys.path.insert(0, str(PACKAGE_ROOT))
+
+from knowledge_hub.source_intelligence import infer_source_relevance
 
 
 def now_iso() -> str:
@@ -346,6 +350,25 @@ def build_source_payload(
     registered_by: str,
     acquired_at: str,
 ) -> dict:
+    relevance_tier, _, role_labels = infer_source_relevance(
+        source_type="paper",
+        title=metadata["title"],
+        summary=short_summary(metadata["summary"]),
+        provenance={
+            "arxiv_id": metadata["versioned_id"],
+            "authors": metadata["authors"],
+            "published": metadata["published"],
+            "updated": metadata["updated"],
+            "abs_url": metadata["abs_url"],
+            "pdf_url": metadata["pdf_url"],
+            "source_url": metadata["source_url"],
+            "relevance_tier": metadata.get("relevance_tier"),
+            "role_labels": metadata.get("role_labels"),
+        },
+        canonical_source_id="",
+        explicit_relevance_tier=str(metadata.get("relevance_tier") or ""),
+        explicit_role_labels=metadata.get("role_labels") if isinstance(metadata.get("role_labels"), list) else [],
+    )
     return {
         "source_id": f"paper:{slugify(metadata['title'])}-{metadata['base_id'].replace('.', '-')}",
         "source_type": "paper",
@@ -375,6 +398,8 @@ def build_source_payload(
         "acquired_at": acquired_at,
         "registered_by": registered_by,
         "summary": short_summary(metadata["summary"]),
+        "relevance_tier": relevance_tier,
+        "role_labels": role_labels,
     }
 
 

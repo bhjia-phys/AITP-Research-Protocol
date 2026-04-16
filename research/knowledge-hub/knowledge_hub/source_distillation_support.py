@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .l1_source_intake_support import evidence_sentence_ids_for_text
 from .source_intelligence import detect_assumptions, detect_regimes, infer_method_specificity, infer_reading_depth_label
 
 _FORMAL_SOURCE_TYPES = {"paper", "thesis", "article", "local_note", "book", "lecture", "derivation"}
@@ -569,6 +570,10 @@ def _build_l1_source_intake(
                         text=analysis_text,
                         needle=specificity_needle or title or summary,
                     ),
+                    "evidence_sentence_ids": evidence_sentence_ids_for_text(
+                        text=analysis_text,
+                        needle=specificity_needle or title or summary,
+                    ),
                 }
             )
         if not analysis_text:
@@ -582,6 +587,7 @@ def _build_l1_source_intake(
                     "assumption": assumption,
                     "reading_depth": reading_depth,
                     "evidence_excerpt": _excerpt_for_signal(text=analysis_text, needle=assumption),
+                    "evidence_sentence_ids": evidence_sentence_ids_for_text(text=analysis_text, needle=assumption),
                 }
             )
         for regime in detect_regimes(text=analysis_text):
@@ -593,6 +599,7 @@ def _build_l1_source_intake(
                     "regime": regime,
                     "reading_depth": reading_depth,
                     "evidence_excerpt": _excerpt_for_signal(text=analysis_text, needle=regime),
+                    "evidence_sentence_ids": evidence_sentence_ids_for_text(text=analysis_text, needle=regime),
                 }
             )
 

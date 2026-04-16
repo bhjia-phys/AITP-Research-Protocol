@@ -870,6 +870,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                     "assumption": "Benchmark first.",
                     "reading_depth": "abstract_only",
                     "evidence_excerpt": "Benchmark first.",
+                    "evidence_sentence_ids": ["s001"],
                 }
             ],
             "regime_rows": [
@@ -880,6 +881,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                     "regime": "weak coupling",
                     "reading_depth": "abstract_only",
                     "evidence_excerpt": "weak coupling",
+                    "evidence_sentence_ids": ["s002"],
                 }
             ],
             "reading_depth_rows": [
@@ -900,6 +902,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                     "specificity_tier": "high",
                     "reading_depth": "abstract_only",
                     "evidence_excerpt": "Exact benchmark workflow.",
+                    "evidence_sentence_ids": ["s003"],
                 }
             ],
         }
@@ -925,10 +928,83 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             bundle["active_research_contract"]["l1_source_intake"]["method_specificity_rows"][0]["method_family"],
             "numerical_benchmark",
         )
+        self.assertEqual(
+            bundle["active_research_contract"]["l1_source_intake"]["assumption_rows"][0]["evidence_sentence_ids"][0],
+            "s001",
+        )
         note_text = Path(result["runtime_protocol_note_path"]).read_text(encoding="utf-8")
         self.assertIn("## L1 source intake", note_text)
         self.assertIn("## Source-backed regimes", note_text)
         self.assertIn("## Method specificity", note_text)
+        self.assertIn("sentence ids:", note_text)
+
+    def test_runtime_bundle_registers_l1_source_bridge_as_deferred_hydration_surface(self) -> None:
+        shell_surfaces = self._shell_surfaces()
+        shell_surfaces["research_question_contract"]["l1_vault"] = {
+            "vault_version": 1,
+            "status": "materialized",
+            "topic_slug": "demo-topic",
+            "authority_level": "non_authoritative_compiled_l1",
+            "protocol_path": "intake/L1_VAULT_PROTOCOL.md",
+            "root_path": "topics/demo-topic/L1/vault",
+            "raw": {
+                "manifest_path": "topics/demo-topic/L1/vault/raw/source-manifest.json",
+                "note_path": "topics/demo-topic/L1/vault/raw/source-manifest.md",
+                "source_count": 1,
+            },
+            "wiki": {
+                "schema_path": "topics/demo-topic/L1/vault/wiki/schema.md",
+                "home_page_path": "topics/demo-topic/L1/vault/wiki/home.md",
+                "page_count": 5,
+                "page_paths": [
+                    "topics/demo-topic/L1/vault/wiki/home.md",
+                    "topics/demo-topic/L1/vault/wiki/source-intake.md",
+                    "topics/demo-topic/L1/vault/wiki/source-bridge.md",
+                    "topics/demo-topic/L1/vault/wiki/open-questions.md",
+                    "topics/demo-topic/L1/vault/wiki/runtime-bridge.md",
+                ],
+            },
+            "output": {
+                "digest_path": "topics/demo-topic/L1/vault/output/current-query.json",
+                "digest_note_path": "topics/demo-topic/L1/vault/output/current-query.md",
+                "flowback_log_path": "topics/demo-topic/L1/vault/output/flowback.jsonl",
+                "flowback_note_path": "topics/demo-topic/L1/vault/output/flowback.md",
+                "flowback_entry_count": 4,
+            },
+            "compatibility_refs": [
+                {
+                    "kind": "source_anchor_index_json",
+                    "path": "topics/demo-topic/L1/vault/output/source_anchor_index.json",
+                    "status": "available",
+                },
+                {
+                    "kind": "source_anchor_bridge_note",
+                    "path": "topics/demo-topic/L1/vault/wiki/source-bridge.md",
+                    "status": "available",
+                },
+            ],
+        }
+        with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
+            with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
+                result = self.service._materialize_runtime_protocol_bundle(
+                    topic_slug="demo-topic",
+                    updated_by="test",
+                    human_request="continue this topic and hydrate the exact source detail only when needed",
+                    load_profile="light",
+                )
+
+        bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
+        self.assertIn(
+            "topics/demo-topic/L1/vault/wiki/source-bridge.md",
+            self._deferred_paths(bundle),
+        )
+        self.assertTrue(
+            any(
+                row["path"] == "topics/demo-topic/L1/vault/wiki/source-bridge.md"
+                and row["trigger"] == "verification_route_selection"
+                for row in bundle["may_defer_until_trigger"]
+            )
+        )
 
     def test_runtime_bundle_projects_source_intelligence_into_read_path(self) -> None:
         shell_surfaces = self._shell_surfaces()

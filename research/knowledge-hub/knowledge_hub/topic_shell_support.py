@@ -47,23 +47,29 @@ from .capability_plane_support import materialize_execution_resource_context
 from .validation_review_service import analytical_cross_check_markdown_lines
 from .topic_truth_root_support import compatibility_projection_path
 from .iteration_journal_support import materialize_iteration_journal
+def _newer_projection_target(path: Path) -> Path:
+    compatibility_path = compatibility_projection_path(path)
+    if compatibility_path is None or not compatibility_path.exists():
+        return path
+    if not path.exists():
+        return compatibility_path
+    try:
+        if compatibility_path.stat().st_mtime > path.stat().st_mtime:
+            return compatibility_path
+    except OSError:
+        return path
+    return path
 def _read_json(path: Path) -> dict[str, Any] | None:
-    target = path
+    target = _newer_projection_target(path)
     if not target.exists():
-        compatibility_path = compatibility_projection_path(path)
-        if compatibility_path is None or not compatibility_path.exists():
-            return None
-        target = compatibility_path
+        return None
     return json.loads(target.read_text(encoding="utf-8"))
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
-    target = path
+    target = _newer_projection_target(path)
     if not target.exists():
-        compatibility_path = compatibility_projection_path(path)
-        if compatibility_path is None or not compatibility_path.exists():
-            return []
-        target = compatibility_path
+        return []
     rows: list[dict[str, Any]] = []
     for raw_line in target.read_text(encoding="utf-8").splitlines():
         line = raw_line.strip()
@@ -1329,24 +1335,21 @@ def ensure_topic_shell_surfaces(
         pending_actions=pending_actions,
         selected_pending_action=selected_pending_action,
     )
-    topic_completion = self.assess_topic_completion(
+    topic_completion = self._materialize_topic_completion_surface(
         topic_slug=topic_slug,
         run_id=latest_run_id or None,
         updated_by=updated_by,
-        refresh_runtime_bundle=False,
     )
     dependency_state = self._topic_dependency_state(topic_slug)
-    statement_compilation = self.prepare_statement_compilation(
+    statement_compilation = self._materialize_statement_compilation_surface(
         topic_slug=topic_slug,
         run_id=latest_run_id or None,
         updated_by=updated_by,
-        refresh_runtime_bundle=False,
     )
-    lean_bridge = self.prepare_lean_bridge(
+    lean_bridge = self._materialize_lean_bridge_surface(
         topic_slug=topic_slug,
         run_id=latest_run_id or None,
         updated_by=updated_by,
-        refresh_runtime_bundle=False,
     )
     followup_reintegration_paths = self._write_followup_reintegration_rows(
         topic_slug,
@@ -1914,8 +1917,10 @@ def ensure_topic_shell_surfaces(
         "l1_vault_wiki_home_path": str(l1_vault["wiki_home_path"]),
         "l1_vault_wiki_schema_path": str(l1_vault["wiki_schema_path"]),
         "l1_vault_wiki_source_intake_path": str(l1_vault["wiki_source_intake_path"]),
+        "l1_vault_wiki_source_bridge_path": str(l1_vault["wiki_source_bridge_path"]),
         "l1_vault_wiki_open_questions_path": str(l1_vault["wiki_open_questions_path"]),
         "l1_vault_wiki_runtime_bridge_path": str(l1_vault["wiki_runtime_bridge_path"]),
+        "l1_vault_output_source_anchor_index_path": str(l1_vault["source_anchor_index_path"]),
         "l1_vault_output_digest_path": str(l1_vault["output_digest_path"]),
         "l1_vault_output_digest_note_path": str(l1_vault["output_digest_note_path"]),
         "l1_vault_flowback_log_path": str(l1_vault["flowback_log_path"]),

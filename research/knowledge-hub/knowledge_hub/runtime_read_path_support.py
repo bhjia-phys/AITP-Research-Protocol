@@ -66,6 +66,14 @@ def empty_source_intelligence(*, topic_slug: str) -> dict[str, Any]:
             "strongest_tier": "unknown",
             "weakest_tier": "unknown",
         },
+        "relevance_rows": [],
+        "relevance_summary": {
+            "source_count": 0,
+            "counts_by_tier": {},
+            "strongest_tier": "irrelevant",
+            "weakest_tier": "irrelevant",
+            "role_label_counts": {},
+        },
         "citation_edges": [],
         "source_neighbors": [],
         "neighbor_signal_count": 0,
@@ -2330,6 +2338,8 @@ def append_l1_source_intake_markdown(lines: list[str], payload: dict[str, Any]) 
             )
             if row.get("evidence_excerpt"):
                 lines.append(f"  evidence: {row.get('evidence_excerpt')}")
+            if row.get("evidence_sentence_ids"):
+                lines.append(f"  sentence ids: {', '.join(row.get('evidence_sentence_ids') or [])}")
         else:
             lines.append(f"- {row}")
     lines.extend(["", "## Source-backed regimes", ""])
@@ -2341,6 +2351,8 @@ def append_l1_source_intake_markdown(lines: list[str], payload: dict[str, Any]) 
             )
             if row.get("evidence_excerpt"):
                 lines.append(f"  evidence: {row.get('evidence_excerpt')}")
+            if row.get("evidence_sentence_ids"):
+                lines.append(f"  sentence ids: {', '.join(row.get('evidence_sentence_ids') or [])}")
         else:
             lines.append(f"- {row}")
     lines.extend(["", "## Reading depth", ""])
@@ -2361,6 +2373,8 @@ def append_l1_source_intake_markdown(lines: list[str], payload: dict[str, Any]) 
             )
             if row.get("evidence_excerpt"):
                 lines.append(f"  evidence: {row.get('evidence_excerpt')}")
+            if row.get("evidence_sentence_ids"):
+                lines.append(f"  sentence ids: {', '.join(row.get('evidence_sentence_ids') or [])}")
         else:
             lines.append(f"- {row}")
     lines.extend(["", "## Reading-depth limits", ""])
@@ -2440,6 +2454,7 @@ def append_source_intelligence_markdown(lines: list[str], payload: dict[str, Any
         ]
     )
     fidelity_summary = payload.get("fidelity_summary") or {}
+    relevance_summary = payload.get("relevance_summary") or {}
     lines.extend(
         [
             "",
@@ -2448,6 +2463,13 @@ def append_source_intelligence_markdown(lines: list[str], payload: dict[str, Any
             f"- Strongest tier: `{fidelity_summary.get('strongest_tier') or 'unknown'}`",
             f"- Weakest tier: `{fidelity_summary.get('weakest_tier') or 'unknown'}`",
             f"- Counts by tier: `{', '.join(f'{key}={value}' for key, value in (fidelity_summary.get('counts_by_tier') or {}).items()) or '(none)'}`",
+            "",
+            "## Source relevance",
+            "",
+            f"- Strongest tier: `{relevance_summary.get('strongest_tier') or 'irrelevant'}`",
+            f"- Weakest tier: `{relevance_summary.get('weakest_tier') or 'irrelevant'}`",
+            f"- Counts by tier: `{', '.join(f'{key}={value}' for key, value in (relevance_summary.get('counts_by_tier') or {}).items()) or '(none)'}`",
+            f"- Role labels: `{', '.join(f'{key}={value}' for key, value in (relevance_summary.get('role_label_counts') or {}).items()) or '(none)'}`",
         ]
     )
     if payload.get("source_neighbors"):
@@ -2539,6 +2561,17 @@ def normalized_source_intelligence(
         payload["path"] = relativize(Path(shell_surfaces["source_intelligence_path"]))
     if shell_surfaces.get("source_intelligence_note_path"):
         payload["note_path"] = relativize(Path(shell_surfaces["source_intelligence_note_path"]))
+    payload.setdefault("relevance_rows", [])
+    payload.setdefault(
+        "relevance_summary",
+        {
+            "source_count": 0,
+            "counts_by_tier": {},
+            "strongest_tier": "irrelevant",
+            "weakest_tier": "irrelevant",
+            "role_label_counts": {},
+        },
+    )
     return payload
 
 

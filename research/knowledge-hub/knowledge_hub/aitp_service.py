@@ -755,6 +755,9 @@ class AITPService:
             "note": runtime_root / "session_start.generated.md",
         }
 
+    def _required_read_receipts_path(self, topic_slug: str) -> Path:
+        return self._runtime_root(topic_slug) / "required_read_receipts.jsonl"
+
     def _control_note_path(self, topic_slug: str) -> Path:
         return self._runtime_root(topic_slug) / "control_note.md"
 
@@ -811,6 +814,199 @@ class AITPService:
         path = Path(raw).expanduser()
         if path.is_absolute():
             return path
+        return self.kernel_root / path
+
+    def _session_start_payload_for_required_reads(self, topic_slug: str) -> dict[str, Any]:
+        payload = read_json(self._session_start_paths(topic_slug)["json"])
+        if payload is None:
+            payload = read_json(self._runtime_root(topic_slug) / "session_start.generated.json")
+        return payload or {}
+
+    def _required_read_paths_from_session(self, payload: dict[str, Any]) -> list[str]:
+        artifacts = payload.get("artifacts") or {}
+        required_paths = [
+            self._normalize_artifact_path(artifacts.get("session_start_note_path")),
+            self._normalize_artifact_path(artifacts.get("runtime_protocol_note_path")),
+        ]
+        for row in payload.get("must_read_now") or []:
+            if isinstance(row, dict):
+                required_paths.append(self._normalize_artifact_path(row.get("path")))
+        return self._dedupe_strings([str(item) for item in required_paths if str(item or "").strip()])
+
+    def _render_required_read_gate_markdown(self, payload: dict[str, Any]) -> str:
+        if payload.get("blocked"):
+            lines = [
+                "# Startup contract missing",
+                "",
+                "Materialize the current topic startup contract before deeper execution continues.",
+                "",
+                "## Missing paths",
+                "",
+            ]
+            for path in payload.get("missing_paths") or ["(none)"]:
+                lines.append(f"- `{path}`" if path != "(none)" else "- (none)")
+            lines.extend(
+                [
+                    "",
+                    "Resolve with:",
+                    "",
+                    f"`aitp session-start --topic-slug {payload.get('topic_slug') or '<topic_slug>'} \"continue this topic\"`",
+                    "",
+                ]
+            )
+            return "\n".join(lines)
+        if not payload.get("needs_ack"):
+            return "# Required reads\n\nNo active required-read gate is currently blocking deeper execution.\n"
+        lines = [
+            "# Required reads",
+            "",
+            "Acknowledge the current startup reads before continuing deeper execution.",
+            "",
+            f"- Topic slug: `{payload.get('topic_slug') or '(missing)'}`",
+            f"- Required generation: `{payload.get('generation') or '(missing)'}`",
+            f"- Receipt path: `{payload.get('receipt_path') or '(missing)'}`",
+            "",
+            "## Missing paths",
+            "",
+        ]
+        for path in payload.get("missing_paths") or ["(none)"]:
+            lines.append(f"- `{path}`" if path != "(none)" else "- (none)")
+        lines.extend(
+            [
+                "",
+                "Resolve with:",
+                "",
+                f"`aitp ack-read --topic-slug {payload.get('topic_slug') or '<topic_slug>'} --all-current`",
+                "",
+            ]
+        )
+        return "\n".join(lines)
+
+    def topic_required_read_gate(
+        self,
+        *,
+        topic_slug: str,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        session_payload = self._session_start_payload_for_required_reads(topic_slug)
+        if not session_payload:
+            topic_exists = bool(read_json(self._runtime_root(topic_slug) / "topic_state.json"))
+            missing_paths = []
+            if topic_exists:
+                missing_paths = [
+                    self._relativize(self._session_start_paths(topic_slug)["json"]),
+                    self._relativize(self._runtime_root(topic_slug) / "runtime_protocol.generated.md"),
+                ]
+            payload = {
+                "topic_slug": topic_slug,
+                "updated_by": updated_by,
+                "gate_kind": "startup_contract_missing" if topic_exists else "none",
+                "blocked": topic_exists,
+                "needs_ack": False,
+                "generation": "",
+                "required_paths": [],
+                "acknowledged_paths": [],
+                "missing_paths": missing_paths,
+                "receipt_path": self._relativize(self._required_read_receipts_path(topic_slug)),
+            }
+            payload["markdown"] = self._render_required_read_gate_markdown(payload)
+            return payload
+
+        generation = str(session_payload.get("updated_at") or "").strip()
+        required_paths = self._required_read_paths_from_session(session_payload)
+        receipt_path = self._required_read_receipts_path(topic_slug)
+        acknowledged_paths = self._dedupe_strings(
+            [
+                self._normalize_artifact_path(row.get("path"))
+                for row in read_jsonl(receipt_path)
+                if str(row.get("generation") or "").strip() == generation
+                and self._normalize_artifact_path(row.get("path"))
+            ]
+        )
+        missing_paths = [path for path in required_paths if path not in acknowledged_paths]
+        payload = {
+            "topic_slug": topic_slug,
+            "updated_by": updated_by,
+            "gate_kind": "must_read_ack",
+            "blocked": False,
+            "needs_ack": bool(missing_paths),
+            "generation": generation,
+            "required_paths": required_paths,
+            "acknowledged_paths": acknowledged_paths,
+            "missing_paths": missing_paths,
+            "receipt_path": self._relativize(receipt_path),
+        }
+        payload["markdown"] = self._render_required_read_gate_markdown(payload)
+        return payload
+
+    def acknowledge_required_reads(
+        self,
+        *,
+        topic_slug: str,
+        paths: list[str] | None = None,
+        all_current: bool = False,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        gate = self.topic_required_read_gate(topic_slug=topic_slug, updated_by=updated_by)
+        if not gate.get("generation"):
+            return {
+                "topic_slug": topic_slug,
+                "receipt_path": gate.get("receipt_path"),
+                "acknowledged_count": 0,
+                "acknowledged_paths": [],
+                "remaining_missing_count": 0,
+                "remaining_missing_paths": [],
+                "generation": "",
+            }
+
+        target_paths = (
+            list(gate.get("missing_paths") or [])
+            if all_current
+            else self._dedupe_strings(
+                [
+                    str(self._normalize_artifact_path(path) or "").strip()
+                    for path in (paths or [])
+                    if str(self._normalize_artifact_path(path) or "").strip()
+                ]
+            )
+        )
+        existing_rows = read_jsonl(self._required_read_receipts_path(topic_slug))
+        existing_keys = {
+            (
+                str(row.get("generation") or "").strip(),
+                str(self._normalize_artifact_path(row.get("path")) or "").strip(),
+            )
+            for row in existing_rows
+        }
+        new_rows: list[dict[str, Any]] = []
+        for path in target_paths:
+            key = (str(gate.get("generation") or "").strip(), path)
+            if key in existing_keys:
+                continue
+            existing_keys.add(key)
+            new_rows.append(
+                {
+                    "ack_id": f"required-read:{topic_slug}:{bounded_slugify(path, max_length=48)}",
+                    "topic_slug": topic_slug,
+                    "generation": str(gate.get("generation") or "").strip(),
+                    "path": path,
+                    "acknowledged_at": now_iso(),
+                    "updated_by": updated_by,
+                }
+            )
+        if new_rows:
+            write_jsonl(self._required_read_receipts_path(topic_slug), [*existing_rows, *new_rows])
+        refreshed = self.topic_required_read_gate(topic_slug=topic_slug, updated_by=updated_by)
+        return {
+            "topic_slug": topic_slug,
+            "receipt_path": refreshed.get("receipt_path"),
+            "generation": str(gate.get("generation") or "").strip(),
+            "acknowledged_count": len(new_rows),
+            "acknowledged_paths": [str(row.get("path") or "").strip() for row in new_rows],
+            "remaining_missing_count": len(refreshed.get("missing_paths") or []),
+            "remaining_missing_paths": list(refreshed.get("missing_paths") or []),
+        }
+
         for root in (self.kernel_root, self.repo_root):
             candidate = (root / path).resolve()
             if candidate.exists():
@@ -828,6 +1024,17 @@ class AITPService:
         if raw.startswith(kernel_prefixes):
             return (self.kernel_root / path).resolve()
         return (self.repo_root / path).resolve()
+
+    def require_topic_ready_for_deeper_execution(
+        self,
+        *,
+        topic_slug: str,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any] | None:
+        gate = self.topic_required_read_gate(topic_slug=topic_slug, updated_by=updated_by)
+        if gate.get("blocked") or gate.get("needs_ack"):
+            return dict(gate)
+        return None
 
     def _research_root(self) -> Path:
         return self.kernel_root.parent
@@ -7859,6 +8066,13 @@ class AITPService:
         max_auto_steps: int = 1,
         load_profile: str | None = None,
     ) -> dict[str, Any]:
+        if topic_slug:
+            gate = self.require_topic_ready_for_deeper_execution(
+                topic_slug=topic_slug,
+                updated_by=updated_by,
+            )
+            if gate is not None:
+                return gate
         research_mode = self._template_mode_to_research_mode(mode) if mode else None
         if max_auto_steps <= 0:
             payload = self.orchestrate(
@@ -8410,6 +8624,12 @@ class AITPService:
         }
         if mode not in mode_defaults:
             raise ValueError(f"Unsupported verification mode: {mode}")
+        gate = self.require_topic_ready_for_deeper_execution(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        if gate is not None:
+            return gate
 
         self.get_runtime_state(topic_slug)
         shell_surfaces = self.ensure_topic_shell_surfaces(
@@ -8495,13 +8715,12 @@ class AITPService:
             "runtime_protocol": protocol_paths,
         }
 
-    def assess_topic_completion(
+    def _materialize_topic_completion_surface(
         self,
         *,
         topic_slug: str,
         run_id: str | None = None,
         updated_by: str = "aitp-cli",
-        refresh_runtime_bundle: bool = True,
     ) -> dict[str, Any]:
         resolved_run_id = self._resolve_run_id(topic_slug, run_id)
         candidate_rows = self._candidate_rows_for_run(topic_slug, resolved_run_id)
@@ -8528,6 +8747,27 @@ class AITPService:
             json_path=paths["json"],
             note_path=paths["note"],
         )
+        return result
+
+    def assess_topic_completion(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None = None,
+        updated_by: str = "aitp-cli",
+        refresh_runtime_bundle: bool = True,
+    ) -> dict[str, Any]:
+        gate = self.require_topic_ready_for_deeper_execution(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        if gate is not None:
+            return gate
+        result = self._materialize_topic_completion_surface(
+            topic_slug=topic_slug,
+            run_id=run_id,
+            updated_by=updated_by,
+        )
         if refresh_runtime_bundle:
             result["runtime_protocol"] = self._materialize_runtime_protocol_bundle(
                 topic_slug=topic_slug,
@@ -8548,6 +8788,12 @@ class AITPService:
         updated_by: str = "aitp-cli",
         refresh_runtime_bundle: bool = True,
     ) -> dict[str, Any]:
+        gate = self.require_topic_ready_for_deeper_execution(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        if gate is not None:
+            return gate
         return update_followup_return_packet(
             self,
             topic_slug=topic_slug,
@@ -8569,6 +8815,12 @@ class AITPService:
         run_id: str | None = None,
         updated_by: str = "aitp-cli",
     ) -> dict[str, Any]:
+        gate = self.require_topic_ready_for_deeper_execution(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        if gate is not None:
+            return gate
         return reintegrate_followup_subtopic(
             self,
             topic_slug=topic_slug,
@@ -8577,14 +8829,13 @@ class AITPService:
             updated_by=updated_by,
         )
 
-    def prepare_lean_bridge(
+    def _materialize_lean_bridge_surface(
         self,
         *,
         topic_slug: str,
         run_id: str | None = None,
         candidate_id: str | None = None,
         updated_by: str = "aitp-cli",
-        refresh_runtime_bundle: bool = True,
     ) -> dict[str, Any]:
         resolved_run_id = self._resolve_run_id(topic_slug, run_id)
         candidate_rows = self._candidate_rows_for_run(topic_slug, resolved_run_id)
@@ -8602,7 +8853,29 @@ class AITPService:
             updated_by=updated_by,
             candidate_id=candidate_id,
         )
-        result = dict(payload)
+        return dict(payload)
+
+    def prepare_lean_bridge(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None = None,
+        candidate_id: str | None = None,
+        updated_by: str = "aitp-cli",
+        refresh_runtime_bundle: bool = True,
+    ) -> dict[str, Any]:
+        gate = self.require_topic_ready_for_deeper_execution(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        if gate is not None:
+            return gate
+        result = self._materialize_lean_bridge_surface(
+            topic_slug=topic_slug,
+            run_id=run_id,
+            updated_by=updated_by,
+            candidate_id=candidate_id,
+        )
         if refresh_runtime_bundle:
             result["runtime_protocol"] = self._materialize_runtime_protocol_bundle(
                 topic_slug=topic_slug,
@@ -8619,6 +8892,12 @@ class AITPService:
         updated_by: str = "aitp-cli",
         refresh_runtime_bundle: bool = True,
     ) -> dict[str, Any]:
+        gate = self.require_topic_ready_for_deeper_execution(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        if gate is not None:
+            return gate
         resolved_run_id = self._resolve_run_id(topic_slug, run_id)
         candidate_rows = self._candidate_rows_for_run(topic_slug, resolved_run_id)
 
@@ -8775,6 +9054,12 @@ class AITPService:
         updated_by: str = "aitp-cli",
         refresh_runtime_bundle: bool = True,
     ) -> dict[str, Any]:
+        gate = self.require_topic_ready_for_deeper_execution(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        if gate is not None:
+            return gate
         export_paths = self._lean_bridge_export_target_paths(topic_slug)
         export_target = read_json(export_paths["json"])
         if export_target is None or (
@@ -8890,14 +9175,13 @@ class AITPService:
             )
         return result
 
-    def prepare_statement_compilation(
+    def _materialize_statement_compilation_surface(
         self,
         *,
         topic_slug: str,
         run_id: str | None = None,
         candidate_id: str | None = None,
         updated_by: str = "aitp-cli",
-        refresh_runtime_bundle: bool = True,
     ) -> dict[str, Any]:
         resolved_run_id = self._resolve_run_id(topic_slug, run_id)
         candidate_rows = self._candidate_rows_for_run(topic_slug, resolved_run_id)
@@ -8908,7 +9192,29 @@ class AITPService:
             updated_by=updated_by,
             candidate_id=candidate_id,
         )
-        result = dict(payload)
+        return dict(payload)
+
+    def prepare_statement_compilation(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None = None,
+        candidate_id: str | None = None,
+        updated_by: str = "aitp-cli",
+        refresh_runtime_bundle: bool = True,
+    ) -> dict[str, Any]:
+        gate = self.require_topic_ready_for_deeper_execution(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+        )
+        if gate is not None:
+            return gate
+        result = self._materialize_statement_compilation_surface(
+            topic_slug=topic_slug,
+            run_id=run_id,
+            updated_by=updated_by,
+            candidate_id=candidate_id,
+        )
         if refresh_runtime_bundle:
             result["runtime_protocol"] = self._materialize_runtime_protocol_bundle(
                 topic_slug=topic_slug,

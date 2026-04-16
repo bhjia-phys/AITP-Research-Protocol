@@ -6,7 +6,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from .source_intelligence import derive_canonical_source_id, extract_reference_ids
+from .source_intelligence import (
+    RELEVANCE_RANK,
+    derive_canonical_source_id,
+    extract_reference_ids,
+    infer_source_relevance,
+)
 
 
 def now_iso() -> str:
@@ -38,8 +43,20 @@ def _slugify(text: str) -> str:
     return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", str(text or "").lower())).strip("-") or "source"
 
 
-def _source_layer_root(kernel_root: Path) -> Path:
-    return kernel_root / "topics"
+def _source_index_paths(kernel_root: Path) -> list[Path]:
+    candidates = [
+        *sorted((kernel_root / "source-layer" / "topics").glob("*/source_index.jsonl")),
+        *sorted((kernel_root / "topics").glob("*/L0/source_index.jsonl")),
+    ]
+    deduped: list[Path] = []
+    seen: set[Path] = set()
+    for path in candidates:
+        resolved = path.resolve()
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        deduped.append(path)
+    return deduped
 
 
 def _compiled_root(kernel_root: Path) -> Path:
@@ -100,11 +117,23 @@ def _enrich_source_row(row: dict[str, Any], *, topic_slug: str) -> dict[str, Any
         [str(item) for item in (row.get("references") or []) if str(item).strip()]
         or extract_reference_ids(text=f"{title} {summary}", provenance=provenance)
     )
+    relevance_tier, relevance_basis, role_labels = infer_source_relevance(
+        source_type=source_type,
+        title=title,
+        summary=summary,
+        provenance=provenance,
+        canonical_source_id=canonical_source_id,
+        explicit_relevance_tier=str(row.get("relevance_tier") or ""),
+        explicit_role_labels=row.get("role_labels") if isinstance(row.get("role_labels"), list) else [],
+    )
     return {
         **row,
         "topic_slug": topic_slug,
         "canonical_source_id": canonical_source_id,
         "references": references,
+        "relevance_tier": relevance_tier,
+        "relevance_basis": relevance_basis,
+        "role_labels": role_labels,
         "source_id": str(row.get("source_id") or "").strip() or f"source:{_slugify(title)}",
         "source_type": source_type or "unknown",
         "title": title or canonical_source_id,
@@ -114,12 +143,15 @@ def _enrich_source_row(row: dict[str, Any], *, topic_slug: str) -> dict[str, Any
 
 def build_source_catalog(kernel_root: Path) -> dict[str, Any]:
     kernel_root = kernel_root.resolve()
-    topics_root = _source_layer_root(kernel_root)
     source_rows: list[dict[str, Any]] = []
     topic_index: list[dict[str, Any]] = []
     topic_slugs: list[str] = []
-    for source_index_path in sorted(topics_root.glob("*/L0/source_index.jsonl")):
-        topic_slug = source_index_path.parent.parent.name
+    for source_index_path in _source_index_paths(kernel_root):
+        topic_slug = (
+            source_index_path.parent.name
+            if source_index_path.parent.parent.name == "topics"
+            else source_index_path.parent.parent.name
+        )
         topic_slugs.append(topic_slug)
         rows = [_enrich_source_row(row, topic_slug=topic_slug) for row in read_jsonl(source_index_path)]
         source_rows.extend(rows)
@@ -143,6 +175,8 @@ def build_source_catalog(kernel_root: Path) -> dict[str, Any]:
 
     sources: list[dict[str, Any]] = []
     linked_reference_edge_count = 0
+    relevance_counts_by_tier: dict[str, int] = {}
+    role_label_counts: dict[str, int] = {}
     for canonical_source_id, rows in grouped.items():
         topic_slugs_for_source = _dedupe_strings([str(row.get("topic_slug") or "") for row in rows])
         references = _dedupe_strings([ref for row in rows for ref in (row.get("references") or [])])
@@ -155,6 +189,13 @@ def build_source_catalog(kernel_root: Path) -> dict[str, Any]:
         linked_reference_edge_count += len(linked_canonical_source_ids)
         source_types = _dedupe_strings([str(row.get("source_type") or "") for row in rows])
         titles = _dedupe_strings([str(row.get("title") or "") for row in rows])
+        relevance_tiers = _dedupe_strings([str(row.get("relevance_tier") or "") for row in rows])
+        strongest_relevance_tier = max(
+            relevance_tiers,
+            key=lambda item: (RELEVANCE_RANK.get(item, -1), item),
+            default="irrelevant",
+        )
+        entry_role_labels = _dedupe_strings([label for row in rows for label in (row.get("role_labels") or [])])
         entry = {
             "canonical_source_id": canonical_source_id,
             "representative_title": titles[0] if titles else canonical_source_id,
@@ -166,8 +207,15 @@ def build_source_catalog(kernel_root: Path) -> dict[str, Any]:
             "titles": titles,
             "references": references,
             "linked_canonical_source_ids": linked_canonical_source_ids,
+            "relevance_tiers": relevance_tiers,
+            "strongest_relevance_tier": strongest_relevance_tier,
+            "role_labels": entry_role_labels,
         }
         sources.append(entry)
+        for tier in relevance_tiers:
+            relevance_counts_by_tier[tier] = relevance_counts_by_tier.get(tier, 0) + 1
+        for label in entry_role_labels:
+            role_label_counts[label] = role_label_counts.get(label, 0) + 1
 
     sources.sort(key=lambda row: (-int(row["topic_count"]), -int(row["occurrence_count"]), str(row["canonical_source_id"])))
     source_type_families: list[dict[str, Any]] = []
@@ -183,6 +231,11 @@ def build_source_catalog(kernel_root: Path) -> dict[str, Any]:
                 "multi_topic_source_count": sum(1 for row in rows if int(row["topic_count"]) > 1),
             }
         )
+    relevance_counts_by_tier = dict(
+        sorted(relevance_counts_by_tier.items(), key=lambda item: (-RELEVANCE_RANK.get(item[0], -1), item[0]))
+    )
+    role_label_counts = dict(sorted(role_label_counts.items(), key=lambda item: (-item[1], item[0])))
+    relevance_tiers_present = [tier for tier, count in relevance_counts_by_tier.items() if count > 0]
 
     return {
         "kind": "aitp_source_catalog",
@@ -196,6 +249,20 @@ def build_source_catalog(kernel_root: Path) -> dict[str, Any]:
             "multi_topic_source_count": sum(1 for row in sources if int(row["topic_count"]) > 1),
             "linked_reference_edge_count": linked_reference_edge_count,
             "empty_source_store": len(source_rows) == 0,
+            "relevance_summary": {
+                "counts_by_tier": relevance_counts_by_tier,
+                "strongest_tier": max(
+                    relevance_tiers_present,
+                    key=lambda item: (RELEVANCE_RANK.get(item, -1), item),
+                    default="irrelevant",
+                ),
+                "weakest_tier": min(
+                    relevance_tiers_present,
+                    key=lambda item: (RELEVANCE_RANK.get(item, 99), item),
+                    default="irrelevant",
+                ),
+            },
+            "role_label_counts": role_label_counts,
         },
         "sources": sources,
         "source_type_families": source_type_families,
@@ -297,6 +364,7 @@ def build_source_family_report(kernel_root: Path, *, source_type: str) -> dict[s
 
 def render_source_catalog_markdown(payload: dict[str, Any]) -> str:
     summary = payload.get("summary") or {}
+    relevance_summary = summary.get("relevance_summary") or {}
     lines = [
         "# Source Catalog",
         "",
@@ -318,6 +386,18 @@ def render_source_catalog_markdown(payload: dict[str, Any]) -> str:
         )
         return "\n".join(lines).rstrip() + "\n"
 
+    lines.extend(
+        [
+            "## Relevance Summary",
+            "",
+            f"- Strongest tier: `{relevance_summary.get('strongest_tier') or 'irrelevant'}`",
+            f"- Weakest tier: `{relevance_summary.get('weakest_tier') or 'irrelevant'}`",
+            f"- Counts by tier: `{', '.join(f'{key}={value}' for key, value in (relevance_summary.get('counts_by_tier') or {}).items()) or '(none)'}`",
+            f"- Role labels: `{', '.join(f'{key}={value}' for key, value in (summary.get('role_label_counts') or {}).items()) or '(none)'}`",
+            "",
+        ]
+    )
+
     lines.extend(["## Cross-Topic Reused Sources", ""])
     reused_rows = [row for row in payload.get("sources") or [] if int(row.get("topic_count") or 0) > 1]
     if not reused_rows:
@@ -325,7 +405,8 @@ def render_source_catalog_markdown(payload: dict[str, Any]) -> str:
     for row in reused_rows:
         lines.append(
             f"- `{row.get('canonical_source_id')}` {row.get('representative_title')} "
-            f"(topics=`{', '.join(row.get('topic_slugs') or [])}`, occurrences=`{row.get('occurrence_count', 0)}`)"
+            f"(topics=`{', '.join(row.get('topic_slugs') or [])}`, occurrences=`{row.get('occurrence_count', 0)}`, "
+            f"relevance=`{row.get('strongest_relevance_tier') or 'irrelevant'}`, roles=`{', '.join(row.get('role_labels') or []) or '(none)'}`)"
         )
     lines.append("")
 

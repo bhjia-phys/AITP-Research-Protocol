@@ -9,6 +9,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
+from jsonschema import Draft202012Validator
+
 
 def _load_module(module_name: str, relative_path: str):
     kernel_root = Path(__file__).resolve().parents[1]
@@ -92,6 +94,39 @@ class SourceDiscoveryContractTests(unittest.TestCase):
             self.assertEqual(registration["extraction_status"], "skipped")
             snapshot_text = registration["layer0_snapshot"].read_text(encoding="utf-8")
             self.assertIn("Source bundle download: failed", snapshot_text)
+
+    def test_register_arxiv_source_persists_relevance_tier_and_role_labels(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            knowledge_root = Path(tmpdir) / "kernel"
+            metadata_override = {
+                **self._metadata_override(),
+                "title": "A Review of Topological Order and Anyon Condensation",
+                "summary": "A foundational review of topological order and anyon condensation for current operator-algebra routes.",
+            }
+
+            registration = self.register_module.register_arxiv_source(
+                knowledge_root=knowledge_root,
+                topic_slug="demo-topic",
+                arxiv_id="2401.00001v2",
+                registered_by="unit-test",
+                metadata_override=metadata_override,
+                download_source=False,
+                skip_enrichment=True,
+                skip_graph_build=True,
+            )
+
+            source_payload = json.loads(registration["layer0_source_json"].read_text(encoding="utf-8"))
+            intake_payload = json.loads((registration["intake_projection_root"] / "source.json").read_text(encoding="utf-8"))
+            public_schema = json.loads((self.repo_root / "schemas" / "source-item.schema.json").read_text(encoding="utf-8"))
+            runtime_schema = json.loads((self.kernel_root / "schemas" / "source-item.schema.json").read_text(encoding="utf-8"))
+
+            Draft202012Validator(public_schema).validate(source_payload)
+            Draft202012Validator(runtime_schema).validate(intake_payload)
+            self.assertEqual(source_payload["relevance_tier"], "must_read")
+            self.assertIn("review", source_payload["role_labels"])
+            self.assertIn("foundational", source_payload["role_labels"])
+            self.assertEqual(intake_payload["relevance_tier"], "must_read")
+            self.assertIn("review", intake_payload["role_labels"])
 
     def test_register_arxiv_source_uses_short_stable_source_directory_slug_for_long_titles(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

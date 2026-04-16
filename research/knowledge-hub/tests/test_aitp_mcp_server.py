@@ -31,6 +31,7 @@ READ_ONLY_PROFILE_TOOLS = {
     "aitp_describe_mcp_profile",
     "aitp_get_runtime_state",
     "aitp_get_topic_interaction",
+    "aitp_get_required_read_gate",
     "aitp_list_pending_decisions",
     "aitp_list_tool_manifest",
     "aitp_get_popup",
@@ -61,6 +62,7 @@ WRITE_PROFILE_TOOLS = {
     "aitp_reject_promotion",
     "aitp_promote_candidate",
     "aitp_auto_promote_candidate",
+    "aitp_ack_required_reads",
     "aitp_run_topic_loop",
     "aitp_install_agent_wrapper",
 }
@@ -170,6 +172,22 @@ class _AITPStubSuccess:
             "markdown": "╔═...",
         }
 
+    def topic_required_read_gate(self, *, topic_slug: str, updated_by: str = "aitp-mcp"):
+        return {
+            "topic_slug": topic_slug,
+            "blocked": False,
+            "needs_ack": False,
+            "gate_kind": "must_read_ack",
+            "missing_paths": [],
+        }
+
+    def acknowledge_required_reads(self, *, topic_slug: str, paths: list[str] | None = None, all_current: bool = False, updated_by: str = "aitp-mcp"):
+        return {
+            "topic_slug": topic_slug,
+            "acknowledged_count": 2 if all_current else len(paths or []),
+            "remaining_missing_count": 0,
+        }
+
     def resolve_popup_choice(self, *, topic_slug: str, choice_index: int, comment: str | None = None, resolved_by: str = "human"):
         return {"status": "resolved", "topic_slug": topic_slug, "choice_index": choice_index}
 
@@ -239,6 +257,12 @@ class _AITPStubFailure:
 
     def topic_popup(self, *, topic_slug: str, updated_by: str = "aitp-mcp"):
         raise RuntimeError("popup boom")
+
+    def topic_required_read_gate(self, *, topic_slug: str, updated_by: str = "aitp-mcp"):
+        raise RuntimeError("required read boom")
+
+    def acknowledge_required_reads(self, *, topic_slug: str, paths: list[str] | None = None, all_current: bool = False, updated_by: str = "aitp-mcp"):
+        raise RuntimeError("ack read boom")
 
     def resolve_popup_choice(self, *, topic_slug: str, choice_index: int, comment: str | None = None, resolved_by: str = "human"):
         raise RuntimeError("resolve popup boom")
@@ -371,6 +395,8 @@ class AITPMCPServerTests(unittest.TestCase):
                         )
                     )
                     popup = _parse(aitp_mcp_server.aitp_get_popup("demo-topic"))
+                    required_read = _parse(aitp_mcp_server.aitp_get_required_read_gate("demo-topic"))
+                    ack_read = _parse(aitp_mcp_server.aitp_ack_required_reads("demo-topic", all_current=True))
                     resolved_popup = _parse(aitp_mcp_server.aitp_resolve_popup("demo-topic", 1))
                     popup = _parse(aitp_mcp_server.aitp_get_popup("demo-topic"))
                     resolved_popup = _parse(aitp_mcp_server.aitp_resolve_popup("demo-topic", 1))
@@ -412,6 +438,10 @@ class AITPMCPServerTests(unittest.TestCase):
         self.assertEqual(popup["status"], "success")
         self.assertTrue(popup["needs_popup"])
         self.assertEqual(popup["popup_kind"], "promotion_gate")
+        self.assertEqual(required_read["status"], "success")
+        self.assertFalse(required_read["needs_ack"])
+        self.assertEqual(ack_read["status"], "success")
+        self.assertEqual(ack_read["acknowledged_count"], 2)
         self.assertEqual(resolved_popup["status"], "resolved")
         self.assertEqual(loop["status"], "success")
         self.assertEqual(install["status"], "success")
@@ -469,6 +499,8 @@ class AITPMCPServerTests(unittest.TestCase):
                         _parse(aitp_mcp_server.aitp_promote_candidate("demo-topic", "candidate:demo")),
                         _parse(aitp_mcp_server.aitp_auto_promote_candidate("demo-topic", "candidate:demo")),
                         _parse(aitp_mcp_server.aitp_get_popup("demo-topic")),
+                        _parse(aitp_mcp_server.aitp_get_required_read_gate("demo-topic")),
+                        _parse(aitp_mcp_server.aitp_ack_required_reads("demo-topic", all_current=True)),
                         _parse(aitp_mcp_server.aitp_resolve_popup("demo-topic", 1)),
                         _parse(aitp_mcp_server.aitp_run_topic_loop(topic_slug="demo-topic")),
                         _parse(aitp_mcp_server.aitp_install_agent_wrapper("codex")),
@@ -602,3 +634,45 @@ class AITPMCPServerTests(unittest.TestCase):
         self.assertNotIn("bootstrap", loop)
         self.assertNotIn("entry_audit", loop)
         self.assertNotIn("exit_audit", loop)
+
+    def test_run_topic_loop_returns_required_read_gate_before_loop_when_reads_are_missing(self) -> None:
+        class _GateStub:
+            def topic_required_read_gate(self, *, topic_slug: str, updated_by: str = "aitp-mcp"):
+                return {
+                    "topic_slug": topic_slug,
+                    "blocked": False,
+                    "needs_ack": True,
+                    "gate_kind": "must_read_ack",
+                    "missing_paths": ["topics/demo-topic/runtime/session_start.generated.md"],
+                }
+
+            def run_topic_loop(self, **kwargs):  # noqa: ANN003
+                raise AssertionError("run_topic_loop should not execute while required reads are missing")
+
+        with patch.object(aitp_mcp_server, "service", _GateStub()):
+            payload = _parse(aitp_mcp_server.aitp_run_topic_loop(topic_slug="demo-topic"))
+
+        self.assertEqual(payload["status"], "success")
+        self.assertTrue(payload["needs_ack"])
+        self.assertEqual(payload["gate_kind"], "must_read_ack")
+
+    def test_resume_topic_returns_required_read_gate_before_orchestrate_when_reads_are_missing(self) -> None:
+        class _GateStub:
+            def topic_required_read_gate(self, *, topic_slug: str, updated_by: str = "aitp-mcp"):
+                return {
+                    "topic_slug": topic_slug,
+                    "blocked": False,
+                    "needs_ack": True,
+                    "gate_kind": "must_read_ack",
+                    "missing_paths": ["topics/demo-topic/runtime/session_start.generated.md"],
+                }
+
+            def orchestrate(self, **kwargs):  # noqa: ANN003
+                raise AssertionError("orchestrate should not execute while required reads are missing")
+
+        with patch.object(aitp_mcp_server, "service", _GateStub()):
+            payload = _parse(aitp_mcp_server.aitp_resume_topic(topic_slug="demo-topic"))
+
+        self.assertEqual(payload["status"], "success")
+        self.assertTrue(payload["needs_ack"])
+        self.assertEqual(payload["gate_kind"], "must_read_ack")

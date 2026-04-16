@@ -4,6 +4,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import sys
 
@@ -104,6 +105,35 @@ class AITPCodexTests(unittest.TestCase):
         args = parser.parse_args(["--topic-slug", "demo-topic", "Continue demo"])
         self.assertEqual(args.topic_slug, "demo-topic")
         self.assertEqual(args.task, "Continue demo")
+
+    def test_write_codex_bootstrap_receipt_materializes_expected_payload(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            home = Path(tmpdir)
+            payload = {
+                "topic_slug": "demo-topic",
+                "run_id": "2026-03-13-demo",
+                "routing": {"route": "implicit_current_topic"},
+                "session_start_contract_path": "/tmp/runtime/demo-topic/session_start.contract.json",
+                "session_start_note_path": "/tmp/runtime/demo-topic/session_start.generated.md",
+            }
+
+            with patch("knowledge_hub.aitp_codex.Path.home", return_value=home):
+                receipt_path = aitp_codex.write_codex_bootstrap_receipt(
+                    payload=payload,
+                    repo_root="D:/repo",
+                    kernel_root="D:/repo/research/knowledge-hub",
+                    updated_by="aitp-codex",
+                )
+
+            self.assertTrue(receipt_path.exists())
+            rendered = json.loads(receipt_path.read_text(encoding="utf-8"))
+            self.assertEqual(rendered["receipt_kind"], "codex_bootstrap_receipt")
+            self.assertEqual(rendered["entrypoint"], "aitp-codex")
+            self.assertEqual(rendered["bootstrap_mode"], "aitp_codex_entrypoint")
+            self.assertEqual(rendered["topic_slug"], "demo-topic")
+            self.assertEqual(rendered["run_id"], "2026-03-13-demo")
+            self.assertEqual(rendered["routing_route"], "implicit_current_topic")
+            self.assertEqual(rendered["session_start_note_path"], payload["session_start_note_path"])
 
     def test_extract_topic_direction_change_supports_english_and_chinese(self) -> None:
         self.assertEqual(

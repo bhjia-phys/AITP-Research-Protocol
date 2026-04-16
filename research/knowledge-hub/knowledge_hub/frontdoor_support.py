@@ -390,15 +390,35 @@ def claude_mcp_status(service: Any, *, workspace_root: Path | None = None) -> di
 
 
 def codex_skill_status(*, repo_root: Path) -> dict[str, Any]:
+    receipt_path = Path.home() / ".codex" / "aitp_bootstrap_receipt.json"
+    receipt_exists = receipt_path.exists()
+    receipt_parse_ok = False
+    receipt_matches_expected = False
+    if receipt_exists:
+        try:
+            receipt_payload = json.loads(receipt_path.read_text(encoding="utf-8"))
+            receipt_parse_ok = isinstance(receipt_payload, dict)
+        except json.JSONDecodeError:
+            receipt_payload = {}
+        if isinstance(receipt_payload, dict):
+            receipt_matches_expected = (
+                str(receipt_payload.get("receipt_kind") or "").strip() == "codex_bootstrap_receipt"
+                and str(receipt_payload.get("entrypoint") or "").strip() == "aitp-codex"
+                and str(receipt_payload.get("bootstrap_mode") or "").strip() == "aitp_codex_entrypoint"
+            )
     using_path = Path.home() / ".agents" / "skills" / "using-aitp" / "SKILL.md"
     runtime_path = Path.home() / ".agents" / "skills" / "aitp-runtime" / "SKILL.md"
     return {
         "using_skill_path": str(using_path),
         "runtime_skill_path": str(runtime_path),
+        "bootstrap_receipt_path": str(receipt_path),
         "using_skill_present": using_path.exists(),
         "runtime_skill_present": runtime_path.exists(),
         "using_skill_matches_canonical": _text_matches_canonical(using_path, repo_root, "skills/using-aitp/SKILL.md"),
         "runtime_skill_matches_canonical": _text_matches_canonical(runtime_path, repo_root, "skills/aitp-runtime/SKILL.md"),
+        "bootstrap_receipt_present": receipt_exists,
+        "bootstrap_receipt_parse_ok": receipt_parse_ok,
+        "bootstrap_receipt_matches_expected": receipt_matches_expected,
     }
 
 
@@ -424,6 +444,46 @@ def runtime_convergence_summary(doctor_payload: dict[str, Any]) -> dict[str, Any
         "front_door_ready_runtimes": front_door_ready_runtimes,
         "front_door_non_ready_runtimes": front_door_non_ready_runtimes,
         "specialized_lanes": list(matrix.get("specialized_lanes") or []),
+    }
+
+
+def strict_l0_l1_summary(doctor_payload: dict[str, Any]) -> dict[str, Any]:
+    matrix = doctor_payload.get("runtime_support_matrix") or {}
+    codex_row = (matrix.get("runtimes") or {}).get("codex") or {}
+    surface_checks = codex_row.get("surface_checks") or {}
+    service_gate_surfaces = [
+        "work_topic",
+        "prepare_verification",
+        "assess_topic_completion",
+        "prepare_statement_compilation",
+        "prepare_lean_bridge",
+        "select_lean_bridge_export_target",
+        "run_lean_bridge_export_check",
+        "update_followup_return_packet",
+        "reintegrate_followup_subtopic",
+    ]
+    blockers: list[str] = []
+    if str(codex_row.get("status") or "") != "ready":
+        blockers.append("codex_frontdoor_not_ready")
+    if not bool(surface_checks.get("bootstrap_receipt_present")):
+        blockers.append("codex_bootstrap_receipt_missing")
+    elif not bool(surface_checks.get("bootstrap_receipt_parse_ok")):
+        blockers.append("codex_bootstrap_receipt_invalid")
+    elif not bool(surface_checks.get("bootstrap_receipt_matches_expected")):
+        blockers.append("codex_bootstrap_receipt_stale")
+    return {
+        "status": "pass" if not blockers else "fail",
+        "baseline_runtime": str(matrix.get("baseline_runtime") or ""),
+        "codex_status": str(codex_row.get("status") or "unknown"),
+        "front_door_converged": bool((doctor_payload.get("runtime_convergence") or {}).get("front_door_runtimes_converged")),
+        "service_gate_surfaces": service_gate_surfaces,
+        "service_gate_surface_count": len(service_gate_surfaces),
+        "blockers": blockers,
+        "summary": (
+            "Current Codex front-door constraints are hard enough for L0-L1 topic work."
+            if not blockers
+            else "Codex can still bypass part of the intended L0-L1 AITP entry contract."
+        ),
     }
 
 
@@ -629,7 +689,7 @@ def ensure_cli_installed(service: Any, *, workspace_root: str | None = None) -> 
     runtime_convergence = runtime_convergence_summary({"runtime_support_matrix": runtime_support_matrix})
     deep_execution_parity = deep_execution_parity_summary({"runtime_support_matrix": runtime_support_matrix})
     overall_status = "clean" if not issues else "mixed_install"
-    return {
+    payload = {
         "overall_status": overall_status,
         "issues": issues,
         "aitp": command_path,
@@ -687,6 +747,8 @@ def ensure_cli_installed(service: Any, *, workspace_root: str | None = None) -> 
         "control_plane_contracts": control_plane_contracts(service),
         "control_plane_surfaces": control_plane_surfaces(),
     }
+    payload["strict_l0_l1"] = strict_l0_l1_summary(payload)
+    return payload
 
 
 def migrate_local_install(

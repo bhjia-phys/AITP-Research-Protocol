@@ -1787,6 +1787,26 @@ def materialize_runtime_protocol_bundle(
                 "reason": self._topic_skill_projection_deferred_reason(topic_skill_projection),
             }
         )
+    l1_vault = active_research_contract.get("l1_vault") or {}
+    source_anchor_bridge_note_path = str(
+        next(
+            (
+                row.get("path")
+                for row in l1_vault.get("compatibility_refs") or []
+                if isinstance(row, dict) and str(row.get("kind") or "").strip() == "source_anchor_bridge_note"
+            ),
+            "",
+        )
+        or ""
+    ).strip()
+    if source_anchor_bridge_note_path and source_anchor_bridge_note_path not in must_read_paths:
+        may_defer_until_trigger.append(
+            {
+                "path": source_anchor_bridge_note_path,
+                "trigger": "verification_route_selection",
+                "reason": "Hydrate the sparse L1-to-L0 source bridge only when route selection or later verification needs the exact anchored source sentence and immutable source artifacts.",
+            }
+        )
     for path in theory_packet_reads:
         may_defer_until_trigger.append(
             {

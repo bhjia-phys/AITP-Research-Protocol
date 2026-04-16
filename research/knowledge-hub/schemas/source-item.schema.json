@@ -58,6 +58,23 @@
     "summary": {
       "type": "string",
       "minLength": 1
+    },
+    "relevance_tier": {
+      "type": "string",
+      "enum": [
+        "canonical",
+        "must_read",
+        "strongly_relevant",
+        "useful",
+        "irrelevant"
+      ]
+    },
+    "role_labels": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     }
   }
 }
