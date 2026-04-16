@@ -450,6 +450,17 @@ def strict_l0_l1_summary(doctor_payload: dict[str, Any]) -> dict[str, Any]:
     matrix = doctor_payload.get("runtime_support_matrix") or {}
     codex_row = (matrix.get("runtimes") or {}).get("codex") or {}
     surface_checks = codex_row.get("surface_checks") or {}
+    service_gate_surfaces = [
+        "work_topic",
+        "prepare_verification",
+        "assess_topic_completion",
+        "prepare_statement_compilation",
+        "prepare_lean_bridge",
+        "select_lean_bridge_export_target",
+        "run_lean_bridge_export_check",
+        "update_followup_return_packet",
+        "reintegrate_followup_subtopic",
+    ]
     blockers: list[str] = []
     if str(codex_row.get("status") or "") != "ready":
         blockers.append("codex_frontdoor_not_ready")
@@ -464,6 +475,8 @@ def strict_l0_l1_summary(doctor_payload: dict[str, Any]) -> dict[str, Any]:
         "baseline_runtime": str(matrix.get("baseline_runtime") or ""),
         "codex_status": str(codex_row.get("status") or "unknown"),
         "front_door_converged": bool((doctor_payload.get("runtime_convergence") or {}).get("front_door_runtimes_converged")),
+        "service_gate_surfaces": service_gate_surfaces,
+        "service_gate_surface_count": len(service_gate_surfaces),
         "blockers": blockers,
         "summary": (
             "Current Codex front-door constraints are hard enough for L0-L1 topic work."

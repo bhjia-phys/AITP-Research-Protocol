@@ -6126,6 +6126,9 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue(payload["runtime_convergence"]["front_door_runtimes_converged"])
         self.assertEqual(payload["full_convergence_repair"]["status"], "none_required")
         self.assertEqual(payload["strict_l0_l1"]["status"], "pass")
+        self.assertIn("work_topic", payload["strict_l0_l1"]["service_gate_surfaces"])
+        self.assertIn("update_followup_return_packet", payload["strict_l0_l1"]["service_gate_surfaces"])
+        self.assertEqual(payload["strict_l0_l1"]["service_gate_surface_count"], len(payload["strict_l0_l1"]["service_gate_surfaces"]))
 
     def test_doctor_runtime_support_matrix_reports_partial_front_doors_honestly(self) -> None:
         codex_status = {
@@ -6301,6 +6304,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertFalse(payload["runtime_convergence"]["front_door_runtimes_converged"])
         self.assertEqual(payload["strict_l0_l1"]["status"], "fail")
         self.assertIn("codex_bootstrap_receipt_missing", payload["strict_l0_l1"]["blockers"])
+        self.assertIn("prepare_lean_bridge", payload["strict_l0_l1"]["service_gate_surfaces"])
 
     def test_doctor_runtime_support_matrix_reports_stale_claude_surfaces(self) -> None:
         codex_status = {
