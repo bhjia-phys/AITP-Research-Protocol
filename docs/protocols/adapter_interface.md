@@ -165,7 +165,58 @@ New adapters should:
 5. Implement clarification sub-protocol (AD6).
 6. Not redefine the protocol.
 
-## AD9. Adapter Boundary
+## AD9. Domain Skills
+
+Domain skills are adapters that provide domain-specific tools, knowledge, and
+workflow templates for particular physics subfields (e.g., DFT calculations,
+many-body methods, lattice models). Unlike platform adapters (Claude Code,
+Codex, etc.) which adapt AITP to an agent platform, domain skills adapt AITP
+to a research domain.
+
+### Domain Skill Interface
+
+Every domain skill MUST:
+
+1. **Declare its domain scope** — which physics subfield and which methods it
+   covers.
+2. **Provide L3-P templates** — workflow plans that the Brain can use when
+   dispatching to L3-P (Planning) in `learn` or `implement` modes.
+3. **Expose tool interfaces** — CLI commands, scripts, or API endpoints that
+   L3-A (Analysis) can invoke during plan execution.
+4. **Define L4 validation rules** — domain-specific criteria for what counts
+   as a passed validation (convergence thresholds, symmetry checks, etc.).
+5. **Reference L2 canonical knowledge** — link to established methods, theorems,
+   and parameter conventions that belong in L2.
+
+### Domain Skill Registration
+
+Domain skills are registered in the adapter manifest with type `domain`:
+
+```json
+{
+  "type": "domain",
+  "name": "oh-my-librpa",
+  "domain": "first-principles-many-body",
+  "methods": ["GW", "BSE", "RPA"],
+  "templates": ["gw-convergence-plan", "bse-spectrum-plan"],
+  "tools": ["librpa-cli", "abacus-interface"],
+  "l4_rules": ["energy-convergence", "symmetry-check"]
+}
+```
+
+### Integration Points
+
+| AITP Layer | Domain Skill Role |
+|-----------|------------------|
+| L3-P | Provide workflow templates for domain-specific plans |
+| L3-A | Execute plans using domain tools |
+| L4 | Apply domain-specific validation criteria |
+| L2 | Reference domain canonical knowledge (methods, parameters) |
+
+Domain skills do NOT modify the Brain, mode envelope, or layer model. They
+extend the tool surface available to L3 and L4.
+
+## AD10. Adapter Boundary
 
 Adapters may:
 - Add convenience commands and shortcuts.
@@ -182,7 +233,7 @@ Adapters may NOT:
 - Bypass the front-door routing.
 - Expose protocol jargon to users.
 
-## AD10. Agent Model
+## AD11. Agent Model
 
 The agent that runs AITP is:
 - a protocol executor, not a protocol author,
@@ -198,7 +249,7 @@ The agent does NOT:
 - substitute proxy-success signals for declared validation evidence,
 - replace missing contracts with unrestricted heuristics.
 
-## AD11. Skill System
+## AD12. Skill System
 
 AITP provides two core skills:
 
@@ -218,7 +269,7 @@ AITP provides two core skills:
 Adapters must ensure that at least the `using-aitp` skill is loaded at
 session start.
 
-## AD12. Charter Document
+## AD13. Charter Document
 
 The Charter document defines the constitutional rules for AITP. Adapters
 must respect the Charter as the highest authority in the protocol hierarchy.
@@ -228,7 +279,7 @@ Charter articles are referenced throughout the SPEC and protocol documents
 but have not been consolidated into a single Charter.md file. This is a
 known gap.
 
-## AD13. Implementation Status
+## AD14. Implementation Status
 
 ### Currently implemented
 - Claude Code adapter with full hook integration.
@@ -247,7 +298,7 @@ known gap.
 - Codex adapter full implementation.
 - OpenCode adapter full implementation.
 
-## AD14. What Adapters Should Not Do
+## AD15. What Adapters Should Not Do
 
 - Claim AITP conformance without meeting conformance requirements.
 - Expose protocol jargon to users unnecessarily.

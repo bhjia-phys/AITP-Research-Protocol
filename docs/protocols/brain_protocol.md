@@ -52,6 +52,32 @@ Clarification rules:
 
 ### loop
 
+The loop stage is driven by the mode envelope (see `mode_envelope_protocol.md`).
+The Brain dispatches to L layers based on the current mode:
+
+**When mode = explore:**
+- Dispatch to L0 (source discovery), L1 (reading notes), L3-I (idea recording).
+- Compare ideas with L2 knowledge to assess novelty.
+- Produce at least one L3-I idea record per cycle.
+- Transition to `learn` when ideas are ready for deep study.
+
+**When mode = learn:**
+- Dispatch to L0/L1 (deep reading), L3-P (reproduction/derivation plan),
+  L3-A (execute plan), L4 (validate).
+- The L3-A <-> L4 loop drives verification of known results.
+- Verified results promote to L2.
+- Transition to `implement` when understanding is sufficient for new work,
+  or back to `explore` if gaps are found.
+
+**When mode = implement:**
+- Dispatch to L3-I (refine idea), L3-P (create plan), L3-A (execute),
+  L4 (validate).
+- The L3-A <-> L4 loop drives discovery.
+- New conclusions stay in L3 for human review.
+- Transition to `explore` when results suggest new questions,
+  or back to `learn` if knowledge gaps are revealed.
+
+General loop rules:
 - Execute the closed-loop cycle: select_route -> materialize_task ->
   ingest_result -> await_external_result.
 - Respect the current mode envelope.

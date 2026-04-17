@@ -9,87 +9,91 @@ MODE_AND_LAYER_OPERATING_MODEL.md.
 
 ## ME1. Role
 
-The mode envelope constrains what the agent may do at any given moment. Each
-mode defines foreground layers, allowed transitions, required writeback,
-forbidden shortcuts, and human checkpoint policy.
+The mode envelope is the Brain's built-in research workflow engine. Each mode
+represents a distinct cognitive activity in physics research. The mode determines
+which layers the agent works in, what transitions are allowed, and what
+writeback is required.
 
-Mode transitions follow a directed graph, not arbitrary jumps.
+The three modes correspond to the core research cycle:
+- **explore** — discover literature, find ideas, record observations
+- **learn** — study deeply, verify known results through derivation/experiment
+- **implement** — pursue new ideas, produce novel results
 
-## ME2. Four Modes
+L2 promotion is NOT a separate mode. It is an operation triggered within
+`learn` or `implement` when candidates pass validation.
 
-### discussion
+## ME2. Three Modes
 
-Purpose: Literature survey, Q&A, source exploration.
+### explore
+
+Purpose: Discover literature, find ideas, record observations.
 
 | Property | Value |
 |----------|-------|
 | Foreground layers | L0, L1, L3 |
+| L3 focus | L3-I (ideation) |
 | Allowed backedges | None |
-| Required writeback | Source registrations, L1 analysis |
-| Forbidden shortcuts | Candidate claims, promotion, L4 execution |
+| Required writeback | Source registrations, L1 notes, L3-I idea records |
+| Forbidden shortcuts | Formal candidates, L4 execution, L2 promotion |
 | Human checkpoint | On scope change or direction ambiguity |
 | Entry conditions | Default mode for new topics |
-| Exit conditions | Research question scoped, sources registered |
+| Exit conditions | At least one idea recorded in L3-I |
 
-### explore
+### learn
 
-Purpose: Active research, hypothesis formation, candidate creation.
-
-| Property | Value |
-|----------|-------|
-| Foreground layers | L0, L1, L2, L3 |
-| Allowed backedges | L3-A -> L1 (need more source analysis) |
-| Required writeback | Candidate claims with evidence levels |
-| Forbidden shortcuts | Promotion, L4 execution without plan |
-| Human checkpoint | On contradiction detection, on scope expansion |
-| Entry conditions | Research question scoped, at least one source registered |
-| Exit conditions | At least one candidate formed or gap identified |
-
-### verify
-
-Purpose: Validation and checking of candidates.
+Purpose: Deep study of specific literature, verification of known results.
 
 | Property | Value |
 |----------|-------|
-| Foreground layers | L2, L3, L4 |
-| Allowed backedges | L4 -> L3-A (revision needed), L3-R -> L3-A (reformulation) |
-| Required writeback | Trust audit, validation results, gap records |
+| Foreground layers | L0, L1, L3, L4 |
+| L3 focus | L3-P (planning), L3-A (analysis) |
+| Allowed backedges | L4 -> L3-A (revision needed), L3-A -> L1 (need more source) |
+| Required writeback | L3-P plans, L3-A candidates, L4 validation results |
 | Forbidden shortcuts | L4 -> L2 (must return through L3-R) |
-| Human checkpoint | On execution plan approval, on stuckness |
-| Entry conditions | At least one candidate in L3 |
-| Exit conditions | Validation complete (pass or fail), result routed |
+| Human checkpoint | On derivation approval, on numerical experiment plan |
+| Entry conditions | At least one idea or source identified |
+| Exit conditions | Known results verified or gap identified |
 
-### promote
+The L3↔L4 loop is the core mechanism: L3-P creates a derivation/reproduction
+plan, L3-A executes it, L4 validates, results return through L3-R. Verified
+knowledge can promote to L2.
 
-Purpose: L2 promotion pipeline.
+### implement
+
+Purpose: Pursue new ideas, produce novel results.
 
 | Property | Value |
 |----------|-------|
-| Foreground layers | L2, L3 |
-| Allowed backedges | L3-D -> L3-A (revision needed) |
-| Required writeback | Promotion trace, L2 unit writes |
-| Forbidden shortcuts | Skipping promotion stages |
-| Human checkpoint | Always at stage 4 (L2 write) |
-| Entry conditions | Candidate passed validation |
-| Exit conditions | Promotion complete or candidate rejected |
+| Foreground layers | L3, L4 |
+| L3 focus | L3-I -> L3-P -> L3-A (full pipeline) |
+| Allowed backedges | L4 -> L3-A (revision), L3-A -> L3-P (replan), L3-P -> L3-I (idea refinement) |
+| Required writeback | L3-I refined idea, L3-P plan, L3-A candidates with evidence |
+| Forbidden shortcuts | L4 -> L2 (must return through L3-R) |
+| Human checkpoint | On novel conclusion, on L2 promotion decision |
+| Entry conditions | Concrete idea ready for execution |
+| Exit conditions | Novel conclusion recorded in L3, or idea disproven |
+
+The L3↔L4 loop drives discovery: L3-I ideas are upgraded to executable form,
+L3-P plans the approach, L3-A executes, L4 validates. New conclusions stay in
+L3 for human review before any L2 promotion.
 
 ## ME3. Submodes
 
-Some modes have submodes that refine the execution behavior within the mode:
+Some modes have submodes that refine execution behavior:
 
-### verify submodes
+### learn submodes
 
-- `iterative_verify` — cyclic validation where each pass refines the candidate
-  based on previous validation results. Used when analytical and numerical
-  validation must iterate to convergence.
+- `derivation` — focused analytical derivation and proof verification
+- `numerical` — focused numerical reproduction and benchmark verification
 
-### explore submodes
+### implement submodes
 
-- `literature` — focused literature survey mode within explore. Prioritizes L0/L1
-  operations and source discovery over candidate creation.
+- `code` — implementing algorithms or computational methods
+- `formal` — formalizing proofs or mathematical structures
+- `experimental` — numerical experiments to test new hypotheses
 
 Submodes do not change the mode's foreground layers or backedge rules. They
-shape action type preferences within the existing envelope.
+shape action type preferences and tool selection within the existing envelope.
 
 ## ME4. Context-Refocusing Engine
 
@@ -113,29 +117,26 @@ the actual topic state during long sessions.
 ## ME5. Transition Graph
 
 ```
-discussion -> explore -> verify -> promote -> discussion
-     ^           |          |          |
-     |           v          v          v
-     +-----------+----------+----------+
-              (backward transitions)
+explore -> learn -> implement -> explore
+  ^          |          |
+  |          v          v
+  +----------+----------+
+       (backward transitions)
 ```
 
 Valid forward transitions:
-- `discussion -> explore`
-- `explore -> verify`
-- `verify -> promote`
-- `promote -> discussion`
+- `explore -> learn` (idea discovered, ready to study deeply)
+- `learn -> implement` (understanding sufficient, ready for new work)
+- `implement -> explore` (results suggest new questions)
 
 Valid backward transitions (require explicit reason and writeback):
-- `explore -> discussion` (need more source work)
-- `verify -> explore` (candidate needs revision)
-- `promote -> verify` (candidate needs more validation)
+- `learn -> explore` (need more source material or broader context)
+- `implement -> learn` (implementation revealed knowledge gap)
+- `implement -> explore` (results suggest different direction entirely)
 
 Invalid transitions (never allowed):
-- `discussion -> verify` (skip candidate formation)
-- `discussion -> promote` (skip both candidate formation and validation)
-- `explore -> promote` (skip validation)
-- `verify -> discussion` (should go through explore first)
+- `explore -> implement` (must pass through learn first)
+- Any transition without writeback from the departing mode
 
 ## ME6. Mode Envelope Fields
 
@@ -144,6 +145,7 @@ Every mode envelope contains:
 ```
 mode: <mode_name>
 foreground_layers: [L0, L1, ...]
+L3_focus: [sub-plane(s)]
 allowed_backedges: [(from, to, reason_required), ...]
 required_writeback: [artifact_type, ...]
 forbidden_shortcuts: [action_type, ...]
@@ -161,9 +163,8 @@ The Brain infers the current mode from:
 - research mode profiles (learned patterns),
 - runtime contract (`runtime_protocol.generated.json`).
 
-When inference is ambiguous, the Brain defaults to `explore` mode, which is
-the most broadly applicable mode for active research. The most conservative
-option (`discussion`) is the default for brand-new topics only.
+When inference is ambiguous, the Brain defaults to `explore` mode for new
+topics and `learn` mode for topics with established sources.
 
 ## ME8. Control Axes
 
@@ -171,10 +172,10 @@ The mode is one axis in the six-axis control plane:
 
 | Axis | Role | Determined By |
 |------|------|--------------|
-| `runtime_mode` | Core driver | Mode envelope |
+| `runtime_mode` | Core driver | Mode envelope (explore/learn/implement) |
 | `transition_posture` | Core driver | Current transition direction |
 | `layer` | Where | Current action target |
-| `L3_subplane` | L3 detail | L3-A / L3-R / L3-D |
+| `L3_subplane` | L3 detail | ideation / planning / analysis / result / distillation |
 | `lane` | Domain | formal_theory / model_numeric / code_and_materials |
 | `task_type` | Intent | open_exploration / conjecture_attempt / target_driven |
 
@@ -192,8 +193,8 @@ Backward transitions (backedges) are allowed but regulated:
 ## ME10. Implementation Status
 
 ### Currently implemented
-- Four modes with foreground layer definitions.
-- Submodes (iterative_verify, literature).
+- Three modes with foreground layer definitions.
+- Submodes for learn and implement.
 - Context-refocusing engine.
 - Runtime contract mode-based action preferences.
 - Research mode profiles feeding into mode selection.
@@ -201,11 +202,13 @@ Backward transitions (backedges) are allowed but regulated:
 ### Not yet implemented
 - Transition graph enforcement (preventing invalid transitions).
 - Mode envelope validation at task materialization.
+- L3-I and L3-P integration with mode dispatch.
 
 ## ME11. What Mode Envelopes Should Not Do
 
 - Allow arbitrary mode jumps.
 - Skip validation steps by mode manipulation.
 - Treat mode transitions as a substitute for research progress.
-- Keep the agent in a comfortable mode (discussion) indefinitely.
+- Keep the agent in a comfortable mode (explore) indefinitely.
 - Allow mode transitions without writeback from the departing mode.
+- Treat L2 promotion as a mode (it is an operation, not a research phase).

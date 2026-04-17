@@ -16,13 +16,29 @@ material that may become reusable if it passes L4 validation.
 Nothing in L3 is trusted. Material here may become reusable IF it passes L4
 and L2 promotion.
 
-## 3.2. Three Sub-Planes
+## 3.2. Five Sub-Planes
 
-L3 is divided into three sub-planes:
+L3 is divided into five sub-planes that form the idea-to-candidate pipeline:
+
+### L3-I — Ideation
+- Record, connect, and refine vague ideas before they become formal candidates.
+- Idea fragments, observations, pattern recognitions, research questions.
+- Comparison with existing L2 knowledge to assess novelty.
+- Output: structured ideas with novelty assessment and connections to other ideas.
+
+### L3-P — Planning
+- Translate ideas into executable research plans.
+- Each plan specifies: steps, required knowledge (from L2), required tools
+  (from domain skills), and checkpoints.
+- Plans may be generated from domain-specific templates (e.g., feature
+  development playbooks) or written from scratch.
+- Output: plan artifacts with step sequence, tool dependencies, and checkpoint
+  definitions.
 
 ### L3-A — Analysis
+- Execute plans, form formal candidates.
 - Candidate claims, explanatory notes, tentative reusable material.
-- Conjectures and hypotheses.
+- Conjectures and hypotheses with explicit claim statements.
 - Source-bound analysis and comparison.
 - Output: candidate claims marked "exploratory", not "trusted."
 
@@ -41,13 +57,9 @@ L3 is divided into three sub-planes:
 This prevents validated-but-misinterpreted results from entering trusted
 knowledge.
 
-**Implementation note:** The auto-promotion pipeline (see P4 in
-`promotion_pipeline.md`) can bypass L3-R for candidates that meet
-auto-promotion criteria. This is a controlled exception: the promotion
-gate support code checks auto-promotion eligibility and routes directly
-to L2_auto. The protocol considers this acceptable only when the candidate
-has passed sufficient automated validation that L3-R interpretation would
-be a formality.
+**Pipeline flow:** L3-I (idea) -> L3-P (plan) -> L3-A (candidate) -> L3-R
+(result) -> L3-D (distillation). Each transition requires the previous
+sub-plane to produce a concrete artifact.
 
 ## 3.3. Candidate Management
 
@@ -141,13 +153,17 @@ The implementation tracks candidate position through a layer graph state
 machine. Each candidate has a layer state that transitions:
 
 ```
-L3-A (analysis) → L3-R (result integration) → L3-D (distillation)
-                                                     ↓
-                                              promotion pipeline
+L3-I (ideation) -> L3-P (planning) -> L3-A (analysis) -> L3-R (result) -> L3-D (distillation)
+                                                                             ↓
+                                                                      promotion pipeline
 ```
 
 State transitions are recorded in the candidate ledger. The state machine
-enforces that candidates cannot skip sub-planes (e.g., no direct L3-A → L3-D).
+enforces that candidates cannot skip sub-planes (e.g., no direct L3-I -> L3-A).
+
+The L3-A <-> L4 loop is the core research cycle in `learn` and `implement`
+modes: L3-A sends candidates to L4 for validation, L4 returns results to
+L3-R, which may route back to L3-A for revision.
 
 ## 3.8. Auto-Promotion Pipeline
 

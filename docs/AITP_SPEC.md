@@ -1,7 +1,7 @@
 # AITP Specification
 
 Status: authoritative specification, subordinate to CHARTER.md.
-Last updated: 2026-04-16.
+Last updated: 2026-04-17.
 
 This document is the single specification that bridges the Charter to the
 protocol tree. Every sub-protocol must be consistent with this SPEC.
@@ -42,7 +42,7 @@ AITP's role is disciplined execution: literature analysis, derivation checking,
 code execution, structured note-taking, and knowledge accumulation.
 
 Protocol requirements for Phase 1:
-- full L0-L4 layer pipeline,
+- full L0-L5 layer pipeline,
 - explicit human checkpoints at L2 promotion and direction changes,
 - durable topic state across sessions,
 - paired backend (human-readable + typed store),
@@ -77,7 +77,7 @@ demonstrated genuine cross-topic reuse across at least five distinct topics.
 
 ## S3. Layer Model
 
-AITP organizes research state into five content layers plus two cross-cutting
+AITP organizes research state into six content layers plus two cross-cutting
 planes.
 
 ### Content Layers
@@ -87,8 +87,9 @@ planes.
 | L0 | Source substrate | Register and trace every input | Source-grounded |
 | L1 | Provisional understanding | Assumption extraction, concept mapping | Untrusted |
 | L2 | Canonical knowledge | Reusable, promoted results | Trusted |
-| L3 | Candidate outputs | Exploratory, tentative material | Untrusted |
+| L3 | Candidate workspace | Idea→plan→candidate pipeline | Untrusted |
 | L4 | Validation & adjudication | Explicit verification | Audit surface |
+| L5 | Writing & publication | Paper writing based on topic results | Output |
 
 **Default route:** L0 -> L1 -> L3 -> L4 -> L2
 
@@ -137,8 +138,16 @@ not a substitute for validation.
 - Paired backend: human-readable Markdown + typed JSON/JSONL store.
 - Requires explicit promotion gate. No automatic writes.
 
-**L3 — Candidate Outputs**
-- Sub-planes: L3-A (analysis), L3-R (result integration), L3-D (distillation).
+**L3 — Candidate Workspace**
+- Sub-planes: L3-I (ideation), L3-P (planning), L3-A (analysis),
+  L3-R (result integration), L3-D (distillation).
+- L3-I: idea workspace — record, connect, refine vague ideas before they
+  become formal candidates.
+- L3-P: plan artifacts — executable research plans with steps, tool needs,
+  and knowledge requirements derived from L2.
+- L3-A: candidate formation — formal claims with evidence and assumptions.
+- L3-R: interpret L4 results, decide routing.
+- L3-D: prepare material for promotion.
 - Conjectures, failed attempts, candidate derivations, anomalies,
   negative results.
 - Scratch mode for quick speculative work.
@@ -153,6 +162,13 @@ not a substitute for validation.
 - **Hard rule:** L4 does not write directly to L2. All L4 results return
   through L3-R. This prevents validated-but-misinterpreted results from
   entering trusted knowledge.
+
+**L5 — Writing & Publication**
+- Paper drafts, slides, and other publication artifacts.
+- Draws from L2 (validated knowledge) and L3 (new results pending review).
+- L5 outputs are NOT automatically trusted — human review required before
+  external submission.
+- See: `docs/protocols/L5_writing_protocol.md`
 
 ## S4. Brain Plane (B)
 
@@ -187,9 +203,15 @@ Human Researcher
 |              Brain Plane (B)                           |
 |                                                       |
 |  Topic Lifecycle Manager                              |
-|  +-- bootstrap -> loop -> status -> verify -> promote |
+|  +-- bootstrap -> mode-driven loop -> complete        |
 |  +-- multi-topic parallel, pause/resume               |
 |  +-- bounded auto-steps                               |
+|                                                       |
+|  Mode Workflow (built-in research process)            |
+|  +-- explore:  L0 -> L1 -> L3-I (discover & record)  |
+|  +-- learn:    L0-L1 -> L3-A <-> L4 (verify known)   |
+|  +-- implement: L3-I -> L3-P -> L3-A <-> L4 (new)    |
+|  +-- mode transitions drive topic progression         |
 |                                                       |
 |  Action Router                                        |
 |  +-- select_route -> materialize_task                 |
@@ -204,12 +226,12 @@ Human Researcher
 |  +-- deferred candidate buffer                        |
 +--------------+----------------------------------------+
                |
-        +------+------+------+------+
-        |      |      |      |      |
-        v      v      v      v      v
-      +--+  +--+  +--+  +--+  +-----+
-      |L0|  |L1|  |L3|  |L4|  | L2  |
-      +--+  +--+  +--+  +--+  +-----+
+        +------+------+------+------+------+
+        |      |      |      |      |      |
+        v      v      v      v      v      v
+      +--+  +--+  +--+  +--+  +-----+ +-----+
+      |L0|  |L1|  |L3|  |L4|  | L2  | | L5  |
+      +--+  +--+  +--+  +--+  +-----+ +-----+
 ```
 
 ### Brain Protocol Reference
@@ -244,16 +266,22 @@ See: `docs/protocols/H_human_interaction.md`
 
 ## S6. Mode Envelope
 
-The Brain operates in one of four modes. Each mode constrains which layers
-the agent may work in, what transitions are allowed, and what writeback is
-required.
+The Brain operates in one of three modes. Each mode represents a distinct
+research activity and constrains which layers the agent may work in, what
+transitions are allowed, and what writeback is required.
 
-| Mode | Purpose | Foreground Layers | Key Constraints |
-|------|---------|-------------------|-----------------|
-| `discussion` | Literature survey, Q&A, exploration | L0, L1, L3 | No candidate claims, no promotion |
-| `explore` | Active research, hypothesis formation | L0, L1, L2, L3 | Candidates marked exploratory |
-| `verify` | Validation and checking | L2, L3, L4 | L4 results return through L3-R |
-| `promote` | L2 promotion pipeline | L2, L3 | Requires human gate |
+The three modes correspond to the core cognitive cycle of physics research:
+discover ideas, verify understanding, create new results.
+
+| Mode | Purpose | Foreground Layers | L3 Focus | Key Constraints |
+|------|---------|-------------------|----------|-----------------|
+| `explore` | Discover literature, record ideas | L0, L1, L3 | L3-I | No formal candidates, compare with L2 |
+| `learn` | Study literature, verify known results | L0, L1, L3, L4 | L3-P, L3-A | L3↔L4 loop for derivation/numerical verification, results promote to L2 |
+| `implement` | Pursue new ideas, produce novel results | L3, L4 | L3-I→L3-P→L3-A | L3↔L4 loop, new conclusions in L3 for human review |
+
+**L2 promotion** is NOT a separate mode. It is an operation triggered within
+`learn` (verified knowledge) or `implement` (novel results) when candidates
+pass validation and are ready for human approval.
 
 Each mode carries an envelope with:
 - `foreground_layers` — which layers the agent works in.
@@ -267,13 +295,22 @@ Each mode carries an envelope with:
 Mode transitions are not arbitrary. The valid transition graph is:
 
 ```
-discussion -> explore -> verify -> promote -> discussion
-     ^                                        |
-     +----------------------------------------+
+explore -> learn -> implement -> explore
+  ^          |          |
+  |          v          v
+  +----------+----------+
+       (backward transitions)
 ```
 
-The agent may also transition backward: `explore -> discussion`, `verify ->
-explore`, but only with explicit reason and writeback.
+Valid forward transitions:
+- `explore -> learn` (idea discovered, ready to study deeply)
+- `learn -> implement` (understanding sufficient, ready to pursue new work)
+- `implement -> explore` (new questions emerged from results)
+
+Valid backward transitions (require explicit reason and writeback):
+- `learn -> explore` (need more source material)
+- `implement -> learn` (implementation revealed knowledge gap)
+- `implement -> explore` (results suggest different direction)
 
 ### Mode Protocol Reference
 
@@ -425,10 +462,10 @@ The Brain uses six control axes to determine runtime behavior:
 
 | Axis | Role | Values |
 |------|------|--------|
-| `runtime_mode` | Core driver — what the agent is doing | discussion, explore, verify, promote |
+| `runtime_mode` | Core driver — what the agent is doing | explore, learn, implement |
 | `transition_posture` | Core driver — how the agent transitions | forward, backedge, lateral, pause |
-| `layer` | Where the work happens | L0, L1, L2, L3, L4 |
-| `L3_subplane` | L3 sub-plane if relevant | analysis, result_integration, distillation |
+| `layer` | Where the work happens | L0, L1, L2, L3, L4, L5 |
+| `L3_subplane` | L3 sub-plane if relevant | ideation, planning, analysis, result_integration, distillation |
 | `lane` | Research domain | formal_theory, model_numeric, code_and_materials |
 | `task_type` | Research intent (redundant with mode in practice) | open_exploration, conjecture_attempt, target_driven |
 
@@ -438,8 +475,17 @@ auxiliary context that shapes behavior within the current mode.
 ## S12. Adapter Interface
 
 Agent platforms (Claude Code, Codex, OpenClaw, OpenCode, others) execute AITP
-through adapters. Adapters are protocol executors, not protocol definers
-(Charter Article 10).
+through adapters. Domain-specific physics capabilities (GW workflows, DFT
+codes, etc.) plug in through domain skills. Both are protocol executors, not
+protocol definers (Charter Article 10).
+
+### Adapter Categories
+
+1. **Platform adapters** — connect AITP to agent platforms (Claude Code, Codex).
+2. **Domain skills** — connect AITP to domain-specific physics capabilities
+   (e.g., oh-my-LibRPA for ABACUS+LibRPA workflows). Domain skills provide
+   domain knowledge, contract schemas, and plan templates through structured
+   manifest files, not through API calls.
 
 ### Adapter Obligations
 
@@ -498,8 +544,9 @@ All sub-protocols are organized into three domains:
 | L0 source layer | `research/knowledge-hub/L0_SOURCE_LAYER.md` | Source registration, fidelity grading, citation graphs |
 | L1 intake protocol | `docs/protocols/L1_intake_protocol.md` | Assumption extraction, vault protocol, reading depth |
 | L2 backend interface | `docs/protocols/L2_backend_interface.md` | Typed store contract, promotion policy, paired backend |
-| L3 execution protocol | `docs/protocols/L3_execution_protocol.md` | Candidate formation, sub-planes, scratch mode |
+| L3 execution protocol | `docs/protocols/L3_execution_protocol.md` | Ideation, planning, candidate formation, sub-planes |
 | L4 validation protocol | `docs/protocols/L4_validation_protocol.md` | Validation types, trust audit, L4 -> L3-R rule |
+| L5 writing protocol | `docs/protocols/L5_writing_protocol.md` | Paper writing, publication artifacts |
 | Closed-loop | `docs/protocols/closed_loop_protocol.md` | Select-route / materialize / ingest / await cycle |
 | Promotion pipeline | `docs/protocols/promotion_pipeline.md` | 3-step flow (aspirational 4-stage model) |
 
@@ -508,8 +555,8 @@ All sub-protocols are organized into three domains:
 | Protocol | File | Purpose |
 |----------|------|---------|
 | Human interaction | `docs/protocols/H_human_interaction.md` | Checkpoints, steering, approval, override, clarification |
-| Mode envelope | `docs/protocols/mode_envelope_protocol.md` | 4 modes, envelopes, transitions |
-| Adapter interface | `docs/protocols/adapter_interface.md` | Platform adapter obligations |
+| Mode envelope | `docs/protocols/mode_envelope_protocol.md` | 3 modes, envelopes, transitions |
+| Adapter interface | `docs/protocols/adapter_interface.md` | Platform adapter + domain skill obligations |
 
 ### Legacy Protocol Map
 
@@ -622,10 +669,11 @@ AITP-Research-Protocol/
 │   │   ├── L2_backend_interface.md         # L2 typed store contract
 │   │   ├── L3_execution_protocol.md        # L3 candidate workspace
 │   │   ├── L4_validation_protocol.md       # L4 validation surface
+│   │   ├── L5_writing_protocol.md          # L5 writing & publication
 │   │   ├── closed_loop_protocol.md         # Closed-loop state machine
 │   │   ├── promotion_pipeline.md           # 4-stage promotion
 │   │   ├── H_human_interaction.md          # H plane gates
-│   │   ├── mode_envelope_protocol.md       # 4-mode envelopes
+│   │   ├── mode_envelope_protocol.md       # 3-mode envelopes
 │   │   └── adapter_interface.md            # Platform adapter obligations
 │   └── ...                                 # Existing docs preserved
 ├── research/knowledge-hub/                 # Runtime + implementation
