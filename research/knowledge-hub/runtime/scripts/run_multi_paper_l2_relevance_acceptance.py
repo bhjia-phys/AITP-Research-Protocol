@@ -97,7 +97,7 @@ def seed_unrelated_canonical_carryover(kernel_root: Path) -> None:
 
 
 def seed_source_artifacts(kernel_root: Path) -> list[dict[str, str]]:
-    topic_root = kernel_root / "source-layer" / "topics" / TOPIC_SLUG / "sources"
+    topic_root = kernel_root / "topics" / TOPIC_SLUG / "L0" / "sources"
     sources = [
         {
             "source_id": "source:measurement-induced-bridge-paper",

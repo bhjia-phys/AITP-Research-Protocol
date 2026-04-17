@@ -75,7 +75,7 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def seed_demo_runtime(kernel_root: Path) -> None:
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     runtime_root.mkdir(parents=True, exist_ok=True)
     write_json(
         runtime_root / "topic_state.json",
@@ -87,6 +87,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
             "research_mode": "formal_derivation",
         },
     )
+    write_json(runtime_root / "session_start.contract.json", {"updated_at": "test-seed"})
     write_json(
         runtime_root / "interaction_state.json",
         {
@@ -148,7 +149,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
 
 def seed_demo_validation(kernel_root: Path) -> None:
     write_jsonl(
-        kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001" / "candidate_ledger.jsonl",
+        kernel_root / "topics" / "demo-topic" / "L3" / "runs" / "run-001" / "candidate_ledger.jsonl",
         [
             {
                 "candidate_id": "candidate:demo-candidate",
@@ -167,7 +168,7 @@ def seed_demo_validation(kernel_root: Path) -> None:
         ],
     )
     write_jsonl(
-        kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001" / "strategy_memory.jsonl",
+        kernel_root / "topics" / "demo-topic" / "L3" / "runs" / "run-001" / "strategy_memory.jsonl",
         [
             {
                 "strategy_id": "strategy:demo-proof",
@@ -187,7 +188,7 @@ def seed_demo_validation(kernel_root: Path) -> None:
         ],
     )
     write_jsonl(
-        kernel_root / "source-layer" / "topics" / "demo-topic" / "source_index.jsonl",
+        kernel_root / "topics" / "demo-topic" / "L0" / "source_index.jsonl",
         [
             {
                 "source_id": "paper:demo-source",

@@ -87,7 +87,7 @@ def _resolve_brain_root(
 
 
 def _concept_graph_export_root(kernel_root: Path, topic_slug: str) -> Path:
-    return kernel_root / "intake" / "topics" / topic_slug / "vault" / "wiki" / "concept-graph"
+    return kernel_root / "topics" / topic_slug / "L1" / "vault" / "wiki" / "concept-graph"
 
 
 def sync_concept_graph_export_to_theoretical_physics_brain(

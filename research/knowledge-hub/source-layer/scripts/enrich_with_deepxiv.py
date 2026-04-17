@@ -187,7 +187,7 @@ def _locate_source_json(
             raise FileNotFoundError(f"Source JSON does not exist: {resolved}")
         return resolved
 
-    topic_root = knowledge_root / "source-layer" / "topics" / topic_slug
+    topic_root = knowledge_root / "topics" / topic_slug / "L0"
     rows = load_jsonl(topic_root / "source_index.jsonl")
     for row in rows:
         if str(source_id or "").strip() and str(row.get("source_id") or "").strip() == str(source_id).strip():
@@ -257,9 +257,9 @@ def enrich_registered_source(
 
     intake_projection_json = (
         resolved_knowledge_root
-        / "intake"
         / "topics"
         / resolved_topic_slug
+        / "L1"
         / "sources"
         / source_json_path.parent.name
         / "source.json"

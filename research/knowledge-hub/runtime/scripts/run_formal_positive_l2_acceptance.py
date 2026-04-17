@@ -102,8 +102,8 @@ def rewrite_topic_relative_path(
     target_topic_slug: str,
 ) -> str:
     return str(value).replace(
-        f"source-layer/topics/{reference_topic_slug}/",
-        f"source-layer/topics/{target_topic_slug}/",
+        f"topics/{reference_topic_slug}/L0/",
+        f"topics/{target_topic_slug}/L0/",
     )
 
 
@@ -113,11 +113,11 @@ def clone_reference_sources(
     reference_topic_slug: str,
     target_topic_slug: str,
 ) -> dict[str, Any]:
-    reference_root = kernel_root / "source-layer" / "topics" / reference_topic_slug
+    reference_root = kernel_root / "topics" / reference_topic_slug / "L0"
     if not reference_root.exists():
         raise FileNotFoundError(f"Reference topic root is missing: {reference_root}")
 
-    target_root = kernel_root / "source-layer" / "topics" / target_topic_slug
+    target_root = kernel_root / "topics" / target_topic_slug / "L0"
     target_root.mkdir(parents=True, exist_ok=True)
 
     reference_sources_root = reference_root / "sources"
@@ -211,7 +211,7 @@ def main() -> int:
         phase="entry",
         updated_by=args.updated_by,
     )
-    (kernel_root / "runtime" / "topics" / topic_slug / "context_fragments").mkdir(
+    (kernel_root / "topics" / topic_slug / "runtime" / "context_fragments").mkdir(
         parents=True,
         exist_ok=True,
     )
@@ -318,7 +318,7 @@ def main() -> int:
                 (bootstrap_payload.get("files") or {}).get("runtime_protocol") or ""
             ),
             "source_index": str(
-                kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl"
+                kernel_root / "topics" / topic_slug / "L0" / "source_index.jsonl"
             ),
             "workspace_memory_map": compile_map_payload["json_path"],
             "workspace_graph_report": compile_graph_payload["json_path"],

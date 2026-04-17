@@ -195,10 +195,7 @@ if __name__ == "__main__":
 
 def load_reference_candidate(package_root: Path) -> dict[str, Any]:
     ledger_path = (
-        package_root
-        / "feedback"
-        / "topics"
-        / REFERENCE_TOPIC_SLUG
+        package_root / "topics" / REFERENCE_TOPIC_SLUG / "L3"
         / "runs"
         / REFERENCE_RUN_ID
         / "candidate_ledger.jsonl"
@@ -231,8 +228,8 @@ def clone_candidate_for_fresh_topic(
         {
             **dict(ref),
             "path": str(ref.get("path") or "").replace(
-                f"source-layer/topics/{REFERENCE_TOPIC_SLUG}/",
-                f"source-layer/topics/{topic_slug}/",
+                f"topics/{REFERENCE_TOPIC_SLUG}/L0/",
+                f"topics/{topic_slug}/L0/",
             ),
         }
         for ref in (reference_candidate.get("origin_refs") or [])
@@ -294,7 +291,7 @@ def main() -> int:
     service = AITPService(kernel_root=kernel_root, repo_root=repo_root)
     topic_slug = str(contract_payload["topic_slug"])
     run_id = str(contract_payload["run_id"])
-    runtime_root = kernel_root / "runtime" / "topics" / topic_slug
+    runtime_root = kernel_root / "topics" / topic_slug / "runtime"
     tpkn_root = work_root / "tpkn-hs-positive"
     create_minimal_tpkn_backend(tpkn_root)
 
@@ -313,10 +310,7 @@ def main() -> int:
         trust_audit_path=trust_audit_path,
     )
     candidate_ledger_path = (
-        kernel_root
-        / "feedback"
-        / "topics"
-        / topic_slug
+        kernel_root / "topics" / topic_slug / "L3"
         / "runs"
         / run_id
         / "candidate_ledger.jsonl"

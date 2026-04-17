@@ -86,8 +86,8 @@ def main() -> int:
     runtime_schemas_root = package_root / "runtime" / "schemas"
     if runtime_schemas_root.exists():
         shutil.copytree(runtime_schemas_root, kernel_root / "runtime" / "schemas", dirs_exist_ok=True)
-    reference_topic_root = package_root / "source-layer" / "topics" / "jones-von-neumann-algebras"
-    shutil.copytree(reference_topic_root, kernel_root / "source-layer" / "topics" / reference_topic_root.name, dirs_exist_ok=True)
+    reference_topic_root = package_root / "topics" / "jones-von-neumann-algebras" / "L0"
+    shutil.copytree(reference_topic_root, kernel_root / "topics" / "jones-von-neumann-algebras" / "L0", dirs_exist_ok=True)
     adapter_scripts_root = repo_root / "research" / "adapters" / "openclaw" / "scripts"
     shutil.copytree(adapter_scripts_root, work_root / "adapters" / "openclaw" / "scripts", dirs_exist_ok=True)
 

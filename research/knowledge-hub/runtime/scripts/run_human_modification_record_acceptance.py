@@ -70,7 +70,7 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def seed_demo_runtime(kernel_root: Path) -> None:
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     runtime_root.mkdir(parents=True, exist_ok=True)
     (runtime_root / "topic_state.json").write_text(
         json.dumps(
@@ -121,7 +121,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
 
 
 def seed_demo_candidate(kernel_root: Path) -> None:
-    feedback_root = kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001"
+    feedback_root = kernel_root / "topics" / "demo-topic" / "L3" / "runs" / "run-001"
     feedback_root.mkdir(parents=True, exist_ok=True)
     write_jsonl(
         feedback_root / "candidate_ledger.jsonl",
@@ -190,7 +190,7 @@ def main() -> int:
         args=["replay-topic", "--topic-slug", "demo-topic", "--json"],
     )
 
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     gate_json = runtime_root / "promotion_gate.json"
     gate_note = runtime_root / "promotion_gate.md"
     replay_json = Path(replay["json_path"])

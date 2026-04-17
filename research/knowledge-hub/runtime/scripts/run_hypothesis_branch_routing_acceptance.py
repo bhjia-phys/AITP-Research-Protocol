@@ -75,7 +75,7 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def seed_demo_runtime(kernel_root: Path) -> None:
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     runtime_root.mkdir(parents=True, exist_ok=True)
     write_json(
         runtime_root / "topic_state.json",
@@ -87,8 +87,8 @@ def seed_demo_runtime(kernel_root: Path) -> None:
             "research_mode": "formal_derivation",
             "summary": "One hypothesis stays local while neighboring routes are parked explicitly.",
             "pointers": {
-                "innovation_direction_path": "runtime/topics/demo-topic/innovation_direction.md",
-                "innovation_decisions_path": "runtime/topics/demo-topic/innovation_decisions.jsonl",
+                "innovation_direction_path": "topics/demo-topic/runtime/innovation_direction.md",
+                "innovation_decisions_path": "topics/demo-topic/runtime/innovation_decisions.jsonl",
             },
         },
     )
@@ -165,7 +165,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
                     "summary": "The weak-coupling explanation remains the active local route.",
                     "route_kind": "current_topic",
                     "route_target_summary": "Keep the weak-coupling route on the current topic branch under the current steering note.",
-                    "route_target_ref": "runtime/topics/demo-topic/innovation_direction.md",
+                    "route_target_ref": "topics/demo-topic/runtime/innovation_direction.md",
                     "evidence_refs": ["paper:demo-source", "note:demo-weak-coupling-check"],
                     "exclusion_notes": [],
                 },
@@ -176,7 +176,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
                     "summary": "The symmetry-breaking route should stay parked until broader evidence arrives.",
                     "route_kind": "deferred_buffer",
                     "route_target_summary": "Park the symmetry-breaking route in the deferred buffer until bounded reactivation conditions are met.",
-                    "route_target_ref": "runtime/topics/demo-topic/deferred_candidates.json",
+                    "route_target_ref": "topics/demo-topic/runtime/deferred_candidates.json",
                     "evidence_refs": ["note:demo-symmetry-gap"],
                     "exclusion_notes": [],
                 },
@@ -187,7 +187,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
                     "summary": "A prior-work distinction should stay live on a separate follow-up branch.",
                     "route_kind": "followup_subtopic",
                     "route_target_summary": "Route the prior-work distinction into a bounded follow-up subtopic rather than widening the current topic.",
-                    "route_target_ref": "runtime/topics/demo-topic/followup_subtopics.jsonl",
+                    "route_target_ref": "topics/demo-topic/runtime/followup_subtopics.jsonl",
                     "evidence_refs": ["note:demo-prior-work-gap"],
                     "exclusion_notes": [],
                 },
@@ -271,7 +271,7 @@ def main() -> int:
         args=["replay-topic", "--topic-slug", "demo-topic", "--json"],
     )
 
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     research_note = runtime_root / "research_question.contract.md"
     runtime_protocol_note = Path(status_payload["runtime_protocol_note_path"])
     replay_json = Path(replay_payload["json_path"])

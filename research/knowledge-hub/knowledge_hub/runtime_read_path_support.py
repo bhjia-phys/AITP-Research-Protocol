@@ -1573,6 +1573,9 @@ def _route_truth_surface_kind(ref: str, *, topic_slug: str) -> str:
         return "transition_history"
     if topic_slug and f"topics/{topic_slug}/runtime/" in normalized:
         return "current_topic_surface"
+    # Legacy layout fallback: runtime/topics/<slug>/...
+    if topic_slug and f"runtime/topics/{topic_slug}/" in normalized:
+        return "current_topic_surface"
     if "topics/" in normalized and "/runtime/" in normalized:
         return "other_topic_surface"
     return "external_or_unknown"

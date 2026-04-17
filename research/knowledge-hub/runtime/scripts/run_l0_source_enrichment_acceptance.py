@@ -67,8 +67,8 @@ def main() -> int:
         else Path(tempfile.mkdtemp(prefix="aitp-l0-source-enrichment-acceptance-")).resolve()
     )
     kernel_root = work_root / "kernel"
-    (kernel_root / "source-layer").mkdir(parents=True, exist_ok=True)
-    (kernel_root / "intake").mkdir(parents=True, exist_ok=True)
+    (kernel_root / "topics" / "demo-topic" / "L0").mkdir(parents=True, exist_ok=True)
+    (kernel_root / "topics" / "demo-topic" / "L1").mkdir(parents=True, exist_ok=True)
 
     metadata_path = work_root / "fixtures" / "metadata.json"
     enrichment_path = work_root / "fixtures" / "deepxiv-enrichment.json"

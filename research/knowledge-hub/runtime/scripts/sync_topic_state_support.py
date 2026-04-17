@@ -20,9 +20,9 @@ def infer_resume_state(
         if verdict in {"deferred", "rejected", "needs_revision"}:
             if fallback_targets:
                 first_target = fallback_targets[0]
-                if str(first_target).startswith("feedback/"):
+                if str(first_target).startswith("feedback/") or "/L3/" in str(first_target):
                     return "L3", "L4", f"Latest Layer 4 verdict is {verdict}; resume exploratory work in Layer 3."
-                if str(first_target).startswith("intake/"):
+                if str(first_target).startswith("intake/") or "/L1/" in str(first_target):
                     return "L1", "L4", f"Latest Layer 4 verdict is {verdict}; resume source-bound work in Layer 1."
             return "L4", "L4", f"Latest Layer 4 verdict is {verdict}; inspect the validation record."
     if closed_loop_decision:

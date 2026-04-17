@@ -4,12 +4,12 @@
   "title": "Jones Chapter 4 Finite-Product Block-Centralizer Type-I Packet",
   "summary": "Bounded theorem-card candidate for the current Jones Chapter 4 finite-dimensional/type-I backbone: package the compile-checked block-centralizer finite-product theorem packet as the current honest finite-dimensional anchor, exposing the ambient centralizer as a linear product of block-fiber full-operator/type-I pieces together with the centralizer subalgebra identification, diagonal block-compression formula, and finrank audit, without claiming the stronger subalgebra-level AlgEquiv product theorem or the full Chapter 4 classification route.",
   "maturity": "auto_validated",
-  "created_at": "2026-04-14T01:51:04+08:00",
-  "updated_at": "2026-04-14T01:51:04+08:00",
+  "created_at": "2026-04-16T23:13:11+08:00",
+  "updated_at": "2026-04-16T23:13:11+08:00",
   "topic_completion_status": "promotion-ready",
   "tags": [
     "theorem_card",
-    "fresh-jones-finite-dimensional-factor-closure",
+    "jones-von-neumann-algebras",
     "backend:theoretical-physics-knowledge-network"
   ],
   "assumptions": [
@@ -43,19 +43,16 @@
     "backend_refs": [
       "backend:theoretical-physics-knowledge-network"
     ],
-    "l1_artifacts": [
-      "source-layer/topics/fresh-jones-finite-dimensional-factor-closure/sources/local-note-readme/source.json",
-      "source-layer/topics/fresh-jones-finite-dimensional-factor-closure/sources/local-note-readme/snapshot.md"
-    ],
+    "l1_artifacts": [],
     "l3_runs": [
-      "feedback/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/candidate_ledger.jsonl"
+      "topics/jones-von-neumann-algebras/L3/runs/2026-04-16-231309-jones-ch4-fp/candidate_ledger.jsonl"
     ],
     "l4_checks": [
-      "runtime/topics/fresh-jones-finite-dimensional-factor-closure/promotion_gate.json",
-      "validation/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/theory-packets/candidate-jones-ch4-fin-50e7c38d/merge_report.json",
-      "consultation/topics/fresh-jones-finite-dimensional-factor-closure/calls/consult-tpkn-promotion-candidate-jones-ch4-fini-fde0117f/result.json",
-      "validation/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/theory-packets/candidate-jones-ch4-fin-50e7c38d/coverage_ledger.json",
-      "validation/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/theory-packets/candidate-jones-ch4-fin-50e7c38d/formal_theory_review.json"
+      "topics/jones-von-neumann-algebras/runtime/promotion_gate.json",
+      "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/merge_report.json",
+      "topics/jones-von-neumann-algebras/consultation/calls/consult-tpkn-promotion-candidate-jones-ch4-fini-fde0117f/result.json",
+      "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/coverage_ledger.json",
+      "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/formal_theory_review.json"
     ],
     "citations": [
       "chapter-4/multiplicity-and-finite-dimensional-von-neumann-algebras",
@@ -66,14 +63,45 @@
     "route": "L3->L4_auto->L2_auto",
     "review_mode": "ai_auto",
     "canonical_layer": "L2_auto",
-    "promoted_by": "formal-positive-l2-acceptance",
-    "promoted_at": "2026-04-14T01:51:04+08:00",
+    "promoted_by": "jones-ch4-finite-product-acceptance",
+    "promoted_at": "2026-04-16T23:13:11+08:00",
     "review_status": "accepted",
     "rationale": "Mirrored into repo-local canonical L2 after successful external backend promotion."
   },
   "dependencies": [
     "theorem:finite-dimensional-block-centralizer-is-linear-product-of-block-fiber-type-i-factors"
   ],
+  "origin_topic_refs": [
+    "topics/jones-von-neumann-algebras"
+  ],
+  "origin_run_refs": [
+    "topics/jones-von-neumann-algebras/L3/runs/2026-04-16-231309-jones-ch4-fp",
+    "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp",
+    "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d"
+  ],
+  "validation_receipts": [
+    "topics/jones-von-neumann-algebras/consultation/calls/consult-tpkn-promotion-candidate-jones-ch4-fini-fde0117f/result.json",
+    "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/merge_report.json",
+    "topics/jones-von-neumann-algebras/runtime/promotion_gate.json",
+    "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/regression_gate.json",
+    "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/coverage_ledger.json",
+    "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/formal_theory_review.json",
+    "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/statement-compilation/candidate-jones-ch4-fin-50e7c38d/statement_compilation.json",
+    "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/statement-compilation/candidate-jones-ch4-fin-50e7c38d/proof_repair_plan.json",
+    "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/lean-bridge/candidate-jones-ch4-fin-50e7c38d/lean_ready_packet.json"
+  ],
+  "reuse_receipts": [],
+  "related_consultation_refs": [
+    "topics/jones-von-neumann-algebras/consultation/calls/consult-tpkn-promotion-candidate-jones-ch4-fini-fde0117f/request.json",
+    "topics/jones-von-neumann-algebras/consultation/calls/consult-tpkn-promotion-candidate-jones-ch4-fini-fde0117f/result.json",
+    "topics/jones-von-neumann-algebras/consultation/calls/consult-tpkn-promotion-candidate-jones-ch4-fini-fde0117f/application.json",
+    "topics/jones-von-neumann-algebras/consultation/consultation_index.jsonl"
+  ],
+  "applicable_topics": [
+    "jones-von-neumann-algebras"
+  ],
+  "failed_topics": [],
+  "regime_notes": [],
   "related_units": [
     "local_note:jones-von-neumann-algebras-definition-packet",
     "local_note:theorem-level-package-roadmap",
@@ -81,27 +109,27 @@
   ],
   "payload": {
     "backend_unit_type": "theorem",
-    "backend_unit_path": "D:\\BaiduSyncdisk\\repos\\_formal_positive_l2\\468cf6dc\\jones-closure\\theoretical-physics-knowledge-network\\units\\theorems\\jones-ch4-finite-product.json",
-    "backend_root": "D:\\BaiduSyncdisk\\repos\\_formal_positive_l2\\468cf6dc\\jones-closure\\theoretical-physics-knowledge-network",
+    "backend_unit_path": "D:\\BaiduSyncdisk\\repos\\_jones_accept\\a3521c6a\\theoretical-physics-knowledge-network\\units\\theorems\\jones-ch4-finite-product.json",
+    "backend_root": "D:\\BaiduSyncdisk\\repos\\_jones_accept\\a3521c6a\\theoretical-physics-knowledge-network",
     "candidate_id": "candidate:jones-ch4-finite-product",
     "candidate_type": "theorem_card",
-    "source_manifest_path": "D:\\BaiduSyncdisk\\repos\\_formal_positive_l2\\468cf6dc\\jones-closure\\theoretical-physics-knowledge-network\\sources\\jones-von-neumann-algebras-definition-packet\\manifest.json",
-    "merge_report_path": "validation/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/theory-packets/candidate-jones-ch4-fin-50e7c38d/merge_report.json",
-    "consultation_result_path": "consultation/topics/fresh-jones-finite-dimensional-factor-closure/calls/consult-tpkn-promotion-candidate-jones-ch4-fini-fde0117f/result.json",
+    "source_manifest_path": "D:\\BaiduSyncdisk\\repos\\_jones_accept\\a3521c6a\\theoretical-physics-knowledge-network\\sources\\jones-von-neumann-algebras-definition-packet\\manifest.json",
+    "merge_report_path": "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/merge_report.json",
+    "consultation_result_path": "topics/jones-von-neumann-algebras/consultation/calls/consult-tpkn-promotion-candidate-jones-ch4-fini-fde0117f/result.json",
     "review_artifacts": {
-      "structure_map_path": "validation/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/theory-packets/candidate-jones-ch4-fin-50e7c38d/structure_map.json",
-      "coverage_ledger_path": "validation/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/theory-packets/candidate-jones-ch4-fin-50e7c38d/coverage_ledger.json",
-      "notation_table_path": "validation/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/theory-packets/candidate-jones-ch4-fin-50e7c38d/notation_table.json",
-      "derivation_graph_path": "validation/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/theory-packets/candidate-jones-ch4-fin-50e7c38d/derivation_graph.json",
-      "agent_consensus_path": "validation/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/theory-packets/candidate-jones-ch4-fin-50e7c38d/agent_consensus.json",
-      "regression_gate_path": "validation/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/theory-packets/candidate-jones-ch4-fin-50e7c38d/regression_gate.json",
-      "promotion_gate_path": "runtime/topics/fresh-jones-finite-dimensional-factor-closure/promotion_gate.json",
+      "structure_map_path": "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/structure_map.json",
+      "coverage_ledger_path": "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/coverage_ledger.json",
+      "notation_table_path": "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/notation_table.json",
+      "derivation_graph_path": "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/derivation_graph.json",
+      "agent_consensus_path": "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/agent_consensus.json",
+      "regression_gate_path": "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/regression_gate.json",
+      "promotion_gate_path": "topics/jones-von-neumann-algebras/runtime/promotion_gate.json",
       "candidate_id": "candidate:jones-ch4-finite-product",
-      "faithfulness_review_path": "validation/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/theory-packets/candidate-jones-ch4-fin-50e7c38d/faithfulness_review.json",
-      "comparator_audit_record_path": "validation/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/theory-packets/candidate-jones-ch4-fin-50e7c38d/comparator_audit_record.json",
-      "provenance_review_path": "validation/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/theory-packets/candidate-jones-ch4-fin-50e7c38d/provenance_review.json",
-      "prerequisite_closure_review_path": "validation/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/theory-packets/candidate-jones-ch4-fin-50e7c38d/prerequisite_closure_review.json",
-      "formal_theory_review_path": "validation/topics/fresh-jones-finite-dimensional-factor-closure/runs/2026-04-14-015101-jones-close/theory-packets/candidate-jones-ch4-fin-50e7c38d/formal_theory_review.json"
+      "faithfulness_review_path": "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/faithfulness_review.json",
+      "comparator_audit_record_path": "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/comparator_audit_record.json",
+      "provenance_review_path": "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/provenance_review.json",
+      "prerequisite_closure_review_path": "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/prerequisite_closure_review.json",
+      "formal_theory_review_path": "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-jones-ch4-fin-50e7c38d/formal_theory_review.json"
     }
   }
 }

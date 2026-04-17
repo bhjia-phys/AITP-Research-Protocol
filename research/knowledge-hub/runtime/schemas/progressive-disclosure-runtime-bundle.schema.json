@@ -1240,6 +1240,7 @@
         "topic_slug": {"type": "string", "minLength": 1},
         "read_depth": {"type": "string", "minLength": 1},
         "retrieval_profile": {"type": "string", "minLength": 1},
+        "profile_shelf_path": {"type": "string", "minLength": 1},
         "status": {"type": "string", "minLength": 1},
         "query_text": {"type": "string"},
         "canonical_hits": {
@@ -1859,6 +1860,7 @@
         "topic_slug": {"type": "string", "minLength": 1},
         "read_depth": {"type": "string", "minLength": 1},
         "retrieval_profile": {"type": "string", "minLength": 1},
+        "profile_shelf_path": {"type": "string", "minLength": 1},
         "status": {"type": "string", "minLength": 1},
         "query_text": {"type": "string"},
         "canonical_hits": {

@@ -185,12 +185,12 @@ def main() -> int:
     shutil.copytree(package_root / "canonical", kernel_root / "canonical", dirs_exist_ok=True)
     shutil.copytree(package_root / "schemas", kernel_root / "schemas", dirs_exist_ok=True)
     shutil.copytree(package_root / "runtime" / "schemas", kernel_root / "runtime" / "schemas", dirs_exist_ok=True)
-    (kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki").mkdir(parents=True, exist_ok=True)
-    (kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "home.md").write_text(
+    (kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki").mkdir(parents=True, exist_ok=True)
+    (kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "home.md").write_text(
         "# Demo Home\n\nCommunity bridge staging acceptance.\n",
         encoding="utf-8",
     )
-    (kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "source-intake.md").write_text(
+    (kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "source-intake.md").write_text(
         "# Source Intake\n\nCommunity bridge staging acceptance.\n",
         encoding="utf-8",
     )
@@ -202,10 +202,10 @@ def main() -> int:
     from knowledge_hub.aitp_service import AITPService
 
     service = AITPService(kernel_root=kernel_root, repo_root=repo_root)
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     seed_runtime(runtime_root)
 
-    source_root = kernel_root / "source-layer" / "topics" / "demo-topic"
+    source_root = kernel_root / "topics" / "demo-topic" / "L0"
     paper_source_slug = "paper-anyon-condensation-2401-00005"
     note_source_slug = "note-operator-algebra"
     paper_graph_path = source_root / "sources" / paper_source_slug / "concept_graph.json"
@@ -214,7 +214,7 @@ def main() -> int:
     write_concept_graph(
         paper_graph_path,
         source_id="paper:anyon-condensation-2401-00005",
-        source_json_path=f"source-layer/topics/demo-topic/sources/{paper_source_slug}/source.json",
+        source_json_path=f"topics/demo-topic/L0/sources/{paper_source_slug}/source.json",
         node_id="concept:anyon-condensation",
         label="Anyon condensation",
         community_id="community-topological-order-paper",
@@ -224,7 +224,7 @@ def main() -> int:
     write_concept_graph(
         note_graph_path,
         source_id="note:operator-algebra",
-        source_json_path=f"source-layer/topics/demo-topic/sources/{note_source_slug}/source.json",
+        source_json_path=f"topics/demo-topic/L0/sources/{note_source_slug}/source.json",
         node_id="concept:operator-sector",
         label="Operator algebra sector",
         community_id="community-topological-order-note",
@@ -233,8 +233,8 @@ def main() -> int:
     )
     write_source_index(
         source_root,
-        paper_graph_path=f"source-layer/topics/demo-topic/sources/{paper_source_slug}/concept_graph.json",
-        note_graph_path=f"source-layer/topics/demo-topic/sources/{note_source_slug}/concept_graph.json",
+        paper_graph_path=f"topics/demo-topic/L0/sources/{paper_source_slug}/concept_graph.json",
+        note_graph_path=f"topics/demo-topic/L0/sources/{note_source_slug}/concept_graph.json",
     )
 
     status_payload = service.topic_status(topic_slug="demo-topic")

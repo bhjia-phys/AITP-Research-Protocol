@@ -76,9 +76,9 @@ def _strip_comment_lines(text: str) -> str:
 def _snapshot_path(*, kernel_root: Path, topic_slug: str, source_id: str) -> Path:
     return (
         kernel_root
-        / "source-layer"
         / "topics"
         / topic_slug
+        / "L0"
         / "sources"
         / source_id.replace(":", "-")
         / "snapshot.md"

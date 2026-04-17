@@ -1527,7 +1527,7 @@ def materialize_runtime_protocol_bundle(
             0,
             {
                 "path": post_promotion_followup_note_path,
-                "reason": "Read the durable post-promotion followup before reopening another bounded route after Layer 2 writeback.",
+                "reason": "Read the durable post-promotion followup before reopening another research path after Layer 2 writeback.",
             },
         )
         must_read_paths.add(post_promotion_followup_note_path)

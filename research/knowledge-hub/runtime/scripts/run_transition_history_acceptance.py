@@ -75,7 +75,7 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def seed_demo_runtime(kernel_root: Path) -> None:
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     runtime_root.mkdir(parents=True, exist_ok=True)
     (runtime_root / "topic_state.json").write_text(
         json.dumps(
@@ -127,7 +127,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
 
 
 def seed_demo_source_layer(kernel_root: Path) -> None:
-    topic_root = kernel_root / "source-layer" / "topics" / "demo-topic"
+    topic_root = kernel_root / "topics" / "demo-topic" / "L0"
     topic_root.mkdir(parents=True, exist_ok=True)
     write_jsonl(
         topic_root / "source_index.jsonl",
@@ -144,7 +144,7 @@ def seed_demo_source_layer(kernel_root: Path) -> None:
 
 
 def seed_demo_candidate(kernel_root: Path) -> None:
-    feedback_root = kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001"
+    feedback_root = kernel_root / "topics" / "demo-topic" / "L3" / "runs" / "run-001"
     feedback_root.mkdir(parents=True, exist_ok=True)
     write_jsonl(
         feedback_root / "candidate_ledger.jsonl",
@@ -228,7 +228,7 @@ def main() -> int:
         args=["replay-topic", "--topic-slug", "demo-topic", "--json"],
     )
 
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     transition_log = runtime_root / "transition_history.jsonl"
     transition_json = runtime_root / "transition_history.json"
     transition_note = runtime_root / "transition_history.md"

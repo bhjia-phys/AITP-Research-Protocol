@@ -224,7 +224,7 @@ def main() -> int:
     service = AITPService(kernel_root=kernel_root, repo_root=repo_root)
     topic_slug = str(contract_payload["topic_slug"])
     run_id = str(contract_payload["run_id"])
-    runtime_root = kernel_root / "runtime" / "topics" / topic_slug
+    runtime_root = kernel_root / "topics" / topic_slug / "runtime"
     tpkn_root = work_root / "tpkn-librpa-qsgw-positive"
     create_minimal_tpkn_backend(tpkn_root)
 

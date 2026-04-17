@@ -124,10 +124,10 @@ def prepare_first_run_kernel(package_root: Path, kernel_root: Path) -> None:
 
 def assert_topic_is_fresh(kernel_root: Path, topic_slug: str) -> None:
     paths = [
-        kernel_root / "runtime" / "topics" / topic_slug,
-        kernel_root / "feedback" / "topics" / topic_slug,
-        kernel_root / "source-layer" / "topics" / topic_slug,
-        kernel_root / "intake" / "topics" / topic_slug,
+        kernel_root / "topics" / topic_slug / "runtime",
+        kernel_root / "topics" / topic_slug / "L3",
+        kernel_root / "topics" / topic_slug / "L0",
+        kernel_root / "topics" / topic_slug / "L1",
     ]
     for path in paths:
         check(not path.exists(), f"expected a fresh topic slug, but found existing path: {path}")

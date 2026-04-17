@@ -70,7 +70,7 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def seed_demo_runtime(kernel_root: Path) -> None:
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     runtime_root.mkdir(parents=True, exist_ok=True)
     (runtime_root / "topic_state.json").write_text(
         json.dumps(
@@ -84,6 +84,10 @@ def seed_demo_runtime(kernel_root: Path) -> None:
             indent=2,
         )
         + "\n",
+        encoding="utf-8",
+    )
+    (runtime_root / "session_start.contract.json").write_text(
+        json.dumps({"updated_at": "test-seed"}, ensure_ascii=True, indent=2) + "\n",
         encoding="utf-8",
     )
     (runtime_root / "interaction_state.json").write_text(
@@ -133,7 +137,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
 
 
 def seed_demo_source_layer(kernel_root: Path) -> None:
-    topic_root = kernel_root / "source-layer" / "topics" / "demo-topic"
+    topic_root = kernel_root / "topics" / "demo-topic" / "L0"
     write_jsonl(
         topic_root / "source_index.jsonl",
         [
@@ -204,9 +208,9 @@ def main() -> int:
     regime_rows = l1_source_intake.get("regime_rows", [])
     method_specificity_rows = l1_source_intake.get("method_specificity_rows", [])
 
-    research_contract_note = kernel_root / "runtime" / "topics" / "demo-topic" / "research_question.contract.md"
-    runtime_protocol_note = kernel_root / "runtime" / "topics" / "demo-topic" / "runtime_protocol.generated.md"
-    wiki_source_intake_note = kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "source-intake.md"
+    research_contract_note = kernel_root / "topics" / "demo-topic" / "runtime" / "research_question.contract.md"
+    runtime_protocol_note = kernel_root / "topics" / "demo-topic" / "runtime" / "runtime_protocol.generated.md"
+    wiki_source_intake_note = kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "source-intake.md"
     for path in (
         research_contract_note,
         runtime_protocol_note,

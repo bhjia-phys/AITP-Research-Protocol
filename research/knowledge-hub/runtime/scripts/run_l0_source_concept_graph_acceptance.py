@@ -57,8 +57,8 @@ def main() -> int:
     del repo_root
     work_root = Path(args.work_root).expanduser().resolve() if args.work_root else Path(tempfile.mkdtemp(prefix="aitp-l0-source-concept-graph-acceptance-")).resolve()
     kernel_root = work_root / "kernel"
-    (kernel_root / "source-layer").mkdir(parents=True, exist_ok=True)
-    (kernel_root / "intake").mkdir(parents=True, exist_ok=True)
+    (kernel_root / "topics" / "demo-topic" / "L0").mkdir(parents=True, exist_ok=True)
+    (kernel_root / "topics" / "demo-topic" / "L1").mkdir(parents=True, exist_ok=True)
 
     metadata_path = work_root / "fixtures" / "metadata.json"
     enrichment_path = work_root / "fixtures" / "deepxiv-enrichment.json"
@@ -99,10 +99,10 @@ def main() -> int:
                 {"node_id": "concept:anyon-condensation", "label": "Anyon condensation", "node_type": "concept", "confidence_tier": "EXTRACTED", "confidence_score": 0.93}
             ],
             "edges": [
-                {"edge_id": "edge-topological-order-special-case-anyon-condensation", "from_id": "concept:anyon-condensation", "relation": "special_case_of", "to_id": "concept:topological-order", "evidence_refs": ["source-layer/topics/demo-topic/sources/paper-topological-order-and-anyon-condensation-2401-00001/source.json"], "notes": "offline fixture"}
+                {"edge_id": "edge-topological-order-special-case-anyon-condensation", "from_id": "concept:anyon-condensation", "relation": "special_case_of", "to_id": "concept:topological-order", "evidence_refs": ["topics/demo-topic/L0/sources/paper-topological-order-and-anyon-condensation-2401-00001/source.json"], "notes": "offline fixture"}
             ],
             "hyperedges": [
-                {"hyperedge_id": "hyperedge-condensation-route", "relation": "supports", "node_ids": ["concept:topological-order", "concept:anyon-condensation"], "evidence_refs": ["source-layer/topics/demo-topic/sources/paper-topological-order-and-anyon-condensation-2401-00001/source.json"], "notes": "offline fixture"}
+                {"hyperedge_id": "hyperedge-condensation-route", "relation": "supports", "node_ids": ["concept:topological-order", "concept:anyon-condensation"], "evidence_refs": ["topics/demo-topic/L0/sources/paper-topological-order-and-anyon-condensation-2401-00001/source.json"], "notes": "offline fixture"}
             ],
             "communities": [
                 {"community_id": "community-topological-order", "label": "Topological order cluster", "node_ids": ["concept:topological-order", "concept:anyon-condensation"]}

@@ -385,6 +385,23 @@ def _render_obsidian_family_index_markdown(family_dir: str, units: list[dict[str
 
 
 def _render_obsidian_profile_markdown(profile_name: str, entrypoint: dict[str, Any]) -> str:
+    units = list(entrypoint.get("units") or [])
+
+    def _unit_link(unit: dict[str, Any]) -> str:
+        family_dir = _family_dir_from_unit(unit)
+        page_name = _obsidian_page_name(str(unit.get("unit_id") or ""), str(unit.get("unit_type") or "unit"))
+        return f"- {_wiki_link(f'families/{family_dir}/{page_name}', str(unit.get('title') or unit.get('unit_id') or 'unit'))} - {unit.get('summary') or '(missing)'}"
+
+    def _section(title: str, predicate) -> list[str]:  # type: ignore[no-untyped-def]
+        matched = [unit for unit in units if predicate(unit)]
+        lines = [f"## {title}", ""]
+        for unit in matched:
+            lines.append(_unit_link(unit))
+        if not matched:
+            lines.append("- `(none)`")
+        lines.append("")
+        return lines
+
     lines = [
         f"# {profile_name}",
         "",
@@ -393,17 +410,23 @@ def _render_obsidian_profile_markdown(profile_name: str, entrypoint: dict[str, A
         f"- Preferred unit types: `{', '.join(entrypoint.get('preferred_unit_types') or []) or '(none)'}`",
         f"- Available count: `{entrypoint.get('available_count') or 0}`",
         "",
-        "## Units",
-        "",
     ]
-    for unit in entrypoint.get("units") or []:
-        family_dir = _family_dir_from_unit(unit)
-        page_name = _obsidian_page_name(str(unit.get("unit_id") or ""), str(unit.get("unit_type") or "unit"))
-        lines.append(
-            f"- {_wiki_link(f'families/{family_dir}/{page_name}', str(unit.get('title') or unit.get('unit_id') or 'unit'))} - {unit.get('summary') or '(missing)'}"
+    lines.extend(
+        _section(
+            "Core Hits",
+            lambda unit: str(unit.get("unit_type") or "") not in {"warning_note", "workflow", "topic_skill_projection"}
+            and not (unit.get("reuse_receipts") or []),
         )
-    if not (entrypoint.get("units") or []):
-        lines.append("- `(none)`")
+    )
+    lines.extend(_section("Warnings", lambda unit: str(unit.get("unit_type") or "") == "warning_note"))
+    lines.extend(_section("Workflows", lambda unit: str(unit.get("unit_type") or "") == "workflow"))
+    lines.extend(
+        _section(
+            "Topic Skill Projections",
+            lambda unit: str(unit.get("unit_type") or "") == "topic_skill_projection",
+        )
+    )
+    lines.extend(_section("Recently Reused Units", lambda unit: bool(unit.get("reuse_receipts") or [])))
     lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 

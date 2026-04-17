@@ -186,7 +186,7 @@ def _validator(path: Path) -> Draft202012Validator:
 
 
 def _strategy_memory_path(kernel_root: Path, topic_slug: str, run_id: str) -> Path:
-    return kernel_root / "feedback" / "topics" / topic_slug / "runs" / run_id / "strategy_memory.jsonl"
+    return kernel_root / "topics" / topic_slug / "L3" / "runs" / run_id / "strategy_memory.jsonl"
 
 
 def _proof_fragment_path(kernel_root: Path, unit_id: str) -> Path:

@@ -171,12 +171,12 @@ def main() -> int:
     shutil.copytree(package_root / "canonical", kernel_root / "canonical", dirs_exist_ok=True)
     shutil.copytree(package_root / "schemas", kernel_root / "schemas", dirs_exist_ok=True)
     shutil.copytree(package_root / "runtime" / "schemas", kernel_root / "runtime" / "schemas", dirs_exist_ok=True)
-    (kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki").mkdir(parents=True, exist_ok=True)
-    (kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "home.md").write_text(
+    (kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki").mkdir(parents=True, exist_ok=True)
+    (kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "home.md").write_text(
         "# Demo Home\n\nGraph diff staging acceptance.\n",
         encoding="utf-8",
     )
-    (kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "source-intake.md").write_text(
+    (kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "source-intake.md").write_text(
         "# Source Intake\n\nGraph diff staging acceptance.\n",
         encoding="utf-8",
     )
@@ -188,10 +188,10 @@ def main() -> int:
     from knowledge_hub.aitp_service import AITPService
 
     service = AITPService(kernel_root=kernel_root, repo_root=repo_root)
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     seed_runtime(runtime_root)
 
-    source_root = kernel_root / "source-layer" / "topics" / "demo-topic"
+    source_root = kernel_root / "topics" / "demo-topic" / "L0"
     paper_source_slug = "paper-anyon-condensation-2401-00005"
     note_source_slug = "note-operator-algebra"
     paper_graph_path = source_root / "sources" / paper_source_slug / "concept_graph.json"
@@ -200,14 +200,14 @@ def main() -> int:
     write_concept_graph(
         paper_graph_path,
         source_id="paper:anyon-condensation-2401-00005",
-        source_json_path=f"source-layer/topics/demo-topic/sources/{paper_source_slug}/source.json",
+        source_json_path=f"topics/demo-topic/L0/sources/{paper_source_slug}/source.json",
         label="Topological order",
         node_id="concept:topological-order",
         generated_at="2026-04-13T00:00:00+08:00",
     )
     write_source_index(
         source_root,
-        paper_graph_path=f"source-layer/topics/demo-topic/sources/{paper_source_slug}/concept_graph.json",
+        paper_graph_path=f"topics/demo-topic/L0/sources/{paper_source_slug}/concept_graph.json",
         note_graph_path=None,
     )
     service.topic_status(topic_slug="demo-topic")
@@ -215,7 +215,7 @@ def main() -> int:
     write_concept_graph(
         paper_graph_path,
         source_id="paper:anyon-condensation-2401-00005",
-        source_json_path=f"source-layer/topics/demo-topic/sources/{paper_source_slug}/source.json",
+        source_json_path=f"topics/demo-topic/L0/sources/{paper_source_slug}/source.json",
         label="Anyon condensation",
         node_id="concept:anyon-condensation",
         generated_at="2026-04-14T00:00:00+08:00",
@@ -223,15 +223,15 @@ def main() -> int:
     write_concept_graph(
         note_graph_path,
         source_id="note:operator-algebra",
-        source_json_path=f"source-layer/topics/demo-topic/sources/{note_source_slug}/source.json",
+        source_json_path=f"topics/demo-topic/L0/sources/{note_source_slug}/source.json",
         label="Anyon condensation",
         node_id="concept:anyon-condensation-operator",
         generated_at="2026-04-14T00:00:00+08:00",
     )
     write_source_index(
         source_root,
-        paper_graph_path=f"source-layer/topics/demo-topic/sources/{paper_source_slug}/concept_graph.json",
-        note_graph_path=f"source-layer/topics/demo-topic/sources/{note_source_slug}/concept_graph.json",
+        paper_graph_path=f"topics/demo-topic/L0/sources/{paper_source_slug}/concept_graph.json",
+        note_graph_path=f"topics/demo-topic/L0/sources/{note_source_slug}/concept_graph.json",
     )
     second_status = service.topic_status(topic_slug="demo-topic")
     runtime_protocol_json = runtime_root / "runtime_protocol.generated.json"
@@ -266,8 +266,8 @@ def main() -> int:
     )
     staging = execution["result"]["staging"]
     manifest_path = Path(staging["manifest_json_path"])
-    graph_analysis_json = kernel_root / "runtime" / "topics" / "demo-topic" / "graph_analysis.json"
-    graph_analysis_history = kernel_root / "runtime" / "topics" / "demo-topic" / "graph_analysis_history.jsonl"
+    graph_analysis_json = kernel_root / "topics" / "demo-topic" / "runtime" / "graph_analysis.json"
+    graph_analysis_history = kernel_root / "topics" / "demo-topic" / "runtime" / "graph_analysis_history.jsonl"
     for path in (manifest_path, graph_analysis_json, graph_analysis_history):
         ensure_exists(path)
 

@@ -75,8 +75,8 @@ def rewrite_topic_relative_path(
     target_topic_slug: str,
 ) -> str:
     return str(value).replace(
-        f"source-layer/topics/{reference_topic_slug}/",
-        f"source-layer/topics/{target_topic_slug}/",
+        f"topics/{reference_topic_slug}/L0/",
+        f"topics/{target_topic_slug}/L0/",
     )
 
 
@@ -86,11 +86,11 @@ def clone_reference_sources(
     reference_topic_slug: str,
     target_topic_slug: str,
 ) -> dict[str, Any]:
-    reference_root = kernel_root / "source-layer" / "topics" / reference_topic_slug
+    reference_root = kernel_root / "topics" / reference_topic_slug / "L0"
     if not reference_root.exists():
         raise FileNotFoundError(f"Reference topic root is missing: {reference_root}")
 
-    target_root = kernel_root / "source-layer" / "topics" / target_topic_slug
+    target_root = kernel_root / "topics" / target_topic_slug / "L0"
     target_root.mkdir(parents=True, exist_ok=True)
 
     reference_sources_root = reference_root / "sources"
@@ -140,7 +140,7 @@ def load_reference_candidate(
     run_id: str,
     candidate_id: str,
 ) -> dict[str, Any]:
-    ledger_path = package_root / "feedback" / "topics" / topic_slug / "runs" / run_id / "candidate_ledger.jsonl"
+    ledger_path = package_root / "topics" / topic_slug / "L3" / "runs" / run_id / "candidate_ledger.jsonl"
     for row in read_jsonl(ledger_path):
         if str(row.get("candidate_id") or "").strip() == candidate_id:
             return row
@@ -221,10 +221,10 @@ def main() -> int:
     runtime_schemas_root = package_root / "runtime" / "schemas"
     if runtime_schemas_root.exists():
         shutil.copytree(runtime_schemas_root, kernel_root / "runtime" / "schemas", dirs_exist_ok=True)
-    reference_topic_root = package_root / "source-layer" / "topics" / args.reference_topic_slug
+    reference_topic_root = package_root / "topics" / args.reference_topic_slug / "L0"
     shutil.copytree(
         reference_topic_root,
-        kernel_root / "source-layer" / "topics" / reference_topic_root.name,
+        kernel_root / "topics" / args.reference_topic_slug / "L0",
         dirs_exist_ok=True,
     )
 
@@ -253,10 +253,10 @@ def main() -> int:
         candidate_id=args.reference_candidate_id,
     )
 
-    runtime_root = kernel_root / "runtime" / "topics" / topic_slug
+    runtime_root = kernel_root / "topics" / topic_slug / "runtime"
     target_contract_path = runtime_root / "hs_positive_target_contract.json"
     target_contract_note_path = runtime_root / "hs_positive_target_contract.md"
-    source_index_path = kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl"
+    source_index_path = kernel_root / "topics" / topic_slug / "L0" / "source_index.jsonl"
 
     target_contract = {
         "contract_kind": "hs_toy_model_positive_target",

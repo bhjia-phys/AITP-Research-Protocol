@@ -210,7 +210,7 @@ def create_minimal_tpkn_backend(target_root: Path) -> None:
 
 
 def write_source_index_row(kernel_root: Path, topic_slug: str) -> Path:
-    source_index_path = kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl"
+    source_index_path = kernel_root / "topics" / topic_slug / "L0" / "source_index.jsonl"
     source_index_path.parent.mkdir(parents=True, exist_ok=True)
     row = {
         "source_id": WITTEN_SOURCE_ID,
@@ -238,7 +238,7 @@ def write_source_index_row(kernel_root: Path, topic_slug: str) -> Path:
 
 
 def write_real_topic_candidate(kernel_root: Path, topic_slug: str, run_id: str) -> Path:
-    feedback_root = kernel_root / "feedback" / "topics" / topic_slug / "runs" / run_id
+    feedback_root = kernel_root / "topics" / topic_slug / "L3" / "runs" / run_id
     feedback_root.mkdir(parents=True, exist_ok=True)
     ledger_path = feedback_root / "candidate_ledger.jsonl"
     row = {
@@ -256,7 +256,7 @@ def write_real_topic_candidate(kernel_root: Path, topic_slug: str, run_id: str) 
                 "id": WITTEN_SOURCE_ID,
                 "layer": "L0",
                 "object_type": "source",
-                "path": f"source-layer/topics/{topic_slug}/source_index.jsonl",
+                "path": f"topics/{topic_slug}/L0/source_index.jsonl",
                 "title": "Three Lectures On Topological Phases Of Matter",
                 "summary": "Witten Lecture Two source anchor for the formal-closure acceptance theorem.",
             }
@@ -345,6 +345,12 @@ def main() -> int:
         args.updated_by,
     ]
     subprocess.run(orchestrate_command, check=True, env=env, capture_output=True, text=True)
+
+    _witten_runtime_root = kernel_root / "topics" / args.topic_slug / "runtime"
+    (_witten_runtime_root / "session_start.contract.json").write_text(
+        json.dumps({"updated_at": "test-seed"}, ensure_ascii=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
     source_index_path = write_source_index_row(kernel_root, args.topic_slug)
     candidate_ledger_path = write_real_topic_candidate(kernel_root, args.topic_slug, args.run_id)
@@ -500,20 +506,17 @@ def main() -> int:
         env,
     )
 
-    topic_completion_path = kernel_root / "runtime" / "topics" / args.topic_slug / "topic_completion.json"
-    lean_bridge_path = kernel_root / "runtime" / "topics" / args.topic_slug / "lean_bridge.active.json"
+    topic_completion_path = kernel_root / "topics" / args.topic_slug / "runtime" / "topic_completion.json"
+    lean_bridge_path = kernel_root / "topics" / args.topic_slug / "runtime" / "lean_bridge.active.json"
     lean_packet_path = (
-        kernel_root
-        / "validation"
-        / "topics"
-        / args.topic_slug
+        kernel_root / "topics" / args.topic_slug / "L4"
         / "runs"
         / args.run_id
         / "lean-bridge"
         / bounded_slugify("candidate:witten-l2-hall-response-equivalence")
         / "lean_ready_packet.json"
     )
-    promotion_gate_path = kernel_root / "runtime" / "topics" / args.topic_slug / "promotion_gate.json"
+    promotion_gate_path = kernel_root / "topics" / args.topic_slug / "runtime" / "promotion_gate.json"
     source_manifest_path = tpkn_work_root / "sources" / "witten-topological-phases-1510.07698v2" / "manifest.json"
 
     for path in (

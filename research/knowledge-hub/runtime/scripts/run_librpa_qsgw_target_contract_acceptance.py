@@ -405,11 +405,11 @@ def main() -> int:
         load_profile="light",
     )
 
-    runtime_root = kernel_root / "runtime" / "topics" / topic_slug
-    source_index_path = kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl"
+    runtime_root = kernel_root / "topics" / topic_slug / "runtime"
+    source_index_path = kernel_root / "topics" / topic_slug / "L0" / "source_index.jsonl"
     target_contract_path = runtime_root / "librpa_qsgw_target_contract.json"
     target_contract_note_path = runtime_root / "librpa_qsgw_target_contract.md"
-    candidate_ledger_path = kernel_root / "feedback" / "topics" / topic_slug / "runs" / args.run_id / "candidate_ledger.jsonl"
+    candidate_ledger_path = kernel_root / "topics" / topic_slug / "L3" / "runs" / args.run_id / "candidate_ledger.jsonl"
     source_rows = read_jsonl(source_index_path)
     check(bool(source_rows), "Expected local-note sources to be registered for the LibRPA QSGW topic.")
     origin_refs = build_origin_refs(source_rows, source_index_path)

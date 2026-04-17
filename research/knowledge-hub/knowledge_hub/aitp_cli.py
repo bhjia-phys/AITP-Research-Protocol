@@ -71,11 +71,16 @@ def _emit_required_read_gate(
     updated_by: str,
     as_json: bool,
     blocking: bool = False,
+    operation: str | None = None,
 ) -> int | None:
     normalized_topic_slug = str(topic_slug or "").strip()
     if not normalized_topic_slug:
         return None
-    gate_payload = service.topic_required_read_gate(topic_slug=normalized_topic_slug, updated_by=updated_by)
+    gate_payload = service.topic_required_read_gate(
+        topic_slug=normalized_topic_slug,
+        updated_by=updated_by,
+        operation=operation,
+    )
     if not isinstance(gate_payload, dict):
         return None
     if not gate_payload.get("blocked") and not gate_payload.get("needs_ack"):
@@ -1287,6 +1292,7 @@ def _main_with_args(parser: argparse.ArgumentParser, args: argparse.Namespace) -
             updated_by=args.updated_by,
             as_json=args.json,
             blocking=True,
+            operation="complete-topic",
         )
         if required_read_exit is not None:
             return required_read_exit

@@ -146,8 +146,8 @@ def seed_runtime(runtime_root: Path) -> dict[str, Path]:
                         "topic_slug": "demo-topic",
                         "wiki": {
                             "page_paths": [
-                                "intake/topics/demo-topic/vault/wiki/home.md",
-                                "intake/topics/demo-topic/vault/wiki/source-intake.md",
+                                "topics/demo-topic/L1/vault/wiki/home.md",
+                                "topics/demo-topic/L1/vault/wiki/source-intake.md",
                             ]
                         },
                     },
@@ -168,7 +168,7 @@ def seed_runtime(runtime_root: Path) -> dict[str, Path]:
 
 
 def seed_intake(kernel_root: Path) -> None:
-    wiki_root = kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki"
+    wiki_root = kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki"
     wiki_root.mkdir(parents=True, exist_ok=True)
     (wiki_root / "home.md").write_text(
         "# Demo Home\n\nTopological order bridge draft.\n",
@@ -194,7 +194,7 @@ def main() -> int:
     shutil.copytree(package_root / "schemas", kernel_root / "schemas", dirs_exist_ok=True)
     shutil.copytree(package_root / "runtime" / "schemas", kernel_root / "runtime" / "schemas", dirs_exist_ok=True)
     shutil.copytree(package_root / "runtime" / "scripts", kernel_root / "runtime" / "scripts", dirs_exist_ok=True)
-    runtime_paths = seed_runtime(kernel_root / "runtime" / "topics" / "demo-topic")
+    runtime_paths = seed_runtime(kernel_root / "topics" / "demo-topic" / "runtime")
     seed_intake(kernel_root)
 
     import sys
@@ -271,7 +271,7 @@ def main() -> int:
         "artifacts": {
             "manifest_json_path": str(manifest_path),
             "runtime_protocol_note": str(runtime_paths["protocol_note"]),
-            "wiki_source_intake_note": str(kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "source-intake.md"),
+            "wiki_source_intake_note": str(kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "source-intake.md"),
         },
     }
     if args.json:

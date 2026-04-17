@@ -71,7 +71,7 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 def seed_demo_source_layer(kernel_root: Path) -> None:
     write_jsonl(
-        kernel_root / "source-layer" / "topics" / "demo-topic" / "source_index.jsonl",
+        kernel_root / "topics" / "demo-topic" / "L0" / "source_index.jsonl",
         [
             {
                 "source_id": "paper:shared-a",
@@ -85,7 +85,7 @@ def seed_demo_source_layer(kernel_root: Path) -> None:
         ],
     )
     write_jsonl(
-        kernel_root / "source-layer" / "topics" / "sibling-topic" / "source_index.jsonl",
+        kernel_root / "topics" / "sibling-topic" / "L0" / "source_index.jsonl",
         [
             {
                 "source_id": "paper:shared-b",
@@ -99,7 +99,7 @@ def seed_demo_source_layer(kernel_root: Path) -> None:
         ],
     )
     write_jsonl(
-        kernel_root / "source-layer" / "topics" / "neighbor-topic" / "source_index.jsonl",
+        kernel_root / "topics" / "neighbor-topic" / "L0" / "source_index.jsonl",
         [
             {
                 "source_id": "paper:neighbor",
@@ -115,7 +115,7 @@ def seed_demo_source_layer(kernel_root: Path) -> None:
 
 
 def seed_demo_runtime(kernel_root: Path) -> None:
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     runtime_root.mkdir(parents=True, exist_ok=True)
     (runtime_root / "topic_state.json").write_text(
         json.dumps(

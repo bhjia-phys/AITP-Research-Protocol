@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .l2_compiler import materialize_obsidian_l2_mirror
 from .l2_graph import consult_canonical_l2
 from .topic_truth_root_support import compatibility_projection_path
 
@@ -72,6 +73,13 @@ def _reuse_context_paths(service: Any, *, topic_slug: str, context_name: str) ->
     }
 
 
+def _profile_shelf_path(service: Any, *, retrieval_profile: str) -> str:
+    profile_path = service.kernel_root / "canonical" / "compiled" / "obsidian_l2" / "profiles" / f"{retrieval_profile}.md"
+    if not profile_path.exists():
+        materialize_obsidian_l2_mirror(service.kernel_root)
+    return service._relativize(profile_path)
+
+
 def _normalize_canonical_hit(row: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": str(row.get("id") or row.get("unit_id") or ""),
@@ -117,33 +125,81 @@ def _filter_hits(rows: list[dict[str, Any]], *, allowed_unit_types: set[str], li
     return rows[:limit]
 
 
+def _render_context_hit_section(
+    title: str,
+    rows: list[dict[str, Any]],
+    *,
+    predicate,
+) -> list[str]:  # type: ignore[no-untyped-def]
+    matched = [row for row in rows if predicate(row)]
+    lines = [f"## {title}", ""]
+    for row in matched:
+        lines.append(
+            f"- `{row.get('id') or '(missing)'}` type=`{row.get('unit_type') or '(missing)'}` authority=`{row.get('authority_level') or '(missing)'}`"
+        )
+    if not matched:
+        lines.append("- `(none)`")
+    lines.append("")
+    return lines
+
+
 def _render_reuse_context_markdown(payload: dict[str, Any]) -> str:
+    canonical_hits = list(payload.get("canonical_hits") or [])
     lines = [
         f"# {payload.get('context_name', 'Reuse Context').replace('_', ' ').title()}",
         "",
         f"- Topic slug: `{payload.get('topic_slug') or '(missing)'}`",
         f"- Read depth: `{payload.get('read_depth') or '(missing)'}`",
         f"- Retrieval profile: `{payload.get('retrieval_profile') or '(missing)'}`",
+        f"- Profile shelf: `{payload.get('profile_shelf_path') or '(missing)'}`",
         f"- Status: `{payload.get('status') or '(missing)'}`",
         f"- Query text: `{payload.get('query_text') or '(missing)'}`",
         "",
-        "## Canonical hits",
-        "",
     ]
-    for row in payload.get("canonical_hits") or []:
-        lines.append(
-            f"- `{row.get('id') or '(missing)'}` type=`{row.get('unit_type') or '(missing)'}` authority=`{row.get('authority_level') or '(missing)'}`"
+    lines.extend(
+        _render_context_hit_section(
+            "Core Hits",
+            canonical_hits,
+            predicate=lambda row: str(row.get("unit_type") or "") not in {"warning_note", "workflow", "topic_skill_projection"}
+            and not ((row.get("topic_link_refs") or {}).get("reuse_receipts") or []),
         )
-    if not (payload.get("canonical_hits") or []):
-        lines.append("- `(none)`")
-    lines.extend(["", "## Staged hints", ""])
+    )
+    lines.extend(
+        _render_context_hit_section(
+            "Warnings",
+            canonical_hits,
+            predicate=lambda row: str(row.get("unit_type") or "") == "warning_note",
+        )
+    )
+    lines.extend(
+        _render_context_hit_section(
+            "Workflows",
+            canonical_hits,
+            predicate=lambda row: str(row.get("unit_type") or "") == "workflow",
+        )
+    )
+    lines.extend(
+        _render_context_hit_section(
+            "Topic Skill Projections",
+            canonical_hits,
+            predicate=lambda row: str(row.get("unit_type") or "") == "topic_skill_projection",
+        )
+    )
+    lines.extend(
+        _render_context_hit_section(
+            "Recently Reused Units",
+            canonical_hits,
+            predicate=lambda row: bool(((row.get("topic_link_refs") or {}).get("reuse_receipts") or [])),
+        )
+    )
+    lines.extend(["## Staged Hints", ""])
     for row in payload.get("staged_hits") or []:
         lines.append(
             f"- `{row.get('id') or '(missing)'}` type=`{row.get('unit_type') or '(missing)'}` authority=`{row.get('authority_level') or '(missing)'}`"
         )
     if not (payload.get("staged_hits") or []):
         lines.append("- `(none)`")
-    lines.extend(["", "## Supporting refs", ""])
+    lines.extend(["", "## Supporting Refs", ""])
     for item in payload.get("supporting_refs") or []:
         lines.append(f"- `{item}`")
     if not (payload.get("supporting_refs") or []):
@@ -356,6 +412,7 @@ def _materialize_single_context(
         "topic_slug": topic_slug,
         "read_depth": read_depth,
         "retrieval_profile": retrieval_profile,
+        "profile_shelf_path": _profile_shelf_path(service, retrieval_profile=retrieval_profile),
         "status": "ready" if canonical_rows or staged_rows else "empty",
         "query_text": query_text,
         "canonical_hits": canonical_rows,

@@ -220,7 +220,7 @@ def register_local_note_source(
     source_slug = f"local-note-{slugify(resolved_title)}"
     source_id = f"local_note:{slugify(resolved_title)}"
 
-    layer0_topic_root = knowledge_root / "source-layer" / "topics" / topic_slug
+    layer0_topic_root = knowledge_root / "topics" / topic_slug / "L0"
     layer0_source_root = layer0_topic_root / "sources" / source_slug
     layer0_source_root.mkdir(parents=True, exist_ok=True)
 
@@ -318,7 +318,7 @@ def register_local_note_source(
         ),
     )
 
-    intake_topic_root = knowledge_root / "intake" / "topics" / topic_slug
+    intake_topic_root = knowledge_root / "topics" / topic_slug / "L1"
     intake_projection_root = intake_topic_root / "sources" / source_slug
     intake_projection_root.mkdir(parents=True, exist_ok=True)
     ensure_topic_json(intake_topic_root / "topic.json", topic_slug, "intake_active", acquired_at)

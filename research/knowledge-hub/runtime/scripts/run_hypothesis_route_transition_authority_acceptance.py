@@ -23,7 +23,7 @@ def seed_demo_runtime(kernel_root: Path, *, topic_slug: str, route_mode: str) ->
         return
 
     commitment_acceptance.seed_demo_runtime(kernel_root, topic_slug=topic_slug, route_mode="current_target")
-    contract_path = kernel_root / "runtime" / "topics" / topic_slug / "research_question.contract.json"
+    contract_path = kernel_root / "topics" / topic_slug / "runtime" / "research_question.contract.json"
     payload = json.loads(contract_path.read_text(encoding="utf-8"))
     payload["question"] = "Has the committed route become the authoritative bounded truth surface yet?"
     payload["scope"] = [
@@ -51,7 +51,7 @@ def seed_demo_runtime(kernel_root: Path, *, topic_slug: str, route_mode: str) ->
         "The symmetry-breaking route is active, but its durable route ref still points at transition history instead of a current-topic truth surface."
     )
     payload["competing_hypotheses"][0]["route_target_ref"] = (
-        f"runtime/topics/{topic_slug}/transition_history.md"
+        f"topics/{topic_slug}/runtime/transition_history.md"
     )
     contract_path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
 
@@ -108,7 +108,7 @@ def main() -> int:
         runtime_protocol_note = Path(status_payload["runtime_protocol_note_path"])
         replay_json = Path(replay_payload["json_path"])
         replay_md = Path(replay_payload["markdown_path"])
-        transition_history_note = kernel_root / "runtime" / "topics" / topic_slug / "transition_history.md"
+        transition_history_note = kernel_root / "topics" / topic_slug / "runtime" / "transition_history.md"
         for path in (runtime_protocol_note, replay_json, replay_md):
             ensure_exists(path)
         if route_mode != "current_weak":
@@ -147,11 +147,11 @@ def main() -> int:
             check(authority["authority_kind"] == "current_topic_authoritative", "Expected the authoritative topic to expose current_topic_authoritative.")
             check(authority["route_kind"] == "current_topic", "Expected the authoritative topic to keep current_topic route kind.")
             check(
-                f"runtime/topics/{topic_slug}/" in (authority.get("authority_ref") or ""),
+                f"topics/{topic_slug}/runtime/" in (authority.get("authority_ref") or ""),
                 f"Expected the authoritative topic to keep a current-topic authority ref visible for {topic_slug}.",
             )
 
-        candidate_ledger = kernel_root / "feedback" / "topics" / topic_slug / "runs" / "run-001" / "candidate_ledger.jsonl"
+        candidate_ledger = kernel_root / "topics" / topic_slug / "L3" / "runs" / "run-001" / "candidate_ledger.jsonl"
         reactivated_rows = [
             row
             for row in read_jsonl(candidate_ledger)

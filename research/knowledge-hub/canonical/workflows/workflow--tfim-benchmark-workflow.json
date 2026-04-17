@@ -84,5 +84,8 @@
       "check gap",
       "attach warning"
     ]
-  }
+  },
+  "reuse_receipts": [
+    "topics/demo-topic/L3/runs/2026-03-13-demo/iterations/iteration-001/plan.contract.json"
+  ]
 }

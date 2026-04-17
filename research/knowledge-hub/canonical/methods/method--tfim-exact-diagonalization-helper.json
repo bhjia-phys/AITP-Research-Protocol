@@ -76,5 +76,10 @@
   ],
   "payload": {
     "tool_path": "validation/tools/tfim_exact_diagonalization.py"
-  }
+  },
+  "reuse_receipts": [
+    "topics/demo-topic/L3/runs/2026-03-13-demo/iterations/iteration-001/plan.contract.json",
+    "topics/jones-von-neumann-algebras/L3/runs/2026-04-16-231309-jones-ch4-fp/iterations/iteration-001/plan.contract.json",
+    "topics/molecular-qsgw-convergence-and-reproducibility/L3/runs/2026-04-08-200136-bootstrap/iterations/iteration-001/plan.contract.json"
+  ]
 }

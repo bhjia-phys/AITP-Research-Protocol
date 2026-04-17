@@ -75,7 +75,7 @@ def _wiki_link(path_without_md: str, label: str | None = None) -> str:
 
 
 def _graph_export_root(kernel_root: Path, topic_slug: str) -> Path:
-    return kernel_root / "intake" / "topics" / topic_slug / "vault" / "wiki" / "concept-graph"
+    return kernel_root / "topics" / topic_slug / "L1" / "vault" / "wiki" / "concept-graph"
 
 
 def _source_locator_text(row: dict[str, Any]) -> str:

@@ -94,7 +94,7 @@ def seed_runtime_topic(
     research_mode: str = "formal_derivation",
     interaction_updates: dict[str, Any] | None = None,
 ) -> Path:
-    runtime_root = kernel_root / "runtime" / "topics" / topic_slug
+    runtime_root = kernel_root / "topics" / topic_slug / "runtime"
     runtime_root.mkdir(parents=True, exist_ok=True)
     topic_state = {
         "topic_slug": topic_slug,
@@ -109,6 +109,7 @@ def seed_runtime_topic(
     if latest_run_id is not None:
         topic_state["latest_run_id"] = latest_run_id
     write_json(runtime_root / "topic_state.json", topic_state)
+    write_json(runtime_root / "session_start.contract.json", {"updated_at": "test-seed"})
     interaction_state = {
         "human_request": human_request,
         "action_queue_surface": {},

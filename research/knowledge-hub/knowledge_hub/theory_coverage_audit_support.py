@@ -419,7 +419,7 @@ def audit_theory_coverage(
         raise ValueError("missing-anchor-count and skeptic-major-gap-count must be non-negative")
 
     candidate = self._load_candidate(topic_slug, resolved_run_id, candidate_id)
-    source_rows = _read_jsonl(self.kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl")
+    source_rows = _read_jsonl(self.kernel_root / "topics" / topic_slug / "L0" / "source_index.jsonl")
     source_row = choose_source_row(source_rows=source_rows, candidate=candidate)
     source_id = str((source_row or {}).get("source_id") or "") or f"source:{_slugify(candidate_id)}"
     support_fields = _normalize_candidate_support_fields(

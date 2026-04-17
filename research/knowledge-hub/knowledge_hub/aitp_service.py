@@ -644,22 +644,33 @@ class AITPService:
     def _topic_root(self, topic_slug: str) -> Path:
         return topic_truth_root(self.kernel_root, topic_slug)
 
+    # --- Deprecated legacy path methods ---------------------------------
+    # Legacy split-root layout has been fully migrated to topics/<slug>/.
+    # These methods are kept only for any residual import references and
+    # will be removed in a future cleanup pass.  Do NOT call them in new code.
+
     def _legacy_runtime_root(self, topic_slug: str) -> Path:
+        """DEPRECATED: use _runtime_root() instead."""
         return self.kernel_root / "runtime" / "topics" / topic_slug
 
     def _legacy_l0_root(self, topic_slug: str) -> Path:
+        """DEPRECATED: use _l0_root() instead."""
         return self.kernel_root / "source-layer" / "topics" / topic_slug
 
     def _legacy_l1_root(self, topic_slug: str) -> Path:
+        """DEPRECATED: use _l1_root() instead."""
         return self.kernel_root / "intake" / "topics" / topic_slug
 
     def _legacy_l3_root(self, topic_slug: str) -> Path:
+        """DEPRECATED: use _l3_root() instead."""
         return self.kernel_root / "feedback" / "topics" / topic_slug
 
     def _legacy_l4_root(self, topic_slug: str) -> Path:
+        """DEPRECATED: use _l4_root() instead."""
         return self.kernel_root / "validation" / "topics" / topic_slug
 
     def _legacy_consultation_root(self, topic_slug: str) -> Path:
+        """DEPRECATED: use _consultation_root() instead."""
         return self.kernel_root / "consultation" / "topics" / topic_slug
 
     def _l0_root(self, topic_slug: str) -> Path:
@@ -882,12 +893,44 @@ class AITPService:
         )
         return "\n".join(lines)
 
+    def _should_bypass_required_read_gate(
+        self,
+        *,
+        topic_slug: str,
+        operation: str | None = None,
+    ) -> bool:
+        normalized_operation = str(operation or "").strip()
+        if normalized_operation != "complete-topic":
+            return False
+        promotion_gate = self._load_promotion_gate(topic_slug) or {}
+        return str(promotion_gate.get("status") or "").strip() == "promoted"
+
     def topic_required_read_gate(
         self,
         *,
         topic_slug: str,
         updated_by: str = "aitp-cli",
+        operation: str | None = None,
     ) -> dict[str, Any]:
+        if self._should_bypass_required_read_gate(
+            topic_slug=topic_slug,
+            operation=operation,
+        ):
+            payload = {
+                "topic_slug": topic_slug,
+                "updated_by": updated_by,
+                "gate_kind": "none",
+                "blocked": False,
+                "needs_ack": False,
+                "generation": "",
+                "required_paths": [],
+                "acknowledged_paths": [],
+                "missing_paths": [],
+                "receipt_path": self._relativize(self._required_read_receipts_path(topic_slug)),
+            }
+            payload["markdown"] = self._render_required_read_gate_markdown(payload)
+            return payload
+
         session_payload = self._session_start_payload_for_required_reads(topic_slug)
         if not session_payload:
             topic_exists = bool(read_json(self._runtime_root(topic_slug) / "topic_state.json"))
@@ -1030,8 +1073,13 @@ class AITPService:
         *,
         topic_slug: str,
         updated_by: str = "aitp-cli",
+        operation: str | None = None,
     ) -> dict[str, Any] | None:
-        gate = self.topic_required_read_gate(topic_slug=topic_slug, updated_by=updated_by)
+        gate = self.topic_required_read_gate(
+            topic_slug=topic_slug,
+            updated_by=updated_by,
+            operation=operation,
+        )
         if gate.get("blocked") or gate.get("needs_ack"):
             return dict(gate)
         return None
@@ -1522,7 +1570,7 @@ class AITPService:
         return "code_method"
 
     def _load_strategy_memory_rows(self, topic_slug: str) -> list[dict[str, Any]]:
-        runs_root = self.kernel_root / "feedback" / "topics" / topic_slug / "runs"
+        runs_root = self.kernel_root / "topics" / topic_slug / "L3" / "runs"
         if not runs_root.exists():
             return []
         rows: list[dict[str, Any]] = []
@@ -3972,21 +4020,7 @@ class AITPService:
 
     def _ensure_runtime_root(self, topic_slug: str) -> Path:
         paths = ensure_topic_truth_root(self.kernel_root, topic_slug, updated_by="aitp-service")
-        runtime_root = Path(paths["runtime_root"])
-        migration_pairs = (
-            (self._legacy_runtime_root(topic_slug), runtime_root),
-            (self._legacy_l0_root(topic_slug), self._l0_root(topic_slug)),
-            (self._legacy_l1_root(topic_slug), self._l1_root(topic_slug)),
-            (self._legacy_l3_root(topic_slug), self._l3_root(topic_slug)),
-            (self._legacy_l4_root(topic_slug), self._l4_root(topic_slug)),
-            (self._legacy_consultation_root(topic_slug), self._consultation_root(topic_slug)),
-        )
-        for legacy_root, new_root in migration_pairs:
-            if legacy_root.exists():
-                if new_root.exists() and any(new_root.iterdir()):
-                    continue
-                shutil.copytree(legacy_root, new_root, dirs_exist_ok=True)
-        return runtime_root
+        return Path(paths["runtime_root"])
 
     def _trim_steering_fragment(self, value: str) -> str:
         cleaned = str(value or "").strip()
@@ -4066,11 +4100,11 @@ class AITPService:
         if (self._runtime_root(resolved_slug) / "topic_state.json").exists():
             return True
         if (
-            self.kernel_root / "source-layer" / "topics" / resolved_slug / "topic.json"
+            self.kernel_root / "topics" / resolved_slug / "L0" / "topic.json"
         ).exists():
             return True
         if (
-            self.kernel_root / "intake" / "topics" / resolved_slug / "topic.json"
+            self.kernel_root / "topics" / resolved_slug / "L1" / "topic.json"
         ).exists():
             return True
         return any(
@@ -8760,6 +8794,7 @@ class AITPService:
         gate = self.require_topic_ready_for_deeper_execution(
             topic_slug=topic_slug,
             updated_by=updated_by,
+            operation="complete-topic",
         )
         if gate is not None:
             return gate

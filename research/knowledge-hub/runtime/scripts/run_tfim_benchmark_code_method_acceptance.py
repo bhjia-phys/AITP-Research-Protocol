@@ -262,7 +262,7 @@ def main() -> int:
         human_request=human_request,
     )
     topic_slug = str(opened["topic_slug"])
-    runtime_root = kernel_root / "runtime" / "topics" / topic_slug
+    runtime_root = kernel_root / "topics" / topic_slug / "runtime"
 
     work_payload = service.work_topic(
         topic_slug=topic_slug,
@@ -381,7 +381,7 @@ def main() -> int:
     current_topic = service.get_current_topic_memory()
     exit_audit = service.audit(topic_slug=topic_slug, phase="exit", updated_by=args.updated_by)
 
-    source_index_path = kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl"
+    source_index_path = kernel_root / "topics" / topic_slug / "L0" / "source_index.jsonl"
     runtime_protocol_path = runtime_root / "runtime_protocol.generated.json"
     runtime_protocol_note_path = runtime_root / "runtime_protocol.generated.md"
     topic_synopsis_path = runtime_root / "topic_synopsis.json"

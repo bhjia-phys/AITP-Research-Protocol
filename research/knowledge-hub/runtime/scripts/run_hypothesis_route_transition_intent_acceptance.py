@@ -95,7 +95,7 @@ def seed_demo_runtime(
     include_current_topic: bool,
     request_checkpoint: bool,
 ) -> None:
-    next_action_note = f"runtime/topics/{topic_slug}/next_action_decision.md"
+    next_action_note = f"topics/{topic_slug}/runtime/next_action_decision.md"
     if include_current_topic:
         action_type = "manual_followup"
         action_summary = (
@@ -125,7 +125,7 @@ def seed_demo_runtime(
                 "summary": "The weak-coupling route remains the active local branch.",
                 "route_kind": "current_topic",
                 "route_target_summary": "Keep the weak-coupling route on the current topic branch.",
-                "route_target_ref": f"runtime/topics/{topic_slug}/action_queue.jsonl",
+                "route_target_ref": f"topics/{topic_slug}/runtime/action_queue.jsonl",
                 "evidence_refs": ["paper:demo-source"],
                 "exclusion_notes": [],
             }
@@ -141,13 +141,13 @@ def seed_demo_runtime(
             "summary": "The symmetry-breaking route is parked until the cited comparison source lands.",
             "route_kind": "deferred_buffer",
             "route_target_summary": "Park the symmetry-breaking route in the deferred buffer until bounded reactivation conditions are met.",
-            "route_target_ref": f"runtime/topics/{topic_slug}/deferred_candidates.json",
+            "route_target_ref": f"topics/{topic_slug}/runtime/deferred_candidates.json",
             "evidence_refs": ["paper:demo-source-b"],
             "exclusion_notes": [],
         }
     )
 
-    runtime_root = kernel_root / "runtime" / "topics" / topic_slug
+    runtime_root = kernel_root / "topics" / topic_slug / "runtime"
     runtime_root.mkdir(parents=True, exist_ok=True)
     write_json(
         runtime_root / "topic_state.json",
@@ -251,7 +251,7 @@ def seed_demo_runtime(
         },
     )
     write_jsonl(
-        kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl",
+        kernel_root / "topics" / topic_slug / "L0" / "source_index.jsonl",
         [
             {
                 "source_id": "paper:demo-source-b",
@@ -306,7 +306,7 @@ def main() -> int:
         runtime_protocol_note = Path(status_payload["runtime_protocol_note_path"])
         replay_json = Path(replay_payload["json_path"])
         replay_md = Path(replay_payload["markdown_path"])
-        operator_checkpoint_note = kernel_root / "runtime" / "topics" / topic_slug / "operator_checkpoint.active.md"
+        operator_checkpoint_note = kernel_root / "topics" / topic_slug / "runtime" / "operator_checkpoint.active.md"
         for path in (runtime_protocol_note, replay_json, replay_md, operator_checkpoint_note):
             ensure_exists(path)
 
@@ -344,10 +344,10 @@ def main() -> int:
             check("operator_checkpoint.active.md" in route_intent["gate_artifact_ref"], "Expected the checkpoint-held topic to point at the operator checkpoint note.")
 
         check(
-            not read_jsonl(kernel_root / "runtime" / "topics" / topic_slug / "followup_reintegration.jsonl"),
+            not read_jsonl(kernel_root / "topics" / topic_slug / "runtime" / "followup_reintegration.jsonl"),
             f"Expected {topic_slug} not to materialize a follow-up reintegration receipt.",
         )
-        candidate_ledger = kernel_root / "feedback" / "topics" / topic_slug / "runs" / "run-001" / "candidate_ledger.jsonl"
+        candidate_ledger = kernel_root / "topics" / topic_slug / "L3" / "runs" / "run-001" / "candidate_ledger.jsonl"
         reactivated_rows = [
             row
             for row in read_jsonl(candidate_ledger)

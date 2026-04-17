@@ -485,9 +485,9 @@ def discover_and_register(
 ) -> dict[str, Any]:
     discovery_root = (
         knowledge_root
-        / "source-layer"
         / "topics"
         / topic_slug
+        / "L0"
         / "discoveries"
         / f"{timestamp_slug()}-{slugify(query)[:48]}"
     )

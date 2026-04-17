@@ -89,7 +89,7 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def seed_demo_runtime(kernel_root: Path) -> None:
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     runtime_root.mkdir(parents=True, exist_ok=True)
     write_json(
         runtime_root / "topic_state.json",
@@ -162,7 +162,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
                     "summary": "The weak-coupling route remains the active local branch.",
                     "route_kind": "current_topic",
                     "route_target_summary": "Keep the weak-coupling route on the current topic branch.",
-                    "route_target_ref": "runtime/topics/demo-topic/action_queue.jsonl",
+                    "route_target_ref": "topics/demo-topic/runtime/action_queue.jsonl",
                     "evidence_refs": ["paper:demo-source"],
                     "exclusion_notes": [],
                 },
@@ -173,7 +173,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
                     "summary": "The symmetry-breaking route is parked until the cited comparison source lands.",
                     "route_kind": "deferred_buffer",
                     "route_target_summary": "Park the symmetry-breaking route in the deferred buffer until bounded reactivation conditions are met.",
-                    "route_target_ref": "runtime/topics/demo-topic/deferred_candidates.json",
+                    "route_target_ref": "topics/demo-topic/runtime/deferred_candidates.json",
                     "evidence_refs": ["paper:demo-source-b"],
                     "exclusion_notes": [],
                 },
@@ -184,7 +184,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
                     "summary": "The prior-work route is parked until the child route returns bounded evidence.",
                     "route_kind": "followup_subtopic",
                     "route_target_summary": "Route the prior-work distinction into a bounded follow-up subtopic.",
-                    "route_target_ref": "runtime/topics/demo-topic/followup_subtopics.jsonl",
+                    "route_target_ref": "topics/demo-topic/runtime/followup_subtopics.jsonl",
                     "evidence_refs": ["note:demo-prior-work-gap"],
                     "exclusion_notes": [],
                 },
@@ -226,7 +226,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
         },
     )
     write_jsonl(
-        kernel_root / "source-layer" / "topics" / "demo-topic" / "source_index.jsonl",
+        kernel_root / "topics" / "demo-topic" / "L0" / "source_index.jsonl",
         [
             {
                 "source_id": "paper:demo-source-b",
@@ -236,10 +236,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
         ],
     )
     child_packet_path = (
-        kernel_root
-        / "runtime"
-        / "topics"
-        / "demo-topic--followup--prior-work"
+        kernel_root / "topics" / "demo-topic--followup--prior-work" / "runtime"
         / "followup_return_packet.json"
     )
     write_jsonl(
@@ -277,7 +274,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
             "accepted_return_shape": "recovered_units",
             "return_summary": "Recovered the missing prior-work distinction and the parent topic can now reconsider the parked route.",
             "return_artifact_paths": [
-                "feedback/topics/demo-topic/runs/run-001/candidate_ledger.jsonl"
+                "topics/demo-topic/L3/runs/run-001/candidate_ledger.jsonl"
             ],
             "reintegration_requirements": {
                 "must_write_back_parent_gaps": True,
@@ -319,14 +316,14 @@ def main() -> int:
         args=["replay-topic", "--topic-slug", "demo-topic", "--json"],
     )
 
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     runtime_protocol_note = Path(status_payload["runtime_protocol_note_path"])
     replay_json = Path(replay_payload["json_path"])
     replay_md = Path(replay_payload["markdown_path"])
     deferred_buffer = runtime_root / "deferred_candidates.json"
     followup_rows = runtime_root / "followup_subtopics.jsonl"
     parent_reintegration = runtime_root / "followup_reintegration.jsonl"
-    feedback_ledger = kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001" / "candidate_ledger.jsonl"
+    feedback_ledger = kernel_root / "topics" / "demo-topic" / "L3" / "runs" / "run-001" / "candidate_ledger.jsonl"
     reintegration_rows = read_jsonl(parent_reintegration)
     feedback_rows = read_jsonl(feedback_ledger)
     reactivated_rows = [

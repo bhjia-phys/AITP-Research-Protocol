@@ -401,7 +401,7 @@ def _resolve_promotion_context(
     if not self._backend_supports_candidate_type(card_payload, candidate_type):
         raise ValueError(f"Backend {resolved_backend_id} does not declare support for candidate type {candidate_type}")
 
-    source_rows = _read_jsonl(self.kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl")
+    source_rows = _read_jsonl(self.kernel_root / "topics" / topic_slug / "L0" / "source_index.jsonl")
     source_row = choose_source_row(source_rows=source_rows, candidate=candidate)
     resolved_source_id = source_id or str((source_row or {}).get("source_id") or "") or f"source:{_slugify(candidate_id)}"
     resolved_source_section = source_section or "aitp/promoted-candidate"

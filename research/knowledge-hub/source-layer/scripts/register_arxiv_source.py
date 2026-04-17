@@ -237,7 +237,9 @@ def sync_runtime_status_after_registration(
     source_id: str,
     updated_by: str,
 ) -> dict[str, Any]:
-    topic_state_path = knowledge_root / "runtime" / "topics" / topic_slug / "topic_state.json"
+    topic_state_path = knowledge_root / "topics" / topic_slug / "runtime" / "topic_state.json"
+    if not topic_state_path.exists():
+        topic_state_path = knowledge_root / "runtime" / "topics" / topic_slug / "topic_state.json"
     if not topic_state_path.exists():
         return {
             "status": "skipped",
@@ -529,7 +531,7 @@ def register_arxiv_source(
     )
     source_slug = build_source_slug(metadata)
 
-    source_layer_topic_root = knowledge_root / "source-layer" / "topics" / topic_slug
+    source_layer_topic_root = knowledge_root / "topics" / topic_slug / "L0"
     layer0_source_root = source_layer_topic_root / "sources" / source_slug
     layer0_source_root.mkdir(parents=True, exist_ok=True)
 
@@ -623,7 +625,7 @@ def register_arxiv_source(
 
     intake_projection_root: Path | None = None
     if not skip_intake_projection:
-        intake_topic_root = knowledge_root / "intake" / "topics" / topic_slug
+        intake_topic_root = knowledge_root / "topics" / topic_slug / "L1"
         intake_projection_root = intake_topic_root / "sources" / source_slug
         intake_projection_root.mkdir(parents=True, exist_ok=True)
         ensure_intake_manifest(intake_topic_root, topic_slug, acquired_at)

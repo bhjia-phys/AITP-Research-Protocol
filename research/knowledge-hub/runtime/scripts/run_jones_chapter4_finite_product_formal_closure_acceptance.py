@@ -303,7 +303,7 @@ def run_python_json(command: list[str], env: dict[str, str]) -> dict[str, Any]:
 
 
 def source_index_rows(kernel_root: Path, topic_slug: str) -> list[dict[str, Any]]:
-    source_index_path = kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl"
+    source_index_path = kernel_root / "topics" / topic_slug / "L0" / "source_index.jsonl"
     ensure_exists(source_index_path)
     return read_jsonl(source_index_path)
 
@@ -325,7 +325,7 @@ def origin_refs_for_candidate(kernel_root: Path, topic_slug: str) -> list[dict[s
                 "id": source_id,
                 "layer": "L0",
                 "object_type": "source",
-                "path": f"source-layer/topics/{topic_slug}/source_index.jsonl",
+                "path": f"topics/{topic_slug}/L0/source_index.jsonl",
                 "title": str(row.get("title") or source_id),
                 "summary": str(row.get("summary") or ""),
             }
@@ -437,7 +437,13 @@ def main() -> int:
     )
     service.audit(topic_slug=args.topic_slug, phase="entry", updated_by=args.updated_by)
 
-    feedback_root = kernel_root / "feedback" / "topics" / args.topic_slug / "runs" / args.run_id
+    runtime_root = kernel_root / "topics" / args.topic_slug / "runtime"
+    (runtime_root / "session_start.contract.json").write_text(
+        json.dumps({"updated_at": "test-seed"}, ensure_ascii=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    feedback_root = kernel_root / "topics" / args.topic_slug / "L3" / "runs" / args.run_id
     feedback_root.mkdir(parents=True, exist_ok=True)
     candidate_ledger_path = feedback_root / "candidate_ledger.jsonl"
     service._replace_candidate_row(
@@ -446,7 +452,7 @@ def main() -> int:
         CANDIDATE_ID,
         candidate_row(kernel_root, args.topic_slug, args.run_id),
     )
-    validation_run_root = kernel_root / "validation" / "topics" / args.topic_slug / "runs" / args.run_id
+    validation_run_root = kernel_root / "topics" / args.topic_slug / "L4" / "runs" / args.run_id
     (validation_run_root / "theory-packets" / CANDIDATE_SLUG).mkdir(
         parents=True,
         exist_ok=True,
@@ -603,10 +609,7 @@ def main() -> int:
         prerequisite_notes="The current Chapter 4 target is intentionally limited to the finite-dimensional theorem packet already validated against the Lean benchmark.",
     )
     formal_review_path = (
-        kernel_root
-        / "validation"
-        / "topics"
-        / args.topic_slug
+        kernel_root / "topics" / args.topic_slug / "L4"
         / "runs"
         / args.run_id
         / "theory-packets"
@@ -614,10 +617,7 @@ def main() -> int:
         / "formal_theory_review.json"
     )
     coverage_ledger_path = (
-        kernel_root
-        / "validation"
-        / "topics"
-        / args.topic_slug
+        kernel_root / "topics" / args.topic_slug / "L4"
         / "runs"
         / args.run_id
         / "theory-packets"
@@ -778,27 +778,21 @@ def main() -> int:
     exit_audit = service.audit(topic_slug=args.topic_slug, phase="exit", updated_by=args.updated_by)
     status_payload = service.topic_status(topic_slug=args.topic_slug, updated_by=args.updated_by)
 
-    topic_completion_path = kernel_root / "runtime" / "topics" / args.topic_slug / "topic_completion.json"
-    lean_bridge_path = kernel_root / "runtime" / "topics" / args.topic_slug / "lean_bridge.active.json"
-    validation_contract_path = kernel_root / "runtime" / "topics" / args.topic_slug / "validation_contract.active.json"
-    promotion_gate_path = kernel_root / "runtime" / "topics" / args.topic_slug / "promotion_gate.json"
-    projection_path = kernel_root / "runtime" / "topics" / args.topic_slug / "topic_skill_projection.active.json"
-    projection_note_path = kernel_root / "runtime" / "topics" / args.topic_slug / "topic_skill_projection.active.md"
+    topic_completion_path = kernel_root / "topics" / args.topic_slug / "runtime" / "topic_completion.json"
+    lean_bridge_path = kernel_root / "topics" / args.topic_slug / "runtime" / "lean_bridge.active.json"
+    validation_contract_path = kernel_root / "topics" / args.topic_slug / "runtime" / "validation_contract.active.json"
+    promotion_gate_path = kernel_root / "topics" / args.topic_slug / "runtime" / "promotion_gate.json"
+    projection_path = kernel_root / "topics" / args.topic_slug / "runtime" / "topic_skill_projection.active.json"
+    projection_note_path = kernel_root / "topics" / args.topic_slug / "runtime" / "topic_skill_projection.active.md"
     theory_packet_root = (
-        kernel_root
-        / "validation"
-        / "topics"
-        / args.topic_slug
+        kernel_root / "topics" / args.topic_slug / "L4"
         / "runs"
         / args.run_id
         / "theory-packets"
         / CANDIDATE_SLUG
     )
     lean_packet_root = (
-        kernel_root
-        / "validation"
-        / "topics"
-        / args.topic_slug
+        kernel_root / "topics" / args.topic_slug / "L4"
         / "runs"
         / args.run_id
         / "lean-bridge"

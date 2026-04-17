@@ -103,10 +103,10 @@ def main() -> int:
     runtime_schemas_root = package_root / "runtime" / "schemas"
     if runtime_schemas_root.exists():
         shutil.copytree(runtime_schemas_root, kernel_root / "runtime" / "schemas", dirs_exist_ok=True)
-    reference_topic_root = package_root / "source-layer" / "topics" / REFERENCE_TOPIC_SLUG
+    reference_topic_root = package_root / "topics" / REFERENCE_TOPIC_SLUG / "L0"
     shutil.copytree(
         reference_topic_root,
-        kernel_root / "source-layer" / "topics" / reference_topic_root.name,
+        kernel_root / "topics" / REFERENCE_TOPIC_SLUG / "L0",
         dirs_exist_ok=True,
     )
     adapter_scripts_root = repo_root / "research" / "adapters" / "openclaw" / "scripts"
@@ -118,10 +118,7 @@ def main() -> int:
     bootstrap_run_id = f"{run_stamp()}-bootstrap"
     closure_run_id = f"{run_stamp()}-jones-close"
     (
-        kernel_root
-        / "validation"
-        / "topics"
-        / TOPIC_SLUG
+        kernel_root / "topics" / TOPIC_SLUG / "L4"
         / "runs"
         / closure_run_id
         / "theory-packets"

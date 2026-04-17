@@ -62,7 +62,7 @@ def run_cli_json(*, package_root: Path, kernel_root: Path, repo_root: Path, args
 
 
 def seed_demo_runtime(kernel_root: Path) -> None:
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     runtime_root.mkdir(parents=True, exist_ok=True)
     (runtime_root / "topic_state.json").write_text(
         json.dumps(
@@ -76,6 +76,10 @@ def seed_demo_runtime(kernel_root: Path) -> None:
             indent=2,
         )
         + "\n",
+        encoding="utf-8",
+    )
+    (runtime_root / "session_start.contract.json").write_text(
+        json.dumps({"updated_at": "test-seed"}, ensure_ascii=True, indent=2) + "\n",
         encoding="utf-8",
     )
     (runtime_root / "interaction_state.json").write_text(
@@ -112,7 +116,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
 
 
 def seed_demo_candidate_and_theory_packets(kernel_root: Path) -> None:
-    run_root = kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001"
+    run_root = kernel_root / "topics" / "demo-topic" / "L3" / "runs" / "run-001"
     run_root.mkdir(parents=True, exist_ok=True)
     (run_root / "candidate_ledger.jsonl").write_text(
         json.dumps(
@@ -128,7 +132,7 @@ def seed_demo_candidate_and_theory_packets(kernel_root: Path) -> None:
                         "id": "paper:demo-source",
                         "layer": "L0",
                         "object_type": "source",
-                        "path": "source-layer/topics/demo-topic/source_index.jsonl",
+                        "path": "topics/demo-topic/L0/source_index.jsonl",
                         "title": "Demo source",
                         "summary": "Source anchor for theorem packet acceptance.",
                     }
@@ -148,7 +152,7 @@ def seed_demo_candidate_and_theory_packets(kernel_root: Path) -> None:
         encoding="utf-8",
     )
 
-    source_root = kernel_root / "source-layer" / "topics" / "demo-topic"
+    source_root = kernel_root / "topics" / "demo-topic" / "L0"
     source_root.mkdir(parents=True, exist_ok=True)
     (source_root / "source_index.jsonl").write_text(
         json.dumps(
@@ -165,7 +169,7 @@ def seed_demo_candidate_and_theory_packets(kernel_root: Path) -> None:
         encoding="utf-8",
     )
 
-    packet_root = kernel_root / "validation" / "topics" / "demo-topic" / "runs" / "run-001" / "theory-packets" / "candidate-demo-candidate"
+    packet_root = kernel_root / "topics" / "demo-topic" / "L4" / "runs" / "run-001" / "theory-packets" / "candidate-demo-candidate"
     packet_root.mkdir(parents=True, exist_ok=True)
     (packet_root / "structure_map.json").write_text(
         json.dumps(
@@ -261,9 +265,9 @@ def main() -> int:
     compilation_path = Path(compilation["statement_compilation_path"])
     compilation_note_path = Path(compilation["statement_compilation_note_path"])
     active_payload = json.loads(compilation_path.read_text(encoding="utf-8"))
-    packet_path = kernel_root / "validation" / "topics" / "demo-topic" / "runs" / "run-001" / "statement-compilation" / "candidate-demo-candidate" / "statement_compilation.json"
-    repair_plan_path = kernel_root / "validation" / "topics" / "demo-topic" / "runs" / "run-001" / "statement-compilation" / "candidate-demo-candidate" / "proof_repair_plan.json"
-    lean_packet_path = kernel_root / "validation" / "topics" / "demo-topic" / "runs" / "run-001" / "lean-bridge" / "candidate-demo-candidate" / "lean_ready_packet.json"
+    packet_path = kernel_root / "topics" / "demo-topic" / "L4" / "runs" / "run-001" / "statement-compilation" / "candidate-demo-candidate" / "statement_compilation.json"
+    repair_plan_path = kernel_root / "topics" / "demo-topic" / "L4" / "runs" / "run-001" / "statement-compilation" / "candidate-demo-candidate" / "proof_repair_plan.json"
+    lean_packet_path = kernel_root / "topics" / "demo-topic" / "L4" / "runs" / "run-001" / "lean-bridge" / "candidate-demo-candidate" / "lean_ready_packet.json"
 
     ensure_exists(compilation_path)
     ensure_exists(compilation_note_path)

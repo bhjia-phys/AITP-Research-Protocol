@@ -674,7 +674,7 @@ def import_bibtex_sources(
     updated_by: str,
 ) -> dict[str, Any]:
     kernel_root = kernel_root.resolve()
-    source_index_path = _source_layer_root(kernel_root) / "topics" / topic_slug / "source_index.jsonl"
+    source_index_path = kernel_root / "topics" / topic_slug / "L0" / "source_index.jsonl"
     existing_rows = read_jsonl(source_index_path)
     existing_normalized_rows = [_normalize_source_row(row, topic_slug=topic_slug) for row in existing_rows]
     existing_canonical_source_ids = {

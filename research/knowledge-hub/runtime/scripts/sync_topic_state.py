@@ -420,11 +420,11 @@ def main() -> int:
     existing_topic_state = read_json(topic_runtime_root / "topic_state.json") or {}
     existing_pointers = existing_topic_state.get("pointers") or {}
 
-    source_layer_topic_root = knowledge_root / "source-layer" / "topics" / topic_slug
-    intake_topic_root = knowledge_root / "intake" / "topics" / topic_slug
-    feedback_runs_root = knowledge_root / "feedback" / "topics" / topic_slug / "runs"
-    validation_runs_root = knowledge_root / "validation" / "topics" / topic_slug / "runs"
-    consultation_root = knowledge_root / "consultation" / "topics" / topic_slug
+    source_layer_topic_root = knowledge_root / "topics" / topic_slug / "L0"
+    intake_topic_root = knowledge_root / "topics" / topic_slug / "L1"
+    feedback_runs_root = knowledge_root / "topics" / topic_slug / "L3" / "runs"
+    validation_runs_root = knowledge_root / "topics" / topic_slug / "L4" / "runs"
+    consultation_root = knowledge_root / "topics" / topic_slug / "consultation"
 
     detected_run_id = args.run_id
     if not detected_run_id:

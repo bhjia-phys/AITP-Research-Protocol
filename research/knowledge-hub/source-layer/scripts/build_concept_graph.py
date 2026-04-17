@@ -112,7 +112,7 @@ def _locate_source_json(
             raise FileNotFoundError(f"Source JSON does not exist: {resolved}")
         return resolved
 
-    topic_root = knowledge_root / "source-layer" / "topics" / topic_slug
+    topic_root = knowledge_root / "topics" / topic_slug / "L0"
     rows = load_jsonl(topic_root / "source_index.jsonl")
     for row in rows:
         local_path = str((row.get("locator") or {}).get("local_path") or row.get("local_path") or "").strip()
@@ -346,7 +346,7 @@ def build_concept_graph_for_registered_source(
     write_json(source_json_path, source_payload)
 
     intake_projection_json = (
-        resolved_knowledge_root / "intake" / "topics" / resolved_topic_slug / "sources" / source_json_path.parent.name / "source.json"
+        resolved_knowledge_root / "topics" / resolved_topic_slug / "L1" / "sources" / source_json_path.parent.name / "source.json"
     )
     if intake_projection_json.exists():
         intake_payload = load_json(intake_projection_json) or {}

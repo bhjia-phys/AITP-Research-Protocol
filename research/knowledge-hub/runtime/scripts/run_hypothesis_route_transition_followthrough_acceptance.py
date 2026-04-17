@@ -100,7 +100,7 @@ def seed_demo_runtime(
     include_current_topic: bool,
     checkpoint_trigger: bool,
 ) -> None:
-    next_action_note = f"runtime/topics/{topic_slug}/next_action_decision.md"
+    next_action_note = f"topics/{topic_slug}/runtime/next_action_decision.md"
     if include_current_topic:
         action_summary = (
             "Stay on the weak-coupling route for the current bounded step while keeping the "
@@ -132,7 +132,7 @@ def seed_demo_runtime(
                 "summary": "The weak-coupling route remains the active local branch.",
                 "route_kind": "current_topic",
                 "route_target_summary": "Keep the weak-coupling route on the current topic branch.",
-                "route_target_ref": f"runtime/topics/{topic_slug}/action_queue.jsonl",
+                "route_target_ref": f"topics/{topic_slug}/runtime/action_queue.jsonl",
                 "evidence_refs": ["paper:demo-source"],
                 "exclusion_notes": [],
             }
@@ -145,13 +145,13 @@ def seed_demo_runtime(
             "summary": "The symmetry-breaking route is the bounded handoff target.",
             "route_kind": "deferred_buffer",
             "route_target_summary": "Park the symmetry-breaking route in the deferred buffer until bounded reactivation conditions are met.",
-            "route_target_ref": f"runtime/topics/{topic_slug}/deferred_candidates.json",
+            "route_target_ref": f"topics/{topic_slug}/runtime/deferred_candidates.json",
             "evidence_refs": ["paper:demo-source-b"],
             "exclusion_notes": [],
         }
     )
 
-    runtime_root = kernel_root / "runtime" / "topics" / topic_slug
+    runtime_root = kernel_root / "topics" / topic_slug / "runtime"
     runtime_root.mkdir(parents=True, exist_ok=True)
     write_json(
         runtime_root / "topic_state.json",
@@ -252,7 +252,7 @@ def seed_demo_runtime(
         },
     )
     write_jsonl(
-        kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl",
+        kernel_root / "topics" / topic_slug / "L0" / "source_index.jsonl",
         [
             {
                 "source_id": "paper:demo-source-b",
@@ -262,7 +262,7 @@ def seed_demo_runtime(
         ],
     )
     if seed_recorded_receipt:
-        target_ref = f"runtime/topics/{topic_slug}/deferred_candidates.json"
+        target_ref = f"topics/{topic_slug}/runtime/deferred_candidates.json"
         write_json(
             runtime_root / "transition_history.json",
             {
@@ -300,9 +300,9 @@ def seed_demo_runtime(
                         "recorded_by": "test",
                     }
                 ],
-                "log_path": f"runtime/topics/{topic_slug}/transition_history.jsonl",
-                "path": f"runtime/topics/{topic_slug}/transition_history.json",
-                "note_path": f"runtime/topics/{topic_slug}/transition_history.md",
+                "log_path": f"topics/{topic_slug}/runtime/transition_history.jsonl",
+                "path": f"topics/{topic_slug}/runtime/transition_history.json",
+                "note_path": f"topics/{topic_slug}/runtime/transition_history.md",
             },
         )
         write_text(
@@ -320,7 +320,7 @@ def mark_checkpoint_answered(*, package_root: Path, kernel_root: Path, repo_root
     )
     checkpoint = status_payload["operator_checkpoint"]
     check(checkpoint["status"] == "requested", f"Expected {topic_slug} to materialize a requested checkpoint first.")
-    checkpoint_path = kernel_root / "runtime" / "topics" / topic_slug / "operator_checkpoint.active.json"
+    checkpoint_path = kernel_root / "topics" / topic_slug / "runtime" / "operator_checkpoint.active.json"
     payload = json.loads(checkpoint_path.read_text(encoding="utf-8"))
     payload["status"] = "answered"
     payload["active"] = False
@@ -385,7 +385,7 @@ def main() -> int:
         runtime_protocol_note = Path(status_payload["runtime_protocol_note_path"])
         replay_json = Path(replay_payload["json_path"])
         replay_md = Path(replay_payload["markdown_path"])
-        operator_checkpoint_note = kernel_root / "runtime" / "topics" / topic_slug / "operator_checkpoint.active.md"
+        operator_checkpoint_note = kernel_root / "topics" / topic_slug / "runtime" / "operator_checkpoint.active.md"
         for path in (runtime_protocol_note, replay_json, replay_md, operator_checkpoint_note):
             ensure_exists(path)
 
@@ -421,7 +421,7 @@ def main() -> int:
             check(followthrough["followthrough_kind"] == "resume_from_followthrough_ref", "Expected the ready topic to expose resume_from_followthrough_ref.")
             check("transition_history" in followthrough["followthrough_ref"], "Expected the ready topic to point at the authoritative follow-through ref.")
 
-        candidate_ledger = kernel_root / "feedback" / "topics" / topic_slug / "runs" / "run-001" / "candidate_ledger.jsonl"
+        candidate_ledger = kernel_root / "topics" / topic_slug / "L3" / "runs" / "run-001" / "candidate_ledger.jsonl"
         reactivated_rows = [
             row
             for row in read_jsonl(candidate_ledger)

@@ -170,10 +170,7 @@ def main() -> int:
     )
 
     selection_path = (
-        kernel_root
-        / "runtime"
-        / "topics"
-        / args.topic_slug
+        kernel_root / "topics" / args.topic_slug / "runtime"
         / "consultation_followup_selection.active.json"
     )
     selection_payload = json.loads(selection_path.read_text(encoding="utf-8"))

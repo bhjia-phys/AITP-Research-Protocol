@@ -62,10 +62,10 @@ def main() -> int:
     check("strong coupling" in str(contradiction.get("source_basis_summary") or ""), "Expected source-side basis summary.")
     check("weak coupling" in str(contradiction.get("against_basis_summary") or ""), "Expected compared-side basis summary.")
 
-    research_contract_note = kernel_root / "runtime" / "topics" / "demo-topic" / "research_question.contract.md"
-    topic_dashboard_note = kernel_root / "runtime" / "topics" / "demo-topic" / "topic_dashboard.md"
+    research_contract_note = kernel_root / "topics" / "demo-topic" / "runtime" / "research_question.contract.md"
+    topic_dashboard_note = kernel_root / "topics" / "demo-topic" / "runtime" / "topic_dashboard.md"
     runtime_protocol_note = Path(status_payload["runtime_protocol_note_path"])
-    wiki_source_intake_note = kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "source-intake.md"
+    wiki_source_intake_note = kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "source-intake.md"
     for path in (
         research_contract_note,
         topic_dashboard_note,

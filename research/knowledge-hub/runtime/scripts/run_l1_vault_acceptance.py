@@ -70,7 +70,7 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def seed_demo_runtime(kernel_root: Path) -> None:
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     runtime_root.mkdir(parents=True, exist_ok=True)
     (runtime_root / "topic_state.json").write_text(
         json.dumps(
@@ -131,7 +131,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
 
 
 def seed_demo_source_layer(kernel_root: Path) -> None:
-    topic_root = kernel_root / "source-layer" / "topics" / "demo-topic"
+    topic_root = kernel_root / "topics" / "demo-topic" / "L0"
     topic_root.mkdir(parents=True, exist_ok=True)
     source_rows = [
         {
@@ -198,7 +198,7 @@ def main() -> int:
     )
 
     l1_vault = ((status_payload.get("active_research_contract") or {}).get("l1_vault") or {})
-    research_contract_note = kernel_root / "runtime" / "topics" / "demo-topic" / "research_question.contract.md"
+    research_contract_note = kernel_root / "topics" / "demo-topic" / "runtime" / "research_question.contract.md"
     runtime_protocol_note = Path(status_payload["runtime_protocol_note_path"])
     manifest_path = rel_to_abs(kernel_root, str(l1_vault.get("root_path") or "")) / "vault_manifest.json"
     raw_manifest_path = rel_to_abs(kernel_root, str(((l1_vault.get("raw") or {}).get("manifest_path")) or ""))
@@ -206,7 +206,7 @@ def main() -> int:
     wiki_schema_path = rel_to_abs(kernel_root, str(((l1_vault.get("wiki") or {}).get("schema_path")) or ""))
     output_digest_note_path = rel_to_abs(kernel_root, str(((l1_vault.get("output") or {}).get("digest_note_path")) or ""))
     flowback_log_path = rel_to_abs(kernel_root, str(((l1_vault.get("output") or {}).get("flowback_log_path")) or ""))
-    runtime_bridge_path = rel_to_abs(kernel_root, "intake/topics/demo-topic/vault/wiki/runtime-bridge.md")
+    runtime_bridge_path = rel_to_abs(kernel_root, "topics/demo-topic/L1/vault/wiki/runtime-bridge.md")
 
     ensure_exists(research_contract_note)
     ensure_exists(runtime_protocol_note)

@@ -29,7 +29,7 @@ def write_text(path: Path, text: str) -> None:
 
 
 def _runtime_root(kernel_root: Path, topic_slug: str) -> Path:
-    return kernel_root / "runtime" / "topics" / topic_slug
+    return kernel_root / "topics" / topic_slug / "runtime"
 
 
 def _rel(path: Path, root: Path) -> str:

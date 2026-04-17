@@ -145,7 +145,7 @@ def main() -> int:
             args=loop_args,
         )
 
-    gate_path = kernel_root / "runtime" / "topics" / args.topic_slug / "promotion_gate.json"
+    gate_path = kernel_root / "topics" / args.topic_slug / "runtime" / "promotion_gate.json"
     gate_payload = json.loads(gate_path.read_text(encoding="utf-8"))
     candidate_id = str(gate_payload.get("candidate_id") or "").strip()
     check(candidate_id, "Expected the explicit promotion gate to retain the staged candidate id.")

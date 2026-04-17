@@ -273,7 +273,7 @@ def _checkpoint_option_set(checkpoint_kind: str | None) -> tuple[list[dict[str, 
                 {
                     "key": "continue",
                     "label": "Continue",
-                    "description": "Keep the current topic moving on the active bounded route.",
+                    "description": "Keep the current topic moving on the active research path.",
                 },
                 {
                     "key": "branch",

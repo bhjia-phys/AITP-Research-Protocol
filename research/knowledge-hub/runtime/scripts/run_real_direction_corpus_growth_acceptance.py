@@ -52,8 +52,8 @@ def _rewrite_source_path(value: str, slug_map: dict[str, str]) -> str:
 
 
 def _copy_shortened_topic_sources(package_root: Path, kernel_root: Path) -> dict[str, str]:
-    source_index_path = package_root / "source-layer" / "topics" / TOPIC_SLUG / "source_index.jsonl"
-    copied_sources_root = kernel_root / "source-layer" / "topics" / TOPIC_SLUG / "sources"
+    source_index_path = package_root / "topics" / TOPIC_SLUG / "L0" / "source_index.jsonl"
+    copied_sources_root = kernel_root / "topics" / TOPIC_SLUG / "L0" / "sources"
     copied_sources_root.mkdir(parents=True, exist_ok=True)
 
     slug_map: dict[str, str] = {}

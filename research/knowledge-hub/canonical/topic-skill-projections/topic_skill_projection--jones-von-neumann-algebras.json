@@ -1,0 +1,117 @@
+{
+  "id": "topic_skill_projection:jones-von-neumann-algebras",
+  "unit_type": "topic_skill_projection",
+  "title": "Jones Von Neumann Algebras Topic Skill Projection",
+  "summary": "Validated reusable execution projection for the topic's theorem-facing formal-theory route.",
+  "maturity": "human_promoted",
+  "created_at": "2026-04-16T23:13:10+08:00",
+  "updated_at": "2026-04-16T23:13:10+08:00",
+  "topic_completion_status": "promotion-ready",
+  "tags": [
+    "topic_skill_projection",
+    "jones-von-neumann-algebras",
+    "backend:theoretical-physics-knowledge-network"
+  ],
+  "assumptions": [
+    "`candidate:jones-ch4-finite-product` requires `formal_theory_review.json` overall_status `ready` and topic completion `promotion-ready` or `promoted` before route reuse is trusted."
+  ],
+  "regime": {
+    "domain": "operator-algebras",
+    "approximations": [
+      "backend promotion via human",
+      "canonical layer L2"
+    ],
+    "scale": "bounded promoted unit",
+    "boundary_conditions": [
+      "external backend writeback completed",
+      "repo-local canonical mirror materialized"
+    ],
+    "exclusions": []
+  },
+  "scope": {
+    "applies_to": [
+      "How should the topic `jones-von-neumann-algebras` be entered and advanced as a reusable theorem-facing formal-theory route?"
+    ],
+    "out_of_scope": []
+  },
+  "provenance": {
+    "source_ids": [
+      "source:candidate-topic-skill-proj-jones-von-neumann-algebr-05c79819"
+    ],
+    "backend_refs": [
+      "backend:theoretical-physics-knowledge-network"
+    ],
+    "l1_artifacts": [],
+    "l3_runs": [
+      "topics/jones-von-neumann-algebras/L3/runs/2026-04-16-231309-jones-ch4-fp/candidate_ledger.jsonl"
+    ],
+    "l4_checks": [
+      "topics/jones-von-neumann-algebras/runtime/promotion_gate.json",
+      "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-topic-skill-p-51398217/merge_report.json",
+      "topics/jones-von-neumann-algebras/consultation/calls/consult-tpkn-promotion-candidate-topic-skill-pr-2b667a6a/result.json"
+    ],
+    "citations": [
+      "aitp/promoted-candidate",
+      "Jones Von Neumann Algebras Topic Skill Projection"
+    ]
+  },
+  "promotion": {
+    "route": "L3->L4->L2",
+    "review_mode": "human",
+    "canonical_layer": "L2",
+    "promoted_by": "jones-ch4-finite-product-acceptance",
+    "promoted_at": "2026-04-16T23:13:10+08:00",
+    "review_status": "accepted",
+    "rationale": "Mirrored into repo-local canonical L2 after successful external backend promotion."
+  },
+  "dependencies": [],
+  "origin_topic_refs": [
+    "topics/jones-von-neumann-algebras"
+  ],
+  "origin_run_refs": [
+    "topics/jones-von-neumann-algebras/L3/runs/2026-04-16-231309-jones-ch4-fp",
+    "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp",
+    "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-topic-skill-p-51398217"
+  ],
+  "validation_receipts": [
+    "topics/jones-von-neumann-algebras/consultation/calls/consult-tpkn-promotion-candidate-topic-skill-pr-2b667a6a/result.json",
+    "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-topic-skill-p-51398217/merge_report.json",
+    "topics/jones-von-neumann-algebras/runtime/promotion_gate.json",
+    "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/statement-compilation/candidate-topic-skill-p-51398217/statement_compilation.json",
+    "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/statement-compilation/candidate-topic-skill-p-51398217/proof_repair_plan.json"
+  ],
+  "reuse_receipts": [
+    "topics/jones-von-neumann-algebras/L3/runs/2026-04-16-231309-jones-ch4-fp/iterations/iteration-001/plan.contract.json",
+    "topics/molecular-qsgw-convergence-and-reproducibility/L3/runs/2026-04-08-200136-bootstrap/iterations/iteration-001/plan.contract.json",
+    "topics/jcp-qsgw-revision-ri-v-vs-lri-and-molecular-pulay-aux-basis-tests/L3/runs/2026-04-09-024330-bootstrap/iterations/iteration-001/plan.contract.json"
+  ],
+  "related_consultation_refs": [
+    "topics/jones-von-neumann-algebras/consultation/calls/consult-tpkn-promotion-candidate-topic-skill-pr-2b667a6a/request.json",
+    "topics/jones-von-neumann-algebras/consultation/calls/consult-tpkn-promotion-candidate-topic-skill-pr-2b667a6a/result.json",
+    "topics/jones-von-neumann-algebras/consultation/calls/consult-tpkn-promotion-candidate-topic-skill-pr-2b667a6a/application.json",
+    "topics/jones-von-neumann-algebras/consultation/consultation_index.jsonl"
+  ],
+  "applicable_topics": [
+    "jones-von-neumann-algebras"
+  ],
+  "failed_topics": [],
+  "regime_notes": [],
+  "related_units": [
+    "strategy_memory:2026-04-16-231309-jones-ch4-fp",
+    "formal_theory_review:2026-04-16-231309-jones-ch4-fp"
+  ],
+  "payload": {
+    "backend_unit_type": "topic_skill_projection",
+    "backend_unit_path": "D:\\BaiduSyncdisk\\repos\\_jones_accept\\a3521c6a\\theoretical-physics-knowledge-network\\units\\topic-skill-projections\\jones-von-neumann-algebras.json",
+    "backend_root": "D:\\BaiduSyncdisk\\repos\\_jones_accept\\a3521c6a\\theoretical-physics-knowledge-network",
+    "candidate_id": "candidate:topic-skill-proj-jones-von-neumann-algebr-05c79819",
+    "candidate_type": "topic_skill_projection",
+    "source_manifest_path": "D:\\BaiduSyncdisk\\repos\\_jones_accept\\a3521c6a\\theoretical-physics-knowledge-network\\sources\\candidate-topic-skill-proj-jones-von-neumann-algebr-05c79819\\manifest.json",
+    "merge_report_path": "topics/jones-von-neumann-algebras/L4/runs/2026-04-16-231309-jones-ch4-fp/theory-packets/candidate-topic-skill-p-51398217/merge_report.json",
+    "consultation_result_path": "topics/jones-von-neumann-algebras/consultation/calls/consult-tpkn-promotion-candidate-topic-skill-pr-2b667a6a/result.json",
+    "review_artifacts": {
+      "candidate_id": "candidate:topic-skill-proj-jones-von-neumann-algebr-05c79819",
+      "promotion_gate_path": "topics/jones-von-neumann-algebras/runtime/promotion_gate.json"
+    }
+  }
+}

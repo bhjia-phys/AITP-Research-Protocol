@@ -115,8 +115,8 @@ def main() -> int:
         else Path(tempfile.mkdtemp(prefix="aitp-l0-source-discovery-acceptance-")).resolve()
     )
     kernel_root = work_root / "kernel"
-    (kernel_root / "source-layer").mkdir(parents=True, exist_ok=True)
-    (kernel_root / "intake").mkdir(parents=True, exist_ok=True)
+    (kernel_root / "topics" / "demo-topic" / "L0").mkdir(parents=True, exist_ok=True)
+    (kernel_root / "topics" / "demo-topic" / "L1").mkdir(parents=True, exist_ok=True)
 
     search_results_path = work_root / "fixtures" / "deepxiv-search-results.json"
     enrichment_json_path = work_root / "fixtures" / "deepxiv-enrichment.json"
@@ -144,7 +144,7 @@ def main() -> int:
                 {"node_id": "concept:anyon-condensation", "label": "Anyon condensation", "node_type": "concept", "confidence_tier": "EXTRACTED", "confidence_score": 0.93}
             ],
             "edges": [
-                {"edge_id": "edge-topological-order-special-case-anyon-condensation", "from_id": "concept:anyon-condensation", "relation": "special_case_of", "to_id": "concept:topological-order", "evidence_refs": ["source-layer/topics/demo-topic/sources/paper-topological-order-and-anyon-condensation-2401-00001/source.json"], "notes": "offline fixture"}
+                {"edge_id": "edge-topological-order-special-case-anyon-condensation", "from_id": "concept:anyon-condensation", "relation": "special_case_of", "to_id": "concept:topological-order", "evidence_refs": ["topics/demo-topic/L0/sources/paper-topological-order-and-anyon-condensation-2401-00001/source.json"], "notes": "offline fixture"}
             ],
             "hyperedges": [],
             "communities": [
@@ -188,7 +188,7 @@ def main() -> int:
     layer0_source_json = Path(payload["layer0_source_json"])
     layer0_snapshot = Path(payload["layer0_snapshot"])
     intake_projection_root = Path(payload["intake_projection_root"])
-    topic_index_path = kernel_root / "source-layer" / "topics" / "demo-topic" / "source_index.jsonl"
+    topic_index_path = kernel_root / "topics" / "demo-topic" / "L0" / "source_index.jsonl"
     global_index_path = kernel_root / "source-layer" / "global_index.jsonl"
 
     for path in (

@@ -75,7 +75,7 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def seed_demo_runtime(kernel_root: Path) -> None:
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     runtime_root.mkdir(parents=True, exist_ok=True)
     write_json(
         runtime_root / "topic_state.json",
@@ -256,7 +256,7 @@ def main() -> int:
         args=["replay-topic", "--topic-slug", "demo-topic", "--json"],
     )
 
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     research_note = runtime_root / "research_question.contract.md"
     runtime_protocol_note = Path(status_payload["runtime_protocol_note_path"])
     replay_json = Path(replay_payload["json_path"])

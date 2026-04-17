@@ -181,7 +181,7 @@ def main() -> int:
     )
 
     promotion_gate_path = (
-        kernel_root / "runtime" / "topics" / args.topic_slug / "promotion_gate.json"
+        kernel_root / "topics" / args.topic_slug / "runtime" / "promotion_gate.json"
     )
     promotion_gate_payload = json.loads(promotion_gate_path.read_text(encoding="utf-8"))
     check(

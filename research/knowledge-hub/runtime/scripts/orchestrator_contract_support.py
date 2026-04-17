@@ -1303,6 +1303,18 @@ def maybe_append_literature_intake_stage_action(
         return
     if any(str(row.get("action_type") or "").strip() == "literature_intake_stage" for row in queue):
         return
+    existing_queue_path = _topic_runtime_path(knowledge_root, str(topic_state.get("topic_slug") or "").strip(), "action_queue.jsonl")
+    if existing_queue_path.exists():
+        for line in existing_queue_path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if str(row.get("action_type") or "").strip() == "literature_intake_stage" and str(row.get("status") or "").strip() == "failed":
+                return
     candidate_signature = compute_literature_intake_stage_signature(runtime_contract)
     if topic_has_matching_literature_stage(
         knowledge_root=knowledge_root,

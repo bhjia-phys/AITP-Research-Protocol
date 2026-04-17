@@ -1,9 +1,27 @@
+"""Topic truth-root support — path helpers for the unified topic folder layout.
+
+ARCHITECTURE CONSTRAINT (single-topic truth root):
+    All topic data MUST live under ``topics/<slug>/``.
+    The legacy split-root layout (runtime/topics/, source-layer/topics/,
+    intake/topics/, feedback/topics/, validation/topics/, consultation/topics/)
+    has been fully migrated away.  No new code should reference legacy paths.
+
+    Valid layer sub-directories inside ``topics/<slug>/``:
+        L0/  L1/  L2/  L3/  L4/  runtime/  consultation/  logs/
+
+    Global reusable knowledge (canonical L2) lives in ``canonical/``,
+    NOT inside topic folders.  Topic-local L2/ is only a staging placeholder.
+
+See: docs/AITP_TOPIC_FOLDER_ARCHITECTURE.md (in the AITP repo root)
+"""
 from __future__ import annotations
 
+import warnings
 from datetime import datetime
 from pathlib import Path
 
-
+# Legacy mappings kept only for backward-compatible inference during
+# the transition period.  Do NOT use these to construct new paths.
 LEGACY_LAYER_PREFIXES: dict[str, tuple[str, ...]] = {
     "runtime": ("runtime", "topics"),
     "L0": ("source-layer", "topics"),
@@ -50,20 +68,35 @@ def logs_root(kernel_root: Path, topic_slug: str) -> Path:
 def infer_kernel_root_from_topic_path(path: Path) -> Path | None:
     resolved = path.expanduser().resolve()
     parts = resolved.parts
+    # Unified layout: topics/<slug>/...
     if "topics" in parts:
         index = parts.index("topics")
         if index + 2 < len(parts):
             return _path_from_parts(parts[:index])
+    # Legacy layout fallback (deprecated, emits warning)
     for prefix in LEGACY_PREFIX_TO_LAYER:
         if prefix not in parts:
             continue
         index = parts.index(prefix)
         if index + 2 < len(parts) and parts[index + 1] == "topics":
+            warnings.warn(
+                f"Legacy path detected: '{prefix}/topics/...' is deprecated. "
+                "All topic data must live under 'topics/<slug>/'.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             return _path_from_parts(parts[:index])
     return None
 
 
 def compatibility_projection_path(path: Path, *, kernel_root: Path | None = None) -> Path | None:
+    """DEPRECATED: Legacy-to-unified path translation. Will be removed after migration."""
+    warnings.warn(
+        "compatibility_projection_path() is deprecated — "
+        "legacy split-root layout has been fully migrated away.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     resolved = path.expanduser().resolve()
     effective_kernel_root = (kernel_root or infer_kernel_root_from_topic_path(resolved))
     if effective_kernel_root is None:

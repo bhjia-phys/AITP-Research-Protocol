@@ -87,6 +87,7 @@ hiding those rules inside handler code.
   - standard-depth reusable method/workflow context for concrete L3 planning
 - `topics/<topic_slug>/runtime/plan_reuse_context.md`
   - human-readable standard reuse context with bounded canonical/staging hits, currently driven by retrieval profile `l3_plan_reuse_standard`
+  Both reuse contexts now expose `profile_shelf_path` so runtime readers can jump into the matching global `canonical/compiled/obsidian_l2/profiles/*.md` shelf.
 - `topics/<topic_slug>/runtime/execution_resource_context.json`
   - machine-readable capability summary for the currently relevant tools, servers, and environments
 - `topics/<topic_slug>/runtime/execution_resource_context.md`

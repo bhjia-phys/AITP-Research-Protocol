@@ -160,7 +160,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
 
 def seed_strategy_memory(kernel_root: Path) -> None:
     write_jsonl(
-        kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001" / "strategy_memory.jsonl",
+        kernel_root / "topics" / "demo-topic" / "L3" / "runs" / "run-001" / "strategy_memory.jsonl",
         [
             {
                 "strategy_id": "strategy:demo-helpful",

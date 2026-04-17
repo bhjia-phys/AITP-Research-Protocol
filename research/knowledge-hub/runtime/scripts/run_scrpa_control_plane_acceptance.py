@@ -160,7 +160,7 @@ def materialize_control_plane_runtime(
     workspace_root: Path,
     updated_by: str,
 ) -> Path:
-    runtime_root = service.kernel_root / "runtime" / "topics" / topic_slug
+    runtime_root = service.kernel_root / "topics" / topic_slug / "runtime"
     ensure_exists(runtime_root / "topic_state.json")
 
     service.steer_topic(

@@ -75,7 +75,7 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def seed_demo_runtime(kernel_root: Path) -> None:
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     runtime_root.mkdir(parents=True, exist_ok=True)
     write_json(
         runtime_root / "topic_state.json",
@@ -148,7 +148,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
                     "summary": "The weak-coupling route remains the active local branch.",
                     "route_kind": "current_topic",
                     "route_target_summary": "Continue the weak-coupling route on the active topic while keeping parked route obligations explicit.",
-                    "route_target_ref": "runtime/topics/demo-topic/action_queue.jsonl",
+                    "route_target_ref": "topics/demo-topic/runtime/action_queue.jsonl",
                     "evidence_refs": ["paper:demo-source"],
                     "exclusion_notes": [],
                 },
@@ -159,7 +159,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
                     "summary": "The symmetry-breaking route stays parked in deferred storage.",
                     "route_kind": "deferred_buffer",
                     "route_target_summary": "Park the symmetry-breaking route in the deferred buffer until broader evidence arrives.",
-                    "route_target_ref": "runtime/topics/demo-topic/deferred_candidates.json",
+                    "route_target_ref": "topics/demo-topic/runtime/deferred_candidates.json",
                     "evidence_refs": ["note:demo-symmetry-gap"],
                     "exclusion_notes": [],
                 },
@@ -170,7 +170,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
                     "summary": "The prior-work route stays visible as a bounded follow-up obligation.",
                     "route_kind": "followup_subtopic",
                     "route_target_summary": "Route the prior-work distinction into a bounded follow-up subtopic after the current topic stabilizes.",
-                    "route_target_ref": "runtime/topics/demo-topic/followup_subtopics.jsonl",
+                    "route_target_ref": "topics/demo-topic/runtime/followup_subtopics.jsonl",
                     "evidence_refs": ["note:demo-prior-work-gap"],
                     "exclusion_notes": [],
                 },
@@ -243,7 +243,7 @@ def main() -> int:
         args=["replay-topic", "--topic-slug", "demo-topic", "--json"],
     )
 
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     runtime_protocol_note = Path(status_payload["runtime_protocol_note_path"])
     replay_json = Path(replay_payload["json_path"])
     replay_md = Path(replay_payload["markdown_path"])

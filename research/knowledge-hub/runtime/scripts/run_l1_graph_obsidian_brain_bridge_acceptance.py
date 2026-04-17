@@ -66,7 +66,7 @@ def write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def seed_demo_runtime(kernel_root: Path) -> None:
-    runtime_root = kernel_root / "runtime" / "topics" / "demo-topic"
+    runtime_root = kernel_root / "topics" / "demo-topic" / "runtime"
     runtime_root.mkdir(parents=True, exist_ok=True)
     (runtime_root / "topic_state.json").write_text(
         json.dumps(
@@ -116,7 +116,7 @@ def seed_demo_runtime(kernel_root: Path) -> None:
 
 
 def seed_demo_source_layer(kernel_root: Path) -> None:
-    topic_root = kernel_root / "source-layer" / "topics" / "demo-topic"
+    topic_root = kernel_root / "topics" / "demo-topic" / "L0"
     source_slug = "paper-topological-order-and-anyon-condensation-2401-00001"
     source_dir = topic_root / "sources" / source_slug
     source_dir.mkdir(parents=True, exist_ok=True)
@@ -127,7 +127,7 @@ def seed_demo_source_layer(kernel_root: Path) -> None:
             "graph_version": 1,
             "topic_slug": "demo-topic",
             "source_id": "paper:topological-order-and-anyon-condensation-2401-00001",
-            "source_json_path": f"source-layer/topics/demo-topic/sources/{source_slug}/source.json",
+            "source_json_path": f"topics/demo-topic/L0/sources/{source_slug}/source.json",
             "generated_at": "2026-04-13T00:00:00+08:00",
             "generated_by": "test",
             "provider": "override_json",
@@ -163,8 +163,8 @@ def seed_demo_source_layer(kernel_root: Path) -> None:
                 "title": "Topological Order and Anyon Condensation",
                 "summary": "Topological order supports the bounded condensation route.",
                 "locator": {
-                    "local_path": f"source-layer/topics/demo-topic/sources/{source_slug}/source.json",
-                    "concept_graph_path": f"source-layer/topics/demo-topic/sources/{source_slug}/concept_graph.json",
+                    "local_path": f"topics/demo-topic/L0/sources/{source_slug}/source.json",
+                    "concept_graph_path": f"topics/demo-topic/L0/sources/{source_slug}/concept_graph.json",
                 },
                 "provenance": {
                     "abs_url": "https://example.org/topological-order",
@@ -242,7 +242,7 @@ def main() -> int:
     )
 
     target_root = brain_root / "90 AITP Imports" / "concept-graphs" / "demo-topic"
-    receipt_path = kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph" / "theoretical_physics_brain_sync.receipt.json"
+    receipt_path = kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph" / "theoretical_physics_brain_sync.receipt.json"
     ensure_exists(target_root / "index.md")
     ensure_exists(target_root / "topological-order-cluster" / "topological-order.md")
     ensure_exists(receipt_path)

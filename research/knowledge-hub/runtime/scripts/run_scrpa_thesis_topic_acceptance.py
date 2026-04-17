@@ -140,7 +140,7 @@ def main() -> int:
     )
     current_topic = service.get_current_topic_memory()
 
-    runtime_root = kernel_root / "runtime" / "topics" / topic_slug
+    runtime_root = kernel_root / "topics" / topic_slug / "runtime"
     research_question_note = runtime_root / "research_question.contract.md"
     validation_note = runtime_root / "validation_contract.active.md"
     idea_packet_note = runtime_root / "idea_packet.md"
