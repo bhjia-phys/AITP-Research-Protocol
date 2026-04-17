@@ -10,25 +10,56 @@
 | I want to... | Start here | Then |
 |---|---|---|
 | Understand AITP in 5 minutes | [README.md](../README.md) | [QUICKSTART.md](QUICKSTART.md) → [USER_TOPIC_JOURNEY.md](USER_TOPIC_JOURNEY.md) |
+| Understand the protocol architecture | [CHARTER.md](CHARTER.md) | [AITP_SPEC.md](AITP_SPEC.md) → specific protocol below |
 | Contribute code to AITP itself | [AITP_GSD_WORKFLOW_CONTRACT.md](AITP_GSD_WORKFLOW_CONTRACT.md) | [architecture.md](architecture.md) → [research/knowledge-hub/LAYER_MAP.md](../research/knowledge-hub/LAYER_MAP.md) |
 | Do theoretical physics research with AITP | [using-aitp/SKILL.md](../skills/using-aitp/SKILL.md) | [aitp-runtime/SKILL.md](../skills/aitp-runtime/SKILL.md) → [USER_TOPIC_JOURNEY.md](USER_TOPIC_JOURNEY.md) |
-| Integrate AITP into my agent platform | [adapters/README.md](../adapters/README.md) | Pick your platform: [codex](../adapters/codex/SKILL.md) · [claude-code](../adapters/claude-code/SKILL.md) · [openclaw](../adapters/openclaw/SKILL.md) · [opencode](../adapters/opencode/SKILL.md) |
-| Understand the research protocol mechanics | [contracts/README.md](../contracts/README.md) | [schemas/README.md](../schemas/README.md) → [research/knowledge-hub/ROUTING_POLICY.md](../research/knowledge-hub/ROUTING_POLICY.md) |
-| Understand the runtime engine | [research/knowledge-hub/runtime/README.md](../research/knowledge-hub/runtime/README.md) | [research/knowledge-hub/AUTONOMY_AND_OPERATOR_MODEL.md](../research/knowledge-hub/AUTONOMY_AND_OPERATOR_MODEL.md) → [research/knowledge-hub/PROGRESSIVE_DISCLOSURE_PROTOCOL.md](../research/knowledge-hub/PROGRESSIVE_DISCLOSURE_PROTOCOL.md) |
+| Integrate AITP into my agent platform | [adapters/README.md](../adapters/README.md) | [protocols/adapter_interface.md](protocols/adapter_interface.md) → pick your platform |
+| Understand the research protocol mechanics | [AITP_SPEC.md](AITP_SPEC.md) | [contracts/README.md](../contracts/README.md) → [schemas/README.md](../schemas/README.md) |
+| Understand the runtime engine | [protocols/brain_protocol.md](protocols/brain_protocol.md) | [research/knowledge-hub/runtime/README.md](../research/knowledge-hub/runtime/README.md) |
+
+---
+
+## Protocol Architecture (Charter → SPEC → Protocols)
+
+```
+CHARTER.md (highest authority: 10 articles + three-phase vision)
+  └── AITP_SPEC.md (unified specification)
+        ├── Brain Domain (global orchestrator)
+        │     ├── brain_protocol.md
+        │     ├── action_queue_protocol.md
+        │     └── followup_lifecycle.md
+        ├── Point Domain (layer-specific)
+        │     ├── L0_SOURCE_LAYER.md (existing)
+        │     ├── L1_intake_protocol.md
+        │     ├── L2_backend_interface.md
+        │     ├── L3_execution_protocol.md
+        │     ├── L4_validation_protocol.md
+        │     ├── closed_loop_protocol.md
+        │     └── promotion_pipeline.md
+        └── Interaction Domain (cross-cutting)
+              ├── H_human_interaction.md
+              ├── mode_envelope_protocol.md
+              └── adapter_interface.md
+```
+
+All protocol files live under `docs/protocols/` (new) unless otherwise noted.
 
 ---
 
 ## Layer Architecture
 
-AITP organizes research into five layers. The default route is `L0 → L1 → L3 → L4 → L2`.
+AITP organizes research into five content layers plus two cross-cutting planes.
+The default route is `L0 → L1 → L3 → L4 → L2`.
 
 | Layer | Name | Purpose | Key doc | Key schema |
 |---|---|---|---|---|
+| **B** | Brain (orchestrator) | Topic lifecycle, routing, memory | [brain_protocol.md](protocols/brain_protocol.md) | — |
+| **H** | Human (interaction) | Checkpoints, steering, approval | [H_human_interaction.md](protocols/H_human_interaction.md) | [decision-point.schema.json](../schemas/decision-point.schema.json) |
 | **L0** | Source acquisition | Papers, notes, upstream refs | [L0_SOURCE_LAYER.md](../research/knowledge-hub/L0_SOURCE_LAYER.md) | [source-item.schema.json](../schemas/source-item.schema.json) |
-| **L1** | Provisional understanding | Analysis, derivation sketches | [research_question contract](../contracts/research-question.md) · [L1_VAULT_PROTOCOL.md](../research/knowledge-hub/intake/L1_VAULT_PROTOCOL.md) | [research-question.schema.json](../schemas/research-question.schema.json) |
-| **L2** | Trusted knowledge | Promoted, reusable results | [PROMOTION_POLICY.md](../research/knowledge-hub/canonical/PROMOTION_POLICY.md) · [L2_COMPILER_PROTOCOL.md](../research/knowledge-hub/canonical/L2_COMPILER_PROTOCOL.md) | [promotion-trace.schema.json](../schemas/promotion-trace.schema.json) |
-| **L3** | Candidate outputs | Exploratory, tentative | [CANDIDATE.md](../research/knowledge-hub/feedback/CANDIDATE.md) · [SPLIT_PROTOCOL.md](../research/knowledge-hub/feedback/SPLIT_PROTOCOL.md) | [candidate-claim.schema.json](../schemas/candidate-claim.schema.json) |
-| **L4** | Validation & trust audit | Checks, benchmarks, human decisions | [BASELINE_REPRODUCTION_AND_UNDERSTANDING_GATES.md](../research/knowledge-hub/validation/BASELINE_REPRODUCTION_AND_UNDERSTANDING_GATES.md) | [validation.schema.json](../schemas/validation.schema.json) |
+| **L1** | Provisional understanding | Analysis, derivation sketches | [L1_intake_protocol.md](protocols/L1_intake_protocol.md) | [research-question.schema.json](../schemas/research-question.schema.json) |
+| **L2** | Trusted knowledge | Promoted, reusable results | [L2_backend_interface.md](protocols/L2_backend_interface.md) | [promotion-trace.schema.json](../schemas/promotion-trace.schema.json) |
+| **L3** | Candidate outputs | Exploratory, tentative | [L3_execution_protocol.md](protocols/L3_execution_protocol.md) | [candidate-claim.schema.json](../schemas/candidate-claim.schema.json) |
+| **L4** | Validation & trust audit | Checks, benchmarks, human decisions | [L4_validation_protocol.md](protocols/L4_validation_protocol.md) | [validation.schema.json](../schemas/validation.schema.json) |
 
 See [LAYER_MAP.md](../research/knowledge-hub/LAYER_MAP.md) for the full filesystem layout per layer.
 
