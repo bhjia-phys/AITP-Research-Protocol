@@ -13,15 +13,25 @@ _NODE_SPECS: dict[str, dict[str, str]] = {
         "role": "intake_and_assumption_tracking",
         "summary": "Record source-backed assumptions, regimes, notation, and ambiguity honestly.",
     },
+    "L3-I": {
+        "macro_layer": "L3",
+        "role": "ideation",
+        "summary": "Record, connect, and refine vague ideas before they become formal candidates.",
+    },
+    "L3-P": {
+        "macro_layer": "L3",
+        "role": "planning",
+        "summary": "Translate ideas into executable research plans with steps, tools, and checkpoints.",
+    },
     "L3-A": {
         "macro_layer": "L3",
         "role": "analysis",
-        "summary": "Compare routes, sharpen candidates, and keep exploratory reasoning bounded.",
+        "summary": "Execute plans, form formal candidates with explicit claims and supporting derivation.",
     },
     "L3-R": {
         "macro_layer": "L3",
         "role": "result_integration",
-        "summary": "Integrate returned L4 results before another pass or reusable distillation.",
+        "summary": "Interpret L4 returns, explain validation outcomes, and decide what to do with failures.",
     },
     "L3-D": {
         "macro_layer": "L3",
@@ -55,9 +65,33 @@ _EDGE_SPECS: list[dict[str, str]] = [
     },
     {
         "from_node": "L1",
+        "to_node": "L3-I",
+        "edge_kind": "forward",
+        "summary": "Record an idea from source-backed understanding.",
+    },
+    {
+        "from_node": "L3-I",
+        "to_node": "L3-P",
+        "edge_kind": "forward",
+        "summary": "Translate a refined idea into an executable research plan.",
+    },
+    {
+        "from_node": "L3-I",
+        "to_node": "L2",
+        "edge_kind": "consultation",
+        "summary": "Compare idea with L2 knowledge to assess novelty.",
+    },
+    {
+        "from_node": "L3-P",
         "to_node": "L3-A",
         "edge_kind": "forward",
-        "summary": "Form a bounded candidate from intake-backed understanding.",
+        "summary": "Begin executing the plan to form a formal candidate.",
+    },
+    {
+        "from_node": "L3-P",
+        "to_node": "L3-I",
+        "edge_kind": "backedge",
+        "summary": "Replan reveals the idea needs refinement.",
     },
     {
         "from_node": "L3-A",
@@ -76,6 +110,12 @@ _EDGE_SPECS: list[dict[str, str]] = [
         "to_node": "L2",
         "edge_kind": "consultation",
         "summary": "Consult compiled knowledge without treating consultation as promotion.",
+    },
+    {
+        "from_node": "L3-A",
+        "to_node": "L3-P",
+        "edge_kind": "backedge",
+        "summary": "Analysis reveals the plan needs adjustment.",
     },
     {
         "from_node": "L4",
@@ -109,9 +149,15 @@ _EDGE_SPECS: list[dict[str, str]] = [
     },
     {
         "from_node": "L3-R",
+        "to_node": "L3-A",
+        "edge_kind": "iterate",
+        "summary": "Return to analysis to revise the candidate based on validation feedback.",
+    },
+    {
+        "from_node": "L3-R",
         "to_node": "L0",
         "edge_kind": "backedge",
-        "summary": "Return for source recovery if the returned result exposes missing inputs or citations.",
+        "summary": "Return for source recovery if the returned result exposes missing inputs.",
     },
     {
         "from_node": "L3-R",
@@ -139,6 +185,12 @@ _EDGE_SPECS: list[dict[str, str]] = [
     },
     {
         "from_node": "L2",
+        "to_node": "L3-I",
+        "edge_kind": "reuse_return",
+        "summary": "Reusable knowledge can seed a new idea without becoming the whole topic.",
+    },
+    {
+        "from_node": "L2",
         "to_node": "L3-A",
         "edge_kind": "reuse_return",
         "summary": "Reusable knowledge can seed a new bounded candidate without becoming the whole topic.",
@@ -147,12 +199,14 @@ _EDGE_SPECS: list[dict[str, str]] = [
 
 _NEXT_NODE_SEQUENCE: dict[str, list[str]] = {
     "L0": ["L1"],
-    "L1": ["L3-A", "L0"],
-    "L3-A": ["L4", "L0", "L2"],
-    "L3-R": ["L3-D", "L4", "L0", "L2"],
+    "L1": ["L3-I", "L0"],
+    "L3-I": ["L3-P", "L2"],
+    "L3-P": ["L3-A", "L3-I"],
+    "L3-A": ["L4", "L0", "L2", "L3-P"],
+    "L3-R": ["L3-D", "L4", "L3-A", "L0", "L2"],
     "L3-D": ["L2", "L4", "L0"],
     "L4": ["L3-R", "L0", "L2"],
-    "L2": ["L3-A"],
+    "L2": ["L3-I", "L3-A"],
 }
 
 _PROMOTION_STATUSES = {"ready", "promotion_ready", "ready_for_promotion", "promoted"}

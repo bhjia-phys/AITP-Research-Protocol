@@ -688,6 +688,9 @@ class AITPService:
     def _l4_root(self, topic_slug: str) -> Path:
         return topic_layer_root(self.kernel_root, topic_slug, "L4")
 
+    def _l5_root(self, topic_slug: str) -> Path:
+        return topic_layer_root(self.kernel_root, topic_slug, "L5")
+
     def _runtime_root(self, topic_slug: str) -> Path:
         return topic_runtime_root(self.kernel_root, topic_slug)
 
@@ -2850,12 +2853,14 @@ class AITPService:
         *,
         topic_slug: str,
         updated_by: str,
+        topic_state: dict[str, Any],
         existing_checkpoint: dict[str, Any],
         idea_packet: dict[str, Any],
         research_contract: dict[str, Any],
         validation_contract: dict[str, Any],
         promotion_gate: dict[str, Any],
         selected_pending_action: dict[str, Any] | None,
+        next_action_decision: dict[str, Any] | None,
         decision_surface: dict[str, Any],
         dashboard_path: Path,
         idea_packet_paths: dict[str, Path],
@@ -2867,12 +2872,14 @@ class AITPService:
             self,
             topic_slug=topic_slug,
             updated_by=updated_by,
+            topic_state=topic_state,
             existing_checkpoint=existing_checkpoint,
             idea_packet=idea_packet,
             research_contract=research_contract,
             validation_contract=validation_contract,
             promotion_gate=promotion_gate,
             selected_pending_action=selected_pending_action,
+            next_action_decision=next_action_decision,
             decision_surface=decision_surface,
             dashboard_path=dashboard_path,
             idea_packet_paths=idea_packet_paths,
@@ -3583,6 +3590,127 @@ class AITPService:
             unresolved_statuses=unresolved_statuses,
         )
 
+    def mechanical_completion_preflight(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None = None,
+    ) -> dict[str, Any]:
+        resolved_run_id = self._resolve_run_id(topic_slug, run_id)
+        checks: list[dict[str, Any]] = []
+
+        check_run_id = {
+            "check": "run_id_resolved",
+            "status": "pass" if resolved_run_id else "blocked",
+            "summary": f"Run id resolved: {resolved_run_id}"
+            if resolved_run_id
+            else "No run id could be resolved for this topic.",
+        }
+        checks.append(check_run_id)
+
+        if resolved_run_id:
+            operation_manifests = self._load_operation_manifests(topic_slug, resolved_run_id)
+            if not operation_manifests:
+                checks.append({
+                    "check": "operations_exist",
+                    "status": "pass",
+                    "summary": "No operations registered; nothing to validate.",
+                })
+            else:
+                unconfirmed_ops: list[str] = []
+                for manifest in operation_manifests:
+                    op_id = str(manifest.get("operation_id") or manifest.get("path") or "unknown")
+                    baseline_status = str(manifest.get("baseline_status") or "").strip()
+                    if not self._baseline_status_ready(baseline_status):
+                        unconfirmed_ops.append(f"{op_id}: {baseline_status}")
+                if unconfirmed_ops:
+                    checks.append({
+                        "check": "operations_baseline_confirmed",
+                        "status": "blocked",
+                        "summary": f"{len(unconfirmed_ops)} operation(s) have unconfirmed baseline status.",
+                        "detail": unconfirmed_ops,
+                    })
+                else:
+                    checks.append({
+                        "check": "operations_baseline_confirmed",
+                        "status": "pass",
+                        "summary": f"All {len(operation_manifests)} operation(s) have confirmed baseline status.",
+                    })
+
+            candidate_rows = self._candidate_rows_for_run(topic_slug, resolved_run_id)
+            if not candidate_rows:
+                checks.append({
+                    "check": "candidates_exist",
+                    "status": "blocked",
+                    "summary": "No candidate rows found for the current run.",
+                })
+            else:
+                checks.append({
+                    "check": "candidates_exist",
+                    "status": "pass",
+                    "summary": f"{len(candidate_rows)} candidate row(s) found.",
+                })
+
+            followup_rows = self._load_followup_subtopic_rows(topic_slug)
+            reintegration_rows = self._load_followup_reintegration_rows(topic_slug)
+            reintegrated = {
+                str(r.get("child_topic_slug") or "").strip()
+                for r in reintegration_rows
+                if str(r.get("child_topic_slug") or "").strip()
+            }
+            pending_followups = [
+                str(r.get("child_topic_slug") or "").strip()
+                for r in followup_rows
+                if str(r.get("child_topic_slug") or "").strip()
+                and str(r.get("child_topic_slug") or "").strip() not in reintegrated
+                and str(r.get("status") or "") != "reintegrated"
+            ]
+            if pending_followups:
+                checks.append({
+                    "check": "followup_debt_clear",
+                    "status": "blocked",
+                    "summary": f"{len(pending_followups)} unreintegrated follow-up child topic(s).",
+                    "detail": pending_followups,
+                })
+            else:
+                checks.append({
+                    "check": "followup_debt_clear",
+                    "status": "pass",
+                    "summary": "No unreintegrated follow-up child topics.",
+                })
+
+            _, pending_actions = self._load_action_queue(topic_slug)
+            open_gap_summary = derive_open_gap_summary(
+                self,
+                topic_slug=topic_slug,
+                candidate_rows=candidate_rows,
+                pending_actions=pending_actions,
+                selected_pending_action=None,
+            )
+            gap_status = str(open_gap_summary.get("status") or "").strip()
+            if gap_status in ("clear", "capability_gap"):
+                checks.append({
+                    "check": "gap_packets_clear",
+                    "status": "pass",
+                    "summary": f"Gap status: {gap_status}.",
+                })
+            else:
+                checks.append({
+                    "check": "gap_packets_clear",
+                    "status": "blocked",
+                    "summary": f"Gap status: {gap_status}. {open_gap_summary.get('gap_count', 0)} gap item(s).",
+                    "detail": open_gap_summary.get("blockers", []),
+                })
+        blocked_count = sum(1 for c in checks if c["status"] == "blocked")
+        return {
+            "mechanical_preflight": {
+                "status": "pass" if blocked_count == 0 else "blocked",
+                "blocked_count": blocked_count,
+                "total_checks": len(checks),
+                "checks": checks,
+            }
+        }
+
     def _completion_gate_checks(
         self,
         *,
@@ -4021,6 +4149,16 @@ class AITPService:
     def _ensure_runtime_root(self, topic_slug: str) -> Path:
         paths = ensure_topic_truth_root(self.kernel_root, topic_slug, updated_by="aitp-service")
         return Path(paths["runtime_root"])
+
+    def write_human_dossier(self, topic_slug: str) -> dict[str, Any]:
+        from .human_dossier_support import write_dossier
+        topic_root = self._topic_root(topic_slug)
+        output_dir = topic_root / "L5"
+        try:
+            main_tex = write_dossier(topic_root, output_dir=output_dir)
+            return {"status": "ok", "path": str(main_tex)}
+        except Exception as exc:
+            return {"status": "error", "message": str(exc)}
 
     def _trim_steering_fragment(self, value: str) -> str:
         cleaned = str(value or "").strip()
@@ -8790,6 +8928,7 @@ class AITPService:
         run_id: str | None = None,
         updated_by: str = "aitp-cli",
         refresh_runtime_bundle: bool = True,
+        skip_preflight: bool = False,
     ) -> dict[str, Any]:
         gate = self.require_topic_ready_for_deeper_execution(
             topic_slug=topic_slug,
@@ -8798,11 +8937,22 @@ class AITPService:
         )
         if gate is not None:
             return gate
+        preflight_result: dict[str, Any] | None = None
+        if not skip_preflight:
+            preflight_result = self.mechanical_completion_preflight(
+                topic_slug=topic_slug,
+                run_id=run_id,
+            )
+            if preflight_result["mechanical_preflight"]["status"] == "blocked":
+                preflight_result["preflight_blocked"] = True
+                return preflight_result
         result = self._materialize_topic_completion_surface(
             topic_slug=topic_slug,
             run_id=run_id,
             updated_by=updated_by,
         )
+        if preflight_result is not None:
+            result["mechanical_preflight"] = preflight_result["mechanical_preflight"]
         if refresh_runtime_bundle:
             result["runtime_protocol"] = self._materialize_runtime_protocol_bundle(
                 topic_slug=topic_slug,

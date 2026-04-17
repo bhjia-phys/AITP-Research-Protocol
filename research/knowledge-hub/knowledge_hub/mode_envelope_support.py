@@ -3,57 +3,47 @@ from __future__ import annotations
 from typing import Any
 
 _MODE_SPECS: dict[str, dict[str, Any]] = {
-    "discussion": {
-        "local_task": "Clarify direction, shrink ambiguity, and keep the topic inside an honest early-layer envelope.",
-        "foreground_layers": ["L0", "L1", "L3"],
-        "allowed_backedges": ["L1 -> L0", "L1/L3 -> L2"],
-        "required_writeback": ["idea_packet", "operator_checkpoint", "research_question_contract"],
-        "forbidden_shortcuts": [
-            "Do not treat discussion as validation.",
-            "Do not preload heavy L4 or promotion context without a declared trigger.",
-        ],
-        "human_checkpoint_policy": "Ask only when the ambiguity materially changes route choice or topic direction.",
-        "entry_conditions": ["Intent clarification, scope ambiguity, or an unresolved operator checkpoint is active."],
-        "exit_conditions": ["Exit when the question is bounded enough for candidate formation or the human redirects the route."],
-    },
     "explore": {
-        "local_task": "Form or refine a bounded candidate without pretending it is already validated.",
-        "foreground_layers": ["L1", "L3"],
-        "allowed_backedges": ["L3 -> L0", "L3 -> L2"],
-        "required_writeback": ["candidate_packets", "route_choice_notes", "source_recovery_notes"],
+        "local_task": "Discover literature, find ideas, record observations. Compare with L2 to assess novelty.",
+        "foreground_layers": ["L0", "L1", "L3"],
+        "L3_focus": ["L3-I"],
+        "allowed_backedges": [],
+        "required_writeback": ["source_registrations", "l1_notes", "l3i_idea_records"],
         "forbidden_shortcuts": [
-            "Do not treat local plausibility as validation.",
-            "Do not widen mandatory context beyond the current chosen approach.",
+            "Do not form formal candidates in explore mode.",
+            "Do not execute L4 validation or L2 promotion.",
         ],
-        "human_checkpoint_policy": "Ask only at real route changes, cost changes, or novelty-definition changes.",
-        "entry_conditions": ["A bounded research question exists and work is still forming or refining the candidate route."],
-        "exit_conditions": ["Exit when the candidate is concrete enough for L4 validation or when an honest backedge is required."],
+        "human_checkpoint_policy": "Ask on scope change or direction ambiguity.",
+        "entry_conditions": ["Default mode for new topics."],
+        "exit_conditions": ["At least one idea recorded in L3-I, or sources identified."],
     },
-    "verify": {
-        "local_task": "Validate, adjudicate, or inspect proof/execution obligations for the current bounded candidate.",
-        "foreground_layers": ["L4"],
-        "allowed_backedges": ["L4 -> L0", "L4 -> L2"],
-        "required_writeback": ["validation_result_artifacts", "contradiction_artifacts", "decision_or_route_updates"],
+    "learn": {
+        "local_task": "Deep study of specific literature, verification of known results through derivation/experiment.",
+        "foreground_layers": ["L0", "L1", "L3", "L4"],
+        "L3_focus": ["L3-P", "L3-A"],
+        "allowed_backedges": ["L4 -> L3-A (revision)", "L3-A -> L1 (need more source)"],
+        "required_writeback": ["l3p_plans", "l3a_candidates", "l4_validation_results"],
         "forbidden_shortcuts": [
+            "L4 results must return through L3-R, never directly to L2.",
             "Do not let style confidence count as validation.",
-            "Do not keep iterating locally after a real L0/L2 blocker is known.",
         ],
-        "human_checkpoint_policy": "Ask when the execution lane, resource commitment, or the question of how to judge this is materially open.",
-        "entry_conditions": ["Current work is in explicit validation, proof review, or route-selection review."],
-        "exit_conditions": ["Exit when validation completes, blocks honestly to L0/L2/human, or hands off to promotion."],
+        "human_checkpoint_policy": "Ask on derivation approval or numerical experiment plan.",
+        "entry_conditions": ["At least one idea or source identified."],
+        "exit_conditions": ["Known results verified or gap identified."],
     },
-    "promote": {
-        "local_task": "Inspect gate state and decide whether L4-backed material may cross the L4 -> L2 boundary.",
-        "foreground_layers": ["L4", "L2"],
-        "allowed_backedges": ["promote -> L4", "promote -> L0", "promote -> L2"],
-        "required_writeback": ["promotion_gate", "promotion_decision", "backend_receipt"],
+    "implement": {
+        "local_task": "Pursue new ideas, produce novel results. Full L3-I -> L3-P -> L3-A pipeline.",
+        "foreground_layers": ["L3", "L4"],
+        "L3_focus": ["L3-I", "L3-P", "L3-A"],
+        "allowed_backedges": ["L4 -> L3-A (revision)", "L3-A -> L3-P (replan)", "L3-P -> L3-I (idea refinement)"],
+        "required_writeback": ["l3i_refined_idea", "l3p_plan", "l3a_candidates_with_evidence"],
         "forbidden_shortcuts": [
-            "Do not treat consultation as promotion.",
-            "Do not treat maturity vibes as gate satisfaction.",
+            "L4 results must return through L3-R, never directly to L2.",
+            "New conclusions stay in L3 for human review before L2 promotion.",
         ],
-        "human_checkpoint_policy": "Human checkpoints remain legitimate for writeback and expensive trust moves.",
-        "entry_conditions": ["The current action is explicitly reviewing or executing Layer 2 writeback."],
-        "exit_conditions": ["Exit when gate review completes or the candidate is rejected back to L4/L0 work."],
+        "human_checkpoint_policy": "Ask on novel conclusion or L2 promotion decision.",
+        "entry_conditions": ["Concrete idea ready for execution."],
+        "exit_conditions": ["Novel conclusion recorded in L3, or idea disproven."],
     },
 }
 
@@ -131,22 +121,26 @@ _LITERATURE_SUBMODE_SPEC = {
     ],
 }
 _MODE_ESCALATION_TRIGGERS = {
-    "discussion": {
-        "decision_override_present",
-    },
     "explore": {
+        "decision_override_present",
         "non_trivial_consultation",
         "capability_gap_blocker",
         "trust_missing",
     },
-    "verify": {
+    "learn": {
         "verification_route_selection",
         "proof_completion_review",
         "contradiction_detected",
+        "non_trivial_consultation",
+        "capability_gap_blocker",
+        "trust_missing",
     },
-    "promote": {
+    "implement": {
         "promotion_intent",
         "decision_override_present",
+        "verification_route_selection",
+        "proof_completion_review",
+        "contradiction_detected",
     },
 }
 
@@ -183,8 +177,8 @@ def _select_active_submode(
     human_request: str | None,
     active_triggers: set[str],
 ) -> str | None:
-    if runtime_mode == "verify" and bool(active_triggers & _VERIFY_TRIGGERS):
-        return "iterative_verify"
+    if runtime_mode in ("learn", "implement") and bool(active_triggers & _VERIFY_TRIGGERS):
+        return "derivation" if "derivation" in selected_action_summary.lower() else "numerical"
     lowered_summary = selected_action_summary.lower()
     if runtime_mode == "explore" and "l2 staging manifest" in lowered_summary:
         return "literature"
@@ -194,6 +188,14 @@ def _select_active_submode(
         human_request,
     ):
         return "literature"
+    if runtime_mode == "implement":
+        lowered = selected_action_summary.lower()
+        if any(t in lowered for t in ("code", "implement", "algorithm")):
+            return "code"
+        if any(t in lowered for t in ("formal", "proof", "lean")):
+            return "formal"
+        if any(t in lowered for t in ("numerical", "experiment", "benchmark")):
+            return "experimental"
     return None
 
 
@@ -207,17 +209,19 @@ def _select_runtime_mode(
     active_triggers: set[str],
 ) -> str:
     lowered_summary = selected_action_summary.lower()
-    if idea_packet_status == "needs_clarification" or operator_checkpoint_status == "requested":
-        return "discussion"
-    if selected_action_type in _PROMOTE_ACTION_TYPES or any(token in lowered_summary for token in ("promot", "writeback")):
-        return "promote"
     if (
         resume_stage == "L4"
         or selected_action_type in _VERIFY_ACTION_TYPES
         or bool(active_triggers & _VERIFY_TRIGGERS)
         or any(token in lowered_summary for token in ("validation", "verification", "proof", "derivation", "selected route"))
     ):
-        return "verify"
+        return "learn"
+    if selected_action_type in _PROMOTE_ACTION_TYPES or any(token in lowered_summary for token in ("promot", "writeback")):
+        return "implement"
+    if idea_packet_status == "needs_clarification" or operator_checkpoint_status == "requested":
+        return "explore"
+    if any(token in lowered_summary for token in ("novel", "new idea", "conjecture", "hypothesis")):
+        return "implement"
     return "explore"
 
 
@@ -246,12 +250,12 @@ def _transition_posture(
     active_triggers: set[str],
     operator_checkpoint_status: str,
 ) -> dict[str, Any]:
-    if runtime_mode == "promote":
+    if runtime_mode == "implement" and "promotion_intent" in active_triggers:
         return {
             "transition_kind": "forward_transition",
-            "transition_reason": "The current bounded task is explicitly reviewing or executing the L4 -> L2 boundary.",
+            "transition_reason": "L4-validated material is ready for the L4 -> L2 promotion pipeline.",
             "allowed_targets": ["L2", "L4", "L0"],
-            "triggered_by": ["promotion_intent"] if "promotion_intent" in active_triggers else [],
+            "triggered_by": ["promotion_intent"],
             "requires_human_checkpoint": True,
             "human_checkpoint_reason": "Layer 2 writeback remains an explicit trust boundary.",
         }
@@ -336,8 +340,10 @@ def build_runtime_mode_contract(
     required_writeback = list(mode_spec["required_writeback"])
     entry_conditions = list(mode_spec["entry_conditions"])
     if active_submode:
-        if active_submode == "iterative_verify":
+        if active_submode in ("derivation", "numerical"):
             entry_conditions.append("A bounded L3-L4 loop is active and each failed pass can produce explicit feedback.")
+        elif active_submode in ("code", "formal", "experimental"):
+            entry_conditions.append("An active implement submode is driving the L3-I -> L3-P -> L3-A pipeline.")
         elif active_submode == "literature":
             local_task = str(_LITERATURE_SUBMODE_SPEC["local_task"])
             required_writeback = list(_LITERATURE_SUBMODE_SPEC["required_writeback"])
@@ -666,53 +672,13 @@ def refocus_context_for_runtime_mode(
             (research_question_contract_note_path, "Active research question, scope, and chosen approach contract."),
     ]
 
-    if runtime_mode == "discussion":
-        prioritized_paths = [
-            (idea_packet_path, "Clarify the current idea packet before deeper execution."),
-            (operator_checkpoint_path, "Resolve the active operator checkpoint before deeper execution."),
-            *shared_primary_rows,
-            (control_note_path, "Current human steering note for this topic."),
-        ]
-        deferred_rules = [
-            (
-                validation_review_bundle_path,
-                "verification_route_selection",
-                "Validation review details stay deferred until the work enters explicit verification.",
-            ),
-            (
-                validation_contract_path,
-                "verification_route_selection",
-                "Validation-route details stay deferred until the work enters explicit verification.",
-            ),
-            (
-                promotion_readiness_path,
-                "promotion_intent",
-                "Promotion-readiness review is deferred while the route is still being clarified.",
-            ),
-            (
-                promotion_gate_path,
-                "promotion_intent",
-                "Promotion-gate review is deferred while the route is still being clarified.",
-            ),
-            (
-                topic_completion_path,
-                "verification_route_selection",
-                "Topic-completion review is deferred while the route remains in early discussion.",
-            ),
-        ]
-        return _refocus_by_rules(
-            runtime_mode_payload=runtime_mode_payload,
-            must_read_now=must_read_now,
-            may_defer_until_trigger=may_defer_until_trigger,
-            prioritized_paths=prioritized_paths,
-            deferred_rules=deferred_rules,
-        )
-
     if runtime_mode == "explore":
         prioritized_paths = list(shared_primary_rows)
         if str((runtime_mode_payload.get("mode_envelope") or {}).get("load_profile") or "") == "full":
             prioritized_paths.extend(
                 [
+                    (idea_packet_path, "Current idea packet for L3-I ideation."),
+                    (operator_checkpoint_path, "Active operator checkpoint before deeper execution."),
                     (control_note_path, "Current human steering note for this topic."),
                     (topic_synopsis_path, "Machine synopsis for the current bounded candidate route and queue state."),
                 ]
@@ -741,7 +707,7 @@ def refocus_context_for_runtime_mode(
             (
                 topic_completion_path,
                 "verification_route_selection",
-                "Topic-completion review is deferred until the route exits exploration and enters verification.",
+                "Topic-completion review is deferred until the route exits exploration and enters learn mode.",
             ),
         ]
         return _refocus_by_rules(
@@ -752,10 +718,10 @@ def refocus_context_for_runtime_mode(
             deferred_rules=deferred_rules,
         )
 
-    if runtime_mode == "verify":
+    if runtime_mode == "learn":
         prioritized_paths = [
             *shared_primary_rows,
-            (validation_review_bundle_path, "Primary L4 review surface for the active verification lane."),
+            (validation_review_bundle_path, "Primary L4 review surface for the active L3-A <-> L4 loop."),
             (validation_contract_path, "Current validation route, required checks, and failure modes for this topic."),
             *verification_route_rows,
             (topic_completion_path, "Topic-completion support surface for remaining blockers and regression debt."),
@@ -790,9 +756,10 @@ def refocus_context_for_runtime_mode(
             deferred_rules=deferred_rules,
         )
 
-    if runtime_mode == "promote":
+    if runtime_mode == "implement":
         prioritized_paths = [
             *shared_primary_rows,
+            (idea_packet_path, "Active L3-I idea driving the implementation pipeline."),
             (promotion_readiness_path, "Promotion blockers, ready candidates, and gate posture for the current writeback decision."),
             (promotion_gate_path, "Current promotion gate, backend target, and writeback receipt surface."),
             (validation_review_bundle_path, "Supporting L4 review surface behind the current writeback decision."),
@@ -802,7 +769,7 @@ def refocus_context_for_runtime_mode(
             (
                 control_note_path,
                 "decision_override_present",
-                "Human steering history is deferred unless a decision override becomes active during gate review.",
+                "Human steering history is deferred unless a decision override becomes active.",
             ),
             (
                 topic_synopsis_path,
