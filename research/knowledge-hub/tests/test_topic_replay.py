@@ -24,7 +24,7 @@ class TopicReplayTests(unittest.TestCase):
         self.tempdir = tempfile.TemporaryDirectory()
         self.kernel_root = Path(self.tempdir.name)
         self.topic_slug = "demo-topic"
-        self.topic_root = self.kernel_root / "runtime" / "topics" / self.topic_slug
+        self.topic_root = self.kernel_root / "topics" / self.topic_slug / "runtime"
         self.topic_root.mkdir(parents=True, exist_ok=True)
 
         (self.topic_root / "topic_synopsis.json").write_text(
@@ -73,7 +73,7 @@ class TopicReplayTests(unittest.TestCase):
                             "summary": "The leading bounded route stays visible on the active topic.",
                             "route_kind": "current_topic",
                             "route_target_summary": "Keep the leading route on the current topic branch.",
-                            "route_target_ref": "runtime/topics/demo-topic/research_question.contract.md",
+                            "route_target_ref": "topics/demo-topic/runtime/research_question.contract.md",
                             "evidence_refs": ["note:demo-leading"],
                             "exclusion_notes": [],
                         },
@@ -84,7 +84,7 @@ class TopicReplayTests(unittest.TestCase):
                             "summary": "A neighboring route should stay live on a separate follow-up branch.",
                             "route_kind": "followup_subtopic",
                             "route_target_summary": "Open a bounded follow-up subtopic for the neighboring route.",
-                            "route_target_ref": "runtime/topics/demo-topic/followup_subtopics.jsonl",
+                            "route_target_ref": "topics/demo-topic/runtime/followup_subtopics.jsonl",
                             "evidence_refs": ["note:demo-followup"],
                             "exclusion_notes": [],
                         },
@@ -117,9 +117,9 @@ class TopicReplayTests(unittest.TestCase):
                     "query": "Recover the neighboring route before reintegration.",
                     "return_packet_path": str(
                         self.kernel_root
-                        / "runtime"
                         / "topics"
                         / "demo-topic--followup--route"
+                        / "runtime"
                         / "followup_return_packet.json"
                     ),
                 },
@@ -130,16 +130,16 @@ class TopicReplayTests(unittest.TestCase):
         )
         (
             self.kernel_root
-            / "runtime"
             / "topics"
             / "demo-topic--followup--route"
+            / "runtime"
             / "followup_return_packet.json"
         ).parent.mkdir(parents=True, exist_ok=True)
         (
             self.kernel_root
-            / "runtime"
             / "topics"
             / "demo-topic--followup--route"
+            / "runtime"
             / "followup_return_packet.json"
         ).write_text(
             json.dumps(

@@ -31,7 +31,7 @@ class HypothesisRouteTransitionAuthorityContractTests(unittest.TestCase):
             return
 
         self._base._seed_demo_topic(topic_slug=topic_slug, route_mode="current_target")
-        contract_path = self.kernel_root / "runtime" / "topics" / topic_slug / "research_question.contract.json"
+        contract_path = self.kernel_root / "topics" / topic_slug / "runtime" / "research_question.contract.json"
         payload = json.loads(contract_path.read_text(encoding="utf-8"))
         payload["question"] = "Has the committed route become the authoritative bounded truth surface yet?"
         payload["scope"] = [
@@ -59,7 +59,7 @@ class HypothesisRouteTransitionAuthorityContractTests(unittest.TestCase):
             "The symmetry-breaking route is active, but its durable route ref still points at transition history instead of a current-topic truth surface."
         )
         payload["competing_hypotheses"][0]["route_target_ref"] = (
-            f"runtime/topics/{topic_slug}/transition_history.md"
+            f"topics/{topic_slug}/runtime/transition_history.md"
         )
         contract_path.write_text(json.dumps(payload, ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
 
@@ -106,7 +106,7 @@ class HypothesisRouteTransitionAuthorityContractTests(unittest.TestCase):
         self.assertEqual(authority["authority_status"], "authoritative")
         self.assertEqual(authority["authority_kind"], "current_topic_authoritative")
         self.assertEqual(authority["route_kind"], "current_topic")
-        self.assertIn("runtime/topics/demo-topic-authority-authoritative/", authority["authority_ref"])
+        self.assertIn("topics/demo-topic-authority-authoritative/runtime/", authority["authority_ref"])
         self.assertEqual(replay_payload["route_transition_authority"]["authority_status"], "authoritative")
         self.assertEqual(replay_payload["current_position"]["route_transition_authority_status"], "authoritative")
         self.assertEqual(replay_payload["conclusions"]["route_transition_authority_status"], "authoritative")

@@ -342,7 +342,7 @@ class L2GraphActivationTests(unittest.TestCase):
   "provenance": {
     "source_ids": ["local_note:jones-von-neumann-algebras-definition-packet"],
     "backend_refs": ["backend:theoretical-physics-knowledge-network"],
-    "l1_artifacts": ["source-layer/topics/fresh-jones/source_index.jsonl"],
+    "l1_artifacts": ["topics/fresh-jones/L0/source_index.jsonl"],
     "l3_runs": ["feedback/topics/fresh-jones/runs/run-001/candidate_ledger.jsonl"],
     "l4_checks": ["validation/topics/fresh-jones/runs/run-001/theory-packets/candidate-demo/formal_theory_review.json"],
     "citations": ["chapter-4/multiplicity-and-finite-dimensional-von-neumann-algebras"]
@@ -418,7 +418,7 @@ class L2GraphActivationTests(unittest.TestCase):
   "provenance": {
     "source_ids": ["local_note:jones-von-neumann-algebras-definition-packet"],
     "backend_refs": ["backend:theoretical-physics-knowledge-network"],
-    "l1_artifacts": ["source-layer/topics/fresh-jones/source_index.jsonl"],
+    "l1_artifacts": ["topics/fresh-jones/L0/source_index.jsonl"],
     "l3_runs": ["feedback/topics/fresh-jones/runs/run-001/candidate_ledger.jsonl"],
     "l4_checks": ["validation/topics/fresh-jones/runs/run-001/theory-packets/candidate-demo/formal_theory_review.json"],
     "citations": ["chapter-4/multiplicity-and-finite-dimensional-von-neumann-algebras"]

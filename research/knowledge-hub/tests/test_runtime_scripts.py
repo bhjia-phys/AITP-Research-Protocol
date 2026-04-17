@@ -28,10 +28,10 @@ class RuntimeScriptTests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmpdir = tempfile.TemporaryDirectory()
         self.knowledge_root = Path(self._tmpdir.name)
-        (self.knowledge_root / "runtime").mkdir(parents=True, exist_ok=True)
-        (self.knowledge_root / "feedback").mkdir(parents=True, exist_ok=True)
-        (self.knowledge_root / "validation").mkdir(parents=True, exist_ok=True)
-        (self.knowledge_root / "source-layer").mkdir(parents=True, exist_ok=True)
+        (self.knowledge_root / "topics").mkdir(parents=True, exist_ok=True)
+        
+        
+        
         self.orchestrate_topic = _load_module(
             "aitp_orchestrate_topic_test",
             "runtime/scripts/orchestrate_topic.py",
@@ -225,7 +225,7 @@ class RuntimeScriptTests(unittest.TestCase):
             "Demo Topic",
         )
 
-        run_root = self.knowledge_root / "feedback" / "topics" / "demo-topic" / "runs"
+        run_root = self.knowledge_root / "topics" / "demo-topic" / "L3" / "runs"
         next_actions_files = sorted(run_root.glob("*-bootstrap/next_actions.md"))
         self.assertEqual(len(next_actions_files), 1)
         next_actions_text = next_actions_files[0].read_text(encoding="utf-8")
@@ -235,7 +235,7 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertIn("intake/ARXIV_FIRST_SOURCE_INTAKE.md", next_actions_text)
 
     def test_orchestrate_topic_main_detaches_subprocess_stdin_for_noninteractive_children(self) -> None:
-        topic_runtime_root = self.knowledge_root / "runtime" / "topics" / "demo-topic"
+        topic_runtime_root = self.knowledge_root / "topics" / "demo-topic" / "runtime"
         commands: list[dict[str, object]] = []
 
         def fake_run(command, **kwargs):  # noqa: ANN001, ANN003
@@ -353,8 +353,8 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.first_run_topic_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics").exists())
-        self.assertTrue((work_root / "kernel" / "source-layer" / "topics").exists())
+        self.assertTrue((work_root / "kernel" / "topics").exists())
+        self.assertTrue((work_root / "kernel" / "topics").exists())
 
     def test_first_source_followthrough_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "first-source-followthrough-acceptance"
@@ -407,7 +407,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertTrue((work_root / "kernel" / "canonical" / "staging" / "workspace_staging_manifest.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics").exists())
+        self.assertTrue((work_root / "kernel" / "topics").exists())
 
     def test_staged_l2_reentry_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "staged-l2-reentry-acceptance"
@@ -460,7 +460,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertTrue((work_root / "kernel" / "canonical" / "staging" / "workspace_staging_manifest.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics").exists())
+        self.assertTrue((work_root / "kernel" / "topics").exists())
 
     def test_staged_l2_advancement_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "staged-l2-advancement-acceptance"
@@ -513,7 +513,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertTrue((work_root / "kernel" / "canonical" / "staging" / "workspace_staging_manifest.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics").exists())
+        self.assertTrue((work_root / "kernel" / "topics").exists())
 
     def test_consultation_followup_selection_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "consultation-followup-selection-acceptance"
@@ -569,7 +569,7 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = module.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics").exists())
+        self.assertTrue((work_root / "kernel" / "topics").exists())
         self.assertTrue(
             (
                 work_root
@@ -804,7 +804,7 @@ class RuntimeScriptTests(unittest.TestCase):
             feedback_status=None,
             latest_decision={
                 "verdict": "needs_revision",
-                "fallback_targets": ["feedback/topics/demo-topic/runs/2026-03-13-demo"],
+                "fallback_targets": ["topics/demo-topic/L3/runs/2026-03-13-demo"],
             },
             closed_loop_decision=None,
         )
@@ -825,7 +825,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_split.contract.json",
+            "topics/demo-topic/L3/runs/2026-03-13-demo/candidate_split.contract.json",
             {
                 "contract_version": 1,
                 "splits": [
@@ -861,7 +861,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            "topics/demo-topic/L3/runs/2026-03-13-demo/candidate_ledger.jsonl",
             [
                 {
                     "candidate_id": "candidate:demo-definition",
@@ -880,15 +880,15 @@ class RuntimeScriptTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/coverage_ledger.json",
+            "topics/demo-topic/L4/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/coverage_ledger.json",
             {"status": "pass"},
         )
         self._write_json(
-            "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/agent_consensus.json",
+            "topics/demo-topic/L4/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/agent_consensus.json",
             {"status": "ready"},
         )
         self._write_json(
-            "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/regression_gate.json",
+            "topics/demo-topic/L4/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/regression_gate.json",
             {"status": "pass", "split_clearance_status": "clear", "promotion_blockers": []},
         )
 
@@ -919,7 +919,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            "topics/demo-topic/L3/runs/2026-03-13-demo/candidate_ledger.jsonl",
             [
                 {
                     "candidate_id": "candidate:demo-definition",
@@ -940,15 +940,15 @@ class RuntimeScriptTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/coverage_ledger.json",
+            "topics/demo-topic/L4/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/coverage_ledger.json",
             {"status": "pass"},
         )
         self._write_json(
-            "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/agent_consensus.json",
+            "topics/demo-topic/L4/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/agent_consensus.json",
             {"status": "ready"},
         )
         self._write_json(
-            "validation/topics/demo-topic/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/regression_gate.json",
+            "topics/demo-topic/L4/runs/2026-03-13-demo/theory-packets/candidate-demo-definition/regression_gate.json",
             {
                 "status": "pass",
                 "split_required": True,
@@ -981,20 +981,20 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/followup_subtopics.jsonl",
+            "topics/demo-topic/runtime/followup_subtopics.jsonl",
             [
                 {
                     "child_topic_slug": "demo-topic--followup--x",
                     "parent_topic_slug": "demo-topic",
                     "status": "spawned",
                     "return_packet_path": str(
-                        self.knowledge_root / "runtime" / "topics" / "demo-topic--followup--x" / "followup_return_packet.json"
+                        self.knowledge_root / "topics" / "demo-topic--followup--x" / "runtime" / "followup_return_packet.json"
                     ),
                 }
             ],
         )
         self._write_json(
-            "runtime/topics/demo-topic--followup--x/followup_return_packet.json",
+            "topics/demo-topic--followup--x/runtime/followup_return_packet.json",
             {
                 "return_packet_version": 1,
                 "child_topic_slug": "demo-topic--followup--x",
@@ -1015,7 +1015,7 @@ class RuntimeScriptTests(unittest.TestCase):
                 "return_status": "recovered_units",
                 "accepted_return_shape": "recovered_units",
                 "return_summary": "Recovered the missing definition.",
-                "return_artifact_paths": ["feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl"],
+                "return_artifact_paths": ["topics/demo-topic/L3/runs/2026-03-13-demo/candidate_ledger.jsonl"],
                 "reintegration_requirements": {
                     "must_write_back_parent_gaps": True,
                     "must_update_reentry_targets": True,
@@ -1039,7 +1039,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_topic_completion_actions_detect_missing_completion_surface(self) -> None:
         self._write_jsonl(
-            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            "topics/demo-topic/L3/runs/2026-03-13-demo/candidate_ledger.jsonl",
             [
                 {
                     "candidate_id": "candidate:demo-definition",
@@ -1060,7 +1060,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_topic_completion_actions_refresh_when_gate_promoted_but_completion_is_stale(self) -> None:
         self._write_jsonl(
-            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            "topics/demo-topic/L3/runs/2026-03-13-demo/candidate_ledger.jsonl",
             [
                 {
                     "candidate_id": "candidate:demo-definition",
@@ -1070,14 +1070,14 @@ class RuntimeScriptTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            "runtime/topics/demo-topic/promotion_gate.json",
+            "topics/demo-topic/runtime/promotion_gate.json",
             {
                 "status": "promoted",
                 "candidate_id": "candidate:demo-definition",
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/topic_completion.json",
+            "topics/demo-topic/runtime/topic_completion.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -1098,14 +1098,14 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_materialize_action_queue_prunes_stale_promotion_review_after_gate_promoted(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/promotion_gate.json",
+            "topics/demo-topic/runtime/promotion_gate.json",
             {
                 "status": "promoted",
                 "candidate_id": "candidate:demo-definition",
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/topic_completion.json",
+            "topics/demo-topic/runtime/topic_completion.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -1142,7 +1142,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_materialize_action_queue_prefers_skill_discovery_for_capability_gap_contract(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            "topics/demo-topic/runtime/runtime_protocol.generated.json",
             {
                 "runtime_mode": "explore",
                 "transition_posture": {
@@ -1174,7 +1174,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_materialize_action_queue_appends_literature_intake_stage_in_literature_submode(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            "topics/demo-topic/runtime/runtime_protocol.generated.json",
             {
                 "runtime_mode": "explore",
                 "active_submode": "literature",
@@ -1250,7 +1250,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         }
         self._write_json(
-            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            "topics/demo-topic/runtime/runtime_protocol.generated.json",
             runtime_payload,
         )
         signature = self.orchestrate_topic.compute_literature_intake_stage_signature(runtime_payload)
@@ -1320,7 +1320,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         }
         self._write_json(
-            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            "topics/demo-topic/runtime/runtime_protocol.generated.json",
             runtime_payload,
         )
         signature = self.orchestrate_topic.compute_literature_intake_stage_signature(runtime_payload)
@@ -1344,7 +1344,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/innovation_decisions.jsonl",
+            "topics/demo-topic/runtime/innovation_decisions.jsonl",
             [
                 {
                     "decision_id": "innovation-decision:demo-topic:continue",
@@ -1405,7 +1405,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         }
         self._write_json(
-            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            "topics/demo-topic/runtime/runtime_protocol.generated.json",
             runtime_payload,
         )
         signature = self.orchestrate_topic.compute_literature_intake_stage_signature(runtime_payload)
@@ -1429,7 +1429,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/innovation_decisions.jsonl",
+            "topics/demo-topic/runtime/innovation_decisions.jsonl",
             [
                 {
                     "decision_id": "innovation-decision:demo-topic:continue",
@@ -1441,7 +1441,7 @@ class RuntimeScriptTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            "runtime/topics/demo-topic/consultation_followup_selection.active.json",
+            "topics/demo-topic/runtime/consultation_followup_selection.active.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -1499,7 +1499,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         }
         self._write_json(
-            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            "topics/demo-topic/runtime/runtime_protocol.generated.json",
             runtime_payload,
         )
         signature = self.orchestrate_topic.compute_literature_intake_stage_signature(runtime_payload)
@@ -1523,7 +1523,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/innovation_decisions.jsonl",
+            "topics/demo-topic/runtime/innovation_decisions.jsonl",
             [
                 {
                     "decision_id": "innovation-decision:demo-topic:continue-01",
@@ -1549,7 +1549,7 @@ class RuntimeScriptTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            "runtime/topics/demo-topic/next_action_decision.json",
+            "topics/demo-topic/runtime/next_action_decision.json",
             {
                 "topic_slug": "demo-topic",
                 "updated_at": "2026-04-14T06:06:00+08:00",
@@ -1559,7 +1559,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/consultation_followup_selection.active.json",
+            "topics/demo-topic/runtime/consultation_followup_selection.active.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -1620,7 +1620,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         }
         self._write_json(
-            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            "topics/demo-topic/runtime/runtime_protocol.generated.json",
             runtime_payload,
         )
         signature = self.orchestrate_topic.compute_literature_intake_stage_signature(runtime_payload)
@@ -1644,7 +1644,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/innovation_decisions.jsonl",
+            "topics/demo-topic/runtime/innovation_decisions.jsonl",
             [
                 {
                     "decision_id": "innovation-decision:demo-topic:continue-01",
@@ -1677,7 +1677,7 @@ class RuntimeScriptTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            "runtime/topics/demo-topic/next_action_decision.json",
+            "topics/demo-topic/runtime/next_action_decision.json",
             {
                 "topic_slug": "demo-topic",
                 "updated_at": "2026-04-14T06:07:00+08:00",
@@ -1687,7 +1687,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/consultation_followup_selection.active.json",
+            "topics/demo-topic/runtime/consultation_followup_selection.active.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -1701,7 +1701,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/selected_candidate_route_choice.active.json",
+            "topics/demo-topic/runtime/selected_candidate_route_choice.active.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -1742,7 +1742,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_materialize_action_queue_does_not_repeat_completion_refresh_when_completion_is_current(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/consultation_followup_selection.active.json",
+            "topics/demo-topic/runtime/consultation_followup_selection.active.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -1756,7 +1756,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/selected_candidate_route_choice.active.json",
+            "topics/demo-topic/runtime/selected_candidate_route_choice.active.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -1771,14 +1771,14 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/promotion_gate.json",
+            "topics/demo-topic/runtime/promotion_gate.json",
             {
                 "status": "promoted",
                 "candidate_id": "staging:demo-topic-existing",
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/topic_completion.json",
+            "topics/demo-topic/runtime/topic_completion.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -1788,7 +1788,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            "topics/demo-topic/L3/runs/2026-03-13-demo/candidate_ledger.jsonl",
             [
                 {
                     "candidate_id": "staging:demo-topic-existing",
@@ -1820,7 +1820,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_materialize_action_queue_advances_beyond_post_promotion_inspect_after_later_continue(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/consultation_followup_selection.active.json",
+            "topics/demo-topic/runtime/consultation_followup_selection.active.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -1834,7 +1834,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/selected_candidate_route_choice.active.json",
+            "topics/demo-topic/runtime/selected_candidate_route_choice.active.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -1849,7 +1849,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/promotion_gate.json",
+            "topics/demo-topic/runtime/promotion_gate.json",
             {
                 "status": "promoted",
                 "candidate_id": "staging:demo-topic-existing",
@@ -1857,7 +1857,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/topic_completion.json",
+            "topics/demo-topic/runtime/topic_completion.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -1879,7 +1879,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/next_action_decision.json",
+            "topics/demo-topic/runtime/next_action_decision.json",
             {
                 "topic_slug": "demo-topic",
                 "updated_at": "2026-04-14T06:09:30+08:00",
@@ -1889,7 +1889,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/innovation_decisions.jsonl",
+            "topics/demo-topic/runtime/innovation_decisions.jsonl",
             [
                 {
                     "decision_id": "innovation-decision:demo-topic:continue-01",
@@ -1908,7 +1908,7 @@ class RuntimeScriptTests(unittest.TestCase):
             ],
         )
         self._write_jsonl(
-            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            "topics/demo-topic/L3/runs/2026-03-13-demo/candidate_ledger.jsonl",
             [
                 {
                     "candidate_id": "staging:demo-topic-existing",
@@ -1949,7 +1949,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_materialize_action_queue_advances_beyond_topic_completion_blocker_review(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/consultation_followup_selection.active.json",
+            "topics/demo-topic/runtime/consultation_followup_selection.active.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -1963,7 +1963,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/selected_candidate_route_choice.active.json",
+            "topics/demo-topic/runtime/selected_candidate_route_choice.active.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -1978,7 +1978,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/promotion_gate.json",
+            "topics/demo-topic/runtime/promotion_gate.json",
             {
                 "status": "promoted",
                 "candidate_id": "staging:demo-topic-existing",
@@ -1986,7 +1986,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/topic_completion.json",
+            "topics/demo-topic/runtime/topic_completion.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -2003,7 +2003,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/post_promotion_followup.active.json",
+            "topics/demo-topic/runtime/post_promotion_followup.active.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -2024,7 +2024,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/next_action_decision.json",
+            "topics/demo-topic/runtime/next_action_decision.json",
             {
                 "topic_slug": "demo-topic",
                 "updated_at": "2026-04-14T06:11:30+08:00",
@@ -2034,7 +2034,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/innovation_decisions.jsonl",
+            "topics/demo-topic/runtime/innovation_decisions.jsonl",
             [
                 {
                     "decision_id": "innovation-decision:demo-topic:continue-01",
@@ -2060,7 +2060,7 @@ class RuntimeScriptTests(unittest.TestCase):
             ],
         )
         self._write_jsonl(
-            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            "topics/demo-topic/L3/runs/2026-03-13-demo/candidate_ledger.jsonl",
             [
                 {
                     "candidate_id": "staging:demo-topic-existing",
@@ -2075,7 +2075,7 @@ class RuntimeScriptTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            "runtime/topics/demo-topic/statement_compilation.active.json",
+            "topics/demo-topic/runtime/statement_compilation.active.json",
             {
                 "topic_slug": "demo-topic",
                 "run_id": "2026-03-13-demo",
@@ -2124,7 +2124,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_materialize_action_queue_prefers_promotion_review_in_promote_mode(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            "topics/demo-topic/runtime/runtime_protocol.generated.json",
             {
                 "runtime_mode": "promote",
                 "transition_posture": {
@@ -2156,7 +2156,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_materialize_action_queue_skips_runtime_execution_append_for_consultation_backedge(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            "topics/demo-topic/runtime/runtime_protocol.generated.json",
             {
                 "runtime_mode": "explore",
                 "transition_posture": {
@@ -2198,7 +2198,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_materialize_action_queue_skips_skill_append_in_promote_mode(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            "topics/demo-topic/runtime/runtime_protocol.generated.json",
             {
                 "runtime_mode": "promote",
                 "transition_posture": {
@@ -2230,7 +2230,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_materialize_action_queue_skips_runtime_appends_when_human_checkpoint_required(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            "topics/demo-topic/runtime/runtime_protocol.generated.json",
             {
                 "runtime_mode": "verify",
                 "transition_posture": {
@@ -2277,7 +2277,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_materialize_action_queue_skips_helper_runtime_appends_when_human_checkpoint_required(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/runtime_protocol.generated.json",
+            "topics/demo-topic/runtime/runtime_protocol.generated.json",
             {
                 "runtime_mode": "verify",
                 "transition_posture": {
@@ -2343,7 +2343,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_materialize_action_queue_skips_runtime_and_helper_appends_when_operator_checkpoint_is_requested(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/operator_checkpoint.active.json",
+            "topics/demo-topic/runtime/operator_checkpoint.active.json",
             {
                 "checkpoint_id": "checkpoint:demo-topic:execution-lane-confirmation",
                 "topic_slug": "demo-topic",
@@ -2418,7 +2418,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_compute_closed_loop_status_reports_truth_root_runtime_paths(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/selected_validation_route.json",
+            "topics/demo-topic/runtime/selected_validation_route.json",
             {
                 "route_id": "route:demo-topic:benchmark",
                 "objective": "Run the bounded benchmark lane.",
@@ -2427,10 +2427,10 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/execution_task.json",
+            "topics/demo-topic/runtime/execution_task.json",
             {
                 "task_id": "benchmark-task",
-                "validation_note": "validation/topics/demo-topic/runs/run-001/validation_note.md",
+                "validation_note": "topics/demo-topic/L4/runs/run-001/validation_note.md",
                 "candidate_id": "candidate:demo-benchmark",
                 "surface": "numerical",
                 "status": "planned",
@@ -2462,7 +2462,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_build_interaction_state_uses_truth_root_closed_loop_paths(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/selected_validation_route.json",
+            "topics/demo-topic/runtime/selected_validation_route.json",
             {
                 "route_id": "route:demo-topic:benchmark",
                 "objective": "Run the bounded benchmark lane.",
@@ -2471,10 +2471,10 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/execution_task.json",
+            "topics/demo-topic/runtime/execution_task.json",
             {
                 "task_id": "benchmark-task",
-                "validation_note": "validation/topics/demo-topic/runs/run-001/validation_note.md",
+                "validation_note": "topics/demo-topic/L4/runs/run-001/validation_note.md",
                 "candidate_id": "candidate:demo-benchmark",
                 "surface": "numerical",
                 "status": "planned",
@@ -2497,8 +2497,8 @@ class RuntimeScriptTests(unittest.TestCase):
                 "latest_run_id": "run-001",
                 "updated_by": "test",
                 "pointers": {
-                    "feedback_status_path": "feedback/topics/demo-topic/runs/run-001/status.json",
-                    "promotion_decision_path": "validation/topics/demo-topic/runs/run-001/promotion_decisions.jsonl",
+                    "feedback_status_path": "topics/demo-topic/L3/runs/run-001/status.json",
+                    "promotion_decision_path": "topics/demo-topic/L4/runs/run-001/promotion_decisions.jsonl",
                 },
             },
             [],
@@ -2523,7 +2523,7 @@ class RuntimeScriptTests(unittest.TestCase):
         script_path.write_text("# runtime script shim\n", encoding="utf-8")
 
         self._write_jsonl(
-            "source-layer/topics/demo-topic/source_index.jsonl",
+            "topics/demo-topic/L0/source_index.jsonl",
             [
                 {
                     "source_id": "paper:demo",
@@ -2534,7 +2534,7 @@ class RuntimeScriptTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            "intake/topics/demo-topic/status.json",
+            "topics/demo-topic/L1/status.json",
             {
                 "stage": "L1_active",
                 "next_stage": "L1",
@@ -2542,14 +2542,14 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "feedback/topics/demo-topic/runs/run-001/status.json",
+            "topics/demo-topic/L3/runs/run-001/status.json",
             {
                 "stage": "candidate_shaping",
                 "candidate_status": "in_progress",
                 "last_updated": "2026-03-20T10:00:00+08:00",
             },
         )
-        (self.knowledge_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001" / "next_actions.md").write_text(
+        (self.knowledge_root / "topics" / "demo-topic" / "L3" / "runs" / "run-001" / "next_actions.md").write_text(
             "1. Continue the bounded route.\n",
             encoding="utf-8",
         )
@@ -2583,7 +2583,7 @@ class RuntimeScriptTests(unittest.TestCase):
         script_path.write_text("# runtime script shim\n", encoding="utf-8")
 
         self._write_json(
-            "runtime/topics/demo-topic/topic_state.json",
+            "topics/demo-topic/runtime/topic_state.json",
             {
                 "topic_slug": "demo-topic",
                 "resume_stage": "L3",
@@ -2593,7 +2593,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/action_queue.jsonl",
+            "topics/demo-topic/runtime/action_queue.jsonl",
             [
                 {
                     "action_id": "action:demo-topic:01",
@@ -2631,7 +2631,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_materialize_action_queue_declared_contract_can_disable_runtime_appends_but_keep_skill_append(self) -> None:
         self._write_json(
-            "feedback/topics/demo-topic/runs/2026-03-13-demo/next_actions.contract.json",
+            "topics/demo-topic/L3/runs/2026-03-13-demo/next_actions.contract.json",
             {
                 "contract_version": 1,
                 "policy_note": "Keep only the declared queue plus capability-gap help.",
@@ -2660,7 +2660,7 @@ class RuntimeScriptTests(unittest.TestCase):
             "handler": None,
             "handler_args": {},
             "queue_source": "runtime_appended",
-            "declared_contract_path": "feedback/topics/demo-topic/runs/2026-03-13-demo/next_actions.contract.json",
+            "declared_contract_path": "topics/demo-topic/L3/runs/2026-03-13-demo/next_actions.contract.json",
         }
 
         with (
@@ -2707,7 +2707,7 @@ class RuntimeScriptTests(unittest.TestCase):
                         "Continue a bounded manual derivation follow-up.",
                     ],
                     "pointers": {
-                        "next_actions_path": "feedback/topics/demo-topic/runs/2026-03-13-demo/next_actions.md",
+                        "next_actions_path": "topics/demo-topic/L3/runs/2026-03-13-demo/next_actions.md",
                     },
                 },
                 ["backend parity"],
@@ -2729,7 +2729,7 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertNotIn("auto_promote_candidate", action_types)
 
     def test_decide_next_action_prefers_skill_discovery_for_capability_gap_backedge(self) -> None:
-        topic_runtime_root = self.knowledge_root / "runtime" / "topics" / "demo-topic"
+        topic_runtime_root = self.knowledge_root / "topics" / "demo-topic" / "runtime"
         topic_runtime_root.mkdir(parents=True, exist_ok=True)
         (topic_runtime_root / "runtime_protocol.generated.json").write_text(
             json.dumps(
@@ -2789,7 +2789,7 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertEqual(decision["decision_basis"], "runtime_contract_preferred:skill_discovery")
 
     def test_decide_next_action_prefers_literature_intake_stage_in_literature_submode(self) -> None:
-        topic_runtime_root = self.knowledge_root / "runtime" / "topics" / "demo-topic"
+        topic_runtime_root = self.knowledge_root / "topics" / "demo-topic" / "runtime"
         topic_runtime_root.mkdir(parents=True, exist_ok=True)
         (topic_runtime_root / "runtime_protocol.generated.json").write_text(
             json.dumps(
@@ -2850,7 +2850,7 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertEqual(decision["decision_basis"], "runtime_contract_preferred:literature_intake_stage")
 
     def test_decide_next_action_prefers_promotion_review_in_promote_mode(self) -> None:
-        topic_runtime_root = self.knowledge_root / "runtime" / "topics" / "demo-topic"
+        topic_runtime_root = self.knowledge_root / "topics" / "demo-topic" / "runtime"
         topic_runtime_root.mkdir(parents=True, exist_ok=True)
         (topic_runtime_root / "runtime_protocol.generated.json").write_text(
             json.dumps(
@@ -2920,7 +2920,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "feedback/topics/demo-topic/runs/2026-03-13-demo/candidate_ledger.jsonl",
+            "topics/demo-topic/L3/runs/2026-03-13-demo/candidate_ledger.jsonl",
             [
                 {
                     "candidate_id": "candidate:demo-definition",
@@ -2950,7 +2950,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/deferred_candidates.json",
+            "topics/demo-topic/runtime/deferred_candidates.json",
             {
                 "buffer_version": 1,
                 "topic_slug": "demo-topic",
@@ -2975,7 +2975,7 @@ class RuntimeScriptTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "source-layer/topics/demo-topic/source_index.jsonl",
+            "topics/demo-topic/L0/source_index.jsonl",
             [
                 {
                     "source_id": "paper:followup-source",
@@ -3012,8 +3012,8 @@ class RuntimeScriptTests(unittest.TestCase):
                 },
             },
             "pointers": {
-                "promotion_gate_path": "runtime/topics/demo-topic/promotion_gate.json",
-                "promotion_gate_note_path": "runtime/topics/demo-topic/promotion_gate.md",
+                "promotion_gate_path": "topics/demo-topic/runtime/promotion_gate.json",
+                "promotion_gate_note_path": "topics/demo-topic/runtime/promotion_gate.md",
             },
         }
         interaction_state = {
@@ -3024,14 +3024,14 @@ class RuntimeScriptTests(unittest.TestCase):
             "human_edit_surfaces": [
                 {
                     "surface": "runtime_queue_contract",
-                    "path": "runtime/topics/demo-topic/action_queue_contract.generated.md",
+                    "path": "topics/demo-topic/runtime/action_queue_contract.generated.md",
                     "role": "editable queue contract snapshot",
                 }
             ],
             "action_queue_surface": {
                 "queue_source": "heuristic",
-                "generated_contract_path": "runtime/topics/demo-topic/action_queue_contract.generated.json",
-                "generated_contract_note_path": "runtime/topics/demo-topic/action_queue_contract.generated.md",
+                "generated_contract_path": "topics/demo-topic/runtime/action_queue_contract.generated.json",
+                "generated_contract_note_path": "topics/demo-topic/runtime/action_queue_contract.generated.md",
             },
             "decision_surface": {
                 "decision_mode": "continue_unfinished",
@@ -3046,10 +3046,10 @@ class RuntimeScriptTests(unittest.TestCase):
                 "reason": "Bounded capability gap remains.",
                 "control_note_status": "missing",
                 "decision_contract_status": "missing",
-                "unfinished_work_path": "runtime/topics/demo-topic/unfinished_work.json",
-                "unfinished_work_note_path": "runtime/topics/demo-topic/unfinished_work.md",
-                "next_action_decision_path": "runtime/topics/demo-topic/next_action_decision.json",
-                "next_action_decision_note_path": "runtime/topics/demo-topic/next_action_decision.md",
+                "unfinished_work_path": "topics/demo-topic/runtime/unfinished_work.json",
+                "unfinished_work_note_path": "topics/demo-topic/runtime/unfinished_work.md",
+                "next_action_decision_path": "topics/demo-topic/runtime/next_action_decision.json",
+                "next_action_decision_note_path": "topics/demo-topic/runtime/next_action_decision.md",
             },
             "capability_adaptation": {
                 "protocol_path": "research/adapters/openclaw/SKILL_ADAPTATION_PROTOCOL.md",
@@ -3128,15 +3128,15 @@ class RuntimeScriptTests(unittest.TestCase):
                     "selected_route_id": "route:demo",
                     "execution_task_id": "task:demo",
                     "next_action_summary": "Inspect the returned result and continue the bounded proof review.",
-                    "next_action_decision_note_path": "runtime/topics/demo-topic/next_action_decision.md",
-                    "selected_validation_route_path": "runtime/topics/demo-topic/selected_validation_route.json",
+                    "next_action_decision_note_path": "topics/demo-topic/runtime/next_action_decision.md",
+                    "selected_validation_route_path": "topics/demo-topic/runtime/selected_validation_route.json",
                 },
                 "last_evidence_return": {
                     "status": "present",
                     "kind": "result_manifest",
                     "record_id": "result:demo",
                     "recorded_at": "2026-03-28T09:00:00+08:00",
-                    "path": "validation/topics/demo-topic/runs/2026-03-20-demo/result_manifest.json",
+                    "path": "topics/demo-topic/L4/runs/2026-03-20-demo/result_manifest.json",
                     "summary": "Closed-loop result manifest is `partial`.",
                 },
                 "active_human_need": {
@@ -3148,34 +3148,34 @@ class RuntimeScriptTests(unittest.TestCase):
                 "blocker_summary": [],
             },
             "pointers": {
-                "l0_source_index_path": "source-layer/topics/demo-topic/source_index.jsonl",
-                "intake_status_path": "intake/topics/demo-topic/status.json",
-                "feedback_status_path": "feedback/topics/demo-topic/runs/2026-03-20-demo/status.json",
-                "next_actions_path": "feedback/topics/demo-topic/runs/2026-03-20-demo/next_actions.md",
-                "next_actions_contract_path": "feedback/topics/demo-topic/runs/2026-03-20-demo/next_actions.contract.json",
-                "promotion_decision_path": "validation/topics/demo-topic/runs/2026-03-20-demo/promotion_decisions.jsonl",
-                "consultation_index_path": "consultation/topics/demo-topic/consultation_index.jsonl",
+                "l0_source_index_path": "topics/demo-topic/L0/source_index.jsonl",
+                "intake_status_path": "topics/demo-topic/L1/status.json",
+                "feedback_status_path": "topics/demo-topic/L3/runs/2026-03-20-demo/status.json",
+                "next_actions_path": "topics/demo-topic/L3/runs/2026-03-20-demo/next_actions.md",
+                "next_actions_contract_path": "topics/demo-topic/L3/runs/2026-03-20-demo/next_actions.contract.json",
+                "promotion_decision_path": "topics/demo-topic/L4/runs/2026-03-20-demo/promotion_decisions.jsonl",
+                "consultation_index_path": "topics/demo-topic/consultation/consultation_index.jsonl",
                 "control_note_path": "",
                 "innovation_direction_path": "",
                 "innovation_decisions_path": "",
-                "unfinished_work_path": "runtime/topics/demo-topic/unfinished_work.json",
-                "unfinished_work_note_path": "runtime/topics/demo-topic/unfinished_work.md",
-                "next_action_decision_path": "runtime/topics/demo-topic/next_action_decision.json",
-                "next_action_decision_note_path": "runtime/topics/demo-topic/next_action_decision.md",
-                "next_action_decision_contract_path": "runtime/topics/demo-topic/next_action_decision.contract.json",
-                "next_action_decision_contract_note_path": "runtime/topics/demo-topic/next_action_decision.contract.md",
-                "action_queue_contract_generated_path": "runtime/topics/demo-topic/action_queue_contract.generated.json",
-                "action_queue_contract_generated_note_path": "runtime/topics/demo-topic/action_queue_contract.generated.md",
-                "selected_validation_route_path": "runtime/topics/demo-topic/selected_validation_route.json",
-                "execution_task_path": "runtime/topics/demo-topic/execution_task.json",
-                "execution_notes_path": "validation/topics/demo-topic/runs/2026-03-20-demo/execution_notes",
-                "returned_execution_result_path": "validation/topics/demo-topic/runs/2026-03-20-demo/returned_execution_result.json",
-                "result_manifest_path": "validation/topics/demo-topic/runs/2026-03-20-demo/result_manifest.json",
-                "trajectory_log_path": "validation/topics/demo-topic/runs/2026-03-20-demo/trajectory_log.jsonl",
-                "trajectory_note_path": "validation/topics/demo-topic/runs/2026-03-20-demo/result_summary.md",
-                "failure_classification_path": "validation/topics/demo-topic/runs/2026-03-20-demo/failure_classification.json",
-                "failure_classification_note_path": "validation/topics/demo-topic/runs/2026-03-20-demo/failure_classification.md",
-                "decision_ledger_path": "validation/topics/demo-topic/runs/2026-03-20-demo/decision_ledger.jsonl",
+                "unfinished_work_path": "topics/demo-topic/runtime/unfinished_work.json",
+                "unfinished_work_note_path": "topics/demo-topic/runtime/unfinished_work.md",
+                "next_action_decision_path": "topics/demo-topic/runtime/next_action_decision.json",
+                "next_action_decision_note_path": "topics/demo-topic/runtime/next_action_decision.md",
+                "next_action_decision_contract_path": "topics/demo-topic/runtime/next_action_decision.contract.json",
+                "next_action_decision_contract_note_path": "topics/demo-topic/runtime/next_action_decision.contract.md",
+                "action_queue_contract_generated_path": "topics/demo-topic/runtime/action_queue_contract.generated.json",
+                "action_queue_contract_generated_note_path": "topics/demo-topic/runtime/action_queue_contract.generated.md",
+                "selected_validation_route_path": "topics/demo-topic/runtime/selected_validation_route.json",
+                "execution_task_path": "topics/demo-topic/runtime/execution_task.json",
+                "execution_notes_path": "topics/demo-topic/L4/runs/2026-03-20-demo/execution_notes",
+                "returned_execution_result_path": "topics/demo-topic/L4/runs/2026-03-20-demo/returned_execution_result.json",
+                "result_manifest_path": "topics/demo-topic/L4/runs/2026-03-20-demo/result_manifest.json",
+                "trajectory_log_path": "topics/demo-topic/L4/runs/2026-03-20-demo/trajectory_log.jsonl",
+                "trajectory_note_path": "topics/demo-topic/L4/runs/2026-03-20-demo/result_summary.md",
+                "failure_classification_path": "topics/demo-topic/L4/runs/2026-03-20-demo/failure_classification.json",
+                "failure_classification_note_path": "topics/demo-topic/L4/runs/2026-03-20-demo/failure_classification.md",
+                "decision_ledger_path": "topics/demo-topic/L4/runs/2026-03-20-demo/decision_ledger.jsonl",
                 "literature_followup_queries_path": "",
                 "literature_followup_receipts_path": "",
                 "followup_gap_writeback_path": "",
@@ -3184,8 +3184,8 @@ class RuntimeScriptTests(unittest.TestCase):
                 "deferred_buffer_note_path": "",
                 "followup_subtopics_path": "",
                 "followup_subtopics_note_path": "",
-                "promotion_gate_path": "runtime/topics/demo-topic/promotion_gate.json",
-                "promotion_gate_note_path": "runtime/topics/demo-topic/promotion_gate.md",
+                "promotion_gate_path": "topics/demo-topic/runtime/promotion_gate.json",
+                "promotion_gate_note_path": "topics/demo-topic/runtime/promotion_gate.md",
             },
         }
 
@@ -3198,7 +3198,7 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertIn("result:demo", rendered)
 
     def test_derive_status_explainability_prioritizes_operator_checkpoint(self) -> None:
-        topic_runtime_root = self.knowledge_root / "runtime" / "topics" / "demo-topic"
+        topic_runtime_root = self.knowledge_root / "topics" / "demo-topic" / "runtime"
         topic_runtime_root.mkdir(parents=True, exist_ok=True)
         (topic_runtime_root / "operator_checkpoint.active.json").write_text(
             json.dumps(
@@ -3228,7 +3228,7 @@ class RuntimeScriptTests(unittest.TestCase):
                     "status": "partial",
                 },
                 "paths": {
-                    "result_manifest_path": "validation/topics/demo-topic/runs/2026-03-20-demo/result_manifest.json",
+                    "result_manifest_path": "topics/demo-topic/L4/runs/2026-03-20-demo/result_manifest.json",
                 },
                 "selected_route": {
                     "route_id": "route:demo",
@@ -3267,13 +3267,13 @@ class RuntimeScriptTests(unittest.TestCase):
             "backend_bridges": [],
             "promotion_gate": {"status": "not_requested", "promoted_units": []},
             "pointers": {
-                "l0_source_index_path": "source-layer/topics/demo-topic/source_index.jsonl",
-                "intake_status_path": "source-layer/topics/demo-topic/intake_status.json",
-                "feedback_status_path": "feedback/topics/demo-topic/runs/2026-03-20-demo/feedback_status.json",
-                "promotion_decision_path": "validation/topics/demo-topic/runs/2026-03-20-demo/promotion_decision.json",
-                "promotion_gate_path": "runtime/topics/demo-topic/promotion_gate.json",
-                "promotion_gate_note_path": "runtime/topics/demo-topic/promotion_gate.md",
-                "consultation_index_path": "runtime/topics/demo-topic/consultation_index.json",
+                "l0_source_index_path": "topics/demo-topic/L0/source_index.jsonl",
+                "intake_status_path": "topics/demo-topic/L0/intake_status.json",
+                "feedback_status_path": "topics/demo-topic/L3/runs/2026-03-20-demo/feedback_status.json",
+                "promotion_decision_path": "topics/demo-topic/L4/runs/2026-03-20-demo/promotion_decision.json",
+                "promotion_gate_path": "topics/demo-topic/runtime/promotion_gate.json",
+                "promotion_gate_note_path": "topics/demo-topic/runtime/promotion_gate.md",
+                "consultation_index_path": "topics/demo-topic/runtime/consultation_index.json",
             },
         }
         interaction_state = {
@@ -3283,19 +3283,19 @@ class RuntimeScriptTests(unittest.TestCase):
                 "selected_action_id": "action:demo:2",
                 "control_note_status": "present",
                 "decision_contract_status": "missing",
-                "unfinished_work_path": "runtime/topics/demo-topic/unfinished_work.json",
-                "next_action_decision_path": "runtime/topics/demo-topic/next_action_decision.json",
+                "unfinished_work_path": "topics/demo-topic/runtime/unfinished_work.json",
+                "next_action_decision_path": "topics/demo-topic/runtime/next_action_decision.json",
             },
             "action_queue_surface": {
                 "queue_source": "declared_contract",
-                "declared_contract_path": "feedback/topics/demo-topic/runs/2026-03-20-demo/next_actions.contract.json",
+                "declared_contract_path": "topics/demo-topic/L3/runs/2026-03-20-demo/next_actions.contract.json",
             },
             "closed_loop": {
-                "selected_route_path": "runtime/topics/demo-topic/selected_validation_route.json",
-                "execution_task_path": "runtime/topics/demo-topic/execution_task.json",
-                "returned_result_path": "validation/topics/demo-topic/runs/2026-03-20-demo/returned_execution_result.json",
-                "trajectory_log_path": "runtime/topics/demo-topic/loop_history.jsonl",
-                "failure_classification_path": "runtime/topics/demo-topic/failure_classification.json",
+                "selected_route_path": "topics/demo-topic/runtime/selected_validation_route.json",
+                "execution_task_path": "topics/demo-topic/runtime/execution_task.json",
+                "returned_result_path": "topics/demo-topic/L4/runs/2026-03-20-demo/returned_execution_result.json",
+                "trajectory_log_path": "topics/demo-topic/runtime/loop_history.jsonl",
+                "failure_classification_path": "topics/demo-topic/runtime/failure_classification.json",
             },
         }
         queue = [
@@ -3318,12 +3318,12 @@ class RuntimeScriptTests(unittest.TestCase):
 
     def test_materialize_execution_task_defaults_to_human_confirmation_for_inferred_route(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/selected_validation_route.json",
+            "topics/demo-topic/runtime/selected_validation_route.json",
             {
                 "route_id": "route:demo-topic:benchmark",
                 "objective": "Run the bounded benchmark lane in the current execution environment.",
-                "input_artifacts": ["feedback/topics/demo-topic/runs/run-001/result_summary.md"],
-                "expected_outputs": ["validation/topics/demo-topic/runs/run-001/results/benchmark.json"],
+                "input_artifacts": ["topics/demo-topic/L3/runs/run-001/result_summary.md"],
+                "expected_outputs": ["topics/demo-topic/L4/runs/run-001/results/benchmark.json"],
                 "success_criterion": ["Benchmark output is materialized."],
                 "failure_signals": ["Benchmark run does not produce the declared artifact."],
                 "run_id": "run-001",
@@ -3345,7 +3345,7 @@ class RuntimeScriptTests(unittest.TestCase):
         self.assertTrue(payload["needs_human_confirm"])
         self.assertFalse(payload["auto_dispatch_allowed"])
         task_note = (
-            self.knowledge_root / "runtime" / "topics" / "demo-topic" / "execution_task.md"
+            self.knowledge_root / "topics" / "demo-topic" / "runtime" / "execution_task.md"
         ).read_text(encoding="utf-8")
         self.assertIn("Human confirmation is required before dispatch", task_note)
 
@@ -3382,9 +3382,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.l1_vault_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "vault" / "vault_manifest.json").exists())
-        self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "home.md").exists())
-        self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "vault" / "output" / "flowback.jsonl").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L1" / "vault" / "vault_manifest.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "home.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L1" / "vault" / "output" / "flowback.jsonl").exists())
 
     def test_statement_compilation_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "statement-compilation-acceptance"
@@ -3401,9 +3401,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.statement_compilation_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "statement_compilation.active.json").exists())
-        self.assertTrue((work_root / "kernel" / "validation" / "topics" / "demo-topic" / "runs" / "run-001" / "statement-compilation" / "candidate-demo-candidate" / "statement_compilation.json").exists())
-        self.assertTrue((work_root / "kernel" / "validation" / "topics" / "demo-topic" / "runs" / "run-001" / "statement-compilation" / "candidate-demo-candidate" / "proof_repair_plan.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "statement_compilation.active.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L4" / "runs" / "run-001" / "statement-compilation" / "candidate-demo-candidate" / "statement_compilation.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L4" / "runs" / "run-001" / "statement-compilation" / "candidate-demo-candidate" / "proof_repair_plan.json").exists())
 
     def test_l0_source_discovery_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l0-source-discovery-acceptance"
@@ -3420,10 +3420,10 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.l0_source_discovery_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "source-layer" / "topics" / "demo-topic" / "discoveries").exists())
-        self.assertTrue((work_root / "kernel" / "source-layer" / "topics" / "demo-topic" / "source_index.jsonl").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L0" / "discoveries").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L0" / "source_index.jsonl").exists())
         self.assertTrue((work_root / "kernel" / "source-layer" / "global_index.jsonl").exists())
-        self.assertTrue((work_root / "kernel" / "source-layer" / "topics" / "demo-topic" / "sources").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L0" / "sources").exists())
 
     def test_l0_source_enrichment_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l0-source-enrichment-acceptance"
@@ -3440,9 +3440,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.l0_source_enrichment_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "source-layer" / "topics" / "demo-topic" / "source_index.jsonl").exists())
-        self.assertTrue((work_root / "kernel" / "source-layer" / "topics" / "demo-topic" / "sources").exists())
-        self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "sources").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L0" / "source_index.jsonl").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L0" / "sources").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L1" / "sources").exists())
 
     def test_l0_source_concept_graph_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l0-source-concept-graph-acceptance"
@@ -3459,8 +3459,8 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.l0_source_concept_graph_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "source-layer" / "topics" / "demo-topic" / "source_index.jsonl").exists())
-        self.assertTrue((work_root / "kernel" / "source-layer" / "topics" / "demo-topic" / "sources").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L0" / "source_index.jsonl").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L0" / "sources").exists())
 
     def test_l1_concept_graph_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l1-concept-graph-acceptance"
@@ -3477,8 +3477,8 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.l1_concept_graph_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "research_question.contract.md").exists())
-        self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "source-intake.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "research_question.contract.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "source-intake.md").exists())
 
     def test_l1_assumption_depth_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l1-assumption-depth-acceptance"
@@ -3495,9 +3495,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.l1_assumption_depth_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "research_question.contract.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "topic_dashboard.md").exists())
-        self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "source-intake.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "research_question.contract.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "topic_dashboard.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "source-intake.md").exists())
 
     def test_l1_contradiction_surface_acceptance_script_runs_on_isolated_work_root(self) -> None:
         module = _load_module(
@@ -3518,9 +3518,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = module.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "research_question.contract.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "topic_dashboard.md").exists())
-        self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "source-intake.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "research_question.contract.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "topic_dashboard.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "source-intake.md").exists())
 
     def test_analytical_cross_check_surface_acceptance_script_runs_on_isolated_work_root(self) -> None:
         module = _load_module(
@@ -3541,8 +3541,8 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = module.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "validation_review_bundle.active.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "validation_review_bundle.active.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "runtime_protocol.generated.md").exists())
 
     def test_analytical_judgment_surface_acceptance_script_runs_on_isolated_work_root(self) -> None:
         module = _load_module(
@@ -3563,8 +3563,8 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = module.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "validation_review_bundle.active.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "validation_review_bundle.active.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "runtime_protocol.generated.md").exists())
 
     def test_formal_positive_l2_acceptance_parser_supports_fresh_topic_inputs(self) -> None:
         module = _load_module(
@@ -3635,8 +3635,8 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = module.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "knowledge-hub" / "runtime" / "topics").exists())
-        self.assertTrue((work_root / "knowledge-hub" / "source-layer" / "topics").exists())
+        self.assertTrue((work_root / "knowledge-hub" / "topics").exists())
+        self.assertTrue((work_root / "knowledge-hub" / "topics").exists())
 
     def test_hs_positive_l2_acceptance_script_runs_on_isolated_work_root(self) -> None:
         module = _load_module(
@@ -3702,14 +3702,14 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = module.main()
 
         self.assertEqual(exit_code, 0)
-        runtime_topics_root = work_root / "knowledge-hub" / "runtime" / "topics"
-        source_topics_root = work_root / "knowledge-hub" / "source-layer" / "topics"
-        feedback_root = work_root / "knowledge-hub" / "feedback" / "topics"
+        runtime_topics_root = work_root / "knowledge-hub" / "topics"
+        source_topics_root = work_root / "knowledge-hub" / "topics"
+        feedback_root = work_root / "knowledge-hub" / "topics"
         self.assertTrue(runtime_topics_root.exists())
         self.assertTrue(source_topics_root.exists())
-        self.assertTrue(any(runtime_topics_root.glob("*/librpa_qsgw_target_contract.json")))
-        self.assertTrue(any(source_topics_root.glob("*/source_index.jsonl")))
-        self.assertTrue(any(feedback_root.glob("*/runs/*/candidate_ledger.jsonl")))
+        self.assertTrue(any(runtime_topics_root.glob("*/runtime/librpa_qsgw_target_contract.json")))
+        self.assertTrue(any(source_topics_root.glob("*/L0/source_index.jsonl")))
+        self.assertTrue(any(feedback_root.glob("*/L3/runs/*/candidate_ledger.jsonl")))
 
     def test_librpa_qsgw_positive_l2_acceptance_script_runs_on_isolated_work_root(self) -> None:
         module = _load_module(
@@ -3881,9 +3881,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.l1_progressive_reading_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "research_question.contract.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "source-intake.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "research_question.contract.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "source-intake.md").exists())
 
     def test_l1_graph_analysis_staging_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l1-graph-analysis-staging-acceptance"
@@ -3901,8 +3901,8 @@ class RuntimeScriptTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertTrue((work_root / "kernel" / "canonical" / "staging" / "workspace_staging_manifest.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "source-intake.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "source-intake.md").exists())
 
     def test_l1_graph_diff_runtime_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l1-graph-diff-runtime-acceptance"
@@ -3919,9 +3919,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.l1_graph_diff_runtime_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "graph_analysis.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "graph_analysis.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "graph_analysis_history.jsonl").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "graph_analysis.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "graph_analysis.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "graph_analysis_history.jsonl").exists())
 
     def test_l1_graph_diff_staging_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l1-graph-diff-staging-acceptance"
@@ -3939,8 +3939,8 @@ class RuntimeScriptTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertTrue((work_root / "kernel" / "canonical" / "staging" / "workspace_staging_manifest.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "graph_analysis.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "graph_analysis_history.jsonl").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "graph_analysis.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "graph_analysis_history.jsonl").exists())
 
     def test_l1_graph_community_bridge_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l1-graph-community-bridge-acceptance"
@@ -3958,8 +3958,8 @@ class RuntimeScriptTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertTrue((work_root / "kernel" / "canonical" / "staging" / "workspace_staging_manifest.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "graph_analysis.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "graph_analysis.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "graph_analysis.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "graph_analysis.md").exists())
 
     def test_l1_graph_hyperedge_pattern_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l1-graph-hyperedge-pattern-acceptance"
@@ -3977,8 +3977,8 @@ class RuntimeScriptTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertTrue((work_root / "kernel" / "canonical" / "staging" / "workspace_staging_manifest.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "graph_analysis.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "graph_analysis.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "graph_analysis.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "graph_analysis.md").exists())
 
     def test_multi_paper_l2_relevance_acceptance_script_runs_on_isolated_work_root(self) -> None:
         module = _load_module(
@@ -4017,8 +4017,8 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.l1_graph_obsidian_export_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph" / "manifest.json").exists())
-        self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph" / "index.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph" / "manifest.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph" / "index.md").exists())
 
     def test_l1_graph_obsidian_multicommunity_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l1-graph-obsidian-multicommunity-acceptance"
@@ -4035,8 +4035,8 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.l1_graph_obsidian_multicommunity_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph" / "category-theory-cluster" / "index.md").exists())
-        self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph" / "topological-order-cluster" / "index.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph" / "category-theory-cluster" / "index.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph" / "topological-order-cluster" / "index.md").exists())
 
     def test_l1_graph_obsidian_brain_bridge_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "l1-graph-obsidian-brain-bridge-acceptance"
@@ -4054,7 +4054,7 @@ class RuntimeScriptTests(unittest.TestCase):
 
         self.assertEqual(exit_code, 0)
         self.assertTrue((work_root / "brain" / "90 AITP Imports" / "concept-graphs" / "demo-topic" / "index.md").exists())
-        self.assertTrue((work_root / "kernel" / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph" / "theoretical_physics_brain_sync.receipt.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph" / "theoretical_physics_brain_sync.receipt.json").exists())
 
     def test_mode_enforcement_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "mode-enforcement-acceptance"
@@ -4071,10 +4071,10 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.mode_enforcement_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-discussion" / "runtime_protocol.generated.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-explore" / "runtime_protocol.generated.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-verify" / "runtime_protocol.generated.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-promote" / "runtime_protocol.generated.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-discussion" / "runtime" / "runtime_protocol.generated.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-explore" / "runtime" / "runtime_protocol.generated.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-verify" / "runtime" / "runtime_protocol.generated.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-promote" / "runtime" / "runtime_protocol.generated.json").exists())
         self.assertTrue((work_root / "kernel" / "canonical" / "staging" / "workspace_staging_manifest.json").exists())
 
     def test_transition_history_acceptance_script_runs_on_isolated_work_root(self) -> None:
@@ -4092,9 +4092,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.transition_history_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "transition_history.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "transition_history.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "transition_history.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "transition_history.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "topic_replay_bundle.json").exists())
 
     def test_human_modification_record_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "human-modification-record-acceptance"
@@ -4111,9 +4111,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.human_modification_record_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "promotion_gate.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "promotion_gate.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "promotion_gate.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "promotion_gate.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "topic_replay_bundle.json").exists())
 
     def test_competing_hypotheses_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "competing-hypotheses-acceptance"
@@ -4130,9 +4130,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.competing_hypotheses_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "research_question.contract.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "research_question.contract.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "topic_replay_bundle.json").exists())
 
     def test_hypothesis_branch_routing_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-branch-routing-acceptance"
@@ -4149,9 +4149,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_branch_routing_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "research_question.contract.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "research_question.contract.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "topic_replay_bundle.json").exists())
 
     def test_hypothesis_route_activation_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-activation-acceptance"
@@ -4168,9 +4168,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_activation_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "followup_subtopics.jsonl").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "followup_subtopics.jsonl").exists())
 
     def test_hypothesis_route_reentry_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-reentry-acceptance"
@@ -4187,9 +4187,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_reentry_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "followup_subtopics.jsonl").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "followup_subtopics.jsonl").exists())
 
     def test_hypothesis_route_handoff_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-handoff-acceptance"
@@ -4206,9 +4206,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_handoff_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "followup_subtopics.jsonl").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "followup_subtopics.jsonl").exists())
 
     def test_hypothesis_route_choice_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-choice-acceptance"
@@ -4225,9 +4225,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_choice_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic" / "followup_subtopics.jsonl").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic" / "runtime" / "followup_subtopics.jsonl").exists())
 
     def test_hypothesis_route_transition_gate_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-transition-gate-acceptance"
@@ -4244,9 +4244,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_transition_gate_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-blocked" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-available" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-checkpoint" / "operator_checkpoint.active.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-blocked" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-available" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-checkpoint" / "runtime" / "operator_checkpoint.active.md").exists())
 
     def test_hypothesis_route_transition_intent_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-transition-intent-acceptance"
@@ -4263,9 +4263,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_transition_intent_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-proposed" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-ready" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-checkpoint-held" / "operator_checkpoint.active.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-proposed" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-ready" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-checkpoint-held" / "runtime" / "operator_checkpoint.active.md").exists())
 
     def test_hypothesis_route_transition_receipt_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-transition-receipt-acceptance"
@@ -4282,9 +4282,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_transition_receipt_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-pending-receipt" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-recorded-receipt" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-no-receipt" / "transition_history.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-pending-receipt" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-recorded-receipt" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-no-receipt" / "runtime" / "transition_history.md").exists())
 
     def test_hypothesis_route_transition_resolution_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-transition-resolution-acceptance"
@@ -4301,9 +4301,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_transition_resolution_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-pending-resolution" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-resolved-resolution" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-no-resolution" / "transition_history.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-pending-resolution" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-resolved-resolution" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-no-resolution" / "runtime" / "transition_history.md").exists())
 
     def test_hypothesis_route_transition_discrepancy_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-transition-discrepancy-acceptance"
@@ -4320,9 +4320,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_transition_discrepancy_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-no-discrepancy-pending" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-discrepancy-present" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-no-discrepancy-none" / "transition_history.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-no-discrepancy-pending" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-discrepancy-present" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-no-discrepancy-none" / "runtime" / "transition_history.md").exists())
 
     def test_hypothesis_route_transition_repair_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-transition-repair-acceptance"
@@ -4339,9 +4339,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_transition_repair_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-no-repair-pending" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-repair-needed" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-no-repair-none" / "transition_history.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-no-repair-pending" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-repair-needed" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-no-repair-none" / "runtime" / "transition_history.md").exists())
 
     def test_hypothesis_route_transition_escalation_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-transition-escalation-acceptance"
@@ -4358,9 +4358,9 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_transition_escalation_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-no-escalation" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-escalation-recommended" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-escalation-active" / "operator_checkpoint.active.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-no-escalation" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-escalation-recommended" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-escalation-active" / "runtime" / "operator_checkpoint.active.md").exists())
 
     def test_hypothesis_route_transition_clearance_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-transition-clearance-acceptance"
@@ -4377,10 +4377,10 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_transition_clearance_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-no-clearance" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-clearance-awaiting" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-clearance-blocked" / "operator_checkpoint.active.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-clearance-cleared" / "operator_checkpoint.active.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-no-clearance" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-clearance-awaiting" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-clearance-blocked" / "runtime" / "operator_checkpoint.active.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-clearance-cleared" / "runtime" / "operator_checkpoint.active.md").exists())
 
     def test_hypothesis_route_transition_followthrough_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-transition-followthrough-acceptance"
@@ -4397,10 +4397,10 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_transition_followthrough_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-no-followthrough" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-followthrough-awaiting" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-followthrough-blocked" / "operator_checkpoint.active.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-followthrough-ready" / "operator_checkpoint.active.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-no-followthrough" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-followthrough-awaiting" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-followthrough-blocked" / "runtime" / "operator_checkpoint.active.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-followthrough-ready" / "runtime" / "operator_checkpoint.active.md").exists())
 
     def test_hypothesis_route_transition_resumption_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-transition-resumption-acceptance"
@@ -4417,10 +4417,10 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_transition_resumption_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-no-resumption" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-resumption-waiting" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-resumption-pending" / "operator_checkpoint.active.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-resumption-resumed" / "transition_history.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-no-resumption" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-resumption-waiting" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-resumption-pending" / "runtime" / "operator_checkpoint.active.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-resumption-resumed" / "runtime" / "transition_history.md").exists())
 
     def test_hypothesis_route_transition_commitment_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-transition-commitment-acceptance"
@@ -4437,10 +4437,10 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_transition_commitment_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-no-commitment" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-commitment-waiting" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-commitment-pending" / "transition_history.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-commitment-committed" / "transition_history.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-no-commitment" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-commitment-waiting" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-commitment-pending" / "runtime" / "transition_history.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-commitment-committed" / "runtime" / "transition_history.md").exists())
 
     def test_hypothesis_route_transition_authority_acceptance_script_runs_on_isolated_work_root(self) -> None:
         work_root = Path(self._tmpdir.name) / "hypothesis-route-transition-authority-acceptance"
@@ -4457,10 +4457,10 @@ class RuntimeScriptTests(unittest.TestCase):
             exit_code = self.hypothesis_route_transition_authority_acceptance.main()
 
         self.assertEqual(exit_code, 0)
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-no-authority" / "runtime_protocol.generated.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-authority-waiting" / "topic_replay_bundle.json").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-authority-pending" / "transition_history.md").exists())
-        self.assertTrue((work_root / "kernel" / "runtime" / "topics" / "demo-topic-authority-authoritative" / "transition_history.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-no-authority" / "runtime" / "runtime_protocol.generated.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-authority-waiting" / "runtime" / "topic_replay_bundle.json").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-authority-pending" / "runtime" / "transition_history.md").exists())
+        self.assertTrue((work_root / "kernel" / "topics" / "demo-topic-authority-authoritative" / "runtime" / "transition_history.md").exists())
 
 
 if __name__ == "__main__":

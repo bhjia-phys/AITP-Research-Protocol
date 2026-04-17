@@ -39,7 +39,7 @@ class RuntimeCompatSurfaceCleanupTests(unittest.TestCase):
         self._tmpdir.cleanup()
 
     def _topic_root(self, topic_slug: str) -> Path:
-        root = self.kernel_root / "runtime" / "topics" / topic_slug
+        root = self.kernel_root / "topics" / topic_slug / "runtime"
         root.mkdir(parents=True, exist_ok=True)
         return root
 

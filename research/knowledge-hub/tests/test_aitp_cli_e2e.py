@@ -89,7 +89,7 @@ class AITPCLIE2ETests(unittest.TestCase):
         latest_run_id: str,
         resume_stage: str = "L3",
     ) -> Path:
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self.kernel_root / "topics" / topic_slug / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -391,7 +391,7 @@ class AITPCLIE2ETests(unittest.TestCase):
         )
 
     def test_record_taste_and_taste_profile_cli_paths(self) -> None:
-        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root = self.kernel_root / "topics" / "demo-topic" / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -439,7 +439,7 @@ class AITPCLIE2ETests(unittest.TestCase):
         self.assertTrue(Path(profile_payload["research_taste_note_path"]).exists())
 
     def test_record_negative_result_and_scratch_log_cli_paths(self) -> None:
-        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root = self.kernel_root / "topics" / "demo-topic" / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -485,7 +485,7 @@ class AITPCLIE2ETests(unittest.TestCase):
         self.assertTrue(Path(scratch_payload["scratchpad_note_path"]).exists())
 
     def test_status_json_exposes_source_intelligence(self) -> None:
-        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root = self.kernel_root / "topics" / "demo-topic" / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -529,7 +529,7 @@ class AITPCLIE2ETests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        demo_source_root = self.kernel_root / "source-layer" / "topics" / "demo-topic"
+        demo_source_root = self.kernel_root / "topics" / "demo-topic" / "L0"
         demo_source_root.mkdir(parents=True, exist_ok=True)
         (demo_source_root / "source_index.jsonl").write_text(
             json.dumps(
@@ -549,7 +549,7 @@ class AITPCLIE2ETests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        neighbor_source_root = self.kernel_root / "source-layer" / "topics" / "neighbor-topic"
+        neighbor_source_root = self.kernel_root / "topics" / "neighbor-topic" / "L0"
         neighbor_source_root.mkdir(parents=True, exist_ok=True)
         (neighbor_source_root / "source_index.jsonl").write_text(
             json.dumps(
@@ -593,7 +593,7 @@ class AITPCLIE2ETests(unittest.TestCase):
         )
 
     def test_status_json_exposes_research_judgment_signals(self) -> None:
-        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root = self.kernel_root / "topics" / "demo-topic" / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -678,7 +678,7 @@ class AITPCLIE2ETests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        feedback_root = self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001"
+        feedback_root = self.kernel_root / "topics" / "demo-topic" / "L3" / "runs" / "run-001"
         feedback_root.mkdir(parents=True, exist_ok=True)
         (feedback_root / "strategy_memory.jsonl").write_text(
             json.dumps(
@@ -718,7 +718,7 @@ class AITPCLIE2ETests(unittest.TestCase):
         self.assertEqual(payload["topic_synopsis"]["runtime_focus"]["momentum_status"], "queued")
 
     def test_layer_graph_command_uses_real_service_path(self) -> None:
-        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root = self.kernel_root / "topics" / "demo-topic" / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -782,7 +782,7 @@ class AITPCLIE2ETests(unittest.TestCase):
         self.assertTrue(Path(payload["layer_graph_note_path"]).exists())
 
     def test_analytical_review_cli_writes_artifact_and_becomes_primary_bundle_surface(self) -> None:
-        runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        runtime_root = self.kernel_root / "topics" / "demo-topic" / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -809,7 +809,7 @@ class AITPCLIE2ETests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        feedback_root = self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001"
+        feedback_root = self.kernel_root / "topics" / "demo-topic" / "L3" / "runs" / "run-001"
         feedback_root.mkdir(parents=True, exist_ok=True)
         (feedback_root / "candidate_ledger.jsonl").write_text(
             json.dumps(
@@ -832,7 +832,7 @@ class AITPCLIE2ETests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
-        source_root = self.kernel_root / "source-layer" / "topics" / "demo-topic"
+        source_root = self.kernel_root / "topics" / "demo-topic" / "L0"
         source_root.mkdir(parents=True, exist_ok=True)
         (source_root / "source_index.jsonl").write_text(
             json.dumps(
@@ -845,6 +845,26 @@ class AITPCLIE2ETests(unittest.TestCase):
                 ensure_ascii=True,
             )
             + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "session_start.contract.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": "demo-topic",
+                    "updated_at": "2026-04-01T00:00:00+08:00",
+                    "artifacts": {},
+                    "must_read_now": [],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "session_start.generated.md").write_text("# Session start\n", encoding="utf-8")
+        (runtime_root / "runtime_protocol.generated.md").write_text("# Runtime protocol\n", encoding="utf-8")
+        (runtime_root / "runtime_protocol.generated.json").write_text(
+            json.dumps({"topic_slug": "demo-topic"}, ensure_ascii=True, indent=2) + "\n",
             encoding="utf-8",
         )
 
@@ -1073,8 +1093,8 @@ class AITPCLIE2ETests(unittest.TestCase):
         self.assertIn("workspace_staging_manifest", second_payload["supporting_artifacts"])
 
     def test_compile_source_catalog_cli_json_path(self) -> None:
-        topic_a_root = self.kernel_root / "source-layer" / "topics" / "topic-a"
-        topic_b_root = self.kernel_root / "source-layer" / "topics" / "topic-b"
+        topic_a_root = self.kernel_root / "topics" / "topic-a" / "L0"
+        topic_b_root = self.kernel_root / "topics" / "topic-b" / "L0"
         topic_a_root.mkdir(parents=True, exist_ok=True)
         topic_b_root.mkdir(parents=True, exist_ok=True)
         (topic_a_root / "source_index.jsonl").write_text(
@@ -1135,9 +1155,9 @@ class AITPCLIE2ETests(unittest.TestCase):
         self.assertEqual(payload["payload"]["sources"][0]["canonical_source_id"], "source_identity:doi:10-1000-shared-paper")
 
     def test_trace_source_citations_and_compile_source_family_cli_json_path(self) -> None:
-        topic_a_root = self.kernel_root / "source-layer" / "topics" / "topic-a"
-        topic_b_root = self.kernel_root / "source-layer" / "topics" / "topic-b"
-        topic_c_root = self.kernel_root / "source-layer" / "topics" / "topic-c"
+        topic_a_root = self.kernel_root / "topics" / "topic-a" / "L0"
+        topic_b_root = self.kernel_root / "topics" / "topic-b" / "L0"
+        topic_c_root = self.kernel_root / "topics" / "topic-c" / "L0"
         for root in (topic_a_root, topic_b_root, topic_c_root):
             root.mkdir(parents=True, exist_ok=True)
         (topic_a_root / "source_index.jsonl").write_text(
@@ -1211,8 +1231,8 @@ class AITPCLIE2ETests(unittest.TestCase):
         self.assertEqual(family_payload["payload"]["summary"]["multi_topic_source_count"], 1)
 
     def test_export_and_import_source_bibtex_cli_json_path(self) -> None:
-        topic_a_root = self.kernel_root / "source-layer" / "topics" / "topic-a"
-        topic_b_root = self.kernel_root / "source-layer" / "topics" / "topic-b"
+        topic_a_root = self.kernel_root / "topics" / "topic-a" / "L0"
+        topic_b_root = self.kernel_root / "topics" / "topic-b" / "L0"
         for root in (topic_a_root, topic_b_root):
             root.mkdir(parents=True, exist_ok=True)
         (topic_a_root / "source_index.jsonl").write_text(
@@ -1309,15 +1329,15 @@ class AITPCLIE2ETests(unittest.TestCase):
         self.assertEqual(import_payload["payload"]["summary"]["imported_entry_count"], 1)
 
     def test_sync_l1_graph_export_to_theoretical_physics_brain_cli_json_path(self) -> None:
-        export_root = self.kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph"
+        export_root = self.kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph"
         export_root.mkdir(parents=True, exist_ok=True)
         (export_root / "manifest.json").write_text(
             json.dumps(
                 {
                     "kind": "obsidian_concept_graph_export",
                     "topic_slug": "demo-topic",
-                    "root_path": "intake/topics/demo-topic/vault/wiki/concept-graph",
-                    "index_path": "intake/topics/demo-topic/vault/wiki/concept-graph/index.md",
+                    "root_path": "topics/demo-topic/L1/vault/wiki/concept-graph",
+                    "index_path": "topics/demo-topic/L1/vault/wiki/concept-graph/index.md",
                     "summary": {
                         "node_note_count": 1,
                         "community_folder_count": 1,
@@ -1413,7 +1433,7 @@ class AITPCLIE2ETests(unittest.TestCase):
         self.assertEqual(current.returncode, 0, msg=current.stderr)
         current_payload = json.loads(current.stdout)
         self.assertEqual(current_payload["current_topic"]["topic_slug"], "beta-topic")
-        self.assertEqual(current_payload["current_topic"]["runtime_root"], "runtime/topics/beta-topic")
+        self.assertEqual(current_payload["current_topic"]["runtime_root"], "topics/beta-topic/runtime")
         self.assertTrue((self.kernel_root / "runtime" / "current_topic.json").exists())
         self.assertTrue((self.kernel_root / "runtime" / "current_topic.md").exists())
 

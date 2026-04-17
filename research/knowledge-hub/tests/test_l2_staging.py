@@ -43,7 +43,7 @@ class L2StagingTests(unittest.TestCase):
             entry_kind="workflow_draft",
             title="Demo draft",
             summary="A provisional reusable workflow draft.",
-            source_artifact_paths=["runtime/topics/demo-topic/topic_dashboard.md"],
+            source_artifact_paths=["topics/demo-topic/runtime/topic_dashboard.md"],
             staged_by="test",
         )
 

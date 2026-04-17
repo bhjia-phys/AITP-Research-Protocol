@@ -31,8 +31,8 @@ class LiteratureModeEnvelopeTests(unittest.TestCase):
             selected_action_type="inspect_source_intake",
             selected_action_summary="Read and extract reusable knowledge from this paper.",
             must_read_now=[
-                {"path": "runtime/topics/demo-topic/topic_dashboard.md", "reason": "dashboard"},
-                {"path": "runtime/topics/demo-topic/research_question.contract.md", "reason": "contract"},
+                {"path": "topics/demo-topic/runtime/topic_dashboard.md", "reason": "dashboard"},
+                {"path": "topics/demo-topic/runtime/research_question.contract.md", "reason": "contract"},
             ],
             may_defer_until_trigger=[],
             escalation_triggers=[],
@@ -65,11 +65,11 @@ class LiteratureModeEnvelopeTests(unittest.TestCase):
         refocused = refocus_context_for_active_submode(
             runtime_mode_payload=runtime_mode_payload,
             must_read_now=[
-                {"path": "runtime/topics/demo-topic/topic_dashboard.md", "reason": "dashboard"},
-                {"path": "runtime/topics/demo-topic/research_question.contract.md", "reason": "contract"},
-                {"path": "runtime/topics/demo-topic/validation_contract.active.md", "reason": "validation"},
-                {"path": "runtime/topics/demo-topic/validation_review_bundle.active.md", "reason": "review"},
-                {"path": "runtime/topics/demo-topic/promotion_gate.md", "reason": "gate"},
+                {"path": "topics/demo-topic/runtime/topic_dashboard.md", "reason": "dashboard"},
+                {"path": "topics/demo-topic/runtime/research_question.contract.md", "reason": "contract"},
+                {"path": "topics/demo-topic/runtime/validation_contract.active.md", "reason": "validation"},
+                {"path": "topics/demo-topic/runtime/validation_review_bundle.active.md", "reason": "review"},
+                {"path": "topics/demo-topic/runtime/promotion_gate.md", "reason": "gate"},
             ],
             may_defer_until_trigger=[],
             l1_vault={
@@ -83,10 +83,10 @@ class LiteratureModeEnvelopeTests(unittest.TestCase):
             },
             canonical_index_path="canonical/index.jsonl",
             workspace_staging_manifest_path="canonical/staging/workspace_staging_manifest.json",
-            validation_contract_path="runtime/topics/demo-topic/validation_contract.active.md",
-            validation_review_bundle_path="runtime/topics/demo-topic/validation_review_bundle.active.md",
-            promotion_readiness_path="runtime/topics/demo-topic/promotion_readiness.json",
-            promotion_gate_path="runtime/topics/demo-topic/promotion_gate.md",
+            validation_contract_path="topics/demo-topic/runtime/validation_contract.active.md",
+            validation_review_bundle_path="topics/demo-topic/runtime/validation_review_bundle.active.md",
+            promotion_readiness_path="topics/demo-topic/runtime/promotion_readiness.json",
+            promotion_gate_path="topics/demo-topic/runtime/promotion_gate.md",
         )
 
         focused_paths = [row["path"] for row in refocused["must_read_now"]]
@@ -96,12 +96,12 @@ class LiteratureModeEnvelopeTests(unittest.TestCase):
         self.assertIn("intake/topics/demo-topic/vault/wiki/source-intake.md", focused_paths)
         self.assertIn("canonical/staging/workspace_staging_manifest.json", focused_paths)
         self.assertIn("canonical/index.jsonl", focused_paths)
-        self.assertNotIn("runtime/topics/demo-topic/validation_contract.active.md", focused_paths)
-        self.assertNotIn("runtime/topics/demo-topic/validation_review_bundle.active.md", focused_paths)
-        self.assertNotIn("runtime/topics/demo-topic/promotion_gate.md", focused_paths)
-        self.assertIn("runtime/topics/demo-topic/validation_contract.active.md", deferred_paths)
-        self.assertIn("runtime/topics/demo-topic/validation_review_bundle.active.md", deferred_paths)
-        self.assertIn("runtime/topics/demo-topic/promotion_gate.md", deferred_paths)
+        self.assertNotIn("topics/demo-topic/runtime/validation_contract.active.md", focused_paths)
+        self.assertNotIn("topics/demo-topic/runtime/validation_review_bundle.active.md", focused_paths)
+        self.assertNotIn("topics/demo-topic/runtime/promotion_gate.md", focused_paths)
+        self.assertIn("topics/demo-topic/runtime/validation_contract.active.md", deferred_paths)
+        self.assertIn("topics/demo-topic/runtime/validation_review_bundle.active.md", deferred_paths)
+        self.assertIn("topics/demo-topic/runtime/promotion_gate.md", deferred_paths)
 
     def test_runtime_bundle_schema_allows_literature_submode(self) -> None:
         payload = json.loads(

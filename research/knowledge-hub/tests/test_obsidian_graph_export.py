@@ -25,7 +25,7 @@ class ObsidianGraphExportTests(unittest.TestCase):
         self._tmpdir = tempfile.TemporaryDirectory()
         self.kernel_root = Path(self._tmpdir.name)
         self.source_kernel = Path(__file__).resolve().parents[1]
-        (self.kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki").mkdir(parents=True, exist_ok=True)
+        (self.kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki").mkdir(parents=True, exist_ok=True)
         shutil.copytree(self.source_kernel / "schemas", self.kernel_root / "schemas", dirs_exist_ok=True)
 
     def tearDown(self) -> None:
@@ -129,9 +129,9 @@ class ObsidianGraphExportTests(unittest.TestCase):
 
         manifest_path = Path(result["manifest_path"])
         index_path = Path(result["index_path"])
-        community_index = self.kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph" / "topological-order-cluster" / "index.md"
-        topological_note = self.kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph" / "topological-order-cluster" / "topological-order.md"
-        anyon_note = self.kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph" / "topological-order-cluster" / "anyon-condensation.md"
+        community_index = self.kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph" / "topological-order-cluster" / "index.md"
+        topological_note = self.kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph" / "topological-order-cluster" / "topological-order.md"
+        anyon_note = self.kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph" / "topological-order-cluster" / "anyon-condensation.md"
 
         self.assertTrue(manifest_path.exists())
         self.assertTrue(index_path.exists())
@@ -191,8 +191,8 @@ class ObsidianGraphExportTests(unittest.TestCase):
         )
 
         manifest_payload = json.loads(Path(result["manifest_path"]).read_text(encoding="utf-8"))
-        unclustered_index = self.kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph" / "unclustered" / "index.md"
-        unclustered_note = self.kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph" / "unclustered" / "edge-current.md"
+        unclustered_index = self.kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph" / "unclustered" / "index.md"
+        unclustered_note = self.kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph" / "unclustered" / "edge-current.md"
 
         self.assertTrue(unclustered_index.exists())
         self.assertTrue(unclustered_note.exists())
@@ -252,9 +252,9 @@ class ObsidianGraphExportTests(unittest.TestCase):
         )
 
         manifest_payload = json.loads(Path(result["manifest_path"]).read_text(encoding="utf-8"))
-        primary_note = self.kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph" / "category-theory-cluster" / "modular-tensor-category.md"
-        category_index = self.kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph" / "category-theory-cluster" / "index.md"
-        topological_index = self.kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph" / "topological-order-cluster" / "index.md"
+        primary_note = self.kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph" / "category-theory-cluster" / "modular-tensor-category.md"
+        category_index = self.kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph" / "category-theory-cluster" / "index.md"
+        topological_index = self.kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph" / "topological-order-cluster" / "index.md"
 
         self.assertTrue(primary_note.exists())
         self.assertTrue(category_index.exists())

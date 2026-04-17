@@ -61,7 +61,7 @@ class TheoryMetricsTests(unittest.TestCase):
         self._tmpdir.cleanup()
 
     def _write_runtime_state(self, topic_slug: str = "demo-topic", run_id: str = "2026-03-13-demo") -> Path:
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self.kernel_root / "topics" / topic_slug / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -86,7 +86,7 @@ class TheoryMetricsTests(unittest.TestCase):
         candidate_type: str = "theorem_card",
         candidate_id: str = "candidate:demo-candidate",
     ) -> None:
-        feedback_root = self.kernel_root / "feedback" / "topics" / topic_slug / "runs" / run_id
+        feedback_root = self.kernel_root / "topics" / topic_slug / "L3" / "runs" / run_id
         feedback_root.mkdir(parents=True, exist_ok=True)
         ledger_path = feedback_root / "candidate_ledger.jsonl"
         row = {
@@ -101,7 +101,7 @@ class TheoryMetricsTests(unittest.TestCase):
                     "id": "paper:demo-source",
                     "layer": "L0",
                     "object_type": "source",
-                    "path": f"source-layer/topics/{topic_slug}/source_index.jsonl",
+                    "path": f"topics/{topic_slug}/L0/source_index.jsonl",
                     "title": "Demo Source",
                     "summary": "Demo source summary.",
                 }
@@ -114,7 +114,7 @@ class TheoryMetricsTests(unittest.TestCase):
         }
         ledger_path.write_text(json.dumps(row, ensure_ascii=True) + "\n", encoding="utf-8")
 
-        source_root = self.kernel_root / "source-layer" / "topics" / topic_slug
+        source_root = self.kernel_root / "topics" / topic_slug / "L0"
         source_root.mkdir(parents=True, exist_ok=True)
         (source_root / "source_index.jsonl").write_text(
             json.dumps(
@@ -132,7 +132,7 @@ class TheoryMetricsTests(unittest.TestCase):
         )
 
     def _write_conformance_shell_artifacts(self, *, topic_slug: str = "demo-topic", run_id: str = "2026-03-13-demo") -> None:
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self.kernel_root / "topics" / topic_slug / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -143,8 +143,8 @@ class TheoryMetricsTests(unittest.TestCase):
                     "research_mode": "formal_theory",
                     "active_executor_kind": "codex",
                     "pointers": {
-                        "research_question_contract_path": f"runtime/topics/{topic_slug}/research_question.contract.json",
-                        "validation_contract_path": f"runtime/topics/{topic_slug}/validation_contract.active.json",
+                        "research_question_contract_path": f"topics/{topic_slug}/runtime/research_question.contract.json",
+                        "validation_contract_path": f"topics/{topic_slug}/runtime/validation_contract.active.json",
                     },
                 },
                 ensure_ascii=True,
@@ -210,16 +210,36 @@ class TheoryMetricsTests(unittest.TestCase):
             + "\n",
             encoding="utf-8",
         )
+        (runtime_root / "session_start.contract.json").write_text(
+            json.dumps(
+                {
+                    "topic_slug": topic_slug,
+                    "updated_at": "2026-04-01T00:00:00+08:00",
+                    "artifacts": {},
+                    "must_read_now": [],
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        (runtime_root / "session_start.generated.md").write_text("# Session start\n", encoding="utf-8")
+        (runtime_root / "runtime_protocol.generated.md").write_text("# Runtime protocol\n", encoding="utf-8")
+        (runtime_root / "runtime_protocol.generated.json").write_text(
+            json.dumps({"topic_slug": topic_slug}, ensure_ascii=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
         (runtime_root / "interaction_state.json").write_text(
             json.dumps(
                 {
                     "human_request": "Continue the active topic carefully.",
-                    "human_edit_surfaces": [f"runtime/topics/{topic_slug}/operator_console.md"],
+                    "human_edit_surfaces": [f"topics/{topic_slug}/runtime/operator_console.md"],
                     "delivery_contract": {"rule": "return_updated_runtime_state"},
-                    "capability_adaptation": {"protocol_path": f"runtime/topics/{topic_slug}/capability_protocol.md"},
-                    "decision_surface": {"next_action_decision_path": f"runtime/topics/{topic_slug}/next_action_decision.json"},
+                    "capability_adaptation": {"protocol_path": f"topics/{topic_slug}/runtime/capability_protocol.md"},
+                    "decision_surface": {"next_action_decision_path": f"topics/{topic_slug}/runtime/next_action_decision.json"},
                     "action_queue_surface": {
-                        "generated_contract_path": f"runtime/topics/{topic_slug}/action_queue_contract.generated.json"
+                        "generated_contract_path": f"topics/{topic_slug}/runtime/action_queue_contract.generated.json"
                     },
                 },
                 ensure_ascii=True,
@@ -279,7 +299,7 @@ class TheoryMetricsTests(unittest.TestCase):
 
         metrics_root = self.kernel_root / "runtime" / "theory_metrics"
         global_rows = _read_jsonl(metrics_root / "theory_operations.jsonl")
-        topic_rows = _read_jsonl(self.kernel_root / "runtime" / "topics" / "demo-topic" / "theory_operations.jsonl")
+        topic_rows = _read_jsonl(self.kernel_root / "topics" / "demo-topic" / "runtime" / "theory_operations.jsonl")
 
         operation_kinds = [row["operation_kind"] for row in global_rows]
         self.assertIn("conformance_audit", operation_kinds)

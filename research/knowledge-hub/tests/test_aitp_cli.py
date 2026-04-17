@@ -484,14 +484,14 @@ class AITPCLITests(unittest.TestCase):
                 "--rationale",
                 "It closes the exact benchmark gap first.",
                 "--input-refs",
-                '["runtime/topics/demo-topic/operator_console.md"]',
+                '["topics/demo-topic/runtime/operator_console.md"]',
                 "--output-refs",
-                '["runtime/topics/demo-topic/chronicles/chronicle__demo.md"]',
+                '["topics/demo-topic/runtime/chronicles/chronicle__demo.md"]',
             ]
         )
         self.assertEqual(trace_args.command, "trace-decision")
-        self.assertEqual(trace_args.input_refs[0], "runtime/topics/demo-topic/operator_console.md")
-        self.assertEqual(trace_args.output_refs[0], "runtime/topics/demo-topic/chronicles/chronicle__demo.md")
+        self.assertEqual(trace_args.input_refs[0], "topics/demo-topic/runtime/operator_console.md")
+        self.assertEqual(trace_args.output_refs[0], "topics/demo-topic/runtime/chronicles/chronicle__demo.md")
 
         chronicle_args = parser.parse_args(
             [
@@ -516,6 +516,8 @@ class AITPCLITests(unittest.TestCase):
     def test_main_dispatches_update_followup_return(self) -> None:
         with patch.object(aitp_cli, "_service_from_args") as mock_factory:
             mock_service = MagicMock()
+            mock_service.topic_popup.return_value = {"needs_popup": False, "markdown": ""}
+            mock_service.topic_required_read_gate.return_value = {"blocked": False, "needs_ack": False}
             mock_service.update_followup_return_packet.return_value = {"status": "success"}
             mock_factory.return_value = mock_service
             with patch.object(sys, "argv", [
@@ -880,7 +882,7 @@ class AITPCLITests(unittest.TestCase):
     def test_main_dispatches_import_bibtex_sources(self) -> None:
         with patch.object(aitp_cli, "_service_from_args") as mock_factory:
             mock_service = MagicMock()
-            mock_service.import_bibtex_sources.return_value = {"source_index_path": "source-layer/topics/demo-topic/source_index.jsonl"}
+            mock_service.import_bibtex_sources.return_value = {"source_index_path": "topics/demo-topic/L0/source_index.jsonl"}
             mock_factory.return_value = mock_service
             with patch.object(
                 sys,
@@ -1536,6 +1538,8 @@ class AITPCLITests(unittest.TestCase):
     def test_main_dispatches_statement_compilation(self) -> None:
         with patch.object(aitp_cli, "_service_from_args") as mock_factory:
             mock_service = MagicMock()
+            mock_service.topic_popup.return_value = {"needs_popup": False, "markdown": ""}
+            mock_service.topic_required_read_gate.return_value = {"blocked": False, "needs_ack": False}
             mock_service.prepare_statement_compilation.return_value = {"status": "needs_repair"}
             mock_factory.return_value = mock_service
             with patch.object(
@@ -1870,7 +1874,7 @@ class AITPCLITests(unittest.TestCase):
     def test_main_renders_compact_human_status_and_next_and_full_dashboard(self) -> None:
         with patch.object(aitp_cli, "_service_from_args") as mock_factory:
             mock_service = MagicMock()
-            runtime_root = Path("D:/demo-kernel/runtime/topics/demo-topic")
+            runtime_root = Path("D:/demo-kernel/topics/demo-topic/runtime")
             status_payload = {
                 "topic_slug": "demo-topic",
                 "title": "Demo Topic",
@@ -1880,8 +1884,8 @@ class AITPCLITests(unittest.TestCase):
                 "next_action_hint": "Run 'aitp next --topic-slug demo-topic' to inspect the bounded action queue.",
                 "runtime_protocol_note_path": str(runtime_root / "runtime_protocol.generated.md"),
                 "must_read_now": [
-                    {"path": "runtime/topics/demo-topic/topic_dashboard.md"},
-                    {"path": "runtime/topics/demo-topic/research_question.contract.md"},
+                    {"path": "topics/demo-topic/runtime/topic_dashboard.md"},
+                    {"path": "topics/demo-topic/runtime/research_question.contract.md"},
                 ],
                 "open_gap_summary": {"status": "clear"},
                 "promotion_readiness": {"status": "not_requested"},
@@ -1890,17 +1894,17 @@ class AITPCLITests(unittest.TestCase):
                 "lean_bridge": {"status": "empty"},
                 "primary_runtime_surfaces": {
                     "primary": {
-                        "runtime_human": "runtime/topics/demo-topic/topic_dashboard.md",
+                        "runtime_human": "topics/demo-topic/runtime/topic_dashboard.md",
                     }
                 },
             }
             next_payload = {
                 "topic_slug": "demo-topic",
                 "selected_action_summary": "Inspect the graph export before continuing.",
-                "open_next": "runtime/topics/demo-topic/topic_dashboard.md",
+                "open_next": "topics/demo-topic/runtime/topic_dashboard.md",
                 "must_read_now": [
-                    {"path": "runtime/topics/demo-topic/topic_dashboard.md"},
-                    {"path": "runtime/topics/demo-topic/research_question.contract.md"},
+                    {"path": "topics/demo-topic/runtime/topic_dashboard.md"},
+                    {"path": "topics/demo-topic/runtime/research_question.contract.md"},
                 ],
                 "open_gap_summary": {"status": "clear"},
             }
@@ -1955,7 +1959,7 @@ class AITPCLITests(unittest.TestCase):
         self.assertIn("Topic completion: not_assessed", verbose_output)
         self.assertIn("AITP Next", next_output)
         self.assertIn("Do: Inspect the graph export before continuing.", next_output)
-        self.assertIn("Read now: runtime/topics/demo-topic/topic_dashboard.md", next_output)
+        self.assertIn("Read now: topics/demo-topic/runtime/topic_dashboard.md", next_output)
         self.assertIn("Machine view: aitp next --topic-slug demo-topic --json", next_output)
         self.assertIn("# Demo Dashboard", full_output)
         self.assertIn("Full dashboard body.", full_output)

@@ -63,7 +63,7 @@ class HypothesisRouteHandoffContractTests(unittest.TestCase):
 
     def _seed_demo_topic(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/topic_state.json",
+            "topics/demo-topic/runtime/topic_state.json",
             {
                 "topic_slug": "demo-topic",
                 "latest_run_id": "run-001",
@@ -74,7 +74,7 @@ class HypothesisRouteHandoffContractTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/interaction_state.json",
+            "topics/demo-topic/runtime/interaction_state.json",
             {
                 "human_request": "Show which ready parked route is the next bounded handoff candidate.",
                 "decision_surface": {
@@ -84,7 +84,7 @@ class HypothesisRouteHandoffContractTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/action_queue.jsonl",
+            "topics/demo-topic/runtime/action_queue.jsonl",
             [
                 {
                     "action_id": "action:demo-topic:route-handoff",
@@ -97,7 +97,7 @@ class HypothesisRouteHandoffContractTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            "runtime/topics/demo-topic/research_question.contract.json",
+            "topics/demo-topic/runtime/research_question.contract.json",
             {
                 "contract_version": 1,
                 "question_id": "research_question:demo-topic",
@@ -122,7 +122,7 @@ class HypothesisRouteHandoffContractTests(unittest.TestCase):
                         "summary": "The weak-coupling route remains the active local branch.",
                         "route_kind": "current_topic",
                         "route_target_summary": "Keep the weak-coupling route on the current topic branch.",
-                        "route_target_ref": "runtime/topics/demo-topic/action_queue.jsonl",
+                        "route_target_ref": "topics/demo-topic/runtime/action_queue.jsonl",
                         "evidence_refs": ["paper:demo-source"],
                         "exclusion_notes": [],
                     },
@@ -133,7 +133,7 @@ class HypothesisRouteHandoffContractTests(unittest.TestCase):
                         "summary": "The symmetry-breaking route is parked until the cited comparison source lands.",
                         "route_kind": "deferred_buffer",
                         "route_target_summary": "Park the symmetry-breaking route in the deferred buffer until bounded reactivation conditions are met.",
-                        "route_target_ref": "runtime/topics/demo-topic/deferred_candidates.json",
+                        "route_target_ref": "topics/demo-topic/runtime/deferred_candidates.json",
                         "evidence_refs": ["paper:demo-source-b"],
                         "exclusion_notes": [],
                     },
@@ -144,7 +144,7 @@ class HypothesisRouteHandoffContractTests(unittest.TestCase):
                         "summary": "The prior-work route is parked until the child route returns bounded evidence.",
                         "route_kind": "followup_subtopic",
                         "route_target_summary": "Route the prior-work distinction into a bounded follow-up subtopic.",
-                        "route_target_ref": "runtime/topics/demo-topic/followup_subtopics.jsonl",
+                        "route_target_ref": "topics/demo-topic/runtime/followup_subtopics.jsonl",
                         "evidence_refs": ["note:demo-prior-work-gap"],
                         "exclusion_notes": [],
                     },
@@ -160,7 +160,7 @@ class HypothesisRouteHandoffContractTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/deferred_candidates.json",
+            "topics/demo-topic/runtime/deferred_candidates.json",
             {
                 "buffer_version": 1,
                 "topic_slug": "demo-topic",
@@ -186,7 +186,7 @@ class HypothesisRouteHandoffContractTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "source-layer/topics/demo-topic/source_index.jsonl",
+            "topics/demo-topic/L0/source_index.jsonl",
             [
                 {
                     "source_id": "paper:demo-source-b",
@@ -196,7 +196,7 @@ class HypothesisRouteHandoffContractTests(unittest.TestCase):
             ],
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/followup_subtopics.jsonl",
+            "topics/demo-topic/runtime/followup_subtopics.jsonl",
             [
                 {
                     "child_topic_slug": "demo-topic--followup--prior-work",
@@ -214,7 +214,7 @@ class HypothesisRouteHandoffContractTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            "runtime/topics/demo-topic--followup--prior-work/followup_return_packet.json",
+            "topics/demo-topic--followup--prior-work/runtime/followup_return_packet.json",
             {
                 "return_packet_version": 1,
                 "child_topic_slug": "demo-topic--followup--prior-work",
@@ -263,7 +263,7 @@ class HypothesisRouteHandoffContractTests(unittest.TestCase):
         self.assertEqual(len(route_handoff["keep_parked_routes"]), 1)
         self.assertEqual(route_handoff["keep_parked_routes"][0]["hypothesis_id"], "hypothesis:prior-work")
         self.assertEqual(route_handoff["keep_parked_routes"][0]["handoff_status"], "keep_parked")
-        self.assertIn("already occupies the bounded handoff lane", route_handoff["keep_parked_routes"][0]["handoff_summary"])
+        self.assertIn("parked", route_handoff["keep_parked_routes"][0]["handoff_summary"])
 
         self.assertEqual(replay_payload["route_handoff"]["primary_handoff_candidate_id"], "hypothesis:symmetry-breaking")
         self.assertEqual(replay_payload["conclusions"]["handoff_candidate_count"], 1)

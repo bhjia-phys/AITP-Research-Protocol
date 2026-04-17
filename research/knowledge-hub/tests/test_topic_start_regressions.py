@@ -51,7 +51,7 @@ class TopicStartRegressionTests(unittest.TestCase):
         topic_slug: str = "demo-topic",
         human_request: str = "Please inspect this thesis and take it from there.",
     ) -> tuple[Path, Path]:
-        runtime_root = self.kernel_root / "runtime" / "topics" / topic_slug
+        runtime_root = self.kernel_root / "topics" / topic_slug / "runtime"
         runtime_root.mkdir(parents=True, exist_ok=True)
         (runtime_root / "interaction_state.json").write_text(
             json.dumps(
@@ -94,7 +94,7 @@ class TopicStartRegressionTests(unittest.TestCase):
             encoding="utf-8",
         )
 
-        source_root = self.kernel_root / "source-layer" / "topics" / topic_slug
+        source_root = self.kernel_root / "topics" / topic_slug / "L0"
         source_root.mkdir(parents=True, exist_ok=True)
         thesis_path = self.root / "inputs" / "demo-thesis.tex"
         thesis_path.parent.mkdir(parents=True, exist_ok=True)
@@ -238,7 +238,7 @@ class TopicStartRegressionTests(unittest.TestCase):
 
     def test_distill_from_sources_prefers_snapshot_preview_over_original_and_summary(self) -> None:
         topic_slug = "demo-topic"
-        source_root = self.kernel_root / "source-layer" / "topics" / topic_slug
+        source_root = self.kernel_root / "topics" / topic_slug / "L0"
         source_root.mkdir(parents=True, exist_ok=True)
 
         original_path = self.root / "inputs" / "snapshot-priority.tex"
@@ -403,7 +403,7 @@ class TopicStartRegressionTests(unittest.TestCase):
 
     def test_distill_from_sources_collects_source_concept_graph_into_l1_source_intake(self) -> None:
         topic_slug = "demo-topic-graph"
-        source_root = self.kernel_root / "source-layer" / "topics" / topic_slug
+        source_root = self.kernel_root / "topics" / topic_slug / "L0"
         source_root.mkdir(parents=True, exist_ok=True)
         source_slug = "paper-topological-order-and-anyon-condensation-2401-00001"
         source_dir = source_root / "sources" / source_slug
@@ -421,7 +421,7 @@ class TopicStartRegressionTests(unittest.TestCase):
                     "graph_version": 1,
                     "topic_slug": topic_slug,
                     "source_id": "paper:topological-order-and-anyon-condensation-2401-00001",
-                    "source_json_path": f"source-layer/topics/{topic_slug}/sources/{source_slug}/source.json",
+                    "source_json_path": f"topics/{topic_slug}/L0/sources/{source_slug}/source.json",
                     "generated_at": "2026-04-13T00:00:00+08:00",
                     "generated_by": "test",
                     "provider": "override_json",
@@ -432,7 +432,7 @@ class TopicStartRegressionTests(unittest.TestCase):
                             "node_type": "concept",
                             "confidence_tier": "EXTRACTED",
                             "confidence_score": 0.95,
-                            "evidence_refs": [f"source-layer/topics/{topic_slug}/sources/{source_slug}/source.json"],
+                            "evidence_refs": [f"topics/{topic_slug}/L0/sources/{source_slug}/source.json"],
                             "notes": "",
                         }
                     ],
@@ -462,7 +462,7 @@ class TopicStartRegressionTests(unittest.TestCase):
                     "title": "Topological Order and Anyon Condensation",
                     "summary": "Topological order supports the bounded condensation route.",
                     "locator": {
-                        "concept_graph_path": f"source-layer/topics/{topic_slug}/sources/{source_slug}/concept_graph.json",
+                        "concept_graph_path": f"topics/{topic_slug}/L0/sources/{source_slug}/concept_graph.json",
                     },
                     "provenance": {
                         "abs_url": "https://example.org/topological-order",
@@ -480,7 +480,7 @@ class TopicStartRegressionTests(unittest.TestCase):
     def test_source_backed_topic_start_surfaces_contradiction_and_notation_tension(self) -> None:
         topic_slug = "demo-topic"
         runtime_root, thesis_path = self._write_source_backed_topic(topic_slug=topic_slug)
-        source_root = self.kernel_root / "source-layer" / "topics" / topic_slug
+        source_root = self.kernel_root / "topics" / topic_slug / "L0"
         second_path = self.root / "inputs" / "demo-note.md"
         second_path.write_text(
             "# Conflicting follow-up note\n\n"

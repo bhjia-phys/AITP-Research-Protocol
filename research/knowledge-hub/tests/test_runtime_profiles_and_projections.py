@@ -62,7 +62,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "SECTION_FORMALIZATION_PROTOCOL.md",
         )
 
-        self.runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        self.runtime_root = self.kernel_root / "topics" / "demo-topic" / "runtime"
         self.runtime_root.mkdir(parents=True, exist_ok=True)
         (self.runtime_root / "topic_state.json").write_text(
             json.dumps(
@@ -74,7 +74,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                     "latest_run_id": "run-001",
                     "research_mode": "toy_model",
                     "pointers": {
-                        "control_note_path": "runtime/topics/demo-topic/control_note.md"
+                        "control_note_path": "topics/demo-topic/runtime/control_note.md"
                     },
                 },
                 indent=2,
@@ -127,71 +127,71 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
 
     def _shell_surfaces(self) -> dict[str, object]:
         research_json = self._write_surface(
-            "runtime/topics/demo-topic/research_question.contract.json",
+            "topics/demo-topic/runtime/research_question.contract.json",
             json.dumps({"question_id": "research_question:demo-topic"}, indent=2) + "\n",
         )
         research_note = self._write_surface(
-            "runtime/topics/demo-topic/research_question.contract.md",
+            "topics/demo-topic/runtime/research_question.contract.md",
             "# Research question\n",
         )
         validation_json = self._write_surface(
-            "runtime/topics/demo-topic/validation_contract.active.json",
+            "topics/demo-topic/runtime/validation_contract.active.json",
             json.dumps({"validation_id": "validation:demo-topic:active"}, indent=2) + "\n",
         )
         validation_note = self._write_surface(
-            "runtime/topics/demo-topic/validation_contract.active.md",
+            "topics/demo-topic/runtime/validation_contract.active.md",
             "# Validation contract\n",
         )
         idea_json = self._write_surface(
-            "runtime/topics/demo-topic/idea_packet.json",
+            "topics/demo-topic/runtime/idea_packet.json",
             json.dumps({"topic_slug": "demo-topic"}, indent=2) + "\n",
         )
-        idea_note = self._write_surface("runtime/topics/demo-topic/idea_packet.md", "# Idea packet\n")
+        idea_note = self._write_surface("topics/demo-topic/runtime/idea_packet.md", "# Idea packet\n")
         checkpoint_json = self._write_surface(
-            "runtime/topics/demo-topic/operator_checkpoint.active.json",
+            "topics/demo-topic/runtime/operator_checkpoint.active.json",
             json.dumps({"checkpoint_id": "checkpoint:demo"}, indent=2) + "\n",
         )
         checkpoint_note = self._write_surface(
-            "runtime/topics/demo-topic/operator_checkpoint.active.md",
+            "topics/demo-topic/runtime/operator_checkpoint.active.md",
             "# Operator checkpoint\n",
         )
         checkpoint_ledger = self._write_surface(
-            "runtime/topics/demo-topic/operator_checkpoints.jsonl",
+            "topics/demo-topic/runtime/operator_checkpoints.jsonl",
             "",
         )
-        dashboard = self._write_surface("runtime/topics/demo-topic/topic_dashboard.md", "# Dashboard\n")
-        readiness_note = self._write_surface("runtime/topics/demo-topic/promotion_readiness.md", "# Promotion readiness\n")
+        dashboard = self._write_surface("topics/demo-topic/runtime/topic_dashboard.md", "# Dashboard\n")
+        readiness_note = self._write_surface("topics/demo-topic/runtime/promotion_readiness.md", "# Promotion readiness\n")
         review_bundle_json = self._write_surface(
-            "runtime/topics/demo-topic/validation_review_bundle.active.json",
+            "topics/demo-topic/runtime/validation_review_bundle.active.json",
             json.dumps({"bundle_kind": "validation_review_bundle", "status": "not_materialized"}, indent=2) + "\n",
         )
         review_bundle_note = self._write_surface(
-            "runtime/topics/demo-topic/validation_review_bundle.active.md",
+            "topics/demo-topic/runtime/validation_review_bundle.active.md",
             "# Validation review bundle\n",
         )
-        gap_note = self._write_surface("runtime/topics/demo-topic/gap_map.md", "# Gap map\n")
+        gap_note = self._write_surface("topics/demo-topic/runtime/gap_map.md", "# Gap map\n")
         topic_completion_json = self._write_surface(
-            "runtime/topics/demo-topic/topic_completion.json",
+            "topics/demo-topic/runtime/topic_completion.json",
             json.dumps({"status": "in_progress"}, indent=2) + "\n",
         )
-        topic_completion_note = self._write_surface("runtime/topics/demo-topic/topic_completion.md", "# Topic completion\n")
+        topic_completion_note = self._write_surface("topics/demo-topic/runtime/topic_completion.md", "# Topic completion\n")
         statement_compilation_json = self._write_surface(
-            "runtime/topics/demo-topic/statement_compilation.active.json",
+            "topics/demo-topic/runtime/statement_compilation.active.json",
             json.dumps({"status": "idle"}, indent=2) + "\n",
         )
         statement_compilation_note = self._write_surface(
-            "runtime/topics/demo-topic/statement_compilation.active.md",
+            "topics/demo-topic/runtime/statement_compilation.active.md",
             "# Statement compilation\n",
         )
         lean_bridge_json = self._write_surface(
-            "runtime/topics/demo-topic/lean_bridge.active.json",
+            "topics/demo-topic/runtime/lean_bridge.active.json",
             json.dumps({"status": "idle"}, indent=2) + "\n",
         )
-        lean_bridge_note = self._write_surface("runtime/topics/demo-topic/lean_bridge.active.md", "# Lean bridge\n")
-        followup_reintegration_jsonl = self._write_surface("runtime/topics/demo-topic/followup_reintegration.jsonl", "")
-        followup_reintegration_note = self._write_surface("runtime/topics/demo-topic/followup_reintegration.md", "# Follow-up reintegration\n")
-        followup_gap_writeback_jsonl = self._write_surface("runtime/topics/demo-topic/followup_gap_writeback.jsonl", "")
-        followup_gap_writeback_note = self._write_surface("runtime/topics/demo-topic/followup_gap_writeback.md", "# Follow-up gap writeback\n")
+        lean_bridge_note = self._write_surface("topics/demo-topic/runtime/lean_bridge.active.md", "# Lean bridge\n")
+        followup_reintegration_jsonl = self._write_surface("topics/demo-topic/runtime/followup_reintegration.jsonl", "")
+        followup_reintegration_note = self._write_surface("topics/demo-topic/runtime/followup_reintegration.md", "# Follow-up reintegration\n")
+        followup_gap_writeback_jsonl = self._write_surface("topics/demo-topic/runtime/followup_gap_writeback.jsonl", "")
+        followup_gap_writeback_note = self._write_surface("topics/demo-topic/runtime/followup_gap_writeback.md", "# Follow-up gap writeback\n")
 
         return {
             "research_question_contract_path": research_json,
@@ -243,7 +243,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "missing_fields": [],
                 "clarification_questions": [],
                 "execution_context_signals": [],
-                "note_path": "runtime/topics/demo-topic/idea_packet.md",
+                "note_path": "topics/demo-topic/runtime/idea_packet.md",
                 "updated_at": "2026-03-28T00:00:00+00:00",
                 "updated_by": "test",
             },
@@ -267,8 +267,8 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "requested_by": None,
                 "answered_at": None,
                 "answered_by": None,
-                "note_path": "runtime/topics/demo-topic/operator_checkpoint.active.md",
-                "ledger_path": "runtime/topics/demo-topic/operator_checkpoints.jsonl",
+                "note_path": "topics/demo-topic/runtime/operator_checkpoint.active.md",
+                "ledger_path": "topics/demo-topic/runtime/operator_checkpoints.jsonl",
                 "updated_at": "2026-03-28T00:00:00+00:00",
                 "updated_by": "test",
             },
@@ -294,13 +294,13 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "promotion_gate_status": "not_requested",
                 "blockers": ["Benchmark not yet executed."],
                 "entrypoints": {
-                    "validation_contract_path": "runtime/topics/demo-topic/validation_contract.active.json",
-                    "validation_contract_note_path": "runtime/topics/demo-topic/validation_contract.active.md",
-                    "promotion_readiness_path": "runtime/topics/demo-topic/promotion_readiness.json",
-                    "promotion_readiness_note_path": "runtime/topics/demo-topic/promotion_readiness.md",
-                    "topic_completion_path": "runtime/topics/demo-topic/topic_completion.json",
-                    "topic_completion_note_path": "runtime/topics/demo-topic/topic_completion.md",
-                    "gap_map_path": "runtime/topics/demo-topic/gap_map.md",
+                    "validation_contract_path": "topics/demo-topic/runtime/validation_contract.active.json",
+                    "validation_contract_note_path": "topics/demo-topic/runtime/validation_contract.active.md",
+                    "promotion_readiness_path": "topics/demo-topic/runtime/promotion_readiness.json",
+                    "promotion_readiness_note_path": "topics/demo-topic/runtime/promotion_readiness.md",
+                    "topic_completion_path": "topics/demo-topic/runtime/topic_completion.json",
+                    "topic_completion_note_path": "topics/demo-topic/runtime/topic_completion.md",
+                    "gap_map_path": "topics/demo-topic/runtime/gap_map.md",
                     "promotion_gate_path": None,
                 },
                 "specialist_artifacts": [],
@@ -336,7 +336,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "status": "in_progress",
                 "summary": "Topic completion is not ready yet.",
                 "promotion_ready_candidate_ids": [],
-                "path": "runtime/topics/demo-topic/topic_completion.md",
+                "path": "topics/demo-topic/runtime/topic_completion.md",
             },
             "statement_compilation": {
                 "status": "idle",
@@ -345,7 +345,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "ready_packet_count": 0,
                 "needs_repair_count": 0,
                 "packets": [],
-                "path": "runtime/topics/demo-topic/statement_compilation.active.md",
+                "path": "topics/demo-topic/runtime/statement_compilation.active.md",
                 "updated_at": "2026-03-28T00:00:00+00:00",
                 "updated_by": "test",
             },
@@ -356,7 +356,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "ready_packet_count": 0,
                 "needs_refinement_count": 0,
                 "packets": [],
-                "path": "runtime/topics/demo-topic/lean_bridge.active.md",
+                "path": "topics/demo-topic/runtime/lean_bridge.active.md",
                 "updated_at": "2026-03-28T00:00:00+00:00",
                 "updated_by": "test",
             },
@@ -585,12 +585,12 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "judgment_summary": "Momentum `queued`; stuckness `none`; surprise `none`.",
             },
             "truth_sources": {
-                "topic_state_path": "runtime/topics/demo-topic/topic_state.json",
-                "research_question_contract_path": "runtime/topics/demo-topic/research_question.contract.json",
-                "next_action_surface_path": "runtime/topics/demo-topic/action_queue.jsonl",
+                "topic_state_path": "topics/demo-topic/runtime/topic_state.json",
+                "research_question_contract_path": "topics/demo-topic/runtime/research_question.contract.json",
+                "next_action_surface_path": "topics/demo-topic/runtime/action_queue.jsonl",
                 "human_need_surface_path": None,
                 "dependency_registry_path": "runtime/active_topics.json",
-                "promotion_readiness_path": "runtime/topics/demo-topic/promotion_readiness.json",
+                "promotion_readiness_path": "topics/demo-topic/runtime/promotion_readiness.json",
                 "promotion_gate_path": None,
             },
             "next_action_summary": "Run the smallest exact benchmark first.",
@@ -635,7 +635,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "candidate_refs": ["candidate:demo-benchmark-packet"],
             "packet_refs": [packet_rows[0]["path"]],
             "decision_trace_refs": [],
-            "audit_refs": ["runtime/topics/demo-topic/topic_completion.md"],
+            "audit_refs": ["topics/demo-topic/runtime/topic_completion.md"],
             "backend_target": {
                 "backend_id": "",
                 "target_backend_root": "",
@@ -660,7 +660,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "candidate_id": "candidate:topic-skill-projection-demo-topic",
             "intended_l2_target": "topic_skill_projection:demo-topic",
             "entry_signals": ["lane=toy_numeric"],
-            "required_first_reads": ["runtime/topics/demo-topic/research_question.contract.md"],
+            "required_first_reads": ["topics/demo-topic/runtime/research_question.contract.md"],
             "required_first_routes": ["Close the exact benchmark before broader inference."],
             "benchmark_first_rules": ["Reproduce the small exact benchmark before route reuse."],
             "operator_checkpoint_rules": ["Raise an operator checkpoint on benchmark mismatch."],
@@ -686,7 +686,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "from_layer": "L4",
                 "to_layer": "L3",
                 "reason": "Validation returned the topic to L3 after a bounded contradiction.",
-                "evidence_refs": ["runtime/topics/demo-topic/gap_map.md"],
+                "evidence_refs": ["topics/demo-topic/runtime/gap_map.md"],
                 "recorded_at": "2026-03-28T00:00:00+00:00",
                 "recorded_by": "test",
             },
@@ -739,7 +739,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "Do not treat the projection itself as a theorem certificate or proof-complete artifact."
             ],
             "derived_from_artifacts": [
-                "runtime/topics/formal-demo/topic_completion.json",
+                "topics/formal-demo/runtime/topic_completion.json",
                 "feedback/topics/formal-demo/runs/run-formal-001/strategy_memory.jsonl"
             ],
             "updated_at": "2026-04-01T00:00:00+00:00",
@@ -804,14 +804,14 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             bundle["transition_posture"]["transition_kind"],
         )
         self.assertEqual(bundle["control_plane"]["h_plane"]["checkpoint_status"], "answered")
-        self.assertEqual(bundle["mode_envelope"]["minimum_mandatory_context"][0]["path"], "runtime/topics/demo-topic/topic_dashboard.md")
+        self.assertEqual(bundle["mode_envelope"]["minimum_mandatory_context"][0]["path"], "topics/demo-topic/runtime/topic_dashboard.md")
         self.assertIn("L3 -> L0", bundle["mode_envelope"]["allowed_backedges"])
         self.assertEqual(bundle["transition_posture"]["transition_kind"], "boundary_hold")
         self.assertEqual(len(bundle["must_read_now"]), 3)
-        self.assertEqual(bundle["must_read_now"][0]["path"], "runtime/topics/demo-topic/topic_dashboard.md")
-        self.assertEqual(bundle["must_read_now"][1]["path"], "runtime/topics/demo-topic/research_question.contract.md")
+        self.assertEqual(bundle["must_read_now"][0]["path"], "topics/demo-topic/runtime/topic_dashboard.md")
+        self.assertEqual(bundle["must_read_now"][1]["path"], "topics/demo-topic/runtime/research_question.contract.md")
         self.assertEqual(bundle["must_read_now"][2]["path"], "topics/demo-topic/runtime/graph_analysis.md")
-        self.assertEqual(bundle["minimal_execution_brief"]["open_next"], "runtime/topics/demo-topic/topic_dashboard.md")
+        self.assertEqual(bundle["minimal_execution_brief"]["open_next"], "topics/demo-topic/runtime/topic_dashboard.md")
         self.assertNotIn("operator_console.md", json.dumps(bundle["must_read_now"]))
         self.assertTrue(
             any(
@@ -1009,11 +1009,11 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
     def test_runtime_bundle_projects_source_intelligence_into_read_path(self) -> None:
         shell_surfaces = self._shell_surfaces()
         shell_surfaces["source_intelligence_path"] = self._write_surface(
-            "runtime/topics/demo-topic/source_intelligence.json",
+            "topics/demo-topic/runtime/source_intelligence.json",
             json.dumps({"topic_slug": "demo-topic"}, indent=2) + "\n",
         )
         shell_surfaces["source_intelligence_note_path"] = self._write_surface(
-            "runtime/topics/demo-topic/source_intelligence.md",
+            "topics/demo-topic/runtime/source_intelligence.md",
             "# Source intelligence\n",
         )
         shell_surfaces["source_intelligence"] = {
@@ -1057,8 +1057,8 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 }
             ],
             "neighbor_signal_count": 1,
-            "path": "runtime/topics/demo-topic/source_intelligence.json",
-            "note_path": "runtime/topics/demo-topic/source_intelligence.md",
+            "path": "topics/demo-topic/runtime/source_intelligence.json",
+            "note_path": "topics/demo-topic/runtime/source_intelligence.md",
         }
         with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
             with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
@@ -1082,15 +1082,15 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
     def test_runtime_bundle_projects_graph_analysis_into_read_path(self) -> None:
         shell_surfaces = self._shell_surfaces()
         shell_surfaces["graph_analysis_path"] = self._write_surface(
-            "runtime/topics/demo-topic/graph_analysis.json",
+            "topics/demo-topic/runtime/graph_analysis.json",
             json.dumps({"topic_slug": "demo-topic"}, indent=2) + "\n",
         )
         shell_surfaces["graph_analysis_note_path"] = self._write_surface(
-            "runtime/topics/demo-topic/graph_analysis.md",
+            "topics/demo-topic/runtime/graph_analysis.md",
             "# Graph analysis\n",
         )
         shell_surfaces["graph_analysis_history_path"] = self._write_surface(
-            "runtime/topics/demo-topic/graph_analysis_history.jsonl",
+            "topics/demo-topic/runtime/graph_analysis_history.jsonl",
             "",
         )
         shell_surfaces["graph_analysis"] = {
@@ -1122,9 +1122,9 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "added": {"node_count": 1, "node_labels": ["Anyon condensation"], "edge_count": 0, "edge_relations": [], "god_node_count": 1, "god_node_labels": ["Anyon condensation"]},
                 "removed": {"node_count": 1, "node_labels": ["Topological order"], "edge_count": 0, "edge_relations": [], "god_node_count": 1, "god_node_labels": ["Topological order"]},
             },
-            "path": "runtime/topics/demo-topic/graph_analysis.json",
-            "note_path": "runtime/topics/demo-topic/graph_analysis.md",
-            "history_path": "runtime/topics/demo-topic/graph_analysis_history.jsonl",
+            "path": "topics/demo-topic/runtime/graph_analysis.json",
+            "note_path": "topics/demo-topic/runtime/graph_analysis.md",
+            "history_path": "topics/demo-topic/runtime/graph_analysis_history.jsonl",
         }
         with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
             with patch.object(self.service, "_candidate_rows_for_run", return_value=[]):
@@ -1139,7 +1139,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertEqual(bundle["graph_analysis"]["summary"]["connection_count"], 1)
         self.assertEqual(bundle["graph_analysis"]["diff"]["added"]["node_labels"][0], "Anyon condensation")
         self.assertIn(
-            "runtime/topics/demo-topic/graph_analysis.md",
+            "topics/demo-topic/runtime/graph_analysis.md",
             json.dumps(bundle["must_read_now"]),
         )
         note_text = Path(result["runtime_protocol_note_path"]).read_text(encoding="utf-8")
@@ -1157,7 +1157,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                     "latest_run_id": "run-001",
                     "research_mode": "formal_derivation",
                     "pointers": {
-                        "control_note_path": "runtime/topics/demo-topic/control_note.md"
+                        "control_note_path": "topics/demo-topic/runtime/control_note.md"
                     },
                 },
                 indent=2,
@@ -1196,17 +1196,17 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "status": "ready",
             "summary": "Statement compilation is active for the bounded theorem packet.",
             "packet_count": 1,
-            "path": "runtime/topics/demo-topic/statement_compilation.active.md",
+            "path": "topics/demo-topic/runtime/statement_compilation.active.md",
         }
         shell_surfaces["lean_bridge"] = {
             **dict(shell_surfaces["lean_bridge"]),
             "status": "ready",
             "summary": "Lean bridge packet is ready for the bounded theorem packet.",
             "packet_count": 1,
-            "path": "runtime/topics/demo-topic/lean_bridge.active.md",
+            "path": "topics/demo-topic/runtime/lean_bridge.active.md",
         }
         self._write_surface(
-            "runtime/topics/demo-topic/topic_skill_projection.active.json",
+            "topics/demo-topic/runtime/topic_skill_projection.active.json",
             json.dumps(
                 {
                     "id": "topic_skill_projection:demo-topic",
@@ -1221,7 +1221,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                     "candidate_id": "candidate:demo-theorem",
                     "intended_l2_target": "topic_skill_projection:demo-topic",
                     "entry_signals": ["lane=formal_theory"],
-                    "required_first_reads": ["runtime/topics/demo-topic/research_question.contract.md"],
+                    "required_first_reads": ["topics/demo-topic/runtime/research_question.contract.md"],
                     "required_first_routes": ["Read the theorem-facing review packet before changing the route."],
                     "benchmark_first_rules": [],
                     "operator_checkpoint_rules": [],
@@ -1237,7 +1237,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             + "\n",
         )
         self._write_surface(
-            "runtime/topics/demo-topic/topic_skill_projection.active.md",
+            "topics/demo-topic/runtime/topic_skill_projection.active.md",
             "# Demo theorem projection\n",
         )
         shell_surfaces["topic_skill_projection"] = {
@@ -1253,7 +1253,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "candidate_id": "candidate:demo-theorem",
             "intended_l2_target": "topic_skill_projection:demo-topic",
             "entry_signals": ["lane=formal_theory"],
-            "required_first_reads": ["runtime/topics/demo-topic/research_question.contract.md"],
+            "required_first_reads": ["topics/demo-topic/runtime/research_question.contract.md"],
             "required_first_routes": ["Read the theorem-facing review packet before changing the route."],
             "benchmark_first_rules": [],
             "operator_checkpoint_rules": [],
@@ -1263,8 +1263,8 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "derived_from_artifacts": [
                 "validation/topics/demo-topic/runs/run-001/theory-packets/candidate-demo-theorem/formal_theory_review.json"
             ],
-            "path": "runtime/topics/demo-topic/topic_skill_projection.active.json",
-            "note_path": "runtime/topics/demo-topic/topic_skill_projection.active.md",
+            "path": "topics/demo-topic/runtime/topic_skill_projection.active.json",
+            "note_path": "topics/demo-topic/runtime/topic_skill_projection.active.md",
             "updated_at": "2026-04-13T10:00:00+08:00",
             "updated_by": "test",
         }
@@ -1325,7 +1325,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                     "latest_run_id": "run-001",
                     "research_mode": "formal_derivation",
                     "pointers": {
-                        "control_note_path": "runtime/topics/demo-topic/control_note.md"
+                        "control_note_path": "topics/demo-topic/runtime/control_note.md"
                     },
                 },
                 indent=2,
@@ -1379,7 +1379,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                     "latest_run_id": "run-001",
                     "research_mode": "formal_derivation",
                     "pointers": {
-                        "control_note_path": "runtime/topics/demo-topic/control_note.md"
+                        "control_note_path": "topics/demo-topic/runtime/control_note.md"
                     },
                 },
                 indent=2,
@@ -1411,7 +1411,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         manifest = bundle["protocol_manifest"]
         self.assertEqual(manifest["overall_status"], "fail")
         self.assertEqual(manifest["declared_state"], "verifying")
-        self.assertIn("runtime/topics/demo-topic/validation_contract.active.md", manifest["missing_paths"])
+        self.assertIn("topics/demo-topic/runtime/validation_contract.active.md", manifest["missing_paths"])
         self.assertTrue(manifest["note_path"].endswith("protocol_manifest.active.md"))
         self.assertIn(manifest["note_path"], self._must_read_paths(bundle))
         self.assertTrue((self.kernel_root / manifest["path"]).exists())
@@ -1466,15 +1466,15 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         deferred_paths = self._deferred_paths(bundle)
 
         self.assertEqual(bundle["runtime_mode"], "discussion")
-        self.assertIn("runtime/topics/demo-topic/idea_packet.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/topic_dashboard.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/research_question.contract.md", must_read_paths)
-        self.assertNotIn("runtime/topics/demo-topic/validation_review_bundle.active.md", must_read_paths)
-        self.assertNotIn("runtime/topics/demo-topic/validation_contract.active.md", must_read_paths)
-        self.assertNotIn("runtime/topics/demo-topic/promotion_readiness.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/validation_review_bundle.active.md", deferred_paths)
-        self.assertIn("runtime/topics/demo-topic/validation_contract.active.md", deferred_paths)
-        self.assertIn("runtime/topics/demo-topic/promotion_readiness.md", deferred_paths)
+        self.assertIn("topics/demo-topic/runtime/idea_packet.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/topic_dashboard.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/research_question.contract.md", must_read_paths)
+        self.assertNotIn("topics/demo-topic/runtime/validation_review_bundle.active.md", must_read_paths)
+        self.assertNotIn("topics/demo-topic/runtime/validation_contract.active.md", must_read_paths)
+        self.assertNotIn("topics/demo-topic/runtime/promotion_readiness.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/validation_review_bundle.active.md", deferred_paths)
+        self.assertIn("topics/demo-topic/runtime/validation_contract.active.md", deferred_paths)
+        self.assertIn("topics/demo-topic/runtime/promotion_readiness.md", deferred_paths)
 
     def test_full_explore_mode_keeps_candidate_context_and_defers_validation_and_promotion(self) -> None:
         shell_surfaces = self._shell_surfaces()
@@ -1493,18 +1493,18 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         deferred_paths = self._deferred_paths(bundle)
 
         self.assertEqual(bundle["runtime_mode"], "explore")
-        self.assertIn("runtime/topics/demo-topic/topic_dashboard.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/research_question.contract.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/control_note.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/topic_dashboard.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/research_question.contract.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/control_note.md", must_read_paths)
         self.assertIn("topics/demo-topic/runtime/topic_synopsis.json", must_read_paths)
-        self.assertNotIn("runtime/topics/demo-topic/validation_review_bundle.active.md", must_read_paths)
-        self.assertNotIn("runtime/topics/demo-topic/validation_contract.active.md", must_read_paths)
-        self.assertNotIn("runtime/topics/demo-topic/promotion_readiness.md", must_read_paths)
-        self.assertNotIn("runtime/topics/demo-topic/topic_completion.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/validation_review_bundle.active.md", deferred_paths)
-        self.assertIn("runtime/topics/demo-topic/validation_contract.active.md", deferred_paths)
-        self.assertIn("runtime/topics/demo-topic/promotion_readiness.md", deferred_paths)
-        self.assertIn("runtime/topics/demo-topic/topic_completion.md", deferred_paths)
+        self.assertNotIn("topics/demo-topic/runtime/validation_review_bundle.active.md", must_read_paths)
+        self.assertNotIn("topics/demo-topic/runtime/validation_contract.active.md", must_read_paths)
+        self.assertNotIn("topics/demo-topic/runtime/promotion_readiness.md", must_read_paths)
+        self.assertNotIn("topics/demo-topic/runtime/topic_completion.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/validation_review_bundle.active.md", deferred_paths)
+        self.assertIn("topics/demo-topic/runtime/validation_contract.active.md", deferred_paths)
+        self.assertIn("topics/demo-topic/runtime/promotion_readiness.md", deferred_paths)
+        self.assertIn("topics/demo-topic/runtime/topic_completion.md", deferred_paths)
 
     def test_full_verify_mode_foregrounds_validation_route_and_defers_promotion(self) -> None:
         shell_surfaces = self._shell_surfaces()
@@ -1522,8 +1522,8 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "decision_surface": {},
                 "human_edit_surfaces": [],
                 "closed_loop": {
-                    "selected_route_path": "runtime/topics/demo-topic/selected_validation_route.md",
-                    "execution_task_path": "runtime/topics/demo-topic/execution_task.md",
+                    "selected_route_path": "topics/demo-topic/runtime/selected_validation_route.md",
+                    "execution_task_path": "topics/demo-topic/runtime/execution_task.md",
                 },
             }
         )
@@ -1542,14 +1542,14 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         deferred_paths = self._deferred_paths(bundle)
 
         self.assertEqual(bundle["runtime_mode"], "verify")
-        self.assertIn("runtime/topics/demo-topic/validation_review_bundle.active.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/validation_contract.active.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/selected_validation_route.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/execution_task.md", must_read_paths)
-        self.assertNotIn("runtime/topics/demo-topic/promotion_readiness.md", must_read_paths)
-        self.assertNotIn("runtime/topics/demo-topic/control_note.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/promotion_readiness.md", deferred_paths)
-        self.assertIn("runtime/topics/demo-topic/control_note.md", deferred_paths)
+        self.assertIn("topics/demo-topic/runtime/validation_review_bundle.active.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/validation_contract.active.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/selected_validation_route.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/execution_task.md", must_read_paths)
+        self.assertNotIn("topics/demo-topic/runtime/promotion_readiness.md", must_read_paths)
+        self.assertNotIn("topics/demo-topic/runtime/control_note.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/promotion_readiness.md", deferred_paths)
+        self.assertIn("topics/demo-topic/runtime/control_note.md", deferred_paths)
         active_triggers = {
             row["trigger"]
             for row in bundle["escalation_triggers"]
@@ -1561,11 +1561,11 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
     def test_full_verify_mode_foregrounds_iteration_journal_when_present(self) -> None:
         shell_surfaces = self._shell_surfaces()
         journal_note = self._write_surface(
-            "runtime/topics/demo-topic/iteration_journal.md",
+            "topics/demo-topic/runtime/iteration_journal.md",
             "# Iteration journal\n",
         )
         journal_json = self._write_surface(
-            "runtime/topics/demo-topic/iteration_journal.json",
+            "topics/demo-topic/runtime/iteration_journal.json",
             json.dumps(
                 {
                     "contract_version": 1,
@@ -1594,34 +1594,34 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
         must_read_paths = self._must_read_paths(bundle)
 
-        self.assertIn("runtime/topics/demo-topic/iteration_journal.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/iteration_journal.md", must_read_paths)
 
     def test_light_profile_foregrounds_reuse_and_execution_resource_contexts_when_present(self) -> None:
         shell_surfaces = self._shell_surfaces()
         idea_json = self._write_surface(
-            "runtime/topics/demo-topic/idea_reuse_context.json",
+            "topics/demo-topic/runtime/idea_reuse_context.json",
             json.dumps({"context_name": "idea_reuse_context", "read_depth": "quick"}, indent=2) + "\n",
         )
         idea_note = self._write_surface(
-            "runtime/topics/demo-topic/idea_reuse_context.md",
+            "topics/demo-topic/runtime/idea_reuse_context.md",
             "# Idea reuse context\n",
         )
         resource_json = self._write_surface(
-            "runtime/topics/demo-topic/execution_resource_context.json",
+            "topics/demo-topic/runtime/execution_resource_context.json",
             json.dumps({"context_name": "execution_resource_context", "read_depth": "standard"}, indent=2) + "\n",
         )
         resource_note = self._write_surface(
-            "runtime/topics/demo-topic/execution_resource_context.md",
+            "topics/demo-topic/runtime/execution_resource_context.md",
             "# Execution resource context\n",
         )
         shell_surfaces["idea_reuse_context_path"] = idea_json
         shell_surfaces["idea_reuse_context_note_path"] = idea_note
         shell_surfaces["plan_reuse_context_path"] = self._write_surface(
-            "runtime/topics/demo-topic/plan_reuse_context.json",
+            "topics/demo-topic/runtime/plan_reuse_context.json",
             json.dumps({"context_name": "plan_reuse_context", "read_depth": "standard"}, indent=2) + "\n",
         )
         shell_surfaces["plan_reuse_context_note_path"] = self._write_surface(
-            "runtime/topics/demo-topic/plan_reuse_context.md",
+            "topics/demo-topic/runtime/plan_reuse_context.md",
             "# Plan reuse context\n",
         )
         shell_surfaces["execution_resource_context_path"] = resource_json
@@ -1631,16 +1631,16 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "read_depth": "quick",
             "status": "ready",
             "canonical_hits": [{"id": "concept:demo", "authority_level": "canonical"}],
-            "path": "runtime/topics/demo-topic/idea_reuse_context.json",
-            "note_path": "runtime/topics/demo-topic/idea_reuse_context.md",
+            "path": "topics/demo-topic/runtime/idea_reuse_context.json",
+            "note_path": "topics/demo-topic/runtime/idea_reuse_context.md",
         }
         shell_surfaces["plan_reuse_context"] = {
             "context_name": "plan_reuse_context",
             "read_depth": "standard",
             "status": "ready",
             "canonical_hits": [{"id": "workflow:demo", "authority_level": "canonical"}],
-            "path": "runtime/topics/demo-topic/plan_reuse_context.json",
-            "note_path": "runtime/topics/demo-topic/plan_reuse_context.md",
+            "path": "topics/demo-topic/runtime/plan_reuse_context.json",
+            "note_path": "topics/demo-topic/runtime/plan_reuse_context.md",
         }
         shell_surfaces["execution_resource_context"] = {
             "context_name": "execution_resource_context",
@@ -1648,8 +1648,8 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "status": "ready",
             "recommended_server": {"capability_id": "server:el"},
             "recommended_tool_ids": ["tool:tfim-exact-diagonalization"],
-            "path": "runtime/topics/demo-topic/execution_resource_context.json",
-            "note_path": "runtime/topics/demo-topic/execution_resource_context.md",
+            "path": "topics/demo-topic/runtime/execution_resource_context.json",
+            "note_path": "topics/demo-topic/runtime/execution_resource_context.md",
         }
 
         with patch.object(self.service, "ensure_topic_shell_surfaces", return_value=shell_surfaces):
@@ -1664,8 +1664,8 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         bundle = json.loads(Path(result["runtime_protocol_path"]).read_text(encoding="utf-8"))
         must_read_paths = self._must_read_paths(bundle)
 
-        self.assertIn("runtime/topics/demo-topic/idea_reuse_context.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/execution_resource_context.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/idea_reuse_context.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/execution_resource_context.md", must_read_paths)
         self.assertEqual(bundle["idea_reuse_context"]["read_depth"], "quick")
         self.assertEqual(
             bundle["execution_resource_context"]["recommended_server"]["capability_id"],
@@ -1679,14 +1679,14 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "status": "needs_repair",
             "summary": "Statement compilation surfaced open proof-repair holes after the promoted writeback.",
             "packet_count": 1,
-            "path": "runtime/topics/demo-topic/statement_compilation.active.md",
+            "path": "topics/demo-topic/runtime/statement_compilation.active.md",
         }
         shell_surfaces["lean_bridge"] = {
             **dict(shell_surfaces["lean_bridge"]),
             "status": "needs_refinement",
             "summary": "Lean bridge still carries proof obligations after the promoted writeback.",
             "packet_count": 1,
-            "path": "runtime/topics/demo-topic/lean_bridge.active.md",
+            "path": "topics/demo-topic/runtime/lean_bridge.active.md",
         }
         self._rewrite_action_queue(
             "prepare_lean_bridge",
@@ -1716,8 +1716,8 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         must_read_paths = self._must_read_paths(bundle)
 
         self.assertEqual(bundle["runtime_mode"], "verify")
-        self.assertIn("runtime/topics/demo-topic/statement_compilation.active.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/lean_bridge.active.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/statement_compilation.active.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/lean_bridge.active.md", must_read_paths)
 
     def test_full_verify_mode_foregrounds_proof_repair_review_surfaces(self) -> None:
         shell_surfaces = self._shell_surfaces()
@@ -1726,7 +1726,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "status": "needs_repair",
             "summary": "Statement compilation surfaced open proof-repair holes after Lean bridge refresh.",
             "packet_count": 1,
-            "path": "runtime/topics/demo-topic/statement_compilation.active.md",
+            "path": "topics/demo-topic/runtime/statement_compilation.active.md",
             "packets": [
                 {
                     "candidate_id": "candidate:demo-theorem",
@@ -1739,7 +1739,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             "status": "needs_refinement",
             "summary": "Lean bridge still carries proof obligations after refresh.",
             "packet_count": 1,
-            "path": "runtime/topics/demo-topic/lean_bridge.active.md",
+            "path": "topics/demo-topic/runtime/lean_bridge.active.md",
             "packets": [
                 {
                     "candidate_id": "candidate:demo-theorem",
@@ -1775,8 +1775,8 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         must_read_paths = self._must_read_paths(bundle)
 
         self.assertEqual(bundle["runtime_mode"], "verify")
-        self.assertIn("runtime/topics/demo-topic/statement_compilation.active.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/lean_bridge.active.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/statement_compilation.active.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/lean_bridge.active.md", must_read_paths)
         self.assertIn(
             "validation/topics/demo-topic/runs/run-001/statement-compilation/candidate-demo-theorem/proof_repair_plan.md",
             must_read_paths,
@@ -1810,7 +1810,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "decision_surface": {},
                 "human_edit_surfaces": [],
                 "closed_loop": {
-                    "selected_route_path": "runtime/topics/demo-topic/selected_validation_route.md",
+                    "selected_route_path": "topics/demo-topic/runtime/selected_validation_route.md",
                 },
             }
         )
@@ -1830,11 +1830,11 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         deferred_paths = self._deferred_paths(bundle)
 
         self.assertEqual(bundle["runtime_mode"], "promote")
-        self.assertIn("runtime/topics/demo-topic/promotion_readiness.md", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/promotion_readiness.md", must_read_paths)
         self.assertIn("topics/demo-topic/runtime/promotion_gate.md", must_read_paths)
-        self.assertIn("runtime/topics/demo-topic/topic_completion.md", must_read_paths)
-        self.assertNotIn("runtime/topics/demo-topic/control_note.md", must_read_paths)
-        self.assertNotIn("runtime/topics/demo-topic/topic_synopsis.json", must_read_paths)
+        self.assertIn("topics/demo-topic/runtime/topic_completion.md", must_read_paths)
+        self.assertNotIn("topics/demo-topic/runtime/control_note.md", must_read_paths)
+        self.assertNotIn("topics/demo-topic/runtime/topic_synopsis.json", must_read_paths)
         self.assertIn("topics/demo-topic/runtime/control_note.md", deferred_paths)
         self.assertIn("topics/demo-topic/runtime/topic_synopsis.json", deferred_paths)
         active_triggers = {
@@ -1850,8 +1850,8 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         topic_state = json.loads((self.runtime_root / "topic_state.json").read_text(encoding="utf-8"))
         topic_state["pointers"] = {
             **(topic_state.get("pointers") or {}),
-            "selected_candidate_route_choice_note_path": "runtime/topics/demo-topic/selected_candidate_route_choice.active.md",
-            "selected_candidate_route_choice_path": "runtime/topics/demo-topic/selected_candidate_route_choice.active.json",
+            "selected_candidate_route_choice_note_path": "topics/demo-topic/runtime/selected_candidate_route_choice.active.md",
+            "selected_candidate_route_choice_path": "topics/demo-topic/runtime/selected_candidate_route_choice.active.json",
         }
         (self.runtime_root / "topic_state.json").write_text(
             json.dumps(topic_state, indent=2) + "\n",
@@ -1916,7 +1916,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         self.assertEqual(bundle["runtime_mode"], "promote")
         self.assertIn("topics/demo-topic/runtime/promotion_gate.md", must_read_paths)
         self.assertIn(
-            "runtime/topics/demo-topic/selected_candidate_route_choice.active.md",
+            "topics/demo-topic/runtime/selected_candidate_route_choice.active.md",
             must_read_paths,
         )
 
@@ -1959,7 +1959,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                             "source_count": 1,
                         },
                     ],
-                    "pointers": {"control_note_path": "runtime/topics/demo-topic/control_note.md"},
+                    "pointers": {"control_note_path": "topics/demo-topic/runtime/control_note.md"},
                 },
                 indent=2,
             )
@@ -2113,14 +2113,14 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             operator_checkpoint_status="cancelled",
             selected_action_type="dispatch_execution_task",
             selected_action_summary="Dispatch the selected execution task.",
-            must_read_now=[{"path": "runtime/topics/demo-topic/topic_dashboard.md", "reason": "dashboard"}],
+            must_read_now=[{"path": "topics/demo-topic/runtime/topic_dashboard.md", "reason": "dashboard"}],
             may_defer_until_trigger=[],
             escalation_triggers=[
                 {
                     "trigger": "verification_route_selection",
                     "active": True,
                     "condition": "selected route is active",
-                    "required_reads": ["runtime/topics/demo-topic/selected_validation_route.json"],
+                    "required_reads": ["topics/demo-topic/runtime/selected_validation_route.json"],
                 }
             ],
         )
@@ -2135,14 +2135,14 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
             operator_checkpoint_status="cancelled",
             selected_action_type="promote_candidate",
             selected_action_summary="Promote the current candidate into Layer 2.",
-            must_read_now=[{"path": "runtime/topics/demo-topic/promotion_gate.md", "reason": "gate"}],
+            must_read_now=[{"path": "topics/demo-topic/runtime/promotion_gate.md", "reason": "gate"}],
             may_defer_until_trigger=[],
             escalation_triggers=[
                 {
                     "trigger": "promotion_intent",
                     "active": True,
                     "condition": "writeback is active",
-                    "required_reads": ["runtime/topics/demo-topic/promotion_gate.md"],
+                    "required_reads": ["topics/demo-topic/runtime/promotion_gate.md"],
                 }
             ],
         )
@@ -2156,13 +2156,13 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                 "trigger": "verification_route_selection",
                 "active": True,
                 "condition": "verification path is active",
-                "required_reads": ["runtime/topics/demo-topic/selected_validation_route.md"],
+                "required_reads": ["topics/demo-topic/runtime/selected_validation_route.md"],
             },
             {
                 "trigger": "promotion_intent",
                 "active": True,
                 "condition": "promotion path is active",
-                "required_reads": ["runtime/topics/demo-topic/promotion_gate.md"],
+                "required_reads": ["topics/demo-topic/runtime/promotion_gate.md"],
             },
         ]
 
@@ -2193,7 +2193,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
         )
         self.assertEqual(roles["compatibility"]["current_topic_machine"], "runtime/current_topic.json")
         self.assertEqual(roles["compatibility"]["operator_console"], "topics/demo-topic/runtime/operator_console.md")
-        self.assertEqual(status_payload["must_read_now"][0]["path"], "runtime/topics/demo-topic/topic_dashboard.md")
+        self.assertEqual(status_payload["must_read_now"][0]["path"], "topics/demo-topic/runtime/topic_dashboard.md")
 
     def test_topic_status_materializes_layer_graph_surface(self) -> None:
         (self.runtime_root / "topic_state.json").write_text(
@@ -2206,7 +2206,7 @@ class RuntimeProfileProjectionTests(unittest.TestCase):
                     "latest_run_id": "run-001",
                     "research_mode": "formal_derivation",
                     "pointers": {
-                        "control_note_path": "runtime/topics/demo-topic/control_note.md"
+                        "control_note_path": "topics/demo-topic/runtime/control_note.md"
                     },
                 },
                 indent=2,

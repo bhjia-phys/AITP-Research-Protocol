@@ -63,7 +63,7 @@ class HypothesisRouteChoiceContractTests(unittest.TestCase):
 
     def _seed_demo_topic(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/topic_state.json",
+            "topics/demo-topic/runtime/topic_state.json",
             {
                 "topic_slug": "demo-topic",
                 "latest_run_id": "run-001",
@@ -72,23 +72,23 @@ class HypothesisRouteChoiceContractTests(unittest.TestCase):
                 "research_mode": "formal_derivation",
                 "summary": "The active topic should show whether to stay local or yield to the next handoff candidate.",
                 "pointers": {
-                    "next_action_decision_note_path": "runtime/topics/demo-topic/next_action_decision.md"
+                    "next_action_decision_note_path": "topics/demo-topic/runtime/next_action_decision.md"
                 },
             },
         )
-        (self.kernel_root / "runtime" / "topics" / "demo-topic" / "next_action_decision.md").parent.mkdir(parents=True, exist_ok=True)
-        (self.kernel_root / "runtime" / "topics" / "demo-topic" / "next_action_decision.md").write_text(
+        (self.kernel_root / "topics" / "demo-topic" / "runtime" / "next_action_decision.md").parent.mkdir(parents=True, exist_ok=True)
+        (self.kernel_root / "topics" / "demo-topic" / "runtime" / "next_action_decision.md").write_text(
             "# Next action\n\nStay on the weak-coupling route for the current bounded step.\n",
             encoding="utf-8",
         )
         self._write_json(
-            "runtime/topics/demo-topic/interaction_state.json",
+            "topics/demo-topic/runtime/interaction_state.json",
             {
                 "human_request": "Show whether the current route should stay local or yield to the parked handoff candidate.",
                 "decision_surface": {
                     "selected_action_id": "action:demo-topic:route-choice",
                     "decision_source": "heuristic",
-                    "next_action_decision_note_path": "runtime/topics/demo-topic/next_action_decision.md",
+                    "next_action_decision_note_path": "topics/demo-topic/runtime/next_action_decision.md",
                 },
                 "action_queue_surface": {
                     "queue_source": "heuristic"
@@ -96,7 +96,7 @@ class HypothesisRouteChoiceContractTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/action_queue.jsonl",
+            "topics/demo-topic/runtime/action_queue.jsonl",
             [
                 {
                     "action_id": "action:demo-topic:route-choice",
@@ -109,7 +109,7 @@ class HypothesisRouteChoiceContractTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            "runtime/topics/demo-topic/research_question.contract.json",
+            "topics/demo-topic/runtime/research_question.contract.json",
             {
                 "contract_version": 1,
                 "question_id": "research_question:demo-topic",
@@ -134,7 +134,7 @@ class HypothesisRouteChoiceContractTests(unittest.TestCase):
                         "summary": "The weak-coupling route remains the active local branch.",
                         "route_kind": "current_topic",
                         "route_target_summary": "Keep the weak-coupling route on the current topic branch.",
-                        "route_target_ref": "runtime/topics/demo-topic/action_queue.jsonl",
+                        "route_target_ref": "topics/demo-topic/runtime/action_queue.jsonl",
                         "evidence_refs": ["paper:demo-source"],
                         "exclusion_notes": [],
                     },
@@ -145,7 +145,7 @@ class HypothesisRouteChoiceContractTests(unittest.TestCase):
                         "summary": "The symmetry-breaking route is parked until the cited comparison source lands.",
                         "route_kind": "deferred_buffer",
                         "route_target_summary": "Park the symmetry-breaking route in the deferred buffer until bounded reactivation conditions are met.",
-                        "route_target_ref": "runtime/topics/demo-topic/deferred_candidates.json",
+                        "route_target_ref": "topics/demo-topic/runtime/deferred_candidates.json",
                         "evidence_refs": ["paper:demo-source-b"],
                         "exclusion_notes": [],
                     },
@@ -156,7 +156,7 @@ class HypothesisRouteChoiceContractTests(unittest.TestCase):
                         "summary": "The prior-work route is parked until the child route returns bounded evidence.",
                         "route_kind": "followup_subtopic",
                         "route_target_summary": "Route the prior-work distinction into a bounded follow-up subtopic.",
-                        "route_target_ref": "runtime/topics/demo-topic/followup_subtopics.jsonl",
+                        "route_target_ref": "topics/demo-topic/runtime/followup_subtopics.jsonl",
                         "evidence_refs": ["note:demo-prior-work-gap"],
                         "exclusion_notes": [],
                     },
@@ -172,7 +172,7 @@ class HypothesisRouteChoiceContractTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/deferred_candidates.json",
+            "topics/demo-topic/runtime/deferred_candidates.json",
             {
                 "buffer_version": 1,
                 "topic_slug": "demo-topic",
@@ -198,7 +198,7 @@ class HypothesisRouteChoiceContractTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "source-layer/topics/demo-topic/source_index.jsonl",
+            "topics/demo-topic/L0/source_index.jsonl",
             [
                 {
                     "source_id": "paper:demo-source-b",
@@ -208,7 +208,7 @@ class HypothesisRouteChoiceContractTests(unittest.TestCase):
             ],
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/followup_subtopics.jsonl",
+            "topics/demo-topic/runtime/followup_subtopics.jsonl",
             [
                 {
                     "child_topic_slug": "demo-topic--followup--prior-work",
@@ -226,7 +226,7 @@ class HypothesisRouteChoiceContractTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            "runtime/topics/demo-topic--followup--prior-work/followup_return_packet.json",
+            "topics/demo-topic--followup--prior-work/runtime/followup_return_packet.json",
             {
                 "return_packet_version": 1,
                 "child_topic_slug": "demo-topic--followup--prior-work",

@@ -73,7 +73,7 @@ class HypothesisRouteTransitionResumptionContractTests(unittest.TestCase):
         route_mode: str,
         checkpoint_trigger: bool,
     ) -> None:
-        next_action_note = f"runtime/topics/{topic_slug}/next_action_decision.md"
+        next_action_note = f"topics/{topic_slug}/runtime/next_action_decision.md"
         if route_mode == "current_weak":
             action_summary = (
                 "Stay on the weak-coupling route for the current bounded step while keeping the "
@@ -105,7 +105,7 @@ class HypothesisRouteTransitionResumptionContractTests(unittest.TestCase):
                     "summary": "The weak-coupling route remains the active local branch.",
                     "route_kind": "current_topic",
                     "route_target_summary": "Keep the weak-coupling route on the current topic branch.",
-                    "route_target_ref": f"runtime/topics/{topic_slug}/action_queue.jsonl",
+                    "route_target_ref": f"topics/{topic_slug}/runtime/action_queue.jsonl",
                     "evidence_refs": ["paper:demo-source"],
                     "exclusion_notes": [],
                 }
@@ -118,7 +118,7 @@ class HypothesisRouteTransitionResumptionContractTests(unittest.TestCase):
                     "summary": "The symmetry-breaking route is the bounded handoff target.",
                     "route_kind": "deferred_buffer",
                     "route_target_summary": "Park the symmetry-breaking route in the deferred buffer until bounded reactivation conditions are met.",
-                    "route_target_ref": f"runtime/topics/{topic_slug}/deferred_candidates.json",
+                    "route_target_ref": f"topics/{topic_slug}/runtime/deferred_candidates.json",
                     "evidence_refs": ["paper:demo-source-b"],
                     "exclusion_notes": [],
                 }
@@ -132,7 +132,7 @@ class HypothesisRouteTransitionResumptionContractTests(unittest.TestCase):
                     "summary": "The symmetry-breaking route is the bounded handoff target.",
                     "route_kind": "deferred_buffer",
                     "route_target_summary": "Park the symmetry-breaking route in the deferred buffer until bounded reactivation conditions are met.",
-                    "route_target_ref": f"runtime/topics/{topic_slug}/deferred_candidates.json",
+                    "route_target_ref": f"topics/{topic_slug}/runtime/deferred_candidates.json",
                     "evidence_refs": ["paper:demo-source-b"],
                     "exclusion_notes": [],
                 }
@@ -146,14 +146,14 @@ class HypothesisRouteTransitionResumptionContractTests(unittest.TestCase):
                     "summary": "The symmetry-breaking route is already the resumed local route.",
                     "route_kind": "current_topic",
                     "route_target_summary": "Keep the symmetry-breaking route on the current topic branch.",
-                    "route_target_ref": f"runtime/topics/{topic_slug}/action_queue.jsonl",
+                    "route_target_ref": f"topics/{topic_slug}/runtime/action_queue.jsonl",
                     "evidence_refs": ["paper:demo-source-b"],
                     "exclusion_notes": [],
                 }
             )
 
         self._write_json(
-            f"runtime/topics/{topic_slug}/topic_state.json",
+            f"topics/{topic_slug}/runtime/topic_state.json",
             {
                 "topic_slug": topic_slug,
                 "latest_run_id": "run-001",
@@ -169,7 +169,7 @@ class HypothesisRouteTransitionResumptionContractTests(unittest.TestCase):
         )
         self._write_text(next_action_note, "# Next action\n\n" + action_summary + "\n")
         self._write_json(
-            f"runtime/topics/{topic_slug}/interaction_state.json",
+            f"topics/{topic_slug}/runtime/interaction_state.json",
             {
                 "human_request": "Show the bounded route transition resumption.",
                 "decision_surface": {
@@ -183,7 +183,7 @@ class HypothesisRouteTransitionResumptionContractTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            f"runtime/topics/{topic_slug}/action_queue.jsonl",
+            f"topics/{topic_slug}/runtime/action_queue.jsonl",
             [
                 {
                     "action_id": f"action:{topic_slug}:route-transition-resumption",
@@ -196,7 +196,7 @@ class HypothesisRouteTransitionResumptionContractTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            f"runtime/topics/{topic_slug}/research_question.contract.json",
+            f"topics/{topic_slug}/runtime/research_question.contract.json",
             {
                 "contract_version": 1,
                 "question_id": f"research_question:{topic_slug}",
@@ -225,7 +225,7 @@ class HypothesisRouteTransitionResumptionContractTests(unittest.TestCase):
             },
         )
         self._write_json(
-            f"runtime/topics/{topic_slug}/deferred_candidates.json",
+            f"topics/{topic_slug}/runtime/deferred_candidates.json",
             {
                 "buffer_version": 1,
                 "topic_slug": topic_slug,
@@ -251,7 +251,7 @@ class HypothesisRouteTransitionResumptionContractTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            f"source-layer/topics/{topic_slug}/source_index.jsonl",
+            f"topics/{topic_slug}/L0/source_index.jsonl",
             [
                 {
                     "source_id": "paper:demo-source-b",
@@ -262,12 +262,12 @@ class HypothesisRouteTransitionResumptionContractTests(unittest.TestCase):
         )
         if seed_recorded_receipt:
             target_ref = (
-                f"runtime/topics/{topic_slug}/action_queue.jsonl"
+                f"topics/{topic_slug}/runtime/action_queue.jsonl"
                 if route_mode == "current_target"
-                else f"runtime/topics/{topic_slug}/deferred_candidates.json"
+                else f"topics/{topic_slug}/runtime/deferred_candidates.json"
             )
             self._write_json(
-                f"runtime/topics/{topic_slug}/transition_history.json",
+                f"topics/{topic_slug}/runtime/transition_history.json",
                 {
                     "topic_slug": topic_slug,
                     "status": "recorded",
@@ -303,13 +303,13 @@ class HypothesisRouteTransitionResumptionContractTests(unittest.TestCase):
                             "recorded_by": "test",
                         }
                     ],
-                    "log_path": f"runtime/topics/{topic_slug}/transition_history.jsonl",
-                    "path": f"runtime/topics/{topic_slug}/transition_history.json",
-                    "note_path": f"runtime/topics/{topic_slug}/transition_history.md",
+                    "log_path": f"topics/{topic_slug}/runtime/transition_history.jsonl",
+                    "path": f"topics/{topic_slug}/runtime/transition_history.json",
+                    "note_path": f"topics/{topic_slug}/runtime/transition_history.md",
                 },
             )
             self._write_text(
-                f"runtime/topics/{topic_slug}/transition_history.md",
+                f"topics/{topic_slug}/runtime/transition_history.md",
                 "# Transition history\n\nRecorded enactment of hypothesis:symmetry-breaking.\n",
             )
 
@@ -317,7 +317,7 @@ class HypothesisRouteTransitionResumptionContractTests(unittest.TestCase):
         first_status = self.service.topic_status(topic_slug=topic_slug)
         checkpoint = first_status["operator_checkpoint"]
         self.assertEqual(checkpoint["status"], "requested")
-        checkpoint_path = self.kernel_root / "runtime" / "topics" / topic_slug / "operator_checkpoint.active.json"
+        checkpoint_path = self.kernel_root / "topics" / topic_slug / "runtime" / "operator_checkpoint.active.json"
         payload = json.loads(checkpoint_path.read_text(encoding="utf-8"))
         payload["status"] = "answered"
         payload["active"] = False

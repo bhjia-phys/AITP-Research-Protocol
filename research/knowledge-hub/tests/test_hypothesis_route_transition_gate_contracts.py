@@ -68,7 +68,7 @@ class HypothesisRouteTransitionGateContractTests(unittest.TestCase):
         include_current_topic: bool,
         request_checkpoint: bool,
     ) -> None:
-        next_action_note = f"runtime/topics/{topic_slug}/next_action_decision.md"
+        next_action_note = f"topics/{topic_slug}/runtime/next_action_decision.md"
         if include_current_topic:
             action_type = "manual_followup"
             action_summary = (
@@ -98,7 +98,7 @@ class HypothesisRouteTransitionGateContractTests(unittest.TestCase):
                     "summary": "The weak-coupling route remains the active local branch.",
                     "route_kind": "current_topic",
                     "route_target_summary": "Keep the weak-coupling route on the current topic branch.",
-                    "route_target_ref": f"runtime/topics/{topic_slug}/action_queue.jsonl",
+                    "route_target_ref": f"topics/{topic_slug}/runtime/action_queue.jsonl",
                     "evidence_refs": ["paper:demo-source"],
                     "exclusion_notes": [],
                 }
@@ -114,14 +114,14 @@ class HypothesisRouteTransitionGateContractTests(unittest.TestCase):
                 "summary": "The symmetry-breaking route is parked until the cited comparison source lands.",
                 "route_kind": "deferred_buffer",
                 "route_target_summary": "Park the symmetry-breaking route in the deferred buffer until bounded reactivation conditions are met.",
-                "route_target_ref": f"runtime/topics/{topic_slug}/deferred_candidates.json",
+                "route_target_ref": f"topics/{topic_slug}/runtime/deferred_candidates.json",
                 "evidence_refs": ["paper:demo-source-b"],
                 "exclusion_notes": [],
             }
         )
 
         self._write_json(
-            f"runtime/topics/{topic_slug}/topic_state.json",
+            f"topics/{topic_slug}/runtime/topic_state.json",
             {
                 "topic_slug": topic_slug,
                 "latest_run_id": "run-001",
@@ -141,7 +141,7 @@ class HypothesisRouteTransitionGateContractTests(unittest.TestCase):
             encoding="utf-8",
         )
         self._write_json(
-            f"runtime/topics/{topic_slug}/interaction_state.json",
+            f"topics/{topic_slug}/runtime/interaction_state.json",
             {
                 "human_request": "Show the bounded route transition gate.",
                 "decision_surface": {
@@ -155,7 +155,7 @@ class HypothesisRouteTransitionGateContractTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            f"runtime/topics/{topic_slug}/action_queue.jsonl",
+            f"topics/{topic_slug}/runtime/action_queue.jsonl",
             [
                 {
                     "action_id": f"action:{topic_slug}:route-transition-gate",
@@ -168,7 +168,7 @@ class HypothesisRouteTransitionGateContractTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            f"runtime/topics/{topic_slug}/research_question.contract.json",
+            f"topics/{topic_slug}/runtime/research_question.contract.json",
             {
                 "contract_version": 1,
                 "question_id": f"research_question:{topic_slug}",
@@ -197,7 +197,7 @@ class HypothesisRouteTransitionGateContractTests(unittest.TestCase):
             },
         )
         self._write_json(
-            f"runtime/topics/{topic_slug}/deferred_candidates.json",
+            f"topics/{topic_slug}/runtime/deferred_candidates.json",
             {
                 "buffer_version": 1,
                 "topic_slug": topic_slug,
@@ -223,7 +223,7 @@ class HypothesisRouteTransitionGateContractTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            f"source-layer/topics/{topic_slug}/source_index.jsonl",
+            f"topics/{topic_slug}/L0/source_index.jsonl",
             [
                 {
                     "source_id": "paper:demo-source-b",

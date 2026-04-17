@@ -64,7 +64,7 @@ class CompetingHypothesesContractTests(unittest.TestCase):
 
     def _seed_demo_topic(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/topic_state.json",
+            "topics/demo-topic/runtime/topic_state.json",
             {
                 "topic_slug": "demo-topic",
                 "latest_run_id": "run-001",
@@ -75,7 +75,7 @@ class CompetingHypothesesContractTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/interaction_state.json",
+            "topics/demo-topic/runtime/interaction_state.json",
             {
                 "human_request": "Keep the competing hypotheses explicit while the bounded review continues.",
                 "decision_surface": {
@@ -85,7 +85,7 @@ class CompetingHypothesesContractTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/action_queue.jsonl",
+            "topics/demo-topic/runtime/action_queue.jsonl",
             [
                 {
                     "action_id": "action:demo-topic:compare-hypotheses",
@@ -98,7 +98,7 @@ class CompetingHypothesesContractTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            "runtime/topics/demo-topic/research_question.contract.json",
+            "topics/demo-topic/runtime/research_question.contract.json",
             {
                 "contract_version": 1,
                 "question_id": "research_question:demo-topic",
@@ -152,7 +152,7 @@ class CompetingHypothesesContractTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/deferred_candidates.json",
+            "topics/demo-topic/runtime/deferred_candidates.json",
             {
                 "buffer_version": 1,
                 "topic_slug": "demo-topic",
@@ -169,7 +169,7 @@ class CompetingHypothesesContractTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/followup_subtopics.jsonl",
+            "topics/demo-topic/runtime/followup_subtopics.jsonl",
             [
                 {
                     "child_topic_slug": "demo-topic--followup--prior-work",
@@ -215,7 +215,7 @@ class CompetingHypothesesContractTests(unittest.TestCase):
 
         self.assertEqual(status_payload["active_research_contract"]["competing_hypothesis_count"], 3)
         self.assertEqual(status_payload["active_research_contract"]["leading_hypothesis_id"], "hypothesis:weak-coupling")
-        self.assertTrue((self.kernel_root / "runtime" / "topics" / "demo-topic" / "deferred_candidates.json").exists())
+        self.assertTrue((self.kernel_root / "topics" / "demo-topic" / "runtime" / "deferred_candidates.json").exists())
         self.assertEqual(status_payload["topic_completion"]["followup_subtopic_count"], 1)
         self.assertEqual(replay_payload["conclusions"]["competing_hypothesis_count"], 3)
         self.assertEqual(replay_payload["conclusions"]["excluded_competing_hypothesis_count"], 1)
@@ -226,7 +226,7 @@ class CompetingHypothesesContractTests(unittest.TestCase):
         self.assertTrue(any(step["label"] == "Question contract" for step in replay_payload["reading_path"]))
 
         research_note = (
-            self.kernel_root / "runtime" / "topics" / "demo-topic" / "research_question.contract.md"
+            self.kernel_root / "topics" / "demo-topic" / "runtime" / "research_question.contract.md"
         ).read_text(encoding="utf-8")
         runtime_protocol_note = Path(status_payload["runtime_protocol_note_path"]).read_text(encoding="utf-8")
         replay_note = Path(replay_result["markdown_path"]).read_text(encoding="utf-8")

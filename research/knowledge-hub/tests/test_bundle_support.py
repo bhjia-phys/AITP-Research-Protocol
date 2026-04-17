@@ -23,12 +23,12 @@ class BundleSupportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
             (root / "runtime" / "scripts").mkdir(parents=True, exist_ok=True)
-            (root / "runtime" / "topics" / "demo-topic").mkdir(parents=True, exist_ok=True)
+            (root / "topics" / "demo-topic" / "runtime").mkdir(parents=True, exist_ok=True)
             (root / "validation" / "topics" / "demo-topic").mkdir(parents=True, exist_ok=True)
             (root / "knowledge_hub").mkdir(parents=True, exist_ok=True)
             (root / "runtime" / "scripts" / "orchestrate_topic.py").write_text("#!/usr/bin/env python\n", encoding="utf-8")
             (root / "runtime" / "current_topic.json").write_text("{}\n", encoding="utf-8")
-            (root / "runtime" / "topics" / "demo-topic" / "topic_state.json").write_text("{}\n", encoding="utf-8")
+            (root / "topics" / "demo-topic" / "runtime" / "topic_state.json").write_text("{}\n", encoding="utf-8")
             (root / "validation" / "topics" / "demo-topic" / "run.json").write_text("{}\n", encoding="utf-8")
             (root / "knowledge_hub" / "__init__.py").write_text("", encoding="utf-8")
             (root / "LAYER_MAP.md").write_text("# Layer map\n", encoding="utf-8")
@@ -38,7 +38,7 @@ class BundleSupportTests(unittest.TestCase):
         self.assertIn("LAYER_MAP.md", bundle_rows)
         self.assertIn("runtime/scripts/orchestrate_topic.py", bundle_rows)
         self.assertNotIn("runtime/current_topic.json", bundle_rows)
-        self.assertNotIn("runtime/topics/demo-topic/topic_state.json", bundle_rows)
+        self.assertNotIn("topics/demo-topic/runtime/topic_state.json", bundle_rows)
         self.assertNotIn("validation/topics/demo-topic/run.json", bundle_rows)
         self.assertNotIn("knowledge_hub/__init__.py", bundle_rows)
 

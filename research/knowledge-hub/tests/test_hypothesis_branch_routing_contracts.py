@@ -64,7 +64,7 @@ class HypothesisBranchRoutingContractTests(unittest.TestCase):
 
     def _seed_demo_topic(self) -> None:
         self._write_json(
-            "runtime/topics/demo-topic/topic_state.json",
+            "topics/demo-topic/runtime/topic_state.json",
             {
                 "topic_slug": "demo-topic",
                 "latest_run_id": "run-001",
@@ -73,13 +73,13 @@ class HypothesisBranchRoutingContractTests(unittest.TestCase):
                 "research_mode": "formal_derivation",
                 "summary": "One hypothesis stays local while others route to parked surfaces.",
                 "pointers": {
-                    "innovation_direction_path": "runtime/topics/demo-topic/innovation_direction.md",
-                    "innovation_decisions_path": "runtime/topics/demo-topic/innovation_decisions.jsonl",
+                    "innovation_direction_path": "topics/demo-topic/runtime/innovation_direction.md",
+                    "innovation_decisions_path": "topics/demo-topic/runtime/innovation_decisions.jsonl",
                 },
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/interaction_state.json",
+            "topics/demo-topic/runtime/interaction_state.json",
             {
                 "human_request": "Keep the weak-coupling route local, park one route, and branch one route outward.",
                 "decision_surface": {
@@ -89,7 +89,7 @@ class HypothesisBranchRoutingContractTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/action_queue.jsonl",
+            "topics/demo-topic/runtime/action_queue.jsonl",
             [
                 {
                     "action_id": "action:demo-topic:route-hypotheses",
@@ -101,15 +101,15 @@ class HypothesisBranchRoutingContractTests(unittest.TestCase):
                 }
             ],
         )
-        (self.kernel_root / "runtime" / "topics" / "demo-topic" / "innovation_direction.md").parent.mkdir(
+        (self.kernel_root / "topics" / "demo-topic" / "runtime" / "innovation_direction.md").parent.mkdir(
             parents=True, exist_ok=True
         )
-        (self.kernel_root / "runtime" / "topics" / "demo-topic" / "innovation_direction.md").write_text(
+        (self.kernel_root / "topics" / "demo-topic" / "runtime" / "innovation_direction.md").write_text(
             "# Innovation direction\n\nKeep the weak-coupling route on the active topic.\n",
             encoding="utf-8",
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/innovation_decisions.jsonl",
+            "topics/demo-topic/runtime/innovation_decisions.jsonl",
             [
                 {
                     "decision": "continue",
@@ -118,7 +118,7 @@ class HypothesisBranchRoutingContractTests(unittest.TestCase):
             ],
         )
         self._write_json(
-            "runtime/topics/demo-topic/research_question.contract.json",
+            "topics/demo-topic/runtime/research_question.contract.json",
             {
                 "contract_version": 1,
                 "question_id": "research_question:demo-topic",
@@ -143,7 +143,7 @@ class HypothesisBranchRoutingContractTests(unittest.TestCase):
                         "summary": "The weak-coupling explanation remains the active local route.",
                         "route_kind": "current_topic",
                         "route_target_summary": "Keep the weak-coupling route on the current topic branch under the current steering note.",
-                        "route_target_ref": "runtime/topics/demo-topic/innovation_direction.md",
+                        "route_target_ref": "topics/demo-topic/runtime/innovation_direction.md",
                         "evidence_refs": ["paper:demo-source", "note:demo-weak-coupling-check"],
                         "exclusion_notes": [],
                     },
@@ -154,7 +154,7 @@ class HypothesisBranchRoutingContractTests(unittest.TestCase):
                         "summary": "The symmetry-breaking route should stay parked until broader evidence arrives.",
                         "route_kind": "deferred_buffer",
                         "route_target_summary": "Park the symmetry-breaking route in the deferred buffer until bounded reactivation conditions are met.",
-                        "route_target_ref": "runtime/topics/demo-topic/deferred_candidates.json",
+                        "route_target_ref": "topics/demo-topic/runtime/deferred_candidates.json",
                         "evidence_refs": ["note:demo-symmetry-gap"],
                         "exclusion_notes": [],
                     },
@@ -165,7 +165,7 @@ class HypothesisBranchRoutingContractTests(unittest.TestCase):
                         "summary": "A prior-work distinction should stay live on a separate follow-up branch.",
                         "route_kind": "followup_subtopic",
                         "route_target_summary": "Route the prior-work distinction into a bounded follow-up subtopic rather than widening the current topic.",
-                        "route_target_ref": "runtime/topics/demo-topic/followup_subtopics.jsonl",
+                        "route_target_ref": "topics/demo-topic/runtime/followup_subtopics.jsonl",
                         "evidence_refs": ["note:demo-prior-work-gap"],
                         "exclusion_notes": [],
                     },
@@ -192,7 +192,7 @@ class HypothesisBranchRoutingContractTests(unittest.TestCase):
             },
         )
         self._write_json(
-            "runtime/topics/demo-topic/deferred_candidates.json",
+            "topics/demo-topic/runtime/deferred_candidates.json",
             {
                 "buffer_version": 1,
                 "topic_slug": "demo-topic",
@@ -209,7 +209,7 @@ class HypothesisBranchRoutingContractTests(unittest.TestCase):
             },
         )
         self._write_jsonl(
-            "runtime/topics/demo-topic/followup_subtopics.jsonl",
+            "topics/demo-topic/runtime/followup_subtopics.jsonl",
             [
                 {
                     "child_topic_slug": "demo-topic--followup--prior-work",
@@ -255,10 +255,10 @@ class HypothesisBranchRoutingContractTests(unittest.TestCase):
         self.assertEqual(replay_payload["conclusions"]["deferred_branch_hypothesis_count"], 1)
         self.assertEqual(replay_payload["conclusions"]["followup_branch_hypothesis_count"], 1)
         self.assertEqual(status_payload["topic_completion"]["followup_subtopic_count"], 1)
-        self.assertTrue((self.kernel_root / "runtime" / "topics" / "demo-topic" / "deferred_candidates.json").exists())
+        self.assertTrue((self.kernel_root / "topics" / "demo-topic" / "runtime" / "deferred_candidates.json").exists())
 
         research_note = (
-            self.kernel_root / "runtime" / "topics" / "demo-topic" / "research_question.contract.md"
+            self.kernel_root / "topics" / "demo-topic" / "runtime" / "research_question.contract.md"
         ).read_text(encoding="utf-8")
         runtime_protocol_note = Path(status_payload["runtime_protocol_note_path"]).read_text(encoding="utf-8")
         replay_note = Path(replay_result["markdown_path"]).read_text(encoding="utf-8")

@@ -44,7 +44,7 @@ class SourceCatalogTests(unittest.TestCase):
         relevance_tier: str | None = None,
         role_labels: list[str] | None = None,
     ) -> None:
-        path = self.kernel_root / "source-layer" / "topics" / topic_slug / "source_index.jsonl"
+        path = self.kernel_root / "topics" / topic_slug / "L0" / "source_index.jsonl"
         path.parent.mkdir(parents=True, exist_ok=True)
         existing = path.read_text(encoding="utf-8") if path.exists() else ""
         payload = {

@@ -19,7 +19,7 @@ class _StubService:
         self.kernel_root = kernel_root
 
     def _runtime_root(self, topic_slug: str) -> Path:
-        return self.kernel_root / "runtime" / "topics" / topic_slug
+        return self.kernel_root / "topics" / topic_slug / "runtime"
 
     def _relativize(self, path: Path) -> str:
         return path.relative_to(self.kernel_root).as_posix()
@@ -103,7 +103,7 @@ class TheoryContextInjectionTests(unittest.TestCase):
             candidate_id=candidate_id,
             formal_theory_review_path=formal_review_path,
             prerequisite_closure_review_path=prerequisite_path,
-            target_paths=["runtime/topics/demo-topic/statement_compilation.active.md"],
+            target_paths=["topics/demo-topic/runtime/statement_compilation.active.md"],
         )
 
         self.assertIsNotNone(payload)

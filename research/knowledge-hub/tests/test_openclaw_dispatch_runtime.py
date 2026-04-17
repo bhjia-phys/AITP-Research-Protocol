@@ -149,7 +149,7 @@ class DispatchRuntimeControllerActionTests(unittest.TestCase):
 class DispatchActionQueueTests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmpdir = tempfile.TemporaryDirectory()
-        self.runtime_root = Path(self._tmpdir.name) / "runtime" / "topics" / "demo-topic"
+        self.runtime_root = Path(self._tmpdir.name) / "topics" / "demo-topic" / "runtime"
         self.runtime_root.mkdir(parents=True, exist_ok=True)
         self.module = _load_module(
             "aitp_dispatch_action_queue_test",
@@ -245,7 +245,7 @@ class DispatchActionQueueTests(unittest.TestCase):
 class DispatchExecutionTaskTests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmpdir = tempfile.TemporaryDirectory()
-        self.runtime_root = Path(self._tmpdir.name) / "runtime" / "topics" / "demo-topic"
+        self.runtime_root = Path(self._tmpdir.name) / "topics" / "demo-topic" / "runtime"
         self.runtime_root.mkdir(parents=True, exist_ok=True)
         self.module = _load_module(
             "aitp_dispatch_execution_task_test",
@@ -369,7 +369,7 @@ class ExternalSkillDiscoveryTests(unittest.TestCase):
 class OpenClawLoopSurfaceTests(unittest.TestCase):
     def setUp(self) -> None:
         self._tmpdir = tempfile.TemporaryDirectory()
-        self.runtime_root = Path(self._tmpdir.name) / "runtime" / "topics" / "demo-topic"
+        self.runtime_root = Path(self._tmpdir.name) / "topics" / "demo-topic" / "runtime"
         self.runtime_root.mkdir(parents=True, exist_ok=True)
 
     def tearDown(self) -> None:

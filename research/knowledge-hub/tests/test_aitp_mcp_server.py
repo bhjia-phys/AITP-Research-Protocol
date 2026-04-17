@@ -4,7 +4,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import sys
 
@@ -269,6 +269,35 @@ class _AITPStubFailure:
 
 
 class AITPMCPServerTests(unittest.TestCase):
+    def test_main_rebuilds_service_from_explicit_cli_roots(self) -> None:
+        fake_server = Mock()
+        existing_server = Mock()
+
+        with patch.object(aitp_mcp_server, "AITPService", autospec=True) as mock_service_cls:
+            with patch.object(aitp_mcp_server, "build_mcp_server", return_value=fake_server) as mock_build:
+                with patch.object(aitp_mcp_server, "mcp", existing_server):
+                    with patch.object(
+                        sys,
+                        "argv",
+                        [
+                            "aitp-mcp",
+                            "--kernel-root",
+                            "C:\\temp\\aitp-kernel",
+                            "--repo-root",
+                            "D:\\repo\\AITP",
+                            "--mcp-profile",
+                            "review",
+                        ],
+                    ):
+                        aitp_mcp_server.main()
+
+        mock_service_cls.assert_called_once_with(
+            kernel_root=Path("C:\\temp\\aitp-kernel"),
+            repo_root=Path("D:\\repo\\AITP"),
+        )
+        mock_build.assert_called_once_with("review")
+        fake_server.run.assert_called_once_with()
+
     def test_review_and_skeptic_profiles_register_only_read_only_tools(self) -> None:
         full_server = aitp_mcp_server.build_mcp_server("full")
         review_server = aitp_mcp_server.build_mcp_server("review")

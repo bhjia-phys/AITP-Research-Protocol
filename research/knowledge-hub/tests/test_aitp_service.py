@@ -5951,6 +5951,14 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(payload["plan_reuse_context"]["read_depth"], "standard")
         self.assertEqual(payload["idea_reuse_context"]["retrieval_profile"], "l3_idea_reuse_quick")
         self.assertEqual(payload["plan_reuse_context"]["retrieval_profile"], "l3_plan_reuse_standard")
+        self.assertEqual(
+            payload["idea_reuse_context"]["profile_shelf_path"],
+            "canonical/compiled/obsidian_l2/profiles/l3_idea_reuse_quick.md",
+        )
+        self.assertEqual(
+            payload["plan_reuse_context"]["profile_shelf_path"],
+            "canonical/compiled/obsidian_l2/profiles/l3_plan_reuse_standard.md",
+        )
         self.assertTrue(payload["idea_reuse_context"]["canonical_hits"])
         self.assertEqual(
             payload["execution_resource_context"]["recommended_server"]["capability_id"],
@@ -5967,6 +5975,19 @@ class AITPServiceTests(unittest.TestCase):
         self.assertTrue(Path(payload["idea_reuse_context_path"]).exists())
         self.assertTrue(Path(payload["plan_reuse_context_path"]).exists())
         self.assertTrue(Path(payload["execution_resource_context_path"]).exists())
+        self.assertTrue((self.kernel_root / "canonical" / "compiled" / "obsidian_l2" / "profiles" / "l3_idea_reuse_quick.md").exists())
+        self.assertTrue((self.kernel_root / "canonical" / "compiled" / "obsidian_l2" / "profiles" / "l3_plan_reuse_standard.md").exists())
+        idea_note = Path(payload["idea_reuse_context_note_path"]).read_text(encoding="utf-8")
+        plan_note = Path(payload["plan_reuse_context_note_path"]).read_text(encoding="utf-8")
+        self.assertIn("canonical/compiled/obsidian_l2/profiles/l3_idea_reuse_quick.md", idea_note)
+        self.assertIn("## Core Hits", idea_note)
+        self.assertIn("## Warnings", idea_note)
+        self.assertIn("warning_note:tfim-dense-ed-finite-size-limit", idea_note)
+        self.assertIn("## Workflows", plan_note)
+        self.assertIn("## Topic Skill Projections", plan_note)
+        self.assertIn("## Recently Reused Units", plan_note)
+        self.assertIn("workflow:tfim-benchmark-workflow", plan_note)
+        self.assertIn("topic_skill_projection:tfim-benchmark-first-route", plan_note)
 
     def test_prepare_verification_plan_contract_carries_explicit_resource_refs(self) -> None:
         self._prepare_l2_graph_kernel()
@@ -6932,15 +6953,15 @@ class AITPServiceTests(unittest.TestCase):
         )
 
     def test_sync_l1_graph_export_to_theoretical_physics_brain_mirrors_local_export(self) -> None:
-        export_root = self.kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph"
+        export_root = self.kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph"
         export_root.mkdir(parents=True, exist_ok=True)
         (export_root / "manifest.json").write_text(
             json.dumps(
                 {
                     "kind": "obsidian_concept_graph_export",
                     "topic_slug": "demo-topic",
-                    "root_path": "intake/topics/demo-topic/vault/wiki/concept-graph",
-                    "index_path": "intake/topics/demo-topic/vault/wiki/concept-graph/index.md",
+                    "root_path": "topics/demo-topic/L1/vault/wiki/concept-graph",
+                    "index_path": "topics/demo-topic/L1/vault/wiki/concept-graph/index.md",
                     "summary": {
                         "node_note_count": 1,
                         "community_folder_count": 1,
@@ -9796,7 +9817,7 @@ class AITPServiceTests(unittest.TestCase):
             "bootstrap": {
                 "runtime_root": "topics/demo-topic",
                 "files": {
-                    "agent_brief": "runtime/runtime/topics/demo-topic/agent_brief.md",
+                    "agent_brief": "topics/demo-topic/runtime/agent_brief.md",
                     "operator_console": "topics/demo-topic/runtime/operator_console.md",
                     "conformance_report": "topics/demo-topic/runtime/conformance_report.md",
                 },
@@ -12926,6 +12947,7 @@ class AITPServiceTests(unittest.TestCase):
         self.assertEqual(claude_run_hook_path.read_text(encoding="utf-8"), canonical_claude_run_hook)
         self.assertEqual(claude_hooks_json_path.read_text(encoding="utf-8"), canonical_claude_hooks_json)
         self.assertIn("claude mcp add-json", claude_setup_path.read_text(encoding="utf-8"))
+        self.assertIn("--kernel-root", claude_setup_path.read_text(encoding="utf-8"))
         settings_payload = json.loads(claude_settings_path.read_text(encoding="utf-8"))
         self.assertIn("SessionStart", settings_payload["hooks"])
         claude_mcp_payload = json.loads(claude_mcp_config_path.read_text(encoding="utf-8"))

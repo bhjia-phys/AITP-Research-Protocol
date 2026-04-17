@@ -183,7 +183,7 @@ class TopicTruthRootLayoutTests(unittest.TestCase):
         self.assertIn("Which bounded route should run next?", pending_note)
 
     def test_request_promotion_reads_legacy_runtime_and_feedback_layout(self) -> None:
-        legacy_runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        legacy_runtime_root = self.kernel_root / "topics" / "demo-topic" / "runtime"
         legacy_feedback_run_root = (
             self.kernel_root / "feedback" / "topics" / "demo-topic" / "runs" / "run-001"
         )
@@ -231,7 +231,7 @@ class TopicTruthRootLayoutTests(unittest.TestCase):
         )
 
         new_gate_path = self.kernel_root / "topics" / "demo-topic" / "runtime" / "promotion_gate.json"
-        legacy_gate_path = self.kernel_root / "runtime" / "topics" / "demo-topic" / "promotion_gate.json"
+        legacy_gate_path = self.kernel_root / "topics" / "demo-topic" / "runtime" / "promotion_gate.json"
         self.assertEqual(payload["status"], "pending_human_approval")
         self.assertTrue(new_gate_path.exists())
         self.assertTrue(legacy_gate_path.exists())
@@ -309,7 +309,7 @@ class TopicTruthRootLayoutTests(unittest.TestCase):
         write_topic_synopsis("demo-topic", synopsis_payload, kernel_root=self.kernel_root)
         write_pending_decisions_projection("demo-topic", pending_payload, kernel_root=self.kernel_root)
 
-        legacy_runtime_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        legacy_runtime_root = self.kernel_root / "topics" / "demo-topic" / "runtime"
         self.assertTrue((legacy_runtime_root / "topic_synopsis.json").exists())
         self.assertTrue((legacy_runtime_root / "topic_synopsis.md").exists())
         self.assertTrue((legacy_runtime_root / "pending_decisions.json").exists())

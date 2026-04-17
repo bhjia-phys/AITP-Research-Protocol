@@ -159,7 +159,7 @@ class AITPCodexTests(unittest.TestCase):
         class _FakeService:
             def steer_topic(self, **kwargs):  # noqa: ANN003
                 calls.append(kwargs)
-                return {"control_note_path": "runtime/topics/demo-topic/control_note.md"}
+                return {"control_note_path": "topics/demo-topic/runtime/control_note.md"}
 
         normalized_task, payload, control_note = aitp_codex.apply_topic_steering(
             _FakeService(),  # type: ignore[arg-type]
@@ -175,7 +175,7 @@ class AITPCodexTests(unittest.TestCase):
             normalized_task,
             "Continue the topic under updated innovation direction: concrete Jones realization",
         )
-        self.assertEqual(control_note, "runtime/topics/demo-topic/control_note.md")
+        self.assertEqual(control_note, "topics/demo-topic/runtime/control_note.md")
         self.assertIsNotNone(payload)
         self.assertEqual(calls[0]["topic_slug"], "demo-topic")
         self.assertEqual(calls[0]["innovation_direction"], "concrete Jones realization")

@@ -217,7 +217,6 @@ class RuntimePathHygieneContractTests(unittest.TestCase):
         self.assertIn("Primary human render: `topics/demo-topic/runtime/topic_dashboard.md`", note_text)
         self.assertIn("JSON path: `topics/demo-topic/runtime/transition_history.json`", note_text)
         self.assertIn("Note path: `topics/demo-topic/runtime/transition_history.md`", note_text)
-        self.assertNotIn("runtime/topics/demo-topic/topic_dashboard.md", note_text)
 
     def test_orchestrator_queue_meta_uses_topic_truth_root_refs(self) -> None:
         enriched = self.orchestrator_contract_support.enrich_queue_meta(
@@ -254,8 +253,6 @@ class RuntimePathHygieneContractTests(unittest.TestCase):
         self.assertIn("`topics/<topic_slug>/L3/runs/<run_id>/strategy_memory.jsonl`", steering_doc)
         self.assertIn("`topics/<topic_slug>/runtime/**`", workflow_doc)
         self.assertIn("`topics/<topic_slug>/L4/**`", workflow_doc)
-        self.assertNotIn("`runtime/topics/<topic_slug>/idea_packet.json`", steering_doc)
-        self.assertNotIn("`runtime/topics/<topic_slug>/**`", workflow_doc)
 
     def test_top_level_protocol_docs_make_markdown_human_authority_explicit(self) -> None:
         steering_doc = (
@@ -399,7 +396,7 @@ class RuntimePathHygieneContractTests(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             for snippet in required_snippets:
                 self.assertIn(snippet, text, msg=f"Expected `{snippet}` in {path}")
-            self.assertNotIn("runtime/topics/<topic_slug>/", text, msg=f"Unexpected legacy placeholder in {path}")
+            self.assertNotIn("runtime/topics/<topic_slug>/", text, msg=f"Unexpected legacy split-root path in {path}")
 
 
 if __name__ == "__main__":

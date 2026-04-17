@@ -29,15 +29,15 @@ class ObsidianGraphBridgeSupportTests(unittest.TestCase):
         self.brain_root = self.root / "obsidian-markdown" / "01 Theoretical Physics"
         self.source_kernel = Path(__file__).resolve().parents[1]
         shutil.copytree(self.source_kernel / "canonical", self.kernel_root / "canonical", dirs_exist_ok=True)
-        export_root = self.kernel_root / "intake" / "topics" / "demo-topic" / "vault" / "wiki" / "concept-graph"
+        export_root = self.kernel_root / "topics" / "demo-topic" / "L1" / "vault" / "wiki" / "concept-graph"
         export_root.mkdir(parents=True, exist_ok=True)
         (export_root / "manifest.json").write_text(
             json.dumps(
                 {
                     "kind": "obsidian_concept_graph_export",
                     "topic_slug": "demo-topic",
-                    "root_path": "intake/topics/demo-topic/vault/wiki/concept-graph",
-                    "index_path": "intake/topics/demo-topic/vault/wiki/concept-graph/index.md",
+                    "root_path": "topics/demo-topic/L1/vault/wiki/concept-graph",
+                    "index_path": "topics/demo-topic/L1/vault/wiki/concept-graph/index.md",
                     "summary": {
                         "node_note_count": 1,
                         "community_folder_count": 1,

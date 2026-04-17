@@ -323,6 +323,60 @@ class L2CompilerTests(unittest.TestCase):
         self.assertIn("[[families/methods/method--rpa-fit|RPA fit]]", topic_markdown)
         self.assertIn("[[families/warning-notes/warning_note--scope-trap|Scope trap]]", topic_markdown)
 
+    def test_materialize_workspace_memory_map_profile_shelf_splits_core_warnings_workflows_projections_and_reuse(self) -> None:
+        self._write_unit(
+            "concepts",
+            "concept:green-function",
+            "concept",
+            "Green function",
+            "Core concept.",
+        )
+        self._write_unit(
+            "warning-notes",
+            "warning_note:scope-trap",
+            "warning_note",
+            "Scope trap",
+            "Portable warning.",
+        )
+        self._write_unit(
+            "workflows",
+            "workflow:gw-check",
+            "workflow",
+            "GW check",
+            "Reusable workflow.",
+        )
+        self._write_unit(
+            "topic-skill-projections",
+            "topic_skill_projection:demo-route",
+            "topic_skill_projection",
+            "Demo route",
+            "Reusable projection.",
+        )
+        self._write_unit(
+            "methods",
+            "method:rpa-fit",
+            "method",
+            "RPA fit",
+            "Reusable method.",
+            reuse_receipts=["topics/demo-topic/L3/runs/run-001/iterations/iteration-001/plan.contract.json"],
+        )
+
+        result = materialize_workspace_memory_map(self.kernel_root)
+
+        profile_markdown = (
+            Path(result["obsidian_root"]) / "profiles" / "l3_plan_reuse_standard.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("## Core Hits", profile_markdown)
+        self.assertIn("## Warnings", profile_markdown)
+        self.assertIn("## Workflows", profile_markdown)
+        self.assertIn("## Topic Skill Projections", profile_markdown)
+        self.assertIn("## Recently Reused Units", profile_markdown)
+        self.assertIn("[[families/concepts/concept--green-function|Green function]]", profile_markdown)
+        self.assertIn("[[families/warning-notes/warning_note--scope-trap|Scope trap]]", profile_markdown)
+        self.assertIn("[[families/workflows/workflow--gw-check|GW check]]", profile_markdown)
+        self.assertIn("[[families/topic-skill-projections/topic_skill_projection--demo-route|Demo route]]", profile_markdown)
+        self.assertIn("[[families/methods/method--rpa-fit|RPA fit]]", profile_markdown)
+
     def test_materialize_workspace_graph_report_writes_navigation_pages(self) -> None:
         self._write_unit("concepts", "concept:green-function", "concept", "Green function", "Core concept.")
         self._write_unit("workflows", "workflow:gw-check", "workflow", "GW check", "Reusable workflow.")

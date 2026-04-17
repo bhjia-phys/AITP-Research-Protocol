@@ -164,7 +164,7 @@ class SourceDiscoveryContractTests(unittest.TestCase):
             self.assertEqual(registration["layer0_source_root"].name, source_slug)
             self.assertEqual(
                 registration["layer0_source_root"].relative_to(knowledge_root).as_posix(),
-                f"source-layer/topics/measurement-induced-algebraic-transition-and-observer-algebras/sources/{source_slug}",
+                f"topics/measurement-induced-algebraic-transition-and-observer-algebras/L0/sources/{source_slug}",
             )
 
     def test_register_arxiv_source_refreshes_runtime_status_surfaces_when_topic_runtime_exists(self) -> None:
@@ -185,7 +185,7 @@ class SourceDiscoveryContractTests(unittest.TestCase):
                 target = knowledge_root / "runtime" / name
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(self.kernel_root / "runtime" / name, target)
-            runtime_root = knowledge_root / "runtime" / "topics" / "demo-topic"
+            runtime_root = knowledge_root / "topics" / "demo-topic" / "runtime"
             runtime_root.mkdir(parents=True, exist_ok=True)
             (runtime_root / "topic_state.json").write_text(
                 json.dumps(
@@ -604,10 +604,10 @@ class SourceDiscoveryContractTests(unittest.TestCase):
                         {"node_id": "concept:anyon-condensation", "label": "Anyon condensation", "node_type": "concept", "confidence_tier": "EXTRACTED", "confidence_score": 0.93},
                     ],
                     "edges": [
-                        {"edge_id": "edge-topological-order-special-case-anyon-condensation", "from_id": "concept:anyon-condensation", "relation": "special_case_of", "to_id": "concept:topological-order", "evidence_refs": ["source-layer/topics/demo-topic/sources/paper-topological-order-and-anyon-condensation-2401-00001/source.json"], "notes": "offline fixture"}
+                        {"edge_id": "edge-topological-order-special-case-anyon-condensation", "from_id": "concept:anyon-condensation", "relation": "special_case_of", "to_id": "concept:topological-order", "evidence_refs": ["topics/demo-topic/L0/sources/paper-topological-order-and-anyon-condensation-2401-00001/source.json"], "notes": "offline fixture"}
                     ],
                     "hyperedges": [
-                        {"hyperedge_id": "hyperedge-condensation-route", "relation": "supports", "node_ids": ["concept:topological-order", "concept:anyon-condensation"], "evidence_refs": ["source-layer/topics/demo-topic/sources/paper-topological-order-and-anyon-condensation-2401-00001/source.json"], "notes": "offline fixture"}
+                        {"hyperedge_id": "hyperedge-condensation-route", "relation": "supports", "node_ids": ["concept:topological-order", "concept:anyon-condensation"], "evidence_refs": ["topics/demo-topic/L0/sources/paper-topological-order-and-anyon-condensation-2401-00001/source.json"], "notes": "offline fixture"}
                     ],
                     "communities": [
                         {"community_id": "community-topological-order", "label": "Topological order cluster", "node_ids": ["concept:topological-order", "concept:anyon-condensation"]}

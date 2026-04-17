@@ -50,7 +50,7 @@ class Phase6ProtocolTests(unittest.TestCase):
             "session-chronicle.schema.json",
         )
 
-        topic_root = self.kernel_root / "runtime" / "topics" / "demo-topic"
+        topic_root = self.kernel_root / "topics" / "demo-topic" / "runtime"
         topic_root.mkdir(parents=True, exist_ok=True)
         (topic_root / "topic_state.json").write_text(
             json.dumps(
@@ -144,9 +144,9 @@ class Phase6ProtocolTests(unittest.TestCase):
             "Selected the exact benchmark lane first.",
             "small-system",
             "The exact benchmark must close before larger-system inference.",
-            ["runtime/topics/demo-topic/topic_state.json"],
+            ["topics/demo-topic/runtime/topic_state.json"],
             context="Benchmark disagreement still exists for the larger-system lane.",
-            output_refs=["runtime/topics/demo-topic/benchmarks/run-001.json"],
+            output_refs=["topics/demo-topic/runtime/benchmarks/run-001.json"],
             kernel_root=self.kernel_root,
         )
         second = record_decision_trace(
@@ -154,7 +154,7 @@ class Phase6ProtocolTests(unittest.TestCase):
             "Deferred the larger-system lane until the benchmark is stable.",
             "defer",
             "The benchmark surface is not stable enough yet.",
-            ["runtime/topics/demo-topic/benchmarks/run-001.json"],
+            ["topics/demo-topic/runtime/benchmarks/run-001.json"],
             related_traces=[first["decision_trace"]["id"]],
             would_change_if="A larger exact benchmark closes the disagreement.",
             kernel_root=self.kernel_root,
@@ -188,7 +188,7 @@ class Phase6ProtocolTests(unittest.TestCase):
             "Selected the small-system lane for the first bounded pass.",
             "small-system",
             "It gives the cleanest exact baseline.",
-            ["runtime/topics/demo-topic/topic_state.json"],
+            ["topics/demo-topic/runtime/topic_state.json"],
             kernel_root=self.kernel_root,
         )
 
@@ -197,7 +197,7 @@ class Phase6ProtocolTests(unittest.TestCase):
             chronicle_id,
             "Run the bounded small-system lane",
             "The exact benchmark route was reproduced.",
-            artifacts_created=["runtime/topics/demo-topic/benchmarks/run-001.json"],
+            artifacts_created=["topics/demo-topic/runtime/benchmarks/run-001.json"],
             decision_trace_refs=[trace["decision_trace"]["id"]],
             kernel_root=self.kernel_root,
         )
