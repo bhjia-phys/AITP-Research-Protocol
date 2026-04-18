@@ -871,6 +871,7 @@ def materialize_runtime_protocol_bundle(
         explicit_load_profile=load_profile,
         human_request=human_request,
         topic_state=topic_state,
+        topic_slug=topic_slug,
     )
     topic_state = self._persist_load_profile_state(
         topic_slug=topic_slug,
@@ -2247,6 +2248,7 @@ def materialize_runtime_protocol_bundle(
         escalation_triggers=escalation_triggers,
         human_request=human_request,
         current_mode=last_recorded_mode,
+        topic_slug=topic_slug,
     )
     protocol_manifest = materialize_protocol_manifest(
         self,
@@ -2279,6 +2281,7 @@ def materialize_runtime_protocol_bundle(
         escalation_triggers=escalation_triggers,
         human_request=human_request,
         current_mode=last_recorded_mode,
+        topic_slug=topic_slug,
     )
     staging_manifest = materialize_workspace_staging_manifest(self.kernel_root)
     refocused_context = refocus_context_for_runtime_mode(

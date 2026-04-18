@@ -739,6 +739,52 @@ class AITPService:
     def _runtime_root(self, topic_slug: str) -> Path:
         return topic_runtime_root(self.kernel_root, topic_slug)
 
+    def _classification_contract_path(self, topic_slug: str) -> Path:
+        return self._runtime_root(topic_slug) / "classification_contract.jsonl"
+
+    def _load_latest_classification(
+        self, topic_slug: str, classification_type: str | None = None
+    ) -> dict[str, Any] | None:
+        path = self._classification_contract_path(topic_slug)
+        rows = read_jsonl(path)
+        if classification_type is not None:
+            rows = [r for r in rows if r.get("classification_type") == classification_type]
+        return rows[-1] if rows else None
+
+    def _load_classifications(
+        self, topic_slug: str, classification_type: str | None = None
+    ) -> list[dict[str, Any]]:
+        path = self._classification_contract_path(topic_slug)
+        rows = read_jsonl(path)
+        if classification_type is not None:
+            rows = [r for r in rows if r.get("classification_type") == classification_type]
+        return rows
+
+    def record_classification(
+        self,
+        topic_slug: str,
+        classification_type: str,
+        value: str,
+        rationale: str,
+        signals_used: list[str] | None = None,
+        source: str = "ai_reasoning",
+        updated_by: str = "aitp-mcp",
+    ) -> dict[str, Any]:
+        path = self._classification_contract_path(topic_slug)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        record = {
+            "classification_type": classification_type,
+            "value": value,
+            "rationale": rationale,
+            "signals_used": signals_used or [],
+            "source": source,
+            "updated_by": updated_by,
+            "recorded_at": now_iso(),
+        }
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record, ensure_ascii=True, separators=(",", ":")) + "\n")
+        return record
+
     def _append_notebook_entry(
         self,
         topic_slug: str,
@@ -2754,10 +2800,18 @@ class AITPService:
         explicit_load_profile: str | None,
         human_request: str | None = None,
         topic_state: dict[str, Any] | None = None,
+        topic_slug: str | None = None,
     ) -> tuple[str, str]:
         normalized_explicit = str(explicit_load_profile or "").strip().lower()
         if normalized_explicit in {"light", "full"}:
             return normalized_explicit, "explicit_request"
+
+        if topic_slug:
+            recorded = self._load_latest_classification(topic_slug, "load_profile")
+            if recorded:
+                value = str(recorded.get("value") or "").strip().lower()
+                if value in {"light", "full"}:
+                    return value, "ai_recorded_classification"
 
         normalized_request = str(human_request or "").strip().lower()
         if normalized_request:

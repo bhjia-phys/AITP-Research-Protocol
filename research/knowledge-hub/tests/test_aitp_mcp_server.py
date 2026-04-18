@@ -36,6 +36,7 @@ READ_ONLY_PROFILE_TOOLS = {
     "aitp_list_tool_manifest",
     "aitp_get_popup",
     "aitp_get_topic_popup",
+    "aitp_read_classifications",
 }
 
 WRITE_PROFILE_TOOLS = {
@@ -65,6 +66,7 @@ WRITE_PROFILE_TOOLS = {
     "aitp_ack_required_reads",
     "aitp_run_topic_loop",
     "aitp_install_agent_wrapper",
+    "aitp_record_classification",
 }
 
 

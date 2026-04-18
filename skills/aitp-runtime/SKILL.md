@@ -15,7 +15,12 @@ description: Use after AITP routing has claimed the task; continue theory work t
 ## Workflow
 
 1. Resume or materialize runtime state through `aitp session-start`, `aitp loop`, `aitp resume`, or `aitp bootstrap` when needed.
-2. Read `runtime_protocol.generated.md`.
+2. **Classification step**: Before the first loop/resume call, load and apply the classification skills:
+   - Load `aitp-research-classifier` → reason about research mode → call `aitp_record_classification(topic_slug, "research_mode", ...)`.
+   - Load `aitp-load-profile-resolver` → reason about load profile → call `aitp_record_classification(topic_slug, "load_profile", ...)`.
+   - When the action queue is being materialized, load `aitp-action-classifier` → reason about action type → call `aitp_record_classification(topic_slug, "action_type", ...)`.
+   - When runtime mode is being selected, load `aitp-runtime-mode-selector` → reason about mode and submode → call `aitp_record_classification` for each.
+3. Read `runtime_protocol.generated.md`.
 3. Read the files listed under `Must read now`.
 4. Treat `session_start.generated.md` as a routing audit artifact when it exists; it is backend state, not a user ritual.
 5. Keep the lightweight runtime minimum current even when the full runtime bundle is not present:

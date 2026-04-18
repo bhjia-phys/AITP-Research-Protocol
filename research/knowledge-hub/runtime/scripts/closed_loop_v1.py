@@ -889,7 +889,12 @@ def choose_route_candidate(
     action_suffix = (best_action or {}).get("action_id") or (task_payload.get("task_id") or "route")
     route_id = f"route:{topic_slug}:{slugify(str(action_suffix).split(':')[-1])}"
     route_type = task_payload.get("surface") or (best_action or {}).get("action_type") or "manual_followup"
-    research_profile = resolve_task_research_profile(task_payload=task_payload)
+    research_profile = resolve_task_research_profile(
+        task_payload=task_payload,
+        classification_contract_path=str(
+            knowledge_root / "topics" / topic_slug / "runtime" / "classification_contract.jsonl"
+        ),
+    )
 
     selection_reason = (
         SELECTION_REASON_TEMPLATES.get("fallback")
@@ -1052,6 +1057,9 @@ def materialize_execution_task(knowledge_root: Path, topic_state: dict, updated_
         task_payload=source_task_payload or {},
         route=selected_route,
         existing_topic_state=topic_state,
+        classification_contract_path=str(
+            knowledge_root / "topics" / topic_slug / "runtime" / "classification_contract.jsonl"
+        ),
     )
 
     surface = None

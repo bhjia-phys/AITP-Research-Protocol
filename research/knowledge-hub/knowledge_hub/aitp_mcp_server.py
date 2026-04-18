@@ -1031,6 +1031,49 @@ def aitp_install_agent_wrapper(
         return _err(str(exc))
 
 
+@aitp_tool(access="write")
+def aitp_record_classification(
+    topic_slug: str,
+    classification_type: str,
+    value: str,
+    rationale: str,
+    signals_used: list[str] | None = None,
+    source: str = "ai_reasoning",
+    updated_by: str = "aitp-mcp",
+) -> str:
+    """Record an AI classification decision into the durable classification contract."""
+    try:
+        record = service.record_classification(
+            topic_slug=topic_slug,
+            classification_type=classification_type,
+            value=value,
+            rationale=rationale,
+            signals_used=signals_used,
+            source=source,
+            updated_by=updated_by,
+        )
+        return _ok(recorded=record)
+    except Exception as exc:  # noqa: BLE001
+        return _err(str(exc))
+
+
+@aitp_tool(access="read")
+def aitp_read_classifications(
+    topic_slug: str,
+    classification_type: str | None = None,
+) -> str:
+    """Read classification records for a topic, optionally filtered by type."""
+    try:
+        rows = service._load_classifications(
+            topic_slug=topic_slug,
+            classification_type=classification_type,
+        )
+        latest = rows[-1] if rows else None
+        return _ok(classifications=rows, latest=latest, count=len(rows))
+    except Exception as exc:  # noqa: BLE001
+        return _err(str(exc))
+
+
 mcp = build_mcp_server(ACTIVE_MCP_PROFILE)
 
 

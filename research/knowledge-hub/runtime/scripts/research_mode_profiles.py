@@ -80,12 +80,35 @@ def _signals_for_mode(mode: str) -> list[str]:
     return list(entry.get("markers") or []) if entry else []
 
 
+def _load_recorded_classification(
+    classification_contract_path: Path | str | None,
+) -> str | None:
+    if not classification_contract_path:
+        return None
+    path = Path(classification_contract_path)
+    if not path.exists():
+        return None
+    rows: list[dict] = []
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if line:
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                pass
+    research_mode_rows = [r for r in rows if r.get("classification_type") == "research_mode"]
+    if research_mode_rows:
+        return research_mode_rows[-1].get("value")
+    return None
+
+
 def infer_research_mode(
     *,
     explicit_mode: str | None = None,
     task_payload: dict | None = None,
     route: dict | None = None,
     existing_topic_state: dict | None = None,
+    classification_contract_path: str | None = None,
 ) -> str:
     for candidate in (
         explicit_mode,
@@ -94,6 +117,12 @@ def infer_research_mode(
         (existing_topic_state or {}).get("research_mode"),
     ):
         normalized = normalize_research_mode(str(candidate) if candidate is not None else None)
+        if normalized:
+            return normalized
+
+    recorded = _load_recorded_classification(classification_contract_path)
+    if recorded:
+        normalized = normalize_research_mode(recorded)
         if normalized:
             return normalized
 
@@ -132,12 +161,14 @@ def resolve_task_research_profile(
     task_payload: dict | None = None,
     route: dict | None = None,
     existing_topic_state: dict | None = None,
+    classification_contract_path: str | None = None,
 ) -> dict:
     research_mode = infer_research_mode(
         explicit_mode=explicit_mode,
         task_payload=task_payload,
         route=route,
         existing_topic_state=existing_topic_state,
+        classification_contract_path=classification_contract_path,
     )
     profile = profile_for_mode(research_mode)
 

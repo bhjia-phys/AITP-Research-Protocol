@@ -323,7 +323,57 @@ def ensure_topic_shell(knowledge_root: Path, topic_slug: str, statement: str | N
             )
 
 
-def classify_action(summary: str) -> tuple[str, bool]:
+def _load_recorded_action_classification(
+    classification_contract_path: Path | str | None,
+) -> str | None:
+    if not classification_contract_path:
+        return None
+    path = Path(classification_contract_path)
+    if not path.exists():
+        return None
+    rows: list[dict] = []
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if line:
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                pass
+    action_rows = [r for r in rows if r.get("classification_type") == "action_type"]
+    if action_rows:
+        return action_rows[-1].get("value")
+    return None
+
+
+def classify_action(
+    summary: str,
+    *,
+    pre_classified_type: str | None = None,
+    classification_contract_path: str | None = None,
+) -> tuple[str, bool]:
+    if pre_classified_type:
+        auto_types = {
+            "apply_candidate_split_contract",
+            "reactivate_deferred_candidate",
+            "spawn_followup_subtopics",
+            "assess_topic_completion",
+            "prepare_lean_bridge",
+            "auto_promote_candidate",
+        }
+        return pre_classified_type, pre_classified_type in auto_types
+
+    recorded = _load_recorded_action_classification(classification_contract_path)
+    if recorded:
+        auto_types = {
+            "apply_candidate_split_contract",
+            "reactivate_deferred_candidate",
+            "spawn_followup_subtopics",
+            "assess_topic_completion",
+            "prepare_lean_bridge",
+            "auto_promote_candidate",
+        }
+        return recorded, recorded in auto_types
+
     lowered = summary.lower()
     if "baseline" in lowered or "reproduc" in lowered:
         return "baseline_reproduction", False
@@ -944,7 +994,11 @@ def load_declared_action_contract(topic_state: dict, knowledge_root: Path) -> di
     }
 
 
-def declared_actions_from_contract(topic_state: dict, declared_contract: dict | None) -> tuple[list[dict], dict]:
+def declared_actions_from_contract(
+    topic_state: dict,
+    declared_contract: dict | None,
+    knowledge_root: Path | None = None,
+) -> tuple[list[dict], dict]:
     if declared_contract is None:
         return [], {
             "queue_source": "heuristic",
@@ -974,7 +1028,12 @@ def declared_actions_from_contract(topic_state: dict, declared_contract: dict | 
         if not summary:
             continue
         action_type = str(row.get("action_type") or "").strip()
-        derived_action_type, derived_auto_runnable = classify_action(summary)
+        derived_action_type, derived_auto_runnable = classify_action(
+            summary,
+            classification_contract_path=str(
+                knowledge_root / "topics" / topic_state["topic_slug"] / "runtime" / "classification_contract.jsonl"
+            ) if knowledge_root else None,
+        )
         if not action_type:
             action_type = derived_action_type
         auto_runnable = row.get("auto_runnable")
@@ -1110,7 +1169,7 @@ def materialize_action_queue(
         operator_checkpoint,
     )
     declared_contract = load_declared_action_contract(topic_state, knowledge_root)
-    queue, queue_meta = declared_actions_from_contract(topic_state, declared_contract)
+    queue, queue_meta = declared_actions_from_contract(topic_state, declared_contract, knowledge_root=knowledge_root)
     queue_meta = enrich_queue_meta(
         queue_meta,
         topic_slug=topic_state["topic_slug"],

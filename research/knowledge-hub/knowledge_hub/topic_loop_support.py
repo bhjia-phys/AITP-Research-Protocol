@@ -286,6 +286,7 @@ def _finalize_loop_outcome(
         explicit_load_profile=load_profile,
         human_request=human_request,
         topic_state=bootstrap.get("topic_state"),
+        topic_slug=topic_slug,
     )
     self._persist_load_profile_state(
         topic_slug=topic_slug,

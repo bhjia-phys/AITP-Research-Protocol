@@ -137,6 +137,20 @@ def _detect_literature_intake_intent(*texts: str | None) -> bool:
     )
 
 
+def _load_recorded_mode(
+    topic_slug: str | None,
+    classification_type: str,
+) -> str | None:
+    if not topic_slug:
+        return None
+    from .aitp_service import AITPService, read_jsonl
+    svc = AITPService()
+    path = svc._classification_contract_path(topic_slug)
+    rows = read_jsonl(path)
+    typed = [r for r in rows if r.get("classification_type") == classification_type]
+    return typed[-1].get("value") if typed else None
+
+
 def _select_active_submode(
     *,
     runtime_mode: str,
@@ -144,7 +158,10 @@ def _select_active_submode(
     selected_action_summary: str,
     human_request: str | None,
     active_triggers: set[str],
+    recorded_submode: str | None = None,
 ) -> str | None:
+    if recorded_submode:
+        return recorded_submode
     if runtime_mode in ("learn", "implement") and bool(active_triggers & _VERIFY_TRIGGERS):
         return "derivation" if "derivation" in selected_action_summary.lower() else "numerical"
     lowered_summary = selected_action_summary.lower()
@@ -176,31 +193,34 @@ def _select_runtime_mode(
     selected_action_summary: str,
     active_triggers: set[str],
     current_mode: str | None = None,
+    recorded_mode: str | None = None,
 ) -> str:
-    lowered_summary = selected_action_summary.lower()
-    candidate = "explore"
-
-    if selected_action_type in _PROMOTE_ACTION_TYPES or any(token in lowered_summary for token in ("promot", "writeback")):
-        candidate = "implement"
-    elif (
-        resume_stage == "L4"
-        or selected_action_type in _VERIFY_ACTION_TYPES
-        or bool(active_triggers & _VERIFY_TRIGGERS)
-        or any(token in lowered_summary for token in ("validation", "verification", "proof", "derivation", "selected route"))
-    ):
-        candidate = "learn"
-    elif idea_packet_status == "needs_clarification" or operator_checkpoint_status == "requested":
-        candidate = "explore"
-    elif any(token in lowered_summary for token in ("novel", "new idea", "conjecture", "hypothesis")):
-        candidate = "implement"
+    if recorded_mode:
+        candidate = recorded_mode
     else:
+        lowered_summary = selected_action_summary.lower()
         candidate = "explore"
+
+        if selected_action_type in _PROMOTE_ACTION_TYPES or any(token in lowered_summary for token in ("promot", "writeback")):
+            candidate = "implement"
+        elif (
+            resume_stage == "L4"
+            or selected_action_type in _VERIFY_ACTION_TYPES
+            or bool(active_triggers & _VERIFY_TRIGGERS)
+            or any(token in lowered_summary for token in ("validation", "verification", "proof", "derivation", "selected route"))
+        ):
+            candidate = "learn"
+        elif idea_packet_status == "needs_clarification" or operator_checkpoint_status == "requested":
+            candidate = "explore"
+        elif any(token in lowered_summary for token in ("novel", "new idea", "conjecture", "hypothesis")):
+            candidate = "implement"
+        else:
+            candidate = "explore"
 
     if current_mode is not None:
         normalized_current = _normalize_mode(current_mode)
         normalized_candidate = _normalize_mode(candidate)
         if not is_valid_transition(normalized_current, normalized_candidate):
-            # Invalid transition: stay in current mode instead of jumping
             return normalized_current
 
     return candidate
@@ -291,7 +311,10 @@ def build_runtime_mode_contract(
     escalation_triggers: list[dict[str, Any]],
     human_request: str | None = None,
     current_mode: str | None = None,
+    topic_slug: str | None = None,
 ) -> dict[str, Any]:
+    recorded_mode = _load_recorded_mode(topic_slug, "runtime_mode")
+    recorded_submode = _load_recorded_mode(topic_slug, "active_submode")
     active_triggers = {
         str(row.get("trigger") or "").strip()
         for row in escalation_triggers
@@ -305,6 +328,7 @@ def build_runtime_mode_contract(
         selected_action_summary=selected_action_summary,
         active_triggers=active_triggers,
         current_mode=current_mode,
+        recorded_mode=recorded_mode,
     )
     active_submode = _select_active_submode(
         runtime_mode=runtime_mode,
@@ -312,6 +336,7 @@ def build_runtime_mode_contract(
         selected_action_summary=selected_action_summary,
         human_request=human_request,
         active_triggers=active_triggers,
+        recorded_submode=recorded_submode,
     )
     mode_spec = _get_mode_spec(runtime_mode)
     transition_posture = _transition_posture(

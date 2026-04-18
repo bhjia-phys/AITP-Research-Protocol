@@ -498,6 +498,9 @@ def main() -> int:
         task_payload=closed_loop_task,
         route=closed_loop_route,
         existing_topic_state=existing_topic_state,
+        classification_contract_path=str(
+            knowledge_root / "topics" / topic_slug / "runtime" / "classification_contract.jsonl"
+        ),
     )
     research_mode = research_profile["research_mode"]
     active_executor_kind = str(
