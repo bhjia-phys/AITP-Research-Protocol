@@ -126,7 +126,7 @@ not a substitute for validation.
 - Assumption extraction (structural, not keyword-based).
 - Reading depth tracking (scan / close-read / multi-pass cross-check).
 - Contradiction detection and notation regime identification.
-- Derivation sketches and concept structure.
+- Source provenance, intake analysis, and source-anchor mapping for later L3 reconstruction.
 - Every claim in L1 is marked "provisional."
 
 **L2 — Canonical Knowledge**
@@ -146,9 +146,14 @@ not a substitute for validation.
 - L3-P: plan artifacts — executable research plans with steps, tool needs,
   and knowledge requirements derived from L2.
 - L3-A: candidate formation — formal claims with evidence and assumptions.
+- L3 is the unified detailed-derivation home, including source reconstructions
+  and novel candidate derivations.
+- Derivation-heavy candidates become promotion-ready only after they carry a
+  detailed L3 derivation record plus an explicit L2 comparison receipt; formal
+  theorem/proof candidates also need theory-packet proof surfaces.
 - L3-R: interpret L4 results, decide routing.
 - L3-D: prepare material for promotion.
-- Conjectures, failed attempts, candidate derivations, anomalies,
+- Conjectures, source reconstructions, failed attempts, candidate derivations, anomalies,
   negative results.
 - Scratch mode for quick speculative work.
 - Material here may become reusable IF it passes L4 and L2 promotion.

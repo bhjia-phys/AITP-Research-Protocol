@@ -840,6 +840,24 @@ def materialize_iteration_journal(
     }
     _write_json(journal_paths["journal_json"], journal_payload)
     _write_text(journal_paths["journal_note"], _render_iteration_journal_markdown(journal_payload) + "\n")
+    try:
+        from .research_notebook_support import append_notebook_entry
+        l3_root = service._l3_root(topic_slug)
+        append_notebook_entry(
+            l3_root,
+            kind="iteration_journal",
+            title=f"Iteration {current_iteration_id}",
+            status=str(conclusion_status or "in_progress"),
+            run_id=run_id or "",
+            body=str(journal_payload.get("latest_staging_entry", {}).get("summary") or ""),
+            details={
+                "iteration_id": current_iteration_id,
+                "total_iterations": len(iteration_ids),
+                "staging_decision": str(staging_decision or ""),
+            },
+        )
+    except Exception:
+        pass
     return {
         **journal_payload,
         "path": service._relativize(journal_paths["journal_json"]),

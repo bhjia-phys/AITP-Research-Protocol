@@ -257,6 +257,22 @@ def execute_auto_actions(
         steps_used += 1
 
     _write_jsonl(queue_path, queue_rows)
+    for action in executed:
+        try:
+            from .research_notebook_support import append_notebook_entry
+            l3_root = self._l3_root(topic_slug)
+            append_notebook_entry(
+                l3_root,
+                kind="auto_action",
+                title=str(action.get("action_type") or "action"),
+                status=str(action.get("status") or ""),
+                details={
+                    "action_id": action.get("action_id"),
+                    "action_type": action.get("action_type"),
+                },
+            )
+        except Exception:
+            pass
     remaining = sum(1 for row in queue_rows if row.get("status") == "pending")
     if transition_kind == "backedge_transition" and not executed:
         return {

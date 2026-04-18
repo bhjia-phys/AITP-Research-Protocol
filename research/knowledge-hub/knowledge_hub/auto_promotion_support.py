@@ -80,6 +80,16 @@ def _validate_auto_promotion(
         raise ValueError(
             f"Backend {resolved_backend_id} does not declare support for candidate type {candidate.get('candidate_type')}"
         )
+    runtime_blockers = self._candidate_runtime_blockers(
+        str(candidate.get("topic_slug") or ""),
+        str(candidate.get("run_id") or ""),
+        candidate,
+    )
+    if runtime_blockers:
+        raise PermissionError(
+            "Auto promotion is blocked until the candidate satisfies the required L3 derivation, L2 comparison, and theory-packet surfaces: "
+            + "; ".join(runtime_blockers)
+        )
 
     runtime_policy = self._load_runtime_policy().get("auto_promotion_policy") or {}
     missing = [name for name in _required_theory_packet_artifacts(runtime_policy) if not packet_paths[name].exists()]

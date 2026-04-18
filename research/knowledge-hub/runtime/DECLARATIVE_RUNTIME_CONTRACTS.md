@@ -130,6 +130,81 @@ This journal layer supplements, and does not replace:
 - `L4/runs/<run_id>/returned_execution_result.json`,
 - canonical staging entries.
 
+## 1.2 L3 derivation record contract
+
+Paths:
+
+- `topics/<topic_slug>/L3/runs/<run_id>/derivation_records.jsonl`
+- `topics/<topic_slug>/L3/runs/<run_id>/derivation_records.md`
+
+Purpose:
+
+- keep the topic's detailed derivation body in one layer,
+- allow source-derived reconstruction and original candidate derivation to share
+  the same run-local home,
+- preserve failed derivation routes instead of hiding them in chat or ad hoc
+  scratch notes.
+
+Rules:
+
+- L1 may provide source anchors, notation tensions, and contradiction cues, but
+  the detailed derivation body belongs in `L3`.
+- Every derivation row should say whether it is a `source_reconstruction`,
+  `cross_source_reconstruction`, `candidate_derivation`, `failed_attempt`, or
+  `notation_resolution`.
+- Source-derived derivations must carry explicit `source_refs`.
+- The Markdown note is the primary human-readable derivation surface for the
+  run; JSONL remains the thin machine-facing ledger.
+- Every derivation row should carry an explicit epistemic marker showing that
+  the record is AI-authored provisional reasoning rather than truth by itself.
+
+## 1.3 L3-to-L2 comparison receipt contract
+
+Paths:
+
+- `topics/<topic_slug>/L3/runs/<run_id>/l2_comparison_receipts.jsonl`
+- `topics/<topic_slug>/L3/runs/<run_id>/l2_comparison_receipts.md`
+
+Purpose:
+
+- force derivation-heavy candidates to compare themselves explicitly against
+  nearby reusable L2 knowledge,
+- preserve what was compared, how far the agreement goes, and what still
+  blocks promotion,
+- keep "compare against L2" as a durable artifact rather than an implicit chat
+  claim.
+
+Rules:
+
+- A derivation-heavy candidate is not promotion-ready until at least one
+  comparison receipt names that candidate.
+- Each comparison receipt should include:
+  - `candidate_ref_id`,
+  - `compared_unit_ids`,
+  - `comparison_summary`,
+  - `comparison_scope`,
+  - `outcome`,
+  - `limitations`.
+- The Markdown note is the primary human-readable comparison surface for the
+  run; JSONL remains the thin machine-facing ledger.
+- If the comparison outcome exposes a missing cited step, an unresolved
+  contradiction, or an insufficient source basis, the honest route is to
+  narrow the candidate or return to `L0` instead of pretending the derivation
+  is already stable.
+
+## 1.4 Theory-packet readiness gate for formal candidates
+
+For theorem/proof/formal candidates, detailed derivation and L2 comparison are
+still not enough by themselves.
+
+Before such a candidate is promotion-ready, the corresponding theory packet
+should expose at least:
+
+- `derivation_graph.json` — the proof or derivation spine as a durable graph,
+- `formal_theory_review.json` — with `overall_status: "ready"`.
+
+These surfaces are part of the readiness contract, not optional later polish.
+
 ## 2. Runtime decision contract
 
 Path:

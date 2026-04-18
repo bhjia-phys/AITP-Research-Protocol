@@ -1886,6 +1886,31 @@ def ingest_execution_result(knowledge_root: Path, topic_state: dict, updated_by:
         next_actions_lines.append(f"{index}. {action}")
     write_text(paths["feedback_next_actions_path"], "\n".join(next_actions_lines) + "\n")  # type: ignore[arg-type]
 
+    try:
+        _notebook_path = knowledge_root / "topics" / topic_slug / "L3"
+        if _notebook_path.exists():
+            import sys as _sys
+            _hub_parent = str(knowledge_root / "knowledge_hub")
+            if _hub_parent not in _sys.path:
+                _sys.path.insert(0, _hub_parent)
+            from knowledge_hub.research_notebook_support import append_notebook_entry as _ane
+            _ane(
+                _notebook_path,
+                kind="closed_loop_result",
+                title=f"Result: {manifest_status}",
+                status=manifest_status,
+                run_id=run_id or "",
+                body=str(returned_result.get("what_was_attempted") or ""),
+                details={
+                    "result_id": returned_result["result_id"],
+                    "task_id": task_payload["task_id"],
+                    "decision": decision.get("decision", ""),
+                    "route_id": selected_route.get("route_id", ""),
+                },
+            )
+    except Exception:
+        pass
+
     return {
         "manifest": manifest,
         "trajectory": trajectory,

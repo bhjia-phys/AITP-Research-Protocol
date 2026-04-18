@@ -396,6 +396,16 @@ def _resolve_promotion_context(
     if not resolved_run_id:
         raise FileNotFoundError(f"Unable to resolve a validation run for topic {topic_slug}")
     candidate = self._load_candidate(topic_slug, resolved_run_id, candidate_id)
+    runtime_blockers = self._candidate_runtime_blockers(
+        topic_slug,
+        resolved_run_id,
+        candidate,
+    )
+    if runtime_blockers:
+        raise PermissionError(
+            "Promotion is blocked until the candidate satisfies the required L3 derivation, L2 comparison, and theory-packet surfaces: "
+            + "; ".join(runtime_blockers)
+        )
 
     resolved_backend_id = backend_id or str(gate_payload.get("backend_id") or "") or "backend:theoretical-physics-knowledge-network"
     resolved_review_mode = review_mode or str(gate_payload.get("review_mode") or "human")

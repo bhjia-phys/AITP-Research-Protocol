@@ -71,6 +71,16 @@ For derivation-heavy work, keep checking:
 - limiting cases and special cases,
 - agreement with earlier declared equations.
 
+Also keep three status distinctions explicit:
+
+- the L3 derivation record is AI-authored provisional reasoning, not truth,
+- cited dependencies and source anchors may still force a return to L0,
+- comparison against known derivations or methods in L2 is part of the logic
+  check, not optional polish.
+- a derivation-heavy candidate is not promotion-ready until that L2
+  comparison is persisted as a durable comparison receipt rather than implied
+  in chat or memory.
+
 For numerical or execution-backed work, keep checking:
 
 - input fidelity,
@@ -93,6 +103,10 @@ For proof-heavy work, completion should also stay capped when:
 - proof fragments are still missing,
 - notation bridges are still ambiguous,
 - family equivalence is still asserted only heuristically.
+- the recorded derivation body is only a summary and not a sufficiently
+  detailed reasoning spine.
+- the theorem/proof packet still lacks a derivation graph or a ready
+  `formal_theory_review.json`.
 
 ## 6. Forbidden proxies
 
@@ -121,6 +135,11 @@ It should:
 3. spawn an `L0` follow-up route when a real source recovery is needed,
 4. require a return packet before reintegration.
 
+If an L2 comparison receipt says the route only partially matches, reveals a
+normalization mismatch, or exposes a missing cited step, that is a real gap
+signal. The correct move is to keep the limitation visible, narrow the claim,
+or return to `L0`; not to smooth the issue away in polished prose.
+
 That is why `GAP_RECOVERY_PROTOCOL.md` and follow-up subtopics are part of the
 kernel rather than a local convention.
 
@@ -134,7 +153,10 @@ If anything, they make auto-promotion more honest:
 - consensus is not enough,
 - regression is not optional,
 - split honesty and gap honesty remain mandatory,
-- missing execution evidence should block claims that depend on execution.
+- missing execution evidence should block claims that depend on execution,
+- missing derivation detail, missing L2 comparison receipts, or missing
+  theorem/proof theory-packet surfaces should block derivation-heavy
+  promotions.
 
 ## 9. Runtime exposure rule
 

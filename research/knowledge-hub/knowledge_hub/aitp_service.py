@@ -194,6 +194,8 @@ from .validation_review_service import ValidationReviewService
 from .auto_action_support import execute_auto_actions
 from .auto_promotion_support import auto_promote_candidate
 from .iteration_journal_support import materialize_iteration_journal
+from .l3_comparison_support import record_l2_derivation_comparison_entry
+from .l3_derivation_support import record_l3_derivation_entry
 from .analytical_review_support import (
     audit_analytical_review as perform_analytical_review_audit,
 )
@@ -693,6 +695,32 @@ class AITPService:
 
     def _runtime_root(self, topic_slug: str) -> Path:
         return topic_runtime_root(self.kernel_root, topic_slug)
+
+    def _append_notebook_entry(
+        self,
+        topic_slug: str,
+        *,
+        kind: str,
+        title: str,
+        body: str = "",
+        status: str = "",
+        run_id: str = "",
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        from .research_notebook_support import append_notebook_entry
+        try:
+            l3_root = self._l3_root(topic_slug)
+            append_notebook_entry(
+                l3_root,
+                kind=kind,
+                title=title,
+                body=body,
+                status=status,
+                run_id=run_id,
+                details=details,
+            )
+        except Exception:
+            pass
 
     def _runtime_topic_index_path(self) -> Path:
         return self.kernel_root / "runtime" / "topic_index.jsonl"
@@ -1833,12 +1861,351 @@ class AITPService:
         rows = read_jsonl(path)
         rows.append(row)
         write_jsonl(path, rows)
+        self._append_notebook_entry(
+            topic_slug,
+            kind="strategy",
+            title=normalized_summary[:120],
+            status=normalized_outcome,
+            run_id=run_id,
+            details={
+                "strategy_type": normalized_strategy_type,
+                "confidence": normalized_confidence,
+                "strategy_id": resolved_strategy_id,
+            },
+        )
         return {
             "topic_slug": topic_slug,
             "run_id": run_id,
             "strategy_memory_path": str(path),
             "strategy_memory_entry": row,
         }
+
+    def record_l3_derivation(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str,
+        title: str,
+        body: str = "",
+        derivation_kind: str = "analysis_derivation",
+        epistemic_status: str = "ai_provisional_reasoning",
+        status: str = "",
+        source_refs: list[str] | None = None,
+        assumptions: list[str] | None = None,
+        provenance_note: str = "",
+        updated_by: str = "human",
+        derivation_id: str | None = None,
+        replace_existing: bool = False,
+    ) -> dict[str, Any]:
+        run_root = self._feedback_run_root(topic_slug, run_id)
+        run_root.mkdir(parents=True, exist_ok=True)
+        payload = record_l3_derivation_entry(
+            run_root=run_root,
+            topic_slug=topic_slug,
+            run_id=run_id,
+            title=title,
+            body=body,
+            derivation_kind=derivation_kind,
+            epistemic_status=epistemic_status,
+            status=status,
+            source_refs=source_refs,
+            assumptions=assumptions,
+            provenance_note=provenance_note,
+            updated_by=updated_by,
+            derivation_id=derivation_id,
+            replace_existing=replace_existing,
+        )
+        return {
+            "topic_slug": topic_slug,
+            "run_id": run_id,
+            "derivation_id": payload["derivation_id"],
+            "derivation_path": payload["ledger_path"],
+            "derivation_note_path": payload["note_path"],
+            "derivation_entry": payload["row"],
+        }
+
+    def _derivation_records_path(self, topic_slug: str, run_id: str) -> Path:
+        return self._feedback_run_root(topic_slug, run_id) / "derivation_records.jsonl"
+
+    def _load_derivation_rows(self, topic_slug: str, run_id: str) -> list[dict[str, Any]]:
+        return read_jsonl(self._derivation_records_path(topic_slug, run_id))
+
+    def record_l2_derivation_comparison(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str,
+        candidate_id: str,
+        title: str,
+        comparison_summary: str,
+        compared_unit_ids: list[str] | None = None,
+        comparison_scope: str = "",
+        outcome: str = "",
+        limitations: list[str] | None = None,
+        updated_by: str = "human",
+        comparison_id: str | None = None,
+    ) -> dict[str, Any]:
+        run_root = self._feedback_run_root(topic_slug, run_id)
+        run_root.mkdir(parents=True, exist_ok=True)
+        payload = record_l2_derivation_comparison_entry(
+            run_root=run_root,
+            topic_slug=topic_slug,
+            run_id=run_id,
+            candidate_id=candidate_id,
+            title=title,
+            comparison_summary=comparison_summary,
+            compared_unit_ids=compared_unit_ids,
+            comparison_scope=comparison_scope,
+            outcome=outcome,
+            limitations=limitations,
+            updated_by=updated_by,
+            comparison_id=comparison_id,
+        )
+        return {
+            "topic_slug": topic_slug,
+            "run_id": run_id,
+            "comparison_id": payload["comparison_id"],
+            "comparison_path": payload["ledger_path"],
+            "comparison_note_path": payload["note_path"],
+            "comparison_entry": payload["row"],
+        }
+
+    def _l2_comparison_receipts_path(self, topic_slug: str, run_id: str) -> Path:
+        return self._feedback_run_root(topic_slug, run_id) / "l2_comparison_receipts.jsonl"
+
+    def _load_l2_comparison_rows(self, topic_slug: str, run_id: str) -> list[dict[str, Any]]:
+        return read_jsonl(self._l2_comparison_receipts_path(topic_slug, run_id))
+
+    def _candidate_requires_detailed_derivation(self, candidate_row: dict[str, Any]) -> bool:
+        candidate_type = str(candidate_row.get("candidate_type") or "").strip()
+        if candidate_type in {"derivation_object", "derivation_step", "proof_fragment", "theorem_card"}:
+            return True
+        if str(candidate_row.get("formal_theory_role") or "").strip():
+            return True
+        if str(candidate_row.get("statement_graph_role") or "").strip():
+            return True
+        route = str(candidate_row.get("proposed_validation_route") or "").strip().lower()
+        return any(token in route for token in ("derivation", "proof", "formal"))
+
+    def _derivation_body_is_sufficiently_detailed(self, text: str) -> bool:
+        normalized = str(text or "").strip()
+        if len(normalized) < 120:
+            return False
+        if "$$" in normalized or "\\begin{align" in normalized or "\\[" in normalized:
+            return True
+        if "\n\n" in normalized:
+            return True
+        return normalized.count(".") >= 3
+
+    def _comparison_summary_is_sufficiently_detailed(self, text: str) -> bool:
+        normalized = str(text or "").strip()
+        if len(normalized) < 80:
+            return False
+        return normalized.count(".") >= 1 or ";" in normalized or "\n" in normalized
+
+    def _matching_derivation_rows(
+        self,
+        candidate_row: dict[str, Any],
+        derivation_rows: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        candidate_id = str(candidate_row.get("candidate_id") or "").strip()
+        title = str(candidate_row.get("title") or "").strip()
+        matches: list[dict[str, Any]] = []
+        for row in derivation_rows:
+            derivation_id = str(row.get("derivation_id") or "").strip()
+            row_title = str(row.get("title") or "").strip()
+            candidate_ref_id = str(row.get("candidate_ref_id") or "").strip()
+            if candidate_id and candidate_ref_id == candidate_id:
+                matches.append(row)
+                continue
+            if candidate_id and derivation_id == candidate_id:
+                matches.append(row)
+                continue
+            if title and row_title == title:
+                matches.append(row)
+        return matches
+
+    def _candidate_requires_l2_comparison(self, candidate_row: dict[str, Any]) -> bool:
+        return self._candidate_requires_detailed_derivation(candidate_row)
+
+    def _matching_comparison_rows(
+        self,
+        candidate_row: dict[str, Any],
+        comparison_rows: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        candidate_id = str(candidate_row.get("candidate_id") or "").strip()
+        if not candidate_id:
+            return []
+        matches: list[dict[str, Any]] = []
+        for row in comparison_rows:
+            candidate_ref_id = str(row.get("candidate_ref_id") or "").strip()
+            if candidate_ref_id == candidate_id:
+                matches.append(row)
+        return matches
+
+    def _candidate_derivation_blockers(
+        self,
+        topic_slug: str,
+        run_id: str,
+        candidate_row: dict[str, Any],
+    ) -> list[str]:
+        if not self._candidate_requires_detailed_derivation(candidate_row):
+            return []
+
+        candidate_id = str(candidate_row.get("candidate_id") or "").strip() or "candidate"
+        derivation_rows = self._load_derivation_rows(topic_slug, run_id)
+        matches = self._matching_derivation_rows(candidate_row, derivation_rows)
+        if not matches:
+            return [
+                f"{candidate_id}: missing detailed L3 derivation record.",
+            ]
+
+        latest = matches[-1]
+        blockers: list[str] = []
+        if not self._derivation_body_is_sufficiently_detailed(str(latest.get("body") or "")):
+            blockers.append(
+                f"{candidate_id}: derivation record is present but lacks a sufficiently detailed derivation body."
+            )
+        if not str(latest.get("provenance_note") or "").strip():
+            blockers.append(
+                f"{candidate_id}: derivation record is missing an explicit provenance note stating its AI-authored provisional status."
+            )
+        if not str(latest.get("epistemic_status") or "").strip():
+            blockers.append(
+                f"{candidate_id}: derivation record is missing an epistemic status."
+            )
+        origin_refs = candidate_row.get("origin_refs") or []
+        source_grounded = any(
+            isinstance(ref, dict) and str(ref.get("layer") or "").strip() in {"L0", "L1"}
+            for ref in origin_refs
+        )
+        if source_grounded and not [str(item).strip() for item in (latest.get("source_refs") or []) if str(item).strip()]:
+            blockers.append(
+                f"{candidate_id}: source-grounded derivation is missing explicit source refs in L3."
+            )
+        return blockers
+
+    def _candidate_comparison_blockers(
+        self,
+        topic_slug: str,
+        run_id: str,
+        candidate_row: dict[str, Any],
+    ) -> list[str]:
+        if not self._candidate_requires_l2_comparison(candidate_row):
+            return []
+
+        candidate_id = str(candidate_row.get("candidate_id") or "").strip() or "candidate"
+        comparison_rows = self._load_l2_comparison_rows(topic_slug, run_id)
+        matches = self._matching_comparison_rows(candidate_row, comparison_rows)
+        if not matches:
+            return [f"{candidate_id}: missing L2 comparison receipt."]
+
+        latest = matches[-1]
+        blockers: list[str] = []
+        compared_unit_ids = self._dedupe_strings(list(latest.get("compared_unit_ids") or []))
+        if not compared_unit_ids:
+            blockers.append(
+                f"{candidate_id}: comparison receipt is missing compared L2 unit ids."
+            )
+        if not self._comparison_summary_is_sufficiently_detailed(
+            str(latest.get("comparison_summary") or "")
+        ):
+            blockers.append(
+                f"{candidate_id}: comparison receipt is missing a sufficiently detailed comparison summary."
+            )
+        if not str(latest.get("comparison_scope") or "").strip():
+            blockers.append(
+                f"{candidate_id}: comparison receipt is missing an explicit comparison scope."
+            )
+        outcome = str(latest.get("outcome") or "").strip()
+        if not outcome:
+            blockers.append(
+                f"{candidate_id}: comparison receipt is missing an explicit comparison outcome."
+            )
+        limitations = self._dedupe_strings(list(latest.get("limitations") or []))
+        if not limitations:
+            blockers.append(
+                f"{candidate_id}: comparison receipt is missing explicit limitations."
+            )
+        if outcome.lower() in {
+            "return_to_l0",
+            "insufficient_basis",
+            "source_gap",
+            "contradiction",
+            "mismatch_requires_l0",
+        }:
+            blockers.append(
+                f"{candidate_id}: comparison outcome `{outcome}` requires a return to L0 or a narrower derivation route before promotion."
+            )
+        return blockers
+
+    def _candidate_requires_theory_packet(self, candidate_row: dict[str, Any]) -> bool:
+        candidate_type = str(candidate_row.get("candidate_type") or "").strip()
+        if candidate_type in {"theorem_card", "proof_fragment"}:
+            return True
+        if str(candidate_row.get("formal_theory_role") or "").strip():
+            return True
+        if str(candidate_row.get("statement_graph_role") or "").strip():
+            return True
+        route = str(candidate_row.get("proposed_validation_route") or "").strip().lower()
+        return any(token in route for token in ("theorem", "proof", "formal"))
+
+    def _candidate_theory_packet_blockers(
+        self,
+        topic_slug: str,
+        run_id: str,
+        candidate_row: dict[str, Any],
+    ) -> list[str]:
+        if not self._candidate_requires_theory_packet(candidate_row):
+            return []
+
+        candidate_id = str(candidate_row.get("candidate_id") or "").strip() or "candidate"
+        if not str(candidate_row.get("candidate_id") or "").strip():
+            return [f"{candidate_id}: theory-packet checks require a durable candidate_id."]
+
+        packet_paths = self._theory_packet_paths(topic_slug, run_id, candidate_id)
+        blockers: list[str] = []
+
+        derivation_graph_path = packet_paths["derivation_graph"]
+        if not derivation_graph_path.exists():
+            blockers.append(
+                f"{candidate_id}: missing theory-packet derivation graph."
+            )
+        else:
+            derivation_graph = read_json(derivation_graph_path) or {}
+            if not list(derivation_graph.get("nodes") or []):
+                blockers.append(
+                    f"{candidate_id}: theory-packet derivation graph is present but has no nodes."
+                )
+
+        review_path = packet_paths["formal_theory_review"]
+        if not review_path.exists():
+            blockers.append(
+                f"{candidate_id}: missing theory-packet formal_theory_review."
+            )
+        else:
+            review_payload = read_json(review_path) or {}
+            review_status = str(review_payload.get("overall_status") or "missing").strip()
+            if review_status != "ready":
+                blockers.append(
+                    f"{candidate_id}: formal_theory_review overall_status is `{review_status}`, not `ready`."
+                )
+
+        return blockers
+
+    def _candidate_runtime_blockers(
+        self,
+        topic_slug: str,
+        run_id: str,
+        candidate_row: dict[str, Any],
+    ) -> list[str]:
+        return self._dedupe_strings(
+            [
+                *self._candidate_derivation_blockers(topic_slug, run_id, candidate_row),
+                *self._candidate_comparison_blockers(topic_slug, run_id, candidate_row),
+                *self._candidate_theory_packet_blockers(topic_slug, run_id, candidate_row),
+            ]
+        )
 
     def _load_collaborator_memory_rows(self) -> list[dict[str, Any]]:
         path = self._collaborator_memory_paths()["jsonl"]
@@ -2692,6 +3059,14 @@ class AITPService:
             row_blockers = self._dedupe_strings(
                 list(row.get("promotion_blockers") or [])
             )
+            if latest_run_id:
+                row_blockers.extend(
+                    self._candidate_runtime_blockers(
+                        topic_slug,
+                        latest_run_id,
+                        row,
+                    )
+                )
             if as_bool(row.get("split_required")):
                 row_blockers.append(
                     f"{candidate_id or 'candidate'} requires a split contract before promotion."
@@ -5352,6 +5727,81 @@ class AITPService:
         if not replaced:
             rows.append(updated_row)
         write_jsonl(ledger_path, rows)
+        self._maybe_record_candidate_derivation(topic_slug, run_id, updated_row)
+        self._append_notebook_entry(
+            topic_slug,
+            kind="candidate_update",
+            title=str(updated_row.get("title") or updated_row.get("candidate_id") or "candidate"),
+            status=str(updated_row.get("status") or ""),
+            run_id=run_id,
+            details={
+                k: updated_row[k]
+                for k in ("candidate_id", "claim_type", "status", "trust_level", "promotion_status")
+                if k in updated_row
+            },
+        )
+
+    def _maybe_record_candidate_derivation(
+        self,
+        topic_slug: str,
+        run_id: str,
+        candidate_row: dict[str, Any],
+    ) -> None:
+        candidate_type = str(candidate_row.get("candidate_type") or "").strip()
+        if candidate_type not in {"derivation_object", "derivation_step", "proof_fragment"}:
+            return
+
+        title = str(candidate_row.get("title") or candidate_row.get("candidate_id") or "").strip()
+        if not title:
+            return
+
+        summary = str(candidate_row.get("summary") or "").strip()
+        question = str(candidate_row.get("question") or "").strip()
+        body_parts: list[str] = []
+        if summary:
+            body_parts.append(summary)
+        if question:
+            body_parts.append(f"Adjudication question: {question}")
+        body = "\n\n".join(body_parts).strip()
+
+        source_refs: list[str] = []
+        for ref in candidate_row.get("origin_refs") or []:
+            if not isinstance(ref, dict):
+                continue
+            ref_path = str(ref.get("path") or "").strip()
+            ref_title = str(ref.get("title") or ref.get("id") or "").strip()
+            if ref_path:
+                source_refs.append(ref_path)
+            elif ref_title:
+                source_refs.append(ref_title)
+
+        provenance_note = (
+            "Mirrored automatically from the L3 candidate ledger so derivation-centered candidates "
+            "also appear in the unified run-local derivation surface."
+        )
+
+        try:
+            self.record_l3_derivation(
+                topic_slug=topic_slug,
+                run_id=run_id,
+                title=title,
+                body=body,
+                derivation_kind="candidate_derivation",
+                epistemic_status="candidate_scaffold",
+                status=str(candidate_row.get("status") or "").strip(),
+                source_refs=source_refs,
+                assumptions=[
+                    str(item).strip()
+                    for item in (candidate_row.get("assumptions") or [])
+                    if str(item).strip()
+                ],
+                provenance_note=provenance_note,
+                updated_by="candidate_ledger_mirror",
+                derivation_id=str(candidate_row.get("candidate_id") or "").strip() or None,
+                replace_existing=True,
+            )
+        except Exception:
+            pass
 
     def _remove_candidate_row(
         self,

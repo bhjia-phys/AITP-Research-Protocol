@@ -9,8 +9,9 @@ intake/ARXIV_FIRST_SOURCE_INTAKE.md, research-question.schema.json.
 
 ## 1.1. Role
 
-L1 is the provisional understanding layer. It builds structured, explicit models
-from L0 sources WITHOUT promoting them to trusted knowledge.
+L1 is the provisional source-analysis and provenance layer. It builds
+structured, explicit models from L0 sources WITHOUT promoting them to trusted
+knowledge.
 
 Every claim in L1 is marked "provisional" via the blanket authority level
 `non_authoritative_compiled_l1`. Individual claims carry evidence sentence
@@ -50,12 +51,14 @@ When sources are registered in L0, L1 receives them and:
    - canonical notation selection: NOT YET IMPLEMENTED. Currently only
      records per-source notation; no canonical selection mechanism.
 
-5. **Derivation sketching** — NOT YET IMPLEMENTED. The protocol envisions:
-   - outline-level derivation structures,
-   - key intermediate formulas,
-   - dependency chains between propositions,
-   all marked as "provisional." No data structures or vault pages exist
-   for derivation sketching yet.
+5. **Derivation anchor capture** — NOT YET IMPLEMENTED. The protocol envisions:
+   - source-section pointers for where a derivation is stated or omitted,
+   - equation-location anchors for later reconstruction,
+   - dependency hints that help L3 rebuild the derivation honestly.
+
+   The detailed derivation body does NOT live in L1. Even when the work is
+   source reconstruction rather than novel research, the full derivation note
+   belongs in L3 so one topic has one derivation home.
 
 6. **Method specificity tracking** — IMPLEMENTED (not in original protocol).
    Tracks `method_family` and `specificity_tier` per source, classifying
@@ -185,7 +188,7 @@ runtime guard preventing downstream L2 promotion of L1 material.
 - Obsidian concept graph export.
 
 ### Not yet implemented
-- Derivation sketching (section 1.2 item 5).
+- Derivation anchor capture (section 1.2 item 5).
 - Assumption sub-categorization (mathematical/physical/notational).
 - Canonical notation selection.
 - Research question contract schema validation.
@@ -196,6 +199,7 @@ runtime guard preventing downstream L2 promotion of L1 material.
 
 - Decide canonical promotion.
 - Store provisional reasoning as if it were source identity.
+- Own the detailed derivation body for the topic.
 - Replace L3 candidate formation.
 - Replace L4 adjudication.
 - Substitute summary plausibility for actual derivation checking.

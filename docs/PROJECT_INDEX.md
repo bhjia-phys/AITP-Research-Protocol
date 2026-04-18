@@ -56,7 +56,7 @@ The default route is `L0 → L1 → L3 → L4 → L2`.
 | **B** | Brain (orchestrator) | Topic lifecycle, routing, memory | [brain_protocol.md](protocols/brain_protocol.md) | — |
 | **H** | Human (interaction) | Checkpoints, steering, approval | [H_human_interaction.md](protocols/H_human_interaction.md) | [decision-point.schema.json](../schemas/decision-point.schema.json) |
 | **L0** | Source acquisition | Papers, notes, upstream refs | [L0_SOURCE_LAYER.md](../research/knowledge-hub/L0_SOURCE_LAYER.md) | [source-item.schema.json](../schemas/source-item.schema.json) |
-| **L1** | Provisional understanding | Analysis, derivation sketches | [L1_intake_protocol.md](protocols/L1_intake_protocol.md) | [research-question.schema.json](../schemas/research-question.schema.json) |
+| **L1** | Provisional understanding | Source analysis, provenance, notation/contradiction intake | [L1_intake_protocol.md](protocols/L1_intake_protocol.md) | [research-question.schema.json](../schemas/research-question.schema.json) |
 | **L2** | Trusted knowledge | Promoted, reusable results | [L2_backend_interface.md](protocols/L2_backend_interface.md) | [promotion-trace.schema.json](../schemas/promotion-trace.schema.json) |
 | **L3** | Candidate outputs | Exploratory, tentative | [L3_execution_protocol.md](protocols/L3_execution_protocol.md) | [candidate-claim.schema.json](../schemas/candidate-claim.schema.json) |
 | **L4** | Validation & trust audit | Checks, benchmarks, human decisions | [L4_validation_protocol.md](protocols/L4_validation_protocol.md) | [validation.schema.json](../schemas/validation.schema.json) |
@@ -174,6 +174,9 @@ The Python package `aitp-kernel` provides all runtime services. Key modules:
 | `l2_reuse_context_support.py` | Progressive L3 reuse contexts over global L2 |
 | `l2_staging.py` | L2 staging before promotion |
 | `l2_hygiene.py` | L2 canonical store hygiene |
+| `l3_derivation_support.py` | Run-local L3 derivation ledger and notebook-entry projection |
+| `l3_comparison_support.py` | Run-local L2 comparison receipt ledger for derivation-heavy candidates |
+| `research_notebook_support.py` | XeLaTeX topic notebook compiler over runtime, provenance, derivation, and log surfaces |
 | `capability_plane_support.py` | Runtime capability plane for tools, servers, and environments |
 | `lean_bridge_support.py` | Lean 4 bridge for formal theory |
 | `statement_compilation_support.py` | Statement compilation before proof repair |

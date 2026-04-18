@@ -96,6 +96,18 @@ hiding those rules inside handler code.
   - thin machine-facing run journal for one multi-iteration `L3 -> L4 -> L3` round
 - `topics/<topic_slug>/L3/runs/<run_id>/iteration_journal.md`
   - primary human-readable audit journal over that run's plan, return, and synthesis continuity
+- `topics/<topic_slug>/L3/runs/<run_id>/derivation_records.jsonl`
+  - machine-readable L3 derivation ledger; source reconstructions and topic-local derivations both live here
+- `topics/<topic_slug>/L3/runs/<run_id>/derivation_records.md`
+  - human-readable derivation note index for the run
+- `topics/<topic_slug>/L3/runs/<run_id>/l2_comparison_receipts.jsonl`
+  - machine-readable receipts showing how derivation-heavy candidates were compared against nearby L2 knowledge
+- `topics/<topic_slug>/L3/runs/<run_id>/l2_comparison_receipts.md`
+  - human-readable comparison note index for the run
+- `topics/<topic_slug>/L3/research_notebook.tex`
+  - rebuilt XeLaTeX notebook source compiling runtime framing, L1 provenance, L3 derivations, comparison receipts, run history, and appendix log
+- `topics/<topic_slug>/L3/research_notebook.pdf`
+  - compiled human-facing research notebook when `xelatex` is available
 - `topics/<topic_slug>/L3/runs/<run_id>/iterations/<iteration_id>/plan.contract.json`
   - thin machine-facing plan contract that now carries explicit `idea_reuse_context_path`, `plan_reuse_context_path`, `resource_context_path`, `server_ref`, `environment_ref`, and `tool_refs`
 - `topics/<topic_slug>/L3/runs/<run_id>/iterations/<iteration_id>/plan.md`
@@ -174,6 +186,16 @@ hiding those rules inside handler code.
   - focused-topic compatibility projection for current-topic flows; local to the active kernel and not a repo-tracked truth surface
 - `current_topic.md`
   - human-readable focused-topic compatibility note; local to the active kernel and not a repo-tracked truth surface
+
+Promotion-readiness rule of thumb for derivation-heavy work:
+
+- detailed L3 derivation note is mandatory,
+- explicit L2 comparison receipt is mandatory,
+- theorem/proof/formal candidates also need theory-packet proof surfaces such
+  as `derivation_graph.json` and a ready `formal_theory_review.json`,
+- if those surfaces reveal a source gap or unresolved mismatch, the route
+  returns to `L0` or narrows in `L3` rather than pretending the derivation is
+  settled.
 - `scripts/sync_topic_state.py`
   - helper that materializes the runtime state from existing layer artifacts
 - `topics/<topic_slug>/runtime/action_queue.jsonl`

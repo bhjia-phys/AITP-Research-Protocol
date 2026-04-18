@@ -13,8 +13,16 @@ L3 is the workspace for untrusted but useful material. It is where the agent
 forms candidates, explores conjectures, records failed attempts, and prepares
 material that may become reusable if it passes L4 validation.
 
+L3 is also the single detailed-derivation home for a topic. Source-derived
+reconstructions, cross-source merged derivations, bounded candidate
+derivations, and failed derivation attempts all live in L3 rather than being
+split across L1 and L3.
+
 Nothing in L3 is trusted. Material here may become reusable IF it passes L4
 and L2 promotion.
+For derivation-heavy work, "looks coherent" is not enough: promotion readiness
+must be earned through explicit derivation, comparison, and, when relevant,
+theory-packet surfaces.
 
 ## 3.2. Five Sub-Planes
 
@@ -40,6 +48,8 @@ L3 is divided into five sub-planes that form the idea-to-candidate pipeline:
 - Candidate claims, explanatory notes, tentative reusable material.
 - Conjectures and hypotheses with explicit claim statements.
 - Source-bound analysis and comparison.
+- Detailed derivation bodies, including source reconstructions with explicit
+  provenance back to cited literature.
 - Output: candidate claims marked "exploratory", not "trusted."
 
 ### L3-R — Result Integration
@@ -98,7 +108,53 @@ See: `feedback/SPLIT_PROTOCOL.md`, `followup_lifecycle.md` FL4.
 A wide candidate (spanning multiple independent claims) must not be promoted
 as one object. The correct route is always split, then promote bounded pieces.
 
-## 3.4. Scratch Mode
+## 3.4. Unified Derivation Surface
+
+L3 owns the topic's detailed derivation body, whether the derivation is:
+- `source_reconstruction` — rebuild a cited source argument step by step,
+- `cross_source_reconstruction` — merge multiple source-local derivations into
+  one bounded topic-local derivation,
+- `candidate_derivation` — derive a new bounded candidate,
+- `failed_attempt` — preserve a derivation route that did not close,
+- `notation_resolution` — resolve a notation or convention mismatch through an
+  explicit derivation note.
+
+Run-local derivation surfaces:
+
+```
+topics/<topic_slug>/L3/runs/<run_id>/derivation_records.jsonl
+topics/<topic_slug>/L3/runs/<run_id>/derivation_records.md
+topics/<topic_slug>/L3/runs/<run_id>/l2_comparison_receipts.jsonl
+topics/<topic_slug>/L3/runs/<run_id>/l2_comparison_receipts.md
+```
+
+Rules:
+- L1 may point to source anchors, sections, or notation tensions, but it should
+  not duplicate the full derivation body.
+- Source-derived derivations stay explicitly marked as reconstructions until
+  they are validated and promoted through the normal route.
+- Every L3 derivation record is AI-authored provisional reasoning, not truth by
+  itself. Its job is to preserve the reasoning spine, assumptions, and source
+  anchors so later audit can check it honestly.
+- A derivation-heavy candidate is not promotion-ready merely because a detailed
+  derivation row exists. It must also carry an explicit L2 comparison receipt
+  naming the compared units, the comparison scope, the comparison outcome, and
+  the remaining limitations.
+- The comparison receipt is part of the logic-check chain, not optional polish.
+  Its job is to make visible where the new derivation agrees with, differs
+  from, or still falls short of nearby known routes in L2.
+- Theorem-facing or otherwise formal candidates need a stronger gate than
+  ordinary derivation notes: before they are promotion-ready, the corresponding
+  theory packet must contain at least a `derivation_graph.json` proof spine and
+  a `formal_theory_review.json` whose `overall_status` is `ready`.
+- Failed derivations remain durable in the same L3 surface so later sessions do
+  not unknowingly repeat the same dead end.
+- When the derivation remains logically shaky, notation-ambiguous, or dependent
+  on omitted cited steps, the correct move is to return to L0 for source
+  recovery and to L2 for known-method or known-derivation comparison before
+  treating the route as stable.
+
+## 3.5. Scratch Mode
 
 L3 provides a scratch mode for quick speculative work:
 - no formal candidate structure required,
@@ -114,7 +170,7 @@ material to the candidate surface. Scratch work exists in session context
 and topic notes, but there is no structured scratch-to-candidate promotion
 mechanism. This is a known gap.
 
-## 3.5. Strategy Memory
+## 3.6. Strategy Memory
 
 L3 records helpful and harmful patterns:
 - approaches that succeeded or failed in past topics,
@@ -128,7 +184,7 @@ as a persistent cross-topic store. Individual topics record failure patterns
 in topic-specific notes, but there is no cross-topic pattern extraction or
 strategy memory retrieval.
 
-## 3.6. Run Records
+## 3.7. Run Records
 
 Each L3 execution leaves a run record. The protocol originally specified:
 
@@ -138,16 +194,19 @@ L3/runs/<run_id>/result_summary.md
 L3/runs/<run_id>/validation_plan.md
 ```
 
-The actual implementation stores run-related information in the topic
-runtime directory under:
-- `runtime/topics/<topic_slug>/runtime/` — action decisions, decision traces,
-  topic state.
-- Candidate records in the candidate ledger (in-memory and JSONL).
+The actual implementation now stores run-related information across:
+- `topics/<topic_slug>/L3/runs/<run_id>/candidate_ledger.jsonl`
+- `topics/<topic_slug>/L3/runs/<run_id>/strategy_memory.jsonl`
+- `topics/<topic_slug>/L3/runs/<run_id>/derivation_records.jsonl`
+- `topics/<topic_slug>/L3/runs/<run_id>/iteration_journal.json|md`
+- `topics/<topic_slug>/L3/runs/<run_id>/iterations/<iteration_id>/...`
+- `runtime/topics/<topic_slug>/runtime/` for cross-layer queue, checkpoint,
+  and decision surfaces.
 
-The `L3/runs/` path structure is NOT currently used. Run records are managed
-through the topic runtime artifacts instead.
+So the `L3/runs/` path structure is actively used for run-local research
+artifacts, while runtime surfaces still carry the cross-layer control state.
 
-## 3.7. Layer Graph State Machine
+## 3.8. Layer Graph State Machine
 
 The implementation tracks candidate position through a layer graph state
 machine. Each candidate has a layer state that transitions:
@@ -165,7 +224,7 @@ The L3-A <-> L4 loop is the core research cycle in `learn` and `implement`
 modes: L3-A sends candidates to L4 for validation, L4 returns results to
 L3-R, which may route back to L3-A for revision.
 
-## 3.8. Auto-Promotion Pipeline
+## 3.9. Auto-Promotion Pipeline
 
 When a candidate meets auto-promotion criteria (see `promotion_pipeline.md` P4),
 the code can route it directly to L2_auto without explicit human approval.
@@ -178,7 +237,7 @@ This pipeline:
 This bypasses L3-R and L3-D as separate steps but performs equivalent
 checks inline.
 
-## 3.9. TPKN Backend
+## 3.10. TPKN Backend
 
 The implementation provides a TPKN (Theoretical Physics Knowledge Network)
 backend that:
@@ -188,7 +247,7 @@ backend that:
 
 Candidates may reference TPKN units as evidence or prior knowledge.
 
-## 3.10. Loop Detection
+## 3.11. Loop Detection
 
 The topic loop includes loop detection to prevent the agent from cycling
 through the same actions without making progress:
@@ -196,7 +255,7 @@ through the same actions without making progress:
 - Detects when the same action type is repeated without state change,
 - Triggers intervention (escalation, mode change, or human checkpoint).
 
-## 3.11. Proof Engineering Distillation
+## 3.12. Proof Engineering Distillation
 
 When a candidate involves formal theory material, L3-D includes proof
 engineering distillation:
@@ -206,11 +265,18 @@ engineering distillation:
 
 See: `PROOF_OBLIGATION_PROTOCOL.md`, `VERIFICATION_BRIDGE_PROTOCOL.md`.
 
-## 3.12. Implementation Status
+## 3.13. Implementation Status
 
 ### Currently implemented
 - Three sub-planes (L3-A, L3-R, L3-D) with state machine transitions.
 - Candidate management with ledger, fingerprinting, and deduplication.
+- Run-local derivation recording surfaces for unified topic-local derivation
+  bodies.
+- Run-local L2 comparison receipt surfaces for derivation-heavy candidates.
+- Promotion blockers that keep derivation-heavy candidates out of promotion
+  until detailed L3 derivation notes and L2 comparison receipts exist.
+- Stronger theorem/proof readiness gate through theory-packet derivation-graph
+  and formal-review surfaces.
 - Candidate split contract with deferred fragment buffering.
 - Auto-promotion pipeline (bypasses L3-R for eligible candidates).
 - Layer graph state machine for candidate position tracking.
@@ -224,14 +290,14 @@ See: `PROOF_OBLIGATION_PROTOCOL.md`, `VERIFICATION_BRIDGE_PROTOCOL.md`.
 - Mandatory `validation_requirements` field on candidates.
 - Scratch-to-candidate promotion bridge.
 - Strategy/collaborator memory (cross-topic persistent store).
-- `L3/runs/<run_id>/` path structure for run records.
 - Negative-result documentation system.
 
-## 3.13. What L3 Should Not Do
+## 3.14. What L3 Should Not Do
 
 - Promote directly to L2 (except through auto-promotion pipeline).
 - Treat exploratory results as validated.
 - Discard failed paths without recording them.
 - Claim coverage equals understanding.
+- Split detailed derivation bodies between L1 and L3.
 - Substitute scratch material for validated candidates.
 - Bypass L3-R interpretation for candidates that need human review.
