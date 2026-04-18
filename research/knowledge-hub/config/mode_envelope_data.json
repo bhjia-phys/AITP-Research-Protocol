@@ -1,0 +1,147 @@
+{
+  "description": "Declarative mode envelope specs, submode rules, escalation triggers, literature-intake tokens, defer rules, and writeback artifact map. Used by mode_envelope_support.py.",
+  "updated_at": "2026-04-19",
+
+  "mode_specs": {
+    "explore": {
+      "local_task": "Discover literature, find ideas, record observations. Compare with L2 to assess novelty.",
+      "foreground_layers": ["L0", "L1", "L3"],
+      "L3_focus": ["L3-I"],
+      "allowed_backedges": [],
+      "required_writeback": ["source_registrations", "l1_notes", "l3i_idea_records"],
+      "forbidden_shortcuts": [
+        "Do not form formal candidates in explore mode.",
+        "Do not execute L4 validation or L2 promotion."
+      ],
+      "human_checkpoint_policy": "Ask on scope change or direction ambiguity.",
+      "entry_conditions": ["Default mode for new topics."],
+      "exit_conditions": ["At least one idea recorded in L3-I, or sources identified."]
+    },
+    "learn": {
+      "local_task": "Deep study of specific literature, verification of known results through derivation/experiment.",
+      "foreground_layers": ["L0", "L1", "L3", "L4"],
+      "L3_focus": ["L3-P", "L3-A"],
+      "allowed_backedges": ["L4 -> L3-A (revision)", "L3-A -> L1 (need more source)"],
+      "required_writeback": ["l3p_plans", "l3a_candidates", "l4_validation_results"],
+      "forbidden_shortcuts": [
+        "L4 results must return through L3-R, never directly to L2.",
+        "Do not let style confidence count as validation."
+      ],
+      "human_checkpoint_policy": "Ask on derivation approval or numerical experiment plan.",
+      "entry_conditions": ["At least one idea or source identified."],
+      "exit_conditions": ["Known results verified or gap identified."]
+    },
+    "implement": {
+      "local_task": "Pursue new ideas, produce novel results. Full L3-I -> L3-P -> L3-A pipeline.",
+      "foreground_layers": ["L3", "L4"],
+      "L3_focus": ["L3-I", "L3-P", "L3-A"],
+      "allowed_backedges": ["L4 -> L3-A (revision)", "L3-A -> L3-P (replan)", "L3-P -> L3-I (idea refinement)"],
+      "required_writeback": ["l3i_refined_idea", "l3p_plan", "l3a_candidates_with_evidence"],
+      "forbidden_shortcuts": [
+        "L4 results must return through L3-R, never directly to L2.",
+        "New conclusions stay in L3 for human review before L2 promotion."
+      ],
+      "human_checkpoint_policy": "Ask on novel conclusion or L2 promotion decision.",
+      "entry_conditions": ["Concrete idea ready for execution."],
+      "exit_conditions": ["Novel conclusion recorded in L3, or idea disproven."]
+    }
+  },
+
+  "literature_submode_spec": {
+    "local_task": "Read a source, extract reusable knowledge units, and stage them into L2 without full formal-theory audit.",
+    "required_writeback": [
+      "l2_staging_entries_with_literature_intake_fast_path",
+      "l1_vault_wiki_pages_for_current_source"
+    ],
+    "entry_conditions": [
+      "The current request is source-intake or paper-reading work rather than benchmark execution or proof discharge.",
+      "The topic needs reusable literature knowledge staged before a deeper validation route exists."
+    ],
+    "exit_conditions": [
+      "Exit when the current source has yielded its bounded staged knowledge units.",
+      "Exit when the human redirects the route away from literature intake."
+    ]
+  },
+
+  "mode_escalation_triggers": {
+    "explore": [
+      "decision_override_present",
+      "non_trivial_consultation",
+      "capability_gap_blocker",
+      "trust_missing"
+    ],
+    "learn": [
+      "verification_route_selection",
+      "proof_completion_review",
+      "contradiction_detected",
+      "non_trivial_consultation",
+      "capability_gap_blocker",
+      "trust_missing"
+    ],
+    "implement": [
+      "promotion_intent",
+      "decision_override_present",
+      "verification_route_selection",
+      "proof_completion_review",
+      "contradiction_detected"
+    ]
+  },
+
+  "literature_source_tokens": ["literature", "paper", "source", "arxiv", "pdf"],
+  "literature_intake_tokens": ["read", "extract", "intake", "note", "notes", "summar"],
+  "literature_keep_suffixes": [
+    "topic_dashboard.md",
+    "research_question.contract.md",
+    "control_note.md",
+    "idea_packet.md",
+    "operator_checkpoint.active.md",
+    "graph_analysis.md",
+    "topic_synopsis.json"
+  ],
+  "literature_defer_rules": [
+    {
+      "suffix": "validation_review_bundle.active.md",
+      "trigger": "verification_route_selection",
+      "reason": "Validation review details are only mandatory once the work leaves literature intake and enters explicit verification."
+    },
+    {
+      "suffix": "validation_contract.active.md",
+      "trigger": "verification_route_selection",
+      "reason": "Validation-route details are deferred until the work leaves literature intake and enters explicit verification."
+    },
+    {
+      "suffix": "promotion_readiness.json",
+      "trigger": "promotion_intent",
+      "reason": "Promotion-readiness details are deferred until the work leaves literature intake and approaches writeback."
+    },
+    {
+      "suffix": "promotion_gate.md",
+      "trigger": "promotion_intent",
+      "reason": "Promotion-gate review is deferred during literature-intake staging."
+    },
+    {
+      "suffix": "topic_completion.json",
+      "trigger": "verification_route_selection",
+      "reason": "Topic-completion review is deferred while the work is still source-intake staging."
+    },
+    {
+      "suffix": "topic_completion.md",
+      "trigger": "verification_route_selection",
+      "reason": "Topic-completion review is deferred while the work is still source-intake staging."
+    }
+  ],
+
+  "writeback_artifact_map": {
+    "source_registrations": "topics/{slug}/runtime/source_registrations.jsonl",
+    "l1_notes": "topics/{slug}/L1/vault",
+    "l3i_idea_records": "topics/{slug}/L3/runs",
+    "l3p_plans": "topics/{slug}/L3/runs",
+    "l3a_candidates": "topics/{slug}/L3/runs",
+    "l4_validation_results": "topics/{slug}/L4/runs",
+    "l3i_refined_idea": "topics/{slug}/L3/runs",
+    "l3p_plan": "topics/{slug}/L3/runs",
+    "l3a_candidates_with_evidence": "topics/{slug}/L3/runs",
+    "l2_staging_entries_with_literature_intake_fast_path": "canonical/staging/workspace_staging_manifest.json",
+    "l1_vault_wiki_pages_for_current_source": "topics/{slug}/L1/vault"
+  }
+}

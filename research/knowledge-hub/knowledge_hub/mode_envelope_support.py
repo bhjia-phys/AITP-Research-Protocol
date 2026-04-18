@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 from .mode_registry import (
@@ -9,132 +12,51 @@ from .mode_registry import (
 )
 from .mode_registry import is_valid_transition, normalize_runtime_mode as _normalize_mode
 
-_MODE_SPECS: dict[str, dict[str, Any]] = {
-    "explore": {
-        "local_task": "Discover literature, find ideas, record observations. Compare with L2 to assess novelty.",
-        "foreground_layers": ["L0", "L1", "L3"],
-        "L3_focus": ["L3-I"],
-        "allowed_backedges": [],
-        "required_writeback": ["source_registrations", "l1_notes", "l3i_idea_records"],
-        "forbidden_shortcuts": [
-            "Do not form formal candidates in explore mode.",
-            "Do not execute L4 validation or L2 promotion.",
-        ],
-        "human_checkpoint_policy": "Ask on scope change or direction ambiguity.",
-        "entry_conditions": ["Default mode for new topics."],
-        "exit_conditions": ["At least one idea recorded in L3-I, or sources identified."],
-    },
-    "learn": {
-        "local_task": "Deep study of specific literature, verification of known results through derivation/experiment.",
-        "foreground_layers": ["L0", "L1", "L3", "L4"],
-        "L3_focus": ["L3-P", "L3-A"],
-        "allowed_backedges": ["L4 -> L3-A (revision)", "L3-A -> L1 (need more source)"],
-        "required_writeback": ["l3p_plans", "l3a_candidates", "l4_validation_results"],
-        "forbidden_shortcuts": [
-            "L4 results must return through L3-R, never directly to L2.",
-            "Do not let style confidence count as validation.",
-        ],
-        "human_checkpoint_policy": "Ask on derivation approval or numerical experiment plan.",
-        "entry_conditions": ["At least one idea or source identified."],
-        "exit_conditions": ["Known results verified or gap identified."],
-    },
-    "implement": {
-        "local_task": "Pursue new ideas, produce novel results. Full L3-I -> L3-P -> L3-A pipeline.",
-        "foreground_layers": ["L3", "L4"],
-        "L3_focus": ["L3-I", "L3-P", "L3-A"],
-        "allowed_backedges": ["L4 -> L3-A (revision)", "L3-A -> L3-P (replan)", "L3-P -> L3-I (idea refinement)"],
-        "required_writeback": ["l3i_refined_idea", "l3p_plan", "l3a_candidates_with_evidence"],
-        "forbidden_shortcuts": [
-            "L4 results must return through L3-R, never directly to L2.",
-            "New conclusions stay in L3 for human review before L2 promotion.",
-        ],
-        "human_checkpoint_policy": "Ask on novel conclusion or L2 promotion decision.",
-        "entry_conditions": ["Concrete idea ready for execution."],
-        "exit_conditions": ["Novel conclusion recorded in L3, or idea disproven."],
-    },
-}
+_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "mode_envelope_data.json"
 
-_LITERATURE_SOURCE_TOKENS = ("literature", "paper", "source", "arxiv", "pdf")
-_LITERATURE_INTAKE_TOKENS = ("read", "extract", "intake", "note", "notes", "summar")
-_LITERATURE_KEEP_SUFFIXES = (
-    "topic_dashboard.md",
-    "research_question.contract.md",
-    "control_note.md",
-    "idea_packet.md",
-    "operator_checkpoint.active.md",
-    "graph_analysis.md",
-    "topic_synopsis.json",
-)
-_LITERATURE_DEFER_RULES = (
-    (
-        "validation_review_bundle.active.md",
-        "verification_route_selection",
-        "Validation review details are only mandatory once the work leaves literature intake and enters explicit verification.",
-    ),
-    (
-        "validation_contract.active.md",
-        "verification_route_selection",
-        "Validation-route details are deferred until the work leaves literature intake and enters explicit verification.",
-    ),
-    (
-        "promotion_readiness.json",
-        "promotion_intent",
-        "Promotion-readiness details are deferred until the work leaves literature intake and approaches writeback.",
-    ),
-    (
-        "promotion_gate.md",
-        "promotion_intent",
-        "Promotion-gate review is deferred during literature-intake staging.",
-    ),
-    (
-        "topic_completion.json",
-        "verification_route_selection",
-        "Topic-completion review is deferred while the work is still source-intake staging.",
-    ),
-    (
-        "topic_completion.md",
-        "verification_route_selection",
-        "Topic-completion review is deferred while the work is still source-intake staging.",
-    ),
-)
-_LITERATURE_SUBMODE_SPEC = {
-    "local_task": "Read a source, extract reusable knowledge units, and stage them into L2 without full formal-theory audit.",
-    "required_writeback": [
-        "l2_staging_entries_with_literature_intake_fast_path",
-        "l1_vault_wiki_pages_for_current_source",
-    ],
-    "entry_conditions": [
-        "The current request is source-intake or paper-reading work rather than benchmark execution or proof discharge.",
-        "The topic needs reusable literature knowledge staged before a deeper validation route exists.",
-    ],
-    "exit_conditions": [
-        "Exit when the current source has yielded its bounded staged knowledge units.",
-        "Exit when the human redirects the route away from literature intake.",
-    ],
-}
-_MODE_ESCALATION_TRIGGERS = {
-    "explore": {
-        "decision_override_present",
-        "non_trivial_consultation",
-        "capability_gap_blocker",
-        "trust_missing",
-    },
-    "learn": {
-        "verification_route_selection",
-        "proof_completion_review",
-        "contradiction_detected",
-        "non_trivial_consultation",
-        "capability_gap_blocker",
-        "trust_missing",
-    },
-    "implement": {
-        "promotion_intent",
-        "decision_override_present",
-        "verification_route_selection",
-        "proof_completion_review",
-        "contradiction_detected",
-    },
-}
+
+@lru_cache(maxsize=1)
+def _load_config() -> dict:
+    return json.loads(_CONFIG_PATH.read_text(encoding="utf-8"))
+
+
+def _mode_specs() -> dict[str, dict[str, Any]]:
+    return _load_config()["mode_specs"]
+
+
+def _get_mode_spec(mode: str) -> dict[str, Any]:
+    return _mode_specs().get(mode, {})
+
+
+def _literature_tokens() -> dict[str, tuple[str, ...]]:
+    cfg = _load_config()
+    return {
+        "source": tuple(cfg.get("literature_source_tokens") or []),
+        "intake": tuple(cfg.get("literature_intake_tokens") or []),
+        "keep_suffixes": tuple(cfg.get("literature_keep_suffixes") or []),
+    }
+
+
+def _literature_defer_rules() -> list[tuple[str, str, str]]:
+    return [
+        (r["suffix"], r["trigger"], r["reason"])
+        for r in _load_config().get("literature_defer_rules") or []
+    ]
+
+
+def _literature_submode_spec() -> dict[str, Any]:
+    return _load_config().get("literature_submode_spec") or {}
+
+
+def _mode_escalation_triggers() -> dict[str, set[str]]:
+    return {
+        mode: set(triggers)
+        for mode, triggers in _load_config().get("mode_escalation_triggers", {}).items()
+    }
+
+
+def _writeback_artifact_map() -> dict[str, str]:
+    return dict(_load_config().get("writeback_artifact_map") or {})
 
 
 def light_profile_primary_reads(
@@ -153,11 +75,12 @@ def decision_override_read(control_note_path: str) -> dict[str, str]:
 
 
 def _detect_literature_intake_intent(*texts: str | None) -> bool:
+    tokens = _literature_tokens()
     normalized = " ".join(str(text or "").strip().lower() for text in texts if str(text or "").strip())
     if not normalized:
         return False
-    return any(token in normalized for token in _LITERATURE_SOURCE_TOKENS) and any(
-        token in normalized for token in _LITERATURE_INTAKE_TOKENS
+    return any(token in normalized for token in tokens["source"]) and any(
+        token in normalized for token in tokens["intake"]
     )
 
 
@@ -235,7 +158,7 @@ def filter_escalation_triggers_for_mode(
     runtime_mode: str,
     escalation_triggers: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    allowed = _MODE_ESCALATION_TRIGGERS.get(str(runtime_mode or "").strip())
+    allowed = _mode_escalation_triggers().get(str(runtime_mode or "").strip())
     if not allowed:
         return [dict(row) for row in escalation_triggers]
 
@@ -295,7 +218,7 @@ def _transition_posture(
     return {
         "transition_kind": "boundary_hold",
         "transition_reason": f"Current work remains inside the `{runtime_mode}` envelope until a declared trigger or completed artifact changes the layer boundary.",
-        "allowed_targets": list(_MODE_SPECS[runtime_mode]["foreground_layers"]),
+        "allowed_targets": list(_get_mode_spec(runtime_mode).get("foreground_layers", [])),
         "triggered_by": sorted(active_triggers),
         "requires_human_checkpoint": requires_human_checkpoint,
         "human_checkpoint_reason": "An active operator checkpoint is unresolved." if requires_human_checkpoint else None,
@@ -337,7 +260,7 @@ def build_runtime_mode_contract(
         human_request=human_request,
         active_triggers=active_triggers,
     )
-    mode_spec = _MODE_SPECS[runtime_mode]
+    mode_spec = _get_mode_spec(runtime_mode)
     transition_posture = _transition_posture(
         runtime_mode=runtime_mode,
         active_triggers=active_triggers,
@@ -352,12 +275,13 @@ def build_runtime_mode_contract(
         elif active_submode in ("code", "formal", "experimental"):
             entry_conditions.append("An active implement submode is driving the L3-I -> L3-P -> L3-A pipeline.")
         elif active_submode == "literature":
-            local_task = str(_LITERATURE_SUBMODE_SPEC["local_task"])
-            required_writeback = list(_LITERATURE_SUBMODE_SPEC["required_writeback"])
-            entry_conditions.extend(_LITERATURE_SUBMODE_SPEC["entry_conditions"])
+            lit_spec = _literature_submode_spec()
+            local_task = str(lit_spec["local_task"])
+            required_writeback = list(lit_spec["required_writeback"])
+            entry_conditions.extend(lit_spec["entry_conditions"])
     exit_conditions = list(mode_spec["exit_conditions"])
     if active_submode == "literature":
-        exit_conditions.extend(_LITERATURE_SUBMODE_SPEC["exit_conditions"])
+        exit_conditions.extend(_literature_submode_spec().get("exit_conditions") or [])
     if transition_posture["transition_kind"] == "backedge_transition":
         exit_conditions.append("Current work should exit locally once the declared backedge has been materialized.")
     topic_has_ideas = idea_packet_status not in ("", "needs_clarification", "missing")
@@ -419,11 +343,10 @@ def check_forbidden_shortcuts(
 
     Returns a dict with 'allowed' (bool) and optional 'reason' (str).
     """
-    mode_spec = _MODE_SPECS.get(runtime_mode)
+    mode_spec = _get_mode_spec(runtime_mode)
     if not mode_spec:
         return {"allowed": True}
 
-    forbidden = [str(r).strip().lower() for r in mode_spec.get("forbidden_shortcuts") or []]
     lowered_summary = action_summary.lower()
 
     violations: list[str] = []
@@ -464,7 +387,7 @@ def check_layer_permission(
 
     Returns a dict with 'allowed' (bool) and optional 'reason' (str).
     """
-    mode_spec = _MODE_SPECS.get(runtime_mode)
+    mode_spec = _get_mode_spec(runtime_mode)
     if not mode_spec:
         return {"allowed": True}
 
@@ -482,21 +405,6 @@ def check_layer_permission(
     return {"allowed": True}
 
 
-_WRITEBACK_ARTIFACT_MAP = {
-    "source_registrations": "topics/{slug}/runtime/source_registrations.jsonl",
-    "l1_notes": "topics/{slug}/L1/vault",
-    "l3i_idea_records": "topics/{slug}/L3/runs",
-    "l3p_plans": "topics/{slug}/L3/runs",
-    "l3a_candidates": "topics/{slug}/L3/runs",
-    "l4_validation_results": "topics/{slug}/L4/runs",
-    "l3i_refined_idea": "topics/{slug}/L3/runs",
-    "l3p_plan": "topics/{slug}/L3/runs",
-    "l3a_candidates_with_evidence": "topics/{slug}/L3/runs",
-    "l2_staging_entries_with_literature_intake_fast_path": "canonical/staging/workspace_staging_manifest.json",
-    "l1_vault_wiki_pages_for_current_source": "topics/{slug}/L1/vault",
-}
-
-
 def verify_required_writeback(
     *,
     runtime_mode: str,
@@ -507,7 +415,7 @@ def verify_required_writeback(
 
     Returns a dict with 'all_satisfied' (bool) and per-item status.
     """
-    mode_spec = _MODE_SPECS.get(runtime_mode)
+    mode_spec = _get_mode_spec(runtime_mode)
     if not mode_spec:
         return {"all_satisfied": True, "items": [], "missing": []}
 
@@ -516,7 +424,7 @@ def verify_required_writeback(
     missing: list[str] = []
 
     for key in required:
-        pattern = _WRITEBACK_ARTIFACT_MAP.get(key, "")
+        pattern = _writeback_artifact_map().get(key, "")
         path_str = pattern.format(slug=topic_slug) if "{slug}" in pattern else pattern
         resolved = kernel_root / path_str
         satisfied = resolved.exists() if path_str else True
@@ -545,8 +453,8 @@ def validate_mode_transition_conditions(
 
     Returns a dict with 'valid' (bool), 'exit_met', 'entry_met', and 'warnings'.
     """
-    from_spec = _MODE_SPECS.get(from_mode)
-    to_spec = _MODE_SPECS.get(to_mode)
+    from_spec = _get_mode_spec(from_mode)
+    to_spec = _get_mode_spec(to_mode)
     warnings: list[str] = []
 
     # Check exit conditions of the source mode
@@ -755,7 +663,7 @@ def refocus_context_for_active_submode(
         path = str(row.get("path") or "").strip()
         reason = str(row.get("reason") or "").strip()
         matched_defer = False
-        for suffix, trigger, deferred_reason in _LITERATURE_DEFER_RULES:
+        for suffix, trigger, deferred_reason in _literature_defer_rules():
             if path.endswith(suffix):
                 _append_deferred_surface(
                     deferred_reads,
@@ -767,7 +675,7 @@ def refocus_context_for_active_submode(
                 break
         if matched_defer:
             continue
-        if path.endswith(_LITERATURE_KEEP_SUFFIXES):
+        if path.endswith(tuple(t for t in _literature_tokens()["keep_suffixes"])):
             _append_path_reason(focused_reads, path=path, reason=reason or "Keep this runtime control surface visible.")
 
     for wiki_path in _literature_wiki_paths(l1_vault):

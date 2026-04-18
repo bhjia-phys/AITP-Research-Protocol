@@ -9,42 +9,7 @@ from functools import lru_cache
 from pathlib import Path
 
 PROFILE_PATH = Path(__file__).resolve().parents[1] / "research_mode_profiles.json"
-
-FIRST_PRINCIPLES_MARKERS = (
-    "ab initio",
-    "first principles",
-    "first-principles",
-    "gw",
-    "qsgw",
-    "dft",
-    "hartree",
-    "fock",
-    "librpa",
-    "self-energy",
-    "convergence",
-    "basis set",
-)
-TOY_MODEL_MARKERS = (
-    "toy model",
-    "spin chain",
-    "heisenberg",
-    "ising",
-    "j1-j2",
-    "exact diagonalization",
-    "finite-size",
-)
-FORMAL_DERIVATION_MARKERS = (
-    "derivation",
-    "derive",
-    "proof",
-    "lemma",
-    "theorem",
-    "formal",
-    "bootstrap",
-    "ward identity",
-    "operator algebra",
-    "consistency condition",
-)
+SIGNALS_CONFIG_PATH = Path(__file__).resolve().parents[2] / "config" / "lane_and_mode_signals.json"
 
 
 def _slugify(text: str) -> str:
@@ -57,6 +22,13 @@ def _slugify(text: str) -> str:
 @lru_cache(maxsize=1)
 def load_registry() -> dict:
     return json.loads(PROFILE_PATH.read_text(encoding="utf-8"))
+
+
+@lru_cache(maxsize=1)
+def _load_signals_config() -> dict:
+    if not SIGNALS_CONFIG_PATH.exists():
+        return {}
+    return json.loads(SIGNALS_CONFIG_PATH.read_text(encoding="utf-8"))
 
 
 def profile_path_ref() -> str:
@@ -77,22 +49,7 @@ def normalize_research_mode(value: str | None) -> str | None:
     if not value:
         return None
     token = _slugify(str(value))
-    aliases = {
-        "general": "exploratory_general",
-        "exploratory": "exploratory_general",
-        "generic": "exploratory_general",
-        "numerical": "first_principles",
-        "first_principle": "first_principles",
-        "first_principles": "first_principles",
-        "ab_initio": "first_principles",
-        "spin_chain": "toy_model",
-        "spin_chains": "toy_model",
-        "toy": "toy_model",
-        "toy_models": "toy_model",
-        "formal": "formal_derivation",
-        "derivation": "formal_derivation",
-        "formal_proof": "formal_derivation",
-    }
+    aliases = _load_signals_config().get("mode_aliases") or {}
     token = aliases.get(token, token)
     return token if token in available_modes() else None
 
@@ -107,6 +64,20 @@ def profile_for_mode(research_mode: str | None) -> dict:
         "profile_path": profile_path_ref(),
         **profile,
     }
+
+
+def _signals_for_mode(mode: str) -> list[str]:
+    cfg = _load_signals_config()
+    mapping = {
+        "first_principles": "first_principles",
+        "toy_model": "toy_model",
+        "formal_derivation": "formal_derivation",
+    }
+    key = mapping.get(mode)
+    if not key:
+        return []
+    entry = (cfg.get("lane_signals") or {}).get(key)
+    return list(entry.get("markers") or []) if entry else []
 
 
 def infer_research_mode(
@@ -144,12 +115,10 @@ def infer_research_mode(
         )
     ).lower()
 
-    if any(marker in combined_text for marker in FIRST_PRINCIPLES_MARKERS):
-        return "first_principles"
-    if any(marker in combined_text for marker in TOY_MODEL_MARKERS):
-        return "toy_model"
-    if any(marker in combined_text for marker in FORMAL_DERIVATION_MARKERS):
-        return "formal_derivation"
+    for mode in ("first_principles", "toy_model", "formal_derivation"):
+        if any(marker in combined_text for marker in _signals_for_mode(mode)):
+            return mode
+
     if surface == "numerical":
         return "first_principles"
     if surface == "symbolic":

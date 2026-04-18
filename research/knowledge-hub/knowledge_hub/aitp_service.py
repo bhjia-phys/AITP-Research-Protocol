@@ -9,6 +9,7 @@ import hashlib
 import subprocess
 import sys
 from dataclasses import dataclass
+from functools import lru_cache
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -232,6 +233,7 @@ from .theory_metrics import (
     record_topic_completion_metric,
 )
 from .source_distillation_support import distill_from_sources
+from .research_report_support import materialize_research_report as materialize_research_report_surface
 from .theory_coverage_audit_support import (
     audit_theory_coverage as perform_theory_coverage_audit,
 )
@@ -281,6 +283,15 @@ from .obsidian_graph_bridge_support import (
     sync_concept_graph_export_to_theoretical_physics_brain,
 )
 from .semantic_routing import canonical_validation_mode
+from .lane_contract_defaults import (
+    full_lane_config,
+    known_research_modes,
+    lane_signals_config,
+    template_mode_to_research_mode_map,
+    research_mode_to_template_mode_map,
+    return_to_l0_outcomes as _config_return_to_l0_outcomes,
+    valid_strategy_types as _config_valid_strategy_types,
+)
 from .bundle_support import (
     LEGACY_PACKAGE_DISTRIBUTION_NAMES,
     PACKAGE_DISTRIBUTION_NAME,
@@ -289,6 +300,13 @@ from .bundle_support import (
     package_bundle_available,
     package_distribution_names,
 )
+
+_PROMOTION_GATE_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "promotion_gate_policy.json"
+
+
+@lru_cache(maxsize=1)
+def _load_promotion_gate_config() -> dict:
+    return json.loads(_PROMOTION_GATE_CONFIG_PATH.read_text(encoding="utf-8"))
 
 
 def _looks_like_repo_root(path: Path) -> bool:
@@ -1551,22 +1569,11 @@ class AITPService:
 
     def _template_mode_to_research_mode(self, template_mode: str | None) -> str:
         normalized = str(template_mode or "").strip().lower()
-        mapping = {
-            "formal_theory": "formal_derivation",
-            "toy_numeric": "toy_model",
-            "code_method": "exploratory_general",
-        }
-        return mapping.get(normalized, normalized or "exploratory_general")
+        return template_mode_to_research_mode_map().get(normalized, normalized or "exploratory_general")
 
     def _research_mode_to_template_mode(self, research_mode: str | None) -> str:
         normalized = str(research_mode or "").strip().lower()
-        mapping = {
-            "formal_derivation": "formal_theory",
-            "toy_model": "toy_numeric",
-            "first_principles": "toy_numeric",
-            "exploratory_general": "code_method",
-        }
-        return mapping.get(normalized, "code_method")
+        return research_mode_to_template_mode_map().get(normalized, "code_method")
 
     def _validation_mode_for_template(self, template_mode: str | None) -> str:
         normalized = str(template_mode or "").strip().lower()
@@ -1586,18 +1593,19 @@ class AITPService:
     def _lane_for_modes(
         self, *, template_mode: str | None, research_mode: str | None
     ) -> str:
-        normalized_template = str(template_mode or "").strip().lower()
-        normalized_research = str(research_mode or "").strip().lower()
-        if (
-            normalized_template == "formal_theory"
-            or normalized_research == "formal_derivation"
-        ):
-            return "formal_theory"
-        if normalized_template == "toy_numeric" or normalized_research in {
-            "toy_model",
-            "first_principles",
-        }:
-            return "toy_numeric"
+        tm = str(template_mode or "").strip().lower()
+        rm = str(research_mode or "").strip().lower()
+        for rule in full_lane_config().get("lane_for_modes") or []:
+            when_tm = rule.get("when_template_mode")
+            when_rm = rule.get("when_research_mode")
+            tm_match = when_tm is not None and tm == when_tm
+            rm_match = (
+                when_rm is None
+                or (isinstance(when_rm, list) and rm in when_rm)
+                or (isinstance(when_rm, str) and rm == when_rm)
+            )
+            if tm_match or rm_match:
+                return rule["lane"]
         return "code_method"
 
     def _load_strategy_memory_rows(self, topic_slug: str) -> list[dict[str, Any]]:
@@ -1793,16 +1801,7 @@ class AITPService:
         do_not_apply_when: list[str] | None = None,
         human_note: str | None = None,
     ) -> dict[str, Any]:
-        valid_strategy_types = {
-            "search_route",
-            "verification_guardrail",
-            "debug_pattern",
-            "resource_plan",
-            "scope_control",
-            "proof_engineering",
-            "api_workaround",
-            "failure_pattern",
-        }
+        valid_strategy_types = _config_valid_strategy_types()
         valid_outcomes = {"helpful", "neutral", "harmful", "inconclusive"}
         normalized_strategy_type = str(strategy_type or "").strip()
         normalized_outcome = str(outcome or "").strip()
@@ -1977,33 +1976,36 @@ class AITPService:
         return read_jsonl(self._l2_comparison_receipts_path(topic_slug, run_id))
 
     def _candidate_requires_detailed_derivation(self, candidate_row: dict[str, Any]) -> bool:
+        cfg = _load_promotion_gate_config().get("derivation_required") or {}
         candidate_type = str(candidate_row.get("candidate_type") or "").strip()
-        if candidate_type == "topic_skill_projection":
+        if candidate_type in (cfg.get("exempt_types") or []):
             return False
-        if candidate_type in {"derivation_object", "derivation_step", "proof_fragment", "theorem_card"}:
+        if candidate_type in (cfg.get("required_types") or []):
             return True
-        if str(candidate_row.get("formal_theory_role") or "").strip():
-            return True
-        if str(candidate_row.get("statement_graph_role") or "").strip():
-            return True
+        for field in cfg.get("requires_on_field_set") or []:
+            if str(candidate_row.get(field) or "").strip():
+                return True
         route = str(candidate_row.get("proposed_validation_route") or "").strip().lower()
-        return any(token in route for token in ("derivation", "proof", "formal"))
+        return any(token in route for token in (cfg.get("route_signal_tokens") or []))
 
     def _derivation_body_is_sufficiently_detailed(self, text: str) -> bool:
+        cfg = _load_promotion_gate_config().get("detail_thresholds") or {}
         normalized = str(text or "").strip()
-        if len(normalized) < 120:
+        if len(normalized) < (cfg.get("derivation_min_length") or 120):
             return False
-        if "$$" in normalized or "\\begin{align" in normalized or "\\[" in normalized:
+        for marker in cfg.get("derivation_latex_markers") or []:
+            if marker in normalized:
+                return True
+        if (cfg.get("derivation_paragraph_separator") or "\n\n") in normalized:
             return True
-        if "\n\n" in normalized:
-            return True
-        return normalized.count(".") >= 3
+        return normalized.count(".") >= (cfg.get("derivation_min_period_count") or 3)
 
     def _comparison_summary_is_sufficiently_detailed(self, text: str) -> bool:
+        cfg = _load_promotion_gate_config().get("detail_thresholds") or {}
         normalized = str(text or "").strip()
-        if len(normalized) < 80:
+        if len(normalized) < (cfg.get("comparison_min_length") or 80):
             return False
-        return normalized.count(".") >= 1 or ";" in normalized or "\n" in normalized
+        return normalized.count(".") >= (cfg.get("comparison_min_period_count") or 1) or ";" in normalized or "\n" in normalized
 
     def _matching_derivation_rows(
         self,
@@ -2129,30 +2131,24 @@ class AITPService:
             blockers.append(
                 f"{candidate_id}: comparison receipt is missing explicit limitations."
             )
-        if outcome.lower() in {
-            "return_to_l0",
-            "insufficient_basis",
-            "source_gap",
-            "contradiction",
-            "mismatch_requires_l0",
-        }:
+        if outcome.lower() in _config_return_to_l0_outcomes():
             blockers.append(
                 f"{candidate_id}: comparison outcome `{outcome}` requires a return to L0 or a narrower derivation route before promotion."
             )
         return blockers
 
     def _candidate_requires_theory_packet(self, candidate_row: dict[str, Any]) -> bool:
+        cfg = _load_promotion_gate_config().get("theory_packet_required") or {}
         candidate_type = str(candidate_row.get("candidate_type") or "").strip()
-        if candidate_type == "topic_skill_projection":
+        if candidate_type in (cfg.get("exempt_types") or []):
             return False
-        if candidate_type in {"theorem_card", "proof_fragment"}:
+        if candidate_type in (cfg.get("required_types") or []):
             return True
-        if str(candidate_row.get("formal_theory_role") or "").strip():
-            return True
-        if str(candidate_row.get("statement_graph_role") or "").strip():
-            return True
+        for field in cfg.get("requires_on_field_set") or []:
+            if str(candidate_row.get(field) or "").strip():
+                return True
         route = str(candidate_row.get("proposed_validation_route") or "").strip().lower()
-        return any(token in route for token in ("theorem", "proof", "formal"))
+        return any(token in route for token in (cfg.get("route_signal_tokens") or []))
 
     def _candidate_theory_packet_blockers(
         self,
@@ -6106,6 +6102,27 @@ class AITPService:
     def _runtime_protocol_markdown(self, payload: dict[str, Any]) -> str:
         return runtime_protocol_markdown(payload)
 
+    def _research_report_paths(self, topic_slug: str) -> dict[str, Path]:
+        runtime_root = self._runtime_root(topic_slug)
+        return {
+            "json": runtime_root / "research_report.active.json",
+            "note": runtime_root / "research_report.active.md",
+        }
+
+    def materialize_research_report(
+        self,
+        *,
+        topic_slug: str,
+        run_id: str | None = None,
+        updated_by: str = "aitp-cli",
+    ) -> dict[str, Any]:
+        return materialize_research_report_surface(
+            self,
+            topic_slug=topic_slug,
+            run_id=run_id,
+            updated_by=updated_by,
+        )
+
     def _materialize_runtime_protocol_bundle(
         self,
         *,
@@ -8775,18 +8792,11 @@ class AITPService:
         topic_state: dict[str, Any],
     ) -> str:
         existing = str(topic_state.get("research_mode") or "").strip()
-        if existing in {
-            "exploratory_general",
-            "first_principles",
-            "toy_model",
-            "formal_derivation",
-        }:
+        if existing in known_research_modes():
             return existing
-        if validation_mode == "numerical":
-            return "first_principles"
-        if validation_mode == "formal":
-            return "formal_derivation"
-        return "exploratory_general"
+        cfg = full_lane_config()
+        mapping = cfg.get("validation_mode_to_research_mode") or {}
+        return mapping.get(validation_mode, "exploratory_general")
 
     def _execution_surface_for_validation_mode(self, validation_mode: str) -> str:
         if validation_mode == "numerical":

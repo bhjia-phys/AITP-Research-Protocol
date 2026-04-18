@@ -1,0 +1,122 @@
+[
+    {
+        "strategy_id": "strat-jones-codrestrict-comp-subtype",
+        "strategy_type": "proof_engineering",
+        "summary": "Build the range-facing map in two steps: first `LinearMap.codRestrict` or `ContinuousLinearMap.codRestrict` into the proved range, then compose with `Submodule.subtype` instead of trying to force a direct subtype-to-range map.",
+        "input_context": {
+            "proof_family": "jones-section2-polar-support",
+            "surface": "range-facing linear map construction"
+        },
+        "outcome": "helpful",
+        "confidence": 0.93,
+        "reuse_conditions": [
+            "the proof already has a witness that the map lands in a target submodule",
+            "the local goal is a reusable range-facing linear map or linear equivalence"
+        ],
+        "do_not_apply_when": [
+            "the codomain is not a submodule-backed range target",
+            "the local obstacle is theorem shape rather than codomain packaging"
+        ],
+        "human_note": "This is the primary reusable construction recipe recovered from the Jones E2E run."
+    },
+    {
+        "strategy_id": "strat-jones-clmap-coefun-linear-map-sub",
+        "strategy_type": "api_workaround",
+        "summary": "When `ContinuousLinearMap` coercions hide the `LinearMap` structure and `rw [ContinuousLinearMap.map_sub]` stops matching, pull the underlying `LinearMap.map_sub` fact into a named `have` instead of rewriting directly.",
+        "input_context": {
+            "proof_family": "jones-section2-polar-support",
+            "surface": "continuous-linear-map subtraction rewrites"
+        },
+        "outcome": "helpful",
+        "confidence": 0.88,
+        "reuse_conditions": [
+            "a ContinuousLinearMap goal fails because CoeFun coercion has already fired",
+            "subtraction is easier to expose at the LinearMap layer than at the CLM layer"
+        ],
+        "do_not_apply_when": [
+            "the theorem is already phrased over plain LinearMap",
+            "the failure is due to missing simp lemmas rather than coercion shape"
+        ],
+        "human_note": "Treat CoeFun-triggered rewrite failure as a structure mismatch, not as missing algebra."
+    },
+    {
+        "strategy_id": "strat-jones-sub-eq-zero-direction",
+        "strategy_type": "failure_pattern",
+        "summary": "For `sub_eq_zero`, remember the direction: `rw [sub_eq_zero]` rewrites `a - b = 0` to `a = b`, while `.mpr` is the reliable way to build the subtraction goal from an equality.",
+        "input_context": {
+            "proof_family": "jones-section2-polar-support",
+            "surface": "goal-shape control around subtraction"
+        },
+        "outcome": "helpful",
+        "confidence": 0.9,
+        "reuse_conditions": [
+            "the local proof moves between equality goals and subtraction-equals-zero goals",
+            "a rewrite looks symmetric but Lean needs the constructor direction explicitly"
+        ],
+        "do_not_apply_when": [
+            "the target equality is not actually equivalent to a subtraction-zero form",
+            "ring-style normalization is the real blocker"
+        ],
+        "human_note": "This is a small but frequent Lean proof-direction trap worth keeping explicit."
+    },
+    {
+        "strategy_id": "strat-jones-starprojection-range-instance",
+        "strategy_type": "api_workaround",
+        "summary": "If `Submodule.range_starProjection` stalls on instance inference, pass the submodule parameter explicitly with `(U := ...)` before searching for deeper math reasons.",
+        "input_context": {
+            "proof_family": "jones-section2-polar-support",
+            "surface": "instance inference around starProjection ranges"
+        },
+        "outcome": "helpful",
+        "confidence": 0.84,
+        "reuse_conditions": [
+            "the target lemma is `Submodule.range_starProjection` or a close relative",
+            "Lean reports an instance/inference failure rather than a false statement"
+        ],
+        "do_not_apply_when": [
+            "the failure is a missing hypothesis instead of a missing explicit parameter",
+            "the local object is not actually a starProjection-backed range statement"
+        ],
+        "human_note": "Prefer explicit parameters before inventing new bridging lemmas."
+    },
+    {
+        "strategy_id": "strat-jones-ker-bridge-positive-part",
+        "strategy_type": "proof_engineering",
+        "summary": "Use `jonesFiniteCoordinatePolarPositivePart_ker_eq_ker` as the bridge from `ker |A|` to `ker A` before unpacking kernel membership by hand.",
+        "input_context": {
+            "proof_family": "jones-section2-polar-support",
+            "surface": "kernel membership transfer for polar positive part"
+        },
+        "outcome": "helpful",
+        "confidence": 0.91,
+        "reuse_conditions": [
+            "the proof needs to move kernel membership from the positive part back to the original operator",
+            "the local source already lives inside the Jones finite-coordinate polar setup"
+        ],
+        "do_not_apply_when": [
+            "the proof is outside the finite-coordinate polar decomposition regime",
+            "no kernel bridge lemma of this shape exists in the current namespace"
+        ],
+        "human_note": "Reach for the domain bridge lemma before expanding kernel definitions manually."
+    },
+    {
+        "strategy_id": "strat-jones-have-rw-goal-shape-mismatch",
+        "strategy_type": "failure_pattern",
+        "summary": "When `show f (x - y) = 0` fails because the goal is really `f x - f y = 0`, first materialize the mapped subtraction in a `have`, then `rw` into the exact goal shape.",
+        "input_context": {
+            "proof_family": "jones-section2-polar-support",
+            "surface": "goal-shape alignment after map_sub"
+        },
+        "outcome": "helpful",
+        "confidence": 0.89,
+        "reuse_conditions": [
+            "a mapped subtraction goal differs syntactically from the target but is propositionally the same",
+            "the local obstacle is term shape rather than missing mathematical content"
+        ],
+        "do_not_apply_when": [
+            "the map does not preserve subtraction in the required structure",
+            "the mismatch comes from coercions or casts rather than subtraction expansion"
+        ],
+        "human_note": "Use `have` plus targeted rewrites to align Lean's exact goal shape."
+    }
+]

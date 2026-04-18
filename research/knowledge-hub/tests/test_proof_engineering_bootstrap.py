@@ -21,8 +21,8 @@ _bootstrap_path()
 from knowledge_hub.l2_graph import read_jsonl
 from knowledge_hub.proof_engineering_bootstrap import (
     JONES_PROOF_FRAGMENT_ID,
-    JONES_STRATEGY_MEMORY_SEEDS,
     build_jones_codrestrict_proof_fragment,
+    jones_strategy_seeds,
     materialize_jones_proof_engineering_seed,
 )
 
@@ -67,7 +67,7 @@ class ProofEngineeringBootstrapTests(unittest.TestCase):
         payload = materialize_jones_proof_engineering_seed(self.kernel_root, updated_by="test-suite")
 
         strategy_rows = read_jsonl(Path(payload["strategy_memory_path"]))
-        self.assertEqual(len(strategy_rows), len(JONES_STRATEGY_MEMORY_SEEDS))
+        self.assertEqual(len(strategy_rows), len(jones_strategy_seeds()))
         self.assertIn("formal_derivation", {row["lane"] for row in strategy_rows})
         strategy_types = {row["strategy_type"] for row in strategy_rows}
         self.assertIn("proof_engineering", strategy_types)

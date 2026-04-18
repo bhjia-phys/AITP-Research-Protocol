@@ -1,0 +1,27 @@
+{
+  "description": "Declarative policy for candidate promotion gates: which candidate types require detailed derivation, theory packets, or L2 comparison. Used by aitp_service.py promotion-gate methods.",
+  "updated_at": "2026-04-19",
+
+  "derivation_required": {
+    "exempt_types": ["topic_skill_projection"],
+    "required_types": ["derivation_object", "derivation_step", "proof_fragment", "theorem_card"],
+    "requires_on_field_set": ["formal_theory_role", "statement_graph_role"],
+    "route_signal_tokens": ["derivation", "proof", "formal"]
+  },
+
+  "theory_packet_required": {
+    "exempt_types": ["topic_skill_projection"],
+    "required_types": ["theorem_card", "proof_fragment"],
+    "requires_on_field_set": ["formal_theory_role", "statement_graph_role"],
+    "route_signal_tokens": ["theorem", "proof", "formal"]
+  },
+
+  "detail_thresholds": {
+    "derivation_min_length": 120,
+    "derivation_latex_markers": ["$$", "\\begin{align", "\\["],
+    "derivation_paragraph_separator": "\n\n",
+    "derivation_min_period_count": 3,
+    "comparison_min_length": 80,
+    "comparison_min_period_count": 1
+  }
+}

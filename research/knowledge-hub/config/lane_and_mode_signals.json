@@ -1,0 +1,156 @@
+{
+  "description": "Single source of truth for lane/mode classification signals, aliases, and contract defaults. Used by lane_contract_defaults.py and research_mode_profiles.py.",
+  "updated_at": "2026-04-19",
+
+  "known_research_modes": [
+    "exploratory_general", "first_principles", "toy_model", "formal_derivation"
+  ],
+
+  "lane_signals": {
+    "formal_derivation": {
+      "markers": [
+        "derivation", "derive", "proof", "lemma", "theorem", "formal",
+        "bootstrap", "ward identity", "operator algebra", "consistency condition",
+        "planar algebra", "subfactor", "von neumann algebra", "jones index"
+      ]
+    },
+    "toy_model": {
+      "markers": [
+        "lattice", "hamiltonian", "ising", "heisenberg", "haldane",
+        "spin chain", "toy model", "finite-size", "finite size",
+        "exact diagonalization", "tfim", "su(2)", "mps", "dmrg",
+        "j1-j2", "numerical renormalization"
+      ]
+    },
+    "first_principles": {
+      "markers": [
+        "ab initio", "first principles", "first-principles",
+        "gw", "qsgw", "dft", "hartree", "fock", "librpa",
+        "self-energy", "convergence", "basis set",
+        "density functional", "plane wave", "pseudopotential",
+        "bethe-salpeter", "bse", "qmc", "quantum monte carlo",
+        "abinit", "vasp", "quantum espresso"
+      ]
+    }
+  },
+
+  "mode_aliases": {
+    "general": "exploratory_general",
+    "exploratory": "exploratory_general",
+    "generic": "exploratory_general",
+    "numerical": "first_principles",
+    "first_principle": "first_principles",
+    "first_principles": "first_principles",
+    "ab_initio": "first_principles",
+    "spin_chain": "toy_model",
+    "spin_chains": "toy_model",
+    "toy": "toy_model",
+    "toy_models": "toy_model",
+    "formal": "formal_derivation",
+    "derivation": "formal_derivation",
+    "formal_proof": "formal_derivation"
+  },
+
+  "template_mode_to_research_mode": {
+    "formal_theory": "formal_derivation",
+    "toy_numeric": "toy_model",
+    "code_method": "exploratory_general"
+  },
+
+  "research_mode_to_template_mode": {
+    "formal_derivation": "formal_theory",
+    "toy_model": "toy_numeric",
+    "first_principles": "toy_numeric",
+    "exploratory_general": "code_method"
+  },
+
+  "validation_mode_to_research_mode": {
+    "numerical": "first_principles",
+    "formal": "formal_derivation",
+    "analytical": "formal_derivation",
+    "hybrid": "exploratory_general"
+  },
+
+  "lane_for_modes": [
+    {
+      "when_template_mode": "formal_theory",
+      "when_research_mode": "formal_derivation",
+      "lane": "formal_theory"
+    },
+    {
+      "when_template_mode": "toy_numeric",
+      "when_research_mode": ["toy_model", "first_principles"],
+      "lane": "toy_numeric"
+    },
+    {
+      "when_template_mode": "code_method",
+      "when_research_mode": null,
+      "lane": "code_method"
+    }
+  ],
+
+  "lane_contract_defaults": {
+    "formal_derivation": {
+      "observables": [
+        "Formal closure or proof target for the bounded question.",
+        "Source theorem dependencies and notation lock status.",
+        "Proof obligation completeness versus gap-honesty check."
+      ],
+      "deliverables": [
+        "Complete derivation chain persisted in L3 with explicit theorem dependencies.",
+        "Notation lock and definition table matching the active formalism.",
+        "Proof or closure obligation list with completion status."
+      ],
+      "target_claims_template": "Bounded formal question: {question}"
+    },
+    "toy_model": {
+      "observables": [
+        "Model family and Hamiltonian or action specification.",
+        "Observable family and finite-size or parameter regime.",
+        "Benchmark or comparator convergence behaviour."
+      ],
+      "deliverables": [
+        "Model specification and parameter table persisted in L3.",
+        "Numerical results with convergence evidence and error estimates.",
+        "Benchmark comparison table against reference or analytic values."
+      ],
+      "target_claims_template": "Bounded model question: {question}"
+    },
+    "first_principles": {
+      "observables": [
+        "Code or method family and implementation basis.",
+        "Convergence target (basis set, grid, sampling).",
+        "Benchmark or reference comparator result."
+      ],
+      "deliverables": [
+        "Method specification, basis set, and convergence parameters persisted in L3.",
+        "Computed observables with convergence evidence.",
+        "Benchmark comparison against reference data or analytic limits."
+      ],
+      "target_claims_template": "Bounded method question: {question}"
+    },
+    "generic": {
+      "observables": [
+        "Declared candidate ids, bounded claims, and validation outcomes.",
+        "Promotion readiness, gap honesty, and whether the topic must return to L0."
+      ],
+      "deliverables": [
+        "Persist the active research question, validation route, and bounded next action as durable runtime artifacts.",
+        "Write derivation/proof or execution evidence into the appropriate AITP layer before claiming completion.",
+        "Produce Layer-appropriate outputs that can later be promoted into durable L2 knowledge when justified."
+      ],
+      "target_claims_template": "Bounded claim: {question}"
+    }
+  },
+
+  "return_to_l0_outcomes": [
+    "return_to_l0", "insufficient_basis", "source_gap",
+    "contradiction", "mismatch_requires_l0"
+  ],
+
+  "valid_strategy_types": [
+    "search_route", "verification_guardrail", "debug_pattern",
+    "resource_plan", "scope_control", "proof_engineering",
+    "api_workaround", "failure_pattern"
+  ]
+}

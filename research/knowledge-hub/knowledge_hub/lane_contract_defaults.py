@@ -7,11 +7,32 @@ alternatives derived from ``template_mode``, ``research_mode``, and the topic's
 existing content.
 
 All functions are pure — they only read their inputs and return lists of strings.
+
+Classification signals and contract defaults are loaded from
+``config/lane_and_mode_signals.json``.
 """
 
 from __future__ import annotations
 
+import json
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
+
+_CONFIG_PATH = Path(__file__).resolve().parent.parent / "config" / "lane_and_mode_signals.json"
+
+
+@lru_cache(maxsize=1)
+def _load_config() -> dict:
+    return json.loads(_CONFIG_PATH.read_text(encoding="utf-8"))
+
+
+def _lane_signals(lane_key: str) -> set[str]:
+    cfg = _load_config()
+    entry = (cfg.get("lane_signals") or {}).get(lane_key)
+    if not entry:
+        return set()
+    return set(entry.get("markers") or [])
 
 
 def detect_lane(
@@ -22,15 +43,17 @@ def detect_lane(
 ) -> str:
     hints = topic_content_hints or {}
     tm = str(template_mode or "").strip().lower()
+    cfg = _load_config()
+
     if tm == "formal_theory":
         return "formal_derivation"
 
     rm = str(research_mode or "").strip().lower()
     if tm == "code_method":
         text = _hint_text(hints)
-        if _looks_like_toy_model(text):
+        if _text_matches_signals(text, _lane_signals("toy_model")):
             return "toy_model"
-        if _looks_like_first_principles(text):
+        if _text_matches_signals(text, _lane_signals("first_principles")):
             return "first_principles"
 
     return "generic"
@@ -38,42 +61,19 @@ def detect_lane(
 
 def lane_observables(lane: str, topic_context: dict[str, Any]) -> list[str]:
     question = str((topic_context or {}).get("question") or "").strip()
-    ctx = lane
-
-    if ctx == "formal_derivation":
+    cfg = _load_config()
+    defaults = (cfg.get("lane_contract_defaults") or {}).get(lane)
+    if defaults:
+        base = list(defaults.get("observables") or [])
+    else:
         base = [
-            "Formal closure or proof target for the bounded question.",
-            "Source theorem dependencies and notation lock status.",
-            "Proof obligation completeness versus gap-honesty check.",
+            "Declared candidate ids, bounded claims, and validation outcomes.",
+            "Promotion readiness, gap honesty, and whether the topic must return to L0.",
         ]
-        if question:
-            base.insert(0, f"Bounded formal question: {question}")
-        return base
-
-    if ctx == "toy_model":
-        base = [
-            "Model family and Hamiltonian or action specification.",
-            "Observable family and finite-size or parameter regime.",
-            "Benchmark or comparator convergence behaviour.",
-        ]
-        if question:
-            base.insert(0, f"Bounded model question: {question}")
-        return base
-
-    if ctx == "first_principles":
-        base = [
-            "Code or method family and implementation basis.",
-            "Convergence target (basis set, grid, sampling).",
-            "Benchmark or reference comparator result.",
-        ]
-        if question:
-            base.insert(0, f"Bounded method question: {question}")
-        return base
-
-    return [
-        "Declared candidate ids, bounded claims, and validation outcomes.",
-        "Promotion readiness, gap honesty, and whether the topic must return to L0.",
-    ]
+    if question:
+        template = (defaults or {}).get("target_claims_template") or "Bounded question: {question}"
+        base.insert(0, template.format(question=question))
+    return base
 
 
 def lane_target_claims(
@@ -109,38 +109,48 @@ def lane_target_claims(
 
 
 def lane_deliverables(lane: str, topic_context: dict[str, Any]) -> list[str]:
-    question = str((topic_context or {}).get("question") or "").strip()
-    ctx = lane
-
-    if ctx == "formal_derivation":
-        base = [
-            "Complete derivation chain persisted in L3 with explicit theorem dependencies.",
-            "Notation lock and definition table matching the active formalism.",
-            "Proof or closure obligation list with completion status.",
-        ]
-        return base
-
-    if ctx == "toy_model":
-        base = [
-            "Model specification and parameter table persisted in L3.",
-            "Numerical results with convergence evidence and error estimates.",
-            "Benchmark comparison table against reference or analytic values.",
-        ]
-        return base
-
-    if ctx == "first_principles":
-        base = [
-            "Method specification, basis set, and convergence parameters persisted in L3.",
-            "Computed observables with convergence evidence.",
-            "Benchmark comparison against reference data or analytic limits.",
-        ]
-        return base
+    cfg = _load_config()
+    defaults = (cfg.get("lane_contract_defaults") or {}).get(lane)
+    if defaults:
+        return list(defaults.get("deliverables") or [])
 
     return [
         "Persist the active research question, validation route, and bounded next action as durable runtime artifacts.",
         "Write derivation/proof or execution evidence into the appropriate AITP layer before claiming completion.",
         "Produce Layer-appropriate outputs that can later be promoted into durable L2 knowledge when justified.",
     ]
+
+
+def lane_signals_config() -> dict:
+    return _load_config().get("lane_signals") or {}
+
+
+def full_lane_config() -> dict:
+    return _load_config()
+
+
+def known_research_modes() -> set[str]:
+    return set(_load_config().get("known_research_modes") or [])
+
+
+def mode_aliases() -> dict[str, str]:
+    return dict(_load_config().get("mode_aliases") or {})
+
+
+def template_mode_to_research_mode_map() -> dict[str, str]:
+    return dict(_load_config().get("template_mode_to_research_mode") or {})
+
+
+def research_mode_to_template_mode_map() -> dict[str, str]:
+    return dict(_load_config().get("research_mode_to_template_mode") or {})
+
+
+def return_to_l0_outcomes() -> set[str]:
+    return set(_load_config().get("return_to_l0_outcomes") or [])
+
+
+def valid_strategy_types() -> set[str]:
+    return set(_load_config().get("valid_strategy_types") or [])
 
 
 def _is_runtime_action_id(value: str) -> bool:
@@ -166,22 +176,5 @@ def _hint_text(hints: dict[str, Any]) -> str:
     return " ".join(parts).lower()
 
 
-_TOY_MODEL_SIGNALS = {
-    "lattice", "hamiltonian", "ising", "heisenberg", "haldane",
-    "spin chain", "toy model", "finite-size", "finite size",
-    "exact diagonalization", "tfim", "su(2)", "mps", "dmrg",
-}
-
-_FIRST_PRINCIPLES_SIGNALS = {
-    "dft", "density functional", "gw", "qsgw", "bethe-salpeter", "bse",
-    "qmc", "quantum monte carlo", "basis set", "plane wave", "pseudopotential",
-    "convergence", "librpa", "abinit", "vasp", "quantum espresso",
-}
-
-
-def _looks_like_toy_model(text: str) -> bool:
-    return any(s in text for s in _TOY_MODEL_SIGNALS)
-
-
-def _looks_like_first_principles(text: str) -> bool:
-    return any(s in text for s in _FIRST_PRINCIPLES_SIGNALS)
+def _text_matches_signals(text: str, signals: set[str]) -> bool:
+    return any(s in text for s in signals)
