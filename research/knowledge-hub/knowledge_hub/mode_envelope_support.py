@@ -7,6 +7,7 @@ from .mode_registry import (
     VERIFY_OPERATION_SIGNALS as _VERIFY_ACTION_TYPES,
     VERIFY_TRIGGERS as _VERIFY_TRIGGERS,
 )
+from .mode_registry import is_valid_transition, normalize_runtime_mode as _normalize_mode
 
 _MODE_SPECS: dict[str, dict[str, Any]] = {
     "explore": {
@@ -198,22 +199,35 @@ def _select_runtime_mode(
     selected_action_type: str,
     selected_action_summary: str,
     active_triggers: set[str],
+    current_mode: str | None = None,
 ) -> str:
     lowered_summary = selected_action_summary.lower()
+    candidate = "explore"
+
     if selected_action_type in _PROMOTE_ACTION_TYPES or any(token in lowered_summary for token in ("promot", "writeback")):
-        return "implement"
-    if (
+        candidate = "implement"
+    elif (
         resume_stage == "L4"
         or selected_action_type in _VERIFY_ACTION_TYPES
         or bool(active_triggers & _VERIFY_TRIGGERS)
         or any(token in lowered_summary for token in ("validation", "verification", "proof", "derivation", "selected route"))
     ):
-        return "learn"
-    if idea_packet_status == "needs_clarification" or operator_checkpoint_status == "requested":
-        return "explore"
-    if any(token in lowered_summary for token in ("novel", "new idea", "conjecture", "hypothesis")):
-        return "implement"
-    return "explore"
+        candidate = "learn"
+    elif idea_packet_status == "needs_clarification" or operator_checkpoint_status == "requested":
+        candidate = "explore"
+    elif any(token in lowered_summary for token in ("novel", "new idea", "conjecture", "hypothesis")):
+        candidate = "implement"
+    else:
+        candidate = "explore"
+
+    if current_mode is not None:
+        normalized_current = _normalize_mode(current_mode)
+        normalized_candidate = _normalize_mode(candidate)
+        if not is_valid_transition(normalized_current, normalized_candidate):
+            # Invalid transition: stay in current mode instead of jumping
+            return normalized_current
+
+    return candidate
 
 
 def filter_escalation_triggers_for_mode(
@@ -300,6 +314,7 @@ def build_runtime_mode_contract(
     may_defer_until_trigger: list[dict[str, str]],
     escalation_triggers: list[dict[str, Any]],
     human_request: str | None = None,
+    current_mode: str | None = None,
 ) -> dict[str, Any]:
     active_triggers = {
         str(row.get("trigger") or "").strip()
@@ -313,6 +328,7 @@ def build_runtime_mode_contract(
         selected_action_type=selected_action_type,
         selected_action_summary=selected_action_summary,
         active_triggers=active_triggers,
+        current_mode=current_mode,
     )
     active_submode = _select_active_submode(
         runtime_mode=runtime_mode,
@@ -344,6 +360,21 @@ def build_runtime_mode_contract(
         exit_conditions.extend(_LITERATURE_SUBMODE_SPEC["exit_conditions"])
     if transition_posture["transition_kind"] == "backedge_transition":
         exit_conditions.append("Current work should exit locally once the declared backedge has been materialized.")
+    topic_has_ideas = idea_packet_status not in ("", "needs_clarification", "missing")
+    topic_has_sources = bool(must_read_now) or bool(may_defer_until_trigger)
+    topic_has_verified_results = bool(active_triggers & {"validation_passed", "promotion_ready"})
+    topic_has_novel_conclusions = any(
+        token in selected_action_summary.lower()
+        for token in ("novel", "conclusion", "result")
+    )
+    transition_validation = validate_mode_transition_conditions(
+        from_mode=current_mode or runtime_mode,
+        to_mode=runtime_mode,
+        topic_has_ideas=topic_has_ideas,
+        topic_has_sources=topic_has_sources,
+        topic_has_verified_results=topic_has_verified_results,
+        topic_has_novel_conclusions=topic_has_novel_conclusions,
+    )
     return {
         "runtime_mode": runtime_mode,
         "active_submode": active_submode,
@@ -363,6 +394,7 @@ def build_runtime_mode_contract(
             "exit_conditions": exit_conditions,
         },
         "transition_posture": transition_posture,
+        "transition_validation": transition_validation,
     }
 
 
@@ -373,6 +405,183 @@ def runtime_mode_payload_fragment(**kwargs: Any) -> dict[str, Any]:
         "active_submode": mode_contract["active_submode"],
         "mode_envelope": mode_contract["mode_envelope"],
         "transition_posture": mode_contract["transition_posture"],
+        "transition_validation": mode_contract["transition_validation"],
+    }
+
+
+def check_forbidden_shortcuts(
+    *,
+    runtime_mode: str,
+    action_type: str,
+    action_summary: str,
+) -> dict[str, Any]:
+    """Check whether an action violates the current mode's forbidden_shortcuts.
+
+    Returns a dict with 'allowed' (bool) and optional 'reason' (str).
+    """
+    mode_spec = _MODE_SPECS.get(runtime_mode)
+    if not mode_spec:
+        return {"allowed": True}
+
+    forbidden = [str(r).strip().lower() for r in mode_spec.get("forbidden_shortcuts") or []]
+    lowered_summary = action_summary.lower()
+
+    violations: list[str] = []
+    if runtime_mode == "explore":
+        # "Do not form formal candidates in explore mode."
+        if action_type in ("promote_candidate", "auto_promote_candidate", "request_promotion"):
+            violations.append("Explore mode forbids candidate promotion actions.")
+        # "Do not execute L4 validation or L2 promotion."
+        if action_type in ("dispatch_execution_task", "materialize_execution_task"):
+            if any(t in lowered_summary for t in ("validation", "verification", "execution")):
+                violations.append("Explore mode forbids L4 validation execution.")
+    elif runtime_mode == "learn":
+        # "L4 results must return through L3-R, never directly to L2."
+        if action_type == "promote_candidate" and "l2" in lowered_summary and "l3" not in lowered_summary:
+            violations.append("Learn mode requires L4 results to return through L3-R, not directly to L2.")
+        # "Do not let style confidence count as validation."
+        if "style confidence" in lowered_summary or "style_confidence" in lowered_summary:
+            violations.append("Learn mode forbids treating style confidence as validation.")
+    elif runtime_mode == "implement":
+        # "L4 results must return through L3-R, never directly to L2."
+        if action_type == "promote_candidate" and "bypass" in lowered_summary:
+            violations.append("Implement mode forbids bypassing L3-R for promotion.")
+        # "New conclusions stay in L3 for human review before L2 promotion."
+        if "auto-promote" in lowered_summary and "conclusion" in lowered_summary:
+            violations.append("Implement mode requires human review before promoting new conclusions.")
+
+    if violations:
+        return {"allowed": False, "reason": "; ".join(violations)}
+    return {"allowed": True}
+
+
+def check_layer_permission(
+    *,
+    runtime_mode: str,
+    target_layer: str,
+) -> dict[str, Any]:
+    """Check whether an action targeting *target_layer* is permitted in the current mode.
+
+    Returns a dict with 'allowed' (bool) and optional 'reason' (str).
+    """
+    mode_spec = _MODE_SPECS.get(runtime_mode)
+    if not mode_spec:
+        return {"allowed": True}
+
+    normalized = target_layer.strip().upper()
+    if not normalized.startswith("L"):
+        return {"allowed": True}
+
+    prefix = normalized.split("-")[0]
+    foreground = {str(layer).strip().upper().split("-")[0] for layer in mode_spec.get("foreground_layers") or []}
+    if prefix not in foreground:
+        return {
+            "allowed": False,
+            "reason": f"{runtime_mode} mode does not permit work in {normalized} (foreground: {', '.join(sorted(foreground))}).",
+        }
+    return {"allowed": True}
+
+
+_WRITEBACK_ARTIFACT_MAP = {
+    "source_registrations": "topics/{slug}/runtime/source_registrations.jsonl",
+    "l1_notes": "topics/{slug}/L1/vault",
+    "l3i_idea_records": "topics/{slug}/L3/runs",
+    "l3p_plans": "topics/{slug}/L3/runs",
+    "l3a_candidates": "topics/{slug}/L3/runs",
+    "l4_validation_results": "topics/{slug}/L4/runs",
+    "l3i_refined_idea": "topics/{slug}/L3/runs",
+    "l3p_plan": "topics/{slug}/L3/runs",
+    "l3a_candidates_with_evidence": "topics/{slug}/L3/runs",
+    "l2_staging_entries_with_literature_intake_fast_path": "canonical/staging/workspace_staging_manifest.json",
+    "l1_vault_wiki_pages_for_current_source": "topics/{slug}/L1/vault",
+}
+
+
+def verify_required_writeback(
+    *,
+    runtime_mode: str,
+    kernel_root: Path,
+    topic_slug: str,
+) -> dict[str, Any]:
+    """Check whether required_writeback artifacts exist for the current mode.
+
+    Returns a dict with 'all_satisfied' (bool) and per-item status.
+    """
+    mode_spec = _MODE_SPECS.get(runtime_mode)
+    if not mode_spec:
+        return {"all_satisfied": True, "items": [], "missing": []}
+
+    required = [str(r).strip() for r in mode_spec.get("required_writeback") or []]
+    items: list[dict[str, Any]] = []
+    missing: list[str] = []
+
+    for key in required:
+        pattern = _WRITEBACK_ARTIFACT_MAP.get(key, "")
+        path_str = pattern.format(slug=topic_slug) if "{slug}" in pattern else pattern
+        resolved = kernel_root / path_str
+        satisfied = resolved.exists() if path_str else True
+        items.append({"key": key, "path": path_str, "satisfied": satisfied})
+        if not satisfied:
+            missing.append(key)
+
+    return {
+        "all_satisfied": len(missing) == 0,
+        "items": items,
+        "missing": missing,
+        "mode": runtime_mode,
+    }
+
+
+def validate_mode_transition_conditions(
+    *,
+    from_mode: str,
+    to_mode: str,
+    topic_has_ideas: bool = False,
+    topic_has_sources: bool = False,
+    topic_has_verified_results: bool = False,
+    topic_has_novel_conclusions: bool = False,
+) -> dict[str, Any]:
+    """Validate entry/exit conditions for a mode transition.
+
+    Returns a dict with 'valid' (bool), 'exit_met', 'entry_met', and 'warnings'.
+    """
+    from_spec = _MODE_SPECS.get(from_mode)
+    to_spec = _MODE_SPECS.get(to_mode)
+    warnings: list[str] = []
+
+    # Check exit conditions of the source mode
+    exit_met = True
+    if from_spec:
+        exit_conds = [str(c).lower() for c in from_spec.get("exit_conditions") or []]
+        if from_mode == "explore":
+            if not topic_has_ideas and not topic_has_sources:
+                exit_met = False
+                warnings.append("Explore exit: no ideas recorded or sources identified yet.")
+        elif from_mode == "learn":
+            if not topic_has_verified_results:
+                warnings.append("Learn exit: no verified results or identified gap yet.")
+        elif from_mode == "implement":
+            if not topic_has_novel_conclusions:
+                warnings.append("Implement exit: no novel conclusion recorded yet.")
+
+    # Check entry conditions of the target mode
+    entry_met = True
+    if to_spec:
+        entry_conds = [str(c).lower() for c in to_spec.get("entry_conditions") or []]
+        if to_mode == "learn":
+            if not topic_has_ideas and not topic_has_sources:
+                entry_met = False
+                warnings.append("Learn entry: at least one idea or source should be identified.")
+        elif to_mode == "implement":
+            if not topic_has_ideas:
+                entry_met = False
+                warnings.append("Implement entry: a concrete idea should be ready for execution.")
+
+    return {
+        "valid": exit_met and entry_met,
+        "exit_met": exit_met,
+        "entry_met": entry_met,
+        "warnings": warnings,
     }
 
 

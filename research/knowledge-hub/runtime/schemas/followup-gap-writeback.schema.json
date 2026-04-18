@@ -72,7 +72,8 @@
               "missing_cited_result",
               "missing_derivation_step",
               "cross_paper_dependency",
-              "formalization_blocker"
+              "formalization_blocker",
+              "contradiction"
             ]
           },
           "title": {

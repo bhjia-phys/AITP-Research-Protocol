@@ -18,6 +18,51 @@ VALID_RUNTIME_MODES: frozenset[str] = frozenset({"explore", "learn", "implement"
 
 DEFAULT_RUNTIME_MODE: str = "explore"
 
+# ── Mode transition graph (protocol S6) ─────────────────────────────────
+
+VALID_FORWARD_TRANSITIONS: frozenset[tuple[str, str]] = frozenset({
+    ("explore", "learn"),
+    ("learn", "implement"),
+    ("implement", "explore"),
+})
+
+VALID_BACKWARD_TRANSITIONS: frozenset[tuple[str, str]] = frozenset({
+    ("learn", "explore"),
+    ("implement", "learn"),
+})
+
+ALL_VALID_TRANSITIONS: frozenset[tuple[str, str]] = VALID_FORWARD_TRANSITIONS | VALID_BACKWARD_TRANSITIONS
+
+SELF_TRANSITIONS: frozenset[tuple[str, str]] = frozenset({
+    (m, m) for m in VALID_RUNTIME_MODES
+})
+
+
+def is_valid_transition(from_mode: str, to_mode: str, *, allow_self: bool = True) -> bool:
+    """Check whether a mode transition is allowed by the protocol graph.
+
+    Self-transitions (same mode) are always valid by default.
+    Backward transitions require an explicit reason at recording time.
+    """
+    normalized_from = normalize_runtime_mode(from_mode)
+    normalized_to = normalize_runtime_mode(to_mode)
+    if normalized_from == normalized_to:
+        return allow_self
+    return (normalized_from, normalized_to) in ALL_VALID_TRANSITIONS
+
+
+def transition_direction(from_mode: str, to_mode: str) -> str:
+    """Return 'forward', 'backward', 'self', or 'invalid'."""
+    normalized_from = normalize_runtime_mode(from_mode)
+    normalized_to = normalize_runtime_mode(to_mode)
+    if normalized_from == normalized_to:
+        return "self"
+    if (normalized_from, normalized_to) in VALID_FORWARD_TRANSITIONS:
+        return "forward"
+    if (normalized_from, normalized_to) in VALID_BACKWARD_TRANSITIONS:
+        return "backward"
+    return "invalid"
+
 # ── Sub-modes per canonical mode ────────────────────────────────────────
 
 SUBMODES: dict[str, frozenset[str]] = {

@@ -226,9 +226,9 @@
     },
     "research/knowledge-hub/knowledge_hub/mode_envelope_support.py": {
       "category": "mode_envelope_support",
-      "max_lines": 900,
+      "max_lines": 1050,
       "max_longest_function_lines": 240,
-      "reason": "Mode-envelope assembly and context refocusing are still centralized here. It stays watchlisted until runtime-mode policy and context-selection logic are decomposed further."
+      "reason": "Mode-envelope assembly and context refocusing are still centralized here. Budget increased to accommodate transition gate, forbidden-shortcuts, writeback verification, entry/exit condition validation, and layer permission checking."
     },
     "research/knowledge-hub/knowledge_hub/obsidian_graph_export.py": {
       "category": "obsidian_graph_export",
@@ -445,6 +445,12 @@
       "max_lines": 950,
       "max_longest_function_lines": 461,
       "reason": "Runtime state sync is still a fat CLI script, but explainability and resume rendering now sit behind a focused helper boundary. Shared inference and utility layers should keep leaving this script before it grows much further."
+    },
+    "research/knowledge-hub/knowledge_hub/auto_action_support.py": {
+      "category": "core_runtime",
+      "max_lines": 300,
+      "max_longest_function_lines": 240,
+      "reason": "Auto-action execution with popup gate and stuckness checks."
     }
   }
 }

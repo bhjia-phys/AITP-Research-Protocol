@@ -13,6 +13,26 @@ CONTRADICTION_RELATIONS = {"contradicts", "conflicts_with", "incompatible_with",
 STALE_DAYS_THRESHOLD = 180
 MIN_SUMMARY_CHARS = 24
 
+VALID_EDGE_RELATIONS: frozenset[str] = frozenset({
+    "bridged_to",
+    "depends_on",
+    "derived_from",
+    "specializes",
+    "supports",
+    "uses_method",
+    "validated_by",
+    "warned_by",
+    "contradicts",
+    "conflicts_with",
+    "incompatible_with",
+    "conflict",
+    "related_to",
+    "generalizes",
+    "assumes",
+    "proves",
+    "illustrates",
+})
+
 
 def now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
@@ -325,4 +345,36 @@ def materialize_workspace_hygiene_report(kernel_root: Path) -> dict[str, Any]:
         "payload": payload,
         "json_path": str(json_path),
         "markdown_path": str(md_path),
+    }
+
+
+def validate_edge_types(kernel_root: Path) -> dict[str, Any]:
+    """Validate that all edges use known relation types."""
+    edges_path = _canonical_root(kernel_root) / "edges.jsonl"
+    if not edges_path.exists():
+        return {"valid": True, "total": 0, "unknown": [], "known_types": sorted(VALID_EDGE_RELATIONS)}
+
+    edges = read_jsonl(edges_path)
+    unknown: list[dict[str, str]] = []
+    for edge in edges:
+        relation = str(
+            edge.get("relation")
+            or edge.get("edge_type")
+            or edge.get("kind")
+            or edge.get("type")
+            or ""
+        ).strip()
+        if relation and relation not in VALID_EDGE_RELATIONS:
+            unknown.append({
+                "relation": relation,
+                "from": str(edge.get("from") or edge.get("source") or ""),
+                "to": str(edge.get("to") or edge.get("target") or ""),
+            })
+
+    return {
+        "valid": len(unknown) == 0,
+        "total": len(edges),
+        "unknown_count": len(unknown),
+        "unknown": unknown[:20],
+        "known_types": sorted(VALID_EDGE_RELATIONS),
     }

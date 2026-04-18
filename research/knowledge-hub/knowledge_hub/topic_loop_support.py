@@ -210,6 +210,7 @@ def _resolve_loop_auto_step_budget(
     applied_max_auto_steps = requested_max_auto_steps
     auto_step_budget_reason = "requested_budget"
     if bool(human_posture.get("requires_human_input_now")):
+        applied_max_auto_steps = 0
         auto_step_budget_reason = "human_checkpoint_active"
     elif runtime_mode == "learn" and active_submode == "derivation":
         applied_max_auto_steps = max(requested_max_auto_steps, 16)
@@ -238,6 +239,7 @@ def _finalize_loop_outcome(
     auto_actions: dict[str, Any],
     steering_artifacts: dict[str, Any],
     scheduler_selection: dict[str, Any] | None,
+    cycle_counter: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     capability = self.capability_audit(topic_slug=topic_slug, updated_by=updated_by)
     trust = None
@@ -278,6 +280,7 @@ def _finalize_loop_outcome(
         "remaining_pending_actions": auto_actions["remaining_pending"],
         "steering": steering_artifacts,
         "current_topic_memory": current_topic_memory,
+        "cycle_counter": cycle_counter or {},
     }
     resolved_load_profile, load_profile_reason = self._resolve_load_profile(
         explicit_load_profile=load_profile,
@@ -333,6 +336,48 @@ def _finalize_loop_outcome(
     }
 
 
+def _increment_cycle_counter(service: Any, topic_slug: str, *, updated_by: str) -> dict[str, Any]:
+    """Increment and return the persistent cycle counter for a topic."""
+    runtime_root = service._runtime_root(topic_slug)
+    counter_path = runtime_root / "cycle_counter.json"
+    counter: dict[str, Any] = {
+        "topic_slug": topic_slug,
+        "total_cycles": 0,
+        "cycles_per_mode": {},
+        "first_cycle_at": _now_iso(),
+        "last_cycle_at": _now_iso(),
+    }
+    if counter_path.exists():
+        try:
+            existing = json.loads(counter_path.read_text(encoding="utf-8"))
+            if isinstance(existing, dict):
+                counter = existing
+        except (json.JSONDecodeError, OSError):
+            pass
+    counter["total_cycles"] = int(counter.get("total_cycles") or 0) + 1
+    counter["last_cycle_at"] = _now_iso()
+    counter["updated_by"] = updated_by
+    runtime_protocol = service._materialize_runtime_protocol_bundle(
+        topic_slug=topic_slug,
+        updated_by=updated_by,
+    )
+    bundle_path = Path(runtime_protocol["runtime_protocol_path"])
+    if bundle_path.exists():
+        try:
+            bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
+            mode = str(bundle.get("runtime_mode") or "explore")
+        except (json.JSONDecodeError, OSError):
+            mode = "explore"
+    else:
+        mode = "explore"
+    per_mode = dict(counter.get("cycles_per_mode") or {})
+    per_mode[mode] = int(per_mode.get(mode) or 0) + 1
+    counter["cycles_per_mode"] = per_mode
+    counter["current_mode"] = mode
+    _write_json(counter_path, counter)
+    return counter
+
+
 def run_topic_loop(
     self,
     *,
@@ -362,6 +407,9 @@ def run_topic_loop(
     )
     resolved_topic_slug = loop_context["resolved_topic_slug"]
     resolved_run_id = loop_context["resolved_run_id"]
+    cycle_counter = _increment_cycle_counter(
+        self, resolved_topic_slug, updated_by=updated_by,
+    )
     entry_audit = self.audit(topic_slug=resolved_topic_slug, phase="entry", updated_by=updated_by)
     auto_step_budget = _resolve_loop_auto_step_budget(
         self,
@@ -397,4 +445,5 @@ def run_topic_loop(
         auto_actions=auto_actions,
         steering_artifacts=loop_context["steering_artifacts"],
         scheduler_selection=loop_context["scheduler_selection"],
+        cycle_counter=cycle_counter,
     )

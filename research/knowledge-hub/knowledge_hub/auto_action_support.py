@@ -6,6 +6,9 @@ from pathlib import Path
 from typing import Any
 
 from .topic_truth_root_support import compatibility_projection_path
+from .loop_detection_support import should_force_human_checkpoint
+from .popup_support import detect_popup_trigger
+from .mode_envelope_support import check_forbidden_shortcuts, check_layer_permission
 
 
 def _read_json(path: Path) -> dict[str, Any] | None:
@@ -53,6 +56,37 @@ def execute_auto_actions(
             "checkpoint_note_path": str(operator_checkpoint.get("note_path") or ""),
         }
 
+    stuckness = should_force_human_checkpoint(self, topic_slug, updated_by=updated_by)
+    if stuckness.get("force_human_checkpoint"):
+        remaining = sum(1 for row in queue_rows if row.get("status") == "pending")
+        return {
+            "queue_path": str(queue_path),
+            "executed": [],
+            "remaining_pending": remaining,
+            "stuckness_blocking": True,
+            "stuckness_reason": stuckness.get("reason") or "repeated_action_pattern",
+            "stuckness_recommendation": stuckness.get("recommendation") or "",
+        }
+
+    popup_check = detect_popup_trigger(
+        topic_slug=topic_slug,
+        promotion_gate=_read_json(self._promotion_gate_paths(topic_slug)["json"]),
+        operator_checkpoint=operator_checkpoint,
+        pending_decision_points=[],
+        h_plane_payload=None,
+    )
+    if popup_check.get("needs_popup"):
+        remaining = sum(1 for row in queue_rows if row.get("status") == "pending")
+        return {
+            "queue_path": str(queue_path),
+            "executed": [],
+            "remaining_pending": remaining,
+            "popup_blocking": True,
+            "popup_kind": popup_check.get("popup_kind") or "",
+            "popup_priority": popup_check.get("priority") or 0,
+            "popup_summary": popup_check.get("summary") or "",
+        }
+
     runtime_protocol = self._materialize_runtime_protocol_bundle(
         topic_slug=topic_slug,
         updated_by=updated_by,
@@ -94,6 +128,18 @@ def execute_auto_actions(
             continue
         if transition_kind == "backedge_transition" and action_type not in allowed_backedge_auto_actions:
             continue
+        shortcut_check = check_forbidden_shortcuts(
+            runtime_mode=runtime_mode,
+            action_type=str(action_type or ""),
+            action_summary=str(row.get("summary") or ""),
+        )
+        if not shortcut_check.get("allowed"):
+            continue
+        explicit_layer = str((row.get("handler_args") or {}).get("layer") or "").strip()
+        if explicit_layer:
+            layer_check = check_layer_permission(runtime_mode=runtime_mode, target_layer=explicit_layer)
+            if not layer_check.get("allowed"):
+                continue
         started_at = _now_iso()
         result: dict[str, Any]
         try:

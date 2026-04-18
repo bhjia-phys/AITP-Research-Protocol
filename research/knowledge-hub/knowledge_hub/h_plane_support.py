@@ -33,15 +33,36 @@ def _write_text(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
+_VALID_DIRECTIVES = frozenset({"human_redirect", "follow_control_note", "pause", "stop", "no_action"})
+
+_DIRECTIVE_REQUIRED_FIELDS: dict[str, list[str]] = {
+    "human_redirect": ["summary"],
+    "follow_control_note": ["summary"],
+    "pause": [],
+    "stop": [],
+    "no_action": [],
+}
+
+
 def _control_note_details(control_note_path: Path, innovation_direction_path: Path, innovation_decisions_path: Path) -> dict[str, Any]:
     directive = ""
     summary = ""
+    raw_text = ""
+    warnings: list[str] = []
     if control_note_path.exists():
-        text = control_note_path.read_text(encoding="utf-8")
-        directive_match = re.search(r"^directive:\s*(?P<value>.+)$", text, flags=re.MULTILINE)
-        summary_match = re.search(r"^summary:\s*(?P<value>.+)$", text, flags=re.MULTILINE)
+        raw_text = control_note_path.read_text(encoding="utf-8")
+        directive_match = re.search(r"^directive:\s*(?P<value>.+)$", raw_text, flags=re.MULTILINE)
+        summary_match = re.search(r"^summary:\s*(?P<value>.+)$", raw_text, flags=re.MULTILINE)
         directive = str((directive_match.group("value") if directive_match else "")).strip()
         summary = str((summary_match.group("value") if summary_match else "")).strip()
+        if directive and directive not in _VALID_DIRECTIVES:
+            warnings.append(f"Unknown directive '{directive}'. Valid: {', '.join(sorted(_VALID_DIRECTIVES))}.")
+        elif directive:
+            required = _DIRECTIVE_REQUIRED_FIELDS.get(directive, [])
+            for field_name in required:
+                field_match = re.search(rf"^{field_name}:\s*(?P<value>.+)$", raw_text, flags=re.MULTILINE)
+                if not field_match or not field_match.group("value").strip():
+                    warnings.append(f"Directive '{directive}' requires field '{field_name}' to be set.")
     latest_decision = (_read_jsonl(innovation_decisions_path) or [{}])[-1]
     decision = str(latest_decision.get("decision") or "").strip()
     if directive == "human_redirect":
@@ -61,6 +82,7 @@ def _control_note_details(control_note_path: Path, innovation_direction_path: Pa
         "control_note_path": str(control_note_path) if control_note_path.exists() else "",
         "innovation_direction_path": str(innovation_direction_path) if innovation_direction_path.exists() else "",
         "innovation_decisions_path": str(innovation_decisions_path) if innovation_decisions_path.exists() else "",
+        "validation_warnings": warnings,
     }
 
 
@@ -209,3 +231,5 @@ def h_plane_audit(self, *, topic_slug: str, updated_by: str = "aitp-cli") -> dic
         "audit_path": str(json_path),
         "audit_note_path": str(note_path),
     }
+
+

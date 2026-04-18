@@ -42,14 +42,28 @@ _TPKN_TO_CANONICAL_UNIT_TYPE = {
 }
 
 _CANONICAL_DIR_BY_TYPE = {
+    "atomic_note": "atomic-notes",
     "bridge": "bridges",
+    "caveat_card": "caveat-cards",
     "claim_card": "claim-cards",
     "concept": "concepts",
+    "definition_card": "definition-cards",
+    "derivation_object": "derivation-objects",
+    "derivation_step": "derivation-steps",
+    "equation_card": "equation-cards",
+    "equivalence_map": "equivalence-maps",
+    "example_card": "example-cards",
+    "assumption_card": "assumption-cards",
+    "regime_card": "regime-cards",
     "method": "methods",
+    "negative_result": "negative-results",
+    "notation_card": "notation-cards",
     "physical_picture": "physical-pictures",
     "proof_fragment": "proof-fragments",
+    "symbol_binding": "symbol-bindings",
     "theorem_card": "theorem-cards",
     "topic_skill_projection": "topic-skill-projections",
+    "validation_pattern": "validation-patterns",
     "warning_note": "warning-notes",
     "workflow": "workflows",
 }
@@ -776,6 +790,7 @@ def _record_promotion_and_finalize(
     self._replace_candidate_row(topic_slug, context["resolved_run_id"], candidate_id, updated_candidate)
 
     gate_payload["status"] = "promoted"
+    gate_payload["promotion_stage"] = "promoted"
     gate_payload["backend_id"] = context["resolved_backend_id"]
     gate_payload["target_backend_root"] = str(context["tpkn_root"])
     gate_payload["review_mode"] = context["resolved_review_mode"]

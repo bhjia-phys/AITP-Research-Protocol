@@ -14,7 +14,7 @@ from .l2_staging import materialize_workspace_staging_manifest
 from .mode_envelope_support import decision_override_read, dedupe_surface_entries, filter_escalation_triggers_for_mode, light_profile_primary_reads, refocus_context_for_runtime_mode, runtime_mode_markdown_lines, runtime_mode_payload_fragment
 from .paired_backend_support import build_runtime_backend_bridges
 from .research_trajectory_support import append_research_trajectory_markdown, normalize_research_trajectory_for_bundle, research_trajectory_must_read_entry
-from .mode_learning_support import append_mode_learning_markdown, normalize_mode_learning_for_bundle, mode_learning_must_read_entry
+from .mode_learning_support import append_mode_learning_markdown, get_last_recorded_mode, normalize_mode_learning_for_bundle, mode_learning_must_read_entry
 from .research_judgment_runtime_support import append_research_judgment_markdown, decision_surface_snapshot, normalize_research_judgment_for_bundle, research_judgment_must_read_entry
 from .research_taste_support import append_research_taste_markdown, normalize_research_taste_for_bundle, research_taste_must_read_entry
 from .scratchpad_support import append_scratchpad_markdown, normalize_scratchpad_for_bundle, scratchpad_must_read_entry
@@ -2215,6 +2215,7 @@ def materialize_runtime_protocol_bundle(
         ]
     )
     editable_surfaces = dedupe_surface_entries(editable_surfaces)
+    last_recorded_mode = get_last_recorded_mode(runtime_root, topic_slug=topic_slug)
     runtime_mode_preview = runtime_mode_payload_fragment(
         resume_stage=runtime_focus.get("resume_stage") or topic_state.get("resume_stage"),
         load_profile=resolved_load_profile,
@@ -2226,6 +2227,7 @@ def materialize_runtime_protocol_bundle(
         may_defer_until_trigger=may_defer_until_trigger,
         escalation_triggers=escalation_triggers,
         human_request=human_request,
+        current_mode=last_recorded_mode,
     )
     protocol_manifest = materialize_protocol_manifest(
         self,
@@ -2257,6 +2259,7 @@ def materialize_runtime_protocol_bundle(
         may_defer_until_trigger=may_defer_until_trigger,
         escalation_triggers=escalation_triggers,
         human_request=human_request,
+        current_mode=last_recorded_mode,
     )
     staging_manifest = materialize_workspace_staging_manifest(self.kernel_root)
     refocused_context = refocus_context_for_runtime_mode(

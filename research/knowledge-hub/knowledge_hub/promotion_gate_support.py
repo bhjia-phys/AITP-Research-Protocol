@@ -384,6 +384,7 @@ def request_promotion(
         "title": str(candidate.get("title") or ""),
         "summary": str(candidate.get("summary") or ""),
         "route": route,
+        "promotion_stage": "candidate",
         "status": "pending_human_approval",
         "intended_l2_targets": self._dedupe_strings(list(candidate.get("intended_l2_targets") or [])),
         "backend_id": str(backend_id or ""),
@@ -469,6 +470,7 @@ def approve_promotion(
     if str(gate_payload.get("candidate_id") or "") != candidate_id:
         raise ValueError(f"Promotion gate candidate mismatch: expected {gate_payload.get('candidate_id')}, got {candidate_id}")
     gate_payload["status"] = "approved"
+    gate_payload["promotion_stage"] = "promotion_ready"
     gate_payload["approved_by"] = approved_by
     gate_payload["approved_at"] = _now_iso()
     gate_payload["resolved_destination_layer"] = str(gate_payload.get("canonical_layer") or "L2")
@@ -577,4 +579,56 @@ def reject_promotion(
         **gate_payload,
         **paths,
         "promotion_gate_log_path": log_path,
+    }
+
+
+PROMOTION_PIPELINE_STAGES = ("candidate", "validated", "promotion_ready", "promoted")
+
+
+def promotion_pipeline_metrics(
+    self,
+    *,
+    topic_slug: str,
+    updated_by: str = "aitp-service",
+) -> dict[str, Any]:
+    """Compute 4-stage aspirational promotion pipeline metrics for a topic.
+
+    Stages: candidate -> validated -> promotion_ready -> promoted.
+    """
+    gate_payload = load_promotion_gate(self, topic_slug) or {}
+    current_stage = str(gate_payload.get("promotion_stage") or "candidate").strip()
+    if current_stage not in PROMOTION_PIPELINE_STAGES:
+        current_stage = "candidate"
+
+    stage_index = PROMOTION_PIPELINE_STAGES.index(current_stage)
+
+    log_path_str = self._promotion_gate_log_path(topic_slug, gate_payload.get("run_id") or "")
+    log_path = Path(log_path_str) if log_path_str else self._runtime_root(topic_slug) / "promotion_gate_log.jsonl"
+    log_rows = _read_jsonl(log_path) if log_path.exists() else []
+
+    stage_counts: dict[str, int] = {stage: 0 for stage in PROMOTION_PIPELINE_STAGES}
+    for row in log_rows:
+        event = str(row.get("event") or "").strip()
+        if event == "requested":
+            stage_counts["candidate"] += 1
+        elif event == "approved":
+            stage_counts["promotion_ready"] += 1
+        elif event == "promoted":
+            stage_counts["promoted"] += 1
+        elif event == "rejected":
+            stage_counts["validated"] += 1
+
+    return {
+        "topic_slug": topic_slug,
+        "current_stage": current_stage,
+        "stage_index": stage_index,
+        "total_stages": len(PROMOTION_PIPELINE_STAGES),
+        "stage_counts": stage_counts,
+        "gate_status": str(gate_payload.get("status") or "not_requested"),
+        "candidate_id": str(gate_payload.get("candidate_id") or ""),
+        "candidate_type": str(gate_payload.get("candidate_type") or ""),
+        "summary": (
+            f"Promotion pipeline at stage {current_stage} "
+            f"({stage_index + 1}/{len(PROMOTION_PIPELINE_STAGES)})."
+        ),
     }

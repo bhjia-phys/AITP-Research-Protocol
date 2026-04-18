@@ -5,7 +5,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Iterable
 
-from .mode_registry import DEFAULT_RUNTIME_MODE, VALID_RUNTIME_MODES, normalize_runtime_mode
+from .mode_registry import (
+    DEFAULT_RUNTIME_MODE,
+    VALID_RUNTIME_MODES,
+    normalize_runtime_mode,
+    transition_direction,
+    is_valid_transition,
+)
 
 
 SUPPORTED_TRANSITIONS: tuple[tuple[str, str], ...] = (
@@ -66,6 +72,14 @@ def mode_learning_paths(runtime_root: Path) -> dict[str, Path]:
     }
 
 
+def get_last_recorded_mode(runtime_root: Path, *, topic_slug: str) -> str | None:
+    """Return the to_mode from the most recent transition for this topic, or None."""
+    rows = _load_transition_rows(runtime_root, topic_slug=topic_slug)
+    if not rows:
+        return None
+    return str(rows[0].get("to_mode") or "").strip() or None
+
+
 def mode_transition_history_path(runtime_root: Path) -> Path:
     return runtime_root / "mode_transition_history.jsonl"
 
@@ -95,6 +109,7 @@ def _normalize_transition_row(
         "run_id": str(payload.get("run_id") or "").strip(),
         "from_mode": from_mode,
         "to_mode": to_mode,
+        "transition_direction": transition_direction(from_mode, to_mode),
         "dwell_seconds": max(0.0, normalized_dwell),
         "trigger": str(payload.get("trigger") or "").strip(),
         "summary": str(payload.get("summary") or "").strip()
@@ -153,6 +168,18 @@ def record_mode_transition(
     if normalized_from not in VALID_RUNTIME_MODES or normalized_to not in VALID_RUNTIME_MODES:
         raise ValueError(
             f"from_mode and to_mode must be one of {sorted(VALID_RUNTIME_MODES)}"
+        )
+    direction = transition_direction(normalized_from, normalized_to)
+    if direction == "invalid":
+        raise ValueError(
+            f"Transition {normalized_from} -> {normalized_to} is not in the protocol "
+            f"mode-transition graph. Valid forward: explore->learn, learn->implement, "
+            f"implement->explore. Valid backward: learn->explore, implement->learn."
+        )
+    if direction == "backward" and not trigger and not summary:
+        raise ValueError(
+            f"Backward transition {normalized_from} -> {normalized_to} requires an "
+            f"explicit trigger or summary explaining why the backward move is justified."
         )
     row = _normalize_transition_row(
         {

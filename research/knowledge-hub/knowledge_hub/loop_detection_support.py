@@ -9,6 +9,8 @@ from typing import Any
 
 LOOP_DETECTION_RETRY_THRESHOLD = 3
 
+GENERAL_LOOP_THRESHOLD = 3
+
 
 def _now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
@@ -222,3 +224,122 @@ def materialize_loop_detection(
     _write_json(paths["json"], payload)
     _write_text(paths["note"], loop_detection_markdown(payload))
     return payload
+
+
+def _action_fingerprint(action: dict[str, Any]) -> str:
+    """Produce a fingerprint for detecting repeated actions."""
+    action_type = str(action.get("action_type") or "").strip()
+    summary = str(action.get("summary") or "").strip().lower()[:80]
+    handler_args = action.get("handler_args") or {}
+    key_args = {
+        k: v for k, v in sorted(handler_args.items())
+        if k in ("candidate_id", "run_id", "source_id", "route_id")
+    }
+    return f"{action_type}:{summary}:{json.dumps(key_args, sort_keys=True)}"
+
+
+def detect_general_action_loop(
+    action_queue_rows: list[dict[str, Any]],
+    *,
+    threshold: int = GENERAL_LOOP_THRESHOLD,
+) -> dict[str, Any]:
+    """Detect repeated action patterns in the action queue history.
+
+    Looks for consecutive completed actions with the same fingerprint.
+    Returns a stuckness report if a loop is detected.
+    """
+    completed = [
+        row for row in action_queue_rows
+        if str(row.get("status") or "").strip() in ("completed", "failed")
+    ]
+    if not completed:
+        return {"stuck": False, "reason": "no_completed_actions"}
+
+    # Group consecutive actions by fingerprint
+    fingerprints: list[tuple[str, dict[str, Any]]] = []
+    for row in completed[-20:]:
+        fingerprints.append((_action_fingerprint(row), row))
+
+    # Find the longest trailing run of identical fingerprints
+    if len(fingerprints) < 2:
+        return {"stuck": False, "reason": "insufficient_history"}
+
+    last_fp = fingerprints[-1][0]
+    consecutive_count = 1
+    for fp, _ in reversed(fingerprints[:-1]):
+        if fp == last_fp:
+            consecutive_count += 1
+        else:
+            break
+
+    if consecutive_count < threshold:
+        return {
+            "stuck": False,
+            "reason": "below_threshold",
+            "consecutive_count": consecutive_count,
+            "threshold": threshold,
+        }
+
+    last_action = fingerprints[-1][1]
+    return {
+        "stuck": True,
+        "reason": "repeated_action_pattern",
+        "consecutive_count": consecutive_count,
+        "threshold": threshold,
+        "action_type": str(last_action.get("action_type") or ""),
+        "action_summary": str(last_action.get("summary") or ""),
+        "action_id": str(last_action.get("action_id") or ""),
+        "recommendation": (
+            "The same action has been repeated {count} times without progress. "
+            "Force a human checkpoint: pause auto-execution and ask the operator "
+            "for a strategy change or route redirect."
+        ).format(count=consecutive_count),
+    }
+
+
+def should_force_human_checkpoint(
+    service: Any,
+    topic_slug: str,
+    *,
+    updated_by: str = "loop-detection",
+) -> dict[str, Any]:
+    """Check whether a human checkpoint should be forced due to stuckness.
+
+    Combines theorem-facing loop detection with general action-loop detection.
+    """
+    runtime_root = service._runtime_root(topic_slug)
+    action_queue_path = runtime_root / "action_queue.jsonl"
+    action_rows = _read_jsonl(action_queue_path)
+
+    general_report = detect_general_action_loop(action_rows)
+
+    # Also check theory-facing loop via the existing mechanism
+    theory_report = {
+        "status": "clear",
+        "retry_count": 0,
+    }
+    loop_json_path = runtime_root / "loop_detection.json"
+    if loop_json_path.exists():
+        try:
+            loop_data = json.loads(loop_json_path.read_text(encoding="utf-8"))
+            theory_report = loop_data
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    force = general_report.get("stuck") or theory_report.get("status") == "active"
+    result: dict[str, Any] = {
+        "force_human_checkpoint": bool(force),
+        "general_loop": general_report,
+        "theory_loop_active": theory_report.get("status") == "active",
+        "theory_retry_count": int(theory_report.get("retry_count") or 0),
+    }
+
+    if force:
+        source = "general_action_loop" if general_report.get("stuck") else "theory_retry_loop"
+        result["reason"] = source
+        result["recommendation"] = general_report.get("recommendation") or (
+            "Theory-facing retries have exceeded the threshold. "
+            "Change strategy before retrying."
+        )
+
+    return result

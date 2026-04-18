@@ -338,7 +338,8 @@
       "missing_cited_result",
       "missing_derivation_step",
       "cross_paper_dependency",
-      "formalization_blocker"
+      "formalization_blocker",
+      "contradiction"
     ],
     "return_to_stage_by_kind": {
       "missing_definition": "L1",
@@ -346,7 +347,8 @@
       "missing_cited_result": "L0",
       "missing_derivation_step": "L3",
       "cross_paper_dependency": "L0",
-      "formalization_blocker": "L4_formalization"
+      "formalization_blocker": "L4_formalization",
+      "contradiction": "L3"
     },
     "default_priority_by_stage": {
       "L0": "high",
