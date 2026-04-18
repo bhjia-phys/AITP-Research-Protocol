@@ -4,6 +4,7 @@ SETLOCAL EnableExtensions EnableDelayedExpansion
 FOR %%I IN ("%~dp0..") DO SET "REPO_ROOT=%%~fI"
 SET "KIMI_HOME=%REPO_ROOT%\.kimi"
 SET "KIMI_CONFIG=%KIMI_HOME%\config.toml"
+SET "KIMI_AGENT=%KIMI_HOME%\aitp-agent.yaml"
 SET "KIMI_SECRETS=%KIMI_HOME%\secrets"
 
 IF NOT EXIST "%KIMI_HOME%" mkdir "%KIMI_HOME%" >NUL 2>NUL
@@ -43,10 +44,11 @@ IF NOT EXIST "%KIMI_BIN%" (
 )
 
 REM --------------------------------------------------------------------------
-REM Launch with project-level config.
+REM Launch with project-level config and AITP agent.
 REM --config-file overrides ~/.kimi/config.toml completely.
+REM --agent-file loads the AITP bootstrap agent (forces using-aitp read).
 REM --------------------------------------------------------------------------
-CALL "%KIMI_BIN%" --config-file "%KIMI_CONFIG%" %*
+CALL "%KIMI_BIN%" --config-file "%KIMI_CONFIG%" --agent-file "%KIMI_AGENT%" %*
 EXIT /B %ERRORLEVEL%
 
 REM --------------------------------------------------------------------------
