@@ -1053,6 +1053,68 @@ def aitp_writeback_query_result(
 
 
 # ---------------------------------------------------------------------------
+# L5 writing
+# ---------------------------------------------------------------------------
+
+_L5_ARTIFACTS = {
+    "outline.md": (
+        "# Writing Outline\n\n## Title\n\n## Claims\n\n## Structure\n\n"
+        "## Target Audience\n\n## Key Equations\n",
+    ),
+    "claim_evidence_map.md": (
+        "# Claim-Evidence Map\n\n## Claims\n\n## Evidence Links\n\n"
+        "## Provenance Chain\n\n## Confidence Per Claim\n",
+    ),
+    "equation_provenance.md": (
+        "# Equation Provenance\n\n## Equations\n\n## Source Classification\n\n"
+        "## Derivation Chain\n\n## Verification Status\n",
+    ),
+    "figure_provenance.md": (
+        "# Figure Provenance\n\n## Figures\n\n## Source Data\n\n"
+        "## Reproducibility Notes\n",
+    ),
+    "limitations.md": (
+        "# Limitations\n\n## Non-Claims\n\n## Unresolved Issues\n\n"
+        "## Regime Boundaries\n\n## Negative Results\n",
+    ),
+}
+
+
+@mcp.tool()
+def aitp_advance_to_l5(topics_root: str, topic_slug: str) -> str:
+    """Transition from L4 to L5 writing. Requires flow_notebook.tex."""
+    root = _topic_root(topics_root, topic_slug)
+    tex_path = root / "L3" / "tex" / "flow_notebook.tex"
+    if not tex_path.exists():
+        return (
+            f"Blocked: flow_notebook.tex not found at {tex_path}. "
+            f"Run aitp_render_flow_notebook before advancing to L5."
+        )
+
+    state_path = root / "state.md"
+    fm, body = _parse_md(state_path)
+    fm["stage"] = "L5"
+    fm["posture"] = "write"
+    fm["updated_at"] = _now()
+    _write_md(state_path, fm, body)
+
+    # Create L5 scaffolds
+    l5_dir = root / "L5_writing"
+    l5_dir.mkdir(parents=True, exist_ok=True)
+    for name, content in _L5_ARTIFACTS.items():
+        path = l5_dir / name
+        if not path.exists():
+            _write_md(path, {
+                "artifact_kind": f"l5_{name.replace('.', '_')}",
+                "stage": "L5",
+                "created_at": _now(),
+            }, content)
+
+    _append_to_topic_log(root, "advanced to L5 writing")
+    return f"Advanced to L5 writing. Fill provenance artifacts before drafting."
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
