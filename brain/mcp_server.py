@@ -215,6 +215,35 @@ def aitp_bootstrap_topic(
     # Write L1 artifact scaffolds
     for rel_name, (artifact_fm, artifact_body) in L1_ARTIFACT_TEMPLATES.items():
         _write_md(root / "L1" / rel_name, artifact_fm, artifact_body)
+    # Runtime surfaces: topic index and log
+    _write_md(root / "runtime" / "index.md", {
+        "topic_slug": safe_slug, "kind": "topic_index", "created_at": _now(),
+    }, (
+        f"# Topic Index: {title}\n\n"
+        "## Source Basis\n- L0/sources/\n- L1/source_basis.md\n\n"
+        "## Research Notebook\n- L3/ subplane active artifacts\n\n"
+        "## Validation\n- L4/reviews/\n\n"
+        "## Reusable Results\n- L2/canonical/\n\n"
+        "## Writing\n- L3/tex/flow_notebook.tex\n- L5_writing/\n"
+    ))
+    _write_md(root / "runtime" / "log.md", {
+        "topic_slug": safe_slug, "kind": "topic_log", "created_at": _now(),
+    }, f"# Topic Log: {title}\n\n## Events\n\n- {_now()} topic bootstrapped\n")
+    # Global L2 surfaces
+    global_l2 = base.parent / "L2" if base.name == "topics" else Path(topics_root).parent / "L2"
+    global_l2.mkdir(parents=True, exist_ok=True)
+    if not (global_l2 / "index.md").exists():
+        _write_md(global_l2 / "index.md", {
+            "kind": "global_l2_index", "created_at": _now(),
+        }, (
+            "# Global L2 Index\n\n"
+            "## Family\n\n## Regime\n\n"
+            "## Warning And Negative Results\n\n## Cross-Topic Bridges\n"
+        ))
+    if not (global_l2 / "log.md").exists():
+        _write_md(global_l2 / "log.md", {
+            "kind": "global_l2_log", "created_at": _now(),
+        }, "# Global L2 Log\n\n## Events\n")
     fm = {
         "topic_slug": safe_slug,
         "title": title,
@@ -670,6 +699,233 @@ def _escape_latex(text: str) -> str:
                      ("~", "\\textasciitilde{}"), ("^", "\\textasciicircum{}")]:
         text = text.replace(old, new)
     return text
+
+
+# ---------------------------------------------------------------------------
+# Knowledge-base operations
+# ---------------------------------------------------------------------------
+
+
+def _append_to_topic_log(root: Path, event: str) -> None:
+    """Append a dated event to the topic runtime log."""
+    log_path = root / "runtime" / "log.md"
+    if log_path.exists():
+        existing = log_path.read_text(encoding="utf-8")
+    else:
+        existing = f"# Topic Log\n\n## Events\n"
+    if not existing.endswith("\n"):
+        existing += "\n"
+    _atomic_write_text(log_path, existing + f"- {_now()} {event}\n")
+
+
+def _global_l2_path(topics_root: str) -> Path:
+    base = topics_dir(topics_root)
+    return base.parent / "L2" if base.name == "topics" else Path(topics_root).parent / "L2"
+
+
+@mcp.tool()
+def aitp_ingest_knowledge(
+    topics_root: str,
+    topic_slug: str,
+    source_id: str,
+    source_type: str = "paper",
+    title: str = "",
+    arxiv_id: str = "",
+    role: str = "peripheral",
+    notes: str = "",
+) -> str:
+    """Ingest a source: register in L0, note role, append to topic log."""
+    root = _topic_root(topics_root, topic_slug)
+    slug = _slugify(source_id)
+    src_path = root / "L0" / "sources" / f"{slug}.md"
+    fm = {
+        "source_id": slug,
+        "type": source_type,
+        "title": title or source_id,
+        "arxiv_id": arxiv_id,
+        "role": role,
+        "fidelity": "arxiv_preprint",
+        "registered": _now(),
+    }
+    body = f"# {title or source_id}\n\n{notes}\n" if notes else f"# {title or source_id}\n"
+    _write_md(src_path, fm, body)
+    _append_to_topic_log(root, f"ingest source {slug} (role: {role})")
+    return f"Ingested source {slug} into L0 with role {role}."
+
+
+@mcp.tool()
+def aitp_query_knowledge(
+    topics_root: str,
+    topic_slug: str,
+    question: str,
+) -> dict[str, Any]:
+    """Query the layered knowledge base. Returns a layer-aware answer packet."""
+    root = _topic_root(topics_root, topic_slug)
+
+    # Determine highest available layer with content
+    basis_layer = "L1"
+    artifact_refs = []
+    regime_notes = []
+
+    # Check L0/L1 sources
+    src_dir = root / "L0" / "sources"
+    if src_dir.is_dir():
+        for p in src_dir.glob("*.md"):
+            fm, _ = _parse_md(p)
+            artifact_refs.append(f"L0/{p.name}")
+            if fm.get("role") == "core":
+                regime_notes.append(f"Core source: {fm.get('title', p.stem)}")
+
+    # Check L1 artifacts
+    for name in ["question_contract.md", "source_basis.md", "convention_snapshot.md"]:
+        if (root / "L1" / name).exists():
+            artifact_refs.append(f"L1/{name}")
+
+    # Check L3
+    state_fm, _ = _parse_md(root / "state.md")
+    if str(state_fm.get("stage", "")) == "L3":
+        basis_layer = "L3"
+        for sp in L3_SUBPLANES:
+            artifact_name = L3_ACTIVE_ARTIFACT_NAMES[sp]
+            sp_path = root / "L3" / sp / artifact_name
+            if sp_path.exists():
+                artifact_refs.append(f"L3/{sp}/{artifact_name}")
+
+    # Check L4
+    rev_dir = root / "L4" / "reviews"
+    if rev_dir.is_dir() and list(rev_dir.glob("*.md")):
+        basis_layer = "L4"
+
+    # Build answer from L1 question contract
+    answer = ""
+    q_fm, q_body = _parse_md(root / "L1" / "question_contract.md")
+    if q_fm.get("bounded_question"):
+        answer = str(q_fm["bounded_question"])
+    if q_fm.get("scope_boundaries"):
+        regime_notes.append(f"Scope: {q_fm['scope_boundaries']}")
+
+    authority_warning = (
+        f"This answer is grounded at {basis_layer}. "
+        f"Do not treat it as stronger than {basis_layer} authority."
+    )
+
+    return {
+        "question": question,
+        "answer": answer or "No bounded question defined yet.",
+        "basis_layer": basis_layer,
+        "artifact_refs": artifact_refs,
+        "regime_notes": regime_notes,
+        "authority_warning": authority_warning,
+    }
+
+
+@mcp.tool()
+def aitp_lint_knowledge(
+    topics_root: str,
+    topic_slug: str,
+) -> list[dict[str, str]]:
+    """Lint the knowledge base for structural and scientific hygiene."""
+    root = _topic_root(topics_root, topic_slug)
+    findings: list[dict[str, str]] = []
+
+    # Check contradiction register for unresolved entries
+    cr_path = root / "L1" / "contradiction_register.md"
+    if cr_path.exists():
+        cr_fm, _ = _parse_md(cr_path)
+        blocking = str(cr_fm.get("blocking_contradictions", "")).strip()
+        if not blocking:
+            findings.append({
+                "severity": "warning",
+                "kind": "unresolved_contradiction",
+                "artifact_path": str(cr_path),
+                "message": "Contradiction register has no blocking_contradictions value.",
+            })
+
+    # Check L2 promoted units for regime and non-claims
+    l2_dir = root / "L2" / "canonical"
+    if l2_dir.is_dir():
+        for l2_path in sorted(l2_dir.glob("*.md")):
+            l2_fm, l2_body = _parse_md(l2_path)
+            has_regime = "## Regime" in l2_body or "regime" in str(l2_fm.get("regime", ""))
+            if not has_regime:
+                findings.append({
+                    "severity": "warning",
+                    "kind": "missing_regime",
+                    "artifact_path": str(l2_path),
+                    "message": f"Promoted unit {l2_path.name} lacks regime specification.",
+                })
+            has_nonclaims = "## Non-Success" in l2_body or "non_success" in str(l2_fm.get("non_success", ""))
+            if not has_nonclaims:
+                findings.append({
+                    "severity": "warning",
+                    "kind": "missing_nonclaims",
+                    "artifact_path": str(l2_path),
+                    "message": f"Promoted unit {l2_path.name} lacks non-claims or failure modes.",
+                })
+
+    # Check for orphaned L2 units without provenance
+    if l2_dir.is_dir():
+        for l2_path in sorted(l2_dir.glob("*.md")):
+            l2_fm, _ = _parse_md(l2_path)
+            if not l2_fm.get("candidate_id") and not l2_fm.get("promoted_at"):
+                findings.append({
+                    "severity": "error",
+                    "kind": "broken_provenance",
+                    "artifact_path": str(l2_path),
+                    "message": f"L2 unit {l2_path.name} has no provenance link.",
+                })
+
+    # Log lint run
+    _append_to_topic_log(
+        root,
+        f"lint run: {len(findings)} findings ({sum(1 for f in findings if f['severity'] == 'error')} errors)",
+    )
+    return findings
+
+
+@mcp.tool()
+def aitp_writeback_query_result(
+    topics_root: str,
+    topic_slug: str,
+    basis_layer: str,
+    content: str,
+    note_id: str,
+) -> str:
+    """Write back a query result to the appropriate layer. L2 requires promotion gate."""
+    if basis_layer == "L2":
+        return (
+            "L2 writeback not allowed directly. Use aitp_submit_candidate + "
+            "aitp_request_promotion + aitp_resolve_promotion_gate + aitp_promote_candidate."
+        )
+
+    root = _topic_root(topics_root, topic_slug)
+    slug = _slugify(note_id)
+
+    if basis_layer == "L1":
+        note_path = root / "L1" / f"{slug}.md"
+        _write_md(note_path, {
+            "artifact_kind": "l1_note", "stage": "L1", "created_at": _now(),
+        }, f"# Query Writeback: {slug}\n\n{content}\n")
+        _append_to_topic_log(root, f"writeback L1 note {slug}")
+        return f"Written L1/{slug}.md"
+
+    if basis_layer == "L3":
+        note_path = root / "L3" / f"{slug}.md"
+        _write_md(note_path, {
+            "artifact_kind": "l3_note", "stage": "L3", "created_at": _now(),
+        }, f"# Query Writeback: {slug}\n\n{content}\n")
+        _append_to_topic_log(root, f"writeback L3 note {slug}")
+        return f"Written L3/{slug}.md"
+
+    if basis_layer == "L4":
+        note_path = root / "L4" / "reviews" / f"{slug}.md"
+        _write_md(note_path, {
+            "artifact_kind": "l4_note", "stage": "L4", "created_at": _now(),
+        }, f"# Query Writeback: {slug}\n\n{content}\n")
+        _append_to_topic_log(root, f"writeback L4 note {slug}")
+        return f"Written L4/reviews/{slug}.md"
+
+    return f"Unknown basis_layer '{basis_layer}'. Use L1, L3, or L4."
 
 
 # ---------------------------------------------------------------------------
