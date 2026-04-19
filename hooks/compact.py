@@ -1,15 +1,22 @@
 """AITP Compact hook — re-inject skill after context compaction.
 
-Runs when context is compacted. Same logic as session_start but
+Runs when context is compacted. Uses the same stage/posture logic as session_start
 with a reminder that context was lost.
 """
 
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
-from session_start import _find_topics_root, _find_active_topic, _parse_frontmatter, _SKILL_MAP
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from session_start import (
+    _find_topics_root,
+    _find_active_topic,
+    _parse_md,
+)
 
 
 def main():
@@ -21,16 +28,19 @@ def main():
     if not topic_slug:
         return
 
-    from brain.state_model import topics_dir
+    from brain.state_model import topics_dir, evaluate_l1_stage
     td = topics_dir(topics_root)
-    state_path = os.path.join(td, topic_slug, "state.md")
-    fm = _parse_frontmatter(state_path)
-    status = fm.get("status", "new")
-    skill = _SKILL_MAP.get(status, "skill-continuous")
+    root = Path(td) / topic_slug
+    fm, _ = _parse_md(root / "state.md")
+    snapshot = evaluate_l1_stage(_parse_md, root, lane=fm.get("lane", "unspecified"))
 
-    print(f"AITP: Context was compacted. Resuming topic '{topic_slug}' (status: {status}).")
-    print(f"AITP: Read skills/{skill}.md to restore your workflow context.")
-    print(f"AITP: Also read topics/{topic_slug}/state.md for the full picture.")
+    print(
+        f"AITP: Context was compacted. Resuming topic '{topic_slug}' "
+        f"(stage: {snapshot.stage}, posture: {snapshot.posture}, gate: {snapshot.gate_status})."
+    )
+    if snapshot.required_artifact_path:
+        print(f"AITP: Complete {snapshot.required_artifact_path} before advancing.")
+    print(f"AITP: Read skills/{snapshot.skill}.md to restore your workflow context.")
 
 
 if __name__ == "__main__":

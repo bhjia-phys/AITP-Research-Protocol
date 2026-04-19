@@ -11,46 +11,32 @@ This skill helps you pick up where you left off.
 
 ## What to Do
 
-1. **Read topic state** by calling:
+1. **Read the current execution brief** by calling:
    ```
-   aitp_get_status(topics_root, topic_slug)
+   aitp_get_execution_brief(topics_root, topic_slug)
    ```
 
-2. **Check for popups** (blockers requiring human input):
-   ```
-   aitp_get_popup(topics_root, topic_slug)
-   ```
-   If there is a popup, resolve it FIRST before continuing.
+2. **Inspect the brief fields:**
+   - `stage` — which research stage (L1, L3, L4, L2, L5)
+   - `posture` — current operating stance (read, frame, derive, verify, distill, write)
+   - `gate_status` — ready or blocked, and why
+   - `required_artifact_path` — what file needs work
+   - `missing_requirements` — specific fields or sections to fill
 
-3. **Determine where you are** based on status:
+3. **Read the posture skill** named by the brief's `skill` field.
 
-   | Status | Where You Left Off | Next Skill |
-   |--------|-------------------|------------|
-   | `new` | Just started, no sources | skill-explore |
-   | `sources_registered` | Sources found, not analyzed | skill-intake |
-   | `intake_done` | Sources analyzed, no candidates | skill-derive |
-   | `candidate_ready` | Candidate submitted, not validated | skill-validate |
-   | `validated` | Candidate validated, not promoted | skill-promote |
-   | `promoted` | Candidate promoted to L2 | Ask human for next direction |
-   | `blocked` | Something is stuck | Read `state.md` to understand blocker |
+4. **Do not advance** if the brief says the topic is blocked. Fix the missing requirements first.
 
-4. **Read relevant files** to rebuild context:
+5. **If you need the full topic picture**, also read:
    - `state.md` — current status and research question
    - `L3/derivations.md` — what derivations have been done
    - `L3/candidates/*.md` — what candidates exist
-   - `L4/reviews/*.md` — what validation has been done
-
-5. **Inject the appropriate skill** and continue work.
 
 ## Rules
 
 - Do NOT start from scratch. Read what already exists.
-- Do NOT assume the status is correct. Verify by checking actual files.
-- If the status doesn't match the files (e.g., status says "intake_done" but
-  no intake files exist), fix the status:
-  ```
-  aitp_update_status(topics_root, topic_slug, status="<correct_status>")
-  ```
+- Do NOT assume the status is correct. The brief is the authority.
+- Do NOT bypass a blocked gate. Fix the missing artifact first.
 - If you find work that was in progress but not recorded, record it now.
 
 ## After Resume

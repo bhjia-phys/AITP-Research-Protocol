@@ -18,7 +18,13 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from brain.state_model import topic_root as resolve_topic_root, topics_dir, validate_topic_slug
+from brain.state_model import (
+    topic_root as resolve_topic_root,
+    topics_dir,
+    validate_topic_slug,
+    evaluate_l1_stage,
+    L1_ARTIFACT_TEMPLATES,
+)
 
 mcp = FastMCP("aitp-brain")
 
@@ -130,22 +136,27 @@ def _infer_status(fm: dict[str, Any], topic_root: Path) -> str:
 
 @mcp.tool()
 def aitp_get_status(topics_root: str, topic_slug: str) -> dict[str, Any]:
-    """Read topic state and return current status, mode, layer, and counts."""
+    """Read topic state and return current status, stage, posture, and gate."""
     root = _topic_root(topics_root, topic_slug)
     fm, body = _parse_md(root / "state.md")
     status = _infer_status(fm, root)
+    snapshot = evaluate_l1_stage(_parse_md, root, lane=fm.get("lane", "unspecified"))
     src_dir = root / "L0" / "sources"
-    intake_dir = root / "L1" / "intake"
     cand_dir = root / "L3" / "candidates"
     l2_dir = root / "L2" / "canonical"
     return {
         "topic_slug": topic_slug,
         "status": status,
+        "stage": fm.get("stage", snapshot.stage),
+        "posture": fm.get("posture", snapshot.posture),
+        "lane": fm.get("lane", snapshot.lane),
+        "gate_status": snapshot.gate_status,
         "mode": fm.get("mode", "explore"),
-        "layer": fm.get("layer", "L0"),
+        "layer": fm.get("layer", "L1"),
         "title": fm.get("title", topic_slug),
+        "required_artifact_path": snapshot.required_artifact_path,
+        "missing_requirements": snapshot.missing_requirements,
         "sources_count": len(list(src_dir.glob("*.md"))) if src_dir.is_dir() else 0,
-        "intake_count": len(list(intake_dir.glob("*.md"))) if intake_dir.is_dir() else 0,
         "candidates_count": len(list(cand_dir.glob("*.md"))) if cand_dir.is_dir() else 0,
         "l2_count": len(list(l2_dir.glob("*.md"))) if l2_dir.is_dir() else 0,
         "updated_at": fm.get("updated_at", ""),
@@ -181,8 +192,9 @@ def aitp_bootstrap_topic(
     topic_slug: str,
     title: str,
     question: str,
+    lane: str = "unspecified",
 ) -> str:
-    """Create a new topic directory structure with state.md."""
+    """Create a new topic directory structure with state.md and L1 scaffolds."""
     safe_slug = validate_topic_slug(topic_slug)
     base = topics_dir(topics_root)
     root = base / safe_slug
@@ -194,12 +206,19 @@ def aitp_bootstrap_topic(
         "L4/reviews", "L5_writing/figures", "L5_writing/tables", "runtime",
     ]:
         (root / sub).mkdir(parents=True)
+    # Write L1 artifact scaffolds
+    for rel_name, (artifact_fm, artifact_body) in L1_ARTIFACT_TEMPLATES.items():
+        _write_md(root / "L1" / rel_name, artifact_fm, artifact_body)
     fm = {
         "topic_slug": safe_slug,
         "title": title,
         "status": "new",
         "mode": "explore",
-        "layer": "L0",
+        "layer": "L1",
+        "stage": "L1",
+        "posture": "read",
+        "lane": lane,
+        "gate_status": "blocked_missing_field",
         "created_at": _now(),
         "updated_at": _now(),
         "sources_count": 0,
@@ -432,6 +451,31 @@ def aitp_get_skill_context(topics_root: str, topic_slug: str) -> dict[str, Any]:
         "mode": fm.get("mode", "explore"),
         "skill": skill_name,
         "message": f"Topic is in '{status}' state. Inject '{skill_name}'.",
+    }
+
+
+@mcp.tool()
+def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any]:
+    """Return a stage/posture execution brief with gate status and missing requirements."""
+    root = _topic_root(topics_root, topic_slug)
+    fm, _ = _parse_md(root / "state.md")
+    snapshot = evaluate_l1_stage(_parse_md, root, lane=fm.get("lane", "unspecified"))
+    return {
+        "topic_slug": topic_slug,
+        "stage": snapshot.stage,
+        "posture": snapshot.posture,
+        "lane": snapshot.lane,
+        "gate_status": snapshot.gate_status,
+        "required_artifact_path": snapshot.required_artifact_path,
+        "missing_requirements": snapshot.missing_requirements,
+        "next_allowed_transition": snapshot.next_allowed_transition,
+        "skill": snapshot.skill,
+        "immediate_allowed_work": (
+            [f"edit {snapshot.required_artifact_path}"]
+            if snapshot.required_artifact_path
+            else ["prepare transition to L3"]
+        ),
+        "immediate_blocked_work": ["L3 derivation", "L4 validation", "L2 promotion"],
     }
 
 

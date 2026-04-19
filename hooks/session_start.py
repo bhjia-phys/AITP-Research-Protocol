@@ -1,14 +1,18 @@
-"""AITP SessionStart hook — inject skill based on topic status.
+"""AITP SessionStart hook — inject skill based on topic stage/posture.
 
 Runs when a new session starts. Reads the active topic's state and prints
-a skill injection instruction for the agent to follow.
+a stage/posture-aware skill injection instruction for the agent to follow.
 """
 
 from __future__ import annotations
 
 import os
+import re
 import sys
 from pathlib import Path
+from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
 def _find_topics_root() -> str | None:
@@ -26,7 +30,6 @@ def _find_topics_root() -> str | None:
 
 
 def _parse_frontmatter(path: str) -> dict:
-    import re
     if not os.path.isfile(path):
         return {}
     with open(path, encoding="utf-8") as f:
@@ -34,12 +37,25 @@ def _parse_frontmatter(path: str) -> dict:
     m = re.match(r"^---\s*\n(.*?)\n---", text, re.DOTALL)
     if not m:
         return {}
-    fm = {}
+    fm: dict[str, str] = {}
     for line in m.group(1).splitlines():
         if ":" in line:
             key, _, val = line.partition(":")
             fm[key.strip()] = val.strip().strip('"').strip("'")
     return fm
+
+
+def _parse_md(path: Path) -> tuple[dict[str, Any], str]:
+    """Parse markdown with YAML frontmatter."""
+    if not path.exists():
+        return {}, ""
+    text = path.read_text(encoding="utf-8")
+    m = re.match(r"^---\s*\n(.*?)\n---\s*\n(.*)$", text, re.DOTALL)
+    if not m:
+        return {}, text
+    import yaml
+    fm = yaml.safe_load(m.group(1)) or {}
+    return fm, m.group(2)
 
 
 def _find_active_topic(topics_root: str) -> str | None:
@@ -68,16 +84,6 @@ def _find_active_topic(topics_root: str) -> str | None:
     return best_slug
 
 
-_SKILL_MAP = {
-    "new": "skill-explore",
-    "sources_registered": "skill-intake",
-    "intake_done": "skill-derive",
-    "candidate_ready": "skill-validate",
-    "validated": "skill-promote",
-    "promoted": "skill-write",
-}
-
-
 def main():
     topics_root = _find_topics_root()
     if not topics_root:
@@ -89,15 +95,19 @@ def main():
         print("AITP: No active topic found. Start one with aitp_bootstrap_topic.")
         return
 
-    from brain.state_model import topics_dir
+    from brain.state_model import topics_dir, evaluate_l1_stage
     td = topics_dir(topics_root)
-    state_path = os.path.join(td, topic_slug, "state.md")
-    fm = _parse_frontmatter(state_path)
-    status = fm.get("status", "new")
-    skill = _SKILL_MAP.get(status, "skill-continuous")
+    root = Path(td) / topic_slug
+    fm, _ = _parse_md(root / "state.md")
+    snapshot = evaluate_l1_stage(_parse_md, root, lane=fm.get("lane", "unspecified"))
 
-    print(f"AITP: Active topic '{topic_slug}' (status: {status}).")
-    print(f"AITP: Read and follow skills/{skill}.md before continuing.")
+    print(
+        f"AITP: Active topic '{topic_slug}' "
+        f"(stage: {snapshot.stage}, posture: {snapshot.posture}, gate: {snapshot.gate_status})."
+    )
+    if snapshot.required_artifact_path:
+        print(f"AITP: Fill {snapshot.required_artifact_path} before advancing.")
+    print(f"AITP: Read and follow skills/{snapshot.skill}.md before continuing.")
 
 
 if __name__ == "__main__":
