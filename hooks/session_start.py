@@ -6,10 +6,9 @@ a skill injection instruction for the agent to follow.
 
 from __future__ import annotations
 
-import json
 import os
-import re
 import sys
+from pathlib import Path
 
 
 def _find_topics_root() -> str | None:
@@ -23,12 +22,11 @@ def _find_topics_root() -> str | None:
         if parent == cwd:
             break
         cwd = parent
-    # Check environment variable
     return os.environ.get("AITP_TOPICS_ROOT")
 
 
 def _parse_frontmatter(path: str) -> dict:
-    """Parse YAML frontmatter from a Markdown file (minimal parser)."""
+    import re
     if not os.path.isfile(path):
         return {}
     with open(path, encoding="utf-8") as f:
@@ -45,14 +43,22 @@ def _parse_frontmatter(path: str) -> dict:
 
 
 def _find_active_topic(topics_root: str) -> str | None:
-    """Find the most recently updated topic."""
-    topics_dir = os.path.join(topics_root, "topics")
-    if not os.path.isdir(topics_dir):
-        return None
+    """Resolve the active topic from marker or most-recent."""
+    from brain.state_model import topics_dir
+    td = topics_dir(topics_root)
+
+    marker = Path(td) / ".current_topic"
+    if marker.exists():
+        slug = marker.read_text(encoding="utf-8").strip()
+        if slug and (Path(td) / slug / "state.md").exists():
+            return slug
+
     best_slug = None
     best_time = ""
-    for entry in os.listdir(topics_dir):
-        state_path = os.path.join(topics_dir, entry, "state.md")
+    if not os.path.isdir(td):
+        return None
+    for entry in os.listdir(td):
+        state_path = os.path.join(td, entry, "state.md")
         if os.path.isfile(state_path):
             fm = _parse_frontmatter(state_path)
             updated = fm.get("updated_at", "")
@@ -68,6 +74,7 @@ _SKILL_MAP = {
     "intake_done": "skill-derive",
     "candidate_ready": "skill-validate",
     "validated": "skill-promote",
+    "promoted": "skill-write",
 }
 
 
@@ -82,7 +89,9 @@ def main():
         print("AITP: No active topic found. Start one with aitp_bootstrap_topic.")
         return
 
-    state_path = os.path.join(topics_root, "topics", topic_slug, "state.md")
+    from brain.state_model import topics_dir
+    td = topics_dir(topics_root)
+    state_path = os.path.join(td, topic_slug, "state.md")
     fm = _parse_frontmatter(state_path)
     status = fm.get("status", "new")
     skill = _SKILL_MAP.get(status, "skill-continuous")

@@ -1,6 +1,6 @@
 """AITP Brain MCP Server v2 — Minimal skill-driven research protocol.
 
-Provides ~10 tools for the agent to read/write topic state.
+Provides ~12 tools for the agent to read/write topic state.
 All storage is Markdown with YAML frontmatter. No JSON, no JSONL.
 
 Dependencies: fastmcp, pyyaml
@@ -9,12 +9,16 @@ Install: pip install fastmcp pyyaml
 
 from __future__ import annotations
 
+import os
 import re
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 from fastmcp import FastMCP
+
+from brain.state_model import topic_root as resolve_topic_root, topics_dir, validate_topic_slug
 
 mcp = FastMCP("aitp-brain")
 
@@ -31,10 +35,7 @@ def _now() -> str:
 
 
 def _topic_root(topics_root: str, topic_slug: str) -> Path:
-    root = Path(topics_root) / topic_slug
-    if not root.is_dir():
-        raise FileNotFoundError(f"Topic not found: {topic_slug}")
-    return root
+    return resolve_topic_root(topics_root, topic_slug)
 
 
 def _parse_md(path: Path) -> tuple[dict[str, Any], str]:
@@ -49,11 +50,30 @@ def _parse_md(path: Path) -> tuple[dict[str, Any], str]:
     return fm, m.group(2)
 
 
-def _write_md(path: Path, fm: dict[str, Any], body: str) -> None:
+def _atomic_write_text(path: Path, text: str) -> None:
+    """Write text to file atomically via temp-file-and-replace."""
     path.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(dir=str(path.parent))
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(text)
+        os.replace(tmp_name, path)
+    except BaseException:
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
+
+
+def _render_md(fm: dict[str, Any], body: str) -> str:
     import yaml
     frontmatter = yaml.dump(fm, default_flow_style=False, allow_unicode=True).strip()
-    path.write_text(f"---\n{frontmatter}\n---\n{body}\n", encoding="utf-8")
+    return f"---\n{frontmatter}\n---\n{body}\n"
+
+
+def _write_md(path: Path, fm: dict[str, Any], body: str) -> None:
+    _atomic_write_text(path, _render_md(fm, body))
 
 
 def _append_section(path: Path, section: str) -> None:
@@ -61,7 +81,7 @@ def _append_section(path: Path, section: str) -> None:
     existing = path.read_text(encoding="utf-8") if path.exists() else ""
     if existing and not existing.endswith("\n"):
         existing += "\n"
-    path.write_text(existing + section + "\n", encoding="utf-8")
+    _atomic_write_text(path, existing + section + "\n")
 
 
 def _slugify(text: str) -> str:
@@ -80,16 +100,16 @@ _SKILL_MAP = {
     "intake_done": "skill-derive",
     "candidate_ready": "skill-validate",
     "validated": "skill-promote",
+    "promoted": "skill-write",
 }
 
-_VALID_STATUSES = set(_SKILL_MAP.keys()) | {"promoted", "complete", "blocked"}
+_VALID_STATUSES = set(_SKILL_MAP.keys()) | {"complete", "blocked"}
 
 
 def _infer_status(fm: dict[str, Any], topic_root: Path) -> str:
     explicit = str(fm.get("status") or "").strip()
     if explicit and explicit in _VALID_STATUSES:
         return explicit
-    # Infer from filesystem state
     src_dir = topic_root / "L0" / "sources"
     intake_dir = topic_root / "L1" / "intake"
     cand_dir = topic_root / "L3" / "candidates"
@@ -163,14 +183,19 @@ def aitp_bootstrap_topic(
     question: str,
 ) -> str:
     """Create a new topic directory structure with state.md."""
-    root = Path(topics_root) / topic_slug
+    safe_slug = validate_topic_slug(topic_slug)
+    base = topics_dir(topics_root)
+    root = base / safe_slug
     if root.exists():
-        return f"Topic {topic_slug} already exists."
+        return f"Topic {safe_slug} already exists."
     root.mkdir(parents=True)
-    for sub in ["L0/sources", "L1/intake", "L2/canonical", "L3/candidates", "L4/reviews", "runtime"]:
+    for sub in [
+        "L0/sources", "L1/intake", "L2/canonical", "L3/candidates",
+        "L4/reviews", "L5_writing/figures", "L5_writing/tables", "runtime",
+    ]:
         (root / sub).mkdir(parents=True)
     fm = {
-        "topic_slug": topic_slug,
+        "topic_slug": safe_slug,
         "title": title,
         "status": "new",
         "mode": "explore",
@@ -182,7 +207,7 @@ def aitp_bootstrap_topic(
     }
     body = f"# {title}\n\n## Research Question\n{question}\n"
     _write_md(root / "state.md", fm, body)
-    return f"Bootstrapped topic {topic_slug} at {root}"
+    return f"Bootstrapped topic {safe_slug} at {root}"
 
 
 @mcp.tool()
@@ -212,7 +237,6 @@ def aitp_register_source(
     }
     body = f"# {title or source_id}\n\n{notes}\n" if notes else f"# {title or source_id}\n"
     _write_md(path, fm, body)
-    # Update state
     return f"Registered source {slug}"
 
 
@@ -291,25 +315,94 @@ def aitp_submit_candidate(
     return f"Submitted candidate {slug}"
 
 
+# ---------------------------------------------------------------------------
+# Promotion gate lifecycle
+# ---------------------------------------------------------------------------
+
+_PROMOTION_TRANSITIONS = {
+    "submitted": "pending_validation",
+    "pending_validation": "validated",
+    "validated": "pending_approval",
+    "pending_approval": "approved_for_promotion",
+    "approved_for_promotion": "promoted",
+}
+
+
 @mcp.tool()
 def aitp_request_promotion(
     topics_root: str,
     topic_slug: str,
     candidate_id: str,
 ) -> str:
-    """Request promotion of a validated candidate to L2."""
+    """Move a validated candidate to pending_approval for human review."""
     root = _topic_root(topics_root, topic_slug)
     slug = _slugify(candidate_id)
     cand_path = root / "L3" / "candidates" / f"{slug}.md"
     if not cand_path.exists():
         return f"Candidate {slug} not found."
     fm, body = _parse_md(cand_path)
-    if fm.get("status") != "validated":
-        return f"Candidate {slug} status is '{fm.get('status')}', not 'validated'. Run validation first."
+    current = fm.get("status", "")
+    if current != "validated":
+        return f"Candidate {slug} status is '{current}', not 'validated'. Cannot request promotion."
     fm["status"] = "pending_approval"
-    fm["promotion_requested"] = _now()
+    fm["promotion_requested_at"] = _now()
     _write_md(cand_path, fm, body)
-    return f"Candidate {slug} pending human approval for L2 promotion."
+    return f"Candidate {slug} moved to pending_approval. Awaiting human decision."
+
+
+@mcp.tool()
+def aitp_resolve_promotion_gate(
+    topics_root: str,
+    topic_slug: str,
+    candidate_id: str,
+    decision: str,
+    reason: str = "",
+) -> str:
+    """Resolve a pending_approval candidate: approve or reject."""
+    root = _topic_root(topics_root, topic_slug)
+    slug = _slugify(candidate_id)
+    cand_path = root / "L3" / "candidates" / f"{slug}.md"
+    if not cand_path.exists():
+        return f"Candidate {slug} not found."
+    fm, body = _parse_md(cand_path)
+    if fm.get("status") != "pending_approval":
+        return f"Candidate {slug} is not pending_approval (status: {fm.get('status')})."
+    if decision == "approve":
+        fm["status"] = "approved_for_promotion"
+        fm["approved_at"] = _now()
+        fm["approval_reason"] = reason
+    elif decision == "reject":
+        fm["status"] = "validated"
+        fm["rejection_reason"] = reason
+    else:
+        return f"Unknown decision '{decision}'. Use 'approve' or 'reject'."
+    _write_md(cand_path, fm, body)
+    return f"Candidate {slug} resolved: {decision}."
+
+
+@mcp.tool()
+def aitp_promote_candidate(
+    topics_root: str,
+    topic_slug: str,
+    candidate_id: str,
+    comment: str = "",
+) -> str:
+    """Promote an approved candidate to L2. Only works after gate approval."""
+    root = _topic_root(topics_root, topic_slug)
+    slug = _slugify(candidate_id)
+    cand_path = root / "L3" / "candidates" / f"{slug}.md"
+    if not cand_path.exists():
+        return f"Candidate {slug} not found."
+    fm, body = _parse_md(cand_path)
+    if fm.get("status") != "approved_for_promotion":
+        return f"Candidate {slug} is not approved_for_promotion (status: {fm.get('status')}). Use aitp_request_promotion then aitp_resolve_promotion_gate first."
+    fm["status"] = "promoted"
+    fm["promoted_at"] = _now()
+    fm["promotion_comment"] = comment
+    _write_md(cand_path, fm, body)
+    l2_path = root / "L2" / "canonical" / f"{slug}.md"
+    _write_md(l2_path, fm, body)
+    return f"Promoted {slug} to L2/canonical/."
 
 
 @mcp.tool()
@@ -324,76 +417,6 @@ def aitp_list_candidates(topics_root: str, topic_slug: str) -> list[dict[str, An
         fm, _ = _parse_md(path)
         results.append({"candidate_id": fm.get("candidate_id", path.stem), "title": fm.get("title", ""), "status": fm.get("status", "")})
     return results
-
-
-@mcp.tool()
-def aitp_get_popup(topics_root: str, topic_slug: str) -> dict[str, Any]:
-    """Check if there is a blocker requiring human input."""
-    root = _topic_root(topics_root, topic_slug)
-    cand_dir = root / "L3" / "candidates"
-    if not cand_dir.is_dir():
-        return {"kind": "none"}
-    for path in cand_dir.glob("*.md"):
-        fm, _ = _parse_md(path)
-        if fm.get("status") == "pending_approval":
-            return {
-                "kind": "promotion_gate",
-                "candidate_id": fm.get("candidate_id", path.stem),
-                "title": fm.get("title", ""),
-                "summary": f"Candidate '{fm.get('title')}' is ready for L2 promotion. Approve?",
-                "options": ["Approve promotion", "Request revision", "Reject"],
-            }
-    ctrl_path = root / "runtime" / "control_note.md"
-    if ctrl_path.exists():
-        fm, body = _parse_md(ctrl_path)
-        if fm.get("active"):
-            return {"kind": "control_note", "summary": body.strip()[:200], "options": ["Acknowledge"]}
-    return {"kind": "none"}
-
-
-@mcp.tool()
-def aitp_resolve_popup(
-    topics_root: str,
-    topic_slug: str,
-    choice_index: int,
-    comment: str = "",
-) -> str:
-    """Resolve a popup by recording the human's choice."""
-    root = _topic_root(topics_root, topic_slug)
-    popup = aitp_get_popup(topics_root, topic_slug)
-    if popup["kind"] == "none":
-        return "No active popup."
-    if popup["kind"] == "promotion_gate":
-        cand_slug = popup["candidate_id"]
-        cand_path = root / "L3" / "candidates" / f"{cand_slug}.md"
-        fm, body = _parse_md(cand_path)
-        if choice_index == 0:  # Approve
-            fm["status"] = "promoted"
-            fm["promoted_at"] = _now()
-            fm["promotion_comment"] = comment
-            _write_md(cand_path, fm, body)
-            # Write to L2
-            l2_path = root / "L2" / "canonical" / f"{cand_slug}.md"
-            _write_md(l2_path, fm, body)
-            return f"Promoted {cand_slug} to L2."
-        elif choice_index == 1:  # Revise
-            fm["status"] = "revision_requested"
-            fm["revision_comment"] = comment
-            _write_md(cand_path, fm, body)
-            return f"Revision requested for {cand_slug}."
-        else:  # Reject
-            fm["status"] = "rejected"
-            fm["rejection_comment"] = comment
-            _write_md(cand_path, fm, body)
-            return f"Rejected {cand_slug}."
-    if popup["kind"] == "control_note":
-        ctrl_path = root / "runtime" / "control_note.md"
-        fm, body = _parse_md(ctrl_path)
-        fm["active"] = False
-        fm["resolved_at"] = _now()
-        _write_md(ctrl_path, fm, body)
-        return "Control note acknowledged."
-    return f"Resolved popup of kind {popup['kind']}."
 
 
 @mcp.tool()

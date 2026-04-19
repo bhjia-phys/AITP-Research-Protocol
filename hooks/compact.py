@@ -7,9 +7,8 @@ with a reminder that context was lost.
 from __future__ import annotations
 
 import os
-import sys
+from pathlib import Path
 
-# Reuse session_start logic
 from session_start import _find_topics_root, _find_active_topic, _parse_frontmatter, _SKILL_MAP
 
 
@@ -22,7 +21,9 @@ def main():
     if not topic_slug:
         return
 
-    state_path = os.path.join(topics_root, "topics", topic_slug, "state.md")
+    from brain.state_model import topics_dir
+    td = topics_dir(topics_root)
+    state_path = os.path.join(td, topic_slug, "state.md")
     fm = _parse_frontmatter(state_path)
     status = fm.get("status", "new")
     skill = _SKILL_MAP.get(status, "skill-continuous")
