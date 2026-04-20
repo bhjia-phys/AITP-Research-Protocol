@@ -28,10 +28,24 @@ You are in the ideation subplane of L3 derivation.
 3. Note prior work and risks.
 4. Do not start planning or analysis yet.
 
+## Flow Notebook — Incremental Update (MANDATORY)
+
+Before advancing out of this subplane, update `L3/tex/flow_notebook.tex`:
+
+1. **If file does NOT exist**: copy template from `<aitp-repo-root>/templates/flow_notebook.tex`
+   to `L3/tex/flow_notebook.tex`, fill the **Ideation** section, leave other sections as
+   `{{PLACEHOLDER}}` comments.
+2. **If file already exists**: update ONLY the Ideation section from `active_idea.md`
+   using Markdown→LaTeX conversion rules (see skill-l3-distill for full rules table).
+   Add version comment: `% Updated: <date> — ideation revision`.
+
+Do NOT compile to PDF yet. Compilation happens at distillation.
+
 ## Exit condition
 
 Advance to **planning** when `active_idea.md` has filled frontmatter fields
-`idea_statement` and `motivation`, plus headings `## Idea Statement` and `## Motivation`.
+`idea_statement` and `motivation`, plus headings `## Idea Statement` and `## Motivation`,
+AND `flow_notebook.tex` has been updated.
 
 ## Allowed transitions
 

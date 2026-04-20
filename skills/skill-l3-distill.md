@@ -33,22 +33,40 @@ You are in the distillation subplane of L3 derivation.
 When `active_distillation.md` has filled frontmatter fields `distilled_claim`
 and `evidence_summary`, plus headings `## Distilled Claim` and `## Evidence Summary`,
 the L3 flow is complete. You may then:
-- Generate `L3/tex/flow_notebook.tex` and compile to PDF (see below).
+- Finalize `L3/tex/flow_notebook.tex` and compile to PDF.
 - Advance to L4 for adjudication.
 
-## Flow Notebook Generation (MANDATORY)
+## Flow Notebook — Incremental Update (MANDATORY)
 
-When L3 derivation is complete, you MUST produce a readable PDF by converting all
-L3 Markdown artifacts into proper LaTeX yourself. Do NOT call `aitp_render_flow_notebook`.
+The flow_notebook.tex is a **living document** that must be updated incrementally
+throughout the entire L3→L4→L3 cycle, not just at distillation.
 
-### Step 1: Read all L3 Markdown content
+### When to update
 
-Read every artifact under `L3/`:
-- `L3/distillation/active_distillation.md`
-- `L3/ideation/*.md`, `L3/plan/*.md`, `L3/analysis/*.md`, `L3/integration/*.md`
-- Any other subplane outputs
+Update `L3/tex/flow_notebook.tex` at EVERY one of these triggers:
+1. **Completing any L3 subplane** (ideation, plan, analysis, integration, distillation)
+2. **Returning from L4 to L3** (revision after validation feedback)
+3. **Completing a subroutine** (e.g., new L1 source analysis, code execution)
 
-### Step 2: Convert Markdown to LaTeX properly
+At distillation (this subplane), do the FINAL update and compile to PDF.
+
+### How to update
+
+**If `L3/tex/flow_notebook.tex` does NOT exist yet:**
+1. Read the template at `<aitp-repo-root>/templates/flow_notebook.tex`
+2. Copy it to `L3/tex/flow_notebook.tex`
+3. Fill all available `{{PLACEHOLDER}}` sections
+4. Remove sections whose artifacts don't exist yet (keep their placeholder comments)
+
+**If `L3/tex/flow_notebook.tex` already exists:**
+1. Read the current tex file
+2. Identify which section corresponds to the subplane you just completed
+3. Read the updated Markdown artifact for that subplane
+4. Convert ONLY the changed section's content (Markdown → LaTeX)
+5. Replace that section in the tex file, leaving other sections unchanged
+6. Add a version comment at the top: `% Updated: <date> — <subplane> revision`
+
+### Markdown→LaTeX conversion rules
 
 You MUST perform full Markdown-to-LaTeX conversion. Apply these rules EXACTLY:
 
@@ -71,21 +89,7 @@ You MUST perform full Markdown-to-LaTeX conversion. Apply these rules EXACTLY:
 CRITICAL: Do NOT paste raw Markdown into LaTeX. Every line must be valid LaTeX.
 Tables in particular MUST use `\begin{tabular}` — never pipe-delimited Markdown.
 
-### Step 3: Write flow_notebook.tex
-
-Use the AITP template as the skeleton. Read the template file at:
-```
-<aitp-repo-root>/templates/flow_notebook.tex
-```
-(Where `<aitp-repo-root>` is the local path to the aitp-v2-refactor repository.)
-
-Copy the template to `L3/tex/flow_notebook.tex`, then replace every
-`{{PLACEHOLDER}}` with the corresponding converted LaTeX content.
-Remove any placeholder sections that have no corresponding artifact.
-
-### Step 4: Compile to PDF
-
-Run pdflatex on the generated file:
+### Compile to PDF (at distillation or final update)
 
 ```bash
 cd "<topics_root>/<topic_slug>/L3/tex"
@@ -93,19 +97,14 @@ pdflatex -interaction=nonstopmode flow_notebook.tex
 pdflatex -interaction=nonstopmode flow_notebook.tex
 ```
 
-If compilation fails:
-1. Read the `.log` file to identify the error.
-2. Fix the LaTeX error in `flow_notebook.tex`.
-3. Retry compilation.
-4. Repeat until PDF is produced.
-
+If compilation fails: read `.log`, fix errors, retry.
 If `pdflatex` is not available, try `latexmk -pdf flow_notebook.tex`.
 
-### Step 5: Report
+### Report
 
-Tell the human:
-- Path to the compiled PDF
-- Brief summary of what L3 produced
+After each update, tell the human:
+- Which section was updated
+- Path to the tex/pdf file
 
 ## Allowed transitions
 
