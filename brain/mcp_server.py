@@ -602,7 +602,6 @@ def aitp_get_skill_context(topics_root: str, topic_slug: str) -> dict[str, Any]:
     }
 
 
-@mcp.tool()
 _AGENT_BEHAVIOR_REMINDER = (
     "BEHAVIORAL RULE: When you need to ask the user ANY question "
     "(clarification, direction choice, scope check), you MUST use the AskUserQuestion tool. "
@@ -612,6 +611,7 @@ _AGENT_BEHAVIOR_REMINDER = (
 )
 
 
+@mcp.tool()
 def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any]:
     """Return a stage/posture execution brief with gate status and missing requirements."""
     root = _topic_root(topics_root, topic_slug)
