@@ -26,7 +26,14 @@ validation criteria.
    - Assumptions
    - Validation criteria
 
-2. **Run validation checks** appropriate to the candidate:
+2. **Confirm execution environment** (for numerical validation):
+   - Check the plan's Execution Environment section for the target machine.
+   - If no execution environment is documented, use AskUserQuestion to ask the human
+     BEFORE running any computation.
+   - Verify you are on the correct machine (hostname, available packages).
+   - Do NOT run computations on the wrong machine.
+
+3. **Run validation checks** appropriate to the candidate:
 
    ### Numerical Validation
    - Run benchmark comparisons if applicable
