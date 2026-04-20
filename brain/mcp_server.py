@@ -266,7 +266,8 @@ def aitp_bootstrap_topic(
     root.mkdir(parents=True)
     for sub in [
         "L0/sources", "L1/intake", "L3/candidates",
-        "L4/reviews", "L5_writing/figures", "L5_writing/tables", "runtime",
+        "L4/reviews", "L4/scripts", "L4/outputs",
+        "L5_writing/figures", "L5_writing/tables", "runtime",
     ]:
         (root / sub).mkdir(parents=True)
     # Write L1 artifact scaffolds
@@ -824,11 +825,18 @@ def aitp_submit_l4_review(
     evidence_scripts: list[str] | None = None,
     evidence_outputs: list[str] | None = None,
     execution_environment: str = "",
+    data_provenance: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
-    """Submit an L4 review with one of the six validation outcomes. Returns popup gate if not pass.
+    """Submit an L4 review with one of the six validation outcomes. Returns popup gate.
 
     For toy_numeric / code_method lanes, evidence_scripts and evidence_outputs are REQUIRED.
     For formal_theory lane, they are optional (analytical checks suffice).
+
+    data_provenance: list of dicts, each with keys:
+      - data_point: what was measured/computed
+      - script: path to the script that produced it
+      - executed_at: ISO timestamp of execution
+      - method: brief description of how it was computed
     """
     if outcome not in L4_OUTCOMES:
         return {"message": f"Invalid outcome '{outcome}'. Valid: {L4_OUTCOMES}"}
@@ -872,6 +880,8 @@ def aitp_submit_l4_review(
         fm["evidence_outputs"] = evidence_outputs
     if execution_environment:
         fm["execution_environment"] = execution_environment
+    if data_provenance:
+        fm["data_provenance"] = data_provenance
 
     body = (
         f"# Review: {slug}\n\n"
@@ -890,6 +900,15 @@ def aitp_submit_l4_review(
             body += f"- {check}: {result}\n"
     else:
         body += "No individual check results recorded.\n"
+    if data_provenance:
+        body += "\n## Data Provenance\n"
+        for entry in data_provenance:
+            body += (
+                f"- **{entry.get('data_point', '?')}**\n"
+                f"  - Script: `{entry.get('script', '?')}`\n"
+                f"  - Executed: {entry.get('executed_at', '?')}\n"
+                f"  - Method: {entry.get('method', '?')}\n"
+            )
 
     _write_md(review_path, fm, body)
     _append_to_topic_log(root, f"L4 review: {slug} -> {outcome}")
@@ -906,6 +925,47 @@ def aitp_submit_l4_review(
             ],
         }
     return _GateResult(result)
+
+
+@mcp.tool()
+def aitp_return_to_l3_from_l4(
+    topics_root: str,
+    topic_slug: str,
+    reason: str = "post_l4_analysis",
+) -> dict[str, Any]:
+    """After L4 pass, return to L3 for post-validation analysis. Mandatory step.
+
+    L4 pass does NOT advance to L5 directly. It returns to L3 analysis so the
+    agent can: (1) analyze validation findings, (2) update flow_notebook.tex,
+    (3) ask the human whether to persist, continue iterating, or advance.
+
+    reason: why returning (post_l4_analysis | post_l4_revision | post_l4_extension)
+    """
+    root = _topic_root(topics_root, topic_slug)
+    state_path = root / "state.md"
+    fm, body = _parse_md(state_path)
+    current_stage = fm.get("stage", "")
+
+    if current_stage not in ("L3", "L4"):
+        return _GateResult({"message": f"Cannot return to L3: topic is at {current_stage}."})
+
+    fm["stage"] = "L3"
+    fm["posture"] = "derive"
+    fm["l3_subplane"] = "analysis"
+    fm["l4_return_reason"] = reason
+    fm["updated_at"] = _now()
+    _write_md(state_path, fm, body)
+    _append_to_topic_log(root, f"returned from L4 to L3 analysis: {reason}")
+
+    return _GateResult({
+        "message": (
+            f"Returned to L3 analysis from L4. You MUST:\n"
+            f"1. Analyze the L4 validation results\n"
+            f"2. Update flow_notebook.tex with L4 findings\n"
+            f"3. Ask the human: persist/advance or continue iterating?\n"
+            f"4. If iterating: plan → analyze → integrate → distill → L4 again"
+        ),
+    })
 
 
 # ---------------------------------------------------------------------------

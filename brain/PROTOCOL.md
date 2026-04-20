@@ -17,7 +17,7 @@ access to the AITP MCP tools.
 The protocol is a **stage machine** with orthogonal posture and lane:
 
 ```
-Stage:    L1 → L3 → L4 → L2 → L5
+Stage:    L1 → L3 → L4 → L3 → L4 → ... → L2 → L5
 Posture:  read | frame | derive | verify | distill | write
 Lane:     formal_theory | toy_numeric | code_method
 ```
@@ -42,7 +42,8 @@ advancing.
 | `aitp_advance_l3_subplane` | L3 | Move between subplanes (respect allowed transitions) |
 | `aitp_submit_candidate` | L3 | After distillation, submit a distilled claim |
 | `aitp_create_validation_contract` | L4 | Define mandatory physics checks for a candidate |
-| `aitp_submit_l4_review` | L4 | Submit adjudication outcome (pass/partial_pass/fail/contradiction/stuck/timeout) |
+| `aitp_submit_l4_review` | L4 | Submit adjudication outcome with evidence and provenance |
+| `aitp_return_to_l3_from_l4` | L4→L3 | Return to L3 analysis after L4 pass (mandatory, not optional) |
 | `aitp_advance_to_l5` | L4→L5 | Advance to writing phase (requires flow_notebook.tex from L3 distillation) |
 | `aitp_request_promotion` | L4→L2 | Request promotion for a validated candidate |
 | `aitp_resolve_promotion_gate` | L4→L2 | Approve or reject the promotion |
@@ -116,11 +117,37 @@ distillation   → result_integration
       mandatory_checks=["dimensional_consistency", ...])
     → Defines what must be checked.
 
-9.  aitp_submit_l4_review(topics_root, topic_slug, candidate_id,
-      outcome, notes)
+9.  Write validation scripts (L4/scripts/) and execute on target machine.
+    Every data point must have provenance: script path, execution timestamp, method.
+
+10. aitp_submit_l4_review(topics_root, topic_slug, candidate_id,
+      outcome, notes, evidence_scripts=[...], evidence_outputs=[...],
+      data_provenance=[...])
     → outcome ∈ {pass, partial_pass, fail, contradiction, stuck, timeout}
-    → Only "pass" allows promotion.
+    → evidence_scripts/outputs REQUIRED for toy_numeric and code_method lanes
+    → data_provenance REQUIRED: every data point traced to a specific script execution
 ```
+
+**L4 pass does NOT advance to L5.** It returns to L3 for post-validation analysis.
+
+### Phase 3b: L4→L3 Return Loop (stage = L3, posture = derive)
+
+```
+11. aitp_return_to_l3_from_l4(topics_root, topic_slug, reason="post_l4_analysis")
+    → Returns to L3 analysis subplane
+
+12. Analyze L4 findings in L3/analysis/active_analysis.md
+    → What passed conclusively? What had caveats? What remains open?
+    → Update flow_notebook.tex with L4 results
+
+13. Ask the human (MANDATORY):
+    - "Persist and advance" → proceed to promotion/L5
+    - "Continue iterating" → new L3 cycle (plan → analyze → integrate → distill → L4)
+    - "Revise scope" → narrow/adjust the claim
+```
+
+This loop continues until the human confirms the topic is ready to persist.
+Each L3 cycle does incremental flow_notebook.tex updates at every subplane.
 
 Physics check fields:
 `dimensional_consistency`, `symmetry_compatibility`,
@@ -129,10 +156,10 @@ Physics check fields:
 ### Phase 4: Promotion to Global L2
 
 ```
-10. Agent generates L3/tex/flow_notebook.tex during L3 distillation
+14. Agent generates L3/tex/flow_notebook.tex during L3 distillation
     (Markdown→LaTeX conversion and PDF compilation per skill-l3-distill)
 
-11. Request → resolve → promote:
+15. Request → resolve → promote:
     aitp_request_promotion(topics_root, topic_slug, candidate_id)
     aitp_resolve_promotion_gate(topics_root, topic_slug, candidate_id, "approve")
     aitp_promote_candidate(topics_root, topic_slug, candidate_id)
@@ -144,7 +171,7 @@ Physics check fields:
 ### Phase 5: L5 Writing (stage = L5, posture = write)
 
 ```
-12. aitp_advance_to_l5(topics_root, topic_slug)
+16. aitp_advance_to_l5(topics_root, topic_slug)
     → BLOCKED if flow_notebook.tex does not exist.
     → Creates L5_writing/ provenance scaffolds:
       - outline.md
@@ -186,6 +213,8 @@ while topic is not complete:
         Match on brief.stage:
             "L1" → Fill remaining L1 artifacts or advance to L3
             "L3" → Work on active subplane artifact, then advance
+            "L4" → Validate candidate with code, submit review,
+                    then return to L3 via aitp_return_to_l3_from_l4
             "L5" → Fill provenance files, then draft paper
         continue
 ```
@@ -221,6 +250,8 @@ topics_root/
     │   └── tex/flow_notebook.tex    # Flow-end archive
     ├── L4/
     │   ├── validation_contract.md
+    │   ├── scripts/*.py               # Validation scripts (mandatory for numeric lanes)
+    │   ├── outputs/                   # Execution logs, plots, data tables
     │   └── reviews/*.md
     ├── L5_writing/                  # Paper provenance
     │   ├── outline.md

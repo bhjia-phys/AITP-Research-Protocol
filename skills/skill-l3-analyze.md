@@ -28,6 +28,21 @@ You are in the analysis subplane of L3 derivation.
 3. Flag any anomalies or unexpected findings.
 4. Do not finalize claims yet.
 
+## Post-L4 Return Analysis
+
+If you entered this subplane via `aitp_return_to_l3_from_l4` (check `l4_return_reason`
+in state.md), your analysis must:
+
+1. **Read the L4 review** at `L4/reviews/<candidate_id>.md` — note all check results,
+   caveats, and quantitative discrepancies.
+2. **Assess validation quality** — were checks independent? Were any criterion relying
+   on stored data rather than fresh computation? Note gaps.
+3. **Record findings** in `L3/analysis/active_analysis.md`:
+   - What was validated conclusively
+   - What had caveats (normalization differences, finite-size limitations)
+   - What remains open (larger L, different operators, thermodynamic limit)
+4. **Update flow_notebook.tex** with the L4 analysis section.
+
 ## Flow Notebook — Incremental Update (MANDATORY)
 
 Before advancing out of this subplane, update `L3/tex/flow_notebook.tex`:
