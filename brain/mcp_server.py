@@ -266,7 +266,7 @@ def aitp_bootstrap_topic(
     root.mkdir(parents=True)
     for sub in [
         "L0/sources", "L1/intake", "L3/candidates",
-        "L4/reviews", "L4/scripts", "L4/outputs",
+        "L4/reviews", "L4/scripts", "L4/outputs", "L4/outputs/figures",
         "L5_writing/figures", "L5_writing/tables", "runtime",
     ]:
         (root / sub).mkdir(parents=True)
