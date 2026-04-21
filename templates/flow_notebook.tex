@@ -96,13 +96,17 @@
 % --- 3.3 Analysis ---
 \subsection{Analysis}
 % Source: L3/analysis/active_analysis.md
-% Convert: derivation steps, formulas, anomalies, assumptions flagged.
+% Convert: round_type, derivation steps (equation + justification + origin per step),
+% source anchor table, anomalies, failed routes, assumptions flagged.
+% For formal_theory derivation_round: every step MUST have equation, justification,
+% step_origin. Missing fields go into Open Obligations.
 {{ANALYSIS_CONTENT}}
 
 % --- 3.4 Result Integration ---
 \subsection{Result Integration}
 % Source: L3/integration/active_integration.md
-% Convert: findings, consistency checks, gaps remaining.
+% Convert: findings, claim readiness (blocked/qualified/stable), open obligations.
+% Each finding must have a readiness level. Blocked findings cannot become candidates.
 {{INTEGRATION_CONTENT}}
 
 % --- 3.5 Distillation ---
@@ -123,6 +127,10 @@
 % ===========================================================================
 % Section 5: Current Claim Boundary
 % ===========================================================================
+% Report claim readiness level per finding (blocked/qualified/stable).
+% Blocked findings: list with reason and repair plan.
+% Qualified findings: list with validity_regime, depends_on, breaks_if, still_unclosed.
+% Stable findings: summarize as current best statements.
 
 \section{Current Claim Boundary}
 {{CLAIM_BOUNDARY}}
@@ -130,6 +138,8 @@
 % ===========================================================================
 % Section 6: Failures and Open Problems
 % ===========================================================================
+% Record failed derivation routes with: why plausible, exact failure point,
+% lesson, revive conditions. Also list all open obligations from integration.
 
 \section{Failures and Open Problems}
 {{OPEN_PROBLEMS}}

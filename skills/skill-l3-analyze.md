@@ -61,12 +61,75 @@ At ANY point during analysis, you may offer these back-paths via AskUserQuestion
 
 `L3/analysis/active_analysis.md`
 
+## Round Type (MANDATORY frontmatter field)
+
+Set `round_type` in `active_analysis.md` frontmatter to one of:
+
+| Round type | When to use | Mandatory blocks |
+|---|---|---|
+| `derivation_round` | Advancing a derivation, closing a proof/identity chain | `derivation_spine`, `assumptions_and_regime`, `open_obligation_list` |
+| `source_restoration_round` | Recovering a source-local derivation or definition | `target_source_location`, `source_anchor_table`, `l3_restoration` |
+| `numerical_or_benchmark_round` | Running or reviewing bounded numerical tests | `test_plan`, `observable_definition`, `pass_conditions`, `anomaly_analysis` |
+| `synthesis_round` | Consolidating what a phase has taught the topic | `what_was_learned`, `current_best_statements`, `excluded_routes_summary` |
+
+If the analysis spans multiple types, pick the PRIMARY one. Cross-type obligations
+(e.g., convention_ledger, source_anchor_table) apply whenever the content requires them.
+
+## Step-Level Derivation Discipline (formal_theory lane)
+
+For `derivation_round` in `formal_theory` lane, every derivation step MUST have these
+fields recorded in the body under `## Derivation Spine`:
+
+```markdown
+### Step N: <label>
+- **Equation**: <the mathematical transformation>
+- **Justification**: <why this step is valid>
+- **Step origin**: `source_statement` | `l3_completion` | `conjecture`
+- **Source anchor**: <page/section/equation number> (required if origin is source_statement)
+- **Assumption dependencies**: <list assumptions this step relies on>
+- **Open gap**: <note if anything is missing or uncertain>
+```
+
+Steps missing `equation` + `justification` + `step_origin` are flagged as
+`non_auditable`. The analysis is NOT ready to advance until ALL derivation steps
+are auditable OR explicitly marked with open_gap notes explaining what is missing.
+
+## Source Anchor Table
+
+When any derivation step references a source (paper, book, lecture), record an entry
+under `## Source Anchor Table`:
+
+```markdown
+| Step | Source | Location | What source says | L3 completed? |
+|------|--------|----------|-------------------|---------------|
+| Step 3 | Redlich (1984) | Eq. (2.17) | $\Delta S_{CS} = ...$ | yes |
+| Step 5 | Witten (2016) | p.12, below Eq. (3.4) | parity transformation rule | no |
+```
+
+This makes it explicit which steps come from sources vs. which are L3-completed.
+
 ## What to do
 
-1. Execute the planned derivation steps.
-2. Record the method used and results so far.
-3. Flag any anomalies or unexpected findings.
-4. Do not finalize claims yet.
+1. Set `round_type` in frontmatter.
+2. Execute the planned derivation steps with step-level discipline.
+3. Record the method used, results so far, and source anchors.
+4. Flag any anomalies or unexpected findings.
+5. For failed routes, use the Failure Route Template below.
+6. Do not finalize claims yet.
+
+## Failure Route Template
+
+When a derivation route fails, record it under `## Failed Routes`:
+
+```markdown
+### <route name>
+- **Why it looked plausible**: <what made this route seem worth trying>
+- **Exact failure point**: <where exactly the reasoning broke down>
+- **Lesson**: <what was learned from the failure>
+- **Revive conditions**: <under what circumstances this route might work>
+```
+
+Failed routes are NOT discarded — they prevent future sessions from repeating dead ends.
 
 ## Post-L4 Return Analysis
 

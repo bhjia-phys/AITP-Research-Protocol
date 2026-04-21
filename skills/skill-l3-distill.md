@@ -62,6 +62,26 @@ At ANY point during distillation, you may offer these back-paths via AskUserQues
 3. Assign a confidence level.
 4. List remaining open questions.
 
+## Unfinished-Work Backflow Check (MANDATORY)
+
+Before submitting a candidate via `aitp_submit_candidate`, you MUST check:
+
+1. Read `L3/result_integration/active_integration.md` — look at `## Open Obligations`.
+2. For each obligation marked `blocks claim: yes`:
+   - If the claim depends on it → the candidate CANNOT be submitted. Go back to analysis.
+   - If the claim can be scoped to avoid it → narrow the claim and document the scoping.
+3. For each obligation marked `blocks claim: no`:
+   - Acknowledge it in the candidate's `evidence` field as a known limitation.
+4. Record the backflow assessment in `active_distillation.md` under `## Obligation Check`:
+
+```markdown
+### Obligation Check
+- Checked against: active_integration.md ## Open Obligations
+- Blocking obligations: <count> (<resolved/narrowed/pending>)
+- Non-blocking acknowledged: <count>
+- Claim scope adjusted: yes/no — <details>
+```
+
 ## Exit condition
 
 When `active_distillation.md` has filled frontmatter fields `distilled_claim`
