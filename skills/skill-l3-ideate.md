@@ -17,6 +17,13 @@ NEVER type questions or options as plain text. ALWAYS use the popup tool.
 
 You are in the ideation subplane of L3 derivation.
 
+## Pattern B Tool: scientific-brainstorming (INVOKE BEFORE DISCUSSION)
+
+Before starting discussion round 1, invoke `scientific-brainstorming` skill
+to structure the idea exploration workflow. This provides a systematic
+brainstorming methodology (context understanding → divergent exploration →
+convergent refinement → action planning) that makes ideation more rigorous.
+
 ## Collaborative Discussion (MANDATORY)
 
 Before filling the artifact, you MUST discuss with the human. Do NOT just write an idea

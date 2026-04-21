@@ -96,7 +96,8 @@ def main():
         return
 
     from brain.state_model import (
-        topics_dir, evaluate_l1_stage, evaluate_l3_stage, get_tool_catalog,
+        topics_dir, evaluate_l1_stage, evaluate_l3_stage,
+        get_tool_catalog, get_pattern_b_instructions,
     )
     td = topics_dir(topics_root)
     root = Path(td) / topic_slug
@@ -117,14 +118,31 @@ def main():
         print(f"AITP: Fill {snapshot.required_artifact_path} before advancing.")
     print(f"AITP: MANDATORY — read and follow skills/{snapshot.skill}.md before continuing.")
 
-    # Progressive-disclosure: short menu of available tools for this stage.
-    # Agent loads full content on demand via Skill tool or ToolSearch.
+    # Progressive-disclosure tool catalog with integration patterns.
+    # Pattern A: load on demand  |  Pattern B: invoke at checkpoint  |  Pattern C: already in skill
     posture_key = snapshot.l3_subplane or snapshot.posture
     catalog = get_tool_catalog(snapshot.stage, posture_key)
     if catalog:
-        print("AITP: Available tools (load on demand with Skill or ToolSearch):")
-        for name, desc in catalog:
-            print(f"  - {name} — {desc}")
+        pattern_a = [(n, d) for n, d, p in catalog if p == "A"]
+        pattern_b = [(n, d) for n, d, p in catalog if p == "B"]
+        pattern_c = [(n, d) for n, d, p in catalog if p == "C"]
+        if pattern_b:
+            print("AITP: INVOKE at checkpoint (Pattern B — load before discussion rounds):")
+            for name, desc in pattern_b:
+                print(f"  - {name} — {desc}")
+        if pattern_a:
+            print("AITP: Available on demand (Pattern A — load with Skill or ToolSearch when needed):")
+            for name, desc in pattern_a:
+                print(f"  - {name} — {desc}")
+        if pattern_c:
+            print("AITP: Already embedded in current skill (Pattern C):")
+            for name, desc in pattern_c:
+                print(f"  - {name} — {desc}")
+
+    # Pattern B explicit invoke instructions
+    b_instructions = get_pattern_b_instructions(snapshot.stage, posture_key)
+    for tool_name, instruction in b_instructions:
+        print(f"AITP: PATTERN-B [{tool_name}]: {instruction}")
 
 
 if __name__ == "__main__":

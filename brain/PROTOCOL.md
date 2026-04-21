@@ -263,3 +263,58 @@ topics_root/
         ├── index.md                 # Topic index
         └── log.md                   # Event log
 ```
+
+## Tool Integration Architecture
+
+External tools (MCP servers, skills) integrate into AITP via three patterns:
+
+### Pattern A — Catalog-only (load on demand)
+
+Tool is listed in the progressive-disclosure catalog for the current stage.
+The agent discovers it from the session-start menu and loads full content
+via `Skill` or `ToolSearch` when needed.
+
+**When to use**: Tool is optional reference; missing it doesn't break results.
+**Examples**: `arxiv-latex-mcp`, `paper-search-mcp`, `ssh-mcp`, `mcp-server-chart`
+
+### Pattern B — Skill reference (invoke at checkpoint)
+
+Tool is listed in the catalog AND the AITP skill file explicitly tells the
+agent to invoke it at a specific checkpoint. The session-start hook prints
+a `PATTERN-B` instruction so the agent knows to load it proactively.
+
+**When to use**: Tool has a workflow that should be followed at specific subplane points.
+**Examples**: `scientific-brainstorming` at L3/ideation, `scientific-writing` at L5/write
+
+**How to add a Pattern B tool**:
+1. Add entry to `TOOL_CATALOG` with pattern `"B"`
+2. Add entry to `PATTERN_B_INSTRUCTIONS` with invoke instruction
+3. Add a reference in the AITP skill file (e.g., `skill-l3-ideate.md`)
+
+### Pattern C — Workflow absorbed (embedded in AITP skill)
+
+Tool's workflow is already part of the AITP skill's mandatory steps.
+The catalog entry is informational only — the agent already follows the
+workflow by reading the AITP skill.
+
+**When to use**: Tool is critical for correctness; missing it would produce wrong results.
+**Examples**: `jupyter-mcp-server` in L4 validation, `knowledge-hub` in L1/L2
+
+### Decision matrix
+
+| Question | A | B | C |
+|----------|---|---|---|
+| Missing this tool breaks results? | No | Might | Yes |
+| Tool has independent use outside AITP? | Yes | Yes | No |
+| Must be used every time? | No | At specific points | Every time |
+
+### Adding new tools
+
+To add a new tool to AITP:
+
+1. **Install** the MCP server or skill
+2. **Classify** using the decision matrix above
+3. **Register** in `TOOL_CATALOG` (in `brain/state_model.py`) with the pattern tag
+4. If Pattern B: also add to `PATTERN_B_INSTRUCTIONS` and update the AITP skill file
+5. If Pattern C: embed the workflow into the AITP skill's mandatory steps
+6. **Test** by starting a new session and verifying the catalog prints correctly
