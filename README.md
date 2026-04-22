@@ -41,11 +41,13 @@ L1 (read/frame) -> L3 (ideation -> planning -> analysis -> integration -> distil
 ## Architecture
 
 ```
-aitp-v2-refactor/
+AITP-Research-Protocol/
   brain/
     mcp_server.py       # FastMCP server — ~25 tools, all prefixed mcp__aitp__aitp_*
     state_model.py      # Stage evaluation, gate logic, artifact templates
     PROTOCOL.md         # Agent-facing operating manual (single source of truth)
+  deploy/
+    templates/          # Agent-specific templates (hooks, skills, configs)
   skills/
     skill-init.md       # First-run workspace setup (AskUserQuestion)
     skill-read.md       # Per-stage skill files loaded by the agent
@@ -55,10 +57,11 @@ aitp-v2-refactor/
     skill-promote.md
     skill-write.md
   scripts/
-    create_topics_from_scattered.py   # Migrate existing research into AITP topics
-    migrate_v0_to_v2.py              # Migrate from v0 kernel format
-  hooks/                              # Claude Code hook examples
-  tests/                              # Test suite
+    aitp-pm.py          # Package manager (install / uninstall / update / upgrade)
+    aitp                # Unix wrapper
+    aitp.cmd            # Windows wrapper
+  hooks/                # Claude Code hook sources
+  tests/                # Test suite
 ```
 
 The MCP server exposes tools like:
@@ -79,56 +82,57 @@ The MCP server exposes tools like:
 - Python 3.10+
 - An MCP-compatible AI agent (Claude Code, Kimi Code, etc.)
 
-### Setup
+### Quick start
 
-1. Clone this repo:
 ```bash
 git clone https://github.com/bhjia-phys/AITP-Research-Protocol.git
 cd AITP-Research-Protocol
+python scripts/aitp-pm.py install
 ```
 
-2. Install dependencies:
+That's it. The package manager will:
+
+1. **Install dependencies** (`fastmcp`, `pyyaml`, `jsonschema`)
+2. **Deploy hooks and skills** to Claude Code (`~/.claude/`)
+3. **Configure MCP server** for Kimi Code (`~/.kimi/`)
+4. **Register the `aitp` command** globally — after this first run, you can use `aitp` from anywhere:
+
 ```bash
-pip install fastmcp pyyaml
+aitp install          # Install all agents (claude-code + kimi-code)
+aitp uninstall        # Remove everything
+aitp update           # Re-sync from repo to deployed locations
+aitp upgrade          # Git pull + re-deploy (one-command update)
+aitp status           # Show install status
+aitp doctor           # Health check
 ```
 
-3. Configure your agent's MCP settings to launch the server:
-```json
-{
-  "mcpServers": {
-    "aitp": {
-      "command": "python",
-      "args": ["D:/path/to/AITP-Research-Protocol/brain/mcp_server.py"]
-    }
-  }
-}
-```
+### First-run topics root
 
-4. Point `topics_root` to where you want research topics stored. On first run in a new workspace, AITP will prompt you to choose a location via AskUserQuestion and save it to `.aitp_config.json`. You can also set the `AITP_TOPICS_ROOT` environment variable for non-interactive setups.
+On first install, AITP asks where to store research topics. You can pre-set this:
 
-### Agent-specific setup
+- **Environment variable**: `AITP_TOPICS_ROOT=/path/to/aitp-topics`
+- **CLI flag**: `python scripts/aitp-pm.py install --topics-root /path/to/aitp-topics`
+
+The choice is saved to `~/.aitp/install-record.json` and reused on subsequent runs.
+
+### Agent-specific notes
 
 #### Claude Code
 
-Add to `settings.json` under `hooks`:
-- `UserPromptSubmit` hook for keyword-based AITP routing
-- `PreToolUse` hook for write-guard on topic files
-- `SessionStart` hook for skill injection
-
-See `hooks/` for ready-made Python hooks.
+The package manager automatically deploys:
+- Hooks: `SessionStart`, `UserPromptSubmit`, `PreToolUse` — keyword routing, write guard, skill injection
+- Skills: `using-aitp`, `aitp-runtime` — loaded by the agent when physics research is detected
+- MCP server entry in settings
 
 #### Kimi Code
 
-Kimi Code supports MCP servers natively. Add the same MCP config to Kimi's settings. The protocol works identically — all routing is done through MCP tool calls.
+Automatically configures:
+- `~/.kimi/mcp.json` — MCP server entry
+- `~/.kimi/config.toml` — `[mcp.servers.aitp]` section
 
 #### Any MCP-compatible agent
 
-The protocol is agent-agnostic. Any client that can:
-1. Connect to an MCP stdio server
-2. Call tools with JSON parameters
-3. Read tool responses
-
-...can drive AITP research end-to-end.
+The protocol is agent-agnostic. Any client that can connect to an MCP stdio server, call tools with JSON parameters, and read responses can drive AITP research end-to-end.
 
 ## Research lanes
 

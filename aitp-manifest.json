@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "package_version": "0.6.0",
+  "description": "AITP Research Protocol — deployable asset index. Edit this file when adding/removing deployable files.",
+
+  "pip_deps": ["fastmcp", "pyyaml", "jsonschema"],
+
+  "template_variables": [
+    "REPO_ROOT",
+    "TOPICS_ROOT",
+    "USER_HOME",
+    "CLAUDE_USER_DIR",
+    "KIMI_USER_DIR"
+  ],
+
+  "template_dir": "deploy/templates/",
+  "hook_sources_dir": "hooks/",
+
+  "claude-code": {
+    "copy_hooks": [
+      {"src": "hooks/session_start.py", "dst": "session-start.py"},
+      {"src": "hooks/compact.py", "dst": "compact.py"},
+      {"src": "hooks/stop.py", "dst": "stop.py"}
+    ],
+    "template_hooks": [
+      {"src": "claude-code/run-hook.cmd", "dst": "run-hook.cmd"},
+      {"src": "claude-code/session-start.sh", "dst": "session-start"},
+      {"src": "claude-code/hooks.json", "dst": "hooks.json"},
+      {"src": "claude-code/aitp-keyword-router.py", "dst": "aitp-keyword-router.py"},
+      {"src": "claude-code/aitp-routing-guard.py", "dst": "aitp-routing-guard.py"}
+    ],
+    "template_skills": [
+      {"src": "claude-code/using-aitp.md", "dst": "using-aitp/SKILL.md"},
+      {"src": "claude-code/aitp-runtime.md", "dst": "aitp-runtime/SKILL.md"},
+      {"src": "claude-code/aitp-mcp-setup.md", "dst": "aitp-runtime/AITP_MCP_SETUP.md"}
+    ],
+    "user_scope_settings_hooks": ["SessionStart", "UserPromptSubmit", "PreToolUse"]
+  },
+
+  "kimi-code": {
+    "mcp_server_name": "aitp",
+    "config_toml_section": "mcp.servers.aitp"
+  }
+}

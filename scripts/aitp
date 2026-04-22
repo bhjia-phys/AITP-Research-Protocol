@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+"""Thin wrapper: `aitp install` / `aitp uninstall` / `aitp update` / `aitp status` / `aitp doctor`."""
+import runpy
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+PM_SCRIPT = REPO_ROOT / "scripts" / "aitp-pm.py"
+
+if not PM_SCRIPT.exists():
+    print(f"ERROR: cannot find {PM_SCRIPT}", file=sys.stderr)
+    sys.exit(1)
+
+sys.argv = [str(PM_SCRIPT)] + sys.argv[1:]
+runpy.run_path(str(PM_SCRIPT), run_name="__main__")
