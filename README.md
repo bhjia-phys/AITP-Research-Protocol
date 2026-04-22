@@ -1,13 +1,20 @@
 <div align="center">
-  <h1>AITP Research Protocol v2</h1>
+  <img src=".github/assets/aitp-mark.svg" width="80" height="80" alt="AITP">
+  <h1>AITP Research Protocol</h1>
   <p><strong>An MCP-based research protocol that turns any AI coding agent into a disciplined theoretical-physics collaborator — keeping evidence separate from conjecture, remembering topics across sessions, and only promoting results to trusted memory after human approval.</strong></p>
+  <p>
+    <a href="#installation">Install</a> ·
+    <a href="brain/PROTOCOL.md">Protocol Manual</a> ·
+    <a href="docs/QUICKSTART.md">Quickstart</a> ·
+    <a href="docs/roadmap.md">Roadmap</a>
+  </p>
 </div>
 
 ---
 
 ## What is AITP
 
-AITP (AI-assisted Theoretical Physics) is a **stage-machine protocol** implemented as an MCP server. Any MCP-compatible agent — Claude Code, Kimi Code, Copilot, or a custom wrapper — can drive theoretical-physics research through it.
+AITP (AI-assisted Theoretical Physics) is a **stage-machine protocol** implemented as an MCP server. Any MCP-compatible agent — Claude Code, Kimi Code, Codex, OpenCode, or a custom wrapper — can drive theoretical-physics research through it.
 
 The protocol enforces:
 
@@ -27,60 +34,111 @@ The protocol enforces:
 ## Protocol stages
 
 ```
-L1 (read/frame) -> L3 (ideation -> planning -> analysis -> integration -> distillation) -> L4 (validate) -> L2 (trusted) -> L5 (write)
+L1 (read/frame) → L3 (ideation → planning → analysis → integration → distillation) → L4 (validate) → L2 (trusted) → L5 (write)
 ```
 
 | Stage | Purpose | Key artifacts |
 |-------|---------|--------------|
 | **L1** | Source acquisition, framing | `source_basis.md`, `question_contract.md`, `convention_snapshot.md` |
-| **L3** | Derivation through 5 subplanes | `active_idea.md`, `active_plan.md`, `active_analysis.md`, etc. |
-| **L4** | Validation and adjudication | `validation_contract.md`, review outcomes (pass/fail/contradiction) |
+| **L3** | Derivation through 5 subplanes | `active_idea.md`, `active_plan.md`, `active_analysis.md`, `active_integration.md`, `active_distillation.md` |
+| **L4** | Validation and adjudication | `validation_contract.md`, review outcomes (pass / fail / contradiction) |
 | **L2** | Promoted trusted knowledge | Global knowledge base, reusable across topics |
-| **L5** | Publication writing | `flow_notebook.tex`, provenance, draft paper |
+| **L5** | Publication writing | `flow_notebook.tex`, provenance files, draft paper |
 
 ## Architecture
 
 ```
 AITP-Research-Protocol/
-  brain/
-    mcp_server.py       # FastMCP server — ~25 tools, all prefixed mcp__aitp__aitp_*
-    state_model.py      # Stage evaluation, gate logic, artifact templates
-    PROTOCOL.md         # Agent-facing operating manual (single source of truth)
-  deploy/
-    templates/          # Agent-specific templates (hooks, skills, configs)
-  skills/
-    skill-init.md       # First-run workspace setup (AskUserQuestion)
-    skill-read.md       # Per-stage skill files loaded by the agent
-    skill-frame.md
-    skill-l3-*.md       # 5 L3 subplane skills
-    skill-validate.md
-    skill-promote.md
-    skill-write.md
-  scripts/
-    aitp-pm.py          # Package manager (install / uninstall / update / upgrade)
-    aitp                # Unix wrapper
-    aitp.cmd            # Windows wrapper
-  hooks/                # Claude Code hook sources
-  tests/                # Test suite
+├── brain/                    # Core protocol engine
+│   ├── mcp_server.py         # FastMCP server — 32 tools, prefixed mcp__aitp__aitp_*
+│   ├── state_model.py        # Stage evaluation, gate logic, artifact templates
+│   └── PROTOCOL.md           # Agent-facing operating manual (single source of truth)
+│
+├── skills/                   # Per-stage skill files loaded by the agent
+│   ├── skill-init.md         # First-run workspace setup
+│   ├── skill-read.md         # L1 reading
+│   ├── skill-frame.md        # L1 framing
+│   ├── skill-l3-*.md         # L3 subplanes (ideate, plan, analyze, integrate, distill)
+│   ├── skill-validate.md     # L4 validation
+│   ├── skill-promote.md      # L2 promotion
+│   ├── skill-write.md        # L5 writing
+│   └── skill-explore.md      # Quick-exploration mode
+│
+├── adapters/                 # Agent-specific integration surfaces
+│   ├── claude-code/          # Claude Code adapter (hooks + skills + MCP)
+│   ├── codex/                # Codex CLI adapter
+│   ├── opencode/             # OpenCode adapter
+│   └── openclaw/             # OpenClaw adapter
+│
+├── deploy/                   # Package manager templates
+│   └── templates/            # Agent-specific deployment templates (hooks, skills, configs)
+│
+├── contracts/                # Human-readable artifact contracts
+│   ├── research-question.md
+│   ├── derivation.md
+│   ├── candidate-claim.md
+│   ├── validation.md
+│   └── promotion-or-reject.md
+│
+├── schemas/                  # JSON Schema definitions for all artifacts
+│   ├── topic-synopsis.schema.json
+│   ├── derivation.schema.json
+│   ├── validation.schema.json
+│   └── ...                   # 16 schemas total
+│
+├── hooks/                    # Claude Code hook source scripts
+│   ├── session_start.py      # SessionStart — skill injection, topic detection
+│   ├── compact.py            # Context compaction handler
+│   └── stop.py               # Session stop handler
+│
+├── scripts/                  # Tooling and migration
+│   ├── aitp-pm.py            # Package manager (install / uninstall / update / upgrade)
+│   ├── aitp                  # Unix CLI wrapper
+│   ├── aitp.cmd              # Windows CLI wrapper
+│   └── migrate_v0_to_v2.py   # Legacy topic migration
+│
+├── templates/                # LaTeX templates
+│   └── flow_notebook.tex     # Derivation trail template for L5
+│
+├── tests/                    # Test suite
+│   ├── test_state_model.py
+│   ├── test_foundation_safety.py
+│   ├── test_l3_subplanes.py
+│   ├── test_l4_l2_memory.py
+│   ├── test_l5_e2e.py
+│   └── test_e2e_scenario_a.py
+│
+├── research/                 # Research data (git-ignored by default)
+│   └── knowledge-hub/        # L2 knowledge base
+│
+└── docs/                     # Documentation
+    ├── INSTALL.md            # Consolidated install index
+    ├── QUICKSTART.md         # 5-minute quickstart
+    ├── AITP_SPEC.md          # Protocol specification
+    ├── CHARTER.md            # Project charter
+    └── roadmap.md            # Development roadmap
 ```
 
-The MCP server exposes tools like:
+## MCP tools (32)
 
-- `aitp_bootstrap_topic` — create a new research topic
-- `aitp_get_execution_brief` — check current stage, gate status, and what to do next
-- `aitp_list_topics` — list all topics with metadata
-- `aitp_advance_to_l3` / `aitp_advance_l3_subplane` — stage transitions
-- `aitp_register_source` / `aitp_ingest_knowledge` — source management
-- `aitp_submit_candidate` / `aitp_create_validation_contract` / `aitp_submit_l4_review` — validation flow
-- `aitp_request_promotion` / `aitp_promote_candidate` — human-gated L2 promotion
-- `aitp_advance_to_l5` — writing pipeline (flow notebook generated by agent during L3 distillation)
+The MCP server exposes 32 tools organized by function:
+
+| Category | Tools |
+|----------|-------|
+| **Topic lifecycle** | `bootstrap_topic`, `list_topics`, `get_status`, `update_status`, `archive_topic`, `restore_topic`, `fork_topic` |
+| **L1 reading & framing** | `register_source`, `list_sources`, `session_resume` |
+| **L3 derivation** | `advance_to_l3`, `advance_l3_subplane`, `retreat_to_l1`, `record_derivation`, `switch_lane` |
+| **L3 → L4 validation** | `submit_candidate`, `list_candidates`, `create_validation_contract`, `submit_l4_review`, `return_to_l3_from_l4` |
+| **L2 knowledge** | `request_promotion`, `resolve_promotion_gate`, `promote_candidate`, `query_l2`, `ingest_knowledge`, `query_knowledge`, `lint_knowledge`, `writeback_query_result` |
+| **L5 writing** | `advance_to_l5`, `return_from_l5` |
+| **Agent guidance** | `get_execution_brief`, `get_skill_context` |
 
 ## Installation
 
 ### Prerequisites
 
 - Python 3.10+
-- An MCP-compatible AI agent (Claude Code, Kimi Code, etc.)
+- An MCP-compatible AI agent (Claude Code, Kimi Code, Codex, OpenCode, etc.)
 
 ### Quick start
 
@@ -92,10 +150,9 @@ python scripts/aitp-pm.py install
 
 That's it. The package manager will:
 
-1. **Install dependencies** (`fastmcp`, `pyyaml`, `jsonschema`)
-2. **Deploy hooks and skills** to Claude Code (`~/.claude/`)
-3. **Configure MCP server** for Kimi Code (`~/.kimi/`)
-4. **Register the `aitp` command** globally — after this first run, you can use `aitp` from anywhere:
+1. **Deploy hooks and skills** to Claude Code (`~/.claude/`)
+2. **Configure MCP server** for Kimi Code (`~/.kimi/`)
+3. **Register the `aitp` command** globally — after this first run, you can use `aitp` from anywhere:
 
 ```bash
 aitp install          # Install all agents (claude-code + kimi-code)
@@ -115,24 +172,15 @@ On first install, AITP asks where to store research topics. You can pre-set this
 
 The choice is saved to `~/.aitp/install-record.json` and reused on subsequent runs.
 
-### Agent-specific notes
+### Supported agents
 
-#### Claude Code
-
-The package manager automatically deploys:
-- Hooks: `SessionStart`, `UserPromptSubmit`, `PreToolUse` — keyword routing, write guard, skill injection
-- Skills: `using-aitp`, `aitp-runtime` — loaded by the agent when physics research is detected
-- MCP server entry in settings
-
-#### Kimi Code
-
-Automatically configures:
-- `~/.kimi/mcp.json` — MCP server entry
-- `~/.kimi/config.toml` — `[mcp.servers.aitp]` section
-
-#### Any MCP-compatible agent
-
-The protocol is agent-agnostic. Any client that can connect to an MCP stdio server, call tools with JSON parameters, and read responses can drive AITP research end-to-end.
+| Agent | Install method | What gets deployed |
+|-------|---------------|-------------------|
+| **Claude Code** | `aitp install` | Hooks (SessionStart, UserPromptSubmit, PreToolUse), skills (using-aitp, aitp-runtime), MCP server in settings.json |
+| **Kimi Code** | `aitp install` | `~/.kimi/mcp.json` + `~/.kimi/config.toml` [mcp.servers.aitp] |
+| **Codex CLI** | See `adapters/codex/` | Skill file integration |
+| **OpenCode** | See `adapters/opencode/` | MCP + skill integration |
+| **Any MCP agent** | Manual | Connect to `brain/mcp_server.py` via stdio |
 
 ## Research lanes
 
@@ -145,12 +193,16 @@ The protocol is agent-agnostic. Any client that can connect to an MCP stdio serv
 ## Topic file structure
 
 ```
-<workspace>/                          # Your project directory
-  .aitp_config.json                  # Workspace config (topics_root, created on first run)
-  topics/<topic-slug>/               # Research topics directory
+<topics_root>/
+  <topic-slug>/
     state.md                         # YAML frontmatter: stage, posture, lane, subplane
     L0/sources/                      # Registered source metadata
-    L1/                              # source_basis, question_contract, conventions, anchors, contradictions
+    L1/
+      source_basis.md
+      question_contract.md
+      convention_snapshot.md
+      anchors.md
+      contradictions.md
     L3/
       ideation/active_idea.md
       planning/active_plan.md
@@ -163,7 +215,9 @@ The protocol is agent-agnostic. Any client that can connect to an MCP stdio serv
       validation_contract.md
       reviews/
     L5_writing/
-      outline.md, provenance/, draft/
+      outline.md
+      provenance/
+      draft/
     runtime/                         # Execution state
 ```
 
@@ -179,8 +233,14 @@ The protocol is agent-agnostic. Any client that can connect to an MCP stdio serv
 
 MIT License — see [LICENSE](LICENSE) file for details.
 
-## Read Next
+## Documentation
 
-- [brain/PROTOCOL.md](brain/PROTOCOL.md) — full agent-facing operating manual
-- [brain/mcp_server.py](brain/mcp_server.py) — MCP tool implementations
-- [brain/state_model.py](brain/state_model.py) — gate logic and stage evaluation
+| Document | Description |
+|----------|-------------|
+| [brain/PROTOCOL.md](brain/PROTOCOL.md) | Full agent-facing operating manual |
+| [docs/AITP_SPEC.md](docs/AITP_SPEC.md) | Protocol specification |
+| [docs/QUICKSTART.md](docs/QUICKSTART.md) | 5-minute quickstart guide |
+| [docs/INSTALL.md](docs/INSTALL.md) | Consolidated install index |
+| [docs/CHARTER.md](docs/CHARTER.md) | Project charter and principles |
+| [docs/roadmap.md](docs/roadmap.md) | Development roadmap |
+| [docs/design-principles.md](docs/design-principles.md) | Design principles |
