@@ -17,8 +17,8 @@ access to the AITP MCP tools.
 The protocol is a **stage machine** with orthogonal posture and lane:
 
 ```
-Stage:    L1 (includes L0 source registration) → L3 → L4 → L3 → L4 → ... → L2 → L5
-Posture:  read | frame | derive | verify | distill | write
+Stage:    L0 (discover) → L1 (read → frame) → L3 → L4 → L3 → L4 → ... → L2 → L5
+Posture:  discover | read | frame | derive | verify | distill | write
 Lane:     formal_theory | toy_numeric | code_method
 ```
 
@@ -35,9 +35,12 @@ advancing.
 | Tool | Stage | When |
 |------|-------|------|
 | `aitp_bootstrap_topic` | — | First action for a new topic |
-| `aitp_register_source` | L1 | Register each source (paper, book, dataset) |
+| `aitp_register_source` | L0 | Register each source (paper, dataset, code, book, experiment, etc.) |
+| `aitp_advance_to_l1` | L0→L1 | After L0 source registry passes gate |
+| `aitp_advance_to_l3` | L1→L3 | After all L1 artifacts pass gate |
 | `aitp_ingest_knowledge` | L1 | Fill L1 artifacts from source content |
 | `aitp_get_execution_brief` | any | **Always call this first** to check gate status |
+| `aitp_retreat_to_l0` | L1/L3→L0 | Return to L0 when sources are insufficient |
 | `aitp_session_resume` | any | **After session break** — get resumption context and recent activity |
 | `aitp_advance_to_l3` | L1→L3 | After all L1 artifacts pass gate |
 | `aitp_advance_l3_subplane` | L3 | Move between subplanes (respect allowed transitions) |
@@ -63,19 +66,36 @@ advancing.
 
 ## End-to-End Flow
 
-### Phase 1: Bootstrap (stage = L1, posture = read)
+### Phase 0: Bootstrap + Source Discovery (stage = L0, posture = discover)
 
 ```
 1. aitp_bootstrap_topic(topics_root, topic_slug, title, question, lane)
-   → Creates directory structure, state.md, L1 artifact scaffolds
+   → Creates directory structure, state.md, L0 and L1 artifact scaffolds
+   → Initial stage is L0
 
 2. aitp_register_source(topics_root, topic_slug, source_id, ...)
    → One call per source. Creates L0/sources/<id>.md
+   → Source types: paper, preprint, book, dataset, code, experiment, simulation, lecture_notes, reference
 
-3. aitp_ingest_knowledge(topics_root, topic_slug, source_id, ...)
+3. Fill L0/source_registry.md:
+   - Search Methodology — where you looked, what queries
+   - Source Inventory — grouped by type
+   - Coverage Assessment — what is covered, what is missing
+   - Set source_count (frontmatter) to match registered sources
+   - Set search_status (frontmatter) to: initial | focused | comprehensive | exhausted
+
+4. aitp_advance_to_l1(topics_root, topic_slug)
+   → Transitions from L0 to L1 (reading and framing)
+   → Requires: source_registry.md filled + at least one registered source
+```
+
+### Phase 1: Reading and Framing (stage = L1, posture = read → frame)
+
+```
+5. aitp_ingest_knowledge(topics_root, topic_slug, source_id, ...)
    → Updates L1 artifacts from source content
 
-4. aitp_get_execution_brief(topics_root, topic_slug)
+6. aitp_get_execution_brief(topics_root, topic_slug)
    → Check gate_status. If "ready", proceed to Phase 2.
    → If "blocked_missing_field", edit the flagged artifact.
    → If "blocked_missing_artifact", create the missing file.
@@ -91,10 +111,10 @@ L1 requires 5 filled artifacts:
 ### Phase 2: L3 Derivation (stage = L3, posture = derive)
 
 ```
-5. aitp_advance_to_l3(topics_root, topic_slug)
+8. aitp_advance_to_l3(topics_root, topic_slug)
    → Sets stage=L3, l3_subplane=ideation
 
-6. Walk subplanes in order: ideation → planning → analysis
+9. Walk subplanes in order: ideation → planning → analysis
    → result_integration → distillation
 
    For each subplane:
@@ -104,8 +124,8 @@ L1 requires 5 filled artifacts:
       Only forward transitions are allowed (see table below).
       Back-edges exist for revision (analysis→planning, etc.)
 
-7. aitp_submit_candidate(topics_root, topic_slug, candidate_id, claim, evidence)
-   → After distillation is complete. Creates L3/candidates/<id>.md
+10. aitp_submit_candidate(topics_root, topic_slug, candidate_id, claim, evidence)
+    → After distillation is complete. Creates L3/candidates/<id>.md
 ```
 
 Allowed L3 transitions:
@@ -120,14 +140,14 @@ distillation   → result_integration
 ### Phase 3: L4 Validation (stage = L4, posture = verify)
 
 ```
-8.  aitp_create_validation_contract(topics_root, topic_slug, candidate_id,
+11. aitp_create_validation_contract(topics_root, topic_slug, candidate_id,
       mandatory_checks=["dimensional_consistency", ...])
     → Defines what must be checked.
 
-9.  Write validation scripts (L4/scripts/) and execute on target machine.
+12. Write validation scripts (L4/scripts/) and execute on target machine.
     Every data point must have provenance: script path, execution timestamp, method.
 
-10. aitp_submit_l4_review(topics_root, topic_slug, candidate_id,
+13. aitp_submit_l4_review(topics_root, topic_slug, candidate_id,
       outcome, notes, check_results={...}, evidence_scripts=[...],
       evidence_outputs=[...], data_provenance=[...])
     → outcome ∈ {pass, partial_pass, fail, contradiction, stuck, timeout}
@@ -144,20 +164,20 @@ distillation   → result_integration
 
 **L4 non-pass outcomes** trigger a popup gate with options:
 - `fail` → return to L3 for revision
-- `contradiction` → may require retreat to L1 or flag L2 conflict
+- `contradiction` → may require retreat to L1/L0 or flag L2 conflict
 - `stuck`/`timeout` → human decides: retry, switch lane, or archive
 
 ### Phase 3b: L4→L3 Return Loop (stage = L3, posture = derive)
 
 ```
-11. aitp_return_to_l3_from_l4(topics_root, topic_slug, reason="post_l4_analysis")
+14. aitp_return_to_l3_from_l4(topics_root, topic_slug, reason="post_l4_analysis")
     → Returns to L3 analysis subplane
 
-12. Analyze L4 findings in L3/analysis/active_analysis.md
+15. Analyze L4 findings in L3/analysis/active_analysis.md
     → What passed conclusively? What had caveats? What remains open?
     → Update flow_notebook.tex with L4 results
 
-13. Ask the human (MANDATORY):
+16. Ask the human (MANDATORY):
     - "Persist and advance" → proceed to promotion/L5
     - "Continue iterating" → new L3 cycle (plan → analyze → integrate → distill → L4)
     - "Revise scope" → narrow/adjust the claim
@@ -174,10 +194,10 @@ Physics check fields:
 ### Phase 4: Promotion to Global L2
 
 ```
-14. Agent generates L3/tex/flow_notebook.tex during L3 distillation
+17. Agent generates L3/tex/flow_notebook.tex during L3 distillation
     (Markdown→LaTeX conversion and PDF compilation per skill-l3-distill)
 
-15. Request → resolve → promote:
+18. Request → resolve → promote:
     aitp_request_promotion(topics_root, topic_slug, candidate_id)
     aitp_resolve_promotion_gate(topics_root, topic_slug, candidate_id, "approve")
     aitp_promote_candidate(topics_root, topic_slug, candidate_id)
@@ -194,7 +214,7 @@ Physics check fields:
 ### Phase 5: L5 Writing (stage = L5, posture = write)
 
 ```
-16. aitp_advance_to_l5(topics_root, topic_slug)
+19. aitp_advance_to_l5(topics_root, topic_slug)
     → BLOCKED if flow_notebook.tex does not exist.
     → Creates L5_writing/ provenance scaffolds:
       - outline.md
@@ -288,6 +308,7 @@ while topic is not complete:
 
     if brief.gate_status == "ready":
         Match on brief.stage:
+            "L0" → Register sources, fill source_registry.md, advance to L1
             "L1" → Fill remaining L1 artifacts or advance to L3
             "L3" → Work on active subplane artifact, then advance
             "L4" → Validate candidate with code/analysis, submit review,
@@ -330,7 +351,9 @@ topics_root/
 │
 └── topics/<slug>/
     ├── state.md                     # Core state machine
-    ├── L0/sources/*.md              # Registered sources
+    ├── L0/
+    │   ├── source_registry.md       # Source discovery inventory and coverage
+    │   └── sources/*.md             # Registered sources (papers, datasets, code, etc.)
     ├── L1/                          # Framing artifacts (5 files)
     ├── L3/
     │   ├── <subplane>/active_*.md   # Subplane artifacts

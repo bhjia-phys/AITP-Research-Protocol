@@ -163,7 +163,18 @@ def stop_for_topic(topics_root: str) -> None:
     _atomic_write_text(log_path, log_text + f"- {now} session ended\n")
 
 
+def _hooks_disabled(workspace: str) -> bool:
+    """Check if hooks are explicitly disabled via env var or config."""
+    if os.environ.get("AITP_HOOKS", "").lower() in ("off", "0", "false", "no"):
+        return True
+    config = _read_aitp_config(workspace)
+    return not config.get("hooks_enabled", True)
+
+
 def main():
+    workspace = _find_workspace_root()
+    if _hooks_disabled(workspace):
+        return
     topics_root = _find_topics_root()
     if not topics_root:
         return

@@ -15,7 +15,7 @@ The public Claude Code path is now SessionStart-first:
 
 During Claude Code topic work:
 
-1. if the idea is vague, run the clarification sub-protocol before normal `L0-L4` execution;
+1. if the idea is vague, run the clarification sub-protocol before normal `L0→L1→L3→L4→L2→L5` execution;
 2. clarification rounds target `scope`, `assumptions`, and `target_claims`, with at most 3 rounds and 1-3 questions per round;
 3. non-trivial checkpoints should become decision points and later decision traces, not only chat prose;
 4. session summaries should be written back as chronicles so operator questions can be answered from runtime state;

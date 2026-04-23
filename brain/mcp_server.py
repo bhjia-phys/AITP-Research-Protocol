@@ -29,8 +29,10 @@ from brain.state_model import (
     topic_root as resolve_topic_root,
     topics_dir,
     validate_topic_slug,
+    evaluate_l0_stage,
     evaluate_l1_stage,
     evaluate_l3_stage,
+    L0_ARTIFACT_TEMPLATES,
     L1_ARTIFACT_TEMPLATES,
     L3_ARTIFACT_TEMPLATES,
     L3_ACTIVE_ARTIFACT_NAMES,
@@ -257,7 +259,7 @@ def aitp_bootstrap_topic(
     question: str,
     lane: str = "unspecified",
 ) -> str:
-    """Create a new topic directory structure with state.md and L1 scaffolds."""
+    """Create a new topic directory structure with state.md and L0/L1 scaffolds."""
     safe_slug = validate_topic_slug(topic_slug)
     base = topics_dir(topics_root)
     root = base / safe_slug
@@ -270,6 +272,9 @@ def aitp_bootstrap_topic(
         "L5_writing/figures", "L5_writing/tables", "runtime",
     ]:
         (root / sub).mkdir(parents=True)
+    # Write L0 artifact scaffolds
+    for rel_name, (artifact_fm, artifact_body) in L0_ARTIFACT_TEMPLATES.items():
+        _write_md(root / "L0" / rel_name, artifact_fm, artifact_body)
     # Write L1 artifact scaffolds
     for rel_name, (artifact_fm, artifact_body) in L1_ARTIFACT_TEMPLATES.items():
         _write_md(root / "L1" / rel_name, artifact_fm, artifact_body)
@@ -278,7 +283,8 @@ def aitp_bootstrap_topic(
         "topic_slug": safe_slug, "kind": "topic_index", "created_at": _now(),
     }, (
         f"# Topic Index: {title}\n\n"
-        "## Source Basis\n- L0/sources/\n- L1/source_basis.md\n\n"
+        "## Source Discovery\n- L0/sources/\n- L0/source_registry.md\n\n"
+        "## Source Basis\n- L1/source_basis.md\n\n"
         "## Research Notebook\n- L3/ subplane active artifacts\n\n"
         "## Validation\n- L4/reviews/\n\n"
         "## Reusable Results\n- global L2/ (cross-topic)\n\n"
@@ -307,15 +313,18 @@ def aitp_bootstrap_topic(
         "title": title,
         "status": "new",
         "mode": "explore",
-        "layer": "L1",
-        "stage": "L1",
-        "posture": "read",
+        "layer": "L0",
+        "stage": "L0",
+        "posture": "discover",
         "lane": lane,
         "gate_status": "blocked_missing_field",
         "created_at": _now(),
         "updated_at": _now(),
         "sources_count": 0,
         "candidates_count": 0,
+        "l4_cycle_count": 0,
+        "research_loop_active": False,
+        "research_loop_max_cycles": 0,
     }
     body = f"# {title}\n\n## Research Question\n{question}\n"
     _write_md(root / "state.md", fm, body)
@@ -349,6 +358,12 @@ def aitp_register_source(
     }
     body = f"# {title or source_id}\n\n{notes}\n" if notes else f"# {title or source_id}\n"
     _write_md(path, fm, body)
+    # Update sources_count in state.md
+    state_path = root / "state.md"
+    sfm, sbody = _parse_md(state_path)
+    sfm["sources_count"] = int(sfm.get("sources_count", 0)) + 1
+    sfm["updated_at"] = _now()
+    _write_md(state_path, sfm, sbody)
     return f"Registered source {slug}"
 
 
@@ -653,7 +668,7 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
     """Return a stage/posture execution brief with gate status and missing requirements."""
     root = _topic_root(topics_root, topic_slug)
     fm, _ = _parse_md(root / "state.md")
-    stage = str(fm.get("stage", "L1"))
+    stage = str(fm.get("stage", "L0"))
 
     if stage == "L3":
         snapshot = evaluate_l3_stage(_parse_md, root, lane=fm.get("lane", "unspecified"))
@@ -674,6 +689,28 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
                 else [f"advance from {snapshot.l3_subplane}"]
             ),
             "immediate_blocked_work": ["L4 validation", "L2 promotion"],
+            "_agent_behavior_reminder": _AGENT_BEHAVIOR_REMINDER,
+        }
+
+    if stage == "L0":
+        snapshot = evaluate_l0_stage(_parse_md, root, lane=fm.get("lane", "unspecified"))
+        return {
+            "topic_slug": topic_slug,
+            "stage": snapshot.stage,
+            "posture": snapshot.posture,
+            "lane": snapshot.lane,
+            "gate_status": snapshot.gate_status,
+            "required_artifact_path": snapshot.required_artifact_path,
+            "missing_requirements": snapshot.missing_requirements,
+            "next_allowed_transition": snapshot.next_allowed_transition,
+            "skill": snapshot.skill,
+            "l3_subplane": snapshot.l3_subplane,
+            "immediate_allowed_work": (
+                [f"edit {snapshot.required_artifact_path}"]
+                if snapshot.required_artifact_path
+                else ["advance to L1 (reading and framing)"]
+            ),
+            "immediate_blocked_work": ["L1 framing", "L3 derivation", "L4 validation", "L2 promotion"],
             "_agent_behavior_reminder": _AGENT_BEHAVIOR_REMINDER,
         }
 
@@ -722,9 +759,11 @@ def aitp_session_resume(
         recent_events = lines[-10:]
 
     # Get execution brief inline
-    stage = str(fm.get("stage", "L1"))
+    stage = str(fm.get("stage", "L0"))
     if stage == "L3":
         snapshot = evaluate_l3_stage(_parse_md, root, lane=fm.get("lane", "unspecified"))
+    elif stage == "L0":
+        snapshot = evaluate_l0_stage(_parse_md, root, lane=fm.get("lane", "unspecified"))
     else:
         snapshot = evaluate_l1_stage(_parse_md, root, lane=fm.get("lane", "unspecified"))
 
@@ -757,6 +796,75 @@ def aitp_session_resume(
             f"from where the last session left off."
         ),
     }
+
+
+# ---------------------------------------------------------------------------
+# L0 <-> L1 transition tools
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def aitp_advance_to_l1(topics_root: str, topic_slug: str) -> dict[str, Any]:
+    """Transition a topic from L0 (discover, ready) to L1 (read). Returns popup gate."""
+    root = _topic_root(topics_root, topic_slug)
+    l0_snapshot = evaluate_l0_stage(_parse_md, root)
+    if l0_snapshot.gate_status != "ready":
+        return _GateResult({"message": f"L0 gate is not ready (status: {l0_snapshot.gate_status}). Register sources and fill source_registry.md first."})
+
+    state_path = root / "state.md"
+    fm, body = _parse_md(state_path)
+    fm["stage"] = "L1"
+    fm["posture"] = "read"
+    fm["layer"] = "L1"
+    fm["updated_at"] = _now()
+    _write_md(state_path, fm, body)
+    _append_to_topic_log(root, "advanced from L0 to L1")
+    return _GateResult({
+        "message": "Advanced to L1 (reading and framing). Begin reading registered sources and filling L1 artifacts.",
+        "popup_gate": {
+            "question": "Source discovery complete. Begin reading and framing?",
+            "header": "L0->L1",
+            "options": [
+                {"label": "Start reading", "description": "Proceed to L1. Read registered sources and fill source_basis.md."},
+                {"label": "Register more sources", "description": "Go back and add more sources to L0 before reading."},
+            ],
+        },
+    })
+
+
+@mcp.tool()
+def aitp_retreat_to_l0(topics_root: str, topic_slug: str, reason: str = "") -> _GateResult:
+    """Retreat from L1 back to L0 for more source discovery. L1 work is preserved.
+
+    Use when reading reveals missing sources, wrong coverage, or need for additional materials.
+    """
+    root = _topic_root(topics_root, topic_slug)
+    state_path = root / "state.md"
+    fm, body = _parse_md(state_path)
+    current_stage = fm.get("stage", "L0")
+    if current_stage not in ("L1", "L3"):
+        return _GateResult({"message": f"Cannot retreat to L0: topic is at {current_stage}."})
+
+    fm["stage"] = "L0"
+    fm["posture"] = "discover"
+    fm["layer"] = "L0"
+    fm["retreated_from"] = current_stage
+    fm["retreat_reason"] = reason
+    fm["updated_at"] = _now()
+    _write_md(state_path, fm, body)
+    _append_to_topic_log(root, f"retreated from {current_stage} to L0: {reason}")
+    return _GateResult({
+        "message": f"Retreated to L0 from {current_stage}. All artifacts preserved. Register more sources or update the registry.",
+        "popup_gate": {
+            "question": "Retreated to L0 for more source discovery. What do you need to do?",
+            "header": f"{current_stage}→L0",
+            "options": [
+                {"label": "Register sources", "description": "Add new sources (papers, datasets, code, etc.) to L0/sources/."},
+                {"label": "Update registry", "description": "Edit L0/source_registry.md with new search methodology or coverage assessment."},
+                {"label": "Go back", "description": f"Return to {current_stage} without changes (used register_source separately)."},
+            ],
+        },
+    })
 
 
 # ---------------------------------------------------------------------------
@@ -965,6 +1073,10 @@ def aitp_submit_l4_review(
             }
 
     (root / "L4" / "reviews").mkdir(parents=True, exist_ok=True)
+    cycle = int(state_fm.get("l4_cycle_count", 0)) + 1
+    # Versioned review: cand-1_v1.md, cand-1_v2.md, etc. Also overwrite latest.
+    version_tag = f"_v{cycle}"
+    review_path_versioned = root / "L4" / "reviews" / f"{slug}{version_tag}.md"
     review_path = root / "L4" / "reviews" / f"{slug}.md"
 
     fm = {
@@ -972,6 +1084,7 @@ def aitp_submit_l4_review(
         "stage": "L4",
         "candidate_id": slug,
         "outcome": outcome,
+        "l4_cycle": cycle,
         "reviewed_at": _now(),
     }
     if check_results:
@@ -1013,7 +1126,8 @@ def aitp_submit_l4_review(
             )
 
     _write_md(review_path, fm, body)
-    _append_to_topic_log(root, f"L4 review: {slug} -> {outcome}")
+    _write_md(review_path_versioned, fm, body)  # Preserve history across cycles
+    _append_to_topic_log(root, f"L4 review (cycle {cycle}): {slug} -> {outcome}")
 
     # Update candidate status based on L4 outcome
     cand_path = root / "L3" / "candidates" / f"{slug}.md"
@@ -1030,8 +1144,17 @@ def aitp_submit_l4_review(
             cand_fm["l4_notes"] = notes
         _write_md(cand_path, cand_fm, cand_body)
 
-    result: dict[str, Any] = {"message": f"L4 review submitted for {slug}: {outcome}."}
-    if outcome != "pass":
+    result: dict[str, Any] = {"message": f"L4 review submitted for {slug}: {outcome} (cycle {cycle})."}
+    result["l4_cycle"] = cycle
+
+    loop_active = state_fm.get("research_loop_active", False)
+    stop_on_pass = state_fm.get("research_loop_stop_on_pass", True)
+
+    if outcome == "pass" and loop_active and stop_on_pass:
+        result["message"] += " Loop auto-stopping on pass. Call aitp_stop_research_loop to finalize."
+        result["loop_auto_stop"] = True
+
+    if outcome != "pass" and not loop_active:
         result["popup_gate"] = {
             "question": f"L4 review outcome was '{outcome}' (not pass). How to proceed?",
             "header": "L4 Review",
@@ -1041,6 +1164,8 @@ def aitp_submit_l4_review(
                 {"label": "Abandon candidate", "description": "Discard this candidate and try a different approach."},
             ],
         }
+    elif outcome != "pass" and loop_active:
+        result["message"] += "\nLoop active: proceed to aitp_return_to_l3_from_l4 autonomously."
     return _GateResult(result)
 
 
@@ -1050,11 +1175,10 @@ def aitp_return_to_l3_from_l4(
     topic_slug: str,
     reason: str = "post_l4_analysis",
 ) -> dict[str, Any]:
-    """After L4 pass, return to L3 for post-validation analysis. Mandatory step.
+    """After L4 review, return to L3 for post-validation analysis or revision.
 
-    L4 pass does NOT advance to L5 directly. It returns to L3 analysis so the
-    agent can: (1) analyze validation findings, (2) update flow_notebook.tex,
-    (3) ask the human whether to persist, continue iterating, or advance.
+    Increments the L4 cycle counter. In research loop mode, returns autonomous
+    instructions instead of asking the human.
 
     reason: why returning (post_l4_analysis | post_l4_revision | post_l4_extension)
     """
@@ -1066,23 +1190,223 @@ def aitp_return_to_l3_from_l4(
     if current_stage not in ("L3", "L4"):
         return _GateResult({"message": f"Cannot return to L3: topic is at {current_stage}."})
 
+    cycle = int(fm.get("l4_cycle_count", 0)) + 1
+    loop_active = fm.get("research_loop_active", False)
+    max_cycles = int(fm.get("research_loop_max_cycles", 0))
+
     fm["stage"] = "L3"
     fm["posture"] = "derive"
     fm["l3_subplane"] = "analysis"
     fm["l4_return_reason"] = reason
+    fm["l4_cycle_count"] = cycle
     fm["updated_at"] = _now()
     _write_md(state_path, fm, body)
-    _append_to_topic_log(root, f"returned from L4 to L3 analysis: {reason}")
+    _append_to_topic_log(root, f"returned from L4 to L3 analysis (cycle {cycle}): {reason}")
 
-    return _GateResult({
-        "message": (
-            f"Returned to L3 analysis from L4. You MUST:\n"
+    cand_id = fm.get("candidate_id", "")
+    latest_outcome = ""
+    if cand_id:
+        rev_path = root / "L4" / "reviews" / f"{cand_id}_v{cycle}.md"
+        if rev_path.exists():
+            rev_fm, _ = _parse_md(rev_path)
+            latest_outcome = rev_fm.get("outcome", "")
+
+    if loop_active and cycle < max_cycles:
+        msg = (
+            f"L3-L4 loop cycle {cycle}/{max_cycles}. Last outcome: {latest_outcome or 'unknown'}.\n\n"
+            f"AUTONOMOUS MODE - proceed without human interaction:\n"
+            f"1. Read L4/reviews/{cand_id}_v{cycle}.md for detailed findings\n"
+            f"2. Revise analysis in L3/analysis/active_analysis.md based on L4 feedback\n"
+            f"3. Advance through subplanes: analysis -> result_integration -> distillation\n"
+            f"4. Re-submit candidate with revised claim\n"
+            f"5. Create new validation contract and submit L4 review\n"
+            f"6. If pass: call aitp_stop_research_loop then proceed\n"
+            f"7. If not pass: repeat from step 2"
+        )
+    elif loop_active and cycle >= max_cycles:
+        fm2, body2 = _parse_md(state_path)
+        fm2["research_loop_active"] = False
+        _write_md(state_path, fm2, body2)
+        loop_active = False
+        msg = (
+            f"Research loop completed: {cycle} cycles reached (max={max_cycles}). "
+            f"Last outcome: {latest_outcome}. Loop stopped. Ask human for direction."
+        )
+    else:
+        msg = (
+            f"Returned to L3 analysis from L4 (cycle {cycle}). You MUST:\n"
             f"1. Analyze the L4 validation results\n"
             f"2. Update flow_notebook.tex with L4 findings\n"
             f"3. Ask the human: persist/advance or continue iterating?\n"
-            f"4. If iterating: plan → analyze → integrate → distill → L4 again"
+            f"4. If iterating: analysis -> result_integration -> distillation -> L4 again"
+        )
+
+    return _GateResult({"message": msg, "l4_cycle": cycle, "loop_active": loop_active})
+
+
+# ---------------------------------------------------------------------------
+# Research loop (autonomous L3-L4 iteration)
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def aitp_start_research_loop(
+    topics_root: str,
+    topic_slug: str,
+    max_cycles: int = 5,
+    stop_on_pass: bool = True,
+    candidate_id: str = "",
+) -> dict[str, Any]:
+    """Start an autonomous L3-L4 research loop.
+
+    Once active, the agent should iterate L3 (derive) -> L4 (validate) -> L3 (revise)
+    without asking the human for permission at each step. The loop tracks cycle count
+    and preserves full review history.
+
+    The loop auto-stops when:
+    - L4 review outcome is 'pass' (if stop_on_pass=True)
+    - max_cycles reached
+    - aitp_stop_research_loop is called
+
+    max_cycles: maximum L3-L4 iterations before forcing a stop (default 5)
+    stop_on_pass: automatically stop the loop when L4 passes (default True)
+    candidate_id: the candidate to iterate on (recorded in state for tracking)
+    """
+    root = _topic_root(topics_root, topic_slug)
+    state_path = root / "state.md"
+    fm, body = _parse_md(state_path)
+
+    current_stage = fm.get("stage", "")
+    if current_stage not in ("L3", "L4"):
+        return _GateResult({
+            "message": f"Cannot start research loop: topic is at {current_stage}. Must be at L3 or L4.",
+        })
+
+    fm["research_loop_active"] = True
+    fm["research_loop_max_cycles"] = max_cycles
+    fm["research_loop_stop_on_pass"] = stop_on_pass
+    fm["research_loop_started_at"] = _now()
+    if candidate_id:
+        fm["candidate_id"] = candidate_id
+    fm["updated_at"] = _now()
+    _write_md(state_path, fm, body)
+    _append_to_topic_log(root, f"research loop started: max_cycles={max_cycles}, stop_on_pass={stop_on_pass}")
+
+    cand_id = candidate_id or fm.get("candidate_id", "")
+    return _GateResult({
+        "message": (
+            f"Research loop active. Max {max_cycles} cycles. "
+            f"{'Will auto-stop on L4 pass.' if stop_on_pass else 'Will continue even on L4 pass.'}\n\n"
+            f"The agent should now iterate autonomously:\n"
+            f"1. At L3/analysis: revise based on latest L4 review\n"
+            f"2. Advance through subplanes: analysis -> result_integration -> distillation\n"
+            f"3. Submit candidate: aitp_submit_candidate\n"
+            f"4. Validate: aitp_create_validation_contract + aitp_submit_l4_review\n"
+            f"5. Return to L3: aitp_return_to_l3_from_l4\n"
+            f"6. Repeat until pass or max cycles\n"
+            f"7. When done: aitp_stop_research_loop\n\n"
+            f"Review history is preserved: L4/reviews/{cand_id}_vN.md for each cycle."
         ),
+        "loop_active": True,
+        "max_cycles": max_cycles,
     })
+
+
+@mcp.tool()
+def aitp_stop_research_loop(
+    topics_root: str,
+    topic_slug: str,
+    reason: str = "",
+) -> dict[str, Any]:
+    """Stop the autonomous research loop and report summary.
+
+    Call when L4 passes, when stuck, or when the human wants to intervene.
+    Returns a summary of all L4 cycles completed.
+    """
+    root = _topic_root(topics_root, topic_slug)
+    state_path = root / "state.md"
+    fm, body = _parse_md(state_path)
+
+    if not fm.get("research_loop_active", False):
+        return _GateResult({"message": "No research loop is active."})
+
+    cycle_count = int(fm.get("l4_cycle_count", 0))
+    cand_id = fm.get("candidate_id", "")
+
+    # Collect all versioned reviews
+    reviews_dir = root / "L4" / "reviews"
+    review_summaries: list[dict[str, Any]] = []
+    if reviews_dir.exists():
+        for rp in sorted(reviews_dir.glob(f"{cand_id}_v*.md")):
+            rfm, _ = _parse_md(rp)
+            review_summaries.append({
+                "file": rp.name,
+                "cycle": rfm.get("l4_cycle", 0),
+                "outcome": rfm.get("outcome", ""),
+                "reviewed_at": rfm.get("reviewed_at", ""),
+            })
+
+    fm["research_loop_active"] = False
+    fm["research_loop_stopped_at"] = _now()
+    fm["research_loop_stop_reason"] = reason
+    fm["updated_at"] = _now()
+    _write_md(state_path, fm, body)
+    _append_to_topic_log(root, f"research loop stopped after {cycle_count} cycles: {reason}")
+
+    outcomes = [r["outcome"] for r in review_summaries]
+    final_outcome = outcomes[-1] if outcomes else "unknown"
+
+    return _GateResult({
+        "message": (
+            f"Research loop stopped after {cycle_count} cycles. "
+            f"Final outcome: {final_outcome}. "
+            f"Reason: {reason or 'N/A'}.\n\n"
+            f"Review history:\n"
+            + "\n".join(
+                f"  Cycle {r['cycle']}: {r['outcome']} ({r['file']})"
+                for r in review_summaries
+            )
+        ),
+        "cycle_count": cycle_count,
+        "final_outcome": final_outcome,
+        "review_summaries": review_summaries,
+    })
+
+
+@mcp.tool()
+def aitp_get_loop_status(
+    topics_root: str,
+    topic_slug: str,
+) -> dict[str, Any]:
+    """Get the current research loop status and cycle history."""
+    root = _topic_root(topics_root, topic_slug)
+    fm, _ = _parse_md(root / "state.md")
+
+    loop_active = fm.get("research_loop_active", False)
+    cycle_count = int(fm.get("l4_cycle_count", 0))
+    max_cycles = int(fm.get("research_loop_max_cycles", 0))
+    cand_id = fm.get("candidate_id", "")
+
+    # Collect review summaries
+    reviews_dir = root / "L4" / "reviews"
+    review_summaries: list[dict[str, Any]] = []
+    if reviews_dir.exists() and cand_id:
+        for rp in sorted(reviews_dir.glob(f"{cand_id}_v*.md")):
+            rfm, _ = _parse_md(rp)
+            review_summaries.append({
+                "cycle": rfm.get("l4_cycle", 0),
+                "outcome": rfm.get("outcome", ""),
+                "reviewed_at": rfm.get("reviewed_at", ""),
+            })
+
+    return {
+        "loop_active": loop_active,
+        "cycle_count": cycle_count,
+        "max_cycles": max_cycles,
+        "candidate_id": cand_id,
+        "cycles_remaining": max(0, max_cycles - cycle_count),
+        "review_history": review_summaries,
+    }
 
 
 # ---------------------------------------------------------------------------

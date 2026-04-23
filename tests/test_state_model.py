@@ -44,8 +44,8 @@ class BootstrapL1ScaffoldTests(unittest.TestCase):
                 self.assertTrue((tr / "L1" / name).exists(), f"Missing L1/{name}")
             fm, _ = mcp_server._parse_md(tr / "state.md")
             self.assertEqual(fm["status"], "new")
-            self.assertEqual(fm["stage"], "L1")
-            self.assertEqual(fm["posture"], "read")
+            self.assertEqual(fm["stage"], "L0")
+            self.assertEqual(fm["posture"], "discover")
             self.assertEqual(fm["lane"], "unspecified")
 
 
@@ -58,20 +58,38 @@ class L1GateTests(unittest.TestCase):
         )
         return repo_root
 
-    def test_execution_brief_blocks_on_first_missing_l1_field(self):
+    def test_execution_brief_blocks_on_first_missing_l0_field(self):
         with tempfile.TemporaryDirectory() as tmp:
             self._bootstrap(tmp)
             brief = mcp_server.aitp_get_execution_brief(tmp, "demo-topic")
-            self.assertEqual(brief["stage"], "L1")
-            self.assertEqual(brief["posture"], "read")
+            self.assertEqual(brief["stage"], "L0")
+            self.assertEqual(brief["posture"], "discover")
             self.assertEqual(brief["gate_status"], "blocked_missing_field")
-            self.assertTrue(brief["required_artifact_path"].endswith("question_contract.md"))
-            self.assertIn("bounded_question", brief["missing_requirements"])
+            self.assertTrue(
+                "source_registry" in brief.get("required_artifact_path", "")
+                or "source" in str(brief.get("missing_requirements", [])),
+                f"Expected source-related missing requirement, got: {brief}",
+            )
 
     def test_execution_brief_turns_ready_after_all_l1_artifacts_are_filled(self):
         with tempfile.TemporaryDirectory() as tmp:
             repo_root = self._bootstrap(tmp)
             tr = repo_root / "topics" / "demo-topic"
+
+            # Satisfy L0 gate: fill source_registry and register a source
+            mcp_server._write_md(
+                tr / "L0" / "source_registry.md",
+                {"artifact_kind": "l0_source_registry", "stage": "L0",
+                 "source_count": 1, "search_status": "complete"},
+                "# Source Registry\n\n## Search Methodology\narxiv\n\n## Source Inventory\npaper-a\n\n## Coverage Assessment\nAdequate\n\n## Gaps And Next Sources\nNone\n",
+            )
+            mcp_server._write_md(
+                tr / "L0" / "sources" / "paper-a.md",
+                {"artifact_kind": "l0_source", "source_type": "paper",
+                 "slug": "paper-a", "short_title": "Paper A"},
+                "# Paper A\n\nA source.\n",
+            )
+            mcp_server.aitp_advance_to_l1(tmp, "demo-topic")
 
             mcp_server._write_md(
                 tr / "L1" / "question_contract.md",

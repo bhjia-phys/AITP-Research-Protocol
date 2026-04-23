@@ -28,6 +28,14 @@ def _read_aitp_config(workspace: str) -> dict:
         return {}
 
 
+def _hooks_disabled(workspace: str) -> bool:
+    """Check if hooks are explicitly disabled via env var or config."""
+    if os.environ.get("AITP_HOOKS", "").lower() in ("off", "0", "false", "no"):
+        return True
+    config = _read_aitp_config(workspace)
+    return not config.get("hooks_enabled", True)
+
+
 def _find_workspace_root() -> str:
     """Walk up from cwd to find a workspace root (has .git, CLAUDE.md, or .aitp_config.json)."""
     cwd = os.getcwd()
@@ -132,10 +140,14 @@ def _find_active_topic(topics_root: str) -> str | None:
 
 
 def main():
+    workspace = _find_workspace_root()
+
+    if _hooks_disabled(workspace):
+        return
+
     topics_root = _find_topics_root()
 
     if not topics_root:
-        workspace = _find_workspace_root()
         config_path = os.path.join(workspace, ".aitp_config.json")
         print("AITP: No topics root configured. This is a first run in this workspace.")
         print("AITP: MANDATORY — read and follow skills/skill-init.md before continuing.")
@@ -150,7 +162,7 @@ def main():
         return
 
     from brain.state_model import (
-        topics_dir, evaluate_l1_stage, evaluate_l3_stage,
+        topics_dir, evaluate_l0_stage, evaluate_l1_stage, evaluate_l3_stage,
         evaluate_l4_stage, evaluate_l5_stage,
         get_tool_catalog, get_pattern_b_instructions,
     )
@@ -165,6 +177,8 @@ def main():
         snapshot = evaluate_l4_stage(_parse_md, root, lane=fm.get("lane", "unspecified"))
     elif stage == "L5":
         snapshot = evaluate_l5_stage(_parse_md, root, lane=fm.get("lane", "unspecified"))
+    elif stage == "L0":
+        snapshot = evaluate_l0_stage(_parse_md, root, lane=fm.get("lane", "unspecified"))
     else:
         snapshot = evaluate_l1_stage(_parse_md, root, lane=fm.get("lane", "unspecified"))
 

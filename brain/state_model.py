@@ -2,7 +2,7 @@
 
 Centralizes path contract so brain/mcp_server.py and hooks agree on
 whether topics live at <topics_root>/<slug> or <topics_root>/topics/<slug>.
-Also defines the L1 gate evaluation logic and StageSnapshot dataclass.
+Also defines the L0/L1/L3 gate evaluation logic and StageSnapshot dataclass.
 """
 
 from __future__ import annotations
@@ -58,6 +58,101 @@ def topic_root(topics_root: str | Path, topic_slug: str) -> Path:
     if not root.is_dir():
         raise FileNotFoundError(f"Topic not found: {safe_slug}")
     return root
+
+
+# ---------------------------------------------------------------------------
+# L0 artifact templates (frontmatter, body)
+# ---------------------------------------------------------------------------
+
+L0_ARTIFACT_TEMPLATES: dict[str, tuple[dict[str, Any], str]] = {
+    "source_registry.md": (
+        {
+            "artifact_kind": "l0_source_registry",
+            "stage": "L0",
+            "required_fields": ["source_count", "search_status"],
+            "source_count": 0,
+            "search_status": "",
+        },
+        "# Source Registry\n\n## Search Methodology\n\n## Source Inventory\n\n"
+        "## Coverage Assessment\n\n## Gaps And Next Sources\n",
+    ),
+}
+
+L0_SOURCE_TYPES: list[str] = [
+    "paper", "preprint", "book", "dataset", "code",
+    "experiment", "simulation", "lecture_notes", "reference",
+]
+
+
+# ---------------------------------------------------------------------------
+# L0 gate evaluation
+# ---------------------------------------------------------------------------
+
+_L0_CONTRACTS: list[tuple[str, str, list[str], list[str]]] = [
+    (
+        "source_registry.md",
+        "discover",
+        ["source_count", "search_status"],
+        ["## Search Methodology", "## Source Inventory", "## Coverage Assessment"],
+    ),
+]
+
+
+def evaluate_l0_stage(
+    parse_md: Callable[[Path], tuple[dict[str, Any], str]],
+    topic_root_path: Path,
+    lane: str = "unspecified",
+) -> StageSnapshot:
+    """Evaluate L0 gate status by checking source registry and registered sources."""
+    for name, posture, fields, headings in _L0_CONTRACTS:
+        path = topic_root_path / "L0" / name
+        if not path.exists():
+            return StageSnapshot(
+                stage="L0",
+                posture=posture,
+                lane=lane,
+                gate_status="blocked_missing_artifact",
+                required_artifact_path=str(path),
+                missing_requirements=[name],
+                next_allowed_transition="L0",
+                skill="skill-discover",
+            )
+        fm, body = parse_md(path)
+        missing = _missing_frontmatter_keys(fm, fields) + _missing_required_headings(body, headings)
+        if missing:
+            return StageSnapshot(
+                stage="L0",
+                posture=posture,
+                lane=lane,
+                gate_status="blocked_missing_field",
+                required_artifact_path=str(path),
+                missing_requirements=missing,
+                next_allowed_transition="L0",
+                skill="skill-discover",
+            )
+        # Require at least one registered source
+        src_dir = topic_root_path / "L0" / "sources"
+        actual_count = len(list(src_dir.glob("*.md"))) if src_dir.is_dir() else 0
+        if actual_count < 1:
+            return StageSnapshot(
+                stage="L0",
+                posture=posture,
+                lane=lane,
+                gate_status="blocked_missing_field",
+                required_artifact_path=str(path),
+                missing_requirements=["register at least one source in L0/sources/"],
+                next_allowed_transition="L0",
+                skill="skill-discover",
+            )
+
+    return StageSnapshot(
+        stage="L0",
+        posture="discover",
+        lane=lane,
+        gate_status="ready",
+        next_allowed_transition="L1",
+        skill="skill-discover",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -495,7 +590,13 @@ def evaluate_l5_stage(
 #            steps. Catalog entry is informational only.
 
 TOOL_CATALOG: dict[tuple[str, str], list[tuple[str, str, str]]] = {
-    # L1 — source registration and framing
+    # L0 — source discovery and registration
+    ("L0", "discover"): [
+        ("arxiv-latex-mcp", "Read paper sections and abstracts from arXiv", "A"),
+        ("paper-search-mcp", "Multi-source paper search (arXiv, PubMed, Semantic Scholar, etc.)", "B"),
+        ("knowledge-hub", "Query existing knowledge base for related sources", "C"),
+    ],
+    # L1 — reading and framing
     ("L1", "read"): [
         ("arxiv-latex-mcp", "Read paper sections and abstracts from arXiv", "A"),
         ("paper-search-mcp", "Multi-source paper search (arXiv, PubMed, Semantic Scholar, etc.)", "A"),
@@ -559,6 +660,11 @@ TOOL_CATALOG: dict[tuple[str, str], list[tuple[str, str, str]]] = {
 # Pattern B tools that should be explicitly invoked at specific subplanes.
 # Key: tool_name, Value: list of (stage, subplane, invoke_instruction)
 PATTERN_B_INSTRUCTIONS: dict[str, list[tuple[str, str, str]]] = {
+    "paper-search-mcp": [
+        ("L0", "discover",
+         "Invoke 'paper-search-mcp' to systematically search for relevant sources "
+         "during the discovery phase."),
+    ],
     "scientific-brainstorming": [
         ("L3", "ideation",
          "Invoke skill 'scientific-brainstorming' BEFORE discussion round 1 "

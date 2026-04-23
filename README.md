@@ -36,11 +36,12 @@ Think of it as an infinitely patient research collaborator who keeps a perfect l
 ## Protocol stages
 
 ```
-L1 (read/frame) → L3 (ideation → planning → analysis → integration → distillation) → L4 (validate) → L2 (trusted) → L5 (write)
+L0 (discover) → L1 (read/frame) → L3 (ideation → planning → analysis → integration → distillation) → L4 (validate) → L2 (trusted) → L5 (write)
 ```
 
 | Stage | What happens | Physics analogy |
 |-------|-------------|-----------------|
+| **L0** | Find and register sources | The literature search before the seminar — papers, datasets, code, experiments |
 | **L1** | Read sources, frame the question | Literature review + defining the scope of your calculation |
 | **L3** | Derive through 5 subplanes | The actual work: scratchpad → formal derivation → checking → synthesizing → distilling claims |
 | **L4** | Validation and adjudication | The "show me" moment — consistency checks, boundary cases, cross-references |
@@ -109,12 +110,13 @@ AITP-Research-Protocol/
 
 ## MCP tools (32)
 
-The AI drives the protocol through 32 structured tools — it cannot directly edit topic files. Every action goes through a gate:
+The AI drives the protocol through 34 structured tools — it cannot directly edit topic files. Every action goes through a gate:
 
 | Category | Tools |
 |----------|-------|
 | **Topic lifecycle** | `bootstrap_topic`, `list_topics`, `get_status`, `update_status`, `archive_topic`, `restore_topic`, `fork_topic` |
-| **L1 — reading** | `register_source`, `list_sources`, `session_resume` |
+| **L0 — discovery** | `register_source`, `list_sources`, `advance_to_l1`, `retreat_to_l0` |
+| **L1 — reading** | `session_resume`, `ingest_knowledge` |
 | **L3 — derivation** | `advance_to_l3`, `advance_l3_subplane`, `retreat_to_l1`, `record_derivation`, `switch_lane` |
 | **L3 → L4 — validation gate** | `submit_candidate`, `list_candidates`, `create_validation_contract`, `submit_l4_review`, `return_to_l3_from_l4` |
 | **L2 — trusted knowledge** | `request_promotion`, `resolve_promotion_gate`, `promote_candidate`, `query_l2`, `ingest_knowledge`, `query_knowledge`, `lint_knowledge`, `writeback_query_result` |
@@ -174,7 +176,9 @@ Every topic is a directory of plain Markdown files. No database, no proprietary 
 <topics_root>/
   <topic-slug>/
     state.md                         # Current stage, posture, lane
-    L0/sources/                      # Paper metadata, DOIs, reading notes
+    L0/
+      source_registry.md             # Source inventory, search methodology, coverage
+      sources/                       # Individual source files (papers, datasets, code, ...)
     L1/
       source_basis.md                # What the sources actually say
       question_contract.md           # The bounded question
