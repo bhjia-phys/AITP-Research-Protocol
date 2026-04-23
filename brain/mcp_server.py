@@ -293,6 +293,9 @@ def aitp_bootstrap_topic(
     _write_md(root / "runtime" / "log.md", {
         "topic_slug": safe_slug, "kind": "topic_log", "created_at": _now(),
     }, f"# Topic Log: {title}\n\n## Events\n\n- {_now()} topic bootstrapped\n")
+    _write_md(root / "runtime" / "sessions.md", {
+        "kind": "session_log", "topic_slug": safe_slug, "created_at": _now(),
+    }, f"# Session Log: {title}\n\n## Sessions\n")
     # Global L2 surfaces
     global_l2 = base.parent / "L2" if base.name == "topics" else Path(topics_root).parent / "L2"
     global_l2.mkdir(parents=True, exist_ok=True)

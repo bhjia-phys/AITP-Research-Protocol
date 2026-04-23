@@ -145,6 +145,7 @@ def stop_for_topic(topics_root: str) -> None:
         return
 
     now = datetime.now().astimezone().isoformat(timespec="seconds")
+    now_short = datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M")
     root = Path(td) / slug
 
     # Update state.md updated_at atomically
@@ -154,6 +155,22 @@ def stop_for_topic(topics_root: str) -> None:
         fm["updated_at"] = now
         fm["last_session_ended"] = now
         _atomic_write_text(state_path, _render_md(fm, body))
+
+    # Record session end in sessions.md
+    marker = root / "runtime" / ".current_session"
+    if marker.exists():
+        sid = marker.read_text(encoding="utf-8").strip().split("\n")[0]
+        sessions_path = root / "runtime" / "sessions.md"
+        if sessions_path.exists():
+            text = sessions_path.read_text(encoding="utf-8")
+            # Replace the open-ended line for this session
+            old_line = f"- {sid} | start:"
+            for line in text.splitlines():
+                if line.startswith(old_line) and "| end: —" in line:
+                    text = text.replace(line, line.replace("| end: —", f"| end: {now_short}"))
+                    break
+            sessions_path.write_text(text, encoding="utf-8")
+        marker.unlink(missing_ok=True)
 
     # Append session-end event to runtime log
     log_path = root / "runtime" / "log.md"

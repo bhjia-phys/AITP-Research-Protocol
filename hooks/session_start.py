@@ -10,6 +10,8 @@ import json
 import os
 import re
 import sys
+import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -139,6 +141,35 @@ def _find_active_topic(topics_root: str) -> str | None:
     return best_slug
 
 
+def _record_session_start(topic_root: Path, topic_slug: str, stage: str, posture: str, subplane: str = "") -> str:
+    """Record a new session to runtime/sessions.md. Returns the session ID."""
+    sid = uuid.uuid4().hex[:12]
+    now = datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M")
+    stage_info = f"{stage}/{posture}" + (f"/{subplane}" if subplane else "")
+
+    # Write session marker
+    marker = topic_root / "runtime" / ".current_session"
+    marker.write_text(f"{sid}\n{now}", encoding="utf-8")
+
+    # Append to sessions log
+    sessions_path = topic_root / "runtime" / "sessions.md"
+    if sessions_path.exists():
+        text = sessions_path.read_text(encoding="utf-8")
+        if not text.endswith("\n"):
+            text += "\n"
+    else:
+        text = (
+            "---\n"
+            f"kind: session_log\ntopic_slug: {topic_slug}\n"
+            "---\n\n"
+            "# Session Log\n\n"
+            "## Sessions\n\n"
+        )
+    text += f"- {sid} | start: {now} | end: — | stage: {stage_info}\n"
+    sessions_path.write_text(text, encoding="utf-8")
+    return sid
+
+
 def main():
     workspace = _find_workspace_root()
 
@@ -190,6 +221,13 @@ def main():
     if snapshot.required_artifact_path:
         print(f"AITP: Fill {snapshot.required_artifact_path} before advancing.")
     print(f"AITP: MANDATORY — read and follow skills/{snapshot.skill}.md before continuing.")
+
+    # Record session
+    sid = _record_session_start(
+        root, topic_slug, snapshot.stage, snapshot.posture,
+        subplane=snapshot.l3_subplane,
+    )
+    print(f"AITP: Session {sid} started. Recorded to runtime/sessions.md.")
 
     # Progressive-disclosure tool catalog with integration patterns.
     # Pattern A: load on demand  |  Pattern B: invoke at checkpoint  |  Pattern C: already in skill

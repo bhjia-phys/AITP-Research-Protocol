@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -58,6 +59,18 @@ def main():
     if snapshot.required_artifact_path:
         print(f"AITP: Complete {snapshot.required_artifact_path} before advancing.")
     print(f"AITP: Read skills/{snapshot.skill}.md to restore your workflow context.")
+
+    # Record compact event to sessions.md if session marker exists
+    marker = root / "runtime" / ".current_session"
+    if marker.exists():
+        now_short = datetime.now().astimezone().strftime("%Y-%m-%dT%H:%M")
+        sessions_path = root / "runtime" / "sessions.md"
+        if sessions_path.exists():
+            text = sessions_path.read_text(encoding="utf-8")
+            if not text.endswith("\n"):
+                text += "\n"
+            text += f"  - compacted at {now_short} (stage: {snapshot.stage}/{snapshot.posture})\n"
+            sessions_path.write_text(text, encoding="utf-8")
 
 
 if __name__ == "__main__":

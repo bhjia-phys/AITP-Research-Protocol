@@ -70,7 +70,25 @@
 \noindent\textbf{Units:} {{UNIT_CONVENTIONS}}
 
 % ===========================================================================
-% Section 3: Derivation Route
+% Section 3: Session Provenance
+% ===========================================================================
+% Source: runtime/sessions.md — list all sessions that contributed.
+% One row per session: ID, start time, end time, stage at entry.
+% ===========================================================================
+
+\section{Session Provenance}
+
+\begin{longtable}{llll}
+\toprule
+\textbf{Session} & \textbf{Started} & \textbf{Ended} & \textbf{Stage} \\
+\midrule
+\endhead
+{{SESSION_ROWS}}
+\bottomrule
+\end{longtable}
+
+% ===========================================================================
+% Section 4: Derivation Route
 % ===========================================================================
 % Sources: L3/ideation/, L3/plan/, L3/analysis/, L3/integration/,
 %          L3/distillation/ — converted from Markdown to LaTeX.
@@ -81,19 +99,19 @@
 
 \section{Derivation Route}
 
-% --- 3.1 Ideation ---
+% --- 4.1 Ideation ---
 \subsection{Ideation}
 % Source: L3/ideation/active_ideation.md
 % Convert: idea statement, motivation, prior work table, risk assessment.
 {{IDEATION_CONTENT}}
 
-% --- 3.2 Plan ---
+% --- 4.2 Plan ---
 \subsection{Planning}
 % Source: L3/plan/active_plan.md
 % Convert: plan statement, derivation route, expected outcomes, milestones.
 {{PLAN_CONTENT}}
 
-% --- 3.3 Analysis ---
+% --- 4.3 Analysis ---
 \subsection{Analysis}
 % Source: L3/analysis/active_analysis.md
 % Convert: round_type, derivation steps (equation + justification + origin per step),
@@ -102,21 +120,21 @@
 % step_origin. Missing fields go into Open Obligations.
 {{ANALYSIS_CONTENT}}
 
-% --- 3.4 Result Integration ---
+% --- 4.4 Result Integration ---
 \subsection{Result Integration}
 % Source: L3/integration/active_integration.md
 % Convert: findings, claim readiness (blocked/qualified/stable), open obligations.
 % Each finding must have a readiness level. Blocked findings cannot become candidates.
 {{INTEGRATION_CONTENT}}
 
-% --- 3.5 Distillation ---
+% --- 4.5 Distillation ---
 \subsection{Distillation}
 % Source: L3/distillation/active_distillation.md
 % Convert: distilled claim, evidence summary, confidence level, open questions.
 {{DISTILLATION_CONTENT}}
 
 % ===========================================================================
-% Section 4: Validation and Checks
+% Section 5: Validation and Checks
 % ===========================================================================
 % Source: L4/reviews/*.md (if available)
 % ===========================================================================
@@ -125,7 +143,7 @@
 {{L4_VALIDATION_CONTENT}}
 
 % ===========================================================================
-% Section 5: Current Claim Boundary
+% Section 6: Current Claim Boundary
 % ===========================================================================
 % Report claim readiness level per finding (blocked/qualified/stable).
 % Blocked findings: list with reason and repair plan.
@@ -136,7 +154,7 @@
 {{CLAIM_BOUNDARY}}
 
 % ===========================================================================
-% Section 6: Failures and Open Problems
+% Section 7: Failures and Open Problems
 % ===========================================================================
 % Record failed derivation routes with: why plausible, exact failure point,
 % lesson, revive conditions. Also list all open obligations from integration.
