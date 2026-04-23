@@ -32,6 +32,7 @@ from brain.state_model import (
     evaluate_l0_stage,
     evaluate_l1_stage,
     evaluate_l3_stage,
+    _get_l3_config,
     L0_ARTIFACT_TEMPLATES,
     L1_ARTIFACT_TEMPLATES,
     L3_ARTIFACT_TEMPLATES,
@@ -41,6 +42,18 @@ from brain.state_model import (
     L3_ALLOWED_TRANSITIONS,
     L4_OUTCOMES,
     PHYSICS_CHECK_FIELDS,
+    STUDY_L3_SUBPLANES,
+    STUDY_L3_ARTIFACT_TEMPLATES,
+    STUDY_L3_ACTIVE_ARTIFACT_NAMES,
+    STUDY_L3_SKILL_MAP,
+    STUDY_L3_ALLOWED_TRANSITIONS,
+    STUDY_CANDIDATE_TYPES,
+    L2_NODE_TYPES,
+    L2_EDGE_TYPES,
+    L2_TOWER_TEMPLATE,
+    L2_CORRESPONDENCE_TEMPLATE,
+    STUDY_L4_CHECKS,
+    TRUST_EVOLUTION,
 )
 
 mcp = FastMCP("aitp-brain")
@@ -218,6 +231,7 @@ def aitp_get_status(topics_root: str, topic_slug: str) -> dict[str, Any]:
         "gate_status": snapshot.gate_status,
         "mode": fm.get("mode", "explore"),
         "layer": fm.get("layer", "L1"),
+        "l3_mode": fm.get("l3_mode", "research"),
         "title": fm.get("title", topic_slug),
         "required_artifact_path": snapshot.required_artifact_path,
         "missing_requirements": snapshot.missing_requirements,
@@ -258,6 +272,7 @@ def aitp_bootstrap_topic(
     title: str,
     question: str,
     lane: str = "unspecified",
+    mode: str = "explore",
 ) -> str:
     """Create a new topic directory structure with state.md and L0/L1 scaffolds."""
     safe_slug = validate_topic_slug(topic_slug)
@@ -315,7 +330,7 @@ def aitp_bootstrap_topic(
         "topic_slug": safe_slug,
         "title": title,
         "status": "new",
-        "mode": "explore",
+        "mode": mode,
         "layer": "L0",
         "stage": "L0",
         "posture": "discover",
@@ -328,6 +343,7 @@ def aitp_bootstrap_topic(
         "l4_cycle_count": 0,
         "research_loop_active": False,
         "research_loop_max_cycles": 0,
+        "l3_mode": "research",
     }
     body = f"# {title}\n\n## Research Question\n{question}\n"
     _write_md(root / "state.md", fm, body)
@@ -422,25 +438,41 @@ def aitp_submit_candidate(
     assumptions: str = "",
     validation_criteria: str = "",
     depends_on: list[str] | None = None,
+    candidate_type: str = "research_claim",
+    regime_of_validity: str = "",
 ) -> dict[str, Any]:
     """Submit a candidate finding. Creates L3/candidates/<id>.md. Returns popup gate for confirmation.
 
-    depends_on: list of candidate_ids that this candidate builds upon. The dependency
-    chain is recorded in frontmatter for provenance tracking.
+    depends_on: list of candidate_ids that this candidate builds upon.
+    candidate_type: type of candidate — research modes produce research_claim (default),
+        study modes produce atomic_concept, derivation_chain, correspondence_link,
+        regime_boundary, or open_question.
+    regime_of_validity: physical regime where this candidate applies (required for study candidates).
     """
     root = _topic_root(topics_root, topic_slug)
     slug = _slugify(candidate_id)
     path = root / "L3" / "candidates" / f"{slug}.md"
+
+    # Determine l3_mode from state
+    state_fm, _ = _parse_md(root / "state.md")
+    l3_mode = state_fm.get("l3_mode", "research")
+    if candidate_type == "research_claim" and l3_mode == "study":
+        candidate_type = "atomic_concept"
+
     fm = {
         "candidate_id": slug,
         "title": title,
         "claim": claim,
         "status": "submitted",
         "mode": "candidate",
+        "candidate_type": candidate_type,
+        "l3_mode": l3_mode,
         "depends_on": depends_on or [],
         "created_at": _now(),
         "updated_at": _now(),
     }
+    if regime_of_validity:
+        fm["regime_of_validity"] = regime_of_validity
     body = (
         f"# {title}\n\n"
         f"## Claim\n{claim}\n\n"
@@ -617,11 +649,48 @@ def aitp_promote_candidate(
     fm["promotion_comment"] = comment
     fm["trust_basis"] = trust_basis
     fm["trust_scope"] = trust_scope
+    if fm.get("candidate_type"):
+        fm["candidate_type"] = fm.get("candidate_type", "research_claim")
+    if fm.get("regime_of_validity"):
+        fm["regime_of_validity"] = fm.get("regime_of_validity", "")
     if "version" not in fm:
         fm["version"] = 1
 
     _write_md(cand_path, fm, body)
     _write_md(l2_path, fm, body)
+
+    # Also create a graph node if the candidate has a type and regime
+    cand_type = fm.get("candidate_type", "research_claim")
+    regime = fm.get("regime_of_validity", "")
+    if cand_type != "research_claim" and cand_type in L2_NODE_TYPES:
+        try:
+            _ensure_l2_graph_dirs(topics_root)
+            global_l2 = _global_l2_path(topics_root)
+            node_path = global_l2 / "graph" / "nodes" / f"{slug}.md"
+            node_fm = {
+                "node_id": slug,
+                "type": cand_type,
+                "title": fm.get("title", slug),
+                "regime_of_validity": regime,
+                "trust_basis": trust_basis,
+                "trust_scope": trust_scope,
+                "version": 1,
+                "source_candidate": slug,
+                "source_topic": topic_slug,
+                "mathematical_expression": "",
+                "created_at": _now(),
+                "updated_at": _now(),
+            }
+            node_body = (
+                f"# {fm.get('title', slug)}\n\n"
+                f"## Physical Meaning\n{fm.get('claim', '')}\n\n"
+                f"## Mathematical Expression\n\n"
+                f"## Regime and Limits\n{regime}\n\n"
+                f"## Open Questions\n"
+            )
+            _write_md(node_path, node_fm, node_body)
+        except Exception:
+            pass  # Non-fatal: graph node creation is best-effort
 
     _append_to_topic_log(root, f"promoted {slug} to global L2 (v{fm['version']})")
     return f"Promoted {slug} to global L2 (v{fm['version']})."
@@ -686,6 +755,7 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
             "next_allowed_transition": snapshot.next_allowed_transition,
             "skill": snapshot.skill,
             "l3_subplane": snapshot.l3_subplane,
+            "l3_mode": snapshot.l3_mode,
             "immediate_allowed_work": (
                 [f"edit {snapshot.required_artifact_path}"]
                 if snapshot.required_artifact_path
@@ -772,10 +842,12 @@ def aitp_session_resume(
 
     # Summarize what was last worked on
     last_subplane = fm.get("l3_subplane", "")
+    l3_mode = fm.get("l3_mode", "research")
     summary_parts = [
         f"Topic '{fm.get('title', topic_slug)}' is at stage={stage}",
     ]
     if last_subplane:
+        summary_parts.append(f"L3 subplane={last_subplane} (mode={l3_mode})")
         summary_parts.append(f"L3 subplane={last_subplane}")
     if snapshot.gate_status != "ready":
         summary_parts.append(f"gated by: {snapshot.missing_requirements}")
@@ -787,6 +859,7 @@ def aitp_session_resume(
         "stage": stage,
         "posture": fm.get("posture", snapshot.posture),
         "lane": fm.get("lane", ""),
+        "l3_mode": l3_mode,
         "l3_subplane": last_subplane,
         "gate_status": snapshot.gate_status,
         "skill": snapshot.skill,
@@ -876,38 +949,60 @@ def aitp_retreat_to_l0(topics_root: str, topic_slug: str, reason: str = "") -> _
 
 
 @mcp.tool()
-def aitp_advance_to_l3(topics_root: str, topic_slug: str) -> dict[str, Any]:
-    """Transition a topic from L1 (ready) to L3, starting at ideation subplane. Returns popup gate."""
+def aitp_advance_to_l3(
+    topics_root: str,
+    topic_slug: str,
+    l3_mode: str = "research",
+) -> dict[str, Any]:
+    """Transition a topic from L1 (ready) to L3. Returns popup gate.
+
+    l3_mode: research | study
+    - research (default): start at ideation subplane for original derivation
+    - study: start at source_decompose for literature understanding
+    """
     root = _topic_root(topics_root, topic_slug)
     l1_snapshot = evaluate_l1_stage(_parse_md, root)
     if l1_snapshot.gate_status != "ready":
         return _GateResult({"message": f"L1 gate is not ready (status: {l1_snapshot.gate_status}). Fill missing artifacts first."})
 
+    if l3_mode not in ("research", "study"):
+        return _GateResult({"message": f"Invalid l3_mode '{l3_mode}'. Use 'research' or 'study'."})
+
+    (
+        subplanes,
+        _,
+        templates,
+        artifact_names,
+        _,
+        _,
+        entry_subplane,
+    ) = _get_l3_config(l3_mode)
+
     state_path = root / "state.md"
     fm, body = _parse_md(state_path)
     fm["stage"] = "L3"
     fm["posture"] = "derive"
-    fm["l3_subplane"] = "ideation"
+    fm["l3_mode"] = l3_mode
+    fm["l3_subplane"] = entry_subplane
     fm["updated_at"] = _now()
     _write_md(state_path, fm, body)
 
     # Create L3 subplane directories and scaffolds
-    for subplane in L3_SUBPLANES:
+    for subplane in subplanes:
         (root / "L3" / subplane).mkdir(parents=True, exist_ok=True)
-        _, template_fm, template_body = L3_ARTIFACT_TEMPLATES[subplane]
-        artifact_name = L3_ACTIVE_ARTIFACT_NAMES[subplane]
-        artifact_path = root / "L3" / subplane / artifact_name
+        _, template_fm, template_body = templates[subplane]
+        artifact_path = root / "L3" / subplane / artifact_names[subplane]
         if not artifact_path.exists():
             _write_md(artifact_path, template_fm, template_body)
 
     (root / "L3" / "tex").mkdir(parents=True, exist_ok=True)
     return _GateResult({
-        "message": f"Advanced to L3 ideation. Create L3/ideation/active_idea.md to proceed.",
+        "message": f"Advanced to L3 {entry_subplane} (mode: {l3_mode}).",
         "popup_gate": {
-            "question": "L1 reading and framing complete. Start L3 derivation (ideation)?",
+            "question": f"L1 complete. Start L3 in {l3_mode} mode ({entry_subplane})?",
             "header": "L1->L3",
             "options": [
-                {"label": "Start derivation", "description": "Proceed to L3 ideation and begin generating candidate ideas."},
+                {"label": "Start", "description": f"Proceed to L3 {l3_mode} mode, starting at {entry_subplane}."},
                 {"label": "Review L1 first", "description": "Go back and review L1 artifacts before advancing."},
             ],
         },
@@ -918,28 +1013,44 @@ def aitp_advance_to_l3(topics_root: str, topic_slug: str) -> dict[str, Any]:
 def aitp_advance_l3_subplane(
     topics_root: str, topic_slug: str, target_subplane: str,
 ) -> str:
-    """Advance the L3 subplane. Only allows valid forward transitions and backedges."""
-    if target_subplane not in L3_SUBPLANES:
-        return f"Unknown subplane '{target_subplane}'. Valid: {L3_SUBPLANES}"
+    """Advance the L3 subplane. Only allows valid forward transitions and backedges.
 
+    Transition rules depend on l3_mode:
+    - research: ideation -> planning -> analysis -> result_integration -> distillation
+    - study: source_decompose -> step_derive -> gap_audit -> synthesis
+    """
     root = _topic_root(topics_root, topic_slug)
     state_path = root / "state.md"
     fm, body = _parse_md(state_path)
-    current = fm.get("l3_subplane", "ideation")
+    l3_mode = str(fm.get("l3_mode", "research")).strip() or "research"
 
-    allowed = L3_ALLOWED_TRANSITIONS.get(current, [])
+    (
+        subplanes,
+        allowed_transitions,
+        _,
+        _,
+        skill_map,
+        _,
+        _,
+    ) = _get_l3_config(l3_mode)
+
+    if target_subplane not in subplanes:
+        return f"Unknown subplane '{target_subplane}' for mode '{l3_mode}'. Valid: {subplanes}"
+
+    current = fm.get("l3_subplane", subplanes[0])
+    allowed = allowed_transitions.get(current, [])
     if target_subplane not in allowed:
         return (
-            f"Transition from '{current}' to '{target_subplane}' is not allowed. "
-            f"Allowed targets: {allowed}"
+            f"Transition from '{current}' to '{target_subplane}' is not allowed "
+            f"in {l3_mode} mode. Allowed targets: {allowed}"
         )
 
     fm["l3_subplane"] = target_subplane
     fm["updated_at"] = _now()
     _write_md(state_path, fm, body)
 
-    skill = L3_SKILL_MAP.get(target_subplane, "skill-l3-ideate")
-    return f"Advanced to L3/{target_subplane}. Follow {skill}."
+    skill = skill_map.get(target_subplane, skill_map.get(subplanes[0], "skill-l3-ideate"))
+    return f"Advanced to L3/{target_subplane} (mode: {l3_mode}). Follow {skill}."
 
 
 @mcp.tool()
@@ -973,6 +1084,86 @@ def aitp_retreat_to_l1(topics_root: str, topic_slug: str, reason: str = "") -> _
                 {"label": "Resume L3", "description": "Go back to L3 without changes (used register_source separately)."},
             ],
         },
+    })
+
+
+# ---------------------------------------------------------------------------
+# L3 mode switching (research <-> study)
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def aitp_switch_l3_mode(
+    topics_root: str,
+    topic_slug: str,
+    new_mode: str,
+    reason: str = "",
+) -> dict[str, Any]:
+    """Switch between L3 research mode and study mode.
+
+    new_mode: research | study
+    - research: original derivation (ideation -> planning -> analysis -> result_integration -> distillation)
+    - study: literature understanding (source_decompose -> step_derive -> gap_audit -> synthesis)
+
+    Switching preserves current subplane state and resets to the entry subplane
+    of the new mode. Use when:
+    - research -> study: L3 derivation reveals knowledge gaps needing literature study
+    - study -> research: literature study yields new research directions
+    """
+    valid_modes = {"research", "study"}
+    if new_mode not in valid_modes:
+        return {"message": f"Invalid mode '{new_mode}'. Valid: {sorted(valid_modes)}"}
+
+    root = _topic_root(topics_root, topic_slug)
+    state_path = root / "state.md"
+    fm, body = _parse_md(state_path)
+
+    if fm.get("stage") not in ("L3", "L1"):
+        return _GateResult({
+            "message": f"Cannot switch L3 mode: topic is at {fm.get('stage')}, not L3/L1.",
+        })
+
+    old_mode = fm.get("l3_mode", "research")
+    if old_mode == new_mode:
+        return {"message": f"Already in '{new_mode}' mode. No change needed."}
+
+    # Determine entry subplane for new mode
+    _, _, _, _, _, _, entry_subplane = _get_l3_config(new_mode)
+
+    fm["l3_mode"] = new_mode
+    fm["previous_l3_mode"] = old_mode
+    fm["l3_mode_switch_reason"] = reason
+    fm["l3_mode_switched_at"] = _now()
+    if fm.get("stage") == "L3":
+        fm["l3_subplane"] = entry_subplane
+    fm["updated_at"] = _now()
+    _write_md(state_path, fm, body)
+
+    if fm.get("stage") == "L3":
+        # Create subplane directories and scaffolds for new mode
+        subplanes, _, templates, artifact_names, _, _, _ = _get_l3_config(new_mode)
+        for subplane in subplanes:
+            (root / "L3" / subplane).mkdir(parents=True, exist_ok=True)
+            _, template_fm, template_body = templates[subplane]
+            artifact_path = root / "L3" / subplane / artifact_names[subplane]
+            if not artifact_path.exists():
+                _write_md(artifact_path, template_fm, template_body)
+
+    _append_to_topic_log(root, f"switched L3 mode: {old_mode} -> {new_mode} ({reason})")
+
+    mode_desc = {
+        "research": "ideation -> planning -> analysis -> result_integration -> distillation",
+        "study": "source_decompose -> step_derive -> gap_audit -> synthesis",
+    }
+    return _GateResult({
+        "message": (
+            f"Switched L3 mode from '{old_mode}' to '{new_mode}'. "
+            f"New subplane flow: {mode_desc[new_mode]}. "
+            f"Entry subplane: {entry_subplane}."
+        ),
+        "old_mode": old_mode,
+        "new_mode": new_mode,
+        "entry_subplane": entry_subplane,
     })
 
 
@@ -1725,8 +1916,11 @@ def aitp_query_knowledge(
     state_fm, _ = _parse_md(root / "state.md")
     if str(state_fm.get("stage", "")) == "L3":
         basis_layer = "L3"
-        for sp in L3_SUBPLANES:
-            artifact_name = L3_ACTIVE_ARTIFACT_NAMES[sp]
+        l3_mode = state_fm.get("l3_mode", "research")
+        _, _, _, mode_artifact_names, _, _, _ = _get_l3_config(l3_mode)
+        mode_subplanes = mode_artifact_names.keys()
+        for sp in mode_subplanes:
+            artifact_name = mode_artifact_names[sp]
             sp_path = root / "L3" / sp / artifact_name
             if sp_path.exists():
                 artifact_refs.append(f"L3/{sp}/{artifact_name}")
@@ -1866,6 +2060,566 @@ def aitp_writeback_query_result(
         return f"Written L4/reviews/{slug}.md"
 
     return f"Unknown basis_layer '{basis_layer}'. Use L1, L3, or L4."
+
+
+# ---------------------------------------------------------------------------
+# L2 knowledge graph operations
+# ---------------------------------------------------------------------------
+
+
+def _ensure_l2_graph_dirs(topics_root: str) -> Path:
+    """Ensure L2/graph/ directories exist and return the graph root."""
+    global_l2 = _global_l2_path(topics_root)
+    for sub in ["graph/nodes", "graph/edges", "graph/towers"]:
+        (global_l2 / sub).mkdir(parents=True, exist_ok=True)
+    return global_l2
+
+
+@mcp.tool()
+def aitp_create_l2_node(
+    topics_root: str,
+    node_id: str,
+    node_type: str,
+    title: str,
+    physical_meaning: str = "",
+    mathematical_expression: str = "",
+    regime_of_validity: str = "",
+    tower: str = "",
+    aliases: list[str] | None = None,
+    units: str = "",
+    source_candidate: str = "",
+) -> str:
+    """Create a node in the L2 knowledge graph.
+
+    node_type: concept | theorem | technique | derivation_chain | result | approximation | open_question | regime_boundary
+    """
+    if node_type not in L2_NODE_TYPES:
+        return f"Invalid node_type '{node_type}'. Valid: {L2_NODE_TYPES}"
+
+    global_l2 = _ensure_l2_graph_dirs(topics_root)
+    slug = _slugify(node_id)
+    node_path = global_l2 / "graph" / "nodes" / f"{slug}.md"
+
+    # Check for existing node (merge scenario)
+    existing_fm: dict[str, Any] = {}
+    if node_path.exists():
+        existing_fm, _ = _parse_md(node_path)
+        existing_version = int(existing_fm.get("version", 1))
+    else:
+        existing_version = 0
+
+    fm: dict[str, Any] = {
+        "node_id": slug,
+        "type": node_type,
+        "title": title,
+        "regime_of_validity": regime_of_validity,
+        "tower": tower,
+        "trust_basis": "source_grounded",
+        "trust_scope": "single_source",
+        "version": existing_version + 1,
+        "aliases": aliases or [],
+        "units": units,
+        "mathematical_expression": mathematical_expression,
+        "created_at": existing_fm.get("created_at", _now()),
+        "updated_at": _now(),
+    }
+    if source_candidate:
+        fm["source_candidate"] = source_candidate
+    # Preserve higher trust level if merging
+    if existing_fm:
+        trust_order = ["source_grounded", "multi_source_confirmed", "validated", "independently_verified"]
+        old_idx = trust_order.index(existing_fm.get("trust_basis", "source_grounded")) if existing_fm.get("trust_basis") in trust_order else 0
+        new_idx = trust_order.index(fm["trust_basis"])
+        if old_idx > new_idx:
+            fm["trust_basis"] = existing_fm["trust_basis"]
+            fm["trust_scope"] = existing_fm.get("trust_scope", fm["trust_scope"])
+
+    body = (
+        f"# {title}\n\n"
+        f"## Physical Meaning\n{physical_meaning}\n\n"
+        f"## Mathematical Expression\n{mathematical_expression}\n\n"
+        f"## Regime and Limits\n\n"
+        f"## Derivation Chain\n\n"
+        f"## Open Questions\n"
+    )
+    _write_md(node_path, fm, body)
+    return f"Created L2 graph node {slug} (type={node_type}, v{fm['version']})"
+
+
+@mcp.tool()
+def aitp_update_l2_node(
+    topics_root: str,
+    node_id: str,
+    physical_meaning: str | None = None,
+    mathematical_expression: str | None = None,
+    regime_of_validity: str | None = None,
+    tower: str | None = None,
+    aliases: list[str] | None = None,
+    trust_level: str | None = None,
+) -> str:
+    """Update fields of an existing L2 graph node."""
+    global_l2 = _global_l2_path(topics_root)
+    slug = _slugify(node_id)
+    node_path = global_l2 / "graph" / "nodes" / f"{slug}.md"
+    if not node_path.exists():
+        return f"Node {slug} not found. Use aitp_create_l2_node first."
+
+    fm, body = _parse_md(node_path)
+    if physical_meaning is not None:
+        fm["physical_meaning"] = physical_meaning
+    if mathematical_expression is not None:
+        fm["mathematical_expression"] = mathematical_expression
+    if regime_of_validity is not None:
+        fm["regime_of_validity"] = regime_of_validity
+    if tower is not None:
+        fm["tower"] = tower
+    if aliases is not None:
+        fm["aliases"] = aliases
+    if trust_level and trust_level in TRUST_EVOLUTION:
+        fm.update(TRUST_EVOLUTION[trust_level])
+    fm["updated_at"] = _now()
+    fm["version"] = int(fm.get("version", 1)) + 1
+    _write_md(node_path, fm, body)
+    return f"Updated L2 node {slug} (v{fm['version']})"
+
+
+@mcp.tool()
+def aitp_create_l2_edge(
+    topics_root: str,
+    edge_id: str,
+    from_node: str,
+    to_node: str,
+    edge_type: str,
+    regime_condition: str = "",
+    evidence: str = "",
+    correspondence_verified: bool = False,
+) -> str:
+    """Create a typed edge between two L2 graph nodes.
+
+    edge_type: limits_to | derives_from | uses | assumes | matches_onto | decouples_at |
+               emerges_from | specializes | generalizes | approximates | component_of |
+               equivalent_to | contradicts | refines | motivates | proven_by
+    """
+    if edge_type not in L2_EDGE_TYPES:
+        return f"Invalid edge_type '{edge_type}'. Valid: {L2_EDGE_TYPES}"
+
+    global_l2 = _ensure_l2_graph_dirs(topics_root)
+    slug = _slugify(edge_id)
+    edge_path = global_l2 / "graph" / "edges" / f"{slug}.md"
+
+    # Verify both nodes exist
+    from_slug = _slugify(from_node)
+    to_slug = _slugify(to_node)
+    from_path = global_l2 / "graph" / "nodes" / f"{from_slug}.md"
+    to_path = global_l2 / "graph" / "nodes" / f"{to_slug}.md"
+    warnings = []
+    if not from_path.exists():
+        warnings.append(f"Warning: from_node '{from_slug}' not found in L2 graph")
+    if not to_path.exists():
+        warnings.append(f"Warning: to_node '{to_slug}' not found in L2 graph")
+
+    fm: dict[str, Any] = {
+        "edge_id": slug,
+        "from_node": from_slug,
+        "to_node": to_slug,
+        "type": edge_type,
+        "regime_condition": regime_condition,
+        "correspondence_verified": correspondence_verified,
+        "evidence": evidence,
+        "created_at": _now(),
+    }
+
+    body = (
+        f"# Edge: {from_slug} --[{edge_type}]--> {to_slug}\n\n"
+        f"## Regime Condition\n{regime_condition}\n\n"
+        f"## Evidence\n{evidence}\n\n"
+        f"## Verification\n{'Verified' if correspondence_verified else 'Not yet verified'}\n"
+    )
+    _write_md(edge_path, fm, body)
+    msg = f"Created L2 edge {slug} ({from_slug} --[{edge_type}]--> {to_slug})"
+    if warnings:
+        msg += ". " + "; ".join(warnings)
+    return msg
+
+
+@mcp.tool()
+def aitp_query_l2_graph(
+    topics_root: str,
+    query: str = "",
+    node_type: str = "",
+    tower: str = "",
+    from_node: str = "",
+    edge_type: str = "",
+) -> dict[str, Any]:
+    """Query the L2 knowledge graph with dual-level retrieval.
+
+    Low-level: match specific nodes by type, tower, or query substring.
+    High-level: find all edges from a node to explore relationships.
+    """
+    global_l2 = _global_l2_path(topics_root)
+    nodes_dir = global_l2 / "graph" / "nodes"
+    edges_dir = global_l2 / "graph" / "edges"
+
+    if not nodes_dir.is_dir():
+        return {"message": "L2 graph not initialized.", "nodes": [], "edges": []}
+
+    # Node search (low-level)
+    nodes = []
+    for np in sorted(nodes_dir.glob("*.md")):
+        fm, body = _parse_md(np)
+        if node_type and fm.get("type") != node_type:
+            continue
+        if tower and fm.get("tower") != tower:
+            continue
+        if query:
+            q = query.lower()
+            if (q not in str(fm.get("title", "")).lower()
+                    and q not in str(fm.get("physical_meaning", "")).lower()
+                    and q not in str(fm.get("mathematical_expression", "")).lower()
+                    and q not in str(fm.get("aliases", [])).lower()
+                    and q not in body.lower()):
+                continue
+        nodes.append({
+            "node_id": fm.get("node_id", np.stem),
+            "title": fm.get("title", ""),
+            "type": fm.get("type", ""),
+            "tower": fm.get("tower", ""),
+            "regime_of_validity": fm.get("regime_of_validity", ""),
+            "trust_basis": fm.get("trust_basis", ""),
+            "trust_scope": fm.get("trust_scope", ""),
+            "version": fm.get("version", 1),
+            "mathematical_expression": fm.get("mathematical_expression", ""),
+        })
+
+    # Edge search (high-level from a specific node)
+    edges = []
+    if edges_dir.is_dir():
+        for ep in sorted(edges_dir.glob("*.md")):
+            fm, _ = _parse_md(ep)
+            if edge_type and fm.get("type") != edge_type:
+                continue
+            if from_node:
+                fn = _slugify(from_node)
+                if fm.get("from_node") != fn and fm.get("to_node") != fn:
+                    continue
+            edges.append({
+                "edge_id": fm.get("edge_id", ep.stem),
+                "from_node": fm.get("from_node", ""),
+                "to_node": fm.get("to_node", ""),
+                "type": fm.get("type", ""),
+                "regime_condition": fm.get("regime_condition", ""),
+                "correspondence_verified": fm.get("correspondence_verified", False),
+            })
+
+    return {
+        "nodes": nodes,
+        "edges": edges,
+        "node_count": len(nodes),
+        "edge_count": len(edges),
+        "authority_level": "L2_graph",
+    }
+
+
+@mcp.tool()
+def aitp_merge_subgraph_delta(
+    topics_root: str,
+    topic_slug: str,
+    nodes: list[dict[str, str]] | None = None,
+    edges: list[dict[str, str]] | None = None,
+    missing_prerequisites: list[str] | None = None,
+) -> dict[str, Any]:
+    """Merge a subgraph delta from study mode into the L2 knowledge graph.
+
+    nodes: list of {node_id, type, title, physical_meaning, mathematical_expression, regime_of_validity, tower}
+    edges: list of {edge_id, from_node, to_node, type, regime_condition, evidence}
+    missing_prerequisites: list of node_ids that should exist but don't yet
+    """
+    global_l2 = _ensure_l2_graph_dirs(topics_root)
+    root = _topic_root(topics_root, topic_slug)
+    results = {"nodes_created": 0, "nodes_updated": 0, "edges_created": 0, "conflicts": [], "missing": []}
+
+    if nodes:
+        for nd in nodes:
+            nid = _slugify(nd.get("node_id", ""))
+            if not nid:
+                continue
+            node_path = global_l2 / "graph" / "nodes" / f"{nid}.md"
+            if node_path.exists():
+                # Merge: bump version, potentially upgrade trust
+                existing_fm, _ = _parse_md(node_path)
+                existing_fm["version"] = int(existing_fm.get("version", 1)) + 1
+                existing_fm["updated_at"] = _now()
+                # Check for title conflict (different concept, same slug)
+                if nd.get("title") and existing_fm.get("title") != nd.get("title"):
+                    results["conflicts"].append({
+                        "node_id": nid,
+                        "existing_title": existing_fm.get("title", ""),
+                        "new_title": nd.get("title", ""),
+                    })
+                _write_md(node_path, existing_fm, _parse_md(node_path)[1])
+                results["nodes_updated"] += 1
+            else:
+                # Create new
+                nd_type = nd.get("type", "concept")
+                if nd_type not in L2_NODE_TYPES:
+                    nd_type = "concept"
+                fm = {
+                    "node_id": nid,
+                    "type": nd_type,
+                    "title": nd.get("title", nid),
+                    "regime_of_validity": nd.get("regime_of_validity", ""),
+                    "tower": nd.get("tower", ""),
+                    "trust_basis": "source_grounded",
+                    "trust_scope": "single_source",
+                    "version": 1,
+                    "mathematical_expression": nd.get("mathematical_expression", ""),
+                    "source_topic": topic_slug,
+                    "created_at": _now(),
+                    "updated_at": _now(),
+                }
+                body = (
+                    f"# {nd.get('title', nid)}\n\n"
+                    f"## Physical Meaning\n{nd.get('physical_meaning', '')}\n\n"
+                    f"## Mathematical Expression\n{nd.get('mathematical_expression', '')}\n\n"
+                    f"## Regime and Limits\n{nd.get('regime_of_validity', '')}\n\n"
+                    f"## Open Questions\n"
+                )
+                _write_md(node_path, fm, body)
+                results["nodes_created"] += 1
+
+    if edges:
+        for ed in edges:
+            eid = _slugify(ed.get("edge_id", ""))
+            if not eid:
+                continue
+            edge_path = global_l2 / "graph" / "edges" / f"{eid}.md"
+            if edge_path.exists():
+                continue  # Don't overwrite edges
+            ed_type = ed.get("type", "uses")
+            if ed_type not in L2_EDGE_TYPES:
+                ed_type = "uses"
+            fm = {
+                "edge_id": eid,
+                "from_node": _slugify(ed.get("from_node", "")),
+                "to_node": _slugify(ed.get("to_node", "")),
+                "type": ed_type,
+                "regime_condition": ed.get("regime_condition", ""),
+                "evidence": ed.get("evidence", ""),
+                "correspondence_verified": False,
+                "source_topic": topic_slug,
+                "created_at": _now(),
+            }
+            body = (
+                f"# Edge: {fm['from_node']} --[{ed_type}]--> {fm['to_node']}\n\n"
+                f"## Regime Condition\n{fm['regime_condition']}\n\n"
+                f"## Evidence\n{fm['evidence']}\n"
+            )
+            _write_md(edge_path, fm, body)
+            results["edges_created"] += 1
+
+    if missing_prerequisites:
+        for mp in missing_prerequisites:
+            mp_slug = _slugify(mp)
+            mp_path = global_l2 / "graph" / "nodes" / f"{mp_slug}.md"
+            if not mp_path.exists():
+                results["missing"].append(mp_slug)
+
+    _append_to_topic_log(
+        root,
+        f"L2 graph merge: {results['nodes_created']} created, "
+        f"{results['nodes_updated']} updated, {results['edges_created']} edges, "
+        f"{len(results['conflicts'])} conflicts, {len(results['missing'])} missing",
+    )
+    return results
+
+
+# ---------------------------------------------------------------------------
+# Quality assurance tools (study mode)
+# ---------------------------------------------------------------------------
+
+
+@mcp.tool()
+def aitp_coverage_map(
+    topics_root: str,
+    topic_slug: str,
+) -> dict[str, Any]:
+    """Generate a coverage map for study mode — how thoroughly a source has been processed.
+
+    Returns claim counts, gap counts, and coverage percentage across subplanes.
+    """
+    root = _topic_root(topics_root, topic_slug)
+    state_fm, _ = _parse_md(root / "state.md")
+    if state_fm.get("l3_mode") != "study":
+        return {"message": "Coverage map only available in study mode."}
+
+    subplane_status = {}
+    subplanes_config = {
+        "source_decompose": "active_decomposition.md",
+        "step_derive": "active_derivation.md",
+        "gap_audit": "active_gaps.md",
+        "synthesis": "active_synthesis.md",
+    }
+
+    for sp, artifact_name in subplanes_config.items():
+        artifact_path = root / "L3" / sp / artifact_name
+        if not artifact_path.exists():
+            subplane_status[sp] = {"status": "not_started", "filled_fields": 0}
+            continue
+        fm, body = _parse_md(artifact_path)
+        filled = sum(1 for f in fm.get("required_fields", [])
+                     if str(fm.get(f, "")).strip())
+        subplane_status[sp] = {
+            "status": "partial" if filled < len(fm.get("required_fields", [])) else "complete",
+            "filled_fields": filled,
+            "total_fields": len(fm.get("required_fields", [])),
+        }
+
+    # Count claims and gaps
+    dec_path = root / "L3" / "source_decompose" / "active_decomposition.md"
+    claim_count = 0
+    if dec_path.exists():
+        fm, _ = _parse_md(dec_path)
+        claim_count = int(fm.get("claim_count", 0))
+
+    gap_path = root / "L3" / "gap_audit" / "active_gaps.md"
+    gap_count = 0
+    blocking_count = 0
+    if gap_path.exists():
+        fm, _ = _parse_md(gap_path)
+        gap_count = int(fm.get("gap_count", 0))
+        blocking = str(fm.get("blocking_gaps", "")).strip()
+        blocking_count = 0 if blocking in ("none", "") else len(blocking.split(","))
+
+    completed = sum(1 for s in subplane_status.values() if s["status"] == "complete")
+    total = len(subplane_status)
+    coverage_pct = int(100 * completed / total) if total else 0
+
+    return {
+        "subplanes": subplane_status,
+        "claim_count": claim_count,
+        "gap_count": gap_count,
+        "blocking_gap_count": blocking_count,
+        "coverage_pct": coverage_pct,
+        "ready_for_synthesis": coverage_pct >= 75 and blocking_count == 0,
+    }
+
+
+@mcp.tool()
+def aitp_check_correspondence(
+    topics_root: str,
+    topic_slug: str,
+    node_id: str = "",
+) -> dict[str, Any]:
+    """Check correspondence principle for a node or all nodes in a topic.
+
+    For each result/concept with a regime, check if there is a `limits_to` edge
+    pointing to a known lower-energy result. If missing, flag it.
+    """
+    global_l2 = _global_l2_path(topics_root)
+    nodes_dir = global_l2 / "graph" / "nodes"
+    edges_dir = global_l2 / "graph" / "edges"
+
+    if not nodes_dir.is_dir():
+        return {"message": "L2 graph not initialized.", "checks": []}
+
+    # Collect nodes to check
+    nodes_to_check = []
+    if node_id:
+        slug = _slugify(node_id)
+        np = nodes_dir / f"{slug}.md"
+        if np.exists():
+            nodes_to_check.append(np)
+    else:
+        nodes_to_check = sorted(nodes_dir.glob("*.md"))
+
+    # Build edge index: from_node -> list of edges
+    edge_index: dict[str, list[dict[str, Any]]] = {}
+    if edges_dir.is_dir():
+        for ep in edges_dir.glob("*.md"):
+            fm, _ = _parse_md(ep)
+            fn = fm.get("from_node", "")
+            edge_index.setdefault(fn, []).append(fm)
+
+    checks = []
+    for np in nodes_to_check:
+        fm, _ = _parse_md(np)
+        nid = fm.get("node_id", np.stem)
+        ntype = fm.get("type", "")
+        regime = fm.get("regime_of_validity", "")
+
+        # Only check result/concept/theorem/approximation types
+        if ntype not in ("result", "concept", "theorem", "approximation"):
+            continue
+
+        node_edges = edge_index.get(nid, [])
+        limits_edges = [e for e in node_edges if e.get("type") == "limits_to"]
+        verified_limits = [e for e in limits_edges if e.get("correspondence_verified")]
+
+        status = "verified" if verified_limits else ("unverified" if limits_edges else "missing")
+        checks.append({
+            "node_id": nid,
+            "type": ntype,
+            "title": fm.get("title", ""),
+            "regime": regime,
+            "limits_to_edges": len(limits_edges),
+            "verified_edges": len(verified_limits),
+            "correspondence_status": status,
+        })
+
+    missing = [c for c in checks if c["correspondence_status"] == "missing"]
+    return {
+        "checks": checks,
+        "total_checked": len(checks),
+        "verified": len([c for c in checks if c["correspondence_status"] == "verified"]),
+        "unverified": len([c for c in checks if c["correspondence_status"] == "unverified"]),
+        "missing": len(missing),
+        "missing_nodes": [{"node_id": c["node_id"], "title": c["title"]} for c in missing],
+    }
+
+
+@mcp.tool()
+def aitp_create_l2_tower(
+    topics_root: str,
+    tower_id: str,
+    name: str,
+    energy_range: str,
+    layers: list[dict[str, str]] | None = None,
+) -> str:
+    """Define an EFT tower in the L2 knowledge graph.
+
+    layers: list of {id, energy_scale, theories (comma-separated node_ids)}
+    """
+    global_l2 = _ensure_l2_graph_dirs(topics_root)
+    slug = _slugify(tower_id)
+    tower_path = global_l2 / "graph" / "towers" / f"{slug}.md"
+
+    fm = {
+        "kind": "l2_tower",
+        "tower_id": slug,
+        "name": name,
+        "energy_range": energy_range,
+        "layers": layers or [],
+        "created_at": _now(),
+        "updated_at": _now(),
+    }
+
+    layer_lines = []
+    for layer in (layers or []):
+        layer_lines.append(
+            f"### {layer.get('id', 'unknown')}\n"
+            f"- Energy scale: {layer.get('energy_scale', '')}\n"
+            f"- Theories: {layer.get('theories', '')}\n"
+        )
+
+    body = (
+        f"# {name}\n\n"
+        f"Energy range: {energy_range}\n\n"
+        f"## Layers\n\n{''.join(layer_lines) if layer_lines else 'No layers defined yet.'}\n\n"
+        f"## Correspondence Links\n\n"
+        f"## Open Boundaries\n"
+    )
+    _write_md(tower_path, fm, body)
+    return f"Created EFT tower {slug}: {name}"
 
 
 # ---------------------------------------------------------------------------

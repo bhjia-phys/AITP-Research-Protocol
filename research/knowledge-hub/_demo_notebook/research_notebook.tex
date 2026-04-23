@@ -1,0 +1,108 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[UTF8]{ctex}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{longtable}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small AITP Research Notebook}
+\fancyhead[R]{\small \leftmark}
+\fancyfoot[C]{\thepage}
+
+\definecolor{resultcolor}{RGB}{0,100,0}
+\definecolor{warncolor}{RGB}{180,80,0}
+\definecolor{failcolor}{RGB}{180,0,0}
+
+\newcommand{\result}[1]{\textcolor{resultcolor}{#1}}
+\newcommand{\warn}[1]{\textcolor{warncolor}{#1}}
+\newcommand{\fail}[1]{\textcolor{failcolor}{#1}}
+\newcommand{\entrytag}[1]{\texttt{\small[#1]}}
+
+\title{AITP Research Notebook\\[0.5em]
+\large Topic: }
+\author{AITP Kernel}
+\date{Generated: 2026-04-18T21:01:49+08:00}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+\section{\entrytag{candidate\_update} Hubbard model ground-state energy estimate}
+
+\noindent Time: \texttt{2026-04-18T21:01:46+08:00} \quad\textbar{}\quad Run: \texttt{run-2026-04-18-a} \quad\textbar{}\quad Status: \result{success}
+
+Using variational Monte Carlo on a 8x8 lattice with U/t=4, we obtain a ground-state energy of E\_0 = -0.87t per site. The result agrees with the QMC benchmark within 2\%.
+
+\begin{description}[leftmargin=2em]
+  \item[candidate\_id] cand-hubbard-gs-001
+  \item[claim\_type] numerical\_benchmark
+  \item[trust\_level] medium
+  \item[promotion\_status] pending
+\end{description}
+
+\hrule\vspace{0.5em}
+
+\section{\entrytag{strategy} Pulay mixing significantly accelerates SCF convergence for BH3 molecule}
+
+\noindent Time: \texttt{2026-04-18T21:01:47+08:00} \quad\textbar{}\quad Run: \texttt{run-2026-04-18-a} \quad\textbar{}\quad Status: \warn{helpful}
+
+Switching from simple linear mixing (alpha=0.3) to Pulay mixing with history=8 reduced the SCF cycle count from 47 to 12 for the BH3 molecule in QSGW calculation.
+
+\begin{description}[leftmargin=2em]
+  \item[strategy\_type] verification\_guardrail
+  \item[confidence] 0.85
+  \item[strategy\_id] strat-pulay-bh3
+\end{description}
+
+\hrule\vspace{0.5em}
+
+\section{\entrytag{auto\_action} skill\_discovery: knowledge-hub skill check}
+
+\noindent Time: \texttt{2026-04-18T21:01:48+08:00} \quad\textbar{}\quad Run: \texttt{run-2026-04-18-a} \quad\textbar{}\quad Status: \result{completed}
+
+\begin{description}[leftmargin=2em]
+  \item[action\_id] act-skill-001
+  \item[action\_type] skill\_discovery
+\end{description}
+
+\hrule\vspace{0.5em}
+
+\section{\entrytag{iteration\_journal} Iteration iter-003: SCF convergence confirmed}
+
+\noindent Time: \texttt{2026-04-18T21:01:49+08:00} \quad\textbar{}\quad Run: \texttt{run-2026-04-18-a} \quad\textbar{}\quad Status: \result{success}
+
+The third iteration confirmed SCF convergence with residual < 1e-8. Band gap converged to 6.2 eV, consistent with the experimental value of 6.0 eV.
+
+\begin{description}[leftmargin=2em]
+  \item[iteration\_id] iter-003
+  \item[total\_iterations] 3
+  \item[staging\_decision] promote
+\end{description}
+
+\hrule\vspace{0.5em}
+
+\section{\entrytag{closed\_loop\_result} Result: success — QSGW band gap for BH3}
+
+\noindent Time: \texttt{2026-04-18T21:01:49+08:00} \quad\textbar{}\quad Run: \texttt{run-2026-04-18-a} \quad\textbar{}\quad Status: \result{success}
+
+The quasiparticle band gap was computed as:
+$$E_g^{\mathrm{QSGW}} = \langle\psi_c|\Sigma(\epsilon_c) - v_{xc}|\psi_cangle - \langle\psi_v|\Sigma(\epsilon_v) - v_{xc}|\psi_vangle$$
+Result: $E_g = 6.2$ eV, compared to experimental $E_g^{\mathrm{exp}} = 6.0$ eV. The relative error is 3.3\%, within the acceptable threshold of 5\%.
+
+\begin{description}[leftmargin=2em]
+  \item[result\_id] result-qsgw-bh3-001
+  \item[task\_id] task-band-gap-bh3
+  \item[decision] keep
+  \item[route\_id] route-qsgw-numerical
+\end{description}
+
+\hrule\vspace{0.5em}
+
+\end{document}

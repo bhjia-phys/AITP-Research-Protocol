@@ -14,17 +14,21 @@ access to the AITP MCP tools.
 
 ## Core Model
 
-The protocol is a **stage machine** with orthogonal posture and lane:
+The protocol is a **stage machine** with orthogonal posture, lane, and L3 mode:
 
 ```
 Stage:    L0 (discover) → L1 (read → frame) → L3 → L4 → L3 → L4 → ... → L2 → L5
 Posture:  discover | read | frame | derive | verify | distill | write
 Lane:     formal_theory | toy_numeric | code_method
+L3 Mode:  research | study
 ```
 
 - **Stage** is hard state — you cannot skip or reverse.
 - **Posture** is operating stance — what you *do* at the current stage.
 - **Lane** is research style — orthogonal, does not affect gate logic.
+- **L3 Mode** determines the subplane flow within L3:
+  - **research** (default): ideation → planning → analysis → result_integration → distillation
+  - **study**: source_decompose → step_derive → gap_audit → synthesis
 
 Every agent action must respect the gate model.  When
 `gate_status != "ready"`, you must fix missing requirements before
@@ -37,12 +41,14 @@ advancing.
 | `aitp_bootstrap_topic` | — | First action for a new topic |
 | `aitp_register_source` | L0 | Register each source (paper, dataset, code, book, experiment, etc.) |
 | `aitp_advance_to_l1` | L0→L1 | After L0 source registry passes gate |
-| `aitp_advance_to_l3` | L1→L3 | After all L1 artifacts pass gate |
+| `aitp_advance_to_l3` | L1→L3 | After all L1 artifacts pass gate. Set l3_mode=research or l3_mode=study |
+| `aitp_switch_l3_mode` | L3 | Switch between research and study mode mid-session |
 | `aitp_ingest_knowledge` | L1 | Fill L1 artifacts from source content |
 | `aitp_get_execution_brief` | any | **Always call this first** to check gate status |
 | `aitp_retreat_to_l0` | L1/L3→L0 | Return to L0 when sources are insufficient |
 | `aitp_session_resume` | any | **After session break** — get resumption context and recent activity |
-| `aitp_advance_to_l3` | L1→L3 | After all L1 artifacts pass gate |
+| `aitp_advance_to_l3` | L1→L3 | After all L1 artifacts pass gate. Set l3_mode=research or l3_mode=study |
+| `aitp_switch_l3_mode` | L3 | Switch between research and study mode mid-session |
 | `aitp_advance_l3_subplane` | L3 | Move between subplanes (respect allowed transitions) |
 | `aitp_submit_candidate` | L3 | After distillation, submit a distilled claim |
 | `aitp_create_validation_contract` | L4 | Define mandatory physics checks for a candidate |
@@ -63,6 +69,14 @@ advancing.
 | `aitp_archive_topic` | any | Archive a topic (abandoned, paused, superseded) |
 | `aitp_restore_topic` | archived | Restore an archived topic to its previous stage |
 | `aitp_retreat_to_l1` | L3→L1 | Retreat to L1 when sources/framing need revision |
+| `aitp_create_l2_node` | any | Create a node in the L2 knowledge graph |
+| `aitp_update_l2_node` | any | Update fields of an existing L2 graph node |
+| `aitp_create_l2_edge` | any | Create a typed edge between two L2 graph nodes |
+| `aitp_query_l2_graph` | any | Query L2 graph with dual-level retrieval (nodes + edges) |
+| `aitp_merge_subgraph_delta` | L3 study | Merge study-mode subgraph into L2 graph |
+| `aitp_coverage_map` | L3 study | Check source coverage across study subplanes |
+| `aitp_check_correspondence` | any | Verify correspondence principle for L2 nodes |
+| `aitp_create_l2_tower` | any | Define an EFT tower in the L2 graph |
 
 ## End-to-End Flow
 
@@ -111,30 +125,51 @@ L1 requires 5 filled artifacts:
 ### Phase 2: L3 Derivation (stage = L3, posture = derive)
 
 ```
-8. aitp_advance_to_l3(topics_root, topic_slug)
-   → Sets stage=L3, l3_subplane=ideation
+8. aitp_advance_to_l3(topics_root, topic_slug, l3_mode="research"|"study")
+   → Sets stage=L3, l3_subplane=entry subplane for chosen mode
+   → research mode: l3_subplane=ideation
+   → study mode: l3_subplane=source_decompose
 
-9. Walk subplanes in order: ideation → planning → analysis
-   → result_integration → distillation
+9. Walk subplanes in order (mode-dependent):
+
+   RESEARCH mode: ideation → planning → analysis → result_integration → distillation
+   STUDY mode:    source_decompose → step_derive → gap_audit → synthesis
 
    For each subplane:
    a. Edit the active artifact (e.g., L3/ideation/active_idea.md)
       Fill frontmatter fields AND body headings.
    b. aitp_advance_l3_subplane(topics_root, topic_slug, next_subplane)
-      Only forward transitions are allowed (see table below).
-      Back-edges exist for revision (analysis→planning, etc.)
+      Only valid transitions are allowed (see tables below).
+      Back-edges exist for revision.
 
-10. aitp_submit_candidate(topics_root, topic_slug, candidate_id, claim, evidence)
-    → After distillation is complete. Creates L3/candidates/<id>.md
+10. aitp_submit_candidate(topics_root, topic_slug, candidate_id, claim, evidence,
+      candidate_type="research_claim"|"atomic_concept"|"derivation_chain"|..., regime_of_validity=...)
+    → After final subplane is complete. Creates L3/candidates/<id>.md
 ```
 
-Allowed L3 transitions:
+Allowed L3 transitions (research mode):
 ```
 ideation       → planning
 planning       → analysis, ideation
 analysis       → result_integration, ideation, planning
 result_integration → distillation, analysis
 distillation   → result_integration
+```
+
+Allowed L3 transitions (study mode):
+```
+source_decompose → step_derive
+step_derive      → gap_audit, source_decompose
+gap_audit        → synthesis, step_derive
+synthesis        → gap_audit
+```
+
+Switching between modes mid-session:
+```
+aitp_switch_l3_mode(topics_root, topic_slug, new_mode="research"|"study", reason=...)
+→ Resets to entry subplane of new mode
+→ Current subplane state is preserved (not deleted)
+→ Use when research reveals knowledge gaps (→study) or study yields new ideas (→research)
 ```
 
 ### Phase 3: L4 Validation (stage = L4, posture = verify)
@@ -310,7 +345,10 @@ while topic is not complete:
         Match on brief.stage:
             "L0" → Register sources, fill source_registry.md, advance to L1
             "L1" → Fill remaining L1 artifacts or advance to L3
-            "L3" → Work on active subplane artifact, then advance
+            "L3" → Check brief.l3_mode:
+                     "research" → Work on active subplane artifact (ideation...distillation)
+                     "study" → Work on active subplane artifact (source_decompose...synthesis)
+                   Then advance subplane or submit candidate
             "L4" → Validate candidate with code/analysis, submit review,
                     then return to L3 via aitp_return_to_l3_from_l4
             "L5" → Fill provenance files, then draft paper.
@@ -320,6 +358,8 @@ while topic is not complete:
     # Lifecycle overrides (can happen at any stage):
     if human requests lane change:
         aitp_switch_lane(topics_root, topic_slug, new_lane, reason)
+    if human requests L3 mode switch (research <-> study):
+        aitp_switch_l3_mode(topics_root, topic_slug, new_mode, reason)
     if human requests fork:
         aitp_fork_topic(topics_root, topic_slug, child_slug, ...)
     if human requests archive:
@@ -357,6 +397,8 @@ topics_root/
     ├── L1/                          # Framing artifacts (5 files)
     ├── L3/
     │   ├── <subplane>/active_*.md   # Subplane artifacts
+    │   │   # Research mode: ideation/ planning/ analysis/ result_integration/ distillation/
+    │   │   # Study mode: source_decompose/ step_derive/ gap_audit/ synthesis/
     │   ├── candidates/*.md          # Submitted candidates
     │   └── tex/flow_notebook.tex    # Flow-end archive
     ├── L4/

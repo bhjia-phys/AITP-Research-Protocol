@@ -1,0 +1,5 @@
+\contentsline {section}{\numberline {1}\texttt {\small [candidate\_update]} Hubbard model ground-state energy estimate}{2}{section.1}%
+\contentsline {section}{\numberline {2}\texttt {\small [strategy]} Pulay mixing significantly accelerates SCF convergence for BH3 molecule}{2}{section.2}%
+\contentsline {section}{\numberline {3}\texttt {\small [auto\_action]} skill\_discovery: knowledge-hub skill check}{2}{section.3}%
+\contentsline {section}{\numberline {4}\texttt {\small [iteration\_journal]} Iteration iter-003: SCF convergence confirmed}{2}{section.4}%
+\contentsline {section}{\numberline {5}\texttt {\small [closed\_loop\_result]} Result: success — QSGW band gap for BH3}{3}{section.5}%

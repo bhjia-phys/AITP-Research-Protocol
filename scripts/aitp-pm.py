@@ -478,6 +478,11 @@ _SKILL_TEMPLATES = [
     ("claude-code/aitp-mcp-setup.md", "aitp-runtime/AITP_MCP_SETUP.md"),
 ]
 
+_KIMI_SKILL_TEMPLATES = [
+    ("kimi-code/using-aitp.md", "using-aitp/SKILL.md"),
+    ("kimi-code/aitp-runtime.md", "aitp-runtime/SKILL.md"),
+]
+
 
 def _deploy_claude_code(
     scope: str, target_root: Path | None, variables: dict, remove: bool = False
@@ -617,23 +622,66 @@ def _deploy_claude_code(
 
 
 def _deploy_kimi_code(
-    scope: str, variables: dict, remove: bool = False
+    scope: str, target_root: Path | None, variables: dict, remove: bool = False
 ) -> list[str]:
     """Install or uninstall AITP for Kimi Code."""
-    kimi_dir = Path(variables["KIMI_USER_DIR"])
+    if scope == "user":
+        base = Path(variables["KIMI_USER_DIR"])
+    else:
+        base = target_root / ".kimi" if target_root else Path.cwd() / ".kimi"
+
     deployed: list[str] = []
+    skills_dir = base / "skills"
+
+    if remove:
+        # Remove skill files
+        for _, dst_rel in _KIMI_SKILL_TEMPLATES:
+            p = skills_dir / dst_rel
+            if p.exists():
+                p.unlink()
+                deployed.append(f"- {p}")
+
+        # Clean empty dirs
+        for d in [skills_dir / "using-aitp", skills_dir / "aitp-runtime", skills_dir]:
+            try:
+                if d.exists() and not list(d.iterdir()):
+                    d.rmdir()
+            except OSError:
+                pass
+
+        # mcp.json
+        mcp_path = base / "mcp.json"
+        _write_mcp_json(mcp_path, variables["REPO_ROOT"], remove=True)
+        deployed.append(f"~ {mcp_path} (aitp entry removed)")
+
+        # config.toml
+        config_path = base / "config.toml"
+        _merge_kimi_config_toml(config_path, variables["REPO_ROOT"], remove=True)
+        deployed.append(f"~ {config_path} ([mcp.servers.aitp] removed)")
+
+        return deployed
+
+    # --- Install ---
+    print(f"  Deploying skills to {skills_dir}/")
+    skills_dir.mkdir(parents=True, exist_ok=True)
+    for tmpl_rel, dst_rel in _KIMI_SKILL_TEMPLATES:
+        content = _read_template(tmpl_rel)
+        if content is None:
+            print(f"    WARNING: template not found: {tmpl_rel}")
+            continue
+        dst = skills_dir / dst_rel
+        _atomic_write(dst, _fill(content, variables))
+        deployed.append(str(dst))
 
     # mcp.json
-    mcp_path = kimi_dir / "mcp.json"
-    _write_mcp_json(mcp_path, variables["REPO_ROOT"], remove=remove)
-    action = "removed from" if remove else "written to"
-    deployed.append(f"{mcp_path} (aitp entry {action})")
+    mcp_path = base / "mcp.json"
+    _write_mcp_json(mcp_path, variables["REPO_ROOT"])
+    deployed.append(f"{mcp_path} (aitp entry written)")
 
     # config.toml
-    config_path = kimi_dir / "config.toml"
-    _merge_kimi_config_toml(config_path, variables["REPO_ROOT"], remove=remove)
-    action = "removed from" if remove else "merged into"
-    deployed.append(f"{config_path} ([mcp.servers.aitp] {action})")
+    config_path = base / "config.toml"
+    _merge_kimi_config_toml(config_path, variables["REPO_ROOT"])
+    deployed.append(f"{config_path} ([mcp.servers.aitp] merged)")
 
     return deployed
 
@@ -666,7 +714,7 @@ def cmd_install(args) -> None:
         if agent == "claude-code":
             paths = _deploy_claude_code(scope, target_root, variables, remove=False)
         elif agent == "kimi-code":
-            paths = _deploy_kimi_code(scope, variables, remove=False)
+            paths = _deploy_kimi_code(scope, target_root, variables, remove=False)
         else:
             print(f"  Unknown agent: {agent}")
             continue
@@ -707,7 +755,7 @@ def cmd_uninstall(args) -> None:
         if agent == "claude-code":
             paths = _deploy_claude_code(scope, target_root, variables, remove=True)
         elif agent == "kimi-code":
-            paths = _deploy_kimi_code(scope, variables, remove=True)
+            paths = _deploy_kimi_code(scope, target_root, variables, remove=True)
         else:
             continue
 
@@ -763,7 +811,7 @@ def cmd_update(args) -> None:
             if agent == "claude-code":
                 paths = _deploy_claude_code(scope, target_root, variables, remove=False)
             elif agent == "kimi-code":
-                paths = _deploy_kimi_code(scope, variables, remove=False)
+                paths = _deploy_kimi_code(scope, target_root, variables, remove=False)
             else:
                 continue
 
@@ -896,7 +944,7 @@ def cmd_upgrade(args) -> None:
         if agent == "claude-code":
             paths = _deploy_claude_code(scope, target_root, variables, remove=False)
         elif agent == "kimi-code":
-            paths = _deploy_kimi_code(scope, variables, remove=False)
+            paths = _deploy_kimi_code(scope, target_root, variables, remove=False)
         else:
             continue
 

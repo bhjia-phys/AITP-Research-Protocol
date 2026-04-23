@@ -39,6 +39,10 @@
 
   "kimi-code": {
     "mcp_server_name": "aitp",
-    "config_toml_section": "mcp.servers.aitp"
+    "config_toml_section": "mcp.servers.aitp",
+    "template_skills": [
+      {"src": "kimi-code/using-aitp.md", "dst": "using-aitp/SKILL.md"},
+      {"src": "kimi-code/aitp-runtime.md", "dst": "aitp-runtime/SKILL.md"}
+    ]
   }
 }

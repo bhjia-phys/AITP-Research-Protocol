@@ -1,0 +1,267 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[UTF8]{ctex}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[margin=2.3cm,headheight=16pt,headsep=0.75cm,footskip=1.1cm]{geometry}
+\usepackage[most]{tcolorbox}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{longtable}
+\usepackage{titlesec}
+\usepackage{needspace}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=black,
+  pdftitle={AITP Research Notebook - Aitp Research Notebook Sample}
+}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em}
+\renewcommand{\arraystretch}{1.15}
+\setlist[itemize]{leftmargin=1.8em}
+\setlist[description]{style=nextline,leftmargin=1.8em,labelsep=0.6em}
+
+\definecolor{ink}{RGB}{32,38,46}
+\definecolor{muted}{RGB}{93,103,118}
+\definecolor{linecolor}{RGB}{216,222,230}
+\definecolor{softfill}{RGB}{247,249,252}
+
+\definecolor{candidateframe}{RGB}{32,88,146}
+\definecolor{candidateback}{RGB}{242,247,253}
+\definecolor{strategyframe}{RGB}{120,82,38}
+\definecolor{strategyback}{RGB}{250,246,239}
+\definecolor{autoframe}{RGB}{86,93,113}
+\definecolor{autoback}{RGB}{244,246,249}
+\definecolor{journalframe}{RGB}{60,115,88}
+\definecolor{journalback}{RGB}{242,248,244}
+\definecolor{loopframe}{RGB}{140,54,104}
+\definecolor{loopback}{RGB}{250,242,248}
+
+\definecolor{resultcolor}{RGB}{28,115,76}
+\definecolor{resultback}{RGB}{236,247,241}
+\definecolor{warncolor}{RGB}{176,105,24}
+\definecolor{warnback}{RGB}{252,244,233}
+\definecolor{failcolor}{RGB}{176,54,54}
+\definecolor{failback}{RGB}{252,238,238}
+
+\newcommand{\result}[1]{\textcolor{resultcolor}{#1}}
+\newcommand{\warn}[1]{\textcolor{warncolor}{#1}}
+\newcommand{\fail}[1]{\textcolor{failcolor}{#1}}
+
+\newtcbox{\entrytag}{on line,boxsep=0.45mm,left=1.1mm,right=1.1mm,top=0.3mm,bottom=0.3mm,
+  colback=white,colframe=linecolor,boxrule=0.4pt,arc=0.9mm,
+  fontupper=\ttfamily\scriptsize\color{muted}}
+
+\newtcbox{\metabox}{on line,boxsep=0.55mm,left=1.2mm,right=1.2mm,top=0.45mm,bottom=0.45mm,
+  colback=white,colframe=linecolor,boxrule=0.4pt,arc=1.0mm}
+
+\newcommand{\metaitem}[2]{\metabox{\textcolor{muted}{\scriptsize\textsf{#1}}\hspace{0.45em}\texttt{\scriptsize #2}}}
+
+\newcommand{\kindpill}[2]{\tcbox[on line,boxsep=0.6mm,left=1.4mm,right=1.4mm,top=0.45mm,bottom=0.45mm,
+  colback=#1,colframe=#1,boxrule=0pt,arc=1.2mm]{\textcolor{white}{\textsf{\scriptsize\bfseries #2}}}}
+
+\newcommand{\statusgood}[1]{\tcbox[on line,boxsep=0.6mm,left=1.4mm,right=1.4mm,top=0.45mm,bottom=0.45mm,
+  colback=resultback,colframe=resultcolor,boxrule=0.45pt,arc=1.2mm]{\textcolor{resultcolor}{\textsf{\scriptsize\bfseries Status: #1}}}}
+
+\newcommand{\statuswarn}[1]{\tcbox[on line,boxsep=0.6mm,left=1.4mm,right=1.4mm,top=0.45mm,bottom=0.45mm,
+  colback=warnback,colframe=warncolor,boxrule=0.45pt,arc=1.2mm]{\textcolor{warncolor}{\textsf{\scriptsize\bfseries Status: #1}}}}
+
+\newcommand{\statusfail}[1]{\tcbox[on line,boxsep=0.6mm,left=1.4mm,right=1.4mm,top=0.45mm,bottom=0.45mm,
+  colback=failback,colframe=failcolor,boxrule=0.45pt,arc=1.2mm]{\textcolor{failcolor}{\textsf{\scriptsize\bfseries Status: #1}}}}
+
+\titleformat{\section}
+  {\Large\bfseries\color{ink}}
+  {}
+  {0pt}
+  {}
+
+\titlespacing*{\section}{0pt}{2.0em}{0.75em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textsf{AITP Research Notebook}}
+\fancyhead[R]{\small\nouppercase{\leftmark}}
+\fancyfoot[L]{\small\textsf{Aitp Research Notebook Sample}}
+\fancyfoot[R]{\small\textsf{Page \thepage\ of \pageref*{LastPage}}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\title{AITP Research Notebook\\[0.5em]
+\large Topic: Aitp Research Notebook Sample}
+\author{AITP Kernel}
+\date{Generated: 2026-04-18T21:38:56+08:00}
+
+\begin{document}
+\begin{titlepage}
+\thispagestyle{empty}
+\vspace*{0.12\textheight}
+
+{\Huge\bfseries\color{ink} AITP Research Notebook\par}
+\vspace{0.8em}
+{\Large\color{muted} Topic: Aitp Research Notebook Sample\par}
+\vspace{1.8em}
+
+\begin{tcolorbox}[
+  enhanced,
+  width=0.92\textwidth,
+  colback=softfill,
+  colframe=linecolor,
+  boxrule=0.6pt,
+  arc=1.5mm,
+  left=2.5mm,
+  right=2.5mm,
+  top=2mm,
+  bottom=2mm
+]
+\small\color{ink}
+This notebook is rebuilt from the authoritative JSONL operation log.
+Each section records one research event, preserving narrative context,
+machine metadata, and structured details for later audit.
+\end{tcolorbox}
+
+\vfill
+{\large\color{ink} AITP Kernel\par}
+\vspace{0.4em}
+{\normalsize\color{muted} Generated: 2026-04-18T21:38:56+08:00\par}
+\end{titlepage}
+
+\tableofcontents
+\clearpage
+\needspace{12\baselineskip}
+\section{Candidate Update: Finite-size scaling looks stable}
+
+\begin{tcolorbox}[enhanced,breakable,colback=candidateback,colframe=candidateframe,boxrule=0.7pt,arc=1.5mm,left=1.6mm,right=1.6mm,top=1.4mm,bottom=1.4mm,before skip=0.25em,after skip=1.1em,borderline west={2.5mm}{0pt}{candidateframe}]
+\noindent \kindpill{candidateframe}{Candidate Update} \hspace{0.45em} \entrytag{candidate\_update} \hspace{0.45em} \metaitem{Time}{2026-04-18T21:38:56+08:00} \hspace{0.45em} \metaitem{Run}{demo-run-001} \hspace{0.45em} \statusgood{promoted}\par
+
+候选结论：在当前 toy model 上，谱隙随系统尺寸增大呈现稳定收敛趋势。
+
+Inline check: the fitted exponent is $\alpha \approx 1.97$.
+
+$$\Delta_N \approx \Delta_\infty + c N^{-\alpha}$$
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=linecolor,boxrule=0.4pt,arc=1.0mm,left=1.1mm,right=1.1mm,top=0.9mm,bottom=0.9mm]
+{\small\bfseries\color{ink} Structured Details}\par\medskip
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash\ttfamily\footnotesize\color{muted}}p{0.28\linewidth}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textnormal{Field} & \textnormal{Value} \\
+\midrule
+dataset & toy\_chain\_v3 \\
+fit\_window & N = 24, 32, 40, 48 \\
+residual & 1.8e-3 \\
+artifacts & ["figures/gap\_fit.pdf", "tables/gap\_fit.csv"] \\
+\bottomrule
+\end{tabularx}
+\end{tcolorbox}
+
+\end{tcolorbox}
+
+\needspace{12\baselineskip}
+\section{Strategy Record: Symmetry-constrained ansatz before brute-force sweeps}
+
+\begin{tcolorbox}[enhanced,breakable,colback=strategyback,colframe=strategyframe,boxrule=0.7pt,arc=1.5mm,left=1.6mm,right=1.6mm,top=1.4mm,bottom=1.4mm,before skip=0.25em,after skip=1.1em,borderline west={2.5mm}{0pt}{strategyframe}]
+\noindent \kindpill{strategyframe}{Strategy Record} \hspace{0.45em} \entrytag{strategy} \hspace{0.45em} \metaitem{Time}{2026-04-18T21:38:56+08:00} \hspace{0.45em} \metaitem{Run}{demo-run-002} \hspace{0.45em} \statuswarn{tentative}\par
+
+这次更有效的做法不是盲扫参数，而是先把对称性约束写清楚，再缩小搜索空间。
+
+Practical note: keep a short rejection log for ansatz choices that fail quickly.
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=linecolor,boxrule=0.4pt,arc=1.0mm,left=1.1mm,right=1.1mm,top=0.9mm,bottom=0.9mm]
+{\small\bfseries\color{ink} Structured Details}\par\medskip
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash\ttfamily\footnotesize\color{muted}}p{0.28\linewidth}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textnormal{Field} & \textnormal{Value} \\
+\midrule
+worked\_because & Search space dropped by roughly one order of magnitude. \\
+watch\_out & Can over-constrain the trial family if assumptions are too strong. \\
+\bottomrule
+\end{tabularx}
+\end{tcolorbox}
+
+\end{tcolorbox}
+
+\needspace{12\baselineskip}
+\section{Automated Action: Automated follow-up search surfaced a mismatch}
+
+\begin{tcolorbox}[enhanced,breakable,colback=autoback,colframe=autoframe,boxrule=0.7pt,arc=1.5mm,left=1.6mm,right=1.6mm,top=1.4mm,bottom=1.4mm,before skip=0.25em,after skip=1.1em,borderline west={2.5mm}{0pt}{autoframe}]
+\noindent \kindpill{autoframe}{Automated Action} \hspace{0.45em} \entrytag{auto\_action} \hspace{0.45em} \metaitem{Time}{2026-04-18T21:38:56+08:00} \hspace{0.45em} \metaitem{Run}{demo-run-003} \hspace{0.45em} \statusfail{failed}\par
+
+自动动作触发后，系统对 benchmark 文献和当前推导做了对照。
+
+Result: one reference used a different normalization convention, so the first comparison failed.
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=linecolor,boxrule=0.4pt,arc=1.0mm,left=1.1mm,right=1.1mm,top=0.9mm,bottom=0.9mm]
+{\small\bfseries\color{ink} Structured Details}\par\medskip
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash\ttfamily\footnotesize\color{muted}}p{0.28\linewidth}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textnormal{Field} & \textnormal{Value} \\
+\midrule
+trigger & follow-up literature scan \\
+mismatch & \{"field": "normalization", "expected": "2pi periodic", "observed": "pi periodic"\} \\
+next\_action & Recompute comparison under unified convention. \\
+\bottomrule
+\end{tabularx}
+\end{tcolorbox}
+
+\end{tcolorbox}
+
+\needspace{12\baselineskip}
+\section{Iteration Journal: Loop 4 summary and confidence update}
+
+\begin{tcolorbox}[enhanced,breakable,colback=journalback,colframe=journalframe,boxrule=0.7pt,arc=1.5mm,left=1.6mm,right=1.6mm,top=1.4mm,bottom=1.4mm,before skip=0.25em,after skip=1.1em,borderline west={2.5mm}{0pt}{journalframe}]
+\noindent \kindpill{journalframe}{Iteration Journal} \hspace{0.45em} \entrytag{iteration\_journal} \hspace{0.45em} \metaitem{Time}{2026-04-18T21:38:56+08:00} \hspace{0.45em} \metaitem{Run}{demo-run-004} \hspace{0.45em} \statuswarn{in\_review}\par
+
+本轮闭环的关键进展是：候选命题没有被推翻，但可信度提升主要来自排除了两个常见伪象。
+
+Confidence moved from cautious to moderately positive, but not yet publication-ready.
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=linecolor,boxrule=0.4pt,arc=1.0mm,left=1.1mm,right=1.1mm,top=0.9mm,bottom=0.9mm]
+{\small\bfseries\color{ink} Structured Details}\par\medskip
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash\ttfamily\footnotesize\color{muted}}p{0.28\linewidth}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textnormal{Field} & \textnormal{Value} \\
+\midrule
+surprises & ["Finite-size drift was smaller than expected.", "One control experiment was inconclusive."] \\
+stuckness & low \\
+human\_attention\_needed & Check whether the benchmark choice is too easy. \\
+\bottomrule
+\end{tabularx}
+\end{tcolorbox}
+
+\end{tcolorbox}
+
+\needspace{12\baselineskip}
+\section{Closed-Loop Result: Notebook-style closure snapshot}
+
+\begin{tcolorbox}[enhanced,breakable,colback=loopback,colframe=loopframe,boxrule=0.7pt,arc=1.5mm,left=1.6mm,right=1.6mm,top=1.4mm,bottom=1.4mm,before skip=0.25em,after skip=1.1em,borderline west={2.5mm}{0pt}{loopframe}]
+\noindent \kindpill{loopframe}{Closed-Loop Result} \hspace{0.45em} \entrytag{closed\_loop\_result} \hspace{0.45em} \metaitem{Time}{2026-04-18T21:38:56+08:00} \hspace{0.45em} \metaitem{Run}{demo-run-005} \hspace{0.45em} \statusgood{approved}\par
+
+闭环结果：当前路线值得继续，但应把“规范约定统一”提升为显式 gate。
+
+Summary metric: $F_1 = 0.91$, with no contradiction detected in the present validation slice.
+
+$$\mathcal{L}_{\mathrm{score}} = \lambda_1 E_{\mathrm{fit}} + \lambda_2 E_{\mathrm{consistency}}$$
+
+\begin{tcolorbox}[enhanced,breakable,colback=white,colframe=linecolor,boxrule=0.4pt,arc=1.0mm,left=1.1mm,right=1.1mm,top=0.9mm,bottom=0.9mm]
+{\small\bfseries\color{ink} Structured Details}\par\medskip
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash\ttfamily\footnotesize\color{muted}}p{0.28\linewidth}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textnormal{Field} & \textnormal{Value} \\
+\midrule
+decision & continue\_with\_guardrail \\
+metrics & \{"f1": 0.91, "consistency\_checks": 7, "failures": 1\} \\
+artifacts & ["reports/closure\_summary.md", "plots/consistency\_matrix.pdf"] \\
+\bottomrule
+\end{tabularx}
+\end{tcolorbox}
+
+\end{tcolorbox}
+
+\end{document}

@@ -23,6 +23,7 @@ class StageSnapshot:
     next_allowed_transition: str = ""
     skill: str = "skill-continuous"
     l3_subplane: str = ""
+    l3_mode: str = ""
 
 
 def topics_dir(topics_root: str | Path) -> Path:
@@ -104,6 +105,11 @@ def evaluate_l0_stage(
     lane: str = "unspecified",
 ) -> StageSnapshot:
     """Evaluate L0 gate status by checking source registry and registered sources."""
+    # Determine discovery mode from state.md to select the right skill
+    state_fm, _ = parse_md(topic_root_path / "state.md")
+    mode = state_fm.get("mode", "explore")
+    skill = "skill-deep-research" if mode == "deep_research" else "skill-discover"
+
     for name, posture, fields, headings in _L0_CONTRACTS:
         path = topic_root_path / "L0" / name
         if not path.exists():
@@ -115,7 +121,7 @@ def evaluate_l0_stage(
                 required_artifact_path=str(path),
                 missing_requirements=[name],
                 next_allowed_transition="L0",
-                skill="skill-discover",
+                skill=skill,
             )
         fm, body = parse_md(path)
         missing = _missing_frontmatter_keys(fm, fields) + _missing_required_headings(body, headings)
@@ -128,7 +134,7 @@ def evaluate_l0_stage(
                 required_artifact_path=str(path),
                 missing_requirements=missing,
                 next_allowed_transition="L0",
-                skill="skill-discover",
+                skill=skill,
             )
         # Require at least one registered source
         src_dir = topic_root_path / "L0" / "sources"
@@ -142,7 +148,7 @@ def evaluate_l0_stage(
                 required_artifact_path=str(path),
                 missing_requirements=["register at least one source in L0/sources/"],
                 next_allowed_transition="L0",
-                skill="skill-discover",
+                skill=skill,
             )
 
     return StageSnapshot(
@@ -151,7 +157,7 @@ def evaluate_l0_stage(
         lane=lane,
         gate_status="ready",
         next_allowed_transition="L1",
-        skill="skill-discover",
+        skill=skill,
     )
 
 
@@ -409,6 +415,125 @@ L3_REQUIRED_HEADINGS: dict[str, list[str]] = {
 }
 
 
+# ---------------------------------------------------------------------------
+# L3 study mode subplanes (learning / literature understanding)
+# ---------------------------------------------------------------------------
+
+STUDY_L3_SUBPLANES = ["source_decompose", "step_derive", "gap_audit", "synthesis"]
+
+STUDY_L3_ALLOWED_TRANSITIONS: dict[str, list[str]] = {
+    "source_decompose": ["step_derive"],
+    "step_derive": ["gap_audit", "source_decompose"],
+    "gap_audit": ["synthesis", "step_derive"],
+    "synthesis": ["gap_audit"],
+}
+
+STUDY_L3_ARTIFACT_TEMPLATES: dict[str, tuple[str, dict[str, Any], str]] = {
+    "source_decompose": (
+        "source_decompose",
+        {
+            "artifact_kind": "l3_active_decomposition",
+            "subplane": "source_decompose",
+            "required_fields": ["source_ref", "claim_count"],
+            "source_ref": "",
+            "claim_count": 0,
+        },
+        "# Active Decomposition\n\n## Source Reference\n\n## Atomic Claims\n\n"
+        "## Claim-Concept Map\n\n## L2 Overlap Check\n",
+    ),
+    "step_derive": (
+        "step_derive",
+        {
+            "artifact_kind": "l3_active_derivation",
+            "subplane": "step_derive",
+            "required_fields": ["derivation_count", "all_steps_justified"],
+            "derivation_count": 0,
+            "all_steps_justified": "",
+        },
+        "# Active Derivation\n\n## Derivation Chains\n\n"
+        "## Step-by-Step Trace\n\n## Feynman Self-Check\n\n## Unresolved Steps\n",
+    ),
+    "gap_audit": (
+        "gap_audit",
+        {
+            "artifact_kind": "l3_active_gaps",
+            "subplane": "gap_audit",
+            "required_fields": ["gap_count", "blocking_gaps"],
+            "gap_count": 0,
+            "blocking_gaps": "",
+        },
+        "# Active Gap Audit\n\n## Unstated Assumptions\n\n"
+        "## Approximation Regimes\n\n## Correspondence Check\n\n"
+        "## Prerequisite Gaps\n\n## Severity Assessment\n",
+    ),
+    "synthesis": (
+        "synthesis",
+        {
+            "artifact_kind": "l3_active_synthesis",
+            "subplane": "synthesis",
+            "required_fields": ["synthesis_statement", "l2_update_summary"],
+            "synthesis_statement": "",
+            "l2_update_summary": "",
+        },
+        "# Active Synthesis\n\n## Reconstructed Contribution\n\n"
+        "## L2 Node Proposals\n\n## L2 Edge Proposals\n\n"
+        "## Open Questions\n\n## Regime Annotations\n",
+    ),
+}
+
+STUDY_L3_ACTIVE_ARTIFACT_NAMES: dict[str, str] = {
+    "source_decompose": "active_decomposition.md",
+    "step_derive": "active_derivation.md",
+    "gap_audit": "active_gaps.md",
+    "synthesis": "active_synthesis.md",
+}
+
+STUDY_L3_SKILL_MAP: dict[str, str] = {
+    "source_decompose": "skill-l3-decompose",
+    "step_derive": "skill-l3-step-derive",
+    "gap_audit": "skill-l3-gap-audit",
+    "synthesis": "skill-l3-synthesis",
+}
+
+STUDY_L3_REQUIRED_HEADINGS: dict[str, list[str]] = {
+    "source_decompose": ["## Source Reference", "## Atomic Claims"],
+    "step_derive": ["## Derivation Chains", "## Step-by-Step Trace"],
+    "gap_audit": ["## Unstated Assumptions", "## Correspondence Check"],
+    "synthesis": ["## Reconstructed Contribution", "## L2 Node Proposals"],
+}
+
+STUDY_CANDIDATE_TYPES = [
+    "atomic_concept",
+    "derivation_chain",
+    "correspondence_link",
+    "regime_boundary",
+    "open_question",
+]
+
+
+def _get_l3_config(l3_mode: str):
+    """Return the L3 configuration (subplanes, transitions, templates, etc.) for the given mode."""
+    if l3_mode == "study":
+        return (
+            STUDY_L3_SUBPLANES,
+            STUDY_L3_ALLOWED_TRANSITIONS,
+            STUDY_L3_ARTIFACT_TEMPLATES,
+            STUDY_L3_ACTIVE_ARTIFACT_NAMES,
+            STUDY_L3_SKILL_MAP,
+            STUDY_L3_REQUIRED_HEADINGS,
+            "source_decompose",
+        )
+    return (
+        L3_SUBPLANES,
+        L3_ALLOWED_TRANSITIONS,
+        L3_ARTIFACT_TEMPLATES,
+        L3_ACTIVE_ARTIFACT_NAMES,
+        L3_SKILL_MAP,
+        L3_REQUIRED_HEADINGS,
+        "ideation",
+    )
+
+
 def evaluate_l3_stage(
     parse_md: Callable[[Path], tuple[dict[str, Any], str]],
     topic_root_path: Path,
@@ -416,13 +541,25 @@ def evaluate_l3_stage(
 ) -> StageSnapshot:
     """Evaluate L3 gate status by checking active subplane artifacts."""
     state_fm, _ = parse_md(topic_root_path / "state.md")
-    current_subplane = str(state_fm.get("l3_subplane", "")).strip() or "ideation"
+    l3_mode = str(state_fm.get("l3_mode", "research")).strip() or "research"
 
-    artifact_name = L3_ACTIVE_ARTIFACT_NAMES.get(current_subplane, "active_idea.md")
+    (
+        subplanes,
+        allowed_transitions,
+        artifact_templates,
+        artifact_names,
+        skill_map,
+        required_headings_map,
+        default_subplane,
+    ) = _get_l3_config(l3_mode)
+
+    current_subplane = str(state_fm.get("l3_subplane", "")).strip() or default_subplane
+
+    artifact_name = artifact_names.get(current_subplane, f"active_{current_subplane}.md")
     artifact_path = topic_root_path / "L3" / current_subplane / artifact_name
-    skill = L3_SKILL_MAP.get(current_subplane, "skill-l3-ideate")
+    skill = skill_map.get(current_subplane, skill_map.get(default_subplane, "skill-l3-ideate"))
 
-    template_info = L3_ARTIFACT_TEMPLATES.get(current_subplane)
+    template_info = artifact_templates.get(current_subplane)
     if template_info is None:
         return StageSnapshot(
             stage="L3", posture="derive", lane=lane,
@@ -430,13 +567,13 @@ def evaluate_l3_stage(
             required_artifact_path=str(artifact_path),
             missing_requirements=[f"unknown subplane '{current_subplane}'"],
             next_allowed_transition="", skill=skill,
-            l3_subplane=current_subplane,
+            l3_subplane=current_subplane, l3_mode=l3_mode,
         )
 
     _, template_fm, _ = template_info
-    required_fields = [f for f in template_fm.get("required_fields", [])
-                       if not current_subplane.startswith("_")]
-    required_headings = L3_REQUIRED_HEADINGS.get(current_subplane, [])
+    req_fields = [f for f in template_fm.get("required_fields", [])
+                   if not current_subplane.startswith("_")]
+    req_headings = required_headings_map.get(current_subplane, [])
 
     if not artifact_path.exists():
         return StageSnapshot(
@@ -446,13 +583,13 @@ def evaluate_l3_stage(
             missing_requirements=[artifact_name],
             next_allowed_transition="",
             skill=skill,
-            l3_subplane=current_subplane,
+            l3_subplane=current_subplane, l3_mode=l3_mode,
         )
 
     fm, body = parse_md(artifact_path)
     missing = (
-        _missing_frontmatter_keys(fm, required_fields)
-        + _missing_required_headings(body, required_headings)
+        _missing_frontmatter_keys(fm, req_fields)
+        + _missing_required_headings(body, req_headings)
     )
     if missing:
         return StageSnapshot(
@@ -462,25 +599,88 @@ def evaluate_l3_stage(
             missing_requirements=missing,
             next_allowed_transition="",
             skill=skill,
-            l3_subplane=current_subplane,
+            l3_subplane=current_subplane, l3_mode=l3_mode,
         )
 
     # Current subplane is complete; check if this is the last one
-    if current_subplane == "distillation":
+    last_subplane = subplanes[-1]
+    if current_subplane == last_subplane:
         return StageSnapshot(
             stage="L3", posture="derive", lane=lane,
             gate_status="ready",
             next_allowed_transition="L4",
             skill=skill,
-            l3_subplane=current_subplane,
+            l3_subplane=current_subplane, l3_mode=l3_mode,
         )
     return StageSnapshot(
         stage="L3", posture="derive", lane=lane,
         gate_status="ready",
-        next_allowed_transition=",".join(L3_ALLOWED_TRANSITIONS.get(current_subplane, [])),
+        next_allowed_transition=",".join(allowed_transitions.get(current_subplane, [])),
         skill=skill,
-        l3_subplane=current_subplane,
+        l3_subplane=current_subplane, l3_mode=l3_mode,
     )
+
+
+# ---------------------------------------------------------------------------
+# L2 knowledge graph constants
+# ---------------------------------------------------------------------------
+
+L2_NODE_TYPES = [
+    "concept", "theorem", "technique", "derivation_chain",
+    "result", "approximation", "open_question", "regime_boundary",
+]
+
+L2_EDGE_TYPES = [
+    # Core physics
+    "limits_to", "specializes", "generalizes", "approximates",
+    # Logical dependency
+    "derives_from", "proven_by", "assumes", "uses",
+    # Structural
+    "component_of", "equivalent_to", "contradicts",
+    # EFT tower
+    "matches_onto", "decouples_at", "emerges_from",
+    # Research
+    "refines", "motivates",
+]
+
+L2_TOWER_TEMPLATE: tuple[dict[str, Any], str] = (
+    {
+        "kind": "l2_tower",
+        "name": "",
+        "energy_range": "",
+        "layers": [],
+        "correspondence_links": [],
+    },
+    "# EFT Tower\n\n## Layers\n\n## Correspondence Links\n\n## Open Boundaries\n",
+)
+
+L2_CORRESPONDENCE_TEMPLATE: tuple[dict[str, Any], str] = (
+    {
+        "kind": "l2_correspondence",
+        "from_theory": "",
+        "to_theory": "",
+        "limit_condition": "",
+        "verified": False,
+        "verified_by": "",
+    },
+    "# Correspondence Link\n\n## Limit Condition\n\n## Verification\n\n## Notes\n",
+)
+
+STUDY_L4_CHECKS = [
+    "coverage_check",
+    "feynman_self_test",
+    "correspondence_check",
+    "derivation_step_completeness",
+    "regime_annotation",
+    "l2_edge_completeness",
+]
+
+TRUST_EVOLUTION = {
+    "source_grounded": {"basis": "source_grounded", "scope": "single_source"},
+    "multi_source_confirmed": {"basis": "multi_source_confirmed", "scope": "bounded_reusable"},
+    "correspondence_verified": {"basis": "validated", "scope": "broad_reusable"},
+    "independently_verified": {"basis": "independently_verified", "scope": "broad_reusable"},
+}
 
 
 # ---------------------------------------------------------------------------
@@ -654,6 +854,24 @@ TOOL_CATALOG: dict[tuple[str, str], list[tuple[str, str, str]]] = {
         ("arxiv-latex-mcp", "Reference paper formatting and structure", "A"),
         ("scientific-writing", "Academic writing guidance and structure", "B"),
         ("mcp-server-chart", "Generate publication-quality charts", "A"),
+    ],
+    # L3 study mode — literature understanding subplanes
+    ("L3_study", "source_decompose"): [
+        ("arxiv-latex-mcp", "Read paper sections for decomposition", "A"),
+        ("knowledge-hub", "Check existing L2 concepts for overlap", "C"),
+    ],
+    ("L3_study", "step_derive"): [
+        ("arxiv-latex-mcp", "Reference derivation steps from source", "A"),
+        ("jupyter-mcp-server", "Symbolic verification of derivation steps (SymPy)", "A"),
+        ("knowledge-hub", "Query prerequisite concepts from L2", "A"),
+    ],
+    ("L3_study", "gap_audit"): [
+        ("arxiv-latex-mcp", "Cross-check claims against source", "A"),
+        ("knowledge-hub", "Check L2 for correspondence targets", "C"),
+    ],
+    ("L3_study", "synthesis"): [
+        ("knowledge-hub", "Write synthesized knowledge to L2", "C"),
+        ("arxiv-latex-mcp", "Final verification against source", "A"),
     ],
 }
 
