@@ -23,7 +23,8 @@ natural-language theory work route through the gatekeeper skill.
    aitp install-agent --agent codex --scope user
    ```
 
-   Windows-friendly equivalent:
+   If `aitp` is not on `PATH` yet and you are working from a local checkout of
+   this repository, use the repo-local launcher:
 
    ```cmd
    scripts\aitp-local.cmd install-agent --agent codex --scope user
@@ -36,7 +37,17 @@ This is the current plugin-first-equivalent Codex path.
 ## Repo-backed contributor path
 
 If you want repo-synced skills while changing this repository, use a local
-checkout:
+checkout.
+
+Public baseline first:
+
+```bash
+python -m pip install aitp-kernel
+aitp install-agent --agent codex --scope user
+```
+
+If you instead want the checkout itself to be your local fallback surface, keep
+going:
 
 1. Clone the repository:
 
@@ -76,8 +87,10 @@ checkout:
    scripts\aitp-local.cmd install-agent --agent codex --scope user
    ```
 
-   This copies `using-aitp` and `aitp-runtime` into `%USERPROFILE%\.agents\skills`
-   instead of relying on a junction. Rerun it after updates if you use this path.
+   This copies `using-aitp` and `aitp-runtime` into the user-scope Codex skill
+   roots that already exist on your machine, typically `%USERPROFILE%\.agents\skills`
+   and possibly `%USERPROFILE%\.codex\skills` or `%USERPROFILE%\.codex-home\skills`.
+   Rerun it after updates if you use this path.
 
 4. Restart Codex.
 
@@ -88,7 +101,21 @@ aitp doctor
 aitp doctor --json
 ```
 
+Windows repo-local fallback:
+
+```cmd
+scripts\aitp-local.cmd doctor
+```
+
 The Codex row should be `ready` in `runtime_support_matrix.runtimes.codex`.
+
+If you want to inspect the skill roots directly on Windows:
+
+```powershell
+Get-ChildItem "$env:USERPROFILE\.agents\skills"
+Get-ChildItem "$env:USERPROFILE\.codex\skills"
+Get-ChildItem "$env:USERPROFILE\.codex-home\skills"
+```
 
 ## Verify
 
@@ -129,6 +156,12 @@ If bootstrap does not fire, use:
 
 ```bash
 aitp session-start "<task>"
+```
+
+Windows repo-local fallback:
+
+```cmd
+scripts\aitp-local.cmd session-start "<task>"
 ```
 
 ## Updating

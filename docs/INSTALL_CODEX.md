@@ -34,7 +34,8 @@ Install the user-scope Codex assets directly:
 aitp install-agent --agent codex --scope user
 ```
 
-Windows-native equivalent:
+If `aitp` is not on `PATH` yet and you are working from a local checkout of
+this repository, use the repo-local launcher instead:
 
 ```cmd
 scripts\aitp-local.cmd install-agent --agent codex --scope user
@@ -54,18 +55,18 @@ What this means in practice:
 
 ## Repo-backed contributor path
 
-If you want symlinked skills that track a local checkout while you edit the
+If you want repo-backed contributor instructions while you edit this
 repository itself, follow [`.codex/INSTALL.md`](../.codex/INSTALL.md).
 
 ## Workspace-local compatibility install
 
-If you want workspace-local copied skills instead of a symlink:
+If you want workspace-local copied skills instead of a user-scope install:
 
 ```bash
 aitp install-agent --agent codex --scope project --target-root /path/to/theory-workspace
 ```
 
-User-scope copied-assets alternative:
+User-scope equivalent:
 
 ```bash
 aitp install-agent --agent codex --scope user
@@ -83,13 +84,27 @@ Windows-native user-scope alternative:
 scripts\aitp-local.cmd install-agent --agent codex --scope user
 ```
 
-This now writes only:
+For project scope, this writes:
 
 - `.agents/skills/using-aitp/`
 - `.agents/skills/aitp-runtime/`
 - `.agents/skills/aitp-runtime/AITP_MCP_SETUP.md`
 
+For user scope, Codex may refresh more than one skill root depending on what
+already exists on the machine:
+
+- `~/.agents/skills/using-aitp/` and `~/.agents/skills/aitp-runtime/`
+- `~/.codex/skills/using-aitp/` and `~/.codex/skills/aitp-runtime/`
+- `~/.codex-home/skills/using-aitp/` and `~/.codex-home/skills/aitp-runtime/`
+
 It no longer writes `aitp-codex` or workspace wrapper binaries by default.
+
+Important distinction:
+
+- `scripts\aitp-local.cmd` is the repo-local AITP runtime CLI fallback.
+- `scripts\aitp.cmd` is the legacy package-manager wrapper in this repository.
+- For Codex bootstrap, use `aitp ...` or `scripts\aitp-local.cmd ...`, not
+  `scripts\aitp.cmd ...`.
 
 ## Verify
 
@@ -107,14 +122,23 @@ Minimal sanity checks:
 
 ```bash
 aitp doctor
-ls -la ~/.agents/skills/aitp
+ls -la ~/.agents/skills
+ls -la ~/.codex/skills
 ```
 
-Windows (PowerShell), inspect the skills root and confirm either the `aitp`
-junction or copied `using-aitp` / `aitp-runtime` folders are present:
+Windows (PowerShell), if you are using the repo-local launcher:
+
+```powershell
+scripts\aitp-local.cmd doctor
+```
+
+Then inspect the skill roots and confirm `using-aitp` / `aitp-runtime` are
+present in the roots your local Codex installation actually uses:
 
 ```powershell
 Get-ChildItem "$env:USERPROFILE\.agents\skills"
+Get-ChildItem "$env:USERPROFILE\.codex\skills"
+Get-ChildItem "$env:USERPROFILE\.codex-home\skills"
 ```
 
 For the structured runtime view, use:
@@ -156,6 +180,12 @@ If bootstrap does not fire, use:
 
 ```bash
 aitp session-start "<task>"
+```
+
+Repo-local Windows fallback:
+
+```cmd
+scripts\aitp-local.cmd session-start "<task>"
 ```
 
 ## Remove

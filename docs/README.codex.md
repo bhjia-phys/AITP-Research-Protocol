@@ -11,6 +11,13 @@ python -m pip install aitp-kernel
 aitp install-agent --agent codex --scope user
 ```
 
+If `aitp` is not on `PATH` yet and you are running from a local checkout on
+Windows, use:
+
+```cmd
+scripts\aitp-local.cmd install-agent --agent codex --scope user
+```
+
 If you want the repo-backed contributor path instead, tell Codex:
 
 ```text
@@ -19,9 +26,13 @@ Fetch and follow instructions from https://raw.githubusercontent.com/bhjia-phys/
 
 ## How it works
 
-- Codex discovers `skills/using-aitp/SKILL.md` through `~/.agents/skills/aitp`.
+- Codex discovers `using-aitp` and `aitp-runtime` through whichever local
+  user-scope skill roots exist, typically `~/.agents/skills`, `~/.codex/skills`,
+  or `~/.codex-home/skills`.
 - `using-aitp` acts as the gatekeeper for topic continuation, paper learning, derivation planning, steering updates, and validation work.
 - Once AITP claims the task, Codex follows `aitp-runtime` and the runtime bundle.
+- `scripts\aitp-local.cmd` is the repo-local runtime CLI fallback when the
+  installed `aitp` command is unavailable.
 
 The point is not to make the user memorize wrapper commands. The point is to
 make Codex enter the research protocol before it starts answering like a chat
