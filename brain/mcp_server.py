@@ -2405,8 +2405,319 @@ _L5_ARTIFACTS = {
 
 
 @mcp.tool()
+def _build_flow_notebook_content(
+    root: Path, title: str, question: str, lane: str
+) -> str:
+    """Build flow_notebook.tex content from all L3 subplane artifacts.
+
+    Reads every subplane active artifact, every candidate, and every L4 review,
+    then consolidates into a structured LaTeX document.
+    """
+    def _read_section(path: Path) -> str:
+        if not path.exists():
+            return ""
+        _, body = _parse_md(path)
+        return body
+
+    def _esc(text: str) -> str:
+        """Minimal LaTeX escaping."""
+        return (text
+                .replace("\\", "\\textbackslash ")
+                .replace("&", "\\&")
+                .replace("%", "\\%")
+                .replace("$", "\\$")
+                .replace("#", "\\#")
+                .replace("_", "\\_")
+                .replace("{", "\\{")
+                .replace("}", "\\}")
+                .replace("^", "\\^{}")
+                .replace("~", "\\textasciitilde "))
+
+    def _inline_math_safe(text: str) -> str:
+        """Keep $...$ and $$...$$ math blocks intact, escape the rest."""
+        # Simple approach: split on $, escape odd segments
+        parts = text.split("$")
+        result = []
+        for i, part in enumerate(parts):
+            if i % 2 == 0:
+                result.append(_esc(part))
+            else:
+                result.append(f"${part}$")
+        return "".join(result)
+
+    # Determine L3 mode
+    fm_state, _ = _parse_md(root / "state.md")
+    l3_mode = fm_state.get("l3_mode", "research")
+
+    # Collect subplane artifacts
+    subplanes = []
+    if l3_mode == "research":
+        from brain.state_model import L3_SUBPLANES, L3_ACTIVE_ARTIFACT_NAMES
+        sp_names = L3_SUBPLANES
+        art_names = L3_ACTIVE_ARTIFACT_NAMES
+    else:
+        from brain.state_model import STUDY_L3_SUBPLANES, STUDY_L3_ACTIVE_ARTIFACT_NAMES
+        sp_names = STUDY_L3_SUBPLANES
+        art_names = STUDY_L3_ACTIVE_ARTIFACT_NAMES
+
+    for sp in sp_names:
+        art_name = art_names.get(sp, f"active_{sp}.md")
+        path = root / "L3" / sp / art_name
+        if path.exists():
+            fm, body = _parse_md(path)
+            subplanes.append({
+                "name": sp,
+                "frontmatter": fm,
+                "body": body,
+            })
+
+    # Collect candidates
+    cand_dir = root / "L3" / "candidates"
+    candidates = []
+    if cand_dir.is_dir():
+        for cp in sorted(cand_dir.glob("*.md")):
+            fm, body = _parse_md(cp)
+            if fm.get("status") in ("validated", "approved_for_promotion", "promoted", ""):
+                candidates.append({"slug": cp.stem, "fm": fm, "body": body})
+
+    # Collect L4 reviews
+    review_dir = root / "L4" / "reviews"
+    reviews = []
+    if review_dir.is_dir():
+        for rp in sorted(review_dir.glob("*.md")):
+            fm, body = _parse_md(rp)
+            reviews.append({"slug": rp.stem, "fm": fm, "body": body})
+
+    # Build LaTeX document
+    tex = []
+    tex.append(r"\documentclass[11pt,a4paper]{article}")
+    tex.append(r"\usepackage[utf8]{inputenc}")
+    tex.append(r"\usepackage[T1]{fontenc}")
+    tex.append(r"\usepackage{amsmath,amssymb,amsfonts}")
+    tex.append(r"\usepackage{physics}")
+    tex.append(r"\usepackage{hyperref}")
+    tex.append(r"\usepackage[margin=2.5cm]{geometry}")
+    tex.append(r"\usepackage{enumitem}")
+    tex.append("")
+    tex.append(r"\title{Flow Notebook: " + _esc(title) + "}")
+    tex.append(r"\author{AITP Protocol v3}")
+    tex.append(r"\date{\today}")
+    tex.append("")
+    tex.append(r"\begin{document}")
+    tex.append(r"\maketitle")
+    tex.append("")
+
+    # ---- 1. Abstract / Synthesis ----
+    tex.append(r"\section{Research Summary}")
+    tex.append("")
+    synopsis_written = False
+    for sp in subplanes:
+        if sp["name"] in ("distillation", "synthesis"):
+            text = _inline_math_safe(sp["body"].strip())
+            if text:
+                tex.append(r"\subsection*{Synthesis}")
+                tex.append("")
+                for line in text.split("\n"):
+                    if line.startswith("#"):
+                        tex.append(r"\subsection*{" + _esc(line.lstrip("# ")) + "}")
+                    elif line.strip():
+                        tex.append(_esc(line))
+                    tex.append("")
+                synopsis_written = True
+
+    if not synopsis_written and candidates:
+        tex.append(r"\subsection*{Key Claims}")
+        tex.append(r"\begin{itemize}")
+        for c in candidates[:5]:
+            claim = c["fm"].get("claim", "")[:300]
+            tex.append(r"\item " + _inline_math_safe(claim))
+        tex.append(r"\end{itemize}")
+
+    # ---- 2. Question & Scope ----
+    tex.append(r"\section{Research Question}")
+    tex.append("")
+    qc_path = root / "L1" / "question_contract.md"
+    if qc_path.exists():
+        fm_qc, body_qc = _parse_md(qc_path)
+        bounded = fm_qc.get("bounded_question", question)
+        scope = fm_qc.get("scope_boundaries", "")
+        tex.append(r"\textbf{Bounded Question:} " + _inline_math_safe(bounded))
+        tex.append("")
+        if scope:
+            tex.append(r"\textbf{Scope:} " + _esc(scope))
+            tex.append("")
+
+    # ---- 3. Source Basis ----
+    tex.append(r"\section{Source Basis}")
+    tex.append("")
+    sb_path = root / "L1" / "source_basis.md"
+    if sb_path.exists():
+        _, body_sb = _parse_md(sb_path)
+        tex.append(_inline_math_safe(body_sb[:2000]))
+        tex.append("")
+
+    # ---- 4. Conventions ----
+    cs_path = root / "L1" / "convention_snapshot.md"
+    if cs_path.exists():
+        tex.append(r"\section{Conventions \& Notation}")
+        tex.append("")
+        _, body_cs = _parse_md(cs_path)
+        tex.append(_inline_math_safe(body_cs[:1000]))
+        tex.append("")
+
+    # ---- 5. Derivation ----
+    tex.append(r"\section{Derivation}")
+    tex.append("")
+    derivation_sps = [sp for sp in subplanes if sp["name"] in ("analysis", "step_derive", "result_integration")]
+    if derivation_sps:
+        for sp in derivation_sps:
+            tex.append(r"\subsection*{" + sp["name"].replace("_", " ").title() + "}")
+            tex.append("")
+            text = _inline_math_safe(sp["body"].strip())
+            for line in text.split("\n"):
+                if line.startswith("## "):
+                    tex.append(r"\subsubsection*{" + _esc(line[3:]) + "}")
+                elif line.strip():
+                    tex.append(_esc(line))
+                tex.append("")
+    else:
+        tex.append(r"(No structured derivation recorded. See subplane artifacts.)")
+        tex.append("")
+
+    # ---- 6. Results ----
+    tex.append(r"\section{Results}")
+    tex.append("")
+    if candidates:
+        for i, c in enumerate(candidates, 1):
+            title = c["fm"].get("title", c["slug"])
+            claim = c["fm"].get("claim", "")
+            ctype = c["fm"].get("candidate_type", "research_claim")
+            regime = c["fm"].get("regime_of_validity", "")
+            tex.append(r"\subsection*{Result " + str(i) + r": " + _esc(title) + "}")
+            tex.append("")
+            tex.append(r"\textbf{Type:} " + _esc(ctype))
+            tex.append("")
+            tex.append(r"\textbf{Claim:} " + _inline_math_safe(claim))
+            tex.append("")
+            if regime:
+                tex.append(r"\textbf{Regime of Validity:} " + _esc(regime))
+                tex.append("")
+    else:
+        tex.append(r"(No candidates submitted.)")
+        tex.append("")
+
+    # ---- 7. Gap Audit / Limitations ----
+    tex.append(r"\section{Assumptions, Gaps \& Limitations}")
+    tex.append("")
+    gap_sps = [sp for sp in subplanes if sp["name"] in ("gap_audit", "planning", "ideation")]
+    gap_written = False
+    for sp in gap_sps:
+        text = _inline_math_safe(sp["body"].strip())
+        if text:
+            tex.append(r"\subsection*{" + sp["name"].replace("_", " ").title() + "}")
+            tex.append("")
+            for line in text.split("\n"):
+                if line.strip():
+                    tex.append(_esc(line))
+                    tex.append("")
+            gap_written = True
+    if not gap_written:
+        tex.append(r"(No formal gap audit recorded.)")
+        tex.append("")
+
+    # ---- 8. Validation ----
+    tex.append(r"\section{Validation}")
+    tex.append("")
+    if reviews:
+        for r in reviews:
+            outcome = r["fm"].get("outcome", "unknown")
+            notes = r["fm"].get("notes", "")
+            tex.append(r"\subsection*{" + _esc(r["slug"]) + r" — " + _esc(outcome) + "}")
+            tex.append("")
+            if notes:
+                tex.append(_inline_math_safe(notes[:500]))
+                tex.append("")
+    else:
+        tex.append(r"(No L4 reviews submitted.)")
+        tex.append("")
+
+    # ---- 9. Open Questions ----
+    tex.append(r"\section{Open Questions \& Future Work}")
+    tex.append("")
+    oq_candidates = [c for c in candidates if c["fm"].get("candidate_type") == "open_question"]
+    if oq_candidates:
+        tex.append(r"\begin{itemize}")
+        for c in oq_candidates:
+            tex.append(r"\item " + _inline_math_safe(c["fm"].get("claim", c["slug"])[:300]))
+        tex.append(r"\end{itemize}")
+    else:
+        tex.append(r"(No open questions formally recorded.)")
+        tex.append("")
+
+    tex.append("")
+    tex.append(r"\end{document}")
+
+    return "\n".join(tex)
+
+
+@mcp.tool()
+def aitp_generate_flow_notebook(
+    topics_root: str,
+    topic_slug: str,
+) -> dict[str, Any]:
+    """Generate flow_notebook.tex from all L3 subplane artifacts, candidates, and reviews.
+
+    Reads every subplane active artifact, every candidate, and every L4 review,
+    then consolidates into a structured LaTeX document at L3/tex/flow_notebook.tex.
+    This is the readable research record — a physicist can understand the full
+    derivation, results, and validation from this single document.
+
+    Call this before advance_to_l5, or at any point during L3/L4 to snapshot progress.
+    """
+    root = _topic_root(topics_root, topic_slug)
+    fm, _ = _parse_md(root / "state.md")
+
+    title = str(fm.get("title", topic_slug))
+    question = ""  # extracted from body if available
+    lane = str(fm.get("lane", "unspecified"))
+
+    tex_content = _build_flow_notebook_content(root, title, question, lane)
+
+    # Write to L3/tex/
+    tex_dir = root / "L3" / "tex"
+    tex_dir.mkdir(parents=True, exist_ok=True)
+    tex_path = tex_dir / "flow_notebook.tex"
+    _write_md(tex_path, {
+        "artifact_kind": "l3_flow_notebook",
+        "stage": "L3",
+        "generated_at": _now(),
+        "topic_slug": topic_slug,
+    }, tex_content)
+
+    _append_to_topic_log(root, "generated flow_notebook.tex")
+
+    return {
+        "message": f"flow_notebook.tex generated at L3/tex/flow_notebook.tex",
+        "path": str(tex_path),
+        "size_bytes": len(tex_content),
+        "sections_included": [
+            "Research Summary",
+            "Research Question",
+            "Source Basis",
+            "Conventions & Notation",
+            "Derivation",
+            "Results",
+            "Assumptions, Gaps & Limitations",
+            "Validation",
+            "Open Questions & Future Work",
+        ],
+    }
+
+
 def aitp_advance_to_l5(topics_root: str, topic_slug: str) -> dict[str, Any]:
-    """Transition from L4 to L5 writing. Returns popup gate."""
+    """Transition from L4 to L5 writing. Returns popup gate.
+
+    Auto-generates flow_notebook.tex before advancing if it doesn't exist."""
     root = _topic_root(topics_root, topic_slug)
     state_path = root / "state.md"
     fm, body = _parse_md(state_path)
