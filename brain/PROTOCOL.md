@@ -1,8 +1,9 @@
 ---
 name: aitp-protocol
-version: "2.0"
-description: Operating manual for the AITP brain-driven research protocol.
-  Any agent reading this file can drive the protocol end-to-end.
+version: "3.0"
+description: Operating manual for the AITP adversarial-collaborator protocol.
+  Python stores and searches, you judge physics. Evidence before claims.
+  Derivations before conclusions. Limits before generalizations.
 ---
 
 # AITP Protocol — Brain-Driven Research Operating Manual
@@ -36,47 +37,85 @@ advancing.
 
 ## Quick Reference: Tool → When to Call
 
+### Lifecycle & State
 | Tool | Stage | When |
 |------|-------|------|
-| `aitp_bootstrap_topic` | — | First action for a new topic |
-| `aitp_register_source` | L0 | Register each source (paper, dataset, code, book, experiment, etc.) |
-| `aitp_advance_to_l1` | L0→L1 | After L0 source registry passes gate |
-| `aitp_advance_to_l3` | L1→L3 | After all L1 artifacts pass gate. Set l3_mode=research or l3_mode=study |
-| `aitp_switch_l3_mode` | L3 | Switch between research and study mode mid-session |
-| `aitp_ingest_knowledge` | L1 | Fill L1 artifacts from source content |
-| `aitp_get_execution_brief` | any | **Always call this first** to check gate status |
-| `aitp_retreat_to_l0` | L1/L3→L0 | Return to L0 when sources are insufficient |
-| `aitp_session_resume` | any | **After session break** — get resumption context and recent activity |
-| `aitp_advance_to_l3` | L1→L3 | After all L1 artifacts pass gate. Set l3_mode=research or l3_mode=study |
-| `aitp_switch_l3_mode` | L3 | Switch between research and study mode mid-session |
-| `aitp_advance_l3_subplane` | L3 | Move between subplanes (respect allowed transitions) |
-| `aitp_submit_candidate` | L3 | After distillation, submit a distilled claim |
-| `aitp_create_validation_contract` | L4 | Define mandatory physics checks for a candidate |
-| `aitp_submit_l4_review` | L4 | Submit adjudication outcome with evidence and provenance |
-| `aitp_return_to_l3_from_l4` | L4→L3 | Return to L3 analysis after L4 pass (mandatory, not optional) |
-| `aitp_advance_to_l5` | L4→L5 | Advance to writing phase (requires flow_notebook.tex from L3 distillation) |
-| `aitp_return_from_l5` | L5→L3 | Return to L3 when writing reveals gaps needing validation |
-| `aitp_request_promotion` | L3/L4→L2 | Request promotion for a validated candidate |
-| `aitp_resolve_promotion_gate` | L2 | Approve or reject the promotion |
-| `aitp_promote_candidate` | L2 | Execute the promotion (writes to global L2) |
-| `aitp_query_knowledge` | any | Query the topic-scoped knowledge base (returns authority level) |
-| `aitp_query_l2` | any | Query the global L2 knowledge base (cross-topic validated claims) |
-| `aitp_lint_knowledge` | any | Check for contradictions, missing regime, broken provenance |
-| `aitp_writeback_query_result` | any | Write a note back to the appropriate layer |
+| `aitp_bootstrap_topic` | — | Create topic directory structure + scaffolds |
+| `aitp_get_execution_brief` | any | **Always call first** — gate status, compute target, next steps |
 | `aitp_get_status` | any | Read topic state |
-| `aitp_switch_lane` | any | Change research lane (formal_theory, toy_numeric, code_method) |
+| `aitp_session_resume` | any | Resume after session break |
+| `aitp_health_check` | — | Aggregated dashboard of all topics |
+| `aitp_list_topics` | — | List all topics |
+| `aitp_archive_topic` | any | Archive a topic |
+| `aitp_restore_topic` | archived | Restore from archive |
 | `aitp_fork_topic` | any | Fork a side-discovery into a new topic |
-| `aitp_archive_topic` | any | Archive a topic (abandoned, paused, superseded) |
-| `aitp_restore_topic` | archived | Restore an archived topic to its previous stage |
-| `aitp_retreat_to_l1` | L3→L1 | Retreat to L1 when sources/framing need revision |
-| `aitp_create_l2_node` | any | Create a node in the L2 knowledge graph |
-| `aitp_update_l2_node` | any | Update fields of an existing L2 graph node |
-| `aitp_create_l2_edge` | any | Create a typed edge between two L2 graph nodes |
-| `aitp_query_l2_graph` | any | Query L2 graph with dual-level retrieval (nodes + edges) |
-| `aitp_merge_subgraph_delta` | L3 study | Merge study-mode subgraph into L2 graph |
-| `aitp_coverage_map` | L3 study | Check source coverage across study subplanes |
-| `aitp_check_correspondence` | any | Verify correspondence principle for L2 nodes |
-| `aitp_create_l2_tower` | any | Define an EFT tower in the L2 graph |
+
+### Stage Transitions
+| Tool | Stage | When |
+|------|-------|------|
+| `aitp_advance_to_l1` | L0→L1 | After L0 source_registry.md passes gate |
+| `aitp_advance_to_l3` | L1→L3 | After all L1 artifacts pass gate. Set l3_mode |
+| `aitp_advance_l3_subplane` | L3 | Move between subplanes (respect allowed transitions) |
+| `aitp_advance_to_l5` | L4→L5 | Advance to writing; auto-generates flow_notebook.tex |
+| `aitp_retreat_to_l0` | L1/L3 | Return to L0 |
+| `aitp_retreat_to_l1` | L3 | Return to L1 |
+| `aitp_switch_l3_mode` | L3 | Switch research ↔ study mode |
+| `aitp_switch_lane` | any | Change lane (formal_theory / toy_numeric / code_method) |
+
+### Sources & Candidates
+| Tool | Stage | When |
+|------|-------|------|
+| `aitp_register_source` | L0 | Register each source |
+| `aitp_list_sources` | any | List registered sources |
+| `aitp_submit_candidate` | L3 | Submit a candidate claim |
+| `aitp_list_candidates` | any | List all candidates |
+
+### L4 Adversarial Review
+| Tool | Stage | When |
+|------|-------|------|
+| `aitp_submit_l4_review` | L4 | Submit review with evidence; devil's advocate REQUIRED for pass |
+| `aitp_list_inference_rules` | L3/L4 | List available derivation inference rules |
+| `aitp_verify_derivation_step` | L3/L4 | Verify one derivation step via SymPy |
+| `aitp_verify_derivation_chain` | L3/L4 | Verify entire derivation chain via SymPy |
+
+### Mathematical Verification (SymPy)
+| Tool | Stage | When |
+|------|-------|------|
+| `aitp_verify_dimensions` | L3/L4 | Check dimensional consistency of an equation |
+| `aitp_verify_algebra` | L3/L4 | Verify algebraic identity |
+| `aitp_verify_limit` | L3/L4 | Check limit behavior (correspondence principle) |
+
+### Promotion
+| Tool | Stage | When |
+|------|-------|------|
+| `aitp_request_promotion` | L4→L2 | Request promotion (needs validated candidate) |
+| `aitp_resolve_promotion_gate` | L2 | Human approves/rejects promotion |
+| `aitp_promote_candidate` | L2 | Execute promotion → global L2 |
+
+### L2 Knowledge Graph
+| Tool | Stage | When |
+|------|-------|------|
+| `aitp_query_l2_index` | any | Progressive-disclosure domain taxonomy |
+| `aitp_query_l2` | any | Query global L2 knowledge base |
+| `aitp_query_l2_graph` | any | Query L2 graph with filters (type, tower, edges) |
+| `aitp_create_l2_node` | any | Create L2 graph node |
+| `aitp_update_l2_node` | any | Update node fields |
+| `aitp_create_l2_edge` | any | Create typed edge (refuses dangling references) |
+| `aitp_create_l2_tower` | any | Define EFT tower |
+| `aitp_merge_subgraph_delta` | L3 study | Merge study subgraph into L2 |
+
+### Configuration
+| Tool | Stage | When |
+|------|-------|------|
+| `aitp_set_compute_target` | any | Set compute target (local / fisher / lean-remote) |
+
+### Output
+| Tool | Stage | When |
+|------|-------|------|
+| `aitp_generate_flow_notebook` | L3/L4 | Generate flow_notebook.tex from all artifacts |
+| `aitp_visualize_eft_tower` | any | ASCII EFT tower diagram |
+| `aitp_visualize_derivation_chain` | any | ASCII derivation chain |
+| `aitp_visualize_knowledge_graph` | any | ASCII knowledge graph |
 
 ## End-to-End Flow
 

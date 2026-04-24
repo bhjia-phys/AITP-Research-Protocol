@@ -1324,23 +1324,49 @@ def aitp_submit_l4_review(
     evidence_outputs: list[str] | None = None,
     execution_environment: str = "",
     data_provenance: list[dict[str, str]] | None = None,
+    devils_advocate: str = "",
+    verification_evidence: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Submit an L4 review with one of the six validation outcomes. Returns popup gate.
+    r"""Submit an L4 review with one of the six validation outcomes. Returns popup gate.
+
+    ADVERSARIAL REVIEW (v3): You are NOT certifying your own work. You are
+    attempting to falsify the claim. A "pass" means the claim survived your
+    best attempts to break it.
 
     EVIDENCE REQUIREMENTS BY LANE:
-    - toy_numeric / code_method: evidence_scripts and evidence_outputs are REQUIRED for 'pass'.
-      Every data point must have a data_provenance entry tracing it to a specific script execution.
-    - formal_theory: check_results dict is the primary evidence carrier. Required entries:
-      dimensional_consistency, symmetry_compatibility, limiting_case_check, correspondence_check.
-      evidence_scripts/outputs are optional but recommended for automated symbolic checks (SymPy).
-      The check_results values should describe WHAT was verified and the outcome (e.g., "pass: all
-      terms have units of energy; RHS and LHS match under ℏ=c=1").
+    - toy_numeric / code_method: evidence_scripts + evidence_outputs REQUIRED for pass.
+      Every data point must have a data_provenance entry.
+    - formal_theory: outcome="pass" REQUIRES check_results with at minimum:
+        dimensional_consistency, symmetry_compatibility, limiting_case_check,
+        correspondence_check — OR verification_evidence from SymPy verification tools.
+      Each check must describe what was verified and the outcome.
+
+    devils_advocate: REQUIRED for "pass". State at least one specific way the
+      claim could still be wrong despite passing all checks. This is the
+      adversarial collaborator's duty — no claim is beyond doubt.
+
+    verification_evidence: Optional dict with results from SymPy verification
+      tools (aitp_verify_dimensions, aitp_verify_algebra, etc.).
+      Format: {"tool": "aitp_verify_dimensions", "result": {...}}
 
     data_provenance: list of dicts, each with keys:
       - data_point: what was measured/computed
       - script: path to the script that produced it
       - executed_at: ISO timestamp of execution
       - method: brief description of how it was computed
+
+    Example pass review:
+      aitp_submit_l4_review(td, "qho", "energy-spectrum", "pass",
+        check_results={
+          "dimensional_consistency": "pass: [H] = [\hbar\omega] = energy",
+          "symmetry_compatibility": "pass: H commutes with parity",
+          "limiting_case_check": "pass: classical HO recovered as n→∞",
+          "correspondence_check": "pass: matches known result E_n=(n+1/2)\hbar\omega",
+        },
+        devils_advocate="The derivation assumes the potential is exactly harmonic. "
+                        "Anharmonic corrections would shift the spectrum.",
+        verification_evidence={"tool": "aitp_verify_dimensions", "result": {"pass": True}},
+      )
     """
     if outcome not in L4_OUTCOMES:
         return {"message": f"Invalid outcome '{outcome}'. Valid: {L4_OUTCOMES}"}
@@ -1351,20 +1377,50 @@ def aitp_submit_l4_review(
     # Lane-aware evidence requirement
     state_fm, _ = _parse_md(root / "state.md")
     lane = state_fm.get("lane", "")
-    needs_evidence = lane in ("toy_numeric", "code_method")
 
-    if needs_evidence and outcome == "pass":
-        if not evidence_scripts or not evidence_outputs:
+    # ---- Adversarial evidence enforcement ----
+
+    if outcome == "pass":
+        # Check devil's advocate
+        if not devils_advocate.strip():
             return {
                 "message": (
-                    f"BLOCKED: Lane '{lane}' requires evidence_scripts and evidence_outputs "
-                    f"for L4 pass reviews. You must:\n"
-                    f"1. Write validation scripts and save them (e.g., L4/scripts/)\n"
-                    f"2. Execute them on the target machine specified in the plan\n"
-                    f"3. Record output paths (e.g., L4/outputs/)\n"
-                    f"4. Re-submit with evidence_scripts=[...] and evidence_outputs=[...]"
+                    "BLOCKED: Adversarial review requires devils_advocate for pass outcomes. "
+                    "State at least one specific way the claim could still be wrong — "
+                    "what assumptions could break? What regime boundaries are untested? "
+                    "What measurement would falsify this claim?"
                 ),
             }
+
+        # toy_numeric / code_method: must have evidence scripts + outputs
+        if lane in ("toy_numeric", "code_method"):
+            if not evidence_scripts or not evidence_outputs:
+                return {
+                    "message": (
+                        f"BLOCKED: Lane '{lane}' requires evidence_scripts and evidence_outputs "
+                        f"for L4 pass reviews. Execute validation scripts, record outputs, "
+                        f"and re-submit."
+                    ),
+                }
+
+        # formal_theory: must have check_results OR verification_evidence
+        if lane == "formal_theory":
+            has_check_results = bool(check_results and any(
+                k in check_results for k in PHYSICS_CHECK_FIELDS
+            ))
+            has_verification = bool(verification_evidence)
+            if not has_check_results and not has_verification:
+                return {
+                    "message": (
+                        f"BLOCKED: Lane 'formal_theory' requires evidence for L4 pass. "
+                        f"Provide either:\n"
+                        f"1. check_results with at least one physics check from "
+                        f"{sorted(PHYSICS_CHECK_FIELDS)}, OR\n"
+                        f"2. verification_evidence from SymPy verification tools "
+                        f"(aitp_verify_dimensions, aitp_verify_algebra, aitp_verify_derivation_step).\n"
+                        f"Python cannot certify physics — you must provide the evidence."
+                    ),
+                }
 
     (root / "L4" / "reviews").mkdir(parents=True, exist_ok=True)
     cycle = int(state_fm.get("l4_cycle_count", 0)) + 1
@@ -1391,12 +1447,24 @@ def aitp_submit_l4_review(
         fm["execution_environment"] = execution_environment
     if data_provenance:
         fm["data_provenance"] = data_provenance
+    if devils_advocate:
+        fm["devils_advocate"] = devils_advocate
+    if verification_evidence:
+        fm["verification_evidence"] = verification_evidence
 
     body = (
         f"# Review: {slug}\n\n"
         f"## Outcome\n{outcome}\n\n"
         f"## Notes\n{notes}\n\n"
     )
+    if devils_advocate:
+        body += f"## Devil's Advocate\n{devils_advocate}\n\n"
+    if verification_evidence:
+        body += (
+            "## SymPy Verification Evidence\n"
+            f"Tool: {verification_evidence.get('tool', 'unknown')}\n\n"
+            f"```\n{verification_evidence.get('result', {})}\n```\n\n"
+        )
     if execution_environment:
         body += f"## Execution Environment\n{execution_environment}\n\n"
     if evidence_scripts:

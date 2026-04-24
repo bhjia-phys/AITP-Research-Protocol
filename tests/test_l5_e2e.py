@@ -24,6 +24,7 @@ def _bootstrap_full_flow(tmp: str, lane: str = "formal_theory") -> Path:
     # Submit review
     mcp_server.aitp_submit_l4_review(
         tmp, "demo-topic", cand_id, "pass", "All checks passed.",
+        devils_advocate="Test fixture — adversarial review deferred to full test.",
     )
 
     # Fast-forward promotion

@@ -350,6 +350,8 @@ class TestE2EStudyWorkflow:
                 "limiting_case_check": "pass: classical limit recovered",
                 "correspondence_check": "pass: E_n -> <n+1/2> hbar omega matches classical",
             },
+            devils_advocate="Assumes harmonic potential; anharmonic corrections unverified.",
+            verification_evidence={"tool": "aitp_verify_dimensions", "result": {"pass": True}},
         )
         assert "pass" in str(r).lower()
 
@@ -376,7 +378,8 @@ class TestE2EStudyWorkflow:
         # Repeat for the other candidates (abbreviated)
         for cand_id in ["zero-point-energy", "qho-classical-correspondence"]:
             aitp_submit_l4_review(td, TOPIC, cand_id, outcome="pass",
-                                  notes="Validated.", check_results={"all": "pass"})
+                                  notes="Validated.", check_results={"all": "pass"},
+                                  devils_advocate="Rapid promotion check; detailed adversarial review deferred.")
             aitp_request_promotion(td, TOPIC, cand_id)
             aitp_resolve_promotion_gate(td, TOPIC, cand_id, "approve")
             r = aitp_promote_candidate(td, TOPIC, cand_id)
@@ -545,7 +548,8 @@ class TestE2EStudyWorkflow:
                               claim="E_n = (n+1/2) hbar omega",
                               candidate_type="result",
                               regime_of_validity="1D QHO")
-        aitp_submit_l4_review(td, TOPIC, "energy-formula", outcome="pass")
+        aitp_submit_l4_review(td, TOPIC, "energy-formula", outcome="pass",
+                              devils_advocate="Test review for conflict detection.")
         aitp_request_promotion(td, TOPIC, "energy-formula")
         aitp_resolve_promotion_gate(td, TOPIC, "energy-formula", "approve")
         r = aitp_promote_candidate(td, TOPIC, "energy-formula")

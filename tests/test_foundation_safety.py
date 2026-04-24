@@ -161,6 +161,7 @@ class TestPromotionGate(unittest.TestCase):
             outcome="pass",
             notes="All checks passed",
             check_results={"dimensional_consistency": "pass"},
+            devils_advocate="Foundation test — single dimensional check is insufficient for real pass.",
         )
 
         return cand_path

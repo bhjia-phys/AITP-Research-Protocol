@@ -271,6 +271,12 @@ def _l4_validation_and_review(tmp: str) -> None:
         "mass dimension. Limiting case: N=1 reproduces Redlich's result. "
         "Correspondence: large-k limit recovers classical CS. Symmetry: "
         "parity transformation flips sgn(m), consistent with anomaly structure.",
+        devils_advocate="CS anomaly may receive corrections from higher-order terms in 1/m expansion.",
+        check_results={
+            "dimensional_consistency": "pass: CS action has correct mass dimension",
+            "limiting_case_check": "pass: N=1 limit reproduces Redlich",
+            "correspondence_check": "pass: large-k limit recovers classical CS",
+        },
     )
 
 

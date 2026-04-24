@@ -108,6 +108,7 @@ class GlobalL2MemoryTests(unittest.TestCase):
             repo_root, cand_id = _bootstrap_with_candidate(tmp)
             mcp_server.aitp_submit_l4_review(
                 tmp, "demo-topic", cand_id, "pass", "All checks passed.",
+                devils_advocate="Test fixture review.",
             )
             # Advance candidate through promotion gate
             tr = repo_root / "topics" / "demo-topic"
@@ -132,6 +133,7 @@ class GlobalL2MemoryTests(unittest.TestCase):
             repo_root, cand_id = _bootstrap_with_candidate(tmp)
             mcp_server.aitp_submit_l4_review(
                 tmp, "demo-topic", cand_id, "pass", "All checks passed.",
+                devils_advocate="Test fixture review.",
             )
             # Fast-forward promotion
             tr = repo_root / "topics" / "demo-topic"
@@ -162,6 +164,7 @@ class GlobalL2MemoryTests(unittest.TestCase):
             repo_root, cand_id = _bootstrap_with_candidate(tmp)
             mcp_server.aitp_submit_l4_review(
                 tmp, "demo-topic", cand_id, "pass", "All checks passed.",
+                devils_advocate="Test fixture review.",
             )
             tr = repo_root / "topics" / "demo-topic"
             cand_path = tr / "L3" / "candidates" / f"{cand_id}.md"
@@ -193,6 +196,7 @@ class TrustClassificationTests(unittest.TestCase):
             repo_root, cand_id = _bootstrap_with_candidate(tmp)
             mcp_server.aitp_submit_l4_review(
                 tmp, "demo-topic", cand_id, "pass", "All checks passed.",
+                devils_advocate="Test fixture review.",
             )
             tr = repo_root / "topics" / "demo-topic"
             cand_path = tr / "L3" / "candidates" / f"{cand_id}.md"
