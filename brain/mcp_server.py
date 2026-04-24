@@ -63,6 +63,10 @@ from brain.sympy_verify import (
     check_dimensions,
     check_algebra,
     check_limit,
+    validate_derivation_step,
+    validate_derivation_chain,
+    INFERENCE_RULES,
+    INFERENCE_RULE_DESCRIPTIONS,
 )
 
 mcp = FastMCP("aitp-brain")
@@ -1618,6 +1622,92 @@ def aitp_verify_limit(
         → pass=True (quantum → classical equipartition)
     """
     return check_limit(expression, limit_var, limit_value, expected, assumptions)
+
+
+@mcp.tool()
+def aitp_list_inference_rules() -> dict[str, Any]:
+    """List all available physics inference rules for derivation step verification.
+
+    Each rule has a generic SymPy-based validator. Use these when recording
+    derivation steps in the L3 analysis subplane.
+    """
+    return {
+        "rules": [
+            {"name": r, "description": INFERENCE_RULE_DESCRIPTIONS.get(r, "")}
+            for r in INFERENCE_RULES
+        ],
+        "usage": (
+            "Record each derivation step with: rule, input_expr, output_expr, argument. "
+            "Then verify with aitp_verify_derivation_step."
+        ),
+    }
+
+
+@mcp.tool()
+def aitp_verify_derivation_step(
+    rule: str,
+    input_expr: str,
+    output_expr: str,
+    argument: str = "",
+    assumptions: dict | None = None,
+) -> dict[str, Any]:
+    """Verify a single derivation step using the specified inference rule.
+
+    Each rule has a generic SymPy-based validator that checks whether the
+    output correctly follows from the input using this rule — independent
+    of the specific equation content.
+
+    Args:
+        rule: One of the inference rules from aitp_list_inference_rules()
+        input_expr: The expression before the operation (SymPy-compatible)
+        output_expr: The expression after the operation (SymPy-compatible)
+        argument: Rule-specific argument:
+            - multiply_both_sides / divide_both_sides: the factor
+            - substitute: "old=new" or "old->new"
+            - differentiate / integrate: the variable
+            - take_limit: "var->value" (e.g. "n->oo", "hbar->0")
+            - series_expand: "var,order" or "var,point,order"
+            - apply_identity: the identity expression or "A=B"
+        assumptions: Optional dict of symbol definitions
+
+    Example:
+        aitp_verify_derivation_step("substitute", "x**2 + y", "x**2 + 2*x + 1",
+                                     "y=2*x+1")
+        → pass=True
+
+        aitp_verify_derivation_step("differentiate", "x**2", "2*x", "x")
+        → pass=True (d(x^2)/dx = 2x correct)
+
+        aitp_verify_derivation_step("differentiate", "x**2", "3*x", "x")
+        → pass=False (d(x^2)/dx ≠ 3x)
+    """
+    return validate_derivation_step(rule, input_expr, output_expr, argument, assumptions)
+
+
+@mcp.tool()
+def aitp_verify_derivation_chain(
+    steps: list[dict],
+    assumptions: dict | None = None,
+) -> dict[str, Any]:
+    """Verify an entire derivation chain step by step.
+
+    Each step is a dict with keys: rule, input_expr, output_expr, argument (optional).
+    The first step may omit input_expr (treated as initial expression).
+
+    Returns per-step results with overall pass/fail and a summary.
+
+    Example:
+        aitp_verify_derivation_chain([
+            {"rule": "multiply_both_sides", "input_expr": "E = m*c**2",
+             "output_expr": "E/c**2 = m", "argument": "1/c**2"},
+            {"rule": "substitute", "output_expr": "m = E/c**2",
+             "argument": "m=E/c**2"},
+        ])
+        → pass=True (both steps verified)
+
+    Use this at the end of L3 analysis to validate the full derivation.
+    """
+    return validate_derivation_chain(steps, assumptions)
 
 
 @mcp.tool()

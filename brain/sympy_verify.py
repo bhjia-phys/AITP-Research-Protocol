@@ -569,3 +569,393 @@ def check_limit(
 
     except Exception as e:
         return {"pass": False, "error": f"SymPy evaluation error: {e}"}
+
+
+# ---------------------------------------------------------------------------
+# Derivation step verification — Physics Derivation Graph approach
+# ---------------------------------------------------------------------------
+# Each physics inference rule has a generic validation function that checks
+# whether the rule was correctly applied, independent of the specific equation.
+# This is the key insight from the Physics Derivation Graph project.
+
+INFERENCE_RULES = [
+    "multiply_both_sides",
+    "divide_both_sides",
+    "add_to_both_sides",
+    "subtract_from_both_sides",
+    "substitute",
+    "expand",
+    "factor",
+    "simplify",
+    "differentiate",
+    "integrate",
+    "take_limit",
+    "series_expand",
+    "commutator_eval",
+    "apply_identity",
+    "rearrange",
+]
+
+INFERENCE_RULE_DESCRIPTIONS: dict[str, str] = {
+    "multiply_both_sides": "Multiply both sides of an equation by a factor",
+    "divide_both_sides": "Divide both sides of an equation by a (non-zero) factor",
+    "add_to_both_sides": "Add an expression to both sides",
+    "subtract_from_both_sides": "Subtract an expression from both sides",
+    "substitute": "Substitute a variable or expression with another",
+    "expand": "Expand products and powers algebraically",
+    "factor": "Factor an expression",
+    "simplify": "Simplify an expression using algebraic identities",
+    "differentiate": "Differentiate w.r.t. a variable",
+    "integrate": "Integrate w.r.t. a variable",
+    "take_limit": "Take the limit as a variable approaches a value",
+    "series_expand": "Series expand to given order around a point",
+    "commutator_eval": "Evaluate a commutator [A, B] = AB - BA",
+    "apply_identity": "Apply a known mathematical/physical identity",
+    "rearrange": "Rearrange terms (commutative/associative operations)",
+}
+
+
+def _sympy_parse(expr_str: str, namespace: dict) -> "sympy.Expr":
+    """Parse a string into a SymPy expression, handling 'A = B' as Eq(A, B)."""
+    import sympy
+    stripped = expr_str.strip()
+    # Handle equation notation "A = B" → Eq(A, B)
+    if "=" in stripped and not stripped.startswith("="):
+        # Split on first = that is not part of == or !=
+        parts = re.split(r"(?<![=!<>])=(?!=)", stripped, maxsplit=1)
+        if len(parts) == 2:
+            lhs = sympy.sympify(parts[0].strip(), locals=namespace)
+            rhs = sympy.sympify(parts[1].strip(), locals=namespace)
+            return sympy.Eq(lhs, rhs)
+    return sympy.sympify(stripped, locals=namespace)
+
+
+def validate_derivation_step(
+    rule: str,
+    input_expr: str,
+    output_expr: str,
+    argument: str = "",
+    assumptions: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Validate a single derivation step using the specified inference rule.
+
+    Each rule has a generic SymPy-based validator that checks whether the
+    output correctly follows from the input using this rule.
+
+    Args:
+        rule: One of INFERENCE_RULES
+        input_expr: The expression/equation before the operation
+        output_expr: The expression/equation after the operation
+        argument: The argument to the rule (factor, variable, identity, etc.)
+        assumptions: Optional symbol definitions
+
+    Returns:
+        Dict with pass, rule, input, output, verification_method, and details.
+    """
+    if rule not in INFERENCE_RULES:
+        return {
+            "pass": False,
+            "error": f"Unknown rule '{rule}'. Available: {INFERENCE_RULES}",
+        }
+
+    try:
+        import sympy
+    except ImportError:
+        return {"pass": False, "error": "SymPy is not installed."}
+
+    namespace: dict[str, Any] = {}
+    if assumptions:
+        for var, defn in assumptions.items():
+            try:
+                namespace[var] = sympy.sympify(defn)
+            except sympy.SympifyError:
+                pass
+
+    try:
+        inp = _sympy_parse(input_expr, namespace)
+        out = _sympy_parse(output_expr, namespace)
+    except (sympy.SympifyError, SyntaxError) as e:
+        return {"pass": False, "error": f"Cannot parse expression: {e}"}
+
+    try:
+        validator = _RULE_VALIDATORS[rule]
+        result = validator(inp, out, argument, namespace)
+        result["rule"] = rule
+        result["verification_method"] = f"sympy.{rule}"
+        return result
+    except Exception as e:
+        return {
+            "pass": False,
+            "rule": rule,
+            "error": f"Validation error: {e}",
+        }
+
+
+def _parse_equation(expr: "sympy.Expr") -> tuple["sympy.Expr", "sympy.Expr"] | None:
+    """If expr is an Eq, return (lhs, rhs). Otherwise return None."""
+    import sympy
+    if isinstance(expr, sympy.Equality):
+        return expr.lhs, expr.rhs
+    return None
+
+
+# ---- Per-rule SymPy validators ----
+
+def _v_multiply_both_sides(inp, out, arg, ns):
+    import sympy
+    factor = sympy.sympify(arg, locals=ns) if arg else sympy.sympify("1")
+    eq = _parse_equation(inp)
+    if eq is not None:
+        lhs, rhs = eq
+        expected = sympy.Eq(sympy.simplify(lhs * factor), sympy.simplify(rhs * factor))
+    else:
+        expected = sympy.simplify(inp * factor)
+    if isinstance(expected, sympy.Equality):
+        ok = sympy.simplify(out.lhs - expected.lhs) == 0 and sympy.simplify(out.rhs - expected.rhs) == 0
+    else:
+        ok = sympy.simplify(out - expected) == 0
+    return {"pass": ok, "expected": str(expected),
+            "verdict": "Correct." if ok else f"MISMATCH: expected {expected}"}
+
+
+def _v_divide_both_sides(inp, out, arg, ns):
+    import sympy
+    factor = sympy.sympify(arg, locals=ns) if arg else sympy.sympify("1")
+    eq = _parse_equation(inp)
+    if eq is not None:
+        lhs, rhs = eq
+        expected = sympy.Eq(sympy.simplify(lhs / factor), sympy.simplify(rhs / factor))
+    else:
+        expected = sympy.simplify(inp / factor)
+    if isinstance(expected, sympy.Equality):
+        ok = sympy.simplify(out.lhs - expected.lhs) == 0 and sympy.simplify(out.rhs - expected.rhs) == 0
+    else:
+        ok = sympy.simplify(out - expected) == 0
+    return {"pass": ok, "expected": str(expected)}
+
+
+def _v_add_to_both_sides(inp, out, arg, ns):
+    import sympy
+    term = sympy.sympify(arg, locals=ns) if arg else 0
+    eq = _parse_equation(inp)
+    if eq is not None:
+        lhs, rhs = eq
+        expected = sympy.Eq(sympy.simplify(lhs + term), sympy.simplify(rhs + term))
+    else:
+        expected = sympy.simplify(inp + term)
+    if isinstance(expected, sympy.Equality):
+        ok = sympy.simplify(out.lhs - expected.lhs) == 0 and sympy.simplify(out.rhs - expected.rhs) == 0
+    else:
+        ok = sympy.simplify(out - expected) == 0
+    return {"pass": ok, "expected": str(expected)}
+
+
+def _v_subtract_from_both_sides(inp, out, arg, ns):
+    import sympy
+    term = sympy.sympify(arg, locals=ns) if arg else 0
+    eq = _parse_equation(inp)
+    if eq is not None:
+        lhs, rhs = eq
+        expected = sympy.Eq(sympy.simplify(lhs - term), sympy.simplify(rhs - term))
+    else:
+        expected = sympy.simplify(inp - term)
+    if isinstance(expected, sympy.Equality):
+        ok = sympy.simplify(out.lhs - expected.lhs) == 0 and sympy.simplify(out.rhs - expected.rhs) == 0
+    else:
+        ok = sympy.simplify(out - expected) == 0
+    return {"pass": ok, "expected": str(expected)}
+
+
+def _v_substitute(inp, out, arg, ns):
+    import sympy
+    if not arg:
+        return {"pass": False, "error": "Substitution requires argument like 'x=y'."}
+    parts = re.split(r"\s*->\s*|\s*=\s*", arg, maxsplit=1)
+    if len(parts) != 2:
+        return {"pass": False, "error": f"Cannot parse substitution '{arg}'. Use 'old=new'."}
+    old_sym = sympy.sympify(parts[0].strip(), locals=ns)
+    new_expr = sympy.sympify(parts[1].strip(), locals=ns)
+    expected = sympy.simplify(inp.subs(old_sym, new_expr))
+    diff = sympy.simplify(out - expected)
+    return {"pass": diff == 0, "expected": str(expected), "difference": str(diff)}
+
+
+def _v_expand(inp, out, arg, ns):
+    import sympy
+    expected = sympy.expand(inp)
+    diff = sympy.simplify(out - expected)
+    return {"pass": diff == 0, "expected": str(expected), "difference": str(diff)}
+
+
+def _v_factor(inp, out, arg, ns):
+    import sympy
+    expected = sympy.factor(inp)
+    diff = sympy.simplify(out - expected)
+    return {"pass": diff == 0, "expected": str(expected), "difference": str(diff)}
+
+
+def _v_simplify(inp, out, arg, ns):
+    import sympy
+    diff = sympy.simplify(inp - out)
+    is_eq = diff == 0
+    if not is_eq:
+        try:
+            if inp.equals(out):
+                is_eq = True
+        except Exception:
+            pass
+    return {"pass": is_eq, "difference": str(diff)}
+
+
+def _v_differentiate(inp, out, arg, ns):
+    import sympy
+    if not arg:
+        return {"pass": False, "error": "Differentiation requires a variable argument."}
+    var = sympy.sympify(arg.strip(), locals=ns)
+    expected = sympy.diff(inp, var)
+    diff = sympy.simplify(out - expected)
+    return {"pass": diff == 0, "expected": str(expected), "difference": str(diff)}
+
+
+def _v_integrate(inp, out, arg, ns):
+    import sympy
+    if not arg:
+        return {"pass": False, "error": "Integration requires a variable argument."}
+    var = sympy.sympify(arg.strip(), locals=ns)
+    expected = sympy.integrate(inp, var)
+    diff = sympy.simplify(out - expected)
+    return {"pass": diff == 0, "expected": str(expected), "difference": str(diff)}
+
+
+def _v_take_limit(inp, out, arg, ns):
+    import sympy
+    if not arg:
+        return {"pass": False, "error": "Limit requires argument like 'x->0' or 'n->oo'."}
+    parts = arg.split("->")
+    if len(parts) != 2:
+        return {"pass": False, "error": f"Limit format: 'var->value'. Got: '{arg}'."}
+    var = sympy.sympify(parts[0].strip(), locals=ns)
+    val_str = parts[1].strip()
+    val = sympy.oo if val_str == "oo" else (-sympy.oo if val_str == "-oo" else sympy.sympify(val_str, locals=ns))
+    expected = sympy.limit(inp, var, val)
+    diff = sympy.simplify(out - expected)
+    return {"pass": diff == 0, "expected": str(expected), "difference": str(diff)}
+
+
+def _v_series_expand(inp, out, arg, ns):
+    import sympy
+    if not arg:
+        return {"pass": False, "error": "Series requires argument like 'x,3'."}
+    parts = [p.strip() for p in arg.split(",")]
+    if len(parts) < 2:
+        return {"pass": False, "error": f"Series format: 'var,order'. Got: '{arg}'."}
+    var = sympy.sympify(parts[0], locals=ns)
+    point = 0 if len(parts) == 2 else sympy.sympify(parts[1], locals=ns)
+    order = int(parts[1] if len(parts) == 2 else parts[2])
+    expected = sympy.series(inp, var, point, order).removeO()
+    diff = sympy.simplify(out - expected)
+    return {"pass": diff == 0, "expected": str(expected), "difference": str(diff)}
+
+
+def _v_commutator_eval(inp, out, arg, ns):
+    import sympy
+    diff = sympy.simplify(inp - out)
+    is_eq = diff == 0
+    if not is_eq:
+        try:
+            if inp.equals(out):
+                is_eq = True
+        except Exception:
+            pass
+    return {"pass": is_eq, "difference": str(diff)}
+
+
+def _v_apply_identity(inp, out, arg, ns):
+    import sympy
+    if not arg:
+        return {"pass": False, "error": "apply_identity requires the identity as argument."}
+    parts = re.split(r"\s*=\s*", arg, maxsplit=1)
+    if len(parts) == 2:
+        old = sympy.sympify(parts[0].strip(), locals=ns)
+        new = sympy.sympify(parts[1].strip(), locals=ns)
+        expected = sympy.simplify(inp.subs(old, new))
+    else:
+        ident = sympy.sympify(arg, locals=ns)
+        expected = sympy.simplify(inp.subs(ident, sympy.simplify(ident)))
+    diff = sympy.simplify(out - expected)
+    return {"pass": diff == 0, "expected": str(expected), "difference": str(diff)}
+
+
+def _v_rearrange(inp, out, arg, ns):
+    import sympy
+    diff = sympy.simplify(inp - out)
+    return {"pass": diff == 0, "difference": str(diff)}
+
+
+_RULE_VALIDATORS: dict[str, Any] = {
+    "multiply_both_sides": _v_multiply_both_sides,
+    "divide_both_sides": _v_divide_both_sides,
+    "add_to_both_sides": _v_add_to_both_sides,
+    "subtract_from_both_sides": _v_subtract_from_both_sides,
+    "substitute": _v_substitute,
+    "expand": _v_expand,
+    "factor": _v_factor,
+    "simplify": _v_simplify,
+    "differentiate": _v_differentiate,
+    "integrate": _v_integrate,
+    "take_limit": _v_take_limit,
+    "series_expand": _v_series_expand,
+    "commutator_eval": _v_commutator_eval,
+    "apply_identity": _v_apply_identity,
+    "rearrange": _v_rearrange,
+}
+
+
+def validate_derivation_chain(
+    steps: list[dict[str, str]],
+    assumptions: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Validate an entire derivation chain step by step.
+
+    Args:
+        steps: List of dicts, each with keys: rule, input_expr, output_expr, argument (optional)
+        assumptions: Optional global symbol definitions
+
+    Returns:
+        Dict with overall pass/fail, per-step results, and summary.
+    """
+    results = []
+    all_pass = True
+    for i, step in enumerate(steps):
+        rule = step.get("rule", "")
+        inp = step.get("input_expr", "")
+        out = step.get("output_expr", "")
+        arg = step.get("argument", "")
+
+        if not rule or not out:
+            results.append({
+                "step": i + 1, "pass": False,
+                "error": "Missing required fields (rule, output_expr).",
+                "step_input": step,
+            })
+            all_pass = False
+            continue
+
+        result = validate_derivation_step(rule, inp, out, arg, assumptions)
+        result["step"] = i + 1
+        results.append(result)
+        if not result.get("pass"):
+            all_pass = False
+
+    return {
+        "pass": all_pass,
+        "total_steps": len(steps),
+        "passed_steps": sum(1 for r in results if r.get("pass")),
+        "failed_steps": sum(1 for r in results if not r.get("pass")),
+        "results": results,
+        "summary": (
+            f"All {len(steps)} steps verified."
+            if all_pass
+            else f"{sum(1 for r in results if not r.get('pass'))}/{len(steps)} steps failed."
+        ),
+    }
