@@ -577,6 +577,7 @@ def aitp_submit_candidate(
         f"## Validation Criteria\n{validation_criteria}\n"
     )
     _write_md(path, fm, body)
+    _auto_refresh_flow_notebook(root, state_fm)
     return _GateResult({
         "message": f"Submitted candidate {slug}",
         "popup_gate": {
@@ -802,6 +803,8 @@ def aitp_promote_candidate(
             return f"Promoted {slug} to global L2 (v{fm['version']}). WARNING: graph node not created — {e}"
 
     _append_to_topic_log(root, f"promoted {slug} to global L2 (v{fm['version']})")
+    state_fm, _ = _parse_md(root / "state.md")
+    _auto_refresh_flow_notebook(root, state_fm)
     return f"Promoted {slug} to global L2 (v{fm['version']})."
 
 
@@ -1182,6 +1185,8 @@ def aitp_advance_l3_subplane(
     fm["updated_at"] = _now()
     _write_md(state_path, fm, body)
 
+    _auto_refresh_flow_notebook(root, fm)
+
     skill = skill_map.get(target_subplane, skill_map.get(subplanes[0], "skill-l3-ideate"))
     return f"Advanced to L3/{target_subplane} (mode: {l3_mode}). Follow {skill}."
 
@@ -1522,6 +1527,7 @@ def aitp_submit_l4_review(
                 {"label": "Abandon candidate", "description": "Discard this candidate and try a different approach."},
             ],
         }
+    _auto_refresh_flow_notebook(root, state_fm)
     return _GateResult(result)
 
 
@@ -2816,6 +2822,25 @@ def _build_flow_notebook_content(
     tex.append(r"\end{document}")
 
     return "\n".join(tex)
+
+
+def _auto_refresh_flow_notebook(root: Path, fm: dict) -> None:
+    """Silently regenerate flow_notebook.tex. Never blocks — errors are ignored."""
+    try:
+        title = str(fm.get("title", ""))
+        question = ""  # extracted from body if needed
+        lane = str(fm.get("lane", "unspecified"))
+        tex_content = _build_flow_notebook_content(root, title, question, lane)
+        tex_dir = root / "L3" / "tex"
+        tex_dir.mkdir(parents=True, exist_ok=True)
+        _write_md(tex_dir / "flow_notebook.tex", {
+            "artifact_kind": "l3_flow_notebook",
+            "stage": "L3",
+            "generated_at": _now(),
+            "topic_slug": fm.get("topic_slug", ""),
+        }, tex_content)
+    except Exception:
+        pass  # Never block normal operations
 
 
 @mcp.tool()

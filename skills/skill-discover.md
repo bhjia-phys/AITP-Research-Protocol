@@ -17,6 +17,13 @@ NEVER type questions as plain text. ALWAYS use the popup tool.
 
 You are in the source discovery phase. Your job is to find and register all relevant materials before the deep reading begins.
 
+## Check progress at any time
+
+`L3/tex/flow_notebook.tex` is auto-regenerated after every subplane advance,
+candidate submission, L4 review, and promotion. The researcher can open this
+file at any time to see the current state of the research — all derivations,
+results, gaps, and validation evidence in one structured LaTeX document.
+
 ## Step 0: Check L2 knowledge base FIRST (MANDATORY)
 
 Before searching for new sources, you MUST check what the global L2 knowledge base
