@@ -91,7 +91,9 @@ _AGENT_BEHAVIOR_REMINDER = (
     "Python is storage+search only. You are the physicist. "
     "Assess your own work before advancing — the skill file asks Socratic questions, "
     "not compliance checklists. Evidence before claims. "
-    "Derivations before conclusions. Limits before generalizations."
+    "Derivations before conclusions. Limits before generalizations. "
+    "Check compute_target before ANY code, SymPy, Lean, or numerical work "
+    "— route heavy computation to the declared target (local/fisher/lean-remote)."
 )
 
 
@@ -335,6 +337,7 @@ def aitp_get_status(topics_root: str, topic_slug: str) -> dict[str, Any]:
         "stage": fm.get("stage", snapshot.stage),
         "posture": fm.get("posture", snapshot.posture),
         "lane": fm.get("lane", snapshot.lane),
+        "compute_target": str(fm.get("compute", "local")),
         "gate_status": snapshot.gate_status,
         "mode": fm.get("mode", "explore"),
         "layer": fm.get("layer", "L1"),
@@ -442,6 +445,7 @@ def aitp_bootstrap_topic(
         "stage": "L0",
         "posture": "discover",
         "lane": lane,
+        "compute": "local",
         "gate_status": "blocked_missing_field",
         "created_at": _now(),
         "updated_at": _now(),
@@ -814,6 +818,7 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
             "stage": snapshot.stage,
             "posture": snapshot.posture,
             "lane": snapshot.lane,
+            "compute_target": str(fm.get("compute", "local")),
             "gate_status": snapshot.gate_status,
             "required_artifact_path": snapshot.required_artifact_path,
             "missing_requirements": snapshot.missing_requirements,
@@ -837,6 +842,7 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
             "stage": snapshot.stage,
             "posture": snapshot.posture,
             "lane": snapshot.lane,
+            "compute_target": str(fm.get("compute", "local")),
             "gate_status": snapshot.gate_status,
             "required_artifact_path": snapshot.required_artifact_path,
             "missing_requirements": snapshot.missing_requirements,
@@ -858,6 +864,7 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
         "stage": snapshot.stage,
         "posture": snapshot.posture,
         "lane": snapshot.lane,
+        "compute_target": str(fm.get("compute", "local")),
         "gate_status": snapshot.gate_status,
         "required_artifact_path": snapshot.required_artifact_path,
         "missing_requirements": snapshot.missing_requirements,
@@ -1501,6 +1508,56 @@ def aitp_switch_lane(
         "old_lane": old_lane,
         "new_lane": new_lane,
         "note": "L4 evidence requirements change with lane. Review validation contract.",
+    }
+
+
+@mcp.tool()
+def aitp_set_compute_target(
+    topics_root: str,
+    topic_slug: str,
+    target: str,
+) -> dict[str, Any]:
+    """Set the compute target for a topic. Agents MUST check this before
+    running any code, numerical computation, SymPy, Lean, or heavy I/O.
+
+    Valid targets:
+      - local: this machine, lightweight only (small SymPy, quick checks)
+      - fisher: Fisher server via ssh-mcp (numerical diagonalization, QSGW, LibRPA)
+      - lean-remote: remote Lean server via lean-lsp-mcp (mathlib compilation)
+
+    The compute target is returned by aitp_get_execution_brief and
+    aitp_get_status so agents always know where to execute.
+    """
+    valid_targets = {"local", "fisher", "lean-remote"}
+    if target not in valid_targets:
+        return {
+            "message": f"Invalid compute target '{target}'. Valid: {sorted(valid_targets)}",
+            "valid_targets": sorted(valid_targets),
+        }
+
+    root = _topic_root(topics_root, topic_slug)
+    state_path = root / "state.md"
+    fm, body = _parse_md(state_path)
+
+    old_target = fm.get("compute", "local")
+    fm["compute"] = target
+    fm["compute_set_at"] = _now()
+    fm["updated_at"] = _now()
+    _write_md(state_path, fm, body)
+    _append_to_topic_log(
+        root,
+        f"compute target: {old_target} -> {target}",
+    )
+
+    return {
+        "message": f"Compute target set to '{target}' (was '{old_target}').",
+        "old_target": old_target,
+        "new_target": target,
+        "note": (
+            "Agents must route all computation, numerical work, SymPy, "
+            "and Lean compilation to this target. Do NOT execute heavy "
+            "workloads on the wrong machine."
+        ),
     }
 
 
