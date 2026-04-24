@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 import re
+import subprocess
 import sys
 import tempfile
 from datetime import datetime
@@ -173,6 +174,16 @@ def _slugify(text: str) -> str:
 # Skill injection logic
 # ---------------------------------------------------------------------------
 
+_LANE_ALIASES = {
+    "code_and_materials": "code_method",
+}
+
+
+def _normalize_lane(lane: str) -> str:
+    """Normalize lane name, resolving aliases like code_and_materials -> code_method."""
+    return _LANE_ALIASES.get(lane, lane)
+
+
 _SKILL_MAP = {
     "new": "skill-explore",
     "sources_registered": "skill-intake",
@@ -181,6 +192,35 @@ _SKILL_MAP = {
     "validated": "skill-promote",
     "promoted": "skill-write",
 }
+
+
+def _load_domain_manifest(topic_root_path: Path) -> dict[str, Any] | None:
+    """Load domain-manifest.md from the topic's contracts/ directory.
+
+    Returns the parsed frontmatter dict, or None if no manifest exists.
+    Accepts manifests with either domain_id (full domain skill) or
+    repo_ref (code binding only).
+    """
+    manifest_path = topic_root_path / "contracts" / "domain-manifest.md"
+    if not manifest_path.exists():
+        return None
+    try:
+        fm, _ = _parse_md(manifest_path)
+        if "domain_id" in fm or "repo_ref" in fm:
+            return fm
+    except Exception:
+        pass
+    return None
+
+
+def _domain_invariants(manifest: dict[str, Any]) -> list[dict[str, str]]:
+    """Extract invariant definitions from a domain manifest."""
+    return manifest.get("invariants", [])
+
+
+def _domain_operations(manifest: dict[str, Any]) -> list[dict[str, Any]]:
+    """Extract operation definitions from a domain manifest."""
+    return manifest.get("operations", [])
 
 _VALID_STATUSES = set(_SKILL_MAP.keys()) | {"complete", "blocked"}
 
@@ -343,6 +383,7 @@ def aitp_get_status(topics_root: str, topic_slug: str) -> dict[str, Any]:
     src_dir = root / "L0" / "sources"
     cand_dir = root / "L3" / "candidates"
     global_l2 = _global_l2_path(topics_root)
+    manifest = _load_domain_manifest(root)
     return {
         "topic_slug": topic_slug,
         "status": status,
@@ -360,6 +401,8 @@ def aitp_get_status(topics_root: str, topic_slug: str) -> dict[str, Any]:
         "sources_count": len(list(src_dir.glob("*.md"))) if src_dir.is_dir() else 0,
         "candidates_count": len(list(cand_dir.glob("*.md"))) if cand_dir.is_dir() else 0,
         "l2_count": len(list(global_l2.glob("*.md"))) if global_l2.is_dir() else 0,
+        "domain_skill": manifest.get("domain_id", "") if manifest else "",
+        "repo_ref": manifest.get("repo_ref", {}) if manifest else {},
         "updated_at": fm.get("updated_at", ""),
     }
 
@@ -397,6 +440,7 @@ def aitp_bootstrap_topic(
     mode: str = "explore",
 ) -> str:
     """Create a new topic directory structure with state.md and L0/L1 scaffolds."""
+    lane = _normalize_lane(lane)
     safe_slug = validate_topic_slug(topic_slug)
     base = topics_dir(topics_root)
     root = base / safe_slug
@@ -409,6 +453,17 @@ def aitp_bootstrap_topic(
         "L5_writing/figures", "L5_writing/tables", "runtime",
     ]:
         (root / sub).mkdir(parents=True)
+    # Domain-specific directories for code_method lane (PROJECT_STRUCTURE_CONVENTION)
+    if lane == "code_method":
+        for sub in [
+            "docs/sections", "docs/figures",
+            "code/patches",
+            "computation/smoke_test", "computation/benchmark",
+            "contracts",
+            "archive/conversations", "archive/specs",
+            "build/cmake",
+        ]:
+            (root / sub).mkdir(parents=True)
     # Write L0 artifact scaffolds
     for rel_name, (artifact_fm, artifact_body) in L0_ARTIFACT_TEMPLATES.items():
         _write_md(root / "L0" / rel_name, artifact_fm, artifact_body)
@@ -471,6 +526,113 @@ def aitp_bootstrap_topic(
     body = f"# {title}\n\n## Research Question\n{question}\n"
     _write_md(root / "state.md", fm, body)
     return f"Bootstrapped topic {safe_slug} at {root}"
+
+
+@mcp.tool()
+def aitp_load_domain_manifest(
+    topics_root: str,
+    topic_slug: str,
+) -> dict[str, Any]:
+    """Load and return the domain manifest for a topic, if one exists.
+
+    Reads contracts/domain-manifest.md. Returns the manifest frontmatter with
+    domain_id, target_codes, operations, invariants, repo_ref, etc., or an
+    empty dict if no domain skill is registered for this topic.
+    """
+    root = _topic_root(topics_root, topic_slug)
+    manifest = _load_domain_manifest(root)
+    if manifest is None:
+        return {"message": "No domain manifest found. Place contracts/domain-manifest.md to register a domain skill."}
+    return manifest
+
+
+@mcp.tool()
+def aitp_bind_repo(
+    topics_root: str,
+    topic_slug: str,
+    repo_path: str,
+    branch_prefix: str = "feat",
+    base_branch: str = "",
+) -> dict[str, Any]:
+    """Bind a topic to a local git repo for code development.
+
+    Creates a feature branch in the repo and writes a repo_ref into
+    contracts/domain-manifest.json. After binding, the agent reads/writes
+    code directly in the repo rather than copying files into the topic.
+
+    Args:
+        topics_root: Root directory for topics.
+        topic_slug: Topic identifier.
+        repo_path: Absolute path to the local git repository.
+        branch_prefix: Prefix for the feature branch (default "feat").
+            Use "fix" for bug fixes, "experiment" for exploratory work.
+        base_branch: Branch to create from. Defaults to current HEAD.
+    """
+    import json as _json
+
+    root = _topic_root(topics_root, topic_slug)
+    repo = Path(repo_path)
+    if not repo.is_dir():
+        return {"message": f"Repo path does not exist: {repo}"}
+    if not (repo / ".git").exists():
+        return {"message": f"Not a git repository: {repo}"}
+
+    branch_name = f"{branch_prefix}/{topic_slug}"
+
+    try:
+        if base_branch:
+            subprocess.run(
+                ["git", "checkout", "-b", branch_name, base_branch],
+                cwd=str(repo), capture_output=True, text=True, check=True,
+            )
+        else:
+            current = subprocess.run(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                cwd=str(repo), capture_output=True, text=True, check=True,
+            ).stdout.strip()
+            if current == branch_name:
+                pass  # already on the right branch
+            else:
+                subprocess.run(
+                    ["git", "checkout", "-b", branch_name],
+                    cwd=str(repo), capture_output=True, text=True, check=True,
+                )
+    except subprocess.CalledProcessError as e:
+        return {"message": f"Git error: {e.stderr.strip()}"}
+
+    base_commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=str(repo), capture_output=True, text=True, check=True,
+    ).stdout.strip()[:12]
+
+    contracts_dir = root / "contracts"
+    contracts_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = contracts_dir / "domain-manifest.md"
+
+    if manifest_path.exists():
+        fm, body = _parse_md(manifest_path)
+    else:
+        fm, body = {}, "# Domain Manifest\n"
+
+    fm["repo_ref"] = {
+        "local_path": str(repo),
+        "branch": branch_name,
+        "base_commit": base_commit,
+    }
+
+    _write_md(manifest_path, fm, body)
+
+    _append_to_topic_log(
+        root,
+        f"bound repo: {repo} branch={branch_name} base={base_commit}",
+    )
+
+    return {
+        "message": f"Bound topic {topic_slug} to {repo} on branch {branch_name}",
+        "repo_path": str(repo),
+        "branch": branch_name,
+        "base_commit": base_commit,
+    }
 
 
 @mcp.tool()
@@ -2069,14 +2231,16 @@ def aitp_switch_lane(
 ) -> dict[str, Any]:
     """Switch the research lane for an active topic. Records old/new lane and reason.
 
-    new_lane: formal_theory | toy_numeric | code_method | unspecified
+    new_lane: formal_theory | toy_numeric | code_method | code_and_materials | unspecified
     Valid transitions: any lane to any other lane. Common patterns:
       - formal_theory → toy_numeric: analytical derivation hit a dead end
       - toy_numeric → code_method: need production-quality computation
       - code_method → formal_theory: numerical results suggest a clean analytical form
+    Note: code_and_materials is an alias for code_method and is normalized automatically.
     """
+    resolved = _normalize_lane(new_lane)
     valid_lanes = {"formal_theory", "toy_numeric", "code_method", "unspecified"}
-    if new_lane not in valid_lanes:
+    if resolved not in valid_lanes:
         return {"message": f"Invalid lane '{new_lane}'. Valid: {sorted(valid_lanes)}"}
 
     root = _topic_root(topics_root, topic_slug)
@@ -2084,21 +2248,22 @@ def aitp_switch_lane(
     fm, body = _parse_md(state_path)
 
     old_lane = fm.get("lane", "unspecified")
-    if old_lane == new_lane:
+    if old_lane == resolved:
         return {"message": f"Topic is already on lane '{new_lane}'. No change needed."}
 
-    fm["lane"] = new_lane
+    fm["lane"] = resolved
     fm["previous_lane"] = old_lane
     fm["lane_switch_reason"] = reason
     fm["lane_switched_at"] = _now()
     fm["updated_at"] = _now()
     _write_md(state_path, fm, body)
-    _append_to_topic_log(root, f"switched lane: {old_lane} -> {new_lane} ({reason})")
+    _append_to_topic_log(root, f"switched lane: {old_lane} -> {resolved} ({reason})")
 
     return {
-        "message": f"Switched lane from '{old_lane}' to '{new_lane}'.",
+        "message": f"Switched lane from '{old_lane}' to '{resolved}'.",
         "old_lane": old_lane,
-        "new_lane": new_lane,
+        "new_lane": resolved,
+        "requested_lane": new_lane,
         "note": "L4 evidence requirements change with lane. Review validation contract.",
     }
 

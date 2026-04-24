@@ -2,7 +2,7 @@
 
 This document defines the mandatory project structure, documentation, and
 workflow conventions for ABACUS+LibRPA feature development within the AITP
-`code_and_materials` lane.
+`code_method` lane.
 
 These rules are **non-negotiable** for every new feature project. They exist to
 ensure derivations drive code, not the other way around.
@@ -40,15 +40,15 @@ this folder and nowhere else.
 ├── computation/                   # Computation outputs
 │   ├── smoke_test/                #   Phase 4 smoke test
 │   └── benchmark/                 #   Phase 5 production runs
-├── contracts/                     # AITP contract instances (JSON)
-│   ├── development-task.*.json
-│   ├── computation-workflow.*.json
-│   ├── benchmark-report.*.json
-│   └── calculation-debug.*.json
+├── contracts/                     # AITP contract instances (Markdown + YAML frontmatter)
+│   ├── development-task.*.md
+│   ├── computation-workflow.*.md
+│   ├── benchmark-report.*.md
+│   └── calculation-debug.*.md
 ├── archive/                       # Reproducibility archive (append-only)
 │   ├── conversations/             #   Unedited conversation transcripts
 │   ├── specs/                     #   Externalized spec versions
-│   └── hitl-log.json              #   HITL round tracking
+│   └── hitl-log.md                #   HITL round tracking
 └── build/                         # Build configurations
     └── cmake/                     #   CMake presets
 ```
@@ -292,7 +292,7 @@ When starting a new project, the agent must:
 
 When this document conflicts with a general AITP convention, **this document
 takes precedence** for ABACUS+LibRPA feature development projects within the
-`code_and_materials` lane.
+`code_method` lane.
 
 ---
 
@@ -315,7 +315,7 @@ archive/
 ├── code/                         # Code versions with pass/fail status
 │   ├── {artifact}-{model1}-{model2}#{round}-{Pass|Fail}.{ext}
 │   └── ...
-└── hitl-log.json                 # HITL round tracking
+└── hitl-log.md                    # HITL round tracking
 ```
 
 ### Naming convention

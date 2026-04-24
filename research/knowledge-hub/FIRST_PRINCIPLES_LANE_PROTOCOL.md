@@ -1,12 +1,12 @@
 # First-Principles Domain Specialization
 
 This document defines the **ABACUS+LibRPA domain specialization** within the
-`code_and_materials` lane of AITP. It covers both sub-domains (computation and
+`code_method` lane of AITP. It covers both sub-domains (computation and
 development), their interaction loop, routing strategy, invariants, and
 validation standards.
 
 This is not an independent lane. It is a domain-specific protocol layer that
-sits inside the existing `code_and_materials` lane, following the same L0→L4
+sits inside the existing `code_method` lane, following the same L0→L4
 layer model and promotion rules. The domain knowledge here was extracted from
 the `oh-my-librpa` OpenCode skill and formalized into AITP contracts.
 
@@ -14,7 +14,7 @@ the `oh-my-librpa` OpenCode skill and formalized into AITP contracts.
 
 | Attribute | Value |
 |---|---|
-| Parent lane | `code_and_materials` |
+| Parent lane | `code_method` |
 | Domain | ABACUS + LibRPA first-principles calculations |
 | Sub-domains | `computation`, `development` |
 | System types | `molecule`, `solid`, `2D` |
@@ -230,7 +230,7 @@ map to concrete filesystem directories within the project folder:
 ## 10. Relationship to oh-my-librpa
 
 This document formalizes the knowledge from the `oh-my-librpa` OpenCode skill
-into AITP protocol contracts under the `code_and_materials` lane. The mapping:
+into AITP protocol contracts under the `code_method` lane. The mapping:
 
 | oh-my-librpa concept | AITP artifact |
 |---|---|
@@ -307,5 +307,5 @@ When symmetry sidecar files are present:
 ---
 
 This document is the authoritative reference for the ABACUS+LibRPA domain
-specialization within the `code_and_materials` lane. When in doubt, this
+specialization within the `code_method` lane. When in doubt, this
 document takes precedence over individual contract files or schema comments.

@@ -1,6 +1,6 @@
 # Calculation Debug Contract
 
-**Schema**: [`calculation-debug.schema.json`](../schemas/calculation-debug.schema.json)
+**Frontmatter schema**: [`calculation-debug.schema.json`](../schemas/calculation-debug.schema.json)
 
 ## Purpose
 

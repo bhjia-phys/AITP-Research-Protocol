@@ -1032,7 +1032,7 @@ Before declaring the feature done, verify every contract:
 ---
 
 This playbook is the authoritative reference for the feature development
-lifecycle within the `code_and_materials` lane's ABACUS+LibRPA domain
+lifecycle within the `code_method` lane's ABACUS+LibRPA domain
 specialization. It works with — not replaces — the
 [FIRST_PRINCIPLES_LANE_PROTOCOL.md](./FIRST_PRINCIPLES_LANE_PROTOCOL.md) and
 the five domain contracts under `contracts/`.

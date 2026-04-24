@@ -1,6 +1,6 @@
 # Computation Workflow Contract
 
-**Schema**: [`computation-workflow.schema.json`](../schemas/computation-workflow.schema.json)
+**Frontmatter schema**: [`computation-workflow.schema.json`](../schemas/computation-workflow.schema.json)
 
 ## Purpose
 

@@ -215,7 +215,7 @@ All materials associated with a research project must be archived:
 | Conversation transcripts | `archive/conversations/` | Unedited Markdown |
 | Spec versions | `archive/specs/` | Versioned Markdown |
 | Code versions | `archive/code/` | Source files with pass/fail status |
-| HITL log | `archive/hitl-log.json` | Structured JSON |
+| HITL log | `archive/hitl-log.md` | Markdown with YAML frontmatter |
 
 ### 5.2 Naming convention
 

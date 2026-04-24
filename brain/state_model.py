@@ -699,6 +699,27 @@ PHYSICS_CHECK_FIELDS = [
 ]
 
 
+def _load_manifest(topic_root_path: Path) -> dict[str, Any] | None:
+    """Load domain-manifest.md from topic's contracts/ directory."""
+    manifest_path = topic_root_path / "contracts" / "domain-manifest.md"
+    if not manifest_path.exists():
+        return None
+    try:
+        text = manifest_path.read_text(encoding="utf-8")
+        if not text.startswith("---"):
+            return None
+        end = text.find("---", 3)
+        if end == -1:
+            return None
+        import yaml
+        data = yaml.safe_load(text[3:end])
+        if data and ("domain_id" in data or "repo_ref" in data):
+            return data
+    except (json.JSONDecodeError, OSError):
+        pass
+    return None
+
+
 def evaluate_l4_stage(
     parse_md: Callable[[Path], tuple[dict[str, Any], str]],
     topic_root_path: Path,
@@ -710,6 +731,7 @@ def evaluate_l4_stage(
     begins validating candidates. Gate checks:
     - At least one candidate submitted
     - At least one L4 review filed for each candidate being promoted
+    - Domain invariants checked (if domain-manifest.json exists)
     """
     cand_dir = topic_root_path / "L3" / "candidates"
     review_dir = topic_root_path / "L4" / "reviews"
@@ -759,6 +781,37 @@ def evaluate_l4_stage(
             next_allowed_transition="L3",
             skill="skill-validate",
         )
+
+    # Domain invariant checks (if domain manifest exists)
+    manifest = _load_manifest(topic_root_path)
+    if manifest:
+        invariants = manifest.get("invariants", [])
+        invariant_results_path = topic_root_path / "L4" / "invariant-checks.md"
+        if not invariant_results_path.exists():
+            invariant_ids = [inv.get("id", "unknown") for inv in invariants]
+            return StageSnapshot(
+                stage="L4", posture="verify", lane=lane,
+                gate_status="blocked_missing_artifact",
+                required_artifact_path=str(invariant_results_path),
+                missing_requirements=[f"domain invariant check: {iid}" for iid in invariant_ids],
+                next_allowed_transition="L3",
+                skill="skill-validate",
+            )
+        inv_fm, inv_body = parse_md(invariant_results_path)
+        unchecked = []
+        for inv in invariants:
+            inv_id = inv.get("id", "")
+            if inv_id and inv_id not in inv_body:
+                unchecked.append(inv_id)
+        if unchecked:
+            return StageSnapshot(
+                stage="L4", posture="verify", lane=lane,
+                gate_status="blocked_missing_field",
+                required_artifact_path=str(invariant_results_path),
+                missing_requirements=[f"domain invariant result for: {uid}" for uid in unchecked],
+                next_allowed_transition="L3",
+                skill="skill-validate",
+            )
 
     return StageSnapshot(
         stage="L4", posture="verify", lane=lane,

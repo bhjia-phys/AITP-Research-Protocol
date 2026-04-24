@@ -1,8 +1,8 @@
-# AITP Specification v2
+# AITP Specification v3
 
 Status: authoritative specification, subordinate to CHARTER.md.
-Last updated: 2026-04-24.
-Version: 2.0 (brain-driven, skill-first, markdown-only).
+Last updated: 2026-04-25.
+Version: 3.0 (brain-driven, skill-first, markdown-only, domain-skills).
 
 This document is the single specification that bridges the Charter to the
 protocol tree. Every sub-protocol must be consistent with this SPEC.

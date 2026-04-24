@@ -82,14 +82,13 @@ no API, no function calls, no IPC. The project folder is the shared state.
 
 ```
 <project-root>/
-├── contracts/                    # Shared state
-│   ├── domain-manifest.json      # Skill registers here (§4)
-│   ├── computation-workflow.*.json   # Skill writes, AITP validates
-│   ├── development-task.*.json       # Skill writes, AITP validates
-│   ├── benchmark-report.*.json       # Skill writes, AITP validates
-│   ├── calculation-debug.*.json      # Skill writes, AITP validates
-│   └── compute-resource.*.json       # Skill writes, AITP validates
-├── .aitp-skill-state.json        # Skill writes private state
+├── contracts/                    # Shared state (Markdown with YAML frontmatter)
+│   ├── domain-manifest.md        # Skill registers here (§4)
+│   ├── computation-workflow.*.md     # Skill writes, AITP validates
+│   ├── development-task.*.md         # Skill writes, AITP validates
+│   ├── benchmark-report.*.md         # Skill writes, AITP validates
+│   ├── calculation-debug.*.md        # Skill writes, AITP validates
+│   └── compute-resource.*.md         # Skill writes, AITP validates
 └── ...
 ```
 
@@ -99,7 +98,7 @@ no API, no function calls, no IPC. The project folder is the shared state.
 AITP Core                              Domain Skill
    │                                       │
    │──── "What domain is this?" ──────────>│
-   │<─── domain-manifest.json ─────────────│
+   │<─── domain-manifest.md ───────────────│
    │                                       │
    │──── "Create project for <topic>" ────>│
    │<─── domain-specific dirs/files ───────│
@@ -131,10 +130,13 @@ invoke the skill, but the skill is not imported as a Python module.
 
 ## 4. Domain manifest
 
-Every domain skill must provide a `domain-manifest.json`. This is the skill's
+Every domain skill must provide a `domain-manifest.md`. This is the skill's
 registration card — it tells AITP everything about the domain.
 
 ### Schema
+
+The manifest is stored as a Markdown file (`domain-manifest.md`) with YAML
+frontmatter. The JSON Schema below describes the required frontmatter fields.
 
 ```json
 {
@@ -288,7 +290,7 @@ A minimal manifest for a hypothetical VASP workflow skill:
     {"name": "gw_workflow", "family": "computation", "description": "GW band structure", "phases": ["4", "5"]}
   ],
   "contracts": [
-    {"name": "computation-workflow", "schema_path": "schemas/computation-workflow.schema.json", "purpose": "Track GW stages"}
+    {"name": "computation-workflow", "schema_path": "schemas/computation-workflow.schema.json", "purpose": "Track GW stages"}  # schema defines frontmatter shape
   ],
   "invariants": [
     {"id": "encut_convergence", "description": "ENCUT must be converged before GW", "failure_mode": "Incorrect QP energies", "check_method": "Compare ENCUT series"}
@@ -311,7 +313,7 @@ reaches a specific phase or gate.
 
 | Hook | When called | What the skill returns |
 |------|------------|----------------------|
-| `register` | Phase P (project setup) | `domain-manifest.json`, domain-specific subdirectories, initial README content |
+| `register` | Phase P (project setup) | `domain-manifest.md`, domain-specific subdirectories, initial README content |
 | `on_scope` | Phase 0 | Suggested system types, reference data sources, success criteria template |
 | `on_derivation_required` | Phase 1 | List of equations to derive, starting references, assumptions to document |
 | `on_implementation_map` | Phase 1 (after derivation) | Mapping from equations to code locations, branch names |
@@ -331,7 +333,7 @@ signals the agent that a hook is needed, and the agent delegates to the skill.
 ```
 AITP Playbook Engine
   → "Phase 1 reached. Need derivation guidance for <topic>."
-    → Agent reads domain-manifest.json
+    → Agent reads domain-manifest.md
     → Agent invokes oh-my-librpa skill with derivation request
     → Skill returns equation list, references, assumptions
     → Agent writes guidance into project docs/
@@ -347,8 +349,8 @@ pyatb for transport properties).
 
 ### Rules
 
-1. Each skill registers its own `domain-manifest.json` in
-   `contracts/domain-manifest.<domain_id>.json`.
+1. Each skill registers its own `domain-manifest.md` in
+   `contracts/domain-manifest.<domain_id>.md`.
 2. Contract schemas from different skills coexist in `schemas/`.
 3. Invariants from all registered skills are checked at L4.
 4. Routing is tried in registration order; first match wins.
@@ -358,10 +360,10 @@ pyatb for transport properties).
 
 ```
 contracts/
-├── domain-manifest.abacus-librpa.json    # GW calculation
-├── domain-manifest.pyatb.json            # Transport properties
-├── computation-workflow.gw-al-001.json
-├── computation-workflow.transport-al-001.json
+├── domain-manifest.abacus-librpa.md    # GW calculation
+├── domain-manifest.pyatb.md            # Transport properties
+├── computation-workflow.gw-al-001.md
+├── computation-workflow.transport-al-001.md
 └── ...
 ```
 
@@ -372,7 +374,7 @@ contracts/
 Not every OpenCode skill qualifies as a domain skill for AITP. To qualify, a
 skill must:
 
-1. **Provide a `domain-manifest.json`** conforming to the schema in §4.
+1. **Provide a `domain-manifest.md`** conforming to the schema in §4.
 2. **Implement at least the `register` and `on_scope` hooks** (§5).
 3. **Use AITP contract schemas** for any data that passes through gates.
 4. **Respect the derive-first workflow** — no code suggestions before
@@ -402,7 +404,7 @@ When a new project is created, the agent:
 | `FEATURE_DEVELOPMENT_PLAYBOOK.md` | Generic playbook | Stays generic; domain-specific details come from the skill hooks |
 | `PROJECT_STRUCTURE_CONVENTION.md` | Generic structure | Unchanged; all skills follow this |
 | This document | Interface specification | New; defines the contract between AITP and skills |
-| `domain-manifest.*.json` | Skill registration | New; per-skill, stored in project `contracts/` |
+| `domain-manifest.*.md` | Skill registration | New; per-skill, stored in project `contracts/` |
 
 ### Migration path
 

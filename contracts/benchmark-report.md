@@ -1,6 +1,6 @@
 # Benchmark Report Contract
 
-**Schema**: [`benchmark-report.schema.json`](../schemas/benchmark-report.schema.json)
+**Frontmatter schema**: [`benchmark-report.schema.json`](../schemas/benchmark-report.schema.json)
 
 ## Purpose
 

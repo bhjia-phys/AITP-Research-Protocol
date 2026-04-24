@@ -19,4 +19,4 @@ The current public contract family is:
 Each contract has:
 
 - a human-readable description in this directory;
-- a matching JSON Schema under `../schemas/`.
+- a matching JSON Schema under `../schemas/` that describes the YAML frontmatter fields.

@@ -1,6 +1,6 @@
 # Compute Resource Contract
 
-**Schema**: [`compute-resource.schema.json`](../schemas/compute-resource.schema.json)
+**Frontmatter schema**: [`compute-resource.schema.json`](../schemas/compute-resource.schema.json)
 
 ## Purpose
 
