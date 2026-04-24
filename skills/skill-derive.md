@@ -11,26 +11,9 @@ candidate findings.
 
 ## What to Do
 
-1. **Start a derivation** by calling:
-   ```
-   aitp_record_derivation(
-     topics_root, topic_slug,
-     derivation_id="d1-reconstruct-hamiltonian",
-     kind="source_reconstruction",
-     title="Reconstruct H-S Hamiltonian from source",
-     source="hs-1988",
-     content="Step-by-step reconstruction..."
-   )
-   ```
+1. **Start a derivation** by writing to `L3/analysis/active_analysis.md`. Set `round_type` in frontmatter to the appropriate type (see skill-l3-analyze for round types).
 
-2. **Derivation types** (use the appropriate `kind`):
-   - `source_reconstruction` — reproduce a result from a source
-   - `cross_source_reconstruction` — combine results from multiple sources
-   - `candidate_derivation` — derive a new or novel result
-   - `failed_attempt` — record a failed approach (do not hide failures)
-   - `notation_resolution` — resolve notation conflicts between sources
-
-3. **Record every step**. Each derivation step should include:
+2. **Record every step**. Each derivation step should include:
    - What you started from (source, previous step)
    - What transformation you applied
    - What you obtained

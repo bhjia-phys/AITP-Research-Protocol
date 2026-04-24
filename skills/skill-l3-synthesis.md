@@ -74,12 +74,6 @@ For each candidate:
 3. Does every derivation step have a `justification_type`?
 4. Are all blocking gaps from gap_audit resolved or deferred with reason?
 
-## Flow Notebook — Incremental Update
-
-Update `L3/tex/flow_notebook.tex`:
-- Fill the **Synthesis** section with the reconstructed contribution
-- Include L2 update proposals
-
 ## Exit condition
 
 The synthesis subplane is the last study subplane. When complete:

@@ -33,16 +33,12 @@ You are in **explore** mode. Your job: discover relevant literature and register
    - Open questions
    - Connections to other work
 
-4. **Record initial ideas** in `L3/derivations.md` using:
-   ```
-   aitp_record_derivation(
-     topics_root, topic_slug,
-     derivation_id="idea-1",
-     kind="ideation",
-     title="Brief idea description",
-     status="speculative",
-     content="What you noticed and why it might matter"
-   )
+4. **Record initial ideas** by writing to `L0/ideas.md` (create if needed). Format each idea as:
+   ```markdown
+   ### idea-1: Brief idea description
+   - **Status**: speculative
+   - **What you noticed**: ...
+   - **Why it might matter**: ...
    ```
 
 5. **When you have registered at least one source**, update status:

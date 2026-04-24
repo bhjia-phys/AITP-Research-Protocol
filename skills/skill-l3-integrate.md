@@ -49,7 +49,7 @@ At ANY point during integration, you may offer these back-paths via AskUserQuest
   reveals the plan was incomplete
 - **Retreat to L1** (`aitp_retreat_to_l1`): if integration reveals fundamental
   framing issues
-- **Query L2** (`aitp_query_knowledge`): compare integrated findings against
+- **Query L2** (`aitp_query_l2`): compare integrated findings against
   validated global knowledge
 
 ## Active artifact
@@ -117,25 +117,11 @@ all open obligations before submitting a candidate.
 4. List open obligations with blocking status.
 5. Do not distill yet.
 
-## Flow Notebook — Incremental Update (MANDATORY)
-
-Before advancing out of this subplane, update `L3/tex/flow_notebook.tex`:
-
-1. **If file does NOT exist**: copy template from `<aitp-repo-root>/templates/flow_notebook.tex`
-   to `L3/tex/flow_notebook.tex`, fill the **Result Integration** section, leave other sections
-   as `{{PLACEHOLDER}}` comments.
-2. **If file already exists**: update ONLY the Result Integration section from
-   `active_integration.md` using Markdown→LaTeX conversion rules (see skill-l3-distill for
-   full rules table).
-   Add version comment: `% Updated: <date> — integration revision`.
-
-Do NOT compile to PDF yet. Compilation happens at distillation.
-
 ## Exit condition
 
 Advance to **distillation** when `active_integration.md` has filled frontmatter fields
 `integration_statement`, `findings`, and `claim_readiness`, plus headings `## Integration Statement`,
-`## Findings`, `## Claim Readiness`, and `## Open Obligations`, AND `flow_notebook.tex` has been updated.
+`## Findings`, `## Claim Readiness`, and `## Open Obligations`.
 
 ## Allowed transitions
 

@@ -85,10 +85,7 @@ def main():
             "Tests pass, flow TeX renders correctly")
 
         # ── Step 7: L4 validation ──
-        print("\n[7] Creating validation contract and submitting L4 review...")
-        mcp_server.aitp_create_validation_contract(
-            tmp, "demo-topic", "cand-1",
-            mandatory_checks=["dimensional_consistency", "limiting_case_check"])
+        print("\n[7] Submitting L4 review...")
         mcp_server.aitp_submit_l4_review(
             tmp, "demo-topic", "cand-1", "pass", "All physics checks passed.")
 

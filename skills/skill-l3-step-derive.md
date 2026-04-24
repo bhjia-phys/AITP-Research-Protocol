@@ -56,12 +56,6 @@ Before advancing:
 - `all_steps_justified` is honestly assessed
 - Any steps where you could not reproduce the derivation are flagged
 
-## Flow Notebook — Incremental Update
-
-Update `L3/tex/flow_notebook.tex`:
-- Add derivation chains to the **Derivation Trace** section
-- Include the step-by-step trace with justification annotations
-
 ## Exit condition
 
 Advance to **gap_audit** when:

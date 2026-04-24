@@ -54,7 +54,7 @@ At ANY point during analysis, you may offer these back-paths via AskUserQuestion
   reveals the idea itself is flawed
 - **Retreat to L1** (`aitp_retreat_to_l1`): if analysis reveals missing sources
   or wrong conventions
-- **Query L2** (`aitp_query_knowledge`): check if similar results exist, compare
+- **Query L2** (`aitp_query_l2`): check if similar results exist, compare
   against known validated results
 
 ## Active artifact
@@ -133,8 +133,7 @@ Failed routes are NOT discarded — they prevent future sessions from repeating 
 
 ## Post-L4 Return Analysis
 
-If you entered this subplane via `aitp_return_to_l3_from_l4` (check `l4_return_reason`
-in state.md), your analysis must:
+If you are returning to analysis after L4 validation (post-L4 return), your analysis must:
 
 1. **Read the L4 review** at `L4/reviews/<candidate_id>.md` — note all check results,
    caveats, and quantitative discrepancies.
@@ -144,26 +143,10 @@ in state.md), your analysis must:
    - What was validated conclusively
    - What had caveats (normalization differences, finite-size limitations)
    - What remains open (larger L, different operators, thermodynamic limit)
-4. **Update flow_notebook.tex** with the L4 analysis section.
-
-## Flow Notebook — Incremental Update (MANDATORY)
-
-Before advancing out of this subplane, update `L3/tex/flow_notebook.tex`:
-
-1. **If file does NOT exist**: copy template from `<aitp-repo-root>/templates/flow_notebook.tex`
-   to `L3/tex/flow_notebook.tex`, fill the **Analysis** section, leave other sections as
-   `{{PLACEHOLDER}}` comments.
-2. **If file already exists**: update ONLY the Analysis section from `active_analysis.md`
-   using Markdown→LaTeX conversion rules (see skill-l3-distill for full rules table).
-   Add version comment: `% Updated: <date> — analysis revision`.
-
-Do NOT compile to PDF yet. Compilation happens at distillation.
-
 ## Exit condition
 
 Advance to **result_integration** when `active_analysis.md` has filled frontmatter fields
-`analysis_statement` and `method`, plus headings `## Analysis Statement` and `## Method`,
-AND `flow_notebook.tex` has been updated.
+`analysis_statement` and `method`, plus headings `## Analysis Statement` and `## Method`.
 
 ## Allowed transitions
 

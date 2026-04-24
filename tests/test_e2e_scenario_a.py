@@ -263,15 +263,6 @@ def _l4_validation_and_review(tmp: str) -> None:
         "against Redlich N=1 and Witten's general framework.",
     )
 
-    mcp_server.aitp_create_validation_contract(
-        tmp, TOPIC_SLUG, "cand-cs-anomaly",
-        mandatory_checks=[
-            "dimensional_consistency",
-            "limiting_case_check",
-            "correspondence_check",
-            "symmetry_compatibility",
-        ],
-    )
 
     mcp_server.aitp_submit_l4_review(
         tmp, TOPIC_SLUG, "cand-cs-anomaly",
@@ -282,7 +273,6 @@ def _l4_validation_and_review(tmp: str) -> None:
         "parity transformation flips sgn(m), consistent with anomaly structure.",
     )
 
-    mcp_server.aitp_return_to_l3_from_l4(tmp, TOPIC_SLUG, reason="l4_pass_return")
 
 
 def _create_flow_tex_and_advance_l5(tmp: str, repo_root: Path) -> None:
@@ -401,15 +391,6 @@ class ScenarioAEndToEndTest(unittest.TestCase):
 
             tr = repo_root / "topics" / TOPIC_SLUG
 
-            # Validation contract exists with 4 checks
-            vc_path = tr / "L4" / "validation_contract.md"
-            self.assertTrue(vc_path.exists())
-            vc_fm, _ = mcp_server._parse_md(vc_path)
-            checks = vc_fm.get("mandatory_checks", [])
-            self.assertEqual(len(checks), 4)
-            for check in ["dimensional_consistency", "limiting_case_check",
-                          "correspondence_check", "symmetry_compatibility"]:
-                self.assertIn(check, checks, f"Missing check: {check}")
 
             # Review exists with outcome=pass
             review_path = tr / "L4" / "reviews" / "cand-cs-anomaly.md"
@@ -463,11 +444,6 @@ class ScenarioAEndToEndTest(unittest.TestCase):
             r_fm, _ = mcp_server._parse_md(latest[0])
             self.assertEqual(r_fm["outcome"], "pass")
 
-            # Checkpoint 4: L4/validation_contract.md exists with 4 checks
-            vc_path = tr / "L4" / "validation_contract.md"
-            self.assertTrue(vc_path.exists())
-            vc_fm, _ = mcp_server._parse_md(vc_path)
-            self.assertEqual(len(vc_fm.get("mandatory_checks", [])), 4)
 
             # Checkpoint 5: flow_notebook.tex exists
             tex_path = tr / "L3" / "tex" / "flow_notebook.tex"
@@ -486,8 +462,7 @@ class ScenarioAEndToEndTest(unittest.TestCase):
             log_path = tr / "runtime" / "log.md"
             self.assertTrue(log_path.exists())
             log_content = log_path.read_text(encoding="utf-8")
-            for event in ["bootstrapped", "L4 review", "returned from L4",
-                          "advanced to L5"]:
+            for event in ["bootstrapped", "L4 review", "advanced to L5"]:
                 self.assertIn(
                     event, log_content,
                     f"runtime/log.md missing event: {event}",

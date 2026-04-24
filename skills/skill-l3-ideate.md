@@ -50,7 +50,7 @@ At ANY point during discussion, you may offer these back-paths via AskUserQuesti
 
 - **Retreat to L1** (`aitp_retreat_to_l1`): if sources are insufficient, framing is wrong,
   or assumptions need revision
-- **Query L2** (`aitp_query_knowledge`): check if related results already exist in the
+- **Query L2** (`aitp_query_l2`): check if related results already exist in the
   global knowledge base — don't reinvent the wheel
 - **Register new sources** (`aitp_register_source`): if the discussion reveals missing
   literature, add sources before continuing
@@ -68,24 +68,10 @@ These are not just for this subplane — they are available throughout ALL L3 su
 3. Note prior work and risks.
 4. Do not start planning or analysis yet.
 
-## Flow Notebook — Incremental Update (MANDATORY)
-
-Before advancing out of this subplane, update `L3/tex/flow_notebook.tex`:
-
-1. **If file does NOT exist**: copy template from `<aitp-repo-root>/templates/flow_notebook.tex`
-   to `L3/tex/flow_notebook.tex`, fill the **Ideation** section, leave other sections as
-   `{{PLACEHOLDER}}` comments.
-2. **If file already exists**: update ONLY the Ideation section from `active_idea.md`
-   using Markdown→LaTeX conversion rules (see skill-l3-distill for full rules table).
-   Add version comment: `% Updated: <date> — ideation revision`.
-
-Do NOT compile to PDF yet. Compilation happens at distillation.
-
 ## Exit condition
 
 Advance to **planning** when `active_idea.md` has filled frontmatter fields
-`idea_statement` and `motivation`, plus headings `## Idea Statement` and `## Motivation`,
-AND `flow_notebook.tex` has been updated.
+`idea_statement` and `motivation`, plus headings `## Idea Statement` and `## Motivation`.
 
 ## Allowed transitions
 

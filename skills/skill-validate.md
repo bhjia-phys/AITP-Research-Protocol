@@ -139,15 +139,11 @@ This is intentional — no self-certification for numerical claims.
 aitp_update_status(topics_root, topic_slug, status="validated")
 ```
 
-### Step 8: Return to L3 (MANDATORY after pass)
+### Step 8: After L4 pass
 
-After L4 pass, do NOT stop. Do NOT advance to L5 yet. You MUST return to L3:
+After L4 pass, do NOT stop. Do NOT advance to L5 yet. You MUST return to L3 for post-validation analysis.
 
-```
-aitp_return_to_l3_from_l4(topics_root, topic_slug, reason="post_l4_analysis")
-```
-
-Then follow the **post-L4 analysis flow** (see below).
+To return to L3: use `aitp_advance_l3_subplane` to go to the `analysis` subplane, then follow the **post-L4 analysis flow** (see below). There is no separate "return from L4" tool — just navigate back to L3 and continue work.
 
 ## Post-L4 Analysis Flow (MANDATORY)
 
@@ -158,9 +154,7 @@ After returning to L3 from L4:
    - Were there quantitative discrepancies (e.g., normalization differences)?
    - Do the validated results suggest new questions or extensions?
 
-2. **Update flow_notebook.tex** with the L4 findings (incremental update).
-
-3. **Ask the human** (MANDATORY — use AskUserQuestion):
+2. **Ask the human** (MANDATORY — use AskUserQuestion):
    - "L4 passed. The validated claim is: <claim>. What next?"
      - **Promote to L2**: promote to global knowledge base for cross-topic reuse
      - **Advance to L5 writing**: start paper writing phase
@@ -179,7 +173,6 @@ After returning to L3 from L4:
    - Advance to `planning` subplane
    - Design new computational experiments based on L4 findings
    - Execute through the full L3 cycle (plan → analyze → integrate → distill)
-   - Update flow_notebook.tex at each subplane
    - Submit new/updated candidate and re-enter L4
 
 7. **If human says "revise scope"**:

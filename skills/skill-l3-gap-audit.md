@@ -39,7 +39,7 @@ Run the following audit checklist:
 ### 3. Correspondence Check (MOST IMPORTANT)
 - For each result in the source:
   - Does it reduce to a known result in an appropriate limit?
-  - Use `aitp_query_l2` to check if the limiting case exists in L2
+  - Use `aitp_query_l2_graph` to check if the limiting case exists in L2
   - If the limiting case is NOT in L2, flag it as a prerequisite gap
 - If the paper does NOT do this check, that itself is a gap
 
@@ -70,12 +70,6 @@ Fill the artifact:
 - All five checklist items are addressed (even if empty)
 - Every gap has a severity level
 - Correspondence check is attempted for every major result
-
-## Flow Notebook — Incremental Update
-
-Update `L3/tex/flow_notebook.tex`:
-- Add gap audit findings to the **Gap Audit** section
-- Flag any blocking gaps that need resolution
 
 ## Exit condition
 

@@ -55,28 +55,10 @@ def _bootstrap_with_candidate(tmp: str) -> tuple[Path, str]:
     return repo_root, "cand-1"
 
 
-class L4ValidationContractTests(unittest.TestCase):
-    def test_validation_contract_requires_explicit_checks(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            repo_root, cand_id = _bootstrap_with_candidate(tmp)
-            result = mcp_server.aitp_create_validation_contract(
-                tmp, "demo-topic", cand_id,
-                mandatory_checks=["dimensional_consistency", "symmetry_compatibility"],
-            )
-            self.assertIn("cand-1", result)
-            tr = repo_root / "topics" / "demo-topic"
-            vc_path = tr / "L4" / "validation_contract.md"
-            self.assertTrue(vc_path.exists())
-            fm, _ = mcp_server._parse_md(vc_path)
-            self.assertEqual(fm["candidate_id"], "cand-1")
-
+class L4ReviewTests(unittest.TestCase):
     def test_review_can_end_in_partial_pass(self):
         with tempfile.TemporaryDirectory() as tmp:
             repo_root, cand_id = _bootstrap_with_candidate(tmp)
-            mcp_server.aitp_create_validation_contract(
-                tmp, "demo-topic", cand_id,
-                mandatory_checks=["dimensional_consistency"],
-            )
             result = mcp_server.aitp_submit_l4_review(
                 tmp, "demo-topic", cand_id, "partial_pass",
                 "Dimensional check passed but symmetry check inconclusive.",
@@ -91,10 +73,6 @@ class L4ValidationContractTests(unittest.TestCase):
     def test_review_can_end_in_contradiction(self):
         with tempfile.TemporaryDirectory() as tmp:
             repo_root, cand_id = _bootstrap_with_candidate(tmp)
-            mcp_server.aitp_create_validation_contract(
-                tmp, "demo-topic", cand_id,
-                mandatory_checks=["dimensional_consistency"],
-            )
             result = mcp_server.aitp_submit_l4_review(
                 tmp, "demo-topic", cand_id, "contradiction",
                 "Claim contradicts eq.12 in source.",
@@ -104,10 +82,6 @@ class L4ValidationContractTests(unittest.TestCase):
     def test_review_can_end_in_stuck(self):
         with tempfile.TemporaryDirectory() as tmp:
             repo_root, cand_id = _bootstrap_with_candidate(tmp)
-            mcp_server.aitp_create_validation_contract(
-                tmp, "demo-topic", cand_id,
-                mandatory_checks=["dimensional_consistency"],
-            )
             result = mcp_server.aitp_submit_l4_review(
                 tmp, "demo-topic", cand_id, "stuck",
                 "Cannot resolve sign ambiguity without further data.",
@@ -120,19 +94,6 @@ class L4ValidationContractTests(unittest.TestCase):
 
 
 class PhysicsChecksTests(unittest.TestCase):
-    def test_validation_contract_surfaces_missing_physics_checks(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            repo_root, cand_id = _bootstrap_with_candidate(tmp)
-            mcp_server.aitp_create_validation_contract(
-                tmp, "demo-topic", cand_id,
-                mandatory_checks=["dimensional_consistency", "limiting_case_check"],
-            )
-            tr = repo_root / "topics" / "demo-topic"
-            vc_path = tr / "L4" / "validation_contract.md"
-            fm, _ = mcp_server._parse_md(vc_path)
-            self.assertIn("dimensional_consistency", fm.get("mandatory_checks", []))
-            self.assertIn("limiting_case_check", fm.get("mandatory_checks", []))
-
     def test_physics_check_fields_are_known(self):
         expected = {
             "dimensional_consistency", "symmetry_compatibility",
@@ -145,10 +106,6 @@ class GlobalL2MemoryTests(unittest.TestCase):
     def test_promote_writes_to_global_l2_root(self):
         with tempfile.TemporaryDirectory() as tmp:
             repo_root, cand_id = _bootstrap_with_candidate(tmp)
-            mcp_server.aitp_create_validation_contract(
-                tmp, "demo-topic", cand_id,
-                mandatory_checks=["dimensional_consistency"],
-            )
             mcp_server.aitp_submit_l4_review(
                 tmp, "demo-topic", cand_id, "pass", "All checks passed.",
             )
@@ -173,10 +130,6 @@ class GlobalL2MemoryTests(unittest.TestCase):
     def test_conflicting_existing_unit_creates_conflict_record(self):
         with tempfile.TemporaryDirectory() as tmp:
             repo_root, cand_id = _bootstrap_with_candidate(tmp)
-            mcp_server.aitp_create_validation_contract(
-                tmp, "demo-topic", cand_id,
-                mandatory_checks=["dimensional_consistency"],
-            )
             mcp_server.aitp_submit_l4_review(
                 tmp, "demo-topic", cand_id, "pass", "All checks passed.",
             )
@@ -207,10 +160,6 @@ class GlobalL2MemoryTests(unittest.TestCase):
     def test_repeat_promotion_creates_version_receipt(self):
         with tempfile.TemporaryDirectory() as tmp:
             repo_root, cand_id = _bootstrap_with_candidate(tmp)
-            mcp_server.aitp_create_validation_contract(
-                tmp, "demo-topic", cand_id,
-                mandatory_checks=["dimensional_consistency"],
-            )
             mcp_server.aitp_submit_l4_review(
                 tmp, "demo-topic", cand_id, "pass", "All checks passed.",
             )
@@ -242,10 +191,6 @@ class TrustClassificationTests(unittest.TestCase):
     def test_promoted_unit_has_2d_trust(self):
         with tempfile.TemporaryDirectory() as tmp:
             repo_root, cand_id = _bootstrap_with_candidate(tmp)
-            mcp_server.aitp_create_validation_contract(
-                tmp, "demo-topic", cand_id,
-                mandatory_checks=["dimensional_consistency"],
-            )
             mcp_server.aitp_submit_l4_review(
                 tmp, "demo-topic", cand_id, "pass", "All checks passed.",
             )

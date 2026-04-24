@@ -46,7 +46,7 @@ At ANY point during discussion, you may offer these back-paths via AskUserQuesti
 - **Back to ideation** (`aitp_advance_l3_subplane(target="ideation")`): if the plan
   reveals the idea itself needs rethinking
 - **Retreat to L1** (`aitp_retreat_to_l1`): if sources or conventions are insufficient
-- **Query L2** (`aitp_query_knowledge`): check if related derivations or results exist
+- **Query L2** (`aitp_query_l2`): check if related derivations or results exist
 - **Register new sources** (`aitp_register_source`): if the plan requires literature
   not yet in the knowledge base
 
@@ -84,24 +84,10 @@ Example:
 
 If the human has not specified the target machine, you MUST ask before proceeding.
 
-## Flow Notebook — Incremental Update (MANDATORY)
-
-Before advancing out of this subplane, update `L3/tex/flow_notebook.tex`:
-
-1. **If file does NOT exist**: copy template from `<aitp-repo-root>/templates/flow_notebook.tex`
-   to `L3/tex/flow_notebook.tex`, fill the **Planning** section (derivation route, execution
-   environment), leave other sections as `{{PLACEHOLDER}}` comments.
-2. **If file already exists**: update ONLY the Planning section from `active_plan.md`
-   using Markdown→LaTeX conversion rules (see skill-l3-distill for full rules table).
-   Add version comment: `% Updated: <date> — planning revision`.
-
-Do NOT compile to PDF yet. Compilation happens at distillation.
-
 ## Exit condition
 
 Advance to **analysis** when `active_plan.md` has filled frontmatter fields
-`plan_statement` and `derivation_route`, plus headings `## Plan Statement` and `## Derivation Route`,
-AND `flow_notebook.tex` has been updated.
+`plan_statement` and `derivation_route`, plus headings `## Plan Statement` and `## Derivation Route`.
 
 ## Allowed transitions
 

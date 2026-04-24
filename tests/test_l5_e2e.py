@@ -21,11 +21,7 @@ def _bootstrap_full_flow(tmp: str, lane: str = "formal_theory") -> Path:
     state_fm["lane"] = lane
     mcp_server._write_md(tr / "state.md", state_fm, state_body)
 
-    # Create validation contract and submit review
-    mcp_server.aitp_create_validation_contract(
-        tmp, "demo-topic", cand_id,
-        mandatory_checks=["dimensional_consistency", "limiting_case_check"],
-    )
+    # Submit review
     mcp_server.aitp_submit_l4_review(
         tmp, "demo-topic", cand_id, "pass", "All checks passed.",
     )
@@ -76,13 +72,20 @@ class L5ScaffoldTests(unittest.TestCase):
 
 
 class FlowTeXGateTests(unittest.TestCase):
-    def test_l5_write_blocked_if_flow_notebook_missing(self):
+    def test_l5_advance_without_flow_notebook(self):
+        """L5 advance succeeds even without flow notebook (v3: no busy-work gate)."""
         with tempfile.TemporaryDirectory() as tmp:
             repo_root, cand_id = _bootstrap_with_candidate(tmp)
             tr = repo_root / "topics" / "demo-topic"
-            # Don't render flow notebook
             result = mcp_server.aitp_advance_to_l5(tmp, "demo-topic")
-            self.assertIn("blocked", result.lower())
+            self.assertIn("l5", result.lower())
+            # Scaffolds should still be created
+            for name in ["outline.md", "claim_evidence_map.md",
+                         "equation_provenance.md", "figure_provenance.md", "limitations.md"]:
+                self.assertTrue(
+                    (tr / "L5_writing" / name).exists(),
+                    f"L5_writing/{name} must exist after advance to L5",
+                )
 
     def test_l5_write_unblocks_after_flow_notebook_exists(self):
         with tempfile.TemporaryDirectory() as tmp:

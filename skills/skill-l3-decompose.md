@@ -28,10 +28,10 @@ You are decomposing a source (paper, book chapter, lecture notes) into atomic cl
 3. **Decompose into atomic claims** — for each distinct claim in the source:
    - Restate it in your own words (not copy-paste).
    - Tag it: `definition | theorem | approximation | physical_principle | numerical_result | conjecture`
-   - Check L2: does a similar concept already exist? (`aitp_query_l2`)
+   - Check L2: does a similar concept already exist? (`aitp_query_l2_graph`)
    - Mark: `confirmed_existing` (found in L2) or `new_to_l2`
 4. **Fill the artifact**:
-   - `source_ref`: which L0 source (source_id)
+   - `source_id`: which L0 source (source_id)
    - `claim_count`: number of atomic claims
    - `## Atomic Claims`: numbered list, each with claim_type and L2 status
    - `## Claim-Concept Map`: which claims map to which physics concepts
@@ -44,17 +44,10 @@ Before advancing, verify:
 - Every claim has a type tag
 - L2 overlap check is completed for all claims
 
-## Flow Notebook — Incremental Update
-
-Before advancing out of this subplane, update `L3/tex/flow_notebook.tex`:
-1. If file does NOT exist: copy template from `<aitp-repo-root>/templates/flow_notebook.tex`.
-2. Fill the **Source Decomposition** section with the claim inventory.
-3. Leave other sections as `{{PLACEHOLDER}}`.
-
 ## Exit condition
 
 Advance to **step_derive** when:
-- `source_ref` is filled
+- `source_id` is filled
 - `claim_count` > 0
 - `## Atomic Claims` has at least one entry
 - L2 overlap check is completed
