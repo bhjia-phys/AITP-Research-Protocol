@@ -40,6 +40,7 @@ class BootstrapL1ScaffoldTests(unittest.TestCase):
             for name in [
                 "question_contract.md", "source_basis.md", "convention_snapshot.md",
                 "derivation_anchor_map.md", "contradiction_register.md",
+                "source_toc_map.md",
             ]:
                 self.assertTrue((tr / "L1" / name).exists(), f"Missing L1/{name}")
             fm, _ = mcp_server._parse_md(tr / "state.md")
@@ -124,6 +125,29 @@ class L1GateTests(unittest.TestCase):
                  "blocking_contradictions": "none"},
                 "# Contradiction Register\n\n## Unresolved Source Conflicts\nNone.\n\n## Regime Mismatches\nNone blocking.\n\n## Notation Collisions\nTracked and resolved.\n\n## Blocking Status\nnone\n",
             )
+            mcp_server._write_md(
+                tr / "L1" / "source_toc_map.md",
+                {"artifact_kind": "l1_source_toc_map", "stage": "L1",
+                 "sources_with_toc": "paper-a", "total_sections": 1,
+                 "coverage_status": "complete"},
+                "# Source TOC Map\n\n## Per-Source TOC\n\n"
+                "### paper-a (TOC confidence: high)\n\n"
+                "- [s1] Main Content — status: extracted  → intake: L1/intake/paper-a/s1.md\n\n"
+                "## Coverage Summary\n\n## Deferred Sections\n\n## Extraction Notes\n",
+            )
+            intake_dir = tr / "L1" / "intake" / "paper-a"
+            intake_dir.mkdir(parents=True, exist_ok=True)
+            mcp_server._write_md(
+                intake_dir / "s1.md",
+                {"artifact_kind": "l1_section_intake", "source_id": "paper-a",
+                 "section_id": "s1", "section_title": "Main Content",
+                 "extraction_status": "extracted", "completeness_confidence": "high",
+                 "updated_at": "2025-01-01T00:00:00Z"},
+                "# Main Content\n\n## Section Summary (skim)\nContent.\n\n"
+                "## Key Concepts\nConcept.\n\n## Equations Found\neq-1.\n\n"
+                "## Physical Claims\nClaim.\n\n## Prerequisites\nNone.\n\n"
+                "## Cross-References\nNone.\n\n## Completeness Self-Assessment\nConfidence: **high**\n",
+            )
 
             brief = mcp_server.aitp_get_execution_brief(tmp, "demo-topic")
             self.assertEqual(brief["stage"], "L1")
@@ -143,6 +167,24 @@ class HookOutputTests(unittest.TestCase):
             mcp_server.aitp_bootstrap_topic(
                 str(repo_root), "demo-topic", "Demo Topic", "What is the bounded question?",
             )
+            tr = repo_root / "topics" / "demo-topic"
+
+            # Fill L0 gate: source_registry + registered source
+            mcp_server._write_md(
+                tr / "L0" / "source_registry.md",
+                {"artifact_kind": "l0_source_registry", "stage": "L0",
+                 "source_count": 1, "search_status": "complete"},
+                "# Source Registry\n\n## Search Methodology\narxiv\n\n"
+                "## Source Inventory\npaper-a\n\n## Coverage Assessment\nAdequate.\n\n"
+                "## Gaps And Next Sources\nNone.\n",
+            )
+            mcp_server._write_md(
+                tr / "L0" / "sources" / "paper-a.md",
+                {"artifact_kind": "l0_source", "source_type": "paper",
+                 "slug": "paper-a", "short_title": "Paper A"},
+                "# Paper A\n\nA source.\n",
+            )
+            mcp_server.aitp_advance_to_l1(tmp, "demo-topic")
             completed = subprocess.run(
                 [sys.executable, str(self.REPO_ROOT / "hooks" / "session_start.py")],
                 cwd=repo_root, text=True, capture_output=True, check=True,
@@ -159,6 +201,24 @@ class HookOutputTests(unittest.TestCase):
             mcp_server.aitp_bootstrap_topic(
                 str(repo_root), "demo-topic", "Demo Topic", "What is the bounded question?",
             )
+            tr = repo_root / "topics" / "demo-topic"
+
+            # Fill L0 gate: source_registry + registered source
+            mcp_server._write_md(
+                tr / "L0" / "source_registry.md",
+                {"artifact_kind": "l0_source_registry", "stage": "L0",
+                 "source_count": 1, "search_status": "complete"},
+                "# Source Registry\n\n## Search Methodology\narxiv\n\n"
+                "## Source Inventory\npaper-a\n\n## Coverage Assessment\nAdequate.\n\n"
+                "## Gaps And Next Sources\nNone.\n",
+            )
+            mcp_server._write_md(
+                tr / "L0" / "sources" / "paper-a.md",
+                {"artifact_kind": "l0_source", "source_type": "paper",
+                 "slug": "paper-a", "short_title": "Paper A"},
+                "# Paper A\n\nA source.\n",
+            )
+            mcp_server.aitp_advance_to_l1(tmp, "demo-topic")
             completed = subprocess.run(
                 [sys.executable, str(self.REPO_ROOT / "hooks" / "compact.py")],
                 cwd=repo_root, text=True, capture_output=True, check=True,

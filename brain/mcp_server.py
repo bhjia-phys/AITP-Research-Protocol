@@ -686,6 +686,187 @@ def aitp_list_sources(topics_root: str, topic_slug: str) -> list[dict[str, Any]]
 
 
 @mcp.tool()
+def aitp_parse_source_toc(
+    topics_root: str,
+    topic_slug: str,
+    source_id: str,
+    toc_entries: list[dict[str, str]],
+    toc_confidence: str = "medium",
+) -> str:
+    """Parse and record a source's table of contents into the L1 source_toc_map.
+
+    Call this after accessing a source (via arxiv-latex-mcp, web reader, etc.)
+    to mechanically register every section/chapter. Each entry should correspond
+    to the smallest identifiable unit in the source's structure.
+
+    toc_entries: list of dicts, each with:
+      - "section_id": slug for the section (e.g. "sec2-1")
+      - "title": section title as in the source
+      - "depth": heading depth as string, e.g. "1" for chapter, "2" for subsection
+      - "page_range": optional, e.g. "3-5"
+    toc_confidence: high (from machine-parsed TOC, e.g. arxiv-latex-mcp sections),
+      medium (AI-extracted from well-structured PDF), low (AI-guessed from
+      unstructured text). Defaults to "medium".
+    """
+    root = _topic_root(topics_root, topic_slug)
+    toc_path = root / "L1" / "source_toc_map.md"
+
+    if not toc_path.exists():
+        return "L1/source_toc_map.md not found. Bootstrap the topic first."
+
+    fm, body = _parse_md(toc_path)
+
+    # Build section table entries
+    section_lines = []
+    for entry in toc_entries:
+        sid = entry.get("section_id", "unknown")
+        title = entry.get("title", "Untitled")
+        depth = entry.get("depth", "1")
+        page_range = entry.get("page_range", "")
+        indent = "  " * (int(depth) - 1) if depth.isdigit() else ""
+        page_info = f" (pp. {page_range})" if page_range else ""
+        section_lines.append(
+            f"{indent}- [{sid}] {title}{page_info} — status: pending"
+        )
+
+    # Append to ## Per-Source TOC
+    confidence_note = f" (TOC confidence: {toc_confidence})"
+    source_block = (
+        f"\n### {source_id}{confidence_note}\n\n"
+        + "\n".join(section_lines)
+        + "\n"
+    )
+
+    if "## Per-Source TOC" in body:
+        body = body.replace("## Per-Source TOC\n", "## Per-Source TOC\n" + source_block + "\n", 1)
+    else:
+        body += source_block
+
+    # Update frontmatter counters
+    new_section_count = len(toc_entries)
+    total = int(fm.get("total_sections", 0)) + new_section_count
+    fm["total_sections"] = total
+
+    # Update sources_with_toc
+    existing_sources = str(fm.get("sources_with_toc", ""))
+    if existing_sources:
+        fm["sources_with_toc"] = f"{existing_sources}, {source_id}"
+    else:
+        fm["sources_with_toc"] = source_id
+
+    # Reset coverage_status since new sections are pending
+    fm["coverage_status"] = ""
+
+    _write_md(toc_path, fm, body)
+    _append_to_topic_log(root, f"parsed TOC for source {source_id}: {new_section_count} sections")
+    return f"Recorded {new_section_count} sections for {source_id}. Total sections: {total}. Mark sections as extracted/deferred using aitp_update_section_status."
+
+
+@mcp.tool()
+def aitp_update_section_status(
+    topics_root: str,
+    topic_slug: str,
+    source_id: str,
+    section_id: str,
+    new_status: str,
+    extraction_note: str = "",
+) -> str:
+    """Update the reading status of a specific section in the source_toc_map.
+
+    new_status: pending | skimming | extracted | deferred
+    extraction_note: brief note about what was extracted, or reason for deferral.
+    """
+    valid_statuses = {"pending", "skimming", "extracted", "deferred"}
+    if new_status not in valid_statuses:
+        return f"Invalid status '{new_status}'. Valid: {sorted(valid_statuses)}"
+
+    root = _topic_root(topics_root, topic_slug)
+    toc_path = root / "L1" / "source_toc_map.md"
+    if not toc_path.exists():
+        return "L1/source_toc_map.md not found."
+
+    fm, body = _parse_md(toc_path)
+
+    # Find and replace the section's status line
+    old_pattern = f"[{section_id}]"
+    lines = body.split("\n")
+    found = False
+    import re as _re_section
+    for i, line in enumerate(lines):
+        if old_pattern in line and source_id in body[:body.index(line) + len(line)]:
+            # Replace status
+            lines[i] = _re_section.sub(r"— status: \w+", f"— status: {new_status}", line)
+            if extraction_note:
+                lines[i] += f"\n  > {extraction_note}"
+            # Link to intake note if it exists
+            intake_note_path = f"L1/intake/{_slugify(source_id)}/{_slugify(section_id)}.md"
+            if (root / intake_note_path).exists() and "→ intake:" not in lines[i]:
+                lines[i] = lines[i].rstrip() + f"  → intake: {intake_note_path}"
+            found = True
+            break
+
+    # Also check under the correct ### source_id block
+    if not found:
+        in_source_block = False
+        for i, line in enumerate(lines):
+            if line.strip().startswith(f"### {source_id}"):
+                in_source_block = True
+                continue
+            if line.startswith("### ") and in_source_block:
+                break
+            if in_source_block and old_pattern in line:
+                import re as _re_section2
+                lines[i] = _re_section2.sub(r"— status: \w+", f"— status: {new_status}", line)
+                if extraction_note:
+                    lines[i] += f"\n  > {extraction_note}"
+                # Link to intake note if it exists
+                intake_note_path = f"L1/intake/{_slugify(source_id)}/{_slugify(section_id)}.md"
+                if (root / intake_note_path).exists() and "→ intake:" not in lines[i]:
+                    lines[i] = lines[i].rstrip() + f"  → intake: {intake_note_path}"
+                found = True
+                break
+
+    if not found:
+        return f"Section [{section_id}] not found under source {source_id}."
+
+    body = "\n".join(lines)
+
+    # Recompute coverage
+    total = int(fm.get("total_sections", 0))
+    done = body.count("— status: extracted")
+    deferred = body.count("— status: deferred")
+    pending = total - done - deferred
+
+    if pending <= 0:
+        if deferred > 0:
+            fm["coverage_status"] = "partial_with_deferrals"
+            # Ensure ## Deferred Sections is populated
+            if "## Deferred Sections" in body and body.count("## Deferred Sections") > 0:
+                deferred_lines = [l for l in lines if "— status: deferred" in l]
+                deferred_summary = "\n".join(f"- {l.strip()}" for l in deferred_lines)
+                body = body.replace(
+                    "## Deferred Sections\n",
+                    f"## Deferred Sections\n{deferred_summary}\n\n",
+                    1,
+                )
+        else:
+            fm["coverage_status"] = "complete"
+    else:
+        fm["coverage_status"] = ""
+
+    _write_md(toc_path, fm, body)
+    _append_to_topic_log(
+        root,
+        f"section {source_id}/{section_id} -> {new_status} "
+        f"(extracted: {done}/{total}, deferred: {deferred})",
+    )
+    return (
+        f"Updated {source_id}/{section_id} to {new_status}. "
+        f"Coverage: {done} extracted, {deferred} deferred, {pending} pending out of {total}."
+    )
+
+
+@mcp.tool()
 def aitp_write_section_intake(
     topics_root: str,
     topic_slug: str,
@@ -775,11 +956,6 @@ def aitp_write_section_intake(
                     lines[i] = line.rstrip() + f"  → intake: {intake_link}"
                 break
         t_body = "\n".join(lines)
-        # Update frontmatter: ensure this section counts as extracted
-        if completeness_confidence in ("high", "medium"):
-            t_body = t_body.replace(
-                f"[{section_id}]", f"[{section_id}]", 1
-            )
         _write_md(toc_path, t_fm, t_body)
 
     _append_to_topic_log(
@@ -791,174 +967,6 @@ def aitp_write_section_intake(
         f"Intake note written: {intake_link}. "
         f"Status: {status}, confidence: {completeness_confidence or 'unset'}."
     )
-
-
-@mcp.tool()
-def aitp_parse_source_toc(
-    topics_root: str,
-    topic_slug: str,
-    source_id: str,
-    toc_entries: list[dict[str, str]],
-    toc_confidence: str = "medium",
-) -> str:
-    """Parse a source's table of contents into L1/source_toc_map.md.
-
-    toc_entries: list of dicts, each with:
-      - "section_id": slug for the section (e.g. "sec2-1")
-      - "title": section title as in the source
-      - "depth": heading depth as string, e.g. "1" for chapter, "2" for subsection
-      - "page_range": optional, e.g. "3-5"
-    toc_confidence: high (from machine-parsed TOC, e.g. arxiv-latex-mcp sections),
-      medium (AI-extracted from well-structured PDF), low (AI-guessed from
-      unstructured text). Defaults to "medium".
-    """
-    root = _topic_root(topics_root, topic_slug)
-    toc_path = root / "L1" / "source_toc_map.md"
-
-    if not toc_path.exists():
-        return "L1/source_toc_map.md not found. Bootstrap the topic first."
-
-    fm, body = _parse_md(toc_path)
-
-    section_lines = []
-    for entry in toc_entries:
-        sid = entry.get("section_id", "")
-        title = entry.get("title", "")
-        depth = entry.get("depth", "2")
-        page = entry.get("page_range", "")
-        page_note = f" (pp. {page})" if page else ""
-        prefix = "  " * (int(depth) - 1) if depth.isdigit() else "  "
-        section_lines.append(
-            f"{prefix}- [ ] [{sid}] {title}{page_note}  "
-            f"⏳ status: pending"
-        )
-
-    # Append to ## Per-Source TOC
-    confidence_note = f" (TOC confidence: {toc_confidence})"
-    source_block = (
-        f"\n### {source_id}{confidence_note}\n\n"
-        + "\n".join(section_lines)
-        + "\n"
-    )
-
-    if f"### {source_id}" in body:
-        lines = body.split("\n")
-        in_block = False
-        start = None
-        for i, line in enumerate(lines):
-            if line.strip().startswith(f"### {source_id}"):
-                in_block = True
-                start = i
-                continue
-            if line.startswith("### ") and in_block:
-                end = i
-                lines[start:end] = [source_block.rstrip()]
-                body = "\n".join(lines)
-                break
-        if in_block and start is not None:
-            lines[start:] = [source_block.rstrip()]
-            body = "\n".join(lines)
-    else:
-        body = body.rstrip() + "\n" + source_block
-
-    # Update frontmatter
-    sources_str = fm.get("sources_with_toc", "")
-    sources_list = [s.strip() for s in sources_str.split(",") if s.strip()]
-    if source_id not in sources_list:
-        sources_list.append(source_id)
-        fm["sources_with_toc"] = ", ".join(sources_list)
-    fm["total_sections"] = str(
-        int(fm.get("total_sections", 0)) + len(toc_entries)
-    )
-    if toc_confidence == "high":
-        fm["coverage_status"] = "complete"
-    elif not fm.get("coverage_status") or fm["coverage_status"] == "":
-        fm["coverage_status"] = "partial_with_deferrals"
-
-    _write_md(toc_path, fm, body)
-    _append_to_topic_log(
-        root,
-        f"TOC parsed for {source_id}: {len(toc_entries)} sections "
-        f"(confidence: {toc_confidence})",
-    )
-    return (
-        f"TOC parsed for {source_id}: {len(toc_entries)} sections written "
-        f"to L1/source_toc_map.md (confidence: {toc_confidence})."
-    )
-
-
-@mcp.tool()
-def aitp_update_section_status(
-    topics_root: str,
-    topic_slug: str,
-    source_id: str,
-    section_id: str,
-    new_status: str,
-    extraction_note: str = "",
-) -> str:
-    """Update the extraction status of a section in source_toc_map.md.
-
-    new_status: pending | skimming | extracted | deferred
-    extraction_note: optional note about what was found or why deferred.
-    """
-    root = _topic_root(topics_root, topic_slug)
-    toc_path = root / "L1" / "source_toc_map.md"
-
-    if not toc_path.exists():
-        return "L1/source_toc_map.md not found. Bootstrap the topic first."
-
-    fm, body = _parse_md(toc_path)
-
-    old_pattern = f"[{section_id}]"
-    lines = body.split("\n")
-    found = False
-    import re as _re_section
-    for i, line in enumerate(lines):
-        if old_pattern in line and source_id in body[:body.index(line) + len(line)]:
-            lines[i] = _re_section.sub(
-                r"⏳ status: \w+", f"⏳ status: {new_status}", line
-            )
-            if extraction_note:
-                lines[i] += f"\n  > {extraction_note}"
-            intake_note_path = (
-                f"L1/intake/{_slugify(source_id)}/{_slugify(section_id)}.md"
-            )
-            if (root / intake_note_path).exists() and "→ intake:" not in lines[i]:
-                lines[i] = lines[i].rstrip() + f"  → intake: {intake_note_path}"
-            found = True
-            break
-
-    if not found:
-        in_source_block = False
-        for i, line in enumerate(lines):
-            if line.strip().startswith(f"### {source_id}"):
-                in_source_block = True
-                continue
-            if line.startswith("### ") and in_source_block:
-                break
-            if in_source_block and old_pattern in line:
-                lines[i] = _re_section.sub(
-                    r"⏳ status: \w+", f"⏳ status: {new_status}", line
-                )
-                if extraction_note:
-                    lines[i] += f"\n  > {extraction_note}"
-                intake_note_path = (
-                    f"L1/intake/{_slugify(source_id)}/{_slugify(section_id)}.md"
-                )
-                if (root / intake_note_path).exists() and "→ intake:" not in lines[i]:
-                    lines[i] = lines[i].rstrip() + f"  → intake: {intake_note_path}"
-                found = True
-                break
-
-    if not found:
-        return f"Section [{section_id}] not found under source {source_id} in source_toc_map.md."
-
-    _write_md(toc_path, fm, "\n".join(lines))
-    _append_to_topic_log(
-        root,
-        f"section status updated: {source_id}/{section_id} → {new_status}",
-    )
-    return f"Section {source_id}/{section_id} status updated to '{new_status}'."
 
 
 @mcp.tool()

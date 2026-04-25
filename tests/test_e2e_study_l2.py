@@ -113,6 +113,30 @@ def _bootstrap_and_fill(td):
          "blocking_contradictions": "none"},
         "# Contradiction Register\n\n## Unresolved Source Conflicts\nNone.\n\n## Blocking Status\nnone\n",
     )
+    _write_md(
+        tr / "L1" / "source_toc_map.md",
+        {"artifact_kind": "l1_source_toc_map", "stage": "L1",
+         "sources_with_toc": "sakurai", "total_sections": 1,
+         "coverage_status": "complete"},
+        "# Source TOC Map\n\n## Per-Source TOC\n\n"
+        "### sakurai (TOC confidence: high)\n\n"
+        "- [s1] Angular Momentum — status: extracted  → intake: L1/intake/sakurai/s1.md\n\n"
+        "## Coverage Summary\n\n## Deferred Sections\n\n## Extraction Notes\n",
+    )
+    # Create intake note for extracted section (required by L1 quality gate)
+    intake_dir = tr / "L1" / "intake" / "sakurai"
+    intake_dir.mkdir(parents=True, exist_ok=True)
+    _write_md(
+        intake_dir / "s1.md",
+        {"artifact_kind": "l1_section_intake", "source_id": "sakurai",
+         "section_id": "s1", "section_title": "Angular Momentum",
+         "extraction_status": "extracted", "completeness_confidence": "high",
+         "updated_at": "2025-01-01T00:00:00Z"},
+        "# Angular Momentum\n\n## Section Summary (skim)\nAngular momentum algebra.\n\n"
+        "## Key Concepts\nLadder operators.\n\n## Equations Found\n[J_i, J_j] = i hbar eps_ijk J_k.\n\n"
+        "## Physical Claims\nSpectrum of J^2 and J_z.\n\n## Prerequisites\nQM basics.\n\n"
+        "## Cross-References\nNone.\n\n## Completeness Self-Assessment\nConfidence: **high**\n",
+    )
 
 
 def _fill_subplane_artifact(td, subplane, artifact_name, frontmatter, body_text):

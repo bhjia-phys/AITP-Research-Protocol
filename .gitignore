@@ -43,3 +43,5 @@ research/adapters/openclaw/state/
 # GSD worktree artifacts
 .sisyphus/
 topics/
+.gitignore
+_recovery_*.json

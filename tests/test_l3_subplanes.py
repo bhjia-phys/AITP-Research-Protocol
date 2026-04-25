@@ -72,9 +72,32 @@ def _bootstrap_l1_complete(tmp: str) -> Path:
             "## Notation Collisions\nTracked and resolved.\n\n"
             "## Blocking Status\nnone\n",
         ),
+        "source_toc_map.md": (
+            {"artifact_kind": "l1_source_toc_map", "stage": "L1",
+             "sources_with_toc": "paper-a", "total_sections": 1,
+             "coverage_status": "complete"},
+            "# Source TOC Map\n\n## Per-Source TOC\n\n"
+            "### paper-a (TOC confidence: high)\n\n"
+            "- [s1] Main Content — status: extracted  → intake: L1/intake/paper-a/s1.md\n\n"
+            "## Coverage Summary\n\n## Deferred Sections\n\n## Extraction Notes\n",
+        ),
     }
     for name, (fm, body) in filled.items():
         mcp_server._write_md(tr / "L1" / name, fm, body)
+    # Create intake note for extracted section (required by L1 quality gate)
+    intake_dir = tr / "L1" / "intake" / "paper-a"
+    intake_dir.mkdir(parents=True, exist_ok=True)
+    mcp_server._write_md(
+        intake_dir / "s1.md",
+        {"artifact_kind": "l1_section_intake", "source_id": "paper-a",
+         "section_id": "s1", "section_title": "Main Content",
+         "extraction_status": "extracted", "completeness_confidence": "high",
+         "updated_at": "2025-01-01T00:00:00Z"},
+        "# Main Content\n\n## Section Summary (skim)\nContent.\n\n"
+        "## Key Concepts\nConcept.\n\n## Equations Found\neq.\n\n"
+        "## Physical Claims\nClaim.\n\n## Prerequisites\nNone.\n\n"
+        "## Cross-References\nNone.\n\n## Completeness Self-Assessment\nConfidence: **high**\n",
+    )
     return repo_root
 
 

@@ -67,7 +67,7 @@ advancing.
 |------|-------|------|
 | `aitp_register_source` | L0 | Register each source |
 | `aitp_list_sources` | any | List registered sources |
-| `aitp_parse_source_toc` | L1 | Mechanically extract TOC from a source into source_toc_map |
+| `aitp_parse_source_toc` | L1 | Parse and record a source's table of contents into source_toc_map |
 | `aitp_update_section_status` | L1 | Mark a section extracted/deferred in source_toc_map |
 | `aitp_write_section_intake` | L1 | Write per-section intake note with concepts/equations/claims |
 | `aitp_submit_candidate` | L3 | Submit a candidate claim |
@@ -157,13 +157,12 @@ advancing.
    → If "blocked_missing_artifact", create the missing file.
 ```
 
-L1 requires 6 filled artifacts:
+L1 requires 5 filled artifacts:
 - `question_contract.md` — bounded question, scope, target quantities
 - `source_basis.md` — core and peripheral sources
 - `convention_snapshot.md` — notation, units, sign conventions
 - `derivation_anchor_map.md` — starting points for derivation
 - `contradiction_register.md` — blocking contradictions (even if "none")
-- `source_toc_map.md` — per-source TOC with section statuses
 
 #### L1 Source Completeness Workflow
 
@@ -182,13 +181,13 @@ L1 enforces mechanical source coverage via `source_toc_map.md` and per-section i
    in detail. Call `aitp_write_section_intake` with full fields:
    `key_concepts`, `equations_found`, `physical_claims`, `prerequisites`,
    `cross_references`, and honest `completeness_confidence` (high/medium/low).
-   The tool auto-marks `extracted` and links TOC entry → intake note.
+   The tool auto-marks `extracted` and links TOC entry -> intake note.
 5. **Defer out-of-scope sections** — `aitp_update_section_status` with
    `new_status="deferred"` and explicit reason.
 6. **Coverage + quality gate** — L1 cannot advance to L3 until:
    - `coverage_status` is `"complete"` or `"partial_with_deferrals"`
    - Every `extracted` section has an intake note
-   - Intake note count ≥ extracted section count
+   - Intake note count >= extracted section count
    - No intake notes remain at `completeness_confidence="low"` without action
 
 This prevents the common failure mode where L1 reading skips sections or

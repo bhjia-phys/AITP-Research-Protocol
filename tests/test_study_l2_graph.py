@@ -105,6 +105,30 @@ def _fill_l1_gate(td):
          "blocking_contradictions": "none"},
         "# Contradiction Register\n\n## Unresolved Source Conflicts\nNone.\n\n## Blocking Status\nnone\n",
     )
+    _write_md(
+        tr / "L1" / "source_toc_map.md",
+        {"artifact_kind": "l1_source_toc_map", "stage": "L1",
+         "sources_with_toc": "paper-a", "total_sections": 1,
+         "coverage_status": "complete"},
+        "# Source TOC Map\n\n## Per-Source TOC\n\n"
+        "### paper-a (TOC confidence: high)\n\n"
+        "- [s1] Main Content — status: extracted  → intake: L1/intake/paper-a/s1.md\n\n"
+        "## Coverage Summary\n\n## Deferred Sections\n\n## Extraction Notes\n",
+    )
+    # Create intake note for extracted section (required by L1 quality gate)
+    intake_dir = tr / "L1" / "intake" / "paper-a"
+    intake_dir.mkdir(parents=True, exist_ok=True)
+    _write_md(
+        intake_dir / "s1.md",
+        {"artifact_kind": "l1_section_intake", "source_id": "paper-a",
+         "section_id": "s1", "section_title": "Main Content",
+         "extraction_status": "extracted", "completeness_confidence": "high",
+         "updated_at": "2025-01-01T00:00:00Z"},
+        "# Main Content\n\n## Section Summary (skim)\nContent.\n\n"
+        "## Key Concepts\nConcept.\n\n## Equations Found\neq-1.\n\n"
+        "## Physical Claims\nClaim.\n\n## Prerequisites\nNone.\n\n"
+        "## Cross-References\nNone.\n\n## Completeness Self-Assessment\nConfidence: **high**\n",
+    )
 
 
 # ---- Study mode state tests ----

@@ -1,6 +1,6 @@
 ---
 name: skill-read
-description: Read posture — build the source basis before framing or derivation.
+description: Read posture — build the source basis with mechanical TOC extraction before framing or derivation.
 trigger: posture == "read"
 ---
 
@@ -15,12 +15,13 @@ NEVER type questions or options as plain text. ALWAYS use the popup tool.
 
 ---
 
-You are building the topic's source-grounded basis.
+You are building the topic's source-grounded basis with **mechanical completeness guarantees**.
 
 ## Required artifacts
 
 - `L1/source_basis.md`
 - `L1/question_contract.md`
+- `L1/source_toc_map.md`
 
 ## Reading workflow (mandatory sequence)
 

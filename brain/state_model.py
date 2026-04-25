@@ -235,6 +235,7 @@ L1_ARTIFACT_TEMPLATES: dict[str, tuple[dict[str, Any], str]] = {
     ),
 }
 
+
 L1_INTAKE_TEMPLATE: tuple[dict[str, Any], str] = (
     {
         "artifact_kind": "l1_section_intake",
@@ -251,7 +252,6 @@ L1_INTAKE_TEMPLATE: tuple[dict[str, Any], str] = (
     "## Physical Claims\n\n## Prerequisites\n\n"
     "## Cross-References\n\n## Completeness Self-Assessment\n",
 )
-
 
 # ---------------------------------------------------------------------------
 # L1 gate evaluation
@@ -295,6 +295,12 @@ _L1_CONTRACTS: list[tuple[str, str, list[str], list[str]]] = [
         "frame",
         ["blocking_contradictions"],
         ["## Unresolved Source Conflicts", "## Blocking Status"],
+    ),
+    (
+        "source_toc_map.md",
+        "read",
+        ["sources_with_toc", "total_sections", "coverage_status"],
+        ["## Per-Source TOC", "## Coverage Summary"],
     ),
 ]
 
@@ -369,7 +375,7 @@ def evaluate_l1_stage(
         # Intake quality audit: extracted sections must have non-trivial intake notes
         intake_dir = topic_root_path / "L1" / "intake"
         if intake_dir.is_dir():
-            extracted = toc_body.count("� status: extracted")
+            extracted = toc_body.count("— status: extracted")
             intake_notes = list(intake_dir.rglob("*.md"))
             if extracted > 0 and len(intake_notes) < extracted:
                 return StageSnapshot(

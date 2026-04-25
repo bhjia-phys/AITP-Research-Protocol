@@ -149,6 +149,37 @@ def _bootstrap_and_register_sources(tmp: str) -> Path:
         "## Blocking Status\nnone\n",
     )
 
+    # Write source_toc_map.md (required by L1 coverage gate)
+    mcp_server._write_md(
+        tr / "L1" / "source_toc_map.md",
+        {"artifact_kind": "l1_source_toc_map", "stage": "L1",
+         "sources_with_toc": "witten-cs-2018",
+         "total_sections": 2, "coverage_status": "complete"},
+        "# Source TOC Map\n\n## Per-Source TOC\n\n"
+        "### witten-cs-2018 (TOC confidence: high)\n\n"
+        "- [s1] Section 1 — status: extracted  → intake: L1/intake/witten-cs-2018/s1.md\n"
+        "- [s2] Section 2 — status: extracted  → intake: L1/intake/witten-cs-2018/s2.md\n\n"
+        "## Coverage Summary\n\n"
+        "## Deferred Sections\n\n"
+        "## Extraction Notes\n",
+    )
+    # Create intake notes for extracted sections (required by L1 gate)
+    for sec_id in ["s1", "s2"]:
+        intake_dir = tr / "L1" / "intake" / "witten-cs-2018"
+        intake_dir.mkdir(parents=True, exist_ok=True)
+        mcp_server._write_md(
+            intake_dir / f"{sec_id}.md",
+            {"artifact_kind": "l1_section_intake", "source_id": "witten-cs-2018",
+             "section_id": sec_id, "section_title": f"Section {sec_id}",
+             "extraction_status": "extracted", "completeness_confidence": "high",
+             "updated_at": "2025-01-01T00:00:00Z"},
+            f"# Section {sec_id}\n\n## Section Summary (skim)\nContent.\n\n"
+            "## Key Concepts\nCS term.\n\n## Equations Found\nS = k/(4pi) int.\n\n"
+            "## Physical Claims\nAnomaly cancellation condition.\n\n"
+            "## Prerequisites\nQFT, differential forms.\n\n"
+            "## Cross-References\nNone.\n\n## Completeness Self-Assessment\nConfidence: **high**\n",
+        )
+
     # Verify L1 gate is ready
     brief = mcp_server.aitp_get_execution_brief(tmp, TOPIC_SLUG)
     assert brief["gate_status"] == "ready", f"L1 gate not ready: {brief}"
