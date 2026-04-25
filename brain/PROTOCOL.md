@@ -1,6 +1,6 @@
 ---
 name: aitp-protocol
-version: "3.0"
+version: "4.0"
 description: Operating manual for the AITP adversarial-collaborator protocol.
   Python stores and searches, you judge physics. Evidence before claims.
   Derivations before conclusions. Limits before generalizations.
@@ -8,18 +8,24 @@ description: Operating manual for the AITP adversarial-collaborator protocol.
 
 # AITP Protocol — Brain-Driven Research Operating Manual
 
-This document is the single source of truth for how to operate the AITP
-(AI-assisted Theoretical Physics) protocol.  It is consumed by any
-agent — Claude Code, Copilot, OpenCode, or a custom wrapper — that has
-access to the AITP MCP tools.
+## Supreme Protocol (至高协议)
+
+**追求真理而非沽名钓誉。Pursue truth, not fame.**
+
+- L2 trust levels reflect physical reliability, not publication count.
+- Negative results and limitations have equal value to positive results.
+- Artifacts exist to serve physical correctness, not bureaucratic completeness.
+- Every claim in L2 must be traceable to its source. No assertion without provenance.
+- The endpoint of each topic is knowledge contributed to L2. The start of each
+  topic is knowledge retrieved from L2. L2 is the memory of the protocol.
 
 ## Core Model
 
 The protocol is a **stage machine** with orthogonal posture, lane, and L3 mode:
 
 ```
-Stage:    L0 (discover) → L1 (read → frame) → L3 → L4 → L3 → L4 → ... → L2 → L5
-Posture:  discover | read | frame | derive | verify | distill | write
+Stage:    L0 (discover) → L1 (read → frame) → L3 → L4 → L3 → L4 → ... → L2
+Posture:  discover | read | frame | derive | verify | distill
 Lane:     formal_theory | toy_numeric | code_method
 L3 Mode:  research | study
 ```
@@ -56,7 +62,6 @@ advancing.
 | `aitp_advance_to_l1` | L0→L1 | After L0 source_registry.md passes gate |
 | `aitp_advance_to_l3` | L1→L3 | After all L1 artifacts pass gate. Set l3_mode |
 | `aitp_advance_l3_subplane` | L3 | Move between subplanes (respect allowed transitions) |
-| `aitp_advance_to_l5` | L4→L5 | Advance to writing; auto-generates flow_notebook.tex |
 | `aitp_retreat_to_l0` | L1/L3 | Return to L0 |
 | `aitp_retreat_to_l1` | L3 | Return to L1 |
 | `aitp_switch_l3_mode` | L3 | Switch research ↔ study mode |
@@ -95,17 +100,68 @@ advancing.
 | `aitp_resolve_promotion_gate` | L2 | Human approves/rejects promotion |
 | `aitp_promote_candidate` | L2 | Execute promotion → global L2 |
 
-### L2 Knowledge Graph
+## L2 Knowledge Graph — The Protocol's Memory
+
+L2 is the persistent, cross-topic knowledge graph. It is the **endpoint of every
+topic** and the **starting point of every new topic**.
+
+### Design Principles
+
+1. **Compiled, not raw.** L2 stores distilled knowledge — concepts, theorems,
+   relations, regime boundaries — not raw source text. Source provenance is
+   stored for auditing but not exposed in default queries to prevent context
+   bloat.
+2. **Source-grounded.** Every node and edge must record its origin (source
+   reference or topic candidate). No assertion without provenance.
+3. **Progressive disclosure.** `aitp_query_l2_index` returns domain summaries.
+   `aitp_query_l2_graph` returns matching nodes. Full details on demand.
+4. **Trust evolves.** source_grounded → multi_source_confirmed → validated →
+   independently_verified.
+
+### Two Paths to L2
+
+**Path A — Lightweight (L0→L2 directly):** For well-understood concepts where
+the relationship is obvious and the source is clear. Create nodes and edges
+immediately without going through L3 derivation.
+
+**Path B — Deep (L0→L1→L3→L4→L2):** For novel or uncertain claims that
+require derivation, adversarial review, and formal validation.
+
+### Tools
+
 | Tool | Stage | When |
 |------|-------|------|
-| `aitp_query_l2_index` | any | Progressive-disclosure domain taxonomy |
-| `aitp_query_l2` | any | Query global L2 knowledge base |
-| `aitp_query_l2_graph` | any | Query L2 graph with filters (type, tower, edges) |
-| `aitp_create_l2_node` | any | Create L2 graph node |
+| `aitp_query_l2_index` | any | Progressive-disclosure domain taxonomy — first call for any topic |
+| `aitp_query_l2_graph` | any | Query L2 graph with filters (type, tower, edges). Source fields hidden by default |
+| `aitp_create_l2_node` | any | Create L2 graph node. source_ref REQUIRED |
 | `aitp_update_l2_node` | any | Update node fields |
-| `aitp_create_l2_edge` | any | Create typed edge (refuses dangling references) |
+| `aitp_create_l2_edge` | any | Create typed edge. source_ref REQUIRED |
 | `aitp_create_l2_tower` | any | Define EFT tower |
 | `aitp_merge_subgraph_delta` | L3 study | Merge study subgraph into L2 |
+| `aitp_quick_l2_concept` | any | Lightweight: create concept + theorem nodes with edges in one call |
+
+### Source Provenance (hidden from default query output)
+
+Every L2 node and edge records `source_ref` — a traceable reference to the
+evidence. This field is stored in the node/edge frontmatter but is
+**excluded from `aitp_query_l2_index` and `aitp_query_l2_graph` output**
+to keep context lean. To inspect provenance, use `aitp_get_l2_provenance`.
+
+### Domain Taxonomy
+
+L2 nodes are organized by domain. Valid domains are enumerated (not free text):
+
+| Domain | Scope |
+|--------|-------|
+| `electronic-structure` | DFT, GW, BSE, RPA, band structure methods |
+| `quantum-many-body` | Green's functions, Feynman diagrams, RG, tensor networks |
+| `qft` | QED, QCD, EFT, axiomatic QFT, CFT |
+| `condensed-matter` | Superconductivity, topological phases, strongly correlated systems |
+| `quantum-gravity` | String theory, LQG, holography, AdS/CFT |
+| `generalized-symmetries` | Higher-form, non-invertible, categorical symmetries |
+| `quantum-information` | Entanglement, quantum channels, error correction |
+| `statistical-mechanics` | Phase transitions, critical phenomena, transport |
+| `aitp-protocol` | AITP internal — protocol design, skills, workflows |
 
 ### Configuration
 | Tool | Stage | When |
@@ -115,7 +171,6 @@ advancing.
 ### Output
 | Tool | Stage | When |
 |------|-------|------|
-| `aitp_generate_flow_notebook` | L3/L4 | Generate flow_notebook.tex from all artifacts |
 | `aitp_visualize_eft_tower` | any | ASCII EFT tower diagram |
 | `aitp_visualize_derivation_chain` | any | ASCII derivation chain |
 | `aitp_visualize_knowledge_graph` | any | ASCII knowledge graph |
@@ -266,7 +321,7 @@ aitp_switch_l3_mode(topics_root, topic_slug, new_mode="research"|"study", reason
         evidence_scripts optional (e.g., SymPy symbolic verification).
 ```
 
-**L4 pass does NOT advance to L5.** It returns to L3 for post-validation analysis.
+**L4 pass does NOT auto-advance.** It returns to L3 for post-validation analysis.
 
 **L4 non-pass outcomes** trigger a popup gate with options:
 - `fail` → return to L3 for revision
@@ -281,17 +336,16 @@ aitp_switch_l3_mode(topics_root, topic_slug, new_mode="research"|"study", reason
 
 15. Analyze L4 findings in L3/analysis/active_analysis.md
     → What passed conclusively? What had caveats? What remains open?
-    → Update flow_notebook.tex with L4 results
+    → Document L4 results in L3/analysis/active_analysis.md
 
 16. Ask the human (MANDATORY):
-    - "Persist and advance" → proceed to promotion/L5
+    - "Persist and advance" → proceed to promotion/L2
     - "Continue iterating" → new L3 cycle (plan → analyze → integrate → distill → L4)
     - "Revise scope" → narrow/adjust the claim
     - "Switch lane" → aitp_switch_lane if analytic dead-end or numeric refinement needed
 ```
 
 This loop continues until the human confirms the topic is ready to persist.
-Each L3 cycle does incremental flow_notebook.tex updates at every subplane.
 
 Physics check fields:
 `dimensional_consistency`, `symmetry_compatibility`,
@@ -300,10 +354,7 @@ Physics check fields:
 ### Phase 4: Promotion to Global L2
 
 ```
-17. Agent generates L3/tex/flow_notebook.tex during L3 distillation
-    (Markdown→LaTeX conversion and PDF compilation per skill-l3-distill)
-
-18. Request → resolve → promote:
+17. Request → resolve → promote:
     aitp_request_promotion(topics_root, topic_slug, candidate_id)
     aitp_resolve_promotion_gate(topics_root, topic_slug, candidate_id, "approve")
     aitp_promote_candidate(topics_root, topic_slug, candidate_id)
@@ -317,30 +368,7 @@ Physics check fields:
     → Address rejection reason, revise candidate, re-distill, re-submit
 ```
 
-### Phase 5: L5 Writing (stage = L5, posture = write)
-
-```
-19. aitp_advance_to_l5(topics_root, topic_slug)
-    → BLOCKED if flow_notebook.tex does not exist.
-    → Creates L5_writing/ provenance scaffolds:
-      - outline.md
-      - claim_evidence_map.md
-      - equation_provenance.md
-      - figure_provenance.md
-      - limitations.md
-```
-
-Fill these provenance files before drafting paper content.
-
-**L5 backedge**: If writing reveals unvalidated steps or evidence gaps:
-```
-aitp_return_from_l5(topics_root, topic_slug, reason, target_subplane)
-→ Returns to L3 (default: analysis subplane)
-→ L5 provenance artifacts preserved
-→ After revision, re-advance to L5 when ready
-```
-
-### Phase 6: Lifecycle Management
+### Phase 5: Lifecycle Management
 
 **Topic forking** — when a side-discovery emerges:
 ```
@@ -422,8 +450,7 @@ while topic is not complete:
                    Then advance subplane or submit candidate
             "L4" → Validate candidate with code/analysis, submit review,
                     then return to L3 via aitp_return_to_l3_from_l4
-            "L5" → Fill provenance files, then draft paper.
-                    Use aitp_return_from_l5 if gaps found.
+            "L2" → Request promotion from validated L4 candidate
         continue
 
     # Lifecycle overrides (can happen at any stage):
@@ -471,18 +498,11 @@ topics_root/
     │   │   # Research mode: ideation/ planning/ analysis/ result_integration/ distillation/
     │   │   # Study mode: source_decompose/ step_derive/ gap_audit/ synthesis/
     │   ├── candidates/*.md          # Submitted candidates
-    │   └── tex/flow_notebook.tex    # Flow-end archive
     ├── L4/
     │   ├── validation_contract.md
     │   ├── scripts/*.py               # Validation scripts (mandatory for numeric lanes)
     │   ├── outputs/                   # Execution logs, plots, data tables
     │   └── reviews/*.md
-    ├── L5_writing/                  # Paper provenance
-    │   ├── outline.md
-    │   ├── claim_evidence_map.md
-    │   ├── equation_provenance.md
-    │   ├── figure_provenance.md
-    │   └── limitations.md
     └── runtime/
         ├── index.md                 # Topic index
         └── log.md                   # Event log
@@ -508,7 +528,7 @@ agent to invoke it at a specific checkpoint. The session-start hook prints
 a `PATTERN-B` instruction so the agent knows to load it proactively.
 
 **When to use**: Tool has a workflow that should be followed at specific subplane points.
-**Examples**: `scientific-brainstorming` at L3/ideation, `scientific-writing` at L5/write
+**Examples**: `scientific-brainstorming` at L3/ideation
 
 **How to add a Pattern B tool**:
 1. Add entry to `TOOL_CATALOG` with pattern `"B"`

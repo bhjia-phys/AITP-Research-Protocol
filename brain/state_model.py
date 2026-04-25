@@ -871,6 +871,64 @@ L2_EDGE_TYPES = [
     "refines", "motivates",
 ]
 
+DOMAIN_TAXONOMY: dict[str, dict[str, Any]] = {
+    "electronic-structure": {
+        "label": "Electronic Structure",
+        "description": "DFT, GW, BSE, RPA, and related first-principles methods",
+        "energy_scales": ["eV", "Hartree"],
+    },
+    "quantum-many-body": {
+        "label": "Quantum Many-Body Theory",
+        "description": "Green's functions, Feynman diagrams, RG, tensor networks",
+        "energy_scales": ["eV", "meV", "K"],
+    },
+    "qft": {
+        "label": "Quantum Field Theory",
+        "description": "QED, QCD, EFT, axiomatic QFT, CFT",
+        "energy_scales": ["GeV", "TeV", "Planck"],
+    },
+    "condensed-matter": {
+        "label": "Condensed Matter Physics",
+        "description": "Superconductivity, topological phases, strongly correlated systems",
+        "energy_scales": ["meV", "eV", "K"],
+    },
+    "quantum-gravity": {
+        "label": "Quantum Gravity",
+        "description": "String theory, LQG, holography, AdS/CFT",
+        "energy_scales": ["Planck"],
+    },
+    "generalized-symmetries": {
+        "label": "Generalized / Higher-Form Symmetries",
+        "description": "Higher-form, non-invertible, categorical symmetries",
+        "energy_scales": ["various"],
+    },
+    "quantum-information": {
+        "label": "Quantum Information",
+        "description": "Entanglement, quantum channels, error correction",
+        "energy_scales": ["various"],
+    },
+    "statistical-mechanics": {
+        "label": "Statistical Mechanics",
+        "description": "Phase transitions, critical phenomena, transport",
+        "energy_scales": ["K", "eV"],
+    },
+    "aitp-protocol": {
+        "label": "AITP Protocol (Internal)",
+        "description": "Protocol design, skills, gate models, workflow architecture",
+        "energy_scales": [],
+    },
+}
+
+VALID_DOMAINS = frozenset(DOMAIN_TAXONOMY.keys())
+
+# Fields excluded from L2 query output to prevent context bloat.
+# Source provenance is stored for auditing but hidden from consumers.
+L2_QUERY_HIDDEN_FIELDS = frozenset({
+    "source_candidate", "source_ref", "source_topic",
+    "created_at", "promoted_at", "promotion_comment",
+    "previous_version_promoted_at", "aliases",
+})
+
 L2_TOWER_TEMPLATE: tuple[dict[str, Any], str] = (
     {
         "kind": "l2_tower",

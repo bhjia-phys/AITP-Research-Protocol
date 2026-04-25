@@ -60,6 +60,9 @@ from brain.state_model import (
     tokenize_for_search,
     _generate_physics_next_action,
     _check_question_semantic_validity,
+    DOMAIN_TAXONOMY,
+    VALID_DOMAINS,
+    L2_QUERY_HIDDEN_FIELDS,
 )
 
 from brain.sympy_verify import (
@@ -2762,7 +2765,12 @@ def aitp_query_l2_index(
     global_l2 = _global_l2_path(topics_root)
     nodes_dir = global_l2 / "graph" / "nodes"
     if not nodes_dir.is_dir():
-        return {"domains": {}, "total_nodes": 0, "message": "L2 graph is empty — no validated knowledge yet."}
+        return {
+            "domains": {},
+            "total_nodes": 0,
+            "valid_domains": sorted(VALID_DOMAINS),
+            "message": "L2 graph is empty — no validated knowledge yet. Use aitp_quick_l2_concept to seed foundational concepts.",
+        }
 
     # Scan all nodes and group by domain
     domains: dict[str, dict[str, Any]] = {}
@@ -2856,6 +2864,7 @@ def aitp_create_l2_node(
     node_id: str,
     node_type: str,
     title: str,
+    source_ref: str = "",
     physical_meaning: str = "",
     mathematical_expression: str = "",
     regime_of_validity: str = "",
@@ -2869,10 +2878,22 @@ def aitp_create_l2_node(
     """Create a node in the L2 knowledge graph.
 
     node_type: concept | theorem | technique | derivation_chain | result | approximation | open_question | regime_boundary
-    domain: e.g. 'electronic-structure', 'quantum-many-body', 'qft', 'condensed-matter'
+    domain: must be a valid domain from the taxonomy (see DOMAIN_TAXONOMY)
+    source_ref: REQUIRED. Traceable reference to evidence (e.g. 'raw/paper.md L42-45' or 'topic:crpa-librpa/candidate:gw-correction').
+        Stored for auditing but hidden from default L2 query output.
     """
     if node_type not in L2_NODE_TYPES:
         return f"Invalid node_type '{node_type}'. Valid: {L2_NODE_TYPES}"
+
+    if domain and domain not in VALID_DOMAINS:
+        return f"Invalid domain '{domain}'. Valid domains: {sorted(VALID_DOMAINS)}"
+
+    if not source_ref and not source_candidate:
+        return (
+            "source_ref is REQUIRED for L2 nodes. Every assertion must have provenance. "
+            "Provide source_ref (e.g. 'raw/paper.md L42-45') or source_candidate "
+            "(e.g. 'topic:crpa-librpa/candidate:gw-correction')."
+        )
 
     global_l2 = _ensure_l2_graph_dirs(topics_root)
     slug = _slugify(node_id)
@@ -2900,6 +2921,7 @@ def aitp_create_l2_node(
         "units": units,
         "mathematical_expression": mathematical_expression,
         "energy_scale": energy_scale,
+        "source_ref": source_ref,
         "created_at": existing_fm.get("created_at", _now()),
         "updated_at": _now(),
     }
@@ -2974,6 +2996,7 @@ def aitp_create_l2_edge(
     from_node: str,
     to_node: str,
     edge_type: str,
+    source_ref: str = "",
     regime_condition: str = "",
     evidence: str = "",
     correspondence_verified: bool = False,
@@ -2983,9 +3006,17 @@ def aitp_create_l2_edge(
     edge_type: limits_to | derives_from | uses | assumes | matches_onto | decouples_at |
                emerges_from | specializes | generalizes | approximates | component_of |
                equivalent_to | contradicts | refines | motivates | proven_by
+    source_ref: REQUIRED. Traceable reference (e.g. 'raw/paper.md L42' or
+        'topic:crpa-librpa'). Stored for auditing, hidden from default query output.
     """
     if edge_type not in L2_EDGE_TYPES:
         return f"Invalid edge_type '{edge_type}'. Valid: {L2_EDGE_TYPES}"
+
+    if not source_ref and not evidence:
+        return (
+            "source_ref is REQUIRED for L2 edges. Every relation must have provenance. "
+            "Provide source_ref (e.g. 'raw/paper.md L42') or evidence."
+        )
 
     global_l2 = _ensure_l2_graph_dirs(topics_root)
     slug = _slugify(edge_id)
@@ -3015,6 +3046,7 @@ def aitp_create_l2_edge(
         "regime_condition": regime_condition,
         "correspondence_verified": correspondence_verified,
         "evidence": evidence,
+        "source_ref": source_ref,
         "created_at": _now(),
     }
 
@@ -3022,10 +3054,106 @@ def aitp_create_l2_edge(
         f"# Edge: {from_slug} --[{edge_type}]--> {to_slug}\n\n"
         f"## Regime Condition\n{regime_condition}\n\n"
         f"## Evidence\n{evidence}\n\n"
+        f"## Source\n{source_ref}\n\n"
         f"## Verification\n{'Verified' if correspondence_verified else 'Not yet verified'}\n"
     )
     _write_md(edge_path, fm, body)
     return f"Created L2 edge {slug} ({from_slug} --[{edge_type}]--> {to_slug})"
+
+
+@mcp.tool()
+def aitp_quick_l2_concept(
+    topics_root: str,
+    concept_id: str,
+    title: str,
+    domain: str,
+    physical_meaning: str,
+    source_ref: str,
+    mathematical_expression: str = "",
+    related_concepts: list[dict[str, str]] | None = None,
+    node_type: str = "concept",
+) -> str:
+    """Lightweight: create a concept node with optional edges to related concepts in one call.
+
+    This is the L0→L2 fast path for well-understood concepts whose relationships
+    are obvious and whose source is clear. No L3 derivation required.
+
+    related_concepts: list of {concept_id, edge_type, source_ref}
+        Each entry creates an edge from this concept to the related concept.
+        The related concept must already exist in L2.
+    """
+    # Create the concept node
+    result = aitp_create_l2_node(
+        topics_root=topics_root,
+        node_id=concept_id,
+        node_type=node_type,
+        title=title,
+        domain=domain,
+        physical_meaning=physical_meaning,
+        mathematical_expression=mathematical_expression,
+        source_ref=source_ref,
+    )
+
+    if related_concepts:
+        edge_results = []
+        for i, rel in enumerate(related_concepts):
+            edge_id = f"{concept_id}--{rel.get('concept_id', '')}"
+            edge_type = rel.get("edge_type", "uses")
+            edge_src = rel.get("source_ref", source_ref)
+            to_node = rel.get("concept_id", "")
+            if not to_node:
+                edge_results.append(f"[SKIP rel {i}: missing concept_id]")
+                continue
+            er = aitp_create_l2_edge(
+                topics_root=topics_root,
+                edge_id=edge_id,
+                from_node=concept_id,
+                to_node=to_node,
+                edge_type=edge_type,
+                source_ref=edge_src,
+            )
+            edge_results.append(er)
+
+        return (
+            f"{result}\n"
+            + "\n".join(edge_results)
+        )
+
+    return result
+
+
+@mcp.tool()
+def aitp_get_l2_provenance(
+    topics_root: str,
+    node_id: str,
+) -> dict[str, Any]:
+    """Get the full provenance of an L2 node, including hidden source fields.
+
+    Use this for auditing — verify where a claim came from before trusting it.
+    Default L2 queries hide source fields to prevent context bloat.
+    """
+    global_l2 = _global_l2_path(topics_root)
+    slug = _slugify(node_id)
+    node_path = global_l2 / "graph" / "nodes" / f"{slug}.md"
+
+    if not node_path.exists():
+        return {"error": f"Node '{slug}' not found in L2 graph."}
+
+    fm, body = _parse_md(node_path)
+    return {
+        "node_id": fm.get("node_id", slug),
+        "title": fm.get("title", ""),
+        "type": fm.get("type", ""),
+        "trust_basis": fm.get("trust_basis", ""),
+        "trust_scope": fm.get("trust_scope", ""),
+        "source_ref": fm.get("source_ref", ""),
+        "source_candidate": fm.get("source_candidate", ""),
+        "source_topic": fm.get("source_topic", ""),
+        "version": fm.get("version", 1),
+        "created_at": fm.get("created_at", ""),
+        "updated_at": fm.get("updated_at", ""),
+        "body_preview": body[:2000],
+    }
 
 
 @mcp.tool()
