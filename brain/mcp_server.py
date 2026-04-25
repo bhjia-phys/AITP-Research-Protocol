@@ -57,6 +57,8 @@ from brain.state_model import (
     VALID_DOMAINS,
     L2_QUERY_HIDDEN_FIELDS,
     DIAGRAM_TEMPLATE,
+    JUSTIFICATION_TYPES,
+    STEP_TEMPLATE,
 )
 
 from brain.sympy_verify import (
@@ -2743,7 +2745,7 @@ def aitp_query_l2_index(
 def _ensure_l2_graph_dirs(topics_root: str) -> Path:
     """Ensure L2/graph/ directories exist and return the graph root."""
     global_l2 = _global_l2_path(topics_root)
-    for sub in ["graph/nodes", "graph/edges", "graph/towers", "graph/diagrams"]:
+    for sub in ["graph/nodes", "graph/edges", "graph/towers", "graph/diagrams", "graph/steps"]:
         (global_l2 / sub).mkdir(parents=True, exist_ok=True)
     return global_l2
 
@@ -3129,6 +3131,166 @@ def aitp_list_diagrams(
             "source_ref": fm.get("source_ref", ""),
         })
     return results
+
+
+@mcp.tool()
+def aitp_create_derivation_step(
+    topics_root: str,
+    step_id: str,
+    chain_id: str,
+    order: int,
+    input_expr: str,
+    output_expr: str,
+    transform: str = "",
+    justification_type: str = "",
+    justification_detail: str = "",
+    depends_on_steps: list[str] | None = None,
+    depends_on_nodes: list[str] | None = None,
+    approximation: str = "",
+    regime_condition: str = "",
+    source_ref: str = "",
+) -> str:
+    """Create a derivation step in the L2 knowledge graph — a first-class entity.
+
+    Steps form a DAG within a derivation chain (chain_id groups them).
+    Each step records: what came in, what transform was applied,
+    what came out, why the transform is valid, and what it depends on.
+
+    justification_type: definition | theorem | approximation |
+        physical_principle | algebraic_identity | limit | assumption
+    depends_on_steps: list of step_ids this step requires (DAG edges)
+    depends_on_nodes: list of L2 node_ids this step invokes
+    source_ref: traceable reference to source (e.g. "Hedin 1965, Eq. 13")
+    """
+    if justification_type and justification_type not in JUSTIFICATION_TYPES:
+        return f"Invalid justification_type '{justification_type}'. Valid: {JUSTIFICATION_TYPES}"
+
+    global_l2 = _ensure_l2_graph_dirs(topics_root)
+    slug = _slugify(step_id)
+    steps_dir = global_l2 / "graph" / "steps"
+    steps_dir.mkdir(parents=True, exist_ok=True)
+    step_path = steps_dir / f"{slug}.md"
+
+    fm: dict[str, Any] = dict(STEP_TEMPLATE)
+    fm.update({
+        "step_id": slug,
+        "chain_id": chain_id,
+        "order": order,
+        "input_expr": input_expr,
+        "output_expr": output_expr,
+        "transform": transform,
+        "justification_type": justification_type,
+        "justification_detail": justification_detail,
+        "depends_on_steps": depends_on_steps or [],
+        "depends_on_nodes": depends_on_nodes or [],
+        "approximation": approximation,
+        "regime_condition": regime_condition,
+        "source_ref": source_ref,
+        "created_at": _now(),
+        "updated_at": _now(),
+    })
+
+    body = (
+        f"# Step {order}: {slug}\n\n"
+        f"## Input\n{input_expr}\n\n"
+        f"## Transform\n{transform}\n\n"
+        f"## Output\n{output_expr}\n\n"
+        f"## Justification\n{justification_type}: {justification_detail}\n\n"
+        f"## Approximation\n{approximation}\n\n"
+        f"## Regime Condition\n{regime_condition}\n\n"
+        f"## Source\n{source_ref}\n"
+    )
+    _write_md(step_path, fm, body)
+
+    deps_info = ""
+    if depends_on_steps:
+        deps_info += f" depends on steps: {depends_on_steps}"
+    if depends_on_nodes:
+        deps_info += f" depends on nodes: {depends_on_nodes}"
+
+    return f"Created derivation step {slug} (chain={chain_id}, order={order}).{deps_info}"
+
+
+@mcp.tool()
+def aitp_list_steps(
+    topics_root: str,
+    chain_id: str = "",
+) -> list[dict[str, Any]]:
+    """List derivation steps, optionally filtered by chain_id. Returns in order."""
+    global_l2 = _global_l2_path(topics_root)
+    steps_dir = global_l2 / "graph" / "steps"
+    if not steps_dir.is_dir():
+        return []
+
+    results = []
+    for sp in sorted(steps_dir.glob("*.md")):
+        fm, _ = _parse_md(sp)
+        if chain_id and fm.get("chain_id") != chain_id:
+            continue
+        results.append({
+            "step_id": fm.get("step_id", sp.stem),
+            "chain_id": fm.get("chain_id", ""),
+            "order": fm.get("order", 0),
+            "input_expr": fm.get("input_expr", ""),
+            "output_expr": fm.get("output_expr", ""),
+            "transform": fm.get("transform", ""),
+            "justification_type": fm.get("justification_type", ""),
+            "depends_on_steps": fm.get("depends_on_steps", []),
+            "depends_on_nodes": fm.get("depends_on_nodes", []),
+            "approximation": fm.get("approximation", ""),
+            "source_ref": fm.get("source_ref", ""),
+        })
+
+    results.sort(key=lambda s: s["order"])
+    return results
+
+
+@mcp.tool()
+def aitp_traverse_derivation(
+    topics_root: str,
+    chain_id: str,
+) -> dict[str, Any]:
+    """Traverse a derivation chain's DAG from first step to last.
+
+    Returns steps in topological order with dependency information,
+    making the derivation traceable by both human and AI.
+    """
+    steps = aitp_list_steps(topics_root, chain_id=chain_id)
+
+    if not steps:
+        return {"chain_id": chain_id, "steps": [], "message": "No steps found."}
+
+    # Build node lookup for depends_on_nodes
+    global_l2 = _global_l2_path(topics_root)
+    nodes_dir = global_l2 / "graph" / "nodes"
+    node_titles = {}
+    if nodes_dir.is_dir():
+        for np in nodes_dir.glob("*.md"):
+            nfm, _ = _parse_md(np)
+            node_titles[np.stem] = nfm.get("title", np.stem)
+
+    enriched = []
+    for s in steps:
+        deps = {
+            "steps": s["depends_on_steps"],
+            "concepts": {nid: node_titles.get(nid, nid) for nid in s["depends_on_nodes"]},
+        }
+        enriched.append({
+            "order": s["order"],
+            "step_id": s["step_id"],
+            "input": s["input_expr"],
+            "transform": s["transform"],
+            "output": s["output_expr"],
+            "justification": f"{s['justification_type']}: {s.get('approximation', '')}",
+            "depends_on": deps,
+            "source": s["source_ref"],
+        })
+
+    return {
+        "chain_id": chain_id,
+        "total_steps": len(steps),
+        "steps": enriched,
+    }
 
 
 @mcp.tool()

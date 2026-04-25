@@ -818,6 +818,28 @@ DIAGRAM_TEMPLATE: dict[str, Any] = {
     "source_file": "",
 }
 
+JUSTIFICATION_TYPES = [
+    "definition", "theorem", "approximation", "physical_principle",
+    "algebraic_identity", "limit", "assumption",
+]
+
+STEP_TEMPLATE: dict[str, Any] = {
+    "kind": "l2_derivation_step",
+    "step_id": "",
+    "chain_id": "",
+    "order": 0,
+    "input_expr": "",
+    "output_expr": "",
+    "transform": "",
+    "justification_type": "",
+    "justification_detail": "",
+    "depends_on_steps": [],
+    "depends_on_nodes": [],
+    "approximation": "",
+    "regime_condition": "",
+    "source_ref": "",
+}
+
 L2_TOWER_TEMPLATE: tuple[dict[str, Any], str] = (
     {
         "kind": "l2_tower",
