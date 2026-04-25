@@ -807,6 +807,32 @@ L2_QUERY_HIDDEN_FIELDS = frozenset({
     "previous_version_promoted_at", "aliases",
 })
 
+DIAGRAM_TYPES = [
+    "feynman", "spectral", "band_structure", "phase_diagram",
+    "rg_flow", "commutative", "schematic", "penrose", "table",
+]
+
+DIAGRAM_SOURCES = [
+    "extracted_from_source", "ai_regenerated", "hand_drawn",
+]
+
+DIAGRAM_TEMPLATE: dict[str, Any] = {
+    "kind": "l2_diagram",
+    "diagram_id": "",
+    "type": "schematic",
+    "title": "",
+    "caption": "",
+    "physical_meaning": "",
+    "related_nodes": [],
+    "related_edges": [],
+    "related_steps": [],
+    "source_ref": "",
+    "source_file": "",
+    "drawn_by": "extracted_from_source",
+    "regime": "",
+    "tags": [],
+}
+
 L2_TOWER_TEMPLATE: tuple[dict[str, Any], str] = (
     {
         "kind": "l2_tower",

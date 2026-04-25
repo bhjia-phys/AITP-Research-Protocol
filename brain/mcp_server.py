@@ -56,6 +56,9 @@ from brain.state_model import (
     DOMAIN_TAXONOMY,
     VALID_DOMAINS,
     L2_QUERY_HIDDEN_FIELDS,
+    DIAGRAM_TYPES,
+    DIAGRAM_SOURCES,
+    DIAGRAM_TEMPLATE,
 )
 
 from brain.sympy_verify import (
@@ -2742,7 +2745,7 @@ def aitp_query_l2_index(
 def _ensure_l2_graph_dirs(topics_root: str) -> Path:
     """Ensure L2/graph/ directories exist and return the graph root."""
     global_l2 = _global_l2_path(topics_root)
-    for sub in ["graph/nodes", "graph/edges", "graph/towers"]:
+    for sub in ["graph/nodes", "graph/edges", "graph/towers", "graph/diagrams"]:
         (global_l2 / sub).mkdir(parents=True, exist_ok=True)
     return global_l2
 
@@ -3043,6 +3046,110 @@ def aitp_get_l2_provenance(
         "updated_at": fm.get("updated_at", ""),
         "body_preview": body[:2000],
     }
+
+
+@mcp.tool()
+def aitp_create_diagram(
+    topics_root: str,
+    diagram_id: str,
+    diagram_type: str,
+    title: str,
+    caption: str = "",
+    physical_meaning: str = "",
+    related_nodes: list[str] | None = None,
+    related_edges: list[str] | None = None,
+    related_steps: list[str] | None = None,
+    source_ref: str = "",
+    source_file: str = "",
+    drawn_by: str = "extracted_from_source",
+    regime: str = "",
+    tags: list[str] | None = None,
+) -> str:
+    """Register a diagram (figure, plot, diagram) in the L2 knowledge graph.
+
+    Diagrams are evidence attachments — they hang on nodes and edges, not
+    enter the force graph as independent entities.
+
+    diagram_type: feynman | spectral | band_structure | phase_diagram |
+                  rg_flow | commutative | schematic | penrose | table
+    drawn_by: extracted_from_source | ai_regenerated | hand_drawn
+    related_nodes: list of L2 node_ids this diagram supports
+    related_edges: list of L2 edge_ids this diagram supports
+    source_ref: human-readable citation (e.g. "Hedin 1965, Fig. 1")
+    source_file: path relative to L2/images/ for the image file
+    """
+    if diagram_type not in DIAGRAM_TYPES:
+        return f"Invalid diagram_type '{diagram_type}'. Valid: {DIAGRAM_TYPES}"
+
+    global_l2 = _ensure_l2_graph_dirs(topics_root)
+    slug = _slugify(diagram_id)
+    diagrams_dir = global_l2 / "graph" / "diagrams"
+    diagrams_dir.mkdir(parents=True, exist_ok=True)
+    diagram_path = diagrams_dir / f"{slug}.md"
+
+    fm: dict[str, Any] = dict(DIAGRAM_TEMPLATE)
+    fm.update({
+        "diagram_id": slug,
+        "type": diagram_type,
+        "title": title,
+        "caption": caption,
+        "physical_meaning": physical_meaning,
+        "related_nodes": related_nodes or [],
+        "related_edges": related_edges or [],
+        "related_steps": related_steps or [],
+        "source_ref": source_ref,
+        "source_file": source_file,
+        "drawn_by": drawn_by,
+        "regime": regime,
+        "tags": tags or [],
+        "created_at": _now(),
+        "updated_at": _now(),
+    })
+
+    body = (
+        f"# {title}\n\n"
+        f"## Physical Description (for AI)\n{physical_meaning}\n\n"
+        f"## Caption\n{caption}\n\n"
+        f"## What This Figure Tells Us\n\n"
+        f"## Source\n{source_ref}\n"
+    )
+    _write_md(diagram_path, fm, body)
+    return (
+        f"Created L2 diagram {slug} (type={diagram_type}). "
+        f"Linked to {len(related_nodes or [])} nodes, {len(related_edges or [])} edges."
+    )
+
+
+@mcp.tool()
+def aitp_list_diagrams(
+    topics_root: str,
+    related_node: str = "",
+    diagram_type: str = "",
+) -> list[dict[str, Any]]:
+    """List diagrams in the L2 knowledge graph, optionally filtered by related node or type."""
+    global_l2 = _global_l2_path(topics_root)
+    diagrams_dir = global_l2 / "graph" / "diagrams"
+    if not diagrams_dir.is_dir():
+        return []
+
+    results = []
+    for dp in sorted(diagrams_dir.glob("*.md")):
+        fm, _ = _parse_md(dp)
+        if diagram_type and fm.get("type") != diagram_type:
+            continue
+        if related_node and related_node not in (fm.get("related_nodes") or []):
+            continue
+        results.append({
+            "diagram_id": fm.get("diagram_id", dp.stem),
+            "type": fm.get("type", ""),
+            "title": fm.get("title", dp.stem),
+            "caption": fm.get("caption", ""),
+            "related_nodes": fm.get("related_nodes", []),
+            "related_edges": fm.get("related_edges", []),
+            "source_ref": fm.get("source_ref", ""),
+            "source_file": fm.get("source_file", ""),
+        })
+    return results
 
 
 @mcp.tool()
