@@ -52,12 +52,11 @@ For **each registered source**, before any extraction:
 Before deep extraction, do a rapid first pass over ALL sections:
 
 1. Read each section quickly — focus on structure, not detail.
-2. For each section, call `aitp_write_section_intake` with:
-   - `section_title`: from the TOC entry
-   - `summary`: 1-3 sentence summary of what this section is about
+2. For each section, call `aitp_batch_extract_section` with just summary + empty concepts:
+   - `summary`: 1-3 sentence summary
    - `completeness_confidence = ""` (leave unset during skim)
-3. After the skim pass, call `aitp_update_section_status` with `new_status = "skimming"`
-   for each section.
+   - `concepts = []` (no deep extraction during skim)
+3. The tool automatically updates section status.
 
 This first pass builds a mental map of the entire source and identifies priority sections
 vs. peripheral sections.
@@ -71,24 +70,37 @@ For sections identified as relevant by the skim pass:
    - **Physical claims** — every non-trivial assertion about the physical system
    - **Prerequisites** — what the reader must know to understand this section
    - **Cross-references** — other sections or external sources this section depends on
-2. Call `aitp_write_section_intake` with all fields filled and
-   `completeness_confidence` set honestly:
-   - `"high"` — every claim and equation captured, no ambiguities
-   - `"medium"` — main points captured, some details may be glossed
-   - `"low"` — significant gaps, need to re-read or consult external sources
-3. The tool automatically marks sections with `completeness_confidence ∈ {high, medium}`
-   as `extracted` in the TOC map and links the intake note.
-4. **Contribute to L2 immediately** — for each significant concept found in this section:
-   - Call `aitp_create_l2_node` with `source_ref="<source_id>/<section_id>"` to create
-     a concept node in the global L2 knowledge graph.
-   - If the concept's relationship to an existing L2 node is obvious (e.g., "GGA
-     generalizes LDA"), call `aitp_create_l2_edge` immediately with
-     `source_ref="<source_id>/<section_id>"`.
-   - Call `aitp_update_section_status` with `new_status="extracted"`.
+2. Call `aitp_batch_extract_section` — a SINGLE call that does ALL of:
+   - Writes the intake note
+   - Creates L2 concept nodes for each discovered concept
+   - Creates L2 edges for each obvious relationship
+   - Auto-suggests related existing L2 concepts
+   - Updates section status to `extracted`
    
-   **This is the L1→L2 bridge**: concepts enter the knowledge graph as soon as they
-   are extracted, not after the entire paper is studied. Each concept is traceable
-   to its exact source location.
+   ```
+   aitp_batch_extract_section(
+       source_id="hedin1965", section_id="sec3",
+       summary="Hedin derives the set of coupled equations...",
+       key_concepts="self-energy Σ, Green's function G, screened interaction W,
+                     vertex function Γ, Dyson equation",
+       completeness_confidence="medium",
+       concepts=[
+           {"concept_id": "hedin-equations", "title": "Hedin Equations",
+            "domain": "electronic-structure", "node_type": "theorem",
+            "physical_meaning": "Coupled integro-differential equations...",
+            "expression": "Σ(1,2) = -i∫G(1,3)Γ(3,2;4)W(4,1)d3d4"},
+       ],
+       edges=[
+           {"from_node": "hedin-equations", "to_node": "greens-function",
+            "edge_type": "uses"},
+           {"from_node": "hedin-equations", "to_node": "self-energy",
+            "edge_type": "derives_from"},
+       ],
+   )
+   ```
+   
+   One call replaces 5 (intake + node + edge + status + search).
+   If the tool returns `suggestions`, review and create edges for matching concepts.
 
 ### Step 3C: Defer genuinely out-of-scope sections
 For sections that are genuinely irrelevant to the bounded question:

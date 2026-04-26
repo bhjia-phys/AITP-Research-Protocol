@@ -868,6 +868,131 @@ def aitp_update_section_status(
 
 
 @mcp.tool()
+def aitp_batch_extract_section(
+    topics_root: str,
+    topic_slug: str,
+    source_id: str,
+    section_id: str,
+    section_title: str = "",
+    summary: str = "",
+    key_concepts: str = "",
+    completeness_confidence: str = "medium",
+    concepts: list[dict[str, str]] | None = None,
+    edges: list[dict[str, str]] | None = None,
+) -> dict[str, Any]:
+    """Extract a section in one call: intake note + L2 nodes + L2 edges + status update.
+
+    Replaces 5 separate MCP calls for the common "finish reading a section" workflow.
+
+    concepts: list of {concept_id, title, domain, physical_meaning, expression}
+        Each entry creates an L2 concept node. source_ref is auto-set to
+        {source_id}/{section_id}.
+    edges: list of {from_node, to_node, edge_type}
+        Each entry creates an L2 edge. from_node should be one of the
+        concept_ids just created, or an existing L2 node.
+    """
+    results = {
+        "intake": "", "nodes_created": 0, "edges_created": 0,
+        "status": "", "suggestions": [],
+    }
+
+    # 1. Write intake note
+    results["intake"] = aitp_write_section_intake(
+        topics_root=topics_root, topic_slug=topic_slug,
+        source_id=source_id, section_id=section_id,
+        section_title=section_title, summary=summary,
+        key_concepts=key_concepts,
+        completeness_confidence=completeness_confidence,
+    )
+
+    # 2. Create L2 nodes for discovered concepts
+    concept_ids = []
+    if concepts:
+        for c in concepts:
+            cid = c.get("concept_id", "")
+            if not cid:
+                continue
+            source_ref = f"{source_id}/{section_id}"
+            r = aitp_create_l2_node(
+                topics_root=topics_root, node_id=cid,
+                node_type=c.get("node_type", "concept"),
+                title=c.get("title", cid),
+                domain=c.get("domain", ""),
+                physical_meaning=c.get("physical_meaning", ""),
+                mathematical_expression=c.get("expression", ""),
+                source_ref=source_ref,
+            )
+            concept_ids.append(cid)
+            results["nodes_created"] += 1
+
+    # 3. Auto-suggest related existing L2 concepts
+    if concept_ids:
+        suggestions = _suggest_related_concepts(
+            topics_root, concept_ids[0], concept_ids
+        )
+        if suggestions:
+            results["suggestions"] = suggestions
+
+    # 4. Create L2 edges
+    if edges:
+        for e in edges:
+            eid = f"{e.get('from_node', '')}--{e.get('to_node', '')}"
+            source_ref = f"{source_id}/{section_id}"
+            r = aitp_create_l2_edge(
+                topics_root=topics_root, edge_id=eid,
+                from_node=e.get("from_node", ""),
+                to_node=e.get("to_node", ""),
+                edge_type=e.get("edge_type", "uses"),
+                source_ref=source_ref,
+            )
+            results["edges_created"] += 1
+
+    # 5. Update section status
+    results["status"] = aitp_update_section_status(
+        topics_root=topics_root, topic_slug=topic_slug,
+        source_id=source_id, section_id=section_id,
+        new_status="extracted",
+    )
+
+    return results
+
+
+def _suggest_related_concepts(
+    topics_root: str,
+    query_concept: str,
+    exclude_ids: list[str],
+) -> list[dict[str, Any]]:
+    """Find existing L2 concepts semantically similar to a new concept."""
+    global_l2 = _global_l2_path(topics_root)
+    nodes_dir = global_l2 / "graph" / "nodes"
+    if not nodes_dir.is_dir():
+        return []
+
+    suggestions = []
+    exclude = set(exclude_ids)
+    for np in nodes_dir.glob("*.md"):
+        nid = np.stem
+        if nid in exclude:
+            continue
+        fm, _ = _parse_md(np)
+        title = fm.get("title", nid)
+        meaning = fm.get("physical_meaning", "") or ""
+        # Simple token overlap scoring
+        query_tokens = set(query_concept.lower().replace("-", " ").split())
+        title_tokens = set(title.lower().split())
+        overlap = query_tokens & title_tokens
+        if len(overlap) >= 2 or query_concept.lower() in title.lower():
+            suggestions.append({
+                "node_id": nid,
+                "title": title,
+                "domain": fm.get("domain", ""),
+                "type": fm.get("type", ""),
+            })
+
+    return suggestions[:5]
+
+
+@mcp.tool()
 def aitp_write_section_intake(
     topics_root: str,
     topic_slug: str,
