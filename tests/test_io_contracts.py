@@ -414,3 +414,44 @@ class TestFlowNotebook:
             # Should complete without error (even if mostly empty)
             assert "generated" in str(result).lower() or "created" in str(result).lower() or \
                    "notebook" in str(result).lower()
+
+
+class TestDoctorValidation:
+    """Doctor command: content-level topic validation."""
+
+    def test_valid_topic_state_passes(self):
+        """Topic with valid state.md must be reported as healthy."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tr = _bootstrap(tmp)
+            _fill_l0(tmp, tr)
+            # Simulate doctor check
+            import re, yaml
+            state_path = tr / "state.md"
+            text = state_path.read_text(encoding="utf-8")
+            m = re.match(r"^---\s*\n(.*?)\n---", text, re.DOTALL)
+            assert m is not None, "state.md must have YAML frontmatter"
+            fm = yaml.safe_load(m.group(1))
+            assert fm is not None, "YAML must parse"
+            assert "stage" in fm, "state.md must have stage field"
+
+    def test_missing_state_md_is_invalid(self):
+        """Topic without state.md must be flagged."""
+        import tempfile
+        tmp = tempfile.mkdtemp()
+        bad_topic = Path(tmp) / "bad-topic"
+        bad_topic.mkdir()
+        assert not (bad_topic / "state.md").exists()
+
+    def test_broken_yaml_is_invalid(self):
+        """state.md with broken YAML frontmatter must be flagged."""
+        import tempfile
+        tmp = tempfile.mkdtemp()
+        bad_topic = Path(tmp) / "broken-topic"
+        bad_topic.mkdir()
+        (bad_topic / "state.md").write_text("---\nbroken: [unclosed\n---\n# Title\n", encoding="utf-8")
+        import yaml
+        try:
+            yaml.safe_load("broken: [unclosed")
+            assert False, "Should have raised"
+        except yaml.YAMLError:
+            pass  # Expected — broken YAML

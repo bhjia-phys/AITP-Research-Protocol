@@ -1116,8 +1116,45 @@ def cmd_doctor(args) -> None:
         issues.append("Topics root not configured")
         print("    FAIL: no topics root found")
     elif Path(topics_root).exists():
-        topics = list(Path(topics_root).iterdir())
-        print(f"    OK ({len([d for d in topics if d.is_dir()])} topics)")
+        topics = [d for d in Path(topics_root).iterdir() if d.is_dir()]
+        print(f"    OK ({len(topics)} topics)")
+        # Content-level check: validate each topic's state.md
+        healthy = 0
+        invalid_state = 0
+        broken_yaml = 0
+        for topic_dir in sorted(topics):
+            state_path = topic_dir / "state.md"
+            if not state_path.exists():
+                invalid_state += 1
+                issues.append(f"Topic '{topic_dir.name}': missing state.md")
+                print(f"    INVALID: {topic_dir.name} — no state.md")
+                continue
+            try:
+                text = state_path.read_text(encoding="utf-8")
+                m = re.match(r"^---\s*\n(.*?)\n---", text, re.DOTALL)
+                if not m:
+                    invalid_state += 1
+                    issues.append(f"Topic '{topic_dir.name}': state.md has no YAML frontmatter")
+                    print(f"    INVALID: {topic_dir.name} — no frontmatter")
+                    continue
+                import yaml
+                fm = yaml.safe_load(m.group(1)) or {}
+                stage = fm.get("stage", "")
+                posture = fm.get("posture", "")
+                lane = fm.get("lane", "")
+                if stage:
+                    healthy += 1
+                    print(f"    OK: {topic_dir.name} stage={stage} posture={posture} lane={lane}")
+                else:
+                    invalid_state += 1
+                    issues.append(f"Topic '{topic_dir.name}': state.md missing 'stage' field")
+                    print(f"    INVALID: {topic_dir.name} — no 'stage' field")
+            except Exception:
+                broken_yaml += 1
+                issues.append(f"Topic '{topic_dir.name}': broken YAML in state.md")
+                print(f"    BROKEN: {topic_dir.name} — YAML parse error")
+        if healthy > 0:
+            print(f"\n  Topic health: {healthy} healthy, {invalid_state} invalid, {broken_yaml} broken")
     else:
         issues.append(f"Topics root path does not exist: {topics_root}")
         print("    FAIL: path does not exist")
