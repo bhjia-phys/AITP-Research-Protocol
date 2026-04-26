@@ -941,8 +941,18 @@ def evaluate_l3_stage(
 # ---------------------------------------------------------------------------
 
 L2_NODE_TYPES = [
+    # Core knowledge types
     "concept", "theorem", "technique", "derivation_chain",
     "result", "approximation", "open_question", "regime_boundary",
+    # Fine-grained types (from LAYER2_OBJECT_FAMILIES)
+    "definition",           # definition_card
+    "equation",             # equation_card
+    "assumption_card",      # assumption_card — what must be true for a result
+    "notation",             # notation_card — symbol conventions
+    "proof_fragment",       # proof_fragment — partial proof steps
+    "example",              # example_card — illustrative cases
+    "caveat",               # caveat_card — warnings, limitations
+    "diagram",              # diagram — figures as evidence attachments
 ]
 
 L2_EDGE_TYPES = [
@@ -956,6 +966,12 @@ L2_EDGE_TYPES = [
     "matches_onto", "decouples_at", "emerges_from",
     # Research
     "refines", "motivates",
+    # Physics-specific relations
+    "dual_to",              # Kramers-Wannier, AdS/CFT bulk/boundary
+    "conjugate_to",         # Fourier conjugate, Legendre conjugate
+    "perturbative_in",      # expansion in a small parameter
+    "superseded_by",        # old result replaced by newer one
+    "invariant_under",      # quantity invariant under a symmetry group
 ]
 
 DOMAIN_TAXONOMY: dict[str, dict[str, Any]] = {
@@ -1004,6 +1020,26 @@ DOMAIN_TAXONOMY: dict[str, dict[str, Any]] = {
         "description": "Protocol design, skills, gate models, workflow architecture",
         "energy_scales": [],
     },
+    "mathematical-physics": {
+        "label": "Mathematical Physics",
+        "description": "Integrable systems, random matrix theory, rigorous results",
+        "energy_scales": [],
+    },
+    "nuclear-physics": {
+        "label": "Nuclear Physics",
+        "description": "Nuclear structure, reactions, QCD phase diagram",
+        "energy_scales": ["MeV", "GeV"],
+    },
+    "cosmology": {
+        "label": "Cosmology & Astrophysics",
+        "description": "Early universe, CMB, dark matter/energy, large-scale structure",
+        "energy_scales": ["GeV", "TeV", "Planck"],
+    },
+    "amo-physics": {
+        "label": "Atomic, Molecular & Optical Physics",
+        "description": "Cold atoms, optical lattices, quantum simulation",
+        "energy_scales": ["meV", "eV", "K"],
+    },
 }
 
 VALID_DOMAINS = frozenset(DOMAIN_TAXONOMY.keys())
@@ -1030,6 +1066,9 @@ DIAGRAM_TEMPLATE: dict[str, Any] = {
 JUSTIFICATION_TYPES = [
     "definition", "theorem", "approximation", "physical_principle",
     "algebraic_identity", "limit", "assumption",
+    "conjecture",           # widely used but not proven
+    "gap",                  # explicitly marked unfilled step
+    "numerical_evidence",   # supported by computation but no analytic proof
 ]
 
 STEP_TEMPLATE: dict[str, Any] = {

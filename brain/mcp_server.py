@@ -648,8 +648,21 @@ def aitp_register_source(
     arxiv_id: str = "",
     fidelity: str = "arxiv_preprint",
     notes: str = "",
+    physical_system: str = "",
+    method_category: str = "",
+    regime: str = "",
+    source_role: str = "direct_dependency",
+    epistemic_tier: str = "",
 ) -> str:
-    """Register a source in L0. Creates a Markdown file with frontmatter."""
+    """Register a source in L0. Creates a Markdown file with frontmatter.
+
+    Physical metadata fields help L1 prioritise reading and L3 trace derivations:
+    - physical_system: what system does this study? (e.g. "Hubbard model", "QED")
+    - method_category: analytic, perturbative, numerical, RG, variational, etc.
+    - regime: weak coupling, large N, 1+1D, T=0, etc.
+    - source_role: foundational, direct_dependency, contrast_reference, background
+    - epistemic_tier: peer_reviewed, community_reviewed, preprint, textbook, lecture, unvetted
+    """
     root = _topic_root(topics_root, topic_slug)
     slug = _slugify(source_id)
     path = root / "L0" / "sources" / f"{slug}.md"
@@ -662,6 +675,11 @@ def aitp_register_source(
         "arxiv_id": arxiv_id,
         "fidelity": fidelity,
         "registered": _now(),
+        "physical_system": physical_system,
+        "method_category": method_category,
+        "regime": regime,
+        "source_role": source_role,
+        "epistemic_tier": epistemic_tier,
     }
     body = f"# {title or source_id}\n\n{notes}\n" if notes else f"# {title or source_id}\n"
     _write_md(path, fm, body)

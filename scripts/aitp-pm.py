@@ -937,7 +937,8 @@ def cmd_upgrade(args) -> None:
     # --- Re-deploy ---
     record = _load_record()
     if not record["installs"]:
-        print("\n  No AITP installs on record. Run 'aitp install' to deploy.")
+        print("\n  No AITP installs on record. Falling back to fresh install.")
+        cmd_install(args)
         return
 
     topics_root = _detect_topics_root()
