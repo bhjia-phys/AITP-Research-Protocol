@@ -54,7 +54,7 @@ At ANY point during integration, you may offer these back-paths via AskUserQuest
 
 ## Active artifact
 
-`L3/result_integration/active_integration.md`
+`L3/integrate/active_integration.md`
 
 ## Claim Readiness Assessment (MANDATORY)
 

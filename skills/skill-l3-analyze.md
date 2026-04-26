@@ -59,7 +59,7 @@ At ANY point during analysis, you may offer these back-paths via AskUserQuestion
 
 ## Active artifact
 
-`L3/analysis/active_analysis.md`
+`L3/derive/active_analysis.md`
 
 ## Round Type (MANDATORY frontmatter field)
 
@@ -139,7 +139,7 @@ If you are returning to analysis after L4 validation (post-L4 return), your anal
    caveats, and quantitative discrepancies.
 2. **Assess validation quality** — were checks independent? Were any criterion relying
    on stored data rather than fresh computation? Note gaps.
-3. **Record findings** in `L3/analysis/active_analysis.md`:
+3. **Record findings** in `L3/derive/active_analysis.md`:
    - What was validated conclusively
    - What had caveats (normalization differences, finite-size limitations)
    - What remains open (larger L, different operators, thermodynamic limit)

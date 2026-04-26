@@ -19,7 +19,7 @@ You are tracing every derivation in the source, step by step, with explicit just
 
 ## Active artifact
 
-`L3/step_derive/active_derivation.md`
+`L3/trace-derivation/active_derivation.md`
 
 ## What to do
 

@@ -52,7 +52,7 @@ At ANY point during discussion, you may offer these back-paths via AskUserQuesti
 
 ## Active artifact
 
-`L3/planning/active_plan.md`
+`L3/plan/active_plan.md`
 
 ## What to do
 

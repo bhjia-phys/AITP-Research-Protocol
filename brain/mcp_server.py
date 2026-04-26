@@ -2067,6 +2067,19 @@ def aitp_switch_l3_activity(
         return f"Unknown activity '{activity}'. Valid: {L3_ACTIVITIES}"
 
     old = fm.get("l3_activity", "ideate")
+
+    # Minimal guard: warn if the old activity's artifact was never written.
+    # The gate checks artifact existence; this provides early feedback.
+    if old and old in L3_ACTIVITY_ARTIFACT_NAMES:
+        artifact_name = L3_ACTIVITY_ARTIFACT_NAMES[old]
+        old_artifact = root / "L3" / old / artifact_name
+        if not old_artifact.exists():
+            _append_to_topic_log(root,
+                f"WARNING: switching from '{old}' to '{activity}' but "
+                f"artifact {old_artifact.name} was not created. "
+                f"Gate will block advance if this activity is needed."
+            )
+
     fm["l3_activity"] = activity
     fm["l3_subplane"] = activity  # compat: skill triggers check l3_subplane
     fm["updated_at"] = _now()

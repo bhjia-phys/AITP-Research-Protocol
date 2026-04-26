@@ -53,7 +53,7 @@ At ANY point during distillation, you may offer these back-paths via AskUserQues
 
 ## Active artifact
 
-`L3/distillation/active_distillation.md`
+`L3/distill/active_distillation.md`
 
 ## What to do
 
@@ -66,7 +66,7 @@ At ANY point during distillation, you may offer these back-paths via AskUserQues
 
 Before submitting a candidate via `aitp_submit_candidate`, you MUST check:
 
-1. Read `L3/result_integration/active_integration.md` — look at `## Open Obligations`.
+1. Read `L3/integrate/active_integration.md` — look at `## Open Obligations`.
 2. For each obligation marked `blocks claim: yes`:
    - If the claim depends on it → the candidate CANNOT be submitted. Go back to analysis.
    - If the claim can be scoped to avoid it → narrow the claim and document the scoping.

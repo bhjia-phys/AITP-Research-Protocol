@@ -59,7 +59,7 @@ These are not just for this subplane — they are available throughout ALL L3 su
 
 ## Active artifact
 
-`L3/ideation/active_idea.md`
+`L3/ideate/active_idea.md`
 
 ## What to do
 

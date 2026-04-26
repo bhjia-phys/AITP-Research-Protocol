@@ -747,7 +747,7 @@ def evaluate_l1_stage(
 # ---------------------------------------------------------------------------
 
 L3_ACTIVITIES = [
-    "ideate", "derive", "trace-derivation",
+    "ideate", "plan", "derive", "trace-derivation",
     "gap-audit", "connect", "integrate", "distill",
 ]
 
@@ -759,6 +759,14 @@ L3_ACTIVITY_TEMPLATES: dict[str, tuple[str, dict[str, Any], str]] = {
          "idea_statement": "", "motivation": ""},
         "# Active Idea\n\n## Idea Statement\n\n## Motivation\n\n"
         "## Prior Work (L2 Check)\n\n## Risk Assessment\n",
+    ),
+    "plan": (
+        "plan",
+        {"artifact_kind": "l3_active_plan", "activity": "plan",
+         "required_fields": ["plan_statement", "derivation_route"],
+         "plan_statement": "", "derivation_route": ""},
+        "# Active Plan\n\n## Plan Statement\n\n## Derivation Route\n\n"
+        "## Tool And Knowledge Requirements\n\n## Risk Assessment\n",
     ),
     "derive": (
         "derive",
@@ -813,6 +821,7 @@ L3_ACTIVITY_TEMPLATES: dict[str, tuple[str, dict[str, Any], str]] = {
 
 L3_ACTIVITY_ARTIFACT_NAMES: dict[str, str] = {
     "ideate": "active_idea.md",
+    "plan": "active_plan.md",
     "derive": "active_derivation.md",
     "trace-derivation": "active_trace.md",
     "gap-audit": "active_gaps.md",
@@ -834,6 +843,7 @@ STUDY_L3_ACTIVE_ARTIFACT_NAMES = {
 
 L3_ACTIVITY_SKILL_MAP: dict[str, str] = {
     "ideate": "skill-l3-ideate",
+    "plan": "skill-l3-plan",
     "derive": "skill-l3-analyze",
     "trace-derivation": "skill-l3-step-derive",
     "gap-audit": "skill-l3-gap-audit",
@@ -844,6 +854,7 @@ L3_ACTIVITY_SKILL_MAP: dict[str, str] = {
 
 L3_ACTIVITY_REQUIRED_HEADINGS: dict[str, list[str]] = {
     "ideate": ["## Idea Statement", "## Motivation"],
+    "plan": ["## Plan Statement", "## Derivation Route"],
     "derive": ["## Derivation Chains", "## Step-by-Step Trace"],
     "trace-derivation": ["## Source Reference", "## Derivation Chains"],
     "gap-audit": ["## Unstated Assumptions", "## Correspondence Check"],
@@ -1263,10 +1274,35 @@ def evaluate_l4_stage(
                 skill="skill-validate",
             )
 
+    # Contradiction detection: scan reviews for contradiction outcomes.
+    # Contradiction with known results is the highest-value signal in L4.
+    conflicts = []
+    for cand_path in submitted:
+        slug = cand_path.stem
+        review_path = review_dir / f"{slug}.md"
+        if review_path.exists():
+            rfm, _ = parse_md(review_path)
+            if rfm.get("outcome") == "contradiction":
+                conflicts.append(slug)
+    if conflicts:
+        return StageSnapshot(
+            stage="L4", posture="verify", lane=lane,
+            gate_status="blocked_contradiction",
+            required_artifact_path=str(review_dir / conflicts[0]),
+            missing_requirements=[
+                f"Review for {c} reports CONTRADICTION with known results. "
+                f"Resolve: (a) new physics found, (b) error in derivation, "
+                f"or (c) regime mismatch between claimed and actual validity."
+                for c in conflicts
+            ],
+            next_allowed_transition="L3",
+            skill="skill-validate",
+        )
+
     return StageSnapshot(
         stage="L4", posture="verify", lane=lane,
         gate_status="ready",
-        next_allowed_transition="L5,L2",
+        next_allowed_transition="L2",
         skill="skill-promote",
     )
 

@@ -19,7 +19,7 @@ You are auditing the source for gaps: hidden assumptions, unstated approximation
 
 ## Active artifact
 
-`L3/gap_audit/active_gaps.md`
+`L3/gap-audit/active_gaps.md`
 
 ## What to do
 
