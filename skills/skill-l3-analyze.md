@@ -148,7 +148,12 @@ If you are returning to analysis after L4 validation (post-L4 return), your anal
 Advance to **result_integration** when `active_analysis.md` has filled frontmatter fields
 `analysis_statement` and `method`, plus headings `## Analysis Statement` and `## Method`.
 
+**Or submit candidate directly** if the derivation produced a clear, verifiable claim
+(use `aitp_submit_candidate` from derive activity without going through integrate/distill).
+This is the right path for focused derivations (e.g., "verify that this formula reproduces
+the known limit") that don't need the full integration/distillation pipeline.
+
 ## Allowed transitions
 
-- Forward: `result_integration`
+- Forward: `result_integration`, candidate submission
 - Backedges: `ideation`, `planning`

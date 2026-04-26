@@ -386,13 +386,15 @@ def aitp_get_status(topics_root: str, topic_slug: str) -> dict[str, Any]:
     src_dir = root / "L0" / "sources"
     cand_dir = root / "L3" / "candidates"
     global_l2 = _global_l2_path(topics_root)
-    manifest = _load_domain_manifest(root)
+    domain_prereqs = resolve_domain_prerequisites(root, topic_slug)
     return {
         "topic_slug": topic_slug,
         "status": status,
         "stage": fm.get("stage", snapshot.stage),
         "posture": fm.get("posture", snapshot.posture),
         "lane": fm.get("lane", snapshot.lane),
+        "research_intensity": str(fm.get("research_intensity", "standard")).strip() or "standard",
+        "interaction_level": str(fm.get("interaction_level", "collaborative")).strip() or "collaborative",
         "compute_target": str(fm.get("compute", "local")),
         "gate_status": snapshot.gate_status,
         "mode": fm.get("mode", "explore"),
@@ -404,8 +406,8 @@ def aitp_get_status(topics_root: str, topic_slug: str) -> dict[str, Any]:
         "sources_count": len(list(src_dir.glob("*.md"))) if src_dir.is_dir() else 0,
         "candidates_count": len(list(cand_dir.glob("*.md"))) if cand_dir.is_dir() else 0,
         "l2_count": len(list(global_l2.glob("*.md"))) if global_l2.is_dir() else 0,
-        "domain_skill": manifest.get("domain_id", "") if manifest else "",
-        "repo_ref": manifest.get("repo_ref", {}) if manifest else {},
+        "domain_prerequisites": domain_prereqs,
+        "repo_ref": {},
         "updated_at": fm.get("updated_at", ""),
     }
 
@@ -441,9 +443,23 @@ def aitp_bootstrap_topic(
     question: str,
     lane: str = "unspecified",
     mode: str = "explore",
+    research_intensity: str = "standard",
+    interaction_level: str = "collaborative",
 ) -> str:
-    """Create a new topic directory structure with state.md and L0/L1 scaffolds."""
+    """Create a new topic directory structure with state.md and L0/L1 scaffolds.
+
+    research_intensity: "quick" (minimal L1 — just question_contract),
+      "standard" (question + source_basis + toc_map),
+      "full" (all 6 L1 artifacts + full L4 review).
+    interaction_level: "collaborative" (full popup gates),
+      "direct" (popup only for gate transitions),
+      "silent" (no popups except promotion rejection).
+    """
     lane = _normalize_lane(lane)
+    if research_intensity not in ("quick", "standard", "full"):
+        research_intensity = "standard"
+    if interaction_level not in ("collaborative", "direct", "silent"):
+        interaction_level = "collaborative"
     safe_slug = validate_topic_slug(topic_slug)
     base = topics_dir(topics_root)
     root = base / safe_slug
@@ -470,7 +486,8 @@ def aitp_bootstrap_topic(
     # Write L0 artifact scaffolds
     for rel_name, (artifact_fm, artifact_body) in L0_ARTIFACT_TEMPLATES.items():
         _write_md(root / "L0" / rel_name, artifact_fm, artifact_body)
-    # Write L1 artifact scaffolds
+    # Write L1 artifact scaffolds — always write all for forward compat,
+    # but intensity controls which are checked by the gate.
     for rel_name, (artifact_fm, artifact_body) in L1_ARTIFACT_TEMPLATES.items():
         _write_md(root / "L1" / rel_name, artifact_fm, artifact_body)
     # Runtime surfaces: topic index and log
@@ -525,10 +542,17 @@ def aitp_bootstrap_topic(
         "research_loop_active": False,
         "research_loop_max_cycles": 0,
         "l3_mode": "research",
+        "research_intensity": research_intensity,
+        "interaction_level": interaction_level,
     }
     body = f"# {title}\n\n## Research Question\n{question}\n"
     _write_md(root / "state.md", fm, body)
-    return f"Bootstrapped topic {safe_slug} at {root}"
+    return (
+        f"Bootstrapped topic '{safe_slug}' at {root}\n"
+        f"  research_intensity: {research_intensity}\n"
+        f"  interaction_level: {interaction_level}\n"
+        f"  lane: {lane}"
+    )
 
 
 @mcp.tool()
@@ -616,6 +640,12 @@ def aitp_bind_repo(
         fm, body = _parse_md(manifest_path)
     else:
         fm, body = {}, "# Domain Manifest\n"
+
+    # Auto-detect domain_id from slug patterns if not already set
+    if not fm.get("domain_id"):
+        slug_lower = topic_slug.lower()
+        if any(p in slug_lower for p in ("librpa", "crpa", "scrpa", "qsgw", "gw-topology")):
+            fm["domain_id"] = "oh-my-librpa"
 
     fm["repo_ref"] = {
         "local_path": str(repo),
@@ -1776,6 +1806,119 @@ def aitp_promote_candidate(
 
 
 @mcp.tool()
+def aitp_fast_track_claim(
+    topics_root: str,
+    topic_slug: str,
+    claim: str,
+    evidence_summary: str,
+    source_ref: str,
+    regime_of_validity: str = "",
+    node_type: str = "result",
+    domain: str = "",
+) -> str:
+    """Fast-track a claim from L3 distillation directly to L2 promotion.
+
+    For claims already validated by literature or simple enough that formal
+    L4 adversarial review is disproportionate. Creates candidate, marks it
+    approved, and promotes to L2 in one call.
+
+    Trust basis is set to "source_grounded" (not "validated") to reflect
+    the abbreviated path. Use aitp_fast_track_claim for:
+    - Textbook or well-established results you're reproducing
+    - Claims directly traceable to a peer-reviewed source
+    - Simple correspondences or regime boundaries
+
+    Do NOT use for novel claims requiring adversarial validation.
+    """
+    root = _topic_root(topics_root, topic_slug)
+    slug = _slugify(claim)[:60]
+    candidate_id = f"fast_{slug}"
+
+    # Write candidate
+    cand_fm = {
+        "candidate_id": candidate_id,
+        "claim": claim,
+        "evidence": evidence_summary,
+        "source_ref": source_ref,
+        "regime_of_validity": regime_of_validity,
+        "candidate_type": node_type if node_type in L2_NODE_TYPES else "result",
+        "status": "approved_for_promotion",
+        "confidence": "source_grounded",
+        "created_at": _now(),
+        "domain": domain,
+    }
+    cand_body = (
+        f"# Fast-Track Claim: {claim[:80]}\n\n"
+        f"**Claim:** {claim}\n\n"
+        f"**Evidence:** {evidence_summary}\n\n"
+        f"**Source:** {source_ref}\n\n"
+        f"**Regime:** {regime_of_validity or '(unspecified)'}\n\n"
+        f"## Fast-Track Justification\n"
+        f"This claim was fast-tracked because it is either:\n"
+        f"- Already validated in peer-reviewed literature, or\n"
+        f"- A simple correspondence/regime boundary, or\n"
+        f"- A concept definition directly traceable to source\n\n"
+        f"Trust basis: source_grounded (not validated — no L4 review)\n"
+    )
+    cand_path = root / "L3" / "candidates" / f"{slug}.md"
+    _write_md(cand_path, cand_fm, cand_body)
+
+    # Promote to L2
+    global_l2 = _global_l2_path(topics_root)
+    global_l2.mkdir(parents=True, exist_ok=True)
+    l2_path = global_l2 / f"{slug}.md"
+    l2_fm = dict(cand_fm)
+    l2_fm["version"] = 1
+    l2_fm["trust_basis"] = "source_grounded"
+    l2_fm["trust_scope"] = "bounded_reusable"
+    l2_fm["updated_at"] = _now()
+    _write_md(l2_path, l2_fm, cand_body)
+
+    # Also create L2 graph node
+    try:
+        _ensure_l2_graph_dirs(topics_root)
+        node_path = global_l2 / "graph" / "nodes" / f"{slug}.md"
+        node_fm = {
+            "node_id": slug,
+            "type": node_type if node_type in L2_NODE_TYPES else "result",
+            "title": claim[:120],
+            "regime_of_validity": regime_of_validity,
+            "trust_basis": "source_grounded",
+            "trust_scope": "bounded_reusable",
+            "version": 1,
+            "source_candidate": slug,
+            "source_topic": topic_slug,
+            "mathematical_expression": "",
+            "domain": domain,
+            "created_at": _now(),
+            "updated_at": _now(),
+        }
+        node_body = (
+            f"# {claim[:120]}\n\n"
+            f"## Physical Meaning\n{claim}\n\n"
+            f"## Evidence\n{evidence_summary}\n\n"
+            f"## Source\n{source_ref}\n\n"
+            f"## Regime and Limits\n{regime_of_validity or '(unspecified)'}\n"
+        )
+        _write_md(node_path, node_fm, node_body)
+    except OSError as e:
+        _append_to_topic_log(root, f"fast_track {slug}: L2 graph node creation failed: {e}")
+
+    # Update state counters
+    state_fm, state_body = _parse_md(root / "state.md")
+    state_fm["candidates_count"] = state_fm.get("candidates_count", 0) + 1
+    _write_md(root / "state.md", state_fm, state_body)
+
+    _append_to_topic_log(root, f"fast-tracked claim '{claim[:80]}' → L2 ({slug})")
+    return (
+        f"Fast-tracked claim to L2: '{claim[:80]}...'\n"
+        f"  candidate_id: {slug}\n"
+        f"  trust_basis: source_grounded (abbreviated path)\n"
+        f"  regime: {regime_of_validity or '(unspecified)'}"
+    )
+
+
+@mcp.tool()
 def aitp_resolve_conflict(
     topics_root: str,
     topic_slug: str,
@@ -1949,6 +2092,12 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
                     "existing_claim": str(cfm.get("existing_claim", ""))[:120],
                 })
 
+    # Common metadata for all branches
+    _meta = {
+        "research_intensity": str(fm.get("research_intensity", "standard")).strip() or "standard",
+        "interaction_level": str(fm.get("interaction_level", "collaborative")).strip() or "collaborative",
+    }
+
     if stage == "L3":
         snapshot = evaluate_l3_stage(_parse_md, root, lane=fm.get("lane", "unspecified"))
         return {
@@ -1956,6 +2105,8 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
             "stage": snapshot.stage,
             "posture": snapshot.posture,
             "lane": snapshot.lane,
+            "research_intensity": _meta["research_intensity"],
+            "interaction_level": _meta["interaction_level"],
             "compute_target": str(fm.get("compute", "local")),
             "gate_status": snapshot.gate_status,
             "required_artifact_path": snapshot.required_artifact_path,
@@ -1983,6 +2134,8 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
             "stage": snapshot.stage,
             "posture": snapshot.posture,
             "lane": snapshot.lane,
+            "research_intensity": _meta["research_intensity"],
+            "interaction_level": _meta["interaction_level"],
             "compute_target": str(fm.get("compute", "local")),
             "gate_status": snapshot.gate_status,
             "required_artifact_path": snapshot.required_artifact_path,
@@ -2009,6 +2162,8 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
             "stage": snapshot.stage,
             "posture": snapshot.posture,
             "lane": snapshot.lane,
+            "research_intensity": _meta["research_intensity"],
+            "interaction_level": _meta["interaction_level"],
             "compute_target": str(fm.get("compute", "local")),
             "gate_status": snapshot.gate_status,
             "required_artifact_path": snapshot.required_artifact_path,
@@ -2036,6 +2191,8 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
             "stage": snapshot.stage,
             "posture": snapshot.posture,
             "lane": snapshot.lane,
+            "research_intensity": _meta["research_intensity"],
+            "interaction_level": _meta["interaction_level"],
             "compute_target": str(fm.get("compute", "local")),
             "gate_status": snapshot.gate_status,
             "required_artifact_path": snapshot.required_artifact_path,
@@ -2064,6 +2221,8 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
         "stage": snapshot.stage,
         "posture": snapshot.posture,
         "lane": snapshot.lane,
+        "research_intensity": _meta["research_intensity"],
+        "interaction_level": _meta["interaction_level"],
         "compute_target": str(fm.get("compute", "local")),
         "gate_status": snapshot.gate_status,
         "required_artifact_path": snapshot.required_artifact_path,
@@ -2098,6 +2257,7 @@ def aitp_session_resume(
     """
     root = _topic_root(topics_root, topic_slug)
     fm, body = _parse_md(root / "state.md")
+    domain_prereqs = resolve_domain_prerequisites(root, topic_slug)
 
     # Read last N log entries
     log_path = root / "runtime" / "log.md"
@@ -2124,7 +2284,6 @@ def aitp_session_resume(
     ]
     if last_subplane:
         summary_parts.append(f"L3 subplane={last_subplane} (mode={l3_mode})")
-        summary_parts.append(f"L3 subplane={last_subplane}")
     if snapshot.gate_status != "ready":
         summary_parts.append(f"gated by: {snapshot.missing_requirements}")
     if recent_events:
@@ -2135,10 +2294,13 @@ def aitp_session_resume(
         "stage": stage,
         "posture": fm.get("posture", snapshot.posture),
         "lane": fm.get("lane", ""),
+        "research_intensity": str(fm.get("research_intensity", "standard")).strip() or "standard",
+        "interaction_level": str(fm.get("interaction_level", "collaborative")).strip() or "collaborative",
         "l3_mode": l3_mode,
         "l3_subplane": last_subplane,
         "gate_status": snapshot.gate_status,
         "skill": snapshot.skill,
+        "domain_prerequisites": domain_prereqs,
         "required_artifact_path": snapshot.required_artifact_path,
         "missing_requirements": snapshot.missing_requirements,
         "recent_events": recent_events,
@@ -3100,6 +3262,48 @@ def aitp_set_compute_target(
             "workloads on the wrong machine."
         ),
     }
+
+
+@mcp.tool()
+def aitp_set_interaction_level(
+    topics_root: str,
+    topic_slug: str,
+    level: str,
+) -> dict[str, Any]:
+    """Change the interaction level for the current topic.
+
+    Valid levels:
+      - collaborative: full popup gates, AskUserQuestion at all decision points
+      - direct: popup gates for gate transitions only, skip discussion rounds
+      - silent: no popup gates (human override only on promotion rejection)
+
+    Use when the user says "just go ahead", "don't ask me", or wants more control.
+    """
+    valid_levels = {"collaborative", "direct", "silent"}
+    if level not in valid_levels:
+        return {
+            "message": f"Invalid interaction level '{level}'. Valid: {sorted(valid_levels)}",
+        }
+
+    root = _topic_root(topics_root, topic_slug)
+    state_path = root / "state.md"
+    fm, body = _parse_md(state_path)
+    old_level = str(fm.get("interaction_level", "collaborative")).strip() or "collaborative"
+
+    fm["interaction_level"] = level
+    fm["updated_at"] = _now()
+    _write_md(state_path, fm, body)
+    _append_to_topic_log(
+        root,
+        f"interaction level: {old_level} -> {level}",
+    )
+
+    return {
+        "message": f"Interaction level set to '{level}' (was '{old_level}').",
+        "old_level": old_level,
+        "new_level": level,
+    }
+
 
 
 @mcp.tool()

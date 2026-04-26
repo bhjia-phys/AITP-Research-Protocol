@@ -117,6 +117,19 @@ The lane (`formal_theory`, `toy_numeric`, `code_method`) affects how the agent f
 | L3 | integrate | `skill-l3-integrate.md` |
 | L3 | distill | `skill-l3-distill.md` |
 | L4 | verify | `skill-validate.md` |
+
+## Domain skills
+
+After loading the stage skill, check `brief.domain_prerequisites` — if it lists domain
+skill files, load them. Domain skills encode domain-specific invariants, validation criteria,
+and workflow lanes that the stage skill assumes are present.
+
+## Intensity and interaction awareness
+
+The execution brief returns `research_intensity` (quick/standard/full) and
+`interaction_level` (collaborative/direct/silent). Respect these:
+- Quick intensity means minimal L1, flexible L3, abbreviated L4.
+- Silent interaction means suppress all AskUserQuestion except promotion rejection.
 | L2 | promote | `skill-promote.md` |
 
 ## Conversation style

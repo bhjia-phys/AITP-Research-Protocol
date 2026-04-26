@@ -121,6 +121,12 @@ After getting the execution brief, load the matching skill:
 - L4 verify → `skill-validate.md`
 - Promote → `skill-promote.md`
 
+## Domain skills
+
+Check `brief.domain_prerequisites` — if it lists domain skill files (e.g. `skill-librpa`),
+load them after the stage skill. Domain skills encode domain-specific invariants, validation
+criteria, and workflow lanes that the stage skill assumes are present.
+
 ## Red flags (STOP if you catch yourself doing these)
 
 - "I can just answer this research question directly."

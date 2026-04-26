@@ -86,7 +86,12 @@ Before submitting a candidate via `aitp_submit_candidate`, you MUST check:
 
 When `active_distillation.md` has filled frontmatter fields `distilled_claim`
 and `evidence_summary`, plus headings `## Distilled Claim` and `## Evidence Summary`,
-the L3 flow is complete. Advance to L4 for adjudication.
+the claim is ready. Choose one of:
+
+1. **Standard path**: Submit candidate (`aitp_submit_candidate`), then advance to
+   L4 for adversarial review. Use for novel claims requiring validation.
+2. **Fast-track path**: Use `aitp_fast_track_claim` directly. Use for results
+   already validated in peer-reviewed literature or simple correspondence claims.
 
 If the current distill claim originated from an idea (e.g. via `aitp_submit_idea`),
 call `aitp_promote_idea_to_candidate` with `derivation_summary` and `evidence`

@@ -26,12 +26,15 @@ class StageSnapshot:
     l3_subplane: str = ""
     l3_mode: str = ""
     domain_prerequisites: list[str] = field(default_factory=list)
+    research_intensity: str = "standard"
+    interaction_level: str = "collaborative"
 
 
 # Domain-skill mapping: maps domain_id (from domain-manifest files) to the
 # AITP skill that encodes its conventions. New domains just add an entry here.
 DOMAIN_ID_TO_SKILL: dict[str, str] = {
     "abacus-librpa": "skill-librpa",
+    "oh-my-librpa": "skill-librpa",
 }
 
 # Legacy slug-based fallback: used when no domain manifest is present.
@@ -120,7 +123,7 @@ def resolve_domain_prerequisites(topic_root_path: Path, topic_slug: str = "") ->
     domain_ids = _detect_domains_from_contracts(topic_root_path)
     for did in domain_ids:
         skill = DOMAIN_ID_TO_SKILL.get(did)
-        if skill:
+        if skill and skill not in skills:
             skills.append(skill)
 
     # 2. State frontmatter detection
@@ -486,13 +489,13 @@ _QUESTION_STEMS = [
 
 
 def _check_question_semantic_validity(
-    fm: dict[str, object], body: str
+    fm: dict[str, object], body: str, research_intensity: str = "standard",
 ) -> list[str]:
     """Check that the bounded question is structurally well-posed.
 
     Returns a list of missing requirements (empty = valid).
-    Checks are structural, not qualitative — we don't judge whether it's
-    a "good" question, only whether it has the necessary form.
+    For quick intensity: only question stem, scope, and targets required.
+    For standard/full: also requires competing hypotheses and non-success conditions.
     """
     issues: list[str] = []
     question = str(fm.get("bounded_question", "")).strip().lower()
@@ -521,27 +524,28 @@ def _check_question_semantic_validity(
             "or calculable quantity with units or dimensionless characterization."
         )
 
-    # Competing hypotheses check
-    competing = str(fm.get("competing_hypotheses", "")).strip()
-    if not competing:
-        issues.append(
-            "competing_hypotheses must name at least one alternative hypothesis "
-            "or prior explanation. State what other answers exist and why they "
-            "might be wrong. This prevents tunnel vision."
-        )
-
-    # Non-Success Conditions check
-    if "## Non-Success Conditions" in body:
-        nsc_start = body.index("## Non-Success Conditions")
-        nsc_end = body.find("##", nsc_start + 1)
-        nsc_section = body[nsc_start:nsc_end] if nsc_end > 0 else body[nsc_start:]
-        nsc_content = nsc_section.split("\n", 1)[1].strip() if "\n" in nsc_section else ""
-        if not nsc_content or len(nsc_content) < 20:
+    # Competing hypotheses and non-success conditions are only required
+    # for standard and full intensity. Quick mode skips them.
+    if research_intensity in ("standard", "full"):
+        competing = str(fm.get("competing_hypotheses", "")).strip()
+        if not competing:
             issues.append(
-                "## Non-Success Conditions must describe at least one specific "
-                "failure mode (not generic text). Describe what would falsify "
-                "or invalidate the expected answer."
+                "competing_hypotheses must name at least one alternative hypothesis "
+                "or prior explanation. State what other answers exist and why they "
+                "might be wrong. This prevents tunnel vision."
             )
+
+        if "## Non-Success Conditions" in body:
+            nsc_start = body.index("## Non-Success Conditions")
+            nsc_end = body.find("##", nsc_start + 1)
+            nsc_section = body[nsc_start:nsc_end] if nsc_end > 0 else body[nsc_start:]
+            nsc_content = nsc_section.split("\n", 1)[1].strip() if "\n" in nsc_section else ""
+            if not nsc_content or len(nsc_content) < 20:
+                issues.append(
+                    "## Non-Success Conditions must describe at least one specific "
+                    "failure mode (not generic text). Describe what would falsify "
+                    "or invalidate the expected answer."
+                )
 
     return issues
 
@@ -624,13 +628,79 @@ _L1_CONTRACTS: list[tuple[str, str, list[str], list[str]]] = [
 ]
 
 
+# Research intensity → which L1 contracts are mandatory.
+# quick: question_contract only. standard: question_contract + source_basis
+#   + source_toc_map. full: all 6 artifacts.
+_L1_INTENSITY_CONTRACTS: dict[str, list[tuple[str, str, list[str], list[str]]]] = {
+    "quick": [
+        ("question_contract.md", "read",
+         ["bounded_question", "scope_boundaries", "target_quantities"],
+         ["## Bounded Question", "## Competing Hypotheses",
+          "## Scope Boundaries", "## Target Quantities Or Claims"]),
+    ],
+    "standard": [
+        ("question_contract.md", "read",
+         ["bounded_question", "scope_boundaries", "target_quantities"],
+         ["## Bounded Question", "## Competing Hypotheses",
+          "## Scope Boundaries", "## Target Quantities Or Claims"]),
+        ("source_basis.md", "read",
+         ["core_sources", "peripheral_sources"],
+         ["## Core Sources", "## Peripheral Sources", "## Why Each Source Matters"]),
+        ("source_toc_map.md", "read",
+         ["sources_with_toc", "total_sections", "coverage_status"],
+         ["## Per-Source TOC", "## Coverage Summary"]),
+    ],
+}
+
+# Interaction levels for mandatory discussions.
+# collaborative: full popup gates, AskUserQuestion at every decision point.
+# direct: popup gates for gate transitions only, skip discussion rounds.
+# silent: no popup gates (human override only on promotion rejection).
+INTERACTION_LEVELS = ["collaborative", "direct", "silent"]
+
+# Validation depth for L4 reviews.
+# abbreviated: dimensional_consistency + one-sentence devils_advocate.
+# full: all 5 physics checks + 5-dimension devils_advocate.
+VALIDATION_DEPTHS = ["abbreviated", "full"]
+
+# L3 activities from which a candidate can be submitted directly to L4
+# without completing the full 5-subplane sequence.
+_DIRECT_SUBMIT_ACTIVITIES = {"distill", "derive", "integrate"}
+
+
 def evaluate_l1_stage(
     parse_md: Callable[[Path], tuple[dict[str, Any], str]],
     topic_root_path: Path,
     lane: str = "unspecified",
+    research_intensity: str = "",
 ) -> StageSnapshot:
-    """Evaluate L1 gate status by checking all required artifacts."""
-    for name, posture, fields, headings in _L1_CONTRACTS:
+    """Evaluate L1 gate status. Respects research_intensity for contract selection.
+
+    If research_intensity is not explicitly passed, it is read from state.md.
+    Falls back to "standard" if not found.
+    """
+    # Resolve research_intensity: explicit arg > state.md > default
+    if not research_intensity:
+        try:
+            state_path = topic_root_path / "state.md"
+            if state_path.exists():
+                state_fm, _ = parse_md(state_path)
+                research_intensity = str(
+                    state_fm.get("research_intensity", "standard")
+                ).strip() or "standard"
+        except Exception:
+            research_intensity = "standard"
+    if research_intensity not in ("quick", "standard", "full"):
+        research_intensity = "standard"
+    # Select contracts based on research intensity
+    if research_intensity == "full":
+        contracts = _L1_CONTRACTS
+    elif research_intensity in _L1_INTENSITY_CONTRACTS:
+        contracts = _L1_INTENSITY_CONTRACTS[research_intensity]
+    else:
+        contracts = _L1_INTENSITY_CONTRACTS["standard"]
+
+    for name, posture, fields, headings in contracts:
         path = topic_root_path / "L1" / name
         if not path.exists():
             return StageSnapshot(
@@ -657,11 +727,13 @@ def evaluate_l1_stage(
                 skill=f"skill-{posture}",
             )
 
-    # Question semantic validity: check the question is genuinely well-posed
+    # Question semantic validity: check the question is genuinely well-posed.
+    # Competing hypotheses and non-success conditions are only required for
+    # standard/full intensity; quick mode skips them.
     question_path = topic_root_path / "L1" / "question_contract.md"
     if question_path.exists():
         q_fm, q_body = parse_md(question_path)
-        sem_issues = _check_question_semantic_validity(q_fm, q_body)
+        sem_issues = _check_question_semantic_validity(q_fm, q_body, research_intensity)
         if sem_issues:
             return StageSnapshot(
                 stage="L1",
@@ -672,85 +744,91 @@ def evaluate_l1_stage(
                 missing_requirements=sem_issues,
                 next_allowed_transition="L1",
                 skill="skill-read",
+                research_intensity=research_intensity,
             )
 
-    # Coverage gate: source_toc_map must indicate full extraction or explicit deferrals
-    toc_path = topic_root_path / "L1" / "source_toc_map.md"
-    if toc_path.exists():
-        toc_fm, toc_body = parse_md(toc_path)
-        cov = str(toc_fm.get("coverage_status", "")).strip().lower()
-        if cov not in ("complete", "partial_with_deferrals"):
-            return StageSnapshot(
-                stage="L1",
-                posture="read",
-                lane=lane,
-                gate_status="blocked_coverage_incomplete",
-                required_artifact_path=str(toc_path),
-                missing_requirements=[
-                    "coverage_status must be 'complete' or 'partial_with_deferrals' "
-                    f"(got '{cov or '(empty)'}'). Extract or defer all source sections."
-                ],
-                next_allowed_transition="L1",
-                skill="skill-read",
-            )
-        # If partial_with_deferrals, require at least one deferred section documented
-        if cov == "partial_with_deferrals" and "## Deferred Sections" not in toc_body:
-            return StageSnapshot(
-                stage="L1",
-                posture="read",
-                lane=lane,
-                gate_status="blocked_coverage_incomplete",
-                required_artifact_path=str(toc_path),
-                missing_requirements=[
-                    "coverage_status is 'partial_with_deferrals' but ## Deferred Sections "
-                    "heading is missing. Document which sections are deferred and why."
-                ],
-                next_allowed_transition="L1",
-                skill="skill-read",
-            )
-        # Intake quality audit: extracted sections must have non-trivial intake notes
-        intake_dir = topic_root_path / "L1" / "intake"
-        if intake_dir.is_dir():
-            extracted = toc_body.count("— status: extracted")
-            intake_notes = list(intake_dir.rglob("*.md"))
-            if extracted > 0 and len(intake_notes) < extracted:
+    # Coverage gate: only for standard/full intensity.
+    if research_intensity in ("standard", "full"):
+        toc_path = topic_root_path / "L1" / "source_toc_map.md"
+        if toc_path.exists():
+            toc_fm, toc_body = parse_md(toc_path)
+            cov = str(toc_fm.get("coverage_status", "")).strip().lower()
+            if cov not in ("complete", "partial_with_deferrals"):
                 return StageSnapshot(
                     stage="L1",
                     posture="read",
                     lane=lane,
                     gate_status="blocked_coverage_incomplete",
-                    required_artifact_path=str(intake_dir),
+                    required_artifact_path=str(toc_path),
                     missing_requirements=[
-                        f"{extracted} sections marked extracted but only "
-                        f"{len(intake_notes)} intake notes found under L1/intake/. "
-                        "Create an intake note for each extracted section via "
-                        "aitp_write_section_intake."
+                        "coverage_status must be 'complete' or 'partial_with_deferrals' "
+                        f"(got '{cov or '(empty)'}'). Extract or defer all source sections."
                     ],
                     next_allowed_transition="L1",
                     skill="skill-read",
+                    research_intensity=research_intensity,
                 )
-            # Check that intake notes for extracted sections have completeness_confidence
-            low_confidence = []
-            for note_path in intake_notes:
-                nfm, _ = parse_md(note_path)
-                conf = str(nfm.get("completeness_confidence", "")).strip().lower()
-                if conf == "low":
-                    low_confidence.append(note_path.stem)
-            if low_confidence:
+            # If partial_with_deferrals, require at least one deferred section documented
+            if cov == "partial_with_deferrals" and "## Deferred Sections" not in toc_body:
                 return StageSnapshot(
                     stage="L1",
                     posture="read",
                     lane=lane,
                     gate_status="blocked_coverage_incomplete",
-                    required_artifact_path=str(intake_dir),
+                    required_artifact_path=str(toc_path),
                     missing_requirements=[
-                        f"Low completeness_confidence in intake notes: "
-                        f"{', '.join(low_confidence[:5])}. "
-                        "Re-read these sections or explicitly defer them."
+                        "coverage_status is 'partial_with_deferrals' but ## Deferred Sections "
+                        "heading is missing. Document which sections are deferred and why."
                     ],
                     next_allowed_transition="L1",
                     skill="skill-read",
+                    research_intensity=research_intensity,
                 )
+            # Intake quality audit: extracted sections must have non-trivial intake notes
+            intake_dir = topic_root_path / "L1" / "intake"
+            if intake_dir.is_dir():
+                extracted = toc_body.count("— status: extracted")
+                intake_notes = list(intake_dir.rglob("*.md"))
+                if extracted > 0 and len(intake_notes) < extracted:
+                    return StageSnapshot(
+                        stage="L1",
+                        posture="read",
+                        lane=lane,
+                        gate_status="blocked_coverage_incomplete",
+                        required_artifact_path=str(intake_dir),
+                        missing_requirements=[
+                            f"{extracted} sections marked extracted but only "
+                            f"{len(intake_notes)} intake notes found under L1/intake/. "
+                            "Create an intake note for each extracted section via "
+                            "aitp_write_section_intake."
+                        ],
+                        next_allowed_transition="L1",
+                        skill="skill-read",
+                        research_intensity=research_intensity,
+                    )
+                # Check that intake notes for extracted sections have completeness_confidence
+                low_confidence = []
+                for note_path in intake_notes:
+                    nfm, _ = parse_md(note_path)
+                    conf = str(nfm.get("completeness_confidence", "")).strip().lower()
+                    if conf == "low":
+                        low_confidence.append(note_path.stem)
+                if low_confidence:
+                    return StageSnapshot(
+                        stage="L1",
+                        posture="read",
+                        lane=lane,
+                        gate_status="blocked_coverage_incomplete",
+                        required_artifact_path=str(intake_dir),
+                        missing_requirements=[
+                            f"Low completeness_confidence in intake notes: "
+                            f"{', '.join(low_confidence[:5])}. "
+                            "Re-read these sections or explicitly defer them."
+                        ],
+                        next_allowed_transition="L1",
+                        skill="skill-read",
+                        research_intensity=research_intensity,
+                    )
 
     return StageSnapshot(
         stage="L1",
@@ -759,6 +837,7 @@ def evaluate_l1_stage(
         gate_status="ready",
         next_allowed_transition="L3",
         skill="skill-frame",
+        research_intensity=research_intensity,
     )
 
 

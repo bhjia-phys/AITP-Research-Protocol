@@ -123,7 +123,10 @@ Advance to **distillation** when `active_integration.md` has filled frontmatter 
 `integration_statement`, `findings`, and `claim_readiness`, plus headings `## Integration Statement`,
 `## Findings`, `## Claim Readiness`, and `## Open Obligations`.
 
+**Or submit candidate directly** if one of the integrated findings is already a clear,
+self-contained claim. Use `aitp_submit_candidate` from integrate activity.
+
 ## Allowed transitions
 
-- Forward: `distillation`
+- Forward: `distillation`, candidate submission
 - Backedges: `analysis`
