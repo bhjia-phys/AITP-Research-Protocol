@@ -1636,6 +1636,7 @@ def aitp_promote_candidate(
     fm["promotion_comment"] = comment
     fm["trust_basis"] = trust_basis
     fm["trust_scope"] = trust_scope
+    fm["l2_path"] = str(l2_path)
     if fm.get("candidate_type"):
         fm["candidate_type"] = fm.get("candidate_type", "research_claim")
     if fm.get("regime_of_validity"):
@@ -2099,6 +2100,53 @@ def aitp_retreat_to_l1(topics_root: str, topic_slug: str, reason: str = "") -> _
             ],
         },
     })
+
+@mcp.tool()
+def aitp_return_to_l3_from_l4(
+    topics_root: str,
+    topic_slug: str,
+    reason: str = "post_l4_analysis",
+) -> _GateResult:
+    """Return from L4 validation to L3 analysis.
+
+    Required by SPEC S3: L4 does not write directly to L2. All L4 results
+    must flow through L3 analysis first. Sets L3 activity to integrate
+    for post-validation analysis.
+    """
+    root = _topic_root(topics_root, topic_slug)
+    state_path = root / "state.md"
+    fm, body = _parse_md(state_path)
+    current_stage = fm.get("stage", "L1")
+    if current_stage != "L4":
+        return _GateResult({
+            "message": f"Cannot return: topic is at {current_stage}, not L4."
+        })
+
+    review_dir = root / "L4" / "reviews"
+    if not review_dir.is_dir() or not list(review_dir.glob("*.md")):
+        return _GateResult({
+            "message": (
+                "No L4 reviews found. Submit at least one validation "
+                "review before returning to L3."
+            ),
+        })
+
+    fm["stage"] = "L3"
+    fm["posture"] = "derive"
+    fm["l3_activity"] = "integrate"
+    fm["returned_from_l4"] = True
+    fm["l4_return_reason"] = reason
+    fm["updated_at"] = _now()
+    _write_md(state_path, fm, body)
+    _append_to_topic_log(root, f"returned from L4 to L3/integrate: {reason}")
+    return _GateResult({
+        "message": (
+            "Returned to L3/integrate. Analyze L4 validation results, "
+            "check consistency, and decide: persist and advance, "
+            "continue iterating, revise scope, or switch lane."
+        ),
+    })
+
 
 
 # ---------------------------------------------------------------------------

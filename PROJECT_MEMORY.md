@@ -11,12 +11,27 @@ structured theoretical physics research with formal validation.
   (Markdown + YAML frontmatter).
 - `brain/state_model.py` — Gate evaluation logic, artifact templates, stage
   definitions (L0, L1, L3, L4, L5), required frontmatter fields, and heading
-  contracts. Also defines the knowledge graph types (nodes, edges, towers).
-- `skills/` — Stage-specific skill Markdown files loaded by agents.
+  contracts. Also defines the knowledge graph types (nodes, edges, towers) and
+  the domain skill registry (`DOMAIN_SKILL_REGISTRY`, `resolve_domain_prerequisites`).
+- `skills/` — Stage-specific skill Markdown files loaded by agents, plus domain
+  skills (e.g., `skill-librpa.md`) that are injected as prerequisites by the
+  execution brief when the topic matches a domain pattern.
 - `schemas/` — JSON Schema definitions for protocol objects.
 - `contracts/` — Protocol contract definitions.
 - `adapters/` — Platform-specific adapters (OpenClaw, Codex).
 - `templates/` — File templates for topics and artifacts.
+
+## Domain Skill System
+
+The execution brief includes a `domain_prerequisites` field. When a topic slug
+matches patterns in `DOMAIN_SKILL_REGISTRY` (in `state_model.py`), the
+corresponding domain skill is listed. The agent must load domain skills BEFORE
+the stage skill. Domain skills encode domain-specific conventions, invariants,
+routing, and validation requirements.
+
+Current domains:
+- `abacus-librpa` — triggered by slug patterns: `librpa`, `crpa`, `scrpa`, `qsgw`,
+  `gw-topology`. Loads `skill-librpa.md` with oh-my-LibRPA conventions.
 
 ## Key Conventions
 
