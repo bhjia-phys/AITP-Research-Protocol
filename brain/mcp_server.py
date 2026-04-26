@@ -959,37 +959,63 @@ def aitp_batch_extract_section(
 
 def _suggest_related_concepts(
     topics_root: str,
-    query_concept: str,
+    query_title: str,
     exclude_ids: list[str],
+    query_meaning: str = "",
 ) -> list[dict[str, Any]]:
-    """Find existing L2 concepts semantically similar to a new concept."""
+    """Find existing L2 concepts semantically similar using TF-IDF vectors."""
     global_l2 = _global_l2_path(topics_root)
     nodes_dir = global_l2 / "graph" / "nodes"
     if not nodes_dir.is_dir():
         return []
 
-    suggestions = []
+    # Collect all existing nodes with embeddings
+    candidates = []
     exclude = set(exclude_ids)
     for np in nodes_dir.glob("*.md"):
         nid = np.stem
         if nid in exclude:
             continue
         fm, _ = _parse_md(np)
-        title = fm.get("title", nid)
-        meaning = fm.get("physical_meaning", "") or ""
-        # Simple token overlap scoring
-        query_tokens = set(query_concept.lower().replace("-", " ").split())
-        title_tokens = set(title.lower().split())
-        overlap = query_tokens & title_tokens
-        if len(overlap) >= 2 or query_concept.lower() in title.lower():
-            suggestions.append({
-                "node_id": nid,
-                "title": title,
-                "domain": fm.get("domain", ""),
-                "type": fm.get("type", ""),
-            })
+        candidates.append({
+            "node_id": nid,
+            "title": fm.get("title", nid),
+            "domain": fm.get("domain", ""),
+            "type": fm.get("type", ""),
+            "_embedding": fm.get("_embedding", ""),
+        })
 
-    return suggestions[:5]
+    if not candidates:
+        return []
+
+    # Fit vectorizer on existing titles for vocabulary
+    existing_texts = [
+        c["title"] + " " + (fm.get("physical_meaning", "") or "")
+        for c in candidates
+        for fm in [_parse_md(global_l2 / "graph" / "nodes" / f"{c['node_id']}.md")[0]]
+    ]
+
+    try:
+        from brain.l2_embedding import embed_concept, find_similar
+        query_vec = embed_concept(query_title, query_meaning, existing_texts)
+        return find_similar(query_vec, candidates, top_k=5, threshold=0.1)
+    except Exception:
+        # Fallback to token overlap if embedding fails
+        suggestions = []
+        query_tokens = set(query_title.lower().replace("-", " ").split())
+        for c in candidates:
+            title_tokens = set(c["title"].lower().split())
+            overlap = query_tokens & title_tokens
+            if len(overlap) >= 2 or query_title.lower() in c["title"].lower():
+                suggestions.append({
+                    "node_id": c["node_id"],
+                    "title": c["title"],
+                    "domain": c["domain"],
+                    "type": c["type"],
+                    "similarity": round(len(overlap) / len(query_tokens), 2) if query_tokens else 0,
+                })
+        suggestions.sort(key=lambda x: x.get("similarity", 0), reverse=True)
+        return suggestions[:5]
 
 
 @mcp.tool()
@@ -2942,6 +2968,14 @@ def aitp_create_l2_node(
         "created_at": existing_fm.get("created_at", _now()),
         "updated_at": _now(),
     }
+    # Generate TF-IDF embedding for semantic search
+    try:
+        from brain.l2_embedding import embed_concept, encode_vector
+        vec = embed_concept(title, physical_meaning)
+        fm["_embedding"] = encode_vector(vec)
+    except Exception:
+        pass
+
     if source_candidate:
         fm["source_candidate"] = source_candidate
     # Preserve higher trust level if merging
