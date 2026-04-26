@@ -25,6 +25,30 @@ class StageSnapshot:
     skill: str = "skill-continuous"
     l3_subplane: str = ""
     l3_mode: str = ""
+    domain_prerequisites: list[str] = field(default_factory=list)
+
+
+# Domain-skill registry: maps slug substrings to mandatory domain skills.
+# When a topic_slug matches any key, the corresponding skill is injected into
+# the execution brief as a domain_prerequisite that must be loaded BEFORE the
+# stage skill.
+DOMAIN_SKILL_REGISTRY: dict[str, str] = {
+    "librpa": "skill-librpa",
+    "crpa": "skill-librpa",
+    "scrpa": "skill-librpa",
+    "qsgw": "skill-librpa",
+    "gw-topology": "skill-librpa",
+}
+
+
+def resolve_domain_prerequisites(topic_slug: str) -> list[str]:
+    """Return domain skills that must be loaded for the given topic."""
+    slug_lower = topic_slug.lower()
+    return list({
+        skill
+        for pattern, skill in DOMAIN_SKILL_REGISTRY.items()
+        if pattern in slug_lower
+    })
 
 
 def topics_dir(topics_root: str | Path) -> Path:
@@ -178,8 +202,9 @@ L1_ARTIFACT_TEMPLATES: dict[str, tuple[dict[str, Any], str]] = {
             "competing_hypotheses": "",
         },
         "# Question Contract\n\n## Bounded Question\n\n## Competing Hypotheses\n\n"
-        "## Scope Boundaries\n\n"
-        "## Target Quantities Or Claims\n\n## Non-Success Conditions\n\n## Uncertainty Markers\n",
+        "## Scope Boundaries\n\n## Forbidden Proxies\n\n"
+        "## Target Quantities Or Claims\n\n## Deliverables\n\n"
+        "## Acceptance Criteria\n\n## Non-Success Conditions\n\n## Uncertainty Markers\n",
     ),
     "source_basis.md": (
         {
@@ -210,6 +235,11 @@ L1_ARTIFACT_TEMPLATES: dict[str, tuple[dict[str, Any], str]] = {
         "equilibrium vs non-equilibrium, thermodynamic limit\n"
         "- **Notational assumptions**: sign conventions, normalization choices, "
         "index ranges, Fourier convention (factors of 2π)\n\n"
+        "## Canonical Notation\n\n"
+        "When sources disagree on notation, choose ONE canonical convention "
+        "for this topic. Record the chosen notation and justify why it was "
+        "selected over alternatives. This is the notation L3 derivations "
+        "should adopt unless there is a physics reason to switch.\n\n"
         "## Unresolved Tensions\n\n"
         "## L3 Discoveries\n\n"
         "Appended during L3 derivation as new conventions, sign choices, "
@@ -289,12 +319,19 @@ L1_INTAKE_TEMPLATE: tuple[dict[str, Any], str] = (
     "# Section Intake\n\n## Section Summary (skim)\n\n"
     "## Key Concepts\n\n## Equations Found\n\n"
     "## Physical Claims\n\n"
-    "Record each claim with its argument role:\n"
+    "Record each claim with its argument role and authority level:\n\n"
+    "Argument role:\n"
     "- **physical_principle** — follows from conservation, symmetry, causality, etc.\n"
     "- **algebraic_identity** — purely mathematical manipulation\n"
     "- **assumption** — invoked without proof; may be justified elsewhere or deferred\n"
     "- **approximation** — a controlled limit (e.g. weak coupling, large-N, low-T)\n"
     "- **conjecture** — not yet proven; may be speculative\n\n"
+    "Authority level (per claim, not blanket):\n"
+    "- **source_grounded** — directly extracted from the source with "
+    "sentence-level evidence\n"
+    "- **provisional** — agent interpretation or synthesis of multiple "
+    "source statements\n"
+    "- **tentative** — speculative connection; needs L3 derivation to confirm\n\n"
     "## Argument Structure\n\n"
     "How do the claims connect? Record the section's logical flow:\n"
     "- Claim A establishes → Claim B uses A to derive → Claim C generalizes B\n"

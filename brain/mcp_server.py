@@ -35,6 +35,7 @@ from brain.state_model import (
     evaluate_l3_stage,
     evaluate_l4_stage,
     evaluate_l5_stage,
+    resolve_domain_prerequisites,
     L0_ARTIFACT_TEMPLATES,
     L1_ARTIFACT_TEMPLATES,
     L3_ACTIVITIES,
@@ -107,7 +108,8 @@ _AGENT_BEHAVIOR_REMINDER = (
     "not compliance checklists. Evidence before claims. "
     "Derivations before conclusions. Limits before generalizations. "
     "Check compute_target before ANY code, SymPy, Lean, or numerical work "
-    " --  route heavy computation to the declared target (local/fisher/lean-remote)."
+    " --  route heavy computation to the declared target (local/fisher/lean-remote). "
+    "If domain_prerequisites is non-empty, load those skills BEFORE the stage skill."
 )
 
 
@@ -1487,8 +1489,23 @@ def aitp_request_promotion(
 
     Requires candidate status='validated' (i.e., L4 review with outcome='pass' has been submitted).
     Also verifies that an L4 pass review exists for this candidate.
+    Refuses promotion if the topic has not reached L4 stage (L1->L2 bypass guard).
     """
     root = _topic_root(topics_root, topic_slug)
+
+    # L1->L2 bypass guard: topic must be at L4 or L2 stage
+    state_fm, _ = _parse_md(root / "state.md")
+    current_stage = str(state_fm.get("stage", "")).strip()
+    if current_stage not in ("L4", "L2"):
+        return _GateResult({
+            "message": (
+                f"Promotion blocked: topic is at stage {current_stage or 'L0'}, "
+                f"not L4. Candidates must pass through the full L0->L1->L3->L4 "
+                f"pipeline before promotion to L2. Continue derivation and "
+                f"validation first."
+            ),
+        })
+
     slug = _slugify(candidate_id)
     cand_path = root / "L3" / "candidates" / f"{slug}.md"
     if not cand_path.exists():
@@ -1702,6 +1719,7 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
     root = _topic_root(topics_root, topic_slug)
     fm, _ = _parse_md(root / "state.md")
     stage = str(fm.get("stage", "L0"))
+    domain_prereqs = resolve_domain_prerequisites(topic_slug)
 
     if stage == "L3":
         snapshot = evaluate_l3_stage(_parse_md, root, lane=fm.get("lane", "unspecified"))
@@ -1718,6 +1736,7 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
             "skill": snapshot.skill,
             "l3_subplane": snapshot.l3_subplane,
             "l3_mode": snapshot.l3_mode,
+            "domain_prerequisites": domain_prereqs,
             "immediate_allowed_work": (
                 [f"edit {snapshot.required_artifact_path}"]
                 if snapshot.required_artifact_path
@@ -1741,6 +1760,7 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
             "next_allowed_transition": snapshot.next_allowed_transition,
             "skill": snapshot.skill,
             "l3_subplane": snapshot.l3_subplane,
+            "domain_prerequisites": domain_prereqs,
             "immediate_allowed_work": (
                 [f"edit {snapshot.required_artifact_path}"]
                 if snapshot.required_artifact_path
@@ -1757,6 +1777,14 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
             "stage": snapshot.stage,
             "posture": snapshot.posture,
             "lane": snapshot.lane,
+            "compute_target": str(fm.get("compute", "local")),
+            "gate_status": snapshot.gate_status,
+            "required_artifact_path": snapshot.required_artifact_path,
+            "missing_requirements": snapshot.missing_requirements,
+            "next_allowed_transition": snapshot.next_allowed_transition,
+            "skill": snapshot.skill,
+            "l3_subplane": snapshot.l3_subplane,
+            "domain_prerequisites": domain_prereqs,
             "compute_target": str(fm.get("compute", "local")),
             "gate_status": snapshot.gate_status,
             "required_artifact_path": snapshot.required_artifact_path,
@@ -1787,6 +1815,7 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
             "next_allowed_transition": snapshot.next_allowed_transition,
             "skill": snapshot.skill,
             "l3_subplane": snapshot.l3_subplane,
+            "domain_prerequisites": domain_prereqs,
             "immediate_allowed_work": (
                 [f"edit {snapshot.required_artifact_path}"]
                 if snapshot.required_artifact_path
@@ -1812,6 +1841,7 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
         "next_allowed_transition": snapshot.next_allowed_transition,
         "skill": snapshot.skill,
         "l3_subplane": snapshot.l3_subplane,
+        "domain_prerequisites": domain_prereqs,
         "physics_context": physics_context,
         "immediate_allowed_work": (
             [f"edit {snapshot.required_artifact_path}"]

@@ -196,8 +196,9 @@ L1 is NOT canonical L2 memory. The `authority_level` field is always set to
 - bypass L4 validation,
 - silently promote compiled wiki notes into reusable L2 truth.
 
-Note: the authority level tag exists in vault manifests but there is no
-runtime guard preventing downstream L2 promotion of L1 material.
+Note: as of v4.0, `aitp_request_promotion` enforces a runtime guard:
+the topic must be at L4 or L2 stage; promotion is blocked if the topic
+is still at L0/L1/L3. This prevents bypassing L4 validation.
 
 ## 1.8. Implementation Status
 
@@ -207,15 +208,22 @@ runtime guard preventing downstream L2 promotion of L1 material.
 - Reading depth tracking (`skim`/`full_read`/`multi_pass`).
 - Contradiction detection and notation tension detection, including
   internal inconsistencies and weakest-step flagging.
-- Notation regime recording (per-source, no canonical selection).
+- Notation regime recording with canonical notation selection
+  (`## Canonical Notation` in convention snapshot).
 - Derivation anchor capture with dependency graph, derivation types, and
   per-anchor assumption tracking (`derivation_anchor_map.md`).
 - Figure and diagram extraction with bridge to L2 diagram nodes.
 - Regime and validity condition tracking in section intake notes.
 - Argument structure and role classification (physical_principle,
   algebraic_identity, assumption, approximation, conjecture).
+- Per-claim authority level marking (source_grounded, provisional, tentative)
+  in section intake `## Physical Claims`.
 - Competing hypotheses gate-check in question contract.
+- Question contract content guardrails: forbidden proxies, deliverables,
+  acceptance criteria headings in template.
 - Convention backflow mechanism (`## L3 Discoveries` in convention snapshot).
+- Runtime guard: `aitp_request_promotion` blocks promotion if topic stage
+  is not L4 or L2 (prevents L1→L2 bypass).
 - Three-layer vault with manifest, schema, and flowback system.
 - Concept graph (nodes, edges, hyperedges, communities, god-nodes).
 - Source intelligence (citations, neighbors, fidelity, relevance).
@@ -226,10 +234,8 @@ runtime guard preventing downstream L2 promotion of L1 material.
 - Obsidian concept graph export.
 
 ### Not yet implemented
-- Canonical notation selection.
-- Research question contract schema validation.
-- Per-claim provisional marking (only blanket authority level exists).
-- Runtime guard preventing L1 -> L2 promotion bypass.
+- Research question contract JSON Schema validation (schema exists but
+  not enforced at gate level; gate relies on frontmatter + heading checks).
 
 ## 1.9. What L1 Should Not Do
 
