@@ -1,6 +1,4 @@
 {
   "name": "aitp",
-  "version": "0.6.0",
-  "type": "module",
-  "main": ".opencode/plugins/aitp.js"
+  "version": "0.6.0"
 }

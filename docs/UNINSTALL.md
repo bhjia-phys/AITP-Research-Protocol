@@ -1,115 +1,76 @@
 # Uninstall
 
-Remove the AITP adapter assets you installed.
+Remove AITP from your AI agents.
 
-If you also installed the runtime itself, remove it with:
-
-```bash
-python -m pip uninstall aitp-kernel
-```
-
-Contributor/local-dev editable installs still uninstall through the same `aitp`
-entrypoint because the editable package now publishes as `aitp-kernel`.
-
-## General rule
-
-There are two install modes:
-
-- preferred native install for the runtime platform;
-- compatibility install via `aitp install-agent`.
-
-Today that still means:
-
-- Claude Code: plugin skeleton plus runtime install
-- OpenCode: plugin-first repo install
-- Codex: native skill discovery plus runtime install
-
-None of these should require a custom `/aitp` command bundle for normal use.
-
-Uninstall the assets that match the mode you actually used. Do not assume that
-every platform writes the same files.
-
-If your machine is in a mixed state rather than a clean canonical install, do
-not start with uninstall. First inspect or converge the install through:
-
-- [`docs/MIGRATE_LOCAL_INSTALL.md`](MIGRATE_LOCAL_INSTALL.md)
-
-The commands below use POSIX-style `rm`. On Windows, remove the same paths with
-PowerShell `Remove-Item -Recurse -Force` or with File Explorer.
-
-## OpenClaw
+## Automatic (recommended)
 
 ```bash
-rm -rf ~/.openclaw/skills/using-aitp
-rm -rf ~/.openclaw/skills/aitp-runtime
+aitp uninstall
 ```
 
-Also remove any `aitp` MCP bridge entry from your OpenClaw configuration.
+This removes hooks, skills, MCP configs, and the CLI wrapper from all
+installed agents. It reads the install record at `~/.aitp/install-record.json`
+to know exactly what was deployed.
 
-## Codex
-
-If you installed through native skill discovery:
+Options:
 
 ```bash
-rm ~/.agents/skills/aitp
+aitp uninstall --agent claude-code    # Remove from Claude Code only
+aitp uninstall --scope project        # Remove project-level install
 ```
 
-Optionally also remove the cloned repo if you no longer want the local source:
+## Manual cleanup
+
+If `aitp uninstall` is unavailable, remove these paths manually:
+
+### Claude Code (user scope)
 
 ```bash
-rm -rf ~/.codex/aitp
+rm -rf ~/.claude/hooks/session-start.py
+rm -rf ~/.claude/hooks/compact.py
+rm -rf ~/.claude/hooks/stop.py
+rm -rf ~/.claude/hooks/run-hook.cmd
+rm -rf ~/.claude/hooks/hooks.json
+rm -rf ~/.claude/hooks/aitp-keyword-router.py
+rm -rf ~/.claude/hooks/aitp-routing-guard.py
+rm -rf ~/.claude/skills/using-aitp
+rm -rf ~/.claude/skills/aitp-runtime
 ```
 
-If you used `aitp install-agent` instead:
+Then edit `~/.claude/settings.json` to remove AITP hook blocks
+(SessionStart, UserPromptSubmit, PreToolUse blocks with `aitp` in the command).
+
+Remove the AITP entry from your MCP config (`~/.claude/mcp.json` or
+`~/.claude.json`):
 
 ```bash
-rm -rf /path/to/theory-workspace/.agents/skills/using-aitp
-rm -rf /path/to/theory-workspace/.agents/skills/aitp-runtime
+claude mcp remove aitp
 ```
 
-Also remove any `aitp` MCP registration if you added one.
-
-## Claude Code
-
-Plugin-managed install:
-
-Use the Claude Code plugin manager to uninstall or disable the `aitp` plugin.
-
-If your Claude environment keeps a local plugin checkout, remove that local
-plugin directory as well.
-
-Compatibility install:
+### Kimi Code (user scope)
 
 ```bash
-rm -rf /path/to/theory-workspace/.claude/skills/using-aitp
-rm -rf /path/to/theory-workspace/.claude/skills/aitp-runtime
-rm -f /path/to/theory-workspace/.claude/hooks/session-start
-rm -f /path/to/theory-workspace/.claude/hooks/run-hook.cmd
-rm -f /path/to/theory-workspace/.claude/hooks/hooks.json
-rm -f /path/to/theory-workspace/.claude/settings.json
+rm -rf ~/.kimi/skills/using-aitp
+rm -rf ~/.kimi/skills/aitp-runtime
 ```
 
-If you merged the compatibility hook into an existing Claude settings file
-instead of removing the whole generated file, delete only the AITP
-`SessionStart` hook block.
+Remove `[mcp.servers.aitp]` section from `~/.kimi/config.toml` and the
+`aitp` entry from `~/.kimi/mcp.json`.
 
-## OpenCode
+### Project scope
 
-Plugin-managed install:
+Same paths but under `<workspace>/.claude/` or `<workspace>/.kimi/` instead
+of `~/`.
 
-Remove `aitp@git+https://github.com/bhjia-phys/AITP-Research-Protocol.git`
-from the `plugin` array in `opencode.json`, then restart OpenCode.
-
-Compatibility install:
+### CLI wrapper
 
 ```bash
-rm -rf /path/to/theory-workspace/.opencode/skills/using-aitp
-rm -rf /path/to/theory-workspace/.opencode/skills/aitp-runtime
-rm -f /path/to/theory-workspace/.opencode/plugins/aitp.js
+rm -f ~/.local/bin/aitp        # Linux/macOS
+# or delete aitp.cmd from your Python Scripts folder on Windows
 ```
 
-Also remove any `aitp` MCP entry from the OpenCode configuration file.
+### Install record
 
-Legacy `/aitp*` command bundles are no longer the default install path. If you
-still have them from an older AITP install, remove them manually so they do not
-compete with the plugin-first route.
+```bash
+rm -f ~/.aitp/install-record.json
+```

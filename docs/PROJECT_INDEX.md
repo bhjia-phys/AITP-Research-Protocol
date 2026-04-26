@@ -313,7 +313,6 @@ Each adapter provides platform-specific integration instructions for the agent.
 | Codex (baseline) | [codex/SKILL.md](../adapters/codex/SKILL.md) | Codex CLI via `.codex/` |
 | Claude Code | [claude-code/SKILL.md](../adapters/claude-code/SKILL.md) | Claude Code via hooks |
 | OpenClaw (autonomous) | [openclaw/SKILL.md](../adapters/openclaw/SKILL.md) | OpenClaw via plugin |
-| OpenCode (plugin) | [opencode/SKILL.md](../adapters/opencode/SKILL.md) | OpenCode via `opencode.json` plugin |
 
 ---
 
@@ -357,7 +356,6 @@ Each adapter provides platform-specific integration instructions for the agent.
 | [INSTALL_CODEX.md](INSTALL_CODEX.md) | Codex |
 | [INSTALL_CLAUDE_CODE.md](INSTALL_CLAUDE_CODE.md) | Claude Code |
 | [INSTALL_OPENCLAW.md](INSTALL_OPENCLAW.md) | OpenClaw |
-| [INSTALL_OPENCODE.md](INSTALL_OPENCODE.md) | OpenCode |
 
 ### Development
 

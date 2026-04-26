@@ -1,108 +1,76 @@
 # Install Guide
 
-This is the consolidated install index for AITP.
+The single install path for AITP.
 
-## Common baseline
-
-All supported runtime surfaces share the same kernel install step:
-
-```bash
-python -m pip install aitp-kernel
-aitp --version
-aitp doctor
-```
-
-If `aitp` is not on `PATH` yet on Windows-native and you are working from a
-local checkout, use the repo-local launcher:
-
-```cmd
-scripts\aitp-local.cmd doctor
-```
-
-Common prerequisites:
+## Prerequisites
 
 - Python 3.10+
-- the runtime surface you actually want to use locally
-- Git only if you choose a repo-backed adapter or contributor workflow
-- your durable personal kernel should live under `~/.aitp/kernel`
+- Git
+- An AI agent (Claude Code, Kimi Code)
 
-The default user-facing install expects your local topic state, runtime
-projections, and private research data to live under `~/.aitp/kernel`
-(`%USERPROFILE%\\.aitp\\kernel` on Windows).
-The repo itself should stay project code, protocol, and public docs only.
-
-The runtime package currently declares `python_requires=">=3.10"` in
-`research/knowledge-hub/setup.py`.
-
-## Contributor / local-dev install
-
-If you are changing this repository itself, keep the editable install lane:
+## Install
 
 ```bash
-python -m pip install -e research/knowledge-hub
+git clone git@github.com:bhjia-phys/AITP-Research-Protocol.git
+cd AITP-Research-Protocol
+python scripts/aitp-pm.py install
+```
+
+The installer detects your installed AI agents, prompts for where to store
+research topics, and deploys hooks, skills, and MCP configs automatically.
+
+After install, the `aitp` command is available globally:
+
+```bash
+aitp doctor     # Full health check
+aitp status     # Show what's installed and file health
+```
+
+## Options
+
+```bash
+# Install for a specific agent only
+python scripts/aitp-pm.py install --agent claude-code
+
+# Project-level install (writes to workspace/.claude/ instead of ~/.claude/)
+python scripts/aitp-pm.py install --scope project
+
+# Custom topics directory
+python scripts/aitp-pm.py install --topics-root /path/to/your/topics
+```
+
+## What gets installed
+
+For Claude Code (user scope):
+- `~/.claude/hooks/` — session-start, keyword router, routing guard
+- `~/.claude/skills/using-aitp/` — routes theory requests into AITP
+- `~/.claude/skills/aitp-runtime/` — protocol execution loop
+- `~/.claude/settings.json` — hook configuration (merged, not replaced)
+- `~/.claude/mcp.json` or user MCP config — AITP MCP server registration
+
+For Kimi Code (user scope):
+- `~/.kimi/skills/using-aitp/` and `~/.kimi/skills/aitp-runtime/`
+- `~/.kimi/mcp.json` and `~/.kimi/config.toml`
+
+## Verify
+
+```bash
 aitp doctor
 ```
 
-That path is still the right one for runtime development, local patching, and
-repo-backed adapter workflows.
-Keep your day-to-day research kernel outside the repo and point local commands
-at it with `--kernel-root` when you do not want to use the default user kernel.
+Checks: Python version, dependencies, repo integrity, topics root,
+Claude Code hooks/skills/settings, Kimi Code MCP/config.
 
-## Pick your runtime
+## Agent-specific details
 
-- Codex: [`docs/INSTALL_CODEX.md`](INSTALL_CODEX.md)
-- OpenCode: [`docs/INSTALL_OPENCODE.md`](INSTALL_OPENCODE.md)
-- Claude Code: [`docs/INSTALL_CLAUDE_CODE.md`](INSTALL_CLAUDE_CODE.md)
-- OpenClaw: [`docs/INSTALL_OPENCLAW.md`](INSTALL_OPENCLAW.md)
+- [Claude Code](INSTALL_CLAUDE_CODE.md)
+- [Kimi Code](INSTALL_CLAUDE_CODE.md) — same pattern, different paths
 
-## Migration and cleanup
+Additional agent adapters are documented in `adapters/`. They are not
+yet integrated into the `aitp-pm.py` one-click installer.
 
-- older editable-install migration:
-  [`docs/MIGRATE_LOCAL_INSTALL.md`](MIGRATE_LOCAL_INSTALL.md)
-- PyPI build and publish workflow:
-  [`docs/PUBLISH_PYPI.md`](PUBLISH_PYPI.md)
-- adapter/runtime removal:
-  [`docs/UNINSTALL.md`](UNINSTALL.md)
+## Next steps
 
-## Verification
-
-After installation, run:
-
-```bash
-aitp doctor
-aitp doctor --json
-```
-
-`aitp doctor` now renders a front-door install summary for Codex, Claude Code,
-and OpenCode, while treating OpenClaw as a specialized lane.
-For Claude Code, that readiness now includes both SessionStart assets and the
-native AITP MCP registration.
-That readiness view is about install/bootstrap truth. It is not the same thing
-as deep-execution parity.
-
-For machine-readable verification, inspect:
-
-- `runtime_convergence.front_door_runtimes_converged`
-- `deep_execution_parity.baseline_status`
-- `deep_execution_parity.pending_targets`
-- `full_convergence_repair.command`
-- `runtime_support_matrix.runtimes.codex.status`
-- `runtime_support_matrix.runtimes.claude_code.status`
-- `runtime_support_matrix.runtimes.opencode.status`
-- `runtime_support_matrix.runtimes.<runtime>.remediation`
-- `runtime_support_matrix.deep_execution_parity.runtimes.<runtime>.status`
-
-If a runtime is not `ready`, use that runtime's
-`runtime_support_matrix.runtimes.<runtime>.remediation.command`, then rerun
-`runtime_support_matrix.runtimes.<runtime>.remediation.followup_command`.
-
-If a runtime is front-door `ready` but still not deep-execution equivalent to
-Codex, inspect the shared parity harness command from
-`runtime_support_matrix.deep_execution_parity.runtimes.<runtime>.acceptance_command`.
-
-Use the runtime-specific install docs above when you need platform-specific
-bootstrap details after the shared kernel install succeeds.
-
-For the shared first-run path after install verification, continue with:
-
-- [`docs/QUICKSTART.md`](QUICKSTART.md)
+After install verification, continue with:
+- [QUICKSTART.md](QUICKSTART.md) — your first research topic
+- [README.md](../README.md) — protocol overview

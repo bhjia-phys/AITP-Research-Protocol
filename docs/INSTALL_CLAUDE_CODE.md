@@ -1,176 +1,105 @@
 # Install Claude Code Adapter
 
-Claude Code should use AITP through SessionStart bootstrap plus a native AITP
-MCP server, not through `/aitp`-style command bundles.
+Claude Code uses AITP through SessionStart bootstrap plus a native AITP
+MCP server.
 
 ## Prerequisites
 
 - Claude Code installed locally
 - Python 3.10+
 
-## Install the AITP runtime
+## Install
 
-For the public install path:
-
-```bash
-python -m pip install aitp-kernel
-aitp --version
-aitp doctor
-```
-
-The runtime requirements in `research/knowledge-hub/requirements.txt` now use
-bounded version ranges rather than fully open-ended dependency specifiers.
-
-If this machine previously used an older workspace-backed editable install,
-first converge the local install:
-
-- [`docs/MIGRATE_LOCAL_INSTALL.md`](MIGRATE_LOCAL_INSTALL.md)
-
-## Preferred install
-
-Install the user-scope SessionStart assets:
+From the AITP repo:
 
 ```bash
-aitp install-agent --agent claude-code --scope user
+python scripts/aitp-pm.py install --agent claude-code
 ```
 
-Windows-native equivalent:
-
-```cmd
-scripts\aitp-local.cmd install-agent --agent claude-code --scope user
-```
-
-The intended outer behavior matches Superpowers:
-
-- SessionStart injects `using-aitp`;
-- Claude Code can call native `mcp__aitp__...` tools for structured AITP actions;
-- natural-language theory requests enter AITP before substantive work;
-- current-topic continuation and steering stay natural-language first.
-- ordinary topic work should remain in a light runtime profile unless a real
-  escalation trigger fires.
-
-This is the preferred path because Claude Code should not need a custom
-`/aitp` command vocabulary for normal AITP use. The session should already be
-inside the right routing discipline before substantial work begins.
-The same install now also writes the canonical Claude MCP registration so AITP
-runtime actions are available as native Claude tools instead of shell-only
-fallbacks.
-
-On Windows-native, the generated hook wrapper now prefers a Python
-`session-start.py` sidecar before any bash fallback, so Git Bash is no longer
-the expected default dependency for SessionStart bootstrap.
-
-## Workspace-local compatibility install
-
-If you want local copied assets inside a project workspace instead of the user
-profile:
+Or if `aitp` is already on PATH:
 
 ```bash
-aitp install-agent --agent claude-code --scope project --target-root /path/to/theory-workspace
+aitp install --agent claude-code
 ```
 
-Windows-native example:
+Options:
 
-```cmd
-scripts\aitp-local.cmd install-agent --agent claude-code --scope project --target-root D:\theory-workspace
+```bash
+aitp install --agent claude-code --scope user      # User-level (default)
+aitp install --agent claude-code --scope project    # Project-level
+aitp install --agent claude-code --topics-root /path/to/topics
 ```
 
-Windows-native user-scope alternative:
+## What gets installed
 
-```cmd
-scripts\aitp-local.cmd install-agent --agent claude-code --scope user
-```
+**User scope** (`~/.claude/`):
+- `hooks/session-start.py`, `hooks/compact.py`, `hooks/stop.py` — lifecycle hooks
+- `hooks/run-hook.cmd` — Windows hook launcher
+- `hooks/aitp-keyword-router.py` — routes theory keywords at prompt submit
+- `hooks/aitp-routing-guard.py` — prevents bypassing AITP for topic edits
+- `skills/using-aitp/SKILL.md` — entry skill for theory requests
+- `skills/aitp-runtime/SKILL.md` — protocol execution loop
+- `settings.json` — merged hook configuration (SessionStart, UserPromptSubmit, PreToolUse)
 
-This now writes:
-
-- `.claude.json`
-- `.claude/skills/using-aitp/`
-- `.claude/skills/aitp-runtime/`
-- `.claude/skills/aitp-runtime/AITP_MCP_SETUP.md`
-- `.mcp.json`
-- `.claude/hooks/session-start`
-- `.claude/hooks/session-start.py`
-- `.claude/hooks/run-hook.cmd`
-- `.claude/hooks/hooks.json`
-- `.claude/settings.json`
-
-It no longer writes `.claude/commands/aitp*.md` by default.
+**Project scope** (`<workspace>/.claude/`):
+- Same hooks and skills under the workspace
+- `.mcp.json` — MCP server registration for the project
 
 ## Verify
 
-Claude Code should now:
+```bash
+aitp doctor
+```
 
-- inject `using-aitp` at SessionStart;
-- expose an `aitp` MCP server through Claude Code's native tool layer;
-- route substantial theory work through AITP before response;
-- follow `runtime_protocol.generated.md` after routing succeeds;
-- inspect active human-choice surfaces with `aitp interaction --topic-slug <topic_slug> --json` or the native AITP MCP surface;
-- resolve formal decision points with `aitp resolve-decision ...`;
-- resolve operator checkpoints with `aitp resolve-checkpoint ...`.
+This checks:
+- Hook files present and match canonical versions
+- Skills deployed correctly
+- `settings.json` wires the expected SessionStart, UserPromptSubmit, PreToolUse hooks
+- MCP server registration is correct
+- Topics root is configured
 
-Use `aitp doctor --json` to verify not just file presence but also whether the
-Claude bootstrap assets still match the canonical hook files and whether
-`.claude/settings.json` still wires the expected SessionStart command.
-The same JSON report should show:
-
-- `runtime_support_matrix.runtimes.claude_code.status` as `ready`
-- `runtime_support_matrix.runtimes.claude_code.remediation` when the Claude
-  row needs repair
-- `claude_mcp_surface.user_mcp_server_matches_canonical` when the user-scope
-  Claude MCP registration is current
-- `claude_mcp_surface.project_mcp_server_matches_canonical` when the
-  workspace-local `.mcp.json` compatibility surface is current
-- `runtime_support_matrix.deep_execution_parity.runtimes.claude_code.status`
-  as `probe_available` once the bounded Claude runtime probe is present
-- `runtime_convergence.front_door_runtimes_converged` when the full front-door
-  adoption surface is aligned
-- `control_plane_contracts` and `control_plane_surfaces` so Claude-side
-  operators can find the unified architecture docs plus the runtime
-  audit/status commands that inspect live topics
-
-If the Claude row is not `ready`, run the command in
-`runtime_support_matrix.runtimes.claude_code.remediation.command`, then rerun
-`runtime_support_matrix.runtimes.claude_code.remediation.followup_command`.
-You can also inspect the native MCP registration directly with:
+Or inspect directly:
 
 ```bash
+ls ~/.claude/hooks/
+ls ~/.claude/skills/
 claude mcp list
 ```
 
-To run the bounded deep-execution probe explicitly:
+## How it works
 
-```bash
-python research/knowledge-hub/runtime/scripts/run_runtime_parity_acceptance.py --runtime claude_code --json
+1. **SessionStart**: Claude Code loads `using-aitp` skill at startup
+2. **UserPromptSubmit**: AITP keyword router checks if the request is theory research
+3. **PreToolUse**: Routing guard prevents Write/Edit to AITP topic files outside the protocol
+4. **MCP tools**: `mcp__aitp__aitp_*` tools available for structured protocol actions
+
+The expected UX:
+- Natural-language theory requests enter AITP before substantive work
+- `Continue this topic` routes to the current topic automatically
+- Ordinary topic work stays in a light runtime profile
+- The agent follows the protocol stages guided by `aitp_get_execution_brief`
+
+## Manual MCP setup
+
+If you prefer to wire the MCP server manually, add to `~/.claude/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "aitp": {
+      "command": "python",
+      "args": ["/path/to/AITP-Research-Protocol/brain/mcp_server.py"]
+    }
+  }
+}
 ```
 
-That report should stay limitation-heavy: it proves the SessionStart bootstrap
-receipt, native MCP availability, plus bounded AITP runtime artifacts, but it
-does not yet claim full
-live-Claude parity with the Codex baseline.
-
-Useful follow-up commands once a topic exists:
-
-```bash
-aitp capability-audit --topic-slug <topic_slug>
-aitp paired-backend-audit --topic-slug <topic_slug>
-aitp h-plane-audit --topic-slug <topic_slug>
-```
-
-After the Claude Code row is `ready`, continue with the shared first-run guide:
-
-- [`docs/QUICKSTART.md`](QUICKSTART.md)
-
-If you are migrating from an older setup, remove any legacy `.claude/commands/aitp*.md`
-bundle so SessionStart bootstrap is the only default entry.
-
-## Manual fallback
-
-If bootstrap is unavailable:
-
-```bash
-aitp session-start "<task>"
-```
+Then `/reload-plugins` in Claude Code.
 
 ## Remove
 
-See [`docs/UNINSTALL.md`](UNINSTALL.md).
+```bash
+aitp uninstall --agent claude-code
+```
+
+Or see [UNINSTALL.md](UNINSTALL.md) for manual cleanup.

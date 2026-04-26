@@ -1,193 +1,39 @@
 # Install Codex Adapter
 
-Codex should use AITP through native skill discovery, not through wrappers.
+> **Status:** Codex adapter assets exist in `adapters/` and `deploy/templates/`,
+> but Codex is not yet integrated into the `aitp-pm.py` one-click installer.
+> For now, use manual setup below.
 
-## Prerequisites
+## Manual setup
 
-- Codex CLI
-- Python 3.10+
-- Git only if you want the repo-backed contributor path
+Codex uses AITP through native skill discovery.
 
-## Install the AITP runtime
+Copy the AITP skills into Codex's skill directories:
 
-For the public install path:
-
+**Linux/macOS:**
 ```bash
-python -m pip install aitp-kernel
-aitp --version
-aitp doctor
+cp -r deploy/templates/claude-code/using-aitp.md ~/.agents/skills/using-aitp/SKILL.md
+cp -r deploy/templates/claude-code/aitp-runtime.md ~/.agents/skills/aitp-runtime/SKILL.md
 ```
 
-The runtime requirements in `research/knowledge-hub/requirements.txt` now use
-bounded version ranges rather than fully open-ended dependency specifiers.
-
-If this machine previously used an older workspace-backed editable install,
-first converge the local install:
-
-- [`docs/MIGRATE_LOCAL_INSTALL.md`](MIGRATE_LOCAL_INSTALL.md)
-
-## Preferred install
-
-Install the user-scope Codex assets directly:
-
-```bash
-aitp install-agent --agent codex --scope user
+**Windows (PowerShell):**
+```powershell
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.agents\skills\using-aitp"
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.agents\skills\aitp-runtime"
+Copy-Item deploy\templates\claude-code\using-aitp.md "$env:USERPROFILE\.agents\skills\using-aitp\SKILL.md"
+Copy-Item deploy\templates\claude-code\aitp-runtime.md "$env:USERPROFILE\.agents\skills\aitp-runtime\SKILL.md"
 ```
 
-If `aitp` is not on `PATH` yet and you are working from a local checkout of
-this repository, use the repo-local launcher instead:
-
-```cmd
-scripts\aitp-local.cmd install-agent --agent codex --scope user
-```
-
-That keeps the public Codex path clone-free: install the package once, install
-the skills, restart Codex, then let native skill discovery route the session.
-
-What this means in practice:
-
-- the user just talks naturally;
-- `using-aitp` decides whether the request must become AITP state first;
-- `aitp-runtime` is loaded only after routing succeeds;
-- ordinary topic work should stay light unless something important forces a
-  deeper runtime expansion;
-- `aitp session-start "<task>"` becomes a fallback, not the normal front door.
-
-## Repo-backed contributor path
-
-If you want repo-backed contributor instructions while you edit this
-repository itself, follow [`.codex/INSTALL.md`](../.codex/INSTALL.md).
-
-## Workspace-local compatibility install
-
-If you want workspace-local copied skills instead of a user-scope install:
-
-```bash
-aitp install-agent --agent codex --scope project --target-root /path/to/theory-workspace
-```
-
-User-scope equivalent:
-
-```bash
-aitp install-agent --agent codex --scope user
-```
-
-Windows-native example:
-
-```cmd
-scripts\aitp-local.cmd install-agent --agent codex --scope project --target-root D:\theory-workspace
-```
-
-Windows-native user-scope alternative:
-
-```cmd
-scripts\aitp-local.cmd install-agent --agent codex --scope user
-```
-
-For project scope, this writes:
-
-- `.agents/skills/using-aitp/`
-- `.agents/skills/aitp-runtime/`
-- `.agents/skills/aitp-runtime/AITP_MCP_SETUP.md`
-
-For user scope, Codex may refresh more than one skill root depending on what
-already exists on the machine:
-
-- `~/.agents/skills/using-aitp/` and `~/.agents/skills/aitp-runtime/`
-- `~/.codex/skills/using-aitp/` and `~/.codex/skills/aitp-runtime/`
-- `~/.codex-home/skills/using-aitp/` and `~/.codex-home/skills/aitp-runtime/`
-
-It no longer writes `aitp-codex` or workspace wrapper binaries by default.
-
-Important distinction:
-
-- `scripts\aitp-local.cmd` is the repo-local AITP runtime CLI fallback.
-- `scripts\aitp.cmd` is the legacy package-manager wrapper in this repository.
-- For Codex bootstrap, use `aitp ...` or `scripts\aitp-local.cmd ...`, not
-  `scripts\aitp.cmd ...`.
+Also register the AITP MCP server in your Codex MCP configuration.
 
 ## Verify
 
-Codex should now be able to:
-
-- auto-trigger `using-aitp` for natural-language theory requests;
-- treat `继续这个 topic` as current-topic continuation before asking for a slug;
-- translate steering language into durable AITP steering updates;
-- follow `runtime_protocol.generated.md` after routing succeeds;
-- inspect active human-choice surfaces with `aitp interaction --topic-slug <topic_slug> --json`;
-- resolve formal decision points with `aitp resolve-decision ...`;
-- resolve operator checkpoints with `aitp resolve-checkpoint ...`.
-
-Minimal sanity checks:
-
+Check that skills are discoverable:
 ```bash
-aitp doctor
-ls -la ~/.agents/skills
-ls -la ~/.codex/skills
-```
-
-Windows (PowerShell), if you are using the repo-local launcher:
-
-```powershell
-scripts\aitp-local.cmd doctor
-```
-
-Then inspect the skill roots and confirm `using-aitp` / `aitp-runtime` are
-present in the roots your local Codex installation actually uses:
-
-```powershell
-Get-ChildItem "$env:USERPROFILE\.agents\skills"
-Get-ChildItem "$env:USERPROFILE\.codex\skills"
-Get-ChildItem "$env:USERPROFILE\.codex-home\skills"
-```
-
-For the structured runtime view, use:
-
-```bash
-aitp doctor --json
-```
-
-That report should show:
-
-- Codex as the current baseline runtime
-- `runtime_support_matrix.runtimes.codex.status` as `ready`
-- `runtime_convergence.front_door_runtimes_converged` when the whole
-  Codex/Claude Code/OpenCode front door is aligned
-- `runtime_support_matrix.runtimes.codex.remediation` for the exact Codex
-  repair command if the row is not `ready`
-- `control_plane_contracts` and `control_plane_surfaces` for the unified
-  architecture docs plus the runtime audit/status commands for live topics
-
-If the Codex row is not `ready`, run the command in
-`runtime_support_matrix.runtimes.codex.remediation.command`, then rerun
-`runtime_support_matrix.runtimes.codex.remediation.followup_command`.
-
-Useful follow-up commands once a topic exists:
-
-```bash
-aitp capability-audit --topic-slug <topic_slug>
-aitp paired-backend-audit --topic-slug <topic_slug>
-aitp h-plane-audit --topic-slug <topic_slug>
-```
-
-After the Codex row is `ready`, continue with the shared first-run guide:
-
-- [`docs/QUICKSTART.md`](QUICKSTART.md)
-
-## Manual fallback
-
-If bootstrap does not fire, use:
-
-```bash
-aitp session-start "<task>"
-```
-
-Repo-local Windows fallback:
-
-```cmd
-scripts\aitp-local.cmd session-start "<task>"
+ls ~/.agents/skills/using-aitp/
+ls ~/.agents/skills/aitp-runtime/
 ```
 
 ## Remove
 
-See [`docs/UNINSTALL.md`](UNINSTALL.md).
+See [UNINSTALL.md](UNINSTALL.md).

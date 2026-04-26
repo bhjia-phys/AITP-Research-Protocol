@@ -1,5 +1,9 @@
 # Publish AITP To PyPI
 
+> **Status:** `aitp-kernel` is not yet published to PyPI. The packaging pipeline
+> described below is the planned workflow. Currently, AITP is installed directly
+> from the git repo via `python scripts/aitp-pm.py install`.
+
 Use this runbook when you want to ship a new public `aitp-kernel` release.
 
 ## Preconditions
