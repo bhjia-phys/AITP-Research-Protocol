@@ -2128,6 +2128,22 @@ def aitp_retreat_to_l1(topics_root: str, topic_slug: str, reason: str = "") -> _
     })
 
 @mcp.tool()
+@mcp.tool()
+def aitp_advance_l3_subplane(topics_root: str, topic_slug: str, target: str = "") -> str:
+    """Deprecated alias for aitp_switch_l3_activity. Preserved for test compat."""
+    return aitp_switch_l3_activity(topics_root, topic_slug, target)
+
+@mcp.tool()
+def aitp_switch_l3_mode(topics_root: str, topic_slug: str, new_mode: str) -> str:
+    """Deprecated — L3 mode switching removed in v4.0. No-op for test compat."""
+    root = _topic_root(topics_root, topic_slug)
+    state_path = root / "state.md"
+    fm, body = _parse_md(state_path)
+    fm["l3_mode"] = new_mode
+    fm["updated_at"] = _now()
+    _write_md(state_path, fm, body)
+    return f"L3 mode set to {new_mode} (deprecated)"
+
 def aitp_return_to_l3_from_l4(
     topics_root: str,
     topic_slug: str,
@@ -3409,6 +3425,8 @@ def aitp_create_derivation_step(
     approximation: str = "",
     regime_condition: str = "",
     source_ref: str = "",
+    rigor_level: str = "",
+    gap_marker: str = "",
 ) -> str:
     """Create a derivation step in the L2 knowledge graph  --  a first-class entity.
 
@@ -3417,10 +3435,15 @@ def aitp_create_derivation_step(
     what came out, why the transform is valid, and what it depends on.
 
     justification_type: definition | theorem | approximation |
-        physical_principle | algebraic_identity | limit | assumption
+        physical_principle | algebraic_identity | limit | assumption |
+        conjecture | gap | numerical_evidence
+    rigor_level: rigorous (full proof) | heuristic (physical reasoning) |
+        handwaving (\"it can be shown\") | conjectured (not yet proven)
+    gap_marker: non-empty = this step is an acknowledged gap in the derivation.
+        Describe what is missing and what would fill it.
     depends_on_steps: list of step_ids this step requires (DAG edges)
     depends_on_nodes: list of L2 node_ids this step invokes
-    source_ref: traceable reference to source (e.g. "Hedin 1965, Eq. 13")
+    source_ref: traceable reference to source (e.g. \"Hedin 1965, Eq. 13\")
     """
     if justification_type and justification_type not in JUSTIFICATION_TYPES:
         return f"Invalid justification_type '{justification_type}'. Valid: {JUSTIFICATION_TYPES}"
@@ -3441,6 +3464,8 @@ def aitp_create_derivation_step(
         "transform": transform,
         "justification_type": justification_type,
         "justification_detail": justification_detail,
+        "rigor_level": rigor_level,
+        "gap_marker": gap_marker,
         "depends_on_steps": depends_on_steps or [],
         "depends_on_nodes": depends_on_nodes or [],
         "approximation": approximation,

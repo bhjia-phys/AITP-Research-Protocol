@@ -804,6 +804,21 @@ def cmd_update(args) -> None:
     except (OSError, json.JSONDecodeError):
         pkg_ver = "unknown"
 
+    # Backup existing files before overwriting
+    backup_dir = INSTALL_DIR / "backups" / datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    backup_count = 0
+    for key in record["installs"]:
+        for f in record["installs"][key].get("files", []):
+            f = f.split(" (")[0]  # Strip annotations
+            p = Path(f)
+            if p.exists():
+                dest = backup_dir / p.name
+                shutil.copy2(p, dest)
+                backup_count += 1
+    if backup_count > 0:
+        print(f"Backed up {backup_count} files to {backup_dir}")
+
     for agent in agents:
         # Find all scopes installed for this agent
         agent_keys = [k for k in record["installs"] if k.startswith(f"{agent}:")]

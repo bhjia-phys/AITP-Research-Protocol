@@ -70,13 +70,29 @@ For Lean formal verification (optional, highest assurance):
 
 ### Step 4: Devil's advocate assessment (MANDATORY for pass)
 
-Before submitting pass, write a devil's advocate argument. State at least ONE specific way
-the claim could still be wrong despite all checks passing:
-- Which assumption, if violated, would break the result?
-- What experiment would falsify this claim?
-- What regime boundary has NOT been tested?
+Before submitting pass, answer ALL of the following. The MCP server blocks
+pass without non-empty `devils_advocate`. Answer each dimension:
 
-This is NOT optional. The MCP server will BLOCK pass without `devils_advocate`.
+1. **Load-bearing assumption**: Which ONE assumption, if violated,
+   would collapse the entire claim? Be specific (not "any assumption
+   could break").
+
+2. **Falsification scenario**: Describe a concrete experiment or
+   calculation that would prove the claim wrong. What observable
+   would differ? By how much?
+
+3. **Untested regime boundary**: What parameter range or physical
+   regime has NOT been checked? What could go wrong there?
+
+4. **Alternative explanation**: Could a different physical mechanism
+   produce the same result? What would distinguish them?
+
+5. **Hidden approximation**: Is there an approximation that was made
+   implicitly (e.g. thermodynamic limit, continuum limit, classical
+   treatment of nuclei) that could hide a real effect?
+
+Format as a single string with these 5 sections. The MCP server
+checks that `devils_advocate` is non-empty — fill it substantively.
 
 ### Step 5: Submit L4 review
 

@@ -876,6 +876,17 @@ L3_ACTIVITY_SKILL_MAP: dict[str, str] = {
     "distill": "skill-l3-distill",
 }
 
+# Backwards-compat: old name for L3_ACTIVITY_TEMPLATES
+L3_ARTIFACT_TEMPLATES = L3_ACTIVITY_TEMPLATES
+
+def _get_l3_config() -> dict:
+    """Deprecated — returns activity config for test compat."""
+    return {
+        'activities': L3_ACTIVITIES,
+        'skill_map': L3_ACTIVITY_SKILL_MAP,
+        'artifact_names': L3_ACTIVITY_ARTIFACT_NAMES,
+    }
+
 L3_ACTIVITY_REQUIRED_HEADINGS: dict[str, list[str]] = {
     "ideate": ["## Idea Statement", "## Motivation"],
     "plan": ["## Plan Statement", "## Derivation Route"],
@@ -886,6 +897,17 @@ L3_ACTIVITY_REQUIRED_HEADINGS: dict[str, list[str]] = {
     "integrate": ["## Integration Statement", "## Findings"],
     "distill": ["## Distilled Claim", "## Evidence Summary"],
 }
+
+# Backwards-compat: old name used by legacy tests
+L3_ARTIFACT_TEMPLATES = L3_ACTIVITY_TEMPLATES
+
+def _get_l3_config() -> dict:
+    """Deprecated — returns activity config for test compat."""
+    return {
+        'activities': L3_ACTIVITIES,
+        'skill_map': L3_ACTIVITY_SKILL_MAP,
+        'artifact_names': L3_ACTIVITY_ARTIFACT_NAMES,
+    }
 
 STUDY_CANDIDATE_TYPES = [
     "atomic_concept", "derivation_chain", "correspondence_link",
@@ -1096,6 +1118,8 @@ STEP_TEMPLATE: dict[str, Any] = {
     "transform": "",
     "justification_type": "",
     "justification_detail": "",
+    "rigor_level": "",          # rigorous | heuristic | handwaving | conjectured
+    "gap_marker": "",           # non-empty = this step is an acknowledged gap
     "depends_on_steps": [],
     "depends_on_nodes": [],
     "approximation": "",
@@ -1221,6 +1245,39 @@ def evaluate_l4_stage(
             required_artifact_path=str(review_dir / unreviewed[0]),
             missing_requirements=[f"L4 review for {u}" for u in unreviewed],
             next_allowed_transition="L3",
+            skill="skill-validate",
+        )
+
+    # Outcome-based routing: check review outcomes for differentiated handling
+    stuck_candidates = []
+    timeout_candidates = []
+    fail_candidates = []
+    for cand_path in submitted:
+        slug = cand_path.stem
+        review_path = review_dir / f"{slug}.md"
+        if review_path.exists():
+            rfm, _ = parse_md(review_path)
+            outcome = str(rfm.get("outcome", "")).strip()
+            if outcome == "stuck":
+                stuck_candidates.append(slug)
+            elif outcome == "timeout":
+                timeout_candidates.append(slug)
+            elif outcome == "fail":
+                fail_candidates.append(slug)
+
+    if stuck_candidates:
+        return StageSnapshot(
+            stage="L4", posture="verify", lane=lane,
+            gate_status="blocked_stuck",
+            required_artifact_path=str(review_dir / stuck_candidates[0]),
+            missing_requirements=[
+                f"Candidate {c} validation is STUCK. Options: "
+                f"(a) switch lane via aitp_switch_lane, "
+                f"(b) retreat to L1 and reframe, "
+                f"(c) narrow the claim scope."
+                for c in stuck_candidates
+            ],
+            next_allowed_transition="L1",
             skill="skill-validate",
         )
 
