@@ -1,17 +1,13 @@
-# AITP Specification v3
+# AITP Specification v4
 
 Status: authoritative specification, subordinate to CHARTER.md.
-Last updated: 2026-04-25.
-Version: 3.0 (brain-driven, skill-first, markdown-only, domain-skills).
+Last updated: 2026-04-26.
+Version: 4.0 (brain-driven, skill-first, file-system state, domain-skills).
 
 This document is the single specification that bridges the Charter to the
 protocol tree. Every sub-protocol must be consistent with this SPEC.
 If a conflict arises, Charter overrides SPEC, SPEC overrides sub-protocols,
 sub-protocols override implementation.
-
-**v2 changes from v1:** Brain replaces all Python orchestration with a minimal
-MCP server (~300 lines) + skill-driven workflow. All storage is Markdown with
-YAML frontmatter — no JSON, no JSONL, no paired backend. See S4, S10, S12.
 
 ---
 
@@ -47,7 +43,7 @@ AITP's role is disciplined execution: literature analysis, derivation checking,
 code execution, structured note-taking, and knowledge accumulation.
 
 Protocol requirements for Phase 1:
-- full L0-L5 layer pipeline,
+- full L0-L4 layer pipeline with L2 knowledge graph endpoint,
 - explicit human checkpoints at L2 promotion and direction changes,
 - durable topic state across sessions,
 - markdown-only storage (YAML frontmatter for structured data),
@@ -94,11 +90,14 @@ planes.
 | L2 | Canonical knowledge | Reusable, promoted results | Trusted |
 | L3 | Candidate workspace | Idea→plan→candidate pipeline | Untrusted |
 | L4 | Validation & adjudication | Explicit verification | Audit surface |
-| L5 | Writing & publication | Paper writing based on topic results | Output |
 
 **Default route:** L0 -> L1 -> L3 -> L4 -> L2
 
-**Low-risk shortcut:** L0 -> L1 -> L2 (requires explicit justification)
+**L5 (writing/publication) is removed in v4.0.** L2 is the endpoint.
+The knowledge graph itself is the output. Paper writing is the human's work.
+
+**Low-risk shortcut (Path A):** L0 -> L2 directly, via `aitp_quick_l2_concept`.
+For well-understood concepts with clear sources.
 
 **Routing rule:** The runtime may not silently skip L3 candidate formation or
 L4 validation when the protocol says they are required.
@@ -112,8 +111,8 @@ L4 validation when the protocol says they are required.
 
 The Brain plane is NOT a content layer. It does not store knowledge. It provides
 tools for the agent to read/write topic state, and injects skills that enforce
-the AITP workflow. Brain is a thin MCP server (~300 lines Python), not an
-orchestration engine.
+the AITP workflow. Brain is an MCP server providing tools for each
+protocol stage plus L2 knowledge graph operations.
 
 The Human plane does not replace protocol discipline. Human approval is a gate,
 not a substitute for validation.
@@ -175,26 +174,20 @@ not a substitute for validation.
   through L3-R. This prevents validated-but-misinterpreted results from
   entering trusted knowledge.
 
-**L5 — Writing & Publication**
-- Paper drafts, slides, and other publication artifacts.
-- Draws from L2 (validated knowledge) and L3 (new results pending review).
-- L5 outputs are NOT automatically trusted — human review required before
-  external submission.
-- See: `docs/protocols/L5_writing_protocol.md`
-
 ## S4. Brain Plane (B)
 
-The Brain is a minimal MCP server that the AI agent calls at key workflow
-points. It does NOT orchestrate. It provides tools and injects skills.
+The Brain is an MCP server providing tools for the agent to read/write
+topic state, and skills that enforce the AITP workflow. The agent calls
+tools at key workflow points, guided by skills and the execution brief.
 
 ### Brain Design Principles
 
-1. **Tools, not orchestration.** The Brain provides ~10 MCP tools. The agent
-   decides when to call them. The Brain does not run loops, queues, or
-   state machines.
-2. **Skills, not code.** Workflow logic (what to do at each layer, how to
+1. **Tools for state access.** The Brain provides ~60 MCP tools organized by
+   protocol stage (L0-L4) plus cross-cutting utilities. The agent decides
+   when to call them. The Brain does not run autonomous loops.
+2. **Skills for workflow.** Workflow logic (what to do at each layer, how to
    validate, when to promote) lives in Markdown skills that the agent reads.
-   The Brain does not encode this in Python.
+   Gate logic lives in `state_model.py` as structured checks.
 3. **Hooks for continuity.** SessionStart, Compact, and Stop hooks ensure the
    agent re-enters the correct workflow after context resets.
 
@@ -211,62 +204,71 @@ Human Researcher
 +-----------------------------------------------------+
                |
 +--------------v----------------------------------------+
-|              Brain MCP Server (~300 lines Python)      |
+|              Brain MCP Server (~5100 lines Python)    |
 |                                                       |
-|  Tools:                                               |
-|  +-- aitp_get_status: read topic state.md frontmatter |
-|  +-- aitp_update_status: update topic state           |
-|  +-- aitp_register_source: create L0 source .md       |
-|  +-- aitp_list_sources: list L0/sources/*.md          |
-|  +-- aitp_record_derivation: append to L3 derivations |
-|  +-- aitp_submit_candidate: create L3 candidate .md   |
-|  +-- aitp_request_promotion: update candidate status  |
-|  +-- aitp_get_popup: check for blockers               |
-|  +-- aitp_resolve_popup: record human choice          |
-|  +-- aitp_get_skill_context: which skill to inject    |
+|  Stage tools:                                         |
+|  +-- aitp_bootstrap_topic: create topic + scaffolds  |
+|  +-- aitp_register_source / aitp_list_sources        |
+|  +-- aitp_parse_source_toc / aitp_write_section_intake|
+|  +-- aitp_get_execution_brief: gate status + next step|
+|  +-- aitp_submit_candidate / aitp_submit_l4_review   |
+|  +-- aitp_request_promotion / aitp_promote_candidate  |
+|  +-- aitp_advance_to_l1 / _l3 / aitp_retreat_to_*    |
 |                                                       |
-|  Skills (Markdown):                                   |
-|  +-- skill-explore.md: how to discover & register     |
-|  +-- skill-intake.md: how to analyze sources           |
-|  +-- skill-derive.md: how to record derivations        |
-|  +-- skill-validate.md: how to validate candidates     |
-|  +-- skill-promote.md: when/how to promote to L2       |
-|  +-- skill-continuous.md: how to resume after break    |
+|  L2 knowledge graph:                                  |
+|  +-- aitp_query_l2_index / aitp_query_l2_graph       |
+|  +-- aitp_create_l2_node / _edge / _tower            |
+|  +-- aitp_quick_l2_concept (Path A shortcut)         |
+|                                                       |
+|  Verification:                                        |
+|  +-- aitp_verify_dimensions / _algebra / _limit       |
+|  +-- aitp_verify_derivation_step / _chain            |
+|                                                       |
+|  Skills (Markdown, 22 files):                         |
+|  +-- skill-discover.md (L0) / skill-read.md (L1)     |
+|  +-- skill-frame.md (L1) / skill-l3-*.md (L3 x8)    |
+|  +-- skill-validate.md (L4) / skill-write.md         |
+|  +-- skill-continuous.md (resume)                     |
 |                                                       |
 |  Hooks:                                               |
-|  +-- SessionStart: inject skill based on status        |
-|  +-- Compact: re-inject skill after context loss       |
-|  +-- Stop: save progress to state.md                   |
+|  +-- SessionStart: inject using-aitp skill            |
+|  +-- UserPromptSubmit: keyword routing to AITP        |
+|  +-- PreToolUse: guard against topic file bypass      |
+|  +-- Stop: save progress to state.md                  |
 +--------------+----------------------------------------+
                |
-        +------+------+------+------+------+
-        |      |      |      |      |      |
-        v      v      v      v      v      v
-      +--+  +--+  +--+  +--+  +-----+ +-----+
-      |L0|  |L1|  |L3|  |L4|  | L2  | | L5  |
-      +--+  +--+  +--+  +--+  +-----+ +-----+
-      (all Markdown with YAML frontmatter)
+        +------+------+------+------+
+        |      |      |      |      |
+        v      v      v      v      v
+      +--+  +--+  +--+  +--+  +-----+
+      |L0|  |L1|  |L3|  |L4|  | L2  |
+      +--+  +--+  +--+  +--+  +-----+
+      (Markdown with YAML frontmatter;
+       numerical data may use JSON)
 ```
 
 ### Skill Injection
 
-The Brain injects skills based on `state.md` frontmatter:
+Skills are loaded by the agent platform (Claude Code hooks, Kimi Code skills).
+The `using-aitp` skill activates on theoretical-physics requests and routes
+into the protocol. The `aitp-runtime` skill executes the stage-driven loop:
 
-| Status | Injected Skill | Agent Does |
-|--------|---------------|------------|
-| `new` | skill-explore | Search literature, register sources |
-| `sources_registered` | skill-intake | Analyze each source in depth |
-| `intake_done` | skill-derive | Perform derivations, form candidates |
-| `candidate_ready` | skill-validate | Validate candidates against evidence |
-| `validated` | skill-promote | Submit for L2 promotion |
-| `any` (after break) | skill-continuous | Resume from where left off |
+| Stage | Skill | Agent Does |
+|-------|-------|------------|
+| L0 | skill-discover | Search literature, register sources |
+| L1 (read) | skill-read | TOC-first reading, per-section intake |
+| L1 (frame) | skill-frame | Frame question, map anchors, register contradictions |
+| L3 | skill-l3-* | Flexible workspace: ideate, derive, gap-audit, connect, integrate, distill |
+| L4 | skill-validate | Adversarial review, dimensional analysis, limiting cases |
+| L2 | skill-promote | Submit for human approval, promote to L2 |
+| any (resume) | skill-continuous | Resume from `aitp_get_execution_brief` |
 
-The agent reads the injected skill and follows it. The Brain does not enforce
-compliance — the skill IS the protocol surface for that layer.
+The agent reads the injected skill and follows it. `aitp_get_execution_brief`
+is the primary orientation tool — call it before deciding what to do next.
 
 ### Brain Protocol Reference
 
-See: `docs/protocols/brain_protocol.md`
+See: `brain/PROTOCOL.md`
 
 ## S5. Human Plane (H)
 
@@ -339,15 +341,15 @@ workflow. The agent reads the appropriate skill and follows it.
 ### Workflow Cycle
 
 ```
-1. SessionStart / Compact hook fires
-2. Hook calls aitp_get_skill_context(topic_slug)
-3. Brain returns which skill to inject
-4. Agent reads the skill
-5. Agent executes the skill's instructions
-6. Agent calls MCP tools to record results
-7. Agent updates topic state via aitp_update_status
+1. SessionStart hook fires → injects using-aitp skill
+2. Agent reads using-aitp skill → routes theory requests into AITP
+3. Agent calls aitp_list_topics or aitp_bootstrap_topic
+4. Agent calls aitp_get_execution_brief → reads stage, gate, next action
+5. Agent loads the stage-appropriate skill and follows it
+6. Agent calls MCP tools to record results, create artifacts
+7. Agent calls aitp_get_execution_brief again → checks gate, advances stage
 8. If session ends: Stop hook saves progress
-9. Next session resumes from step 1
+9. Next session resumes from aitp_session_resume or aitp_get_execution_brief
 ```
 
 ### Skill Responsibilities
@@ -413,15 +415,15 @@ Topics may spawn child sub-topics and may park deferred candidates.
 
 See: `docs/protocols/followup_lifecycle.md`
 
-## S10. Markdown-Only Storage
+## S10. Storage
 
-AITP v2 stores all data as Markdown files with YAML frontmatter. There is no
-JSON, no JSONL, no paired backend. One file serves both human readability and
-structured data access.
+AITP stores **protocol state** (topic artifacts, knowledge graph, gate state)
+as Markdown files with YAML frontmatter. One file serves both human readability
+and structured data access.
 
-### Format
+### Protocol State Format
 
-Every data file follows this structure:
+Every protocol artifact follows this structure:
 
 ```markdown
 ---
@@ -435,25 +437,29 @@ created_at: 2026-04-19T10:00:00
 Human-readable content here.
 ```
 
-- **YAML frontmatter** holds structured/queryable data (what was JSON).
+- **YAML frontmatter** holds structured/queryable data.
 - **Markdown body** holds human-readable content (narrative, notes, derivations).
-- The MCP server reads frontmatter with a simple YAML parser (~10 lines).
+- The MCP server reads frontmatter with a YAML parser.
 - The agent can read the full file naturally.
 
 ### Collections
 
 For list-type data (sources, candidates, derivations), use one of:
 - **One file per item** in a directory (e.g., `L0/sources/hs-1988.md`).
-- **Single file with sections** for append-only logs (e.g., `L3/derivations.md`).
+- **Single file with sections** for append-only logs.
 
-### Why No JSON
+### Numerical Data
 
-- The paired backend (JSON + MD for the same data) doubled IO and maintenance.
+Numerical computation outputs (configs, benchmark results, scan data) may use
+JSON. These are runtime artifacts, not protocol state. Protocol state (gates,
+contracts, knowledge graph nodes) remains Markdown + YAML.
+
+### Why Markdown for Protocol State
+
 - AI agents parse Markdown as naturally as JSON.
 - YAML frontmatter is queryable and typed.
 - Humans can read and edit everything with any text editor.
-- Eliminates 60% of the v1 Python codebase (paired backend, compatibility
-  projections, JSONL parsing, etc.).
+- No paired-backend synchronization required.
 
 ## S11. Control Axes
 
@@ -463,7 +469,7 @@ The Brain uses six control axes to determine runtime behavior:
 |------|------|--------|
 | `runtime_mode` | Core driver — what the agent is doing | explore, learn, implement |
 | `transition_posture` | Core driver — how the agent transitions | forward, backedge, lateral, pause |
-| `layer` | Where the work happens | L0, L1, L2, L3, L4, L5 |
+| `layer` | Where the work happens | L0, L1, L2, L3, L4 |
 | `L3_subplane` | L3 sub-plane if relevant | ideation, planning, analysis, result_integration, distillation |
 | `lane` | Research domain | formal_theory, model_numeric, code_and_materials |
 | `task_type` | Research intent | open_exploration, conjecture_attempt, target_driven |
@@ -479,18 +485,19 @@ they load skills, configure hooks, and connect to the MCP server.
 ### Adapter Obligations
 
 1. **Connect to Brain MCP** — configure the MCP server endpoint.
-2. **Load skills at session start** — inject the skill returned by
-   `aitp_get_skill_context`.
+2. **Load skills at session start** — inject `using-aitp` and `aitp-runtime`
+   skills via platform-native mechanisms (Claude Code hooks, Kimi Code skills).
 3. **Configure hooks** — SessionStart, Compact, Stop.
-4. **Handle popups** — present blocker questions to the human.
-5. **Produce artifacts** — every AITP session must leave Markdown artifacts.
+4. **Handle popups** — present blocker questions to the human via
+   `AskUserQuestion`.
+5. **Produce artifacts** — every AITP session must leave protocol artifacts.
 6. **Respect the Charter** — may not weaken evidence, artifact, or promotion
    discipline.
 
 ### Adapter Categories
 
-1. **Platform adapters** — connect AITP to agent platforms (Claude Code, Codex,
-   OpenCode, etc.).
+1. **Platform adapters** — connect AITP to agent platforms (Claude Code,
+   Kimi Code).
 2. **Domain skills** — connect AITP to domain-specific physics capabilities
    (e.g., GW workflows, DFT codes). Domain skills are Markdown files with
    domain-specific templates and validation criteria.
@@ -540,7 +547,7 @@ All sub-protocols are organized into three domains:
 | L3 execution protocol | `docs/protocols/L3_execution_protocol.md` | Ideation, planning, candidate formation |
 | Topic notebook obligation protocol | `docs/protocols/TOPIC_NOTEBOOK_OBLIGATION_PROTOCOL.md` | Round types, obligation closure, claim-readiness, physicist-facing notebook ordering |
 | L4 validation protocol | `docs/protocols/L4_validation_protocol.md` | Validation types, trust audit |
-| L5 writing protocol | `docs/protocols/L5_writing_protocol.md` | Paper writing, publication artifacts |
+| Closed loop protocol | `docs/protocols/closed_loop_protocol.md` | L3↔L4 iterative verification loop |
 | Promotion pipeline | `docs/protocols/promotion_pipeline.md` | Promotion flow and gates |
 
 ### Interaction Domain — Cross-Cutting Protocols
@@ -555,12 +562,13 @@ All sub-protocols are organized into three domains:
 
 | Skill | File | Purpose |
 |-------|------|---------|
-| skill-explore | `skills/skill-explore.md` | How to discover literature, register sources |
-| skill-intake | `skills/skill-intake.md` | How to analyze sources in depth |
-| skill-derive | `skills/skill-derive.md` | How to record derivations, form candidates |
-| skill-validate | `skills/skill-validate.md` | How to validate candidates |
-| skill-promote | `skills/skill-promote.md` | When and how to promote to L2 |
-| skill-continuous | `skills/skill-continuous.md` | How to resume after session break |
+| skill-discover | `skills/skill-discover.md` | L0: discover and register sources |
+| skill-read | `skills/skill-read.md` | L1 read: TOC-first reading, section intake |
+| skill-frame | `skills/skill-frame.md` | L1 frame: question contract, convention snapshot |
+| skill-l3-* | `skills/skill-l3-*.md` | L3: ideate, plan, analyze, gap-audit, integrate, distill |
+| skill-validate | `skills/skill-validate.md` | L4: adversarial validation |
+| skill-promote | `skills/skill-promote.md` | L2 promotion |
+| skill-continuous | `skills/skill-continuous.md` | Resume after session break |
 
 ## S15. Execution Surface Provenance
 
@@ -605,20 +613,20 @@ aitp-v2/
 │       ├── L2_backend_interface.md    # L2 canonical knowledge
 │       ├── L3_execution_protocol.md   # L3 candidate workspace
 │       ├── L4_validation_protocol.md  # L4 validation surface
-│       ├── L5_writing_protocol.md     # L5 writing & publication
 │       ├── promotion_pipeline.md      # Promotion flow and gates
 │       ├── H_human_interaction.md     # H plane gates
 │       ├── mode_envelope_protocol.md  # 3-mode envelopes
 │       └── adapter_interface.md       # Platform adapter obligations
 ├── brain/
-│   └── mcp_server.py                  # Minimal MCP server (~300 lines)
+│   └── mcp_server.py             # MCP server (60+ tools)
 ├── skills/
-│   ├── skill-explore.md               # Explore mode instructions
-│   ├── skill-intake.md                # L1 analysis instructions
-│   ├── skill-derive.md                # Derivation workflow instructions
-│   ├── skill-validate.md              # Validation instructions
-│   ├── skill-promote.md               # Promotion instructions
-│   └── skill-continuous.md            # Session resume instructions
+│   ├── skill-discover.md              # L0 source discovery
+│   ├── skill-read.md                  # L1 TOC-first reading
+│   ├── skill-frame.md                 # L1 question framing
+│   ├── skill-l3-*.md                  # L3 flexible workspace (8 files)
+│   ├── skill-validate.md              # L4 validation
+│   ├── skill-promote.md               # L2 promotion
+│   └── skill-continuous.md            # Session resume
 ├── hooks/
 │   ├── session_start.py               # Inject skill at session start
 │   ├── compact.py                     # Re-inject skill after compaction

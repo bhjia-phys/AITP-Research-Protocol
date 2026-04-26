@@ -83,5 +83,5 @@ artifacts and passes the declared conformance checks.
 
 ## Article 10 — Adapters do not redefine the charter
 
-OpenClaw, Codex, Claude Code, OpenCode, and later agents may execute AITP, but
-they may not redefine it.
+Claude Code, Kimi Code, and later agents may execute AITP, but they may
+not redefine it.
