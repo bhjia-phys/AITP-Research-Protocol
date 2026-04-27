@@ -365,6 +365,22 @@ def _merge_claude_settings(settings_path: Path, variables: dict, remove: bool = 
             filtered.extend(aitp_entries)
             existing_hooks[event_name] = filtered
 
+    # Merge AITP MCP server into settings.json (Claude Code reads MCP from here)
+    if not remove:
+        repo_root_var = variables["REPO_ROOT"]
+        topics_root_var = variables.get("TOPICS_ROOT", "")
+        mcp_entry = {
+            "command": "python",
+            "args": [f"{repo_root_var}/brain/mcp_server.py"],
+        }
+        if topics_root_var:
+            mcp_entry["env"] = {"AITP_TOPICS_ROOT": topics_root_var}
+        settings.setdefault("mcpServers", {})["aitp"] = mcp_entry
+    else:
+        settings.get("mcpServers", {}).pop("aitp", None)
+        if not settings.get("mcpServers"):
+            settings.pop("mcpServers", None)
+
     _atomic_write(settings_path, json.dumps(settings, indent=2, ensure_ascii=False))
 
 
