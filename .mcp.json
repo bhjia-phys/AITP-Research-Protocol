@@ -2,8 +2,9 @@
   "mcpServers": {
     "aitp": {
       "command": "python",
-      "args": ["brain/mcp_server.py"],
-      "cwd": "D:/BaiduSyncdisk/repos/AITP-Research-Protocol",
+      "args": [
+        "D:/BaiduSyncdisk/repos/AITP-Research-Protocol/brain/native_mcp.py"
+      ],
       "env": {
         "AITP_TOPICS_ROOT": "D:/BaiduSyncdisk/Theoretical-Physics/research/aitp-topics"
       }
