@@ -371,7 +371,7 @@ def _merge_claude_settings(settings_path: Path, variables: dict, remove: bool = 
         topics_root_var = variables.get("TOPICS_ROOT", "")
         mcp_entry = {
             "command": "python",
-            "args": [f"{repo_root_var}/brain/mcp_server.py"],
+            "args": [f"{repo_root_var}/brain/native_mcp.py"],
         }
         if topics_root_var:
             mcp_entry["env"] = {"AITP_TOPICS_ROOT": topics_root_var}
@@ -403,7 +403,7 @@ def _write_mcp_json(mcp_path: Path, repo_root: str, topics_root: str = "", remov
     else:
         entry = {
             "command": "python",
-            "args": [f"{repo_root}/brain/mcp_server.py"],
+            "args": [f"{repo_root}/brain/native_mcp.py"],
             "cwd": repo_root,
         }
         if topics_root:
@@ -430,7 +430,7 @@ def _merge_kimi_config_toml(config_path: Path, repo_root: str, remove: bool = Fa
     section_block = (
         f'{section_header}\n'
         f'command = "python"\n'
-        f'args = ["{repo_root}/brain/mcp_server.py"]\n'
+        f'args = ["{repo_root}/brain/native_mcp.py"]\n'
     )
 
     # Remove existing section
@@ -1077,6 +1077,7 @@ def cmd_doctor(args) -> None:
     # 3. Repo files
     print(f"\n  Repo root: {REPO_ROOT}")
     critical_files = [
+        "brain/native_mcp.py",
         "brain/mcp_server.py",
         "brain/state_model.py",
         "brain/PROTOCOL.md",
