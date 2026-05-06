@@ -77,9 +77,15 @@ def evaluate_l0_stage(
                 next_allowed_transition="L0",
                 skill=skill,
             )
-        # Require at least one registered source
+        # Require at least one registered source (new dir structure or legacy .md)
         src_dir = topic_root_path / "L0" / "sources"
-        actual_count = len(list(src_dir.glob("*.md"))) if src_dir.is_dir() else 0
+        actual_count = 0
+        if src_dir.is_dir():
+            for item in src_dir.iterdir():
+                if item.is_dir() and (item / "source.md").exists():
+                    actual_count += 1
+                elif item.is_file() and item.suffix == ".md":
+                    actual_count += 1
         if actual_count < 1:
             return StageSnapshot(
                 stage="L0",
@@ -352,6 +358,107 @@ def evaluate_l1_stage(
 
 # -- L3 gate --
 
+# -- L3 cross-activity prerequisite DAG --
+# Each downstream activity requires upstream artifacts to have real
+# content, not just template scaffolding. The DAG edges are:
+#
+#   plan ──→ derive ──→ integrate ──→ distill
+#                │           ↗
+#                ├──────────┘
+#                ▼
+#           gap-audit ──────────────┘
+#
+# Activity entry is always allowed (flexible workspace), but the gate
+# reports blocked_incomplete when prerequisite content is missing,
+# and candidate submission is hard-blocked by cmd_candidate_submit().
+
+def _check_l3_cross_activity_prerequisites(
+    parse_md, topic_root_path: Path, current_activity: str,
+) -> list[str]:
+    """Check that prerequisite upstream activities have real content.
+
+    Returns list of human-readable issue strings. Empty list = all clear.
+    """
+    issues: list[str] = []
+    l3_dir = topic_root_path / "L3"
+
+    def _artifact_has_section(activity: str, heading: str, min_chars: int = 50) -> bool:
+        name = L3_ACTIVITY_ARTIFACT_NAMES.get(activity, f"active_{activity}.md")
+        path = l3_dir / activity / name
+        if not path.exists():
+            return False
+        _, body = parse_md(path)
+        return _check_heading_content(body, heading, min_chars=min_chars)
+
+    def _artifact_path(activity: str) -> Path:
+        name = L3_ACTIVITY_ARTIFACT_NAMES.get(activity, f"active_{activity}.md")
+        return l3_dir / activity / name
+
+    def _artifact_body(activity: str) -> str:
+        path = _artifact_path(activity)
+        if not path.exists():
+            return ""
+        _, body = parse_md(path)
+        return body
+
+    # --- derive requires plan ---
+    if current_activity in ("derive",):
+        if not _artifact_has_section("plan", "## Derivation Route", min_chars=50):
+            issues.append(
+                "Plan artifact has empty or missing '## Derivation Route'. "
+                "Without a derivation route, derivation lacks strategic direction."
+            )
+
+    # --- gap-audit requires derive ---
+    if current_activity in ("gap-audit",):
+        if not _artifact_has_section("derive", "## Derivation Chains", min_chars=50):
+            issues.append(
+                "Derive artifact has empty or missing '## Derivation Chains'. "
+                "Gap audit requires derivation content to audit."
+            )
+
+    # --- integrate requires derive AND gap-audit ---
+    if current_activity in ("integrate",):
+        if not _artifact_has_section("derive", "## Derivation Chains", min_chars=50):
+            issues.append(
+                "Derive artifact has empty or missing '## Derivation Chains'. "
+                "Integration requires derivation content to integrate."
+            )
+        if not _artifact_has_section("gap-audit", "## Correspondence Check", min_chars=30):
+            issues.append(
+                "Gap-audit '## Correspondence Check' is empty or missing. "
+                "Integration without correspondence checks risks accepting "
+                "results that fail known limits."
+            )
+
+    # --- distill requires integrate AND gap-audit ---
+    if current_activity in ("distill",):
+        if not _artifact_has_section("integrate", "## Findings", min_chars=50):
+            issues.append(
+                "Integrate '## Findings' is empty or missing. "
+                "Distillation requires findings to distill."
+            )
+        if not _artifact_has_section("gap-audit", "## Correspondence Check", min_chars=30):
+            issues.append(
+                "Gap-audit '## Correspondence Check' is empty or missing. "
+                "Distillation without correspondence checks risks promoting "
+                "results that fail known limits."
+            )
+
+    # --- blocked_incomplete: derive work done but zero candidates ---
+    if current_activity in ("integrate", "distill"):
+        cand_dir = l3_dir / "candidates"
+        candidates = list(cand_dir.glob("*.md")) if cand_dir.is_dir() else []
+        if not candidates and _artifact_has_section("derive", "## Derivation Chains", min_chars=80):
+            issues.append(
+                "Derivation work appears complete but no candidates have been "
+                "submitted. Create a candidate via 'aitp derive pack' before "
+                "proceeding to L4."
+            )
+
+    return issues
+
+
 def evaluate_l3_stage(
     parse_md: Callable[[Path], tuple[dict[str, Any], str]],
     topic_root_path: Path,
@@ -428,6 +535,23 @@ def evaluate_l3_stage(
     steps_dir = topic_root_path / "L2" / "graph" / "steps"
     if steps_dir.exists():
         derivation_count = len(list(steps_dir.glob("*.md")))
+
+    # Cross-activity prerequisite check:
+    # Flexible workspace allows entering any activity, but the gate reports
+    # blocked_incomplete when upstream artifacts lack real content.
+    cross_issues = _check_l3_cross_activity_prerequisites(
+        parse_md, topic_root_path, current_activity,
+    )
+    if cross_issues:
+        return StageSnapshot(
+            stage="L3", posture="derive", lane=lane,
+            gate_status="blocked_incomplete",
+            required_artifact_path="",
+            missing_requirements=cross_issues,
+            next_allowed_transition="",
+            skill=skill,
+            l3_subplane=current_activity, l3_mode="",
+        )
 
     # Build domain constraints from domain manifest + domain skill
     domain_constraints = {}
