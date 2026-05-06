@@ -767,21 +767,39 @@ def aitp_register_source(
     regime: str = "",
     source_role: str = "direct_dependency",
     epistemic_tier: str = "",
+    source_url: str = "",
+    source_path: str = "",
 ) -> str:
-    """Register a source in L0. Dispatches to CLI source add."""
+    """Register a source in L0. Creates per-source directory with original/ subdir.
+
+    The source directory structure:
+      L0/sources/<source_id>/
+        source.md          ← metadata + reading notes
+        original/          ← preserved original files (downloaded or copied)
+
+    Args:
+        source_url: Download URL for the original source file (arxiv tarball, etc.)
+        source_path: Local file/directory path to copy into original/
+    """
     from brain.cli._dispatch_helpers import dispatch
     from brain.cli.commands.source import cmd_source_add
 
     result = dispatch(cmd_source_add,
         topic=topic_slug, id=source_id, title=title or source_id,
         type=source_type, role=source_role, notes=notes,
+        url=source_url, path=source_path,
         success_msg=f"Registered source {_slugify(source_id)}")
 
-    # Enrich with extra metadata fields (CLI doesn't handle these yet)
-    if arxiv_id or fidelity or physical_system or method_category or regime or epistemic_tier:
+    # Enrich with extra metadata fields
+    if arxiv_id or fidelity != "arxiv_preprint" or physical_system or method_category or regime or epistemic_tier:
         root = _topic_root(topics_root, topic_slug)
         slug = _slugify(source_id)
-        path = root / "L0" / "sources" / f"{slug}.md"
+        # New directory structure: L0/sources/<slug>/source.md
+        source_dir = root / "L0" / "sources" / slug
+        path = source_dir / "source.md"
+        # Fall back to legacy flat file
+        if not path.exists():
+            path = root / "L0" / "sources" / f"{slug}.md"
         if path.exists():
             fm, body = _parse_md(path)
             if arxiv_id: fm["arxiv_id"] = arxiv_id
@@ -803,9 +821,35 @@ def aitp_list_sources(topics_root: str, topic_slug: str) -> list[dict[str, Any]]
     if not src_dir.is_dir():
         return []
     results = []
+    seen: set[str] = set()
+    # New directory structure: L0/sources/<slug>/source.md
+    for d in sorted(src_dir.iterdir()):
+        if d.is_dir():
+            sf = d / "source.md"
+            if sf.exists():
+                fm, _ = _parse_md(sf)
+                sid = fm.get("source_id", d.name)
+                seen.add(sid)
+                results.append({
+                    "source_id": sid,
+                    "title": fm.get("title", ""),
+                    "type": fm.get("type", ""),
+                    "arxiv_id": fm.get("arxiv_id", ""),
+                    "original_files": fm.get("original_files", []),
+                })
+    # Legacy flat files: L0/sources/<slug>.md
     for path in sorted(src_dir.glob("*.md")):
         fm, _ = _parse_md(path)
-        results.append({"source_id": fm.get("source_id", path.stem), "title": fm.get("title", ""), "type": fm.get("type", ""), "arxiv_id": fm.get("arxiv_id", "")})
+        sid = fm.get("source_id", path.stem)
+        if sid not in seen:
+            seen.add(sid)
+            results.append({
+                "source_id": sid,
+                "title": fm.get("title", ""),
+                "type": fm.get("type", ""),
+                "arxiv_id": fm.get("arxiv_id", ""),
+                "original_files": [],
+            })
     return results
 
 

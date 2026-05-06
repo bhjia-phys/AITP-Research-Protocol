@@ -86,12 +86,23 @@ def _parse_md(path: Path) -> tuple[dict[str, Any], str]:
 def _esc(text: str) -> str:
     """Escape plain text for LaTeX and convert Unicode math chars.
 
-    Applies _sanitize_unicode first, then escapes LaTeX special chars
-    outside math mode.
+    Escapes TeX special chars first, then converts Unicode math chars
+    to $...$ wrappers (after escaping, so $ are not double-escaped).
     """
     if not text:
         return text
+    # Step 1: escape TeX special chars (on raw text, before $ are added)
+    # We skip $ itself — sanitize_unicode will add proper $...$ wrappers later
+    text = _esc_tex_special(text)
+    # Step 2: convert Unicode to LaTeX math (adds $...$)
     text = _sanitize_unicode(text)
+    return text
+
+
+def _esc_tex_special(text: str) -> str:
+    """Escape TeX special characters (except $, which sanitize_unicode adds)."""
+    if not text:
+        return text
     result: list[str] = []
     i = 0
     while i < len(text):
@@ -106,7 +117,8 @@ def _esc(text: str) -> str:
         elif ch == '%':
             result.append(r"\%")
         elif ch == '$':
-            result.append(r"\$")
+            # Do NOT escape $ — _sanitize_unicode adds proper $...$ wrappers
+            result.append(ch)
         elif ch == '#':
             result.append(r"\#")
         elif ch == '_':
@@ -344,16 +356,38 @@ def _render_research_question(topic_root: Path) -> str:
 def _render_source_landscape(topic_root: Path) -> str:
     src_dir = topic_root / "L0" / "sources"
     sources: list[dict] = []
+    seen: set[str] = set()
     if src_dir.is_dir():
+        # New directory structure: L0/sources/<slug>/source.md
+        for d in sorted(src_dir.iterdir()):
+            if d.is_dir():
+                sf = d / "source.md"
+                if sf.exists():
+                    fm, _ = _parse_md(sf)
+                    sid = fm.get("source_id", d.name)
+                    seen.add(sid)
+                    sources.append({
+                        "id": sid,
+                        "title": fm.get("title", d.name),
+                        "source_type": fm.get("type", ""),
+                        "fidelity": fm.get("fidelity", ""),
+                        "role": fm.get("role", ""),
+                        "original_files": fm.get("original_files", []),
+                    })
+        # Legacy flat .md files (for topics not yet migrated)
         for sp in sorted(src_dir.glob("*.md")):
             fm, _ = _parse_md(sp)
-            sources.append({
-                "id": sp.stem,
-                "title": fm.get("title", sp.stem),
-                "source_type": fm.get("source_type", ""),
-                "fidelity": fm.get("fidelity", ""),
-                "relation": fm.get("relation", ""),
-            })
+            sid = fm.get("source_id", sp.stem)
+            if sid not in seen:
+                seen.add(sid)
+                sources.append({
+                    "id": sid,
+                    "title": fm.get("title", sp.stem),
+                    "source_type": fm.get("type", ""),
+                    "fidelity": fm.get("fidelity", ""),
+                    "role": fm.get("role", ""),
+                    "original_files": [],
+                })
 
     lines: list[str] = []
     lines.append(r"\section{Source Landscape}")
@@ -362,17 +396,17 @@ def _render_source_landscape(topic_root: Path) -> str:
         lines.append(r"\textit{(No sources registered.)}")
         return "\n".join(lines)
 
-    lines.append(r"\begin{longtable}{>{\raggedright}p{3cm} p{5cm} p{2cm} p{2.5cm}}")
+    lines.append(r"\begin{longtable}{>{\raggedright}p{3cm} p{5cm} p{1.5cm} p{2.5cm}}")
     lines.append(r"\toprule")
-    lines.append(r"\textbf{Source} & \textbf{Title} & \textbf{Type} & \textbf{Fidelity} \\")
+    lines.append(r"\textbf{Source} & \textbf{Title} & \textbf{Type} & \textbf{Role/Fidelity} \\")
     lines.append(r"\midrule")
     lines.append(r"\endhead")
     for s in sources[:50]:
         sid = _esc(s["id"][:40])
         title = _esc((s["title"] or s["id"])[:80])
         stype = _esc(s.get("source_type", "")[:20])
-        fidelity = _esc(s.get("fidelity", "")[:20])
-        lines.append(f"{sid} & {title} & {stype} & {fidelity} \\\\")
+        role_fid = _esc((s.get("role", "") + "/" + s.get("fidelity", ""))[:25])
+        lines.append(f"{sid} & {title} & {stype} & {role_fid} \\\\")
     lines.append(r"\bottomrule")
     lines.append(r"\end{longtable}")
     return "\n".join(lines)
