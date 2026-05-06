@@ -84,9 +84,14 @@ def _parse_md(path: Path) -> tuple[dict[str, Any], str]:
 # ── LaTeX escaping ───────────────────────────────────────────────────────
 
 def _esc(text: str) -> str:
-    """Escape plain text for LaTeX.  Does NOT escape inside math mode."""
+    """Escape plain text for LaTeX and convert Unicode math chars.
+
+    Applies _sanitize_unicode first, then escapes LaTeX special chars
+    outside math mode.
+    """
     if not text:
         return text
+    text = _sanitize_unicode(text)
     result: list[str] = []
     i = 0
     while i < len(text):
@@ -126,32 +131,113 @@ def _esc(text: str) -> str:
     return "".join(result)
 
 
+# ── Unicode to LaTeX converter ───────────────────────────────────────────
+
+# Map of Unicode math/special chars to LaTeX commands
+# Two versions: with $ wrapper (for outside math mode) and without (for inside)
+_UNICODE_TO_LATEX_OUTSIDE: dict[str, str] = {}
+_UNICODE_TO_LATEX_INSIDE: dict[str, str] = {}
+
+for _k, _v in [
+    # Greek lowercase
+    ("α", "\\alpha"), ("β", "\\beta"), ("γ", "\\gamma"),
+    ("δ", "\\delta"), ("ε", "\\varepsilon"), ("ζ", "\\zeta"),
+    ("η", "\\eta"), ("θ", "\\theta"), ("ι", "\\iota"),
+    ("κ", "\\kappa"), ("λ", "\\lambda"), ("μ", "\\mu"),
+    ("ν", "\\nu"), ("ξ", "\\xi"), ("π", "\\pi"),
+    ("ρ", "\\rho"), ("σ", "\\sigma"), ("τ", "\\tau"),
+    ("υ", "\\upsilon"), ("φ", "\\phi"), ("χ", "\\chi"),
+    ("ψ", "\\psi"), ("ω", "\\omega"),
+    # Greek uppercase
+    ("Γ", "\\Gamma"), ("Δ", "\\Delta"), ("Θ", "\\Theta"),
+    ("Λ", "\\Lambda"), ("Ξ", "\\Xi"), ("Π", "\\Pi"),
+    ("Σ", "\\Sigma"), ("Φ", "\\Phi"), ("Ψ", "\\Psi"),
+    ("Ω", "\\Omega"),
+    # Math operators and symbols
+    ("∂", "\\partial"), ("∇", "\\nabla"), ("∫", "\\int"),
+    ("∑", "\\sum"), ("∏", "\\prod"),
+    ("∞", "\\infty"), ("≈", "\\approx"), ("≡", "\\equiv"),
+    ("≠", "\\neq"), ("≤", "\\leq"), ("≥", "\\geq"),
+    ("±", "\\pm"), ("×", "\\times"), ("·", "\\cdot"),
+    ("→", "\\to"), ("←", "\\leftarrow"), ("↔", "\\leftrightarrow"),
+    ("⇒", "\\Rightarrow"), ("⇐", "\\Leftarrow"),
+    ("∈", "\\in"), ("∉", "\\notin"), ("⊂", "\\subset"),
+    ("⊃", "\\supset"), ("∪", "\\cup"), ("∩", "\\cap"),
+    ("∧", "\\land"), ("∨", "\\lor"), ("∀", "\\forall"),
+    ("∃", "\\exists"), ("∄", "\\nexists"),
+    ("⟨", "\\langle"), ("⟩", "\\rangle"),
+    ("ħ", "\\hbar"), ("ℏ", "\\hbar"),
+    # Subscripts
+    ("₀", "_0"), ("₁", "_1"), ("₂", "_2"),
+    ("₃", "_3"), ("₄", "_4"), ("₅", "_5"),
+    # Superscripts
+    ("⁰", "^0"), ("¹", "^1"), ("²", "^2"),
+    ("³", "^3"), ("⁴", "^4"), ("⁵", "^5"),
+    ("⁻", "^-"), ("⁺", "^+"),
+    ("ᵀ", "^T"),
+    # Special
+    ("−", "-"),  # Unicode minus → ASCII minus
+    ("†", "\\dagger"), ("…", "\\dots"),
+    ("√", "\\sqrt{}"),
+    # Combining chars (accent-like)
+    ("̂", "^"),  # combining circumflex
+]:
+    _UNICODE_TO_LATEX_OUTSIDE[_k] = "$" + _v + "$"
+    _UNICODE_TO_LATEX_INSIDE[_k] = _v
+
+
+def _sanitize_unicode(text: str) -> str:
+    """Replace Unicode math/special chars with LaTeX commands.
+
+    Handles chars both inside and outside $...$ math spans.
+    Unmapped non-ASCII chars (emoji, etc.) are stripped.
+    """
+    result: list[str] = []
+    in_math = False
+    for ch in text:
+        if ch == '$':
+            in_math = not in_math
+            result.append(ch)
+        elif in_math and ch in _UNICODE_TO_LATEX_INSIDE:
+            result.append(_UNICODE_TO_LATEX_INSIDE[ch])
+        elif not in_math and ch in _UNICODE_TO_LATEX_OUTSIDE:
+            result.append(_UNICODE_TO_LATEX_OUTSIDE[ch])
+        elif ord(ch) < 128:
+            # ASCII — pass through
+            result.append(ch)
+        elif ord(ch) in (0x2013, 0x2014, 0x2018, 0x2019, 0x201C, 0x201D):
+            # Smart quotes and dashes — keep (handled by inputenc)
+            result.append(ch)
+        else:
+            # Non-ASCII, unmapped (emoji, CJK, etc.) — strip silently
+            pass
+    return "".join(result)
+
+
 # ── Markdown body to LaTeX (pandoc fallback) ─────────────────────────────
 
-def _md_body_to_latex(body_text: str, max_chars: int = 8000) -> str:
-    """Convert a Markdown body to LaTeX via pandoc.  Falls back to verbatim.
+def _md_body_to_latex(body_text: str, max_chars: int = 6000) -> str:
+    """Render Markdown body as verbatim LaTeX.
 
-    Truncates input to max_chars to prevent notebook bloat from very large
-    artifact bodies (e.g. detailed derivation traces).
+    Uses verbatim to guarantee correct compilation.  AI polishes
+    the verbatim blocks into proper LaTeX tables/lists/equations
+    as part of the notebook readability step.
+
+    Truncates input to max_chars to prevent notebook bloat.
     """
     if not body_text.strip():
         return ""
-    # Truncate to keep notebook size manageable
-    truncated = body_text[:max_chars]
-    if len(body_text) > max_chars:
-        truncated += "\n\n*(Content truncated — see source artifact for full text.)*"
-    try:
-        result = subprocess.run(
-            ["pandoc", "--from", "markdown", "--to", "latex",
-             "--no-highlight", "--wrap=none"],
-            input=truncated, capture_output=True, text=True, timeout=30,
-            encoding="utf-8",
-        )
-        if result.returncode == 0:
-            return result.stdout.strip()
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        pass
-    return "\\begin{verbatim}\n" + truncated + "\n\\end{verbatim}"
+    # Sanitize Unicode
+    cleaned = _sanitize_unicode(body_text)
+    # Truncate
+    if len(cleaned) > max_chars:
+        cleaned = cleaned[:max_chars] + "\n\n*(Content truncated — see source artifact for full text.)*"
+    # Use verbatim for reliable compilation
+    return (
+        r"\begin{verbatim}" + "\n"
+        + cleaned + "\n"
+        + r"\end{verbatim}"
+    )
 
 
 # ── Section hash tracking ────────────────────────────────────────────────
@@ -646,13 +732,13 @@ def _render_execution_provenance(topic_root: Path) -> str:
     log_lines = [l for l in body.strip().split("\n") if l.strip()]
     recent = "\n".join(log_lines[-40:]) if len(log_lines) > 40 else body.strip()
 
-    # Use verbatim for log content — cleaner than pandoc conversion
+    # Use verbatim for log content
     lines: list[str] = []
     lines.append(r"\section{Execution Provenance}")
     lines.append("")
     lines.append(r"{\footnotesize")
     lines.append(r"\begin{verbatim}")
-    lines.append(recent[:8000])
+    lines.append(_sanitize_unicode(recent[:8000]))
     lines.append(r"\end{verbatim}")
     lines.append(r"}")
     return "\n".join(lines)
@@ -675,7 +761,32 @@ _SECTION_RENDERERS = {
 }
 
 
-# ── Public API ───────────────────────────────────────────────────────────
+# ── Template-based full document assembly ──────────────────────────────
+
+def _resolve_template(topic_root: Path, template_path: Path | None) -> Path:
+    if template_path is not None:
+        return template_path
+    repo_root = Path(__file__).resolve().parent.parent
+    p = repo_root / "templates" / "flow_notebook.tex"
+    if p.exists():
+        return p
+    return topic_root.parent.parent / "templates" / "flow_notebook.tex"
+
+
+def _fill_template_placeholders(template_text: str, topic_root: Path) -> str:
+    """Replace {{PLACEHOLDER}} in template with values from topic state."""
+    state_path = topic_root / "state.md"
+    fm, _ = _parse_md(state_path)
+
+    title = fm.get("title", topic_root.name)
+    lane = fm.get("lane", "unspecified")
+    mode = fm.get("posture", fm.get("stage", "?"))
+
+    return (template_text
+            .replace("{{TOPIC_TITLE}}", _esc(str(title)))
+            .replace("{{MODE}}", _esc(str(mode)))
+            .replace("{{LANE}}", _esc(str(lane))))
+
 
 def build_notebook(
     topic_root: Path,
@@ -685,34 +796,47 @@ def build_notebook(
 ) -> tuple[str, list[str]]:
     """Build (or rebuild) the flow notebook.
 
+    Always assembles the document from the clean template — never uses
+    existing notebook as base (avoids corruption propagation).
+
     Args:
         topic_root: Path to the topic directory.
         template_path: Path to the LaTeX template.  Auto-detected if None.
-        changed_sections: Explicit list of sections to regenerate.  If None,
-            hashes are checked to determine what changed.
-        force_full: If True, regenerate every section regardless of hashes.
+        changed_sections: Explicit sections to regenerate.  If None, hashes
+            determine what changed.
+        force_full: If True, regenerate every section.
 
     Returns:
         (notebook_text, list_of_regenerated_sections)
     """
-    if template_path is None:
-        # Auto-detect template relative to this file's repo root
-        repo_root = Path(__file__).resolve().parent.parent
-        template_path = repo_root / "templates" / "flow_notebook.tex"
-        if not template_path.exists():
-            # Fallback: relative to topic root's grandparent
-            template_path = topic_root.parent.parent / "templates" / "flow_notebook.tex"
+    template_path = _resolve_template(topic_root, template_path)
+    template_text = template_path.read_text(encoding="utf-8")
 
-    existing_notebook = topic_root / "flow_notebook.tex"
+    # Split template into: preamble + sections + postamble
+    # Each section lives between % --- BEGIN <name> --- and % --- END <name> ---
+    tlines = template_text.split("\n")
+    preamble_end = 0
+    postamble_start = len(tlines)
 
-    # Use existing notebook as base if available, otherwise the template
-    if existing_notebook.exists():
-        base_text = existing_notebook.read_text(encoding="utf-8")
-    else:
-        base_text = template_path.read_text(encoding="utf-8")
+    # Find the range of section markers
+    first_begin = len(tlines)
+    last_end = 0
+    for i, line in enumerate(tlines):
+        if _BEGIN_RE.match(line):
+            if i < first_begin:
+                first_begin = i
+        if _END_RE.match(line) and i > last_end:
+            last_end = i
 
-    markers = _parse_template(base_text)
-    lines = base_text.split("\n")
+    if first_begin < len(tlines) and last_end > 0:
+        preamble_end = first_begin
+        postamble_start = last_end + 1
+
+    preamble = "\n".join(tlines[:preamble_end])
+    postamble = "\n".join(tlines[postamble_start:])
+
+    # Fill template-level placeholders
+    preamble = _fill_template_placeholders(preamble, topic_root)
 
     # Determine which sections changed
     old_hashes = _load_hash_state(topic_root)
@@ -731,51 +855,52 @@ def build_notebook(
             if name not in old_hashes or old_hashes[name] != new_hash:
                 to_regenerate.add(name)
 
-    # If nothing to regenerate, return existing content as-is
     if not to_regenerate:
-        for name in SECTION_ORDER:
+        # Nothing changed — return existing notebook if available
+        nb_path = topic_root / "flow_notebook.tex"
+        if nb_path.exists():
+            for name in SECTION_ORDER:
+                if name not in new_hashes:
+                    new_hashes[name] = _hash_files(topic_root, SECTION_SOURCES.get(name, []))
+            _save_hash_state(topic_root, new_hashes)
+            return nb_path.read_text(encoding="utf-8"), []
+        # No existing notebook, must do full build
+        to_regenerate = set(SECTION_ORDER)
+
+    # Render sections and assemble document
+    rendered_sections: list[str] = []
+    regenerated: list[str] = []
+
+    for name in SECTION_ORDER:
+        if name in to_regenerate:
+            renderer = _SECTION_RENDERERS.get(name)
+            if renderer:
+                rendered_sections.append(renderer(topic_root))
+            else:
+                rendered_sections.append(
+                    f"\\section{{{name.replace('_', ' ').title()}}}\n\n"
+                    r"\textit{(Section not yet implemented.)}"
+                )
+            regenerated.append(name)
+            new_hashes[name] = _hash_files(topic_root, SECTION_SOURCES.get(name, []))
+        else:
+            # Use cached section from existing notebook
+            # We don't have per-section cache, so re-render silently
+            # (hash check already passed, should be identical)
+            renderer = _SECTION_RENDERERS.get(name)
+            if renderer:
+                rendered_sections.append(renderer(topic_root))
+            else:
+                rendered_sections.append("")
             if name not in new_hashes:
                 new_hashes[name] = _hash_files(topic_root, SECTION_SOURCES.get(name, []))
-        _save_hash_state(topic_root, new_hashes)
-        return base_text, []
 
-    # Render each changed section and replace content between markers.
-    # Process bottom-to-top so earlier line-number-based markers stay valid.
-    regenerated: list[str] = []
-    # Sort by line number descending (process sections near end of file first)
-    to_process = sorted(
-        [n for n in SECTION_ORDER if n in to_regenerate and n in markers],
-        key=lambda n: markers[n][0],  # begin_lineno
-        reverse=True,
-    )
-    for name in to_process:
-        begin_lineno, _ = markers[name][:2]
-        _, end_lineno = markers[name][2:4]
-        renderer = _SECTION_RENDERERS.get(name)
-        if renderer is None:
-            continue
-
-        new_section = renderer(topic_root)
-
-        # Replace content between markers
-        before = lines[:begin_lineno + 1]  # includes BEGIN marker
-        after = lines[end_lineno:]           # starts with END marker
-        new_lines = new_section.split("\n")
-        lines = before + new_lines + after
-
-        regenerated.append(name)
-        new_hashes[name] = _hash_files(topic_root, SECTION_SOURCES.get(name, []))
-
-    # Sort regenerated by canonical section order for consistent reporting
-    regenerated.sort(key=lambda n: SECTION_ORDER.index(n) if n in SECTION_ORDER else 99)
-
-    # Fill any missing hashes for sections we didn't touch
-    for name in SECTION_ORDER:
-        if name not in new_hashes:
-            new_hashes[name] = _hash_files(topic_root, SECTION_SOURCES.get(name, []))
+    # Assemble: preamble + all sections + postamble
+    body = "\n".join(rendered_sections)
+    document = preamble + "\n" + body + "\n" + postamble
 
     _save_hash_state(topic_root, new_hashes)
-    return "\n".join(lines), regenerated
+    return document, regenerated
 
 
 def render_all_sections(topic_root: Path) -> dict[str, str]:
