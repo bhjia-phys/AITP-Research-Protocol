@@ -62,43 +62,85 @@ At ANY point during distillation, you may offer these back-paths via AskUserQues
 3. Assign a confidence level.
 4. List remaining open questions.
 
-## Unfinished-Work Backflow Check (MANDATORY)
+## L3→L1 Feedback (MANDATORY)
 
-Before submitting a candidate via `aitp_submit_candidate`, you MUST check:
+When submitting a candidate via `aitp_submit_candidate`, use the `l1_feedback_*`
+parameters to record discoveries back to L1:
 
-1. Read `L3/integrate/active_integration.md` — look at `## Open Obligations`.
-2. For each obligation marked `blocks claim: yes`:
-   - If the claim depends on it → the candidate CANNOT be submitted. Go back to analysis.
-   - If the claim can be scoped to avoid it → narrow the claim and document the scoping.
-3. For each obligation marked `blocks claim: no`:
-   - Acknowledge it in the candidate's `evidence` field as a known limitation.
-4. Record the backflow assessment in `active_distillation.md` under `## Obligation Check`:
+- `l1_feedback_kind`: `convention` | `contradiction` | `cross_edge`
+- `l1_feedback_content`: what was discovered (markdown)
+- `l1_feedback_target`: specific L1 artifact name (optional, uses default for each kind)
+
+This is the LAST chance to feed discoveries back to L1 before the candidate
+goes to L4 validation. If the candidate itself represents a discovery that
+changes L1 framing, record it now.
+
+## Pre-Submission Hard Checks (MANDATORY)
+
+Candidate submission now enforces **3-layer hard checks** in the harness
+(`cmd_candidate_submit`). Verify ALL three layers before calling
+`aitp_submit_candidate`:
+
+### Layer 1: Activity gate
+- Current `l3_activity` must be `distill` or `integrate`.
+- Submitting from `derive` or `gap-audit` is hard-blocked.
+
+### Layer 2: Artifact content checks
+The harness checks real content (not template scaffolding) in:
+
+| Artifact | Required heading | Min chars |
+|----------|-----------------|-----------|
+| derive or trace-derivation | `## Derivation Chains` | 50 |
+| gap-audit | `## Correspondence Check` | 30 |
+| integrate | `## Findings` | 50 |
+
+Additionally, read `L3/integrate/active_integration.md` `## Open Obligations`:
+- For `blocks claim: yes` → candidate CANNOT be submitted. Go back to analysis.
+- For `blocks claim: no` → acknowledge in candidate's `evidence` field.
+
+### Layer 3: Preflight + contract validation
+Harness runs preflight (gate check, derivation chain, domain invariants) and
+Pydantic contract validation on the candidate file.
+
+### Backflow assessment record
+
+Record under `## Pre-Submission Check` in `active_distillation.md`:
 
 ```markdown
-### Obligation Check
-- Checked against: active_integration.md ## Open Obligations
-- Blocking obligations: <count> (<resolved/narrowed/pending>)
-- Non-blocking acknowledged: <count>
-- Claim scope adjusted: yes/no — <details>
+### Pre-Submission Check
+- Layer 1 (activity): distill — OK
+- Layer 2 (artifact content):
+  - Derivation Chains: present (N chars)
+  - Correspondence Check (gap-audit): present (N chars)
+  - Findings (integrate): present (N chars)
+- Layer 2 (open obligations):
+  - Blocking: <count> (<resolved/narrowed/pending>)
+  - Non-blocking: <count>
+  - Claim scope adjusted: yes/no — <details>
+- Layer 3: pending harness execution
 ```
 
 ## Exit condition
 
-When `active_distillation.md` has filled frontmatter fields `distilled_claim`
-and `evidence_summary`, plus headings `## Distilled Claim` and `## Evidence Summary`,
-the claim is ready. Choose one of:
+When `active_distillation.md` has filled frontmatter fields `distilled_claim`,
+`evidence_summary`, and `completion_status`, plus headings `## Distilled Claim`
+and `## Evidence Summary`, the claim is ready.
 
-1. **Standard path**: Submit candidate (`aitp_submit_candidate`), then advance to
-   L4 for adversarial review. Use for novel claims requiring validation.
-2. **Fast-track path**: Use `aitp_fast_track_claim` directly. Use for results
-   already validated in peer-reviewed literature or simple correspondence claims.
+**Gate note:** Set `completion_status: complete`. The L3 gate reports
+`blocked_incomplete` if it is `draft` or missing. Cross-activity prerequisite
+check also requires integrate AND gap-audit content before distill is gate-ready.
 
-If the current distill claim originated from an idea (e.g. via `aitp_submit_idea`),
-call `aitp_promote_idea_to_candidate` with `derivation_summary` and `evidence`
-instead of directly calling `aitp_submit_candidate`. This preserves provenance
-back to the original idea.
+Choose one of:
+
+1. **Standard path**: Pass the 3-layer pre-submission check above, then call
+   `aitp_submit_candidate`. The harness hard-validates all three layers.
+2. **Fast-track path**: Use `aitp_fast_track_claim` for results already validated
+   in peer-reviewed literature or simple correspondence claims.
+
+If the distill claim originated from an idea, call `aitp_promote_idea_to_candidate`
+with `derivation_summary` and `evidence` to preserve provenance.
 
 ## Allowed transitions
 
-- Forward: L4 adjudication
-- Backedges: `integrate`, `derive`
+- Forward: L4 adjudication (via `aitp_submit_candidate`, the only L3→L4 entry)
+- Backedges: `integrate`, `derive`, `gap-audit`

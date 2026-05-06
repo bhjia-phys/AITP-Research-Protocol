@@ -40,6 +40,8 @@ class StageSnapshot:
     retreat_reason: str = ""
     retreated_at: str = ""
     retreat_count: int = 0
+    # L1 freshness tracking (v1.2)
+    l1_feedback_status: str = ""  # "" = not evaluated, "has_feedback" or "missing"
 
 
 # -- Re-exported from state_model for backward compat --

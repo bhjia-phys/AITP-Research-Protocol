@@ -1011,9 +1011,49 @@ def evaluate_l4_stage(
                 skill="skill-validate",
             )
 
+    # L1 freshness check: L3→L1 feedback should exist. If zero L3 Discoveries
+    # or contradiction feedback has been recorded, warn but don't block.
+    # L1 is a living document — L3 work that found nothing to feed back is a smell.
+    l1_warnings: list[str] = []
+    convention_path = topic_root_path / "L1" / "convention_snapshot.md"
+    if convention_path.exists():
+        cs_body = convention_path.read_text(encoding="utf-8")
+        # Check if ## L3 Discoveries has entries beyond the template text
+        ld_start = cs_body.find("## L3 Discoveries")
+        if ld_start >= 0:
+            after_heading = cs_body[ld_start + len("## L3 Discoveries"):]
+            # Count non-empty lines after heading (skip template placeholder lines)
+            feedback_lines = [
+                ln for ln in after_heading.split("\n")
+                if ln.strip() and not ln.strip().startswith("Appended during")
+                and not ln.strip().startswith("at L1 framing time")
+            ]
+            if len(feedback_lines) < 2:
+                l1_warnings.append(
+                    "No L3→L1 convention feedback recorded. "
+                    "If L3 derivation discovered new conventions, "
+                    "use aitp_feedback_to_l1 to record them."
+                )
+    else:
+        l1_warnings.append(
+            "L1 convention_snapshot.md missing. Complete L1 framing first."
+        )
+
+    contradiction_path = topic_root_path / "L1" / "contradiction_register.md"
+    if contradiction_path.exists():
+        cr_body = contradiction_path.read_text(encoding="utf-8")
+        if "### L3 Feedback" not in cr_body:
+            l1_warnings.append(
+                "No L3→L1 contradiction feedback recorded. "
+                "If L3 derivation found source conflicts or internal "
+                "inconsistencies, use aitp_feedback_to_l1 to record them."
+            )
+
     return StageSnapshot(
         stage="L4", posture="verify", lane=lane,
         gate_status="ready",
+        missing_requirements=l1_warnings if l1_warnings else [],
         next_allowed_transition="L2",
         skill="skill-promote",
+        l1_feedback_status="missing" if l1_warnings else "has_feedback",
     )

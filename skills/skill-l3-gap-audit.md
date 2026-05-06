@@ -1,6 +1,6 @@
 ---
 name: skill-l3-gap-audit
-description: L3 Gap Audit — find hidden assumptions, unstated approximations, missing correspondence checks, and prerequisite gaps. Used for both novel derivations and source study.
+description: L3 Gap Audit — find hidden assumptions, unstated approximations, missing correspondence checks, and prerequisite gaps. HARD PREREQUISITE for integrate and distill — gate blocks advance without completed gap-audit content.
 trigger: l3_activity == "gap-audit"
 ---
 
@@ -79,15 +79,26 @@ Fill the artifact:
 - Every gap has a severity level
 - Correspondence check is attempted for every major result
 
+## L3→L1 Feedback (MANDATORY)
+
+If gap audit discovers **blocking** or **important** gaps that L1 should have caught:
+- New convention/notation not in `convention_snapshot.md` → call `aitp_feedback_to_l1` with `feedback_kind="convention"`
+- Source contradiction or internal inconsistency → call `aitp_feedback_to_l1` with `feedback_kind="contradiction"`
+- Cross-source dependency not in `source_cross_map.md` → call `aitp_feedback_to_l1` with `feedback_kind="cross_edge"`
+
+**Never skip this.** Even if no gaps found, record that fact with a brief note.
+
 ## Exit condition
 
-Advance to **synthesis** when:
+Advance to **integrate** when:
 - `gap_count` is filled (can be 0)
 - `blocking_gaps` is assessed (can be "none")
+- `completion_status` is set to `complete` (gate reports `blocked_incomplete` otherwise)
 - Correspondence check section has entries for every major result
 - All blocking gaps have a resolution plan or are deferred with reason
 
 ## Allowed transitions
 
-- Forward: `synthesis`
-- Backedges: `step_derive` (if gaps reveal derivation was incomplete)
+- Forward: `integrate`, `distill` (gap-audit is a hard prerequisite — the gate blocks
+  integrate and distill if gap-audit content is missing)
+- Backedges: `derive` (if gaps reveal derivation was incomplete)

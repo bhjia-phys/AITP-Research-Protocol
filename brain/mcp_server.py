@@ -1462,6 +1462,13 @@ def aitp_submit_candidate(
     )
     _write_md(path, fm, body)
 
+    # Optional L3→L1 feedback: record conventions/contradictions discovered during derivation
+    if l1_feedback_kind and l1_feedback_content:
+        _do_feedback_to_l1(
+            root, l1_feedback_kind, l1_feedback_content, l1_feedback_target,
+            state_fm.get("l3_activity", ""), slug,
+        )
+
     # Dispatch to CLI for preflight + contract validation + stage transition
     from brain.cli._dispatch_helpers import dispatch
     from brain.cli.commands.l3_workflow import cmd_candidate_submit
@@ -3194,10 +3201,18 @@ def aitp_switch_l3_activity(
 
 
 @mcp.tool()
-def aitp_retreat_to_l1(topics_root: str, topic_slug: str, reason: str = "") -> _GateResult:
+def aitp_retreat_to_l1(
+    topics_root: str,
+    topic_slug: str,
+    reason: str = "",
+    retreat_feedback: str = "",
+    retreat_feedback_kind: str = "",
+    retreat_feedback_target: str = "",
+) -> _GateResult:
     """Retreat from L3 back to L1 for re-reading or re-framing. L3 work is preserved.
 
     Use when analysis reveals insufficient sources, wrong framing, or missing assumptions.
+    Optionally record what was learned as L1 feedback before retreating.
     """
     root = _topic_root(topics_root, topic_slug)
     state_path = root / "state.md"
@@ -3205,6 +3220,13 @@ def aitp_retreat_to_l1(topics_root: str, topic_slug: str, reason: str = "") -> _
     current_stage = fm.get("stage", "L1")
     if current_stage != "L3":
         return _GateResult({"message": f"Cannot retreat: topic is at {current_stage}, not L3."})
+
+    # Record L3→L1 feedback before retreating (captures what was learned)
+    if retreat_feedback_kind and retreat_feedback:
+        _do_feedback_to_l1(
+            root, retreat_feedback_kind, retreat_feedback, retreat_feedback_target,
+            fm.get("l3_activity", ""), "",
+        )
 
     fm["stage"] = "L1"
     fm["posture"] = "read"
@@ -3214,6 +3236,7 @@ def aitp_retreat_to_l1(topics_root: str, topic_slug: str, reason: str = "") -> _
     fm["retreat_reason"] = reason
     fm["retreated_at"] = _now()
     fm["retreat_count"] = fm.get("retreat_count", 0) + 1
+    fm["l1_feedback_status"] = "has_feedback" if retreat_feedback else ""
     fm["updated_at"] = _now()
     _write_md(state_path, fm, body)
     _append_to_topic_log(root, f"retreated from L3 to L1: {reason}")

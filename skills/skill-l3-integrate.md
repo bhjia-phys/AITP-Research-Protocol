@@ -1,6 +1,6 @@
 ---
 name: skill-l3-integrate
-description: "L3 Integration — combine analysis into findings. Also covers the deprecated synthesis scenario: reconstruct a source's contribution and propose L2 updates."
+description: "L3 Integration — combine analysis into findings. Requires completed derive (or trace-derivation) and gap-audit artifacts before the gate allows advancement. Also covers the deprecated synthesis scenario."
 trigger: l3_activity == "integrate"
 ---
 
@@ -95,6 +95,23 @@ Record the assessment in the body under `## Claim Readiness`:
 - **Caveats** (if qualified): <list>
 ```
 
+## L3→L1 Feedback (MANDATORY)
+
+Before advancing from integration, check if new discoveries should flow back to L1:
+
+1. Re-read `L1/convention_snapshot.md` `## L3 Discoveries` — are there conventions you
+   used in integration that aren't recorded there? If so, call `aitp_feedback_to_l1`
+   with `feedback_kind="convention"`.
+2. Check `L1/contradiction_register.md` — are there source conflicts or regime
+   mismatches you encountered? Record them via `aitp_feedback_to_l1` with
+   `feedback_kind="contradiction"`.
+3. Check `L1/source_cross_map.md` — did integration reveal cross-source
+   dependencies not captured? Record via `aitp_feedback_to_l1` with
+   `feedback_kind="cross_edge"`.
+
+Even if nothing new was found, note in `active_integration.md` under
+`## L1 Feedback Check` that the check was performed and what was (or wasn't) found.
+
 ## Open Obligations Tracking (MANDATORY)
 
 Under `## Open Obligations`, list every missing obligation that blocks claim use:
@@ -120,11 +137,18 @@ all open obligations before submitting a candidate.
 ## Exit condition
 
 Advance to **distillation** when `active_integration.md` has filled frontmatter fields
-`integration_statement`, `findings`, and `claim_readiness`, plus headings `## Integration Statement`,
-`## Findings`, `## Claim Readiness`, and `## Open Obligations`.
+`integration_statement`, `findings`, `claim_readiness`, and `completion_status`, plus
+headings `## Integration Statement`, `## Findings`, `## Claim Readiness`, and
+`## Open Obligations`.
+
+**Gate note:** The L3 gate reports `blocked_incomplete` until `completion_status`
+is set to `complete`. The cross-activity prerequisite check also requires completed
+derive (or trace-derivation) and gap-audit content before integrate is gate-ready.
 
 **Or submit candidate directly** if one of the integrated findings is already a clear,
-self-contained claim. Use `aitp_submit_candidate` from integrate activity.
+self-contained claim. Candidate submission enforces 3-layer hard checks: (1) activity
+must be integrate or distill, (2) derive, gap-audit, and integrate must have real content,
+(3) preflight + contract validation must pass.
 
 ## Allowed transitions
 
