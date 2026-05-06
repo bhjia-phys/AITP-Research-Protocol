@@ -179,8 +179,7 @@ def cmd_topic_init(args):
     dirs = [
         "L0/sources", "L1/intake", "L2/graph/steps", "L2/graph/edges",
         "L3/candidates", "L3/ideate", "L4/reviews", "L4/reports",
-        "L4/scripts", "L4/outputs", "compute", "runtime", "notebook/sections",
-        "notebook/figures", "contracts",
+        "L4/scripts", "L4/outputs", "compute", "runtime", "contracts",
     ]
     for d in dirs:
         (root / d).mkdir(parents=True, exist_ok=True)
@@ -384,8 +383,21 @@ def _append_research_md(root: Path, layer: str, entry: str):
 
 
 def _trigger_notebook_section(root: Path, section: str):
-    """Mark a notebook section for regeneration (Phase 5 placeholder)."""
-    pass
+    """Regenerate a single notebook section.
+
+    Called by MCP tools after state-changing operations to keep the
+    notebook current.  Only the affected section is rebuilt.
+    """
+    try:
+        from brain.flow_notebook import build_notebook
+        tex_content, regenerated = build_notebook(
+            root, changed_sections=[section],
+        )
+        if regenerated:
+            from brain.cli.state import atomic_write
+            atomic_write(root / "flow_notebook.tex", tex_content)
+    except Exception:
+        pass  # Non-blocking — notebook is derivative, not source of truth
 
 
 def cmd_l2_ask(args):
@@ -724,6 +736,7 @@ def build_parser():
     p_nb_sub = p_nb.add_subparsers(dest="subcommand")
     p_nbg = p_nb_sub.add_parser("generate", help="Generate flow notebook LaTeX/PDF")
     p_nbg.add_argument("topic", help="Topic slug")
+    p_nbg.add_argument("--force", action="store_true", help="Force full rebuild of all sections")
     p_nbg.set_defaults(func=cmd_notebook_generate)
 
     # migrate

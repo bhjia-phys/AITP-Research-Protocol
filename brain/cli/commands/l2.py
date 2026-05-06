@@ -138,35 +138,24 @@ def cmd_l2_query(args):
 
 
 def cmd_notebook_generate(args):
-    """Generate flow notebook PDF (Phase 5 — stub)."""
+    """Generate flow notebook LaTeX from all topic artifacts.
+
+    Uses the section-based template builder. Writes to topic root.
+    """
     root = _resolve_topic_root(args.topic)
-    notebook_dir = root / "notebook"
-    notebook_dir.mkdir(parents=True, exist_ok=True)
-    (notebook_dir / "sections").mkdir(parents=True, exist_ok=True)
+    from brain.flow_notebook import build_notebook
+    force = getattr(args, "force", False)
+    tex_content, regenerated = build_notebook(root, force_full=force)
 
-    # Write minimal preamble
-    preamble = r"""\documentclass{article}
-\usepackage{amsmath,amssymb,booktabs,hyperref,graphicx}
-\begin{document}
-\title{Topic Notebook}
-\maketitle
-"""
-    (notebook_dir / "preamble.tex").write_text(preamble, encoding="utf-8")
+    out_path = root / "flow_notebook.tex"
+    # Atomic write
+    from brain.cli.state import atomic_write
+    atomic_write(out_path, tex_content)
 
-    # Incrementally add sections from research.md
-    research_path = root / "research.md"
-    if research_path.exists():
-        content = research_path.read_text(encoding="utf-8")
-        (notebook_dir / "sections" / "research.tex").write_text(
-            "\\section{Research Trail}\n" + content.replace("#", "\\subsection{").replace("##", "\\subsubsection{"), encoding="utf-8")
-
-    # Write main .tex
-    tex = r"\input{notebook/preamble.tex}" + "\n"
-    for section in sorted((notebook_dir / "sections").glob("*.tex")):
-        tex += f"\\input{{notebook/sections/{section.name}}}\n"
-    tex += "\\end{document}\n"
-    (notebook_dir / "notebook.tex").write_text(tex, encoding="utf-8")
-
-    print(f"Notebook scaffold generated → {notebook_dir}")
-    print("Compile with: pdflatex notebook/notebook.tex")
+    if regenerated:
+        print(f"flow_notebook.tex written → {out_path}")
+        print(f"  Sections regenerated: {', '.join(regenerated)}")
+        print("  Compile with: pdflatex flow_notebook.tex")
+    else:
+        print("flow_notebook.tex is up to date (no sections changed).")
     return 0

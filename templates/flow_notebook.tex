@@ -1,12 +1,13 @@
 % ===========================================================================
-% AITP Flow Notebook Template  (v3 — covers full L0–L4 lifecycle)
+% AITP Flow Notebook Template  (v1.0 — section-based incremental)
 % ===========================================================================
-% This template defines the canonical section structure for the L3 flow
-% notebook PDF.  The actual content is filled by _build_flow_notebook_content()
-% in brain/mcp_server.py, which reads every layer artifact and converts
-% Markdown to LaTeX.
+% This template defines the canonical section structure. The notebook builder
+% (brain/flow_notebook.py) fills each section by reading the corresponding
+% L0-L4 artifacts. Sections are delimited by % --- BEGIN/END --- markers
+% for incremental regeneration.
 %
-% Placeholders use {{PLACEHOLDER}} — replace them with content.
+% DO NOT reorder or rename sections without updating SECTION_ORDER in
+% brain/flow_notebook.py.
 % ===========================================================================
 
 \documentclass[11pt,a4paper]{article}
@@ -27,12 +28,12 @@
 \setlength{\parskip}{0.5em plus 0.2em minus 0.1em}
 
 % --- Tables ---
-\usepackage{booktabs}         % \toprule, \midrule, \bottomrule
-\usepackage{longtable}        % Tables that span pages
-\usepackage{array}            % >{\raggedright}p{...} column type
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
 
 % --- Lists ---
-\usepackage{enumitem}         % Better list customization
+\usepackage{enumitem}
 
 % --- Colors & Boxes ---
 \usepackage{xcolor}
@@ -46,13 +47,23 @@
     urlcolor=blue!60!black,
 }
 
-% --- Custom colors ---
+% --- Code listings ---
+\usepackage{listings}
+\lstset{
+    basicstyle=\small\ttfamily,
+    breaklines=true,
+    frame=single,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    showstringspaces=false,
+}
+
+% --- Status commands ---
 \definecolor{passgreen}{RGB}{34,139,34}
 \definecolor{failred}{RGB}{178,34,34}
 \definecolor{warnorange}{RGB}{204,119,34}
 \definecolor{infoblue}{RGB}{47,85,151}
 
-% --- Status commands ---
 \newcommand{\statuspass}{\textcolor{passgreen}{\textbf{PASS}}}
 \newcommand{\statusfail}{\textcolor{failred}{\textbf{FAIL}}}
 \newcommand{\statusactive}{\textcolor{warnorange}{\textbf{ACTIVE}}}
@@ -78,7 +89,7 @@
 % --- Metadata ---
 \title{\textbf{Research Flow Notebook}\\[0.4em]
   \large {{TOPIC_TITLE}}}
-\author{AITP Protocol v3}
+\author{AITP Protocol v1.0}
 \date{\today}
 
 \begin{document}
@@ -87,7 +98,8 @@
 \begin{abstract}
 This notebook records the complete research trajectory: sources,
 conventions, derivation attempts, validated results, and open questions.
-Mode: \texttt{{MODE}}.  Lane: \texttt{{LANE}}.
+It is auto-generated from L0--L4 artifacts and polished for human readability.
+Mode: \texttt{{{MODE}}}.  Lane: \texttt{{{LANE}}}.
 \end{abstract}
 
 \tableofcontents
@@ -95,206 +107,125 @@ Mode: \texttt{{MODE}}.  Lane: \texttt{{LANE}}.
 
 % ===========================================================================
 % §1  Research Question
-% ===========================================================================
-% Source: L1/question_contract.md → frontmatter fields
+% Source: L1/question_contract.md
 % ===========================================================================
 
+% --- BEGIN research_question ---
 \section{Research Question}
 
 \begin{resultbox}[Bounded Question]
-{{BOUNDED_QUESTION}}
+\textit{(No bounded question recorded yet — complete L1/question\_contract.md.)}
 \end{resultbox}
-
-\noindent\textbf{Scope:} {{SCOPE}} \quad
-\textbf{Target quantities:} {{TARGET_QUANTITIES}}
-
-\begin{warningbox}[Non-Success Conditions]
-{{NON_SUCCESS_CONDITIONS}}
-\end{warningbox}
+% --- END research_question ---
 
 % ===========================================================================
-% §2  Source Landscape  (L0)
-% ===========================================================================
-% Source: L0/sources/*.md → per-source frontmatter (title, fidelity, relation)
-%         L1/source_basis.md → coverage analysis
+% §2  Source Landscape
+% Sources: L0/source_registry.md, L0/sources/*.md
 % ===========================================================================
 
+% --- BEGIN source_landscape ---
 \section{Source Landscape}
 
-\begin{longtable}{>{\raggedright}p{3cm} p{5cm} p{2.5cm} p{2.5cm}}
-\toprule
-\textbf{Source} & \textbf{Title} & \textbf{Fidelity} & \textbf{Relation} \\
-\midrule
-\endhead
-{{SOURCE_TABLE_ROWS}}
-\bottomrule
-\end{longtable}
+\textit{(No sources registered yet — use aitp\_register\_source.)}
+% --- END source_landscape ---
 
 % ===========================================================================
-% §3  Conventions & Notation  (L1)
-% ===========================================================================
-% Source: L1/convention_snapshot.md → frontmatter + body
+% §3  Conventions \& Notation
+% Source: L1/convention_snapshot.md
 % ===========================================================================
 
+% --- BEGIN conventions ---
 \section{Conventions \& Notation}
 
-{{NOTATION_BODY}}
-
-\noindent\textbf{Units:} {{UNIT_CONVENTIONS}}
-
-\noindent\textbf{Sign convention:} {{SIGN_CONVENTION}}
+\textit{(No convention snapshot recorded yet — complete L1/convention\_snapshot.md.)}
+% --- END conventions ---
 
 % ===========================================================================
-% §4  Mode & Session History
-% ===========================================================================
-% Source: state.md frontmatter, runtime/sessions.md
+% §4  Mode \& Session History
+% Sources: state.md, runtime/sessions.md
 % ===========================================================================
 
+% --- BEGIN session_history ---
 \section{Mode \& Session History}
 
-\noindent
-\begin{tabular}{ll}
-\toprule
-\textbf{Axis} & \textbf{Value} \\
-\midrule
-Topic slug  & \texttt{{TOPIC_SLUG}} \\
-Status      & \texttt{{STATUS}} \\
-Mode        & \texttt{{MODE}} \\
-Lane        & \texttt{{LANE}} \\
-L3 mode     & \texttt{{L3_MODE}} \\
-\bottomrule
-\end{tabular}
+\textit{(Topic state will appear here once bootstrapped.)}
+% --- END session_history ---
 
 % ===========================================================================
-% §5  Derivation Journey  (L3)
-% ===========================================================================
-% Sources:
-%   L3/ideas/*.md     — branched idea exploration (§5.1)
-%   L3/*/active_*.md  — subplane artifacts (§5.2)
-%   L3/planning/      — planning notes (§5.3)
+% §5  Derivation Journey
+% Sources: L3/*/active_*.md, L3/ideas/*.md
 % ===========================================================================
 
+% --- BEGIN derivation ---
 \section{Derivation Journey}
 
-% --- 5.1  Ideas Explored ---
-\subsection{Ideas Explored}
-\label{sec:ideas}
-
-Multiple derivation routes were attempted.  Failed and abandoned
-approaches are preserved alongside successes --- their lessons
-informed later routes.
-
-{{IDEAS_CONTENT}}
-
-% --- 5.2  Structured Derivation ---
-\subsection{Structured Derivation}
-
-\subsubsection*{Analysis}
-{{ANALYSIS_CONTENT}}
-
-\subsubsection*{Result Integration}
-{{INTEGRATION_CONTENT}}
-
-% --- 5.3  Planning Notes ---
-\subsection{Planning Notes}
-{{PLANNING_CONTENT}}
+\textit{(No derivation content yet — advance to L3 and begin derivation.)}
+% --- END derivation ---
 
 % ===========================================================================
-% §6  Synthesis & Claims
-% ===========================================================================
-% Source: L3/distillation/active_distillation.md, L3/candidates/*.md
+% §6  Synthesis \& Claims
+% Sources: L3/candidates/*.md, L3/distill/active_distillation.md
 % ===========================================================================
 
+% --- BEGIN synthesis ---
 \section{Synthesis \& Claims}
 
-\begin{resultbox}[Distilled Claim]
-{{DISTILLED_CLAIM}}
-\end{resultbox}
-
-\noindent\textbf{Evidence:} {{EVIDENCE_SUMMARY}}
-
-\noindent\textbf{Confidence:} {{CONFIDENCE_LEVEL}}
-
-{{VALIDATED_RESULTS}}
+\textit{(No candidates submitted yet — complete L3 derivation first.)}
+% --- END synthesis ---
 
 % ===========================================================================
-% §7  Validation  (L4)
-% ===========================================================================
-% Source: L4/reviews/*.md, L4/invariant-checks.md
+% §7  Validation
+% Sources: L4/reviews/*.md, L4/outputs/*.md
 % ===========================================================================
 
+% --- BEGIN validation ---
 \section{Validation}
 
-{{L4_REVIEWS}}
-
-{{DOMAIN_INVARIANT_CHECKS}}
+\textit{(No validation reviews yet — submit a candidate to advance to L4.)}
+% --- END validation ---
 
 % ===========================================================================
-% §8  Canonical Knowledge  (L2)
-% ===========================================================================
-% Source: L2/canonical/*.md — promoted knowledge nodes
+% §8  Canonical Knowledge (L2)
+% Source: global L2 graph nodes
 % ===========================================================================
 
+% --- BEGIN l2_knowledge ---
 \section{Canonical Knowledge (L2)}
 
-\begin{longtable}{>{\raggedright}p{3cm} p{2cm} p{6cm}}
-\toprule
-\textbf{Node} & \textbf{Type} & \textbf{Summary} \\
-\midrule
-\endhead
-{{L2_TABLE_ROWS}}
-\bottomrule
-\end{longtable}
+\textit{(No L2 nodes promoted from this topic yet.)}
+% --- END l2_knowledge ---
 
 % ===========================================================================
-% §9  Domain Context  (code_method only)
-% ===========================================================================
+% §9  Domain Context
 % Source: contracts/domain-manifest.md
 % ===========================================================================
 
+% --- BEGIN domain_context ---
 \section{Domain Context}
 
-\noindent
-\begin{tabular}{ll}
-\toprule
-\textbf{Field} & \textbf{Value} \\
-\midrule
-Domain       & \texttt{{DOMAIN_ID}} \\
-Target codes & {{TARGET_CODES}} \\
-Operations   & {{OPERATIONS}} \\
-Repo         & \texttt{{REPO_PATH}} \\
-Branch       & \texttt{{REPO_BRANCH}} \\
-\bottomrule
-\end{tabular}
-
-\subsection*{Domain Invariants}
-{{DOMAIN_INVARIANTS_TABLE}}
+\textit{(No domain manifest recorded — create contracts/domain-manifest.md.)}
+% --- END domain_context ---
 
 % ===========================================================================
-% §10  Negative Results & Open Questions
-% ===========================================================================
-% Sources: L3/ideas/*.md (failed), L3/deferred.md, L3/candidates (open_question)
+% §10  Negative Results \& Open Questions
+% Sources: L3/deferred.md, L3/ideas/*.md (failed/abandoned)
 % ===========================================================================
 
+% --- BEGIN open_questions ---
 \section{Negative Results \& Open Questions}
 
-\subsection*{Failed Approaches}
-{{FAILED_APPROACHES}}
-
-\subsection*{Deferred Items}
-{{DEFERRED_ITEMS}}
-
-\subsection*{Open Questions}
-{{OPEN_QUESTIONS}}
+\textit{(No deferred items or open questions formally recorded.)}
+% --- END open_questions ---
 
 % ===========================================================================
-% §11  Execution Provenance  (if applicable)
-% ===========================================================================
-% Source: runtime/execution_provenance.md
+% §11  Execution Provenance
+% Source: runtime/log.md
 % ===========================================================================
 
+% --- BEGIN execution_provenance ---
 \section{Execution Provenance}
 
-{{EXECUTION_PROVENANCE}}
+\textit{(No execution log yet.)}
+% --- END execution_provenance ---
 
 \end{document}

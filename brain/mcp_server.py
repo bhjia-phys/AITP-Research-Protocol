@@ -579,7 +579,7 @@ def aitp_bootstrap_topic(
         "## Research Notebook\n- L3/ subplane active artifacts\n\n"
         "## Validation\n- L4/reviews/\n\n"
         "## Reusable Results\n- global L2/ (cross-topic)\n\n"
-        "## Writing\n- L3/tex/flow_notebook.tex\n"
+        "## Writing\n- flow_notebook.tex (topic root)\n"
     ))
     _write_md(root / "runtime" / "log.md", {
         "topic_slug": safe_slug, "kind": "topic_log", "created_at": _now(),
@@ -1415,10 +1415,6 @@ def aitp_submit_idea(
                 sup_fm["updated_at"] = _now()
                 _write_md(sup_path, sup_fm, sup_body)
 
-    # Auto-refresh flow notebook to include ideas section
-    state_fm, _ = _parse_md(root / "state.md")
-    _auto_refresh_flow_notebook(root, state_fm)
-
     msg = f"Idea '{slug}' {action} (status: {outcome})."
     if outcome == "failed":
         msg += " Failed approaches are valuable  --  their lessons will be preserved."
@@ -1587,8 +1583,6 @@ def aitp_promote_idea_to_candidate(
     fm["promoted_at"] = _now()
     fm["updated_at"] = _now()
     _write_md(idea_path, fm, body)
-
-    _auto_refresh_flow_notebook(root, state_fm)
 
     return _GateResult({
         "message": f"Idea '{slug}' promoted to candidate '{slug}'. L4 validation can now begin.",
@@ -1993,8 +1987,6 @@ def aitp_promote_candidate(
         _append_to_topic_log(root, f"entry creation for {slug} failed: {e}")
         # Don't block promotion — entry creation is additive
 
-    state_fm, _ = _parse_md(root / "state.md")
-    _auto_refresh_flow_notebook(root, state_fm)
     return (
         f"Promoted {slug} to global L2 (v{fm['version']})."
         + (f"\n\nEFT tower matches:\n" + "\n".join(f"  - {h}" for h in eft_hints)
@@ -2536,8 +2528,6 @@ def aitp_l4_background_submit(
     _write_md(state_path, fm, body)
     _append_to_topic_log(root, f"L4_background_submit: {job_id} on {host} ({estimated_wall_time})")
 
-    _auto_refresh_flow_notebook(root, fm)
-
     # Build cron setup instructions for autonomous L4 polling
     poll_interval = _estimate_poll_interval(estimated_wall_time)
     watchdog_script = str(
@@ -2704,7 +2694,6 @@ def aitp_record_numerical_result(
     )
 
     _write_md(result_path, fm, body)
-    _auto_refresh_flow_notebook(root, _parse_md(root / "state.md")[0])
 
     return (
         f"Recorded numerical result '{observable}': {computed_value} ± {uncertainty} {units} "
@@ -3511,7 +3500,6 @@ def aitp_submit_l4_review(
         }
     state_fm["l4_cycle_count"] = cycle
     _write_md(root / "state.md", state_fm, _parse_md(root / "state.md")[1])
-    _auto_refresh_flow_notebook(root, state_fm)
     return _GateResult(result)
 
 
@@ -5649,139 +5637,17 @@ def aitp_create_l2_tower(
     return f"Created EFT tower {slug}: {name}"
 
 
-def _build_flow_notebook_content(
-    root: Path, title: str, question: str, lane: str
-) -> str:
-    """Build flow_notebook.tex from all topic artifacts.
-
-    Collects data from L0–L4, then delegates to brain.flow_notebook
-    for JHEP-quality LaTeX rendering.
-    """
-    from brain.state_model import L3_ACTIVITIES, L3_ACTIVITY_ARTIFACT_NAMES
-
-    # ── Data collection ────────────────────────────────────────────
-    fm_state, _ = _parse_md(root / "state.md")
-
-    # L3 subplanes
-    subplanes = []
-    for sp in L3_ACTIVITIES:
-        art_name = L3_ACTIVITY_ARTIFACT_NAMES.get(sp, f"active_{sp}.md")
-        path = root / "L3" / sp / art_name
-        if path.exists():
-            fm, body = _parse_md(path)
-            subplanes.append({"name": sp, "fm": fm, "body": body})
-
-    # L3 ideas
-    ideas_dir = root / "L3" / "ideas"
-    ideas_list = sorted(
-        [p for p in ideas_dir.glob("*.md") if not p.stem.startswith("_")],
-        key=lambda p: p.stat().st_mtime, reverse=True,
-    ) if ideas_dir.is_dir() else []
-
-    # L3 candidates
-    cand_dir = root / "L3" / "candidates"
-    candidates = []
-    if cand_dir.is_dir():
-        for cp in sorted(cand_dir.glob("*.md")):
-            fm, _ = _parse_md(cp)
-            candidates.append({"slug": cp.stem, "title": fm.get("title", cp.stem),
-                               "claim": fm.get("claim", ""), "status": fm.get("status", "submitted"),
-                               "fm": fm})
-
-    # L3 deferred
-    deferred_path = root / "L3" / "deferred.md"
-    _, deferred_body = _parse_md(deferred_path) if deferred_path.exists() else ({}, "")
-
-    # L4 reviews
-    review_dir = root / "L4" / "reviews"
-    reviews = []
-    if review_dir.is_dir():
-        for rp in sorted(review_dir.glob("*.md")):
-            fm, body = _parse_md(rp)
-            reviews.append({"slug": rp.stem, "outcome": fm.get("outcome", ""),
-                           "notes": fm.get("notes", ""), "fm": fm, "body": body})
-
-    # L4 numerical results
-    outputs_dir = root / "L4" / "outputs"
-    numerical_results = []
-    if outputs_dir.is_dir():
-        for op in sorted(outputs_dir.glob("*.md")):
-            fm, body = _parse_md(op)
-            if fm.get("artifact_kind") == "numerical_result":
-                numerical_results.append({"observable": fm.get("observable", ""),
-                                         "computed_value": fm.get("computed_value", ""),
-                                         "uncertainty": fm.get("uncertainty", ""),
-                                         "units": fm.get("units", ""),
-                                         "literature_value": fm.get("literature_value", ""),
-                                         "agreement_status": fm.get("agreement_status", ""),
-                                         "fm": fm, "body": body})
-
-    # L0 sources
-    src_dir = root / "L0" / "sources"
-    sources_list = []
-    if src_dir.is_dir():
-        for sp in sorted(src_dir.glob("*.md")):
-            fm, _ = _parse_md(sp)
-            sources_list.append({"source_id": sp.stem,
-                                "source_type": fm.get("source_type", ""),
-                                "title": fm.get("title", sp.stem)})
-
-    # L2 nodes (global)
-    global_l2 = _global_l2_path(str(root.parent.parent)) if root.name != "L2" else root.parent
-    l2_nodes = []
-    if global_l2 and global_l2.is_dir():
-        for np in sorted(global_l2.glob("*.md")):
-            fm, _ = _parse_md(np)
-            l2_nodes.append({"node_id": np.stem, "node_type": fm.get("node_type", ""), "fm": fm})
-
-    # Domain constraints
-    domain_constraints = {}
-    domain_manifest_path = root / "contracts" / "domain-manifest.md"
-    if domain_manifest_path.exists():
-        dm_fm, _ = _parse_md(domain_manifest_path)
-        domain_id = str(dm_fm.get("domain_id", "")).strip()
-        if domain_id:
-            from brain.state_model import DOMAIN_ID_TO_SKILL, _SLUG_FALLBACK_PATTERNS
-            skill_name = DOMAIN_ID_TO_SKILL.get(domain_id)
-            if not skill_name:
-                for pattern, s in _SLUG_FALLBACK_PATTERNS.items():
-                    if pattern in domain_id:
-                        skill_name = s
-                        break
-            if skill_name:
-                skill_path = Path(__file__).parent.parent / "skills" / f"{skill_name}.md"
-                if skill_path.exists():
-                    from brain.checks import _extract_domain_rules
-                    domain_constraints = _extract_domain_rules(skill_path, _parse_md)
-
-    # ── Delegate to flow_notebook.py ───────────────────────────────
-    from brain.flow_notebook import build_flow_notebook_content
-    return build_flow_notebook_content(
-        topic_root=root,
-        fm_state=fm_state,
-        subplanes=subplanes,
-        ideas_list=ideas_list,
-        candidates=candidates,
-        reviews=reviews,
-        sources_list=sources_list,
-        deferred_body=deferred_body,
-        domain_constraints=domain_constraints,
-        l2_nodes=l2_nodes,
-        numerical_results=numerical_results,
-    )
-
-
 def _auto_refresh_flow_notebook(root: Path, fm: dict) -> None:
-    """Silently regenerate flow_notebook.tex. Never blocks  --  errors are ignored."""
+    """Silently regenerate flow_notebook.tex at topic root.
+
+    Only triggered on candidate submission (end of each L3→L4 cycle).
+    Uses the section-based builder for incremental regeneration.
+    Never blocks — errors are ignored.
+    """
     try:
-        title = str(fm.get("title", ""))
-        question = ""  # extracted from body if needed
-        lane = str(fm.get("lane", "unspecified"))
-        tex_content = _build_flow_notebook_content(root, title, question, lane)
-        tex_dir = root / "L3" / "tex"
-        tex_dir.mkdir(parents=True, exist_ok=True)
-        # Write as raw LaTeX — NOT via _write_md which would prepend YAML frontmatter
-        _atomic_write_text(tex_dir / "flow_notebook.tex", tex_content)
+        from brain.flow_notebook import build_notebook
+        tex_content, _regenerated = build_notebook(root)
+        _atomic_write_text(root / "flow_notebook.tex", tex_content)
     except Exception:
         pass  # Never block normal operations
 
@@ -5790,50 +5656,35 @@ def _auto_refresh_flow_notebook(root: Path, fm: dict) -> None:
 def aitp_generate_flow_notebook(
     topics_root: str,
     topic_slug: str,
+    force_full: bool = False,
 ) -> dict[str, Any]:
-    """Generate flow_notebook.tex from all L3 subplane artifacts, candidates, and reviews.
+    """Generate or regenerate the flow notebook at the topic root.
 
-    Reads every subplane active artifact, every candidate, and every L4 review,
-    then consolidates into a structured LaTeX document at L3/tex/flow_notebook.tex.
-    This is the readable research record  --  a physicist can understand the full
-    derivation, results, and validation from this single document.
+    Uses the section-based template builder. By default, only sections
+    whose source artifacts changed are regenerated (incremental).
+    Pass force_full=True to rebuild all sections.
 
-    Call this at any point during L3/L4 to snapshot progress.
+    The notebook is written to <topic_root>/flow_notebook.tex and is
+    designed for human reading — AI should polish it after generation.
+
+    Args:
+        topics_root: Path to the topics root directory.
+        topic_slug: Topic identifier.
+        force_full: If True, force a full rebuild of all sections.
     """
     root = _topic_root(topics_root, topic_slug)
-    fm, _ = _parse_md(root / "state.md")
-
-    title = str(fm.get("title", topic_slug))
-    question = ""  # extracted from body if available
-    lane = str(fm.get("lane", "unspecified"))
-
-    tex_content = _build_flow_notebook_content(root, title, question, lane)
-
-    # Write to L3/tex/ — raw LaTeX, not Markdown (no YAML frontmatter)
-    tex_dir = root / "L3" / "tex"
-    tex_dir.mkdir(parents=True, exist_ok=True)
-    tex_path = tex_dir / "flow_notebook.tex"
-    _atomic_write_text(tex_path, tex_content)
+    from brain.flow_notebook import build_notebook, SECTION_ORDER
+    tex_content, regenerated = build_notebook(root, force_full=force_full)
+    _atomic_write_text(root / "flow_notebook.tex", tex_content)
 
     _append_to_topic_log(root, "generated flow_notebook.tex")
 
     return {
-        "message": f"flow_notebook.tex generated at L3/tex/flow_notebook.tex",
-        "path": str(tex_path),
+        "message": f"flow_notebook.tex written to topic root",
+        "path": str(root / "flow_notebook.tex"),
         "size_bytes": len(tex_content),
-        "sections_included": [
-            "Research Question",
-            "Source Landscape (L0)",
-            "Conventions & Notation (L1)",
-            "Mode & Session History",
-            "Derivation Journey (L3)",
-            "Synthesis & Claims",
-            "Validation (L4)",
-            "Canonical Knowledge (L2)",
-            "Domain Context (if code_method)",
-            "Negative Results & Open Questions",
-            "Execution Provenance (if recorded)",
-        ],
+        "sections_regenerated": regenerated,
+        "sections_included": SECTION_ORDER,
     }
 
 

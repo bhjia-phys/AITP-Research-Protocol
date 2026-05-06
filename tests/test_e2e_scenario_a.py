@@ -331,17 +331,8 @@ def _promote_candidate_and_create_tex(tmp: str, repo_root: Path) -> None:
     )
     mcp_server.aitp_promote_candidate(tmp, TOPIC_SLUG, "cand-cs-anomaly")
 
-    # Create flow_notebook.tex
-    tex_dir = tr / "L3" / "tex"
-    tex_dir.mkdir(parents=True, exist_ok=True)
-    (tex_dir / "flow_notebook.tex").write_text(
-        "\\documentclass{article}\n"
-        "\\begin{document}\n"
-        "\\section{Level Shift in 2+1D Chern-Simons Theory}\n"
-        "The one-loop fermion determinant yields $\\Delta k = N\\,\\mathrm{sgn}(m)/2$.\n"
-        "\\end{document}\n",
-        encoding="utf-8",
-    )
+    # Generate flow_notebook.tex via the builder
+    mcp_server.aitp_generate_flow_notebook(tmp, TOPIC_SLUG, force_full=True)
 
 
 class ScenarioAEndToEndTest(unittest.TestCase):
@@ -468,11 +459,11 @@ class ScenarioAEndToEndTest(unittest.TestCase):
             reviews = list((tr / "L4" / "reviews").glob("*.md"))
             self.assertGreaterEqual(len(reviews), 1)
 
-            # Checkpoint 5: flow_notebook.tex exists
-            tex_path = tr / "L3" / "tex" / "flow_notebook.tex"
+            # Checkpoint 5: flow_notebook.tex exists at topic root
+            tex_path = tr / "flow_notebook.tex"
             self.assertTrue(tex_path.exists())
             tex_content = tex_path.read_text(encoding="utf-8")
-            self.assertIn("Delta", tex_content)
+            self.assertIn("Level Shift", tex_content)
 
             # Checkpoint 6: runtime/log.md has key events
             log_path = tr / "runtime" / "log.md"
