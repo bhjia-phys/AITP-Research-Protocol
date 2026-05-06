@@ -1308,6 +1308,90 @@ def aitp_write_section_intake(
     )
 
 
+# ---------------------------------------------------------------------------
+# L3→L1 Feedback — flow discoveries back to L1
+# ---------------------------------------------------------------------------
+
+
+def _ensure_heading(path: Path, heading: str) -> None:
+    """Ensure a markdown heading exists in a file. Creates file with heading if missing."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not path.exists():
+        _atomic_write_text(path, f"# Auto-generated\n\n{heading}\n\n")
+        return
+    text = path.read_text(encoding="utf-8")
+    if heading not in text:
+        _atomic_write_text(path, text.rstrip() + f"\n\n{heading}\n\n")
+
+
+def _do_feedback_to_l1(
+    root: Path,
+    feedback_kind: str,
+    content: str = "",
+    target_artifact: str = "",
+    source_l3_activity: str = "",
+    source_candidate_id: str = "",
+) -> dict[str, Any]:
+    """Internal helper — writes L3→L1 feedback to the right L1 artifact."""
+    l1_dir = root / "L1"
+
+    now = _now()
+    header = f"\n### L3 Feedback — {now}\n"
+    if source_l3_activity:
+        header += f"**From**: L3 `{source_l3_activity}`"
+        if source_candidate_id:
+            header += f" → candidate `{source_candidate_id}`"
+        header += "\n"
+    header += "\n"
+
+    if feedback_kind == "convention":
+        target = l1_dir / (target_artifact or "convention_snapshot.md")
+        _ensure_heading(target, "## L3 Discoveries")
+        _append_section(target, header + content)
+    elif feedback_kind == "contradiction":
+        target = l1_dir / (target_artifact or "contradiction_register.md")
+        _append_section(target, header + content)
+    elif feedback_kind == "cross_edge":
+        target = l1_dir / (target_artifact or "source_cross_map.md")
+        _append_section(target, header + content)
+    else:
+        return {"message": f"Unknown feedback_kind: {feedback_kind}", "ok": False}
+
+    _append_to_topic_log(root, f"l1_feedback: {feedback_kind} from L3/{source_l3_activity}")
+    return {"message": f"Recorded {feedback_kind} feedback to {target.name}", "ok": True}
+
+
+@mcp.tool()
+def aitp_feedback_to_l1(
+    topics_root: str,
+    topic_slug: str,
+    feedback_kind: str,
+    target_artifact: str = "",
+    content: str = "",
+    source_l3_activity: str = "",
+    source_candidate_id: str = "",
+) -> dict[str, Any]:
+    """Record L3→L1 feedback: conventions, contradictions, or cross-source edges.
+
+    L3 derivation work discovers new conventions, unstated assumptions, and
+    source connections. This tool records those discoveries back into L1 so
+    L1 stays a living document, not a frozen snapshot. Call this whenever
+    you discover something that should have been in L1 but wasn't.
+
+    Args:
+        feedback_kind: convention | contradiction | cross_edge
+        target_artifact: specific L1 artifact (defaults derived from kind)
+        content: feedback content in markdown
+        source_l3_activity: which L3 activity produced this feedback
+        source_candidate_id: which candidate produced this (if applicable)
+    """
+    root = _topic_root(topics_root, topic_slug)
+    return _do_feedback_to_l1(
+        root, feedback_kind, content, target_artifact,
+        source_l3_activity, source_candidate_id,
+    )
+
+
 # dispatch: partial — core file creation differs from CLI (MCP creates candidate directly,
 # CLI requires pre-existing file from derive_pack). Preflight dispatched to CLI.
 @mcp.tool()
@@ -1324,6 +1408,9 @@ def aitp_submit_candidate(
     depends_on: list[str] | None = None,
     candidate_type: str = "research_claim",
     regime_of_validity: str = "",
+    l1_feedback_content: str = "",
+    l1_feedback_kind: str = "",
+    l1_feedback_target: str = "",
 ) -> dict[str, Any]:
     """Submit a candidate finding. Creates L3/candidates/<id>.md. Returns popup gate for confirmation.
 
@@ -1333,6 +1420,9 @@ def aitp_submit_candidate(
         regime_boundary, or open_question. Use negative_result for claims that document
         a dead-end approach or falsified hypothesis (equal value to positive results).
     regime_of_validity: physical regime where this candidate applies (required for study candidates).
+    l1_feedback_*: optional L3→L1 feedback. If l1_feedback_kind and l1_feedback_content
+        are provided, records the discovery back to L1 (e.g. new convention, contradiction,
+        or cross-source edge discovered during derivation).
     """
     root = _topic_root(topics_root, topic_slug)
     slug = _slugify(candidate_id)

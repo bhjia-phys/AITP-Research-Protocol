@@ -37,7 +37,7 @@ class TestVisualizeEFTTower:
             {"id": "quantum", "energy_scale": "eV - keV", "theories": "qm"},
             {"id": "qed", "energy_scale": "keV - GeV", "theories": "qed"},
         ]
-        aitp_create_l2_tower(td, "physics", "Physics Tower", "eV - TeV", layers=layers)
+        aitp_create_l2_tower.__wrapped__(td, "physics", "Physics Tower", "eV - TeV", layers=layers)
 
         r = aitp_visualize_eft_tower(td, "physics")
         assert isinstance(r, dict)
@@ -49,9 +49,9 @@ class TestVisualizeEFTTower:
 
     def test_tower_with_correspondence(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "qed", "concept", "QED", energy_scale="keV-GeV",
+        aitp_create_l2_node.__wrapped__(td, "qed", "concept", "QED", energy_scale="keV-GeV",
                             source_ref="ref:test")
-        aitp_create_l2_node(td, "classical-em", "concept", "Classical EM",
+        aitp_create_l2_node.__wrapped__(td, "classical-em", "concept", "Classical EM",
                             energy_scale="< eV", source_ref="ref:test")
         aitp_create_l2_edge(td, "qed-limits-classical", "qed", "classical-em",
                             "limits_to", regime_condition="alpha -> 0",
@@ -60,7 +60,7 @@ class TestVisualizeEFTTower:
             {"id": "classical", "energy_scale": "< eV", "theories": "classical-em"},
             {"id": "qed", "energy_scale": "keV - GeV", "theories": "qed"},
         ]
-        aitp_create_l2_tower(td, "em", "EM Tower", "eV - GeV", layers=layers)
+        aitp_create_l2_tower.__wrapped__(td, "em", "EM Tower", "eV - GeV", layers=layers)
 
         r = aitp_visualize_eft_tower(td, "em")
         assert "limits_to" in r["ascii"] or "-->" in r["ascii"]
@@ -73,18 +73,18 @@ class TestVisualizeEFTTower:
 
     def test_empty_tower(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_tower(td, "empty", "Empty Tower", "N/A")
+        aitp_create_l2_tower.__wrapped__(td, "empty", "Empty Tower", "N/A")
         r = aitp_visualize_eft_tower(td, "empty")
         assert "no layers" in r["ascii"].lower() or r["metadata"]["layer_count"] == 0
 
     def test_tower_node_title_lookup(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "newton", "concept", "Newtonian Mechanics",
+        aitp_create_l2_node.__wrapped__(td, "newton", "concept", "Newtonian Mechanics",
                             energy_scale="< eV", source_ref="ref:test")
         layers = [
             {"id": "classical", "energy_scale": "< eV", "theories": "newton"},
         ]
-        aitp_create_l2_tower(td, "mech", "Mech Tower", "< eV", layers=layers)
+        aitp_create_l2_tower.__wrapped__(td, "mech", "Mech Tower", "< eV", layers=layers)
 
         r = aitp_visualize_eft_tower(td, "mech")
         assert "Newtonian Mechanics" in r["ascii"]
@@ -96,7 +96,7 @@ class TestVisualizeDerivationChain:
 
     def test_basic_chain(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "e2e-derivation", "derivation_chain",
+        aitp_create_l2_node.__wrapped__(td, "e2e-derivation", "derivation_chain",
                             "E2E Derivation",
                             source_ref="ref:test",
                             regime_of_validity="non-relativistic",
@@ -128,9 +128,9 @@ class TestVisualizeDerivationChain:
 
     def test_chain_with_edges(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "chain-a", "derivation_chain", "Chain A",
+        aitp_create_l2_node.__wrapped__(td, "chain-a", "derivation_chain", "Chain A",
                             source_ref="ref:test")
-        aitp_create_l2_node(td, "result-b", "result", "Result B",
+        aitp_create_l2_node.__wrapped__(td, "result-b", "result", "Result B",
                             source_ref="ref:test")
         aitp_create_l2_edge(td, "chain-to-result", "chain-a", "result-b",
                             "derives_from", source_ref="ref:test")
@@ -140,7 +140,7 @@ class TestVisualizeDerivationChain:
 
     def test_non_derivation_node(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "concept-x", "concept", "Concept X",
+        aitp_create_l2_node.__wrapped__(td, "concept-x", "concept", "Concept X",
                             source_ref="ref:test")
         r = aitp_visualize_derivation_chain(td, "concept-x")
         assert "error" in r or "not 'derivation_chain'" in str(r).lower()
@@ -163,10 +163,10 @@ class TestVisualizeKnowledgeGraph:
 
     def test_graph_with_nodes(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "qho", "concept", "Quantum HO",
+        aitp_create_l2_node.__wrapped__(td, "qho", "concept", "Quantum HO",
                             source_ref="ref:test",
                             physical_meaning="Quantum harmonic oscillator")
-        aitp_create_l2_node(td, "gs-energy", "result", "Ground State Energy",
+        aitp_create_l2_node.__wrapped__(td, "gs-energy", "result", "Ground State Energy",
                             source_ref="ref:test")
         r = aitp_visualize_knowledge_graph(td)
         assert r["metadata"]["node_count"] == 2
@@ -175,8 +175,8 @@ class TestVisualizeKnowledgeGraph:
 
     def test_graph_with_edges(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "a", "concept", "A", source_ref="ref:test")
-        aitp_create_l2_node(td, "b", "result", "B", source_ref="ref:test")
+        aitp_create_l2_node.__wrapped__(td, "a", "concept", "A", source_ref="ref:test")
+        aitp_create_l2_node.__wrapped__(td, "b", "result", "B", source_ref="ref:test")
         aitp_create_l2_edge(td, "a-to-b", "a", "b", "derives_from",
                             source_ref="ref:test")
         r = aitp_visualize_knowledge_graph(td)
@@ -185,19 +185,19 @@ class TestVisualizeKnowledgeGraph:
 
     def test_graph_type_filter(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "c1", "concept", "C1", source_ref="ref:test")
-        aitp_create_l2_node(td, "r1", "result", "R1", source_ref="ref:test")
+        aitp_create_l2_node.__wrapped__(td, "c1", "concept", "C1", source_ref="ref:test")
+        aitp_create_l2_node.__wrapped__(td, "r1", "result", "R1", source_ref="ref:test")
         r = aitp_visualize_knowledge_graph(td, node_type="result")
         assert r["metadata"]["node_count"] == 1
         assert "r1" in r["ascii"]
 
     def test_graph_center_node(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "center", "concept", "Center",
+        aitp_create_l2_node.__wrapped__(td, "center", "concept", "Center",
                             source_ref="ref:test")
-        aitp_create_l2_node(td, "neighbor", "concept", "Neighbor",
+        aitp_create_l2_node.__wrapped__(td, "neighbor", "concept", "Neighbor",
                             source_ref="ref:test")
-        aitp_create_l2_node(td, "far", "concept", "Far Away",
+        aitp_create_l2_node.__wrapped__(td, "far", "concept", "Far Away",
                             source_ref="ref:test")
         aitp_create_l2_edge(td, "c-n", "center", "neighbor", "uses",
                             source_ref="ref:test")
@@ -208,16 +208,16 @@ class TestVisualizeKnowledgeGraph:
 
     def test_missing_correspondence_detection(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "res-a", "result", "Result A",
+        aitp_create_l2_node.__wrapped__(td, "res-a", "result", "Result A",
                             source_ref="ref:test", regime_of_validity="1D")
         r = aitp_visualize_knowledge_graph(td)
         assert "Missing Correspondence" in r["ascii"] or r["metadata"]["missing_correspondence"] >= 1
 
     def test_no_missing_when_limits_exists(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "res-b", "result", "Result B",
+        aitp_create_l2_node.__wrapped__(td, "res-b", "result", "Result B",
                             source_ref="ref:test", regime_of_validity="1D")
-        aitp_create_l2_node(td, "classical", "concept", "Classical Limit",
+        aitp_create_l2_node.__wrapped__(td, "classical", "concept", "Classical Limit",
                             source_ref="ref:test")
         aitp_create_l2_edge(td, "res-b-limits", "res-b", "classical", "limits_to",
                             regime_condition="hbar -> 0", source_ref="ref:test")
@@ -226,9 +226,9 @@ class TestVisualizeKnowledgeGraph:
 
     def test_type_icons_in_output(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "c", "concept", "C", source_ref="ref:test")
-        aitp_create_l2_node(td, "r", "result", "R", source_ref="ref:test")
-        aitp_create_l2_node(td, "q", "open_question", "Q", source_ref="ref:test")
+        aitp_create_l2_node.__wrapped__(td, "c", "concept", "C", source_ref="ref:test")
+        aitp_create_l2_node.__wrapped__(td, "r", "result", "R", source_ref="ref:test")
+        aitp_create_l2_node.__wrapped__(td, "q", "open_question", "Q", source_ref="ref:test")
         r = aitp_visualize_knowledge_graph(td)
         assert "[C]" in r["ascii"]
         assert "[R]" in r["ascii"]
@@ -236,9 +236,9 @@ class TestVisualizeKnowledgeGraph:
 
     def test_trust_markers(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "t-node", "concept", "T Node",
+        aitp_create_l2_node.__wrapped__(td, "t-node", "concept", "T Node",
                             source_ref="ref:test")
-        aitp_update_l2_node(td, "t-node", trust_level="validated")
+        aitp_update_l2_node.__wrapped__(td, "t-node", trust_level="validated")
         r = aitp_visualize_knowledge_graph(td)
         assert "*" in r["ascii"]
 

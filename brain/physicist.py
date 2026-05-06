@@ -20,9 +20,13 @@ from typing import Any
 def _check_physicist_l2_lookup(body: str, stage: str) -> list[str]:
     """Verify the AI queried L2 at this stage and recorded findings.
 
-    Each stage must reference L2 knowledge in its artifacts, and the
-    reference must cite at least one concrete L2 entry ID (e.g. claim-xxx,
-    system-xxx). A bare heading with no entry references is insufficient.
+    Each stage must reference L2 knowledge in its artifacts. Two valid patterns:
+    1. References one or more concrete L2 entry IDs (claim-xxx, system-xxx, ...)
+    2. States that L2 was queried and no relevant entries were found, with
+       evidence of the query (mentions the tool used or the query parameters).
+
+    A bare heading with "No prior knowledge found" is NOT valid — it doesn't
+    prove that L2 was actually queried.
 
     Returns list of missing items (empty = valid).
     """
@@ -46,17 +50,35 @@ def _check_physicist_l2_lookup(body: str, stage: str) -> list[str]:
     next_section = remaining.find("\n## ")
     section = remaining[:next_section] if next_section != -1 else remaining
 
-    # Require at least one L2 entry ID reference
+    # Check for L2 entry ID references (found relevant entries)
     entry_refs = re.findall(
         r'(?:claim|system|method|pitfall|question)-[a-z][a-z0-9-]+',
         section
     )
-    if not entry_refs:
-        issues.append(
-            f"{heading} must reference at least one L2 entry ID "
-            "(e.g. claim-headwing-formula, system-si-bulk). "
-            "Run aitp_query_l2 or aitp_query_entries before filling this section."
-        )
+    if entry_refs:
+        return []  # Found explicit entry references → valid
+
+    # No entry references. Check if the AI at least queried L2.
+    # Accept evidence of querying: mentioning tool names or explicit "nothing found"
+    queried_signals = [
+        "aitp_query_l2", "aitp_query_entries", "aitp_query_l2_index",
+        "aitp_query_l2_graph", "queried L2", "searched L2",
+        "no relevant entries", "L2 returned no", "L2 has no relevant",
+        "nothing relevant in L2", "no L2 entries matched",
+        "L2 is empty for", "zero results", "0 results",
+    ]
+    has_query_evidence = any(signal.lower() in section.lower() for signal in queried_signals)
+    if has_query_evidence:
+        return []  # AI queried but found nothing → valid
+
+    # Neither entry refs nor query evidence
+    issues.append(
+        f"{heading} must reference at least one L2 entry ID "
+        "(e.g. claim-headwing-formula, system-si-bulk), "
+        "or state that L2 was queried and no relevant entries were found. "
+        "Run aitp_query_l2 or aitp_query_entries before filling this section, "
+        "and mention what you searched for."
+    )
 
     return issues
 

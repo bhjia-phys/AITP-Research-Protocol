@@ -35,7 +35,7 @@ class TestCodeBlocks:
     def test_code_block_with_language(self):
         md = "```python\nprint('hello')\n```"
         result = md_body_to_latex(md)
-        assert "language=Python" in result or "Python" in result
+        assert "language=Python" in result
 
     def test_code_block_contains_dollars(self):
         md = "```c\nint x = $foo;\n```"
@@ -68,10 +68,10 @@ class TestTables:
 
 class TestHeadings:
     def test_h1_to_subsection(self):
-        assert r"\subsection*{Title}" in md_body_to_latex("# Title")
+        assert r"\subsection{Title}" in md_body_to_latex("# Title")
 
     def test_h2_to_subsubsection(self):
-        assert r"\subsubsection*{Title}" in md_body_to_latex("## Title")
+        assert r"\subsubsection{Title}" in md_body_to_latex("## Title")
 
     def test_h3_to_bold_heading(self):
         result = md_body_to_latex("### Title")
@@ -129,11 +129,11 @@ class TestEdgeCases:
         result = md_body_to_latex("## Hello\n\nSome **bold** text.")
         assert r"\begin{verbatim}" not in result
         assert r"\end{verbatim}" not in result
-        assert r"\subsubsection*{Hello}" in result
+        assert r"\subsubsection{Hello}" in result
 
     def test_unicode_greek(self):
         result = md_body_to_latex("α particle = 5.0")
-        assert r"$\alpha$" in result
+        assert r"\ensuremath{\alpha}" in result
 
     def test_mixed_complex(self):
         md = (
@@ -146,6 +146,6 @@ class TestEdgeCases:
             "- `option=3` is sufficient.\n"
         )
         result = md_body_to_latex(md)
-        assert r"\subsubsection*{Results}" in result
+        assert r"\subsubsection{Results}" in result
         assert r"\begin{tabular}" in result
         assert r"\begin{itemize}" in result

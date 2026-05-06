@@ -42,7 +42,7 @@ def _setup_td(tmp_path: Path) -> str:
 
 def _bootstrap(td):
     """Bootstrap topic and advance past L0."""
-    aitp_bootstrap_topic(td, TOPIC, "Test Topic", "What is X?")
+    aitp_bootstrap_topic.__wrapped__(td, TOPIC, "Test Topic", "What is X?")
     _fill_l0_gate(td)
     aitp_advance_to_l1(td, TOPIC)
 
@@ -229,7 +229,7 @@ class TestL2GraphNodes:
 
     def test_create_node_requires_source_ref(self, tmp_path):
         td = _setup_td(tmp_path)
-        r = aitp_create_l2_node(td, "orphan-node", "concept", "Orphan")
+        r = aitp_create_l2_node.__wrapped__(td, "orphan-node", "concept", "Orphan")
         assert "provenance" in r.lower() or "source_ref" in r.lower() or "REQUIRED" in r
 
     def test_create_node_all_types(self, tmp_path):
@@ -262,7 +262,7 @@ class TestL2GraphNodes:
             source_ref="ref:A", domain="quantum-many-body",
         )
         # Update trust to validated
-        aitp_update_l2_node(td, "merge-node", trust_level="validated")
+        aitp_update_l2_node.__wrapped__(td, "merge-node", trust_level="validated")
         # Re-create with same id -- node already exists
         r = aitp_create_l2_node(
             td, "merge-node", "concept", "Merge Node",
@@ -278,16 +278,16 @@ class TestL2GraphEdges:
 
     def test_create_edge(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "node-a", "concept", "Node A", source_ref="ref:test", domain="quantum-many-body")
-        aitp_create_l2_node(td, "node-b", "concept", "Node B", source_ref="ref:test", domain="quantum-many-body")
+        aitp_create_l2_node.__wrapped__(td, "node-a", "concept", "Node A", source_ref="ref:test", domain="quantum-many-body")
+        aitp_create_l2_node.__wrapped__(td, "node-b", "concept", "Node B", source_ref="ref:test", domain="quantum-many-body")
         r = aitp_create_l2_edge(td, "edge-ab", "node-a", "node-b", "uses",
                                 source_ref="ref:test")
         assert "Created" in r
 
     def test_create_edge_all_types(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "na", "concept", "NA", source_ref="ref:test", domain="quantum-many-body")
-        aitp_create_l2_node(td, "nb", "concept", "NB", source_ref="ref:test", domain="quantum-many-body")
+        aitp_create_l2_node.__wrapped__(td, "na", "concept", "NA", source_ref="ref:test", domain="quantum-many-body")
+        aitp_create_l2_node.__wrapped__(td, "nb", "concept", "NB", source_ref="ref:test", domain="quantum-many-body")
         for etype in L2_EDGE_TYPES:
             eid = f"edge-{etype.replace('_', '-')}"
             r = aitp_create_l2_edge(td, eid, "na", "nb", etype, source_ref="ref:test")
@@ -305,7 +305,7 @@ class TestL2GraphQuery:
 
     def test_query_by_text(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "propagator-func", "concept", "Propagator",
+        aitp_create_l2_node.__wrapped__(td, "propagator-func", "concept", "Propagator",
                             source_ref="ref:test", domain="quantum-many-body",
                             physical_meaning="Green function propagator of the many-body system")
         graph = aitp_query_l2_graph(td, query="propagator")
@@ -315,16 +315,16 @@ class TestL2GraphQuery:
 
     def test_query_by_type(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "t1", "concept", "Concept", source_ref="ref:test", domain="quantum-many-body")
-        aitp_create_l2_node(td, "t2", "theorem", "Theorem", source_ref="ref:test", domain="quantum-many-body")
+        aitp_create_l2_node.__wrapped__(td, "t1", "concept", "Concept", source_ref="ref:test", domain="quantum-many-body")
+        aitp_create_l2_node.__wrapped__(td, "t2", "theorem", "Theorem", source_ref="ref:test", domain="quantum-many-body")
         graph = aitp_query_l2_graph(td, node_type="concept")
         types = {n["type"] for n in graph["nodes"]}
         assert "concept" in types
 
     def test_query_by_edge_from_node(self, tmp_path):
         td = _setup_td(tmp_path)
-        aitp_create_l2_node(td, "from-a", "concept", "From A", source_ref="ref:test", domain="quantum-many-body")
-        aitp_create_l2_node(td, "to-b", "concept", "To B", source_ref="ref:test", domain="quantum-many-body")
+        aitp_create_l2_node.__wrapped__(td, "from-a", "concept", "From A", source_ref="ref:test", domain="quantum-many-body")
+        aitp_create_l2_node.__wrapped__(td, "to-b", "concept", "To B", source_ref="ref:test", domain="quantum-many-body")
         aitp_create_l2_edge(td, "e1", "from-a", "to-b", "uses", source_ref="ref:test")
         graph = aitp_query_l2_graph(td, from_node="from-a")
         assert len(graph["edges"]) >= 1
@@ -337,7 +337,7 @@ class TestL2MergeDelta:
     def test_merge_creates_nodes_and_edges(self, tmp_path):
         td = _setup_td(tmp_path)
         _bootstrap(td)
-        delta = aitp_merge_subgraph_delta(td, TOPIC,
+        delta = aitp_merge_subgraph_delta.__wrapped__(td, TOPIC,
             nodes=[
                 {"node_id": "new-node-1", "type": "concept",
                  "title": "New Node 1", "physical_meaning": "Test"},
@@ -351,10 +351,10 @@ class TestL2MergeDelta:
         td = _setup_td(tmp_path)
         _bootstrap(td)
         # Create node first
-        aitp_create_l2_node(td, "existing-node", "concept", "Original",
+        aitp_create_l2_node.__wrapped__(td, "existing-node", "concept", "Original",
                             source_ref="ref:test", domain="quantum-many-body")
         # Merge same node
-        delta = aitp_merge_subgraph_delta(td, TOPIC,
+        delta = aitp_merge_subgraph_delta.__wrapped__(td, TOPIC,
             nodes=[
                 {"node_id": "existing-node", "type": "concept",
                  "title": "Updated", "physical_meaning": "Updated meaning"},

@@ -46,6 +46,7 @@ def md_body_to_latex(md_text: str, max_chars: int = 8000) -> str:
     text = _convert_headings(text)
     text = _convert_lists(text)
     text = _convert_inline_formatting(text)
+    text = _escape_stray_specials(text)
     text = _restore_tokens(text, tokens)
 
     return text
@@ -53,14 +54,31 @@ def md_body_to_latex(md_text: str, max_chars: int = 8000) -> str:
 
 # ── Code block protection ───────────────────────────────────────────────
 
+_LISTINGS_LANG_MAP = {
+    "cpp": "C++", "c++": "C++", "c": "C", "python": "Python", "py": "Python",
+    "bash": "bash", "sh": "bash", "shell": "bash",
+    "java": "Java", "javascript": "JavaScript", "js": "JavaScript",
+    "rust": "Rust", "go": "Go", "fortran": "Fortran",
+    "latex": "TeX", "tex": "TeX", "makefile": "make",
+}
+
+
+def _normalize_listings_lang(lang: str) -> str:
+    """Normalize language tag for listings package."""
+    if not lang:
+        return ""
+    lang_lower = lang.lower().strip()
+    return _LISTINGS_LANG_MAP.get(lang_lower, lang_lower)
+
+
 def _protect_code_blocks(text: str, tokens: dict[str, str]) -> str:
     pattern = re.compile(r'```(\w*)\n(.*?)```', re.DOTALL)
 
     def _replace(m):
-        lang = m.group(1) or "text"
+        lang = _normalize_listings_lang(m.group(1) or "")
         code = m.group(2)
         tok = _next_token()
-        lang_opt = f"[language={lang.capitalize()}]" if lang != "text" else ""
+        lang_opt = f"[language={lang}]" if lang else ""
         tokens[tok] = (
             r"\begin{lstlisting}" + lang_opt + "\n"
             + code + "\n"
@@ -239,8 +257,8 @@ def _convert_headings(text: str) -> str:
     """
     text = re.sub(r'^#### (.+)$', r'\\medskip\\noindent\\textbf{\1}\\par', text, flags=re.MULTILINE)
     text = re.sub(r'^### (.+)$', r'\\medskip\\noindent\\textbf{\1}\\par', text, flags=re.MULTILINE)
-    text = re.sub(r'^## (.+)$', r'\\subsubsection*{\1}', text, flags=re.MULTILINE)
-    text = re.sub(r'^# (.+)$', r'\\subsection*{\1}', text, flags=re.MULTILINE)
+    text = re.sub(r'^## (.+)$', r'\\subsubsection{\1}', text, flags=re.MULTILINE)
+    text = re.sub(r'^# (.+)$', r'\\subsection{\1}', text, flags=re.MULTILINE)
     return text
 
 
@@ -279,31 +297,56 @@ def _convert_lists(text: str) -> str:
 # ── Inline formatting ───────────────────────────────────────────────────
 
 def _convert_inline_formatting(text: str) -> str:
+    """Apply markdown inline formatting → LaTeX.
+
+    Per-part processing (split by tokens). Bold/italic are matched within
+    each part — Unicode math chars in the source add \$...\$ tokens that
+    can split **...** across parts. For the common case of Greek letters
+    inside bold (e.g., **C^{mn}_μ**), the _sanitize_unicode step uses
+    \\textmu instead of \$\\mu\$ to avoid creating math tokens mid-bold.
+    """
     parts = re.split(r'(\x00MDTOK\d{4}\x00)', text)
     for idx in range(len(parts)):
         if parts[idx].startswith('\x00MDTOK'):
             continue
         p = parts[idx]
-        # Protect inline code first — its content is escaped separately
-        code_tokens: dict[str, str] = {}
-        def _protect_code(m):
-            tok = _next_token()
-            code_tokens[tok] = r'\texttt{' + _esc_tex_special(m.group(1)) + '}'
-            return tok
-        p = re.sub(r'`([^`]+)`', _protect_code, p)
-        # Escape TeX specials in remaining text (not in code)
-        p = p.replace('_', r'\_')
-        p = p.replace('^', r'\^{}')
-        p = p.replace('#', r'\#')
-        p = p.replace('&', r'\&')
-        p = p.replace('%', r'\%')
-        # Inline formatting (bold, italic, links)
-        p = re.sub(r'\*\*(.+?)\*\*', r'\\textbf{\1}', p)
-        p = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'\\textit{\1}', p)
-        p = re.sub(r'\[(.+?)\]\((.+?)\)', r'\\href{\2}{\1}', p)
-        # Restore inline code
-        for tok, latex in code_tokens.items():
-            p = p.replace(tok, latex)
+        # Bold: **text** (DOTALL for multi-line)
+        p = re.sub(r'\*\*(.+?)\*\*', r'\\textbf{\1}', p, flags=re.DOTALL)
+        # Italic: *text* (not **)
+        p = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'\\textit{\1}', p, flags=re.DOTALL)
+        # Inline code: `text`
+        p = re.sub(
+            r'`([^`]+)`',
+            lambda m: r'\texttt{' + _esc_tex_special(m.group(1)) + '}',
+            p,
+        )
+        # Links: [text](url)
+        p = re.sub(
+            r'\[(.+?)\]\((.+?)\)',
+            lambda m: r'\href{' + m.group(2).replace('#', r'\#') + '}{' + m.group(1) + '}',
+            p,
+        )
+        parts[idx] = p
+    return ''.join(parts)
+
+
+def _escape_stray_specials(text: str) -> str:
+    """Escape remaining TeX specials in plain text after all formatting.
+
+    Only escapes characters that are NOT already part of valid LaTeX commands
+    (e.g., \# from \texttt{} is already escaped by _esc_tex_special).
+    """
+    parts = re.split(r'(\x00MDTOK\d{4}\x00)', text)
+    for idx in range(len(parts)):
+        if parts[idx].startswith('\x00MDTOK'):
+            continue
+        p = parts[idx]
+        # Escape ONLY if not preceded by \ (already escaped by _esc_tex_special)
+        p = re.sub(r'(?<!\\)_', r'\\_', p)     # _ not after \
+        p = re.sub(r'(?<!\\)\^', r'\\^{}', p)   # ^ not after \
+        p = re.sub(r'(?<!\\)#', r'\\#', p)      # # not after \
+        p = re.sub(r'(?<!\\)&', r'\\&', p)      # & not after \
+        p = re.sub(r'(?<!\\)%', r'\\%', p)      # % not after \
         parts[idx] = p
     return ''.join(parts)
 

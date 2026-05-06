@@ -185,7 +185,7 @@ def _render_conventions(topic_root: Path) -> str:
     notation = fm.get("notation_choices", "")
     units = fm.get("unit_conventions", "")
     if notation:
-        lines.append(r"\subsection*{Notation}")
+        lines.append(r"\subsection{Notation}")
         lines.append(_esc(notation))
         lines.append("")
     if units:
@@ -278,7 +278,7 @@ def _render_derivation_journey(topic_root: Path) -> str:
         label = sp.replace("-", " ").replace("_", " ").title()
 
         if not body.strip():
-            lines.append(r"\subsection*{" + label + "}")
+            lines.append(r"\subsection{" + label + "}")
             lines.append(_placeholder_for(sp))
             lines.append("")
             continue
@@ -287,7 +287,7 @@ def _render_derivation_journey(topic_root: Path) -> str:
         fp = _content_fingerprint(body)
         if fp in seen_fingerprints:
             primary = seen_fingerprints[fp]
-            lines.append(r"\subsection*{" + label + "}")
+            lines.append(r"\subsection{" + label + "}")
             lines.append(
                 r"\textit{Content identical to \textbf{" + primary
                 + r"} — see preceding subsection.}"
@@ -297,7 +297,7 @@ def _render_derivation_journey(topic_root: Path) -> str:
 
         seen_fingerprints[fp] = label
         has_any = True
-        lines.append(r"\subsection*{" + label + "}")
+        lines.append(r"\subsection{" + label + "}")
         if _is_substantive(body):
             lines.append(md_body_to_latex(body))
         else:
@@ -435,7 +435,7 @@ def _render_negative_results(topic_root: Path) -> str:
         _, body = _parse_md(deferred_path)
         if body.strip():
             has_content = True
-            lines.append(r"\subsection*{Deferred Items}")
+            lines.append(r"\subsection{Deferred Items}")
             lines.append(md_body_to_latex(body[:3000]))
 
     ideas_dir = topic_root / "L3" / "ideas"
@@ -453,7 +453,7 @@ def _render_negative_results(topic_root: Path) -> str:
 
     if failed_ideas:
         has_content = True
-        lines.append(r"\subsection*{Failed Approaches}")
+        lines.append(r"\subsection{Failed Approaches}")
         for fi in failed_ideas:
             lines.append(r"\begin{warningbox}[" + _esc(fi["title"]) + "]")
             if fi["lessons"]:

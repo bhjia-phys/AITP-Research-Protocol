@@ -34,7 +34,8 @@ class BootstrapL1ScaffoldTests(unittest.TestCase):
             repo_root = Path(tmp)
             (repo_root / "topics").mkdir()
             mcp_server.aitp_bootstrap_topic(
-                str(repo_root), "demo-topic", "Demo Topic", "What is the bounded question?",
+                topics_root=str(repo_root), topic_slug="demo-topic",
+                title="Demo Topic", question="What is the bounded question?",
             )
             tr = repo_root / "topics" / "demo-topic"
             for name in [
@@ -55,14 +56,15 @@ class L1GateTests(unittest.TestCase):
         repo_root = Path(tmp)
         (repo_root / "topics").mkdir()
         mcp_server.aitp_bootstrap_topic(
-            str(repo_root), "demo-topic", "Demo Topic", "What is the bounded question?",
+            topics_root=str(repo_root), topic_slug="demo-topic",
+            title="Demo Topic", question="What is the bounded question?",
         )
         return repo_root
 
     def test_execution_brief_blocks_on_first_missing_l0_field(self):
         with tempfile.TemporaryDirectory() as tmp:
             self._bootstrap(tmp)
-            brief = mcp_server.aitp_get_execution_brief(tmp, "demo-topic")
+            brief = mcp_server.aitp_get_execution_brief(topics_root=tmp, topic_slug="demo-topic")
             self.assertEqual(brief["stage"], "L0")
             self.assertEqual(brief["posture"], "discover")
             self.assertEqual(brief["gate_status"], "blocked_missing_field")
@@ -90,7 +92,7 @@ class L1GateTests(unittest.TestCase):
                  "slug": "paper-a", "short_title": "Paper A"},
                 "# Paper A\n\nA source.\n",
             )
-            mcp_server.aitp_advance_to_l1(tmp, "demo-topic")
+            mcp_server.aitp_advance_to_l1(topics_root=tmp, topic_slug="demo-topic")
 
             mcp_server._write_md(
                 tr / "L1" / "question_contract.md",
@@ -150,7 +152,7 @@ class L1GateTests(unittest.TestCase):
                 "## Cross-References\nNone.\n\n## Completeness Self-Assessment\nConfidence: **high**\n",
             )
 
-            brief = mcp_server.aitp_get_execution_brief(tmp, "demo-topic")
+            brief = mcp_server.aitp_get_execution_brief(topics_root=tmp, topic_slug="demo-topic")
             self.assertEqual(brief["stage"], "L1")
             self.assertEqual(brief["posture"], "frame")
             self.assertEqual(brief["gate_status"], "ready")
@@ -166,7 +168,8 @@ class HookOutputTests(unittest.TestCase):
             repo_root = Path(tmp)
             (repo_root / "topics").mkdir()
             mcp_server.aitp_bootstrap_topic(
-                str(repo_root), "demo-topic", "Demo Topic", "What is the bounded question?",
+                topics_root=str(repo_root), topic_slug="demo-topic",
+                title="Demo Topic", question="What is the bounded question?",
             )
             tr = repo_root / "topics" / "demo-topic"
 
@@ -186,7 +189,7 @@ class HookOutputTests(unittest.TestCase):
                  "slug": "paper-a", "short_title": "Paper A"},
                 "# Paper A\n\nA source.\n",
             )
-            mcp_server.aitp_advance_to_l1(tmp, "demo-topic")
+            mcp_server.aitp_advance_to_l1(topics_root=tmp, topic_slug="demo-topic")
             completed = subprocess.run(
                 [sys.executable, str(self.REPO_ROOT / "hooks" / "session_start.py")],
                 cwd=repo_root, text=True, capture_output=True, check=True,
@@ -201,7 +204,8 @@ class HookOutputTests(unittest.TestCase):
             repo_root = Path(tmp)
             (repo_root / "topics").mkdir()
             mcp_server.aitp_bootstrap_topic(
-                str(repo_root), "demo-topic", "Demo Topic", "What is the bounded question?",
+                topics_root=str(repo_root), topic_slug="demo-topic",
+                title="Demo Topic", question="What is the bounded question?",
             )
             tr = repo_root / "topics" / "demo-topic"
 
@@ -221,7 +225,7 @@ class HookOutputTests(unittest.TestCase):
                  "slug": "paper-a", "short_title": "Paper A"},
                 "# Paper A\n\nA source.\n",
             )
-            mcp_server.aitp_advance_to_l1(tmp, "demo-topic")
+            mcp_server.aitp_advance_to_l1(topics_root=tmp, topic_slug="demo-topic")
             completed = subprocess.run(
                 [sys.executable, str(self.REPO_ROOT / "hooks" / "compact.py")],
                 cwd=repo_root, text=True, capture_output=True, check=True,

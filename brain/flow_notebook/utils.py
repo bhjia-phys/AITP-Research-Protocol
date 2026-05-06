@@ -108,9 +108,16 @@ for _k, _v in [
     ("³", "^3"), ("⁴", "^4"), ("⁵", "^5"),
     ("⁻", "^-"), ("⁺", "^+"), ("ᵀ", "^T"),
     ("−", "-"), ("†", "\\dagger"), ("…", "\\dots"),
-    ("√", "\\sqrt{}"), ("̂", "^"),
+    ("√", "\\sqrt{}"),
+    # Combining circumflex: text mode → \textasciicircum, math mode → \hat
+    ("̂", "\\hat{}"),
 ]:
-    _UNICODE_TO_LATEX_OUTSIDE[_k] = "$" + _v + "$"
+    # Outside math mode: use \ensuremath{} for symbols, $...$ for ^/_ patterns
+    # (^ and _ are only valid in explicit math mode with proper grouping).
+    if _v.startswith('^') or _v.startswith('_'):
+        _UNICODE_TO_LATEX_OUTSIDE[_k] = "$" + _v + "$"
+    else:
+        _UNICODE_TO_LATEX_OUTSIDE[_k] = "\\ensuremath{" + _v + "}"
     _UNICODE_TO_LATEX_INSIDE[_k] = _v
 
 
