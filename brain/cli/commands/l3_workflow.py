@@ -143,8 +143,60 @@ def cmd_candidate_submit(args):
         cand_fm["claim_statement"] = args.claim
         _write_md(cand_path, cand_fm, cand_body)
 
-    # Run preflight
+    # Hard prerequisite checks: prevent submitting without gap-audit and
+    # integration artifacts that have real content. These are physical
+    # necessities, not optional workflow suggestions.
+    from brain.contracts import _DIRECT_SUBMIT_ACTIVITIES
+    from brain.checks import _check_heading_content
+
     state_fm, state_body = _parse_md(root / "state.md")
+    current_activity = str(state_fm.get("l3_activity", "")).strip() or "ideate"
+
+    if current_activity not in _DIRECT_SUBMIT_ACTIVITIES:
+        print(f"Candidate submission not allowed from '{current_activity}' activity.")
+        print(f"Direct submission is only allowed from: {sorted(_DIRECT_SUBMIT_ACTIVITIES)}")
+        print("Switch to integrate or distill first: aitp switch-activity <topic> integrate")
+        return 1
+
+    prereq_issues = []
+
+    def _check_prereq_artifact(activity: str, heading: str, label: str, min_chars: int = 30) -> None:
+        name_map = {
+            "ideate": "active_idea.md", "plan": "active_plan.md",
+            "derive": "active_derivation.md", "trace-derivation": "active_trace.md",
+            "gap-audit": "active_gaps.md", "integrate": "active_integration.md",
+            "distill": "active_distillation.md",
+        }
+        fname = name_map.get(activity, f"active_{activity}.md")
+        path = root / "L3" / activity / fname
+        if not path.exists():
+            prereq_issues.append(
+                f"{label}: {activity}/{fname} does not exist. "
+                f"Run the {activity} activity before submitting."
+            )
+            return
+        _, body = _parse_md(path)
+        if not _check_heading_content(body, heading, min_chars=min_chars):
+            prereq_issues.append(
+                f"{label}: '{heading}' in {activity}/{fname} is empty or has "
+                f"insufficient content (need >= {min_chars} chars). "
+                f"Complete the {activity} activity before submitting."
+            )
+
+    _check_prereq_artifact("derive", "## Derivation Chains", "Missing derivation", min_chars=50)
+    _check_prereq_artifact("gap-audit", "## Correspondence Check",
+                          "Missing correspondence check", min_chars=30)
+    _check_prereq_artifact("integrate", "## Findings",
+                          "Missing integration findings", min_chars=50)
+
+    if prereq_issues:
+        print("Candidate submission blocked — prerequisite artifacts incomplete:")
+        for issue in prereq_issues:
+            print(f"  • {issue}")
+        print(f"\nTo resolve: fill the required sections in L3/<activity>/ and re-submit.")
+        return 1
+
+    # Run preflight
     lane = state_fm.get("lane", "unspecified")
     ctype = args.type or "research_claim"
 
@@ -239,7 +291,7 @@ def cmd_switch_activity(args):
     """Switch L3 activity — lightweight, no preflight."""
     root = _resolve_topic_root(args.topic)
     state_fm, state_body = _parse_md(root / "state.md")
-    valid = ["ideate", "plan", "derive", "trace-derivation", "gap-audit", "connect", "integrate", "distill"]
+    valid = ["ideate", "plan", "derive", "trace-derivation", "gap-audit", "integrate", "distill"]
     activity = args.activity
     if activity not in valid:
         print(f"Invalid activity '{activity}'. Valid: {valid}")

@@ -40,7 +40,7 @@ class StageSnapshot:
 
 L3_ACTIVITIES = [
     "ideate", "plan", "derive", "trace-derivation",
-    "gap-audit", "connect", "integrate", "distill",
+    "gap-audit", "integrate", "distill",
 ]
 
 L3_ACTIVITY_TEMPLATES: dict[str, tuple[str, dict[str, Any], str]] = {
@@ -85,14 +85,6 @@ L3_ACTIVITY_TEMPLATES: dict[str, tuple[str, dict[str, Any], str]] = {
         "## Approximation Regimes\n\n## Correspondence Check\n\n"
         "## Prerequisite Gaps\n\n## Severity Assessment\n",
     ),
-    "connect": (
-        "connect",
-        {"artifact_kind": "l3_active_connect", "activity": "connect",
-         "required_fields": ["connection_summary"],
-         "connection_summary": ""},
-        "# Active Connection\n\n## Concepts Being Connected\n\n"
-        "## Proposed Edges\n\n## Evidence\n\n## Trust Assessment\n",
-    ),
     "integrate": (
         "integrate",
         {"artifact_kind": "l3_active_integration", "activity": "integrate",
@@ -117,7 +109,6 @@ L3_ACTIVITY_ARTIFACT_NAMES: dict[str, str] = {
     "derive": "active_derivation.md",
     "trace-derivation": "active_trace.md",
     "gap-audit": "active_gaps.md",
-    "connect": "active_connect.md",
     "integrate": "active_integration.md",
     "distill": "active_distillation.md",
 }
@@ -135,7 +126,6 @@ L3_ACTIVITY_SKILL_MAP: dict[str, str] = {
     "derive": "skill-l3-analyze",
     "trace-derivation": "skill-l3-analyze",  # merged: derivation tracing covered by analyze skill
     "gap-audit": "skill-l3-gap-audit",
-    "connect": "skill-l3-analyze",
     "integrate": "skill-l3-integrate",
     "distill": "skill-l3-distill",
 }
@@ -157,7 +147,6 @@ L3_ACTIVITY_REQUIRED_HEADINGS: dict[str, list[str]] = {
     "derive": ["## Derivation Chains", "## Step-by-Step Trace"],
     "trace-derivation": ["## Source Reference", "## Derivation Chains"],
     "gap-audit": ["## Unstated Assumptions", "## Correspondence Check"],
-    "connect": ["## Concepts Being Connected", "## Proposed Edges"],
     "integrate": ["## Integration Statement", "## Findings"],
     "distill": ["## Distilled Claim", "## Evidence Summary"],
 }

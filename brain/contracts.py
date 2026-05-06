@@ -343,7 +343,8 @@ INTERACTION_LEVELS = ["collaborative", "direct", "silent"]
 # full: all 5 physics checks + 5-dimension devils_advocate.
 VALIDATION_DEPTHS = ["abbreviated", "full"]
 
-# L3 activities from which a candidate can be submitted directly to L4
-# without completing the full 5-subplane sequence.
-_DIRECT_SUBMIT_ACTIVITIES = {"distill", "derive", "integrate"}
+# L3 activities from which a candidate can be submitted directly to L4.
+# derive is excluded: it cannot pass submission content checks because
+# those require integrate and gap-audit artifacts that don't exist yet.
+_DIRECT_SUBMIT_ACTIVITIES = {"distill", "integrate"}
 

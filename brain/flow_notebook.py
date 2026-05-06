@@ -41,7 +41,6 @@ SECTION_SOURCES: dict[str, list[str]] = {
                              "L3/derive/active_derivation.md",
                              "L3/trace-derivation/active_trace.md",
                              "L3/gap-audit/active_gaps.md",
-                             "L3/connect/active_connect.md",
                              "L3/integrate/active_integration.md",
                              "L3/ideas/*.md"],
     "synthesis":            ["L3/distill/active_distillation.md",
