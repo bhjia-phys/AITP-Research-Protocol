@@ -334,19 +334,20 @@ def _escape_stray_specials(text: str) -> str:
     """Escape remaining TeX specials in plain text after all formatting.
 
     Only escapes characters that are NOT already part of valid LaTeX commands
-    (e.g., \# from \texttt{} is already escaped by _esc_tex_special).
+    (e.g., \# from \\texttt{} is already escaped by _esc_tex_special).
+    Math spans and code blocks are already tokenized.
     """
     parts = re.split(r'(\x00MDTOK\d{4}\x00)', text)
     for idx in range(len(parts)):
         if parts[idx].startswith('\x00MDTOK'):
             continue
         p = parts[idx]
-        # Escape ONLY if not preceded by \ (already escaped by _esc_tex_special)
-        p = re.sub(r'(?<!\\)_', r'\\_', p)     # _ not after \
-        p = re.sub(r'(?<!\\)\^', r'\\^{}', p)   # ^ not after \
-        p = re.sub(r'(?<!\\)#', r'\\#', p)      # # not after \
-        p = re.sub(r'(?<!\\)&', r'\\&', p)      # & not after \
-        p = re.sub(r'(?<!\\)%', r'\\%', p)      # % not after \
+        # Escape ONLY if not preceded by \ (already part of \\_, \\^, \\#, etc.)
+        p = re.sub(r'(?<!\\)_', r'\\_', p)
+        p = re.sub(r'(?<!\\)\^', r'\\^{}', p)
+        p = re.sub(r'(?<!\\)#', r'\\#', p)
+        p = re.sub(r'(?<!\\)&', r'\\&', p)
+        p = re.sub(r'(?<!\\)%', r'\\%', p)
         parts[idx] = p
     return ''.join(parts)
 
