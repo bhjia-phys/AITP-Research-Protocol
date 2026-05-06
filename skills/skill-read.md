@@ -97,6 +97,12 @@ vs. peripheral sections.
 ### Step 3B: Deep-extract priority sections (second pass)
 For sections identified as relevant by the skim pass:
 
+**When there are many pending sections (>3 across >1 source), use parallel sub-agents.**
+This is the recommended approach for efficiency — each agent handles one source's
+sections independently. See "Parallel extraction" below for the exact workflow.
+
+For small-scale extraction (≤3 sections or single source), do sequential extraction:
+
 1. Re-read the section in detail. Extract:
    - **Key concepts** — precise definitions, physical quantities introduced
    - **Equations** — numbered equations and their role in the argument
@@ -134,6 +140,113 @@ For sections identified as relevant by the skim pass:
    
    One call replaces 5 (intake + node + edge + status + search).
    If the tool returns `suggestions`, review and create edges for matching concepts.
+
+### Parallel extraction with sub-agents (preferred for >3 sections across >1 source)
+
+When the TOC has many pending sections across multiple sources, use parallel
+general-purpose agents. Each agent handles ONE source's pending sections —
+they have no shared state and write to independent intake files.
+
+**Decision rule**: If `pending_sections > 3` AND `pending_sources > 1` → spawn
+one agent per source. Otherwise, do sequential extraction (Step 3B).
+
+**Workflow**:
+
+1. Count pending sections per source from `source_toc_map.md`.
+2. For each source with ≥1 pending section, spawn a background agent:
+
+   ```
+   Agent(
+       subagent_type="general-purpose",
+       description="Extract <source_id> pending sections",
+       run_in_background=True,
+       prompt="""You are extracting L1 intake notes for source <source_id>.
+   
+   **Source**: L0/sources/<source_id>/original/<main_file>
+   Full path: <absolute_path_to_source_file>
+   
+   **Pending sections** (from source_toc_map.md):
+   <list each pending section with its section_id and title>
+   
+   **Already done** (skip these):
+   <list extracted sections>
+   
+   **How to extract**: For each pending section:
+   1. Read the source file to understand the content
+   2. Call aitp_write_section_intake with:
+      - topics_root = '<topics_root>'
+      - topic_slug = '<topic_slug>'
+      - source_id = '<source_id>'
+      - section_id = '<section_id>'
+      - section_title = '<descriptive title>'
+      - summary = '<1-3 paragraph summary of what this section covers>'
+      - key_concepts = '<bullet list of key concepts introduced>'
+      - equations_found = '<key equations with line numbers from source>'
+      - physical_claims = '<numbered list of physical claims>'
+      - completeness_confidence = 'high' or 'medium'
+      - source_file = '<file path within repo>' (REQUIRED for repo-type sources)
+   
+   IMPORTANT:
+   - source_file must be the EXACT relative path for repo sources (e.g. 'driver/task_qsgw.cpp')
+   - For paper sources, include line numbers in equations_found (e.g. 'paper.tex line 117')
+   - Report which sections you completed."""
+   )
+   ```
+
+3. Wait for all agents to complete (you will be notified automatically).
+4. After all agents finish, proceed to Step 4 (coverage verification).
+
+**Agent prompt template — paper source**:
+
+```
+You are extracting L1 intake notes for the paper <source_id>.
+Read <path_to_tex_or_pdf> and write intake notes for <N> pending sections:
+<section_list_with_descriptions>
+
+For each section, call:
+from brain.mcp_server import aitp_write_section_intake
+aitp_write_section_intake(
+    topics_root='<topics_root>',
+    topic_slug='<topic_slug>',
+    source_id='<source_id>',
+    section_id='<section_id>',
+    section_title='<title>',
+    summary='<1-3 paragraph summary>',
+    key_concepts='<bullet list>',
+    equations_found='<equations with line numbers>',
+    physical_claims='<numbered claims>',
+    completeness_confidence='high'
+)
+```
+
+**Agent prompt template — repo source**:
+
+```
+You are extracting L1 intake notes for the repo <source_id>.
+Read files from <path_to_repo> and write intake notes for <N> pending files:
+<file_list_with_descriptions>
+
+For each file, call:
+from brain.mcp_server import aitp_write_section_intake
+aitp_write_section_intake(
+    topics_root='<topics_root>',
+    topic_slug='<topic_slug>',
+    source_id='<source_id>',
+    section_id='<section_id>',
+    section_title='<title>',
+    source_file='<exact/relative/path>',
+    summary='<what this file does>',
+    key_concepts='<key functions/classes with line numbers>',
+    equations_found='<formulas with line numbers>',
+    physical_claims='<physical behavior this code controls>',
+    completeness_confidence='high'
+)
+IMPORTANT: source_file MUST be the exact relative path. This field is critical for L3 traceability.
+```
+
+**After all agents complete**: Verify every section has an intake note with
+non-empty `completeness_confidence`. Rerun any agent whose sections are missing
+or have `completeness_confidence = "low"`.
 
 ### Step 3C: Defer genuinely out-of-scope sections
 For sections that are genuinely irrelevant to the bounded question:
