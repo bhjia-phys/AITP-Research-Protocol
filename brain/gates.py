@@ -651,6 +651,36 @@ def evaluate_l4_stage(
             skill="skill-validate",
         )
 
+    # Dead-state detection: in L4 but no reviews ever submitted despite multiple
+    # background job attempts. This means the topic is stuck in debug/retry, not
+    # actually doing verification. Push agent to either file reviews or retreat.
+    state_path = topic_root_path / "state.md"
+    actual_reviews = []
+    if review_dir.is_dir():
+        all_review_files = list(review_dir.glob("*.md"))
+        actual_reviews = [
+            r for r in all_review_files
+            if not any(r.stem.endswith(f"_v{i}") for i in range(1, 20))
+        ]
+    if not actual_reviews and state_path.exists():
+        sf, _ = parse_md(state_path)
+        attempt_count = int(sf.get("l4_job_attempt_count", 0))
+        if attempt_count >= 3:
+            return StageSnapshot(
+                stage="L4", posture="verify", lane=lane,
+                gate_status="blocked_no_reviews",
+                required_artifact_path=str(review_dir),
+                missing_requirements=[
+                    f"No L4 reviews submitted after {attempt_count} job attempts. "
+                    f"Options: (a) submit reviews for completed jobs via "
+                    f"aitp_submit_l4_review, (b) if all jobs failed due to "
+                    f"environment issues, retreat to L1 via aitp_retreat_to_l1, "
+                    f"(c) if stuck on infrastructure, discuss with human."
+                ],
+                next_allowed_transition="L3",
+                skill="skill-validate",
+            )
+
     # Check which submitted candidates have reviews
     unreviewed = []
     for cand_path in submitted:
@@ -701,6 +731,29 @@ def evaluate_l4_stage(
             next_allowed_transition="L1",
             skill="skill-validate",
         )
+
+    # Consecutive failure detection: repeated background job failures signal
+    # an infrastructure/environment issue, not a verification issue. Force
+    # retreat to L1 after 3 consecutive failures.
+    if state_path.exists():
+        sf, _ = parse_md(state_path)
+        consecutive_failures = int(sf.get("l4_consecutive_failures", 0))
+        if consecutive_failures >= 3:
+            return StageSnapshot(
+                stage="L4", posture="verify", lane=lane,
+                gate_status="blocked_repeated_failure",
+                required_artifact_path=str(state_path),
+                missing_requirements=[
+                    f"{consecutive_failures} consecutive background job failures. "
+                    f"This is likely an infrastructure/environment issue, not a "
+                    f"verification issue. Options: (a) retreat to L1 and fix "
+                    f"compute environment, (b) retreat to L0 and verify source "
+                    f"code/build system, (c) switch compute target via "
+                    f"aitp_set_compute_target."
+                ],
+                next_allowed_transition="L1",
+                skill="skill-validate",
+            )
 
     # Check if any candidate is validated
     validated = []
@@ -834,6 +887,34 @@ def evaluate_l4_stage(
             skill="skill-validate",
         )
 
+    # Evidence file existence: code_method/toy_numeric reviews reference
+    # evidence_scripts and evidence_outputs that must exist on disk.
+    # The submit tool checks at submission time; the gate re-checks because
+    # files can be deleted between submission and gate evaluation.
+    if lane in ("code_method", "toy_numeric"):
+        for cand_path in submitted:
+            slug = cand_path.stem
+            review_path = review_dir / f"{slug}.md"
+            if review_path.exists():
+                rfm, _ = parse_md(review_path)
+                for field_name in ("evidence_scripts", "evidence_outputs"):
+                    file_list = rfm.get(field_name, [])
+                    if isinstance(file_list, list):
+                        for fpath in file_list:
+                            full_path = topic_root_path / fpath
+                            if not full_path.exists():
+                                return StageSnapshot(
+                                    stage="L4", posture="verify", lane=lane,
+                                    gate_status="blocked_missing_artifact",
+                                    required_artifact_path=str(full_path),
+                                    missing_requirements=[
+                                        f"L4 review for {slug} references "
+                                        f"{fpath} but file does not exist."
+                                    ],
+                                    next_allowed_transition="L3",
+                                    skill="skill-validate",
+                                )
+
     # AI Physicist L2 Lookup (was dead code — now wired in v1.0):
     # Check that reviews reference L2 knowledge relevant to the claims
     l2_warnings = []
@@ -880,6 +961,26 @@ def evaluate_l4_stage(
                     next_allowed_transition="L3",
                     skill="skill-validate",
                 )
+
+    # Background job awareness: don't declare ready while jobs are running
+    # or completed but unreviewed. The gate should reflect actual state, not
+    # just structural completeness.
+    if state_path.exists():
+        sf, _ = parse_md(state_path)
+        bg_status = sf.get("l4_background_status", "")
+        if bg_status in ("submitted", "running"):
+            return StageSnapshot(
+                stage="L4", posture="verify", lane=lane,
+                gate_status="blocked_job_running",
+                required_artifact_path=str(state_path),
+                missing_requirements=[
+                    f"Background job {sf.get('l4_job_id', 'unknown')} is "
+                    f"{bg_status} on {sf.get('l4_job_host', 'unknown')}. "
+                    f"Wait for completion before evaluating promotion readiness."
+                ],
+                next_allowed_transition="L3",
+                skill="skill-validate",
+            )
 
     return StageSnapshot(
         stage="L4", posture="verify", lane=lane,
