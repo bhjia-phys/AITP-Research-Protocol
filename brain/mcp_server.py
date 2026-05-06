@@ -769,6 +769,9 @@ def aitp_register_source(
     epistemic_tier: str = "",
     source_url: str = "",
     source_path: str = "",
+    commit: str = "",
+    repo: str = "",
+    branch: str = "",
 ) -> str:
     """Register a source in L0. Creates per-source directory with original/ subdir.
 
@@ -780,6 +783,9 @@ def aitp_register_source(
     Args:
         source_url: Download URL for the original source file (arxiv tarball, etc.)
         source_path: Local file/directory path to copy into original/
+        commit: Git commit hash (for code sources — locks exact version reviewed)
+        repo: Repository URL (for code sources)
+        branch: Branch name (for code sources)
     """
     from brain.cli._dispatch_helpers import dispatch
     from brain.cli.commands.source import cmd_source_add
@@ -808,6 +814,9 @@ def aitp_register_source(
             if method_category: fm["method_category"] = method_category
             if regime: fm["regime"] = regime
             if epistemic_tier: fm["epistemic_tier"] = epistemic_tier
+            if commit: fm["commit"] = commit
+            if repo: fm["repo"] = repo
+            if branch: fm["branch"] = branch
             _write_md(path, fm, body)
 
     return result
