@@ -345,6 +345,16 @@ def evaluate_l1_stage(
                 research_intensity=research_intensity,
             )
 
+    # Auto-generate L1/INDEX.md on gate ready (non-blocking)
+    try:
+        from brain.flow_notebook import generate_l1_index
+        index_content = generate_l1_index(topic_root_path)
+        index_path = topic_root_path / "L1" / "INDEX.md"
+        index_path.parent.mkdir(parents=True, exist_ok=True)
+        index_path.write_text(index_content, encoding="utf-8")
+    except Exception:
+        pass  # Index is derivative — never block gate advancement
+
     return StageSnapshot(
         stage="L1",
         posture="frame",

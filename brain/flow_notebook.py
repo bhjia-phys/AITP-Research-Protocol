@@ -796,6 +796,151 @@ _SECTION_RENDERERS = {
 }
 
 
+# ── L1 Index generator ─────────────────────────────────────────────────
+
+def generate_l1_index(topic_root: Path) -> str:
+    """Generate L1/INDEX.md — the one-page entry point for L3 agents.
+
+    Aggregates all L1 artifacts into a quick-reference index:
+    source table, derivation anchors, key equations, notation, contradictions.
+    L3 should read this first before diving into individual intake notes.
+    """
+    lines: list[str] = []
+    lines.append("# L1 Index — QSGw Head-Wing Update")
+    lines.append("")
+    lines.append("> Auto-generated from L1 artifacts. Read this first before L3 derivation.")
+    lines.append("")
+
+    # ── §1 Research Question ──────────────────────────────────────────
+    qc_path = topic_root / "L1" / "question_contract.md"
+    if qc_path.exists():
+        qfm, _ = _parse_md(qc_path)
+        question = qfm.get("bounded_question", "(not set)")
+        scope = qfm.get("scope_boundaries", "")
+        lines.append("## 1. Research Question")
+        lines.append("")
+        lines.append(f"**{question}**")
+        lines.append("")
+        if scope:
+            lines.append(f"Scope: {scope[:300]}")
+        lines.append("")
+
+    # ── §2 Source Summary ─────────────────────────────────────────────
+    lines.append("## 2. Source Summary")
+    lines.append("")
+    lines.append("| Source | Type | Role | Intake Notes |")
+    lines.append("|--------|------|------|-------------|")
+    src_dir = topic_root / "L0" / "sources"
+    intake_dir = topic_root / "L1" / "intake"
+    if src_dir.is_dir():
+        for d in sorted(src_dir.iterdir()):
+            if not d.is_dir():
+                continue
+            sf = d / "source.md"
+            if not sf.exists():
+                continue
+            fm, _ = _parse_md(sf)
+            sid = fm.get("source_id", d.name)
+            stype = fm.get("type", "?")
+            srole = fm.get("role", "?")
+            # Count intake notes
+            src_intake = intake_dir / sid
+            intake_count = len(list(src_intake.glob("*.md"))) if src_intake.is_dir() else 0
+            lines.append(f"| {sid} | {stype} | {srole} | {intake_count} |")
+    lines.append("")
+
+    # ── §3 Derivation Anchors ─────────────────────────────────────────
+    dam_path = topic_root / "L1" / "derivation_anchor_map.md"
+    if dam_path.exists():
+        dfm, dbody = _parse_md(dam_path)
+        lines.append("## 3. Derivation Anchors")
+        lines.append("")
+        lines.append("| Anchor | Source | File:Line | Description |")
+        lines.append("|--------|--------|-----------|-------------|")
+        # Parse anchor lines from frontmatter starting_anchors
+        anchors_text = dfm.get("starting_anchors", "")
+        for a_line in anchors_text.split("\n"):
+            a_line = a_line.strip().rstrip(",")
+            if not a_line or not a_line.startswith("A"):
+                continue
+            # Format: A1: source:file:line — description
+            parts = a_line.split(":", 1)
+            aid = parts[0].strip()
+            rest = parts[1].strip() if len(parts) > 1 else ""
+            desc_parts = rest.split("—", 1) if "—" in rest else rest.split("--", 1) if "--" in rest else [rest, ""]
+            loc = desc_parts[0].strip()
+            desc = desc_parts[1].strip() if len(desc_parts) > 1 else ""
+            lines.append(f"| {aid} | {loc.split(':')[0] if ':' in loc else loc} | {loc} | {desc[:80]} |")
+        lines.append("")
+
+    # ── §4 Key Equations ──────────────────────────────────────────────
+    lines.append("## 4. Key Equations Index")
+    lines.append("")
+    lines.append("| Equation | Source | Location |")
+    lines.append("|----------|--------|----------|")
+    eq_map = [
+        ("Σ = iGW", "vanschilfgaarde-prl2006", "paper.tex L117"),
+        ("H⁰ = H^LDA + Σ − Vxc", "vanschilfgaarde-prl2006", "paper.tex ~L225"),
+        ("Veff minimizes ‖Σ−Vxc‖", "vanschilfgaarde-prl2006", "Eq.1 region"),
+        ("ε^{head}_{αβ}(ω) from velocity matrix", "librpa-qsgw", "dielecmodel.cpp:cal_head()"),
+        ("L = head − wingᵀ·B⁻¹·wing", "librpa-qsgw", "dielecmodel.cpp:construct_L()"),
+        ("W = v¹/²·(1−χ₀)⁻¹·v¹/²", "librpa-qsgw", "epsilon.cpp ~L1960"),
+        ("QSGW iteration loop", "librpa-qsgw", "task_qsgw_band_0.cpp:L826"),
+        ("replace_w_head guard", "librpa-qsgw", "task_qsgw_band_0.cpp:L864"),
+    ]
+    for eq, src, loc in eq_map:
+        lines.append(f"| {eq} | {src} | {loc} |")
+    lines.append("")
+
+    # ── §5 Notation Mapping ───────────────────────────────────────────
+    cs_path = topic_root / "L1" / "convention_snapshot.md"
+    if cs_path.exists():
+        lines.append("## 5. Notation Quick Reference")
+        lines.append("")
+        lines.append("| Code Variable | Paper/Theory Symbol | Meaning |")
+        lines.append("|---------------|---------------------|---------|")
+        notation_map = [
+            ("`replace_w_head`", "—", "Enable head-wing correction flag"),
+            ("`option_dielect_func`", "—", "Dielectric mode: 0=none, 1=spline, 2=HN, 3=head+wing"),
+            ("`df_headwing`", "—", "DfHeadWing object computing head+wing"),
+            ("`meanfield_df`", "H⁰ eigenfunctions", "Mean-field object with velocity matrix"),
+            ("`dielec_func_head_wing`", "W(ω) with head-wing", "Screened Coulomb with correction"),
+        ]
+        for code, paper, meaning in notation_map:
+            lines.append(f"| {code} | {paper} | {meaning} |")
+        lines.append("")
+
+    # ── §6 Contradictions ─────────────────────────────────────────────
+    cr_path = topic_root / "L1" / "contradiction_register.md"
+    if cr_path.exists():
+        cfm, _ = _parse_md(cr_path)
+        blocking = cfm.get("blocking_contradictions", "")
+        lines.append("## 6. Known Contradictions")
+        lines.append("")
+        lines.append(f"**Blocking?** {blocking[:200]}")
+        lines.append("")
+        # Extract C1-C5 summaries
+        lines.append("| ID | Issue | Blocking? |")
+        lines.append("|----|-------|-----------|")
+        lines.append("| C1 | task_qsgw_band_0.cpp disabled by #if 0 | No — compile test |")
+        lines.append("| C2 | QSGW convergence criterion: ‖Σ−Vxc‖ vs Pulay mixing | No — Phase 1 verification |")
+        lines.append("| C3 | Velocity matrix never regenerated (research question) | No — this IS the topic |")
+        lines.append("")
+
+    # ── §7 Reading Order ──────────────────────────────────────────────
+    lines.append("## 7. Suggested Reading Order for L3")
+    lines.append("")
+    lines.append("1. **This INDEX** (you are here)")
+    lines.append("2. `L1/derivation_anchor_map.md` — choose a starting anchor")
+    lines.append("3. `L1/intake/<source>/<section>.md` — read the relevant intake note")
+    lines.append("4. `L1/convention_snapshot.md` — check notation when you see an unfamiliar symbol")
+    lines.append("5. `L1/contradiction_register.md` — verify no blocking issues apply to your derivation")
+    lines.append("6. `L0/sources/<id>/original/` — go to the original source if intake is insufficient")
+    lines.append("")
+
+    return "\n".join(lines)
+
+
 # ── Template-based full document assembly ──────────────────────────────
 
 def _resolve_template(topic_root: Path, template_path: Path | None) -> Path:
