@@ -64,20 +64,51 @@ and expected numerical behavior.
 3. Record source roles and reading depth in `source_basis.md`.
 
 ### Step 2: Parse source TOC
-For **each registered source**, before any extraction:
+
+**Match the source's REAL structure — don't force a template.**
+
+For each source, first determine its structure type:
+
+#### Sources WITH formal sections (most papers, books, long reviews)
 
 1. Access the full text (arxiv-latex-mcp, web reader, PDF reader, etc.).
 2. Extract the table of contents mechanically — every section, subsection, appendix.
-   - **arXiv sources (preferred):** Use `arxiv-latex-mcp` `list_paper_sections` for
-     machine-parsed, 100% reliable section list. Set `toc_confidence = "high"`.
-   - **Well-structured PDFs:** AI-extract section headings from text. Set
+   - **arXiv LaTeX sources (preferred):** Parse `\section{}`, `\subsection{}` from .tex.
+     Set `toc_confidence = "high"`.
+   - **Well-structured PDFs:** AI-extract section headings. Set
      `toc_confidence = "medium"`.
-   - **Unstructured sources:** Extract best-effort. Set `toc_confidence = "low"`.
-3. Call `aitp_parse_source_toc` with all sections found. Each entry is the smallest
-   identifiable structural unit (typically subsections for papers, sections for books).
+3. Each entry is the smallest identifiable structural unit
+   (subsections for papers, sections for books).
+
+#### Sources WITHOUT formal sections (PRL, short letters, some code docs)
+
+**Do NOT invent artificial sections.** Instead:
+
+1. **Read the entire source first** — understand its natural argument flow.
+2. **Identify logical content blocks** from the argument structure, not from headings.
+   A PRL-length paper typically has 3-4 blocks, not 5+.
+3. Register each block as a TOC entry with `depth: "1"` and a `page_range` or line range.
+   Each block should cover a coherent unit of the argument.
+4. Set `toc_confidence = "medium"` (AI-identified, not machine-parsed).
+
+**Section count guideline**:
+- Short papers (<20 pages, no sections): 3-4 blocks
+- Long papers/reviews with sections: match actual section count
+- Code repos: one entry per key file (from notes.md)
+
+**Critical rules for TOC design**:
+- **Equations stay in context.** Don't create a standalone "equations" section.
+  Equations belong in the section where they are derived or used.
+- **Don't split what the paper presents as one argument.** If two topics are
+  intertwined in the source, extract them together and let the intake note
+  separate the concepts.
+- **Prefer fewer, richer sections over many thin ones.** An intake note with
+  5 equations in context is more useful than 5 notes with 1 equation each.
+
+4. Call `aitp_parse_source_toc` with all sections found.
    Include the `toc_confidence` field.
-4. Do NOT skip any section, even if it seems irrelevant. The TOC must be exhaustive.
-5. **Validate TOC**: Spot-check the first and last paragraph of at least 3 sections
+5. Do NOT skip any section, even if it seems irrelevant. The TOC must be exhaustive.
+6. **Validate TOC**: Spot-check the first and last paragraph of at least 3 sections
    to confirm the TOC entries match actual content. If mismatches found, adjust and
    lower `toc_confidence`.
 
@@ -200,8 +231,21 @@ one agent per source. Otherwise, do sequential extraction (Step 3B).
 
 ```
 You are extracting L1 intake notes for the paper <source_id>.
-Read <path_to_tex_or_pdf> and write intake notes for <N> pending sections:
+Read the FULL source first (<path_to_tex_or_pdf>) to understand
+the argument flow, then write intake notes for <N> sections:
+
 <section_list_with_descriptions>
+
+GUIDANCE:
+- Don't just skim section boundaries — understand how each section
+  fits into the paper's overall argument.
+- Equations must include their PHYSICAL CONTEXT (what they mean,
+  not just the LaTeX). Include line numbers from the source.
+- If the paper has no formal sections, the listed sections are
+  logical blocks identified from the argument flow. Respect the
+  narrative connections between blocks.
+- Prefer depth over breadth: fewer sections with richer content
+  is better than many thin sections.
 
 For each section, call:
 from brain.mcp_server import aitp_write_section_intake
@@ -211,10 +255,10 @@ aitp_write_section_intake(
     source_id='<source_id>',
     section_id='<section_id>',
     section_title='<title>',
-    summary='<1-3 paragraph summary>',
-    key_concepts='<bullet list>',
-    equations_found='<equations with line numbers>',
-    physical_claims='<numbered claims>',
+    summary='<1-3 paragraph summary capturing the argument, not just topics>',
+    key_concepts='<bullet list with definitions, not just names>',
+    equations_found='<equations WITH physical interpretation and line numbers>',
+    physical_claims='<numbered claims, each with a clear subject-predicate>',
     completeness_confidence='high'
 )
 ```
@@ -272,6 +316,12 @@ Before exiting:
 
 - **Never skip the TOC parse.** Reading sources without first registering their full
   structure defeats the completeness guarantee.
+- **Match TOC to real source structure.** Don't invent sections for sources without
+  formal headings. Read first, identify natural argument blocks, register those.
+- **Equations stay in context.** Don't create standalone "equations" or "key formulas"
+  sections. Extract equations within the section where they appear in the argument.
+- **Prefer fewer, richer sections.** 3-4 well-extracted sections are better than
+  6+ thin ones. Each intake note should contain complete argument context.
 - **Skim ALL before deep-reading ANY.** The first pass prevents tunnel vision.
 - **Never mark a section "extracted" without an intake note.** The gate checks that
   intake notes exist for every extracted section.
