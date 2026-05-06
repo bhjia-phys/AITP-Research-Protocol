@@ -284,18 +284,26 @@ def _convert_inline_formatting(text: str) -> str:
         if parts[idx].startswith('\x00MDTOK'):
             continue
         p = parts[idx]
-        # Escape _ and ^ first (before they get wrapped in \texttt etc.)
+        # Protect inline code first — its content is escaped separately
+        code_tokens: dict[str, str] = {}
+        def _protect_code(m):
+            tok = _next_token()
+            code_tokens[tok] = r'\texttt{' + _esc_tex_special(m.group(1)) + '}'
+            return tok
+        p = re.sub(r'`([^`]+)`', _protect_code, p)
+        # Escape TeX specials in remaining text (not in code)
         p = p.replace('_', r'\_')
         p = p.replace('^', r'\^{}')
-        # Inline formatting
+        p = p.replace('#', r'\#')
+        p = p.replace('&', r'\&')
+        p = p.replace('%', r'\%')
+        # Inline formatting (bold, italic, links)
         p = re.sub(r'\*\*(.+?)\*\*', r'\\textbf{\1}', p)
         p = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'\\textit{\1}', p)
-        p = re.sub(
-            r'`([^`]+)`',
-            lambda m: r'\texttt{' + _esc_tex_special(m.group(1)) + '}',
-            p,
-        )
         p = re.sub(r'\[(.+?)\]\((.+?)\)', r'\\href{\2}{\1}', p)
+        # Restore inline code
+        for tok, latex in code_tokens.items():
+            p = p.replace(tok, latex)
         parts[idx] = p
     return ''.join(parts)
 
