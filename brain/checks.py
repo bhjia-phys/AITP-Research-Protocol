@@ -62,12 +62,15 @@ _QUESTION_STEMS = [
 
 def _check_question_semantic_validity(
     fm: dict[str, object], body: str, research_intensity: str = "standard",
+    l2_concept_count: int = -1,
 ) -> list[str]:
     """Check that the bounded question is structurally well-posed.
 
     Returns a list of missing requirements (empty = valid).
     For quick intensity: only question stem, scope, and targets required.
     For standard/full: also requires competing hypotheses and non-success conditions.
+    When l2_concept_count >= 0: also requires ## L2 Cross-Reference to either
+    reference specific L2 concepts or explicitly state no relevant L2 knowledge.
     """
     issues: list[str] = []
     question = str(fm.get("bounded_question", "")).strip().lower()
@@ -125,6 +128,28 @@ def _check_question_semantic_validity(
                     "## Non-Success Conditions must describe at least one specific "
                     "failure mode (not generic text). Describe what would falsify "
                     "or invalidate the expected answer."
+                )
+
+    # L2 cross-reference: when L2 has concepts, the question must reference them
+    if l2_concept_count >= 0:
+        if "## L2 Cross-Reference" not in body:
+            issues.append(
+                "## L2 Cross-Reference heading is required. "
+                "Query L2 (aitp_query_l2_index) to find relevant prior knowledge, "
+                "or explicitly state 'no relevant L2 knowledge found' if L2 is empty."
+            )
+        else:
+            # Content check: the L2 Cross-Reference section must have substance
+            l2cr_start = body.index("## L2 Cross-Reference")
+            next_h2 = body.find("##", l2cr_start + 1)
+            l2cr_section = body[l2cr_start:next_h2] if next_h2 > 0 else body[l2cr_start:]
+            l2cr_content = l2cr_section.split("\n", 1)[1].strip() if "\n" in l2cr_section else ""
+            if len(l2cr_content) < 30:
+                issues.append(
+                    "## L2 Cross-Reference section is too thin. "
+                    "Must contain specific L2 concept references (node IDs or concept names) "
+                    "or an explicit statement that L2 has no relevant knowledge. "
+                    "Use aitp_query_l2_index to check."
                 )
 
     return issues

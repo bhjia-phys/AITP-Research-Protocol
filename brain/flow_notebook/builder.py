@@ -294,6 +294,28 @@ def generate_l1_index(topic_root: Path) -> str:
             lines.append(f"| ${latex}$ | {meaning} | {src} |")
         lines.append("")
 
+    # ── §4.6 L2 Knowledge Graph Cross-References ─────────────────────────
+    qc_path = topic_root / "L1" / "question_contract.md"
+    if qc_path.exists():
+        _, qc_body = _parse_md(qc_path)
+        if "## L2 Cross-Reference" in qc_body:
+            l2cr_start = qc_body.index("## L2 Cross-Reference")
+            next_h2 = qc_body.find("\n## ", l2cr_start + 1)
+            l2cr_section = qc_body[l2cr_start:next_h2] if next_h2 > 0 else qc_body[l2cr_start:]
+            l2cr_content = l2cr_section.split("\n", 1)[1].strip() if "\n" in l2cr_section else ""
+            if l2cr_content and len(l2cr_content) > 20:
+                lines.append("## 4.6 L2 Knowledge Graph Cross-References")
+                lines.append("")
+                # Extract node IDs (backtick-quoted patterns like `node-id`)
+                import re
+                node_refs = re.findall(r'`([^`]+)`', l2cr_content)
+                if node_refs:
+                    lines.append("**Referenced L2 nodes/domains:** " + ", ".join(f"`{n}`" for n in node_refs[:15]))
+                else:
+                    lines.append(f"**L2 Cross-Reference content ({len(l2cr_content)} chars):**")
+                    lines.append(f"> {_esc(l2cr_content)[:300]}")
+                lines.append("")
+
     # ── §5 Notation ───────────────────────────────────────────────────
     cs_path = topic_root / "L1" / "convention_snapshot.md"
     if cs_path.exists():

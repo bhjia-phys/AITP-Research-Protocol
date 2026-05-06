@@ -172,10 +172,16 @@ def evaluate_l1_stage(
     # Question semantic validity: check the question is genuinely well-posed.
     # Competing hypotheses and non-success conditions are only required for
     # standard/full intensity; quick mode skips them.
+    # L2 concept count is passed through to validate cross-reference content.
+    l2_nodes_dir = topic_root_path.parent / "L2" / "graph" / "nodes"
+    l2_concept_count = len(list(l2_nodes_dir.glob("*.md"))) if l2_nodes_dir.is_dir() else 0
+
     question_path = topic_root_path / "L1" / "question_contract.md"
     if question_path.exists():
         q_fm, q_body = parse_md(question_path)
-        sem_issues = _check_question_semantic_validity(q_fm, q_body, research_intensity)
+        sem_issues = _check_question_semantic_validity(
+            q_fm, q_body, research_intensity, l2_concept_count,
+        )
         if sem_issues:
             return StageSnapshot(
                 stage="L1",
@@ -290,6 +296,8 @@ def evaluate_l1_stage(
                     )
 
     # L2 cross-reference check: question_contract must reference prior L2 knowledge
+    # with substantive content (not just the heading). Requires >= 80 chars after
+    # the heading — must either name specific L2 concepts or explain why none apply.
     qc_path = topic_root_path / "L1" / "question_contract.md"
     if qc_path.exists():
         _, qc_body = parse_md(qc_path)
@@ -301,6 +309,28 @@ def evaluate_l1_stage(
                 gate_status="blocked_missing_field",
                 required_artifact_path=str(qc_path),
                 missing_requirements=["## L2 Cross-Reference — must record what L2 already knows about this question"],
+                next_allowed_transition="L1",
+                skill="skill-frame",
+                research_intensity=research_intensity,
+            )
+        # Content quality check: heading alone is not enough
+        l2cr_start = qc_body.index("## L2 Cross-Reference")
+        next_h2 = qc_body.find("\n## ", l2cr_start + 1)
+        l2cr_section = qc_body[l2cr_start:next_h2] if next_h2 > 0 else qc_body[l2cr_start:]
+        l2cr_content = l2cr_section.split("\n", 1)[1].strip() if "\n" in l2cr_section else ""
+        if len(l2cr_content) < 80:
+            return StageSnapshot(
+                stage="L1",
+                posture="frame",
+                lane=lane,
+                gate_status="blocked_missing_field",
+                required_artifact_path=str(qc_path),
+                missing_requirements=[
+                    f"## L2 Cross-Reference section too thin ({len(l2cr_content)} chars, need >= 80). "
+                    "Must reference specific L2 concepts by node ID/title, or "
+                    "explicitly state 'no relevant L2 knowledge' with justification. "
+                    "Use aitp_query_l2_index to check."
+                ],
                 next_allowed_transition="L1",
                 skill="skill-frame",
                 research_intensity=research_intensity,

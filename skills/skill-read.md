@@ -58,6 +58,21 @@ and expected numerical behavior.
 
 ## Reading workflow (mandatory sequence for formal_theory)
 
+### Step 0: Query L2 prior knowledge (MANDATORY)
+
+**Never skip this step.** Even if L2 is empty, recording that fact is critical gate-check data.
+
+1. Call `aitp_query_l2_index` to check what the global L2 knowledge graph already
+   knows about this topic's domain, concepts, and methods.
+2. Record findings in `L1/question_contract.md` under `## L2 Cross-Reference`:
+   - If relevant L2 nodes exist: list each by node ID, title, and how it relates
+     to the current question.
+   - If no relevant L2 knowledge exists: write "No relevant L2 knowledge found for
+     [domain/concept]. L2 query performed on [date]." Be specific about what was
+     searched for and why nothing matched.
+3. The L1 gate requires >= 80 characters of substantive content in this section.
+   A bare heading or one-liner will block advancement.
+
 ### Step 1: Register sources
 1. Register or inspect sources using `aitp_register_source`.
 2. Fill the bounded question if it is still blank.
