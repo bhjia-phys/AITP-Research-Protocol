@@ -81,6 +81,7 @@ L1_ARTIFACT_TEMPLATES: dict[str, tuple[dict[str, Any], str]] = {
             "scope_boundaries": "",
             "target_quantities": "",
             "competing_hypotheses": "",
+            "source_refs": [],
         },
         "# Question Contract\n\n## Bounded Question\n\n## Competing Hypotheses\n\n"
         "## Scope Boundaries\n\n## Forbidden Proxies\n\n"
@@ -94,6 +95,7 @@ L1_ARTIFACT_TEMPLATES: dict[str, tuple[dict[str, Any], str]] = {
             "required_fields": ["core_sources", "peripheral_sources"],
             "core_sources": "",
             "peripheral_sources": "",
+            "source_refs": [],
         },
         "# Source Basis\n\n## Core Sources\n\n## Peripheral Sources\n\n"
         "## Source Roles\n\n## Reading Depth\n\n## Why Each Source Matters\n",
@@ -105,6 +107,7 @@ L1_ARTIFACT_TEMPLATES: dict[str, tuple[dict[str, Any], str]] = {
             "required_fields": ["notation_choices", "unit_conventions"],
             "notation_choices": "",
             "unit_conventions": "",
+            "source_refs": [],
         },
         "# Convention Snapshot\n\n## Notation Choices\n\n## Unit Conventions\n\n"
         "## Sign Conventions\n\n## Metric Or Coordinate Conventions\n\n"
@@ -135,6 +138,7 @@ L1_ARTIFACT_TEMPLATES: dict[str, tuple[dict[str, Any], str]] = {
             "required_fields": ["starting_anchors", "anchor_count"],
             "starting_anchors": "",
             "anchor_count": 0,
+            "source_refs": [],
         },
         "# Derivation Anchor Map\n\n"
         "## Source Anchors\n\n"
@@ -160,6 +164,7 @@ L1_ARTIFACT_TEMPLATES: dict[str, tuple[dict[str, Any], str]] = {
             "stage": "L1",
             "required_fields": ["blocking_contradictions"],
             "blocking_contradictions": "",
+            "source_refs": [],
         },
         "# Contradiction Register\n\n## Unresolved Source Conflicts\n\n"
         "## Internal Inconsistencies\n\n"
@@ -176,9 +181,31 @@ L1_ARTIFACT_TEMPLATES: dict[str, tuple[dict[str, Any], str]] = {
             "sources_with_toc": "",
             "total_sections": 0,
             "coverage_status": "",
+            "source_refs": [],
         },
-        "# Source TOC Map\n\n## Per-Source TOC\n\n"
+        "# Source TOC Map\n\n"
+        "## Per-Source TOC\n\n"
+        "*(Use aitp_parse_source_toc to register each source's section structure.)*\n\n"
         "## Coverage Summary\n\n## Deferred Sections\n\n## Extraction Notes\n",
+    ),
+    "source_cross_map.md": (
+        {
+            "artifact_kind": "l1_source_cross_map",
+            "stage": "L1",
+            "required_fields": [],
+            "cross_references": [],
+            "source_refs": [],
+        },
+        "# Source Cross Map\n\n"
+        "## Cross-Source Dependencies\n\n"
+        "Record how sources depend on each other:\n"
+        "- Source A uses results from Source B → A depends_on B\n"
+        "- Source A provides foundation for Source B → A feeds_into B\n"
+        "- Source A contradicts Source B → A conflicts_with B\n\n"
+        "## Equation Lineage\n\n"
+        "Trace key equations across sources. When the same equation appears "
+        "in multiple sources, record the original source and all references.\n\n"
+        "## Unresolved Cross-References\n",
     ),
 }
 
@@ -193,6 +220,8 @@ L1_INTAKE_TEMPLATE: tuple[dict[str, Any], str] = (
         "section_title": "",
         "extraction_status": "skimming",
         "completeness_confidence": "",
+        "source_ref": "",
+        "source_file": "",
         "regime": "",
         "validity_conditions": "",
         "figure_refs": "",
@@ -269,6 +298,12 @@ _L1_CONTRACTS: list[tuple[str, str, list[str], list[str]]] = [
         "read",
         ["sources_with_toc", "total_sections", "coverage_status"],
         ["## Per-Source TOC", "## Coverage Summary"],
+    ),
+    (
+        "source_cross_map.md",
+        "frame",
+        [],
+        ["## Cross-Source Dependencies"],
     ),
 ]
 

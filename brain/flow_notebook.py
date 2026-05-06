@@ -33,7 +33,8 @@ _END_RE   = re.compile(r"^%\s*---\s*END\s+(\w+)\s*---\s*$")
 # ── Section → source artifact globs ──────────────────────────────────────
 SECTION_SOURCES: dict[str, list[str]] = {
     "research_question":    ["L1/question_contract.md"],
-    "source_landscape":     ["L0/source_registry.md", "L0/sources/*.md"],
+    "source_landscape":     ["L0/source_registry.md", "L0/sources/*.md",
+                             "L1/source_basis.md", "L1/source_cross_map.md"],
     "conventions":          ["L1/convention_snapshot.md"],
     "session_history":      ["state.md", "runtime/sessions.md"],
     "derivation":           ["L3/ideate/active_idea.md", "L3/plan/active_plan.md",
@@ -49,7 +50,8 @@ SECTION_SOURCES: dict[str, list[str]] = {
                              "L4/validation_contract.md", "state.md"],
     "l2_knowledge":         [],   # global L2 — checked via parent dir
     "domain_context":       ["contracts/domain-manifest.md"],
-    "open_questions":       ["L3/deferred.md", "L3/ideas/*.md"],
+    "open_questions":       ["L3/deferred.md", "L3/ideas/*.md",
+                             "L1/contradiction_register.md"],
     "execution_provenance": ["runtime/log.md"],
 }
 

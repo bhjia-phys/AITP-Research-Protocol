@@ -188,6 +188,23 @@ def evaluate_l1_stage(
         toc_path = topic_root_path / "L1" / "source_toc_map.md"
         if toc_path.exists():
             toc_fm, toc_body = parse_md(toc_path)
+            total = int(toc_fm.get("total_sections", 0))
+            if total == 0:
+                return StageSnapshot(
+                    stage="L1",
+                    posture="read",
+                    lane=lane,
+                    gate_status="blocked_coverage_incomplete",
+                    required_artifact_path=str(toc_path),
+                    missing_requirements=[
+                        "No sections parsed in source_toc_map (total_sections=0). "
+                        "Call aitp_parse_source_toc for each source to register "
+                        "its section structure before advancing to L3."
+                    ],
+                    next_allowed_transition="L1",
+                    skill="skill-read",
+                    research_intensity=research_intensity,
+                )
             cov = str(toc_fm.get("coverage_status", "")).strip().lower()
             if cov not in ("complete", "partial_with_deferrals"):
                 return StageSnapshot(
