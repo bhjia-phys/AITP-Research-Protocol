@@ -2640,6 +2640,29 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
                     "existing_claim": str(cfm.get("existing_claim", ""))[:120],
                 })
 
+    # L1→L3 handoff: scan available L1 artifacts for the agent to reference
+    l1_artifacts = []
+    l1_dir = root / "L1"
+    if l1_dir.is_dir():
+        for l1_file in sorted(l1_dir.glob("*.md")):
+            l1_fm, l1_body = _parse_md(l1_file)
+            l1_artifacts.append({
+                "file": f"L1/{l1_file.name}",
+                "has_content": len(l1_body.strip()) > 100,
+                "content_length": len(l1_body.strip()),
+                "key_fields": {k: str(l1_fm.get(k, ""))[:80]
+                               for k in l1_fm if not k.startswith("_")} if l1_fm else {},
+            })
+        # Add intake notes summary
+        intake_dir = root / "L1" / "intake"
+        if intake_dir.is_dir():
+            intake_files = list(intake_dir.rglob("*.md"))
+            l1_artifacts.append({
+                "file": "L1/intake/",
+                "has_content": len(intake_files) > 0,
+                "intake_count": len(intake_files),
+            })
+
     # Common metadata for all branches
     _meta = {
         "research_intensity": str(fm.get("research_intensity", "standard")).strip() or "standard",
@@ -2671,6 +2694,7 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
                 if snapshot.required_artifact_path
                 else [f"advance from {snapshot.l3_subplane}"]
             ),
+            "l1_artifacts": l1_artifacts,
             "pending_evidence_requests": pending_requests,
             "active_conflicts": active_conflicts,
             "immediate_blocked_work": ["L4 validation", "L2 promotion"],
@@ -2731,6 +2755,7 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
                 if snapshot.required_artifact_path
                 else ["submit L4 review for unreviewed candidates"]
             ),
+            "l1_artifacts": l1_artifacts,
             "pending_evidence_requests": pending_requests,
             "active_conflicts": active_conflicts,
             "immediate_blocked_work": ["L2 promotion (until validated)"],
@@ -5821,27 +5846,7 @@ def aitp_get_l2_provenance(
             "source": "graph_node",
         }
 
-    # Try promoted candidate
-    cand_path = global_l2 / f"{slug}.md"
-    if cand_path.exists():
-        fm, body = _parse_md(cand_path)
-        return {
-            "node_id": fm.get("candidate_id", slug),
-            "title": fm.get("title", ""),
-            "type": str(fm.get("candidate_type", "research_claim")),
-            "trust_basis": fm.get("trust_basis", ""),
-            "trust_scope": fm.get("trust_scope", ""),
-            "source_ref": fm.get("source_ref", ""),
-            "source_candidate": slug,
-            "source_topic": str(fm.get("source_topic", "")),
-            "version": fm.get("version", 1),
-            "created_at": fm.get("promoted_at", ""),
-            "updated_at": fm.get("promoted_at", ""),
-            "body_preview": body[:2000],
-            "source": "promoted_candidate",
-        }
-
-    return {"error": f"'{slug}' not found in L2 entries, graph nodes, or promoted candidates."}
+    return {"error": f"'{slug}' not found in L2 entries or graph nodes. Create it with aitp_create_entry."}
 
 
 @mcp.tool()
@@ -6145,38 +6150,131 @@ def aitp_extract_topic_entries(
     topics_root: str,
     topic_slug: str,
 ) -> dict[str, Any]:
-    """Auto-extract L2 entries from a topic's L3/L0 artifacts.
+    """Auto-extract L2 entries from a topic's L3 candidates and L0 sources.
 
-    Reads topic artifacts and identifies extractable knowledge:
-    - Systems: from STRU files, chemical formulas, physical parameters
-    - Methods: from workflow descriptions, toolchains
-    - Pitfalls: from error messages in logs
-    - Numerical results: from benchmark tables
+    Primary extraction: reads L3/candidates/*.md and converts each candidate
+    to a draft claim entry. Maps candidate_type → claim_type.
 
-    Creates draft entries with status=unverified and source_ref pointing
-    to the topic. Review and edit each entry before promoting to verified.
+    Secondary: regex-based extraction from L0/L3 text (chemical formulas,
+    error patterns) for system/pitfall entries.
+
+    All entries created with status=unverified and source_ref pointing
+    to the topic. Review and edit each entry before promoting.
     """
     root = _topic_root(topics_root, topic_slug)
-    extracted: dict[str, list[str]] = {"system": [], "method": [], "pitfall": [], "claim": []}
+    extracted: dict[str, list[str]] = {"claim": [], "system": [], "method": [], "pitfall": []}
 
-    # Collect source text from topic artifacts
+    global_l2 = _ensure_l2_graph_dirs(topics_root)
+    import re
+
+    # -- Primary: Extract from L3 candidates --
+    candidates_dir = root / "L3" / "candidates"
+    if candidates_dir.is_dir():
+        # Map candidate_type → claim_type for entries
+        type_map = {
+            "research_claim": "result",
+            "negative_result": "negative_result",
+            "atomic_concept": "definition",
+            "derivation_chain": "derivation_chain",
+            "correspondence_link": "equation",
+            "regime_boundary": "regime_boundary",
+            "open_question": "open_question",
+            "theorem": "theorem",
+            "approximation": "approximation",
+        }
+
+        for cand_file in sorted(candidates_dir.glob("*.md")):
+            cfm, cbody = _parse_md(cand_file)
+            cand_id = str(cfm.get("candidate_id", cand_file.stem))
+            cand_title = str(cfm.get("title", cand_id))
+            cand_claim = str(cfm.get("claim", ""))
+            cand_type = str(cfm.get("candidate_type", "research_claim"))
+            cand_regime = str(cfm.get("regime_of_validity", ""))
+            cand_evidence = str(cfm.get("evidence", ""))
+            dep_list = cfm.get("depends_on", [])
+
+            # Determine entry slug
+            entry_slug = f"claim-{_slugify(cand_id)}"
+            entry_path = global_l2 / "entries" / f"{entry_slug}.md"
+
+            if entry_path.exists():
+                # Already extracted — update version
+                efm, ebody = _parse_md(entry_path)
+                efm["version"] = int(efm.get("version", 1)) + 1
+                efm["statement"] = cand_claim
+                efm["updated"] = _now()
+                efm["source_ref"] = f"topic:{topic_slug}/candidates/{cand_id}"
+                _write_md(entry_path, efm, ebody)
+                extracted["claim"].append(entry_slug + " (updated)")
+                continue
+
+            claim_type = type_map.get(cand_type, "result")
+            lane_list = ["code_method"]  # Default; should be inferred from state.md
+
+            entry_fm: dict[str, Any] = {
+                "entry_id": entry_slug,
+                "role": "claim",
+                "title": cand_title,
+                "lane": lane_list,
+                "status": "unverified",
+                "regime": cand_regime or f"topic:{topic_slug}",
+                "claim_type": claim_type,
+                "statement": cand_claim,
+                "mathematical_expression": "",
+                "observable": "",
+                "evidence_type": "code_derived" if cand_type in ("research_claim", "negative_result") else "analytic_proof",
+                "source_ref": f"topic:{topic_slug}/candidates/{cand_id}",
+                "updated": _now(),
+                "version": 1,
+                "created_at": _now(),
+            }
+            if dep_list:
+                # Convert candidate dep references to entry ID guesses
+                mapped_deps = []
+                for d in dep_list:
+                    d_slug = f"claim-{_slugify(str(d))}"
+                    # Check if mapped dep exists
+                    if (global_l2 / "entries" / f"{d_slug}.md").exists():
+                        mapped_deps.append(d_slug)
+                    else:
+                        mapped_deps.append(str(d))
+                entry_fm["depends_on_claims"] = mapped_deps
+
+            entry_body = (
+                f"# {cand_title}\n\n"
+                f"Auto-extracted from candidate `{cand_id}` in topic `{topic_slug}`.\n\n"
+                f"## Claim\n{cand_claim}\n\n"
+                f"## Evidence\n{cand_evidence}\n\n"
+                f"## Review Needed\n"
+                f"- Verify the claim statement is accurate\n"
+                f"- Add mathematical_expression if applicable\n"
+                f"- Set observable field to enable cross-topic search\n"
+                f"- Confirm or adjust evidence_type\n\n"
+                f"## Relationships\n"
+            )
+            if dep_list:
+                for d in dep_list:
+                    entry_body += f"- derives_from: {d}\n"
+
+            _write_md(entry_path, entry_fm, entry_body)
+            extracted["claim"].append(entry_slug)
+
+    # -- Secondary: Regex extraction from L0/L3 text --
     source_texts: list[str] = []
     for artifact_dir in ["L0", "L3"]:
         art_path = root / artifact_dir
         if art_path.is_dir():
             for md_file in art_path.rglob("*.md"):
+                if md_file.name.startswith("candidate"):
+                    continue  # Already handled above
                 try:
                     source_texts.append(md_file.read_text(encoding="utf-8"))
                 except Exception:
                     pass
 
-    if not source_texts:
-        return {"message": "No topic artifacts found to extract from.", "extracted": extracted}
-
     combined = "\n".join(source_texts)
 
-    # Extract molecule systems from chemical formulas
-    import re
+    # Chemical formula → system entries
     mol_patterns = [
         (r'\bSi\b', 'Si', 'Silicon'),
         (r'\bCH[_4]\b', 'CH4', 'Methane'),
@@ -6191,16 +6289,14 @@ def aitp_extract_topic_entries(
         if re.search(pattern, combined):
             found_mols.add((slug_formula, _name))
 
-    global_l2 = _ensure_l2_graph_dirs(topics_root)
-
     for formula, name in found_mols:
-        sys_slug = f"system-{formula.lower()}-auto"
+        sys_slug = f"system-{formula.lower()}-extracted"
         sys_path = global_l2 / "entries" / f"{sys_slug}.md"
         if not sys_path.exists():
             sys_fm = {
                 "entry_id": sys_slug,
                 "role": "system",
-                "title": f"{formula} {name} (auto-extracted from topic)",
+                "title": f"{formula} {name} (extracted from {topic_slug})",
                 "lane": ["code_method"],
                 "status": "unverified",
                 "regime": "DFT-GW level, isolated molecule",
@@ -6208,53 +6304,46 @@ def aitp_extract_topic_entries(
                 "formula_or_identifier": formula,
                 "parameters": "",
                 "source_ref": f"topic:{topic_slug} (auto-extracted)",
-                "updated": _now(),
-                "version": 1,
-                "created_at": _now(),
+                "updated": _now(), "version": 1, "created_at": _now(),
             }
             sys_body = (
                 f"# {formula} {name}\n\n"
-                f"Auto-extracted from topic `{topic_slug}`.\n"
+                f"Extracted from topic `{topic_slug}` artifacts.\n"
                 f"Review and fill in reference values and calculation records.\n\n"
-                f"## Relationships\n- studied_by: method-abacus-librpa-qsgw\n"
+                f"## Relationships\n"
             )
             _write_md(sys_path, sys_fm, sys_body)
             extracted["system"].append(sys_slug)
 
-    # Extract pitfalls from error patterns
+    # Error patterns → pitfall entries
     error_patterns = [
-        (r'ValueError.*not enough values to unpack', "pyatb-api-mismatch-auto",
-         "pyatb API version mismatch", "code_method"),
-        (r'Floating point exception', "fp-exception-auto",
-         "Floating point exception in numerical code", "code_method"),
-        (r'Can\'?t find even an electron', "scf-failure-auto",
-         "SCF convergence failure", "code_method"),
-        (r'divide.by.zero', "div-by-zero-auto",
-         "Division by zero in numerical computation", "code_method"),
+        (r'ValueError.*not enough values to unpack', "pyatb-api-mismatch-extracted",
+         "pyatb API version mismatch"),
+        (r'Floating point exception', "fp-exception-extracted",
+         "Floating point exception in numerical code"),
+        (r'Can\'?t find even an electron', "scf-failure-extracted",
+         "SCF convergence failure"),
+        (r'divide.by.zero', "div-by-zero-extracted",
+         "Division by zero in numerical computation"),
     ]
-    for pattern, pf_slug_base, pf_title_base, pf_lane in error_patterns:
+    for pattern, pf_slug, pf_title in error_patterns:
         if re.search(pattern, combined, re.IGNORECASE):
-            pf_slug = pf_slug_base
             pf_path = global_l2 / "entries" / f"{pf_slug}.md"
             if not pf_path.exists():
                 pf_fm = {
-                    "entry_id": pf_slug,
-                    "role": "pitfall",
-                    "title": f"{pf_title_base} (auto-extracted)",
-                    "lane": [pf_lane],
-                    "status": "unverified",
+                    "entry_id": pf_slug, "role": "pitfall",
+                    "title": f"{pf_title} (extracted from {topic_slug})",
+                    "lane": ["code_method"], "status": "unverified",
                     "regime": "topic artifacts",
                     "symptom": f"Pattern: {pattern}",
-                    "cause": "Auto-extracted — fill in from topic context",
-                    "fix": "Auto-extracted — fill in from topic context",
+                    "cause": "Extracted from topic — fill in from context",
+                    "fix": "Extracted from topic — fill in from context",
                     "source_ref": f"topic:{topic_slug} (auto-extracted)",
-                    "updated": _now(),
-                    "version": 1,
-                    "created_at": _now(),
+                    "updated": _now(), "version": 1, "created_at": _now(),
                 }
                 pf_body = (
-                    f"# {pf_title_base}\n\n"
-                    f"Auto-extracted from topic `{topic_slug}`.\n"
+                    f"# {pf_title}\n\n"
+                    f"Extracted from topic `{topic_slug}`.\n"
                     f"Review and fill in symptom/cause/fix details.\n\n"
                     f"## Relationships\n"
                 )
@@ -6263,13 +6352,13 @@ def aitp_extract_topic_entries(
 
     # Rebuild indexes
     _rebuild_entry_index(global_l2)
-    _append_to_topic_log(root, f"auto-extracted L2 entries: {extracted}")
+    _append_to_topic_log(root, f"extracted L2 entries: {extracted}")
 
     return {
         "topic": topic_slug,
         "extracted": extracted,
         "total": sum(len(v) for v in extracted.values()),
-        "message": "Extracted entries created with status=unverified. Review before promoting.",
+        "message": "Entries created with status=unverified. Review each entry before promoting.",
     }
 
 

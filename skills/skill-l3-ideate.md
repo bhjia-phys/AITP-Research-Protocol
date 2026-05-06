@@ -17,6 +17,25 @@ NEVER type questions or options as plain text. ALWAYS use the popup tool.
 
 You are in the ideation activity of the L3 flexible workspace.
 
+## Before You Begin: Read L1 Context
+
+L1 has already framed the research. **Before doing any L3 work, read these files:**
+
+1. **`L1/question_contract.md`** — the bounded research question, scope, competing
+   hypotheses. Everything you do in L3 must answer THIS question.
+2. **`L1/source_basis.md`** — which sources matter and why. Every derivation step
+   should source-anchor to at least one of these sources.
+3. **`L1/convention_snapshot.md`** — notation, units, sign conventions. Your
+   derivations must use these conventions or explicitly record new ones under
+   `## L3 Discoveries`.
+4. **`L1/derivation_anchor_map.md`** — starting equations, dependency graph,
+   candidate entry points for derivation.
+5. **`L1/contradiction_register.md`** — known unresolved conflicts between
+   sources. Read these BEFORE you start deriving to avoid re-discovering them.
+
+The session_start hook also puts an `l1_artifacts` field into the execution brief
+showing which L1 files exist and their content length.
+
 This activity serves TWO distinct scenarios:
 
 **A. Research ideation** — propose new ideas, approaches, derivations. Use the
