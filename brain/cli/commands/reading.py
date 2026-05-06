@@ -40,6 +40,8 @@ def cmd_source_extract(args):
         "completeness_confidence": args.confidence or "medium",
         "extracted_at": _now_iso(),
     }
+    if hasattr(args, 'source_file') and args.source_file:
+        fm["source_file"] = args.source_file
     body = f"# {args.source} — {args.section}\n\n{args.content or ''}\n"
     _write_md(path, fm, body)
     _append_research_md(root, "L1", f"Extracted {args.source}/{args.section}")

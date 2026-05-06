@@ -542,6 +542,7 @@ def build_parser():
     p_sext.add_argument("--section", required=True, help="Section name")
     p_sext.add_argument("--content", help="Section content / key equations")
     p_sext.add_argument("--confidence", help="Extraction confidence: low, medium, high")
+    p_sext.add_argument("--source-file", help="File path within repo (for repo-type sources)")
     p_sext.set_defaults(func=cmd_source_extract)
     p_sexta = p_src_sub.add_parser("extract-all", help="List all pending sections for batch extraction")
     p_sexta.add_argument("topic", help="Topic slug")
@@ -658,7 +659,7 @@ def build_parser():
     # switch-activity
     p_sw = sub.add_parser("switch-activity", help="Switch L3 activity (ideate/plan/derive/gap-audit/...)")
     p_sw.add_argument("topic", help="Topic slug")
-    p_sw.add_argument("activity", help="Target activity: ideate, plan, derive, trace-derivation, gap-audit, connect, integrate, distill")
+    p_sw.add_argument("activity", help="Target activity: ideate, plan, derive, trace-derivation, gap-audit, integrate, distill")
     p_sw.set_defaults(func=cmd_switch_activity)
 
     # ── Phase 3: L4 commands ───────────────────────────────────────────
