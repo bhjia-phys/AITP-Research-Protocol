@@ -102,9 +102,8 @@
 % ── Validation table ─────────────────────────────────────────────────────
 \newenvironment{validationtable}[1]{%
     \par\medskip\noindent
-    \begin{tcolorbox}[colback=aitpgreen!3, colframe=aitpgreen!60,
-                      fonttitle=\bfseries, boxrule=0.5pt, arc=2pt,
-                      title={Validation: #1}]
+    \colorbox{aitpgreen!3}{\begin{minipage}{\dimexpr\linewidth-2\fboxsep\relax}
+    \textbf{Validation: #1}\\[0.3em]
     \begin{tabular}{l p{5cm} l}
     \toprule
     \textbf{Check} & \textbf{Result} & \textbf{Status} \\
@@ -112,7 +111,7 @@
 }{%
     \bottomrule
     \end{tabular}
-    \end{tcolorbox}
+    \end{minipage}}
     \medskip\par
 }
 
