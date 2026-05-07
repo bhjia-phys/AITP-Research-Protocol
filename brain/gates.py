@@ -974,20 +974,21 @@ def evaluate_l4_stage(
                                     skill="skill-validate",
                                 )
 
-    # AI Physicist L2 Lookup (was dead code — now wired in v1.0):
-    # Check that reviews reference L2 knowledge relevant to the claims
+    # AI Physicist L2 Lookup: check that reviews reference L2 knowledge.
+    # The check looks for L2 entry ID references (claim-xxx, system-xxx, etc.)
+    # or query evidence anywhere in the review body.
     l2_warnings = []
     for cand_path in submitted:
         slug = cand_path.stem
         review_path = review_dir / f"{slug}.md"
         if review_path.exists():
-            rf, rb = parse_md(review_path)
+            _, rb = parse_md(review_path)
             try:
-                lookup = _check_physicist_l2_lookup(review_path, parse_md, topic_root_path)
+                l2_issues = _check_physicist_l2_lookup(rb, "L4")
             except Exception:
-                lookup = True, ""
-            if not lookup[0]:
-                l2_warnings.append(f"{slug}: {lookup[1]}")
+                l2_issues = []
+            if l2_issues:
+                l2_warnings.append(f"{slug}: {'; '.join(l2_issues)}")
 
     # AI Physicist Check: every review must contain a correspondence/limit check
     # with at least one concrete physical limit named
@@ -1041,6 +1042,24 @@ def evaluate_l4_stage(
                 skill="skill-validate",
             )
 
+        # l4_review_needed enforcement: if a background job completed and
+        # aitp_l4_check_results was called (which sets this flag), the agent
+        # MUST submit reviews before the gate declares ready.
+        if sf.get("l4_review_needed") and bg_status == "completed":
+            return StageSnapshot(
+                stage="L4", posture="verify", lane=lane,
+                gate_status="blocked_missing_artifact",
+                required_artifact_path=str(review_dir),
+                missing_requirements=[
+                    f"Background job {sf.get('l4_job_id', 'unknown')} "
+                    f"completed at {sf.get('l4_job_completed_at', 'unknown')}. "
+                    f"l4_review_needed=True: call aitp_submit_l4_review for "
+                    f"each candidate before the L4 gate will be ready."
+                ],
+                next_allowed_transition="L3",
+                skill="skill-validate",
+            )
+
     # L1 freshness check: L3→L1 feedback should exist. If zero L3 Discoveries
     # or contradiction feedback has been recorded, warn but don't block.
     # L1 is a living document — L3 work that found nothing to feed back is a smell.
@@ -1082,7 +1101,7 @@ def evaluate_l4_stage(
     return StageSnapshot(
         stage="L4", posture="verify", lane=lane,
         gate_status="ready",
-        missing_requirements=l1_warnings if l1_warnings else [],
+        missing_requirements=(l1_warnings + l2_warnings) if (l1_warnings or l2_warnings) else [],
         next_allowed_transition="L2",
         skill="skill-promote",
         l1_feedback_status="missing" if l1_warnings else "has_feedback",

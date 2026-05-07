@@ -106,11 +106,18 @@ def _check_physicist_correspondence(body: str, lane: str) -> list[str]:
 
     issues = []
     # Must name at least one specific limit
-    limit_keywords = ["T→0", "T → 0", "q→0", "q → 0", "weak coupling",
-                      "strong coupling", "large N", "classical limit", "hbar→0",
-                      "non-relativistic", "static limit", "long wavelength",
-                      "low energy", "high temperature", "zero temperature",
-                      "perturbative", "free field", "non-interacting"]
+    limit_keywords = ["T→0", "T → 0", "T=0", "T = 0", "q→0", "q → 0",
+                      "weak coupling", "strong coupling", "large N",
+                      "classical limit", "hbar→0", "non-relativistic",
+                      "static limit", "long wavelength", "low energy",
+                      "high temperature", "zero temperature", "perturbative",
+                      "free field", "non-interacting", "non-interacting limit",
+                      "independent particle", "single-particle", "one-body",
+                      "Hartree-Fock", "HF limit", "mean field", "mean-field",
+                      "adiabatic", "Born-Oppenheimer", "free-particle",
+                      "free electron", "m→∞", "m → ∞", "g→0", "g → 0",
+                      "thermodynamic limit", "continuum limit",
+                      "infinite volume", "non-relativistic limit"]
     has_limit = any(kw.lower() in section.lower() for kw in limit_keywords)
     if not has_limit:
         issues.append("Correspondence check must name at least one concrete physical limit")
@@ -130,21 +137,68 @@ def _check_physicist_anomalies(body: str) -> list[str]:
     """Verify that anomalies (unexpected results, deviations, surprises) are flagged for discussion.
 
     At minimum, the artifact must explicitly state either:
-    - No anomalies were found (and why that's expected), OR
+    - No anomalies were found AND why that's expected (>= 30 chars of reasoning), OR
     - Specific anomalies were found and documented
+
+    A bare "no anomalies found" without explanation is rejected — the AI must
+    explain WHY no anomalies are expected, referencing the physics regime.
     """
-    has_anomaly_section = (
-        "## Anomalies" in body
-        or "## Surprises" in body
-        or "## Unexpected Results" in body
-        or "## Deviations" in body
-        or "no anomalies" in body.lower()
-        or "no unexpected" in body.lower()
-        or "as expected" in body.lower()
-    )
-    if not has_anomaly_section:
-        return ["Must flag anomalies for discussion — either document specific anomalies or explicitly state none were found"]
-    return []
+    # Find anomaly-related sections
+    anomaly_headings = ["## Anomalies", "## Surprises", "## Unexpected Results", "## Deviations"]
+    found_heading = None
+    heading_idx = -1
+    for h in anomaly_headings:
+        idx = body.find(h)
+        if idx != -1:
+            found_heading = h
+            heading_idx = idx
+            break
+
+    if found_heading:
+        # Extract section content
+        content_start = body.find("\n", heading_idx) + 1
+        remaining = body[content_start:]
+        next_section = remaining.find("\n## ")
+        section = remaining[:next_section] if next_section != -1 else remaining
+        section_text = section.strip()
+
+        # If section says "no anomalies", require explanation (>= 30 chars beyond the phrase)
+        if "no anomalies" in section_text.lower() or "no unexpected" in section_text.lower():
+            # Strip the key phrase itself to measure explanation length
+            import re
+            explanation = re.sub(r'(?i)no\s+(anomalies|unexpected)\s*(results\s*)?(found|detected|observed)?[.,;:!\s-]*',
+                                '', section_text).strip()
+            if len(explanation) < 30:
+                return [
+                    "Anomalies section states 'no anomalies' but lacks explanation. "
+                    "Explain WHY no anomalies are expected in this regime "
+                    "(>= 30 chars of physics reasoning, e.g. 'This is a semiconductor "
+                    "at zero temperature where the GW approximation is known to be valid "
+                    "and no symmetry breaking is expected')."
+                ]
+        return []  # Has section with adequate content
+
+    # No dedicated section — check for inline anomaly statements with explanation
+    if "no anomalies" in body.lower() or "no unexpected" in body.lower() or "as expected" in body.lower():
+        # Found the phrase but no dedicated section — check surrounding context
+        # Require at least 30 chars around the phrase
+        idx_lower = body.lower().find("no anomalies")
+        if idx_lower == -1:
+            idx_lower = body.lower().find("no unexpected")
+        if idx_lower == -1:
+            idx_lower = body.lower().find("as expected")
+        if idx_lower >= 0:
+            context_start = max(0, idx_lower - 15)
+            context_end = min(len(body), idx_lower + 50)
+            context = body[context_start:context_end]
+            if len(context.strip()) < 30:
+                return [
+                    "Anomaly statement found but too brief. "
+                    "Explain WHY no anomalies are expected (>= 30 chars of reasoning)."
+                ]
+        return []
+
+    return ["Must flag anomalies for discussion — either document specific anomalies or explicitly state none were found with reasoning"]
 
 
 # -- Physicist reasoning patterns (protocol-level, not gate checks) --
@@ -159,9 +213,14 @@ PHYSICIST_FOUR_QUESTIONS = {
 }
 
 CORRESPONDENCE_LIMIT_KEYWORDS = [
-    "T→0", "T → 0", "q→0", "q → 0", "weak coupling", "strong coupling",
-    "large N", "classical limit", "hbar→0", "non-relativistic", "static limit",
-    "long wavelength", "low energy", "high temperature", "zero temperature",
-    "perturbative", "free field", "non-interacting", "thermodynamic limit",
-    "continuum limit", "infinite volume", "mean field",
+    "T→0", "T → 0", "T=0", "T = 0", "q→0", "q → 0", "weak coupling",
+    "strong coupling", "large N", "classical limit", "hbar→0",
+    "non-relativistic", "static limit", "long wavelength", "low energy",
+    "high temperature", "zero temperature", "perturbative", "free field",
+    "non-interacting", "non-interacting limit", "independent particle",
+    "single-particle", "one-body", "Hartree-Fock", "HF limit",
+    "mean field", "mean-field", "adiabatic", "Born-Oppenheimer",
+    "free-particle", "free electron", "m→∞", "m → ∞", "g→0", "g → 0",
+    "thermodynamic limit", "continuum limit", "infinite volume",
+    "non-relativistic limit",
 ]
