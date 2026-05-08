@@ -1,0 +1,12 @@
+\contentsline {section}{\numberline {1}Candidate Under Review}{2}{section.1}%
+\contentsline {section}{\numberline {2}L4 Validation Outcome}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Primary Review (Cycle 1)}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Physics Check Results}{2}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}Devil's Advocate}{2}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}SymPy Verification Evidence}{2}{subsection.2.4}%
+\contentsline {section}{\numberline {3}Versioned Review (Cycle 2)}{3}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Updated Check Results (v2)}{3}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Devil's Advocate (v2)}{3}{subsection.3.2}%
+\contentsline {section}{\numberline {4}Multi-Outcome Summary}{3}{section.4}%
+\contentsline {section}{\numberline {5}Trust Classification}{4}{section.5}%
+\contentsline {section}{\numberline {6}Test Fixture Provenance}{4}{section.6}%

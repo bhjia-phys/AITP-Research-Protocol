@@ -1,0 +1,57 @@
+{
+  "$description": "Baseline physics check fields and representative values for L4 validation tests",
+  "$version": "1.0",
+  "physics_check_fields": [
+    "dimensional_consistency",
+    "symmetry_compatibility",
+    "limiting_case_check",
+    "conservation_check",
+    "correspondence_check",
+    "approximation_validity_check",
+    "unitarity_check",
+    "causality_check"
+  ],
+  "l4_outcomes": [
+    "pass",
+    "partial_pass",
+    "fail",
+    "contradiction",
+    "stuck",
+    "timeout"
+  ],
+  "representative_pass_checks": {
+    "dimensional_consistency": "pass: [H] = [hbar omega] = energy, both sides ML^2T^{-2}",
+    "symmetry_compatibility": "pass: Hamiltonian commutes with parity operator",
+    "limiting_case_check": "pass: classical harmonic oscillator recovered as n → ∞",
+    "correspondence_check": "pass: matches known result from Griffiths §2.3"
+  },
+  "representative_fail_checks": {
+    "correspondence_check": "fail: predicted gap 3.2 eV vs experimental 1.1 eV (Si band gap)",
+    "symmetry_compatibility": "inconclusive: SU(2) symmetry verified, translational invariance not confirmed"
+  },
+  "representative_contradiction_checks": {
+    "correspondence_check": "contradiction: parity conservation claim contradicts Redlich (1984) parity anomaly proof",
+    "symmetry_compatibility": "contradiction: parity transformation produces non-invariant term ∝ k"
+  },
+  "representative_stuck_checks": {
+    "approximation_validity_check": "stuck: perturbative expansion diverges for g > 0.5; nonperturbative method unavailable"
+  },
+  "lane_evidence_requirements": {
+    "formal_theory": {
+      "required_for_pass": ["check_results", "devils_advocate"],
+      "check_results_minimum": ["dimensional_consistency", "symmetry_compatibility", "limiting_case_check", "correspondence_check"],
+      "alternative": "verification_evidence from SymPy tools"
+    },
+    "toy_numeric": {
+      "required_for_pass": ["evidence_scripts", "evidence_outputs", "devils_advocate"]
+    },
+    "code_method": {
+      "required_for_pass": ["evidence_scripts", "evidence_outputs", "data_provenance", "devils_advocate"]
+    }
+  },
+  "trust_classification": {
+    "validated": {"trust_basis": "validated", "trust_scope": "bounded_reusable"},
+    "partial_validated": {"trust_basis": "partial", "trust_scope": "experimental"},
+    "failed": {"trust_basis": "none", "trust_scope": "none"}
+  }
+}

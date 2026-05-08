@@ -55,7 +55,17 @@ gates when they need domain-specific numerics or formal tooling.
 This layer is the main gate between Layer 3 exploratory material and Layer 2 canonical knowledge.
 Direct `L1 -> L4 -> L2` is not allowed: Layer 4 must come after Layer 3.
 
-See also:
+## Test Data Backup
+
+Every completed L4 run must be curated into a compact backup:
+
+- **Backup directory:** `backups/l4/<topic_slug>/<run_id>/`
+- **Per-run directory:** `topics/<topic_slug>/runs/<run_id>/`
+- **TeX record:** `validation/templates/l4-test-result-record.tex`
+
+See:
+- `L4_TEST_DATA_BACKUP_PROTOCOL.md`
 - `EXECUTION_PROTOCOL.md`
 - `schemas/execution-task.schema.json`
 - `schemas/promotion-decision.schema.json`
+- `tools/curate_l4_backup.py`

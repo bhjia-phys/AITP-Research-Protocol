@@ -241,3 +241,60 @@ This loop continues until:
 - Decide that coverage equals correctness.
 - Skip the trust audit.
 - Collapse six outcomes into two without recording the nuance.
+
+## 4.15. Test Data Backup
+
+### Per-Run Directory
+
+Every L4 validation run writes into a timestamped run directory:
+
+```
+topics/<topic_slug>/runs/<run_id>/
+├── validation_plan.md
+├── validation_contract.md
+├── promotion_decisions.jsonl
+├── execution-tasks/
+│   └── <task_id>.json
+├── results/
+│   ├── GW_band_spin_1.dat
+│   ├── band_gap_data.csv
+│   ├── benchmark_comparison.csv
+│   └── ...
+├── logs/
+│   ├── abacus.out
+│   ├── LibRPA.out
+│   └── slurm.out
+├── figures/
+│   ├── gap_comparison.pdf
+│   └── plot_gap.py
+└── l4_test_result_record.tex    # TeX record of this run
+```
+
+`run_id` convention: `run-YYYY-MM-DD-<letter>` (e.g. `run-2026-05-08-a`).
+
+### Backup Curation
+
+After the run completes, curate into a compact backup bundle following
+`L4_TEST_DATA_BACKUP_PROTOCOL.md` (in `research/knowledge-hub/validation/`):
+
+```
+backups/l4/<topic_slug>/<run_id>/
+├── README.md
+├── manifest.json
+├── inputs/          # Class 2: minimal reproducible inputs
+├── outputs/         # Class 3: meaningful final results
+├── logs/            # Class 4: main-stage logs only
+└── figures/         # Paper-used figures + generating scripts
+```
+
+### TeX Test Record
+
+Every completed L4 validation run must produce a TeX test result record
+using the template `validation/templates/l4-test-result-record.tex`.
+The compiled PDF serves as the durable human-readable adjudication
+artifact. Keep both `.tex` and compiled `.pdf` in the backup bundle.
+
+See:
+- `research/knowledge-hub/validation/L4_TEST_DATA_BACKUP_PROTOCOL.md`
+- `research/knowledge-hub/validation/templates/l4-test-result-record.tex`
+- `research/knowledge-hub/validation/tools/curate_l4_backup.py`

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -294,6 +296,159 @@ class TrustClassificationTests(unittest.TestCase):
             self.assertIn("trust_scope", l2_fm)
             self.assertEqual(l2_fm["trust_basis"], "validated")
             self.assertEqual(l2_fm["trust_scope"], "bounded_reusable")
+
+
+class L4FixtureValidationTests(unittest.TestCase):
+    """Verify L4 test data fixtures are well-formed and match protocol constants."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.fixture_root = (
+            Path(__file__).resolve().parent / "fixtures" / "l4"
+        )
+
+    # ── Review fixtures ──
+
+    def test_all_six_outcome_fixtures_exist(self):
+        reviews_dir = self.fixture_root / "reviews"
+        self.assertTrue(reviews_dir.is_dir(), f"Missing: {reviews_dir}")
+
+        found = set()
+        for path in sorted(reviews_dir.glob("cand-*.md")):
+            # Skip versioned files (_v2, _v3, etc.)
+            if re.match(r".*_v\d+\.md$", path.name):
+                continue
+            fm, _ = mcp_server._parse_md(path)
+            outcome = fm.get("outcome", "")
+            if outcome:
+                found.add(outcome)
+
+        expected = set(L4_OUTCOMES)
+        missing = expected - found
+        self.assertEqual(
+            missing, set(),
+            f"Missing L4 outcome fixtures: {missing}. "
+            f"Found: {found}",
+        )
+
+    def test_each_review_fixture_has_required_fields(self):
+        reviews_dir = self.fixture_root / "reviews"
+        for path in sorted(reviews_dir.glob("cand-*.md")):
+            with self.subTest(path=path.name):
+                fm, body = mcp_server._parse_md(path)
+                self.assertIn("outcome", fm,
+                              f"Missing 'outcome' in {path.name}")
+                self.assertIn(fm["outcome"], L4_OUTCOMES,
+                              f"Invalid outcome in {path.name}: {fm['outcome']}")
+                self.assertIn("artifact_kind", fm)
+                self.assertEqual(fm["artifact_kind"], "l4_review")
+                self.assertIn("candidate_id", fm)
+                self.assertIn("l4_cycle", fm)
+                self.assertIn("reviewed_at", fm)
+                self.assertIn("## Outcome", body)
+                self.assertIn("## Check Results", body)
+
+    def test_pass_review_has_devils_advocate(self):
+        path = self.fixture_root / "reviews" / "cand-qho-energy-spectrum.md"
+        self.assertTrue(path.exists(), f"Missing: {path}")
+        fm, body = mcp_server._parse_md(path)
+        self.assertEqual(fm["outcome"], "pass")
+        self.assertIn("devils_advocate", fm,
+                      "Pass review must have devils_advocate field")
+        self.assertGreater(len(fm["devils_advocate"].strip()), 20,
+                           "Devil's advocate must be substantive")
+        self.assertIn("## Devil's Advocate", body)
+
+    def test_versioned_review_fixture_exists(self):
+        path = self.fixture_root / "reviews" / "cand-qho-energy-spectrum_v2.md"
+        self.assertTrue(path.exists(), f"Missing versioned review: {path}")
+        fm, body = mcp_server._parse_md(path)
+        self.assertEqual(fm["outcome"], "pass")
+        self.assertEqual(fm["l4_cycle"], 2)
+        self.assertIn("v1", body.lower() or "v1")
+
+    # ── Validation contract fixture ──
+
+    def test_validation_contract_fixture(self):
+        path = self.fixture_root / "validation_contract.md"
+        self.assertTrue(path.exists(), f"Missing: {path}")
+        fm, body = mcp_server._parse_md(path)
+        self.assertEqual(fm["artifact_kind"], "l4_validation_contract")
+        self.assertIn("mandatory_checks", fm)
+        self.assertGreaterEqual(len(fm["mandatory_checks"]), 4)
+        for check in fm["mandatory_checks"]:
+            self.assertIn(check, PHYSICS_CHECK_FIELDS,
+                          f"Unknown check '{check}' in validation contract")
+
+    # ── Physics check baseline fixture ──
+
+    def test_physics_check_baseline_fixture(self):
+        path = self.fixture_root / "physics_check_baseline.json"
+        self.assertTrue(path.exists(), f"Missing: {path}")
+
+        import json
+        data = json.loads(path.read_text(encoding="utf-8"))
+
+        self.assertEqual(
+            set(data["physics_check_fields"]),
+            set(PHYSICS_CHECK_FIELDS),
+        )
+        self.assertEqual(
+            set(data["l4_outcomes"]),
+            set(L4_OUTCOMES),
+        )
+        self.assertIn("lane_evidence_requirements", data)
+        for lane in ("formal_theory", "toy_numeric", "code_method"):
+            self.assertIn(lane, data["lane_evidence_requirements"],
+                          f"Missing lane '{lane}' in baseline")
+
+    # ── Candidate baseline fixture ──
+
+    def test_candidate_baseline_fixture(self):
+        path = self.fixture_root / "candidate_baseline.md"
+        self.assertTrue(path.exists(), f"Missing: {path}")
+        fm, body = mcp_server._parse_md(path)
+        self.assertEqual(fm["artifact_kind"], "candidate")
+        self.assertEqual(fm["status"], "validated")
+        self.assertIn("claim", fm)
+        self.assertIn("evidence", fm)
+        self.assertIn("regime_of_validity", fm)
+
+    # ── TeX record fixtures ──
+
+    def test_tex_record_exists(self):
+        tex_path = self.fixture_root / "tex" / "l4_validation_test_record.tex"
+        self.assertTrue(tex_path.exists(),
+                        f"Missing L4 TeX record: {tex_path}")
+
+    def test_tex_record_compiles_to_pdf(self):
+        pdf_path = self.fixture_root / "tex" / "l4_validation_test_record.pdf"
+        self.assertTrue(pdf_path.exists(),
+                        f"Missing compiled PDF: {pdf_path}")
+        self.assertGreater(pdf_path.stat().st_size, 1000,
+                           "PDF file is suspiciously small")
+
+    def test_tex_record_has_build_artifacts(self):
+        tex_dir = self.fixture_root / "tex"
+        for suffix in (".aux", ".log", ".out", ".toc"):
+            artifact = tex_dir / f"l4_validation_test_record{suffix}"
+            self.assertTrue(artifact.exists(),
+                            f"Missing build artifact: {artifact.name}")
+
+    def test_tex_record_mentions_all_six_outcomes(self):
+        tex_path = self.fixture_root / "tex" / "l4_validation_test_record.tex"
+        content = tex_path.read_text(encoding="utf-8")
+        for outcome in L4_OUTCOMES:
+            self.assertIn(
+                outcome, content,
+                f"TeX record missing outcome '{outcome}'",
+            )
+
+    def test_tex_record_references_fixture_paths(self):
+        tex_path = self.fixture_root / "tex" / "l4_validation_test_record.tex"
+        content = tex_path.read_text(encoding="utf-8")
+        self.assertIn("tests/fixtures/l4/", content)
+        self.assertIn("test_l4_l2_memory.py", content)
 
 
 if __name__ == "__main__":
