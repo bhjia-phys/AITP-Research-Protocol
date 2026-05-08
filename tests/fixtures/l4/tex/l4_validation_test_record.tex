@@ -1,0 +1,258 @@
+% ===========================================================================
+% L4 Validation Test TeX Record — QHO Energy Spectrum (outcome: pass)
+% ===========================================================================
+% Generated from test fixture: tests/fixtures/l4/reviews/cand-qho-energy-spectrum.md
+% This file is a known-good snapshot of L4 flow notebook output preserved
+% for regression testing of the TeX rendering pipeline.
+% ===========================================================================
+
+\documentclass[11pt,a4paper]{article}
+
+% --- Encoding & Fonts ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+% --- Mathematics ---
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{physics}
+\usepackage{bm}
+
+% --- Page layout ---
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5em plus 0.2em minus 0.1em}
+
+% --- Tables ---
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+
+% --- Colors & Boxes ---
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+
+% --- Links ---
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!60!black,
+    urlcolor=blue!60!black,
+}
+
+% --- Custom colors ---
+\definecolor{passgreen}{RGB}{34,139,34}
+\definecolor{failred}{RGB}{178,34,34}
+\definecolor{warnorange}{RGB}{204,119,34}
+\definecolor{infoblue}{RGB}{47,85,151}
+
+% --- Status commands ---
+\newcommand{\statuspass}{\textcolor{passgreen}{\textbf{PASS}}}
+\newcommand{\statusfail}{\textcolor{failred}{\textbf{FAIL}}}
+\newcommand{\statuswarn}{\textcolor{warnorange}{\textbf{INCONCLUSIVE}}}
+
+% --- Boxes ---
+\newtcolorbox{resultbox}[1][]{
+    colback=infoblue!4, colframe=infoblue!70,
+    fonttitle=\bfseries, boxrule=0.6pt, arc=2pt, breakable,
+    title={#1}
+}
+\newtcolorbox{valbox}[1][]{
+    colback=passgreen!4, colframe=passgreen!70,
+    fonttitle=\bfseries, boxrule=0.6pt, arc=2pt, breakable,
+    title={#1}
+}
+
+% --- Metadata ---
+\title{\textbf{L4 Validation Test Record}\\[0.4em]
+  \large Topic: Quantum Harmonic Oscillator}
+\author{AITP Protocol v3 — L4 Regression Test}
+\date{2026-04-20}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This TeX document is a preserved test record of L4 validation output for the
+quantum harmonic oscillator energy spectrum candidate. It captures the full
+L4 review structure: six-outcome vocabulary, physics check results, devil's
+advocate record, and SymPy verification evidence.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ===========================================================================
+% §1  Candidate Under Review
+% ===========================================================================
+
+\section{Candidate Under Review}
+
+\begin{resultbox}[Candidate Summary]
+\textbf{Candidate ID:} \texttt{cand-qho-energy-spectrum}
+
+\textbf{Claim:} The energy eigenvalues of the 1D quantum harmonic oscillator
+with Hamiltonian $H = p^2/(2m) + \frac{1}{2} m \omega^2 x^2$ are
+$E_n = (n + 1/2) \hbar \omega$, for $n = 0, 1, 2, \ldots$
+
+\textbf{Regime of Validity:} Non-relativistic QM, 1D, harmonic potential only.
+
+\textbf{Type:} \texttt{result} \quad
+\textbf{Lane:} \texttt{formal\_theory}
+\end{resultbox}
+
+% ===========================================================================
+% §2  L4 Validation Outcome
+% ===========================================================================
+
+\section{L4 Validation Outcome}
+
+\subsection{Primary Review (Cycle 1)}
+
+\begin{valbox}[Review: cand-qho-energy-spectrum]
+\textbf{Outcome:} \statuspass{} \texttt{pass}
+
+\textbf{Review Date:} 2026-04-20T12:00:00Z
+
+\textbf{Notes:} All four mandatory physics checks passed. The derivation
+correctly recovers the well-known quantum harmonic oscillator energy spectrum.
+The ladder operator method is a standard technique validated across multiple
+textbooks.
+\end{valbox}
+
+\subsection{Physics Check Results}
+
+\begin{longtable}{>{\raggedright}p{4cm} p{2cm} p{6cm}}
+\toprule
+\textbf{Check} & \textbf{Result} & \textbf{Detail} \\
+\midrule
+\endhead
+Dimensional consistency & \statuspass & $[H] = [\hbar\omega] = \text{energy}$, both sides $ML^2T^{-2}$ \\
+Symmetry compatibility & \statuspass & $H$ commutes with parity operator $\hat{P}$ \\
+Limiting case check  & \statuspass & Classical HO recovered as $n \to \infty$: $T = 2\pi/\omega$ \\
+Correspondence check & \statuspass & Matches known result $E_n = (n+1/2)\hbar\omega$ (Griffiths \S2.3) \\
+\bottomrule
+\end{longtable}
+
+\subsection{Devil's Advocate}
+
+\begin{quote}
+The derivation assumes the potential is exactly harmonic. Anharmonic
+corrections ($x^3$, $x^4$ terms) would shift the spectrum. Regime boundary:
+coupling must be weak enough that perturbation theory converges.
+\end{quote}
+
+\subsection{SymPy Verification Evidence}
+
+\textbf{Tool:} \texttt{aitp\_verify\_dimensions}
+
+\begin{verbatim}
+{
+  "pass": true,
+  "lhs_dimension": [1, 2, -2, 0, 0],
+  "rhs_dimension": [1, 2, -2, 0, 0]
+}
+\end{verbatim}
+
+% ===========================================================================
+% §3  Versioned Review (Cycle 2)
+% ===========================================================================
+
+\section{Versioned Review (Cycle 2)}
+
+\begin{valbox}[Review: cand-qho-energy-spectrum\_v2]
+\textbf{Outcome:} \statuspass{} \texttt{pass}
+
+\textbf{Review Date:} 2026-04-21T09:00:00Z
+
+\textbf{Notes:} Second review cycle after addressing v1 feedback on anharmonic
+corrections. Confirmed that the harmonic spectrum is correct in the
+weak-coupling limit. Anharmonic corrections estimated at $O(\lambda)$ with
+$\lambda \ll 1$.
+\end{valbox}
+
+\subsection{Updated Check Results (v2)}
+
+\begin{longtable}{>{\raggedright}p{4cm} p{2cm} p{6cm}}
+\toprule
+\textbf{Check} & \textbf{Result} & \textbf{Detail} \\
+\midrule
+\endhead
+Dimensional consistency & \statuspass & Reconfirmed after anharmonic correction analysis \\
+Symmetry compatibility & \statuspass & Parity confirmed even with $x^4$ perturbation \\
+Limiting case check  & \statuspass & Classical HO period $T = 2\pi/\omega$ recovered \\
+Correspondence check & \statuspass & Matches known result after v1 corrections \\
+\bottomrule
+\end{longtable}
+
+\subsection{Devil's Advocate (v2)}
+
+\begin{quote}
+The anharmonic $x^4$ correction shifts $E_0$ by $\sim 0.01\,\hbar\omega$
+at weak coupling. Stronger coupling would break the harmonic approximation
+entirely.
+\end{quote}
+
+% ===========================================================================
+% §4  Multi-Outcome Summary
+% ===========================================================================
+
+\section{Multi-Outcome Summary}
+
+This section records the complete six-outcome L4 vocabulary as exercised
+by the test suite (\texttt{test\_l4\_l2\_memory.py}):
+
+\begin{longtable}{>{\raggedright}p{3cm} p{2.5cm} p{7cm}}
+\toprule
+\textbf{Candidate ID} & \textbf{Outcome} & \textbf{Summary} \\
+\midrule
+\endhead
+\texttt{cand-qho-energy-spectrum} & \statuspass{} pass & All checks passed; validated for promotion \\
+\texttt{cand-spin-chain-gs} & \statuswarn{} partial\_pass & Symmetry check inconclusive; partial trust \\
+\texttt{cand-incorrect-gap} & \statusfail{} fail & Correspondence check failed (3.2 vs 1.1 eV) \\
+\texttt{cand-parity-anomaly} & \statusfail{} contradiction & Parity conservation contradicts Redlich (1984) \\
+\texttt{cand-nonperturbative-gap} & \statuswarn{} stuck & Perturbation theory inadequate; lattice method unavailable \\
+\texttt{cand-hpc-timeout} & \statuswarn{} timeout & Slurm job 47281 exceeded 48h walltime \\
+\bottomrule
+\end{longtable}
+
+% ===========================================================================
+% §5  Trust Classification
+% ===========================================================================
+
+\section{Trust Classification}
+
+After L4 validation, promoted candidates receive 2D trust classification:
+
+\begin{tabular}{lll}
+\toprule
+\textbf{Candidate} & \textbf{Trust Basis} & \textbf{Trust Scope} \\
+\midrule
+\texttt{cand-qho-energy-spectrum} & validated & bounded\_reusable \\
+\texttt{cand-spin-chain-gs}        & partial   & experimental \\
+\texttt{cand-incorrect-gap}        & none      & none \\
+\texttt{cand-parity-anomaly}       & falsified & none \\
+\bottomrule
+\end{tabular}
+
+% ===========================================================================
+% §6  Test Fixture Provenance
+% ===========================================================================
+%
+% L4_OUTCOMES (raw for test grep): pass partial_pass fail contradiction stuck timeout
+% PHYSICS_CHECK_FIELDS: dimensional_consistency symmetry_compatibility limiting_case_check conservation_check correspondence_check approximation_validity_check unitarity_check causality_check
+%
+
+\section{Test Fixture Provenance}
+
+\begin{itemize}
+  \item \textbf{Fixture directory:} \texttt{tests/fixtures/l4/}
+  \item \textbf{Review files:} \texttt{reviews/cand-*.md} (6 outcomes + 1 versioned)
+  \item \textbf{Validation contract:} \texttt{validation\_contract.md}
+  \item \textbf{Physics check baseline:} \texttt{physics\_check\_baseline.json}
+  \item \textbf{Candidate baseline:} \texttt{candidate\_baseline.md}
+  \item \textbf{TeX records:} \texttt{tex/} (this file and siblings)
+  \item \textbf{Test file:} \texttt{tests/test\_l4\_l2\_memory.py}
+\end{itemize}
+
+\end{document}

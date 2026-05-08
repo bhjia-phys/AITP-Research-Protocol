@@ -1,0 +1,303 @@
+% ===========================================================================
+% AITP L4 Test Result Record  (v1 — template for recording L4 validation results)
+% ===========================================================================
+% Fill all {{PLACEHOLDER}} fields. Compile with: pdflatex -interaction=nonstopmode
+% This record captures ONE complete L4 validation run with all its test data.
+% ===========================================================================
+
+\documentclass[11pt,a4paper]{article}
+
+% --- Encoding & Fonts ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+% --- Mathematics ---
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{physics}
+\usepackage{bm}
+
+% --- Page layout ---
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5em plus 0.2em minus 0.1em}
+
+% --- Tables ---
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+
+% --- Lists ---
+\usepackage{enumitem}
+
+% --- Colors & Boxes ---
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+
+% --- Links ---
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!60!black,
+    urlcolor=blue!60!black,
+}
+
+% --- Custom colors ---
+\definecolor{passgreen}{RGB}{34,139,34}
+\definecolor{partialorange}{RGB}{204,119,34}
+\definecolor{failred}{RGB}{178,34,34}
+\definecolor{stuckgray}{RGB}{128,128,128}
+\definecolor{infoblue}{RGB}{47,85,151}
+\definecolor{softfill}{RGB}{247,249,252}
+\definecolor{linecolor}{RGB}{216,222,230}
+
+% --- Status commands ---
+\newcommand{\outcomepass}[0]{\textcolor{passgreen}{\textbf{PASS}}}
+\newcommand{\outcomepartial}[0]{\textcolor{partialorange}{\textbf{PARTIAL\_PASS}}}
+\newcommand{\outcomefail}[0]{\textcolor{failred}{\textbf{FAIL}}}
+\newcommand{\outcomecontra}[0]{\textcolor{failred}{\textbf{CONTRADICTION}}}
+\newcommand{\outcomestuck}[0]{\textcolor{stuckgray}{\textbf{STUCK}}}
+\newcommand{\outcometimeout}[0]{\textcolor{stuckgray}{\textbf{TIMEOUT}}}
+\newcommand{\checkpass}[0]{\textcolor{passgreen}{$\checkmark$ PASS}}
+\newcommand{\checkwarn}[0]{\textcolor{partialorange}{$\sim$ INCONCLUSIVE}}
+\newcommand{\checkfail}[0]{\textcolor{failred}{$\times$ FAIL}}
+
+% --- Boxes ---
+\newtcolorbox{infobox}[1][]{
+    colback=infoblue!4, colframe=infoblue!70,
+    fonttitle=\bfseries, boxrule=0.6pt, arc=2pt, breakable,
+    title={#1}
+}
+\newtcolorbox{passbox}[1][]{
+    colback=passgreen!4, colframe=passgreen!70,
+    fonttitle=\bfseries, boxrule=0.6pt, arc=2pt, breakable,
+    title={#1}
+}
+\newtcolorbox{warnbox}[1][]{
+    colback=partialorange!4, colframe=partialorange!70,
+    fonttitle=\bfseries, boxrule=0.6pt, arc=2pt, breakable,
+    title={#1}
+}
+\newtcolorbox{failbox}[1][]{
+    colback=failred!4, colframe=failred!70,
+    fonttitle=\bfseries, boxrule=0.6pt, arc=2pt, breakable,
+    title={#1}
+}
+
+% --- Metadata ---
+\title{\textbf{L4 Validation Test Result Record}\\[0.4em]
+  \large {{TOPIC_TITLE}}}
+\author{AITP Protocol v3 — L4 Test Record}
+\date{ {{RECORD_DATE}} }
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document records one complete L4 validation run for topic
+\texttt{ {{TOPIC_SLUG}} }. It includes the validation plan, physics check
+results, execution provenance, computation outputs, and promotion decision.
+This record is the durable artifact of L4 adjudication.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ===========================================================================
+% §1  Run Identification
+% ===========================================================================
+
+\section{Run Identification}
+
+\begin{infobox}[Run Metadata]
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.5cm} >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Topic slug       & \texttt{ {{TOPIC_SLUG}} } \\
+Run ID           & \texttt{ {{RUN_ID}} } \\
+Lane             & \texttt{ {{LANE}} } \\
+Date             & \texttt{ {{RUN_DATE}} } \\
+L4 cycle         & {{L4_CYCLE}} \\
+Validation surface & \texttt{ {{VALIDATION_SURFACE}} } \\
+\bottomrule
+\end{tabularx}
+\end{infobox}
+
+% ===========================================================================
+% §2  Candidate Under Test
+% ===========================================================================
+
+\section{Candidate Under Test}
+
+{{CANDIDATE_SECTION}}
+
+% ===========================================================================
+% §3  Validation Plan
+% ===========================================================================
+
+\section{Validation Plan}
+
+\subsection{Mandatory Checks}
+
+\begin{longtable}{>{\raggedright}p{4cm} p{8cm}}
+\toprule
+\textbf{Check} & \textbf{Plan} \\
+\midrule
+\endhead
+{{MANDATORY_CHECKS_TABLE}}
+\bottomrule
+\end{longtable}
+
+\subsection{Pass/Fail Criteria}
+
+\begin{infobox}[Pass Conditions]
+{{PASS_CONDITIONS}}
+\end{infobox}
+
+\begin{failbox}[Failure Signals]
+{{FAILURE_SIGNALS}}
+\end{failbox}
+
+% ===========================================================================
+% §4  Physics Check Results
+% ===========================================================================
+
+\section{Physics Check Results}
+
+{{PHYSICS_CHECK_RESULTS}}
+
+\subsection{Check Result Summary}
+
+\begin{longtable}{>{\raggedright}p{4cm} p{2.5cm} p{6cm}}
+\toprule
+\textbf{Check} & \textbf{Verdict} & \textbf{Detail} \\
+\midrule
+\endhead
+{{CHECK_RESULTS_TABLE}}
+\bottomrule
+\end{longtable}
+
+% ===========================================================================
+% §5  Numerical / Computational Results
+% ===========================================================================
+
+\section{Numerical Results}
+
+{{NUMERICAL_RESULTS}}
+
+% ===========================================================================
+% §6  Execution Provenance
+% ===========================================================================
+
+\section{Execution Provenance}
+
+\begin{infobox}[Execution Environment]
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.5cm} >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Host            & \texttt{ {{EXEC_HOST}} } \\
+Job ID          & \texttt{ {{JOB_ID}} } \\
+Walltime used   & {{WALLTIME_USED}} \\
+Code version    & \texttt{ {{CODE_VERSION}} } \\
+Compiler        & \texttt{ {{COMPILER}} } \\
+MPI processes   & {{MPI_PROCS}} \\
+\bottomrule
+\end{tabularx}
+\end{infobox}
+
+\subsection{Data Provenance}
+
+\begin{longtable}{>{\raggedright}p{2.5cm} p{3cm} p{2cm} p{4.5cm}}
+\toprule
+\textbf{Data Point} & \textbf{Script} & \textbf{Executed At} & \textbf{Method} \\
+\midrule
+\endhead
+{{DATA_PROVENANCE_TABLE}}
+\bottomrule
+\end{longtable}
+
+% ===========================================================================
+% §7  Devil's Advocate
+% ===========================================================================
+
+\section{Devil's Advocate}
+
+\begin{warnbox}[Adversarial Review]
+{{DEVILS_ADVOCATE}}
+\end{warnbox}
+
+% ===========================================================================
+% §8  Comparison to Known Results
+% ===========================================================================
+
+\section{Comparison to Known Results}
+
+{{COMPARISON_SECTION}}
+
+% ===========================================================================
+% §9  Final Outcome
+% ===========================================================================
+
+\section{Final Outcome}
+
+{{OUTCOME_BOX}}
+
+\subsection{Promotion Decision}
+
+{{PROMOTION_DECISION}}
+
+% ===========================================================================
+% §10  Backed-Up Data
+% ===========================================================================
+
+\section{Backed-Up Data}
+
+\begin{infobox}[Backup Manifest Summary]
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.5cm} >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Class} & \textbf{Files} \\
+\midrule
+Test definition  & {{BACKUP_CLASS1}} \\
+Key inputs       & {{BACKUP_CLASS2}} \\
+Final outputs    & {{BACKUP_CLASS3}} \\
+Key logs         & {{BACKUP_CLASS4}} \\
+Figures          & {{BACKUP_FIGURES}} \\
+\bottomrule
+\end{tabularx}
+\end{infobox}
+
+\noindent\textbf{Backup location:} \texttt{ {{BACKUP_PATH}} }
+
+\noindent\textbf{Original size:} {{ORIGINAL_SIZE}}
+
+\noindent\textbf{Backup size:} {{BACKUP_SIZE}}
+
+\noindent\textbf{Removed classes:} {{REMOVED_CLASSES}}
+
+% ===========================================================================
+% §11  Open Issues & Follow-Up
+% ===========================================================================
+
+\section{Open Issues \& Follow-Up}
+
+\subsection{Known Limitations}
+\begin{itemize}
+{{KNOWN_LIMITATIONS}}
+\end{itemize}
+
+\subsection{Follow-Up Tasks}
+\begin{itemize}
+{{FOLLOWUP_TASKS}}
+\end{itemize}
+
+\subsection{Gap Classification (if applicable)}
+{{GAP_CLASSIFICATION}}
+
+% ===========================================================================
+% End
+% ===========================================================================
+
+\end{document}

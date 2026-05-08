@@ -1,0 +1,306 @@
+% ===========================================================================
+% AITP L4 Test Result Record — Example: QHO Benchmark (outcome: pass)
+% ===========================================================================
+% This is a filled-in example of the L4 test result record template.
+% Topic: Quantum Harmonic Oscillator ground state energy benchmark
+% ===========================================================================
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{physics}
+\usepackage{bm}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.5em plus 0.2em minus 0.1em}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=blue!60!black,urlcolor=blue!60!black}
+
+\definecolor{passgreen}{RGB}{34,139,34}
+\definecolor{partialorange}{RGB}{204,119,34}
+\definecolor{failred}{RGB}{178,34,34}
+\definecolor{stuckgray}{RGB}{128,128,128}
+\definecolor{infoblue}{RGB}{47,85,151}
+
+\newcommand{\outcomepass}[0]{\textcolor{passgreen}{\textbf{PASS}}}
+\newcommand{\outcomepartial}[0]{\textcolor{partialorange}{\textbf{PARTIAL\_PASS}}}
+\newcommand{\outcomefail}[0]{\textcolor{failred}{\textbf{FAIL}}}
+\newcommand{\checkpass}[0]{\textcolor{passgreen}{$\checkmark$ PASS}}
+\newcommand{\checkwarn}[0]{\textcolor{partialorange}{$\sim$ INCONCLUSIVE}}
+\newcommand{\checkfail}[0]{\textcolor{failred}{$\times$ FAIL}}
+
+\newtcolorbox{infobox}[1][]{colback=infoblue!4,colframe=infoblue!70,fonttitle=\bfseries,boxrule=0.6pt,arc=2pt,breakable,title={#1}}
+\newtcolorbox{passbox}[1][]{colback=passgreen!4,colframe=passgreen!70,fonttitle=\bfseries,boxrule=0.6pt,arc=2pt,breakable,title={#1}}
+\newtcolorbox{warnbox}[1][]{colback=partialorange!4,colframe=partialorange!70,fonttitle=\bfseries,boxrule=0.6pt,arc=2pt,breakable,title={#1}}
+\newtcolorbox{failbox}[1][]{colback=failred!4,colframe=failred!70,fonttitle=\bfseries,boxrule=0.6pt,arc=2pt,breakable,title={#1}}
+
+\title{\textbf{L4 Validation Test Result Record}\\[0.4em]
+  \large QHO Ground State Energy Benchmark}
+\author{AITP Protocol v3 — L4 Test Record}
+\date{2026-04-20}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document records one complete L4 validation run for the quantum harmonic
+oscillator ground state energy benchmark. Validation surface: toy\_numeric.
+Lane: formal\_theory with numerical cross-check. Outcome: PASS.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ===========================================================================
+\section{Run Identification}
+
+\begin{infobox}[Run Metadata]
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.5cm} >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Topic slug       & \texttt{qho-benchmark} \\
+Run ID           & \texttt{run-2026-04-20-a} \\
+Lane             & \texttt{formal\_theory} \\
+Date             & \texttt{2026-04-20T12:00:00Z} \\
+L4 cycle         & 1 \\
+Validation surface & \texttt{toy\_numeric} \\
+\bottomrule
+\end{tabularx}
+\end{infobox}
+
+% ===========================================================================
+\section{Candidate Under Test}
+
+\begin{infobox}[Candidate Summary]
+\textbf{Candidate ID:} \texttt{cand-qho-energy-spectrum}
+
+\textbf{Claim:} The energy eigenvalues of the 1D quantum harmonic oscillator
+with Hamiltonian $H = p^2/(2m) + \frac{1}{2} m \omega^2 x^2$ are
+$E_n = (n + 1/2) \hbar \omega$, for $n = 0, 1, 2, \ldots$
+
+\textbf{Type:} \texttt{result} \quad
+\textbf{Regime:} Non-relativistic QM, 1D, harmonic potential only
+\end{infobox}
+
+% ===========================================================================
+\section{Validation Plan}
+
+\subsection{Mandatory Checks}
+
+\begin{longtable}{>{\raggedright}p{4cm} p{8cm}}
+\toprule
+\textbf{Check} & \textbf{Plan} \\
+\midrule
+\endhead
+dimensional\_consistency & Verify $[E_n] = [\hbar\omega] = \text{energy}$. Use SymPy dim analysis. \\
+symmetry\_compatibility  & Check $[H, \hat{P}] = 0$ where $\hat{P}$ is parity. \\
+limiting\_case\_check    & Verify classical HO period $T = 2\pi/\omega$ recovered as $n \to \infty$. \\
+correspondence\_check    & Compare $E_n$ against Griffiths QM \S2.3 and known experimental values. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Pass/Fail Criteria}
+
+\begin{infobox}[Pass Conditions]
+All four mandatory checks must return PASS. Dimensional check must confirm
+$ML^2T^{-2}$ on both sides. Correspondence check must match within 1\%.
+\end{infobox}
+
+\begin{failbox}[Failure Signals]
+Dimensional mismatch, non-commutation with parity, classical limit not
+recovered, or $>5\%$ deviation from known $E_n$ values.
+\end{failbox}
+
+% ===========================================================================
+\section{Physics Check Results}
+
+\subsection{Check Result Summary}
+
+\begin{longtable}{>{\raggedright}p{4cm} p{2.5cm} p{6cm}}
+\toprule
+\textbf{Check} & \textbf{Verdict} & \textbf{Detail} \\
+\midrule
+\endhead
+dimensional\_consistency & \checkpass & $[H] = [\hbar\omega] = ML^2T^{-2}$ both sides \\
+symmetry\_compatibility  & \checkpass & $[H, \hat{P}] = 0$ confirmed \\
+limiting\_case\_check    & \checkpass & $T = 2\pi/\omega$ recovered as $n \to \infty$ \\
+correspondence\_check    & \checkpass & $E_n = (n+1/2)\hbar\omega$ matches Griffiths \S2.3 \\
+\bottomrule
+\end{longtable}
+
+\subsection{SymPy Verification Evidence}
+
+\textbf{Tool:} \texttt{aitp\_verify\_dimensions}
+
+\begin{verbatim}
+{
+  "pass": true,
+  "lhs_dimension": [1, 2, -2, 0, 0],
+  "rhs_dimension": [1, 2, -2, 0, 0],
+  "expression_lhs": "H",
+  "expression_rhs": "hbar * omega * (n + 1/2)"
+}
+\end{verbatim}
+
+% ===========================================================================
+\section{Numerical Results}
+
+For the ground state ($n=0$):
+\begin{equation}
+E_0 = \frac{1}{2}\hbar\omega
+\end{equation}
+
+\textbf{Benchmark comparison:}
+\begin{itemize}
+  \item \textbf{Analytic:} $E_0 = 0.5\,\hbar\omega$
+  \item \textbf{Numerical (exact diagonalization, $N_\text{basis}=100$):} $E_0 = 0.5000000\,\hbar\omega$
+  \item \textbf{Relative error:} $< 10^{-12}$ (machine precision)
+\end{itemize}
+
+No external compute was required for this validation since the result is
+analytic. For numerical benchmarks, HPC job details would appear here.
+
+% ===========================================================================
+\section{Execution Provenance}
+
+\begin{infobox}[Execution Environment]
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.5cm} >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Host            & \texttt{local (macOS ARM64)} \\
+Job ID          & \texttt{N/A (analytic validation)} \\
+Walltime used   & N/A \\
+Code version    & \texttt{AITP v3, SymPy 1.12} \\
+Compiler        & N/A \\
+MPI processes   & N/A \\
+\bottomrule
+\end{tabularx}
+\end{infobox}
+
+\subsection{Data Provenance}
+
+\begin{longtable}{>{\raggedright}p{2.5cm} p{3cm} p{2cm} p{4.5cm}}
+\toprule
+\textbf{Data Point} & \textbf{Script} & \textbf{Executed At} & \textbf{Method} \\
+\midrule
+\endhead
+dim\_analysis & aitp\_verify\_dimensions & 2026-04-20T11:55Z & SymPy dimensional analysis \\
+commutation   & aitp\_verify\_algebra    & 2026-04-20T11:56Z & SymPy commutator evaluation \\
+limiting\_case & analytic\_limit.py       & 2026-04-20T11:57Z & Analytic limit $n\to\infty$ \\
+\bottomrule
+\end{longtable}
+
+% ===========================================================================
+\section{Devil's Advocate}
+
+\begin{warnbox}[Adversarial Review]
+The derivation assumes the potential is exactly harmonic. Anharmonic
+corrections ($x^3$, $x^4$ terms) would shift the spectrum. Regime boundary:
+coupling must be weak enough that perturbation theory converges.
+
+Additionally:
+\begin{itemize}
+  \item The result is for a single particle in 1D. Extension to $N$ interacting
+    particles in 3D requires independent verification.
+  \item The classical limit check only verifies the period, not the full
+    classical phase space structure.
+  \item The correspondence check relies on a single textbook source. Cross-check
+    with an independent method (path integral) would strengthen confidence.
+\end{itemize}
+\end{warnbox}
+
+% ===========================================================================
+\section{Comparison to Known Results}
+
+\begin{longtable}{>{\raggedright}p{3cm} p{3cm} p{3cm} p{3.5cm}}
+\toprule
+\textbf{Source} & \textbf{Result} & \textbf{Our Result} & \textbf{Agreement} \\
+\midrule
+\endhead
+Griffiths QM \S2.3 & $E_n = (n+1/2)\hbar\omega$ & $E_n = (n+1/2)\hbar\omega$ & Exact \\
+Sakurai \S2.3      & $E_n = (n+1/2)\hbar\omega$ & $E_n = (n+1/2)\hbar\omega$ & Exact \\
+Cohen-Tannoudji    & $E_n = (n+1/2)\hbar\omega$ & $E_n = (n+1/2)\hbar\omega$ & Exact \\
+\bottomrule
+\end{longtable}
+
+% ===========================================================================
+\section{Final Outcome}
+
+\begin{passbox}[L4 Outcome]
+\textbf{\Large \outcomepass}
+
+All four mandatory physics checks passed. The candidate survives adversarial
+review. No contradictions with known results. No capability gaps.
+\end{passbox}
+
+\subsection{Promotion Decision}
+
+\begin{itemize}
+  \item \textbf{Verdict:} \texttt{promote}
+  \item \textbf{Trust basis:} \texttt{validated}
+  \item \textbf{Trust scope:} \texttt{bounded\_reusable}
+  \item \textbf{Promoted to L2 node:} \texttt{qho-energy-spectrum}
+  \item \textbf{Decider:} AITP L4 adjudication + operator approval
+  \item \textbf{Decision timestamp:} 2026-04-20T12:10:00Z
+\end{itemize}
+
+% ===========================================================================
+\section{Backed-Up Data}
+
+\begin{infobox}[Backup Manifest Summary]
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.5cm} >{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Class} & \textbf{Files} \\
+\midrule
+Test definition  & \texttt{validation\_contract.md}, \texttt{execution-tasks/dim\_check.json} \\
+Key inputs       & \texttt{convention\_snapshot.md}, \texttt{derivation\_anchor\_map.md} \\
+Final outputs    & \texttt{dim\_check\_result.json}, \texttt{algebra\_verify\_result.json} \\
+Key logs         & \texttt{validation.log} \\
+Figures          & (none — analytic validation) \\
+\bottomrule
+\end{tabularx}
+\end{infobox}
+
+\noindent\textbf{Backup location:} \texttt{backups/l4/qho-benchmark/run-2026-04-20-a/}
+
+\noindent\textbf{Original size:} 0.5 MB
+
+\noindent\textbf{Backup size:} 0.05 MB
+
+\noindent\textbf{Removed classes:} scratch notes, intermediate SymPy dumps, raw exploration files
+
+% ===========================================================================
+\section{Open Issues \& Follow-Up}
+
+\subsection{Known Limitations}
+\begin{itemize}
+  \item Harmonic approximation only. Anharmonic corrections not quantified.
+  \item Single-particle result. Many-body extension not validated.
+  \item 1D only. Higher-dimensional harmonic oscillator not checked.
+\end{itemize}
+
+\subsection{Follow-Up Tasks}
+\begin{itemize}
+  \item Estimate first-order anharmonic correction $\Delta E_0^{(1)}$ for
+    $V(x) = \frac{1}{2}m\omega^2 x^2 + \lambda x^4$ (route to L3).
+  \item Extend validation to 3D isotropic harmonic oscillator.
+  \item Cross-check with path integral derivation (independent method).
+\end{itemize}
+
+\subsection{Gap Classification}
+No gaps. All mandatory checks closed.
+
+% ===========================================================================
+\end{document}

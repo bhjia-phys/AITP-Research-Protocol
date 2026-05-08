@@ -1993,11 +1993,12 @@ def aitp_promote_idea_to_candidate(
         "created_at": _now(),
         "updated_at": _now(),
     }
+    evidence_template = f"Derived via idea `{slug}`:" + "\n\n"
     cand_body = (
         f"# {title}\n\n"
         f"## Claim\n{claim}\n\n"
         f"## Derivation Summary\n{derivation_summary or derivation[:2000]}\n\n"
-        f"## Evidence\n{evidence or f'Derived via idea `{slug}`:\\n\\n' + derivation[:2000]}\n\n"
+        f"## Evidence\n{evidence or evidence_template + derivation[:2000]}\n\n"
         f"## Assumptions\nExtracted from idea approach.\n\n"
         f"## Validation Criteria\nTo be validated via L4 review.\n"
     )

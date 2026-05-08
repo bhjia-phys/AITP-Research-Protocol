@@ -11,6 +11,10 @@ It does ship one tiny public toy-model starter:
 This directory is reserved for auditable clone-local or contributed `L4`
 executors.
 
+- `curate_l4_backup.py` — Curate an L4 validation run directory into a compact
+  backup bundle following `../L4_TEST_DATA_BACKUP_PROTOCOL.md`. Supports dry-run
+  mode and auto-detection of research lane.
+
 If you add a tool here, pair it with:
 
 - one execution note under `validation/`,

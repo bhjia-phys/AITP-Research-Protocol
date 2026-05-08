@@ -52,21 +52,6 @@ Each task should record:
 - current status,
 - resulting artifact paths.
 
-## Execution surfaces
-
-Supported surfaces include:
-- `numerical`
-- `symbolic`
-- `formal`
-- `coding`
-- `human_review`
-
-Use the narrowest surface that matches the real task.
-
-Tool-specific execution guides may refine this further.
-Current example:
-- `CHAOS_DIAGNOSTICS_EXECUTION.md`
-
 ## Result loop
 
 1. Read the validation note.
@@ -79,6 +64,21 @@ Current example:
 
 See:
 - `validation/BASELINE_REPRODUCTION_AND_UNDERSTANDING_GATES.md`
+
+## Test Data Backup
+
+After every completed L4 run:
+
+1. Curate the run directory into a compact backup bundle at
+   `backups/l4/<topic_slug>/<run_id>/`
+2. Generate `manifest.json` recording all kept and removed files
+3. Produce a TeX test result record from
+   `validation/templates/l4-test-result-record.tex`
+4. Compile to PDF and archive both `.tex` and `.pdf` alongside the data
+
+See:
+- `validation/L4_TEST_DATA_BACKUP_PROTOCOL.md`
+- `validation/tools/curate_l4_backup.py`
 
 ## Promotion decision artifact
 
