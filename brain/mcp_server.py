@@ -1869,9 +1869,32 @@ def aitp_list_ideas(
         order = {"active": 0, "succeeded": 1, "failed": 2, "superseded": 3, "abandoned": 4}
         return (order.get(i["status"], 5), i["slug"])
 
+    # Also include the active ideation artifact if it exists and has content
+    active_idea_path = root / "L3" / "ideate" / "active_idea.md"
+    active_idea = None
+    if active_idea_path.exists():
+        afm, abody = _parse_md(active_idea_path)
+        if afm.get("idea_statement") or len(abody.strip()) > 100:
+            active_idea = {
+                "slug": "active-ideation",
+                "title": afm.get("idea_statement", "Active ideation")[:150],
+                "status": "active",
+                "approach": (afm.get("motivation", "") or "")[:150],
+                "lessons_learned": "",
+                "superseded_by": "",
+                "inspired_by": [],
+                "supersedes": [],
+                "created_at": afm.get("updated_at", ""),
+                "updated_at": afm.get("updated_at", ""),
+                "source": "active_ideation",
+            }
+            # Prepend active idea before submitted ideas
+            if not status_filter or status_filter == "active":
+                ideas.insert(0, active_idea)
+
     ideas.sort(key=_sort_key)
 
-    return {
+    result = {
         "ideas": ideas,
         "count": len(ideas),
         "by_status": {
@@ -1880,6 +1903,16 @@ def aitp_list_ideas(
         },
         "log_path": str(ideas_dir / "_log.md"),
     }
+    if active_idea:
+        result["active_ideation"] = active_idea
+        result["message"] = (
+            f"Active ideation found in L3/ideate/active_idea.md. "
+            f"Use aitp_submit_idea to formalize it into a tracked idea entry."
+        ) if not ideas else (
+            f"Showing {len(ideas)} submitted ideas + active ideation. "
+            f"Submit the active idea via aitp_submit_idea."
+        )
+    return result
 
 
 @mcp.tool()
@@ -3473,6 +3506,14 @@ def aitp_switch_l3_activity(
 
     old = fm.get("l3_activity", "ideate")
 
+    # No-op: switching to the same activity
+    if old == activity:
+        return (
+            f"Already in activity '{activity}'. No change made. "
+            f"Continue with {L3_ACTIVITY_SKILL_MAP.get(activity, 'skill-l3-ideate')}."
+        )
+
+
     # Dispatch normal case to CLI
     from brain.cli._dispatch_helpers import dispatch
     from brain.cli.commands.l3_workflow import cmd_switch_activity
@@ -4754,6 +4795,7 @@ def _global_l2_path(topics_root: str) -> Path:
 def aitp_query_l2(
     topics_root: str,
     query: str = "",
+    topic_slug: str = "",
 ) -> dict[str, Any]:
     """Query the global L2 knowledge base (cross-topic validated claims).
 
@@ -4806,6 +4848,11 @@ def aitp_query_l2(
                     continue
             else:
                 score = 1.0
+            # L2.1: topic_slug filter — only entries from this topic
+            if topic_slug:
+                src = str(fm.get("source_ref", ""))
+                if topic_slug not in src:
+                    continue
             results.append({
                 "candidate_id": fm.get("entry_id", ep.stem),
                 "title": title,
@@ -4840,6 +4887,8 @@ def aitp_query_l2(
 def aitp_query_l2_index(
     topics_root: str,
     domain_filter: str = "",
+    query: str = "",
+    topic_slug: str = "",
 ) -> dict[str, Any]:
     """Query the L2 knowledge base index  --  progressive disclosure entry point.
 
@@ -4847,8 +4896,9 @@ def aitp_query_l2_index(
     Use this FIRST when starting a new topic to discover what L2 already knows.
     Then drill down with aitp_query_l2_graph for specific nodes.
 
-    If domain_filter is given, returns only that domain with full node listings.
-    Otherwise returns all domains with summary-level detail.
+    domain_filter: filter by role (claim, system, method, pitfall, question).
+    query: free-text search across titles and statements.
+    topic_slug: filter to only entries sourced from a specific topic.
     """
     global_l2 = _global_l2_path(topics_root)
     entries_dir = global_l2 / "entries"
@@ -4872,6 +4922,19 @@ def aitp_query_l2_index(
             continue
         fm, body = _parse_md(ep)
         entry_role = str(fm.get("role", "uncategorized"))
+
+        # L2.3: query filter
+        if query:
+            search_text = str(fm.get("title", "")) + " " + str(fm.get("statement", ""))
+            score = semantic_score(query, [search_text, body])
+            if score < 0.15:
+                continue
+
+        # L2.1: topic_slug filter
+        if topic_slug:
+            src = str(fm.get("source_ref", ""))
+            if topic_slug not in src:
+                continue
 
         if entry_role not in domains:
             domains[entry_role] = {
@@ -6642,23 +6705,38 @@ def aitp_create_derivation_step(
 @mcp.tool()
 def aitp_list_steps(
     topics_root: str,
+    topic_slug: str = "",
     chain_id: str = "",
 ) -> list[dict[str, Any]]:
-    """List derivation steps, optionally filtered by chain_id. Returns in order."""
+    """List derivation steps. Filter optionally by topic_slug and/or chain_id.
+
+    When topic_slug is given, filters to steps referencing that topic's sources.
+    """
     global_l2 = _global_l2_path(topics_root)
     steps_dir = global_l2 / "graph" / "steps"
     if not steps_dir.is_dir():
         return []
+
+    topic_source_ids: set[str] = set()
+    if topic_slug:
+        root = _topic_root(topics_root, topic_slug)
+        src_dir = root / "L0" / "sources"
+        if src_dir.is_dir():
+            topic_source_ids = {d.name for d in src_dir.iterdir() if d.is_dir()}
 
     results = []
     for sp in sorted(steps_dir.glob("*.md")):
         fm, _ = _parse_md(sp)
         if chain_id and fm.get("chain_id") != chain_id:
             continue
+        if topic_source_ids:
+            step_ref = str(fm.get("source_ref", ""))
+            if not any(sid in step_ref for sid in topic_source_ids):
+                continue
         results.append({
             "step_id": fm.get("step_id", sp.stem),
             "chain_id": fm.get("chain_id", ""),
-            "order": fm.get("order", 0),
+            "order": int(fm.get("order", 0) or 0),
             "input_expr": fm.get("input_expr", ""),
             "output_expr": fm.get("output_expr", ""),
             "transform": fm.get("transform", ""),
@@ -6729,6 +6807,7 @@ def aitp_query_l2_graph(
     tower: str = "",
     from_node: str = "",
     edge_type: str = "",
+    topic_slug: str = "",
 ) -> dict[str, Any]:
     """Query the L2 knowledge graph with dual-level retrieval.
 
@@ -6765,6 +6844,11 @@ def aitp_query_l2_graph(
                     continue
             else:
                 score = 1.0
+            # L2.1: topic_slug filter
+            if topic_slug:
+                src = str(fm.get("source_ref", ""))
+                if topic_slug not in src:
+                    continue
             node_id = fm.get("entry_id", ep.stem)
             roles_seen.add(node_id)
             nodes.append({
@@ -6791,6 +6875,11 @@ def aitp_query_l2_graph(
                 continue
             if tower and fm.get("tower") != tower:
                 continue
+            # L2.1: topic_slug filter for legacy graph nodes
+            if topic_slug:
+                src = str(fm.get("source_ref", fm.get("source_topic", "")))
+                if topic_slug not in src:
+                    continue
             if query:
                 q_fields = [
                     str(fm.get("title", "")),
