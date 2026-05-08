@@ -161,7 +161,11 @@ def _parse_md(path: Path) -> tuple[dict[str, Any], str]:
     if not m:
         return {}, text
     import yaml
-    fm = yaml.safe_load(m.group(1)) or {}
+    try:
+        fm = yaml.safe_load(m.group(1)) or {}
+    except yaml.YAMLError:
+        # Fallback: construct minimal fm with known required fields to be lenient
+        fm = {}
     return fm, m.group(2)
 
 
@@ -776,7 +780,7 @@ def aitp_register_source(
     topics_root: str,
     topic_slug: str,
     source_id: str,
-    source_type: str = "paper",
+    type: str = "paper",
     title: str = "",
     arxiv_id: str = "",
     fidelity: str = "arxiv_preprint",
@@ -817,7 +821,7 @@ def aitp_register_source(
 
     result = dispatch(cmd_source_add,
         topic=topic_slug, id=source_id, title=title or source_id,
-        type=source_type, role=source_role, notes=notes,
+        type=type, role=source_role, notes=notes,
         url=source_url, path=source_path,
         repo=clone_repo, branch=repo_branch, commit=repo_commit,
         success_msg=f"Registered source {_slugify(source_id)}")
@@ -981,7 +985,7 @@ def aitp_list_sources(topics_root: str, topic_slug: str) -> list[dict[str, Any]]
                 results.append({
                     "source_id": sid,
                     "title": fm.get("title", ""),
-                    "type": fm.get("type", ""),
+                    "type": fm.get("type") or fm.get("kind") or "unknown",
                     "arxiv_id": fm.get("arxiv_id", ""),
                     "original_files": fm.get("original_files", []),
                 })
@@ -994,11 +998,90 @@ def aitp_list_sources(topics_root: str, topic_slug: str) -> list[dict[str, Any]]
             results.append({
                 "source_id": sid,
                 "title": fm.get("title", ""),
-                "type": fm.get("type", ""),
+                "type": fm.get("type") or fm.get("kind") or "unknown",
                 "arxiv_id": fm.get("arxiv_id", ""),
                 "original_files": [],
             })
     return results
+
+
+@mcp.tool()
+def aitp_read_source(
+    topics_root: str,
+    topic_slug: str,
+    source_id: str,
+    file: str = "",
+) -> dict[str, Any]:
+    """Read a registered source — metadata, notes, or original files.
+
+    Returns the content of the requested file within a source directory.
+    Without --file, returns source.md (metadata).
+
+    Args:
+        source_id: The registered source slug
+        file: "" → source.md, "notes" → notes.md, other → that file
+    """
+    root = _topic_root(topics_root, topic_slug)
+    src_dir = root / "L0" / "sources" / source_id
+
+    target = src_dir / ("source.md" if file == "" else file if file == "notes" else file)
+    if file == "":
+        target = src_dir / "source.md"
+    elif file == "notes":
+        target = src_dir / "notes.md"
+    else:
+        target = src_dir / file
+
+    if not target.exists():
+        return {
+            "error": "File not found",
+            "source_id": source_id,
+            "requested": file or "source.md",
+            "available": sorted([p.name for p in src_dir.iterdir()]) if src_dir.is_dir() else [],
+        }
+
+    fm, body = _parse_md(target)
+    return {
+        "source_id": source_id,
+        "file": file or "source.md",
+        "frontmatter": fm,
+        "body": body,
+    }
+
+
+@mcp.tool()
+def aitp_read_artifact(
+    topics_root: str,
+    topic_slug: str,
+    artifact_path: str,
+) -> dict[str, Any]:
+    """Read any L1/L3/L4 artifact file with frontmatter parsing.
+
+    The protocol-safe way to read artifact files. Returns parsed frontmatter
+    and body. Use instead of manual file reading.
+
+    Args:
+        artifact_path: Path relative to topic root, e.g.:
+            "L1/question_contract.md", "L1/convention_snapshot.md",
+            "L3/candidates/<slug>.md", "L4/reviews/<slug>.md"
+    """
+    root = _topic_root(topics_root, topic_slug)
+    target = root / artifact_path
+
+    if not target.exists():
+        parent_dir = target.parent
+        available = sorted([str(p.relative_to(root)) for p in parent_dir.glob("*.md")]) if parent_dir.is_dir() else []
+        return {
+            "error": f"File not found: {artifact_path}",
+            "available_in_dir": available[:20],
+        }
+
+    fm, body = _parse_md(target)
+    return {
+        "path": artifact_path,
+        "frontmatter": fm,
+        "body": body,
+    }
 
 
 @mcp.tool()

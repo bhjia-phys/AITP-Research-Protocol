@@ -127,10 +127,13 @@ At any point:
 
 ## Required artifacts
 
-- `L1/convention_snapshot.md` — with all headings filled and notation locked
-- `L1/derivation_anchor_map.md` — with at least one anchor per core source
-- `L1/contradiction_register.md` — with blocking status assessed
-- `L1/source_cross_map.md` — with cross-source equation lineage
+All artifacts MUST include `source_refs: [...]` in YAML frontmatter. The gate blocks
+advancement without this field. Each entry must be a real L0 source slug.
+
+- `L1/convention_snapshot.md` — with all headings filled, `source_refs` set, notation locked
+- `L1/derivation_anchor_map.md` — with at least one anchor per core source, `source_refs` set
+- `L1/contradiction_register.md` — with blocking status assessed, `source_refs` set
+- `L1/source_cross_map.md` — with cross-source equation lineage, `source_refs` set
 
 ## Exit condition
 

@@ -56,6 +56,32 @@ and expected numerical behavior.
 - `L1/question_contract.md`
 - `L1/source_toc_map.md`
 
+## Critical: source_refs frontmatter field
+
+ALL L1 artifacts (intake notes, question_contract, source_basis, convention_snapshot,
+contradiction_register, source_cross_map) MUST include `source_refs: [...]` in their
+YAML frontmatter. The L1 gate checks for this field and blocks advancement without it.
+
+Each entry in `source_refs` must reference a real L0 source slug:
+```yaml
+source_refs: [vanschilfgaarde-prl2006, librpa-qsgw]
+```
+
+Use `aitp_list_sources(topics_root, topic_slug)` to get valid source slugs.
+
+## Lightweight path (3+ sources)
+
+When the topic has 3+ sources, use this fast path:
+
+1. Register all sources via `aitp_register_source` (metadata only)
+2. Scan each source with `aitp_read_source(source_id=..., file="source.md")`
+3. Mark priority sources (1-3) for deep reading; defer the rest
+4. Deep-read priority sources using the full workflow below
+5. Use `aitp_read_artifact(artifact_path="L1/intake/<sid>/<sec>.md")` to review previous intake
+
+The full TOC → skim → deep-extract workflow below applies to priority sources only.
+Deferred sources can be extracted later via `aitp_batch_extract_section`.
+
 ## Reading workflow (mandatory sequence for formal_theory)
 
 ### Step 0: Query L2 prior knowledge (MANDATORY)

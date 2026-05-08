@@ -142,32 +142,45 @@ def evaluate_l1_stage(
     else:
         contracts = _L1_INTENSITY_CONTRACTS["standard"]
 
+    all_missing_artifacts: list[str] = []
+    all_missing_fields: list[str] = []
+    first_posture = "read"
+
     for name, posture, fields, headings in contracts:
+        if not first_posture:
+            first_posture = posture
         path = topic_root_path / "L1" / name
         if not path.exists():
-            return StageSnapshot(
-                stage="L1",
-                posture=posture,
-                lane=lane,
-                gate_status="blocked_missing_artifact",
-                required_artifact_path=str(path),
-                missing_requirements=[name],
-                next_allowed_transition="L1",
-                skill=f"skill-{posture}",
-            )
+            all_missing_artifacts.append(name)
+            continue
         fm, body = parse_md(path)
         missing = _missing_frontmatter_keys(fm, fields) + _missing_required_headings(body, headings)
         if missing:
-            return StageSnapshot(
-                stage="L1",
-                posture=posture,
-                lane=lane,
-                gate_status="blocked_missing_field",
-                required_artifact_path=str(path),
-                missing_requirements=missing,
-                next_allowed_transition="L1",
-                skill=f"skill-{posture}",
-            )
+            all_missing_fields.append(f"{name}: " + ", ".join(missing))
+
+    # Collect all missing artifacts/fields before returning
+    if all_missing_artifacts:
+        return StageSnapshot(
+            stage="L1",
+            posture=first_posture,
+            lane=lane,
+            gate_status="blocked_missing_artifact",
+            required_artifact_path=str(topic_root_path / "L1"),
+            missing_requirements=all_missing_artifacts,
+            next_allowed_transition="L1",
+            skill=f"skill-{first_posture}",
+        )
+    if all_missing_fields:
+        return StageSnapshot(
+            stage="L1",
+            posture=first_posture,
+            lane=lane,
+            gate_status="blocked_missing_field",
+            required_artifact_path=str(topic_root_path / "L1"),
+            missing_requirements=all_missing_fields,
+            next_allowed_transition="L1",
+            skill=f"skill-{first_posture}",
+        )
 
     # Question semantic validity: check the question is genuinely well-posed.
     # Competing hypotheses and non-success conditions are only required for
