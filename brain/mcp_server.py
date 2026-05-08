@@ -5940,6 +5940,7 @@ def aitp_quick_l2_concept(
 def aitp_get_l2_provenance(
     topics_root: str,
     node_id: str,
+    topic_slug: str = "",
 ) -> dict[str, Any]:
     """Get the full provenance of an L2 entry, graph node, or promoted candidate.
 
@@ -5990,7 +5991,30 @@ def aitp_get_l2_provenance(
             "source": "graph_node",
         }
 
-    return {"error": f"'{slug}' not found in L2 entries or graph nodes. Create it with aitp_create_entry."}
+    # L2.4: Fallback to topic candidates if topic_slug provided
+    if topic_slug:
+        root = _topic_root(topics_root, topic_slug)
+        cand_path = root / "L3" / "candidates" / f"{slug}.md"
+        if cand_path.exists():
+            fm, body = _parse_md(cand_path)
+            return {
+                "node_id": fm.get("candidate_id", slug),
+                "title": fm.get("title", ""),
+                "type": str(fm.get("candidate_type", "research_claim")),
+                "trust_basis": fm.get("status", "not_promoted"),
+                "trust_scope": fm.get("regime_of_validity", ""),
+                "source_ref": f"topic:{topic_slug}/candidates/{slug}",
+                "source_candidate": slug,
+                "source_topic": topic_slug,
+                "version": 1,
+                "created_at": fm.get("created_at", ""),
+                "updated_at": fm.get("updated_at", ""),
+                "body_preview": body[:2000],
+                "source": "topic_candidate",
+                "note": "Candidate found in topic but NOT promoted to L2. Use aitp_request_promotion.",
+            }
+
+    return {"error": f"'{slug}' not found in L2 entries, graph nodes, or topic candidates."}
 
 
 @mcp.tool()
