@@ -35,6 +35,7 @@ STAGE_PERMISSIONS: dict[str, dict[str, list[str]]] = {
             "aitp_promote_idea_to_candidate", "aitp_list_candidates",
             "aitp_submit_l4_review", "aitp_l4_background_submit",
             "aitp_l4_check_results", "aitp_record_numerical_result",
+            "aitp_l4_analyze_run",
             "aitp_promote_candidate", "aitp_request_promotion", "aitp_resolve_promotion_gate",
             "aitp_fast_track_claim",
             "aitp_create_l2_node", "aitp_create_l2_edge", "aitp_create_l2_tower",

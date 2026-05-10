@@ -27,27 +27,34 @@ This skill helps you pick up where you left off.
    - `stage` — which research stage (L0, L1, L3, L4, L2)
    - `posture` — current operating stance (discover, read, frame, derive, verify, distill)
    - `gate_status` — ready or blocked, and why
+   - `entry_profile` — which L3 workflow profile is active (learn_paper / explore_idea / continue_work / l4_return)
    - `required_artifact_path` — what file needs work
    - `missing_requirements` — specific fields or sections to fill
    - `skill` — which skill to load next
 
-4. **Read the posture skill** named by the brief's `skill` field.
+4. **If `entry_profile` is set**, note the recommended L3 activity DAG:
+   - `learn_paper`: trace-derivation → gap-audit → connect → integrate → distill
+   - `explore_idea`: ideate → plan → derive → gap-audit → integrate → distill
+   - `continue_work`: resume from state.md `l3_activity`, follow parent DAG
+   - `l4_return`: integrate → distill (revise claim from L4 feedback)
 
-5. **Do not advance** if the brief says the topic is blocked. Fix the missing requirements first.
+5. **Read the posture skill** named by the brief's `skill` field.
 
-6. **If you need the full topic picture**, also read:
+6. **Do not advance** if the brief says the topic is blocked. Fix the missing requirements first.
+
+7. **If you need the full topic picture**, also read:
    - `state.md` — current status, research question, lane, domain
    - `L1/convention_snapshot.md` — locked notation and conventions
    - `L3/derive/active_derivation.md` — what derivations have been done
    - `L3/candidates/*.md` — what candidates exist
    - `L4/reviews/*.md` — what validations have been done
 
-7. **Check topic status directly** if the brief seems stale:
+8. **Check topic status directly** if the brief seems stale:
    ```
    aitp_get_status(topics_root, topic_slug)
    ```
 
-8. **Resume the session** if interrupted:
+9. **Resume the session** if interrupted:
    ```
    aitp_session_resume(topics_root, topic_slug)
    ```

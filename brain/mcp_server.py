@@ -86,6 +86,8 @@ from brain.sympy_verify import (
     INFERENCE_RULE_DESCRIPTIONS,
 )
 
+from brain.tools.l4_code_method import analyze_l4_run
+
 from brain.cli.decorators import require_stage, with_preflight
 
 mcp = FastMCP("aitp-brain")
@@ -407,6 +409,7 @@ def aitp_health_check(topics_root: str) -> dict[str, Any]:
             "gate_status": gate,
             "l3_subplane": l3_subplane,
             "l3_mode": l3_mode,
+            "entry_profile": str(fm.get("entry_profile", "")),
             "missing_requirements": missing,
             "sources_count": src_count,
             "candidates_count": cand_count,
@@ -2727,6 +2730,113 @@ def aitp_list_candidates(topics_root: str, topic_slug: str) -> list[dict[str, An
     return results
 
 
+def _scan_branch_points(topic_dir: Path) -> list[dict[str, Any]]:
+    """Scan active_plan.md for ## Branch Points and return structured branch list."""
+    plan_path = topic_dir / "L3" / "plan" / "active_plan.md"
+    if not plan_path.exists():
+        return []
+    _, body = _parse_md(plan_path)
+    # Extract branch points section
+    branches = []
+    in_section = False
+    current_branch: dict[str, Any] = {}
+    for line in body.split("\n"):
+        if line.strip().startswith("## Branch Points"):
+            in_section = True
+            continue
+        if in_section:
+            if line.strip().startswith("## ") and "Branch" not in line:
+                break
+            if line.strip().startswith("### "):
+                if current_branch and "name" in current_branch:
+                    branches.append(current_branch)
+                current_branch = {"name": line.strip().lstrip("#").strip()}
+            elif line.strip().startswith("- Trigger:"):
+                current_branch["trigger"] = line.split(":", 1)[1].strip()
+            elif line.strip().startswith("- Action:"):
+                current_branch["action"] = line.split(":", 1)[1].strip()
+    if current_branch and "name" in current_branch:
+        branches.append(current_branch)
+    return branches
+
+
+@mcp.tool()
+def aitp_set_entry_profile(
+    topics_root: str,
+    topic_slug: str,
+    entry_profile: str,
+) -> str:
+    """Set the entry profile for this topic. This determines which scenario
+    the agent follows in each L3 activity.
+
+    entry_profile:
+      - learn_paper: study existing literature, source decomposition
+      - explore_idea: produce novel results, explore a research idea
+      - continue_work: resume an interrupted session
+      - l4_return: return from L4 validation with feedback
+    """
+    valid = {"learn_paper", "explore_idea", "continue_work", "l4_return"}
+    if entry_profile not in valid:
+        return f"Invalid entry_profile '{entry_profile}'. Must be one of: {sorted(valid)}"
+    root = _topic_root(topics_root, topic_slug)
+    state_path = root / "state.md"
+    fm, body = _parse_md(state_path)
+    fm["entry_profile"] = entry_profile
+    _write_md(state_path, fm, body)
+    return f"Entry profile set to '{entry_profile}' for topic '{topic_slug}'."
+
+
+@mcp.tool()
+def aitp_record_contradiction(
+    topics_root: str,
+    conflict_id: str,
+    claim_a: str,
+    claim_b: str,
+    source_a: str,
+    source_b: str,
+    conflict_type: str = "direct_contradiction",
+    resolution_attempted: str = "",
+) -> str:
+    """Record an unresolved contradiction between two claims into L2/conflicts/.
+
+    Contradictions are first-class knowledge — knowing what disagrees is as
+    valuable as knowing what agrees. Use this when two sources make incompatible
+    claims and you cannot determine which (if either) is correct.
+
+    conflict_type: direct_contradiction | regime_mismatch | notation_collision
+    """
+    valid_types = {"direct_contradiction", "regime_mismatch", "notation_collision"}
+    if conflict_type not in valid_types:
+        return f"Invalid conflict_type. Must be one of: {sorted(valid_types)}"
+    global_l2 = _global_l2_path(topics_root)
+    conflicts_dir = global_l2 / "conflicts"
+    conflicts_dir.mkdir(parents=True, exist_ok=True)
+    conflict_path = conflicts_dir / f"{_slugify(conflict_id)}.md"
+    fm = {
+        "candidate_id": _slugify(conflict_id),
+        "status": "open",
+        "conflict_type": conflict_type,
+        "claim_a": claim_a,
+        "claim_b": claim_b,
+        "source_a": source_a,
+        "source_b": source_b,
+        "resolution_attempted": resolution_attempted,
+        "created_at": _now(),
+        "trust_level": "disputed",
+    }
+    body = (
+        "# Contradiction: " + conflict_id + "\n\n"
+        "## Claim A\n" + claim_a + "\n\n"
+        "## Claim B\n" + claim_b + "\n\n"
+        "## Sources\n"
+        "- A: " + source_a + "\n"
+        "- B: " + source_b + "\n\n"
+        "## Resolution Attempted\n" + (resolution_attempted or "None yet.") + "\n"
+    )
+    _write_md(conflict_path, fm, body)
+    return f"Recorded contradiction '{conflict_id}' in L2/conflicts/. Status: open."
+
+
 @mcp.tool()
 def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any]:
     """Return a stage/posture execution brief with gate status and missing requirements."""
@@ -2810,6 +2920,7 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
             "skill": snapshot.skill,
             "l3_subplane": snapshot.l3_subplane,
             "l3_mode": snapshot.l3_mode,
+            "entry_profile": str(fm.get("entry_profile", "")),
             "domain_prerequisites": domain_prereqs,
             "domain_constraints": getattr(snapshot, "domain_constraints", {}),
             "l4_background_status": getattr(snapshot, "l4_background_status", ""),
@@ -2821,6 +2932,7 @@ def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict[str, Any
             "l1_artifacts": l1_artifacts,
             "pending_evidence_requests": pending_requests,
             "active_conflicts": active_conflicts,
+            "branch_options": _scan_branch_points(root),
             "immediate_blocked_work": ["L4 validation", "L2 promotion"],
             "_agent_behavior_reminder": _AGENT_BEHAVIOR_REMINDER,
         }
@@ -6416,6 +6528,9 @@ def aitp_create_derivation_step(
     source_ref: str = "",
     rigor_level: str = "",
     gap_marker: str = "",
+    code_ref: str = "",
+    paper_ref: str = "",
+    fidelity_assessment: str = "",
 ) -> str:
     """Create a derivation step in the L2 knowledge graph  --  a first-class entity.
 
@@ -6433,6 +6548,11 @@ def aitp_create_derivation_step(
     depends_on_steps: list of step_ids this step requires (DAG edges)
     depends_on_nodes: list of L2 node_ids this step invokes
     source_ref: traceable reference to source (e.g. \"Hedin 1965, Eq. 13\")
+
+    Dual anchoring (v4.2): for code_method trace-derivation.
+      code_ref: code location (\"file:line\" or function name)
+      paper_ref: paper equation/section this code claims to implement
+      fidelity_assessment: faithful | approximate | deviates | unverifiable
     """
     if justification_type and justification_type not in JUSTIFICATION_TYPES:
         return f"Invalid justification_type '{justification_type}'. Valid: {JUSTIFICATION_TYPES}"
@@ -6471,12 +6591,15 @@ def aitp_create_derivation_step(
         "regime_condition": regime_condition,
         "source_ref": source_ref,
         "lane": lane,
+        "code_ref": code_ref,
+        "paper_ref": paper_ref,
+        "fidelity_assessment": fidelity_assessment,
         "created_at": _now(),
         "updated_at": _now(),
     })
 
     # Lane-specific validation: code_method uses source anchoring instead of SymPy
-    if lane == "code_method" and source_ref:
+    if lane == "code_method" and (source_ref or code_ref):
         fm["validation_status"] = "source_anchored"
         fm["validation_note"] = (
             "code_method lane: source anchoring at file:line is the primary verification. "
@@ -6495,6 +6618,12 @@ def aitp_create_derivation_step(
         f"## Regime Condition\n{regime_condition}\n\n"
         f"## Source\n{source_ref}\n"
     )
+    if code_ref:
+        body += f"## Code Reference\n{code_ref}\n"
+    if paper_ref:
+        body += f"## Paper Reference\n{paper_ref}\n"
+    if fidelity_assessment:
+        body += f"## Fidelity Assessment\n{fidelity_assessment}\n"
     _write_md(step_path, fm, body)
 
     deps_info = ""
@@ -7800,6 +7929,47 @@ def aitp_request_source_evidence(
     _write_md(req_path, fm, body)
     _append_to_topic_log(root, f"L0 evidence request: {slug} — {required_claim[:60]}")
     return f"Evidence request '{slug}' filed in L0/pending_requests/. Resolve by registering supporting sources."
+
+
+@mcp.tool()
+@require_stage
+def aitp_l4_analyze_run(
+    topics_root: str,
+    topic_slug: str,
+    run_dir: str,
+    run_id: str = "",
+    literature_comparison: bool = True,
+) -> dict[str, Any]:
+    """Analyze a completed L4 HPC validation run for code_method/toy_numeric lanes.
+
+    Scans the run directory for HPC output files (LibRPA, ABACUS, GW band data),
+    extracts key numerical results, compares against literature benchmarks,
+    and checks QSGW convergence criteria. Writes structured analysis to
+    L4/outputs/<run_id>.md.
+
+    This is the primary L4 validation tool for computational physics topics.
+    Use after every HPC job completes and before filing an L4 review.
+
+    Args:
+        topics_root: Path to AITP topics directory.
+        topic_slug: Topic identifier.
+        run_dir: Absolute or relative path to the completed HPC run directory
+                 (containing LibRPA*.out, GW_band_spin_*.dat, etc.).
+        run_id: Identifier for this run. Auto-generated if empty.
+        literature_comparison: If True, compare extracted values against
+                               known literature benchmarks.
+
+    Returns:
+        Dict with analysis summary including extracted values,
+        benchmark comparison status, and convergence check.
+    """
+    return analyze_l4_run(
+        topics_root=topics_root,
+        topic_slug=topic_slug,
+        run_dir=run_dir,
+        run_id=run_id,
+        literature_comparison=literature_comparison,
+    )
 
 
 if __name__ == "__main__":

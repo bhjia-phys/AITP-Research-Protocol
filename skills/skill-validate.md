@@ -75,23 +75,34 @@ For Lean formal verification (optional, highest assurance):
          job_script="L4/scripts/validate_<check>.py",
          compute_host="<host>", work_dir="<path>")
      ```
-   - Check results when the job completes:
-     ```
-     aitp_l4_check_results(topics_root, topic_slug, candidate_id="<id>")
-     ```
-3. Save outputs to `L4/outputs/`
-4. For numerical results, record structured data:
-   ```
-   aitp_record_numerical_result(
-       topics_root, topic_slug,
-       observable="<name>",
-       computed_value=<float>,
-       expected_value=<float or null>,
-       uncertainty=<float>,
-       source_script="L4/scripts/validate_<check>.py",
-   )
-   ```
-5. Record data_provenance for every data point
+    - Check results when the job completes:
+      ```
+      aitp_l4_check_results(topics_root, topic_slug, candidate_id="<id>")
+      ```
+ 3. **Analyze HPC output** (MANDATORY for code_method before filing review):
+    ```
+    aitp_l4_analyze_run(topics_root, topic_slug, run_dir="<path>",
+        run_id="<run_id>", literature_comparison=True)
+    ```
+    This automatically:
+    - Parses LibRPA/ABACUS output files for key numerical values (band gap, VBM, CBM)
+    - Compares against literature benchmarks (Si gap 1.17 eV etc.)
+    - Checks QSGW convergence (delta_E < 1e-3 eV threshold)
+    - Writes structured analysis to L4/outputs/<run_id>.md
+    - Returns agreement_status: agrees | deviates | inconclusive | no_benchmark_available
+ 4. Save outputs to `L4/outputs/`
+ 5. For numerical results, record structured data:
+    ```
+    aitp_record_numerical_result(
+        topics_root, topic_slug,
+        observable="<name>",
+        computed_value=<float>,
+        expected_value=<float or null>,
+        uncertainty=<float>,
+        source_script="L4/scripts/validate_<check>.py",
+    )
+    ```
+ 6. Record data_provenance for every data point
 
 ### Step 4: Devil's advocate assessment (MANDATORY for pass)
 
