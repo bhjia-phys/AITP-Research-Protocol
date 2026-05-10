@@ -49,6 +49,9 @@ research/adapters/openclaw/state/
 # Symlinked skills (AionUI)
 .claude/skills/
 
+# Machine-specific local settings
+.claude/settings.local.json
+
 # Runtime logs
 brain/_mcp_boot.log
 brain/_mcp_stdout.log
