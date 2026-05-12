@@ -202,21 +202,24 @@ def cmd_source_add(args):
 
     _write_md(source_dir / "source.md", fm, "\n".join(metadata_lines))
 
-    # ── Write notes.md (initial reading notes template) ───────────────
+    # ── Write notes.md ─────────────────────────────────────────────
     notes_fm = {
         "kind": "source_notes",
         "source_id": source_id,
         "created_at": _now_iso(),
     }
-    notes_body = (
-        "# Reading Notes\n\n"
-        "## Key Claims / Equations\n\n"
-        "*(Extract the main physical claims, key equations, and argument structure.)*\n\n"
-        "## Structure / Coverage\n\n"
-        "*(Sections read, what each section contributes.)*\n\n"
-        "## Observations\n\n"
-        "*(Anything surprising, unclear, or worth following up.)*\n"
-    )
+    if args.notes and args.notes.strip():
+        notes_body = args.notes.strip() + "\n"
+    else:
+        notes_body = (
+            "# Reading Notes\n\n"
+            "## Key Claims / Equations\n\n"
+            "*(Extract the main physical claims, key equations, and argument structure.)*\n\n"
+            "## Structure / Coverage\n\n"
+            "*(Sections read, what each section contributes.)*\n\n"
+            "## Observations\n\n"
+            "*(Anything surprising, unclear, or worth following up.)*\n"
+        )
     _write_md(source_dir / "notes.md", notes_fm, notes_body)
 
     _append_research_md(root, "L0", f"Registered source: {source_id} ({stype})")

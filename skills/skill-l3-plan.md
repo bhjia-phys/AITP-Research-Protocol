@@ -73,7 +73,7 @@ The human may add more discussion rounds at any time. Do NOT rush to fill the ar
 
 At ANY point during discussion, you may offer these back-paths via AskUserQuestion:
 
-- **Back to ideation** (`aitp_switch_l3_activity(target="ideate")`): if the plan
+- **Back to ideation** (`aitp_switch_l3_activity(activity="ideate")`): if the plan
   reveals the idea itself needs rethinking
 - **Retreat to L1** (`aitp_retreat_to_l1`): if sources or conventions are insufficient
 - **Query L2** (`aitp_query_l2`): check if related derivations or results exist
@@ -141,5 +141,5 @@ Advance to **derive** when `active_plan.md` has filled frontmatter fields
 
 ## Allowed transitions
 
-- Forward: `derive`
+- Forward: `derive` — call `aitp_switch_l3_activity(activity="derive")` to advance.
 - Backedges: `ideate`

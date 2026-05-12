@@ -53,7 +53,7 @@ If you encounter unexpected behavior (NaN, oscillations, deviation > threshold):
 1. Try 1-3 quick fixes within derive (parameter adjustment, re-run)
 2. If root cause unclear after 3 attempts, switch to diagnose:
    ```
-   aitp_switch_l3_activity(target="diagnose", reason="anomaly: <description>")
+   aitp_switch_l3_activity(activity="diagnose", reason="anomaly: <description>")
    ```
 
 ---
@@ -91,9 +91,9 @@ The human may add more discussion rounds at any time. Do NOT rush to fill the ar
 
 At ANY point during analysis, you may offer these back-paths via AskUserQuestion:
 
-- **Back to plan** (`aitp_switch_l3_activity(target="plan")`): if the derivation
+- **Back to plan** (`aitp_switch_l3_activity(activity="plan")`): if the derivation
   reveals the plan needs adjustment
-- **Back to ideate** (`aitp_switch_l3_activity(target="ideate")`): if the derivation
+- **Back to ideate** (`aitp_switch_l3_activity(activity="ideate")`): if the derivation
   reveals the idea itself is flawed
 - **Retreat to L1** (`aitp_retreat_to_l1`): if analysis reveals missing sources
   or wrong conventions
@@ -279,5 +279,5 @@ Candidate submission is **not allowed from derive** — derive was removed from
 
 ## Allowed transitions
 
-- Forward: `integrate`, `gap-audit` (candidate submission from derive is not allowed)
+- Forward: `integrate`, `gap-audit` — call `aitp_switch_l3_activity(activity="integrate")` or `aitp_switch_l3_activity(activity="gap-audit")` to advance.
 - Backedges: `ideate`, `plan`

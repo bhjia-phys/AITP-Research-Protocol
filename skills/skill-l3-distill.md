@@ -64,9 +64,9 @@ The human may add more discussion rounds at any time. Do NOT rush to fill the ar
 
 At ANY point during distillation, you may offer these back-paths via AskUserQuestion:
 
-- **Back to integration** (`aitp_switch_l3_activity(target="integrate")`):
+- **Back to integration** (`aitp_switch_l3_activity(activity="integrate")`):
   if the claim doesn't match the integrated findings
-- **Back to analysis** (`aitp_switch_l3_activity(target="derive")`): if the claim
+- **Back to analysis** (`aitp_switch_l3_activity(activity="derive")`): if the claim
   needs more computational support
 - **Retreat to L1** (`aitp_retreat_to_l1`): if distillation reveals fundamental
   framing problems
@@ -176,5 +176,5 @@ with `derivation_summary` and `evidence` to preserve provenance.
 
 ## Allowed transitions
 
-- Forward: L4 adjudication (via `aitp_submit_candidate`, the only L3→L4 entry)
+- Forward: L4 adjudication. Call `aitp_submit_candidate(topics_root, topic_slug, candidate_id, title, claim, evidence, assumptions, validation_criteria)` to exit L3 and enter L4 validation.
 - Backedges: `integrate`, `derive`, `gap-audit`

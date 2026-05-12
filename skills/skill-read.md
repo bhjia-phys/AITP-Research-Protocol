@@ -289,7 +289,7 @@ GUIDANCE:
   is better than many thin sections.
 
 For each section, call:
-from brain.mcp_server import aitp_write_section_intake
+Call mcp__aitp__aitp_write_section_intake
 aitp_write_section_intake(
     topics_root='<topics_root>',
     topic_slug='<topic_slug>',
@@ -312,7 +312,7 @@ Read files from <path_to_repo> and write intake notes for <N> pending files:
 <file_list_with_descriptions>
 
 For each file, call:
-from brain.mcp_server import aitp_write_section_intake
+Call mcp__aitp__aitp_write_section_intake
 aitp_write_section_intake(
     topics_root='<topics_root>',
     topic_slug='<topic_slug>',

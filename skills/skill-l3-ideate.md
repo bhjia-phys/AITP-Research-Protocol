@@ -65,13 +65,6 @@ In this scenario:
 - Use `aitp_batch_extract_section` to combine intake + L2 node + edge
   creation in one call.
 
-## Pattern B Tool: scientific-brainstorming (INVOKE BEFORE DISCUSSION)
-
-Before starting discussion round 1, invoke `scientific-brainstorming` skill
-to structure the idea exploration workflow. This provides a systematic
-brainstorming methodology (context understanding → divergent exploration →
-convergent refinement → action planning) that makes ideation more rigorous.
-
 ## Collaborative Discussion (MANDATORY)
 
 Before filling the artifact, you MUST discuss with the human. Do NOT just write an idea
@@ -147,5 +140,5 @@ Advance to **plan** when `active_idea.md` has filled frontmatter fields
 
 ## Allowed transitions
 
-- Forward: `plan`
+- Forward: `plan` — call `aitp_switch_l3_activity(activity="plan")` to advance.
 - Backedges: none (this is the entry subplane)

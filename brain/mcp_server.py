@@ -2761,32 +2761,6 @@ def _scan_branch_points(topic_dir: Path) -> list[dict[str, Any]]:
 
 
 @mcp.tool()
-def aitp_set_entry_profile(
-    topics_root: str,
-    topic_slug: str,
-    entry_profile: str,
-) -> str:
-    """Set the entry profile for this topic. This determines which scenario
-    the agent follows in each L3 activity.
-
-    entry_profile:
-      - learn_paper: study existing literature, source decomposition
-      - explore_idea: produce novel results, explore a research idea
-      - continue_work: resume an interrupted session
-      - l4_return: return from L4 validation with feedback
-    """
-    valid = {"learn_paper", "explore_idea", "continue_work", "l4_return"}
-    if entry_profile not in valid:
-        return f"Invalid entry_profile '{entry_profile}'. Must be one of: {sorted(valid)}"
-    root = _topic_root(topics_root, topic_slug)
-    state_path = root / "state.md"
-    fm, body = _parse_md(state_path)
-    fm["entry_profile"] = entry_profile
-    _write_md(state_path, fm, body)
-    return f"Entry profile set to '{entry_profile}' for topic '{topic_slug}'."
-
-
-@mcp.tool()
 def aitp_record_contradiction(
     topics_root: str,
     conflict_id: str,
@@ -3361,11 +3335,25 @@ def aitp_retreat_to_l0(topics_root: str, topic_slug: str, reason: str = "") -> _
     fm["retreat_reason"] = reason
     fm["retreated_at"] = _now()
     fm["retreat_count"] = fm.get("retreat_count", 0) + 1
+    # Save L3 position for retreat-and-return
+    fm["previous_l3_activity"] = fm.get("l3_activity", "") if current_stage == "L3" else ""
+    # Full checkpoint: capture exact L3 state before retreat
+    if current_stage == "L3":
+        fm["retreat_checkpoint"] = {
+            "l3_activity": fm.get("l3_activity", ""),
+            "candidates": [p.stem for p in (root / "L3" / "candidates").glob("*.md")],
+            "retreated_at": _now(),
+            "reason": reason,
+        }
+    # Reset gate (matches CLI retreat_stage behavior)
+    fm["gate_status"] = "blocked_missing_artifact"
+    fm["gate_override"] = False
+    fm["gate_override_scope"] = ""
     fm["updated_at"] = _now()
     _write_md(state_path, fm, body)
     _append_to_topic_log(root, f"retreated from {current_stage} to L0: {reason}")
     return _GateResult({
-        "message": f"Retreated to L0 from {current_stage}. All artifacts preserved. Register more sources or update the registry.",
+        "message": f"Retreated to L0 from {current_stage}. L3 checkpoint saved. All artifacts preserved. Register more sources or update the registry.",
         "popup_gate": {
             "question": "Retreated to L0 for more source discovery. What do you need to do?",
             "header": f"{current_stage}→L0",
@@ -3400,9 +3388,21 @@ def aitp_advance_to_l3(
 
     state_path = root / "state.md"
     fm, body = _parse_md(state_path)
+
+    # Detect retreat-return: restore previous L3 activity if retreating back from L1
+    previous_l3 = fm.get("previous_l3_activity", "").strip()
+    retreated_from = fm.get("retreated_from", "").strip()
+
+    if previous_l3 and previous_l3 in L3_ACTIVITIES and retreated_from == "L3":
+        fm["l3_activity"] = previous_l3
+        fm.pop("previous_l3_activity", None)
+        return_note = f"restored activity '{previous_l3}' from retreat"
+    else:
+        fm["l3_activity"] = "ideate"
+        return_note = ""
+
     fm["stage"] = "L3"
     fm["posture"] = "derive"
-    fm["l3_activity"] = "ideate"
     fm["updated_at"] = _now()
     _write_md(state_path, fm, body)
 
@@ -3419,7 +3419,20 @@ def aitp_advance_to_l3(
     # Physicist check: verify L1 artifacts reference L2 knowledge
     l2_warnings = _physicist_check_at_checkpoint(root, "L1")
 
-    message = "Advanced to L3 flexible workspace. All activities available. Default: ideate."
+    if return_note:
+        message = f"Advanced to L3 (retreat-return), {return_note}. Previous L3 artifacts and state preserved."
+        # Also run L3 physicist check on return to verify post-retreat state
+        l3_warnings = _physicist_check_at_checkpoint(root, "L3")
+        if l3_warnings:
+            message += (
+                "\n\n[PHYSICIST CHECK — Post-Retreat] L3 artifacts should reference "
+                "new L2 knowledge acquired during retreat:\n"
+                + "\n".join(f"  - {w}" for w in l3_warnings)
+                + "\n\nRun aitp_query_l2 to verify new sources haven't changed the knowledge graph."
+            )
+    else:
+        message = "Advanced to L3 flexible workspace. All activities available. Default: ideate."
+
     if l2_warnings:
         message += (
             "\n\n[PHYSICIST CHECK] L1 artifacts should reference L2 knowledge:\n"
@@ -3608,9 +3621,18 @@ def aitp_retreat_to_l1(
     fm["retreated_from"] = "L3"
     fm["retreated_to"] = "L1"
     fm["previous_l3_activity"] = fm.get("l3_activity", "")
+    fm["retreat_checkpoint"] = {
+        "l3_activity": fm.get("l3_activity", ""),
+        "candidates": [p.stem for p in (root / "L3" / "candidates").glob("*.md")],
+        "retreated_at": _now(),
+        "reason": reason,
+    }
     fm["retreat_reason"] = reason
     fm["retreated_at"] = _now()
     fm["retreat_count"] = fm.get("retreat_count", 0) + 1
+    fm["gate_status"] = "blocked_missing_artifact"
+    fm["gate_override"] = False
+    fm["gate_override_scope"] = ""
     fm["l1_feedback_status"] = "has_feedback" if retreat_feedback else ""
     fm["updated_at"] = _now()
     _write_md(state_path, fm, body)
@@ -3862,6 +3884,11 @@ def aitp_estimate_order(
 # ---------------------------------------------------------------------------
 
 
+
+
+# ---------------------------------------------------------------------------
+# L4 verification agent orchestration
+# ---------------------------------------------------------------------------
 
 
 # ---------------------------------------------------------------------------

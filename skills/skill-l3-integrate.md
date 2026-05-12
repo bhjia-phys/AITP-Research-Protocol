@@ -57,9 +57,9 @@ The human may add more discussion rounds at any time. Do NOT rush to fill the ar
 
 At ANY point during integration, you may offer these back-paths via AskUserQuestion:
 
-- **Back to analysis** (`aitp_switch_l3_activity(target="derive")`): if integration
+- **Back to analysis** (`aitp_switch_l3_activity(activity="derive")`): if integration
   reveals analysis gaps
-- **Back to planning** (`aitp_switch_l3_activity(target="plan")`): if integration
+- **Back to planning** (`aitp_switch_l3_activity(activity="plan")`): if integration
   reveals the plan was incomplete
 - **Retreat to L1** (`aitp_retreat_to_l1`): if integration reveals fundamental
   framing issues
@@ -204,5 +204,5 @@ must be integrate or distill, (2) derive, gap-audit, and integrate must have rea
 
 ## Allowed transitions
 
-- Forward: `distill`, candidate submission
+- Forward: `distill` — call `aitp_switch_l3_activity(activity="distill")`. Or submit candidate via `aitp_submit_candidate(...)` to advance to L4.
 - Backedges: `derive`, `gap-audit`

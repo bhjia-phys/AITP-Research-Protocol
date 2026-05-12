@@ -31,7 +31,7 @@ design targeted tests, exclude wrong hypotheses, converge on a root cause.
 3. Note specific numerical values: expected, observed, discrepancy magnitude
 
 ### Escape Hatches
-- Return to derive (`aitp_switch_l3_activity(target="derive")`): anomaly resolved
+- Return to derive (`aitp_switch_l3_activity(activity="derive")`): anomaly resolved
 - Switch to gap-audit: if the anomaly reveals a structural issue
 - Retreat to L1: if the anomaly suggests wrong conventions
 - Retreat to L0: if the anomaly reveals need for new sources

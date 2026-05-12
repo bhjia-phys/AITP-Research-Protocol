@@ -155,8 +155,51 @@ Advance to **integrate** when:
 - Correspondence check section has entries for every major result
 - All blocking gaps have a resolution plan or are deferred with reason
 
+## Retreat Decision Tree (MANDATORY for blocking gaps)
+
+When gap-audit discovers **blocking** gaps, the agent MUST route to the appropriate
+retreat action. Do NOT just record the gap and continue — blocking gaps require
+a concrete resolution plan with a stage transition.
+
+### Decision rules:
+
+1. **Missing source material** (key paper not in L0, code file not traced, equation from unregistered source):
+   → `aitp_retreat_to_l0(reason="gap-audit: <specific gap>")`
+   → Register the missing source, parse its TOC, extract relevant sections
+   → Return to L3: `aitp_advance_to_l3` will restore the gap-audit position
+
+2. **Wrong framing or missing conventions** (notation ambiguity, contradictory convention, missing question scope):
+   → `aitp_retreat_to_l1(reason="gap-audit: <specific framing issue>", retreat_feedback_kind="convention", retreat_feedback="<detail>")`
+   → Revise L1 artifacts (convention_snapshot, question_contract, contradiction_register)
+   → Return to L3: `aitp_advance_to_l3` restores gap-audit position
+
+3. **Derivation incomplete** (missing steps, unjustified leaps, steps with `gap_marker` set):
+   → Backedge to `derive` via `aitp_switch_l3_activity(activity="derive")`
+   → Fix the derivation, re-record steps with proper justification
+   → Return to gap-audit: `aitp_switch_l3_activity(activity="gap-audit")`
+
+4. **Correspondence check fails** (result doesn't match known limit in L2):
+   → Query L2 more thoroughly: `aitp_query_l2(query="<limit>")`
+   → If L2 has contradictory evidence → file contradiction: `aitp_record_contradiction(...)`
+   → If L2 knowledge insufficient → mark as `important`, proceed with caution, flag for human review
+   → If derivation is wrong → backedge to `derive` (rule 3)
+
+5. **Prerequisite gap** (technique/concept not in L2 and not derivable from L1 sources):
+   → `aitp_request_source_evidence(required_claim="<prerequisite>", reason="<why blocking>")`
+   → This creates a pending request visible in execution brief
+   → If the prerequisite is critical, treat as missing source material (rule 1)
+
+### After retreat resolution:
+Return to L3 via `aitp_advance_to_l3`. The `retreat_checkpoint` in state.md preserves:
+- Which L3 activity was active (`l3_activity`)
+- Which candidates existed
+- When the retreat happened and why
+
+The agent should then re-run gap-audit on the updated derivation to verify the gap is resolved.
+
 ## Allowed transitions
 
-- Forward: `integrate`, `distill` (gap-audit is a hard prerequisite — the gate blocks
+- Forward: `integrate`, `distill` — call `aitp_switch_l3_activity(activity="integrate")` or `aitp_switch_l3_activity(activity="distill")` to advance. (gap-audit is a hard prerequisite — the gate blocks
   integrate and distill if gap-audit content is missing)
 - Backedges: `derive` (if gaps reveal derivation was incomplete)
+- Retreat: `retreat_to_l0`, `retreat_to_l1` (via the decision tree above)

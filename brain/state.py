@@ -402,20 +402,20 @@ PHYSICS_CHECK_FIELDS = [
     "approximation_validity_check",
     "unitarity_check",
     "causality_check",
+    "scale_separation_check",
+    "regularization_independence",
 ]
 
 # Lane-dependent required check fields.
-# formal_theory requires all 8 physics checks.
-# code_method and toy_numeric require the first 6 (includes
-# approximation_validity_check — the single most important check
-# for numerical workflows: k-point convergence, basis set quality,
-# pseudopotential validity, functional choice).
-# Other lanes require only the original 5 (unitarity/causality are
-# less relevant to non-field-theory workflows).
+# formal_theory requires all 10 physics checks.
+# code_method and toy_numeric require the first 8 (all except
+# unitarity/causality — includes scale_separation and
+# regularization_independence which are critical for finite-size
+# and EFT workflows).
 _LANE_PHYSICS_CHECK_FIELDS: dict[str, list[str]] = {
     "formal_theory": PHYSICS_CHECK_FIELDS,
-    "code_method": PHYSICS_CHECK_FIELDS[:6],
-    "toy_numeric": PHYSICS_CHECK_FIELDS[:6],
+    "code_method": PHYSICS_CHECK_FIELDS[:8],
+    "toy_numeric": PHYSICS_CHECK_FIELDS[:8],
 }
 
 CROSS_DOMAIN_CHECK_FIELDS = [
