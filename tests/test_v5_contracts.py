@@ -107,3 +107,56 @@ def test_risk_assessment_contract_rejects_signal_without_evidence_ref():
 
     assert result.ok is False
     assert any(issue.path.endswith("evidence_ref") for issue in result.issues)
+
+
+def test_adapter_packet_contract_accepts_current_packet(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.contracts import validate_adapter_packet
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="Finite-size counting identifies the edge sector.",
+        evidence_profile="toy_numeric",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size artifacts",
+    )
+    bind_session(ws, "s1", topic_id="fqhe", context_id="topological-order", active_claim=claim.claim_id)
+
+    result = validate_adapter_packet(build_adapter_packet(ws, "s1", runtime="codex"))
+
+    assert result.ok is True
+    assert result.issues == []
+
+
+def test_adapter_packet_contract_rejects_summary_as_truth_source(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.contracts import validate_adapter_packet
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "librpa-gw", context_id="gw-methods", title="LibRPA GW")
+    claim = create_claim(
+        ws,
+        topic_id="librpa-gw",
+        statement="The benchmark is ready for promotion.",
+        evidence_profile="code_method",
+        confidence_state="hypothesis",
+        active_uncertainty="code provenance incomplete",
+    )
+    bind_session(ws, "s1", topic_id="librpa-gw", context_id="gw-methods", active_claim=claim.claim_id)
+    packet = build_adapter_packet(ws, "s1", runtime="opencode")
+    packet["summary_orientation"]["truth_source"] = True
+    packet["adapter_contract"]["summary_files_are_truth_source"] = True
+    packet["adapter_contract"]["kernel_must_be_called_before_trust_updates"] = False
+
+    result = validate_adapter_packet(packet)
+
+    assert result.ok is False
+    paths = {issue.path for issue in result.issues}
+    assert "adapter.summary_orientation.truth_source" in paths
+    assert "adapter.adapter_contract.summary_files_are_truth_source" in paths
+    assert "adapter.adapter_contract.kernel_must_be_called_before_trust_updates" in paths

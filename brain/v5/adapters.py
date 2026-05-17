@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from brain.v5.brief import build_execution_brief
-from brain.v5.contracts import require_valid_execution_brief
+from brain.v5.contracts import require_valid_adapter_packet, require_valid_execution_brief
 from brain.v5.paths import WorkspacePaths
 from brain.v5.summaries import read_summary_orientation, write_session_summary
 
@@ -41,7 +41,7 @@ def build_adapter_packet(ws: WorkspacePaths, session_id: str, *, runtime: str = 
     brief = require_valid_execution_brief(build_execution_brief(ws, session_id))
     focus = brief["current_focus"]
 
-    return {
+    packet = {
         "kind": "adapter_packet",
         "runtime": normalized_runtime,
         "session_id": session_id,
@@ -70,6 +70,7 @@ def build_adapter_packet(ws: WorkspacePaths, session_id: str, *, runtime: str = 
         "required_kernel_entrypoints": list(_KERNEL_ENTRYPOINTS),
         "runtime_rules": _runtime_rules(normalized_runtime),
     }
+    return require_valid_adapter_packet(packet)
 
 
 def _normalize_runtime(runtime: str) -> str:

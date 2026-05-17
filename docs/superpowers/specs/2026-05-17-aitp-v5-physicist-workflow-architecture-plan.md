@@ -1693,6 +1693,8 @@ Implementation implications:
 - Adapter packets must expose `truth_sources = [typed_records,
   execution_brief]`, runtime rules, and an explicit list of trust-changing
   actions requiring kernel calls.
+- Adapter packets are public runtime interface payloads and must pass a
+  contract validator before CLI/MCP/adapters return them.
 - Hook/policy enforcement must hard-block trust-changing actions sourced from
   derived summaries. This includes confidence changes, evidence/tool-run
   recording, validation, and L2 promotion when the cited basis is only

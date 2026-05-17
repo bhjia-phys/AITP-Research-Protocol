@@ -48,8 +48,25 @@ _BRIEF_REQUIRED_KEYS = (
     "forbidden_now",
     "human_checkpoint",
 )
+_ADAPTER_REQUIRED_KEYS = (
+    "kind",
+    "runtime",
+    "session_id",
+    "topic_id",
+    "truth_sources",
+    "orientation_surfaces",
+    "summary_orientation",
+    "execution_brief",
+    "trusted_focus",
+    "adapter_contract",
+    "trust_changing_actions",
+    "requires_kernel_call_before",
+    "required_kernel_entrypoints",
+    "runtime_rules",
+)
 
 _RISK_LEVELS = {"fluid", "guided", "rigorous", "adversarial"}
+_ADAPTER_RUNTIMES = {"codex", "claude_code", "opencode"}
 _MAX_QUESTIONS_BY_LEVEL = {
     "fluid": 1,
     "guided": 3,
@@ -127,6 +144,77 @@ def require_valid_execution_brief(payload: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+def validate_adapter_packet(payload: dict[str, Any], *, path: str = "adapter") -> ContractResult:
+    """Validate the public runtime adapter packet."""
+
+    result = ContractResult()
+    _require_mapping(payload, path, result)
+    if result.issues:
+        return result
+
+    for key in _ADAPTER_REQUIRED_KEYS:
+        if key not in payload:
+            result.add(f"{path}.{key}", "missing required adapter packet key")
+
+    if payload.get("kind") != "adapter_packet":
+        result.add(f"{path}.kind", "must be 'adapter_packet'")
+
+    if payload.get("runtime") not in _ADAPTER_RUNTIMES:
+        result.add(f"{path}.runtime", f"must be one of {sorted(_ADAPTER_RUNTIMES)}")
+
+    for key in ("session_id", "topic_id"):
+        _require_nonempty_str(payload, key, path, result)
+
+    if "truth_sources" in payload:
+        _require_list(payload["truth_sources"], f"{path}.truth_sources", result)
+        if isinstance(payload["truth_sources"], list):
+            required_sources = {"typed_records", "execution_brief"}
+            if set(payload["truth_sources"]) != required_sources:
+                result.add(
+                    f"{path}.truth_sources",
+                    "must be exactly ['typed_records', 'execution_brief']",
+                )
+
+    if "summary_orientation" in payload:
+        _validate_summary_orientation(payload["summary_orientation"], f"{path}.summary_orientation", result)
+
+    if "adapter_contract" in payload:
+        _validate_adapter_contract(payload["adapter_contract"], f"{path}.adapter_contract", result)
+
+    if "execution_brief" in payload:
+        result.extend(validate_execution_brief(payload["execution_brief"], path=f"{path}.execution_brief"))
+
+    if "trusted_focus" in payload:
+        _validate_trusted_focus(payload["trusted_focus"], f"{path}.trusted_focus", result)
+
+    for key in ("trust_changing_actions", "requires_kernel_call_before", "required_kernel_entrypoints", "runtime_rules"):
+        if key in payload:
+            _require_list(payload[key], f"{path}.{key}", result)
+            if isinstance(payload[key], list) and any(not isinstance(item, str) or not item for item in payload[key]):
+                result.add(f"{path}.{key}", "must contain non-empty strings")
+
+    if isinstance(payload.get("trust_changing_actions"), list) and isinstance(
+        payload.get("requires_kernel_call_before"),
+        list,
+    ):
+        if set(payload["trust_changing_actions"]) != set(payload["requires_kernel_call_before"]):
+            result.add(
+                f"{path}.requires_kernel_call_before",
+                "must match trust_changing_actions",
+            )
+
+    return result
+
+
+def require_valid_adapter_packet(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return an adapter packet or raise a contract error."""
+
+    result = validate_adapter_packet(payload)
+    if not result.ok:
+        raise ContractError(result)
+    return payload
+
+
 def validate_risk_assessment(payload: dict[str, Any], *, path: str = "risk_assessment") -> ContractResult:
     """Validate a risk assessment payload."""
 
@@ -160,6 +248,54 @@ def validate_risk_assessment(payload: dict[str, Any], *, path: str = "risk_asses
     _require_nonempty_str(payload, "summary", path, result)
 
     return result
+
+
+def _validate_summary_orientation(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    _require_bool_value(payload.get("truth_source"), False, f"{path}.truth_source", result)
+    _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
+    _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
+    if "files" in payload:
+        _require_mapping(payload["files"], f"{path}.files", result)
+
+
+def _validate_adapter_contract(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    _require_bool_value(
+        payload.get("summary_files_are_truth_source"),
+        False,
+        f"{path}.summary_files_are_truth_source",
+        result,
+    )
+    _require_bool_value(
+        payload.get("summary_files_can_update_kernel_state"),
+        False,
+        f"{path}.summary_files_can_update_kernel_state",
+        result,
+    )
+    _require_bool_value(
+        payload.get("kernel_must_be_called_before_trust_updates"),
+        True,
+        f"{path}.kernel_must_be_called_before_trust_updates",
+        result,
+    )
+    if payload.get("regenerated_from") != "kernel_state":
+        result.add(f"{path}.regenerated_from", "must be 'kernel_state'")
+
+
+def _validate_trusted_focus(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    for key in ("active_claim", "claim_statement", "confidence_state", "evidence_profile", "main_uncertainty"):
+        if key not in payload:
+            result.add(f"{path}.{key}", "missing trusted focus key")
+    _require_level(payload.get("flow_profile"), f"{path}.flow_profile", result)
+    _require_level(payload.get("risk_level"), f"{path}.risk_level", result)
 
 
 def validate_action_budget(payload: dict[str, Any], *, path: str = "action_budget") -> ContractResult:
@@ -232,6 +368,11 @@ def _require_list(value: Any, path: str, result: ContractResult) -> None:
 def _require_nonempty_str(payload: dict[str, Any], key: str, path: str, result: ContractResult) -> None:
     if not isinstance(payload.get(key), str) or not payload.get(key):
         result.add(f"{path}.{key}", "must be a non-empty string")
+
+
+def _require_bool_value(value: Any, expected: bool, path: str, result: ContractResult) -> None:
+    if value is not expected:
+        result.add(path, f"must be {expected}")
 
 
 def _require_level(value: Any, path: str, result: ContractResult) -> None:
