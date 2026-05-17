@@ -1693,6 +1693,10 @@ Implementation implications:
 - Adapter packets must expose `truth_sources = [typed_records,
   execution_brief]`, runtime rules, and an explicit list of trust-changing
   actions requiring kernel calls.
+- Hook/policy enforcement must hard-block trust-changing actions sourced from
+  derived summaries. This includes confidence changes, evidence/tool-run
+  recording, validation, and L2 promotion when the cited basis is only
+  `task_plan.md`, `findings.md`, or `progress.md`.
 
 ## Implementation Plan Direction
 

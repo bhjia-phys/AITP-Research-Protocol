@@ -10,6 +10,22 @@ from brain.v5.models import ClaimRecord, CodeStateRecord
 from brain.v5.risk import RiskAssessment
 
 
+_TRUST_CHANGING_ACTIONS = {
+    "record_evidence",
+    "record_tool_run",
+    "change_claim_confidence",
+    "validate_claim",
+    "promote_to_l2",
+}
+_SUMMARY_SOURCE_KINDS = {
+    "derived_summary",
+    "summary_orientation",
+    "task_plan",
+    "findings",
+    "progress",
+}
+
+
 @dataclass
 class PolicyReason:
     policy_id: str
@@ -47,10 +63,12 @@ def evaluate_policy(
     states = code_states or []
     refs = evidence_refs or []
     decision = PolicyDecision(allowed=True, action=action)
-    _ = context or {}
+    ctx = context or {}
 
     if action == "continue_fluid_work" and risk_level == "fluid":
         return decision
+
+    _guard_summary_surface_cannot_drive_trust_update(decision, action, ctx)
 
     if action in {"validate_claim", "promote_to_l2"}:
         _guard_code_method_requires_code_state(decision, claim, states)
@@ -66,6 +84,25 @@ def evaluate_policy(
         _guard_core_protocol_patch_requires_review(decision, evolution_proposal)
 
     return decision
+
+
+def _guard_summary_surface_cannot_drive_trust_update(
+    decision: PolicyDecision,
+    action: str,
+    context: dict[str, Any],
+) -> None:
+    if action not in _TRUST_CHANGING_ACTIONS:
+        return
+    source_kind = str(context.get("source_kind", "")).strip().lower()
+    orientation_only = context.get("orientation_only")
+    if source_kind not in _SUMMARY_SOURCE_KINDS and orientation_only is not True:
+        return
+    decision.add_block(
+        "no_summary_surface_as_truth_source",
+        "derived summary surfaces are orientation only and cannot justify trust-changing actions",
+        "query_execution_brief_or_typed_record",
+        severity="hard_block",
+    )
 
 
 def _guard_code_method_requires_code_state(

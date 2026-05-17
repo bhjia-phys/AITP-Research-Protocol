@@ -70,6 +70,27 @@ def test_guided_noncritical_policy_issue_warns_not_blocks():
     assert "record_code_state" in decision.required_actions
 
 
+def test_pre_tool_use_hard_blocks_summary_based_trust_update_even_when_guided():
+    from brain.v5.hooks import decide_pre_tool_use
+    from brain.v5.policy import evaluate_policy
+
+    policy = evaluate_policy(
+        action="change_claim_confidence",
+        context={"source_kind": "derived_summary", "orientation_only": True},
+    )
+
+    decision = decide_pre_tool_use(
+        action="change_claim_confidence",
+        risk_level="guided",
+        policy_decision=policy,
+    )
+
+    assert decision.block is True
+    assert decision.mode == "block"
+    assert "query_execution_brief_or_typed_record" in decision.required_actions
+    assert "summary" in decision.message
+
+
 def test_post_tool_use_creates_short_trace_event():
     from brain.v5.hooks import post_tool_use_trace_event
 

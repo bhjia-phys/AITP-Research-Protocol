@@ -43,18 +43,19 @@ def decide_pre_tool_use(
         )
 
     required = list(policy_decision.required_actions)
-    should_block = risk_level in _HIGH_RISK_LEVELS or action in _CRITICAL_ACTIONS
+    reason = _reason_summary(policy_decision)
+    should_block = _has_hard_block(policy_decision) or risk_level in _HIGH_RISK_LEVELS or action in _CRITICAL_ACTIONS
     if should_block:
         return HookDecision(
             mode="block",
             block=True,
-            message=_short(f"blocked {action}; required: {', '.join(required)}"),
+            message=_short(f"blocked {action}; {reason}; required: {', '.join(required)}"),
             required_actions=required,
         )
     return HookDecision(
         mode="warn",
         block=False,
-        message=_short(f"warn {action}; required soon: {', '.join(required)}"),
+        message=_short(f"warn {action}; {reason}; required soon: {', '.join(required)}"),
         required_actions=required,
     )
 
@@ -121,6 +122,16 @@ def decide_pre_commit(
 def _is_harness_file(path: str) -> bool:
     normalized = path.replace("\\", "/")
     return normalized.startswith("brain/v5/") or normalized.startswith("docs/superpowers/plans/")
+
+
+def _has_hard_block(decision: PolicyDecision) -> bool:
+    return any(reason.severity == "hard_block" for reason in decision.reasons)
+
+
+def _reason_summary(decision: PolicyDecision) -> str:
+    if not decision.reasons:
+        return "policy violation"
+    return "; ".join(reason.policy_id for reason in decision.reasons)
 
 
 def _short(message: str, *, limit: int = 160) -> str:

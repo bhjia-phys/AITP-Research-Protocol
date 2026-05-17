@@ -133,6 +133,39 @@ def test_policy_blocks_harness_patch_without_test():
     assert any(reason.policy_id == "no_harness_patch_without_test" for reason in decision.reasons)
 
 
+def test_policy_blocks_trust_changing_action_from_summary_surface():
+    from brain.v5.policy import evaluate_policy
+
+    decision = evaluate_policy(
+        action="change_claim_confidence",
+        context={
+            "source_kind": "derived_summary",
+            "source_path": ".aitp/surfaces/session_summaries/s1/findings.md",
+            "orientation_only": True,
+        },
+    )
+
+    assert decision.allowed is False
+    assert "query_execution_brief_or_typed_record" in decision.required_actions
+    assert any(reason.policy_id == "no_summary_surface_as_truth_source" for reason in decision.reasons)
+    assert any(reason.severity == "hard_block" for reason in decision.reasons)
+
+
+def test_policy_allows_trust_changing_action_from_kernel_truth_source():
+    from brain.v5.policy import evaluate_policy
+
+    decision = evaluate_policy(
+        action="change_claim_confidence",
+        context={
+            "source_kind": "execution_brief",
+            "source_ref": "brief:s1",
+        },
+    )
+
+    assert decision.allowed is True
+    assert decision.required_actions == []
+
+
 def test_execution_brief_forbidden_now_includes_policy_blocks(tmp_path):
     from brain.v5.brief import build_execution_brief
     from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
