@@ -139,6 +139,20 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
     assert "read_for_orientation" in packet["runtime_rules"][0]
 
 
+def test_adapter_packet_protocols_are_generated_from_shared_registry(tmp_path):
+    from brain.v5.adapter_protocols import build_adapter_protocols, supported_runtimes
+    from brain.v5.adapters import build_adapter_packet
+
+    ws, _ = _seed_session(tmp_path)
+
+    packet = build_adapter_packet(ws, "s1", runtime="codex")
+    protocols = build_adapter_protocols()
+
+    assert set(supported_runtimes()) == {"codex", "claude_code", "opencode"}
+    for key, value in protocols.items():
+        assert packet[key] == value
+
+
 def test_adapter_packet_ignores_tampered_summary_as_truth_source(tmp_path):
     from brain.v5.adapters import build_adapter_packet
     from brain.v5.markdown import write_md

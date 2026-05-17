@@ -5,6 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from brain.v5.adapter_protocols import (
+    mandatory_gate_protocols,
+    mandatory_kernel_entrypoints,
+    mandatory_record_protocols,
+    mandatory_trust_mutations,
+    mandatory_trust_update_protocol,
+    supported_runtimes,
+)
+
 
 @dataclass
 class ContractIssue:
@@ -113,93 +122,6 @@ _TRUST_APPLY_REQUIRED_KEYS = (
 )
 
 _RISK_LEVELS = {"fluid", "guided", "rigorous", "adversarial"}
-_ADAPTER_RUNTIMES = {"codex", "claude_code", "opencode"}
-_ADAPTER_MANDATORY_KERNEL_ENTRYPOINTS = {
-    "aitp_v5_get_execution_brief",
-    "aitp_v5_preflight_trust_update",
-    "aitp_v5_apply_trust_update",
-}
-_ADAPTER_MANDATORY_TRUST_MUTATIONS = {
-    "change_claim_confidence": {
-        "preflight": "aitp_v5_preflight_trust_update",
-        "apply": "aitp_v5_apply_trust_update",
-    },
-}
-_ADAPTER_MANDATORY_TRUST_UPDATE_PROTOCOL = {
-    "change_claim_confidence": {
-        "sequence": [
-            "refresh_execution_brief",
-            "preflight_trust_update",
-            "apply_trust_update",
-            "refresh_execution_brief",
-            "write_session_summary",
-        ],
-        "preflight": "aitp_v5_preflight_trust_update",
-        "apply": "aitp_v5_apply_trust_update",
-        "refresh": ["aitp_v5_get_execution_brief", "aitp_v5_write_session_summary"],
-        "truth_source": "typed_records",
-        "summary_inputs_trusted": False,
-    },
-}
-_ADAPTER_MANDATORY_RECORD_PROTOCOLS = {
-    "record_evidence": {
-        "entrypoint": "aitp_v5_record_evidence",
-        "sequence": [
-            "refresh_execution_brief",
-            "record_evidence",
-            "refresh_execution_brief",
-            "write_session_summary",
-        ],
-        "required_typed_refs": ["topic_id", "claim_id"],
-        "accepted_link_fields": ["source_refs", "tool_run_ids", "artifact_ids"],
-        "truth_source": "typed_records",
-        "summary_inputs_trusted": False,
-    },
-    "record_tool_run": {
-        "entrypoint": "aitp_v5_record_tool_run",
-        "sequence": [
-            "refresh_execution_brief",
-            "record_tool_run",
-            "refresh_execution_brief",
-            "write_session_summary",
-        ],
-        "required_typed_refs": ["topic_id", "claim_id", "recipe_id"],
-        "accepted_link_fields": ["code_state_ids", "artifact_ids", "source_refs"],
-        "truth_source": "typed_records",
-        "summary_inputs_trusted": False,
-    },
-}
-_ADAPTER_MANDATORY_GATE_PROTOCOLS = {
-    "validate_claim": {
-        "preflight": "aitp_v5_preflight_trust_update",
-        "sequence": [
-            "refresh_execution_brief",
-            "preflight_trust_update",
-            "record_validation_evidence",
-            "refresh_execution_brief",
-            "write_session_summary",
-        ],
-        "required_typed_refs": ["topic_id", "claim_id", "evidence_refs"],
-        "allowed_state_sources": ["typed_evidence_records", "typed_validation_records"],
-        "human_checkpoint_required": False,
-        "truth_source": "typed_records",
-        "summary_inputs_trusted": False,
-    },
-    "promote_to_l2": {
-        "preflight": "aitp_v5_preflight_trust_update",
-        "sequence": [
-            "refresh_execution_brief",
-            "preflight_trust_update",
-            "human_checkpoint",
-            "promote_to_l2",
-        ],
-        "required_typed_refs": ["topic_id", "claim_id", "evidence_refs", "validation_result_ref"],
-        "allowed_state_sources": ["typed_evidence_records", "typed_validation_records", "human_checkpoint"],
-        "human_checkpoint_required": True,
-        "truth_source": "typed_records",
-        "summary_inputs_trusted": False,
-    },
-}
 _MAX_QUESTIONS_BY_LEVEL = {
     "fluid": 1,
     "guided": 3,
@@ -292,8 +214,8 @@ def validate_adapter_packet(payload: dict[str, Any], *, path: str = "adapter") -
     if payload.get("kind") != "adapter_packet":
         result.add(f"{path}.kind", "must be 'adapter_packet'")
 
-    if payload.get("runtime") not in _ADAPTER_RUNTIMES:
-        result.add(f"{path}.runtime", f"must be one of {sorted(_ADAPTER_RUNTIMES)}")
+    if payload.get("runtime") not in supported_runtimes():
+        result.add(f"{path}.runtime", f"must be one of {sorted(supported_runtimes())}")
 
     for key in ("session_id", "topic_id"):
         _require_nonempty_str(payload, key, path, result)
@@ -327,7 +249,7 @@ def validate_adapter_packet(payload: dict[str, Any], *, path: str = "adapter") -
                 result.add(f"{path}.{key}", "must contain non-empty strings")
 
     if isinstance(payload.get("required_kernel_entrypoints"), list):
-        missing = sorted(_ADAPTER_MANDATORY_KERNEL_ENTRYPOINTS - set(payload["required_kernel_entrypoints"]))
+        missing = sorted(mandatory_kernel_entrypoints() - set(payload["required_kernel_entrypoints"]))
         if missing:
             result.add(
                 f"{path}.required_kernel_entrypoints",
@@ -624,7 +546,7 @@ def _validate_trust_mutation_entrypoints(
         return
 
     entrypoints = set(required_kernel_entrypoints) if isinstance(required_kernel_entrypoints, list) else set()
-    for action, required_steps in _ADAPTER_MANDATORY_TRUST_MUTATIONS.items():
+    for action, required_steps in mandatory_trust_mutations().items():
         action_payload = payload.get(action)
         _require_mapping(action_payload, f"{path}.{action}", result)
         if not isinstance(action_payload, dict):
@@ -654,7 +576,7 @@ def _validate_runtime_trust_update_protocol(
         return
 
     entrypoints = set(required_kernel_entrypoints) if isinstance(required_kernel_entrypoints, list) else set()
-    for action, expected_protocol in _ADAPTER_MANDATORY_TRUST_UPDATE_PROTOCOL.items():
+    for action, expected_protocol in mandatory_trust_update_protocol().items():
         protocol = payload.get(action)
         _require_mapping(protocol, f"{path}.{action}", result)
         if not isinstance(protocol, dict):
@@ -707,7 +629,7 @@ def _validate_runtime_record_protocols(
         return
 
     entrypoints = set(required_kernel_entrypoints) if isinstance(required_kernel_entrypoints, list) else set()
-    for action, expected_protocol in _ADAPTER_MANDATORY_RECORD_PROTOCOLS.items():
+    for action, expected_protocol in mandatory_record_protocols().items():
         protocol = payload.get(action)
         _require_mapping(protocol, f"{path}.{action}", result)
         if not isinstance(protocol, dict):
@@ -745,7 +667,7 @@ def _validate_runtime_gate_protocols(
         return
 
     entrypoints = set(required_kernel_entrypoints) if isinstance(required_kernel_entrypoints, list) else set()
-    for action, expected_protocol in _ADAPTER_MANDATORY_GATE_PROTOCOLS.items():
+    for action, expected_protocol in mandatory_gate_protocols().items():
         protocol = payload.get(action)
         _require_mapping(protocol, f"{path}.{action}", result)
         if not isinstance(protocol, dict):

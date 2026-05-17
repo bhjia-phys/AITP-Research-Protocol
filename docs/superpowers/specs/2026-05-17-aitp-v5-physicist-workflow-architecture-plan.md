@@ -1731,6 +1731,8 @@ Implementation implications:
 - Adapter packets should expose structured `runtime_gate_protocols` for
   validation and L2 promotion, including required typed refs, allowed state
   sources, and human-checkpoint boundaries.
+- Adapter protocol definitions should live in a shared registry/builder so
+  packet generation and contract validation cannot drift apart.
 
 ## Implementation Plan Direction
 
