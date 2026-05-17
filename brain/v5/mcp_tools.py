@@ -12,6 +12,7 @@ from brain.v5.evidence import record_evidence
 from brain.v5.models import CodeStateRecord
 from brain.v5.risk import assess_claim_risk
 from brain.v5.store import list_records
+from brain.v5.summaries import write_session_summary
 from brain.v5.tools import record_tool_run, register_tool_recipe
 from brain.v5.workspace import (
     bind_session,
@@ -220,6 +221,11 @@ def aitp_v5_record_tool_run(
         source_refs=source_refs,
     )
     return {"ok": True, **asdict(run)}
+
+
+def aitp_v5_write_session_summary(base: str, *, session_id: str) -> dict:
+    ws = init_workspace(Path(base))
+    return {"ok": True, **asdict(write_session_summary(ws, session_id))}
 
 
 def _linked_code_states(ws, claim_id: str) -> list[CodeStateRecord]:

@@ -11,6 +11,7 @@ from typing import Any
 
 from brain.v5.brief import build_execution_brief
 from brain.v5.risk import assess_claim_risk
+from brain.v5.summaries import write_session_summary
 from brain.v5.workspace import (
     bind_session,
     create_claim,
@@ -71,6 +72,11 @@ def _build_parser() -> argparse.ArgumentParser:
     risk_assess = risk_sub.add_parser("assess")
     risk_assess.add_argument("claim_id")
 
+    summary_parser = subparsers.add_parser("summary")
+    summary_sub = summary_parser.add_subparsers(dest="summary_command", required=True)
+    summary_session = summary_sub.add_parser("session")
+    summary_session.add_argument("session_id")
+
     return parser
 
 
@@ -116,6 +122,9 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         claim = get_claim(ws, args.claim_id)
         risk = assess_claim_risk(claim)
         return {"ok": True, "claim_id": args.claim_id, "risk_assessment": asdict(risk)}
+
+    if args.command == "summary" and args.summary_command == "session":
+        return {"ok": True, **asdict(write_session_summary(ws, args.session_id))}
 
     raise SystemExit(f"unsupported command: {args.command}")
 

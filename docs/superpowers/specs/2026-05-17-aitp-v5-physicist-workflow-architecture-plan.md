@@ -1635,6 +1635,59 @@ Mapping:
 
 The importer should preserve old file paths as provenance.
 
+## External Pattern To Absorb: Planning With Files
+
+Reference:
+
+- WeChat article: <https://mp.weixin.qq.com/s/hSUuFfu8rbkfB88D18i8uQ>
+- Observed title: `Planning with Files: let AI do projects steadily like a senior engineer`
+
+The useful external pattern is simple: keep plan, findings, progress, pitfalls,
+and results in local files so the agent has external working memory across a
+project.
+
+AITP should absorb this as a friendly workflow shell, not as a replacement for
+the typed protocol kernel.
+
+Mapping:
+
+- `task_plan.md` -> routes, active route, next-action scaffold,
+  implementation plans;
+- `findings.md` -> evidence records, claim ledger, source maps,
+  sense-making reports;
+- `progress.md` -> attempts, tool runs, event log, session log;
+- pitfalls / lessons -> failure analyses, reusable pitfalls, route memory;
+- results -> validation evidence, outputs, promoted memory candidates.
+
+Design requirements:
+
+- AITP may expose human-facing derived files such as `task_plan.md`,
+  `findings.md`, and `progress.md`.
+- The truth source remains typed records: claims, evidence, object relations,
+  attempts, tool runs, routes, checkpoints, code states, and memory entries.
+- Summary files must be regenerable or traceable to typed records.
+- Editing a summary file must not update confidence, validation, evidence, or
+  promotion state.
+- Planning-with-files is useful for low-risk work and session continuity, but
+  must escalate on new claims, formula-to-code mapping changes, benchmark
+  anomalies, code-state divergence, literature contradictions, and promotion
+  decisions.
+
+Implementation implications:
+
+- Provide a `workspace-summary` or `session-summary` generator that writes
+  compact plan/findings/progress views from kernel state.
+- Each generated summary frontmatter must include
+  `derived_from: kernel_state`, `truth_source: false`, and
+  `orientation_only: true`.
+- The first implementation surface is `brain/v5/summaries.py` plus CLI command
+  `aitp-v5 summary session <session-id>` and MCP wrapper
+  `aitp_v5_write_session_summary`.
+- Add tests proving summaries do not become independent truth sources when
+  they disagree with typed records.
+- Codex, Claude Code, OpenCode, and future adapters may read compact views for
+  orientation, but must call kernel/CLI/MCP before any trust-changing update.
+
 ## Implementation Plan Direction
 
 This is not the detailed code implementation plan. It is the architecture
