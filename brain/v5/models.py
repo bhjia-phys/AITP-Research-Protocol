@@ -56,6 +56,9 @@ class FlowDecision:
     profile: str
     reason: str
     escalation_triggers: list[str] = field(default_factory=list)
+    risk_level: str = ""
+    risk_score: int = 0
+    action_budget: dict = field(default_factory=dict)
 
 
 @dataclass

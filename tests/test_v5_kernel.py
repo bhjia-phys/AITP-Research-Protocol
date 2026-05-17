@@ -77,8 +77,8 @@ def test_flow_resolver_keeps_trusted_recipe_light_and_new_claim_heavy(tmp_path):
         active_uncertainty="new physical mechanism",
     )
 
-    assert resolve_flow_profile(routine).profile == "autopilot"
-    assert resolve_flow_profile(novel).profile == "research"
+    assert resolve_flow_profile(routine).profile == "fluid"
+    assert resolve_flow_profile(novel).profile == "guided"
 
 
 def test_question_engine_generates_state_conditioned_questions():
@@ -133,7 +133,7 @@ def test_execution_brief_combines_session_claim_flow_and_questions(tmp_path):
 
     assert brief["session"]["topic_id"] == "fqhe"
     assert brief["current_focus"]["active_claim"] == claim.claim_id
-    assert brief["flow_profile"]["profile"] == "research"
+    assert brief["flow_profile"]["profile"] == "guided"
     assert brief["mandatory_reflection"]
     assert "forbidden_now" in brief
 

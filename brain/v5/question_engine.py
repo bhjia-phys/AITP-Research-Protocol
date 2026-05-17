@@ -56,10 +56,10 @@ def generate_questions(
             ["create_object_relation_map"],
         )
 
-    if flow.profile in {"research", "adversarial"}:
+    if flow.profile in {"guided", "rigorous", "adversarial"} or claim.confidence_state in {"hypothesis", "coherent"}:
         add(
             "If this claim is wrong, what is the most likely failure mechanism?",
-            "Research flow needs a failure hypothesis before evidence can change trust.",
+            "Non-fluid physics work needs a failure hypothesis before evidence can change trust.",
             "A ranked failure mode with a minimal diagnostic.",
             ["record_failure_hypothesis", "design_minimal_diagnostic"],
         )
