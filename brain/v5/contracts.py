@@ -113,6 +113,7 @@ _ADAPTER_RUNTIMES = {"codex", "claude_code", "opencode"}
 _ADAPTER_MANDATORY_KERNEL_ENTRYPOINTS = {
     "aitp_v5_get_execution_brief",
     "aitp_v5_preflight_trust_update",
+    "aitp_v5_apply_trust_update",
 }
 _MAX_QUESTIONS_BY_LEVEL = {
     "fluid": 1,

@@ -1716,6 +1716,9 @@ Implementation implications:
   records, never derived summary files.
 - `trust apply` responses are public CLI/MCP payloads and should be contract
   validated just like preflight responses.
+- Adapter packets should name both `aitp_v5_preflight_trust_update` and
+  `aitp_v5_apply_trust_update`, so runtimes see the complete trust mutation
+  path.
 
 ## Implementation Plan Direction
 
