@@ -8,7 +8,11 @@ from pathlib import Path
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
 from brain.v5.code import record_code_state
-from brain.v5.contracts import require_valid_execution_brief, require_valid_trust_update_preflight
+from brain.v5.contracts import (
+    require_valid_execution_brief,
+    require_valid_trust_update_apply,
+    require_valid_trust_update_preflight,
+)
 from brain.v5.evidence import record_evidence
 from brain.v5.models import CodeStateRecord, TrustUpdateRequest
 from brain.v5.risk import assess_claim_risk
@@ -303,7 +307,7 @@ def aitp_v5_apply_trust_update(
         code_state_ids=code_state_ids or [],
         rationale=rationale,
     )
-    return {"ok": True, **apply_trust_update(ws, request)}
+    return {"ok": True, **require_valid_trust_update_apply(apply_trust_update(ws, request))}
 
 
 def _linked_code_states(ws, claim_id: str) -> list[CodeStateRecord]:

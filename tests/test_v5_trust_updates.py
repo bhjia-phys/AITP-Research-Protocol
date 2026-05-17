@@ -157,6 +157,7 @@ def test_preflight_allows_code_method_promotion_with_evidence_and_code_state(tmp
 
 
 def test_apply_confidence_change_updates_registry_and_topic_ledger(tmp_path):
+    from brain.v5.contracts import validate_trust_update_apply
     from brain.v5.models import ClaimRecord
     from brain.v5.store import read_record
     from brain.v5.trust_updates import TrustUpdateRequest, apply_trust_update
@@ -189,9 +190,11 @@ def test_apply_confidence_change_updates_registry_and_topic_ledger(tmp_path):
     assert payload["preflight"]["allowed"] is True
     assert registry_claim.confidence_state == "locally_checked"
     assert ledger_claim.confidence_state == "locally_checked"
+    assert validate_trust_update_apply(payload).ok is True
 
 
 def test_apply_confidence_change_blocks_summary_source_without_mutating(tmp_path):
+    from brain.v5.contracts import validate_trust_update_apply
     from brain.v5.trust_updates import TrustUpdateRequest, apply_trust_update
     from brain.v5.workspace import get_claim
 
@@ -216,6 +219,37 @@ def test_apply_confidence_change_blocks_summary_source_without_mutating(tmp_path
     assert payload["preflight"]["allowed"] is False
     assert "query_execution_brief_or_typed_record" in payload["required_actions"]
     assert persisted.confidence_state == "hypothesis"
+    assert validate_trust_update_apply(payload).ok is True
+
+
+def test_trust_update_apply_contract_rejects_summary_trusted_or_invalid_preflight_payloads():
+    from brain.v5.contracts import validate_trust_update_apply
+
+    payload = {
+        "kind": "trust_update_apply",
+        "request": {"kind": "trust_update_request"},
+        "request_id": "trust-req-invalid-apply",
+        "action": "change_claim_confidence",
+        "session_id": "s1",
+        "topic_id": "fqhe",
+        "claim_id": "claim-fqhe",
+        "applied": True,
+        "previous_state": "hypothesis",
+        "new_state": "locally_checked",
+        "required_actions": ["should_be_empty_when_applied"],
+        "preflight": {"kind": "not_a_valid_preflight"},
+        "truth_source": "summary_orientation",
+        "summary_inputs_trusted": True,
+    }
+
+    result = validate_trust_update_apply(payload)
+
+    assert result.ok is False
+    paths = {issue.path for issue in result.issues}
+    assert "trust_apply.truth_source" in paths
+    assert "trust_apply.summary_inputs_trusted" in paths
+    assert "trust_apply.required_actions" in paths
+    assert any(path.startswith("trust_apply.preflight") for path in paths)
 
 
 def test_cli_trust_preflight_returns_policy_payload(tmp_path, capsys):
@@ -254,6 +288,7 @@ def test_cli_trust_preflight_returns_policy_payload(tmp_path, capsys):
 
 
 def test_cli_trust_apply_confidence_change_updates_claim(tmp_path, capsys):
+    from brain.v5.contracts import validate_trust_update_apply
     from brain.v5.workspace import get_claim, init_workspace
 
     _, claim = _seed_claim(tmp_path)
@@ -287,6 +322,7 @@ def test_cli_trust_apply_confidence_change_updates_claim(tmp_path, capsys):
     assert payload["kind"] == "trust_update_apply"
     assert payload["applied"] is True
     assert persisted.confidence_state == "locally_checked"
+    assert validate_trust_update_apply(payload).ok is True
 
 
 def test_mcp_preflight_trust_update_returns_contract_payload(tmp_path):
@@ -314,6 +350,7 @@ def test_mcp_preflight_trust_update_returns_contract_payload(tmp_path):
 
 
 def test_mcp_apply_trust_update_blocks_summary_source(tmp_path):
+    from brain.v5.contracts import validate_trust_update_apply
     from brain.v5.mcp_tools import aitp_v5_apply_trust_update
     from brain.v5.workspace import get_claim, init_workspace
 
@@ -335,3 +372,4 @@ def test_mcp_apply_trust_update_blocks_summary_source(tmp_path):
     assert payload["kind"] == "trust_update_apply"
     assert payload["applied"] is False
     assert persisted.confidence_state == "hypothesis"
+    assert validate_trust_update_apply(payload).ok is True

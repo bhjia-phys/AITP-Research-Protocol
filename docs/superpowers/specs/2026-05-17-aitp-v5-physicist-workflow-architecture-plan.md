@@ -1714,6 +1714,8 @@ Implementation implications:
 - Confidence-state mutation should use a controlled `trust apply
   change_claim_confidence` path that reuses preflight and updates typed claim
   records, never derived summary files.
+- `trust apply` responses are public CLI/MCP payloads and should be contract
+  validated just like preflight responses.
 
 ## Implementation Plan Direction
 
