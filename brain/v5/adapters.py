@@ -50,6 +50,38 @@ _RUNTIME_TRUST_UPDATE_PROTOCOL = {
         "summary_inputs_trusted": False,
     },
 }
+_RECORD_SEQUENCE_BY_ACTION = {
+    "record_evidence": [
+        "refresh_execution_brief",
+        "record_evidence",
+        "refresh_execution_brief",
+        "write_session_summary",
+    ],
+    "record_tool_run": [
+        "refresh_execution_brief",
+        "record_tool_run",
+        "refresh_execution_brief",
+        "write_session_summary",
+    ],
+}
+_RUNTIME_RECORD_PROTOCOLS = {
+    "record_evidence": {
+        "entrypoint": "aitp_v5_record_evidence",
+        "sequence": list(_RECORD_SEQUENCE_BY_ACTION["record_evidence"]),
+        "required_typed_refs": ["topic_id", "claim_id"],
+        "accepted_link_fields": ["source_refs", "tool_run_ids", "artifact_ids"],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    },
+    "record_tool_run": {
+        "entrypoint": "aitp_v5_record_tool_run",
+        "sequence": list(_RECORD_SEQUENCE_BY_ACTION["record_tool_run"]),
+        "required_typed_refs": ["topic_id", "claim_id", "recipe_id"],
+        "accepted_link_fields": ["code_state_ids", "artifact_ids", "source_refs"],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    },
+}
 
 
 def build_adapter_packet(ws: WorkspacePaths, session_id: str, *, runtime: str = "codex") -> dict[str, Any]:
@@ -103,6 +135,15 @@ def build_adapter_packet(ws: WorkspacePaths, session_id: str, *, runtime: str = 
                 "refresh": list(protocol["refresh"]),
             }
             for action, protocol in _RUNTIME_TRUST_UPDATE_PROTOCOL.items()
+        },
+        "runtime_record_protocols": {
+            action: {
+                **protocol,
+                "sequence": list(protocol["sequence"]),
+                "required_typed_refs": list(protocol["required_typed_refs"]),
+                "accepted_link_fields": list(protocol["accepted_link_fields"]),
+            }
+            for action, protocol in _RUNTIME_RECORD_PROTOCOLS.items()
         },
         "runtime_rules": _runtime_rules(normalized_runtime),
     }

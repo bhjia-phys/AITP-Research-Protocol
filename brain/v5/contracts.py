@@ -64,6 +64,7 @@ _ADAPTER_REQUIRED_KEYS = (
     "required_kernel_entrypoints",
     "trust_mutation_entrypoints",
     "runtime_trust_update_protocol",
+    "runtime_record_protocols",
     "runtime_rules",
 )
 _SUMMARY_ORIENTATION_REQUIRED_KEYS = (
@@ -135,6 +136,34 @@ _ADAPTER_MANDATORY_TRUST_UPDATE_PROTOCOL = {
         "preflight": "aitp_v5_preflight_trust_update",
         "apply": "aitp_v5_apply_trust_update",
         "refresh": ["aitp_v5_get_execution_brief", "aitp_v5_write_session_summary"],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    },
+}
+_ADAPTER_MANDATORY_RECORD_PROTOCOLS = {
+    "record_evidence": {
+        "entrypoint": "aitp_v5_record_evidence",
+        "sequence": [
+            "refresh_execution_brief",
+            "record_evidence",
+            "refresh_execution_brief",
+            "write_session_summary",
+        ],
+        "required_typed_refs": ["topic_id", "claim_id"],
+        "accepted_link_fields": ["source_refs", "tool_run_ids", "artifact_ids"],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    },
+    "record_tool_run": {
+        "entrypoint": "aitp_v5_record_tool_run",
+        "sequence": [
+            "refresh_execution_brief",
+            "record_tool_run",
+            "refresh_execution_brief",
+            "write_session_summary",
+        ],
+        "required_typed_refs": ["topic_id", "claim_id", "recipe_id"],
+        "accepted_link_fields": ["code_state_ids", "artifact_ids", "source_refs"],
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     },
@@ -285,6 +314,14 @@ def validate_adapter_packet(payload: dict[str, Any], *, path: str = "adapter") -
         _validate_runtime_trust_update_protocol(
             payload["runtime_trust_update_protocol"],
             f"{path}.runtime_trust_update_protocol",
+            payload.get("required_kernel_entrypoints"),
+            result,
+        )
+
+    if "runtime_record_protocols" in payload:
+        _validate_runtime_record_protocols(
+            payload["runtime_record_protocols"],
+            f"{path}.runtime_record_protocols",
             payload.get("required_kernel_entrypoints"),
             result,
         )
@@ -608,6 +645,44 @@ def _validate_runtime_trust_update_protocol(
                         f"{path}.{action}.refresh[{index}]",
                         "must reference a declared required kernel entrypoint",
                     )
+
+        if protocol.get("truth_source") != expected_protocol["truth_source"]:
+            result.add(f"{path}.{action}.truth_source", "must be 'typed_records'")
+        _require_bool_value(
+            protocol.get("summary_inputs_trusted"),
+            expected_protocol["summary_inputs_trusted"],
+            f"{path}.{action}.summary_inputs_trusted",
+            result,
+        )
+
+
+def _validate_runtime_record_protocols(
+    payload: Any,
+    path: str,
+    required_kernel_entrypoints: Any,
+    result: ContractResult,
+) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+
+    entrypoints = set(required_kernel_entrypoints) if isinstance(required_kernel_entrypoints, list) else set()
+    for action, expected_protocol in _ADAPTER_MANDATORY_RECORD_PROTOCOLS.items():
+        protocol = payload.get(action)
+        _require_mapping(protocol, f"{path}.{action}", result)
+        if not isinstance(protocol, dict):
+            continue
+
+        entrypoint = protocol.get("entrypoint")
+        if entrypoint != expected_protocol["entrypoint"]:
+            result.add(f"{path}.{action}.entrypoint", f"must be {expected_protocol['entrypoint']!r}")
+        if isinstance(entrypoint, str) and entrypoints and entrypoint not in entrypoints:
+            result.add(f"{path}.{action}.entrypoint", "must reference a declared required kernel entrypoint")
+
+        for key in ("sequence", "required_typed_refs", "accepted_link_fields"):
+            _require_list(protocol.get(key), f"{path}.{action}.{key}", result)
+            if isinstance(protocol.get(key), list) and protocol[key] != expected_protocol[key]:
+                result.add(f"{path}.{action}.{key}", f"must be {expected_protocol[key]!r}")
 
         if protocol.get("truth_source") != expected_protocol["truth_source"]:
             result.add(f"{path}.{action}.truth_source", "must be 'typed_records'")

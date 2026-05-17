@@ -270,6 +270,34 @@ def test_adapter_packet_contract_requires_runtime_trust_update_protocol_sequence
     )
 
 
+def test_adapter_packet_contract_requires_record_protocol_typed_refs(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.contracts import validate_adapter_packet
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "librpa-gw", context_id="gw-methods", title="LibRPA GW")
+    claim = create_claim(
+        ws,
+        topic_id="librpa-gw",
+        statement="The benchmark log is linked to the active claim.",
+        evidence_profile="code_method",
+        confidence_state="hypothesis",
+        active_uncertainty="code state provenance",
+    )
+    bind_session(ws, "s1", topic_id="librpa-gw", context_id="gw-methods", active_claim=claim.claim_id)
+    packet = build_adapter_packet(ws, "s1", runtime="codex")
+    packet["runtime_record_protocols"]["record_tool_run"]["required_typed_refs"].remove("claim_id")
+
+    result = validate_adapter_packet(packet)
+
+    assert result.ok is False
+    assert any(
+        issue.path == "adapter.runtime_record_protocols.record_tool_run.required_typed_refs"
+        for issue in result.issues
+    )
+
+
 def test_summary_orientation_contract_accepts_current_payload(tmp_path):
     from brain.v5.contracts import validate_summary_orientation
     from brain.v5.summaries import read_summary_orientation, write_session_summary

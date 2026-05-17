@@ -1725,6 +1725,9 @@ Implementation implications:
 - Adapter packets should expose a structured `runtime_trust_update_protocol`
   that spells out `refresh brief -> preflight -> apply -> refresh brief ->
   write summary`, while marking summaries as untrusted inputs for mutation.
+- Adapter packets should expose structured `runtime_record_protocols` for
+  evidence and tool-run recording, naming required typed refs and accepted link
+  fields so summaries cannot silently become provenance.
 
 ## Implementation Plan Direction
 

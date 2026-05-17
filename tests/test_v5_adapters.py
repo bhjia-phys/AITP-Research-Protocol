@@ -81,6 +81,32 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     }
+    assert packet["runtime_record_protocols"]["record_evidence"] == {
+        "entrypoint": "aitp_v5_record_evidence",
+        "sequence": [
+            "refresh_execution_brief",
+            "record_evidence",
+            "refresh_execution_brief",
+            "write_session_summary",
+        ],
+        "required_typed_refs": ["topic_id", "claim_id"],
+        "accepted_link_fields": ["source_refs", "tool_run_ids", "artifact_ids"],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    }
+    assert packet["runtime_record_protocols"]["record_tool_run"] == {
+        "entrypoint": "aitp_v5_record_tool_run",
+        "sequence": [
+            "refresh_execution_brief",
+            "record_tool_run",
+            "refresh_execution_brief",
+            "write_session_summary",
+        ],
+        "required_typed_refs": ["topic_id", "claim_id", "recipe_id"],
+        "accepted_link_fields": ["code_state_ids", "artifact_ids", "source_refs"],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    }
     assert "read_for_orientation" in packet["runtime_rules"][0]
 
 
