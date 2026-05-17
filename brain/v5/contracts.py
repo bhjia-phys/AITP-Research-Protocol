@@ -65,6 +65,7 @@ _ADAPTER_REQUIRED_KEYS = (
     "trust_mutation_entrypoints",
     "runtime_trust_update_protocol",
     "runtime_record_protocols",
+    "runtime_gate_protocols",
     "runtime_rules",
 )
 _SUMMARY_ORIENTATION_REQUIRED_KEYS = (
@@ -164,6 +165,37 @@ _ADAPTER_MANDATORY_RECORD_PROTOCOLS = {
         ],
         "required_typed_refs": ["topic_id", "claim_id", "recipe_id"],
         "accepted_link_fields": ["code_state_ids", "artifact_ids", "source_refs"],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    },
+}
+_ADAPTER_MANDATORY_GATE_PROTOCOLS = {
+    "validate_claim": {
+        "preflight": "aitp_v5_preflight_trust_update",
+        "sequence": [
+            "refresh_execution_brief",
+            "preflight_trust_update",
+            "record_validation_evidence",
+            "refresh_execution_brief",
+            "write_session_summary",
+        ],
+        "required_typed_refs": ["topic_id", "claim_id", "evidence_refs"],
+        "allowed_state_sources": ["typed_evidence_records", "typed_validation_records"],
+        "human_checkpoint_required": False,
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    },
+    "promote_to_l2": {
+        "preflight": "aitp_v5_preflight_trust_update",
+        "sequence": [
+            "refresh_execution_brief",
+            "preflight_trust_update",
+            "human_checkpoint",
+            "promote_to_l2",
+        ],
+        "required_typed_refs": ["topic_id", "claim_id", "evidence_refs", "validation_result_ref"],
+        "allowed_state_sources": ["typed_evidence_records", "typed_validation_records", "human_checkpoint"],
+        "human_checkpoint_required": True,
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     },
@@ -322,6 +354,14 @@ def validate_adapter_packet(payload: dict[str, Any], *, path: str = "adapter") -
         _validate_runtime_record_protocols(
             payload["runtime_record_protocols"],
             f"{path}.runtime_record_protocols",
+            payload.get("required_kernel_entrypoints"),
+            result,
+        )
+
+    if "runtime_gate_protocols" in payload:
+        _validate_runtime_gate_protocols(
+            payload["runtime_gate_protocols"],
+            f"{path}.runtime_gate_protocols",
             payload.get("required_kernel_entrypoints"),
             result,
         )
@@ -684,6 +724,50 @@ def _validate_runtime_record_protocols(
             if isinstance(protocol.get(key), list) and protocol[key] != expected_protocol[key]:
                 result.add(f"{path}.{action}.{key}", f"must be {expected_protocol[key]!r}")
 
+        if protocol.get("truth_source") != expected_protocol["truth_source"]:
+            result.add(f"{path}.{action}.truth_source", "must be 'typed_records'")
+        _require_bool_value(
+            protocol.get("summary_inputs_trusted"),
+            expected_protocol["summary_inputs_trusted"],
+            f"{path}.{action}.summary_inputs_trusted",
+            result,
+        )
+
+
+def _validate_runtime_gate_protocols(
+    payload: Any,
+    path: str,
+    required_kernel_entrypoints: Any,
+    result: ContractResult,
+) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+
+    entrypoints = set(required_kernel_entrypoints) if isinstance(required_kernel_entrypoints, list) else set()
+    for action, expected_protocol in _ADAPTER_MANDATORY_GATE_PROTOCOLS.items():
+        protocol = payload.get(action)
+        _require_mapping(protocol, f"{path}.{action}", result)
+        if not isinstance(protocol, dict):
+            continue
+
+        preflight = protocol.get("preflight")
+        if preflight != expected_protocol["preflight"]:
+            result.add(f"{path}.{action}.preflight", f"must be {expected_protocol['preflight']!r}")
+        if isinstance(preflight, str) and entrypoints and preflight not in entrypoints:
+            result.add(f"{path}.{action}.preflight", "must reference a declared required kernel entrypoint")
+
+        for key in ("sequence", "required_typed_refs", "allowed_state_sources"):
+            _require_list(protocol.get(key), f"{path}.{action}.{key}", result)
+            if isinstance(protocol.get(key), list) and protocol[key] != expected_protocol[key]:
+                result.add(f"{path}.{action}.{key}", f"must be {expected_protocol[key]!r}")
+
+        _require_bool_value(
+            protocol.get("human_checkpoint_required"),
+            expected_protocol["human_checkpoint_required"],
+            f"{path}.{action}.human_checkpoint_required",
+            result,
+        )
         if protocol.get("truth_source") != expected_protocol["truth_source"]:
             result.add(f"{path}.{action}.truth_source", "must be 'typed_records'")
         _require_bool_value(

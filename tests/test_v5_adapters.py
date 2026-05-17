@@ -107,6 +107,35 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     }
+    assert packet["runtime_gate_protocols"]["validate_claim"] == {
+        "preflight": "aitp_v5_preflight_trust_update",
+        "sequence": [
+            "refresh_execution_brief",
+            "preflight_trust_update",
+            "record_validation_evidence",
+            "refresh_execution_brief",
+            "write_session_summary",
+        ],
+        "required_typed_refs": ["topic_id", "claim_id", "evidence_refs"],
+        "allowed_state_sources": ["typed_evidence_records", "typed_validation_records"],
+        "human_checkpoint_required": False,
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    }
+    assert packet["runtime_gate_protocols"]["promote_to_l2"] == {
+        "preflight": "aitp_v5_preflight_trust_update",
+        "sequence": [
+            "refresh_execution_brief",
+            "preflight_trust_update",
+            "human_checkpoint",
+            "promote_to_l2",
+        ],
+        "required_typed_refs": ["topic_id", "claim_id", "evidence_refs", "validation_result_ref"],
+        "allowed_state_sources": ["typed_evidence_records", "typed_validation_records", "human_checkpoint"],
+        "human_checkpoint_required": True,
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    }
     assert "read_for_orientation" in packet["runtime_rules"][0]
 
 

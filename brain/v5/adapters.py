@@ -82,6 +82,37 @@ _RUNTIME_RECORD_PROTOCOLS = {
         "summary_inputs_trusted": False,
     },
 }
+_RUNTIME_GATE_PROTOCOLS = {
+    "validate_claim": {
+        "preflight": "aitp_v5_preflight_trust_update",
+        "sequence": [
+            "refresh_execution_brief",
+            "preflight_trust_update",
+            "record_validation_evidence",
+            "refresh_execution_brief",
+            "write_session_summary",
+        ],
+        "required_typed_refs": ["topic_id", "claim_id", "evidence_refs"],
+        "allowed_state_sources": ["typed_evidence_records", "typed_validation_records"],
+        "human_checkpoint_required": False,
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    },
+    "promote_to_l2": {
+        "preflight": "aitp_v5_preflight_trust_update",
+        "sequence": [
+            "refresh_execution_brief",
+            "preflight_trust_update",
+            "human_checkpoint",
+            "promote_to_l2",
+        ],
+        "required_typed_refs": ["topic_id", "claim_id", "evidence_refs", "validation_result_ref"],
+        "allowed_state_sources": ["typed_evidence_records", "typed_validation_records", "human_checkpoint"],
+        "human_checkpoint_required": True,
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    },
+}
 
 
 def build_adapter_packet(ws: WorkspacePaths, session_id: str, *, runtime: str = "codex") -> dict[str, Any]:
@@ -144,6 +175,15 @@ def build_adapter_packet(ws: WorkspacePaths, session_id: str, *, runtime: str = 
                 "accepted_link_fields": list(protocol["accepted_link_fields"]),
             }
             for action, protocol in _RUNTIME_RECORD_PROTOCOLS.items()
+        },
+        "runtime_gate_protocols": {
+            action: {
+                **protocol,
+                "sequence": list(protocol["sequence"]),
+                "required_typed_refs": list(protocol["required_typed_refs"]),
+                "allowed_state_sources": list(protocol["allowed_state_sources"]),
+            }
+            for action, protocol in _RUNTIME_GATE_PROTOCOLS.items()
         },
         "runtime_rules": _runtime_rules(normalized_runtime),
     }

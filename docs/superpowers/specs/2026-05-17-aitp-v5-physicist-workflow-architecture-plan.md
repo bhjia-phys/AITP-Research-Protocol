@@ -1728,6 +1728,9 @@ Implementation implications:
 - Adapter packets should expose structured `runtime_record_protocols` for
   evidence and tool-run recording, naming required typed refs and accepted link
   fields so summaries cannot silently become provenance.
+- Adapter packets should expose structured `runtime_gate_protocols` for
+  validation and L2 promotion, including required typed refs, allowed state
+  sources, and human-checkpoint boundaries.
 
 ## Implementation Plan Direction
 

@@ -298,6 +298,34 @@ def test_adapter_packet_contract_requires_record_protocol_typed_refs(tmp_path):
     )
 
 
+def test_adapter_packet_contract_requires_promotion_human_checkpoint(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.contracts import validate_adapter_packet
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="The validated counting result is ready for reusable memory.",
+        evidence_profile="toy_numeric",
+        confidence_state="locally_checked",
+        active_uncertainty="promotion boundary",
+    )
+    bind_session(ws, "s1", topic_id="fqhe", context_id="topological-order", active_claim=claim.claim_id)
+    packet = build_adapter_packet(ws, "s1", runtime="codex")
+    packet["runtime_gate_protocols"]["promote_to_l2"]["human_checkpoint_required"] = False
+
+    result = validate_adapter_packet(packet)
+
+    assert result.ok is False
+    assert any(
+        issue.path == "adapter.runtime_gate_protocols.promote_to_l2.human_checkpoint_required"
+        for issue in result.issues
+    )
+
+
 def test_summary_orientation_contract_accepts_current_payload(tmp_path):
     from brain.v5.contracts import validate_summary_orientation
     from brain.v5.summaries import read_summary_orientation, write_session_summary
