@@ -28,6 +28,8 @@ class SessionBinding:
     topic_id: str
     context_id: str
     runtime: str = "unknown"
+    interaction_profile: str = "collaborator"
+    interaction_steering: str = ""
     active_cycle: str = ""
     active_claim: str = ""
     active_route: str = ""

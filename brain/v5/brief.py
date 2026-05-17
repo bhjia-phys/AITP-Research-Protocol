@@ -6,6 +6,7 @@ from dataclasses import asdict
 from typing import Any
 
 from brain.v5.flow import resolve_flow_profile
+from brain.v5.interaction import prioritize_questions, resolve_interaction_profile
 from brain.v5.models import ClaimRecord, CodeStateRecord
 from brain.v5.policy import evaluate_policy
 from brain.v5.question_engine import generate_questions
@@ -30,8 +31,15 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
         questions = generate_questions(claim, flow)
 
     action_budget = risk.action_budget if risk and risk.action_budget else action_budget_for_level("guided")
+    interaction = resolve_interaction_profile(
+        session.interaction_profile,
+        risk_level=action_budget.level,
+        max_questions=action_budget.max_questions,
+        user_steering=session.interaction_steering,
+    )
+    questions = prioritize_questions(questions, interaction)
     mandatory_reflection = [
-        asdict(q) for q in questions[: action_budget.max_questions]
+        asdict(q) for q in questions[: interaction.effective_max_questions]
     ]
 
     next_action_candidates = []
@@ -89,6 +97,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
         "flow_profile": asdict(flow) if flow else {"profile": "guided", "reason": "no active claim", "escalation_triggers": []},
         "risk_assessment": asdict(risk) if risk else _default_risk_assessment_payload(action_budget),
         "action_budget": asdict(action_budget),
+        "interaction_profile": asdict(interaction),
         "known_context": {
             "topic_id": session.topic_id,
             "context_id": session.context_id,
