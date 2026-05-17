@@ -61,6 +61,7 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
     assert packet["trusted_focus"]["claim_statement"] == claim.statement
     assert "change_claim_confidence" in packet["trust_changing_actions"]
     assert "aitp_v5_get_execution_brief" in packet["required_kernel_entrypoints"]
+    assert "aitp_v5_preflight_trust_update" in packet["required_kernel_entrypoints"]
     assert "read_for_orientation" in packet["runtime_rules"][0]
 
 

@@ -20,6 +20,7 @@ _TRUST_CHANGING_ACTIONS = [
 ]
 _KERNEL_ENTRYPOINTS = [
     "aitp_v5_get_execution_brief",
+    "aitp_v5_preflight_trust_update",
     "aitp_v5_record_evidence",
     "aitp_v5_record_tool_run",
     "aitp_v5_assess_risk",

@@ -94,6 +94,10 @@ _TRUST_PREFLIGHT_REQUIRED_KEYS = (
 
 _RISK_LEVELS = {"fluid", "guided", "rigorous", "adversarial"}
 _ADAPTER_RUNTIMES = {"codex", "claude_code", "opencode"}
+_ADAPTER_MANDATORY_KERNEL_ENTRYPOINTS = {
+    "aitp_v5_get_execution_brief",
+    "aitp_v5_preflight_trust_update",
+}
 _MAX_QUESTIONS_BY_LEVEL = {
     "fluid": 1,
     "guided": 3,
@@ -219,6 +223,14 @@ def validate_adapter_packet(payload: dict[str, Any], *, path: str = "adapter") -
             _require_list(payload[key], f"{path}.{key}", result)
             if isinstance(payload[key], list) and any(not isinstance(item, str) or not item for item in payload[key]):
                 result.add(f"{path}.{key}", "must contain non-empty strings")
+
+    if isinstance(payload.get("required_kernel_entrypoints"), list):
+        missing = sorted(_ADAPTER_MANDATORY_KERNEL_ENTRYPOINTS - set(payload["required_kernel_entrypoints"]))
+        if missing:
+            result.add(
+                f"{path}.required_kernel_entrypoints",
+                f"missing mandatory kernel entrypoints: {missing}",
+            )
 
     if isinstance(payload.get("trust_changing_actions"), list) and isinstance(
         payload.get("requires_kernel_call_before"),

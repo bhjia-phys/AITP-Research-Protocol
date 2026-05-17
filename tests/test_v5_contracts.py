@@ -162,6 +162,31 @@ def test_adapter_packet_contract_rejects_summary_as_truth_source(tmp_path):
     assert "adapter.adapter_contract.kernel_must_be_called_before_trust_updates" in paths
 
 
+def test_adapter_packet_contract_requires_trust_preflight_entrypoint(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.contracts import validate_adapter_packet
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="Finite-size counting identifies the edge sector.",
+        evidence_profile="toy_numeric",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size artifacts",
+    )
+    bind_session(ws, "s1", topic_id="fqhe", context_id="topological-order", active_claim=claim.claim_id)
+    packet = build_adapter_packet(ws, "s1", runtime="codex")
+    packet["required_kernel_entrypoints"].remove("aitp_v5_preflight_trust_update")
+
+    result = validate_adapter_packet(packet)
+
+    assert result.ok is False
+    assert any(issue.path == "adapter.required_kernel_entrypoints" for issue in result.issues)
+
+
 def test_summary_orientation_contract_accepts_current_payload(tmp_path):
     from brain.v5.contracts import validate_summary_orientation
     from brain.v5.summaries import read_summary_orientation, write_session_summary

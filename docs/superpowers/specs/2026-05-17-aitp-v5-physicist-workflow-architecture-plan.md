@@ -1708,6 +1708,9 @@ Implementation implications:
   state ids, and source kind while keeping summary files orientation-only.
 - The preflight payload is a public adapter/MCP/CLI contract and should be
   contract-validated before wrappers return it.
+- Adapter packets should name `aitp_v5_preflight_trust_update` as a mandatory
+  kernel entrypoint so runtimes have an explicit path for trust-changing action
+  preflight.
 
 ## Implementation Plan Direction
 
