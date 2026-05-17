@@ -1683,10 +1683,16 @@ Implementation implications:
 - The first implementation surface is `brain/v5/summaries.py` plus CLI command
   `aitp-v5 summary session <session-id>` and MCP wrapper
   `aitp_v5_write_session_summary`.
+- The adapter entry surface is `brain/v5/adapters.py` plus CLI command
+  `aitp-v5 adapter packet <runtime> <session-id>` and MCP wrapper
+  `aitp_v5_get_adapter_packet`.
 - Add tests proving summaries do not become independent truth sources when
   they disagree with typed records.
 - Codex, Claude Code, OpenCode, and future adapters may read compact views for
   orientation, but must call kernel/CLI/MCP before any trust-changing update.
+- Adapter packets must expose `truth_sources = [typed_records,
+  execution_brief]`, runtime rules, and an explicit list of trust-changing
+  actions requiring kernel calls.
 
 ## Implementation Plan Direction
 

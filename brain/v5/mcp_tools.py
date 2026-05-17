@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from pathlib import Path
 
+from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
 from brain.v5.code import record_code_state
 from brain.v5.contracts import require_valid_execution_brief
@@ -226,6 +227,11 @@ def aitp_v5_record_tool_run(
 def aitp_v5_write_session_summary(base: str, *, session_id: str) -> dict:
     ws = init_workspace(Path(base))
     return {"ok": True, **asdict(write_session_summary(ws, session_id))}
+
+
+def aitp_v5_get_adapter_packet(base: str, *, runtime: str, session_id: str) -> dict:
+    ws = init_workspace(Path(base))
+    return {"ok": True, **build_adapter_packet(ws, session_id, runtime=runtime)}
 
 
 def _linked_code_states(ws, claim_id: str) -> list[CodeStateRecord]:

@@ -9,6 +9,7 @@ from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Any
 
+from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
 from brain.v5.risk import assess_claim_risk
 from brain.v5.summaries import write_session_summary
@@ -77,6 +78,12 @@ def _build_parser() -> argparse.ArgumentParser:
     summary_session = summary_sub.add_parser("session")
     summary_session.add_argument("session_id")
 
+    adapter_parser = subparsers.add_parser("adapter")
+    adapter_sub = adapter_parser.add_subparsers(dest="adapter_command", required=True)
+    adapter_packet = adapter_sub.add_parser("packet")
+    adapter_packet.add_argument("runtime")
+    adapter_packet.add_argument("session_id")
+
     return parser
 
 
@@ -125,6 +132,9 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.command == "summary" and args.summary_command == "session":
         return {"ok": True, **asdict(write_session_summary(ws, args.session_id))}
+
+    if args.command == "adapter" and args.adapter_command == "packet":
+        return {"ok": True, **build_adapter_packet(ws, args.session_id, runtime=args.runtime)}
 
     raise SystemExit(f"unsupported command: {args.command}")
 
