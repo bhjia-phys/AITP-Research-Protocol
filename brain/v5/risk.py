@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from brain.v5.models import ClaimRecord, CodeStateRecord
+from brain.v5.trust import TrustCard, resolve_trust_cards
 
 
 @dataclass
@@ -108,6 +109,7 @@ def assess_claim_risk(
     claim: ClaimRecord,
     *,
     code_states: list[CodeStateRecord] | None = None,
+    trust_cards: list[TrustCard] | None = None,
 ) -> RiskAssessment:
     """Assess how much protocol friction a claim-local action needs."""
 
@@ -211,7 +213,22 @@ def assess_claim_risk(
 
     score = sum(signal.severity for signal in signals)
 
-    if routine_trusted and not any(state.dirty for state in states):
+    card_resolutions = resolve_trust_cards(claim, trust_cards or [], code_states=states)
+    for resolution in card_resolutions:
+        if resolution.applies:
+            trust_reductions.append(f"trust_card:{resolution.card_id}:{resolution.risk_reduction}")
+            score = max(0, score - resolution.risk_reduction)
+        elif resolution.invalidation_reasons:
+            add(
+                "trust_card_invalidated",
+                3,
+                "; ".join(resolution.invalidation_reasons),
+                f"trust_card:{resolution.card_id}",
+                "follow the trust-card required actions before using the recipe as evidence",
+            )
+            score += 3
+
+    if not trust_cards and routine_trusted and not any(state.dirty for state in states):
         trust_reductions.append("trusted_recipe_covers_routine_clean_workflow")
         score = max(0, score - 2)
 
