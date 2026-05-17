@@ -1683,6 +1683,10 @@ Implementation implications:
 - The first implementation surface is `brain/v5/summaries.py` plus CLI command
   `aitp-v5 summary session <session-id>` and MCP wrapper
   `aitp_v5_write_session_summary`.
+- Summary orientation has its own public read surface:
+  `aitp-v5 summary orientation <session-id>` and
+  `aitp_v5_read_summary_orientation`, both contract-validated as
+  orientation-only.
 - The adapter entry surface is `brain/v5/adapters.py` plus CLI command
   `aitp-v5 adapter packet <runtime> <session-id>` and MCP wrapper
   `aitp_v5_get_adapter_packet`.

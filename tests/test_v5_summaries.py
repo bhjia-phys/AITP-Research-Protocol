@@ -156,6 +156,33 @@ def test_cli_summary_session_returns_orientation_only_file_paths(tmp_path, capsy
     assert payload["files"]["task_plan"].endswith("task_plan.md")
 
 
+def test_cli_summary_orientation_returns_read_only_payload(tmp_path, capsys):
+    from brain.v5.markdown import write_md
+    from brain.v5.summaries import write_session_summary
+
+    ws, _, _, _ = _seed_session(tmp_path)
+    bundle = write_session_summary(ws, "s1")
+    write_md(
+        bundle.files["findings"],
+        {
+            "kind": "derived_summary",
+            "summary_role": "findings",
+            "session_id": "s1",
+            "truth_source": True,
+            "orientation_only": False,
+        },
+        "# Findings\n\nFALSE: this file claims authority.\n",
+    )
+
+    payload = _invoke(["--base", str(tmp_path), "summary", "orientation", "s1"], capsys)
+
+    assert payload["ok"] is True
+    assert payload["truth_source"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["files"]["findings"]["truth_source"] is False
+
+
 def test_mcp_write_session_summary_returns_orientation_only_payload(tmp_path):
     from brain.v5.mcp_tools import aitp_v5_write_session_summary
 
@@ -168,3 +195,18 @@ def test_mcp_write_session_summary_returns_orientation_only_payload(tmp_path):
     assert payload["orientation_only"] is True
     assert payload["derived_from"] == "kernel_state"
     assert payload["files"]["findings"].endswith("findings.md")
+
+
+def test_mcp_read_summary_orientation_returns_contract_payload(tmp_path):
+    from brain.v5.contracts import validate_summary_orientation
+    from brain.v5.mcp_tools import aitp_v5_read_summary_orientation, aitp_v5_write_session_summary
+
+    _seed_session(tmp_path)
+    aitp_v5_write_session_summary(str(tmp_path), session_id="s1")
+
+    payload = aitp_v5_read_summary_orientation(str(tmp_path), session_id="s1")
+
+    assert payload["ok"] is True
+    assert payload["truth_source"] is False
+    assert payload["orientation_only"] is True
+    assert validate_summary_orientation(payload).ok is True

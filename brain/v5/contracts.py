@@ -64,6 +64,15 @@ _ADAPTER_REQUIRED_KEYS = (
     "required_kernel_entrypoints",
     "runtime_rules",
 )
+_SUMMARY_ORIENTATION_REQUIRED_KEYS = (
+    "kind",
+    "session_id",
+    "summary_dir",
+    "files",
+    "truth_source",
+    "orientation_only",
+    "can_update_kernel_state",
+)
 
 _RISK_LEVELS = {"fluid", "guided", "rigorous", "adversarial"}
 _ADAPTER_RUNTIMES = {"codex", "claude_code", "opencode"}
@@ -215,6 +224,41 @@ def require_valid_adapter_packet(payload: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+def validate_summary_orientation(payload: dict[str, Any], *, path: str = "summary_orientation") -> ContractResult:
+    """Validate a public orientation-only summary view."""
+
+    result = ContractResult()
+    _require_mapping(payload, path, result)
+    if result.issues:
+        return result
+
+    for key in _SUMMARY_ORIENTATION_REQUIRED_KEYS:
+        if key not in payload:
+            result.add(f"{path}.{key}", "missing required summary orientation key")
+
+    if payload.get("kind") != "summary_orientation":
+        result.add(f"{path}.kind", "must be 'summary_orientation'")
+    _require_nonempty_str(payload, "session_id", path, result)
+    _require_nonempty_str(payload, "summary_dir", path, result)
+    _validate_summary_orientation(payload, path, result)
+
+    files = payload.get("files")
+    if isinstance(files, dict):
+        for role, file_payload in files.items():
+            _validate_summary_orientation_file(file_payload, f"{path}.files.{role}", result)
+
+    return result
+
+
+def require_valid_summary_orientation(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a summary orientation payload or raise a contract error."""
+
+    result = validate_summary_orientation(payload)
+    if not result.ok:
+        raise ContractError(result)
+    return payload
+
+
 def validate_risk_assessment(payload: dict[str, Any], *, path: str = "risk_assessment") -> ContractResult:
     """Validate a risk assessment payload."""
 
@@ -259,6 +303,19 @@ def _validate_summary_orientation(payload: Any, path: str, result: ContractResul
     _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
     if "files" in payload:
         _require_mapping(payload["files"], f"{path}.files", result)
+
+
+def _validate_summary_orientation_file(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    _require_nonempty_str(payload, "path", path, result)
+    if "frontmatter" in payload:
+        _require_mapping(payload["frontmatter"], f"{path}.frontmatter", result)
+    if "body" in payload and not isinstance(payload["body"], str):
+        result.add(f"{path}.body", "must be a string")
+    _require_bool_value(payload.get("truth_source"), False, f"{path}.truth_source", result)
+    _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
 
 
 def _validate_adapter_contract(payload: Any, path: str, result: ContractResult) -> None:

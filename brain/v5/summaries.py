@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from brain.v5.brief import build_execution_brief
+from brain.v5.contracts import require_valid_summary_orientation
 from brain.v5.evidence import list_evidence_for_claim
 from brain.v5.markdown import read_md, write_md
 from brain.v5.models import ToolRunRecord
@@ -111,7 +112,7 @@ def read_summary_orientation(ws: WorkspacePaths, session_id: str) -> dict[str, A
             "orientation_only": True,
         }
 
-    return {
+    payload = {
         "kind": "summary_orientation",
         "session_id": session_id,
         "summary_dir": str(summary_dir),
@@ -120,6 +121,7 @@ def read_summary_orientation(ws: WorkspacePaths, session_id: str) -> dict[str, A
         "orientation_only": True,
         "can_update_kernel_state": False,
     }
+    return require_valid_summary_orientation(payload)
 
 
 def _summary_frontmatter(

@@ -12,7 +12,7 @@ from typing import Any
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
 from brain.v5.risk import assess_claim_risk
-from brain.v5.summaries import write_session_summary
+from brain.v5.summaries import read_summary_orientation, write_session_summary
 from brain.v5.workspace import (
     bind_session,
     create_claim,
@@ -77,6 +77,8 @@ def _build_parser() -> argparse.ArgumentParser:
     summary_sub = summary_parser.add_subparsers(dest="summary_command", required=True)
     summary_session = summary_sub.add_parser("session")
     summary_session.add_argument("session_id")
+    summary_orientation = summary_sub.add_parser("orientation")
+    summary_orientation.add_argument("session_id")
 
     adapter_parser = subparsers.add_parser("adapter")
     adapter_sub = adapter_parser.add_subparsers(dest="adapter_command", required=True)
@@ -132,6 +134,9 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.command == "summary" and args.summary_command == "session":
         return {"ok": True, **asdict(write_session_summary(ws, args.session_id))}
+
+    if args.command == "summary" and args.summary_command == "orientation":
+        return {"ok": True, **read_summary_orientation(ws, args.session_id)}
 
     if args.command == "adapter" and args.adapter_command == "packet":
         return {"ok": True, **build_adapter_packet(ws, args.session_id, runtime=args.runtime)}

@@ -160,3 +160,49 @@ def test_adapter_packet_contract_rejects_summary_as_truth_source(tmp_path):
     assert "adapter.summary_orientation.truth_source" in paths
     assert "adapter.adapter_contract.summary_files_are_truth_source" in paths
     assert "adapter.adapter_contract.kernel_must_be_called_before_trust_updates" in paths
+
+
+def test_summary_orientation_contract_accepts_current_payload(tmp_path):
+    from brain.v5.contracts import validate_summary_orientation
+    from brain.v5.summaries import read_summary_orientation, write_session_summary
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="The summary orientation is a readable shell only.",
+        evidence_profile="toy_numeric",
+        confidence_state="hypothesis",
+        active_uncertainty="summary may be stale",
+    )
+    bind_session(ws, "s1", topic_id="fqhe", context_id="topological-order", active_claim=claim.claim_id)
+    write_session_summary(ws, "s1")
+
+    result = validate_summary_orientation(read_summary_orientation(ws, "s1"))
+
+    assert result.ok is True
+    assert result.issues == []
+
+
+def test_summary_orientation_contract_rejects_truth_source_payload():
+    from brain.v5.contracts import validate_summary_orientation
+
+    result = validate_summary_orientation(
+        {
+            "kind": "summary_orientation",
+            "session_id": "s1",
+            "summary_dir": ".aitp/surfaces/session_summaries/s1",
+            "files": {},
+            "truth_source": True,
+            "orientation_only": False,
+            "can_update_kernel_state": True,
+        }
+    )
+
+    assert result.ok is False
+    paths = {issue.path for issue in result.issues}
+    assert "summary_orientation.truth_source" in paths
+    assert "summary_orientation.orientation_only" in paths
+    assert "summary_orientation.can_update_kernel_state" in paths
