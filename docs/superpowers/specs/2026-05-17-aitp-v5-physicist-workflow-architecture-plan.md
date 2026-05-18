@@ -1787,6 +1787,16 @@ Implementation implications:
 This is not the detailed code implementation plan. It is the architecture
 record that the implementation plan should follow.
 
+### Implementation Boundary Rule
+
+The v5 kernel must avoid recreating the old large-file failure mode. Public
+facade modules may preserve stable import paths for CLI/MCP/adapters, but the
+actual protocol logic should live in focused modules such as adapter contracts,
+trust contracts, summary contracts, risk contracts, and migration bridges.
+
+Add regression tests for source-module size. When a module crosses the soft
+limit, split by protocol responsibility instead of adding more special cases.
+
 Suggested phases:
 
 ### Phase 0: Compatibility Audit
