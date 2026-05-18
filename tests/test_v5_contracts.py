@@ -237,6 +237,31 @@ def test_adapter_packet_contract_rejects_tampered_public_surface_audit(tmp_path)
     assert any(issue.path == "adapter.public_surface_audit" for issue in result.issues)
 
 
+def test_adapter_packet_contract_rejects_tampered_runtime_entrypoints(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.contracts import validate_adapter_packet
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="Finite-size counting identifies the edge sector.",
+        evidence_profile="toy_numeric",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size artifact may mimic counting",
+    )
+    bind_session(ws, "s1", topic_id="fqhe", context_id="topological-order", active_claim=claim.claim_id)
+    packet = build_adapter_packet(ws, "s1", runtime="codex")
+    packet["runtime_entrypoints"]["public_surfaces"]["mcp"] = "aitp_v5_guess_public_surfaces"
+
+    result = validate_adapter_packet(packet)
+
+    assert result.ok is False
+    assert any(issue.path == "adapter.runtime_entrypoints" for issue in result.issues)
+
+
 def test_adapter_packet_contract_requires_registry_protocol_field_list(tmp_path):
     from brain.v5.adapters import build_adapter_packet
     from brain.v5.contracts import validate_adapter_packet

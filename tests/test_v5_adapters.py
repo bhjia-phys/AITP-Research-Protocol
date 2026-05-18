@@ -209,6 +209,26 @@ def test_adapter_packet_exposes_public_surface_audit_payload(tmp_path):
     ]
 
 
+def test_adapter_packet_exposes_runtime_entrypoints_for_public_surfaces(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+
+    ws, _ = _seed_session(tmp_path)
+
+    packet = build_adapter_packet(ws, "s1", runtime="codex")
+
+    assert packet["runtime_entrypoints"] == runtime_entrypoints()
+    assert packet["runtime_entrypoints"]["public_surfaces"] == {
+        "cli": "aitp-v5 adapter public-surfaces",
+        "mcp": "aitp_v5_describe_public_surfaces",
+        "surface": "public_surface_contracts",
+    }
+    assert packet["runtime_entrypoints"]["trust_preflight"]["mcp"] == "aitp_v5_preflight_trust_update"
+    assert packet["runtime_entrypoints"]["trust_preflight"]["surface"] in packet["public_surface_audit"][
+        "surface_names"
+    ]
+
+
 def test_adapter_registry_protocol_fields_match_builder_keys():
     from brain.v5.adapter_protocols import adapter_protocol_fields, build_adapter_protocols
 

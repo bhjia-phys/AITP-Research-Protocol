@@ -17,6 +17,7 @@ from brain.v5.adapter_protocols import (
     supported_runtimes,
 )
 from brain.v5.public_surfaces import describe_public_surfaces
+from brain.v5.runtime_entrypoints import runtime_entrypoints
 
 
 @dataclass
@@ -73,6 +74,7 @@ _ADAPTER_REQUIRED_KEYS = (
     "trusted_focus",
     "adapter_contract",
     "public_surface_audit",
+    "runtime_entrypoints",
     "adapter_protocol_registry",
     "trust_changing_actions",
     "requires_kernel_call_before",
@@ -257,6 +259,9 @@ def validate_adapter_packet(payload: dict[str, Any], *, path: str = "adapter") -
 
     if "public_surface_audit" in payload:
         _validate_public_surface_audit(payload["public_surface_audit"], f"{path}.public_surface_audit", result)
+
+    if "runtime_entrypoints" in payload:
+        _validate_runtime_entrypoints(payload["runtime_entrypoints"], f"{path}.runtime_entrypoints", result)
 
     if "adapter_protocol_registry" in payload:
         _validate_adapter_protocol_registry(
@@ -644,6 +649,15 @@ def _validate_public_surface_audit(payload: Any, path: str, result: ContractResu
 
     if payload != describe_public_surfaces():
         result.add(path, "must match describe_public_surfaces()")
+
+
+def _validate_runtime_entrypoints(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+
+    if payload != runtime_entrypoints():
+        result.add(path, "must match runtime_entrypoints()")
 
 
 def _validate_adapter_protocol_registry(payload: Any, path: str, result: ContractResult) -> None:

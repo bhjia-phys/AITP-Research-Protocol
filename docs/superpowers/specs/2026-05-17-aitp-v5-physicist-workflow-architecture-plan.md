@@ -1712,6 +1712,9 @@ Implementation implications:
 - Adapter packets should embed that public-surface audit payload, so runtimes
   can inspect contract coverage without a second call and the packet contract
   can reject tampered audit metadata.
+- Adapter packets should also embed canonical `runtime_entrypoints`, mapping
+  public surfaces and trust-changing operations to their CLI/MCP entrypoints,
+  so runtimes can call the kernel without guessing command names.
 - Add tests proving summaries do not become independent truth sources when
   they disagree with typed records.
 - Codex, Claude Code, OpenCode, and future adapters may read compact views for
