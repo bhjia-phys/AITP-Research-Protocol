@@ -1612,7 +1612,23 @@ idea pools from becoming unreadable.
 
 ## Migration From Old AITP
 
-The v5 system must include an importer for existing topics.
+The v5 system must include an importer for existing topics, and the importer
+should be understood as a materialized migration path, not a permanent
+compatibility layer.
+
+The desired end state is:
+
+- existing old topics are converted into v5 typed records;
+- v5 becomes the canonical active workspace format;
+- old topic files are preserved as provenance/archive inputs;
+- old-topic compatibility is a temporary bootstrap and audit mechanism, not the
+  normal runtime mode.
+
+Read-only migration audit is still useful, but only as a dry run. Its purpose
+is to report what would be created, what is ambiguous, and what requires human
+choice before writing v5 records. After audit passes, the migrator should write
+the new v5 topic/context/claim/evidence/tool/validation/memory records while
+linking every created record back to the old file path and source anchor.
 
 Mapping:
 
@@ -1804,9 +1820,12 @@ paths.
 
 Suggested phases:
 
-### Phase 0: Compatibility Audit
+### Phase 0: Migration Audit
 
-Freeze the old capability inventory and write regression cases for:
+Freeze the old capability inventory and write regression cases for migration.
+The audit should answer whether each old topic can be converted into v5 typed
+records without losing meaning, not whether old topics can remain the active
+format forever.
 
 - stage gates;
 - candidate submission;
@@ -1815,6 +1834,7 @@ Freeze the old capability inventory and write regression cases for:
 - background jobs;
 - session resume;
 - LibRPA domain checks.
+- old-to-v5 record mapping completeness.
 
 ### Phase 1: v5 Schema And Filesystem Kernel
 
@@ -1824,7 +1844,9 @@ Implement:
 - context/topic/registry/memory/runtime path helpers;
 - object schemas for intent, question, idea, claim, evidence, relation, route,
   attempt, tool run, code state, code workspace, validation, and checkpoint;
-- migration-safe IDs.
+- migration-safe IDs;
+- materialized old-topic importer that writes v5 typed records after a dry-run
+  audit passes.
 
 ### Phase 2: State Observer And Next-Action Scaffold
 
