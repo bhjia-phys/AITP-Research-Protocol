@@ -1743,6 +1743,8 @@ Implementation implications:
   protocol payload, so runtimes can audit which exact harness contract they saw.
 - Contract validators should recompute the adapter protocol fingerprint from
   the packet's actual protocol fields, not only compare registry metadata.
+- Adapter registry metadata should name the fingerprint algorithm, so runtimes
+  do not need to infer how to reproduce or audit the protocol hash.
 
 ## Implementation Plan Direction
 

@@ -8,6 +8,7 @@ from copy import deepcopy
 from typing import Any
 
 
+_FINGERPRINT_ALGORITHM = "sha256-canonical-json-v1"
 _SUPPORTED_RUNTIMES = ("codex", "claude_code", "opencode")
 _PROTOCOL_FIELDS = [
     "trust_changing_actions",
@@ -175,6 +176,7 @@ def adapter_protocol_registry() -> dict[str, Any]:
         **deepcopy(_REGISTRY_METADATA),
         "protocol_fields": list(adapter_protocol_fields()),
         "protocol_fingerprint": adapter_protocol_fingerprint(),
+        "protocol_fingerprint_algorithm": _FINGERPRINT_ALGORITHM,
     }
 
 

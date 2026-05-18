@@ -294,6 +294,34 @@ def test_adapter_packet_contract_recomputes_protocol_fingerprint(tmp_path):
     )
 
 
+def test_adapter_packet_contract_rejects_tampered_protocol_fingerprint_algorithm(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.contracts import validate_adapter_packet
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="Finite-size counting identifies the edge sector.",
+        evidence_profile="toy_numeric",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size artifacts",
+    )
+    bind_session(ws, "s1", topic_id="fqhe", context_id="topological-order", active_claim=claim.claim_id)
+    packet = build_adapter_packet(ws, "s1", runtime="codex")
+    packet["adapter_protocol_registry"]["protocol_fingerprint_algorithm"] = "md5"
+
+    result = validate_adapter_packet(packet)
+
+    assert result.ok is False
+    assert any(
+        issue.path == "adapter.adapter_protocol_registry.protocol_fingerprint_algorithm"
+        for issue in result.issues
+    )
+
+
 def test_adapter_packet_contract_requires_trust_apply_entrypoint(tmp_path):
     from brain.v5.adapters import build_adapter_packet
     from brain.v5.contracts import validate_adapter_packet

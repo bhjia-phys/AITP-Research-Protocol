@@ -176,6 +176,7 @@ def test_adapter_packet_exposes_protocol_registry_metadata(tmp_path):
             "runtime_gate_protocols",
         ],
         "protocol_fingerprint": adapter_protocol_fingerprint(),
+        "protocol_fingerprint_algorithm": "sha256-canonical-json-v1",
     }
 
 
