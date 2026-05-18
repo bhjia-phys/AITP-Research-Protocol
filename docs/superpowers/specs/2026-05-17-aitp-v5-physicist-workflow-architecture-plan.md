@@ -1718,6 +1718,9 @@ Implementation implications:
 - Runtime entrypoint surfaces should close over the public-surface contract set
   plus the audit payload itself, preventing adapter entrypoint drift as new
   surfaces are added.
+- Runtime entrypoint declarations should also be self-validating: advertised
+  MCP wrappers must exist and advertised CLI templates must parse, so adapters
+  do not receive stale command names.
 - Add tests proving summaries do not become independent truth sources when
   they disagree with typed records.
 - Codex, Claude Code, OpenCode, and future adapters may read compact views for
