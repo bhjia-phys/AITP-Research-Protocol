@@ -1737,6 +1737,8 @@ Implementation implications:
   module and version, making runtime-facing harness assumptions auditable.
 - Adapter registry metadata should list the protocol fields it governs, so
   runtimes and contract validators share the same boundary of responsibility.
+- Contract validators should verify that every registry-governed protocol field
+  named by the shared registry is present in the adapter packet.
 
 ## Implementation Plan Direction
 

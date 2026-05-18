@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from brain.v5.adapter_protocols import (
+    adapter_protocol_fields,
     adapter_protocol_registry,
     mandatory_gate_protocols,
     mandatory_kernel_entrypoints,
@@ -244,6 +245,7 @@ def validate_adapter_packet(payload: dict[str, Any], *, path: str = "adapter") -
             f"{path}.adapter_protocol_registry",
             result,
         )
+    _validate_adapter_protocol_fields_present(payload, path, result)
 
     if "execution_brief" in payload:
         result.extend(validate_execution_brief(payload["execution_brief"], path=f"{path}.execution_brief"))
@@ -552,6 +554,19 @@ def _validate_adapter_protocol_registry(payload: Any, path: str, result: Contrac
     for key, expected_value in adapter_protocol_registry().items():
         if payload.get(key) != expected_value:
             result.add(f"{path}.{key}", f"must be {expected_value!r}")
+
+
+def _validate_adapter_protocol_fields_present(
+    payload: dict[str, Any],
+    path: str,
+    result: ContractResult,
+) -> None:
+    for field_name in adapter_protocol_fields():
+        if field_name not in payload:
+            result.add(
+                f"{path}.adapter_protocol_registry.protocol_fields.{field_name}",
+                "declared protocol field missing from adapter packet",
+            )
 
 
 def _validate_trust_mutation_entrypoints(
