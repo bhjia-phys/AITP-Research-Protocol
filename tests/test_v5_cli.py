@@ -108,6 +108,15 @@ def test_cli_adapter_registry_returns_static_protocol_metadata_without_workspace
     assert not (tmp_path / ".aitp").exists()
 
 
+def test_cli_adapter_public_surfaces_returns_static_audit_payload_without_workspace(tmp_path, capsys):
+    from brain.v5.public_surfaces import describe_public_surfaces
+
+    payload = _invoke(["--base", str(tmp_path), "adapter", "public-surfaces"], capsys)
+
+    assert payload == {"ok": True, "public_surfaces": describe_public_surfaces()}
+    assert not (tmp_path / ".aitp").exists()
+
+
 def test_cli_adapter_registry_validates_payload_before_return(monkeypatch):
     import pytest
 

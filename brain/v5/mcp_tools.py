@@ -11,7 +11,7 @@ from brain.v5.brief import build_execution_brief
 from brain.v5.code import record_code_state
 from brain.v5.evidence import record_evidence
 from brain.v5.models import CodeStateRecord, TrustUpdateRequest
-from brain.v5.public_surfaces import require_valid_public_surface
+from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
 from brain.v5.risk import assess_claim_risk
 from brain.v5.store import list_records
 from brain.v5.summaries import read_summary_orientation, write_session_summary
@@ -258,6 +258,10 @@ def aitp_v5_get_adapter_protocol_registry() -> dict:
             adapter_protocol_registry(),
         ),
     }
+
+
+def aitp_v5_describe_public_surfaces() -> dict:
+    return {"ok": True, "public_surfaces": describe_public_surfaces()}
 
 
 def aitp_v5_preflight_trust_update(

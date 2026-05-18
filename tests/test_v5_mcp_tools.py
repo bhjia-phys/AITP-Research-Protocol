@@ -125,6 +125,15 @@ def test_mcp_adapter_protocol_registry_returns_static_metadata():
     assert payload == {"ok": True, "adapter_protocol_registry": adapter_protocol_registry()}
 
 
+def test_mcp_describe_public_surfaces_returns_static_audit_payload():
+    from brain.v5.mcp_tools import aitp_v5_describe_public_surfaces
+    from brain.v5.public_surfaces import describe_public_surfaces
+
+    payload = aitp_v5_describe_public_surfaces()
+
+    assert payload == {"ok": True, "public_surfaces": describe_public_surfaces()}
+
+
 def test_mcp_adapter_protocol_registry_validates_payload_before_return(monkeypatch):
     import pytest
 

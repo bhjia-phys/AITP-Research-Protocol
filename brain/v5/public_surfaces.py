@@ -14,6 +14,15 @@ _PUBLIC_SURFACE_NAMES = (
     "trust_update_preflight",
 )
 _PUBLIC_SURFACE_VALIDATOR_REF = "brain.v5.public_surfaces.require_valid_public_surface"
+_PUBLIC_SURFACE_PURPOSES = {
+    "adapter_packet": "runtime adapter packet carrying brief, summary orientation, and trust protocol metadata",
+    "adapter_protocol_registry": "auditable registry metadata for adapter protocol fields and validator surfaces",
+    "execution_brief": "typed kernel brief for current focus, risk, evidence coverage, and next actions",
+    "session_summary_bundle": "orientation-only summary files regenerated from typed kernel records",
+    "summary_orientation": "read-only summary view with explicit truth-source protections",
+    "trust_update_apply": "contracted result of a trust-changing mutation after preflight",
+    "trust_update_preflight": "contracted preflight gate for trust-changing actions",
+}
 
 
 def public_surface_names() -> tuple[str, ...]:
@@ -26,6 +35,26 @@ def public_surface_validator_ref() -> str:
     """Return the stable import path for validating public payload surfaces."""
 
     return _PUBLIC_SURFACE_VALIDATOR_REF
+
+
+def describe_public_surfaces() -> dict[str, Any]:
+    """Return an auditable description of public surface contract coverage."""
+
+    return {
+        "kind": "public_surface_contracts",
+        "validator": public_surface_validator_ref(),
+        "surface_names": list(public_surface_names()),
+        "surfaces": [
+            {
+                "name": name,
+                "validator": public_surface_validator_ref(),
+                "purpose": _PUBLIC_SURFACE_PURPOSES[name],
+            }
+            for name in public_surface_names()
+        ],
+        "truth_source": "contract_registry",
+        "summary_inputs_trusted": False,
+    }
 
 
 def require_valid_public_surface(surface_name: str, payload: dict[str, Any]) -> dict[str, Any]:

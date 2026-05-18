@@ -1706,6 +1706,9 @@ Implementation implications:
   runtimes can see which payload surfaces must pass contract validation.
 - Adapter registry metadata should also expose the stable public surface
   validator reference, so runtimes know which helper enforces that contract set.
+- Public surface contracts should have a direct audit payload through
+  `describe_public_surfaces`, `aitp-v5 adapter public-surfaces`, and
+  `aitp_v5_describe_public_surfaces`.
 - Add tests proving summaries do not become independent truth sources when
   they disagree with typed records.
 - Codex, Claude Code, OpenCode, and future adapters may read compact views for

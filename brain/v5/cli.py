@@ -13,7 +13,7 @@ from brain.v5.adapter_protocols import adapter_protocol_registry
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
 from brain.v5.models import TrustUpdateRequest
-from brain.v5.public_surfaces import require_valid_public_surface
+from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
 from brain.v5.risk import assess_claim_risk
 from brain.v5.summaries import read_summary_orientation, write_session_summary
 from brain.v5.trust_updates import apply_trust_update, preflight_trust_update
@@ -90,6 +90,7 @@ def _build_parser() -> argparse.ArgumentParser:
     adapter_packet.add_argument("runtime")
     adapter_packet.add_argument("session_id")
     adapter_sub.add_parser("registry")
+    adapter_sub.add_parser("public-surfaces")
 
     trust_parser = subparsers.add_parser("trust")
     trust_sub = trust_parser.add_subparsers(dest="trust_command", required=True)
@@ -114,6 +115,9 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
                 adapter_protocol_registry(),
             ),
         }
+
+    if args.command == "adapter" and args.adapter_command == "public-surfaces":
+        return {"ok": True, "public_surfaces": describe_public_surfaces()}
 
     ws = init_workspace(Path(args.base))
 

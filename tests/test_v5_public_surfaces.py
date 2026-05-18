@@ -44,6 +44,26 @@ def test_adapter_registry_exposes_public_surface_validator_ref():
     assert adapter_protocol_registry()["public_surface_validator"] == public_surface_validator_ref()
 
 
+def test_describe_public_surfaces_returns_auditable_contract_payload():
+    from brain.v5.public_surfaces import (
+        describe_public_surfaces,
+        public_surface_names,
+        public_surface_validator_ref,
+    )
+
+    payload = describe_public_surfaces()
+
+    assert payload["kind"] == "public_surface_contracts"
+    assert payload["validator"] == public_surface_validator_ref()
+    assert payload["surface_names"] == list(public_surface_names())
+    assert payload["truth_source"] == "contract_registry"
+    assert payload["summary_inputs_trusted"] is False
+    assert {surface["name"] for surface in payload["surfaces"]} == set(public_surface_names())
+    for surface in payload["surfaces"]:
+        assert surface["validator"] == public_surface_validator_ref()
+        assert surface["purpose"]
+
+
 def test_public_surface_validator_rejects_invalid_named_surface():
     import pytest
 
