@@ -12,16 +12,8 @@ from typing import Any
 from brain.v5.adapter_protocols import adapter_protocol_registry
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
-from brain.v5.contracts import (
-    require_valid_adapter_packet,
-    require_valid_adapter_protocol_registry,
-    require_valid_execution_brief,
-    require_valid_session_summary_bundle,
-    require_valid_summary_orientation,
-    require_valid_trust_update_apply,
-    require_valid_trust_update_preflight,
-)
 from brain.v5.models import TrustUpdateRequest
+from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.risk import assess_claim_risk
 from brain.v5.summaries import read_summary_orientation, write_session_summary
 from brain.v5.trust_updates import apply_trust_update, preflight_trust_update
@@ -117,7 +109,10 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
     if args.command == "adapter" and args.adapter_command == "registry":
         return {
             "ok": True,
-            "adapter_protocol_registry": require_valid_adapter_protocol_registry(adapter_protocol_registry()),
+            "adapter_protocol_registry": require_valid_public_surface(
+                "adapter_protocol_registry",
+                adapter_protocol_registry(),
+            ),
         }
 
     ws = init_workspace(Path(args.base))
@@ -151,7 +146,7 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         return {"ok": True, **asdict(session)}
 
     if args.command == "brief":
-        return require_valid_execution_brief(build_execution_brief(ws, args.session_id))
+        return require_valid_public_surface("execution_brief", build_execution_brief(ws, args.session_id))
 
     if args.command == "risk" and args.risk_command == "assess":
         claim = get_claim(ws, args.claim_id)
@@ -161,24 +156,42 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
     if args.command == "summary" and args.summary_command == "session":
         return {
             "ok": True,
-            **require_valid_session_summary_bundle(asdict(write_session_summary(ws, args.session_id))),
+            **require_valid_public_surface(
+                "session_summary_bundle",
+                asdict(write_session_summary(ws, args.session_id)),
+            ),
         }
 
     if args.command == "summary" and args.summary_command == "orientation":
-        return {"ok": True, **require_valid_summary_orientation(read_summary_orientation(ws, args.session_id))}
+        return {
+            "ok": True,
+            **require_valid_public_surface("summary_orientation", read_summary_orientation(ws, args.session_id)),
+        }
 
     if args.command == "adapter" and args.adapter_command == "packet":
         return {
             "ok": True,
-            **require_valid_adapter_packet(build_adapter_packet(ws, args.session_id, runtime=args.runtime)),
+            **require_valid_public_surface(
+                "adapter_packet",
+                build_adapter_packet(ws, args.session_id, runtime=args.runtime),
+            ),
         }
 
     if args.command == "trust" and args.trust_command == "preflight":
         request = _trust_update_request_from_args(args)
-        return {"ok": True, **require_valid_trust_update_preflight(preflight_trust_update(ws, request))}
+        return {
+            "ok": True,
+            **require_valid_public_surface("trust_update_preflight", preflight_trust_update(ws, request)),
+        }
 
     if args.command == "trust" and args.trust_command == "apply":
-        return {"ok": True, **require_valid_trust_update_apply(apply_trust_update(ws, _trust_update_request_from_args(args)))}
+        return {
+            "ok": True,
+            **require_valid_public_surface(
+                "trust_update_apply",
+                apply_trust_update(ws, _trust_update_request_from_args(args)),
+            ),
+        }
 
     raise SystemExit(f"unsupported command: {args.command}")
 

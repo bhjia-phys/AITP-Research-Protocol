@@ -9,17 +9,9 @@ from brain.v5.adapter_protocols import adapter_protocol_registry
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
 from brain.v5.code import record_code_state
-from brain.v5.contracts import (
-    require_valid_adapter_packet,
-    require_valid_adapter_protocol_registry,
-    require_valid_execution_brief,
-    require_valid_session_summary_bundle,
-    require_valid_summary_orientation,
-    require_valid_trust_update_apply,
-    require_valid_trust_update_preflight,
-)
 from brain.v5.evidence import record_evidence
 from brain.v5.models import CodeStateRecord, TrustUpdateRequest
+from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.risk import assess_claim_risk
 from brain.v5.store import list_records
 from brain.v5.summaries import read_summary_orientation, write_session_summary
@@ -98,7 +90,7 @@ def aitp_v5_bind_session(
 
 def aitp_v5_get_execution_brief(base: str, *, session_id: str) -> dict:
     ws = init_workspace(Path(base))
-    return require_valid_execution_brief(build_execution_brief(ws, session_id))
+    return require_valid_public_surface("execution_brief", build_execution_brief(ws, session_id))
 
 
 def aitp_v5_assess_risk(base: str, *, claim_id: str) -> dict:
@@ -236,23 +228,35 @@ def aitp_v5_record_tool_run(
 
 def aitp_v5_write_session_summary(base: str, *, session_id: str) -> dict:
     ws = init_workspace(Path(base))
-    return {"ok": True, **require_valid_session_summary_bundle(asdict(write_session_summary(ws, session_id)))}
+    return {
+        "ok": True,
+        **require_valid_public_surface(
+            "session_summary_bundle",
+            asdict(write_session_summary(ws, session_id)),
+        ),
+    }
 
 
 def aitp_v5_read_summary_orientation(base: str, *, session_id: str) -> dict:
     ws = init_workspace(Path(base))
-    return {"ok": True, **require_valid_summary_orientation(read_summary_orientation(ws, session_id))}
+    return {"ok": True, **require_valid_public_surface("summary_orientation", read_summary_orientation(ws, session_id))}
 
 
 def aitp_v5_get_adapter_packet(base: str, *, runtime: str, session_id: str) -> dict:
     ws = init_workspace(Path(base))
-    return {"ok": True, **require_valid_adapter_packet(build_adapter_packet(ws, session_id, runtime=runtime))}
+    return {
+        "ok": True,
+        **require_valid_public_surface("adapter_packet", build_adapter_packet(ws, session_id, runtime=runtime)),
+    }
 
 
 def aitp_v5_get_adapter_protocol_registry() -> dict:
     return {
         "ok": True,
-        "adapter_protocol_registry": require_valid_adapter_protocol_registry(adapter_protocol_registry()),
+        "adapter_protocol_registry": require_valid_public_surface(
+            "adapter_protocol_registry",
+            adapter_protocol_registry(),
+        ),
     }
 
 
@@ -286,7 +290,7 @@ def aitp_v5_preflight_trust_update(
         code_state_ids=code_state_ids or [],
         rationale=rationale,
     )
-    return {"ok": True, **require_valid_trust_update_preflight(preflight_trust_update(ws, request))}
+    return {"ok": True, **require_valid_public_surface("trust_update_preflight", preflight_trust_update(ws, request))}
 
 
 def aitp_v5_apply_trust_update(
@@ -319,7 +323,7 @@ def aitp_v5_apply_trust_update(
         code_state_ids=code_state_ids or [],
         rationale=rationale,
     )
-    return {"ok": True, **require_valid_trust_update_apply(apply_trust_update(ws, request))}
+    return {"ok": True, **require_valid_public_surface("trust_update_apply", apply_trust_update(ws, request))}
 
 
 def _linked_code_states(ws, claim_id: str) -> list[CodeStateRecord]:

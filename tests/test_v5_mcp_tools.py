@@ -187,6 +187,9 @@ def test_mcp_tools_do_not_import_legacy_mcp_monolith():
 
     source = inspect.getsource(mcp_tools)
 
+    assert "require_valid_public_surface" in source
+    assert "require_valid_adapter_packet" not in source
+    assert "require_valid_session_summary_bundle" not in source
     assert "brain.mcp_server" not in source
     assert "mcp__aitp" not in source
     assert "aitp_get_execution_brief" not in source

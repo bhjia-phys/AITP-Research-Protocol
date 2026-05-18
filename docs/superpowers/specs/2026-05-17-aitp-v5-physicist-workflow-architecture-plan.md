@@ -1700,6 +1700,8 @@ Implementation implications:
 - Session-summary write results should pass a public bundle contract before
   CLI/MCP wrappers return them, preserving `truth_source: false` and
   `orientation_only: true`.
+- Public runtime-facing surfaces should route through a shared helper, so CLI
+  and MCP wrappers cannot drift by importing different individual validators.
 - Add tests proving summaries do not become independent truth sources when
   they disagree with typed records.
 - Codex, Claude Code, OpenCode, and future adapters may read compact views for
