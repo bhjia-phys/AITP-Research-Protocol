@@ -108,6 +108,18 @@ def test_cli_adapter_registry_returns_static_protocol_metadata_without_workspace
     assert not (tmp_path / ".aitp").exists()
 
 
+def test_cli_adapter_registry_validates_payload_before_return(monkeypatch):
+    import pytest
+
+    import brain.v5.cli as cli
+    from brain.v5.contracts import ContractError
+
+    monkeypatch.setattr(cli, "adapter_protocol_registry", lambda: {"kind": "adapter_protocol_registry"})
+
+    with pytest.raises(ContractError):
+        cli.main(["adapter", "registry"])
+
+
 def test_cli_does_not_import_legacy_mcp_monolith():
     import brain.v5.cli as cli
 

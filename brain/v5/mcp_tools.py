@@ -10,6 +10,7 @@ from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
 from brain.v5.code import record_code_state
 from brain.v5.contracts import (
+    require_valid_adapter_protocol_registry,
     require_valid_execution_brief,
     require_valid_trust_update_apply,
     require_valid_trust_update_preflight,
@@ -246,7 +247,10 @@ def aitp_v5_get_adapter_packet(base: str, *, runtime: str, session_id: str) -> d
 
 
 def aitp_v5_get_adapter_protocol_registry() -> dict:
-    return {"ok": True, "adapter_protocol_registry": adapter_protocol_registry()}
+    return {
+        "ok": True,
+        "adapter_protocol_registry": require_valid_adapter_protocol_registry(adapter_protocol_registry()),
+    }
 
 
 def aitp_v5_preflight_trust_update(

@@ -1693,6 +1693,8 @@ Implementation implications:
 - The adapter registry surface should also be directly inspectable through
   `aitp-v5 adapter registry` and `aitp_v5_get_adapter_protocol_registry`, without
   creating workspace state.
+- Direct adapter registry inspect responses should pass the same public registry
+  contract validator before CLI/MCP wrappers return them.
 - Add tests proving summaries do not become independent truth sources when
   they disagree with typed records.
 - Codex, Claude Code, OpenCode, and future adapters may read compact views for

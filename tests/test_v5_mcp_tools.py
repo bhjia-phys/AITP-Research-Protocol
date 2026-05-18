@@ -125,6 +125,18 @@ def test_mcp_adapter_protocol_registry_returns_static_metadata():
     assert payload == {"ok": True, "adapter_protocol_registry": adapter_protocol_registry()}
 
 
+def test_mcp_adapter_protocol_registry_validates_payload_before_return(monkeypatch):
+    import pytest
+
+    import brain.v5.mcp_tools as mcp_tools
+    from brain.v5.contracts import ContractError
+
+    monkeypatch.setattr(mcp_tools, "adapter_protocol_registry", lambda: {"kind": "adapter_protocol_registry"})
+
+    with pytest.raises(ContractError):
+        mcp_tools.aitp_v5_get_adapter_protocol_registry()
+
+
 def test_mcp_tools_do_not_import_legacy_mcp_monolith():
     import brain.v5.mcp_tools as mcp_tools
 

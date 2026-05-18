@@ -350,6 +350,44 @@ def test_adapter_packet_contract_rejects_tampered_protocol_fingerprint_inputs(tm
     )
 
 
+def test_adapter_protocol_registry_contract_accepts_current_registry():
+    from brain.v5.adapter_protocols import adapter_protocol_registry
+    from brain.v5.contracts import validate_adapter_protocol_registry
+
+    result = validate_adapter_protocol_registry(adapter_protocol_registry())
+
+    assert result.ok is True
+
+
+def test_adapter_protocol_registry_contract_rejects_tampered_inputs():
+    from brain.v5.adapter_protocols import adapter_protocol_registry
+    from brain.v5.contracts import validate_adapter_protocol_registry
+
+    registry = adapter_protocol_registry()
+    registry["protocol_fingerprint_inputs"] = ["trust_changing_actions"]
+
+    result = validate_adapter_protocol_registry(registry)
+
+    assert result.ok is False
+    assert any(
+        issue.path == "adapter_protocol_registry.protocol_fingerprint_inputs"
+        for issue in result.issues
+    )
+
+
+def test_adapter_protocol_registry_require_raises_on_invalid_registry():
+    import pytest
+
+    from brain.v5.adapter_protocols import adapter_protocol_registry
+    from brain.v5.contracts import ContractError, require_valid_adapter_protocol_registry
+
+    registry = adapter_protocol_registry()
+    registry["protocol_fingerprint_algorithm"] = "md5"
+
+    with pytest.raises(ContractError):
+        require_valid_adapter_protocol_registry(registry)
+
+
 def test_adapter_packet_contract_requires_trust_apply_entrypoint(tmp_path):
     from brain.v5.adapters import build_adapter_packet
     from brain.v5.contracts import validate_adapter_packet

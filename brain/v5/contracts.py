@@ -323,6 +323,27 @@ def require_valid_adapter_packet(payload: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+def validate_adapter_protocol_registry(
+    payload: dict[str, Any],
+    *,
+    path: str = "adapter_protocol_registry",
+) -> ContractResult:
+    """Validate the public adapter protocol registry payload."""
+
+    result = ContractResult()
+    _validate_adapter_protocol_registry(payload, path, result)
+    return result
+
+
+def require_valid_adapter_protocol_registry(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return an adapter protocol registry payload or raise a contract error."""
+
+    result = validate_adapter_protocol_registry(payload)
+    if not result.ok:
+        raise ContractError(result)
+    return payload
+
+
 def validate_summary_orientation(payload: dict[str, Any], *, path: str = "summary_orientation") -> ContractResult:
     """Validate a public orientation-only summary view."""
 

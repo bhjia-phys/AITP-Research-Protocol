@@ -12,7 +12,11 @@ from typing import Any
 from brain.v5.adapter_protocols import adapter_protocol_registry
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
-from brain.v5.contracts import require_valid_trust_update_apply, require_valid_trust_update_preflight
+from brain.v5.contracts import (
+    require_valid_adapter_protocol_registry,
+    require_valid_trust_update_apply,
+    require_valid_trust_update_preflight,
+)
 from brain.v5.models import TrustUpdateRequest
 from brain.v5.risk import assess_claim_risk
 from brain.v5.summaries import read_summary_orientation, write_session_summary
@@ -107,7 +111,10 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         return {"ok": True, "workspace_root": str(ws.root)}
 
     if args.command == "adapter" and args.adapter_command == "registry":
-        return {"ok": True, "adapter_protocol_registry": adapter_protocol_registry()}
+        return {
+            "ok": True,
+            "adapter_protocol_registry": require_valid_adapter_protocol_registry(adapter_protocol_registry()),
+        }
 
     ws = init_workspace(Path(args.base))
 
