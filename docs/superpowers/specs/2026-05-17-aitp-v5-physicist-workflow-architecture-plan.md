@@ -1745,6 +1745,8 @@ Implementation implications:
   the packet's actual protocol fields, not only compare registry metadata.
 - Adapter registry metadata should name the fingerprint algorithm, so runtimes
   do not need to infer how to reproduce or audit the protocol hash.
+- Adapter registry metadata should list the fingerprint input fields so runtimes
+  can reproduce the hash boundary exactly.
 
 ## Implementation Plan Direction
 

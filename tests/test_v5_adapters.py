@@ -175,6 +175,15 @@ def test_adapter_packet_exposes_protocol_registry_metadata(tmp_path):
             "runtime_record_protocols",
             "runtime_gate_protocols",
         ],
+        "protocol_fingerprint_inputs": [
+            "trust_changing_actions",
+            "requires_kernel_call_before",
+            "required_kernel_entrypoints",
+            "trust_mutation_entrypoints",
+            "runtime_trust_update_protocol",
+            "runtime_record_protocols",
+            "runtime_gate_protocols",
+        ],
         "protocol_fingerprint": adapter_protocol_fingerprint(),
         "protocol_fingerprint_algorithm": "sha256-canonical-json-v1",
     }

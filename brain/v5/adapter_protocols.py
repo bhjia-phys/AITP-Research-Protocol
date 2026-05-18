@@ -175,6 +175,7 @@ def adapter_protocol_registry() -> dict[str, Any]:
     return {
         **deepcopy(_REGISTRY_METADATA),
         "protocol_fields": list(adapter_protocol_fields()),
+        "protocol_fingerprint_inputs": list(adapter_protocol_fields()),
         "protocol_fingerprint": adapter_protocol_fingerprint(),
         "protocol_fingerprint_algorithm": _FINGERPRINT_ALGORITHM,
     }
