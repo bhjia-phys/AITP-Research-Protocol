@@ -388,6 +388,64 @@ def test_adapter_protocol_registry_require_raises_on_invalid_registry():
         require_valid_adapter_protocol_registry(registry)
 
 
+def test_session_summary_bundle_contract_accepts_orientation_only_bundle(tmp_path):
+    from brain.v5.contracts import validate_session_summary_bundle
+
+    payload = {
+        "kind": "session_summary_bundle",
+        "session_id": "s1",
+        "topic_id": "fqhe",
+        "active_claim": "claim-fqhe",
+        "summary_dir": str(tmp_path / "summaries" / "s1"),
+        "files": {
+            "task_plan": str(tmp_path / "task_plan.md"),
+            "findings": str(tmp_path / "findings.md"),
+            "progress": str(tmp_path / "progress.md"),
+        },
+        "derived_from": "kernel_state",
+        "truth_source": False,
+        "orientation_only": True,
+        "adapter_rule": "read_for_orientation_then_call_kernel_before_trust_updates",
+        "source_records": {
+            "sessions": ["s1"],
+            "claims": ["claim-fqhe"],
+            "evidence": [],
+            "tool_runs": [],
+        },
+    }
+
+    result = validate_session_summary_bundle(payload)
+
+    assert result.ok is True
+
+
+def test_session_summary_bundle_contract_rejects_truth_source_bundle(tmp_path):
+    from brain.v5.contracts import validate_session_summary_bundle
+
+    payload = {
+        "kind": "session_summary_bundle",
+        "session_id": "s1",
+        "topic_id": "fqhe",
+        "active_claim": "claim-fqhe",
+        "summary_dir": str(tmp_path / "summaries" / "s1"),
+        "files": {
+            "task_plan": str(tmp_path / "task_plan.md"),
+            "findings": str(tmp_path / "findings.md"),
+            "progress": str(tmp_path / "progress.md"),
+        },
+        "derived_from": "kernel_state",
+        "truth_source": True,
+        "orientation_only": True,
+        "adapter_rule": "read_for_orientation_then_call_kernel_before_trust_updates",
+        "source_records": {"sessions": ["s1"]},
+    }
+
+    result = validate_session_summary_bundle(payload)
+
+    assert result.ok is False
+    assert any(issue.path == "session_summary_bundle.truth_source" for issue in result.issues)
+
+
 def test_adapter_packet_contract_requires_trust_apply_entrypoint(tmp_path):
     from brain.v5.adapters import build_adapter_packet
     from brain.v5.contracts import validate_adapter_packet

@@ -161,6 +161,27 @@ def test_mcp_summary_orientation_validates_payload_before_return(tmp_path, monke
         mcp_tools.aitp_v5_read_summary_orientation(str(tmp_path), session_id="s1")
 
 
+def test_mcp_write_session_summary_validates_payload_before_return(tmp_path, monkeypatch):
+    import pytest
+
+    import brain.v5.mcp_tools as mcp_tools
+    from brain.v5.contracts import ContractError
+    from brain.v5.summaries import SessionSummaryBundle
+
+    bundle = SessionSummaryBundle(
+        session_id="s1",
+        topic_id="fqhe",
+        active_claim="claim-fqhe",
+        summary_dir=str(tmp_path / "summaries" / "s1"),
+        files={"task_plan": "task_plan.md", "findings": "findings.md", "progress": "progress.md"},
+        truth_source=True,
+    )
+    monkeypatch.setattr(mcp_tools, "write_session_summary", lambda *args, **kwargs: bundle)
+
+    with pytest.raises(ContractError):
+        mcp_tools.aitp_v5_write_session_summary(str(tmp_path), session_id="s1")
+
+
 def test_mcp_tools_do_not_import_legacy_mcp_monolith():
     import brain.v5.mcp_tools as mcp_tools
 

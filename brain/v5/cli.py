@@ -16,6 +16,7 @@ from brain.v5.contracts import (
     require_valid_adapter_packet,
     require_valid_adapter_protocol_registry,
     require_valid_execution_brief,
+    require_valid_session_summary_bundle,
     require_valid_summary_orientation,
     require_valid_trust_update_apply,
     require_valid_trust_update_preflight,
@@ -158,7 +159,10 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         return {"ok": True, "claim_id": args.claim_id, "risk_assessment": asdict(risk)}
 
     if args.command == "summary" and args.summary_command == "session":
-        return {"ok": True, **asdict(write_session_summary(ws, args.session_id))}
+        return {
+            "ok": True,
+            **require_valid_session_summary_bundle(asdict(write_session_summary(ws, args.session_id))),
+        }
 
     if args.command == "summary" and args.summary_command == "orientation":
         return {"ok": True, **require_valid_summary_orientation(read_summary_orientation(ws, args.session_id))}

@@ -1697,6 +1697,9 @@ Implementation implications:
   contract validator before CLI/MCP wrappers return them.
 - Execution brief and summary orientation read surfaces should also pass their
   public contract validators before CLI/MCP wrappers return them.
+- Session-summary write results should pass a public bundle contract before
+  CLI/MCP wrappers return them, preserving `truth_source: false` and
+  `orientation_only: true`.
 - Add tests proving summaries do not become independent truth sources when
   they disagree with typed records.
 - Codex, Claude Code, OpenCode, and future adapters may read compact views for

@@ -156,6 +156,27 @@ def test_cli_summary_orientation_validates_payload_before_return(tmp_path, monke
         cli.main(["--base", str(tmp_path), "summary", "orientation", "s1"])
 
 
+def test_cli_summary_session_validates_payload_before_return(tmp_path, monkeypatch):
+    import pytest
+
+    import brain.v5.cli as cli
+    from brain.v5.contracts import ContractError
+    from brain.v5.summaries import SessionSummaryBundle
+
+    bundle = SessionSummaryBundle(
+        session_id="s1",
+        topic_id="fqhe",
+        active_claim="claim-fqhe",
+        summary_dir=str(tmp_path / "summaries" / "s1"),
+        files={"task_plan": "task_plan.md", "findings": "findings.md", "progress": "progress.md"},
+        truth_source=True,
+    )
+    monkeypatch.setattr(cli, "write_session_summary", lambda *args, **kwargs: bundle)
+
+    with pytest.raises(ContractError):
+        cli.main(["--base", str(tmp_path), "summary", "session", "s1"])
+
+
 def test_cli_does_not_import_legacy_mcp_monolith():
     import brain.v5.cli as cli
 

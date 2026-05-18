@@ -13,6 +13,7 @@ from brain.v5.contracts import (
     require_valid_adapter_packet,
     require_valid_adapter_protocol_registry,
     require_valid_execution_brief,
+    require_valid_session_summary_bundle,
     require_valid_summary_orientation,
     require_valid_trust_update_apply,
     require_valid_trust_update_preflight,
@@ -235,7 +236,7 @@ def aitp_v5_record_tool_run(
 
 def aitp_v5_write_session_summary(base: str, *, session_id: str) -> dict:
     ws = init_workspace(Path(base))
-    return {"ok": True, **asdict(write_session_summary(ws, session_id))}
+    return {"ok": True, **require_valid_session_summary_bundle(asdict(write_session_summary(ws, session_id)))}
 
 
 def aitp_v5_read_summary_orientation(base: str, *, session_id: str) -> dict:
