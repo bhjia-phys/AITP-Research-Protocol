@@ -1721,6 +1721,9 @@ Implementation implications:
 - Runtime entrypoint declarations should also be self-validating: advertised
   MCP wrappers must exist and advertised CLI templates must parse, so adapters
   do not receive stale command names.
+- Adapter packet validation should call that runtime-entrypoint validator, not
+  only compare against the canonical mapping, so stale canonical entrypoint
+  declarations are rejected before reaching an agent runtime.
 - Add tests proving summaries do not become independent truth sources when
   they disagree with typed records.
 - Codex, Claude Code, OpenCode, and future adapters may read compact views for

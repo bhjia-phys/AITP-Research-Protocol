@@ -17,7 +17,7 @@ from brain.v5.adapter_protocols import (
     supported_runtimes,
 )
 from brain.v5.public_surfaces import describe_public_surfaces
-from brain.v5.runtime_entrypoints import runtime_entrypoints
+from brain.v5.runtime_entrypoints import runtime_entrypoints, validate_runtime_entrypoints
 
 
 @dataclass
@@ -658,6 +658,9 @@ def _validate_runtime_entrypoints(payload: Any, path: str, result: ContractResul
 
     if payload != runtime_entrypoints():
         result.add(path, "must match runtime_entrypoints()")
+    for error in validate_runtime_entrypoints(payload):
+        error_path = error.split(":", 1)[0]
+        result.add(f"{path}.{error_path}", error)
 
 
 def _validate_adapter_protocol_registry(payload: Any, path: str, result: ContractResult) -> None:
