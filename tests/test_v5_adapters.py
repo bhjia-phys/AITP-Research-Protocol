@@ -192,6 +192,23 @@ def test_adapter_packet_exposes_protocol_registry_metadata(tmp_path):
     }
 
 
+def test_adapter_packet_exposes_public_surface_audit_payload(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.public_surfaces import describe_public_surfaces
+
+    ws, _ = _seed_session(tmp_path)
+
+    packet = build_adapter_packet(ws, "s1", runtime="codex")
+
+    assert packet["public_surface_audit"] == describe_public_surfaces()
+    assert packet["public_surface_audit"]["surface_names"] == packet["adapter_protocol_registry"][
+        "public_surface_contracts"
+    ]
+    assert packet["public_surface_audit"]["validator"] == packet["adapter_protocol_registry"][
+        "public_surface_validator"
+    ]
+
+
 def test_adapter_registry_protocol_fields_match_builder_keys():
     from brain.v5.adapter_protocols import adapter_protocol_fields, build_adapter_protocols
 

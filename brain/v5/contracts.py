@@ -16,6 +16,7 @@ from brain.v5.adapter_protocols import (
     mandatory_trust_update_protocol,
     supported_runtimes,
 )
+from brain.v5.public_surfaces import describe_public_surfaces
 
 
 @dataclass
@@ -71,6 +72,7 @@ _ADAPTER_REQUIRED_KEYS = (
     "execution_brief",
     "trusted_focus",
     "adapter_contract",
+    "public_surface_audit",
     "adapter_protocol_registry",
     "trust_changing_actions",
     "requires_kernel_call_before",
@@ -252,6 +254,9 @@ def validate_adapter_packet(payload: dict[str, Any], *, path: str = "adapter") -
 
     if "adapter_contract" in payload:
         _validate_adapter_contract(payload["adapter_contract"], f"{path}.adapter_contract", result)
+
+    if "public_surface_audit" in payload:
+        _validate_public_surface_audit(payload["public_surface_audit"], f"{path}.public_surface_audit", result)
 
     if "adapter_protocol_registry" in payload:
         _validate_adapter_protocol_registry(
@@ -630,6 +635,15 @@ def _validate_adapter_contract(payload: Any, path: str, result: ContractResult) 
     )
     if payload.get("regenerated_from") != "kernel_state":
         result.add(f"{path}.regenerated_from", "must be 'kernel_state'")
+
+
+def _validate_public_surface_audit(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+
+    if payload != describe_public_surfaces():
+        result.add(path, "must match describe_public_surfaces()")
 
 
 def _validate_adapter_protocol_registry(payload: Any, path: str, result: ContractResult) -> None:

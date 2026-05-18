@@ -8,6 +8,7 @@ from brain.v5.adapter_protocols import build_adapter_protocols, supported_runtim
 from brain.v5.brief import build_execution_brief
 from brain.v5.contracts import require_valid_adapter_packet, require_valid_execution_brief
 from brain.v5.paths import WorkspacePaths
+from brain.v5.public_surfaces import describe_public_surfaces
 from brain.v5.summaries import read_summary_orientation, write_session_summary
 
 
@@ -49,6 +50,7 @@ def build_adapter_packet(ws: WorkspacePaths, session_id: str, *, runtime: str = 
             "kernel_must_be_called_before_trust_updates": True,
             "regenerated_from": "kernel_state",
         },
+        "public_surface_audit": describe_public_surfaces(),
         **build_adapter_protocols(),
         "runtime_rules": _runtime_rules(normalized_runtime),
     }

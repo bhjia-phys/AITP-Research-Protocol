@@ -1709,6 +1709,9 @@ Implementation implications:
 - Public surface contracts should have a direct audit payload through
   `describe_public_surfaces`, `aitp-v5 adapter public-surfaces`, and
   `aitp_v5_describe_public_surfaces`.
+- Adapter packets should embed that public-surface audit payload, so runtimes
+  can inspect contract coverage without a second call and the packet contract
+  can reject tampered audit metadata.
 - Add tests proving summaries do not become independent truth sources when
   they disagree with typed records.
 - Codex, Claude Code, OpenCode, and future adapters may read compact views for
