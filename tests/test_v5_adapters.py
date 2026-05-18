@@ -154,6 +154,7 @@ def test_adapter_packet_protocols_are_generated_from_shared_registry(tmp_path):
 
 
 def test_adapter_packet_exposes_protocol_registry_metadata(tmp_path):
+    from brain.v5.adapter_protocols import adapter_protocol_fingerprint
     from brain.v5.adapters import build_adapter_packet
 
     ws, _ = _seed_session(tmp_path)
@@ -174,6 +175,7 @@ def test_adapter_packet_exposes_protocol_registry_metadata(tmp_path):
             "runtime_record_protocols",
             "runtime_gate_protocols",
         ],
+        "protocol_fingerprint": adapter_protocol_fingerprint(),
     }
 
 
@@ -185,6 +187,17 @@ def test_adapter_registry_protocol_fields_match_builder_keys():
 
     assert tuple(protocols["adapter_protocol_registry"]["protocol_fields"]) == fields
     assert set(fields) == set(protocols) - {"adapter_protocol_registry"}
+
+
+def test_adapter_registry_fingerprint_identifies_protocol_payload():
+    from brain.v5.adapter_protocols import adapter_protocol_fingerprint, build_adapter_protocols
+
+    protocols = build_adapter_protocols()
+    fingerprint = adapter_protocol_fingerprint()
+
+    assert protocols["adapter_protocol_registry"]["protocol_fingerprint"] == fingerprint
+    assert len(fingerprint) == 64
+    assert all(character in "0123456789abcdef" for character in fingerprint)
 
 
 def test_adapter_packet_ignores_tampered_summary_as_truth_source(tmp_path):

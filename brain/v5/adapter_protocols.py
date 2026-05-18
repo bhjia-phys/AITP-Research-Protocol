@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from copy import deepcopy
 from typing import Any
 
@@ -149,12 +151,24 @@ def adapter_protocol_fields() -> tuple[str, ...]:
     return tuple(_PROTOCOL_FIELDS)
 
 
+def adapter_protocol_fingerprint() -> str:
+    """Return a stable fingerprint for the registry-governed protocol payload."""
+
+    canonical_payload = json.dumps(
+        _build_protocol_payload(),
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(canonical_payload.encode("utf-8")).hexdigest()
+
+
 def adapter_protocol_registry() -> dict[str, Any]:
     """Return metadata describing the shared protocol registry."""
 
     return {
         **deepcopy(_REGISTRY_METADATA),
         "protocol_fields": list(adapter_protocol_fields()),
+        "protocol_fingerprint": adapter_protocol_fingerprint(),
     }
 
 
@@ -187,6 +201,12 @@ def build_adapter_protocols() -> dict[str, Any]:
 
     return {
         "adapter_protocol_registry": adapter_protocol_registry(),
+        **_build_protocol_payload(),
+    }
+
+
+def _build_protocol_payload() -> dict[str, Any]:
+    return {
         "trust_changing_actions": deepcopy(_TRUST_CHANGING_ACTIONS),
         "requires_kernel_call_before": deepcopy(_TRUST_CHANGING_ACTIONS),
         "required_kernel_entrypoints": deepcopy(_KERNEL_ENTRYPOINTS),

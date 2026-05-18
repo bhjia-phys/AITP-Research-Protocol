@@ -1739,6 +1739,8 @@ Implementation implications:
   runtimes and contract validators share the same boundary of responsibility.
 - Contract validators should verify that every registry-governed protocol field
   named by the shared registry is present in the adapter packet.
+- Adapter registry metadata should expose a stable fingerprint of the governed
+  protocol payload, so runtimes can audit which exact harness contract they saw.
 
 ## Implementation Plan Direction
 
