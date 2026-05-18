@@ -132,6 +132,30 @@ def test_cli_adapter_packet_validates_payload_before_return(tmp_path, monkeypatc
         cli.main(["--base", str(tmp_path), "adapter", "packet", "codex", "s1"])
 
 
+def test_cli_brief_validates_payload_before_return(tmp_path, monkeypatch):
+    import pytest
+
+    import brain.v5.cli as cli
+    from brain.v5.contracts import ContractError
+
+    monkeypatch.setattr(cli, "build_execution_brief", lambda *args, **kwargs: {"session": {"session_id": "s1"}})
+
+    with pytest.raises(ContractError):
+        cli.main(["--base", str(tmp_path), "brief", "s1"])
+
+
+def test_cli_summary_orientation_validates_payload_before_return(tmp_path, monkeypatch):
+    import pytest
+
+    import brain.v5.cli as cli
+    from brain.v5.contracts import ContractError
+
+    monkeypatch.setattr(cli, "read_summary_orientation", lambda *args, **kwargs: {"kind": "summary_orientation"})
+
+    with pytest.raises(ContractError):
+        cli.main(["--base", str(tmp_path), "summary", "orientation", "s1"])
+
+
 def test_cli_does_not_import_legacy_mcp_monolith():
     import brain.v5.cli as cli
 

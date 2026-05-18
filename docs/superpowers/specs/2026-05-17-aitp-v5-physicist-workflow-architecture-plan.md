@@ -1695,6 +1695,8 @@ Implementation implications:
   creating workspace state.
 - Direct adapter registry inspect responses should pass the same public registry
   contract validator before CLI/MCP wrappers return them.
+- Execution brief and summary orientation read surfaces should also pass their
+  public contract validators before CLI/MCP wrappers return them.
 - Add tests proving summaries do not become independent truth sources when
   they disagree with typed records.
 - Codex, Claude Code, OpenCode, and future adapters may read compact views for

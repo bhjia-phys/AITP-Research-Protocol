@@ -149,6 +149,18 @@ def test_mcp_adapter_packet_validates_payload_before_return(tmp_path, monkeypatc
         mcp_tools.aitp_v5_get_adapter_packet(str(tmp_path), runtime="codex", session_id="s1")
 
 
+def test_mcp_summary_orientation_validates_payload_before_return(tmp_path, monkeypatch):
+    import pytest
+
+    import brain.v5.mcp_tools as mcp_tools
+    from brain.v5.contracts import ContractError
+
+    monkeypatch.setattr(mcp_tools, "read_summary_orientation", lambda *args, **kwargs: {"kind": "summary_orientation"})
+
+    with pytest.raises(ContractError):
+        mcp_tools.aitp_v5_read_summary_orientation(str(tmp_path), session_id="s1")
+
+
 def test_mcp_tools_do_not_import_legacy_mcp_monolith():
     import brain.v5.mcp_tools as mcp_tools
 
