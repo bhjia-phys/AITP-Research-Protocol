@@ -53,3 +53,9 @@ def runtime_entrypoints() -> dict[str, dict[str, Any]]:
     """Return canonical CLI/MCP entrypoints advertised to runtime adapters."""
 
     return deepcopy(_RUNTIME_ENTRYPOINTS)
+
+
+def runtime_entrypoint_surfaces() -> set[str]:
+    """Return the public surfaces named by advertised runtime entrypoints."""
+
+    return {entrypoint["surface"] for entrypoint in _RUNTIME_ENTRYPOINTS.values()}

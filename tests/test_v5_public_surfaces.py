@@ -64,6 +64,17 @@ def test_describe_public_surfaces_returns_auditable_contract_payload():
         assert surface["purpose"]
 
 
+def test_runtime_entrypoint_surfaces_close_over_public_surface_contracts():
+    from brain.v5.public_surfaces import public_surface_names
+    from brain.v5.runtime_entrypoints import runtime_entrypoint_surfaces, runtime_entrypoints
+
+    surfaces = runtime_entrypoint_surfaces()
+
+    assert surfaces == set(public_surface_names()) | {"public_surface_contracts"}
+    for entrypoint in runtime_entrypoints().values():
+        assert entrypoint["surface"] in surfaces
+
+
 def test_public_surface_validator_rejects_invalid_named_surface():
     import pytest
 
