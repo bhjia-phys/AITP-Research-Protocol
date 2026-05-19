@@ -113,6 +113,11 @@ _RUNTIME_ENTRYPOINTS = {
         "mcp": "aitp_v5_request_human_checkpoint",
         "surface": "human_checkpoint_record",
     },
+    "decide_human_checkpoint": {
+        "cli": "aitp-v5 checkpoint decide <args>",
+        "mcp": "aitp_v5_decide_human_checkpoint",
+        "surface": "human_checkpoint_record",
+    },
     "create_promotion_packet": {
         "cli": "aitp-v5 promotion packet create <args>",
         "mcp": "aitp_v5_create_promotion_packet",
@@ -342,6 +347,16 @@ def _sample_args_for_template(template: str) -> list[str]:
             "risk_policy",
             "--option",
             "approve",
+        ]
+    if template.startswith("checkpoint decide"):
+        return [
+            "checkpoint-test",
+            "--decision",
+            "approve",
+            "--rationale",
+            "Looks good",
+            "--decided-by",
+            "human",
         ]
     if template.startswith("promotion packet create"):
         return [

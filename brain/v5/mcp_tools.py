@@ -17,7 +17,7 @@ from brain.v5.physics_objects import record_object_relation, record_physics_obje
 from brain.v5.references import record_reference_location
 from brain.v5.sensemaking import record_sensemaking_report
 from brain.v5.validation import create_validation_contract
-from brain.v5.checkpoints import request_human_checkpoint
+from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
 from brain.v5.memory import create_promotion_packet
 from brain.v5.risk import assess_claim_risk
 from brain.v5.store import list_records
@@ -238,6 +238,14 @@ def aitp_v5_request_human_checkpoint(
     chk = request_human_checkpoint(_ws(base), topic_id=topic_id, claim_id=claim_id,
         reason=reason, requested_by=requested_by, options=options)
     return require_valid_public_surface("human_checkpoint_record", {"ok": True, **asdict(chk)})
+
+
+def aitp_v5_decide_human_checkpoint(
+    base: str, *, checkpoint_id: str, decision: str, rationale: str, decided_by: str,
+) -> dict:
+    dec = decide_human_checkpoint(_ws(base), checkpoint_id=checkpoint_id,
+        decision=decision, rationale=rationale, decided_by=decided_by)
+    return require_valid_public_surface("human_checkpoint_record", {"ok": True, **asdict(dec)})
 
 
 def aitp_v5_create_promotion_packet(

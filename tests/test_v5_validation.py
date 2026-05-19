@@ -290,6 +290,52 @@ def test_human_checkpoint_cli(tmp_path):
     assert result == 0
 
 
+def test_human_checkpoint_decide_cli(tmp_path):
+    from brain.v5.checkpoints import request_human_checkpoint
+    from brain.v5.cli import main
+    from brain.v5.workspace import create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    chk = request_human_checkpoint(ws, topic_id="fqhe", claim_id="claim-fqhe",
+        reason="test", requested_by="test", options=["approve", "revise"])
+
+    result = main([
+        "--base", str(tmp_path), "checkpoint", "decide",
+        chk.checkpoint_id, "--decision", "approve",
+        "--rationale", "Good to go", "--decided-by", "human",
+    ])
+    assert result == 0
+
+
+def test_human_checkpoint_decide_mcp(tmp_path):
+    from brain.v5.checkpoints import request_human_checkpoint
+    from brain.v5.mcp_tools import aitp_v5_decide_human_checkpoint
+    from brain.v5.workspace import create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    chk = request_human_checkpoint(ws, topic_id="fqhe", claim_id="claim-fqhe",
+        reason="test", requested_by="test", options=["approve", "revise"])
+
+    result = aitp_v5_decide_human_checkpoint(
+        str(tmp_path), checkpoint_id=chk.checkpoint_id,
+        decision="approve", rationale="Good to go", decided_by="human",
+    )
+    assert result["ok"] is True
+    assert result["status"] == "decided"
+    assert result["decision"] == "approve"
+
+
+def test_human_checkpoint_decide_runtime_entrypoint():
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+
+    ep = runtime_entrypoints()
+    assert "decide_human_checkpoint" in ep
+    assert ep["decide_human_checkpoint"]["surface"] == "human_checkpoint_record"
+    assert ep["decide_human_checkpoint"]["mcp"] == "aitp_v5_decide_human_checkpoint"
+
+
 def test_human_checkpoint_mcp(tmp_path):
     from brain.v5.checkpoints import request_human_checkpoint
     from brain.v5.mcp_tools import aitp_v5_request_human_checkpoint

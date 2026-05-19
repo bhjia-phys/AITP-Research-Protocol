@@ -21,7 +21,7 @@ from brain.v5.physics_objects import record_object_relation, record_physics_obje
 from brain.v5.references import record_reference_location
 from brain.v5.sensemaking import record_sensemaking_report
 from brain.v5.validation import create_validation_contract
-from brain.v5.checkpoints import request_human_checkpoint
+from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
 from brain.v5.memory import create_promotion_packet
 from brain.v5.risk import assess_claim_risk
 from brain.v5.summaries import read_summary_orientation, write_session_summary
@@ -185,6 +185,9 @@ def _build_parser() -> argparse.ArgumentParser:
     chk_r.add_argument("--topic", required=True, dest="topic_id"); chk_r.add_argument("--claim", required=True, dest="claim_id")
     chk_r.add_argument("--reason", required=True); chk_r.add_argument("--requested-by", required=True)
     chk_r.add_argument("--option", action="append", default=[], dest="options")
+    chk_d = chk_s.add_parser("decide")
+    chk_d.add_argument("checkpoint_id"); chk_d.add_argument("--decision", required=True)
+    chk_d.add_argument("--rationale", required=True); chk_d.add_argument("--decided-by", required=True)
 
     pp = sp.add_parser("promotion"); pps = pp.add_subparsers(dest="promotion_command", required=True)
     pkt = pps.add_parser("packet"); pkts = pkt.add_subparsers(dest="promotion_packet_command", required=True)
@@ -336,6 +339,11 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         chk = request_human_checkpoint(ws, topic_id=args.topic_id, claim_id=args.claim_id,
             reason=args.reason, requested_by=args.requested_by, options=args.options)
         return {"ok": True, **require_valid_public_surface("human_checkpoint_record", {"ok": True, **asdict(chk)})}
+
+    if args.command == "checkpoint" and args.checkpoint_command == "decide":
+        dec = decide_human_checkpoint(ws, checkpoint_id=args.checkpoint_id,
+            decision=args.decision, rationale=args.rationale, decided_by=args.decided_by)
+        return {"ok": True, **require_valid_public_surface("human_checkpoint_record", {"ok": True, **asdict(dec)})}
 
     if args.command == "promotion" and args.promotion_command == "packet" and args.promotion_packet_command == "create":
         pkt = create_promotion_packet(ws, topic_id=args.topic_id, claim_id=args.claim_id,
