@@ -63,6 +63,11 @@ _RUNTIME_ENTRYPOINTS = {
         "mcp": "aitp_v5_list_knowledge_connectors",
         "surface": "knowledge_connector_catalog",
     },
+    "record_reference_location": {
+        "cli": "aitp-v5 reference location record <args>",
+        "mcp": "aitp_v5_record_reference_location",
+        "surface": "reference_location_record",
+    },
     "summary_orientation": {
         "cli": "aitp-v5 summary orientation <session-id>",
         "mcp": "aitp_v5_read_summary_orientation",
@@ -233,5 +238,18 @@ def _sample_args_for_template(template: str) -> list[str]:
             "claim-fqhe",
             "--inputs-json",
             '{"observed":1,"expected":1,"tolerance":0}',
+        ]
+    if template.startswith("reference location record"):
+        return [
+            "--topic",
+            "fqhe",
+            "--connector",
+            "local_pdf",
+            "--type",
+            "paper_pdf",
+            "--uri",
+            "file:///papers/fqhe.pdf",
+            "--label",
+            "FQHE paper PDF",
         ]
     return []

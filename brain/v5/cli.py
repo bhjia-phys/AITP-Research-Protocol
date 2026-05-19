@@ -17,6 +17,7 @@ from brain.v5.evidence import record_evidence
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
 from brain.v5.models import TrustUpdateRequest
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
+from brain.v5.references import record_reference_location
 from brain.v5.risk import assess_claim_risk
 from brain.v5.summaries import read_summary_orientation, write_session_summary
 from brain.v5.tool_executors import describe_tool_executors, execute_registered_tool_result
@@ -161,6 +162,24 @@ def _build_parser() -> argparse.ArgumentParser:
     knowledge_parser = subparsers.add_parser("knowledge")
     knowledge_sub = knowledge_parser.add_subparsers(dest="knowledge_command", required=True)
     knowledge_sub.add_parser("connectors")
+
+    reference_parser = subparsers.add_parser("reference")
+    reference_sub = reference_parser.add_subparsers(dest="reference_command", required=True)
+    reference_location = reference_sub.add_parser("location")
+    reference_location_sub = reference_location.add_subparsers(dest="reference_location_command", required=True)
+    reference_location_record = reference_location_sub.add_parser("record")
+    reference_location_record.add_argument("--topic", required=True, dest="topic_id")
+    reference_location_record.add_argument("--claim", default="", dest="claim_id")
+    reference_location_record.add_argument("--connector", required=True, dest="connector_id")
+    reference_location_record.add_argument("--type", required=True, dest="location_type")
+    reference_location_record.add_argument("--uri", required=True)
+    reference_location_record.add_argument("--label", required=True)
+    reference_location_record.add_argument("--source-ref", default="")
+    reference_location_record.add_argument("--external-id", default="")
+    reference_location_record.add_argument("--status", default="located")
+    reference_location_record.add_argument("--summary", default="")
+    reference_location_record.add_argument("--metadata-json", default="{}")
+    reference_location_record.add_argument("--linked-records-json", default="{}")
 
     summary_parser = subparsers.add_parser("summary")
     summary_sub = summary_parser.add_subparsers(dest="summary_command", required=True)
@@ -335,6 +354,28 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.command == "knowledge" and args.knowledge_command == "connectors":
         return require_valid_public_surface("knowledge_connector_catalog", describe_knowledge_connectors())
+
+    if (
+        args.command == "reference"
+        and args.reference_command == "location"
+        and args.reference_location_command == "record"
+    ):
+        location = record_reference_location(
+            ws,
+            topic_id=args.topic_id,
+            claim_id=args.claim_id,
+            connector_id=args.connector_id,
+            location_type=args.location_type,
+            uri=args.uri,
+            label=args.label,
+            source_ref=args.source_ref,
+            external_id=args.external_id,
+            status=args.status,
+            summary=args.summary,
+            metadata=_json_object_arg(args.metadata_json, "--metadata-json"),
+            linked_records=_json_object_arg(args.linked_records_json, "--linked-records-json"),
+        )
+        return {"ok": True, **require_valid_public_surface("reference_location_record", {"ok": True, **asdict(location)})}
 
     if args.command == "summary" and args.summary_command == "session":
         return {

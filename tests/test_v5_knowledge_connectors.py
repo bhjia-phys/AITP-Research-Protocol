@@ -24,7 +24,7 @@ def test_ima_connector_catalog_declares_theory_literature_protocol():
     assert ima["truth_policy"]["source_backed_evidence_required"] is True
     assert "retrieve_before_answering" in ima["protocol_hooks"]
     assert "capture_nontrivial_learning" in ima["protocol_hooks"]
-    assert "note_location_refs" in ima["required_kernel_followup_records"]
+    assert "reference_location_records" in ima["required_kernel_followup_records"]
     assert "external_note_uri" in ima["location_ref_targets"]
 
 
@@ -77,7 +77,7 @@ def test_execution_brief_recommends_generic_connector_action_for_literature_clai
     assert action["connector_ids"] == ["ima"]
     assert action["backend_required"] is False
     assert "external_note_uri" in action["location_ref_targets"]
-    assert "note_location_refs" in action["required_kernel_followup_records"]
+    assert "reference_location_records" in action["required_kernel_followup_records"]
     assert "orientation" in action["expected_evidence_gain"]
 
 

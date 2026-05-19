@@ -287,6 +287,26 @@ def require_valid_tool_recipe_record(payload: dict[str, Any]) -> dict[str, Any]:
     return _require_valid_tool_recipe_record(payload)
 
 
+def validate_reference_location_record(
+    payload: dict[str, Any],
+    *,
+    path: str = "reference_location_record",
+) -> ContractResult:
+    """Validate a public reference-location-record write payload."""
+
+    from brain.v5.record_contracts import validate_reference_location_record as _validate_reference_location_record
+
+    return _validate_reference_location_record(payload, path=path)
+
+
+def require_valid_reference_location_record(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a reference-location-record write payload or raise a contract error."""
+
+    from brain.v5.record_contracts import require_valid_reference_location_record as _require_valid_reference_location_record
+
+    return _require_valid_reference_location_record(payload)
+
+
 def validate_tool_executor_catalog(payload: dict[str, Any], *, path: str = "tool_executor_catalog") -> ContractResult:
     """Validate a public safe tool-executor catalog payload."""
 

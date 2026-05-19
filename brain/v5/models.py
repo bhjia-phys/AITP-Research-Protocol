@@ -180,6 +180,25 @@ class ArtifactRecord:
 
 
 @dataclass
+class ReferenceLocationRecord:
+    location_id: str
+    topic_id: str
+    connector_id: str
+    location_type: str
+    uri: str
+    label: str
+    claim_id: str = ""
+    source_ref: str = ""
+    external_id: str = ""
+    status: str = "located"
+    summary: str = ""
+    metadata: dict = field(default_factory=dict)
+    linked_records: dict = field(default_factory=dict)
+    orientation_only: bool = True
+    kind: str = "reference_location"
+
+
+@dataclass
 class EvidenceRecord:
     evidence_id: str
     topic_id: str

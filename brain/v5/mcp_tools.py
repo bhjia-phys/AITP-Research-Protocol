@@ -13,6 +13,7 @@ from brain.v5.evidence import record_evidence
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
 from brain.v5.models import CodeStateRecord, TrustUpdateRequest
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
+from brain.v5.references import record_reference_location
 from brain.v5.risk import assess_claim_risk
 from brain.v5.store import list_records
 from brain.v5.summaries import read_summary_orientation, write_session_summary
@@ -274,6 +275,41 @@ def aitp_v5_list_tool_executors() -> dict:
 
 def aitp_v5_list_knowledge_connectors() -> dict:
     return require_valid_public_surface("knowledge_connector_catalog", describe_knowledge_connectors())
+
+
+def aitp_v5_record_reference_location(
+    base: str,
+    *,
+    topic_id: str,
+    connector_id: str,
+    location_type: str,
+    uri: str,
+    label: str,
+    claim_id: str = "",
+    source_ref: str = "",
+    external_id: str = "",
+    status: str = "located",
+    summary: str = "",
+    metadata: dict | None = None,
+    linked_records: dict | None = None,
+) -> dict:
+    ws = init_workspace(Path(base))
+    location = record_reference_location(
+        ws,
+        topic_id=topic_id,
+        claim_id=claim_id,
+        connector_id=connector_id,
+        location_type=location_type,
+        uri=uri,
+        label=label,
+        source_ref=source_ref,
+        external_id=external_id,
+        status=status,
+        summary=summary,
+        metadata=metadata,
+        linked_records=linked_records,
+    )
+    return require_valid_public_surface("reference_location_record", {"ok": True, **asdict(location)})
 
 
 def aitp_v5_write_session_summary(base: str, *, session_id: str) -> dict:

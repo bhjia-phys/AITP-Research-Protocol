@@ -63,7 +63,7 @@ def builtin_knowledge_connectors() -> dict[str, KnowledgeConnectorRecord]:
             ),
             required_kernel_followup_records=(
                 "source_refs",
-                "note_location_refs",
+                "reference_location_records",
                 "evidence_records",
                 "claim_updates_when_trust_changes",
             ),

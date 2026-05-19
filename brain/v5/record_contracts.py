@@ -79,6 +79,23 @@ def require_valid_tool_recipe_record(payload: dict[str, Any]) -> dict[str, Any]:
     return _require_valid(validate_tool_recipe_record(payload), payload)
 
 
+def validate_reference_location_record(payload: dict[str, Any], *, path: str = "reference_location_record") -> ContractResult:
+    result = _validate_base_record(payload, path, kind="reference_location")
+    if result.issues:
+        return result
+    for key in ("location_id", "topic_id", "connector_id", "location_type", "uri", "label", "status"):
+        _require_nonempty_str(payload, key, path, result)
+    for key in ("metadata", "linked_records"):
+        _require_mapping(payload.get(key), f"{path}.{key}", result)
+    if payload.get("orientation_only") is not True:
+        result.add(f"{path}.orientation_only", "must be true")
+    return result
+
+
+def require_valid_reference_location_record(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_reference_location_record(payload), payload)
+
+
 def _validate_base_record(payload: Any, path: str, *, kind: str) -> ContractResult:
     result = ContractResult()
     _require_mapping(payload, path, result)

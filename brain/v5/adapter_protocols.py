@@ -44,6 +44,7 @@ _KERNEL_ENTRYPOINTS = [
     "aitp_v5_record_tool_run",
     "aitp_v5_execute_tool",
     "aitp_v5_register_tool_recipe",
+    "aitp_v5_record_reference_location",
     "aitp_v5_assess_risk",
     "aitp_v5_write_session_summary",
 ]
@@ -103,6 +104,12 @@ _RECORD_SEQUENCE_BY_ACTION = {
     "register_tool_recipe": [
         "register_tool_recipe",
     ],
+    "record_reference_location": [
+        "refresh_execution_brief",
+        "record_reference_location",
+        "refresh_execution_brief",
+        "write_session_summary",
+    ],
 }
 _RUNTIME_RECORD_PROTOCOLS = {
     "record_code_state": {
@@ -142,6 +149,14 @@ _RUNTIME_RECORD_PROTOCOLS = {
         "sequence": list(_RECORD_SEQUENCE_BY_ACTION["register_tool_recipe"]),
         "required_typed_refs": ["recipe_id", "tool_family", "tool_name"],
         "accepted_link_fields": ["required_inputs", "expected_outputs", "invariants"],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    },
+    "record_reference_location": {
+        "entrypoint": "aitp_v5_record_reference_location",
+        "sequence": list(_RECORD_SEQUENCE_BY_ACTION["record_reference_location"]),
+        "required_typed_refs": ["topic_id", "connector_id", "uri"],
+        "accepted_link_fields": ["claim_id", "source_ref", "external_id", "linked_records"],
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     },

@@ -199,7 +199,7 @@ def _knowledge_connector_action(
         "action": "consult_knowledge_connector",
         "rank": 1,
         "why": f"{why}; literature or note context is needed before treating retrieved context as evidence",
-        "expected_evidence_gain": "retrieve orientation context while recording source_refs and note_location_refs in typed kernel records",
+        "expected_evidence_gain": "retrieve orientation context while recording source_refs and reference_location_records in typed kernel records",
         "connector_ids": [connector["connector_id"] for connector in connectors],
         "backend_required": any(connector.get("is_required", False) for connector in connectors),
         "retrieval_targets": _dedupe(_flatten(connector.get("expected_retrieval_targets", []) for connector in connectors)),
