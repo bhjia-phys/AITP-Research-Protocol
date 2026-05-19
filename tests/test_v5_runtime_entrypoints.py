@@ -7,6 +7,21 @@ def test_runtime_entrypoint_validation_confirms_advertised_targets_exist():
     assert validate_runtime_entrypoints() == []
 
 
+def test_runtime_entrypoints_advertise_typed_write_surfaces():
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+
+    entrypoints = runtime_entrypoints()
+
+    assert entrypoints["record_evidence"]["surface"] == "evidence_record"
+    assert entrypoints["record_code_state"]["surface"] == "code_state_record"
+    assert entrypoints["register_tool_recipe"]["surface"] == "tool_recipe_record"
+    assert entrypoints["record_tool_run"]["surface"] == "tool_run_record"
+    assert entrypoints["record_evidence"]["mcp"] == "aitp_v5_record_evidence"
+    assert entrypoints["record_code_state"]["mcp"] == "aitp_v5_record_code_state"
+    assert entrypoints["register_tool_recipe"]["mcp"] == "aitp_v5_register_tool_recipe"
+    assert entrypoints["record_tool_run"]["mcp"] == "aitp_v5_record_tool_run"
+
+
 def test_runtime_entrypoint_validation_reports_bad_mcp_and_cli_targets():
     from brain.v5.runtime_entrypoints import runtime_entrypoints, validate_runtime_entrypoints
 

@@ -7,9 +7,13 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
     assert set(public_surface_names()) == {
         "adapter_packet",
         "adapter_protocol_registry",
+        "code_state_record",
+        "evidence_record",
         "execution_brief",
         "session_summary_bundle",
         "summary_orientation",
+        "tool_recipe_record",
+        "tool_run_record",
         "trust_update_apply",
         "trust_update_preflight",
     }
@@ -22,6 +26,76 @@ def test_public_surface_validator_accepts_valid_adapter_registry():
     registry = adapter_protocol_registry()
 
     assert require_valid_public_surface("adapter_protocol_registry", registry) == registry
+
+
+def test_public_surface_validator_accepts_typed_write_records():
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    evidence = {
+        "ok": True,
+        "kind": "evidence",
+        "evidence_id": "evidence-fqhe-counting",
+        "topic_id": "fqhe",
+        "claim_id": "claim-fqhe-counting",
+        "evidence_type": "toy_numeric",
+        "status": "supports",
+        "summary": "Finite-size counting check.",
+        "supports_outputs": ["minimal_check"],
+        "source_refs": ["paper:example"],
+        "tool_run_ids": ["tool-run-ed"],
+        "artifact_ids": ["artifact-spectrum"],
+    }
+    tool_run = {
+        "ok": True,
+        "kind": "tool_run",
+        "run_id": "tool-run-ed",
+        "recipe_id": "recipe-ed",
+        "tool_family": "numerical",
+        "tool_name": "exact-diagonalization",
+        "topic_id": "fqhe",
+        "claim_id": "claim-fqhe-counting",
+        "inputs": {"system_size": 10},
+        "outputs": {"counting_matches": True},
+        "environment": {"python": "3.12"},
+        "evidence_status": "supports",
+        "code_state_ids": ["code-state-ed"],
+        "artifact_ids": ["artifact-spectrum"],
+        "source_refs": ["paper:example"],
+    }
+    code_state = {
+        "ok": True,
+        "kind": "code_state",
+        "code_state_id": "code-state-librpa-abc123",
+        "repo_id": "librpa",
+        "upstream_remote": "origin",
+        "upstream_branch": "master",
+        "upstream_commit": "abc123",
+        "local_branch": "topic/gw",
+        "worktree_path": "D:/worktrees/librpa/gw",
+        "dirty": False,
+        "patch_id": "",
+        "diff_hash": "",
+        "build_config": {},
+        "runtime_environment": {},
+        "linked_records": {"claim_id": "claim-gw"},
+        "known_divergence": "",
+    }
+    recipe = {
+        "ok": True,
+        "kind": "tool_recipe",
+        "recipe_id": "recipe-librpa-gw",
+        "tool_family": "domain",
+        "tool_name": "librpa-gw-runner",
+        "purpose": "Run a LibRPA GW benchmark.",
+        "required_inputs": ["code_state_id"],
+        "expected_outputs": ["benchmark_consistency"],
+        "invariants": ["same upstream commit"],
+    }
+
+    assert require_valid_public_surface("evidence_record", evidence) == evidence
+    assert require_valid_public_surface("tool_run_record", tool_run) == tool_run
+    assert require_valid_public_surface("code_state_record", code_state) == code_state
+    assert require_valid_public_surface("tool_recipe_record", recipe) == recipe
 
 
 def test_adapter_registry_exposes_public_surface_contract_names():

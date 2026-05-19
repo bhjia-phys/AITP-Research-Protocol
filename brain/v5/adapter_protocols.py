@@ -38,8 +38,10 @@ _KERNEL_ENTRYPOINTS = [
     "aitp_v5_get_execution_brief",
     "aitp_v5_preflight_trust_update",
     "aitp_v5_apply_trust_update",
+    "aitp_v5_record_code_state",
     "aitp_v5_record_evidence",
     "aitp_v5_record_tool_run",
+    "aitp_v5_register_tool_recipe",
     "aitp_v5_assess_risk",
     "aitp_v5_write_session_summary",
 ]
@@ -72,6 +74,12 @@ _RUNTIME_TRUST_UPDATE_PROTOCOL = {
     },
 }
 _RECORD_SEQUENCE_BY_ACTION = {
+    "record_code_state": [
+        "refresh_execution_brief",
+        "record_code_state",
+        "refresh_execution_brief",
+        "write_session_summary",
+    ],
     "record_evidence": [
         "refresh_execution_brief",
         "record_evidence",
@@ -84,8 +92,19 @@ _RECORD_SEQUENCE_BY_ACTION = {
         "refresh_execution_brief",
         "write_session_summary",
     ],
+    "register_tool_recipe": [
+        "register_tool_recipe",
+    ],
 }
 _RUNTIME_RECORD_PROTOCOLS = {
+    "record_code_state": {
+        "entrypoint": "aitp_v5_record_code_state",
+        "sequence": list(_RECORD_SEQUENCE_BY_ACTION["record_code_state"]),
+        "required_typed_refs": ["repo_id", "upstream_commit", "local_branch"],
+        "accepted_link_fields": ["linked_records"],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    },
     "record_evidence": {
         "entrypoint": "aitp_v5_record_evidence",
         "sequence": list(_RECORD_SEQUENCE_BY_ACTION["record_evidence"]),
@@ -99,6 +118,14 @@ _RUNTIME_RECORD_PROTOCOLS = {
         "sequence": list(_RECORD_SEQUENCE_BY_ACTION["record_tool_run"]),
         "required_typed_refs": ["topic_id", "claim_id", "recipe_id"],
         "accepted_link_fields": ["code_state_ids", "artifact_ids", "source_refs"],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    },
+    "register_tool_recipe": {
+        "entrypoint": "aitp_v5_register_tool_recipe",
+        "sequence": list(_RECORD_SEQUENCE_BY_ACTION["register_tool_recipe"]),
+        "required_typed_refs": ["recipe_id", "tool_family", "tool_name"],
+        "accepted_link_fields": ["required_inputs", "expected_outputs", "invariants"],
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     },

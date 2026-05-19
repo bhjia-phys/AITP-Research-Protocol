@@ -134,7 +134,7 @@ def aitp_v5_record_code_state(
         linked_records=linked_records,
         known_divergence=known_divergence,
     )
-    return {"ok": True, **asdict(state)}
+    return require_valid_public_surface("code_state_record", {"ok": True, **asdict(state)})
 
 
 def aitp_v5_record_evidence(
@@ -163,7 +163,7 @@ def aitp_v5_record_evidence(
         tool_run_ids=tool_run_ids,
         artifact_ids=artifact_ids,
     )
-    return {"ok": True, **asdict(evidence)}
+    return require_valid_public_surface("evidence_record", {"ok": True, **asdict(evidence)})
 
 
 def aitp_v5_register_tool_recipe(
@@ -188,7 +188,7 @@ def aitp_v5_register_tool_recipe(
         expected_outputs=expected_outputs,
         invariants=invariants,
     )
-    return {"ok": True, **asdict(recipe)}
+    return require_valid_public_surface("tool_recipe_record", {"ok": True, **asdict(recipe)})
 
 
 def aitp_v5_record_tool_run(
@@ -223,7 +223,7 @@ def aitp_v5_record_tool_run(
         artifact_ids=artifact_ids,
         source_refs=source_refs,
     )
-    return {"ok": True, **asdict(run)}
+    return require_valid_public_surface("tool_run_record", {"ok": True, **asdict(run)})
 
 
 def aitp_v5_write_session_summary(base: str, *, session_id: str) -> dict:

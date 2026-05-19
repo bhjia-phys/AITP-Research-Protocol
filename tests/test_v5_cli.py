@@ -183,6 +183,88 @@ def test_cli_tool_recipe_and_run_record_provenance(tmp_path, capsys):
     assert run["source_refs"] == ["benchmark:si-reference"]
 
 
+def test_cli_evidence_and_code_state_record_provenance(tmp_path, capsys):
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "librpa-gw", context_id="gw-methods", title="LibRPA GW")
+    claim = create_claim(
+        ws,
+        topic_id="librpa-gw",
+        statement="The code state and benchmark evidence are recorded before trust changes.",
+        evidence_profile="code_method",
+        confidence_state="hypothesis",
+        active_uncertainty="code provenance",
+    )
+
+    code_state = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "code",
+            "state",
+            "record",
+            "--repo-id",
+            "librpa",
+            "--upstream-remote",
+            "origin",
+            "--upstream-branch",
+            "master",
+            "--upstream-commit",
+            "abc123",
+            "--local-branch",
+            "topic/gw",
+            "--worktree-path",
+            "D:/worktrees/librpa/gw",
+            "--build-config-json",
+            '{"compiler":"gcc","mpi":true}',
+            "--runtime-environment-json",
+            '{"host":"fisher"}',
+            "--linked-records-json",
+            '{"claim_id":"%s"}' % claim.claim_id,
+        ],
+        capsys,
+    )
+    evidence = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "evidence",
+            "record",
+            "--topic",
+            "librpa-gw",
+            "--claim",
+            claim.claim_id,
+            "--type",
+            "benchmark",
+            "--status",
+            "supports",
+            "--summary",
+            "The Si benchmark run is within tolerance.",
+            "--supports-output",
+            "benchmark_consistency",
+            "--source-ref",
+            "benchmark:si-reference",
+            "--tool-run-id",
+            "tool-run-librpa-si",
+            "--artifact-id",
+            "artifact-si-log",
+        ],
+        capsys,
+    )
+
+    assert code_state["ok"] is True
+    assert code_state["kind"] == "code_state"
+    assert code_state["repo_id"] == "librpa"
+    assert code_state["build_config"]["mpi"] is True
+    assert code_state["linked_records"]["claim_id"] == claim.claim_id
+    assert evidence["ok"] is True
+    assert evidence["kind"] == "evidence"
+    assert evidence["supports_outputs"] == ["benchmark_consistency"]
+    assert evidence["tool_run_ids"] == ["tool-run-librpa-si"]
+    assert evidence["artifact_ids"] == ["artifact-si-log"]
+
+
 def test_cli_adapter_registry_returns_static_protocol_metadata_without_workspace(tmp_path, capsys):
     from brain.v5.adapter_protocols import adapter_protocol_registry
 

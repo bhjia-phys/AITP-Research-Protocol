@@ -7,9 +7,13 @@ from typing import Any, Callable
 _PUBLIC_SURFACE_NAMES = (
     "adapter_packet",
     "adapter_protocol_registry",
+    "code_state_record",
+    "evidence_record",
     "execution_brief",
     "session_summary_bundle",
     "summary_orientation",
+    "tool_recipe_record",
+    "tool_run_record",
     "trust_update_apply",
     "trust_update_preflight",
 )
@@ -17,9 +21,13 @@ _PUBLIC_SURFACE_VALIDATOR_REF = "brain.v5.public_surfaces.require_valid_public_s
 _PUBLIC_SURFACE_PURPOSES = {
     "adapter_packet": "runtime adapter packet carrying brief, summary orientation, and trust protocol metadata",
     "adapter_protocol_registry": "auditable registry metadata for adapter protocol fields and validator surfaces",
+    "code_state_record": "contracted code-state provenance record for code-dependent physics results",
+    "evidence_record": "contracted evidence write result linked to a claim and required outputs",
     "execution_brief": "typed kernel brief for current focus, risk, evidence coverage, and next actions",
     "session_summary_bundle": "orientation-only summary files regenerated from typed kernel records",
     "summary_orientation": "read-only summary view with explicit truth-source protections",
+    "tool_recipe_record": "contracted reusable tool recipe record with inputs, outputs, and invariants",
+    "tool_run_record": "contracted tool-run provenance record linked to claims, code states, and artifacts",
     "trust_update_apply": "contracted result of a trust-changing mutation after preflight",
     "trust_update_preflight": "contracted preflight gate for trust-changing actions",
 }
@@ -70,9 +78,13 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.contracts import (
         require_valid_adapter_packet,
         require_valid_adapter_protocol_registry,
+        require_valid_code_state_record,
+        require_valid_evidence_record,
         require_valid_execution_brief,
         require_valid_session_summary_bundle,
         require_valid_summary_orientation,
+        require_valid_tool_recipe_record,
+        require_valid_tool_run_record,
         require_valid_trust_update_apply,
         require_valid_trust_update_preflight,
     )
@@ -80,9 +92,13 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     return {
         "adapter_packet": require_valid_adapter_packet,
         "adapter_protocol_registry": require_valid_adapter_protocol_registry,
+        "code_state_record": require_valid_code_state_record,
+        "evidence_record": require_valid_evidence_record,
         "execution_brief": require_valid_execution_brief,
         "session_summary_bundle": require_valid_session_summary_bundle,
         "summary_orientation": require_valid_summary_orientation,
+        "tool_recipe_record": require_valid_tool_recipe_record,
+        "tool_run_record": require_valid_tool_run_record,
         "trust_update_apply": require_valid_trust_update_apply,
         "trust_update_preflight": require_valid_trust_update_preflight,
     }

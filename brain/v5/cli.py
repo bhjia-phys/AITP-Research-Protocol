@@ -12,6 +12,8 @@ from typing import Any
 from brain.v5.adapter_protocols import adapter_protocol_registry
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
+from brain.v5.code import record_code_state
+from brain.v5.evidence import record_evidence
 from brain.v5.models import TrustUpdateRequest
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
 from brain.v5.risk import assess_claim_risk
@@ -77,6 +79,38 @@ def _build_parser() -> argparse.ArgumentParser:
     risk_sub = risk_parser.add_subparsers(dest="risk_command", required=True)
     risk_assess = risk_sub.add_parser("assess")
     risk_assess.add_argument("claim_id")
+
+    code_parser = subparsers.add_parser("code")
+    code_sub = code_parser.add_subparsers(dest="code_command", required=True)
+    code_state = code_sub.add_parser("state")
+    code_state_sub = code_state.add_subparsers(dest="code_state_command", required=True)
+    code_state_record = code_state_sub.add_parser("record")
+    code_state_record.add_argument("--repo-id", required=True)
+    code_state_record.add_argument("--upstream-remote", required=True)
+    code_state_record.add_argument("--upstream-branch", required=True)
+    code_state_record.add_argument("--upstream-commit", required=True)
+    code_state_record.add_argument("--local-branch", required=True)
+    code_state_record.add_argument("--worktree-path", required=True)
+    code_state_record.add_argument("--dirty", action="store_true")
+    code_state_record.add_argument("--patch-id", default="")
+    code_state_record.add_argument("--diff-hash", default="")
+    code_state_record.add_argument("--build-config-json", default="{}")
+    code_state_record.add_argument("--runtime-environment-json", default="{}")
+    code_state_record.add_argument("--linked-records-json", default="{}")
+    code_state_record.add_argument("--known-divergence", default="")
+
+    evidence_parser = subparsers.add_parser("evidence")
+    evidence_sub = evidence_parser.add_subparsers(dest="evidence_command", required=True)
+    evidence_record = evidence_sub.add_parser("record")
+    evidence_record.add_argument("--topic", required=True, dest="topic_id")
+    evidence_record.add_argument("--claim", required=True, dest="claim_id")
+    evidence_record.add_argument("--type", required=True, dest="evidence_type")
+    evidence_record.add_argument("--status", required=True)
+    evidence_record.add_argument("--summary", required=True)
+    evidence_record.add_argument("--supports-output", action="append", default=[], dest="supports_outputs")
+    evidence_record.add_argument("--source-ref", action="append", default=[], dest="source_refs")
+    evidence_record.add_argument("--tool-run-id", action="append", default=[], dest="tool_run_ids")
+    evidence_record.add_argument("--artifact-id", action="append", default=[], dest="artifact_ids")
 
     tool_parser = subparsers.add_parser("tool")
     tool_sub = tool_parser.add_subparsers(dest="tool_command", required=True)
@@ -187,6 +221,40 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         risk = assess_claim_risk(claim)
         return {"ok": True, "claim_id": args.claim_id, "risk_assessment": asdict(risk)}
 
+    if args.command == "code" and args.code_command == "state" and args.code_state_command == "record":
+        state = record_code_state(
+            ws,
+            repo_id=args.repo_id,
+            upstream_remote=args.upstream_remote,
+            upstream_branch=args.upstream_branch,
+            upstream_commit=args.upstream_commit,
+            local_branch=args.local_branch,
+            worktree_path=args.worktree_path,
+            dirty=args.dirty,
+            patch_id=args.patch_id,
+            diff_hash=args.diff_hash,
+            build_config=_json_object_arg(args.build_config_json, "--build-config-json"),
+            runtime_environment=_json_object_arg(args.runtime_environment_json, "--runtime-environment-json"),
+            linked_records=_json_object_arg(args.linked_records_json, "--linked-records-json"),
+            known_divergence=args.known_divergence,
+        )
+        return {"ok": True, **require_valid_public_surface("code_state_record", {"ok": True, **asdict(state)})}
+
+    if args.command == "evidence" and args.evidence_command == "record":
+        evidence = record_evidence(
+            ws,
+            topic_id=args.topic_id,
+            claim_id=args.claim_id,
+            evidence_type=args.evidence_type,
+            status=args.status,
+            summary=args.summary,
+            supports_outputs=args.supports_outputs,
+            source_refs=args.source_refs,
+            tool_run_ids=args.tool_run_ids,
+            artifact_ids=args.artifact_ids,
+        )
+        return {"ok": True, **require_valid_public_surface("evidence_record", {"ok": True, **asdict(evidence)})}
+
     if args.command == "tool" and args.tool_command == "recipe" and args.tool_recipe_command == "register":
         recipe = register_tool_recipe(
             ws,
@@ -198,7 +266,7 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             expected_outputs=args.expected_outputs,
             invariants=args.invariants,
         )
-        return {"ok": True, **asdict(recipe)}
+        return {"ok": True, **require_valid_public_surface("tool_recipe_record", {"ok": True, **asdict(recipe)})}
 
     if args.command == "tool" and args.tool_command == "run" and args.tool_run_command == "record":
         run = record_tool_run(
@@ -216,7 +284,7 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             artifact_ids=args.artifact_ids,
             source_refs=args.source_refs,
         )
-        return {"ok": True, **asdict(run)}
+        return {"ok": True, **require_valid_public_surface("tool_run_record", {"ok": True, **asdict(run)})}
 
     if args.command == "summary" and args.summary_command == "session":
         return {

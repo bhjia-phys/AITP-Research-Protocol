@@ -28,6 +28,26 @@ _RUNTIME_ENTRYPOINTS = {
         "mcp": "aitp_v5_get_execution_brief",
         "surface": "execution_brief",
     },
+    "record_code_state": {
+        "cli": "aitp-v5 code state record <args>",
+        "mcp": "aitp_v5_record_code_state",
+        "surface": "code_state_record",
+    },
+    "record_evidence": {
+        "cli": "aitp-v5 evidence record <args>",
+        "mcp": "aitp_v5_record_evidence",
+        "surface": "evidence_record",
+    },
+    "register_tool_recipe": {
+        "cli": "aitp-v5 tool recipe register <args>",
+        "mcp": "aitp_v5_register_tool_recipe",
+        "surface": "tool_recipe_record",
+    },
+    "record_tool_run": {
+        "cli": "aitp-v5 tool run record <args>",
+        "mcp": "aitp_v5_record_tool_run",
+        "surface": "tool_run_record",
+    },
     "summary_orientation": {
         "cli": "aitp-v5 summary orientation <session-id>",
         "mcp": "aitp_v5_read_summary_orientation",
@@ -115,17 +135,7 @@ def _sample_argv(template: str) -> list[str]:
     argv: list[str] = []
     for token in template.split():
         if token == "<args>":
-            argv.extend(
-                [
-                    "change_claim_confidence",
-                    "--session",
-                    "s1",
-                    "--topic",
-                    "fqhe",
-                    "--claim",
-                    "claim-fqhe",
-                ]
-            )
+            argv.extend(_sample_args_for_template(template))
         elif token == "<runtime>":
             argv.append("codex")
         elif token == "<session-id>":
@@ -133,3 +143,68 @@ def _sample_argv(template: str) -> list[str]:
         else:
             argv.append(token)
     return argv
+
+
+def _sample_args_for_template(template: str) -> list[str]:
+    if template.startswith("trust "):
+        return [
+            "change_claim_confidence",
+            "--session",
+            "s1",
+            "--topic",
+            "fqhe",
+            "--claim",
+            "claim-fqhe",
+        ]
+    if template.startswith("code state record"):
+        return [
+            "--repo-id",
+            "librpa",
+            "--upstream-remote",
+            "origin",
+            "--upstream-branch",
+            "master",
+            "--upstream-commit",
+            "abc123",
+            "--local-branch",
+            "topic/gw",
+            "--worktree-path",
+            "D:/worktrees/librpa/gw",
+        ]
+    if template.startswith("evidence record"):
+        return [
+            "--topic",
+            "fqhe",
+            "--claim",
+            "claim-fqhe",
+            "--type",
+            "toy_numeric",
+            "--status",
+            "supports",
+            "--summary",
+            "Finite-size check.",
+        ]
+    if template.startswith("tool recipe register"):
+        return [
+            "recipe-ed",
+            "--family",
+            "numerical",
+            "--name",
+            "exact-diagonalization",
+            "--purpose",
+            "Run an ED check.",
+        ]
+    if template.startswith("tool run record"):
+        return [
+            "--recipe",
+            "recipe-ed",
+            "--family",
+            "numerical",
+            "--name",
+            "exact-diagonalization",
+            "--topic",
+            "fqhe",
+            "--claim",
+            "claim-fqhe",
+        ]
+    return []

@@ -223,6 +223,70 @@ def require_valid_trust_update_apply(payload: dict[str, Any]) -> dict[str, Any]:
     return _require_valid_trust_update_apply(payload)
 
 
+def validate_evidence_record(payload: dict[str, Any], *, path: str = "evidence_record") -> ContractResult:
+    """Validate a public evidence-record write payload."""
+
+    from brain.v5.record_contracts import validate_evidence_record as _validate_evidence_record
+
+    return _validate_evidence_record(payload, path=path)
+
+
+def require_valid_evidence_record(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return an evidence-record write payload or raise a contract error."""
+
+    from brain.v5.record_contracts import require_valid_evidence_record as _require_valid_evidence_record
+
+    return _require_valid_evidence_record(payload)
+
+
+def validate_tool_run_record(payload: dict[str, Any], *, path: str = "tool_run_record") -> ContractResult:
+    """Validate a public tool-run-record write payload."""
+
+    from brain.v5.record_contracts import validate_tool_run_record as _validate_tool_run_record
+
+    return _validate_tool_run_record(payload, path=path)
+
+
+def require_valid_tool_run_record(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a tool-run-record write payload or raise a contract error."""
+
+    from brain.v5.record_contracts import require_valid_tool_run_record as _require_valid_tool_run_record
+
+    return _require_valid_tool_run_record(payload)
+
+
+def validate_code_state_record(payload: dict[str, Any], *, path: str = "code_state_record") -> ContractResult:
+    """Validate a public code-state-record write payload."""
+
+    from brain.v5.record_contracts import validate_code_state_record as _validate_code_state_record
+
+    return _validate_code_state_record(payload, path=path)
+
+
+def require_valid_code_state_record(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a code-state-record write payload or raise a contract error."""
+
+    from brain.v5.record_contracts import require_valid_code_state_record as _require_valid_code_state_record
+
+    return _require_valid_code_state_record(payload)
+
+
+def validate_tool_recipe_record(payload: dict[str, Any], *, path: str = "tool_recipe_record") -> ContractResult:
+    """Validate a public tool-recipe-record write payload."""
+
+    from brain.v5.record_contracts import validate_tool_recipe_record as _validate_tool_recipe_record
+
+    return _validate_tool_recipe_record(payload, path=path)
+
+
+def require_valid_tool_recipe_record(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a tool-recipe-record write payload or raise a contract error."""
+
+    from brain.v5.record_contracts import require_valid_tool_recipe_record as _require_valid_tool_recipe_record
+
+    return _require_valid_tool_recipe_record(payload)
+
+
 def validate_risk_assessment(payload: dict[str, Any], *, path: str = "risk_assessment") -> ContractResult:
     """Validate a risk assessment payload."""
 
