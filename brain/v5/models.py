@@ -239,3 +239,21 @@ class PhysicsObjectRecord:
     linked_records: dict = field(default_factory=dict)
     status: str = "active"
     kind: str = "physics_object"
+
+
+@dataclass
+class ObjectRelationRecord:
+    relation_id: str
+    topic_id: str
+    relation_type: str
+    subject_id: str
+    object_id: str
+    statement: str
+    claim_id: str = ""
+    assumptions: list[str] = field(default_factory=list)
+    failure_modes: list[str] = field(default_factory=list)
+    source_refs: list[str] = field(default_factory=list)
+    evidence_refs: list[str] = field(default_factory=list)
+    metadata: dict = field(default_factory=dict)
+    status: str = "hypothesis"
+    kind: str = "object_relation"

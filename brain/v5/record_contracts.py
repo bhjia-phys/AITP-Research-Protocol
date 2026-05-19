@@ -113,6 +113,22 @@ def require_valid_physics_object_record(payload: dict[str, Any]) -> dict[str, An
     return _require_valid(validate_physics_object_record(payload), payload)
 
 
+def validate_object_relation_record(payload: dict[str, Any], *, path: str = "object_relation_record") -> ContractResult:
+    result = _validate_base_record(payload, path, kind="object_relation")
+    if result.issues:
+        return result
+    for key in ("relation_id", "topic_id", "relation_type", "subject_id", "object_id", "statement", "status"):
+        _require_nonempty_str(payload, key, path, result)
+    for key in ("assumptions", "failure_modes", "source_refs", "evidence_refs"):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    _require_mapping(payload.get("metadata"), f"{path}.metadata", result)
+    return result
+
+
+def require_valid_object_relation_record(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_object_relation_record(payload), payload)
+
+
 def _validate_base_record(payload: Any, path: str, *, kind: str) -> ContractResult:
     result = ContractResult()
     _require_mapping(payload, path, result)

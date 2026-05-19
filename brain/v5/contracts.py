@@ -323,6 +323,22 @@ def require_valid_physics_object_record(payload: dict[str, Any]) -> dict[str, An
     return _require_valid_physics_object_record(payload)
 
 
+def validate_object_relation_record(payload: dict[str, Any], *, path: str = "object_relation_record") -> ContractResult:
+    """Validate a public object-relation-record write payload."""
+
+    from brain.v5.record_contracts import validate_object_relation_record as _validate_object_relation_record
+
+    return _validate_object_relation_record(payload, path=path)
+
+
+def require_valid_object_relation_record(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return an object-relation-record write payload or raise a contract error."""
+
+    from brain.v5.record_contracts import require_valid_object_relation_record as _require_valid_object_relation_record
+
+    return _require_valid_object_relation_record(payload)
+
+
 def validate_tool_executor_catalog(payload: dict[str, Any], *, path: str = "tool_executor_catalog") -> ContractResult:
     """Validate a public safe tool-executor catalog payload."""
 

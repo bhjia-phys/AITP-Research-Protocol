@@ -93,6 +93,11 @@ _RUNTIME_ENTRYPOINTS = {
         "mcp": "aitp_v5_record_physics_object",
         "surface": "physics_object_record",
     },
+    "record_object_relation": {
+        "cli": "aitp-v5 relation record <args>",
+        "mcp": "aitp_v5_record_object_relation",
+        "surface": "object_relation_record",
+    },
 }
 
 
@@ -267,5 +272,18 @@ def _sample_args_for_template(template: str) -> list[str]:
             "N=8 sector",
             "--definition",
             "Finite-size Hilbert sector.",
+        ]
+    if template.startswith("relation record"):
+        return [
+            "--topic",
+            "fqhe",
+            "--type",
+            "diagnoses",
+            "--subject",
+            "object-a",
+            "--object",
+            "object-b",
+            "--statement",
+            "A diagnoses B.",
         ]
     return []

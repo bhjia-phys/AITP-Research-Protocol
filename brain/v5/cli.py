@@ -17,7 +17,7 @@ from brain.v5.evidence import record_evidence
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
 from brain.v5.models import TrustUpdateRequest
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
-from brain.v5.physics_objects import record_physics_object
+from brain.v5.physics_objects import record_object_relation, record_physics_object
 from brain.v5.references import record_reference_location
 from brain.v5.risk import assess_claim_risk
 from brain.v5.summaries import read_summary_orientation, write_session_summary
@@ -211,6 +211,21 @@ def _build_parser() -> argparse.ArgumentParser:
     object_record.add_argument("--linked-records-json", default="{}")
     object_record.add_argument("--status", default="active")
 
+    rel_p = subparsers.add_parser("relation")
+    rel_sub = rel_p.add_subparsers(dest="relation_command", required=True)
+    rr = rel_sub.add_parser("record")
+    rr.add_argument("--topic", required=True, dest="topic_id")
+    rr.add_argument("--type", required=True, dest="relation_type")
+    rr.add_argument("--subject", required=True, dest="subject_id")
+    rr.add_argument("--object", required=True, dest="object_id")
+    rr.add_argument("--statement", required=True)
+    rr.add_argument("--claim", default="", dest="claim_id")
+    rr.add_argument("--assumption", action="append", default=[], dest="assumptions")
+    rr.add_argument("--failure-mode", action="append", default=[], dest="failure_modes")
+    rr.add_argument("--source-ref", action="append", default=[], dest="source_refs")
+    rr.add_argument("--evidence-ref", action="append", default=[], dest="evidence_refs")
+    rr.add_argument("--status", default="hypothesis")
+
     trust_parser = subparsers.add_parser("trust")
     trust_sub = trust_parser.add_subparsers(dest="trust_command", required=True)
     trust_preflight = trust_sub.add_parser("preflight")
@@ -370,42 +385,21 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
     if args.command == "knowledge" and args.knowledge_command == "connectors":
         return require_valid_public_surface("knowledge_connector_catalog", describe_knowledge_connectors())
 
-    if (
-        args.command == "reference"
-        and args.reference_command == "location"
-        and args.reference_location_command == "record"
-    ):
-        location = record_reference_location(
-            ws,
-            topic_id=args.topic_id,
-            claim_id=args.claim_id,
-            connector_id=args.connector_id,
-            location_type=args.location_type,
-            uri=args.uri,
-            label=args.label,
-            source_ref=args.source_ref,
-            external_id=args.external_id,
-            status=args.status,
-            summary=args.summary,
+    if args.command == "reference" and args.reference_command == "location" and args.reference_location_command == "record":
+        location = record_reference_location(ws, topic_id=args.topic_id, claim_id=args.claim_id,
+            connector_id=args.connector_id, location_type=args.location_type, uri=args.uri, label=args.label,
+            source_ref=args.source_ref, external_id=args.external_id, status=args.status, summary=args.summary,
             metadata=_json_object_arg(args.metadata_json, "--metadata-json"),
-            linked_records=_json_object_arg(args.linked_records_json, "--linked-records-json"),
-        )
+            linked_records=_json_object_arg(args.linked_records_json, "--linked-records-json"))
         return {"ok": True, **require_valid_public_surface("reference_location_record", {"ok": True, **asdict(location)})}
 
     if args.command == "summary" and args.summary_command == "session":
-        return {
-            "ok": True,
-            **require_valid_public_surface(
-                "session_summary_bundle",
-                asdict(write_session_summary(ws, args.session_id)),
-            ),
-        }
+        return {"ok": True, **require_valid_public_surface(
+            "session_summary_bundle", asdict(write_session_summary(ws, args.session_id)))}
 
     if args.command == "summary" and args.summary_command == "orientation":
-        return {
-            "ok": True,
-            **require_valid_public_surface("summary_orientation", read_summary_orientation(ws, args.session_id)),
-        }
+        return {"ok": True, **require_valid_public_surface(
+            "summary_orientation", read_summary_orientation(ws, args.session_id))}
 
     if args.command == "adapter" and args.adapter_command == "packet":
         return {
@@ -438,6 +432,13 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             source_refs=args.source_refs, metadata=_json_object_arg(args.metadata_json, "--metadata-json"),
             linked_records=_json_object_arg(args.linked_records_json, "--linked-records-json"), status=args.status)
         return {"ok": True, **require_valid_public_surface("physics_object_record", {"ok": True, **asdict(obj)})}
+
+    if args.command == "relation" and args.relation_command == "record":
+        rel = record_object_relation(ws, topic_id=args.topic_id, relation_type=args.relation_type,
+            subject_id=args.subject_id, object_id=args.object_id, statement=args.statement,
+            claim_id=args.claim_id, assumptions=args.assumptions, failure_modes=args.failure_modes,
+            source_refs=args.source_refs, evidence_refs=args.evidence_refs, status=args.status)
+        return {"ok": True, **require_valid_public_surface("object_relation_record", {"ok": True, **asdict(rel)})}
 
     raise SystemExit(f"unsupported command: {args.command}")
 

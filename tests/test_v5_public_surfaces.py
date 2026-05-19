@@ -11,6 +11,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "evidence_record",
         "execution_brief",
         "knowledge_connector_catalog",
+        "object_relation_record",
         "physics_object_record",
         "reference_location_record",
         "session_summary_bundle",

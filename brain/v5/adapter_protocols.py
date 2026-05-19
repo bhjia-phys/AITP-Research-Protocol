@@ -46,6 +46,7 @@ _KERNEL_ENTRYPOINTS = [
     "aitp_v5_register_tool_recipe",
     "aitp_v5_record_reference_location",
     "aitp_v5_record_physics_object",
+    "aitp_v5_record_object_relation",
     "aitp_v5_assess_risk",
     "aitp_v5_write_session_summary",
 ]
@@ -117,6 +118,12 @@ _RECORD_SEQUENCE_BY_ACTION = {
         "refresh_execution_brief",
         "write_session_summary",
     ],
+    "record_object_relation": [
+        "refresh_execution_brief",
+        "record_object_relation",
+        "refresh_execution_brief",
+        "write_session_summary",
+    ],
 }
 _RUNTIME_RECORD_PROTOCOLS = {
     "record_code_state": {
@@ -172,6 +179,14 @@ _RUNTIME_RECORD_PROTOCOLS = {
         "sequence": list(_RECORD_SEQUENCE_BY_ACTION["record_physics_object"]),
         "required_typed_refs": ["topic_id", "object_type", "name", "definition"],
         "accepted_link_fields": ["source_refs", "linked_records"],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    },
+    "record_object_relation": {
+        "entrypoint": "aitp_v5_record_object_relation",
+        "sequence": list(_RECORD_SEQUENCE_BY_ACTION["record_object_relation"]),
+        "required_typed_refs": ["topic_id", "relation_type", "subject_id", "object_id", "statement"],
+        "accepted_link_fields": ["claim_id", "source_refs", "evidence_refs"],
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     },

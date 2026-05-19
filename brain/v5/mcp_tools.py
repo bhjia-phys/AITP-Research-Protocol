@@ -13,7 +13,7 @@ from brain.v5.evidence import record_evidence
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
 from brain.v5.models import CodeStateRecord, TrustUpdateRequest
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
-from brain.v5.physics_objects import record_physics_object
+from brain.v5.physics_objects import record_object_relation, record_physics_object
 from brain.v5.references import record_reference_location
 from brain.v5.risk import assess_claim_risk
 from brain.v5.store import list_records
@@ -380,6 +380,32 @@ def aitp_v5_record_physics_object(
         status=status,
     )
     return require_valid_public_surface("physics_object_record", {"ok": True, **asdict(obj)})
+
+
+def aitp_v5_record_object_relation(
+    base: str,
+    *,
+    topic_id: str,
+    relation_type: str,
+    subject_id: str,
+    object_id: str,
+    statement: str,
+    claim_id: str = "",
+    assumptions: list[str] | None = None,
+    failure_modes: list[str] | None = None,
+    source_refs: list[str] | None = None,
+    evidence_refs: list[str] | None = None,
+    metadata: dict | None = None,
+    status: str = "hypothesis",
+) -> dict:
+    ws = init_workspace(Path(base))
+    rel = record_object_relation(
+        ws, topic_id=topic_id, relation_type=relation_type, subject_id=subject_id,
+        object_id=object_id, statement=statement, claim_id=claim_id, assumptions=assumptions,
+        failure_modes=failure_modes, source_refs=source_refs, evidence_refs=evidence_refs,
+        metadata=metadata, status=status,
+    )
+    return require_valid_public_surface("object_relation_record", {"ok": True, **asdict(rel)})
 
 
 def aitp_v5_preflight_trust_update(

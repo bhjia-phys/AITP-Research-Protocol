@@ -100,3 +100,125 @@ def test_mcp_record_physics_object_returns_valid_surface(tmp_path):
 
     assert payload["ok"] is True
     assert require_valid_public_surface("physics_object_record", payload) == payload
+
+
+def test_record_object_relation_links_two_physics_objects(tmp_path):
+    from brain.v5.markdown import read_md
+    from brain.v5.physics_objects import record_object_relation, record_physics_object
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="Counting identifies the edge CFT sector.",
+        evidence_profile="toy_numeric",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size aliasing",
+    )
+    counting = record_physics_object(
+        ws,
+        topic_id="fqhe",
+        object_type="observable",
+        name="edge counting sequence",
+        definition="Low-lying entanglement spectrum counting.",
+    )
+    cft = record_physics_object(
+        ws,
+        topic_id="fqhe",
+        object_type="theory",
+        name="edge CFT",
+        definition="Conformal field theory describing the edge.",
+    )
+
+    relation = record_object_relation(
+        ws,
+        topic_id="fqhe",
+        relation_type="diagnoses",
+        subject_id=counting.object_id,
+        object_id=cft.object_id,
+        statement="The counting sequence diagnoses the candidate edge CFT only in the correct momentum sector.",
+        claim_id=claim.claim_id,
+        assumptions=["sector assignment is correct"],
+        failure_modes=["finite-size aliasing mimics the same sequence"],
+        source_refs=["paper:fqhe-counting"],
+    )
+
+    fm, body = read_md(ws.registry_dir("object_relations") / f"{relation.relation_id}.md")
+    assert relation.kind == "object_relation"
+    assert relation.subject_id == counting.object_id
+    assert relation.object_id == cft.object_id
+    assert fm["failure_modes"] == ["finite-size aliasing mimics the same sequence"]
+    assert "diagnoses" in body
+
+
+def test_object_relation_record_is_public_surface_valid(tmp_path):
+    from brain.v5.physics_objects import record_object_relation
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "gw", context_id="gw-methods", title="GW")
+    relation = record_object_relation(
+        ws,
+        topic_id="gw",
+        relation_type="implements",
+        subject_id="object-self-energy-formula",
+        object_id="object-librpa-kernel",
+        statement="The kernel implements the correlation self-energy formula.",
+    )
+
+    payload = {"ok": True, **asdict(relation)}
+    assert require_valid_public_surface("object_relation_record", payload) == payload
+
+
+def test_cli_object_relation_record_returns_json(tmp_path, capsys):
+    from brain.v5.cli import main
+
+    assert main(
+        [
+            "--base",
+            str(tmp_path),
+            "relation",
+            "record",
+            "--topic",
+            "fqhe",
+            "--type",
+            "diagnoses",
+            "--subject",
+            "object-counting",
+            "--object",
+            "object-edge-cft",
+            "--statement",
+            "Counting diagnoses the edge CFT in a fixed sector.",
+            "--claim",
+            "claim-fqhe",
+            "--failure-mode",
+            "finite-size aliasing",
+            "--source-ref",
+            "paper:fqhe",
+        ]
+    ) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["kind"] == "object_relation"
+    assert payload["failure_modes"] == ["finite-size aliasing"]
+
+
+def test_mcp_record_object_relation_returns_valid_surface(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_record_object_relation
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    payload = aitp_v5_record_object_relation(
+        str(tmp_path),
+        topic_id="gw",
+        relation_type="implements",
+        subject_id="object-formula",
+        object_id="object-code",
+        statement="The code path implements the formula.",
+    )
+
+    assert payload["ok"] is True
+    assert require_valid_public_surface("object_relation_record", payload) == payload
