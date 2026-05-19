@@ -98,6 +98,11 @@ _RUNTIME_ENTRYPOINTS = {
         "mcp": "aitp_v5_record_object_relation",
         "surface": "object_relation_record",
     },
+    "record_sensemaking_report": {
+        "cli": "aitp-v5 sensemaking report <args>",
+        "mcp": "aitp_v5_record_sensemaking_report",
+        "surface": "sensemaking_report_record",
+    },
 }
 
 
@@ -285,5 +290,16 @@ def _sample_args_for_template(template: str) -> list[str]:
             "object-b",
             "--statement",
             "A diagnoses B.",
+        ]
+    if template.startswith("sensemaking report"):
+        return [
+            "--topic",
+            "fqhe",
+            "--claim",
+            "claim-fqhe",
+            "--title",
+            "Sanity check",
+            "--summary",
+            "Counting holds for N=8.",
         ]
     return []

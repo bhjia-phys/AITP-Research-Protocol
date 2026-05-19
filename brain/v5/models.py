@@ -257,3 +257,19 @@ class ObjectRelationRecord:
     metadata: dict = field(default_factory=dict)
     status: str = "hypothesis"
     kind: str = "object_relation"
+
+
+@dataclass
+class SensemakingReportRecord:
+    report_id: str
+    topic_id: str
+    claim_id: str
+    title: str
+    summary: str
+    object_ids: list[str] = field(default_factory=list)
+    relation_ids: list[str] = field(default_factory=list)
+    evidence_refs: list[str] = field(default_factory=list)
+    open_questions: list[str] = field(default_factory=list)
+    next_actions: list[str] = field(default_factory=list)
+    validation_status: str = "not_validation"
+    kind: str = "sensemaking_report"

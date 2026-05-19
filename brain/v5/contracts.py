@@ -339,6 +339,22 @@ def require_valid_object_relation_record(payload: dict[str, Any]) -> dict[str, A
     return _require_valid_object_relation_record(payload)
 
 
+def validate_sensemaking_report_record(payload: dict[str, Any], *, path: str = "sensemaking_report_record") -> ContractResult:
+    """Validate a public sensemaking-report-record write payload."""
+
+    from brain.v5.record_contracts import validate_sensemaking_report_record as _validate_sensemaking_report_record
+
+    return _validate_sensemaking_report_record(payload, path=path)
+
+
+def require_valid_sensemaking_report_record(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a sensemaking-report-record write payload or raise a contract error."""
+
+    from brain.v5.record_contracts import require_valid_sensemaking_report_record as _require_valid_sensemaking_report_record
+
+    return _require_valid_sensemaking_report_record(payload)
+
+
 def validate_tool_executor_catalog(payload: dict[str, Any], *, path: str = "tool_executor_catalog") -> ContractResult:
     """Validate a public safe tool-executor catalog payload."""
 

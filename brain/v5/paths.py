@@ -19,6 +19,7 @@ _LAYOUT_DIRS = [
     "registry/artifacts",
     "registry/benchmarks",
     "registry/reference_locations",
+    "registry/sensemaking_reports",
     "registry/code_states",
     "registry/code_workspaces",
     "registry/routes",

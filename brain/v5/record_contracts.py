@@ -129,6 +129,23 @@ def require_valid_object_relation_record(payload: dict[str, Any]) -> dict[str, A
     return _require_valid(validate_object_relation_record(payload), payload)
 
 
+def validate_sensemaking_report_record(payload: dict[str, Any], *, path: str = "sensemaking_report_record") -> ContractResult:
+    result = _validate_base_record(payload, path, kind="sensemaking_report")
+    if result.issues:
+        return result
+    for key in ("report_id", "topic_id", "claim_id", "title", "summary"):
+        _require_nonempty_str(payload, key, path, result)
+    for key in ("object_ids", "relation_ids", "evidence_refs", "open_questions", "next_actions"):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    if payload.get("validation_status") != "not_validation":
+        result.add(f"{path}.validation_status", "must be 'not_validation' — sensemaking reports are orientation-only")
+    return result
+
+
+def require_valid_sensemaking_report_record(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_sensemaking_report_record(payload), payload)
+
+
 def _validate_base_record(payload: Any, path: str, *, kind: str) -> ContractResult:
     result = ContractResult()
     _require_mapping(payload, path, result)

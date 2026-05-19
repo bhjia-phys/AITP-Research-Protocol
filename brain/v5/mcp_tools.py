@@ -15,6 +15,7 @@ from brain.v5.models import CodeStateRecord, TrustUpdateRequest
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
 from brain.v5.physics_objects import record_object_relation, record_physics_object
 from brain.v5.references import record_reference_location
+from brain.v5.sensemaking import record_sensemaking_report
 from brain.v5.risk import assess_claim_risk
 from brain.v5.store import list_records
 from brain.v5.summaries import read_summary_orientation, write_session_summary
@@ -408,70 +409,57 @@ def aitp_v5_record_object_relation(
     return require_valid_public_surface("object_relation_record", {"ok": True, **asdict(rel)})
 
 
-def aitp_v5_preflight_trust_update(
+def aitp_v5_record_sensemaking_report(
     base: str,
     *,
-    action: str,
-    session_id: str,
     topic_id: str,
     claim_id: str,
-    requested_state: str = "",
-    source_kind: str = "",
-    source_ref: str = "",
+    title: str,
+    summary: str,
+    object_ids: list[str] | None = None,
+    relation_ids: list[str] | None = None,
     evidence_refs: list[str] | None = None,
-    code_state_ids: list[str] | None = None,
-    rationale: str = "",
-    request_id: str = "",
+    open_questions: list[str] | None = None,
+    next_actions: list[str] | None = None,
 ) -> dict:
     ws = init_workspace(Path(base))
-    resolved_request_id = request_id or f"trust-request-{session_id}-{claim_id}-{action}"
-    request = TrustUpdateRequest(
-        request_id=resolved_request_id,
-        action=action,
-        session_id=session_id,
-        topic_id=topic_id,
-        claim_id=claim_id,
-        requested_state=requested_state,
-        source_kind=source_kind,
-        source_ref=source_ref,
-        evidence_refs=evidence_refs or [],
-        code_state_ids=code_state_ids or [],
-        rationale=rationale,
+    report = record_sensemaking_report(
+        ws, topic_id=topic_id, claim_id=claim_id, title=title, summary=summary,
+        object_ids=object_ids, relation_ids=relation_ids, evidence_refs=evidence_refs,
+        open_questions=open_questions, next_actions=next_actions,
     )
-    return {"ok": True, **require_valid_public_surface("trust_update_preflight", preflight_trust_update(ws, request))}
+    return require_valid_public_surface("sensemaking_report_record", {"ok": True, **asdict(report)})
+
+
+def aitp_v5_preflight_trust_update(
+    base: str, *, action: str, session_id: str, topic_id: str, claim_id: str,
+    requested_state: str = "", source_kind: str = "", source_ref: str = "",
+    evidence_refs: list[str] | None = None, code_state_ids: list[str] | None = None,
+    rationale: str = "", request_id: str = "",
+) -> dict:
+    ws = init_workspace(Path(base))
+    return {"ok": True, **require_valid_public_surface("trust_update_preflight",
+        preflight_trust_update(ws, _trust_request(locals())))}
 
 
 def aitp_v5_apply_trust_update(
-    base: str,
-    *,
-    action: str,
-    session_id: str,
-    topic_id: str,
-    claim_id: str,
-    requested_state: str = "",
-    source_kind: str = "",
-    source_ref: str = "",
-    evidence_refs: list[str] | None = None,
-    code_state_ids: list[str] | None = None,
-    rationale: str = "",
-    request_id: str = "",
+    base: str, *, action: str, session_id: str, topic_id: str, claim_id: str,
+    requested_state: str = "", source_kind: str = "", source_ref: str = "",
+    evidence_refs: list[str] | None = None, code_state_ids: list[str] | None = None,
+    rationale: str = "", request_id: str = "",
 ) -> dict:
     ws = init_workspace(Path(base))
-    resolved_request_id = request_id or f"trust-request-{session_id}-{claim_id}-{action}"
-    request = TrustUpdateRequest(
-        request_id=resolved_request_id,
-        action=action,
-        session_id=session_id,
-        topic_id=topic_id,
-        claim_id=claim_id,
-        requested_state=requested_state,
-        source_kind=source_kind,
-        source_ref=source_ref,
-        evidence_refs=evidence_refs or [],
-        code_state_ids=code_state_ids or [],
-        rationale=rationale,
-    )
-    return {"ok": True, **require_valid_public_surface("trust_update_apply", apply_trust_update(ws, request))}
+    return {"ok": True, **require_valid_public_surface("trust_update_apply",
+        apply_trust_update(ws, _trust_request(locals())))}
+
+
+def _trust_request(ns: dict) -> TrustUpdate:
+    rid = ns.get("request_id") or f"trust-request-{ns['session_id']}-{ns['claim_id']}-{ns['action']}"
+    return TrustUpdateRequest(request_id=rid, action=ns["action"], session_id=ns["session_id"],
+        topic_id=ns["topic_id"], claim_id=ns["claim_id"], requested_state=ns.get("requested_state", ""),
+        source_kind=ns.get("source_kind", ""), source_ref=ns.get("source_ref", ""),
+        evidence_refs=ns.get("evidence_refs") or [], code_state_ids=ns.get("code_state_ids") or [],
+        rationale=ns.get("rationale", ""))
 
 
 def _linked_code_states(ws, claim_id: str) -> list[CodeStateRecord]:
