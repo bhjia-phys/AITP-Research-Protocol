@@ -52,13 +52,17 @@ def _validate_connector(payload: Any, path: str, result: ContractResult) -> None
         "display_name",
         "purpose",
         "skill_ref",
+        "backend_role",
         "recommended_when",
     ):
         if not isinstance(payload.get(key), str) or not payload[key]:
             result.add(f"{path}.{key}", "must be a non-empty string")
+    if not isinstance(payload.get("is_required"), bool):
+        result.add(f"{path}.is_required", "must be a boolean")
     for key in (
         "supported_activities",
         "expected_retrieval_targets",
+        "location_ref_targets",
         "protocol_hooks",
         "required_kernel_followup_records",
     ):

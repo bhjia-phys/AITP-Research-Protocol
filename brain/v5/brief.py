@@ -59,6 +59,10 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
     policy_forbidden = []
     if claim and flow:
         policy_forbidden = _policy_forbidden_actions(claim, _linked_code_states(ws, claim.claim_id))
+        connector_action = _knowledge_connector_action(
+            knowledge_connectors,
+            why=flow.reason,
+        )
         if flow.profile == "fluid":
             next_action_candidates.append(
                 {
@@ -69,10 +73,12 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
                 }
             )
         elif flow.profile == "guided":
+            if connector_action:
+                next_action_candidates.append(connector_action)
             next_action_candidates.append(
                 {
                     "action": "answer_dynamic_physics_questions",
-                    "rank": 1,
+                    "rank": 2 if connector_action else 1,
                     "why": "claim needs object-relation sense-making without a heavy review yet",
                     "expected_evidence_gain": "clarify claim scope, mechanism, and failure mode",
                 }
@@ -85,10 +91,13 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
             )
             if executor_action:
                 next_action_candidates.append(executor_action)
+            if connector_action:
+                connector_action["rank"] = 2 if executor_action else 1
+                next_action_candidates.append(connector_action)
             next_action_candidates.append(
                 {
                     "action": "collect_required_evidence_or_provenance",
-                    "rank": 2 if executor_action else 1,
+                    "rank": 3 if executor_action and connector_action else 2 if executor_action or connector_action else 1,
                     "why": flow.reason,
                     "expected_evidence_gain": "turn a plausible claim into auditable evidence",
                 }
@@ -179,6 +188,28 @@ def _recommended_executor_action(
     return None
 
 
+def _knowledge_connector_action(
+    connectors: list[dict],
+    *,
+    why: str,
+) -> dict[str, Any] | None:
+    if not connectors:
+        return None
+    return {
+        "action": "consult_knowledge_connector",
+        "rank": 1,
+        "why": f"{why}; literature or note context is needed before treating retrieved context as evidence",
+        "expected_evidence_gain": "retrieve orientation context while recording source_refs and note_location_refs in typed kernel records",
+        "connector_ids": [connector["connector_id"] for connector in connectors],
+        "backend_required": any(connector.get("is_required", False) for connector in connectors),
+        "retrieval_targets": _dedupe(_flatten(connector.get("expected_retrieval_targets", []) for connector in connectors)),
+        "location_ref_targets": _dedupe(_flatten(connector.get("location_ref_targets", []) for connector in connectors)),
+        "required_kernel_followup_records": _dedupe(
+            _flatten(connector.get("required_kernel_followup_records", []) for connector in connectors)
+        ),
+    }
+
+
 def _linked_code_states(ws, claim_id: str) -> list[CodeStateRecord]:
     states = list_records(ws.registry_dir("code_states"), CodeStateRecord)
     return [state for state in states if _record_links_to_claim(state.linked_records, claim_id)]
@@ -214,6 +245,13 @@ def _dedupe(values: list[str]) -> list[str]:
             seen.add(value)
             result.append(value)
     return result
+
+
+def _flatten(groups) -> list[str]:
+    values: list[str] = []
+    for group in groups:
+        values.extend(group)
+    return values
 
 
 def _default_risk_assessment_payload(action_budget) -> dict[str, Any]:

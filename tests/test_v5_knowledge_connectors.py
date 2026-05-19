@@ -15,6 +15,8 @@ def test_ima_connector_catalog_declares_theory_literature_protocol():
     assert catalog["kind"] == "knowledge_connector_catalog"
     assert catalog["truth_source"] == "builtin_connector_registry"
     assert catalog["summary_inputs_trusted"] is False
+    assert ima["backend_role"] == "example_external_backend"
+    assert ima["is_required"] is False
     assert ima["skill_ref"] == "ima-skill"
     assert "literature_learning" in ima["supported_activities"]
     assert "theory_discussion" in ima["supported_activities"]
@@ -22,6 +24,8 @@ def test_ima_connector_catalog_declares_theory_literature_protocol():
     assert ima["truth_policy"]["source_backed_evidence_required"] is True
     assert "retrieve_before_answering" in ima["protocol_hooks"]
     assert "capture_nontrivial_learning" in ima["protocol_hooks"]
+    assert "note_location_refs" in ima["required_kernel_followup_records"]
+    assert "external_note_uri" in ima["location_ref_targets"]
 
 
 def test_execution_brief_exposes_ima_for_literature_learning_claim(tmp_path):
@@ -48,6 +52,33 @@ def test_execution_brief_exposes_ima_for_literature_learning_claim(tmp_path):
     assert ima["recommended_when"] == "before_theory_literature_discussion"
     assert "existing_notes" in ima["expected_retrieval_targets"]
     assert "source_refs" in ima["required_kernel_followup_records"]
+
+
+def test_execution_brief_recommends_generic_connector_action_for_literature_claim(tmp_path):
+    from brain.v5.brief import build_execution_brief
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="Before judging this FQHE idea, look up prior papers and where my notes are stored.",
+        evidence_profile="literature_synthesis",
+        confidence_state="learning",
+        active_uncertainty="paper conventions and note locations are unclear",
+    )
+    bind_session(ws, "s1", topic_id="fqhe", context_id="topological-order", active_claim=claim.claim_id)
+
+    brief = build_execution_brief(ws, "s1")
+
+    action = brief["next_action_candidates"][0]
+    assert action["action"] == "consult_knowledge_connector"
+    assert action["connector_ids"] == ["ima"]
+    assert action["backend_required"] is False
+    assert "external_note_uri" in action["location_ref_targets"]
+    assert "note_location_refs" in action["required_kernel_followup_records"]
+    assert "orientation" in action["expected_evidence_gain"]
 
 
 def test_cli_knowledge_connectors_returns_catalog(tmp_path, capsys):

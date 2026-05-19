@@ -14,8 +14,11 @@ class KnowledgeConnectorRecord:
     display_name: str
     purpose: str
     skill_ref: str
+    backend_role: str = "external_backend"
+    is_required: bool = False
     supported_activities: tuple[str, ...] = ()
     expected_retrieval_targets: tuple[str, ...] = ()
+    location_ref_targets: tuple[str, ...] = ()
     protocol_hooks: tuple[str, ...] = ()
     required_kernel_followup_records: tuple[str, ...] = ()
     truth_policy: dict = field(default_factory=dict)
@@ -31,8 +34,10 @@ def builtin_knowledge_connectors() -> dict[str, KnowledgeConnectorRecord]:
             connector_id="ima",
             connector_kind="notes_and_knowledge_base",
             display_name="IMA",
-            purpose="Search existing notes/knowledge bases and capture nontrivial theory-learning outcomes.",
+            purpose="Example backend for placing/searching literature and recording external note locations.",
             skill_ref="ima-skill",
+            backend_role="example_external_backend",
+            is_required=False,
             supported_activities=(
                 "literature_learning",
                 "theory_discussion",
@@ -45,6 +50,11 @@ def builtin_knowledge_connectors() -> dict[str, KnowledgeConnectorRecord]:
                 "prior_reading_summaries",
                 "source_backed_claim_context",
             ),
+            location_ref_targets=(
+                "external_note_uri",
+                "external_paper_uri",
+                "knowledge_base_item_uri",
+            ),
             protocol_hooks=(
                 "retrieve_before_answering",
                 "cite_retrieved_context_as_orientation",
@@ -53,6 +63,7 @@ def builtin_knowledge_connectors() -> dict[str, KnowledgeConnectorRecord]:
             ),
             required_kernel_followup_records=(
                 "source_refs",
+                "note_location_refs",
                 "evidence_records",
                 "claim_updates_when_trust_changes",
             ),
@@ -97,8 +108,11 @@ def _connector_payload(connector: KnowledgeConnectorRecord) -> dict:
         "display_name": connector.display_name,
         "purpose": connector.purpose,
         "skill_ref": connector.skill_ref,
+        "backend_role": connector.backend_role,
+        "is_required": connector.is_required,
         "supported_activities": list(connector.supported_activities),
         "expected_retrieval_targets": list(connector.expected_retrieval_targets),
+        "location_ref_targets": list(connector.location_ref_targets),
         "protocol_hooks": list(connector.protocol_hooks),
         "required_kernel_followup_records": list(connector.required_kernel_followup_records),
         "truth_policy": dict(connector.truth_policy),
@@ -117,7 +131,7 @@ def _needs_theory_literature_memory(claim: ClaimRecord) -> bool:
             claim.strongest_failure_mode,
         ]
     ).lower()
-    if claim.evidence_profile in {"literature_synthesis", "formal_theory", "mixed"}:
+    if claim.evidence_profile == "literature_synthesis":
         return True
     return any(
         term in text
