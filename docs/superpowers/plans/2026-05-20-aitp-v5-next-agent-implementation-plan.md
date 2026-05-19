@@ -40,7 +40,7 @@ pytest $files -q
 Expected baseline:
 
 ```text
-184 passed
+253 passed
 ```
 
 Do not treat old full-suite failures as blockers unless a task modifies legacy code. The v5 focused suite is the working regression gate for this plan.
@@ -69,25 +69,30 @@ Implemented:
 - Risk engine and action budgets.
 - Dynamic question engine and question intents.
 - Evidence records, tool recipes, tool runs, safe built-in tool executors.
+- Formal-theory checklist executor for auditable definition, assumption, derivation-step, and counterexample-search checks.
 - Code workspace and code state provenance.
 - Trust cards and trust-update preflight/apply.
 - Domain packs and executor recommendations.
 - Knowledge connector catalog with IMA as optional example backend.
 - Reference location records for external notes/PDFs/Zotero/IMA/Obsidian locations.
+- Physics object and object-relation records.
+- Relation-aware execution briefs and question intents using structured relation payloads.
+- Local sense-making reports.
+- Validation contracts and human checkpoint records.
+- L2 promotion packets, memory entries, and promotion governance.
+- Real FQHE and GW workflow acceptance tests.
 - Session summaries as orientation-only derived files.
 - CLI, MCP wrappers, public surface contracts, runtime entrypoints, adapter packets.
-- Legacy bridge skeleton.
+- Legacy bridge with dry-run audit, explicit v5 migration result, and CLI/MCP/runtime surface.
 - Harness audit/evolution skeleton.
 
 Major remaining gaps:
 
-- Physics object and object-relation records are not implemented.
-- Execution brief does not yet surface typed object/relation context.
-- Question engine does not yet consume persisted object/relation records.
-- Local sense-making reports are missing.
-- Validation contracts, human checkpoints, and L4 return payloads are incomplete.
-- L2 memory entries and promotion governance are not implemented.
-- Real workflow acceptance tests are not implemented.
+- Legacy migration still seeds only the primary candidate claim and source evidence; old L3/L4 bodies need richer typed migration into claims, validation evidence, and sense-making reports.
+- Hook helpers are implemented as pure kernel decisions; shell/app hook adapters and installation docs still need integration work.
+- Domain tools are useful but intentionally lightweight; formal-theory checks are checklist/provenance checks, not automated theorem proving.
+- Subagent packets exist, but end-to-end subagent result ingestion as evidence/proposals still needs workflow tests.
+- Full legacy test suite remains a historical failure set outside the v5 regression gate.
 
 ## Execution Rules For Other AI Agents
 
