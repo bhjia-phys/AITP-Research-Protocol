@@ -96,6 +96,23 @@ def require_valid_reference_location_record(payload: dict[str, Any]) -> dict[str
     return _require_valid(validate_reference_location_record(payload), payload)
 
 
+def validate_physics_object_record(payload: dict[str, Any], *, path: str = "physics_object_record") -> ContractResult:
+    result = _validate_base_record(payload, path, kind="physics_object")
+    if result.issues:
+        return result
+    for key in ("object_id", "topic_id", "object_type", "name", "definition", "status"):
+        _require_nonempty_str(payload, key, path, result)
+    for key in ("assumptions", "source_refs"):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    for key in ("metadata", "linked_records"):
+        _require_mapping(payload.get(key), f"{path}.{key}", result)
+    return result
+
+
+def require_valid_physics_object_record(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_physics_object_record(payload), payload)
+
+
 def _validate_base_record(payload: Any, path: str, *, kind: str) -> ContractResult:
     result = ContractResult()
     _require_mapping(payload, path, result)

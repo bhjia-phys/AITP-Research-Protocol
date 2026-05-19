@@ -223,3 +223,19 @@ class BenchmarkRecord:
     tolerance: str
     source_ref: str
     kind: str = "benchmark"
+
+
+@dataclass
+class PhysicsObjectRecord:
+    object_id: str
+    topic_id: str
+    object_type: str
+    name: str
+    definition: str
+    notation: str = ""
+    assumptions: list[str] = field(default_factory=list)
+    source_refs: list[str] = field(default_factory=list)
+    metadata: dict = field(default_factory=dict)
+    linked_records: dict = field(default_factory=dict)
+    status: str = "active"
+    kind: str = "physics_object"

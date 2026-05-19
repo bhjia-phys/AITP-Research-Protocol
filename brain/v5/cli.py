@@ -17,6 +17,7 @@ from brain.v5.evidence import record_evidence
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
 from brain.v5.models import TrustUpdateRequest
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
+from brain.v5.physics_objects import record_physics_object
 from brain.v5.references import record_reference_location
 from brain.v5.risk import assess_claim_risk
 from brain.v5.summaries import read_summary_orientation, write_session_summary
@@ -195,6 +196,20 @@ def _build_parser() -> argparse.ArgumentParser:
     adapter_packet.add_argument("session_id")
     adapter_sub.add_parser("registry")
     adapter_sub.add_parser("public-surfaces")
+
+    object_parser = subparsers.add_parser("object")
+    object_sub = object_parser.add_subparsers(dest="object_command", required=True)
+    object_record = object_sub.add_parser("record")
+    object_record.add_argument("--topic", required=True, dest="topic_id")
+    object_record.add_argument("--type", required=True, dest="object_type")
+    object_record.add_argument("--name", required=True)
+    object_record.add_argument("--definition", required=True)
+    object_record.add_argument("--notation", default="")
+    object_record.add_argument("--assumption", action="append", default=[], dest="assumptions")
+    object_record.add_argument("--source-ref", action="append", default=[], dest="source_refs")
+    object_record.add_argument("--metadata-json", default="{}")
+    object_record.add_argument("--linked-records-json", default="{}")
+    object_record.add_argument("--status", default="active")
 
     trust_parser = subparsers.add_parser("trust")
     trust_sub = trust_parser.add_subparsers(dest="trust_command", required=True)
@@ -416,6 +431,13 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
                 apply_trust_update(ws, _trust_update_request_from_args(args)),
             ),
         }
+
+    if args.command == "object" and args.object_command == "record":
+        obj = record_physics_object(ws, topic_id=args.topic_id, object_type=args.object_type,
+            name=args.name, definition=args.definition, notation=args.notation, assumptions=args.assumptions,
+            source_refs=args.source_refs, metadata=_json_object_arg(args.metadata_json, "--metadata-json"),
+            linked_records=_json_object_arg(args.linked_records_json, "--linked-records-json"), status=args.status)
+        return {"ok": True, **require_valid_public_surface("physics_object_record", {"ok": True, **asdict(obj)})}
 
     raise SystemExit(f"unsupported command: {args.command}")
 

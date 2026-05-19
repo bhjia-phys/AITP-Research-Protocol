@@ -13,6 +13,7 @@ from brain.v5.evidence import record_evidence
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
 from brain.v5.models import CodeStateRecord, TrustUpdateRequest
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
+from brain.v5.physics_objects import record_physics_object
 from brain.v5.references import record_reference_location
 from brain.v5.risk import assess_claim_risk
 from brain.v5.store import list_records
@@ -348,6 +349,37 @@ def aitp_v5_get_adapter_protocol_registry() -> dict:
 
 def aitp_v5_describe_public_surfaces() -> dict:
     return {"ok": True, "public_surfaces": describe_public_surfaces()}
+
+
+def aitp_v5_record_physics_object(
+    base: str,
+    *,
+    topic_id: str,
+    object_type: str,
+    name: str,
+    definition: str,
+    notation: str = "",
+    assumptions: list[str] | None = None,
+    source_refs: list[str] | None = None,
+    metadata: dict | None = None,
+    linked_records: dict | None = None,
+    status: str = "active",
+) -> dict:
+    ws = init_workspace(Path(base))
+    obj = record_physics_object(
+        ws,
+        topic_id=topic_id,
+        object_type=object_type,
+        name=name,
+        definition=definition,
+        notation=notation,
+        assumptions=assumptions,
+        source_refs=source_refs,
+        metadata=metadata,
+        linked_records=linked_records,
+        status=status,
+    )
+    return require_valid_public_surface("physics_object_record", {"ok": True, **asdict(obj)})
 
 
 def aitp_v5_preflight_trust_update(

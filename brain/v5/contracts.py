@@ -307,6 +307,22 @@ def require_valid_reference_location_record(payload: dict[str, Any]) -> dict[str
     return _require_valid_reference_location_record(payload)
 
 
+def validate_physics_object_record(payload: dict[str, Any], *, path: str = "physics_object_record") -> ContractResult:
+    """Validate a public physics-object-record write payload."""
+
+    from brain.v5.record_contracts import validate_physics_object_record as _validate_physics_object_record
+
+    return _validate_physics_object_record(payload, path=path)
+
+
+def require_valid_physics_object_record(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a physics-object-record write payload or raise a contract error."""
+
+    from brain.v5.record_contracts import require_valid_physics_object_record as _require_valid_physics_object_record
+
+    return _require_valid_physics_object_record(payload)
+
+
 def validate_tool_executor_catalog(payload: dict[str, Any], *, path: str = "tool_executor_catalog") -> ContractResult:
     """Validate a public safe tool-executor catalog payload."""
 

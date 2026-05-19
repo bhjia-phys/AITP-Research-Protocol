@@ -88,6 +88,11 @@ _RUNTIME_ENTRYPOINTS = {
         "mcp": "aitp_v5_apply_trust_update",
         "surface": "trust_update_apply",
     },
+    "record_physics_object": {
+        "cli": "aitp-v5 object record <args>",
+        "mcp": "aitp_v5_record_physics_object",
+        "surface": "physics_object_record",
+    },
 }
 
 
@@ -251,5 +256,16 @@ def _sample_args_for_template(template: str) -> list[str]:
             "file:///papers/fqhe.pdf",
             "--label",
             "FQHE paper PDF",
+        ]
+    if template.startswith("object record"):
+        return [
+            "--topic",
+            "fqhe",
+            "--type",
+            "hilbert_sector",
+            "--name",
+            "N=8 sector",
+            "--definition",
+            "Finite-size Hilbert sector.",
         ]
     return []
