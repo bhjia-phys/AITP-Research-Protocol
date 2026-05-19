@@ -222,3 +222,60 @@ def test_mcp_record_object_relation_returns_valid_surface(tmp_path):
 
     assert payload["ok"] is True
     assert require_valid_public_surface("object_relation_record", payload) == payload
+
+
+def test_execution_brief_exposes_object_relations_for_active_claim(tmp_path):
+    from brain.v5.brief import build_execution_brief
+    from brain.v5.physics_objects import record_object_relation, record_physics_object
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="Counting identifies the edge CFT.",
+        evidence_profile="toy_numeric",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size aliasing",
+    )
+    counting = record_physics_object(
+        ws,
+        topic_id="fqhe",
+        object_type="observable",
+        name="counting sequence",
+        definition="Low-lying counting data.",
+    )
+    cft = record_physics_object(
+        ws,
+        topic_id="fqhe",
+        object_type="theory",
+        name="edge CFT",
+        definition="Candidate edge theory.",
+    )
+    relation = record_object_relation(
+        ws,
+        topic_id="fqhe",
+        relation_type="diagnoses",
+        subject_id=counting.object_id,
+        object_id=cft.object_id,
+        statement="Counting diagnoses the edge CFT only after sector matching.",
+        claim_id=claim.claim_id,
+        failure_modes=["wrong momentum sector"],
+    )
+    bind_session(ws, "s1", topic_id="fqhe", context_id="topological-order", active_claim=claim.claim_id)
+
+    brief = build_execution_brief(ws, "s1")
+
+    relations = brief["known_context"]["object_relations"]
+    assert relations == [
+        {
+            "relation_id": relation.relation_id,
+            "relation_type": "diagnoses",
+            "subject_id": counting.object_id,
+            "object_id": cft.object_id,
+            "statement": "Counting diagnoses the edge CFT only after sector matching.",
+            "failure_modes": ["wrong momentum sector"],
+            "status": "hypothesis",
+        }
+    ]

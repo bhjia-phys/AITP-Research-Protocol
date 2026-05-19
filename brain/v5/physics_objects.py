@@ -102,3 +102,15 @@ def list_object_relations_for_claim(ws: WorkspacePaths, claim_id: str) -> list[O
         for relation in list_records(ws.registry_dir("object_relations"), ObjectRelationRecord)
         if relation.claim_id == claim_id
     ]
+
+
+def object_relation_brief_payload(relation: ObjectRelationRecord) -> dict:
+    return {
+        "relation_id": relation.relation_id,
+        "relation_type": relation.relation_type,
+        "subject_id": relation.subject_id,
+        "object_id": relation.object_id,
+        "statement": relation.statement,
+        "failure_modes": list(relation.failure_modes),
+        "status": relation.status,
+    }
