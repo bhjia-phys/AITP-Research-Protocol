@@ -96,3 +96,24 @@ def test_legacy_candidates_map_to_v5_claim_records(tmp_path):
     assert claim.topic_id == "legacy-fqhe"
     assert claim.statement == "Finite-size counting identifies the FQHE edge sector."
     assert claim.evidence_profile == "toy_numeric"
+
+
+def test_legacy_topic_dry_run_reports_missing_and_mapped_sections(tmp_path):
+    from pathlib import Path
+
+    from brain.v5.legacy_bridge import audit_legacy_topic_migration
+
+    topic = tmp_path / "old-topic"
+    (topic / "L0" / "sources" / "paper-a").mkdir(parents=True)
+    (topic / "L1").mkdir()
+    (topic / "state.md").write_text("---\ntitle: Old Topic\n---\n# State\n", encoding="utf-8")
+    (topic / "L0" / "sources" / "paper-a" / "source.md").write_text("# Paper A\n", encoding="utf-8")
+    (topic / "L1" / "question_contract.md").write_text("# Question\n", encoding="utf-8")
+
+    audit = audit_legacy_topic_migration(topic)
+
+    assert audit["kind"] == "legacy_topic_migration_audit"
+    assert audit["can_write_v5_records"] is False
+    assert "L1/source_basis.md" in audit["missing_expected_paths"]
+    assert audit["mapped_paths"]["state.md"] == "topic/runtime metadata"
+    assert audit["mapped_paths"]["L0/sources/paper-a/source.md"] == "reference_location/source evidence candidate"

@@ -105,6 +105,49 @@ def seed_v5_from_legacy(
     )
 
 
+def audit_legacy_topic_migration(topic_path: str | Path) -> dict:
+    """Dry-run audit of what a legacy topic migration would preserve."""
+
+    root = Path(topic_path)
+    mapped_paths: dict[str, str] = {}
+    missing_expected_paths: list[str] = []
+
+    _EXPECTED_PATHS = [
+        "state.md",
+        "L0/sources",
+        "L1/question_contract.md",
+        "L1/source_basis.md",
+    ]
+    _PATH_MAP = {
+        "state.md": "topic/runtime metadata",
+    }
+
+    for rel in _EXPECTED_PATHS:
+        full = root / rel
+        if full.exists():
+            if rel in _PATH_MAP:
+                mapped_paths[rel] = _PATH_MAP[rel]
+        else:
+            missing_expected_paths.append(rel)
+
+    for src in sorted((root / "L0" / "sources").glob("*/source.md")):
+        mapped_paths[src.relative_to(root).as_posix()] = "reference_location/source evidence candidate"
+
+    if root / "L1" / "question_contract.md" in (root / "L1" / "question_contract.md").parent.glob("*"):
+        mapped_paths["L1/question_contract.md"] = "claim/question or claim contract"
+
+    can_write = len(missing_expected_paths) == 0
+
+    return {
+        "kind": "legacy_topic_migration_audit",
+        "topic_path": str(root),
+        "mapped_paths": mapped_paths,
+        "missing_expected_paths": missing_expected_paths,
+        "can_write_v5_records": can_write,
+        "summary_inputs_trusted": False,
+    }
+
+
 def build_v5_brief_from_legacy(
     base: str | Path,
     topic_dir: str | Path,
