@@ -278,4 +278,11 @@ def _contains_any(text: str, terms: tuple[str, ...]) -> bool:
 
 
 def _relation_failure_modes_present(relations: list[str]) -> bool:
-    return any("failure modes:" in r.lower() for r in relations)
+    for r in relations:
+        lower = r.lower()
+        idx = lower.find("failure modes:")
+        if idx != -1:
+            content = lower[idx + len("failure modes:"):].strip()
+            if content:
+                return True
+    return False

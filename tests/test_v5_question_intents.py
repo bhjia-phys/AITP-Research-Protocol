@@ -111,3 +111,36 @@ def test_question_intents_have_llm_expansion_boundaries():
     assert any(intent.intent_type == "limit_symmetry_dimension_check" for intent in intents)
     assert all("must preserve intent_type" in intent.expansion_boundary for intent in intents)
     assert all(intent.kernel_prompt for intent in intents)
+
+
+def test_empty_failure_modes_do_not_trigger_relation_failure_mode_question():
+    """object_relation_failure_mode_check must only fire when failure modes are non-empty."""
+    from brain.v5.models import ClaimRecord, FlowDecision
+    from brain.v5.question_intents import generate_question_intents
+
+    claim = ClaimRecord(
+        claim_id="claim-fqhe-counting",
+        topic_id="fqhe",
+        statement="Entanglement spectrum counting identifies the FQHE edge sector.",
+        evidence_profile="toy_numeric",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size reliability",
+    )
+    flow = FlowDecision(profile="guided", reason="new claim")
+
+    # Simulates what brief.py produces: empty failure_modes list should NOT
+    # include "Failure modes:" text in the relation string
+    relations_with_empty = [
+        "A diagnoses B. Failure modes: ",
+    ]
+    intents = generate_question_intents(claim, flow, object_relations=relations_with_empty)
+    intent_types = [i.intent_type for i in intents]
+    assert "object_relation_failure_mode_check" not in intent_types
+
+    # But non-empty failure modes SHOULD trigger it
+    relations_with_modes = [
+        "A diagnoses B. Failure modes: sector misassignment",
+    ]
+    intents2 = generate_question_intents(claim, flow, object_relations=relations_with_modes)
+    intent_types2 = [i.intent_type for i in intents2]
+    assert "object_relation_failure_mode_check" in intent_types2
