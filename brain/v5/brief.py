@@ -39,23 +39,17 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
         risk = assess_claim_risk(claim, code_states=_linked_code_states(ws, claim.claim_id))
         flow = resolve_flow_profile(claim, assessment=risk)
         raw_object_relations = list_object_relations_for_claim(ws, claim.claim_id)
-        object_relation_texts = []
-        for relation in raw_object_relations:
-            text = relation.statement
-            if relation.failure_modes:
-                text += f" Failure modes: {', '.join(relation.failure_modes)}"
-            object_relation_texts.append(text)
-        questions = generate_questions(claim, flow, object_relations=object_relation_texts)
+        object_relations = [
+            object_relation_brief_payload(relation)
+            for relation in raw_object_relations
+        ]
+        questions = generate_questions(claim, flow, object_relations=object_relations)
         evidence_records = list_evidence_for_claim(ws, claim.claim_id)
         recommended_tool_executors = suggest_tool_executors_for_claim(claim)
         knowledge_connectors = suggest_knowledge_connectors_for_claim(claim)
         reference_locations = [
             reference_location_brief_payload(location)
             for location in list_reference_locations_for_claim(ws, claim.claim_id)
-        ]
-        object_relations = [
-            object_relation_brief_payload(relation)
-            for relation in raw_object_relations
         ]
 
     action_budget = risk.action_budget if risk and risk.action_budget else action_budget_for_level("guided")

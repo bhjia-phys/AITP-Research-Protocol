@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
+from typing import Any
 
 from brain.v5.ids import prefixed_id
 from brain.v5.interaction import InteractionPlan
@@ -33,12 +35,14 @@ def generate_question_intents(
     claim: ClaimRecord,
     flow: FlowDecision,
     *,
-    object_relations: list[str] | None = None,
+    object_relations: list[object] | None = None,
     interaction: InteractionPlan | None = None,
 ) -> list[QuestionIntent]:
     """Generate deterministic question intents before any LLM phrasing layer."""
 
-    relations = object_relations or []
+    relation_contexts = _relation_contexts(object_relations or [])
+    relation_prompts = [context["prompt"] for context in relation_contexts]
+    relation_targets = [context["target"] for context in relation_contexts]
     text = _claim_text(claim)
     objects = _target_objects(text)
     intents: list[QuestionIntent] = []
@@ -66,7 +70,7 @@ def generate_question_intents(
                 expected_answer_shape=expected,
                 suggested_actions=actions,
                 target_objects=target_objects if target_objects is not None else objects,
-                target_relations=target_relations if target_relations is not None else relations,
+                target_relations=target_relations if target_relations is not None else relation_targets,
                 target_uncertainty=claim.active_uncertainty,
                 priority=priority,
             )
@@ -81,15 +85,15 @@ def generate_question_intents(
         priority=10,
     )
 
-    if relations:
-        relation_text = ", ".join(relations)
+    if relation_contexts:
+        relation_text = ", ".join(relation_prompts)
         add(
             "object_relation_check",
             f"Which object relation is load-bearing here, and how does it support the claim? Relations: {relation_text}",
             "The next physics step should inspect relations, not isolated objects.",
             "A relation-level explanation with the weakest edge identified.",
             ["update_relation_graph", "run_relation_check"],
-            target_relations=relations,
+            target_relations=relation_targets,
             priority=20,
         )
     else:
@@ -112,15 +116,15 @@ def generate_question_intents(
             priority=30,
         )
 
-    if relations and _relation_failure_modes_present(relations):
-        relation_text = "; ".join(relations)
+    if relation_contexts and _relation_failure_modes_present(relation_contexts):
+        relation_text = "; ".join(_relation_failure_mode_texts(relation_contexts))
         add(
             "object_relation_failure_mode_check",
             f"Which recorded object-relation failure mode is most dangerous here: {relation_text}?",
             "Recorded object relations expose mechanisms and failure modes that should guide the next physics check.",
             "Name the relation, the failure mode, and the cheapest check.",
             ["record_evidence", "run_minimal_check", "revise_relation"],
-            target_relations=relations,
+            target_relations=relation_targets,
             priority=25,
         )
 
@@ -277,12 +281,61 @@ def _contains_any(text: str, terms: tuple[str, ...]) -> bool:
     return any(term in text for term in terms)
 
 
-def _relation_failure_modes_present(relations: list[str]) -> bool:
-    for r in relations:
-        lower = r.lower()
-        idx = lower.find("failure modes:")
-        if idx != -1:
-            content = lower[idx + len("failure modes:"):].strip()
-            if content:
-                return True
+def _relation_contexts(relations: list[object]) -> list[dict[str, Any]]:
+    contexts: list[dict[str, Any]] = []
+    for relation in relations:
+        if isinstance(relation, Mapping):
+            statement = str(relation.get("statement") or relation.get("relation_id") or "").strip()
+            relation_id = str(relation.get("relation_id") or statement).strip()
+            relation_type = str(relation.get("relation_type") or "").strip()
+            failure_modes = [
+                str(mode).strip()
+                for mode in relation.get("failure_modes", [])
+                if str(mode).strip()
+            ]
+            label = f"{relation_type}: {statement}" if relation_type and statement else statement or relation_type
+            prompt = label
+            if failure_modes:
+                prompt = f"{prompt} Failure modes: {', '.join(failure_modes)}"
+            contexts.append(
+                {
+                    "prompt": prompt,
+                    "target": relation_id or prompt,
+                    "failure_modes": failure_modes,
+                }
+            )
+            continue
+
+        text = str(relation)
+        contexts.append(
+            {
+                "prompt": text,
+                "target": text,
+                "failure_modes": _failure_modes_from_text(text),
+            }
+        )
+    return contexts
+
+
+def _failure_modes_from_text(text: str) -> list[str]:
+    lower = text.lower()
+    idx = lower.find("failure modes:")
+    if idx == -1:
+        return []
+    content = text[idx + len("failure modes:"):].strip()
+    return [mode.strip() for mode in content.split(",") if mode.strip()]
+
+
+def _relation_failure_modes_present(contexts: list[dict[str, Any]]) -> bool:
+    for context in contexts:
+        if context["failure_modes"]:
+            return True
     return False
+
+
+def _relation_failure_mode_texts(contexts: list[dict[str, Any]]) -> list[str]:
+    return [
+        context["prompt"]
+        for context in contexts
+        if context["failure_modes"]
+    ]

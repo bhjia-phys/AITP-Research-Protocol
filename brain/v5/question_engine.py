@@ -11,7 +11,7 @@ def generate_questions(
     claim: ClaimRecord,
     flow: FlowDecision,
     *,
-    object_relations: list[str] | None = None,
+    object_relations: list[object] | None = None,
     interaction=None,
 ) -> list[QuestionRecord]:
     """Generate deterministic physics questions for the current state."""

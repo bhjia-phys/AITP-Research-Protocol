@@ -144,3 +144,66 @@ def test_empty_failure_modes_do_not_trigger_relation_failure_mode_question():
     intents2 = generate_question_intents(claim, flow, object_relations=relations_with_modes)
     intent_types2 = [i.intent_type for i in intents2]
     assert "object_relation_failure_mode_check" in intent_types2
+
+
+def test_structured_object_relation_payload_drives_failure_mode_intent():
+    from brain.v5.models import ClaimRecord, FlowDecision
+    from brain.v5.question_intents import generate_question_intents
+
+    claim = ClaimRecord(
+        claim_id="claim-fqhe-counting",
+        topic_id="fqhe",
+        statement="Entanglement spectrum counting identifies the FQHE edge sector.",
+        evidence_profile="toy_numeric",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size reliability",
+    )
+    flow = FlowDecision(profile="guided", reason="new claim")
+    relations = [
+        {
+            "relation_id": "object-relation-counting-edge-cft",
+            "relation_type": "diagnoses",
+            "subject_id": "object-counting",
+            "object_id": "object-edge-cft",
+            "statement": "Counting diagnoses the edge CFT.",
+            "failure_modes": ["wrong momentum sector"],
+            "status": "hypothesis",
+        }
+    ]
+
+    intents = generate_question_intents(claim, flow, object_relations=relations)
+
+    failure_intent = next(i for i in intents if i.intent_type == "object_relation_failure_mode_check")
+    assert "wrong momentum sector" in failure_intent.kernel_prompt
+    assert failure_intent.target_relations == ["object-relation-counting-edge-cft"]
+
+
+def test_structured_relation_with_empty_failure_modes_stays_lightweight():
+    from brain.v5.models import ClaimRecord, FlowDecision
+    from brain.v5.question_intents import generate_question_intents
+
+    claim = ClaimRecord(
+        claim_id="claim-fqhe-counting",
+        topic_id="fqhe",
+        statement="Entanglement spectrum counting identifies the FQHE edge sector.",
+        evidence_profile="toy_numeric",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size reliability",
+    )
+    flow = FlowDecision(profile="guided", reason="new claim")
+
+    intents = generate_question_intents(
+        claim,
+        flow,
+        object_relations=[
+            {
+                "relation_id": "object-relation-counting-edge-cft",
+                "statement": "Counting diagnoses the edge CFT.",
+                "failure_modes": [],
+            }
+        ],
+    )
+
+    intent_types = [i.intent_type for i in intents]
+    assert "object_relation_check" in intent_types
+    assert "object_relation_failure_mode_check" not in intent_types
