@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from brain.v5.models import ClaimRecord
 from brain.v5.paths import WorkspacePaths
 from brain.v5.store import write_record
+from brain.v5.tool_executors import describe_tool_executors
 
 
 @dataclass
@@ -17,6 +18,7 @@ class DomainPackRecord:
     suggested_question_intents: list[str] = field(default_factory=list)
     risk_signals: list[str] = field(default_factory=list)
     tool_recipes: list[str] = field(default_factory=list)
+    tool_executor_recommendations: list[dict] = field(default_factory=list)
     trust_card_templates: list[str] = field(default_factory=list)
     truth_standard_policy: str = "global_only"
     kind: str = "domain_pack"
@@ -53,6 +55,22 @@ def builtin_domain_packs() -> dict[str, DomainPackRecord]:
             ],
             risk_signals=["numerical_sensitivity", "literature_conflict", "physics_anomaly"],
             tool_recipes=["ed_sector_scan", "counting_table_comparison", "negative_control"],
+            tool_executor_recommendations=[
+                {
+                    "executor_id": "metric_table_check",
+                    "recipe_id": "recipe-fqhe-counting-table",
+                    "evidence_type": "toy_numeric",
+                    "supports_outputs": ["evidence_or_provenance", "minimal_check"],
+                    "use_when": "Compare ED/counting-table rows against expected topological-sector data.",
+                },
+                {
+                    "executor_id": "scalar_tolerance_check",
+                    "recipe_id": "recipe-fqhe-single-observable-check",
+                    "evidence_type": "toy_numeric",
+                    "supports_outputs": ["evidence_or_provenance"],
+                    "use_when": "Check one extracted counting, gap, or overlap observable.",
+                },
+            ],
             trust_card_templates=["small_system_reproduction_card"],
         ),
         "gw_librpa": DomainPackRecord(
@@ -67,6 +85,24 @@ def builtin_domain_packs() -> dict[str, DomainPackRecord]:
             ],
             risk_signals=["formula_to_code_risk", "reproducibility_risk", "compute_cost"],
             tool_recipes=["librpa_gw_benchmark_recipe", "code_state_capture", "abacus_librpa_input_audit"],
+            tool_executor_recommendations=[
+                {
+                    "executor_id": "metric_table_check",
+                    "recipe_id": "recipe-librpa-gw-benchmark-table",
+                    "evidence_type": "code_method",
+                    "supports_outputs": ["evidence_or_provenance", "minimal_check"],
+                    "use_when": "Compare a GW benchmark table against reference values after recording code state.",
+                    "required_context_refs": ["code_state_ids"],
+                },
+                {
+                    "executor_id": "scalar_tolerance_check",
+                    "recipe_id": "recipe-librpa-single-benchmark-observable",
+                    "evidence_type": "code_method",
+                    "supports_outputs": ["evidence_or_provenance"],
+                    "use_when": "Check one GW benchmark observable such as a gap or self-energy norm.",
+                    "required_context_refs": ["code_state_ids"],
+                },
+            ],
             trust_card_templates=["clean_code_state_trust_card", "trusted_benchmark_recipe_card"],
         ),
         "toy_numerics": DomainPackRecord(
@@ -81,6 +117,22 @@ def builtin_domain_packs() -> dict[str, DomainPackRecord]:
             ],
             risk_signals=["numerical_sensitivity", "physics_anomaly"],
             tool_recipes=["toy_hamiltonian_diagonalization", "finite_size_scan", "negative_control"],
+            tool_executor_recommendations=[
+                {
+                    "executor_id": "metric_table_check",
+                    "recipe_id": "recipe-toy-observable-table",
+                    "evidence_type": "toy_numeric",
+                    "supports_outputs": ["evidence_or_provenance", "minimal_check"],
+                    "use_when": "Compare a table of toy-model observables across sizes or sectors.",
+                },
+                {
+                    "executor_id": "scalar_tolerance_check",
+                    "recipe_id": "recipe-toy-single-observable",
+                    "evidence_type": "toy_numeric",
+                    "supports_outputs": ["evidence_or_provenance"],
+                    "use_when": "Check one toy-model energy, gap, norm, or symmetry observable.",
+                },
+            ],
             trust_card_templates=["stable_toy_numeric_recipe_card"],
         ),
     }
@@ -100,6 +152,29 @@ def suggest_domain_packs(claim: ClaimRecord) -> list[DomainPackRecord]:
     if claim.evidence_profile == "formal_theory":
         return [packs["formal_theory"]]
     return []
+
+
+def suggest_tool_executors_for_claim(claim: ClaimRecord) -> list[dict]:
+    """Return domain-conditioned safe executor recommendations for a claim."""
+
+    catalog = {executor["executor_id"]: executor for executor in describe_tool_executors()["executors"]}
+    recommendations: list[dict] = []
+    for pack in suggest_domain_packs(claim):
+        for recommendation in pack.tool_executor_recommendations:
+            executor = catalog.get(recommendation.get("executor_id", ""))
+            if executor is None:
+                continue
+            if recommendation.get("evidence_type") not in {claim.evidence_profile, "mixed"}:
+                continue
+            recommendations.append(
+                {
+                    "pack_id": pack.pack_id,
+                    "domain": pack.domain,
+                    **recommendation,
+                    "executor": executor,
+                }
+            )
+    return recommendations
 
 
 def register_domain_pack(ws: WorkspacePaths, pack: DomainPackRecord) -> DomainPackRecord:

@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any
 
+from brain.v5.domain_packs import suggest_tool_executors_for_claim
 from brain.v5.evidence import list_evidence_for_claim, required_output_coverage
 from brain.v5.flow import resolve_flow_profile
 from brain.v5.interaction import prioritize_questions, resolve_interaction_profile
@@ -110,6 +111,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
             "topic_id": session.topic_id,
             "context_id": session.context_id,
             "previous_failed_attempts": [],
+            "recommended_tool_executors": suggest_tool_executors_for_claim(claim) if claim else [],
         },
         "mandatory_reflection": mandatory_reflection,
         "next_action_candidates": next_action_candidates,
