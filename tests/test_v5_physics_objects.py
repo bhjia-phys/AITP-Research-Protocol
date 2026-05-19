@@ -279,3 +279,38 @@ def test_execution_brief_exposes_object_relations_for_active_claim(tmp_path):
             "status": "hypothesis",
         }
     ]
+
+
+def test_mandatory_reflection_mentions_recorded_relation_failure_mode(tmp_path):
+    from brain.v5.brief import build_execution_brief
+    from brain.v5.physics_objects import record_object_relation, record_physics_object
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="Counting identifies the edge CFT.",
+        evidence_profile="toy_numeric",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size aliasing",
+    )
+    counting = record_physics_object(ws, topic_id="fqhe", object_type="observable", name="counting", definition="Counting data.")
+    cft = record_physics_object(ws, topic_id="fqhe", object_type="theory", name="edge CFT", definition="Candidate theory.")
+    record_object_relation(
+        ws,
+        topic_id="fqhe",
+        relation_type="diagnoses",
+        subject_id=counting.object_id,
+        object_id=cft.object_id,
+        statement="Counting diagnoses the edge CFT.",
+        claim_id=claim.claim_id,
+        failure_modes=["finite-size aliasing"],
+    )
+    bind_session(ws, "s1", topic_id="fqhe", context_id="topological-order", active_claim=claim.claim_id)
+
+    brief = build_execution_brief(ws, "s1")
+
+    questions = "\n".join(item["question"] for item in brief["mandatory_reflection"])
+    assert "finite-size aliasing" in questions

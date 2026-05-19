@@ -112,6 +112,18 @@ def generate_question_intents(
             priority=30,
         )
 
+    if relations and _relation_failure_modes_present(relations):
+        relation_text = "; ".join(relations)
+        add(
+            "object_relation_failure_mode_check",
+            f"Which recorded object-relation failure mode is most dangerous here: {relation_text}?",
+            "Recorded object relations expose mechanisms and failure modes that should guide the next physics check.",
+            "Name the relation, the failure mode, and the cheapest check.",
+            ["record_evidence", "run_minimal_check", "revise_relation"],
+            target_relations=relations,
+            priority=25,
+        )
+
     if claim.evidence_profile == "toy_numeric" or _contains_any(text, _FINITE_SIZE_TERMS):
         add(
             "finite_size_or_cutoff_check",
@@ -263,3 +275,7 @@ def _claim_text(claim: ClaimRecord) -> str:
 
 def _contains_any(text: str, terms: tuple[str, ...]) -> bool:
     return any(term in text for term in terms)
+
+
+def _relation_failure_modes_present(relations: list[str]) -> bool:
+    return any("failure modes:" in r.lower() for r in relations)
