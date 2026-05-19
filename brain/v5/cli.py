@@ -18,7 +18,7 @@ from brain.v5.models import TrustUpdateRequest
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
 from brain.v5.risk import assess_claim_risk
 from brain.v5.summaries import read_summary_orientation, write_session_summary
-from brain.v5.tool_executors import execute_registered_tool
+from brain.v5.tool_executors import execute_registered_tool_result
 from brain.v5.tools import record_tool_run, register_tool_recipe
 from brain.v5.trust_updates import apply_trust_update, preflight_trust_update
 from brain.v5.workspace import (
@@ -152,6 +152,9 @@ def _build_parser() -> argparse.ArgumentParser:
     tool_execute.add_argument("--code-state-id", action="append", default=[], dest="code_state_ids")
     tool_execute.add_argument("--artifact-id", action="append", default=[], dest="artifact_ids")
     tool_execute.add_argument("--source-ref", action="append", default=[], dest="source_refs")
+    tool_execute.add_argument("--supports-output", action="append", default=[], dest="supports_outputs")
+    tool_execute.add_argument("--evidence-type", default="tool_run")
+    tool_execute.add_argument("--evidence-summary", default="")
 
     summary_parser = subparsers.add_parser("summary")
     summary_sub = summary_parser.add_subparsers(dest="summary_command", required=True)
@@ -299,7 +302,7 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         return {"ok": True, **require_valid_public_surface("tool_run_record", {"ok": True, **asdict(run)})}
 
     if args.command == "tool" and args.tool_command == "execute":
-        run = execute_registered_tool(
+        result = execute_registered_tool_result(
             ws,
             executor_id=args.executor_id,
             recipe_id=args.recipe_id,
@@ -310,8 +313,16 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             code_state_ids=args.code_state_ids,
             artifact_ids=args.artifact_ids,
             source_refs=args.source_refs,
+            supports_outputs=args.supports_outputs,
+            evidence_type=args.evidence_type,
+            evidence_summary=args.evidence_summary,
         )
-        return {"ok": True, **require_valid_public_surface("tool_run_record", {"ok": True, **asdict(run)})}
+        payload = {"ok": True, **asdict(result.run)}
+        if result.evidence is not None:
+            evidence = require_valid_public_surface("evidence_record", {"ok": True, **asdict(result.evidence)})
+            payload["evidence_id"] = result.evidence.evidence_id
+            payload["evidence"] = evidence
+        return {"ok": True, **require_valid_public_surface("tool_run_record", payload)}
 
     if args.command == "summary" and args.summary_command == "session":
         return {

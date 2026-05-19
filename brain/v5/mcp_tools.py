@@ -15,7 +15,7 @@ from brain.v5.public_surfaces import describe_public_surfaces, require_valid_pub
 from brain.v5.risk import assess_claim_risk
 from brain.v5.store import list_records
 from brain.v5.summaries import read_summary_orientation, write_session_summary
-from brain.v5.tool_executors import execute_registered_tool
+from brain.v5.tool_executors import execute_registered_tool_result
 from brain.v5.tools import record_tool_run, register_tool_recipe
 from brain.v5.trust_updates import apply_trust_update, preflight_trust_update
 from brain.v5.workspace import (
@@ -239,9 +239,12 @@ def aitp_v5_execute_tool(
     code_state_ids: list[str] | None = None,
     artifact_ids: list[str] | None = None,
     source_refs: list[str] | None = None,
+    supports_outputs: list[str] | None = None,
+    evidence_type: str = "tool_run",
+    evidence_summary: str = "",
 ) -> dict:
     ws = init_workspace(Path(base))
-    run = execute_registered_tool(
+    result = execute_registered_tool_result(
         ws,
         executor_id=executor_id,
         recipe_id=recipe_id,
@@ -252,8 +255,16 @@ def aitp_v5_execute_tool(
         code_state_ids=code_state_ids,
         artifact_ids=artifact_ids,
         source_refs=source_refs,
+        supports_outputs=supports_outputs,
+        evidence_type=evidence_type,
+        evidence_summary=evidence_summary,
     )
-    return require_valid_public_surface("tool_run_record", {"ok": True, **asdict(run)})
+    payload = {"ok": True, **asdict(result.run)}
+    if result.evidence is not None:
+        evidence = require_valid_public_surface("evidence_record", {"ok": True, **asdict(result.evidence)})
+        payload["evidence_id"] = result.evidence.evidence_id
+        payload["evidence"] = evidence
+    return require_valid_public_surface("tool_run_record", payload)
 
 
 def aitp_v5_write_session_summary(base: str, *, session_id: str) -> dict:

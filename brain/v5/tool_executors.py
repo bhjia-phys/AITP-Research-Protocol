@@ -5,7 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Callable
 
-from brain.v5.models import ToolRunRecord
+from brain.v5.evidence import record_evidence
+from brain.v5.models import EvidenceRecord, ToolRunRecord
 from brain.v5.paths import WorkspacePaths
 from brain.v5.tools import record_tool_run
 
@@ -18,6 +19,12 @@ class ToolExecutorSpec:
     execution_mode: str
     version: str
     run: Callable[[dict[str, Any]], dict[str, Any]]
+
+
+@dataclass(frozen=True)
+class ToolExecutionResult:
+    run: ToolRunRecord
+    evidence: EvidenceRecord | None = None
 
 
 def builtin_tool_executors() -> dict[str, ToolExecutorSpec]:
@@ -46,8 +53,46 @@ def execute_registered_tool(
     code_state_ids: list[str] | None = None,
     artifact_ids: list[str] | None = None,
     source_refs: list[str] | None = None,
+    supports_outputs: list[str] | None = None,
+    evidence_type: str = "tool_run",
+    evidence_summary: str = "",
 ) -> ToolRunRecord:
     """Execute a safe built-in tool and record its provenance as a ToolRunRecord."""
+
+    return execute_registered_tool_result(
+        ws,
+        executor_id=executor_id,
+        recipe_id=recipe_id,
+        topic_id=topic_id,
+        claim_id=claim_id,
+        inputs=inputs,
+        evidence_status=evidence_status,
+        code_state_ids=code_state_ids,
+        artifact_ids=artifact_ids,
+        source_refs=source_refs,
+        supports_outputs=supports_outputs,
+        evidence_type=evidence_type,
+        evidence_summary=evidence_summary,
+    ).run
+
+
+def execute_registered_tool_result(
+    ws: WorkspacePaths,
+    *,
+    executor_id: str,
+    recipe_id: str,
+    topic_id: str,
+    claim_id: str,
+    inputs: dict[str, Any],
+    evidence_status: str = "",
+    code_state_ids: list[str] | None = None,
+    artifact_ids: list[str] | None = None,
+    source_refs: list[str] | None = None,
+    supports_outputs: list[str] | None = None,
+    evidence_type: str = "tool_run",
+    evidence_summary: str = "",
+) -> ToolExecutionResult:
+    """Execute a safe built-in tool and optionally record evidence coverage."""
 
     spec = _resolve_executor(executor_id)
     outputs = spec.run(inputs)
@@ -57,7 +102,7 @@ def execute_registered_tool(
         "executor_version": spec.version,
         "execution_mode": spec.execution_mode,
     }
-    return record_tool_run(
+    run = record_tool_run(
         ws,
         recipe_id=recipe_id,
         tool_family=spec.tool_family,
@@ -72,6 +117,21 @@ def execute_registered_tool(
         artifact_ids=artifact_ids,
         source_refs=source_refs,
     )
+    evidence = None
+    if supports_outputs:
+        evidence = record_evidence(
+            ws,
+            topic_id=topic_id,
+            claim_id=claim_id,
+            evidence_type=evidence_type,
+            status=status,
+            summary=evidence_summary or f"Tool run {run.run_id} completed via {executor_id}.",
+            supports_outputs=supports_outputs,
+            source_refs=source_refs,
+            tool_run_ids=[run.run_id],
+            artifact_ids=artifact_ids,
+        )
+    return ToolExecutionResult(run=run, evidence=evidence)
 
 
 def _resolve_executor(executor_id: str) -> ToolExecutorSpec:
