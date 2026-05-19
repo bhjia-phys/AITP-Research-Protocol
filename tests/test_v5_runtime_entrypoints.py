@@ -16,10 +16,12 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["record_code_state"]["surface"] == "code_state_record"
     assert entrypoints["register_tool_recipe"]["surface"] == "tool_recipe_record"
     assert entrypoints["record_tool_run"]["surface"] == "tool_run_record"
+    assert entrypoints["execute_tool"]["surface"] == "tool_run_record"
     assert entrypoints["record_evidence"]["mcp"] == "aitp_v5_record_evidence"
     assert entrypoints["record_code_state"]["mcp"] == "aitp_v5_record_code_state"
     assert entrypoints["register_tool_recipe"]["mcp"] == "aitp_v5_register_tool_recipe"
     assert entrypoints["record_tool_run"]["mcp"] == "aitp_v5_record_tool_run"
+    assert entrypoints["execute_tool"]["mcp"] == "aitp_v5_execute_tool"
 
 
 def test_runtime_entrypoint_validation_reports_bad_mcp_and_cli_targets():

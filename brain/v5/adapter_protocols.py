@@ -30,6 +30,7 @@ _REGISTRY_METADATA = {
 _TRUST_CHANGING_ACTIONS = [
     "record_evidence",
     "record_tool_run",
+    "execute_tool",
     "change_claim_confidence",
     "validate_claim",
     "promote_to_l2",
@@ -41,6 +42,7 @@ _KERNEL_ENTRYPOINTS = [
     "aitp_v5_record_code_state",
     "aitp_v5_record_evidence",
     "aitp_v5_record_tool_run",
+    "aitp_v5_execute_tool",
     "aitp_v5_register_tool_recipe",
     "aitp_v5_assess_risk",
     "aitp_v5_write_session_summary",
@@ -92,6 +94,12 @@ _RECORD_SEQUENCE_BY_ACTION = {
         "refresh_execution_brief",
         "write_session_summary",
     ],
+    "execute_tool": [
+        "refresh_execution_brief",
+        "execute_tool",
+        "refresh_execution_brief",
+        "write_session_summary",
+    ],
     "register_tool_recipe": [
         "register_tool_recipe",
     ],
@@ -117,6 +125,14 @@ _RUNTIME_RECORD_PROTOCOLS = {
         "entrypoint": "aitp_v5_record_tool_run",
         "sequence": list(_RECORD_SEQUENCE_BY_ACTION["record_tool_run"]),
         "required_typed_refs": ["topic_id", "claim_id", "recipe_id"],
+        "accepted_link_fields": ["code_state_ids", "artifact_ids", "source_refs"],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    },
+    "execute_tool": {
+        "entrypoint": "aitp_v5_execute_tool",
+        "sequence": list(_RECORD_SEQUENCE_BY_ACTION["execute_tool"]),
+        "required_typed_refs": ["topic_id", "claim_id", "recipe_id", "executor_id"],
         "accepted_link_fields": ["code_state_ids", "artifact_ids", "source_refs"],
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,

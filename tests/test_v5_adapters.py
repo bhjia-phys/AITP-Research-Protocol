@@ -279,6 +279,7 @@ def test_adapter_packet_ignores_tampered_summary_as_truth_source(tmp_path):
     assert packet["requires_kernel_call_before"] == [
         "record_evidence",
         "record_tool_run",
+        "execute_tool",
         "change_claim_confidence",
         "validate_claim",
         "promote_to_l2",

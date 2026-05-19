@@ -48,6 +48,11 @@ _RUNTIME_ENTRYPOINTS = {
         "mcp": "aitp_v5_record_tool_run",
         "surface": "tool_run_record",
     },
+    "execute_tool": {
+        "cli": "aitp-v5 tool execute <args>",
+        "mcp": "aitp_v5_execute_tool",
+        "surface": "tool_run_record",
+    },
     "summary_orientation": {
         "cli": "aitp-v5 summary orientation <session-id>",
         "mcp": "aitp_v5_read_summary_orientation",
@@ -206,5 +211,17 @@ def _sample_args_for_template(template: str) -> list[str]:
             "fqhe",
             "--claim",
             "claim-fqhe",
+        ]
+    if template.startswith("tool execute"):
+        return [
+            "scalar_tolerance_check",
+            "--recipe",
+            "recipe-ed",
+            "--topic",
+            "fqhe",
+            "--claim",
+            "claim-fqhe",
+            "--inputs-json",
+            '{"observed":1,"expected":1,"tolerance":0}',
         ]
     return []

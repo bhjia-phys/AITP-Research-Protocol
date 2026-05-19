@@ -15,6 +15,7 @@ from brain.v5.public_surfaces import describe_public_surfaces, require_valid_pub
 from brain.v5.risk import assess_claim_risk
 from brain.v5.store import list_records
 from brain.v5.summaries import read_summary_orientation, write_session_summary
+from brain.v5.tool_executors import execute_registered_tool
 from brain.v5.tools import record_tool_run, register_tool_recipe
 from brain.v5.trust_updates import apply_trust_update, preflight_trust_update
 from brain.v5.workspace import (
@@ -218,6 +219,35 @@ def aitp_v5_record_tool_run(
         inputs=inputs,
         outputs=outputs,
         environment=environment,
+        evidence_status=evidence_status,
+        code_state_ids=code_state_ids,
+        artifact_ids=artifact_ids,
+        source_refs=source_refs,
+    )
+    return require_valid_public_surface("tool_run_record", {"ok": True, **asdict(run)})
+
+
+def aitp_v5_execute_tool(
+    base: str,
+    *,
+    executor_id: str,
+    recipe_id: str,
+    topic_id: str,
+    claim_id: str,
+    inputs: dict,
+    evidence_status: str = "",
+    code_state_ids: list[str] | None = None,
+    artifact_ids: list[str] | None = None,
+    source_refs: list[str] | None = None,
+) -> dict:
+    ws = init_workspace(Path(base))
+    run = execute_registered_tool(
+        ws,
+        executor_id=executor_id,
+        recipe_id=recipe_id,
+        topic_id=topic_id,
+        claim_id=claim_id,
+        inputs=inputs,
         evidence_status=evidence_status,
         code_state_ids=code_state_ids,
         artifact_ids=artifact_ids,
