@@ -314,6 +314,7 @@ class PromotionPacketRecord:
     non_claims: list[str] = field(default_factory=list)
     known_failure_modes: list[str] = field(default_factory=list)
     status: str = "pending_human_checkpoint"
+    human_checkpoint_id: str = ""
     kind: str = "promotion_packet"
 
     @property
@@ -326,6 +327,8 @@ class MemoryEntryRecord:
     entry_id: str
     topic_id: str
     source_claim_id: str
+    source_topic_id: str = ""
+    statement: str = ""
     memory_kind: str = "scoped_claim"
     scope: str = ""
     evidence_refs: list[str] = field(default_factory=list)
@@ -333,6 +336,7 @@ class MemoryEntryRecord:
     known_failure_modes: list[str] = field(default_factory=list)
     source_packet_id: str = ""
     human_checkpoint_id: str = ""
+    status: str = "active"
     kind: str = "memory_entry"
 
     @property

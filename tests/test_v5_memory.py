@@ -253,3 +253,55 @@ def test_apply_promotion_rejects_packet_with_empty_scope(tmp_path):
 
     with pytest.raises(ValueError, match="scope"):
         apply_promotion_packet(ws, packet_id=packet_id, checkpoint_id="bypass")
+
+
+def test_apply_promotion_populates_memory_entry_and_packet_fields(tmp_path):
+    """After promotion, MemoryEntryRecord must have source_topic_id/statement/status and
+    PromotionPacketRecord must record human_checkpoint_id and status=promoted."""
+    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
+    from brain.v5.memory import apply_promotion_packet, create_promotion_packet
+    from brain.v5.store import read_record
+    from brain.v5.models import PromotionPacketRecord
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws, topic_id="fqhe",
+        statement="Counting identifies the edge CFT in the recorded sector.",
+        evidence_profile="toy_numeric", confidence_state="locally_checked",
+        active_uncertainty="promotion readiness",
+    )
+    packet = create_promotion_packet(
+        ws, topic_id="fqhe", claim_id=claim.claim_id,
+        proposed_memory_kind="scoped_claim",
+        scope="fixed sector ED",
+        evidence_refs=["evidence-counting"],
+        known_failure_modes=["sector misassignment"],
+    )
+    checkpoint = request_human_checkpoint(
+        ws, topic_id="fqhe", claim_id=claim.claim_id,
+        reason="L2 promotion", requested_by="risk_policy",
+        options=["approve"],
+    )
+    decide_human_checkpoint(
+        ws, checkpoint_id=checkpoint.checkpoint_id,
+        decision="approve", rationale="Good", decided_by="human",
+    )
+
+    entry = apply_promotion_packet(
+        ws, packet_id=packet.packet_id, checkpoint_id=checkpoint.checkpoint_id,
+    )
+
+    # MemoryEntryRecord fields
+    assert entry.source_topic_id == "fqhe"
+    assert entry.statement == claim.statement
+    assert entry.status == "active"
+
+    # PromotionPacketRecord updated
+    refreshed_packet = read_record(
+        ws.registry_dir("promotion_packets") / f"{packet.packet_id}.md",
+        PromotionPacketRecord,
+    )
+    assert refreshed_packet.status == "promoted"
+    assert refreshed_packet.human_checkpoint_id == checkpoint.checkpoint_id
