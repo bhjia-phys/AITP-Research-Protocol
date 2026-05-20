@@ -939,3 +939,68 @@ Each entry should record:
   - implement a small adapter-neutral smoke path that consumes
     `policy_reasons` for routing, or continue the main plan with the next typed
     kernel capability.
+
+### d19b3dc - Require PreTool Policy In Gate Protocols
+
+- Task: make adapter packets explicitly sequence the shared pre-tool policy
+  before validation and L2 promotion gate actions, so runtimes cannot satisfy
+  gate protocols by calling only the trust preflight.
+- Planning source:
+  - residual risk after `d898048` and `1b02058`;
+  - v5 invariant that summaries are orientation-only and cannot become truth
+    sources for validation/promotion;
+  - adapter packet contract requirement that runtime gate protocols be
+    machine-readable rather than prose-only.
+- Changed files:
+  - `PROJECT_MEMORY.md`
+  - `README.md`
+  - `brain/v5/adapter_contracts.py`
+  - `brain/v5/adapter_protocols.py`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_contracts.py`
+- Public/runtime behavior changes:
+  - adapter packets now list `aitp_v5_evaluate_pre_tool_policy` as a required
+    kernel entrypoint;
+  - `runtime_gate_protocols.validate_claim` and
+    `runtime_gate_protocols.promote_to_l2` now include `pre_tool_policy`,
+    sequence `evaluate_pre_tool_policy` immediately after
+    `refresh_execution_brief`, and name `policy_reasons` as the structured
+    reasons field;
+  - adapter packet contract validation now reports precise issues when gate
+    protocols omit or miswire the shared pre-tool policy.
+- Tests:
+  - adapter packet tests assert the required pre-tool policy entrypoint,
+    sequencing, and `policy_reasons` field for validate/promote gates;
+  - contract tests reject a gate protocol missing `pre_tool_policy` at the
+    precise `adapter.runtime_gate_protocols.validate_claim.pre_tool_policy`
+    path.
+- Verification:
+  - red adapter test failed because `aitp_v5_evaluate_pre_tool_policy` was not
+    in `required_kernel_entrypoints`;
+  - red contract test failed because the validator only produced a generic gate
+    protocol mismatch instead of a precise `pre_tool_policy` issue;
+  - focused green set:
+    `pytest tests/test_v5_adapters.py::test_adapter_packet_includes_orientation_summaries_and_trusted_brief tests/test_v5_contracts.py::test_adapter_packet_contract_requires_gate_pre_tool_policy -q`:
+    2 passed;
+  - regression set:
+    `pytest tests/test_v5_adapters.py tests/test_v5_contracts.py tests/test_v5_runtime_entrypoints.py tests/test_v5_public_surfaces.py tests/test_v5_architecture_boundaries.py -q`:
+    80 passed;
+  - full v5 focused suite: 307 passed;
+  - `python -m compileall -q brain\v5`: passed;
+  - `git diff --check -- .`: passed;
+  - source module line counts remained below 500 lines
+    (`adapter_contracts.py`: 495, `adapter_protocols.py`: 471);
+  - `python hooks\aitp_v5_hook.py pre-commit ...`: passed with `mode=log`.
+- Residual risks:
+  - the adapter packet now defines the gate sequence, but native Codex/OpenCode
+    lifecycle installers still need runtime-level tests that consume the gate
+    protocol end to end;
+  - `adapter_contracts.py` is close to the 500-line architecture limit, so the
+    next contract-heavy slice should extract helper code before adding more
+    validation logic there.
+- Next recommended task:
+  - add a small runtime/bridge smoke path proving a generated adapter consumes
+    `runtime_gate_protocols.*.pre_tool_policy`, or extract adapter contract
+    helpers before the next contract expansion.
