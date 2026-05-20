@@ -19,6 +19,16 @@ def test_v5_source_modules_stay_bounded():
     assert oversized == {}
 
 
+def test_cli_adapter_dispatch_lives_in_focused_module():
+    import brain.v5.cli_adapters as cli_adapters
+
+    repo_root = Path(__file__).resolve().parents[1]
+    cli_path = repo_root / "brain" / "v5" / "cli.py"
+
+    assert hasattr(cli_adapters, "dispatch_adapter_command")
+    assert len(cli_path.read_text(encoding="utf-8").splitlines()) <= 480
+
+
 def test_trust_update_contracts_live_behind_contracts_facade():
     import brain.v5.contracts as contracts
     from brain.v5 import trust_contracts

@@ -40,7 +40,7 @@ pytest $files -q
 Expected baseline:
 
 ```text
-308 passed
+309 passed
 ```
 
 Do not treat old full-suite failures as blockers unless a task modifies legacy code. The v5 focused suite is the working regression gate for this plan.
@@ -227,6 +227,8 @@ Modify as needed:
 - `brain/v5/contracts.py`: stable re-export wrapper for validators.
 - `brain/v5/public_surfaces.py`: public surface names and validators.
 - `brain/v5/cli.py`: thin CLI calls.
+- `brain/v5/cli_adapters.py`: adapter CLI dispatch helpers; use this instead
+  of growing the main CLI module for adapter packet/bridge/hook commands.
 - `brain/v5/mcp_tools.py`: thin MCP calls.
 - `brain/v5/runtime_entrypoints.py`: CLI/MCP entrypoint registry.
 - `brain/v5/adapter_protocols.py`: adapter runtime protocol metadata.

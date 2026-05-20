@@ -64,6 +64,9 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
 
 - v5 hook metadata is generated from typed adapter packets under
   `runtime_hook_protocols` and `runtime_hook_installation`.
+- v5 adapter CLI dispatch lives in `brain/v5/cli_adapters.py`; keep
+  `brain/v5/cli.py` as the parser/thin command router rather than adding more
+  adapter branches there.
 - Codex can materialize explicit guard-call instructions with
   `aitp-v5 adapter hook-bridge codex <session-id> --output <path>`.
 - OpenCode can materialize plugin bridge instructions with

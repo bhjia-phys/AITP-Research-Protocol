@@ -9,22 +9,15 @@ from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Any
 
-from brain.v5.adapter_protocols import adapter_protocol_registry
-from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
+from brain.v5.cli_adapters import dispatch_adapter_command
 from brain.v5.code import record_code_state
 from brain.v5.evidence import record_evidence
-from brain.v5.hook_install_templates import (
-    install_claude_code_hook_settings,
-    write_claude_code_hook_settings,
-    write_codex_hook_bridge,
-    write_opencode_plugin_bridge,
-)
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
 from brain.v5.models import TrustUpdateRequest
 from brain.v5.cli_policy import add_policy_parser, dispatch_policy_command
-from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
+from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.physics_objects import record_object_relation, record_physics_object
 from brain.v5.references import record_reference_location
 from brain.v5.sensemaking import record_sensemaking_report
@@ -253,10 +246,8 @@ def _build_parser() -> argparse.ArgumentParser:
 def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
     if args.command == "init":
         return {"ok": True, "workspace_root": str(init_workspace(Path(args.base)).root)}
-    if args.command == "adapter" and args.adapter_command == "registry":
-        return {"ok": True, "adapter_protocol_registry": require_valid_public_surface("adapter_protocol_registry", adapter_protocol_registry())}
-    if args.command == "adapter" and args.adapter_command == "public-surfaces":
-        return {"ok": True, "public_surfaces": describe_public_surfaces()}
+    if args.command == "adapter" and args.adapter_command in {"registry", "public-surfaces"}:
+        return dispatch_adapter_command(args, None)
 
     ws = init_workspace(Path(args.base))
 
@@ -350,33 +341,8 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         return {"ok": True, **require_valid_public_surface("session_summary_bundle", asdict(write_session_summary(ws, args.session_id)))}
     if args.command == "summary" and args.summary_command == "orientation":
         return {"ok": True, **require_valid_public_surface("summary_orientation", read_summary_orientation(ws, args.session_id))}
-    if args.command == "adapter" and args.adapter_command == "packet":
-        return {"ok": True, **require_valid_public_surface("adapter_packet", build_adapter_packet(ws, args.session_id, runtime=args.runtime))}
-    if args.command == "adapter" and args.adapter_command == "hook-bridge":
-        packet = require_valid_public_surface("adapter_packet", build_adapter_packet(ws, args.session_id, runtime=args.runtime))
-        if packet["runtime"] == "opencode":
-            bridge = {"ok": True, **write_opencode_plugin_bridge(
-                args.output, packet["runtime_hook_installation"], packet["runtime_gate_protocols"])}
-            return require_valid_public_surface("opencode_plugin_bridge", bridge)
-        if packet["runtime"] != "codex":
-            raise SystemExit("adapter hook-bridge currently supports codex and opencode runtimes only")
-        bridge = {"ok": True, **write_codex_hook_bridge(
-            args.output, packet["runtime_hook_installation"], packet["runtime_gate_protocols"])}
-        return require_valid_public_surface("codex_hook_bridge", bridge)
-    if args.command == "adapter" and args.adapter_command == "hook-settings":
-        packet = require_valid_public_surface("adapter_packet", build_adapter_packet(ws, args.session_id, runtime=args.runtime))
-        if packet["runtime"] != "claude_code":
-            raise SystemExit("adapter hook-settings currently supports claude-code runtime only")
-        settings = {"ok": True, **write_claude_code_hook_settings(
-            args.output, packet["runtime_hook_installation"], workspace_base=str(ws.base), session_id=args.session_id)}
-        return require_valid_public_surface("claude_code_hook_settings", settings)
-    if args.command == "adapter" and args.adapter_command == "install-hooks":
-        packet = require_valid_public_surface("adapter_packet", build_adapter_packet(ws, args.session_id, runtime=args.runtime))
-        if packet["runtime"] != "claude_code":
-            raise SystemExit("adapter install-hooks currently supports claude-code runtime only")
-        installed = {"ok": True, **install_claude_code_hook_settings(
-            args.settings, packet["runtime_hook_installation"], workspace_base=str(ws.base), session_id=args.session_id)}
-        return require_valid_public_surface("claude_code_hook_installation", installed)
+    if args.command == "adapter":
+        return dispatch_adapter_command(args, ws)
 
     if args.command == "trust":
         req = _trust_update_request_from_args(args)

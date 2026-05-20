@@ -287,9 +287,10 @@ def test_cli_adapter_registry_validates_payload_before_return(monkeypatch):
     import pytest
 
     import brain.v5.cli as cli
+    import brain.v5.cli_adapters as cli_adapters
     from brain.v5.contracts import ContractError
 
-    monkeypatch.setattr(cli, "adapter_protocol_registry", lambda: {"kind": "adapter_protocol_registry"})
+    monkeypatch.setattr(cli_adapters, "adapter_protocol_registry", lambda: {"kind": "adapter_protocol_registry"})
 
     with pytest.raises(ContractError):
         cli.main(["adapter", "registry"])
@@ -299,9 +300,10 @@ def test_cli_adapter_packet_validates_payload_before_return(tmp_path, monkeypatc
     import pytest
 
     import brain.v5.cli as cli
+    import brain.v5.cli_adapters as cli_adapters
     from brain.v5.contracts import ContractError
 
-    monkeypatch.setattr(cli, "build_adapter_packet", lambda *args, **kwargs: {"kind": "adapter_packet"})
+    monkeypatch.setattr(cli_adapters, "build_adapter_packet", lambda *args, **kwargs: {"kind": "adapter_packet"})
 
     with pytest.raises(ContractError):
         cli.main(["--base", str(tmp_path), "adapter", "packet", "codex", "s1"])
