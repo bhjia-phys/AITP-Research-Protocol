@@ -7,10 +7,12 @@ from pathlib import Path
 
 from brain.v5.brief import build_execution_brief
 from brain.v5.evidence import record_evidence
+from brain.v5.ids import prefixed_id
 from brain.v5.markdown import read_md
 from brain.v5.paths import WorkspacePaths
 from brain.v5.references import record_reference_location
 from brain.v5.sensemaking import record_sensemaking_report
+from brain.v5.trace import TraceEvent, append_trace_event
 from brain.v5.workspace import bind_session, create_claim, create_context, create_topic, init_workspace
 
 
@@ -213,6 +215,14 @@ def migrate_legacy_topic_to_v5(
         )
         evidence_ids.append(review_evidence.evidence_id)
 
+    trace_event_ids = _migrate_legacy_runtime_log(
+        ws,
+        root,
+        session_id=session_id,
+        topic_id=summary.topic_slug,
+        claim_id=active_claim.claim_id,
+    )
+
     bind_session(
         ws,
         session_id,
@@ -233,6 +243,7 @@ def migrate_legacy_topic_to_v5(
             "evidence": evidence_ids,
             "reference_locations": reference_location_ids,
             "sensemaking_reports": sensemaking_report_ids,
+            "trace_events": trace_event_ids,
         },
         "preserved_source_refs": preserved_refs,
         "summary_inputs_trusted": False,
@@ -364,3 +375,53 @@ def _first_paragraph(body: str) -> str:
             continue
         lines.append(stripped)
     return " ".join(lines)
+
+
+def _migrate_legacy_runtime_log(
+    ws: WorkspacePaths,
+    root: Path,
+    *,
+    session_id: str,
+    topic_id: str,
+    claim_id: str,
+) -> list[str]:
+    log_path = root / "runtime" / "log.md"
+    summaries = _legacy_runtime_log_summaries(log_path)
+    if not summaries:
+        return []
+
+    trace_path = ws.root / "runtime" / "legacy_migration_trace.jsonl"
+    event_ids: list[str] = []
+    for index, summary in enumerate(summaries, start=1):
+        event_id = prefixed_id("event", f"legacy-runtime-log:{topic_id}:{index}:{summary}", max_slug=64)
+        event = TraceEvent(
+            event_id=event_id,
+            session_id=session_id,
+            topic_id=topic_id,
+            event_type="legacy_runtime_log",
+            risk_level="legacy",
+            claim_id=claim_id,
+            payload={
+                "source_ref": f"legacy_runtime_log:{log_path.as_posix()}#{index}",
+                "summary": summary,
+                "orientation_only": True,
+            },
+        )
+        append_trace_event(trace_path, event)
+        event_ids.append(event_id)
+    return event_ids
+
+
+def _legacy_runtime_log_summaries(log_path: Path) -> list[str]:
+    if not log_path.exists():
+        return []
+    summaries = []
+    for line in log_path.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#") or stripped == "---":
+            continue
+        if stripped.startswith("-"):
+            stripped = stripped[1:].strip()
+        if stripped:
+            summaries.append(stripped)
+    return summaries

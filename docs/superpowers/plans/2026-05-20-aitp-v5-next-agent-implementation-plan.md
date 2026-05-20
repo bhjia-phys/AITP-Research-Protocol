@@ -85,12 +85,13 @@ Implemented:
 - CLI, MCP wrappers, public surface contracts, runtime entrypoints, adapter packets.
 - Legacy bridge with dry-run audit, explicit v5 migration result, and CLI/MCP/runtime surface.
 - Legacy migration converts old L3 candidates into v5 claims/evidence/sense-making reports and old L4 reviews into validation evidence.
+- Legacy runtime logs migrate into v5 JSONL trace events as orientation process history.
 - Subagent auditor results ingest as typed evidence plus sense-making proposals, never direct confidence changes or L2 promotion.
 - Harness audit/evolution skeleton.
 
 Major remaining gaps:
 
-- Legacy migration still needs broader old-topic coverage for old L1 intake/conventions, old L2 entries, runtime logs, and richer source anchors.
+- Legacy migration still needs broader old-topic coverage for old L1 intake/conventions, old L2 entries, and richer source anchors.
 - Hook helpers are implemented as pure kernel decisions; shell/app hook adapters and installation docs still need integration work.
 - Domain tools are useful but intentionally lightweight; formal-theory checks are checklist/provenance checks, not automated theorem proving.
 - Subagent packet planning and result ingestion exist, but live external-subagent execution adapters still need integration tests.

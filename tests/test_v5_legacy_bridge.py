@@ -278,3 +278,40 @@ def test_legacy_migration_converts_all_candidates_and_reviews_to_typed_records(t
     reports = list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord)
     assert {report.report_id for report in reports} == set(result["written_records"]["sensemaking_reports"])
     assert any("control sector" in report.summary for report in reports)
+
+
+def test_legacy_migration_preserves_runtime_log_as_trace_events(tmp_path):
+    from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
+    from brain.v5.trace import read_trace_events
+    from brain.v5.workspace import init_workspace
+
+    legacy = _write_legacy_topic(tmp_path / "legacy")
+    runtime_dir = legacy / "runtime"
+    runtime_dir.mkdir()
+    log = runtime_dir / "log.md"
+    log.write_text(
+        "# Topic Log\n\n"
+        "## Events\n"
+        "- 2026-05-17 L4_test_fail: negative control failed\n"
+        "- 2026-05-18 session ended\n",
+        encoding="utf-8",
+    )
+    before = log.read_text(encoding="utf-8")
+    ws = init_workspace(tmp_path / "v5")
+
+    result = migrate_legacy_topic_to_v5(
+        ws,
+        legacy,
+        context_id="legacy-context",
+        session_id="s1",
+    )
+
+    assert log.read_text(encoding="utf-8") == before
+    assert result["written_records"]["trace_events"]
+    events = read_trace_events(ws.root / "runtime" / "legacy_migration_trace.jsonl")
+    assert [event.event_id for event in events] == result["written_records"]["trace_events"]
+    assert [event.event_type for event in events] == ["legacy_runtime_log", "legacy_runtime_log"]
+    assert events[0].topic_id == "legacy-fqhe"
+    assert events[0].claim_id == result["active_claim_id"]
+    assert events[0].payload["summary"] == "2026-05-17 L4_test_fail: negative control failed"
+    assert log.as_posix() in events[0].payload["source_ref"]
