@@ -29,7 +29,15 @@ def validate_legacy_migration_result(
     if not isinstance(written, dict):
         result.add(f"{path}.written_records", "must be a mapping")
     else:
-        for key in ("topics", "claims", "evidence", "reference_locations", "sensemaking_reports", "trace_events"):
+        for key in (
+            "topics",
+            "claims",
+            "evidence",
+            "reference_locations",
+            "sensemaking_reports",
+            "trace_events",
+            "memory_entries",
+        ):
             values = written.get(key)
             if not isinstance(values, list) or not all(isinstance(item, str) and item for item in values):
                 result.add(f"{path}.written_records.{key}", "must be a list of non-empty strings")

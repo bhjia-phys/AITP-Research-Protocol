@@ -8,7 +8,9 @@ from pathlib import Path
 from brain.v5.brief import build_execution_brief
 from brain.v5.evidence import record_evidence
 from brain.v5.legacy_migration_records import (
+    legacy_l2_migration_candidates,
     migrate_legacy_l1_understanding,
+    migrate_legacy_l2_memory,
     migrate_legacy_runtime_log,
 )
 from brain.v5.markdown import read_md
@@ -233,6 +235,12 @@ def migrate_legacy_topic_to_v5(
         topic_id=summary.topic_slug,
         claim_id=active_claim.claim_id,
     )
+    memory_entry_ids = migrate_legacy_l2_memory(
+        ws,
+        root,
+        topic_id=summary.topic_slug,
+        claim_id=active_claim.claim_id,
+    )
 
     bind_session(
         ws,
@@ -255,6 +263,7 @@ def migrate_legacy_topic_to_v5(
             "reference_locations": reference_location_ids,
             "sensemaking_reports": sensemaking_report_ids,
             "trace_events": trace_event_ids,
+            "memory_entries": memory_entry_ids,
         },
         "preserved_source_refs": preserved_refs,
         "summary_inputs_trusted": False,
@@ -308,6 +317,9 @@ def audit_legacy_topic_migration(topic_path: str | Path) -> dict:
     ):
         if (root / rel).exists():
             mapped_paths[rel] = _PATH_MAP[rel]
+
+    for _path, display_path, label in legacy_l2_migration_candidates(root):
+        mapped_paths[display_path] = label
 
     can_write = len(missing_expected_paths) == 0
 

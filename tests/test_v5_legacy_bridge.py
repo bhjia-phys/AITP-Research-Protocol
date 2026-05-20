@@ -415,3 +415,85 @@ def test_legacy_migration_preserves_l1_derivation_anchors_and_contradictions(tmp
     reports = list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord)
     assert any("edge-counting generating function" in report.summary for report in reports)
     assert any("shifted momentum convention" in report.summary for report in reports)
+
+
+def test_legacy_migration_preserves_l2_entries_as_legacy_seed_memory(tmp_path):
+    from brain.v5.legacy_bridge import audit_legacy_topic_migration, migrate_legacy_topic_to_v5
+    from brain.v5.models import MemoryEntryRecord
+    from brain.v5.store import list_records
+    from brain.v5.workspace import init_workspace
+
+    legacy = _write_legacy_topic(tmp_path / "legacy")
+    l2 = legacy.parent / "L2"
+    entries = l2 / "entries"
+    nodes = l2 / "graph" / "nodes"
+    edges = l2 / "graph" / "edges"
+    entries.mkdir(parents=True)
+    nodes.mkdir(parents=True)
+    edges.mkdir(parents=True)
+    entry = entries / "edge-counting-rule.md"
+    node = nodes / "edge-cft.md"
+    edge = edges / "counting-to-cft.md"
+    entry.write_text(
+        "---\n"
+        "entry_id: edge-counting-rule\n"
+        "role: claim\n"
+        "title: Edge counting rule\n"
+        "statement: Edge counting identifies the chiral CFT sector after convention alignment.\n"
+        "status: verified\n"
+        "regime: disk geometry\n"
+        "source_ref: paper:counting\n"
+        "---\n"
+        "# Edge counting rule\n",
+        encoding="utf-8",
+    )
+    node.write_text(
+        "---\n"
+        "node_id: edge-cft\n"
+        "type: concept\n"
+        "title: Chiral edge CFT\n"
+        "physical_meaning: The low-energy edge sector is organized by chiral CFT characters.\n"
+        "regime_of_validity: finite disk spectra\n"
+        "source_ref: paper:cft\n"
+        "---\n"
+        "# Chiral edge CFT\n",
+        encoding="utf-8",
+    )
+    edge.write_text(
+        "---\n"
+        "edge_id: counting-to-cft\n"
+        "from_node: edge-counting-rule\n"
+        "to_node: edge-cft\n"
+        "type: uses\n"
+        "source_ref: paper:bridge\n"
+        "---\n"
+        "# counting-to-cft\n",
+        encoding="utf-8",
+    )
+
+    audit = audit_legacy_topic_migration(legacy)
+    assert audit["mapped_paths"]["L2/entries/edge-counting-rule.md"] == "l2/memory entry candidate"
+    assert audit["mapped_paths"]["L2/graph/nodes/edge-cft.md"] == "l2/graph node memory candidate"
+    assert audit["mapped_paths"]["L2/graph/edges/counting-to-cft.md"] == "l2/graph edge memory candidate"
+
+    ws = init_workspace(tmp_path / "v5")
+    result = migrate_legacy_topic_to_v5(
+        ws,
+        legacy,
+        context_id="legacy-context",
+        session_id="s1",
+    )
+
+    memories = list_records(ws.root / "memory" / "l2" / "entries", MemoryEntryRecord)
+    assert {memory.entry_id for memory in memories} == set(result["written_records"]["memory_entries"])
+    assert {memory.memory_kind for memory in memories} == {
+        "legacy_l2_entry:claim",
+        "legacy_l2_graph_node:concept",
+        "legacy_l2_graph_edge:uses",
+    }
+    assert all(memory.status == "legacy_seed" for memory in memories)
+    assert all(memory.source_claim_id == result["active_claim_id"] for memory in memories)
+    assert all(memory.human_checkpoint_id == "legacy_migration_review_required" for memory in memories)
+    assert all(memory.evidence_refs for memory in memories)
+    assert any("chiral CFT sector" in memory.statement for memory in memories)
+    assert any("edge-counting-rule --[uses]--> edge-cft" in memory.statement for memory in memories)
