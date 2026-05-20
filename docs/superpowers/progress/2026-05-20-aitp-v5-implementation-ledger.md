@@ -1954,3 +1954,55 @@ Each entry should record:
   - extend bridge/runtime metadata to advertise `human_checkpoint_id` as a
     first-class pre-tool policy input, or broaden policy coverage for another
     trust-relevant MCP input.
+
+### e2b92a9 - Advertise Pre-Tool Input Schemas
+
+- Task: make generated Codex/OpenCode bridge metadata explicitly advertise the
+  shared pre-tool policy input schema and platform event optional tool inputs.
+- Planning source:
+  - previous ledger recommendation to advertise `human_checkpoint_id` as a
+    first-class pre-tool policy input;
+  - v5 rule that adapters should consume machine-readable public surfaces and
+    sidecars, not scrape Markdown or generated summaries.
+- Changed files:
+  - `brain/v5/hook_entrypoint_schemas.py`
+  - `brain/v5/hook_install_templates.py`
+  - `brain/v5/hook_protocol_contracts.py`
+  - `brain/v5/hook_bridge_markdown.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - generated bridge payloads and JSON sidecars include
+    `pre_tool_policy_entrypoint.input_schema`;
+  - generated bridge payloads and JSON sidecars include
+    `pre_tool_event_entrypoint.platform_event_schema`;
+  - the schemas name `risk_level` and optional `human_checkpoint_id` as
+    adapter-discoverable policy inputs while typed kernel records remain
+    authoritative.
+- Tests:
+  - Codex bridge generation asserts the policy input schema, event schema,
+    sidecar schema, and Markdown orientation text;
+  - OpenCode bridge generation asserts the same plugin bridge schema metadata;
+  - public-surface validators accept only bridge fixtures with the schema
+    metadata required by the contract.
+- Verification:
+  - red tests failed as expected with missing `input_schema` and missing
+    `platform_event_schema` in generated bridge payloads;
+  - focused surface/adapter/boundary set:
+    `python -m pytest tests/test_v5_adapters.py tests/test_v5_public_surfaces.py tests/test_v5_architecture_boundaries.py -q`:
+    56 passed;
+  - full v5 regression set:
+    `python -m pytest tests/test_v5_*.py -q`: 332 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py`:
+    passed;
+  - `git diff --check -- .`: passed.
+- Residual risks:
+  - schemas advertise the current policy/event shape, but do not prove native
+    Codex/OpenCode hosts have wired lifecycle callbacks.
+- Next recommended task:
+  - broaden pre-tool policy coverage for another trust-relevant MCP input, or
+    add host-side installation documentation/tests for the next native hook API.
