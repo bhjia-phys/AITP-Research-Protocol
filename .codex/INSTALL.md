@@ -34,6 +34,24 @@ natural-language theory work route through the gatekeeper skill.
 
 This is the current plugin-first-equivalent Codex path.
 
+## AITP v5 hook bridge
+
+AITP v5 adapter packets expose `runtime_hook_installation`. Codex can use this
+field to generate explicit guard-call instructions for:
+
+- `pre_commit`
+- `pre_tool`
+- `post_tool`
+
+The generated bridge is orientation-only. It must keep
+`summary_inputs_trusted=false` and cannot update kernel state by itself. Trust
+changes still require typed v5 kernel records.
+
+For repo-backed development, the bridge writer lives in
+`brain/v5/hook_install_templates.py` as `write_codex_hook_bridge(...)`. It
+derives commands from the adapter packet instead of maintaining a second copy of
+hook commands.
+
 ## Repo-backed contributor path
 
 If you want repo-synced skills while changing this repository, use a local

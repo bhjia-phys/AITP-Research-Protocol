@@ -229,6 +229,32 @@ def test_codex_adapter_packet_builds_hook_installation_from_hook_protocols(tmp_p
         assert hook["state_mutation"] == protocol["state_mutation"]
 
 
+def test_codex_hook_bridge_is_rendered_from_installation_template(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.hook_install_templates import write_codex_hook_bridge
+
+    ws, _ = _seed_session(tmp_path)
+    packet = build_adapter_packet(ws, "s1", runtime="codex")
+    installation = packet["runtime_hook_installation"]
+    installation["hooks"][0]["command"] = ["python", "custom_hook.py", "pre-commit"]
+
+    bridge_path = tmp_path / "AITP_V5_HOOK_BRIDGE.md"
+    bridge = write_codex_hook_bridge(bridge_path, installation)
+
+    assert bridge["kind"] == "codex_hook_bridge"
+    assert bridge["runtime"] == "codex"
+    assert bridge["source_protocol_field"] == "runtime_hook_installation"
+    assert bridge["summary_inputs_trusted"] is False
+    assert bridge["can_update_kernel_state"] is False
+    assert bridge["path"] == str(bridge_path)
+    assert bridge["guard_calls"][0]["hook_name"] == "pre_commit"
+    assert bridge["guard_calls"][0]["command"] == "python custom_hook.py pre-commit"
+    text = bridge_path.read_text(encoding="utf-8")
+    assert "python custom_hook.py pre-commit" in text
+    assert "runtime_hook_installation" in text
+    assert "summary_inputs_trusted=false" in text
+
+
 def test_adapter_packet_exposes_protocol_registry_metadata(tmp_path):
     from brain.v5.adapter_protocols import adapter_protocol_fingerprint
     from brain.v5.adapters import build_adapter_packet

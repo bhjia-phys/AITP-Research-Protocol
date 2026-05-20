@@ -182,3 +182,35 @@ Each entry should record:
 - Next recommended task:
   - add a native config writer or bridge test for one runtime using
     `runtime_hook_installation`.
+
+### Pending - Generate Codex Hook Bridge From Installation Template
+
+- Task: generate a Codex-readable guard-call bridge from
+  `runtime_hook_installation`.
+- Planning source:
+  - previous ledger recommendation after `42a500d`.
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`
+- Changed files:
+  - `.codex/INSTALL.md`
+  - `brain/v5/hook_install_templates.py`
+  - `tests/test_v5_adapters.py`
+  - hook installation and next-agent planning docs
+- Public surface changes:
+  - `write_codex_hook_bridge(path, installation)` writes an orientation-only
+    Markdown bridge from typed installation metadata.
+- Tests:
+  - Codex hook bridge rendering uses the supplied installation template rather
+    than hardcoded hook commands.
+- Verification:
+  - focused red test failed with missing `write_codex_hook_bridge`.
+  - `pytest tests\test_v5_adapters.py tests\test_v5_architecture_boundaries.py -q`: 17 passed.
+  - full v5 focused suite: 272 passed.
+  - `python -m compileall -q brain\v5`: passed.
+  - `git diff --check -- .`: passed.
+- Residual risks:
+  - bridge output is a generated instruction file, not a native Codex lifecycle
+    hook integration;
+  - post-tool trace persistence remains a separate runtime bridge task.
+- Next recommended task:
+  - add a CLI/runtime command to materialize the Codex hook bridge from an actual
+    adapter packet, or implement the Claude Code native settings writer.
