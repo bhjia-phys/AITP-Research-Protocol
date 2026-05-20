@@ -26,6 +26,32 @@ def build_pre_tool_event_runner(runtime: str, session_id: str, payload_path: str
             "--event-json",
             "<platform-event-json>",
         ],
+        "stdin_runner": _stdin_runner(runtime, session_id, path),
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def _stdin_runner(runtime: str, session_id: str, payload_path: str) -> dict[str, Any]:
+    return {
+        "kind": "stdin_pre_tool_event_runner",
+        "script": "hooks/aitp_v5_adapter_event_runner.py",
+        "stdin": "<platform-event-json>",
+        "argv": [
+            "python",
+            "hooks/aitp_v5_adapter_event_runner.py",
+            "pre-tool",
+            "--base",
+            "<workspace>",
+            "--runtime",
+            runtime,
+            "--session-id",
+            session_id,
+            "--bridge-path",
+            payload_path,
+        ],
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
         "can_update_kernel_state": False,

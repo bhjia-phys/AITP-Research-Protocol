@@ -214,7 +214,8 @@ python hooks/aitp_v5_adapter_event_runner.py pre-tool --base <workspace> --runti
 The runner loads the sidecar, validates the generated runner metadata, fills
 runtime/session/pre-tool defaults into the stdin event, and returns the same
 `pre_tool_policy_decision` payload and hook exit code. It is a host adapter, not
-a truth source.
+a truth source. The generated bridge sidecar includes this command vector at
+`pre_tool_event_runner.stdin_runner.argv`.
 
 For an actual v5 workspace/session, materialize it through the public runtime
 surface instead of calling the helper by hand:
@@ -380,6 +381,8 @@ still orientation-only. OpenCode must write durable state through typed v5
 kernel records and `aitp_v5_persist_hook_trace_event`.
 OpenCode hosts that provide event JSON over stdin can use the same
 `hooks/aitp_v5_adapter_event_runner.py pre-tool` path with `--runtime opencode`.
+The OpenCode bridge sidecar advertises it under
+`plugin_bridge.pre_tool_event_runner.stdin_runner.argv`.
 
 ## Installer Work Still Needed
 

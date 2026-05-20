@@ -120,7 +120,10 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   placeholder. `hooks/aitp_v5_adapter_event_runner.py` is the host-facing stdin
   bridge for that path: it reads platform event JSON from stdin, validates the
   generated runner/sidecar, fills runtime/session/pre-tool defaults, and returns
-  the same typed `pre_tool_policy_decision` plus hook exit code.
+  the same typed `pre_tool_policy_decision` plus hook exit code. Generated
+  bridge sidecars advertise that host-facing command in
+  `pre_tool_event_runner.stdin_runner.argv` or
+  `plugin_bridge.pre_tool_event_runner.stdin_runner.argv`.
 - Adapter packet `runtime_gate_protocols.record_evidence`,
   `runtime_gate_protocols.record_tool_run`, `runtime_gate_protocols.validate_claim`,
   and `runtime_gate_protocols.promote_to_l2` explicitly sequence

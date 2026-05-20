@@ -363,6 +363,20 @@ def test_cli_adapter_hook_bridge_writes_codex_bridge_from_packet(tmp_path, capsy
         "<platform-event-json>",
     ]
     assert payload["pre_tool_event_runner"]["summary_inputs_trusted"] is False
+    assert payload["pre_tool_event_runner"]["stdin_runner"]["argv"] == [
+        "python",
+        "hooks/aitp_v5_adapter_event_runner.py",
+        "pre-tool",
+        "--base",
+        "<workspace>",
+        "--runtime",
+        "codex",
+        "--session-id",
+        "s1",
+        "--bridge-path",
+        str(bridge_path.with_suffix(".json")),
+    ]
+    assert payload["pre_tool_event_runner"]["stdin_runner"]["stdin"] == "<platform-event-json>"
     assert [call["hook_name"] for call in payload["guard_calls"]] == ["pre_commit", "pre_tool", "post_tool"]
     sidecar = json.loads(bridge_path.with_suffix(".json").read_text(encoding="utf-8"))
     assert sidecar["kind"] == "codex_hook_bridge"
@@ -375,6 +389,7 @@ def test_cli_adapter_hook_bridge_writes_codex_bridge_from_packet(tmp_path, capsy
     assert "aitp-v5 policy pre-tool" in text
     assert "evaluate_pre_tool_policy" in text
     assert f"--bridge-path {bridge_path.with_suffix('.json')}" in text
+    assert "hooks/aitp_v5_adapter_event_runner.py" in text
 
 
 def test_mcp_codex_hook_bridge_wrapper_returns_contract_payload(tmp_path):
@@ -395,6 +410,7 @@ def test_mcp_codex_hook_bridge_wrapper_returns_contract_payload(tmp_path):
     assert payload["gate_protocols"]["validate_claim"]["pre_tool_policy"] == "aitp_v5_evaluate_pre_tool_policy"
     assert payload["pre_tool_event_runner"]["argv"][4] == "s1"
     assert payload["pre_tool_event_runner"]["argv"][6] == str(bridge_path.with_suffix(".json"))
+    assert payload["pre_tool_event_runner"]["stdin_runner"]["argv"][8] == "s1"
     assert bridge_path.exists()
 
 
@@ -519,6 +535,19 @@ def test_opencode_plugin_bridge_is_rendered_from_installation_template(tmp_path)
         "--event-json",
         "<platform-event-json>",
     ]
+    assert bridge["plugin_bridge"]["pre_tool_event_runner"]["stdin_runner"]["argv"] == [
+        "python",
+        "hooks/aitp_v5_adapter_event_runner.py",
+        "pre-tool",
+        "--base",
+        "<workspace>",
+        "--runtime",
+        "opencode",
+        "--session-id",
+        "<session-id>",
+        "--bridge-path",
+        str(bridge_path.with_suffix(".json")),
+    ]
     assert [call["hook_name"] for call in bridge["plugin_bridge"]["lifecycle_calls"]] == [
         "pre_commit",
         "pre_tool",
@@ -535,6 +564,7 @@ def test_opencode_plugin_bridge_is_rendered_from_installation_template(tmp_path)
     assert "aitp-v5 policy pre-tool" in text
     assert "summary_inputs_trusted=false" in text
     assert f"--bridge-path {bridge_path.with_suffix('.json')}" in text
+    assert "hooks/aitp_v5_adapter_event_runner.py" in text
 
 
 def test_cli_adapter_hook_bridge_writes_opencode_bridge_from_packet(tmp_path, capsys):
@@ -562,6 +592,7 @@ def test_cli_adapter_hook_bridge_writes_opencode_bridge_from_packet(tmp_path, ca
     assert payload["plugin_bridge"]["pre_tool_policy_entrypoint"]["surface"] == "pre_tool_policy_decision"
     assert payload["plugin_bridge"]["pre_tool_event_runner"]["argv"][4] == "s1"
     assert payload["plugin_bridge"]["pre_tool_event_runner"]["argv"][6] == str(bridge_path.with_suffix(".json"))
+    assert payload["plugin_bridge"]["pre_tool_event_runner"]["stdin_runner"]["argv"][8] == "s1"
     assert payload["plugin_bridge"]["pre_tool_event_entrypoint"] == {
         "cli": "aitp-v5 adapter pre-tool-event <runtime> <session-id> <args>",
         "mcp": "aitp_v5_evaluate_adapter_pre_tool_event",
