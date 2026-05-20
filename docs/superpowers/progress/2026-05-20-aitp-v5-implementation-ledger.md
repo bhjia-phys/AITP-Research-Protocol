@@ -148,7 +148,7 @@ Each entry should record:
   - implement a Codex or Claude Code installer/template test that consumes
     `runtime_hook_protocols` instead of duplicating hook commands.
 
-### Pending - Derive Hook Installation Template From Hook Protocols
+### 42a500d - Derive Hook Installation Template From Hook Protocols
 
 - Task: expose runtime hook installation instructions in adapter packets without
   duplicating hook command definitions.
