@@ -202,6 +202,15 @@ def migrate_legacy_topic_to_v5(
         )
         reference_location_ids.append(location.location_id)
 
+    l1_evidence_ids, l1_report_ids = _migrate_legacy_l1_understanding(
+        ws,
+        root,
+        topic_id=summary.topic_slug,
+        claim_id=active_claim.claim_id,
+    )
+    evidence_ids.extend(l1_evidence_ids)
+    sensemaking_report_ids.extend(l1_report_ids)
+
     for review in _legacy_review_records(root):
         review_evidence = record_evidence(
             ws,
@@ -266,6 +275,7 @@ def audit_legacy_topic_migration(topic_path: str | Path) -> dict:
     _PATH_MAP = {
         "state.md": "topic/runtime metadata",
         "L1/source_basis.md": "source basis/evidence orientation",
+        "L1/convention_snapshot.md": "understanding/conventions candidate",
     }
 
     for rel in _EXPECTED_PATHS:
@@ -287,6 +297,8 @@ def audit_legacy_topic_migration(topic_path: str | Path) -> dict:
 
     if (root / "L1" / "question_contract.md").exists():
         mapped_paths["L1/question_contract.md"] = "claim/question or claim contract"
+    if (root / "L1" / "convention_snapshot.md").exists():
+        mapped_paths["L1/convention_snapshot.md"] = "understanding/conventions candidate"
 
     can_write = len(missing_expected_paths) == 0
 
@@ -425,3 +437,46 @@ def _legacy_runtime_log_summaries(log_path: Path) -> list[str]:
         if stripped:
             summaries.append(stripped)
     return summaries
+
+
+def _migrate_legacy_l1_understanding(
+    ws: WorkspacePaths,
+    root: Path,
+    *,
+    topic_id: str,
+    claim_id: str,
+) -> tuple[list[str], list[str]]:
+    specs = [
+        ("source_basis.md", "legacy_l1_source_basis", "Legacy L1 source basis"),
+        ("convention_snapshot.md", "legacy_l1_convention_snapshot", "Legacy L1 convention snapshot"),
+    ]
+    evidence_ids: list[str] = []
+    report_ids: list[str] = []
+    for filename, evidence_type, title in specs:
+        path = root / "L1" / filename
+        if not path.exists():
+            continue
+        fm, body = read_md(path)
+        summary = str(fm.get("summary") or _first_paragraph(body) or title)
+        evidence = record_evidence(
+            ws,
+            topic_id=topic_id,
+            claim_id=claim_id,
+            evidence_type=evidence_type,
+            status="legacy_seed",
+            summary=summary,
+            supports_outputs=["evidence_or_provenance"],
+            source_refs=[f"legacy_l1:{path.as_posix()}"],
+        )
+        report = record_sensemaking_report(
+            ws,
+            topic_id=topic_id,
+            claim_id=claim_id,
+            title=title,
+            summary=summary,
+            evidence_refs=[evidence.evidence_id],
+            next_actions=["review_legacy_l1_understanding"],
+        )
+        evidence_ids.append(evidence.evidence_id)
+        report_ids.append(report.report_id)
+    return evidence_ids, report_ids

@@ -131,6 +131,7 @@ def test_legacy_topic_dry_run_maps_candidates_and_reviews(tmp_path):
     (topic / "L0" / "sources" / "paper-a" / "source.md").write_text("# Paper A\n", encoding="utf-8")
     (topic / "L1" / "question_contract.md").write_text("# Question\n", encoding="utf-8")
     (topic / "L1" / "source_basis.md").write_text("# Sources\n", encoding="utf-8")
+    (topic / "L1" / "convention_snapshot.md").write_text("# Conventions\n", encoding="utf-8")
     (topic / "L3" / "candidates" / "candidate-a.md").write_text("# Candidate A\n", encoding="utf-8")
     (topic / "L4" / "reviews" / "review-a.md").write_text("# Review A\n", encoding="utf-8")
 
@@ -139,6 +140,7 @@ def test_legacy_topic_dry_run_maps_candidates_and_reviews(tmp_path):
     assert audit["can_write_v5_records"] is True
     assert audit["mapped_paths"]["L3/candidates/candidate-a.md"] == "claim/candidate seed"
     assert audit["mapped_paths"]["L4/reviews/review-a.md"] == "validation evidence candidate"
+    assert audit["mapped_paths"]["L1/convention_snapshot.md"] == "understanding/conventions candidate"
     assert audit["summary_inputs_trusted"] is False
 
 
@@ -315,3 +317,51 @@ def test_legacy_migration_preserves_runtime_log_as_trace_events(tmp_path):
     assert events[0].claim_id == result["active_claim_id"]
     assert events[0].payload["summary"] == "2026-05-17 L4_test_fail: negative control failed"
     assert log.as_posix() in events[0].payload["source_ref"]
+
+
+def test_legacy_migration_preserves_l1_source_basis_and_conventions(tmp_path):
+    from brain.v5.evidence import list_evidence_for_claim
+    from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
+    from brain.v5.models import SensemakingReportRecord
+    from brain.v5.store import list_records
+    from brain.v5.workspace import init_workspace
+
+    legacy = _write_legacy_topic(tmp_path / "legacy")
+    l1 = legacy / "L1"
+    l1.mkdir()
+    source_basis = l1 / "source_basis.md"
+    conventions = l1 / "convention_snapshot.md"
+    source_basis.write_text(
+        "---\n"
+        "summary: Counting paper is the primary source; lecture notes are background.\n"
+        "---\n"
+        "# Source Basis\n\nThe source roles separate benchmark data from pedagogical context.\n",
+        encoding="utf-8",
+    )
+    conventions.write_text(
+        "---\n"
+        "summary: Magnetic length is set to one and edge momentum is counted relative to the ground sector.\n"
+        "---\n"
+        "# Convention Snapshot\n\nMagnetic length set to one; finite-size sectors use the same orbital cutoff.\n",
+        encoding="utf-8",
+    )
+    before = conventions.read_text(encoding="utf-8")
+    ws = init_workspace(tmp_path / "v5")
+
+    result = migrate_legacy_topic_to_v5(
+        ws,
+        legacy,
+        context_id="legacy-context",
+        session_id="s1",
+    )
+
+    assert conventions.read_text(encoding="utf-8") == before
+    evidence = list_evidence_for_claim(ws, result["active_claim_id"])
+    evidence_types = {item.evidence_type for item in evidence}
+    assert {"legacy_l1_source_basis", "legacy_l1_convention_snapshot"} <= evidence_types
+    assert any(source_basis.as_posix() in ref for item in evidence for ref in item.source_refs)
+    assert any(conventions.as_posix() in ref for item in evidence for ref in item.source_refs)
+
+    reports = list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord)
+    assert {report.report_id for report in reports} >= set(result["written_records"]["sensemaking_reports"])
+    assert any("Magnetic length is set to one" in report.summary for report in reports)
