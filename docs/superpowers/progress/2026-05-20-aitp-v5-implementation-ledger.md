@@ -1528,3 +1528,60 @@ Each entry should record:
 - Next recommended task:
   - add a tiny generated hook-runner/script or installation test that reads the
     bridge sidecar and invokes `adapter pre-tool-event --bridge-path`.
+
+### bf29c94 - Add Bridge PreTool Runner Payloads
+
+- Task: add a machine-readable sidecar-backed runner command vector to generated
+  Codex/OpenCode bridges.
+- Planning source:
+  - residual risk after `c6ebb72`;
+  - hook runners need a concrete invocation path from generated sidecar payloads
+    to `adapter pre-tool-event`;
+  - the runner must remain orientation/runtime metadata and must not become a
+    state truth source.
+- Changed files:
+  - `brain/v5/cli_adapters.py`
+  - `brain/v5/hook_install_templates.py`
+  - `brain/v5/hook_runner_payloads.py`
+  - `brain/v5/mcp_tools.py`
+  - `tests/test_v5_adapters.py`
+- Public/runtime behavior changes:
+  - generated Codex bridge payloads now include top-level
+    `pre_tool_event_runner.argv`;
+  - generated OpenCode bridge payloads now include
+    `plugin_bridge.pre_tool_event_runner.argv`;
+  - CLI/MCP hook-bridge materializers pass the actual session id into the runner
+    payload;
+  - the runner uses `--bridge-path <payload-path>` and
+    `<platform-event-json>`, preserving typed kernel records as the policy truth
+    source.
+- Tests:
+  - CLI Codex bridge test asserts runner argv, sidecar source, and Markdown
+    `--bridge-path` rendering;
+  - MCP Codex bridge test asserts session id and sidecar path are carried into
+    runner argv;
+  - direct OpenCode bridge test asserts placeholder session runner behavior;
+  - CLI OpenCode bridge test asserts actual session id and sidecar path.
+- Verification:
+  - red tests failed as expected with missing `pre_tool_event_runner`;
+  - target green set:
+    `python -m pytest tests/test_v5_adapters.py::test_cli_adapter_hook_bridge_writes_codex_bridge_from_packet tests/test_v5_adapters.py::test_mcp_codex_hook_bridge_wrapper_returns_contract_payload tests/test_v5_adapters.py::test_opencode_plugin_bridge_is_rendered_from_installation_template tests/test_v5_adapters.py::test_cli_adapter_hook_bridge_writes_opencode_bridge_from_packet -q`:
+    4 passed;
+  - first focused set exposed an architecture-boundary failure because
+    `hook_install_templates.py` reached 508 lines;
+  - root cause fixed by extracting runner payload construction to
+    `brain/v5/hook_runner_payloads.py`;
+  - target runner plus boundary test:
+    `python -m pytest tests/test_v5_adapters.py::test_cli_adapter_hook_bridge_writes_codex_bridge_from_packet tests/test_v5_adapters.py::test_mcp_codex_hook_bridge_wrapper_returns_contract_payload tests/test_v5_adapters.py::test_opencode_plugin_bridge_is_rendered_from_installation_template tests/test_v5_adapters.py::test_cli_adapter_hook_bridge_writes_opencode_bridge_from_packet tests/test_v5_architecture_boundaries.py::test_v5_source_modules_stay_bounded -q`:
+    5 passed;
+  - focused adapter/public/runtime set:
+    `python -m pytest tests/test_v5_adapters.py tests/test_v5_public_surfaces.py tests/test_v5_runtime_entrypoints.py tests/test_v5_architecture_boundaries.py -q`:
+    51 passed.
+- Residual risks:
+  - this creates a concrete command vector, but still does not install a native
+    Codex/OpenCode lifecycle hook;
+  - platform event JSON is still supplied by the host adapter.
+- Next recommended task:
+  - add a tiny host-runner script or platform adapter fixture that fills
+    `<platform-event-json>` from stdin/event payload and executes the generated
+    argv.
