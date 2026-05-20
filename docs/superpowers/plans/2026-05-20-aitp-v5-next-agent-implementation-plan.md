@@ -154,6 +154,10 @@ Implemented:
 - Generated Codex/OpenCode bridge payloads now include
   `pre_tool_event_runner.argv` with the concrete runtime/session sidecar-backed
   pre-tool event command vector.
+- `hooks/aitp_v5_adapter_event_runner.py` provides a thin stdin host-runner for
+  generated bridge sidecars: it validates runner metadata, fills
+  runtime/session/pre-tool defaults, and returns the typed
+  `pre_tool_policy_decision` payload plus hook exit code.
 - The shared CLI/MCP pre-tool policy now also blocks summary/task-plan/findings
   orientation surfaces from driving `record_evidence` and `record_tool_run`
   trust-changing record attempts.
@@ -168,8 +172,8 @@ Major remaining gaps:
   generation and merge installation, OpenCode plugin bridge materialization, and
   post-tool trace persistence surfaces exist; Codex/OpenCode now have a
   CLI/MCP-callable runtime event normalizer advertised in generated bridges plus
-  a generated bridge JSON sidecar and runner argv, but not automatic native
-  lifecycle installation yet.
+  a generated bridge JSON sidecar, runner argv, and stdin host-runner, but not
+  automatic native lifecycle installation yet.
 - Pre-tool policy coverage is still partial. It checks trust-apply token
   presence, validation/promotion context, and summary-sourced evidence/tool-run
   record attempts through CLI/MCP/runtime/bridge metadata, but it does not yet

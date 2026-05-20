@@ -131,7 +131,10 @@ Markdown and return its `payload_path`; hook runners should pass that sidecar to
 embed large JSON in a shell command. Generated bridges now include a
 machine-readable `pre_tool_event_runner.argv` with the concrete runtime,
 session id, `payload_path`, and `<platform-event-json>` placeholder for that
-call.
+call. Hosts that provide hook events on stdin can use
+`hooks/aitp_v5_adapter_event_runner.py pre-tool --base <workspace> --runtime <runtime> --session-id <session-id> --bridge-path <payload-path>`;
+the script fills runtime/session/pre-tool defaults, validates the bridge runner,
+and returns the same typed `pre_tool_policy_decision` payload and hook exit code.
 Trust-changing confidence updates use a request-bound preflight proof token:
 `trust preflight`/`aitp_v5_preflight_trust_update` returns the token, and
 `trust apply`/`aitp_v5_apply_trust_update` must carry the matching token before

@@ -205,6 +205,17 @@ should consume that file, not the Markdown text. The generated payload includes
 `aitp-v5 adapter pre-tool-event` with the concrete runtime, session id, sidecar
 path, and a `<platform-event-json>` placeholder.
 
+If a host hook supplies the platform event JSON on stdin, use the thin runner:
+
+```powershell
+python hooks/aitp_v5_adapter_event_runner.py pre-tool --base <workspace> --runtime codex --session-id <session-id> --bridge-path <payload-path>
+```
+
+The runner loads the sidecar, validates the generated runner metadata, fills
+runtime/session/pre-tool defaults into the stdin event, and returns the same
+`pre_tool_policy_decision` payload and hook exit code. It is a host adapter, not
+a truth source.
+
 For an actual v5 workspace/session, materialize it through the public runtime
 surface instead of calling the helper by hand:
 
@@ -367,6 +378,8 @@ persistence entrypoint, and it writes a sibling JSON sidecar exposed as
 same sidecar-backed pre-tool event invocation for plugin authors, but it is
 still orientation-only. OpenCode must write durable state through typed v5
 kernel records and `aitp_v5_persist_hook_trace_event`.
+OpenCode hosts that provide event JSON over stdin can use the same
+`hooks/aitp_v5_adapter_event_runner.py pre-tool` path with `--runtime opencode`.
 
 ## Installer Work Still Needed
 

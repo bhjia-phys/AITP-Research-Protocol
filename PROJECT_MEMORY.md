@@ -117,7 +117,10 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   consume the bridge payload without treating generated Markdown as a truth
   source. Generated bridge payloads also carry `pre_tool_event_runner.argv` with
   the concrete runtime/session/sidecar invocation and a `<platform-event-json>`
-  placeholder.
+  placeholder. `hooks/aitp_v5_adapter_event_runner.py` is the host-facing stdin
+  bridge for that path: it reads platform event JSON from stdin, validates the
+  generated runner/sidecar, fills runtime/session/pre-tool defaults, and returns
+  the same typed `pre_tool_policy_decision` plus hook exit code.
 - Adapter packet `runtime_gate_protocols.record_evidence`,
   `runtime_gate_protocols.record_tool_run`, `runtime_gate_protocols.validate_claim`,
   and `runtime_gate_protocols.promote_to_l2` explicitly sequence
