@@ -1585,3 +1585,41 @@ Each entry should record:
   - add a tiny host-runner script or platform adapter fixture that fills
     `<platform-event-json>` from stdin/event payload and executes the generated
     argv.
+
+### 82ab863 - Add Adapter Event Stdin Runner
+
+- Task: add a host-facing script that reads platform pre-tool event JSON from
+  stdin and evaluates it through a generated bridge sidecar.
+- Planning source:
+  - residual risk after `bf29c94`;
+  - generated runner argv still required host adapters to supply
+    `<platform-event-json>` on the command line;
+  - Codex/OpenCode-style hosts commonly provide hook event payloads through
+    stdin.
+- Changed files:
+  - `hooks/aitp_v5_adapter_event_runner.py`
+  - `tests/test_v5_adapter_event_runner.py`
+- Public/runtime behavior changes:
+  - new script command:
+    `python hooks/aitp_v5_adapter_event_runner.py pre-tool --base <workspace> --runtime <runtime> --session-id <session-id> --bridge-path <payload-path>`;
+  - the script reads stdin JSON, loads the bridge sidecar, validates runner
+    runtime/session/sidecar metadata, fills runtime/session/pre-tool defaults,
+    and delegates to the same typed-record-backed pre-tool policy path;
+  - the script returns the contracted `pre_tool_policy_decision` payload and
+    exits with its hook `exit_code`.
+- Tests:
+  - subprocess test generates a Codex bridge sidecar, sends a summary-sourced
+    `record_evidence` event through stdin without runtime/session/hook fields,
+    and asserts a typed hard block with exit code 2.
+- Verification:
+  - red test failed as expected because
+    `hooks/aitp_v5_adapter_event_runner.py` did not exist and produced no JSON;
+  - target green set:
+    `python -m pytest tests/test_v5_adapter_event_runner.py -q`: 1 passed.
+- Residual risks:
+  - this is still a thin host runner, not automatic installation into Codex or
+    OpenCode native lifecycle config;
+  - richer platform event schemas may need additional normalization fields.
+- Next recommended task:
+  - advertise the stdin runner in generated bridge payloads or add platform
+    installation wiring that calls it directly.
