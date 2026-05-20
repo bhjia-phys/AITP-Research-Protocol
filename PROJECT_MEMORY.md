@@ -100,7 +100,8 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
 - Runtime adapters can consume those generated bridge `gate_protocols` through
   `brain/v5/adapter_runtime.py::evaluate_bridge_gate_pre_tool_policy`, which
   verifies the bridge sequence and then delegates to the shared typed-record
-  pre-tool policy surface.
+  pre-tool policy surface. `evaluate_bridge_lifecycle_event` provides the thin
+  adapter-neutral lifecycle wrapper for pre-tool events.
 - Adapter packet `runtime_gate_protocols.validate_claim` and
   `runtime_gate_protocols.promote_to_l2` explicitly sequence
   `evaluate_pre_tool_policy` before preflight/promotion and require

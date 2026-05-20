@@ -40,7 +40,7 @@ pytest $files -q
 Expected baseline:
 
 ```text
-310 passed
+311 passed
 ```
 
 Do not treat old full-suite failures as blockers unless a task modifies legacy code. The v5 focused suite is the working regression gate for this plan.
@@ -132,7 +132,8 @@ Implemented:
   can consume the validate/promote sequence without prose scraping.
 - `brain.v5.adapter_runtime.evaluate_bridge_gate_pre_tool_policy` consumes
   generated bridge `gate_protocols` and delegates actual decisions to the shared
-  typed-record-backed pre-tool policy surface.
+  typed-record-backed pre-tool policy surface. `evaluate_bridge_lifecycle_event`
+  maps adapter-neutral `pre_tool` event payloads onto that helper.
 - OpenCode plugin bridge instructions can be materialized from an actual adapter
   packet through CLI/MCP/runtime public surfaces.
 - A v5 implementation ledger exists for step-by-step review.

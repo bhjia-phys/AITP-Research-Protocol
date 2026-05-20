@@ -8,6 +8,39 @@ from typing import Any
 from brain.v5.pretool_policy import evaluate_context_pre_tool_policy
 
 
+def evaluate_bridge_lifecycle_event(
+    ws,
+    bridge_payload: dict[str, Any],
+    event: dict[str, Any],
+) -> dict[str, Any]:
+    """Map a runtime lifecycle event through generated bridge gate protocols."""
+
+    if event.get("lifecycle_event") != "pre_tool":
+        raise ValueError("only pre_tool lifecycle events can produce gate policy decisions")
+    if not _bridge_declares_pre_tool(bridge_payload):
+        raise ValueError("bridge payload does not declare a pre_tool lifecycle call")
+    action = str(event.get("action", ""))
+    payload = evaluate_bridge_gate_pre_tool_policy(
+        ws,
+        bridge_payload,
+        session_id=str(event.get("session_id", "")),
+        action=action,
+        claim_id=str(event.get("claim_id", "")),
+        evidence_refs=_clean_list(event.get("evidence_refs")),
+        code_state_ids=_clean_list(event.get("code_state_ids")),
+        source_kind=str(event.get("source_kind", "typed_records")),
+        source_ref=str(event.get("source_ref", "")),
+        orientation_only=bool(event.get("orientation_only", False)),
+        risk_level=str(event.get("risk_level", "guided")),
+    )
+    payload["runtime_event"] = {
+        "lifecycle_event": "pre_tool",
+        "action": action,
+        "source_kind": str(event.get("source_kind", "typed_records")),
+    }
+    return payload
+
+
 def evaluate_bridge_gate_pre_tool_policy(
     ws,
     bridge_payload: dict[str, Any],
@@ -50,6 +83,15 @@ def evaluate_bridge_gate_pre_tool_policy(
     return payload
 
 
+def _bridge_declares_pre_tool(bridge_payload: dict[str, Any]) -> bool:
+    if bridge_payload.get("kind") == "codex_hook_bridge":
+        return any(call.get("hook_name") == "pre_tool" for call in bridge_payload.get("guard_calls", []))
+    if bridge_payload.get("kind") == "opencode_plugin_bridge":
+        calls = bridge_payload.get("plugin_bridge", {}).get("lifecycle_calls", [])
+        return any(call.get("lifecycle_event") == "pre_tool" for call in calls)
+    return False
+
+
 def _bridge_gate_protocol(bridge_payload: dict[str, Any], action: str) -> dict[str, Any]:
     if bridge_payload.get("kind") == "codex_hook_bridge":
         gate_protocols = bridge_payload.get("gate_protocols", {})
@@ -63,3 +105,11 @@ def _bridge_gate_protocol(bridge_payload: dict[str, Any], action: str) -> dict[s
     if not isinstance(protocol, dict):
         raise ValueError(f"bridge gate protocol missing action: {action}")
     return protocol
+
+
+def _clean_list(values: Any) -> list[str]:
+    if not values:
+        return []
+    if not isinstance(values, list):
+        raise ValueError("event list fields must be lists")
+    return [str(value) for value in values if str(value)]

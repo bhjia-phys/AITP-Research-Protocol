@@ -233,6 +233,9 @@ checks that the bridge protocol names `aitp_v5_evaluate_pre_tool_policy` and
 sequences `evaluate_pre_tool_policy`, then delegates the decision to the shared
 typed-record-backed pre-tool policy surface. The bridge remains orientation-only;
 the returned decision is still backed by typed kernel records.
+For live-style adapter events, `evaluate_bridge_lifecycle_event` maps an
+adapter-neutral `pre_tool` event payload onto the same helper after confirming
+that the generated bridge declares a pre-tool lifecycle call.
 
 ## Claude Code Template
 

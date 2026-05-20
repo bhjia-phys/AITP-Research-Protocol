@@ -115,7 +115,8 @@ the validation/promotion gate sequence, so runtimes can see that policy
 evaluation comes before preflight or promotion. The small
 `brain.v5.adapter_runtime.evaluate_bridge_gate_pre_tool_policy` helper consumes
 that generated gate metadata and delegates the actual decision back to typed
-kernel records.
+kernel records; `evaluate_bridge_lifecycle_event` is the adapter-neutral
+pre-tool event wrapper over the same path.
 Trust-changing confidence updates use a request-bound preflight proof token:
 `trust preflight`/`aitp_v5_preflight_trust_update` returns the token, and
 `trust apply`/`aitp_v5_apply_trust_update` must carry the matching token before
