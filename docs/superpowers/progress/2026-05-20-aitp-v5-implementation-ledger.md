@@ -827,3 +827,60 @@ Each entry should record:
   - add adapter tests or bridge metadata that make Codex/OpenCode explicitly
     call `pre_tool_policy_decision` before validation/promotion actions, or add
     summary-sourced validation/promotion denial tests for the shared surface.
+
+### d898048 - Advertise PreTool Policy In Bridges
+
+- Task: make generated Codex/OpenCode bridge payloads explicitly advertise the
+  shared context-aware pre-tool policy surface, so adapters do not have to
+  reconstruct validation/promotion policy entrypoints from prose.
+- Planning source:
+  - residual risk after `5f17915`;
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`;
+  - v5 goal requirement for CLI/MCP/runtime/hook symmetry.
+- Changed files:
+  - `PROJECT_MEMORY.md`
+  - `README.md`
+  - `brain/v5/hook_install_templates.py`
+  - `brain/v5/hook_protocol_contracts.py`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_public_surfaces.py`
+- Public/runtime behavior changes:
+  - Codex bridge payloads now include top-level
+    `pre_tool_policy_entrypoint`;
+  - OpenCode bridge payloads now include
+    `plugin_bridge.pre_tool_policy_entrypoint`;
+  - both entrypoints point to `aitp-v5 policy pre-tool <args>`,
+    `aitp_v5_evaluate_pre_tool_policy`, and
+    `pre_tool_policy_decision`;
+  - bridge contracts now validate that the entrypoint is typed-record backed,
+    summary-untrusted, and cannot mutate kernel state or claim trust;
+  - generated bridge Markdown documents the shared policy entrypoint.
+- Tests:
+  - Codex bridge helper/CLI payloads include the shared pre-tool entrypoint;
+  - OpenCode bridge helper/CLI payloads include the shared pre-tool entrypoint;
+  - public surface examples include the entrypoint and pass contract validation.
+- Verification:
+  - focused red set failed because Codex/OpenCode bridge payloads lacked
+    `pre_tool_policy_entrypoint`;
+  - focused green set:
+    `pytest tests/test_v5_adapters.py::test_codex_hook_bridge_is_rendered_from_installation_template tests/test_v5_adapters.py::test_cli_adapter_hook_bridge_writes_codex_bridge_from_packet tests/test_v5_adapters.py::test_opencode_plugin_bridge_is_rendered_from_installation_template tests/test_v5_adapters.py::test_cli_adapter_hook_bridge_writes_opencode_bridge_from_packet tests/test_v5_public_surfaces.py::test_public_surface_validator_accepts_codex_hook_bridge tests/test_v5_public_surfaces.py::test_public_surface_validator_accepts_opencode_plugin_bridge -q`:
+    6 passed;
+  - regression set:
+    `pytest tests/test_v5_adapters.py tests/test_v5_public_surfaces.py tests/test_v5_contracts.py tests/test_v5_runtime_entrypoints.py tests/test_v5_architecture_boundaries.py -q`:
+    79 passed;
+  - full v5 focused suite: 304 passed;
+  - `python -m compileall -q brain\v5`: passed;
+  - `git diff --check -- .`: passed;
+  - source module line counts remained below 500 lines;
+  - `python hooks\aitp_v5_hook.py pre-commit ...`: passed with `mode=log`.
+- Residual risks:
+  - Codex/OpenCode still need native lifecycle installers or runtime code that
+    automatically invokes the advertised entrypoint;
+  - context policy still covers validation/L2-promotion requirements rather than
+    every MCP input or all active risk-context dimensions.
+- Next recommended task:
+  - implement one small native adapter invocation/smoke test for OpenCode or
+    Codex that consumes the advertised `pre_tool_policy_entrypoint`, or add
+    shared-surface tests for summary-sourced validation/promotion denial.
