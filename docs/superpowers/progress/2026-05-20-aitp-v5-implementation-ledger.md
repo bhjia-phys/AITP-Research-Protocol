@@ -1853,3 +1853,45 @@ Each entry should record:
   - expand pre-tool policy coverage for active risk context or add fixture
     smoke tests that execute the generated runner against a sample platform
     event.
+
+### 9a75ec7 - Smoke Test Generated Fixture Runners
+
+- Task: verify generated Codex/OpenCode fixture hooks can execute their declared
+  stdin runner argv against sample platform events.
+- Planning source:
+  - residual risk from `bcc53e0`;
+  - fixture-level host wiring must be executable, not only schema-valid;
+  - generated fixture files remain runtime metadata only, while typed policy
+    decisions remain authoritative.
+- Changed files:
+  - `brain/v5/hook_fixture_templates.py`
+  - `brain/v5/hook_install_contracts.py`
+  - `tests/test_v5_adapter_event_runner.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - generated Codex/OpenCode fixture pre-tool hooks now declare a repository
+    `cwd` so their relative `hooks/aitp_v5_adapter_event_runner.py` argv can be
+    executed by host adapters;
+  - fixture contracts require the `cwd` field;
+  - no generated fixture gains authority to mutate typed kernel state or claim
+    trust.
+- Tests:
+  - Codex fixture smoke test installs the fixture, executes
+    `fixture.hooks.pre_tool.argv` from `cwd`, and confirms a summary-sourced
+    evidence record attempt is blocked by typed policy;
+  - OpenCode fixture smoke test does the same through
+    `fixture.plugin_hooks.pre_tool.argv`.
+- Verification:
+  - red tests failed as expected with missing `cwd`;
+  - target green set:
+    `python -m pytest tests/test_v5_adapter_event_runner.py::test_codex_install_fixture_runner_executes_from_declared_cwd tests/test_v5_adapter_event_runner.py::test_opencode_install_fixture_runner_executes_from_declared_cwd -q`:
+    2 passed.
+- Residual risks:
+  - smoke tests execute the generated runner contract but do not prove a real
+    Codex/OpenCode host has native lifecycle wiring installed.
+- Next recommended task:
+  - broaden pre-tool policy coverage for active risk context, or add host-side
+    installation docs/tests for the next runtime that exposes a native hook API.
