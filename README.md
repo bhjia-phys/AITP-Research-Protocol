@@ -109,7 +109,9 @@ cannot update kernel state or claim trust. Generated Codex/OpenCode bridge
 payloads carry this shared entrypoint explicitly so adapter authors do not need
 to reconstruct the policy surface from prose. Its `policy_reasons` list exposes
 machine-readable policy IDs and severities, so reviewers do not need to parse
-free-form hook messages.
+free-form hook messages. Adapter packets also put
+`aitp_v5_evaluate_pre_tool_policy` into the validation/promotion gate sequence,
+so runtimes can see that policy evaluation comes before preflight or promotion.
 Trust-changing confidence updates use a request-bound preflight proof token:
 `trust preflight`/`aitp_v5_preflight_trust_update` returns the token, and
 `trust apply`/`aitp_v5_apply_trust_update` must carry the matching token before

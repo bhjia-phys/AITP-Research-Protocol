@@ -219,6 +219,11 @@ Both surfaces return a contracted `codex_hook_bridge` payload and keep
 `pre_tool_policy_decision` CLI/MCP surface for validation and L2-promotion
 pre-tool checks.
 
+Adapter packets also encode the same rule in `runtime_gate_protocols`: both
+`validate_claim` and `promote_to_l2` sequence `evaluate_pre_tool_policy` before
+preflight/promotion and name `policy_reasons` as the machine-readable routing
+field.
+
 ## Claude Code Template
 
 Claude Code has existing AITP SessionStart and PreToolUse integration for the

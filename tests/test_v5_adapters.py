@@ -62,6 +62,7 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
     assert "change_claim_confidence" in packet["trust_changing_actions"]
     assert "ingest_subagent_result" in packet["trust_changing_actions"]
     assert "aitp_v5_get_execution_brief" in packet["required_kernel_entrypoints"]
+    assert "aitp_v5_evaluate_pre_tool_policy" in packet["required_kernel_entrypoints"]
     assert "aitp_v5_preflight_trust_update" in packet["required_kernel_entrypoints"]
     assert "aitp_v5_apply_trust_update" in packet["required_kernel_entrypoints"]
     assert packet["trust_mutation_entrypoints"]["change_claim_confidence"] == {
@@ -82,6 +83,12 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     }
+    assert packet["runtime_gate_protocols"]["validate_claim"]["pre_tool_policy"] == "aitp_v5_evaluate_pre_tool_policy"
+    assert packet["runtime_gate_protocols"]["validate_claim"]["sequence"][1] == "evaluate_pre_tool_policy"
+    assert packet["runtime_gate_protocols"]["validate_claim"]["policy_reasons_field"] == "policy_reasons"
+    assert packet["runtime_gate_protocols"]["promote_to_l2"]["pre_tool_policy"] == "aitp_v5_evaluate_pre_tool_policy"
+    assert packet["runtime_gate_protocols"]["promote_to_l2"]["sequence"][1] == "evaluate_pre_tool_policy"
+    assert packet["runtime_gate_protocols"]["promote_to_l2"]["policy_reasons_field"] == "policy_reasons"
     assert packet["runtime_record_protocols"]["record_evidence"] == {
         "entrypoint": "aitp_v5_record_evidence",
         "sequence": [
@@ -122,9 +129,11 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
         "summary_inputs_trusted": False,
     }
     assert packet["runtime_gate_protocols"]["validate_claim"] == {
+        "pre_tool_policy": "aitp_v5_evaluate_pre_tool_policy",
         "preflight": "aitp_v5_preflight_trust_update",
         "sequence": [
             "refresh_execution_brief",
+            "evaluate_pre_tool_policy",
             "preflight_trust_update",
             "record_validation_evidence",
             "refresh_execution_brief",
@@ -132,20 +141,24 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
         ],
         "required_typed_refs": ["topic_id", "claim_id", "evidence_refs"],
         "allowed_state_sources": ["typed_evidence_records", "typed_validation_records"],
+        "policy_reasons_field": "policy_reasons",
         "human_checkpoint_required": False,
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     }
     assert packet["runtime_gate_protocols"]["promote_to_l2"] == {
+        "pre_tool_policy": "aitp_v5_evaluate_pre_tool_policy",
         "preflight": "aitp_v5_preflight_trust_update",
         "sequence": [
             "refresh_execution_brief",
+            "evaluate_pre_tool_policy",
             "preflight_trust_update",
             "human_checkpoint",
             "promote_to_l2",
         ],
         "required_typed_refs": ["topic_id", "claim_id", "evidence_refs", "validation_result_ref"],
         "allowed_state_sources": ["typed_evidence_records", "typed_validation_records", "human_checkpoint"],
+        "policy_reasons_field": "policy_reasons",
         "human_checkpoint_required": True,
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,

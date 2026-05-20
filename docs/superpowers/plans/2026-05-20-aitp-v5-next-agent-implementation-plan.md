@@ -40,7 +40,7 @@ pytest $files -q
 Expected baseline:
 
 ```text
-306 passed
+307 passed
 ```
 
 Do not treat old full-suite failures as blockers unless a task modifies legacy code. The v5 focused suite is the working regression gate for this plan.
@@ -125,6 +125,8 @@ Implemented:
 - `pre_tool_policy_decision` includes machine-readable `policy_reasons`, so
   denial/warn causes such as summary-sourced trust updates are auditable without
   parsing hook messages.
+- Adapter packet gate protocols for `validate_claim` and `promote_to_l2`
+  explicitly sequence `evaluate_pre_tool_policy` before preflight/promotion.
 - OpenCode plugin bridge instructions can be materialized from an actual adapter
   packet through CLI/MCP/runtime public surfaces.
 - A v5 implementation ledger exists for step-by-step review.

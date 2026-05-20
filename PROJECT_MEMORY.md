@@ -92,6 +92,10 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `pre_tool_policy_entrypoint` pointing to that shared surface, so runtime
   adapters can wire validation/promotion pre-tool checks without reimplementing
   policy logic.
+- Adapter packet `runtime_gate_protocols.validate_claim` and
+  `runtime_gate_protocols.promote_to_l2` explicitly sequence
+  `evaluate_pre_tool_policy` before preflight/promotion and require
+  `policy_reasons` as the machine-readable routing field.
 - Claude Code `PreToolUse` uses that shared policy for validation and L2
   promotion MCP calls: it resolves the typed claim, cited evidence refs, and
   linked or requested code states, then reuses `evaluate_policy` before the tool

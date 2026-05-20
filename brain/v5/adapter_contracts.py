@@ -452,6 +452,16 @@ def _validate_runtime_gate_protocols(
             result.add(f"{path}.{action}.preflight", f"must be {expected_protocol['preflight']!r}")
         if isinstance(preflight, str) and entrypoints and preflight not in entrypoints:
             result.add(f"{path}.{action}.preflight", "must reference a declared required kernel entrypoint")
+        pre_tool_policy = protocol.get("pre_tool_policy")
+        if pre_tool_policy != expected_protocol["pre_tool_policy"]:
+            result.add(f"{path}.{action}.pre_tool_policy", f"must be {expected_protocol['pre_tool_policy']!r}")
+        if isinstance(pre_tool_policy, str) and entrypoints and pre_tool_policy not in entrypoints:
+            result.add(f"{path}.{action}.pre_tool_policy", "must reference a declared required kernel entrypoint")
+        if protocol.get("policy_reasons_field") != expected_protocol["policy_reasons_field"]:
+            result.add(
+                f"{path}.{action}.policy_reasons_field",
+                f"must be {expected_protocol['policy_reasons_field']!r}",
+            )
 
         for key in ("sequence", "required_typed_refs", "allowed_state_sources"):
             _require_list(protocol.get(key), f"{path}.{action}.{key}", result)

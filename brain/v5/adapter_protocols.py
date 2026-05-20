@@ -39,6 +39,7 @@ _TRUST_CHANGING_ACTIONS = [
 ]
 _KERNEL_ENTRYPOINTS = [
     "aitp_v5_get_execution_brief",
+    "aitp_v5_evaluate_pre_tool_policy",
     "aitp_v5_preflight_trust_update",
     "aitp_v5_apply_trust_update",
     "aitp_v5_record_code_state",
@@ -300,9 +301,11 @@ _RUNTIME_RECORD_PROTOCOLS = {
 }
 _RUNTIME_GATE_PROTOCOLS = {
     "validate_claim": {
+        "pre_tool_policy": "aitp_v5_evaluate_pre_tool_policy",
         "preflight": "aitp_v5_preflight_trust_update",
         "sequence": [
             "refresh_execution_brief",
+            "evaluate_pre_tool_policy",
             "preflight_trust_update",
             "record_validation_evidence",
             "refresh_execution_brief",
@@ -310,20 +313,24 @@ _RUNTIME_GATE_PROTOCOLS = {
         ],
         "required_typed_refs": ["topic_id", "claim_id", "evidence_refs"],
         "allowed_state_sources": ["typed_evidence_records", "typed_validation_records"],
+        "policy_reasons_field": "policy_reasons",
         "human_checkpoint_required": False,
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     },
     "promote_to_l2": {
+        "pre_tool_policy": "aitp_v5_evaluate_pre_tool_policy",
         "preflight": "aitp_v5_preflight_trust_update",
         "sequence": [
             "refresh_execution_brief",
+            "evaluate_pre_tool_policy",
             "preflight_trust_update",
             "human_checkpoint",
             "promote_to_l2",
         ],
         "required_typed_refs": ["topic_id", "claim_id", "evidence_refs", "validation_result_ref"],
         "allowed_state_sources": ["typed_evidence_records", "typed_validation_records", "human_checkpoint"],
+        "policy_reasons_field": "policy_reasons",
         "human_checkpoint_required": True,
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
