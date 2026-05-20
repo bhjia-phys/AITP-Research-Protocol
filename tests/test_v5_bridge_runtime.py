@@ -158,7 +158,7 @@ def test_codex_platform_pre_tool_event_maps_mcp_call_to_gate_policy(tmp_path):
     assert payload["runtime_event"]["runtime"] == "codex"
     assert payload["runtime_event"]["platform_event"] == "codex_pre_tool"
     assert payload["runtime_event"]["tool_name"] == "mcp__aitp__aitp_v5_create_promotion_packet"
-    assert payload["runtime_gate_protocol"]["action"] == "promote_to_l2"
+    assert payload["runtime_gate_protocol"]["action"] == "create_promotion_packet"
 
 
 def test_opencode_platform_pre_tool_event_maps_plugin_call_to_gate_policy(tmp_path):
@@ -201,7 +201,7 @@ def test_opencode_platform_pre_tool_event_maps_plugin_call_to_gate_policy(tmp_pa
     assert payload["runtime_event"]["runtime"] == "opencode"
     assert payload["runtime_event"]["platform_event"] == "opencode_pre_tool"
     assert payload["runtime_event"]["tool_name"] == "mcp__aitp__aitp_v5_create_promotion_packet"
-    assert payload["runtime_gate_protocol"]["action"] == "promote_to_l2"
+    assert payload["runtime_gate_protocol"]["action"] == "create_promotion_packet"
 
 
 def test_platform_pre_tool_event_blocks_summary_sourced_record_evidence(tmp_path):

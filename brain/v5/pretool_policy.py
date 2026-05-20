@@ -18,6 +18,7 @@ _CONTEXT_ACTIONS = {
     "execute_tool",
     "ingest_subagent_result",
     "create_validation_contract",
+    "create_promotion_packet",
     "validate_claim",
     "promote_to_l2",
 }

@@ -686,8 +686,8 @@ def test_claude_hook_script_pre_tool_denies_l2_promotion_without_evidence_refs(t
     assert payload["hookSpecificOutput"] == {
         "hookEventName": "PreToolUse",
         "permissionDecision": "deny",
-        "permissionDecisionReason": "blocked promote_to_l2; no_l2_promotion_without_evidence_ref; required: attach_evidence_ref",
+        "permissionDecisionReason": "blocked create_promotion_packet; no_l2_promotion_without_evidence_ref; required: attach_evidence_ref",
     }
-    assert payload["aitp"]["action"] == "promote_to_l2"
+    assert payload["aitp"]["action"] == "create_promotion_packet"
     assert payload["aitp"]["block"] is True
     assert payload["aitp"]["required_actions"] == ["attach_evidence_ref"]

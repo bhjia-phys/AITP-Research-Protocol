@@ -113,9 +113,9 @@ Implemented:
 - Claude Code `PreToolUse` maps coarse AITP MCP/kernel entrypoints into v5
   actions, denies unqualified direct trust application, and logs typed writes
   such as evidence recording.
-- Claude Code `PreToolUse` uses active workspace context for validation and L2
-  promotion MCP calls, reusing kernel policy for evidence and code-state
-  requirements before tool execution.
+- Claude Code `PreToolUse` uses active workspace context for validation,
+  promotion-packet creation, and L2 promotion MCP calls, reusing kernel policy
+  for evidence and code-state requirements before tool execution.
 - The same context-aware pre-tool policy is now exposed as a shared
   CLI/MCP/runtime public surface:
   `aitp-v5 policy pre-tool <args>` / `aitp_v5_evaluate_pre_tool_policy` /
@@ -128,10 +128,10 @@ Implemented:
 - Adapter packet gate protocols for `validate_claim` and `promote_to_l2`
   explicitly sequence `evaluate_pre_tool_policy` before preflight/promotion.
 - Adapter packet gate protocols for `record_evidence`, `record_tool_run`,
-  `execute_tool`, `ingest_subagent_result`, and
-  `create_validation_contract` now also sequence `evaluate_pre_tool_policy`
-  before the trust-relevant action, so summary-sourced attempts can be blocked
-  through bridge metadata.
+  `execute_tool`, `ingest_subagent_result`, `create_validation_contract`, and
+  `create_promotion_packet` now also
+  sequence `evaluate_pre_tool_policy` before the trust-relevant action, so
+  summary-sourced attempts can be blocked through bridge metadata.
 - Generated Codex/OpenCode bridge payloads and Markdown now carry
   `gate_protocols` derived from `runtime_gate_protocols`, so adapter runtimes
   can consume record/validate/promote sequences without prose scraping.
@@ -175,8 +175,8 @@ Implemented:
   repository `cwd`.
 - The shared CLI/MCP pre-tool policy now also blocks summary/task-plan/findings
   orientation surfaces from driving `record_evidence`, `record_tool_run`,
-  `execute_tool`, `ingest_subagent_result`, and `create_validation_contract`
-  trust-changing attempts.
+  `execute_tool`, `ingest_subagent_result`, `create_validation_contract`, and
+  `create_promotion_packet` trust-changing attempts.
 - The shared CLI/MCP/runtime pre-tool policy now carries `risk_level` and
   optional `human_checkpoint_id`; adversarial-risk trust-changing actions are
   hard-blocked unless the checkpoint resolves to an approved typed human
@@ -201,11 +201,11 @@ Major remaining gaps:
   Codex and OpenCode also have generated installation fixtures.
 - Pre-tool policy coverage is still partial. It checks trust-apply token
   presence, validation/promotion context, and summary-sourced
-  evidence/tool-run/tool-execution/subagent-ingestion/validation-contract
-  attempts through CLI/MCP/runtime/bridge metadata, and adversarial-risk trust
-  changes require approved typed human checkpoints. It still does not yet cover
-  every MCP input or every active risk dimension; bridge metadata now
-  advertises the current policy input schema explicitly.
+  evidence/tool-run/tool-execution/subagent-ingestion/validation-contract/
+  promotion-packet attempts through CLI/MCP/runtime/bridge metadata, and
+  adversarial-risk trust changes require approved typed human checkpoints. It
+  still does not yet cover every MCP input or every active risk dimension;
+  bridge metadata now advertises the current policy input schema explicitly.
 - Domain tools are useful but intentionally lightweight; formal-theory checks are checklist/provenance checks, not automated theorem proving.
 - Subagent packet planning and result ingestion exist, but live external-subagent execution adapters still need integration tests.
 - Full legacy test suite remains a historical failure set outside the v5 regression gate.

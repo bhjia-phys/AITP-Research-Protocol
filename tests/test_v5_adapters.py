@@ -61,6 +61,8 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
     assert packet["trusted_focus"]["claim_statement"] == claim.statement
     assert "change_claim_confidence" in packet["trust_changing_actions"]
     assert "ingest_subagent_result" in packet["trust_changing_actions"]
+    assert "create_validation_contract" in packet["trust_changing_actions"]
+    assert "create_promotion_packet" in packet["trust_changing_actions"]
     assert "aitp_v5_get_execution_brief" in packet["required_kernel_entrypoints"]
     assert "aitp_v5_evaluate_pre_tool_policy" in packet["required_kernel_entrypoints"]
     assert "aitp_v5_preflight_trust_update" in packet["required_kernel_entrypoints"]
@@ -721,6 +723,47 @@ def test_mcp_adapter_pre_tool_event_infers_validation_contract_policy(tmp_path):
     ]
 
 
+def test_mcp_adapter_pre_tool_event_infers_promotion_packet_policy(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_adapter_pre_tool_event, aitp_v5_write_codex_hook_bridge
+
+    _, claim = _seed_session(tmp_path)
+    bridge = aitp_v5_write_codex_hook_bridge(
+        str(tmp_path),
+        session_id="s1",
+        output_path=str(tmp_path / "codex" / "AITP_V5_HOOK_BRIDGE.md"),
+    )
+
+    payload = aitp_v5_evaluate_adapter_pre_tool_event(
+        str(tmp_path),
+        bridge_payload=bridge,
+        platform_event={
+            "runtime": "codex",
+            "hook_name": "pre_tool",
+            "session_id": "s1",
+            "tool_name": "mcp__aitp__aitp_v5_create_promotion_packet",
+            "tool_input": {
+                "topic_id": "librpa-gw",
+                "claim_id": claim.claim_id,
+                "proposed_memory_kind": "method_note",
+                "scope": "Si GW benchmark invariant",
+                "evidence_refs": ["evidence-librpa-gw-benchmark"],
+                "source_kind": "findings",
+                "source_ref": ".aitp/surfaces/session_summaries/s1/findings.md",
+                "orientation_only": True,
+            },
+        },
+    )
+
+    assert payload["ok"] is True
+    assert payload["action"] == "create_promotion_packet"
+    assert payload["mode"] == "block"
+    assert payload["block"] is True
+    assert payload["runtime_gate_protocol"]["action"] == "create_promotion_packet"
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "no_summary_surface_as_truth_source"
+    ]
+
+
 def test_mcp_adapter_pre_tool_event_passes_adversarial_checkpoint_context(tmp_path):
     from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
     from brain.v5.mcp_tools import aitp_v5_evaluate_adapter_pre_tool_event, aitp_v5_write_codex_hook_bridge
@@ -1305,6 +1348,8 @@ def test_adapter_packet_ignores_tampered_summary_as_truth_source(tmp_path):
         "record_tool_run",
         "execute_tool",
         "ingest_subagent_result",
+        "create_validation_contract",
+        "create_promotion_packet",
         "change_claim_confidence",
         "validate_claim",
         "promote_to_l2",

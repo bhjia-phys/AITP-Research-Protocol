@@ -34,6 +34,8 @@ _TRUST_CHANGING_ACTIONS = [
     "record_tool_run",
     "execute_tool",
     "ingest_subagent_result",
+    "create_validation_contract",
+    "create_promotion_packet",
     "change_claim_confidence",
     "validate_claim",
     "promote_to_l2",

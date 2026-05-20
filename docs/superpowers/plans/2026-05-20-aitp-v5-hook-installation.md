@@ -30,8 +30,8 @@ Implemented:
   actions, denying unqualified direct trust application and logging typed writes
   such as evidence recording;
 - Claude Code `PreToolUse` wrapper resolves active typed claim context for
-  validation and L2 promotion MCP calls, reusing kernel policy for evidence and
-  code-state requirements before tool execution;
+  validation, promotion-packet creation, and L2 promotion MCP calls, reusing
+  kernel policy for evidence and code-state requirements before tool execution;
 - shared context-aware pre-tool policy is available as
   `aitp-v5 policy pre-tool <args>` and `aitp_v5_evaluate_pre_tool_policy`,
   returning a contracted `pre_tool_policy_decision` public surface with no
@@ -184,8 +184,8 @@ Recommended placement:
   or public-surface change;
 - call `pre-tool` before trust-changing actions, L2 promotion, remote execution,
   destructive actions, or expensive compute;
-- for validation and L2 promotion decisions that depend on active claim
-  evidence/code provenance, call
+- for validation, promotion-packet creation, and L2 promotion decisions that
+  depend on active claim evidence/code provenance, call
   `aitp-v5 policy pre-tool <action> --session <session-id> ...` or the matching
   MCP wrapper instead of reconstructing policy from generated summaries;
 - call `post-tool` after meaningful physics/numerical/literature tool runs when
@@ -252,13 +252,14 @@ Both surfaces return a contracted `codex_hook_bridge` payload and keep
 `pre_tool_policy_decision` CLI/MCP surface for validation and L2-promotion
 pre-tool checks. It also carries `gate_protocols` generated from the adapter
 packet's `runtime_gate_protocols`, and the generated Markdown renders the
-validation-contract and validate/promote sequences including
-`evaluate_pre_tool_policy` before preflight or promotion.
+validation-contract, promotion-packet, and validate/promote sequences including
+`evaluate_pre_tool_policy` before typed record creation, preflight, or
+promotion.
 
-Adapter packets also encode the same rule in `runtime_gate_protocols`: both
-`create_validation_contract`, `validate_claim`, and `promote_to_l2` sequence
-`evaluate_pre_tool_policy` before the trust-relevant step and name
-`policy_reasons` as the machine-readable routing field.
+Adapter packets also encode the same rule in `runtime_gate_protocols`:
+`create_validation_contract`, `create_promotion_packet`, `validate_claim`, and
+`promote_to_l2` sequence `evaluate_pre_tool_policy` before the trust-relevant
+step and name `policy_reasons` as the machine-readable routing field.
 
 Runtime adapters can consume generated bridge gate metadata through
 `brain.v5.adapter_runtime.evaluate_bridge_gate_pre_tool_policy`. That helper
@@ -267,8 +268,8 @@ sequences `evaluate_pre_tool_policy`, then delegates the decision to the shared
 typed-record-backed pre-tool policy surface. The bridge remains orientation-only;
 the returned decision is still backed by typed kernel records.
 Generated gate protocols now cover record-evidence, record-tool-run,
-execute-tool, subagent-ingestion, validation-contract, validation, and
-L2-promotion actions.
+execute-tool, subagent-ingestion, validation-contract, promotion-packet,
+validation, and L2-promotion actions.
 The shared policy carries `risk_level` and optional `human_checkpoint_id`.
 Adversarial-risk trust-changing actions are hard-blocked unless that checkpoint
 is a decided typed human checkpoint with `decision=approve` for the active
@@ -358,10 +359,10 @@ The current wrapper:
   `aitp_v5_apply_trust_update` to v5 actions; direct trust application without
   a trusted `tool_input.source_kind` and `trust-preflight-*` token denies with
   `aitp_v5_preflight_trust_update`;
-- maps validation and L2-promotion entrypoints through active typed claim
-  context; code-method validation without code state warns with
-  `record_code_state`, and L2 promotion without evidence blocks with
-  `attach_evidence_ref`; this path reuses the shared
+- maps validation, promotion-packet, and L2-promotion entrypoints through active
+  typed claim context; code-method validation without code state warns with
+  `record_code_state`, and promotion-packet/L2 promotion without evidence
+  blocks with `attach_evidence_ref`; this path reuses the shared
   `brain.v5.pretool_policy.context_policy_decision` kernel helper;
 - maps `PostToolUse` to a v5 `TraceEvent` and persists it through
   `.aitp/runtime/hook_trace_events.jsonl`;
@@ -386,8 +387,8 @@ Generated OpenCode bridge payloads include
 `plugin_bridge.pre_tool_policy_entrypoint`, pointing to the same
 `pre_tool_policy_decision` CLI/MCP surface used by Codex and Claude Code. They
 also include `plugin_bridge.gate_protocols`, generated from adapter
-`runtime_gate_protocols`, so plugin authors can consume the validate/promote
-sequence without scraping prose.
+`runtime_gate_protocols`, so plugin authors can consume record, validation,
+promotion-packet, and promote sequences without scraping prose.
 
 The repo-backed OpenCode plugin bridge writer is available through:
 

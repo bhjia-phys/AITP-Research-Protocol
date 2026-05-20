@@ -17,6 +17,7 @@ _TRUST_CHANGING_ACTIONS = {
     "ingest_subagent_result",
     "change_claim_confidence",
     "create_validation_contract",
+    "create_promotion_packet",
     "validate_claim",
     "promote_to_l2",
 }
@@ -77,7 +78,7 @@ def evaluate_policy(
     if action in {"validate_claim", "promote_to_l2"}:
         _guard_code_method_requires_code_state(decision, claim, states)
 
-    if action == "promote_to_l2":
+    if action in {"create_promotion_packet", "promote_to_l2"}:
         _guard_l2_promotion_requires_evidence(decision, refs)
 
     if action == "reduce_friction_with_trust_card":

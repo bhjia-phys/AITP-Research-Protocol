@@ -24,7 +24,7 @@ _AITP_MCP_ACTIONS = {
     "aitp_v5_execute_tool": "execute_tool",
     "aitp_v5_ingest_subagent_result": "ingest_subagent_result",
     "aitp_v5_apply_trust_update": "change_claim_confidence",
-    "aitp_v5_create_promotion_packet": "promote_to_l2",
+    "aitp_v5_create_promotion_packet": "create_promotion_packet",
     "aitp_v5_apply_promotion_packet": "promote_to_l2",
     "aitp_v5_create_validation_contract": "validate_claim",
 }
@@ -170,7 +170,7 @@ def _context_policy_from_workspace(
     base: str,
     session_id: str,
 ) -> PolicyDecision | None:
-    if action not in {"validate_claim", "promote_to_l2"}:
+    if action not in {"create_promotion_packet", "validate_claim", "promote_to_l2"}:
         return None
     tool_input = payload.get("tool_input")
     if not isinstance(tool_input, dict):
