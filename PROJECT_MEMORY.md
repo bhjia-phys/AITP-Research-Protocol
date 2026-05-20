@@ -97,8 +97,8 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `pre_tool_policy_entrypoint` pointing to that shared surface, so runtime
   adapters can wire validation/promotion pre-tool checks without reimplementing
   policy logic. They also carry `gate_protocols` generated from
-  `runtime_gate_protocols`, so bridge files expose the validate/promote sequence
-  as machine-readable payload and rendered Markdown.
+  `runtime_gate_protocols`, so bridge files expose record evidence/tool-run and
+  validate/promote sequences as machine-readable payload and rendered Markdown.
 - Runtime adapters can consume those generated bridge `gate_protocols` through
   `brain/v5/adapter_runtime.py::evaluate_bridge_gate_pre_tool_policy`, which
   verifies the bridge sequence and then delegates to the shared typed-record
@@ -106,9 +106,10 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   adapter-neutral lifecycle wrapper for pre-tool events, and
   `evaluate_platform_pre_tool_event` normalizes Codex/OpenCode pre-tool payloads
   into that same typed decision path.
-- Adapter packet `runtime_gate_protocols.validate_claim` and
-  `runtime_gate_protocols.promote_to_l2` explicitly sequence
-  `evaluate_pre_tool_policy` before preflight/promotion and require
+- Adapter packet `runtime_gate_protocols.record_evidence`,
+  `runtime_gate_protocols.record_tool_run`, `runtime_gate_protocols.validate_claim`,
+  and `runtime_gate_protocols.promote_to_l2` explicitly sequence
+  `evaluate_pre_tool_policy` before the trust-relevant action and require
   `policy_reasons` as the machine-readable routing field.
 - Claude Code `PreToolUse` uses that shared policy for validation and L2
   promotion MCP calls: it resolves the typed claim, cited evidence refs, and

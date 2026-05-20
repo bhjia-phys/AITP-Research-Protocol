@@ -110,11 +110,11 @@ cannot update kernel state or claim trust. The same shared surface also blocks
 only a summary/task-plan/findings/progress orientation surface. Generated
 Codex/OpenCode bridge
 payloads carry this shared entrypoint plus `runtime_gate_protocols` explicitly,
-so adapter authors do not need to reconstruct validation/promotion sequencing
+so adapter authors do not need to reconstruct record/validation/promotion sequencing
 from prose. Its `policy_reasons` list exposes machine-readable policy IDs and
 severities, so reviewers do not need to parse free-form hook messages. Adapter
 packets and generated bridge files put `aitp_v5_evaluate_pre_tool_policy` into
-the validation/promotion gate sequence, so runtimes can see that policy
+the record-evidence/tool-run and validation/promotion gate sequences, so runtimes can see that policy
 evaluation comes before preflight or promotion. The small
 `brain.v5.adapter_runtime.evaluate_bridge_gate_pre_tool_policy` helper consumes
 that generated gate metadata and delegates the actual decision back to typed

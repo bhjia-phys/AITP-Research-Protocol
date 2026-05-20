@@ -40,7 +40,7 @@ pytest $files -q
 Expected baseline:
 
 ```text
-315 passed
+316 passed
 ```
 
 Do not treat old full-suite failures as blockers unless a task modifies legacy code. The v5 focused suite is the working regression gate for this plan.
@@ -127,9 +127,12 @@ Implemented:
   parsing hook messages.
 - Adapter packet gate protocols for `validate_claim` and `promote_to_l2`
   explicitly sequence `evaluate_pre_tool_policy` before preflight/promotion.
+- Adapter packet gate protocols for `record_evidence` and `record_tool_run`
+  now also sequence `evaluate_pre_tool_policy` before the record mutation, so
+  summary-sourced record attempts can be blocked through bridge metadata.
 - Generated Codex/OpenCode bridge payloads and Markdown now carry
   `gate_protocols` derived from `runtime_gate_protocols`, so adapter runtimes
-  can consume the validate/promote sequence without prose scraping.
+  can consume record/validate/promote sequences without prose scraping.
 - `brain.v5.adapter_runtime.evaluate_bridge_gate_pre_tool_policy` consumes
   generated bridge `gate_protocols` and delegates actual decisions to the shared
   typed-record-backed pre-tool policy surface. `evaluate_bridge_lifecycle_event`
@@ -153,8 +156,8 @@ Major remaining gaps:
   event normalizer, but not automatic native lifecycle installation yet.
 - Pre-tool policy coverage is still partial. It checks trust-apply token
   presence, validation/promotion context, and summary-sourced evidence/tool-run
-  record attempts through CLI/MCP/runtime, but it does not yet cover every MCP
-  input or all active risk context.
+  record attempts through CLI/MCP/runtime/bridge metadata, but it does not yet
+  cover every MCP input or all active risk context.
 - Domain tools are useful but intentionally lightweight; formal-theory checks are checklist/provenance checks, not automated theorem proving.
 - Subagent packet planning and result ingestion exist, but live external-subagent execution adapters still need integration tests.
 - Full legacy test suite remains a historical failure set outside the v5 regression gate.

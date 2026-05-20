@@ -1320,3 +1320,59 @@ Each entry should record:
   - decide whether to extend bridge gate protocols beyond validation/promotion
     for `record_evidence` and `record_tool_run`, or add automatic
     Codex/OpenCode installer wiring that invokes the new normalizer.
+
+### 68bc6eb - Gate Evidence And ToolRun PreTool Actions
+
+- Task: extend runtime gate protocols and generated bridges to cover
+  `record_evidence` and `record_tool_run`, matching the shared pre-tool policy
+  coverage added earlier.
+- Planning source:
+  - residual risk after `8a23544` and `4ea3436`;
+  - v5 invariant that summary/task-plan/findings/progress surfaces must not
+    drive trust-changing record writes;
+  - hook bridge requirement that runtime adapters consume machine-readable gate
+    metadata instead of prose.
+- Changed files:
+  - `brain/v5/adapter_contracts.py`
+  - `brain/v5/adapter_protocols.py`
+  - `brain/v5/adapter_runtime.py`
+  - `brain/v5/gate_protocols.py`
+  - `brain/v5/hook_install_templates.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_bridge_runtime.py`
+- Public/runtime behavior changes:
+  - `runtime_gate_protocols` now includes `record_evidence` and
+    `record_tool_run`;
+  - generated Codex/OpenCode bridges carry those gate protocols in payload and
+    rendered Markdown;
+  - `evaluate_platform_pre_tool_event` maps `aitp_v5_record_evidence` and
+    `aitp_v5_record_tool_run` MCP calls to the shared typed policy path;
+  - gate protocol constants moved to `brain/v5/gate_protocols.py` so
+    `adapter_protocols.py` remains below the v5 module-size boundary.
+- Tests:
+  - adapter packets expose exact gate protocols for record evidence/tool runs;
+  - CLI-generated Codex/OpenCode bridges expose those protocols;
+  - a Codex-style `record_evidence` pre-tool payload sourced from `findings`
+    hard-blocks with `no_summary_surface_as_truth_source`.
+- Verification:
+  - red tests failed as expected with missing `record_evidence` gate protocol
+    keys and missing platform action inference;
+  - first focused fix exposed architecture-boundary failure:
+    `adapter_protocols.py` reached 505 lines;
+  - root cause fixed by extracting gate protocols into `brain/v5/gate_protocols.py`;
+  - focused red-green set plus boundary test: 5 passed;
+  - focused adapter/runtime set:
+    `pytest tests/test_v5_adapters.py tests/test_v5_bridge_runtime.py tests/test_v5_public_surfaces.py tests/test_v5_pretool_policy.py tests/test_v5_runtime_entrypoints.py tests/test_v5_architecture_boundaries.py -q`:
+    61 passed;
+  - full v5 focused suite: 316 passed;
+  - `python -m compileall -q brain\v5`: passed;
+  - `git diff --check -- .`: passed.
+- Residual risks:
+  - automatic native Codex/OpenCode installation still needs a platform-specific
+    invocation path;
+  - pre-tool policy still does not cover every possible trust-relevant MCP input
+    or all active risk context.
+- Next recommended task:
+  - add automatic Codex/OpenCode hook invocation docs/tests around the new
+    platform event normalizer, or expand pre-tool policy to the next
+    trust-relevant MCP action class.
