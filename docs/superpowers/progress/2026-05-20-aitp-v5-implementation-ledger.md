@@ -1669,3 +1669,45 @@ Each entry should record:
   - add native-ish Codex/OpenCode installation fixtures that call the advertised
     stdin runner, or split bridge Markdown rendering before the next template
     expansion.
+
+### 8898c68 - Split Hook Bridge Markdown Rendering
+
+- Task: split generated bridge Markdown rendering out of
+  `brain/v5/hook_install_templates.py`.
+- Planning source:
+  - residual risk after `13df91c`;
+  - v5 module-size invariant and user requirement to avoid recreating the old
+    monolithic AITP file pattern;
+  - `hook_install_templates.py` reached 496 lines, leaving too little room for
+    native-ish installation fixtures.
+- Changed files:
+  - `brain/v5/hook_bridge_markdown.py`
+  - `brain/v5/hook_install_templates.py`
+  - `tests/test_v5_architecture_boundaries.py`
+- Public/runtime behavior changes:
+  - no intended behavior change;
+  - Codex/OpenCode bridge writers still render the same Markdown and sidecars;
+  - `hook_install_templates.py` now delegates rendering to
+    `hook_bridge_markdown.py`.
+- Tests:
+  - new architecture-boundary test requires `hook_install_templates.py` to stay
+    at or below 450 lines;
+  - existing Codex/OpenCode bridge rendering tests continue to verify rendered
+    policy, sidecar, and stdin runner content.
+- Verification:
+  - red boundary test failed as expected at 496 lines;
+  - after extraction, target green set:
+    `python -m pytest tests/test_v5_architecture_boundaries.py::test_hook_install_template_module_stays_renderer_free tests/test_v5_adapters.py::test_cli_adapter_hook_bridge_writes_codex_bridge_from_packet tests/test_v5_adapters.py::test_opencode_plugin_bridge_is_rendered_from_installation_template -q`:
+    3 passed;
+  - focused adapter/runtime set:
+    `python -m pytest tests/test_v5_adapters.py tests/test_v5_adapter_event_runner.py tests/test_v5_public_surfaces.py tests/test_v5_runtime_entrypoints.py tests/test_v5_architecture_boundaries.py -q`:
+    53 passed;
+  - post-extraction line counts: `hook_install_templates.py`: 334,
+    `hook_bridge_markdown.py`: 156.
+- Residual risks:
+  - renderer tests are still covered through bridge writer behavior rather than
+    a dedicated renderer test module;
+  - native Codex/OpenCode installation wiring remains unfinished.
+- Next recommended task:
+  - implement native-ish Codex/OpenCode install fixtures now that the template
+    module has room again.
