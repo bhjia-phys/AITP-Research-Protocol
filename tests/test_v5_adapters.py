@@ -60,6 +60,7 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
     assert packet["execution_brief"]["current_focus"]["active_claim"] == claim.claim_id
     assert packet["trusted_focus"]["claim_statement"] == claim.statement
     assert "change_claim_confidence" in packet["trust_changing_actions"]
+    assert "ingest_subagent_result" in packet["trust_changing_actions"]
     assert "aitp_v5_get_execution_brief" in packet["required_kernel_entrypoints"]
     assert "aitp_v5_preflight_trust_update" in packet["required_kernel_entrypoints"]
     assert "aitp_v5_apply_trust_update" in packet["required_kernel_entrypoints"]
@@ -104,6 +105,19 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
         ],
         "required_typed_refs": ["topic_id", "claim_id", "recipe_id"],
         "accepted_link_fields": ["code_state_ids", "artifact_ids", "source_refs"],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    }
+    assert packet["runtime_record_protocols"]["ingest_subagent_result"] == {
+        "entrypoint": "aitp_v5_ingest_subagent_result",
+        "sequence": [
+            "refresh_execution_brief",
+            "ingest_subagent_result",
+            "refresh_execution_brief",
+            "write_session_summary",
+        ],
+        "required_typed_refs": ["topic_id", "claim_id", "packet_id"],
+        "accepted_link_fields": ["evidence_refs", "code_state_refs", "proposed_next_actions"],
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     }
@@ -280,6 +294,7 @@ def test_adapter_packet_ignores_tampered_summary_as_truth_source(tmp_path):
         "record_evidence",
         "record_tool_run",
         "execute_tool",
+        "ingest_subagent_result",
         "change_claim_confidence",
         "validate_claim",
         "promote_to_l2",

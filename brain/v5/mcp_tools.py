@@ -22,6 +22,7 @@ from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoi
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
 from brain.v5.risk import assess_claim_risk
 from brain.v5.store import list_records
+from brain.v5.subagents import ingest_subagent_result
 from brain.v5.summaries import read_summary_orientation, write_session_summary
 from brain.v5.tool_executors import describe_tool_executors, execute_registered_tool_result
 from brain.v5.tools import record_tool_run, register_tool_recipe
@@ -235,6 +236,21 @@ def aitp_v5_record_sensemaking_report(
         title=title, summary=summary, object_ids=object_ids, relation_ids=relation_ids,
         evidence_refs=evidence_refs, open_questions=open_questions, next_actions=next_actions)
     return require_valid_public_surface("sensemaking_report_record", {"ok": True, **asdict(report)})
+
+
+def aitp_v5_ingest_subagent_result(
+    base: str, *, topic_id: str, packet: dict, result_payload: dict,
+) -> dict:
+    result = ingest_subagent_result(
+        _ws(base),
+        packet,
+        topic_id=topic_id,
+        result_payload=result_payload,
+    )
+    payload = result.to_payload()
+    payload["evidence"] = require_valid_public_surface("evidence_record", {"ok": True, **payload["evidence"]})
+    payload["proposal"] = require_valid_public_surface("sensemaking_report_record", {"ok": True, **payload["proposal"]})
+    return {"ok": True, **payload}
 
 
 def aitp_v5_create_validation_contract(

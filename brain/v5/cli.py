@@ -25,6 +25,7 @@ from brain.v5.validation import create_validation_contract
 from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
 from brain.v5.risk import assess_claim_risk
+from brain.v5.subagents import ingest_subagent_result
 from brain.v5.summaries import read_summary_orientation, write_session_summary
 from brain.v5.tool_executors import describe_tool_executors, execute_registered_tool_result
 from brain.v5.tools import record_tool_run, register_tool_recipe
@@ -185,6 +186,12 @@ def _build_parser() -> argparse.ArgumentParser:
     sr.add_argument("--evidence-ref", action="append", default=[], dest="evidence_refs")
     sr.add_argument("--open-question", action="append", default=[], dest="open_questions")
     sr.add_argument("--next-action", action="append", default=[], dest="next_actions")
+
+    sap = sp.add_parser("subagent"); sas = sap.add_subparsers(dest="subagent_command", required=True)
+    sai = sas.add_parser("ingest-result")
+    sai.add_argument("--topic", required=True, dest="topic_id")
+    sai.add_argument("--packet-json", required=True)
+    sai.add_argument("--result-json", required=True)
 
     chk_p = sp.add_parser("checkpoint"); chk_s = chk_p.add_subparsers(dest="checkpoint_command", required=True)
     chk_r = chk_s.add_parser("request")
@@ -347,6 +354,15 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             open_questions=args.open_questions, next_actions=args.next_actions)
         return {"ok": True, **require_valid_public_surface("sensemaking_report_record", {"ok": True, **asdict(rpt)})}
 
+    if args.command == "subagent" and args.subagent_command == "ingest-result":
+        result = ingest_subagent_result(
+            ws,
+            _j(args.packet_json),
+            topic_id=args.topic_id,
+            result_payload=_j(args.result_json),
+        )
+        return _subagent_ingestion_payload(result)
+
     if args.command == "validation" and args.validation_command == "contract" and args.validation_contract_command == "create":
         vc = create_validation_contract(ws, topic_id=args.topic_id, claim_id=args.claim_id,
             required_checks=args.required_checks, failure_modes=args.failure_modes,
@@ -404,6 +420,13 @@ def _j(raw: str) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise SystemExit("expected a JSON object")
     return payload
+
+
+def _subagent_ingestion_payload(result) -> dict[str, Any]:
+    payload = result.to_payload()
+    payload["evidence"] = require_valid_public_surface("evidence_record", {"ok": True, **payload["evidence"]})
+    payload["proposal"] = require_valid_public_surface("sensemaking_report_record", {"ok": True, **payload["proposal"]})
+    return {"ok": True, **payload}
 
 
 def _jsonable(value: Any) -> Any:

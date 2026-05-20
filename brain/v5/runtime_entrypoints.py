@@ -108,6 +108,11 @@ _RUNTIME_ENTRYPOINTS = {
         "mcp": "aitp_v5_record_sensemaking_report",
         "surface": "sensemaking_report_record",
     },
+    "ingest_subagent_result": {
+        "cli": "aitp-v5 subagent ingest-result <args>",
+        "mcp": "aitp_v5_ingest_subagent_result",
+        "surface": "sensemaking_report_record",
+    },
     "create_validation_contract": {
         "cli": "aitp-v5 validation contract create <args>",
         "mcp": "aitp_v5_create_validation_contract",
@@ -339,6 +344,15 @@ def _sample_args_for_template(template: str) -> list[str]:
             "Sanity check",
             "--summary",
             "Counting holds for N=8.",
+        ]
+    if template.startswith("subagent ingest-result"):
+        return [
+            "--topic",
+            "fqhe",
+            "--packet-json",
+            '{"packet_id":"packet-critic","packet_type":"CriticPacket","claim_id":"claim-fqhe","claim_statement":"Claim"}',
+            "--result-json",
+            '{"summary":"Critique result."}',
         ]
     if template.startswith("validation contract create"):
         return [
