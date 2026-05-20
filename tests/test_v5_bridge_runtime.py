@@ -118,3 +118,87 @@ def test_bridge_lifecycle_event_maps_to_gate_pre_tool_policy(tmp_path):
         assert payload["runtime_event"]["lifecycle_event"] == "pre_tool"
         assert payload["runtime_event"]["action"] == "promote_to_l2"
         assert payload["runtime_gate_protocol"]["action"] == "promote_to_l2"
+
+
+def test_codex_platform_pre_tool_event_maps_mcp_call_to_gate_policy(tmp_path):
+    from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.hook_install_templates import write_codex_hook_bridge
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ws, claim = _seed_session(tmp_path)
+    packet = build_adapter_packet(ws, "s1", runtime="codex")
+    bridge = {
+        "ok": True,
+        **write_codex_hook_bridge(
+            tmp_path / "codex" / "AITP_V5_HOOK_BRIDGE.md",
+            packet["runtime_hook_installation"],
+            packet["runtime_gate_protocols"],
+        ),
+    }
+
+    payload = evaluate_platform_pre_tool_event(
+        ws,
+        bridge,
+        {
+            "runtime": "codex",
+            "hook_name": "pre_tool",
+            "session_id": "s1",
+            "tool_name": "mcp__aitp__aitp_v5_create_promotion_packet",
+            "tool_input": {
+                "topic_id": "fqhe",
+                "claim_id": claim.claim_id,
+                "source_kind": "typed_records",
+            },
+        },
+    )
+
+    assert payload["block"] is True
+    assert require_valid_public_surface("pre_tool_policy_decision", payload) == payload
+    assert payload["runtime_event"]["runtime"] == "codex"
+    assert payload["runtime_event"]["platform_event"] == "codex_pre_tool"
+    assert payload["runtime_event"]["tool_name"] == "mcp__aitp__aitp_v5_create_promotion_packet"
+    assert payload["runtime_gate_protocol"]["action"] == "promote_to_l2"
+
+
+def test_opencode_platform_pre_tool_event_maps_plugin_call_to_gate_policy(tmp_path):
+    from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.hook_install_templates import write_opencode_plugin_bridge
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ws, claim = _seed_session(tmp_path)
+    packet = build_adapter_packet(ws, "s1", runtime="opencode")
+    bridge = {
+        "ok": True,
+        **write_opencode_plugin_bridge(
+            tmp_path / ".opencode" / "AITP_V5_PLUGIN_BRIDGE.md",
+            packet["runtime_hook_installation"],
+            packet["runtime_gate_protocols"],
+        ),
+    }
+
+    payload = evaluate_platform_pre_tool_event(
+        ws,
+        bridge,
+        {
+            "runtime": "opencode",
+            "lifecycle_event": "pre_tool",
+            "session_id": "s1",
+            "tool": {
+                "name": "mcp__aitp__aitp_v5_create_promotion_packet",
+                "input": {
+                    "topic_id": "fqhe",
+                    "claim_id": claim.claim_id,
+                    "source_kind": "typed_records",
+                },
+            },
+        },
+    )
+
+    assert payload["block"] is True
+    assert require_valid_public_surface("pre_tool_policy_decision", payload) == payload
+    assert payload["runtime_event"]["runtime"] == "opencode"
+    assert payload["runtime_event"]["platform_event"] == "opencode_pre_tool"
+    assert payload["runtime_event"]["tool_name"] == "mcp__aitp__aitp_v5_create_promotion_packet"
+    assert payload["runtime_gate_protocol"]["action"] == "promote_to_l2"

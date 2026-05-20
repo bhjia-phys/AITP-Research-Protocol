@@ -8,6 +8,32 @@ from typing import Any
 from brain.v5.pretool_policy import evaluate_context_pre_tool_policy
 
 
+_AITP_TOOL_ACTIONS = {
+    "aitp_v5_create_validation_contract": "validate_claim",
+    "aitp_v5_create_promotion_packet": "promote_to_l2",
+    "aitp_v5_apply_promotion_packet": "promote_to_l2",
+}
+
+
+def evaluate_platform_pre_tool_event(
+    ws,
+    bridge_payload: dict[str, Any],
+    platform_event: dict[str, Any],
+) -> dict[str, Any]:
+    """Normalize Codex/OpenCode-style pre-tool events through the bridge policy path."""
+
+    event = _platform_pre_tool_event(bridge_payload, platform_event)
+    payload = evaluate_bridge_lifecycle_event(ws, bridge_payload, event)
+    payload["runtime_event"].update(
+        {
+            "runtime": event["runtime"],
+            "platform_event": event["platform_event"],
+            "tool_name": event["tool_name"],
+        }
+    )
+    return payload
+
+
 def evaluate_bridge_lifecycle_event(
     ws,
     bridge_payload: dict[str, Any],
@@ -92,6 +118,52 @@ def _bridge_declares_pre_tool(bridge_payload: dict[str, Any]) -> bool:
     return False
 
 
+def _platform_pre_tool_event(bridge_payload: dict[str, Any], platform_event: dict[str, Any]) -> dict[str, Any]:
+    runtime = _bridge_runtime(bridge_payload)
+    if str(platform_event.get("runtime", runtime)).strip().lower() != runtime:
+        raise ValueError("platform event runtime does not match bridge payload")
+    if runtime == "codex":
+        if str(platform_event.get("hook_name") or platform_event.get("lifecycle_event")) != "pre_tool":
+            raise ValueError("Codex platform event must be a pre_tool event")
+        tool_name = str(platform_event.get("tool_name") or "")
+        tool_input = platform_event.get("tool_input") if isinstance(platform_event.get("tool_input"), dict) else {}
+    elif runtime == "opencode":
+        if str(platform_event.get("lifecycle_event") or platform_event.get("hook_name")) != "pre_tool":
+            raise ValueError("OpenCode platform event must be a pre_tool event")
+        tool = platform_event.get("tool") if isinstance(platform_event.get("tool"), dict) else {}
+        tool_name = str(tool.get("name") or platform_event.get("tool_name") or "")
+        raw_input = tool.get("input") if isinstance(tool.get("input"), dict) else platform_event.get("tool_input")
+        tool_input = raw_input if isinstance(raw_input, dict) else {}
+    else:
+        raise ValueError("unsupported bridge payload kind")
+    action = str(platform_event.get("action") or tool_input.get("action") or _action_from_tool_name(tool_name))
+    if not action:
+        raise ValueError("platform pre_tool event must provide or imply an AITP action")
+    return {
+        "runtime": runtime,
+        "platform_event": f"{runtime}_pre_tool",
+        "lifecycle_event": "pre_tool",
+        "session_id": str(platform_event.get("session_id") or tool_input.get("session_id") or ""),
+        "action": action,
+        "claim_id": str(tool_input.get("claim_id") or tool_input.get("claim") or ""),
+        "evidence_refs": _input_list(tool_input, "evidence_refs"),
+        "code_state_ids": _input_list(tool_input, "code_state_ids"),
+        "source_kind": str(tool_input.get("source_kind") or platform_event.get("source_kind") or "typed_records"),
+        "source_ref": str(tool_input.get("source_ref") or platform_event.get("source_ref") or ""),
+        "orientation_only": bool(tool_input.get("orientation_only") is True or platform_event.get("orientation_only") is True),
+        "risk_level": str(platform_event.get("risk_level") or tool_input.get("risk_level") or "guided"),
+        "tool_name": tool_name,
+    }
+
+
+def _bridge_runtime(bridge_payload: dict[str, Any]) -> str:
+    if bridge_payload.get("kind") == "codex_hook_bridge":
+        return "codex"
+    if bridge_payload.get("kind") == "opencode_plugin_bridge":
+        return "opencode"
+    raise ValueError("unsupported bridge payload kind")
+
+
 def _bridge_gate_protocol(bridge_payload: dict[str, Any], action: str) -> dict[str, Any]:
     if bridge_payload.get("kind") == "codex_hook_bridge":
         gate_protocols = bridge_payload.get("gate_protocols", {})
@@ -105,6 +177,24 @@ def _bridge_gate_protocol(bridge_payload: dict[str, Any], action: str) -> dict[s
     if not isinstance(protocol, dict):
         raise ValueError(f"bridge gate protocol missing action: {action}")
     return protocol
+
+
+def _action_from_tool_name(tool_name: str) -> str:
+    lowered = tool_name.lower()
+    for entrypoint, action in _AITP_TOOL_ACTIONS.items():
+        if entrypoint in lowered:
+            return action
+    return ""
+
+
+def _input_list(payload: dict[str, Any], key: str) -> list[str]:
+    value = payload.get(key)
+    if isinstance(value, list):
+        return [str(item) for item in value if str(item)]
+    singular = payload.get(key.removesuffix("s"))
+    if singular:
+        return [str(singular)]
+    return []
 
 
 def _clean_list(values: Any) -> list[str]:
