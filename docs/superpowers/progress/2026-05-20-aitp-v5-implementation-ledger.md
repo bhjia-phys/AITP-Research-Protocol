@@ -183,7 +183,7 @@ Each entry should record:
   - add a native config writer or bridge test for one runtime using
     `runtime_hook_installation`.
 
-### Pending - Generate Codex Hook Bridge From Installation Template
+### d71e424 - Generate Codex Hook Bridge From Installation Template
 
 - Task: generate a Codex-readable guard-call bridge from
   `runtime_hook_installation`.
