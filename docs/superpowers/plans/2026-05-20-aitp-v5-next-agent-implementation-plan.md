@@ -270,6 +270,9 @@ Modify as needed:
 - `brain/v5/adapter_protocols.py`: adapter runtime protocol metadata.
 - `brain/v5/adapter_runtime.py`: small runtime helpers that consume generated
   adapter bridge payloads without treating bridge files as truth sources.
+- `brain/v5/hook_bridge_markdown.py`: generated Codex/OpenCode bridge Markdown
+  renderers; keep this separate from `hook_install_templates.py` so payload
+  construction and rendering do not grow into a single large module.
 - `brain/v5/adapter_contracts.py`: only if adapter packet schema changes.
 - `brain/v5/summaries.py`: only after typed records exist.
 

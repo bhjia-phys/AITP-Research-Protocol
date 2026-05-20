@@ -7,6 +7,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+from brain.v5.hook_bridge_markdown import codex_bridge_markdown, opencode_bridge_markdown
 from brain.v5.hook_runner_payloads import build_pre_tool_event_runner
 
 
@@ -95,7 +96,7 @@ def write_codex_hook_bridge(
         "guard_calls": guard_calls,
     }
     bridge_path.parent.mkdir(parents=True, exist_ok=True)
-    bridge_path.write_text(_codex_bridge_markdown(bridge), encoding="utf-8")
+    bridge_path.write_text(codex_bridge_markdown(bridge), encoding="utf-8")
     _write_payload_sidecar(bridge)
     return bridge
 
@@ -149,7 +150,7 @@ def write_opencode_plugin_bridge(
         },
     }
     bridge_path.parent.mkdir(parents=True, exist_ok=True)
-    bridge_path.write_text(_opencode_bridge_markdown(bridge), encoding="utf-8")
+    bridge_path.write_text(opencode_bridge_markdown(bridge), encoding="utf-8")
     _write_payload_sidecar(bridge)
     return bridge
 
@@ -245,165 +246,6 @@ def _gate_protocol_payload(runtime_gate_protocols: dict[str, Any] | None) -> dic
     return payload
 
 
-def _codex_bridge_markdown(bridge: dict[str, Any]) -> str:
-    lines = [
-        "# AITP v5 Codex Hook Bridge",
-        "",
-        "Generated from `runtime_hook_installation`.",
-        "",
-        "- truth_source: false",
-        "- summary_inputs_trusted=false",
-        "- can_update_kernel_state=false",
-        "",
-        "## Shared Context Pre-Tool Policy",
-        "",
-        "Use `aitp-v5 policy pre-tool <args>` before trust-changing actions that depend on typed claim, evidence, source, or code-state context.",
-        "",
-        "- surface: `pre_tool_policy_decision`",
-        "- mcp: `aitp_v5_evaluate_pre_tool_policy`",
-        "- truth_source: `typed_records`",
-        "- can_update_kernel_state=false",
-        "- can_update_claim_trust=false",
-        "",
-        "## Adapter Pre-Tool Event",
-        "",
-        "Use the generated sidecar runner to normalize live platform events through the shared policy path.",
-        "",
-        f"- bridge_payload_source: `{bridge['pre_tool_event_runner']['bridge_payload_source']}`",
-        f"- mcp: `{bridge['pre_tool_event_entrypoint']['mcp']}`",
-        f"- surface: `{bridge['pre_tool_event_entrypoint']['surface']}`",
-        "",
-        "```powershell",
-        _command_string(bridge["pre_tool_event_runner"]["argv"]),
-        "```",
-        "",
-        "Host hooks that provide the platform event on stdin can call:",
-        "",
-        "```powershell",
-        _command_string(bridge["pre_tool_event_runner"]["stdin_runner"]["argv"]),
-        "```",
-        "",
-        "## Gate Protocols",
-        "",
-    ]
-    for action in _gate_protocol_actions(bridge["gate_protocols"]):
-        protocol = bridge["gate_protocols"].get(action, {})
-        lines.extend(
-            [
-                f"### {action}",
-                "",
-                "Generated from `runtime_gate_protocols` in the adapter packet.",
-                "",
-                f"- pre_tool_policy: `{protocol.get('pre_tool_policy', '')}`",
-                f"- policy_reasons_field: `{protocol.get('policy_reasons_field', '')}`",
-                f"- sequence: `{', '.join(protocol.get('sequence', []))}`",
-                "",
-            ]
-        )
-    lines.extend(["## Guard Calls", ""])
-    for guard_call in bridge["guard_calls"]:
-        lines.extend(
-            [
-                f"### {guard_call['hook_name']}",
-                "",
-                f"- when: {guard_call['when']}",
-                f"- output_kind: `{guard_call['output_kind']}`",
-                f"- may_block: `{str(guard_call['may_block']).lower()}`",
-                f"- state_mutation: `{guard_call['state_mutation']}`",
-                "",
-                "```powershell",
-                guard_call["command"],
-                "```",
-                "",
-            ]
-        )
-    return "\n".join(lines).rstrip() + "\n"
-
-
-def _opencode_bridge_markdown(bridge: dict[str, Any]) -> str:
-    lines = [
-        "# AITP v5 OpenCode Plugin Bridge",
-        "",
-        "Generated from `runtime_hook_installation`.",
-        "",
-        "- truth_source: false",
-        "- summary_inputs_trusted=false",
-        "- can_update_kernel_state=false",
-        "- can_update_claim_trust=false",
-        "",
-        "## Shared Context Pre-Tool Policy",
-        "",
-        "Use `aitp-v5 policy pre-tool <args>` before trust-changing actions that depend on typed claim, evidence, source, or code-state context.",
-        "",
-        "- surface: `pre_tool_policy_decision`",
-        "- mcp: `aitp_v5_evaluate_pre_tool_policy`",
-        "- truth_source: `typed_records`",
-        "- can_update_kernel_state=false",
-        "- can_update_claim_trust=false",
-        "",
-        "## Adapter Pre-Tool Event",
-        "",
-        "Use the generated sidecar runner to normalize live platform events through the shared policy path.",
-        "",
-        f"- bridge_payload_source: `{bridge['plugin_bridge']['pre_tool_event_runner']['bridge_payload_source']}`",
-        f"- mcp: `{bridge['plugin_bridge']['pre_tool_event_entrypoint']['mcp']}`",
-        f"- surface: `{bridge['plugin_bridge']['pre_tool_event_entrypoint']['surface']}`",
-        "",
-        "```powershell",
-        _command_string(bridge["plugin_bridge"]["pre_tool_event_runner"]["argv"]),
-        "```",
-        "",
-        "Host hooks that provide the platform event on stdin can call:",
-        "",
-        "```powershell",
-        _command_string(bridge["plugin_bridge"]["pre_tool_event_runner"]["stdin_runner"]["argv"]),
-        "```",
-        "",
-        "## Gate Protocols",
-        "",
-    ]
-    for action in _gate_protocol_actions(bridge["plugin_bridge"]["gate_protocols"]):
-        protocol = bridge["plugin_bridge"]["gate_protocols"].get(action, {})
-        lines.extend(
-            [
-                f"### {action}",
-                "",
-                "Generated from `runtime_gate_protocols` in the adapter packet.",
-                "",
-                f"- pre_tool_policy: `{protocol.get('pre_tool_policy', '')}`",
-                f"- policy_reasons_field: `{protocol.get('policy_reasons_field', '')}`",
-                f"- sequence: `{', '.join(protocol.get('sequence', []))}`",
-                "",
-            ]
-        )
-    lines.extend(["## Lifecycle Calls", ""])
-    for call in bridge["plugin_bridge"]["lifecycle_calls"]:
-        lines.extend(
-            [
-                f"### {call['hook_name']}",
-                "",
-                f"- lifecycle_event: `{call['lifecycle_event']}`",
-                f"- output_kind: `{call['output_kind']}`",
-                f"- may_block: `{str(call['may_block']).lower()}`",
-                f"- state_mutation: `{call['state_mutation']}`",
-                "",
-                "```powershell",
-                call["command"],
-                "```",
-                "",
-            ]
-        )
-    lines.extend(
-        [
-            "## Persistence",
-            "",
-            "Persist post-tool trace events through `aitp_v5_persist_hook_trace_event` only.",
-            "",
-        ]
-    )
-    return "\n".join(lines).rstrip() + "\n"
-
-
 def _claude_event(matcher: str, command: str) -> dict[str, Any]:
     return {
         "matcher": matcher,
@@ -483,10 +325,6 @@ def _write_payload_sidecar(bridge: dict[str, Any]) -> None:
         json.dumps(bridge, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
-
-
-def _gate_protocol_actions(gate_protocols: dict[str, Any]) -> list[str]:
-    return [action for action in gate_protocols if action != "source_protocol_field"]
 
 
 def _normalize_runtime(runtime: str) -> str:

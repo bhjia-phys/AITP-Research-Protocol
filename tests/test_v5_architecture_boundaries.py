@@ -29,6 +29,13 @@ def test_cli_adapter_dispatch_lives_in_focused_module():
     assert len(cli_path.read_text(encoding="utf-8").splitlines()) <= 480
 
 
+def test_hook_install_template_module_stays_renderer_free():
+    repo_root = Path(__file__).resolve().parents[1]
+    template_path = repo_root / "brain" / "v5" / "hook_install_templates.py"
+
+    assert len(template_path.read_text(encoding="utf-8").splitlines()) <= 450
+
+
 def test_trust_update_contracts_live_behind_contracts_facade():
     import brain.v5.contracts as contracts
     from brain.v5 import trust_contracts

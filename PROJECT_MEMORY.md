@@ -67,6 +67,10 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
 - v5 adapter CLI dispatch lives in `brain/v5/cli_adapters.py`; keep
   `brain/v5/cli.py` as the parser/thin command router rather than adding more
   adapter branches there.
+- v5 hook bridge Markdown rendering lives in `brain/v5/hook_bridge_markdown.py`;
+  keep `brain/v5/hook_install_templates.py` focused on payload construction and
+  file writes so hook installation does not regress into a large template
+  module.
 - Codex can materialize explicit guard-call instructions with
   `aitp-v5 adapter hook-bridge codex <session-id> --output <path>`.
 - OpenCode can materialize plugin bridge instructions with
