@@ -331,3 +331,68 @@ Each entry should record:
   - implement a native lifecycle installer/template for one runtime, likely
     Claude Code settings or OpenCode plugin bridge, using the same hook protocol
     metadata and persistence surface.
+
+### 33afc16 - Generate Claude Code Hook Settings
+
+- Task: generate Claude Code native hook settings from the v5 runtime hook
+  installation packet, and add a wrapper that can persist Claude `PostToolUse`
+  events through the v5 hook trace bridge.
+- Planning source:
+  - previous ledger recommendation after `2a9e536`;
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`;
+  - v5 goal requirement for CLI/MCP/kernel symmetry and platform lifecycle
+    hooks that keep typed records authoritative.
+- Changed files:
+  - `PROJECT_MEMORY.md`
+  - `README.md`
+  - `brain/v5/cli.py`
+  - `brain/v5/hook_install_templates.py`
+  - `brain/v5/hook_protocol_contracts.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoints.py`
+  - `docs/INSTALL_CLAUDE_CODE.md`
+  - hook installation and next-agent planning docs
+  - `hooks/aitp_v5_claude_hook.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_hooks.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `tests/test_v5_runtime_entrypoints.py`
+- Public surface changes:
+  - CLI: `aitp-v5 --base <workspace> adapter hook-settings claude-code
+    <session-id> --output .claude/settings.local.json`;
+  - MCP: `aitp_v5_write_claude_code_hook_settings`;
+  - runtime entrypoint: `claude_code_hook_settings`;
+  - public contract: `claude_code_hook_settings` with
+    `summary_inputs_trusted=false`, `can_update_claim_trust=false`, and
+    `can_write_trace_events=true`;
+  - wrapper: `hooks/aitp_v5_claude_hook.py pre-tool|post-tool`.
+- Tests:
+  - CLI writes Claude settings from an actual adapter packet;
+  - MCP wrapper returns the same contracted payload;
+  - Claude hook wrapper persists a `PostToolUse` trace event;
+  - public surface validator accepts the contracted settings payload;
+  - runtime entrypoint registry advertises the CLI/MCP pair.
+- Verification:
+  - focused red tests failed with missing `hook-settings` command, missing MCP
+    wrapper, missing hook script stdout, unknown public surface, and missing
+    runtime entrypoint.
+  - focused green test set: 5 passed.
+  - regression set
+    `pytest tests\test_v5_adapters.py tests\test_v5_hooks.py
+    tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py
+    tests\test_v5_contracts.py tests\test_v5_architecture_boundaries.py -q`:
+    81 passed.
+  - full v5 focused suite: 283 passed.
+  - `python -m compileall -q brain\v5`: passed.
+  - `git diff --check -- .`: passed.
+  - `python hooks\aitp_v5_hook.py pre-commit ...`: passed with `mode=log`.
+- Residual risks:
+  - generated settings are still a template/write command, not a one-click safe
+    merge into user or project Claude settings;
+  - `pre-tool` is log-only and does not yet compute a full typed policy from
+    Claude tool JSON;
+  - Codex/OpenCode native lifecycle integration remains incomplete.
+- Next recommended task:
+  - implement one-click Claude settings merge/install guard, or add the OpenCode
+    plugin bridge using the same typed hook installation metadata.
