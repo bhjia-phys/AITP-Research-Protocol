@@ -89,6 +89,19 @@ CLI 强制 ──── MCP 便利 ──── Skill 指导 ──── Hook �
 | **Skill** | `skills/`, `deploy/skills/` | 告诉 Agent 协议规则、红线、常见用户短语→CLI 命令的映射 |
 | **Hook** | `hooks/` | SessionStart 注入网关 skill。Stop 写 HUD 状态 + 日志 |
 
+## AITP v5 kernel work
+
+AITP v5 is the current typed-kernel implementation track. It keeps durable
+research state in structured v5 records under `brain/v5/`; generated summaries,
+adapter packets, README text, and external note pointers are orientation-only.
+
+Current planning and review entry points:
+
+- [AITP v5 goal instructions](docs/superpowers/plans/2026-05-20-aitp-v5-goal-instructions.md)
+- [AITP v5 next-agent implementation plan](docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md)
+- [AITP v5 hook installation templates](docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md)
+- [AITP v5 implementation ledger](docs/superpowers/progress/2026-05-20-aitp-v5-implementation-ledger.md)
+
 ## Folder structure
 
 ```

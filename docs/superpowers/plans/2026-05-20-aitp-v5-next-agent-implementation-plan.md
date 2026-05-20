@@ -94,10 +94,13 @@ Implemented:
 - Subagent auditor results ingest as typed evidence plus sense-making proposals, never direct confidence changes or L2 promotion.
 - Harness audit/evolution skeleton.
 - Hook helpers include machine-readable pre-commit, pre-tool, and post-tool shell adapters over kernel decisions and trace events.
+- Hook installation contract is documented for Codex, Claude Code, and OpenCode.
+- A v5 implementation ledger exists for step-by-step review.
 
 Major remaining gaps:
 
-- Hook helpers still need Codex/Claude/OpenCode installation docs.
+- Hook helpers still need native Codex/Claude/OpenCode installer wiring and
+  post-tool trace persistence from platform hooks.
 - Domain tools are useful but intentionally lightweight; formal-theory checks are checklist/provenance checks, not automated theorem proving.
 - Subagent packet planning and result ingestion exist, but live external-subagent execution adapters still need integration tests.
 - Full legacy test suite remains a historical failure set outside the v5 regression gate.

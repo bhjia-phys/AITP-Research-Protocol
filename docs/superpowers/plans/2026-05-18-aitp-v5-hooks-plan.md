@@ -201,4 +201,7 @@ For the post-tool trace hook:
 Current scope:
 
 - implemented: machine-readable pre-commit, pre-tool, and post-tool adapters;
-- not yet implemented: Codex/Claude/OpenCode installation templates.
+- documented: Codex/Claude/OpenCode hook installation contract in
+  `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`;
+- not yet implemented: native installer wiring and automatic post-tool trace
+  persistence for Codex/Claude/OpenCode.
