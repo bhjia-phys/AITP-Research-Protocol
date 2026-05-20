@@ -12,6 +12,7 @@ from brain.v5.brief import build_execution_brief
 from brain.v5.code import record_code_state
 from brain.v5.evidence import record_evidence
 from brain.v5.hook_install_templates import (
+    install_codex_hook_fixture,
     install_claude_code_hook_settings,
     write_claude_code_hook_settings,
     write_codex_hook_bridge,
@@ -235,6 +236,29 @@ def aitp_v5_write_opencode_plugin_bridge(base: str, *, session_id: str, output_p
         ),
     }
     return require_valid_public_surface("opencode_plugin_bridge", bridge)
+
+
+def aitp_v5_install_codex_hook_fixture(
+    base: str,
+    *,
+    session_id: str,
+    output_path: str,
+    bridge_output_path: str = "",
+) -> dict:
+    ws = _ws(base)
+    packet = require_valid_public_surface("adapter_packet", build_adapter_packet(ws, session_id, runtime="codex"))
+    installed = {
+        "ok": True,
+        **install_codex_hook_fixture(
+            output_path,
+            packet["runtime_hook_installation"],
+            packet["runtime_gate_protocols"],
+            workspace_base=str(ws.base),
+            session_id=session_id,
+            bridge_path=bridge_output_path or None,
+        ),
+    }
+    return require_valid_public_surface("codex_hook_installation", installed)
 
 
 def aitp_v5_write_claude_code_hook_settings(base: str, *, session_id: str, output_path: str) -> dict:

@@ -101,6 +101,69 @@ def write_codex_hook_bridge(
     return bridge
 
 
+def install_codex_hook_fixture(
+    path: str | Path,
+    installation: dict[str, Any],
+    runtime_gate_protocols: dict[str, Any] | None = None,
+    *,
+    workspace_base: str,
+    session_id: str,
+    bridge_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Write a Codex stdin-runner hook fixture plus its bridge sidecar."""
+
+    fixture_path = Path(path)
+    resolved_bridge_path = Path(bridge_path) if bridge_path else fixture_path.parent / "AITP_V5_HOOK_BRIDGE.md"
+    bridge = write_codex_hook_bridge(
+        resolved_bridge_path,
+        installation,
+        runtime_gate_protocols,
+        session_id=session_id,
+    )
+    pre_tool_hook = {
+        "lifecycle_event": "pre_tool",
+        "command_kind": "stdin_json_runner",
+        "argv": _codex_stdin_runner_argv(
+            workspace_base=workspace_base,
+            session_id=session_id,
+            bridge_payload_path=bridge["payload_path"],
+        ),
+        "stdin": "<platform-event-json>",
+        "output_kind": "pre_tool_policy_decision",
+        "may_block": True,
+        "state_mutation": "none",
+    }
+    fixture = {
+        "kind": "codex_hook_installation_fixture",
+        "runtime": "codex",
+        "hooks": {"pre_tool": pre_tool_hook},
+        "truth_rule": "fixture is runtime metadata only; typed records remain authoritative",
+        "summary_inputs_trusted": False,
+    }
+    payload = {
+        "kind": "codex_hook_installation",
+        "runtime": "codex",
+        "source_protocol_field": "runtime_hook_installation",
+        "installation_mode": installation["installation_mode"],
+        "native_installer_available": False,
+        "fixture_installer_available": True,
+        "summary_inputs_trusted": False,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+        "path": str(fixture_path),
+        "bridge_path": bridge["path"],
+        "bridge_payload_path": bridge["payload_path"],
+        "bridge": bridge,
+        "fixture": fixture,
+    }
+    fixture_path.parent.mkdir(parents=True, exist_ok=True)
+    fixture_path.write_text(
+        json.dumps(fixture, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return payload
+
+
 def write_opencode_plugin_bridge(
     path: str | Path,
     installation: dict[str, Any],
@@ -312,6 +375,22 @@ def _codex_when(hook_name: str) -> str:
 
 def _command_string(command: list[str]) -> str:
     return " ".join(command)
+
+
+def _codex_stdin_runner_argv(*, workspace_base: str, session_id: str, bridge_payload_path: str) -> list[str]:
+    return [
+        "python",
+        "hooks/aitp_v5_adapter_event_runner.py",
+        "pre-tool",
+        "--base",
+        workspace_base,
+        "--runtime",
+        "codex",
+        "--session-id",
+        session_id,
+        "--bridge-path",
+        bridge_payload_path,
+    ]
 
 
 def _payload_sidecar_path(bridge_path: Path) -> Path:

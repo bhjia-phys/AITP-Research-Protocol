@@ -161,6 +161,10 @@ Implemented:
 - Generated bridge sidecars now advertise the stdin host-runner command vector
   in `pre_tool_event_runner.stdin_runner.argv` or
   `plugin_bridge.pre_tool_event_runner.stdin_runner.argv`.
+- Codex can now write a native-ish stdin-runner installation fixture through
+  `aitp-v5 adapter install-hooks codex <session-id> --output <path>` and
+  `aitp_v5_install_codex_hook_fixture`; the fixture writes the bridge/sidecar
+  and points pre-tool events at the stdin runner.
 - The shared CLI/MCP pre-tool policy now also blocks summary/task-plan/findings
   orientation surfaces from driving `record_evidence` and `record_tool_run`
   trust-changing record attempts.
@@ -170,13 +174,13 @@ Implemented:
 
 Major remaining gaps:
 
-- Hook helpers still need native Codex/OpenCode lifecycle installer wiring.
+- Hook helpers still need true native Codex/OpenCode lifecycle installer wiring.
   Codex explicit bridge materialization, Claude Code settings template
   generation and merge installation, OpenCode plugin bridge materialization, and
   post-tool trace persistence surfaces exist; Codex/OpenCode now have a
   CLI/MCP-callable runtime event normalizer advertised in generated bridges plus
-  a generated bridge JSON sidecar, runner argv, advertised stdin host-runner,
-  but not automatic native lifecycle installation yet.
+  a generated bridge JSON sidecar, runner argv, advertised stdin host-runner;
+  Codex also has a generated installation fixture, while OpenCode does not yet.
 - Pre-tool policy coverage is still partial. It checks trust-apply token
   presence, validation/promotion context, and summary-sourced evidence/tool-run
   record attempts through CLI/MCP/runtime/bridge metadata, but it does not yet
@@ -273,6 +277,8 @@ Modify as needed:
 - `brain/v5/hook_bridge_markdown.py`: generated Codex/OpenCode bridge Markdown
   renderers; keep this separate from `hook_install_templates.py` so payload
   construction and rendering do not grow into a single large module.
+- `brain/v5/hook_install_contracts.py`: host installation fixture contracts;
+  keep these out of generic hook protocol contracts.
 - `brain/v5/adapter_contracts.py`: only if adapter packet schema changes.
 - `brain/v5/summaries.py`: only after typed records exist.
 

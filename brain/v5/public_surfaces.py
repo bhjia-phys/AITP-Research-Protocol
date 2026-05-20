@@ -10,6 +10,7 @@ _PUBLIC_SURFACE_NAMES = (
     "claude_code_hook_installation",
     "claude_code_hook_settings",
     "codex_hook_bridge",
+    "codex_hook_installation",
     "code_state_record",
     "evidence_record",
     "execution_brief",
@@ -41,6 +42,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "claude_code_hook_installation": "contracted safe merge of AITP hooks into Claude Code settings without treating settings as truth",
     "claude_code_hook_settings": "contracted Claude Code hook settings generated from runtime hook installation metadata",
     "codex_hook_bridge": "contracted Codex hook bridge generated from runtime hook installation metadata",
+    "codex_hook_installation": "contracted Codex stdin-runner hook installation fixture generated from runtime metadata",
     "code_state_record": "contracted code-state provenance record for code-dependent physics results",
     "evidence_record": "contracted evidence write result linked to a claim and required outputs",
     "execution_brief": "typed kernel brief for current focus, risk, evidence coverage, and next actions",
@@ -141,6 +143,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_opencode_plugin_bridge,
         require_valid_pre_tool_policy_decision,
     )
+    from brain.v5.hook_install_contracts import require_valid_codex_hook_installation
 
     return {
         "adapter_packet": require_valid_adapter_packet,
@@ -148,6 +151,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "claude_code_hook_installation": require_valid_claude_code_hook_installation,
         "claude_code_hook_settings": require_valid_claude_code_hook_settings,
         "codex_hook_bridge": require_valid_codex_hook_bridge,
+        "codex_hook_installation": require_valid_codex_hook_installation,
         "code_state_record": require_valid_code_state_record,
         "evidence_record": require_valid_evidence_record,
         "execution_brief": require_valid_execution_brief,

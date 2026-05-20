@@ -28,6 +28,11 @@ _RUNTIME_ENTRYPOINTS = {
         "mcp": "aitp_v5_write_codex_hook_bridge",
         "surface": "codex_hook_bridge",
     },
+    "codex_hook_installation": {
+        "cli": "aitp-v5 adapter install-hooks codex <session-id> <args>",
+        "mcp": "aitp_v5_install_codex_hook_fixture",
+        "surface": "codex_hook_installation",
+    },
     "opencode_plugin_bridge": {
         "cli": "aitp-v5 adapter hook-bridge opencode <session-id> <args>",
         "mcp": "aitp_v5_write_opencode_plugin_bridge",
@@ -369,6 +374,11 @@ def _sample_args_for_template(template: str) -> list[str]:
         return [
             "--output",
             ".claude/settings.local.json",
+        ]
+    if template.startswith("adapter install-hooks codex"):
+        return [
+            "--output",
+            ".codex/AITP_V5_HOOKS.json",
         ]
     if template.startswith("adapter install-hooks"):
         return [

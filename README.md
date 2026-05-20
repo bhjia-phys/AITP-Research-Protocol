@@ -136,7 +136,11 @@ call. Hosts that provide hook events on stdin can use
 the script fills runtime/session/pre-tool defaults, validates the bridge runner,
 and returns the same typed `pre_tool_policy_decision` payload and hook exit code.
 The generated `pre_tool_event_runner.stdin_runner.argv` field advertises that
-host-facing command directly in the bridge sidecar.
+host-facing command directly in the bridge sidecar. Codex can also materialize a
+native-ish hook fixture with
+`aitp-v5 adapter install-hooks codex <session-id> --output .codex/AITP_V5_HOOKS.json`;
+the fixture writes the bridge and sidecar, then points its pre-tool hook at the
+stdin runner without granting generated files authority over typed records.
 Trust-changing confidence updates use a request-bound preflight proof token:
 `trust preflight`/`aitp_v5_preflight_trust_update` returns the token, and
 `trust apply`/`aitp_v5_apply_trust_update` must carry the matching token before

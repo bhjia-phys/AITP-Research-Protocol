@@ -71,8 +71,16 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   keep `brain/v5/hook_install_templates.py` focused on payload construction and
   file writes so hook installation does not regress into a large template
   module.
+- v5 hook installation fixture contracts live in
+  `brain/v5/hook_install_contracts.py`; keep host installation payload
+  contracts out of `hook_protocol_contracts.py`.
 - Codex can materialize explicit guard-call instructions with
   `aitp-v5 adapter hook-bridge codex <session-id> --output <path>`.
+- Codex can materialize a native-ish stdin-runner installation fixture with
+  `aitp-v5 adapter install-hooks codex <session-id> --output .codex/AITP_V5_HOOKS.json`.
+  The fixture writes a Codex bridge plus sidecar and points `pre_tool` at
+  `hooks/aitp_v5_adapter_event_runner.py`; it is runtime metadata only and
+  keeps `summary_inputs_trusted=false`.
 - OpenCode can materialize plugin bridge instructions with
   `aitp-v5 adapter hook-bridge opencode <session-id> --output .opencode/AITP_V5_PLUGIN_BRIDGE.md`.
 - Claude Code can materialize native hook settings with

@@ -224,10 +224,22 @@ surface instead of calling the helper by hand:
 aitp-v5 --base <workspace> adapter hook-bridge codex <session-id> --output .codex/AITP_V5_HOOK_BRIDGE.md
 ```
 
+Codex can also write a native-ish stdin-runner fixture plus the bridge and
+sidecar:
+
+```powershell
+aitp-v5 --base <workspace> adapter install-hooks codex <session-id> --output .codex/AITP_V5_HOOKS.json
+```
+
+That command writes `.codex/AITP_V5_HOOKS.json`,
+`.codex/AITP_V5_HOOK_BRIDGE.md`, and `.codex/AITP_V5_HOOK_BRIDGE.json`.
+The fixture is runtime metadata only; typed kernel records remain authoritative.
+
 MCP clients use:
 
 ```text
 aitp_v5_write_codex_hook_bridge(base, session_id, output_path)
+aitp_v5_install_codex_hook_fixture(base, session_id, output_path)
 ```
 
 Both surfaces return a contracted `codex_hook_bridge` payload and keep
@@ -388,7 +400,6 @@ The OpenCode bridge sidecar advertises it under
 
 Future implementation should add tests and installer assets for:
 
-- Codex runtime instructions or hook bridge that can call this adapter directly;
 - native OpenCode plugin invocation that calls the generated bridge automatically;
 - native adapter wiring that automatically calls the shared
   `pre_tool_policy_decision` surface from Codex/OpenCode lifecycle events.

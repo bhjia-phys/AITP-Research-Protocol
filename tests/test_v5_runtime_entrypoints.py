@@ -31,6 +31,11 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
         "mcp": "aitp_v5_write_codex_hook_bridge",
         "surface": "codex_hook_bridge",
     }
+    assert entrypoints["codex_hook_installation"] == {
+        "cli": "aitp-v5 adapter install-hooks codex <session-id> <args>",
+        "mcp": "aitp_v5_install_codex_hook_fixture",
+        "surface": "codex_hook_installation",
+    }
     assert entrypoints["opencode_plugin_bridge"] == {
         "cli": "aitp-v5 adapter hook-bridge opencode <session-id> <args>",
         "mcp": "aitp_v5_write_opencode_plugin_bridge",

@@ -10,6 +10,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "claude_code_hook_installation",
         "claude_code_hook_settings",
         "codex_hook_bridge",
+        "codex_hook_installation",
         "code_state_record",
         "evidence_record",
         "execution_brief",
