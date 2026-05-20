@@ -1711,3 +1711,56 @@ Each entry should record:
 - Next recommended task:
   - implement native-ish Codex/OpenCode install fixtures now that the template
     module has room again.
+
+### 2951649 - Add Codex Stdin Runner Install Fixture
+
+- Task: add a Codex native-ish hook installation fixture that points pre-tool
+  events at the existing stdin host-runner without making generated files truth
+  sources.
+- Planning source:
+  - hook-installation plan gap for Codex runtime wiring;
+  - previous `02c06fe` split made room in `hook_install_templates.py`;
+  - v5 rule that typed kernel records remain authoritative and generated
+    bridge/fixture files are runtime metadata only.
+- Changed files:
+  - `brain/v5/cli.py`
+  - `brain/v5/cli_adapters.py`
+  - `brain/v5/hook_install_contracts.py`
+  - `brain/v5/hook_install_templates.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoints.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `tests/test_v5_runtime_entrypoints.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - `aitp-v5 adapter install-hooks codex <session-id> --output <path>` writes
+    `.codex/AITP_V5_HOOKS.json` plus the Codex bridge Markdown and JSON sidecar;
+  - `aitp_v5_install_codex_hook_fixture` exposes the same behavior through MCP;
+  - new public surface `codex_hook_installation` validates the fixture, bridge,
+    runner argv, and `summary_inputs_trusted=false`/no state-mutation flags.
+- Tests:
+  - CLI installer test asserts fixture, bridge, sidecar, runner argv, session id,
+    and sidecar path;
+  - MCP installer test asserts the contracted payload and runner metadata;
+  - runtime entrypoint and public surface registry tests include
+    `codex_hook_installation`.
+- Verification:
+  - red tests failed as expected with missing CLI support, MCP wrapper, and
+    runtime entrypoint;
+  - target green set:
+    `python -m pytest tests/test_v5_adapters.py::test_cli_adapter_install_hooks_writes_codex_stdin_runner_fixture tests/test_v5_adapters.py::test_mcp_codex_hook_installer_returns_contract_payload tests/test_v5_runtime_entrypoints.py::test_runtime_entrypoints_advertise_typed_write_surfaces tests/test_v5_public_surfaces.py::test_public_surface_registry_names_all_runtime_facing_payloads -q`:
+    4 passed.
+- Residual risks:
+  - this is a fixture for Codex-style host wiring, not a guaranteed native Codex
+    lifecycle installer;
+  - OpenCode still lacks the corresponding fixture;
+  - `runtime_entrypoints.py` is close to the source-size boundary and should be
+    split before adding more entrypoint metadata.
+- Next recommended task:
+  - split `runtime_entrypoints.py` metadata/sample args, then add the matching
+    OpenCode stdin-runner installation fixture.
