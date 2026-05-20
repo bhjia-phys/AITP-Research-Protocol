@@ -142,7 +142,8 @@ native-ish hook fixture with
 OpenCode has the matching plugin fixture at
 `aitp-v5 adapter install-hooks opencode <session-id> --output .opencode/AITP_V5_PLUGIN_HOOKS.json`.
 Both fixtures write the bridge and sidecar, then point pre-tool hooks at the
-stdin runner without granting generated files authority over typed records.
+stdin runner with a declared repository `cwd`, without granting generated files
+authority over typed records.
 Trust-changing confidence updates use a request-bound preflight proof token:
 `trust preflight`/`aitp_v5_preflight_trust_update` returns the token, and
 `trust apply`/`aitp_v5_apply_trust_update` must carry the matching token before

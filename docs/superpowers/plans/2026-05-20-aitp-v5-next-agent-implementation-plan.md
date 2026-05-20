@@ -164,11 +164,13 @@ Implemented:
 - Codex can now write a native-ish stdin-runner installation fixture through
   `aitp-v5 adapter install-hooks codex <session-id> --output <path>` and
   `aitp_v5_install_codex_hook_fixture`; the fixture writes the bridge/sidecar
-  and points pre-tool events at the stdin runner.
+  and points pre-tool events at the stdin runner with a declared repository
+  `cwd`.
 - OpenCode can now write a native-ish stdin-runner plugin fixture through
   `aitp-v5 adapter install-hooks opencode <session-id> --output <path>` and
   `aitp_v5_install_opencode_hook_fixture`; the fixture writes the plugin
-  bridge/sidecar and points pre-tool events at the stdin runner.
+  bridge/sidecar and points pre-tool events at the stdin runner with a declared
+  repository `cwd`.
 - The shared CLI/MCP pre-tool policy now also blocks summary/task-plan/findings
   orientation surfaces from driving `record_evidence` and `record_tool_run`
   trust-changing record attempts.

@@ -235,7 +235,9 @@ aitp-v5 --base <workspace> adapter install-hooks codex <session-id> --output .co
 
 That command writes `.codex/AITP_V5_HOOKS.json`,
 `.codex/AITP_V5_HOOK_BRIDGE.md`, and `.codex/AITP_V5_HOOK_BRIDGE.json`.
-The fixture is runtime metadata only; typed kernel records remain authoritative.
+The fixture declares the repository `cwd` for the relative
+`hooks/aitp_v5_adapter_event_runner.py` argv. It is runtime metadata only; typed
+kernel records remain authoritative.
 
 MCP clients use:
 
@@ -407,8 +409,9 @@ aitp-v5 --base <workspace> adapter install-hooks opencode <session-id> --output 
 
 That command writes `.opencode/AITP_V5_PLUGIN_HOOKS.json`,
 `.opencode/AITP_V5_PLUGIN_BRIDGE.md`, and
-`.opencode/AITP_V5_PLUGIN_BRIDGE.json`. The fixture is runtime metadata only;
-typed kernel records remain authoritative.
+`.opencode/AITP_V5_PLUGIN_BRIDGE.json`. The fixture declares the repository
+`cwd` for the relative `hooks/aitp_v5_adapter_event_runner.py` argv. It is
+runtime metadata only; typed kernel records remain authoritative.
 
 ## Installer Work Still Needed
 

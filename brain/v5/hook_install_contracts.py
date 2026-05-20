@@ -148,6 +148,7 @@ def _validate_pre_tool_hook(payload: Any, path: str, result: ContractResult) -> 
     if payload.get("output_kind") != "pre_tool_policy_decision":
         result.add(f"{path}.output_kind", "must be 'pre_tool_policy_decision'")
     _require_bool_value(payload.get("may_block"), True, f"{path}.may_block", result)
+    _require_nonempty_str(payload, "cwd", path, result)
     _require_list(payload.get("argv"), f"{path}.argv", result)
     argv = payload.get("argv")
     if isinstance(argv, list):

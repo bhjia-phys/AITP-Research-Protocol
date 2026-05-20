@@ -40,6 +40,19 @@ def _write_codex_bridge(tmp_path):
     )
 
 
+def _run_fixture_hook(hook, event):
+    argv = list(hook["argv"])
+    argv[0] = sys.executable
+    return subprocess.run(
+        argv,
+        cwd=hook["cwd"],
+        input=json.dumps(event),
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+    )
+
+
 def test_adapter_event_runner_reads_stdin_and_uses_bridge_sidecar(tmp_path):
     claim = _seed_session(tmp_path)
     bridge = _write_codex_bridge(tmp_path)
@@ -83,4 +96,68 @@ def test_adapter_event_runner_reads_stdin_and_uses_bridge_sidecar(tmp_path):
     assert payload["runtime_event"]["runtime"] == "codex"
     assert payload["runtime_event"]["platform_event"] == "codex_pre_tool"
     assert payload["runtime_event"]["tool_name"] == "mcp__aitp__aitp_v5_record_evidence"
+    assert payload["policy_reasons"][0]["policy_id"] == "no_summary_surface_as_truth_source"
+
+
+def test_codex_install_fixture_runner_executes_from_declared_cwd(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_install_codex_hook_fixture
+
+    claim = _seed_session(tmp_path)
+    fixture_path = tmp_path / ".codex" / "AITP_V5_HOOKS.json"
+    installation = aitp_v5_install_codex_hook_fixture(
+        str(tmp_path),
+        session_id="s1",
+        output_path=str(fixture_path),
+    )
+    hook = installation["fixture"]["hooks"]["pre_tool"]
+
+    result = _run_fixture_hook(
+        hook,
+        {
+            "tool_name": "mcp__aitp__aitp_v5_record_evidence",
+            "tool_input": {
+                "topic_id": "librpa-gw",
+                "claim_id": claim.claim_id,
+                "source_kind": "findings",
+                "orientation_only": True,
+            },
+        },
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 2
+    assert payload["ok"] is True
+    assert payload["runtime_event"]["runtime"] == "codex"
+    assert payload["policy_reasons"][0]["policy_id"] == "no_summary_surface_as_truth_source"
+
+
+def test_opencode_install_fixture_runner_executes_from_declared_cwd(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_install_opencode_hook_fixture
+
+    claim = _seed_session(tmp_path)
+    fixture_path = tmp_path / ".opencode" / "AITP_V5_PLUGIN_HOOKS.json"
+    installation = aitp_v5_install_opencode_hook_fixture(
+        str(tmp_path),
+        session_id="s1",
+        output_path=str(fixture_path),
+    )
+    hook = installation["fixture"]["plugin_hooks"]["pre_tool"]
+
+    result = _run_fixture_hook(
+        hook,
+        {
+            "tool_name": "mcp__aitp__aitp_v5_record_evidence",
+            "tool_input": {
+                "topic_id": "librpa-gw",
+                "claim_id": claim.claim_id,
+                "source_kind": "findings",
+                "orientation_only": True,
+            },
+        },
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 2
+    assert payload["ok"] is True
+    assert payload["runtime_event"]["runtime"] == "opencode"
     assert payload["policy_reasons"][0]["policy_id"] == "no_summary_surface_as_truth_source"

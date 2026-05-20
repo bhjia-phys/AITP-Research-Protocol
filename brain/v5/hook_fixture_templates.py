@@ -128,6 +128,7 @@ def _pre_tool_hook(*, runtime: str, workspace_base: str, session_id: str, bridge
     return {
         "lifecycle_event": "pre_tool",
         "command_kind": "stdin_json_runner",
+        "cwd": str(_repo_root()),
         "argv": _stdin_runner_argv(
             runtime=runtime,
             workspace_base=workspace_base,
@@ -155,6 +156,10 @@ def _stdin_runner_argv(*, runtime: str, workspace_base: str, session_id: str, br
         "--bridge-path",
         bridge_payload_path,
     ]
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
 
 
 def _write_fixture(fixture_path: Path, fixture: dict[str, Any]) -> None:
