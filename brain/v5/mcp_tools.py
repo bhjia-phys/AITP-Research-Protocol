@@ -6,6 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from brain.v5.adapter_protocols import adapter_protocol_registry
+from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
 from brain.v5.code import record_code_state
@@ -228,6 +229,15 @@ def aitp_v5_write_claude_code_hook_settings(base: str, *, session_id: str, outpu
     settings = {"ok": True, **write_claude_code_hook_settings(
         output_path, packet["runtime_hook_installation"], workspace_base=str(ws.base), session_id=session_id)}
     return require_valid_public_surface("claude_code_hook_settings", settings)
+
+
+def aitp_v5_evaluate_adapter_pre_tool_event(
+    base: str, *, bridge_payload: dict, platform_event: dict,
+) -> dict:
+    return require_valid_public_surface(
+        "pre_tool_policy_decision",
+        evaluate_platform_pre_tool_event(_ws(base), bridge_payload, platform_event),
+    )
 
 
 def aitp_v5_install_claude_code_hook_settings(base: str, *, session_id: str, settings_path: str) -> dict:

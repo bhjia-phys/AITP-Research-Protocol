@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import json
 from argparse import Namespace
 from typing import Any
 
 from brain.v5.adapter_protocols import adapter_protocol_registry
+from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.hook_install_templates import (
     install_claude_code_hook_settings,
@@ -40,6 +42,11 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
         return {"ok": True, **packet}
     if args.adapter_command == "hook-bridge":
         return _dispatch_hook_bridge(args, packet)
+    if args.adapter_command == "pre-tool-event":
+        return require_valid_public_surface(
+            "pre_tool_policy_decision",
+            evaluate_platform_pre_tool_event(ws, _json_object(args.bridge_json), _json_object(args.event_json)),
+        )
     if args.adapter_command == "hook-settings":
         if packet["runtime"] != "claude_code":
             raise SystemExit("adapter hook-settings currently supports claude-code runtime only")
@@ -91,3 +98,13 @@ def _dispatch_hook_bridge(args: Namespace, packet: dict[str, Any]) -> dict[str, 
         ),
     }
     return require_valid_public_surface("codex_hook_bridge", bridge)
+
+
+def _json_object(raw: str) -> dict[str, Any]:
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"invalid JSON: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise SystemExit("expected a JSON object")
+    return payload

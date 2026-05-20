@@ -43,6 +43,11 @@ _RUNTIME_ENTRYPOINTS = {
         "mcp": "aitp_v5_install_claude_code_hook_settings",
         "surface": "claude_code_hook_installation",
     },
+    "adapter_pre_tool_event": {
+        "cli": "aitp-v5 adapter pre-tool-event <runtime> <session-id> <args>",
+        "mcp": "aitp_v5_evaluate_adapter_pre_tool_event",
+        "surface": "pre_tool_policy_decision",
+    },
     "execution_brief": {
         "cli": "aitp-v5 brief <session-id>",
         "mcp": "aitp_v5_get_execution_brief",
@@ -369,6 +374,13 @@ def _sample_args_for_template(template: str) -> list[str]:
         return [
             "--settings",
             ".claude/settings.local.json",
+        ]
+    if template.startswith("adapter pre-tool-event"):
+        return [
+            "--bridge-json",
+            '{"kind":"codex_hook_bridge","runtime":"codex","source_protocol_field":"runtime_hook_installation","installation_mode":"explicit_guard_calls","native_installer_available":false,"summary_inputs_trusted":false,"can_update_kernel_state":false,"pre_tool_policy_entrypoint":{"cli":"aitp-v5 policy pre-tool <args>","mcp":"aitp_v5_evaluate_pre_tool_policy","surface":"pre_tool_policy_decision","truth_source":"typed_records","summary_inputs_trusted":false,"can_update_kernel_state":false,"can_update_claim_trust":false},"gate_protocols":{"source_protocol_field":"runtime_gate_protocols","record_evidence":{"pre_tool_policy":"aitp_v5_evaluate_pre_tool_policy","preflight":"","sequence":["refresh_execution_brief","evaluate_pre_tool_policy","record_evidence","refresh_execution_brief","write_session_summary"],"required_typed_refs":["topic_id","claim_id"],"allowed_state_sources":["typed_records","typed_evidence_records"],"policy_reasons_field":"policy_reasons","human_checkpoint_required":false,"truth_source":"typed_records","summary_inputs_trusted":false}},"path":"AITP_V5_HOOK_BRIDGE.md","guard_calls":[{"hook_name":"pre_tool"}]}',
+            "--event-json",
+            '{"runtime":"codex","hook_name":"pre_tool","session_id":"s1","tool_name":"mcp__aitp__aitp_v5_record_evidence","tool_input":{"claim_id":"claim-fqhe","source_kind":"typed_records"}}',
         ]
     if template.startswith("object record"):
         return [

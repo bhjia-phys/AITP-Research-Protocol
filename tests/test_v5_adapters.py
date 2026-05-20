@@ -366,6 +366,95 @@ def test_mcp_codex_hook_bridge_wrapper_returns_contract_payload(tmp_path):
     assert bridge_path.exists()
 
 
+def test_cli_adapter_pre_tool_event_evaluates_platform_payload(tmp_path, capsys):
+    _, claim = _seed_session(tmp_path)
+    bridge_path = tmp_path / "codex" / "AITP_V5_HOOK_BRIDGE.md"
+    bridge = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "adapter",
+            "hook-bridge",
+            "codex",
+            "s1",
+            "--output",
+            str(bridge_path),
+        ],
+        capsys,
+    )
+
+    payload = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "adapter",
+            "pre-tool-event",
+            "codex",
+            "s1",
+            "--bridge-json",
+            json.dumps(bridge),
+            "--event-json",
+            json.dumps(
+                {
+                    "runtime": "codex",
+                    "hook_name": "pre_tool",
+                    "session_id": "s1",
+                    "tool_name": "mcp__aitp__aitp_v5_record_evidence",
+                    "tool_input": {
+                        "topic_id": "librpa-gw",
+                        "claim_id": claim.claim_id,
+                        "source_kind": "findings",
+                        "orientation_only": True,
+                    },
+                }
+            ),
+        ],
+        capsys,
+    )
+
+    assert payload["ok"] is True
+    assert payload["kind"] == "hook_decision"
+    assert payload["action"] == "record_evidence"
+    assert payload["block"] is True
+    assert payload["runtime_event"]["platform_event"] == "codex_pre_tool"
+    assert payload["runtime_gate_protocol"]["action"] == "record_evidence"
+
+
+def test_mcp_adapter_pre_tool_event_evaluates_platform_payload(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_adapter_pre_tool_event, aitp_v5_write_codex_hook_bridge
+
+    _, claim = _seed_session(tmp_path)
+    bridge = aitp_v5_write_codex_hook_bridge(
+        str(tmp_path),
+        session_id="s1",
+        output_path=str(tmp_path / "codex" / "AITP_V5_HOOK_BRIDGE.md"),
+    )
+
+    payload = aitp_v5_evaluate_adapter_pre_tool_event(
+        str(tmp_path),
+        bridge_payload=bridge,
+        platform_event={
+            "runtime": "codex",
+            "hook_name": "pre_tool",
+            "session_id": "s1",
+            "tool_name": "mcp__aitp__aitp_v5_record_evidence",
+            "tool_input": {
+                "topic_id": "librpa-gw",
+                "claim_id": claim.claim_id,
+                "source_kind": "findings",
+                "orientation_only": True,
+            },
+        },
+    )
+
+    assert payload["ok"] is True
+    assert payload["action"] == "record_evidence"
+    assert payload["block"] is True
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "no_summary_surface_as_truth_source"
+    ]
+
+
 def test_opencode_plugin_bridge_is_rendered_from_installation_template(tmp_path):
     from brain.v5.adapters import build_adapter_packet
     from brain.v5.hook_install_templates import write_opencode_plugin_bridge
