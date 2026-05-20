@@ -81,6 +81,10 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   and `trust-preflight-*` token are present, while typed writes such as
   `aitp_v5_record_evidence` are logged as their v5 actions. Its `PostToolUse`
   path persists process trace events through `.aitp/runtime/hook_trace_events.jsonl`.
+- Claude Code `PreToolUse` uses active v5 workspace context for validation and
+  L2 promotion MCP calls: it resolves the typed claim, cited evidence refs, and
+  linked or requested code states, then reuses `evaluate_policy` before the tool
+  runs.
 - Trust-changing confidence updates use a request-bound preflight proof token:
   `preflight_trust_update` emits `preflight_token`/`preflight_proof`, and
   `apply_trust_update` refuses otherwise policy-allowed mutations unless the

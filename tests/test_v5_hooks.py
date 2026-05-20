@@ -558,3 +558,136 @@ def test_claude_hook_script_pre_tool_allows_record_evidence_mcp_call_as_typed_wr
     assert payload["aitp"]["action"] == "record_evidence"
     assert payload["aitp"]["block"] is False
     assert payload["aitp"]["summary_inputs_trusted"] is False
+
+
+def test_claude_hook_script_pre_tool_warns_code_method_validation_without_code_state(tmp_path):
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "librpa-gw", context_id="gw-methods", title="LibRPA GW")
+    claim = create_claim(
+        ws,
+        topic_id="librpa-gw",
+        statement="The modified self-energy kernel reproduces the Si GW benchmark.",
+        evidence_profile="code_method",
+        confidence_state="hypothesis",
+        active_uncertainty="formula-code translation risk",
+    )
+    bind_session(
+        ws,
+        "s1",
+        topic_id="librpa-gw",
+        context_id="gw-methods",
+        active_claim=claim.claim_id,
+    )
+
+    repo_root = Path(__file__).resolve().parents[1]
+    script = repo_root / "hooks" / "aitp_v5_claude_hook.py"
+    hook_input = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "mcp__aitp__aitp_v5_create_validation_contract",
+        "tool_input": {
+            "topic_id": "librpa-gw",
+            "claim_id": claim.claim_id,
+            "required_checks": ["benchmark_consistency"],
+        },
+    }
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "pre-tool",
+            "--base",
+            str(tmp_path),
+            "--session-id",
+            "s1",
+        ],
+        input=json.dumps(hook_input),
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["hookSpecificOutput"] == {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "allow",
+        "permissionDecisionReason": "warn validate_claim; no_code_method_validation_without_code_state; required soon: record_code_state",
+    }
+    assert payload["aitp"]["action"] == "validate_claim"
+    assert payload["aitp"]["mode"] == "warn"
+    assert payload["aitp"]["required_actions"] == ["record_code_state"]
+
+
+def test_claude_hook_script_pre_tool_denies_l2_promotion_without_evidence_refs(tmp_path):
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="Finite-size counting identifies the FQHE edge sector.",
+        evidence_profile="toy_numeric",
+        confidence_state="locally_checked",
+        active_uncertainty="ready for bounded reuse",
+    )
+    bind_session(
+        ws,
+        "s1",
+        topic_id="fqhe",
+        context_id="topological-order",
+        active_claim=claim.claim_id,
+    )
+
+    repo_root = Path(__file__).resolve().parents[1]
+    script = repo_root / "hooks" / "aitp_v5_claude_hook.py"
+    hook_input = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "mcp__aitp__aitp_v5_create_promotion_packet",
+        "tool_input": {
+            "topic_id": "fqhe",
+            "claim_id": claim.claim_id,
+            "scope": "finite-size toy models only",
+            "source_kind": "typed_records",
+        },
+    }
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "pre-tool",
+            "--base",
+            str(tmp_path),
+            "--session-id",
+            "s1",
+        ],
+        input=json.dumps(hook_input),
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["hookSpecificOutput"] == {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "deny",
+        "permissionDecisionReason": "blocked promote_to_l2; no_l2_promotion_without_evidence_ref; required: attach_evidence_ref",
+    }
+    assert payload["aitp"]["action"] == "promote_to_l2"
+    assert payload["aitp"]["block"] is True
+    assert payload["aitp"]["required_actions"] == ["attach_evidence_ref"]

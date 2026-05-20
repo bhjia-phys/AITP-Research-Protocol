@@ -27,6 +27,9 @@ Implemented:
 - Claude Code `PreToolUse` wrapper maps coarse AITP MCP/kernel calls into v5
   actions, denying unqualified direct trust application and logging typed writes
   such as evidence recording;
+- Claude Code `PreToolUse` wrapper resolves active typed claim context for
+  validation and L2 promotion MCP calls, reusing kernel policy for evidence and
+  code-state requirements before tool execution;
 - trust-update preflight emits request-bound `preflight_token`/`preflight_proof`
   fields, and trust apply requires the matching token before changing typed
   claim confidence;
@@ -254,6 +257,10 @@ The current wrapper:
   `aitp_v5_apply_trust_update` to v5 actions; direct trust application without
   a trusted `tool_input.source_kind` and `trust-preflight-*` token denies with
   `aitp_v5_preflight_trust_update`;
+- maps validation and L2-promotion entrypoints through active typed claim
+  context; code-method validation without code state warns with
+  `record_code_state`, and L2 promotion without evidence blocks with
+  `attach_evidence_ref`;
 - maps `PostToolUse` to a v5 `TraceEvent` and persists it through
   `.aitp/runtime/hook_trace_events.jsonl`;
 - keeps `summary_inputs_trusted=false` and `can_update_claim_trust=false`.
@@ -295,5 +302,5 @@ Future implementation should add tests and installer assets for:
 
 - Codex runtime instructions or hook bridge that can call this adapter directly;
 - native OpenCode plugin invocation that calls the generated bridge automatically;
-- broader Claude Code `PreToolUse` typed policy coverage beyond current Bash and
-  coarse AITP MCP entrypoint/token-presence mapping.
+- broader Claude Code `PreToolUse` typed policy coverage beyond current Bash,
+  trust-apply token, validation, and promotion mapping.

@@ -100,6 +100,9 @@ settings merge installation, Claude `PreToolUse` typed policy mapping for
 high-risk tool calls and trust-changing AITP MCP calls, OpenCode plugin bridge
 materialization, and post-tool trace-event persistence through CLI/MCP/runtime
 public surfaces.
+For validation and L2 promotion MCP calls, Claude `PreToolUse` resolves the
+active typed claim plus evidence/code-state refs and reuses kernel policy before
+the tool runs.
 Trust-changing confidence updates use a request-bound preflight proof token:
 `trust preflight`/`aitp_v5_preflight_trust_update` returns the token, and
 `trust apply`/`aitp_v5_apply_trust_update` must carry the matching token before

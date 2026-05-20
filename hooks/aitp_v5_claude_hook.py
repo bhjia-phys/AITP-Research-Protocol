@@ -12,9 +12,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from brain.v5.brief import build_execution_brief
 from brain.v5.hook_adapters import hook_decision_payload, hook_trace_event_payload
 from brain.v5.hooks import decide_pre_tool_use, post_tool_use_trace_event
-from brain.v5.policy import PolicyDecision, PolicyReason
+from brain.v5.models import CodeStateRecord
+from brain.v5.policy import PolicyDecision, PolicyReason, evaluate_policy
+from brain.v5.store import list_records
 from brain.v5.trace import persist_hook_trace_event
-from brain.v5.workspace import get_session_binding, init_workspace
+from brain.v5.workspace import get_claim, get_session_binding, init_workspace
 
 
 _AITP_MCP_ACTIONS = {
@@ -64,7 +66,12 @@ def _dispatch(args: argparse.Namespace, claude_payload: dict) -> dict:
         decision = decide_pre_tool_use(
             action=action,
             risk_level="guided",
-            policy_decision=_policy_from_claude_tool(action, claude_payload),
+            policy_decision=_policy_from_claude_tool(
+                action,
+                claude_payload,
+                base=args.base,
+                session_id=args.session_id,
+            ),
         )
         return _claude_pre_tool_output(decision, action=action)
     if args.command == "post-tool":
@@ -118,7 +125,13 @@ def _action_from_aitp_mcp_tool(tool_name: str) -> str:
     return ""
 
 
-def _policy_from_claude_tool(action: str, payload: dict) -> PolicyDecision:
+def _policy_from_claude_tool(
+    action: str,
+    payload: dict,
+    *,
+    base: str,
+    session_id: str,
+) -> PolicyDecision:
     if action == "change_claim_confidence" and not _has_trusted_apply_source(payload):
         return PolicyDecision(
             allowed=False,
@@ -132,6 +145,9 @@ def _policy_from_claude_tool(action: str, payload: dict) -> PolicyDecision:
             ],
             required_actions=["aitp_v5_preflight_trust_update"],
         )
+    context_policy = _context_policy_from_workspace(action, payload, base=base, session_id=session_id)
+    if context_policy is not None:
+        return context_policy
     if action in {"destructive_action", "remote_execution", "expensive_compute"}:
         return PolicyDecision(
             allowed=False,
@@ -148,6 +164,39 @@ def _policy_from_claude_tool(action: str, payload: dict) -> PolicyDecision:
     return PolicyDecision(allowed=True, action=action)
 
 
+def _context_policy_from_workspace(
+    action: str,
+    payload: dict,
+    *,
+    base: str,
+    session_id: str,
+) -> PolicyDecision | None:
+    if action not in {"validate_claim", "promote_to_l2"}:
+        return None
+    tool_input = payload.get("tool_input")
+    if not isinstance(tool_input, dict):
+        tool_input = {}
+    try:
+        ws = init_workspace(base)
+        claim_id = str(tool_input.get("claim_id") or tool_input.get("claim") or "").strip()
+        if not claim_id:
+            claim_id = get_session_binding(ws, session_id).active_claim
+        claim = get_claim(ws, claim_id)
+    except Exception:
+        return None
+    return evaluate_policy(
+        action=action,
+        claim=claim,
+        code_states=_resolve_code_states(ws, claim.claim_id, _input_list(tool_input, "code_state_ids")),
+        evidence_refs=_input_list(tool_input, "evidence_refs"),
+        context={
+            "source_kind": str(tool_input.get("source_kind") or "").strip().lower(),
+            "source_ref": str(tool_input.get("source_ref") or ""),
+            "orientation_only": bool(tool_input.get("orientation_only") is True),
+        },
+    )
+
+
 def _has_trusted_apply_source(payload: dict) -> bool:
     tool_input = payload.get("tool_input")
     if not isinstance(tool_input, dict):
@@ -155,6 +204,33 @@ def _has_trusted_apply_source(payload: dict) -> bool:
     source_kind = str(tool_input.get("source_kind") or "").strip().lower()
     preflight_token = str(tool_input.get("preflight_token") or "").strip()
     return source_kind in _TRUSTED_APPLY_SOURCE_KINDS and preflight_token.startswith("trust-preflight-")
+
+
+def _resolve_code_states(ws, claim_id: str, requested_ids: list[str]) -> list[CodeStateRecord]:
+    states = list_records(ws.registry_dir("code_states"), CodeStateRecord)
+    if requested_ids:
+        wanted = set(requested_ids)
+        return [state for state in states if state.code_state_id in wanted]
+    return [state for state in states if _record_links_to_claim(state.linked_records, claim_id)]
+
+
+def _record_links_to_claim(linked_records: dict, claim_id: str) -> bool:
+    for value in linked_records.values():
+        if value == claim_id:
+            return True
+        if isinstance(value, list) and claim_id in value:
+            return True
+    return False
+
+
+def _input_list(payload: dict, key: str) -> list[str]:
+    value = payload.get(key)
+    if isinstance(value, list):
+        return [str(item) for item in value if str(item)]
+    singular = payload.get(key.removesuffix("s"))
+    if singular:
+        return [str(singular)]
+    return []
 
 
 def _claude_pre_tool_output(decision, *, action: str) -> dict:

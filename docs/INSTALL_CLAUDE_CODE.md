@@ -111,6 +111,10 @@ only allowed through the hook when the tool input carries both a trusted
 `source_kind` and a `trust-preflight-*` token. The kernel still validates the
 token during `aitp_v5_apply_trust_update`. Typed writes such as
 `aitp_v5_record_evidence` are allowed and logged as `record_evidence`.
+Validation and L2 promotion MCP calls are checked against the active v5
+workspace context before the tool runs: the hook resolves the typed claim,
+evidence refs, and linked or requested code-state records and reuses kernel
+policy to warn or deny.
 
 MCP clients can call:
 
