@@ -105,7 +105,10 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   pre-tool policy surface. `evaluate_bridge_lifecycle_event` provides the thin
   adapter-neutral lifecycle wrapper for pre-tool events, and
   `evaluate_platform_pre_tool_event` normalizes Codex/OpenCode pre-tool payloads
-  into that same typed decision path.
+  into that same typed decision path. The normalizer is exposed through
+  `aitp-v5 adapter pre-tool-event <runtime> <session-id> ...` and
+  `aitp_v5_evaluate_adapter_pre_tool_event`, returning the contracted
+  `pre_tool_policy_decision` surface.
 - Adapter packet `runtime_gate_protocols.record_evidence`,
   `runtime_gate_protocols.record_tool_run`, `runtime_gate_protocols.validate_claim`,
   and `runtime_gate_protocols.promote_to_l2` explicitly sequence

@@ -1376,3 +1376,54 @@ Each entry should record:
   - add automatic Codex/OpenCode hook invocation docs/tests around the new
     platform event normalizer, or expand pre-tool policy to the next
     trust-relevant MCP action class.
+
+### 43ee8d3 - Expose Adapter PreTool Event Surface
+
+- Task: expose the platform pre-tool event normalizer through public CLI, MCP,
+  and runtime-entrypoint surfaces so agents do not need to import Python helpers.
+- Planning source:
+  - residual risk after `4ea3436` and `68bc6eb`;
+  - goal requirement for CLI/MCP/runtime symmetry on public kernel capabilities;
+  - hook installation plan requirement that Codex/OpenCode adapters can route
+    lifecycle events into the typed policy path.
+- Changed files:
+  - `brain/v5/cli.py`
+  - `brain/v5/cli_adapters.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/runtime_entrypoints.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_runtime_entrypoints.py`
+- Public/runtime behavior changes:
+  - new CLI command
+    `aitp-v5 adapter pre-tool-event <runtime> <session-id> --bridge-json <json> --event-json <json>`;
+  - new MCP wrapper `aitp_v5_evaluate_adapter_pre_tool_event`;
+  - new runtime entrypoint `adapter_pre_tool_event`, returning the contracted
+    `pre_tool_policy_decision` surface;
+  - the surface delegates to `evaluate_platform_pre_tool_event`, preserving
+    typed records as the decision source.
+- Tests:
+  - CLI pre-tool-event command evaluates a Codex-style record-evidence event and
+    returns a summary-source hard block;
+  - MCP wrapper evaluates the same path;
+  - runtime entrypoints advertise and validate the new CLI/MCP target.
+- Verification:
+  - red tests failed as expected because CLI command, MCP wrapper, and runtime
+    entrypoint were missing;
+  - target green set:
+    `pytest tests/test_v5_adapters.py::test_cli_adapter_pre_tool_event_evaluates_platform_payload tests/test_v5_adapters.py::test_mcp_adapter_pre_tool_event_evaluates_platform_payload tests/test_v5_runtime_entrypoints.py::test_runtime_entrypoints_advertise_typed_write_surfaces tests/test_v5_runtime_entrypoints.py::test_runtime_entrypoint_validation_confirms_advertised_targets_exist -q`:
+    4 passed;
+  - focused adapter/runtime/MCP set:
+    `pytest tests/test_v5_adapters.py tests/test_v5_bridge_runtime.py tests/test_v5_mcp_tools.py tests/test_v5_runtime_entrypoints.py tests/test_v5_public_surfaces.py tests/test_v5_architecture_boundaries.py -q`:
+    66 passed;
+  - full v5 focused suite: 318 passed;
+  - `python -m compileall -q brain\v5`: passed;
+  - `git diff --check -- .`: passed;
+  - line counts stayed below 500 (`cli.py`: 466, `cli_adapters.py`: 110,
+    `mcp_tools.py`: 407, `runtime_entrypoints.py`: 486).
+- Residual risks:
+  - platform hooks still need automatic native installation/invocation;
+  - current event payload contract is JSON-based and intentionally thin.
+- Next recommended task:
+  - add a small generated bridge/runtime doc or script example showing how a
+    Codex/OpenCode hook invokes `adapter pre-tool-event`, or continue expanding
+    pre-tool policy coverage for remaining trust-relevant actions.

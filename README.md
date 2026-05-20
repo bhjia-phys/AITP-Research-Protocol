@@ -121,7 +121,9 @@ that generated gate metadata and delegates the actual decision back to typed
 kernel records; `evaluate_bridge_lifecycle_event` is the adapter-neutral
 pre-tool event wrapper over the same path. `evaluate_platform_pre_tool_event`
 adds a thin Codex/OpenCode event normalizer for live-style pre-tool payloads,
-then reuses the same typed decision path.
+then reuses the same typed decision path. Agents can invoke that normalizer
+through `aitp-v5 adapter pre-tool-event <runtime> <session-id> ...` or
+`aitp_v5_evaluate_adapter_pre_tool_event`.
 Trust-changing confidence updates use a request-bound preflight proof token:
 `trust preflight`/`aitp_v5_preflight_trust_update` returns the token, and
 `trust apply`/`aitp_v5_apply_trust_update` must carry the matching token before

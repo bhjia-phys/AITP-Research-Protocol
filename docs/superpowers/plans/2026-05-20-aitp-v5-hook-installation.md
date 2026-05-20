@@ -241,7 +241,18 @@ that the generated bridge declares a pre-tool lifecycle call. Codex/OpenCode
 platform-style pre-tool payloads can be normalized first through
 `brain.v5.adapter_runtime.evaluate_platform_pre_tool_event`, which extracts the
 AITP action, typed refs, source metadata, and session id before delegating to the
-same bridge lifecycle path.
+same bridge lifecycle path. Runtime adapters can call the same path without
+Python imports through:
+
+```powershell
+aitp-v5 adapter pre-tool-event <runtime> <session-id> --bridge-json <json> --event-json <json>
+```
+
+or the MCP wrapper:
+
+```text
+aitp_v5_evaluate_adapter_pre_tool_event(base, bridge_payload, platform_event)
+```
 
 ## Claude Code Template
 
