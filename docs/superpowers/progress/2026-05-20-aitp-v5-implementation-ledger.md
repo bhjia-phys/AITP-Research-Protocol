@@ -1895,3 +1895,62 @@ Each entry should record:
 - Next recommended task:
   - broaden pre-tool policy coverage for active risk context, or add host-side
     installation docs/tests for the next runtime that exposes a native hook API.
+
+### 1d813e0 - Require Checkpoints For Adversarial Trust Changes
+
+- Task: broaden shared pre-tool policy coverage for active risk context by
+  requiring an approved typed human checkpoint for adversarial-risk
+  trust-changing actions.
+- Planning source:
+  - remaining gap in the next-agent implementation plan: pre-tool policy did
+    not yet cover all active risk context;
+  - v5 invariant that trust-changing actions must go through typed kernel
+    records, preflight, validation, or explicit human checkpoint records.
+- Changed files:
+  - `brain/v5/policy.py`
+  - `brain/v5/pretool_policy.py`
+  - `brain/v5/cli_policy.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/adapter_runtime.py`
+  - `brain/v5/hook_protocol_contracts.py`
+  - `tests/test_v5_pretool_policy.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - `aitp_v5_evaluate_pre_tool_policy` accepts `human_checkpoint_id`;
+  - `aitp-v5 policy pre-tool` accepts `--human-checkpoint`;
+  - `evaluate_platform_pre_tool_event` forwards `human_checkpoint_id` from
+    platform events/tool inputs;
+  - `pre_tool_policy_decision` payloads include `risk_level` and
+    `human_checkpoint_id`;
+  - adversarial-risk trust-changing actions hard-block with
+    `adversarial_trust_change_requires_human_checkpoint` unless the checkpoint
+    is a decided typed `HumanCheckpointRecord` with `decision=approve` for the
+    active claim.
+- Tests:
+  - MCP pre-tool policy blocks adversarial promotion without checkpoint even
+    when evidence refs exist;
+  - MCP pre-tool policy allows adversarial promotion with an approved typed
+    checkpoint;
+  - CLI pre-tool policy accepts `--human-checkpoint`;
+  - adapter pre-tool event path carries adversarial risk/checkpoint context;
+  - public-surface validator rejects invalid pre-tool `risk_level`.
+- Verification:
+  - red tests failed as expected with missing `risk_level` payload field,
+    missing MCP `human_checkpoint_id`, missing CLI `--human-checkpoint`, and
+    missing risk-level contract validation;
+  - target green set:
+    `python -m pytest tests/test_v5_public_surfaces.py::test_public_surface_validator_accepts_pre_tool_policy_decision tests/test_v5_public_surfaces.py::test_public_surface_validator_rejects_invalid_pre_tool_policy_risk_level tests/test_v5_pretool_policy.py tests/test_v5_adapters.py::test_mcp_adapter_pre_tool_event_passes_adversarial_checkpoint_context -q`:
+    13 passed.
+- Residual risks:
+  - pre-tool policy still does not cover every possible MCP input or every risk
+    dimension, but adversarial trust-changing paths now require typed human
+    approval.
+- Next recommended task:
+  - extend bridge/runtime metadata to advertise `human_checkpoint_id` as a
+    first-class pre-tool policy input, or broaden policy coverage for another
+    trust-relevant MCP input.
