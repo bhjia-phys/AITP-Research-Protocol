@@ -759,3 +759,71 @@ Each entry should record:
   - extend the same context-aware policy to OpenCode/Codex bridge invocation, or
     add tests for summary-sourced validation/promotion attempts through Claude
     MCP calls.
+
+### 5f17915 - Expose Shared PreTool Policy Surface
+
+- Task: extract the context-aware validation/L2-promotion pre-tool policy from
+  the Claude wrapper into a reusable v5 kernel capability and expose it through
+  CLI/MCP/runtime public surfaces.
+- Planning source:
+  - residual risk after `30a5075`;
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-goal-instructions.md`;
+  - v5 invariant that adapter-facing decisions must reuse typed kernel records
+    and must not treat generated summaries as truth sources.
+- Changed files:
+  - `PROJECT_MEMORY.md`
+  - `README.md`
+  - `brain/v5/cli.py`
+  - `brain/v5/cli_policy.py`
+  - `brain/v5/hook_protocol_contracts.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/pretool_policy.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoints.py`
+  - `docs/INSTALL_CLAUDE_CODE.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+  - `hooks/aitp_v5_claude_hook.py`
+  - `tests/test_v5_pretool_policy.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `tests/test_v5_runtime_entrypoints.py`
+- Public/runtime behavior changes:
+  - new kernel helper `brain.v5.pretool_policy.context_policy_decision`;
+  - new public kernel payload helper
+    `brain.v5.pretool_policy.evaluate_context_pre_tool_policy`;
+  - new CLI command:
+    `aitp-v5 policy pre-tool <action> --session <session-id> ...`;
+  - new MCP wrapper: `aitp_v5_evaluate_pre_tool_policy`;
+  - new runtime entrypoint: `pre_tool_policy`;
+  - new public surface contract: `pre_tool_policy_decision`;
+  - Claude Code `PreToolUse` now reuses the shared kernel helper instead of
+    owning duplicate workspace/code-state lookup logic.
+- Tests:
+  - kernel/public surface blocks L2 promotion without evidence refs;
+  - CLI returns a contracted pre-tool policy decision;
+  - MCP warns on code-method validation without code-state provenance;
+  - public-surface registry validates `pre_tool_policy_decision`;
+  - runtime entrypoint registry advertises the CLI/MCP pair.
+- Verification:
+  - focused red set failed for missing module, CLI command, MCP wrapper, public
+    surface, and runtime entrypoint;
+  - focused green set:
+    `pytest tests/test_v5_pretool_policy.py tests/test_v5_public_surfaces.py tests/test_v5_runtime_entrypoints.py -q`:
+    23 passed;
+  - regression set:
+    `pytest tests/test_v5_pretool_policy.py tests/test_v5_hooks.py tests/test_v5_mcp_tools.py tests/test_v5_cli.py tests/test_v5_public_surfaces.py tests/test_v5_runtime_entrypoints.py tests/test_v5_contracts.py tests/test_v5_architecture_boundaries.py -q`:
+    99 passed;
+  - full v5 focused suite: 304 passed;
+  - `python -m compileall -q brain\v5`: passed;
+  - `git diff --check -- .`: passed;
+  - source module line counts remained below 500 lines;
+  - `python hooks\aitp_v5_hook.py pre-commit ...`: passed with `mode=log`.
+- Residual risks:
+  - Codex/OpenCode bridge documents can call the shared surface, but native
+    lifecycle installers still do not invoke it automatically;
+  - context policy currently covers validation and L2 promotion record
+    requirements, not every MCP input or all active risk-context dimensions.
+- Next recommended task:
+  - add adapter tests or bridge metadata that make Codex/OpenCode explicitly
+    call `pre_tool_policy_decision` before validation/promotion actions, or add
+    summary-sourced validation/promotion denial tests for the shared surface.
