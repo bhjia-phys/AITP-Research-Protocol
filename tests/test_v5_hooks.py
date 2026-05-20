@@ -182,3 +182,50 @@ def test_v5_hook_script_pre_commit_blocks_harness_change_without_tests():
     assert payload["hook_name"] == "pre_commit"
     assert payload["block"] is True
     assert payload["required_actions"] == ["add_regression_test", "add_evolution_note"]
+
+
+def test_v5_hook_script_pre_tool_blocks_from_policy_json():
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parents[1]
+    script = repo_root / "hooks" / "aitp_v5_hook.py"
+    policy_json = json.dumps({
+        "allowed": False,
+        "action": "promote_to_l2",
+        "reasons": [
+            {
+                "policy_id": "no_l2_promotion_without_evidence_ref",
+                "message": "L2 promotion requires evidence.",
+                "severity": "block",
+            }
+        ],
+        "required_actions": ["attach_evidence_ref"],
+    })
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "pre-tool",
+            "--action",
+            "promote_to_l2",
+            "--risk-level",
+            "adversarial",
+            "--policy-json",
+            policy_json,
+        ],
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 2
+    assert payload["kind"] == "hook_decision"
+    assert payload["hook_name"] == "pre_tool"
+    assert payload["block"] is True
+    assert payload["required_actions"] == ["attach_evidence_ref"]
+    assert payload["summary_inputs_trusted"] is False

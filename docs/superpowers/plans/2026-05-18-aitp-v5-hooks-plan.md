@@ -157,13 +157,20 @@ git push origin HEAD:main
 
 ## Implemented Adapter Surface
 
-The v5 hook adapter starts with a narrow shell-facing pre-commit entrypoint:
+The v5 hook adapter starts with narrow shell-facing pre-commit and pre-tool entrypoints:
 
 ```powershell
 python hooks\aitp_v5_hook.py pre-commit `
   --changed-file brain/v5/policy.py `
   --test-ref tests/test_v5_policy.py `
   --evolution-note "tighten policy after repeated incident"
+```
+
+```powershell
+python hooks\aitp_v5_hook.py pre-tool `
+  --action promote_to_l2 `
+  --risk-level adversarial `
+  --policy-json '{"allowed":false,"action":"promote_to_l2","reasons":[{"policy_id":"no_l2_promotion_without_evidence_ref","message":"missing evidence","severity":"block"}],"required_actions":["attach_evidence_ref"]}'
 ```
 
 The script writes one JSON object to stdout:
@@ -175,6 +182,6 @@ The script writes one JSON object to stdout:
 
 Current scope:
 
-- implemented: machine-readable pre-commit adapter;
+- implemented: machine-readable pre-commit and pre-tool adapters;
 - not yet implemented: Codex/Claude/OpenCode installation templates and
-  pre-tool/post-tool shell wrappers.
+  post-tool shell wrapper.
