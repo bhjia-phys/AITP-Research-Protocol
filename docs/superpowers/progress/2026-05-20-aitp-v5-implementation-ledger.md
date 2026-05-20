@@ -214,3 +214,58 @@ Each entry should record:
 - Next recommended task:
   - add a CLI/runtime command to materialize the Codex hook bridge from an actual
     adapter packet, or implement the Claude Code native settings writer.
+
+### f460fa3 - Expose Codex Hook Bridge Materializer
+
+- Task: materialize a Codex hook bridge directly from an actual v5 adapter
+  packet through public runtime surfaces.
+- Planning source:
+  - previous ledger recommendation after `d71e424`;
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`;
+  - v5 goal requirement for CLI/MCP/runtime symmetry on public capabilities.
+- Changed files:
+  - `.codex/INSTALL.md`
+  - `brain/v5/cli.py`
+  - `brain/v5/contracts.py`
+  - `brain/v5/hook_protocol_contracts.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoints.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `tests/test_v5_runtime_entrypoints.py`
+  - hook installation and next-agent planning docs
+- Public surface changes:
+  - CLI: `aitp-v5 --base <workspace> adapter hook-bridge codex <session-id>
+    --output <path>`;
+  - MCP: `aitp_v5_write_codex_hook_bridge`;
+  - runtime entrypoint: `codex_hook_bridge`;
+  - public contract: `codex_hook_bridge` with `summary_inputs_trusted=false`
+    and `can_update_kernel_state=false`.
+- Tests:
+  - CLI writes the bridge from `runtime_hook_installation` in an adapter packet;
+  - MCP wrapper returns the same contracted payload;
+  - runtime entrypoint registry advertises the CLI/MCP pair;
+  - public surface validator accepts contracted bridge payloads.
+- Verification:
+  - focused red test failed with missing `hook-bridge` command, missing MCP
+    wrapper, missing runtime entrypoint, and unknown public surface.
+  - `pytest tests\test_v5_adapters.py tests\test_v5_runtime_entrypoints.py
+    tests\test_v5_public_surfaces.py tests\test_v5_contracts.py -q`: 63
+    passed before architecture-boundary cleanup.
+  - `pytest tests\test_v5_adapters.py tests\test_v5_runtime_entrypoints.py
+    tests\test_v5_public_surfaces.py tests\test_v5_contracts.py
+    tests\test_v5_architecture_boundaries.py -q`: 66 passed.
+  - full v5 focused suite: 275 passed.
+  - `python -m compileall -q brain\v5`: passed.
+  - `git diff --check -- .`: passed.
+  - `python hooks\aitp_v5_hook.py pre-commit ...`: passed with `mode=log`.
+- Residual risks:
+  - this is still an explicit Codex guard-call bridge, not native lifecycle hook
+    integration;
+  - post-tool trace persistence from platform hook output remains a separate
+    runtime bridge task.
+- Next recommended task:
+  - implement either a Claude Code native settings/template writer, or a
+    post-tool trace persistence runtime bridge that records hook trace events
+    through typed v5 trace/kernel paths.
