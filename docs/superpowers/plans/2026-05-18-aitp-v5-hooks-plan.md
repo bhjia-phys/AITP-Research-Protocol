@@ -154,3 +154,27 @@ git commit -m "feat(v5): add lightweight hook decisions"
 git push origin codex/aitp-v5-kernel-mvp
 git push origin HEAD:main
 ```
+
+## Implemented Adapter Surface
+
+The v5 hook adapter starts with a narrow shell-facing pre-commit entrypoint:
+
+```powershell
+python hooks\aitp_v5_hook.py pre-commit `
+  --changed-file brain/v5/policy.py `
+  --test-ref tests/test_v5_policy.py `
+  --evolution-note "tighten policy after repeated incident"
+```
+
+The script writes one JSON object to stdout:
+
+- `kind: hook_decision`;
+- `mode`, `block`, `message`, and `required_actions` from the kernel decision;
+- `exit_code: 2` when the hook should block, otherwise `0`;
+- `summary_inputs_trusted: false`.
+
+Current scope:
+
+- implemented: machine-readable pre-commit adapter;
+- not yet implemented: Codex/Claude/OpenCode installation templates and
+  pre-tool/post-tool shell wrappers.

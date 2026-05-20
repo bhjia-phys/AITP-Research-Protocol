@@ -127,3 +127,58 @@ def test_pre_commit_harness_patch_requires_tests_and_evolution_note():
     assert "add_evolution_note" in blocked.required_actions
     assert allowed.block is False
     assert allowed.mode == "log"
+
+
+def test_hook_adapter_payload_is_short_json_friendly():
+    from brain.v5.hook_adapters import hook_decision_payload
+    from brain.v5.hooks import decide_pre_commit
+
+    decision = decide_pre_commit(
+        changed_files=["brain/v5/policy.py"],
+        test_refs=[],
+        evolution_note="",
+    )
+
+    payload = hook_decision_payload(decision, hook_name="pre_commit")
+
+    assert payload == {
+        "kind": "hook_decision",
+        "hook_name": "pre_commit",
+        "mode": "block",
+        "block": True,
+        "message": "blocked harness commit; required: add_regression_test, add_evolution_note",
+        "required_actions": ["add_regression_test", "add_evolution_note"],
+        "exit_code": 2,
+        "summary_inputs_trusted": False,
+    }
+    assert len(payload["message"]) <= 160
+
+
+def test_v5_hook_script_pre_commit_blocks_harness_change_without_tests():
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parents[1]
+    script = repo_root / "hooks" / "aitp_v5_hook.py"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "pre-commit",
+            "--changed-file",
+            "brain/v5/policy.py",
+        ],
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 2
+    assert payload["kind"] == "hook_decision"
+    assert payload["hook_name"] == "pre_commit"
+    assert payload["block"] is True
+    assert payload["required_actions"] == ["add_regression_test", "add_evolution_note"]
