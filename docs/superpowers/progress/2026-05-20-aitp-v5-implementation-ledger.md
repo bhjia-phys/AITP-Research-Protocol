@@ -574,3 +574,62 @@ Each entry should record:
 - Next recommended task:
   - extend Claude `PreToolUse` mapping to trust-changing MCP/kernel calls, or
     add native OpenCode plugin invocation around the generated bridge.
+
+### 5da30c9 - Map Claude MCP PreTool Actions
+
+- Task: map Claude Code `PreToolUse` AITP MCP/kernel calls into v5 actions
+  before they can alter protocol state.
+- Planning source:
+  - residual risk after `4ab7a4d`;
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`;
+  - v5 goal requirement that trust-changing actions go through typed kernel
+    records and preflight, not generated summaries or raw convenience calls.
+- Changed files:
+  - `PROJECT_MEMORY.md`
+  - `README.md`
+  - `docs/INSTALL_CLAUDE_CODE.md`
+  - hook installation and next-agent planning docs
+  - `hooks/aitp_v5_claude_hook.py`
+  - `tests/test_v5_hooks.py`
+- Public/runtime behavior changes:
+  - Claude hook tool names such as `mcp__aitp__aitp_v5_record_evidence` and
+    `mcp__aitp__aitp_v5_apply_trust_update` are recognized as v5 actions;
+  - direct `aitp_v5_apply_trust_update` maps to
+    `change_claim_confidence`;
+  - unqualified direct trust application denies with
+    `claude_pre_tool_requires_trust_preflight` and
+    `required_actions=["aitp_v5_preflight_trust_update"]`;
+  - `aitp_v5_record_evidence` maps to `record_evidence` and is allowed as a
+    typed write/log action;
+  - generated hook output remains orientation-only with
+    `summary_inputs_trusted=false`.
+- Tests:
+  - direct trust apply MCP call is denied and carries the v5 typed
+    `hook_decision` payload;
+  - evidence-recording MCP call is allowed and logged as `record_evidence`.
+- Verification:
+  - focused red tests failed because both MCP tools were initially classified as
+    generic `claude_tool_use`, then because the public payload lacked the mapped
+    `action`;
+  - focused green test set:
+    `pytest tests\test_v5_hooks.py::test_claude_hook_script_pre_tool_denies_direct_trust_apply_mcp_call tests\test_v5_hooks.py::test_claude_hook_script_pre_tool_allows_record_evidence_mcp_call_as_typed_write -q`:
+    2 passed;
+  - regression set
+    `pytest tests\test_v5_hooks.py tests\test_v5_adapters.py
+    tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py
+    tests\test_v5_contracts.py tests\test_v5_architecture_boundaries.py -q`:
+    93 passed;
+  - full v5 focused suite: 295 passed;
+  - `python -m compileall -q brain\v5`: passed;
+  - `git diff --check -- .`: passed;
+  - source module line counts remained below 500 lines;
+  - `python hooks\aitp_v5_hook.py pre-commit ...`: passed with `mode=log`.
+- Residual risks:
+  - MCP mapping is still entrypoint-level and does not validate every tool input
+    against full active topic/claim/risk context;
+  - direct trust application can be allowed only by a trusted `source_kind`;
+    there is no durable preflight token/proof chain yet;
+  - native OpenCode lifecycle invocation remains incomplete.
+- Next recommended task:
+  - add a typed trust-update preflight token/proof chain for Claude MCP calls,
+    or broaden validation/promotion MCP mapping with active workspace context.
