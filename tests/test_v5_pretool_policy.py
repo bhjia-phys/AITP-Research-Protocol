@@ -171,3 +171,59 @@ def test_mcp_pre_tool_policy_exposes_machine_readable_policy_reasons(tmp_path):
     assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
         "no_l2_promotion_without_evidence_ref"
     ]
+
+
+def test_mcp_pre_tool_policy_blocks_record_evidence_from_summary_source(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
+
+    _, claim = _seed_claim(tmp_path)
+
+    payload = aitp_v5_evaluate_pre_tool_policy(
+        str(tmp_path),
+        session_id="s1",
+        action="record_evidence",
+        claim_id=claim.claim_id,
+        source_kind="findings",
+        source_ref=".aitp/surfaces/session_summaries/s1/findings.md",
+        orientation_only=True,
+    )
+
+    assert payload["action"] == "record_evidence"
+    assert payload["mode"] == "block"
+    assert payload["block"] is True
+    assert payload["required_actions"] == ["query_execution_brief_or_typed_record"]
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "no_summary_surface_as_truth_source"
+    ]
+
+
+def test_cli_pre_tool_policy_blocks_record_tool_run_from_task_plan_source(tmp_path, capsys):
+    _, claim = _seed_claim(tmp_path)
+
+    payload = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "policy",
+            "pre-tool",
+            "record_tool_run",
+            "--session",
+            "s1",
+            "--claim",
+            claim.claim_id,
+            "--source-kind",
+            "task_plan",
+            "--source-ref",
+            ".aitp/surfaces/session_summaries/s1/task_plan.md",
+            "--orientation-only",
+        ],
+        capsys,
+    )
+
+    assert payload["action"] == "record_tool_run"
+    assert payload["mode"] == "block"
+    assert payload["block"] is True
+    assert payload["required_actions"] == ["query_execution_brief_or_typed_record"]
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "no_summary_surface_as_truth_source"
+    ]
