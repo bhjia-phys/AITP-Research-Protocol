@@ -110,7 +110,12 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `aitp_v5_evaluate_adapter_pre_tool_event`, returning the contracted
   `pre_tool_policy_decision` surface. Generated Codex/OpenCode bridge payloads
   advertise this as `pre_tool_event_entrypoint` so runtime adapters can discover
-  the correct CLI/MCP invocation without prose scraping.
+  the correct CLI/MCP invocation without prose scraping. The bridge
+  materializers write a machine-readable JSON sidecar beside the generated
+  Markdown and return its `payload_path`; runtime hook runners should use
+  `adapter pre-tool-event --bridge-path <payload-path> --event-json <json>` to
+  consume the bridge payload without treating generated Markdown as a truth
+  source.
 - Adapter packet `runtime_gate_protocols.record_evidence`,
   `runtime_gate_protocols.record_tool_run`, `runtime_gate_protocols.validate_claim`,
   and `runtime_gate_protocols.promote_to_l2` explicitly sequence

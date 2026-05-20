@@ -1479,3 +1479,52 @@ Each entry should record:
   - add a minimal generated script/wrapper or installation instruction that uses
     `pre_tool_event_entrypoint` to call `adapter pre-tool-event`, then smoke-test
     the script against generated bridge payloads.
+
+### c6ebb72 - Write Bridge Payload Sidecars
+
+- Task: write machine-readable JSON sidecars for generated Codex/OpenCode
+  bridges and allow CLI pre-tool event evaluation from `--bridge-path`.
+- Planning source:
+  - residual risk after `e6ff277`;
+  - platform hook runners need bridge payloads without scraping generated
+    Markdown or embedding large JSON on the shell command line;
+  - generated bridge files remain orientation/runtime instructions, while typed
+    kernel records remain authoritative.
+- Changed files:
+  - `brain/v5/cli.py`
+  - `brain/v5/cli_adapters.py`
+  - `brain/v5/hook_install_templates.py`
+  - `tests/test_v5_adapters.py`
+- Public/runtime behavior changes:
+  - Codex/OpenCode bridge writers now write a sibling JSON sidecar and include
+    its path as `payload_path` in returned payloads;
+  - `aitp-v5 adapter pre-tool-event` accepts `--bridge-path` in addition to
+    `--bridge-json`;
+  - event normalization still delegates to typed-record-backed pre-tool policy
+    and does not make bridge files truth sources.
+- Tests:
+  - generated Codex bridge tests assert `payload_path` and read the sidecar;
+  - generated OpenCode bridge tests assert `payload_path` and read the sidecar;
+  - CLI pre-tool event test evaluates policy through `--bridge-path`.
+- Verification:
+  - red tests failed as expected with missing `payload_path`;
+  - target green set:
+    `python -m pytest tests/test_v5_adapters.py::test_cli_adapter_hook_bridge_writes_codex_bridge_from_packet tests/test_v5_adapters.py::test_cli_adapter_pre_tool_event_evaluates_platform_payload tests/test_v5_adapters.py::test_opencode_plugin_bridge_is_rendered_from_installation_template -q`:
+    3 passed;
+  - focused adapter/public/runtime set:
+    `python -m pytest tests/test_v5_adapters.py tests/test_v5_public_surfaces.py tests/test_v5_runtime_entrypoints.py tests/test_v5_architecture_boundaries.py -q`:
+    51 passed;
+  - full v5 focused suite: 318 passed;
+  - `python -m compileall -q brain\v5`: passed;
+  - `git diff --check -- .`: passed;
+  - relevant source line counts stayed below 500
+    (`hook_install_templates.py`: 462, `cli_adapters.py`: 119,
+    `cli.py`: 467).
+- Residual risks:
+  - sidecar support still does not install automatic native Codex/OpenCode hook
+    runners;
+  - the live platform event schema remains intentionally thin until a concrete
+    platform adapter needs a richer contract.
+- Next recommended task:
+  - add a tiny generated hook-runner/script or installation test that reads the
+    bridge sidecar and invokes `adapter pre-tool-event --bridge-path`.

@@ -198,7 +198,9 @@ trust-update records are written.
 The repo-backed bridge writer is
 `brain.v5.hook_install_templates.write_codex_hook_bridge`. It writes a compact
 Markdown guide from `runtime_hook_installation` and deliberately marks the output
-as orientation-only.
+as orientation-only. It also writes a machine-readable JSON sidecar next to the
+Markdown guide and returns the sidecar as `payload_path`; runtime hook runners
+should consume that file, not the Markdown text.
 
 For an actual v5 workspace/session, materialize it through the public runtime
 surface instead of calling the helper by hand:
@@ -246,6 +248,12 @@ Python imports through:
 
 ```powershell
 aitp-v5 adapter pre-tool-event <runtime> <session-id> --bridge-json <json> --event-json <json>
+```
+
+Prefer the sidecar form for generated Codex/OpenCode bridges:
+
+```powershell
+aitp-v5 adapter pre-tool-event <runtime> <session-id> --bridge-path <payload-path> --event-json <json>
 ```
 
 or the MCP wrapper:
@@ -351,9 +359,9 @@ aitp_v5_write_opencode_plugin_bridge(base, session_id, output_path)
 ```
 
 The generated bridge records lifecycle calls, gate protocols, and the
-persistence entrypoint, but it is still orientation-only. OpenCode must write
-durable state through typed v5 kernel records and
-`aitp_v5_persist_hook_trace_event`.
+persistence entrypoint, and it writes a sibling JSON sidecar exposed as
+`payload_path`, but it is still orientation-only. OpenCode must write durable
+state through typed v5 kernel records and `aitp_v5_persist_hook_trace_event`.
 
 ## Installer Work Still Needed
 

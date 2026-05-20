@@ -125,6 +125,10 @@ then reuses the same typed decision path. Agents can invoke that normalizer
 through `aitp-v5 adapter pre-tool-event <runtime> <session-id> ...` or
 `aitp_v5_evaluate_adapter_pre_tool_event`; generated Codex/OpenCode bridges
 advertise that event entrypoint alongside the lower-level policy entrypoint.
+The bridge materializers also write a JSON sidecar next to the generated
+Markdown and return its `payload_path`; hook runners should pass that sidecar to
+`adapter pre-tool-event` with `--bridge-path` rather than scrape Markdown or
+embed large JSON in a shell command.
 Trust-changing confidence updates use a request-bound preflight proof token:
 `trust preflight`/`aitp_v5_preflight_trust_update` returns the token, and
 `trust apply`/`aitp_v5_apply_trust_update` must carry the matching token before
