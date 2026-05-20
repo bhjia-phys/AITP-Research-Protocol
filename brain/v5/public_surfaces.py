@@ -21,6 +21,7 @@ _PUBLIC_SURFACE_NAMES = (
     "object_relation_record",
     "opencode_plugin_bridge",
     "physics_object_record",
+    "pre_tool_policy_decision",
     "promotion_packet_record",
     "reference_location_record",
     "sensemaking_report_record",
@@ -51,6 +52,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "object_relation_record": "contracted object-relation record linking physics objects with typed relations, failure modes, and assumptions",
     "opencode_plugin_bridge": "contracted OpenCode plugin bridge generated from runtime hook installation metadata",
     "physics_object_record": "contracted physics-object record for theoretical objects, systems, operators, sectors, and definitions",
+    "pre_tool_policy_decision": "contracted pre-tool policy decision derived from typed kernel records, not summaries",
     "promotion_packet_record": "contracted promotion packet requiring explicit evidence refs, known failure modes, and scope before L2 memory promotion",
     "reference_location_record": "contracted orientation-only pointer to an external paper, note, or knowledge item",
     "sensemaking_report_record": "contracted local sense-making report — orientation-only, never a validation gate",
@@ -137,6 +139,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_claude_code_hook_settings,
         require_valid_hook_trace_event_record,
         require_valid_opencode_plugin_bridge,
+        require_valid_pre_tool_policy_decision,
     )
 
     return {
@@ -156,6 +159,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "object_relation_record": require_valid_object_relation_record,
         "opencode_plugin_bridge": require_valid_opencode_plugin_bridge,
         "physics_object_record": require_valid_physics_object_record,
+        "pre_tool_policy_decision": require_valid_pre_tool_policy_decision,
         "promotion_packet_record": require_valid_promotion_packet_record,
         "reference_location_record": require_valid_reference_location_record,
         "sensemaking_report_record": require_valid_sensemaking_report_record,

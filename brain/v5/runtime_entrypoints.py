@@ -118,6 +118,11 @@ _RUNTIME_ENTRYPOINTS = {
         "mcp": "aitp_v5_apply_trust_update",
         "surface": "trust_update_apply",
     },
+    "pre_tool_policy": {
+        "cli": "aitp-v5 policy pre-tool <args>",
+        "mcp": "aitp_v5_evaluate_pre_tool_policy",
+        "surface": "pre_tool_policy_decision",
+    },
     "record_physics_object": {
         "cli": "aitp-v5 object record <args>",
         "mcp": "aitp_v5_record_physics_object",
@@ -250,6 +255,16 @@ def _sample_args_for_template(template: str) -> list[str]:
             "fqhe",
             "--claim",
             "claim-fqhe",
+        ]
+    if template.startswith("policy pre-tool"):
+        return [
+            "validate_claim",
+            "--session",
+            "s1",
+            "--claim",
+            "claim-fqhe",
+            "--source-kind",
+            "typed_records",
         ]
     if template.startswith("code state record"):
         return [

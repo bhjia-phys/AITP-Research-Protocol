@@ -40,7 +40,7 @@ pytest $files -q
 Expected baseline:
 
 ```text
-300 passed
+304 passed
 ```
 
 Do not treat old full-suite failures as blockers unless a task modifies legacy code. The v5 focused suite is the working regression gate for this plan.
@@ -116,6 +116,10 @@ Implemented:
 - Claude Code `PreToolUse` uses active workspace context for validation and L2
   promotion MCP calls, reusing kernel policy for evidence and code-state
   requirements before tool execution.
+- The same context-aware pre-tool policy is now exposed as a shared
+  CLI/MCP/runtime public surface:
+  `aitp-v5 policy pre-tool <args>` / `aitp_v5_evaluate_pre_tool_policy` /
+  `pre_tool_policy_decision`.
 - OpenCode plugin bridge instructions can be materialized from an actual adapter
   packet through CLI/MCP/runtime public surfaces.
 - A v5 implementation ledger exists for step-by-step review.
@@ -127,9 +131,10 @@ Major remaining gaps:
   generation and merge installation, OpenCode plugin bridge materialization, and
   post-tool trace persistence surfaces exist, but Codex/OpenCode are not native
   lifecycle integrations yet.
-- Claude Code `PreToolUse` coverage is still partial. It checks trust-apply
-  token presence and validation/promotion context, but not every MCP input or
-  all active risk context.
+- Pre-tool policy coverage is still partial. It checks trust-apply token
+  presence and validation/promotion context, and that context check is now
+  adapter-callable through CLI/MCP/runtime, but it does not yet cover every MCP
+  input or all active risk context.
 - Domain tools are useful but intentionally lightweight; formal-theory checks are checklist/provenance checks, not automated theorem proving.
 - Subagent packet planning and result ingestion exist, but live external-subagent execution adapters still need integration tests.
 - Full legacy test suite remains a historical failure set outside the v5 regression gate.

@@ -317,6 +317,58 @@ def require_valid_hook_trace_event_record(payload: dict[str, Any]) -> dict[str, 
     return payload
 
 
+def validate_pre_tool_policy_decision(
+    payload: dict[str, Any],
+    *,
+    path: str = "pre_tool_policy_decision",
+) -> ContractResult:
+    """Validate a public pre-tool decision without granting state mutation authority."""
+
+    result = ContractResult()
+    _require_mapping(payload, path, result)
+    if result.issues:
+        return result
+
+    if payload.get("ok") is not True:
+        result.add(f"{path}.ok", "must be true")
+    if payload.get("kind") != "hook_decision":
+        result.add(f"{path}.kind", "must be 'hook_decision'")
+    if payload.get("hook_name") != "pre_tool":
+        result.add(f"{path}.hook_name", "must be 'pre_tool'")
+    for key in ("action", "session_id", "claim_id", "message"):
+        _require_nonempty_str(payload, key, path, result)
+    mode = payload.get("mode")
+    if mode not in {"log", "warn", "block"}:
+        result.add(f"{path}.mode", "must be one of log, warn, block")
+    if not isinstance(payload.get("block"), bool):
+        result.add(f"{path}.block", "must be a boolean")
+    elif mode == "block" and payload.get("block") is not True:
+        result.add(f"{path}.block", "must be true when mode is block")
+    elif mode in {"log", "warn"} and payload.get("block") is not False:
+        result.add(f"{path}.block", "must be false when mode is log or warn")
+    expected_exit = 2 if payload.get("block") is True else 0
+    if payload.get("exit_code") != expected_exit:
+        result.add(f"{path}.exit_code", f"must be {expected_exit}")
+    if payload.get("truth_source") != "typed_records":
+        result.add(f"{path}.truth_source", "must be 'typed_records'")
+    _require_bool_value(payload.get("summary_inputs_trusted"), False, f"{path}.summary_inputs_trusted", result)
+    _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
+    _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
+    _require_list(payload.get("required_actions"), f"{path}.required_actions", result)
+    if isinstance(payload.get("required_actions"), list):
+        for index, action in enumerate(payload["required_actions"]):
+            if not isinstance(action, str) or not action.strip():
+                result.add(f"{path}.required_actions[{index}]", "must be a non-empty string")
+    return result
+
+
+def require_valid_pre_tool_policy_decision(payload: dict[str, Any]) -> dict[str, Any]:
+    result = validate_pre_tool_policy_decision(payload)
+    if not result.ok:
+        raise ContractError(result)
+    return payload
+
+
 def _validate_codex_guard_call(payload: Any, path: str, result: ContractResult) -> None:
     _require_mapping(payload, path, result)
     if not isinstance(payload, dict):

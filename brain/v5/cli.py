@@ -23,6 +23,7 @@ from brain.v5.hook_install_templates import (
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
 from brain.v5.models import TrustUpdateRequest
+from brain.v5.cli_policy import add_policy_parser, dispatch_policy_command
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
 from brain.v5.physics_objects import record_object_relation, record_physics_object
 from brain.v5.references import record_reference_location
@@ -235,6 +236,8 @@ def _build_parser() -> argparse.ArgumentParser:
     tp2 = sp.add_parser("trust"); ts2 = tp2.add_subparsers(dest="trust_command", required=True)
     _add_trust_request_args(ts2.add_parser("preflight")); _add_trust_request_args(ts2.add_parser("apply"))
 
+    add_policy_parser(sp)
+
     vp = sp.add_parser("validation"); vs = vp.add_subparsers(dest="validation_command", required=True)
     vcp = vs.add_parser("contract"); vcs = vcp.add_subparsers(dest="validation_contract_command", required=True)
     vcr = vcs.add_parser("create")
@@ -256,6 +259,9 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         return {"ok": True, "public_surfaces": describe_public_surfaces()}
 
     ws = init_workspace(Path(args.base))
+
+    if args.command == "policy":
+        return dispatch_policy_command(args, ws)
 
     if args.command == "topic" and args.topic_command == "create":
         return {"ok": True, **asdict(create_topic(ws, args.topic_id, context_id=args.context_id, title=args.title))}

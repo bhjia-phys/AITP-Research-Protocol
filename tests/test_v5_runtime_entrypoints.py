@@ -51,6 +51,11 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
         "mcp": "aitp_v5_persist_hook_trace_event",
         "surface": "hook_trace_event_record",
     }
+    assert entrypoints["pre_tool_policy"] == {
+        "cli": "aitp-v5 policy pre-tool <args>",
+        "mcp": "aitp_v5_evaluate_pre_tool_policy",
+        "surface": "pre_tool_policy_decision",
+    }
 
 
 def test_runtime_entrypoint_validation_reports_bad_mcp_and_cli_targets():

@@ -21,6 +21,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "object_relation_record",
         "opencode_plugin_bridge",
         "physics_object_record",
+        "pre_tool_policy_decision",
         "promotion_packet_record",
         "reference_location_record",
         "sensemaking_report_record",
@@ -187,6 +188,30 @@ def test_public_surface_validator_accepts_hook_trace_event_record():
     }
 
     assert require_valid_public_surface("hook_trace_event_record", payload) == payload
+
+
+def test_public_surface_validator_accepts_pre_tool_policy_decision():
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    payload = {
+        "ok": True,
+        "kind": "hook_decision",
+        "hook_name": "pre_tool",
+        "action": "promote_to_l2",
+        "session_id": "s1",
+        "claim_id": "claim-fqhe",
+        "mode": "block",
+        "block": True,
+        "message": "blocked promote_to_l2; no_l2_promotion_without_evidence_ref; required: attach_evidence_ref",
+        "required_actions": ["attach_evidence_ref"],
+        "exit_code": 2,
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+    assert require_valid_public_surface("pre_tool_policy_decision", payload) == payload
 
 
 def test_public_surface_validator_accepts_typed_write_records():

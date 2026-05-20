@@ -115,6 +115,17 @@ Validation and L2 promotion MCP calls are checked against the active v5
 workspace context before the tool runs: the hook resolves the typed claim,
 evidence refs, and linked or requested code-state records and reuses kernel
 policy to warn or deny.
+This context-aware decision is also available outside Claude through the shared
+public surface:
+
+```text
+aitp-v5 --base <workspace> policy pre-tool <action> --session <session-id> [--claim <claim-id>]
+aitp_v5_evaluate_pre_tool_policy(base, session_id, action, claim_id, ...)
+```
+
+The returned `pre_tool_policy_decision` is a permission/orientation payload only:
+it records `truth_source=typed_records`, keeps `summary_inputs_trusted=false`,
+and cannot update kernel state or claim trust.
 
 MCP clients can call:
 

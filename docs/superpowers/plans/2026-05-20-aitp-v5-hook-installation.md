@@ -30,6 +30,10 @@ Implemented:
 - Claude Code `PreToolUse` wrapper resolves active typed claim context for
   validation and L2 promotion MCP calls, reusing kernel policy for evidence and
   code-state requirements before tool execution;
+- shared context-aware pre-tool policy is available as
+  `aitp-v5 policy pre-tool <args>` and `aitp_v5_evaluate_pre_tool_policy`,
+  returning a contracted `pre_tool_policy_decision` public surface with no
+  kernel-state or claim-trust mutation authority;
 - trust-update preflight emits request-bound `preflight_token`/`preflight_proof`
   fields, and trust apply requires the matching token before changing typed
   claim confidence;
@@ -178,6 +182,10 @@ Recommended placement:
   or public-surface change;
 - call `pre-tool` before trust-changing actions, L2 promotion, remote execution,
   destructive actions, or expensive compute;
+- for validation and L2 promotion decisions that depend on active claim
+  evidence/code provenance, call
+  `aitp-v5 policy pre-tool <action> --session <session-id> ...` or the matching
+  MCP wrapper instead of reconstructing policy from generated summaries;
 - call `post-tool` after meaningful physics/numerical/literature tool runs when
   active session/topic/claim IDs are known;
 - pass the returned `hook_trace_event` to `aitp-v5 trace hook-event persist`
@@ -260,7 +268,8 @@ The current wrapper:
 - maps validation and L2-promotion entrypoints through active typed claim
   context; code-method validation without code state warns with
   `record_code_state`, and L2 promotion without evidence blocks with
-  `attach_evidence_ref`;
+  `attach_evidence_ref`; this path reuses the shared
+  `brain.v5.pretool_policy.context_policy_decision` kernel helper;
 - maps `PostToolUse` to a v5 `TraceEvent` and persists it through
   `.aitp/runtime/hook_trace_events.jsonl`;
 - keeps `summary_inputs_trusted=false` and `can_update_claim_trust=false`.
@@ -302,5 +311,5 @@ Future implementation should add tests and installer assets for:
 
 - Codex runtime instructions or hook bridge that can call this adapter directly;
 - native OpenCode plugin invocation that calls the generated bridge automatically;
-- broader Claude Code `PreToolUse` typed policy coverage beyond current Bash,
-  trust-apply token, validation, and promotion mapping.
+- native adapter wiring that automatically calls the shared
+  `pre_tool_policy_decision` surface from Codex/OpenCode lifecycle events.
