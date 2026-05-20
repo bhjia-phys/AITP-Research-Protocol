@@ -86,10 +86,12 @@ def write_codex_hook_bridge(
         "pre_tool_event_entrypoint": deepcopy(_PRE_TOOL_EVENT_ENTRYPOINT),
         "gate_protocols": _gate_protocol_payload(runtime_gate_protocols),
         "path": str(bridge_path),
+        "payload_path": str(_payload_sidecar_path(bridge_path)),
         "guard_calls": guard_calls,
     }
     bridge_path.parent.mkdir(parents=True, exist_ok=True)
     bridge_path.write_text(_codex_bridge_markdown(bridge), encoding="utf-8")
+    _write_payload_sidecar(bridge)
     return bridge
 
 
@@ -123,6 +125,7 @@ def write_opencode_plugin_bridge(
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
         "path": str(bridge_path),
+        "payload_path": str(_payload_sidecar_path(bridge_path)),
         "plugin_bridge": {
             "setup": ["load AITP skills", "connect AITP MCP server", "read v5 adapter packet"],
             "lifecycle_calls": lifecycle_calls,
@@ -135,6 +138,7 @@ def write_opencode_plugin_bridge(
     }
     bridge_path.parent.mkdir(parents=True, exist_ok=True)
     bridge_path.write_text(_opencode_bridge_markdown(bridge), encoding="utf-8")
+    _write_payload_sidecar(bridge)
     return bridge
 
 
@@ -432,6 +436,19 @@ def _codex_when(hook_name: str) -> str:
 
 def _command_string(command: list[str]) -> str:
     return " ".join(command)
+
+
+def _payload_sidecar_path(bridge_path: Path) -> Path:
+    return bridge_path.with_suffix(".json")
+
+
+def _write_payload_sidecar(bridge: dict[str, Any]) -> None:
+    sidecar_path = Path(str(bridge["payload_path"]))
+    sidecar_path.parent.mkdir(parents=True, exist_ok=True)
+    sidecar_path.write_text(
+        json.dumps(bridge, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
 
 
 def _gate_protocol_actions(gate_protocols: dict[str, Any]) -> list[str]:

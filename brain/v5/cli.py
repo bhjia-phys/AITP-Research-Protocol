@@ -166,7 +166,8 @@ def _build_parser() -> argparse.ArgumentParser:
     aih = aps.add_parser("install-hooks"); aih.add_argument("runtime"); aih.add_argument("session_id")
     aih.add_argument("--settings", required=True)
     ape = aps.add_parser("pre-tool-event"); ape.add_argument("runtime"); ape.add_argument("session_id")
-    ape.add_argument("--bridge-json", required=True); ape.add_argument("--event-json", required=True)
+    ape.add_argument("--bridge-json", default=""); ape.add_argument("--bridge-path", default="")
+    ape.add_argument("--event-json", required=True)
     aps.add_parser("registry"); aps.add_parser("public-surfaces")
 
     op = sp.add_parser("object"); ops = op.add_subparsers(dest="object_command", required=True)

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from argparse import Namespace
+from pathlib import Path
 from typing import Any
 
 from brain.v5.adapter_protocols import adapter_protocol_registry
@@ -45,7 +46,7 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
     if args.adapter_command == "pre-tool-event":
         return require_valid_public_surface(
             "pre_tool_policy_decision",
-            evaluate_platform_pre_tool_event(ws, _json_object(args.bridge_json), _json_object(args.event_json)),
+            evaluate_platform_pre_tool_event(ws, _bridge_payload(args), _json_object(args.event_json)),
         )
     if args.adapter_command == "hook-settings":
         if packet["runtime"] != "claude_code":
@@ -108,3 +109,11 @@ def _json_object(raw: str) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise SystemExit("expected a JSON object")
     return payload
+
+
+def _bridge_payload(args: Namespace) -> dict[str, Any]:
+    if args.bridge_json:
+        return _json_object(args.bridge_json)
+    if args.bridge_path:
+        return _json_object(Path(args.bridge_path).read_text(encoding="utf-8"))
+    raise SystemExit("adapter pre-tool-event requires --bridge-json or --bridge-path")

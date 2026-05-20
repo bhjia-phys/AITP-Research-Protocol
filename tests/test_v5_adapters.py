@@ -350,7 +350,12 @@ def test_cli_adapter_hook_bridge_writes_codex_bridge_from_packet(tmp_path, capsy
     assert payload["gate_protocols"]["record_evidence"]["sequence"][1] == "evaluate_pre_tool_policy"
     assert payload["gate_protocols"]["record_tool_run"]["policy_reasons_field"] == "policy_reasons"
     assert payload["path"] == str(bridge_path)
+    assert payload["payload_path"] == str(bridge_path.with_suffix(".json"))
     assert [call["hook_name"] for call in payload["guard_calls"]] == ["pre_commit", "pre_tool", "post_tool"]
+    sidecar = json.loads(bridge_path.with_suffix(".json").read_text(encoding="utf-8"))
+    assert sidecar["kind"] == "codex_hook_bridge"
+    assert sidecar["path"] == str(bridge_path)
+    assert sidecar["pre_tool_event_entrypoint"]["mcp"] == "aitp_v5_evaluate_adapter_pre_tool_event"
     text = bridge_path.read_text(encoding="utf-8")
     assert "Generated from `runtime_hook_installation`." in text
     assert "python hooks/aitp_v5_hook.py pre-tool" in text
@@ -402,8 +407,8 @@ def test_cli_adapter_pre_tool_event_evaluates_platform_payload(tmp_path, capsys)
             "pre-tool-event",
             "codex",
             "s1",
-            "--bridge-json",
-            json.dumps(bridge),
+            "--bridge-path",
+            bridge["payload_path"],
             "--event-json",
             json.dumps(
                 {
@@ -486,11 +491,16 @@ def test_opencode_plugin_bridge_is_rendered_from_installation_template(tmp_path)
     assert bridge["plugin_bridge"]["pre_tool_policy_entrypoint"]["mcp"] == "aitp_v5_evaluate_pre_tool_policy"
     assert bridge["plugin_bridge"]["pre_tool_policy_entrypoint"]["surface"] == "pre_tool_policy_decision"
     assert bridge["path"] == str(bridge_path)
+    assert bridge["payload_path"] == str(bridge_path.with_suffix(".json"))
     assert [call["hook_name"] for call in bridge["plugin_bridge"]["lifecycle_calls"]] == [
         "pre_commit",
         "pre_tool",
         "post_tool",
     ]
+    sidecar = json.loads(bridge_path.with_suffix(".json").read_text(encoding="utf-8"))
+    assert sidecar["kind"] == "opencode_plugin_bridge"
+    assert sidecar["path"] == str(bridge_path)
+    assert sidecar["plugin_bridge"]["pre_tool_event_entrypoint"]["mcp"] == "aitp_v5_evaluate_adapter_pre_tool_event"
     text = bridge_path.read_text(encoding="utf-8")
     assert "Generated from `runtime_hook_installation`." in text
     assert "aitp_v5_persist_hook_trace_event" in text
