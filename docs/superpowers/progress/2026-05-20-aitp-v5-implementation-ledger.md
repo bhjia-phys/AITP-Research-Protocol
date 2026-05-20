@@ -396,3 +396,68 @@ Each entry should record:
 - Next recommended task:
   - implement one-click Claude settings merge/install guard, or add the OpenCode
     plugin bridge using the same typed hook installation metadata.
+
+### 113673e - Install Claude Hook Settings Safely
+
+- Task: add a Claude Code settings merge installer that preserves existing
+  user/project settings while adding missing AITP v5 hook commands.
+- Planning source:
+  - residual risk after `33afc16`;
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`;
+  - v5 goal requirement for practical runtime hook installation without making
+    generated settings a truth source.
+- Changed files:
+  - `PROJECT_MEMORY.md`
+  - `README.md`
+  - `brain/v5/cli.py`
+  - `brain/v5/hook_install_templates.py`
+  - `brain/v5/hook_protocol_contracts.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoints.py`
+  - `docs/INSTALL_CLAUDE_CODE.md`
+  - hook installation and next-agent planning docs
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `tests/test_v5_runtime_entrypoints.py`
+- Public surface changes:
+  - helper: `install_claude_code_hook_settings`;
+  - CLI: `aitp-v5 --base <workspace> adapter install-hooks claude-code
+    <session-id> --settings .claude/settings.local.json`;
+  - MCP: `aitp_v5_install_claude_code_hook_settings`;
+  - runtime entrypoint: `claude_code_hook_installation`;
+  - public contract: `claude_code_hook_installation` with
+    `summary_inputs_trusted=false`, `can_update_claim_trust=false`, and
+    `can_write_trace_events=true`.
+- Tests:
+  - direct installer preserves existing `PreToolUse`, `Stop`, and non-hook
+    settings fields;
+  - installer appends missing AITP `PreToolUse` and `PostToolUse` entries;
+  - installer is idempotent and avoids duplicate AITP hook entries;
+  - CLI and MCP wrappers return contracted installation payloads;
+  - public surface registry and runtime entrypoint registry advertise the new
+    surface.
+- Verification:
+  - focused red tests failed with missing installer helper, missing CLI
+    subcommand, missing MCP wrapper, unknown public surface, and missing runtime
+    entrypoint.
+  - focused green test set: 5 passed.
+  - regression set
+    `pytest tests\test_v5_adapters.py tests\test_v5_hooks.py
+    tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py
+    tests\test_v5_contracts.py tests\test_v5_architecture_boundaries.py -q`:
+    85 passed.
+  - full v5 focused suite: 287 passed.
+  - `python -m compileall -q brain\v5`: passed.
+  - `git diff --check -- .`: passed.
+  - source module line counts remained below 500 lines.
+  - `python hooks\aitp_v5_hook.py pre-commit ...`: passed with `mode=log`.
+- Residual risks:
+  - Claude `PreToolUse` remains log-only and does not yet compute a full typed
+    blocking policy from Claude tool JSON;
+  - Codex/OpenCode native lifecycle integrations remain incomplete;
+  - installer rejects malformed settings by raising errors instead of offering a
+    repair flow.
+- Next recommended task:
+  - add OpenCode plugin/bridge generation from the same typed hook installation
+    metadata, or deepen the Claude `PreToolUse` policy mapping.
