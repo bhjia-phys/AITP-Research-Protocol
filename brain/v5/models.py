@@ -66,6 +66,7 @@ class TrustUpdateRequest:
     evidence_refs: list[str] = field(default_factory=list)
     code_state_ids: list[str] = field(default_factory=list)
     rationale: str = ""
+    preflight_token: str = ""
     kind: str = "trust_update_request"
 
 

@@ -153,7 +153,8 @@ def _has_trusted_apply_source(payload: dict) -> bool:
     if not isinstance(tool_input, dict):
         return False
     source_kind = str(tool_input.get("source_kind") or "").strip().lower()
-    return source_kind in _TRUSTED_APPLY_SOURCE_KINDS
+    preflight_token = str(tool_input.get("preflight_token") or "").strip()
+    return source_kind in _TRUSTED_APPLY_SOURCE_KINDS and preflight_token.startswith("trust-preflight-")
 
 
 def _claude_pre_tool_output(decision, *, action: str) -> dict:

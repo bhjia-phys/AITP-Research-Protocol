@@ -344,7 +344,7 @@ def aitp_v5_preflight_trust_update(
     base: str, *, action: str, session_id: str, topic_id: str, claim_id: str,
     requested_state: str = "", source_kind: str = "", source_ref: str = "",
     evidence_refs: list[str] | None = None, code_state_ids: list[str] | None = None,
-    rationale: str = "", request_id: str = "",
+    rationale: str = "", request_id: str = "", preflight_token: str = "",
 ) -> dict:
     return {"ok": True, **require_valid_public_surface("trust_update_preflight",
         preflight_trust_update(_ws(base), _trust_request(locals())))}
@@ -354,7 +354,7 @@ def aitp_v5_apply_trust_update(
     base: str, *, action: str, session_id: str, topic_id: str, claim_id: str,
     requested_state: str = "", source_kind: str = "", source_ref: str = "",
     evidence_refs: list[str] | None = None, code_state_ids: list[str] | None = None,
-    rationale: str = "", request_id: str = "",
+    rationale: str = "", request_id: str = "", preflight_token: str = "",
 ) -> dict:
     return {"ok": True, **require_valid_public_surface("trust_update_apply",
         apply_trust_update(_ws(base), _trust_request(locals())))}
@@ -366,7 +366,7 @@ def _trust_request(ns: dict) -> TrustUpdateRequest:
         topic_id=ns["topic_id"], claim_id=ns["claim_id"], requested_state=ns.get("requested_state", ""),
         source_kind=ns.get("source_kind", ""), source_ref=ns.get("source_ref", ""),
         evidence_refs=ns.get("evidence_refs") or [], code_state_ids=ns.get("code_state_ids") or [],
-        rationale=ns.get("rationale", ""))
+        rationale=ns.get("rationale", ""), preflight_token=ns.get("preflight_token", ""))
 
 
 def _linked_code_states(ws, claim_id: str) -> list[CodeStateRecord]:

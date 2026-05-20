@@ -40,7 +40,7 @@ pytest $files -q
 Expected baseline:
 
 ```text
-295 passed
+298 passed
 ```
 
 Do not treat old full-suite failures as blockers unless a task modifies legacy code. The v5 focused suite is the working regression gate for this plan.
@@ -71,7 +71,8 @@ Implemented:
 - Evidence records, tool recipes, tool runs, safe built-in tool executors.
 - Formal-theory checklist executor for auditable definition, assumption, derivation-step, and counterexample-search checks.
 - Code workspace and code state provenance.
-- Trust cards and trust-update preflight/apply.
+- Trust cards and trust-update preflight/apply, including request-bound
+  preflight proof tokens required before confidence-state mutation.
 - Domain packs and executor recommendations.
 - Knowledge connector catalog with IMA as optional example backend.
 - Reference location records for external notes/PDFs/Zotero/IMA/Obsidian locations.
@@ -123,9 +124,9 @@ Major remaining gaps:
   generation and merge installation, OpenCode plugin bridge materialization, and
   post-tool trace persistence surfaces exist, but Codex/OpenCode are not native
   lifecycle integrations yet.
-- Claude Code `PreToolUse` coverage is still entrypoint-level. It does not yet
-  validate every MCP input against full active topic/claim/risk context or a
-  preflight proof token chain.
+- Claude Code `PreToolUse` coverage is still entrypoint-level. It checks
+  trust-apply token presence but does not yet validate every MCP input against
+  full active topic/claim/risk context.
 - Domain tools are useful but intentionally lightweight; formal-theory checks are checklist/provenance checks, not automated theorem proving.
 - Subagent packet planning and result ingestion exist, but live external-subagent execution adapters still need integration tests.
 - Full legacy test suite remains a historical failure set outside the v5 regression gate.

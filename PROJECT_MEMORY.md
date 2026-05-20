@@ -77,10 +77,14 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `PreToolUse` path maps destructive, remote, and expensive Bash commands to a
   v5 typed policy block and returns Claude `permissionDecision=deny`. It also
   recognizes AITP MCP/kernel entrypoints: direct unqualified
-  `aitp_v5_apply_trust_update` calls are denied until a typed preflight/source
-  is present, while typed writes such as `aitp_v5_record_evidence` are logged as
-  their v5 actions. Its `PostToolUse` path persists process trace events through
-  `.aitp/runtime/hook_trace_events.jsonl`.
+  `aitp_v5_apply_trust_update` calls are denied until a typed preflight source
+  and `trust-preflight-*` token are present, while typed writes such as
+  `aitp_v5_record_evidence` are logged as their v5 actions. Its `PostToolUse`
+  path persists process trace events through `.aitp/runtime/hook_trace_events.jsonl`.
+- Trust-changing confidence updates use a request-bound preflight proof token:
+  `preflight_trust_update` emits `preflight_token`/`preflight_proof`, and
+  `apply_trust_update` refuses otherwise policy-allowed mutations unless the
+  request carries the matching token.
 - Hook trace events are durable process history only. They do not create
   evidence, memory, validation, or claim-confidence records.
 

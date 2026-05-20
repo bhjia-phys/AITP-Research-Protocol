@@ -28,6 +28,8 @@ _TRUST_PREFLIGHT_REQUIRED_KEYS = (
     "required_actions",
     "evidence_refs",
     "code_state_ids",
+    "preflight_token",
+    "preflight_proof",
     "truth_source",
     "summary_inputs_trusted",
     "can_update_kernel_state",
@@ -45,6 +47,7 @@ _TRUST_APPLY_REQUIRED_KEYS = (
     "new_state",
     "required_actions",
     "preflight",
+    "preflight_token",
     "truth_source",
     "summary_inputs_trusted",
 )
@@ -85,6 +88,8 @@ def validate_trust_update_preflight(payload: dict[str, Any], *, path: str = "tru
         _require_list(payload.get(key), f"{path}.{key}", result)
         if isinstance(payload.get(key), list) and any(not isinstance(item, str) or not item for item in payload[key]):
             result.add(f"{path}.{key}", "must contain non-empty strings")
+    _require_nonempty_str(payload, "preflight_token", path, result)
+    _validate_preflight_proof(payload.get("preflight_proof"), f"{path}.preflight_proof", result, payload)
 
     if payload.get("truth_source") != "typed_records":
         result.add(f"{path}.truth_source", "must be 'typed_records'")
@@ -123,6 +128,8 @@ def validate_trust_update_apply(payload: dict[str, Any], *, path: str = "trust_a
     _require_mapping(payload.get("request"), f"{path}.request", result)
     if not isinstance(payload.get("applied"), bool):
         result.add(f"{path}.applied", "must be a boolean")
+    if "preflight_token" in payload and not isinstance(payload.get("preflight_token"), str):
+        result.add(f"{path}.preflight_token", "must be a string")
 
     _require_list(payload.get("required_actions"), f"{path}.required_actions", result)
     if isinstance(payload.get("required_actions"), list):
@@ -136,6 +143,12 @@ def validate_trust_update_apply(payload: dict[str, Any], *, path: str = "trust_a
         result.extend(validate_trust_update_preflight(preflight, path=f"{path}.preflight"))
         if payload.get("applied") is True and preflight.get("allowed") is not True:
             result.add(f"{path}.preflight.allowed", "must be true when applied is true")
+        if payload.get("applied") is True:
+            token = payload.get("preflight_token")
+            if not token:
+                result.add(f"{path}.preflight_token", "must be present when applied is true")
+            if token and token != preflight.get("preflight_token"):
+                result.add(f"{path}.preflight_token", "must match preflight.preflight_token when applied is true")
     else:
         _require_mapping(preflight, f"{path}.preflight", result)
 
@@ -161,3 +174,22 @@ def _validate_policy_reason(payload: Any, path: str, result: ContractResult) -> 
         return
     for key in ("policy_id", "message", "severity"):
         _require_nonempty_str(payload, key, path, result)
+
+
+def _validate_preflight_proof(
+    proof: Any,
+    path: str,
+    result: ContractResult,
+    parent_payload: dict[str, Any],
+) -> None:
+    _require_mapping(proof, path, result)
+    if not isinstance(proof, dict):
+        return
+    for key in ("token", "request_id", "request_digest", "policy_digest", "source"):
+        _require_nonempty_str(proof, key, path, result)
+    if proof.get("token") != parent_payload.get("preflight_token"):
+        result.add(f"{path}.token", "must match preflight_token")
+    if proof.get("request_id") != parent_payload.get("request_id"):
+        result.add(f"{path}.request_id", "must match request_id")
+    if proof.get("source") != "trust_update_preflight":
+        result.add(f"{path}.source", "must be 'trust_update_preflight'")

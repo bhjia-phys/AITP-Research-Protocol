@@ -106,8 +106,11 @@ required human checkpoint; ordinary web/literature tool use produces
 `permissionDecision=allow` plus a logged AITP hook decision. AITP MCP calls are
 also mapped into v5 actions: unqualified direct
 `aitp_v5_apply_trust_update` calls are denied with
-`required_actions=["aitp_v5_preflight_trust_update"]`, while typed writes such
-as `aitp_v5_record_evidence` are allowed and logged as `record_evidence`.
+`required_actions=["aitp_v5_preflight_trust_update"]`; a direct trust apply is
+only allowed through the hook when the tool input carries both a trusted
+`source_kind` and a `trust-preflight-*` token. The kernel still validates the
+token during `aitp_v5_apply_trust_update`. Typed writes such as
+`aitp_v5_record_evidence` are allowed and logged as `record_evidence`.
 
 MCP clients can call:
 

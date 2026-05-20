@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from dataclasses import asdict, replace
 
 from brain.v5.models import ClaimRecord, CodeStateRecord, TrustUpdateRequest
@@ -40,6 +42,15 @@ def preflight_trust_update(ws: WorkspacePaths, request: TrustUpdateRequest) -> d
             "orientation_only": source_kind in _SUMMARY_SOURCE_KINDS,
         },
     )
+    policy_reasons = [asdict(reason) for reason in decision.reasons]
+    code_state_ids = [state.code_state_id for state in code_states]
+    proof = _preflight_proof(
+        request,
+        allowed=decision.allowed,
+        policy_reasons=policy_reasons,
+        required_actions=decision.required_actions,
+        code_state_ids=code_state_ids,
+    )
     return {
         "kind": "trust_update_preflight",
         "request": asdict(request),
@@ -51,10 +62,12 @@ def preflight_trust_update(ws: WorkspacePaths, request: TrustUpdateRequest) -> d
         "requested_state": request.requested_state,
         "allowed": decision.allowed,
         "mutation_allowed_after_preflight": decision.allowed,
-        "policy_reasons": [asdict(reason) for reason in decision.reasons],
+        "policy_reasons": policy_reasons,
         "required_actions": decision.required_actions,
         "evidence_refs": list(request.evidence_refs),
-        "code_state_ids": [state.code_state_id for state in code_states],
+        "code_state_ids": code_state_ids,
+        "preflight_token": proof["token"],
+        "preflight_proof": proof,
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
         "can_update_kernel_state": False,
@@ -74,6 +87,15 @@ def apply_trust_update(ws: WorkspacePaths, request: TrustUpdateRequest) -> dict:
             previous_state=claim.confidence_state,
             new_state=claim.confidence_state,
             required_actions=preflight["required_actions"],
+        )
+    if request.preflight_token != preflight["preflight_token"]:
+        return _apply_payload(
+            request,
+            preflight=preflight,
+            applied=False,
+            previous_state=claim.confidence_state,
+            new_state=claim.confidence_state,
+            required_actions=["pass_matching_preflight_token"],
         )
     if request.action != "change_claim_confidence":
         return _apply_payload(
@@ -146,6 +168,7 @@ def _apply_payload(
         "new_state": new_state,
         "required_actions": list(required_actions),
         "preflight": preflight,
+        "preflight_token": request.preflight_token,
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     }
@@ -158,3 +181,41 @@ def _record_links_to_claim(linked_records: dict, claim_id: str) -> bool:
         if isinstance(value, list) and claim_id in value:
             return True
     return False
+
+
+def _preflight_proof(
+    request: TrustUpdateRequest,
+    *,
+    allowed: bool,
+    policy_reasons: list[dict],
+    required_actions: list[str],
+    code_state_ids: list[str],
+) -> dict:
+    request_digest = _digest(_request_token_payload(request, code_state_ids))
+    policy_digest = _digest({
+        "allowed": allowed,
+        "policy_reasons": policy_reasons,
+        "required_actions": list(required_actions),
+    })
+    token_seed = f"{request_digest}|{policy_digest}"
+    token = "trust-preflight-" + hashlib.sha256(token_seed.encode("utf-8")).hexdigest()[:24]
+    return {
+        "token": token,
+        "request_id": request.request_id,
+        "request_digest": request_digest,
+        "policy_digest": policy_digest,
+        "source": "trust_update_preflight",
+    }
+
+
+def _request_token_payload(request: TrustUpdateRequest, code_state_ids: list[str]) -> dict:
+    payload = asdict(request)
+    payload["preflight_token"] = ""
+    payload["source_kind"] = payload["source_kind"].strip().lower()
+    payload["code_state_ids"] = list(code_state_ids)
+    return payload
+
+
+def _digest(payload: dict) -> str:
+    raw = json.dumps(payload, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+    return "sha256:" + hashlib.sha256(raw.encode("utf-8")).hexdigest()

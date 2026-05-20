@@ -1758,6 +1758,9 @@ Implementation implications:
   state ids, and source kind while keeping summary files orientation-only.
 - The preflight payload is a public adapter/MCP/CLI contract and should be
   contract-validated before wrappers return it.
+- Preflight should emit a request-bound proof token. Apply must carry the
+  matching token before mutating typed claim confidence, so a raw apply call
+  cannot silently skip the preflight step.
 - Adapter packets should name `aitp_v5_preflight_trust_update` as a mandatory
   kernel entrypoint so runtimes have an explicit path for trust-changing action
   preflight.

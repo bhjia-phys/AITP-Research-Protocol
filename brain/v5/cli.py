@@ -443,6 +443,7 @@ def _add_trust_request_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--source-ref", default="")
     p.add_argument("--evidence-ref", action="append", default=[], dest="evidence_refs")
     p.add_argument("--code-state-id", action="append", default=[], dest="code_state_ids")
+    p.add_argument("--preflight-token", default="")
     p.add_argument("--rationale", default=""); p.add_argument("--request-id", default="")
 
 
@@ -452,6 +453,7 @@ def _trust_update_request_from_args(args: argparse.Namespace) -> TrustUpdateRequ
         action=args.action, session_id=args.session_id, topic_id=args.topic_id, claim_id=args.claim_id,
         requested_state=args.requested_state, source_kind=args.source_kind, source_ref=args.source_ref,
         evidence_refs=args.evidence_refs, code_state_ids=args.code_state_ids, rationale=args.rationale,
+        preflight_token=args.preflight_token,
     )
 
 

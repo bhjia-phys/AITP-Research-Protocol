@@ -154,13 +154,46 @@ def test_preflight_allows_code_method_promotion_with_evidence_and_code_state(tmp
     assert payload["mutation_allowed_after_preflight"] is True
     assert payload["required_actions"] == []
     assert payload["code_state_ids"] == [code_state.code_state_id]
+    assert payload["preflight_token"].startswith("trust-preflight-")
+    assert payload["preflight_proof"]["token"] == payload["preflight_token"]
+    assert payload["preflight_proof"]["request_id"] == "trust-req-promote"
+
+
+def test_apply_confidence_change_requires_matching_preflight_token(tmp_path):
+    from brain.v5.trust_updates import TrustUpdateRequest, apply_trust_update
+    from brain.v5.workspace import get_claim
+
+    ws, claim = _seed_claim(tmp_path)
+    request = TrustUpdateRequest(
+        request_id="trust-req-apply",
+        action="change_claim_confidence",
+        session_id="s1",
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        requested_state="locally_checked",
+        source_kind="execution_brief",
+        source_ref="brief:s1",
+        rationale="A typed preflight is required before a confidence update.",
+    )
+
+    payload = apply_trust_update(ws, request)
+    persisted = get_claim(ws, claim.claim_id)
+
+    assert payload["kind"] == "trust_update_apply"
+    assert payload["applied"] is False
+    assert payload["preflight"]["allowed"] is True
+    assert payload["preflight_token"] == ""
+    assert payload["required_actions"] == ["pass_matching_preflight_token"]
+    assert persisted.confidence_state == "hypothesis"
 
 
 def test_apply_confidence_change_updates_registry_and_topic_ledger(tmp_path):
+    from dataclasses import replace
+
     from brain.v5.contracts import validate_trust_update_apply
     from brain.v5.models import ClaimRecord
     from brain.v5.store import read_record
-    from brain.v5.trust_updates import TrustUpdateRequest, apply_trust_update
+    from brain.v5.trust_updates import TrustUpdateRequest, apply_trust_update, preflight_trust_update
     from brain.v5.workspace import get_claim
 
     ws, claim = _seed_claim(tmp_path)
@@ -175,6 +208,8 @@ def test_apply_confidence_change_updates_registry_and_topic_ledger(tmp_path):
         source_ref="brief:s1",
         rationale="A typed kernel brief and evidence review justify the confidence update.",
     )
+    preflight = preflight_trust_update(ws, request)
+    request = replace(request, preflight_token=preflight["preflight_token"])
 
     payload = apply_trust_update(ws, request)
     registry_claim = get_claim(ws, claim.claim_id)
@@ -188,6 +223,7 @@ def test_apply_confidence_change_updates_registry_and_topic_ledger(tmp_path):
     assert payload["previous_state"] == "hypothesis"
     assert payload["new_state"] == "locally_checked"
     assert payload["preflight"]["allowed"] is True
+    assert payload["preflight_token"] == preflight["preflight_token"]
     assert registry_claim.confidence_state == "locally_checked"
     assert ledger_claim.confidence_state == "locally_checked"
     assert validate_trust_update_apply(payload).ok is True
@@ -284,6 +320,7 @@ def test_cli_trust_preflight_returns_policy_payload(tmp_path, capsys):
     assert payload["kind"] == "trust_update_preflight"
     assert payload["allowed"] is False
     assert payload["mutation_allowed_after_preflight"] is False
+    assert payload["preflight_token"].startswith("trust-preflight-")
     assert validate_trust_update_preflight(payload).ok is True
 
 
@@ -292,6 +329,28 @@ def test_cli_trust_apply_confidence_change_updates_claim(tmp_path, capsys):
     from brain.v5.workspace import get_claim, init_workspace
 
     _, claim = _seed_claim(tmp_path)
+    preflight = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "trust",
+            "preflight",
+            "change_claim_confidence",
+            "--session",
+            "s1",
+            "--topic",
+            "fqhe",
+            "--claim",
+            claim.claim_id,
+            "--requested-state",
+            "locally_checked",
+            "--source-kind",
+            "execution_brief",
+            "--source-ref",
+            "brief:s1",
+        ],
+        capsys,
+    )
 
     payload = _invoke(
         [
@@ -312,6 +371,8 @@ def test_cli_trust_apply_confidence_change_updates_claim(tmp_path, capsys):
             "execution_brief",
             "--source-ref",
             "brief:s1",
+            "--preflight-token",
+            preflight["preflight_token"],
         ],
         capsys,
     )
@@ -321,6 +382,7 @@ def test_cli_trust_apply_confidence_change_updates_claim(tmp_path, capsys):
     assert payload["ok"] is True
     assert payload["kind"] == "trust_update_apply"
     assert payload["applied"] is True
+    assert payload["preflight_token"] == preflight["preflight_token"]
     assert persisted.confidence_state == "locally_checked"
     assert validate_trust_update_apply(payload).ok is True
 
@@ -346,7 +408,46 @@ def test_mcp_preflight_trust_update_returns_contract_payload(tmp_path):
     assert payload["kind"] == "trust_update_preflight"
     assert payload["allowed"] is False
     assert "query_execution_brief_or_typed_record" in payload["required_actions"]
+    assert payload["preflight_token"].startswith("trust-preflight-")
     assert validate_trust_update_preflight(payload).ok is True
+
+
+def test_mcp_apply_trust_update_accepts_matching_preflight_token(tmp_path):
+    from brain.v5.contracts import validate_trust_update_apply
+    from brain.v5.mcp_tools import aitp_v5_apply_trust_update, aitp_v5_preflight_trust_update
+    from brain.v5.workspace import get_claim, init_workspace
+
+    _, claim = _seed_claim(tmp_path)
+    preflight = aitp_v5_preflight_trust_update(
+        str(tmp_path),
+        action="change_claim_confidence",
+        session_id="s1",
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        requested_state="locally_checked",
+        source_kind="execution_brief",
+        source_ref="brief:s1",
+    )
+
+    payload = aitp_v5_apply_trust_update(
+        str(tmp_path),
+        action="change_claim_confidence",
+        session_id="s1",
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        requested_state="locally_checked",
+        source_kind="execution_brief",
+        source_ref="brief:s1",
+        preflight_token=preflight["preflight_token"],
+    )
+    persisted = get_claim(init_workspace(tmp_path), claim.claim_id)
+
+    assert payload["ok"] is True
+    assert payload["kind"] == "trust_update_apply"
+    assert payload["applied"] is True
+    assert payload["preflight_token"] == preflight["preflight_token"]
+    assert persisted.confidence_state == "locally_checked"
+    assert validate_trust_update_apply(payload).ok is True
 
 
 def test_mcp_apply_trust_update_blocks_summary_source(tmp_path):
