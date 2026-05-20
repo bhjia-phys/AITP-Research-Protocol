@@ -331,6 +331,23 @@ def test_cli_adapter_hook_bridge_writes_codex_bridge_from_packet(tmp_path, capsy
     assert payload["summary_inputs_trusted"] is False
     assert payload["can_update_kernel_state"] is False
     assert payload["pre_tool_policy_entrypoint"]["surface"] == "pre_tool_policy_decision"
+    assert payload["pre_tool_policy_entrypoint"]["input_schema"]["required"] == [
+        "session_id",
+        "action",
+        "claim_id",
+        "risk_level",
+    ]
+    assert "human_checkpoint_id" in payload["pre_tool_policy_entrypoint"]["input_schema"]["optional"]
+    assert payload["pre_tool_event_entrypoint"]["platform_event_schema"]["tool_input_optional"] == [
+        "claim_id",
+        "evidence_refs",
+        "code_state_ids",
+        "source_kind",
+        "source_ref",
+        "orientation_only",
+        "risk_level",
+        "human_checkpoint_id",
+    ]
     assert payload["pre_tool_event_entrypoint"] == {
         "cli": "aitp-v5 adapter pre-tool-event <runtime> <session-id> <args>",
         "mcp": "aitp_v5_evaluate_adapter_pre_tool_event",
@@ -341,6 +358,24 @@ def test_cli_adapter_hook_bridge_writes_codex_bridge_from_packet(tmp_path, capsy
         "can_update_claim_trust": False,
         "requires_bridge_payload": True,
         "requires_platform_event": True,
+        "platform_event_schema": {
+            "required": ["runtime", "session_id"],
+            "hook_field": "hook_name_or_lifecycle_event",
+            "tool_name_fields": ["tool_name", "tool.name"],
+            "tool_input_fields": ["tool_input", "tool.input"],
+            "tool_input_optional": [
+                "claim_id",
+                "evidence_refs",
+                "code_state_ids",
+                "source_kind",
+                "source_ref",
+                "orientation_only",
+                "risk_level",
+                "human_checkpoint_id",
+            ],
+            "truth_source": "platform_event_for_routing_only",
+            "summary_inputs_trusted": False,
+        },
     }
     assert payload["gate_protocols"]["source_protocol_field"] == "runtime_gate_protocols"
     assert payload["gate_protocols"]["validate_claim"]["pre_tool_policy"] == "aitp_v5_evaluate_pre_tool_policy"
@@ -383,6 +418,7 @@ def test_cli_adapter_hook_bridge_writes_codex_bridge_from_packet(tmp_path, capsy
     assert sidecar["path"] == str(bridge_path)
     assert sidecar["pre_tool_event_runner"]["bridge_payload_source"] == "payload_path"
     assert sidecar["pre_tool_event_entrypoint"]["mcp"] == "aitp_v5_evaluate_adapter_pre_tool_event"
+    assert sidecar["pre_tool_policy_entrypoint"]["input_schema"]["optional"][-1] == "human_checkpoint_id"
     text = bridge_path.read_text(encoding="utf-8")
     assert "Generated from `runtime_hook_installation`." in text
     assert "python hooks/aitp_v5_hook.py pre-tool" in text
@@ -390,6 +426,7 @@ def test_cli_adapter_hook_bridge_writes_codex_bridge_from_packet(tmp_path, capsy
     assert "evaluate_pre_tool_policy" in text
     assert f"--bridge-path {bridge_path.with_suffix('.json')}" in text
     assert "hooks/aitp_v5_adapter_event_runner.py" in text
+    assert "human_checkpoint_id" in text
 
 
 def test_mcp_codex_hook_bridge_wrapper_returns_contract_payload(tmp_path):
@@ -630,6 +667,16 @@ def test_opencode_plugin_bridge_is_rendered_from_installation_template(tmp_path)
     assert bridge["plugin_bridge"]["pre_tool_policy_entrypoint"]["cli"] == "aitp-v5 policy pre-tool <args>"
     assert bridge["plugin_bridge"]["pre_tool_policy_entrypoint"]["mcp"] == "aitp_v5_evaluate_pre_tool_policy"
     assert bridge["plugin_bridge"]["pre_tool_policy_entrypoint"]["surface"] == "pre_tool_policy_decision"
+    assert bridge["plugin_bridge"]["pre_tool_policy_entrypoint"]["input_schema"]["required"] == [
+        "session_id",
+        "action",
+        "claim_id",
+        "risk_level",
+    ]
+    assert "human_checkpoint_id" in bridge["plugin_bridge"]["pre_tool_policy_entrypoint"]["input_schema"]["optional"]
+    assert bridge["plugin_bridge"]["pre_tool_event_entrypoint"]["platform_event_schema"]["tool_input_optional"][-1] == (
+        "human_checkpoint_id"
+    )
     assert bridge["path"] == str(bridge_path)
     assert bridge["payload_path"] == str(bridge_path.with_suffix(".json"))
     assert bridge["plugin_bridge"]["pre_tool_event_runner"]["argv"] == [
@@ -666,6 +713,9 @@ def test_opencode_plugin_bridge_is_rendered_from_installation_template(tmp_path)
     assert sidecar["path"] == str(bridge_path)
     assert sidecar["plugin_bridge"]["pre_tool_event_runner"]["bridge_payload_source"] == "payload_path"
     assert sidecar["plugin_bridge"]["pre_tool_event_entrypoint"]["mcp"] == "aitp_v5_evaluate_adapter_pre_tool_event"
+    assert sidecar["plugin_bridge"]["pre_tool_event_entrypoint"]["platform_event_schema"]["tool_input_optional"][-1] == (
+        "human_checkpoint_id"
+    )
     text = bridge_path.read_text(encoding="utf-8")
     assert "Generated from `runtime_hook_installation`." in text
     assert "aitp_v5_persist_hook_trace_event" in text
@@ -673,6 +723,7 @@ def test_opencode_plugin_bridge_is_rendered_from_installation_template(tmp_path)
     assert "summary_inputs_trusted=false" in text
     assert f"--bridge-path {bridge_path.with_suffix('.json')}" in text
     assert "hooks/aitp_v5_adapter_event_runner.py" in text
+    assert "human_checkpoint_id" in text
 
 
 def test_cli_adapter_hook_bridge_writes_opencode_bridge_from_packet(tmp_path, capsys):
@@ -711,6 +762,24 @@ def test_cli_adapter_hook_bridge_writes_opencode_bridge_from_packet(tmp_path, ca
         "can_update_claim_trust": False,
         "requires_bridge_payload": True,
         "requires_platform_event": True,
+        "platform_event_schema": {
+            "required": ["runtime", "session_id"],
+            "hook_field": "hook_name_or_lifecycle_event",
+            "tool_name_fields": ["tool_name", "tool.name"],
+            "tool_input_fields": ["tool_input", "tool.input"],
+            "tool_input_optional": [
+                "claim_id",
+                "evidence_refs",
+                "code_state_ids",
+                "source_kind",
+                "source_ref",
+                "orientation_only",
+                "risk_level",
+                "human_checkpoint_id",
+            ],
+            "truth_source": "platform_event_for_routing_only",
+            "summary_inputs_trusted": False,
+        },
     }
     assert payload["plugin_bridge"]["gate_protocols"]["source_protocol_field"] == "runtime_gate_protocols"
     assert payload["plugin_bridge"]["gate_protocols"]["validate_claim"]["sequence"][1] == "evaluate_pre_tool_policy"

@@ -14,6 +14,7 @@ from brain.v5.contracts import (
     _require_mapping,
     _require_nonempty_str,
 )
+from brain.v5.hook_entrypoint_schemas import pre_tool_event_platform_schema, pre_tool_policy_input_schema
 
 
 def validate_runtime_hook_protocols(payload: Any, path: str, result: ContractResult) -> None:
@@ -432,6 +433,7 @@ def _validate_pre_tool_policy_entrypoint(payload: Any, path: str, result: Contra
         "summary_inputs_trusted": False,
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
+        "input_schema": pre_tool_policy_input_schema(),
     }
     for key, value in expected.items():
         if payload.get(key) != value:
@@ -452,6 +454,7 @@ def _validate_pre_tool_event_entrypoint(payload: Any, path: str, result: Contrac
         "can_update_claim_trust": False,
         "requires_bridge_payload": True,
         "requires_platform_event": True,
+        "platform_event_schema": pre_tool_event_platform_schema(),
     }
     for key, value in expected.items():
         if payload.get(key) != value:

@@ -58,6 +58,10 @@ def test_public_surface_validator_accepts_tool_executor_catalog():
 
 def test_public_surface_validator_accepts_codex_hook_bridge():
     from brain.v5.adapter_protocols import mandatory_gate_protocols
+    from brain.v5.hook_entrypoint_schemas import (
+        pre_tool_event_platform_schema,
+        pre_tool_policy_input_schema,
+    )
     from brain.v5.public_surfaces import require_valid_public_surface
 
     bridge = {
@@ -77,6 +81,7 @@ def test_public_surface_validator_accepts_codex_hook_bridge():
             "summary_inputs_trusted": False,
             "can_update_kernel_state": False,
             "can_update_claim_trust": False,
+            "input_schema": pre_tool_policy_input_schema(),
         },
         "pre_tool_event_entrypoint": {
             "cli": "aitp-v5 adapter pre-tool-event <runtime> <session-id> <args>",
@@ -88,6 +93,7 @@ def test_public_surface_validator_accepts_codex_hook_bridge():
             "can_update_claim_trust": False,
             "requires_bridge_payload": True,
             "requires_platform_event": True,
+            "platform_event_schema": pre_tool_event_platform_schema(),
         },
         "gate_protocols": {
             "source_protocol_field": "runtime_gate_protocols",
@@ -198,6 +204,10 @@ def test_public_surface_validator_accepts_claude_code_hook_installation():
 
 def test_public_surface_validator_accepts_opencode_plugin_bridge():
     from brain.v5.adapter_protocols import mandatory_gate_protocols
+    from brain.v5.hook_entrypoint_schemas import (
+        pre_tool_event_platform_schema,
+        pre_tool_policy_input_schema,
+    )
     from brain.v5.public_surfaces import require_valid_public_surface
 
     payload = {
@@ -221,6 +231,7 @@ def test_public_surface_validator_accepts_opencode_plugin_bridge():
                 "summary_inputs_trusted": False,
                 "can_update_kernel_state": False,
                 "can_update_claim_trust": False,
+                "input_schema": pre_tool_policy_input_schema(),
             },
             "pre_tool_event_entrypoint": {
                 "cli": "aitp-v5 adapter pre-tool-event <runtime> <session-id> <args>",
@@ -232,6 +243,7 @@ def test_public_surface_validator_accepts_opencode_plugin_bridge():
                 "can_update_claim_trust": False,
                 "requires_bridge_payload": True,
                 "requires_platform_event": True,
+                "platform_event_schema": pre_tool_event_platform_schema(),
             },
             "gate_protocols": {
                 "source_protocol_field": "runtime_gate_protocols",

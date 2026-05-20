@@ -300,6 +300,12 @@ aitp_v5_evaluate_adapter_pre_tool_event(base, bridge_payload, platform_event)
 Generated Codex/OpenCode bridge payloads include `pre_tool_event_entrypoint`
 metadata with those CLI/MCP targets, the required `bridge_payload` and
 `platform_event` inputs, and the same `pre_tool_policy_decision` surface.
+The same generated payloads and sidecars expose
+`pre_tool_policy_entrypoint.input_schema` and
+`pre_tool_event_entrypoint.platform_event_schema`. The schema metadata names
+the required policy inputs (`session_id`, `action`, `claim_id`, `risk_level`),
+optional typed refs/source metadata, and optional `human_checkpoint_id`; it is a
+machine-readable adapter contract, not a truth source.
 
 ## Claude Code Template
 

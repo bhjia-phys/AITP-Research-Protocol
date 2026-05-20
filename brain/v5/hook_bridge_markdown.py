@@ -102,6 +102,8 @@ def _shared_pre_tool_policy_lines() -> list[str]:
         "- truth_source: `typed_records`",
         "- can_update_kernel_state=false",
         "- can_update_claim_trust=false",
+        "- required inputs: `session_id`, `action`, `claim_id`, `risk_level`",
+        "- optional inputs include: `evidence_refs`, `code_state_ids`, `source_kind`, `source_ref`, `orientation_only`, `human_checkpoint_id`",
         "",
     ]
 
@@ -115,6 +117,7 @@ def _adapter_pre_tool_event_lines(*, runner: dict[str, Any], entrypoint: dict[st
         f"- bridge_payload_source: `{runner['bridge_payload_source']}`",
         f"- mcp: `{entrypoint['mcp']}`",
         f"- surface: `{entrypoint['surface']}`",
+        "- platform event optional tool inputs include: `claim_id`, `evidence_refs`, `code_state_ids`, `source_kind`, `source_ref`, `orientation_only`, `risk_level`, `human_checkpoint_id`",
         "",
         "```powershell",
         _command_string(runner["argv"]),

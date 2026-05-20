@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from brain.v5.hook_bridge_markdown import codex_bridge_markdown, opencode_bridge_markdown
+from brain.v5.hook_entrypoint_schemas import pre_tool_event_platform_schema, pre_tool_policy_input_schema
 from brain.v5.hook_runner_payloads import build_pre_tool_event_runner
 
 
@@ -24,6 +25,7 @@ _PRE_TOOL_POLICY_ENTRYPOINT = {
     "summary_inputs_trusted": False,
     "can_update_kernel_state": False,
     "can_update_claim_trust": False,
+    "input_schema": pre_tool_policy_input_schema(),
 }
 _PRE_TOOL_EVENT_ENTRYPOINT = {
     "cli": "aitp-v5 adapter pre-tool-event <runtime> <session-id> <args>",
@@ -35,6 +37,7 @@ _PRE_TOOL_EVENT_ENTRYPOINT = {
     "can_update_claim_trust": False,
     "requires_bridge_payload": True,
     "requires_platform_event": True,
+    "platform_event_schema": pre_tool_event_platform_schema(),
 }
 
 

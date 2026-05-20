@@ -132,6 +132,11 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `pre_tool_policy_decision` surface. Generated Codex/OpenCode bridge payloads
   advertise this as `pre_tool_event_entrypoint` so runtime adapters can discover
   the correct CLI/MCP invocation without prose scraping. The bridge
+  entrypoints also advertise machine-readable
+  `pre_tool_policy_entrypoint.input_schema` and
+  `pre_tool_event_entrypoint.platform_event_schema`, including `risk_level` and
+  optional `human_checkpoint_id`, while typed kernel records remain the
+  authority.
   materializers write a machine-readable JSON sidecar beside the generated
   Markdown and return its `payload_path`; runtime hook runners should use
   `adapter pre-tool-event --bridge-path <payload-path> --event-json <json>` to
