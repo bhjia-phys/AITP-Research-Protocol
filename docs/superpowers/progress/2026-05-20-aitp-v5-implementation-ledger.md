@@ -1173,3 +1173,52 @@ Each entry should record:
   - implement a minimal native Codex/OpenCode lifecycle wrapper or smoke test
     that maps an actual tool event to `evaluate_bridge_gate_pre_tool_policy`, or
     broaden pre-tool policy coverage for additional MCP inputs.
+
+### 9a5f5be - Map Bridge Lifecycle PreTool Events
+
+- Task: add an adapter-neutral lifecycle event wrapper that maps generated
+  Codex/OpenCode bridge `pre_tool` events onto the typed-record-backed gate
+  pre-tool policy path.
+- Planning source:
+  - residual risk after `b96500c`;
+  - hook installation plan requirement for native-style Codex/OpenCode lifecycle
+    invocation;
+  - v5 invariant that bridge files are orientation/runtime instructions, while
+    policy decisions still come from typed kernel records.
+- Changed files:
+  - `PROJECT_MEMORY.md`
+  - `README.md`
+  - `brain/v5/adapter_runtime.py`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+  - `tests/test_v5_bridge_runtime.py`
+- Public/runtime behavior changes:
+  - `evaluate_bridge_lifecycle_event` now accepts an adapter-neutral
+    `pre_tool` event payload, confirms the bridge declares a pre-tool lifecycle
+    call, then delegates to `evaluate_bridge_gate_pre_tool_policy`;
+  - returned decisions include a `runtime_event` audit field with the consumed
+    lifecycle event and action;
+  - unsupported lifecycle events or bridges without pre-tool lifecycle metadata
+    fail explicitly.
+- Tests:
+  - generated Codex and OpenCode bridges both map a `pre_tool` event for
+    `promote_to_l2` into the expected typed-record-backed policy block;
+  - returned payloads validate as `pre_tool_policy_decision` public surfaces.
+- Verification:
+  - red test failed with missing `evaluate_bridge_lifecycle_event` import;
+  - focused green set:
+    `pytest tests/test_v5_bridge_runtime.py tests/test_v5_adapters.py tests/test_v5_pretool_policy.py tests/test_v5_architecture_boundaries.py -q`:
+    35 passed;
+  - full v5 focused suite: 311 passed;
+  - `python -m compileall -q brain\v5`: passed;
+  - `git diff --check -- .`: passed;
+  - source module line counts remained below 500 lines
+    (`adapter_runtime.py`: 115, `cli.py`: 464, `adapter_contracts.py`: 495).
+- Residual risks:
+  - the wrapper is still platform-neutral; a Codex/OpenCode native installer or
+    plugin wrapper must call it from real platform hook events;
+  - pre-tool policy coverage still does not cover every possible MCP input.
+- Next recommended task:
+  - add a minimal platform-specific Codex/OpenCode wrapper over
+    `evaluate_bridge_lifecycle_event`, or broaden the shared pre-tool policy for
+    one additional trust-relevant MCP input class.
