@@ -884,3 +884,58 @@ Each entry should record:
   - implement one small native adapter invocation/smoke test for OpenCode or
     Codex that consumes the advertised `pre_tool_policy_entrypoint`, or add
     shared-surface tests for summary-sourced validation/promotion denial.
+
+### 1b02058 - Expose PreTool Policy Reasons
+
+- Task: make `pre_tool_policy_decision` carry machine-readable policy reasons
+  so adapters and reviewers can audit warn/block causes without parsing
+  free-form hook messages.
+- Planning source:
+  - residual risk after `5f17915` and `d898048`;
+  - v5 invariant that summary/orientation-only surfaces cannot drive
+    trust-changing validation or promotion;
+  - reviewability requirement in
+    `docs/superpowers/plans/2026-05-20-aitp-v5-goal-instructions.md`.
+- Changed files:
+  - `PROJECT_MEMORY.md`
+  - `README.md`
+  - `brain/v5/hook_protocol_contracts.py`
+  - `brain/v5/pretool_policy.py`
+  - `docs/INSTALL_CLAUDE_CODE.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+  - `tests/test_v5_pretool_policy.py`
+  - `tests/test_v5_public_surfaces.py`
+- Public/runtime behavior changes:
+  - `pre_tool_policy_decision` now includes `policy_reasons`;
+  - each reason includes `policy_id`, `severity`, and `message`;
+  - public-surface validation now requires reason objects to be structured;
+  - CLI/MCP pre-tool policy calls expose hard blocks such as
+    `no_summary_surface_as_truth_source` directly in JSON.
+- Tests:
+  - CLI pre-tool policy blocks a summary-orientation sourced validation attempt
+    and exposes `no_summary_surface_as_truth_source`;
+  - MCP pre-tool policy exposes `no_l2_promotion_without_evidence_ref`;
+  - public-surface validator accepts `policy_reasons`.
+- Verification:
+  - focused red set failed because `policy_reasons` was missing;
+  - focused green set:
+    `pytest tests/test_v5_pretool_policy.py::test_cli_pre_tool_policy_exposes_machine_readable_summary_source_block tests/test_v5_pretool_policy.py::test_mcp_pre_tool_policy_exposes_machine_readable_policy_reasons tests/test_v5_public_surfaces.py::test_public_surface_validator_accepts_pre_tool_policy_decision -q`:
+    3 passed;
+  - regression set:
+    `pytest tests/test_v5_pretool_policy.py tests/test_v5_public_surfaces.py tests/test_v5_hooks.py tests/test_v5_mcp_tools.py tests/test_v5_cli.py tests/test_v5_contracts.py tests/test_v5_architecture_boundaries.py -q`:
+    98 passed;
+  - full v5 focused suite: 306 passed;
+  - `python -m compileall -q brain\v5`: passed;
+  - `git diff --check -- .`: passed;
+  - source module line counts remained below 500 lines;
+  - `python hooks\aitp_v5_hook.py pre-commit ...`: passed with `mode=log`.
+- Residual risks:
+  - Claude native hook output still nests the shared policy decision inside its
+    existing Claude-specific `aitp` payload; the shared CLI/MCP surface is the
+    cleaner adapter-neutral path;
+  - context policy still covers validation/L2-promotion requirements rather than
+    every MCP input or all active risk-context dimensions.
+- Next recommended task:
+  - implement a small adapter-neutral smoke path that consumes
+    `policy_reasons` for routing, or continue the main plan with the next typed
+    kernel capability.
