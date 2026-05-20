@@ -40,7 +40,7 @@ pytest $files -q
 Expected baseline:
 
 ```text
-291 passed
+293 passed
 ```
 
 Do not treat old full-suite failures as blockers unless a task modifies legacy code. The v5 focused suite is the working regression gate for this plan.
@@ -107,6 +107,8 @@ Implemented:
   v5 trace bridge.
 - Claude Code hook settings can be safely merged into an existing settings file
   without clobbering non-AITP hooks or duplicating AITP hook commands.
+- Claude Code `PreToolUse` maps destructive, remote, and expensive Bash tool
+  calls to a typed v5 policy block and Claude `permissionDecision=deny`.
 - OpenCode plugin bridge instructions can be materialized from an actual adapter
   packet through CLI/MCP/runtime public surfaces.
 - A v5 implementation ledger exists for step-by-step review.

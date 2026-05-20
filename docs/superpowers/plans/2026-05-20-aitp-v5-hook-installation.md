@@ -22,6 +22,8 @@ Implemented:
 - Claude Code hook settings writer derived from `runtime_hook_installation`;
 - Claude Code safe settings merge installer that preserves existing settings and
   deduplicates AITP v5 hook commands;
+- Claude Code `PreToolUse` wrapper maps destructive, remote, and expensive Bash
+  tool JSON to a typed v5 policy block and Claude `permissionDecision=deny`;
 - Claude Code hook wrapper that can persist `PostToolUse` traces through the v5
   trace bridge;
 - CLI/MCP runtime bridge for persisting `post-tool` hook trace events through
@@ -239,8 +241,9 @@ This shape follows the Claude Code hooks reference:
 https://code.claude.com/docs/en/hooks.
 The current wrapper:
 
-- maps `PreToolUse` to a log-only v5 pre-tool decision without bypassing Claude
-  Code's own permission flow;
+- maps `PreToolUse` to a v5 pre-tool decision and returns Claude
+  `hookSpecificOutput.permissionDecision`; destructive, remote, and expensive
+  Bash commands currently deny with `request_human_checkpoint`;
 - maps `PostToolUse` to a v5 `TraceEvent` and persists it through
   `.aitp/runtime/hook_trace_events.jsonl`;
 - keeps `summary_inputs_trusted=false` and `can_update_claim_trust=false`.
@@ -282,5 +285,5 @@ Future implementation should add tests and installer assets for:
 
 - Codex runtime instructions or hook bridge that can call this adapter directly;
 - native OpenCode plugin invocation that calls the generated bridge automatically;
-- deeper Claude Code `PreToolUse` typed policy mapping beyond the current
-  log-only wrapper.
+- broader Claude Code `PreToolUse` typed policy coverage beyond Bash
+  destructive/remote/expensive command mapping.

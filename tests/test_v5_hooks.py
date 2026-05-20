@@ -332,3 +332,88 @@ def test_claude_hook_script_post_tool_persists_trace_event(tmp_path):
     events = read_trace_events(ws.root / "runtime" / "hook_trace_events.jsonl")
     assert len(events) == 1
     assert events[0].payload["tool_name"] == "Bash"
+
+
+def test_claude_hook_script_pre_tool_denies_destructive_bash_with_typed_policy(tmp_path):
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parents[1]
+    script = repo_root / "hooks" / "aitp_v5_claude_hook.py"
+    hook_input = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "Bash",
+        "tool_input": {"command": "rm -rf data"},
+    }
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "pre-tool",
+            "--base",
+            str(tmp_path),
+            "--session-id",
+            "s1",
+        ],
+        input=json.dumps(hook_input),
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["hookSpecificOutput"] == {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "deny",
+        "permissionDecisionReason": "blocked destructive_action; claude_pre_tool_requires_human_checkpoint; required: request_human_checkpoint",
+    }
+    assert payload["aitp"]["kind"] == "hook_decision"
+    assert payload["aitp"]["hook_name"] == "pre_tool"
+    assert payload["aitp"]["block"] is True
+    assert payload["aitp"]["required_actions"] == ["request_human_checkpoint"]
+    assert payload["aitp"]["summary_inputs_trusted"] is False
+
+
+def test_claude_hook_script_pre_tool_allows_web_search_with_typed_log(tmp_path):
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    repo_root = Path(__file__).resolve().parents[1]
+    script = repo_root / "hooks" / "aitp_v5_claude_hook.py"
+    hook_input = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "WebSearch",
+        "tool_input": {"query": "fractional quantum Hall review"},
+    }
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "pre-tool",
+            "--base",
+            str(tmp_path),
+            "--session-id",
+            "s1",
+        ],
+        input=json.dumps(hook_input),
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["hookSpecificOutput"] == {
+        "hookEventName": "PreToolUse",
+        "permissionDecision": "allow",
+        "permissionDecisionReason": "logged literature_or_web_tool_use; no policy block",
+    }
+    assert payload["aitp"]["block"] is False
+    assert payload["aitp"]["mode"] == "log"

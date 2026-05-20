@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from brain.v5.brief import build_execution_brief
 from brain.v5.hook_adapters import hook_decision_payload, hook_trace_event_payload
 from brain.v5.hooks import decide_pre_tool_use, post_tool_use_trace_event
-from brain.v5.policy import PolicyDecision
+from brain.v5.policy import PolicyDecision, PolicyReason
 from brain.v5.trace import persist_hook_trace_event
 from brain.v5.workspace import get_session_binding, init_workspace
 
@@ -44,9 +44,9 @@ def _dispatch(args: argparse.Namespace, claude_payload: dict) -> dict:
         decision = decide_pre_tool_use(
             action=action,
             risk_level="guided",
-            policy_decision=PolicyDecision(allowed=True, action=action),
+            policy_decision=_policy_from_claude_tool(action),
         )
-        return _claude_continue({"aitp": hook_decision_payload(decision, hook_name="pre_tool")})
+        return _claude_pre_tool_output(decision)
     if args.command == "post-tool":
         ws = init_workspace(args.base)
         binding = get_session_binding(ws, args.session_id)
@@ -77,11 +77,45 @@ def _action_from_claude_tool(payload: dict) -> str:
     tool_name = str(payload.get("tool_name") or "").lower()
     if tool_name == "bash":
         command = str((payload.get("tool_input") or {}).get("command") or "").lower()
-        if any(token in command for token in ("rm -rf", "git reset --hard", "ssh ", "scp ")):
-            return "remote_or_destructive_tool_use"
+        if any(token in command for token in ("rm -rf", "git reset --hard")):
+            return "destructive_action"
+        if any(token in command for token in ("ssh ", "scp ")):
+            return "remote_execution"
+        if any(token in command for token in ("sbatch", "qsub", "srun ")):
+            return "expensive_compute"
     if tool_name in {"webfetch", "websearch"}:
         return "literature_or_web_tool_use"
     return "claude_tool_use"
+
+
+def _policy_from_claude_tool(action: str) -> PolicyDecision:
+    if action in {"destructive_action", "remote_execution", "expensive_compute"}:
+        return PolicyDecision(
+            allowed=False,
+            action=action,
+            reasons=[
+                PolicyReason(
+                    policy_id="claude_pre_tool_requires_human_checkpoint",
+                    message="High-risk Claude tool use requires an explicit human checkpoint before execution.",
+                    severity="block",
+                )
+            ],
+            required_actions=["request_human_checkpoint"],
+        )
+    return PolicyDecision(allowed=True, action=action)
+
+
+def _claude_pre_tool_output(decision) -> dict:
+    aitp_payload = hook_decision_payload(decision, hook_name="pre_tool")
+    permission = "deny" if decision.block else "allow"
+    return {
+        "hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": permission,
+            "permissionDecisionReason": decision.message,
+        },
+        "aitp": aitp_payload,
+    }
 
 
 def _evidence_status(payload: dict) -> str:

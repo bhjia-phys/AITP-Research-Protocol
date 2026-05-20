@@ -100,6 +100,11 @@ hooks/aitp_v5_claude_hook.py
 `.aitp/runtime/hook_trace_events.jsonl`. These events are durable process
 history, not evidence records and not claim-confidence updates.
 
+`PreToolUse` maps Claude tool JSON into a v5 typed pre-tool decision. Destructive,
+remote, or expensive Bash commands produce `permissionDecision=deny` with a
+required human checkpoint; ordinary web/literature tool use produces
+`permissionDecision=allow` plus a logged AITP hook decision.
+
 MCP clients can call:
 
 ```text

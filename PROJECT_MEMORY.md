@@ -73,7 +73,9 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
 - Claude Code can also merge AITP v5 hooks into an existing settings file with
   `aitp-v5 adapter install-hooks claude-code <session-id> --settings .claude/settings.local.json`;
   this preserves existing hook entries and avoids duplicate AITP hook commands.
-- `hooks/aitp_v5_claude_hook.py` reads Claude Code hook JSON from stdin; its
+- `hooks/aitp_v5_claude_hook.py` reads Claude Code hook JSON from stdin. Its
+  `PreToolUse` path maps destructive, remote, and expensive Bash commands to a
+  v5 typed policy block and returns Claude `permissionDecision=deny`; its
   `PostToolUse` path persists process trace events through
   `.aitp/runtime/hook_trace_events.jsonl`.
 - Hook trace events are durable process history only. They do not create
