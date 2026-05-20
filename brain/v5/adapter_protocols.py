@@ -20,6 +20,7 @@ _PROTOCOL_FIELDS = [
     "runtime_trust_update_protocol",
     "runtime_record_protocols",
     "runtime_gate_protocols",
+    "runtime_hook_protocols",
 ]
 _REGISTRY_METADATA = {
     "kind": "adapter_protocol_registry",
@@ -328,6 +329,38 @@ _RUNTIME_GATE_PROTOCOLS = {
         "summary_inputs_trusted": False,
     },
 }
+_RUNTIME_HOOK_PROTOCOLS = {
+    "pre_commit": {
+        "lifecycle_event": "pre_commit",
+        "command": ["python", "hooks/aitp_v5_hook.py", "pre-commit"],
+        "required_inputs": ["changed_files", "test_refs", "evolution_note"],
+        "output_kind": "hook_decision",
+        "may_block": True,
+        "block_exit_code": 2,
+        "state_mutation": "none",
+        "summary_inputs_trusted": False,
+    },
+    "pre_tool": {
+        "lifecycle_event": "pre_tool",
+        "command": ["python", "hooks/aitp_v5_hook.py", "pre-tool"],
+        "required_inputs": ["action", "risk_level", "policy_json"],
+        "output_kind": "hook_decision",
+        "may_block": True,
+        "block_exit_code": 2,
+        "state_mutation": "none",
+        "summary_inputs_trusted": False,
+    },
+    "post_tool": {
+        "lifecycle_event": "post_tool",
+        "command": ["python", "hooks/aitp_v5_hook.py", "post-tool"],
+        "required_inputs": ["session_id", "topic_id", "claim_id", "risk_level", "tool_name", "evidence_status"],
+        "output_kind": "hook_trace_event",
+        "may_block": False,
+        "block_exit_code": 0,
+        "state_mutation": "trace_event_output_only",
+        "summary_inputs_trusted": False,
+    },
+}
 
 
 def supported_runtimes() -> tuple[str, ...]:
@@ -403,6 +436,12 @@ def mandatory_gate_protocols() -> dict[str, Any]:
     return deepcopy(_RUNTIME_GATE_PROTOCOLS)
 
 
+def mandatory_hook_protocols() -> dict[str, Any]:
+    """Return mandatory lifecycle hook protocols for runtime adapters."""
+
+    return deepcopy(_RUNTIME_HOOK_PROTOCOLS)
+
+
 def build_adapter_protocols() -> dict[str, Any]:
     """Build the protocol fields shared by all runtime adapter packets."""
 
@@ -421,4 +460,5 @@ def _build_protocol_payload() -> dict[str, Any]:
         "runtime_trust_update_protocol": deepcopy(_RUNTIME_TRUST_UPDATE_PROTOCOL),
         "runtime_record_protocols": deepcopy(_RUNTIME_RECORD_PROTOCOLS),
         "runtime_gate_protocols": deepcopy(_RUNTIME_GATE_PROTOCOLS),
+        "runtime_hook_protocols": deepcopy(_RUNTIME_HOOK_PROTOCOLS),
     }

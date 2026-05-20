@@ -116,3 +116,34 @@ Each entry should record:
 - Next recommended task:
   - Implement or test the first native adapter/installer bridge for one platform,
     likely Codex runtime instructions or Claude Code settings template.
+
+### Pending - Expose Hook Protocols In Adapter Packets
+
+- Task: expose the v5 hook installation contract as typed adapter metadata.
+- Planning source:
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Changed files:
+  - `brain/v5/adapter_protocols.py`
+  - `brain/v5/adapter_contracts.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_contracts.py`
+  - hook installation and next-agent planning docs
+- Public surface changes:
+  - adapter packets now include `runtime_hook_protocols`;
+  - adapter protocol registry/fingerprint includes `runtime_hook_protocols`.
+- Tests:
+  - adapter packet exposes pre-commit, pre-tool, and post-tool hook protocol metadata;
+  - adapter packet contract rejects trusted-summary hook protocol tampering.
+- Verification:
+  - focused red test failed with missing `runtime_hook_protocols`.
+  - `pytest tests\test_v5_adapters.py tests\test_v5_contracts.py tests\test_v5_public_surfaces.py tests\test_v5_architecture_boundaries.py -q`: 57 passed.
+  - full v5 focused suite: 269 passed.
+  - `python -m compileall -q brain\v5`: passed.
+  - `git diff --check -- .`: passed.
+- Residual risks:
+  - native platform installers still need to consume the typed metadata;
+  - post-tool trace event persistence from platform hooks is still not automatic.
+- Next recommended task:
+  - implement a Codex or Claude Code installer/template test that consumes
+    `runtime_hook_protocols` instead of duplicating hook commands.

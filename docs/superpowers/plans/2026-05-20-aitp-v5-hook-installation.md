@@ -12,6 +12,7 @@ Implemented:
 - shell-facing `pre-commit` adapter;
 - shell-facing `pre-tool` adapter;
 - shell-facing `post-tool` trace-event adapter;
+- typed `runtime_hook_protocols` metadata in v5 adapter packets;
 - short JSON output with `summary_inputs_trusted=false`.
 
 Documented here:
@@ -39,6 +40,10 @@ Not implemented in this slice:
 - Decision hooks may block through exit code `2`; trace hooks exit `0`.
 
 ## Common Command Contract
+
+The same contract is available to external runtimes through each v5 adapter
+packet under `runtime_hook_protocols`. That metadata is the typed source for
+installer templates; this Markdown page explains the same contract for humans.
 
 Run from the AITP repository root, or replace `hooks\aitp_v5_hook.py` with an
 absolute path.

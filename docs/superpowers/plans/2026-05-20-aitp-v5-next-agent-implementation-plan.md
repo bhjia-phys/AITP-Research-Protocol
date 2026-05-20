@@ -40,7 +40,7 @@ pytest $files -q
 Expected baseline:
 
 ```text
-267 passed
+269 passed
 ```
 
 Do not treat old full-suite failures as blockers unless a task modifies legacy code. The v5 focused suite is the working regression gate for this plan.
@@ -95,6 +95,7 @@ Implemented:
 - Harness audit/evolution skeleton.
 - Hook helpers include machine-readable pre-commit, pre-tool, and post-tool shell adapters over kernel decisions and trace events.
 - Hook installation contract is documented for Codex, Claude Code, and OpenCode.
+- Adapter packets expose typed `runtime_hook_protocols` metadata for installer/runtime bridges.
 - A v5 implementation ledger exists for step-by-step review.
 
 Major remaining gaps:

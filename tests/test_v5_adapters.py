@@ -167,6 +167,41 @@ def test_adapter_packet_protocols_are_generated_from_shared_registry(tmp_path):
         assert packet[key] == value
 
 
+def test_adapter_packet_exposes_hook_protocols_for_runtime_installers(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+
+    ws, _ = _seed_session(tmp_path)
+
+    packet = build_adapter_packet(ws, "s1", runtime="codex")
+
+    protocols = packet["runtime_hook_protocols"]
+    assert set(protocols) == {"pre_commit", "pre_tool", "post_tool"}
+    assert protocols["pre_commit"] == {
+        "lifecycle_event": "pre_commit",
+        "command": ["python", "hooks/aitp_v5_hook.py", "pre-commit"],
+        "required_inputs": ["changed_files", "test_refs", "evolution_note"],
+        "output_kind": "hook_decision",
+        "may_block": True,
+        "block_exit_code": 2,
+        "state_mutation": "none",
+        "summary_inputs_trusted": False,
+    }
+    assert protocols["pre_tool"]["command"] == ["python", "hooks/aitp_v5_hook.py", "pre-tool"]
+    assert protocols["pre_tool"]["required_inputs"] == ["action", "risk_level", "policy_json"]
+    assert protocols["pre_tool"]["may_block"] is True
+    assert protocols["pre_tool"]["summary_inputs_trusted"] is False
+    assert protocols["post_tool"] == {
+        "lifecycle_event": "post_tool",
+        "command": ["python", "hooks/aitp_v5_hook.py", "post-tool"],
+        "required_inputs": ["session_id", "topic_id", "claim_id", "risk_level", "tool_name", "evidence_status"],
+        "output_kind": "hook_trace_event",
+        "may_block": False,
+        "block_exit_code": 0,
+        "state_mutation": "trace_event_output_only",
+        "summary_inputs_trusted": False,
+    }
+
+
 def test_adapter_packet_exposes_protocol_registry_metadata(tmp_path):
     from brain.v5.adapter_protocols import adapter_protocol_fingerprint
     from brain.v5.adapters import build_adapter_packet
@@ -189,6 +224,7 @@ def test_adapter_packet_exposes_protocol_registry_metadata(tmp_path):
             "runtime_trust_update_protocol",
             "runtime_record_protocols",
             "runtime_gate_protocols",
+            "runtime_hook_protocols",
         ],
         "protocol_fingerprint_inputs": [
             "trust_changing_actions",
@@ -198,6 +234,7 @@ def test_adapter_packet_exposes_protocol_registry_metadata(tmp_path):
             "runtime_trust_update_protocol",
             "runtime_record_protocols",
             "runtime_gate_protocols",
+            "runtime_hook_protocols",
         ],
         "protocol_fingerprint": adapter_protocol_fingerprint(),
         "protocol_fingerprint_algorithm": "sha256-canonical-json-v1",
