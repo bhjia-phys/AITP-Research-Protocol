@@ -27,7 +27,7 @@ codex/aitp-v5-kernel-mvp
 Current baseline commit:
 
 ```text
-7298be0 feat(v5): make codex native hooks cwd independent
+8c11abb feat(v5): smoke test opencode local plugin lifecycle
 ```
 
 Current focused v5 verification:
@@ -37,10 +37,10 @@ $files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullNa
 pytest $files -q
 ```
 
-Expected baseline as of `7298be0`:
+Expected baseline as of `8c11abb`:
 
 ```text
-422 passed
+424 passed
 ```
 
 Do not treat old full-suite failures as blockers unless a task modifies legacy code. The v5 focused suite is the working regression gate for this plan.
@@ -189,8 +189,10 @@ Implemented:
   `aitp-v5 adapter install-hooks opencode <session-id> --plugin <path>` and
   `aitp_v5_install_opencode_hook_fixture(..., plugin_path=...)`; the generated
   plugin uses OpenCode `tool.execute.before`/`tool.execute.after` lifecycle
-  hooks to call the v5 adapter event runner, block through typed pre-tool
-  policy, and persist post-tool trace events.
+  hooks to call the v5 adapter event runner with cwd-independent argv, block
+  through typed pre-tool policy, and persist post-tool trace events. The
+  generated plugin file is smoke-tested by importing it with Node and invoking
+  both lifecycle handlers.
 - Runtime hook installation can now be audited through
   `aitp-v5 adapter install-audit <runtime> <args>` and
   `aitp_v5_audit_hook_installation`; the contracted
@@ -294,9 +296,11 @@ Major remaining gaps:
   surface can inspect supplied host files and report conflicts, and an
   install-paths surface reports workspace-local targets. Codex native
   `hooks.json` commands are now smoke-tested from a user workspace cwd rather
-  than the AITP repository cwd. The remaining gap is broader end-to-end host
-  smoke tests for each runtime plus any non-workspace/global host config
-  discovery that proves useful.
+  than the AITP repository cwd, and generated OpenCode local plugins are
+  smoke-tested by loading the JavaScript module and invoking before/after
+  lifecycle handlers. The remaining gap is broader end-to-end host smoke tests
+  inside real app processes plus any non-workspace/global host config discovery
+  that proves useful.
 - Pre-tool policy coverage is still partial. It checks trust-apply token
   presence, validation/promotion-packet/promotion context, and summary-sourced
   code-state/evidence/tool-run/tool-execution/tool-recipe/reference-location/

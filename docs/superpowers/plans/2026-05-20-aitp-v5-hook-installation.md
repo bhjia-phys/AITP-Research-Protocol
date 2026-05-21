@@ -499,9 +499,12 @@ That command writes `.opencode/plugins/aitp-v5.js`, plus
 `.opencode/AITP_V5_PLUGIN_BRIDGE.md` and
 `.opencode/AITP_V5_PLUGIN_BRIDGE.json`. The plugin subscribes to
 `tool.execute.before` and `tool.execute.after`, calls
-`hooks/aitp_v5_adapter_event_runner.py`, throws on blocking typed
-`pre_tool_policy_decision` output, and logs post-tool trace persistence
-failures without giving generated files authority over typed kernel records.
+the AITP v5 adapter event runner through cwd-independent argv using the active
+Python interpreter and absolute runner path, throws on blocking typed
+`pre_tool_policy_decision` output, and logs post-tool trace persistence failures
+without giving generated files authority over typed kernel records. The
+generated plugin file is smoke-tested by importing it with Node and invoking
+both `tool.execute.before` and `tool.execute.after`.
 
 ## Install Audit
 
@@ -548,4 +551,5 @@ Future implementation should add tests and installer assets for:
 - broader in-host smoke tests that execute generated lifecycle hooks in their
   real Codex/OpenCode host runtimes rather than only through repo-level runner
   tests. Codex native `hooks.json` command strings are already smoke-tested from
-  a user workspace cwd.
+  a user workspace cwd, and the generated OpenCode local plugin is smoke-tested
+  by loading the JavaScript module and invoking both lifecycle handlers.

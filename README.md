@@ -213,8 +213,10 @@ OpenCode has the matching plugin fixture at
 For a real OpenCode project-local plugin, use
 `aitp-v5 adapter install-hooks opencode <session-id> --plugin .opencode/plugins/aitp-v5.js`;
 the generated plugin subscribes to `tool.execute.before` and
-`tool.execute.after`, invokes the same sidecar-backed runner, blocks through
-typed pre-tool policy decisions, and records post-tool traces.
+`tool.execute.after`, invokes the same sidecar-backed runner through
+cwd-independent argv, blocks through typed pre-tool policy decisions, and
+records post-tool traces. The generated plugin is smoke-tested by importing the
+JavaScript module and invoking both lifecycle handlers.
 Installed hook files can be checked with
 `aitp-v5 adapter install-audit <runtime> --settings <path>`,
 `--plugin <path>`, or `--output <path>`; the audit reports

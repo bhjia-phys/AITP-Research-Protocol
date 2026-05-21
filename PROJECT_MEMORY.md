@@ -106,9 +106,12 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
 - OpenCode can install a real project-local plugin file with
   `aitp-v5 adapter install-hooks opencode <session-id> --plugin .opencode/plugins/aitp-v5.js`.
   The generated plugin subscribes to `tool.execute.before` and
-  `tool.execute.after`, calls `hooks/aitp_v5_adapter_event_runner.py`, blocks
-  through the typed `pre_tool_policy_decision`, and persists post-tool trace
-  events without treating the plugin file as a truth source.
+  `tool.execute.after`, calls `hooks/aitp_v5_adapter_event_runner.py` through
+  cwd-independent argv using the active Python interpreter and absolute runner
+  path, blocks through the typed `pre_tool_policy_decision`, and persists
+  post-tool trace events without treating the plugin file as a truth source.
+  Tests import the generated JavaScript module with Node and invoke both
+  lifecycle handlers.
 - Installed runtime hook files can be inspected with
   `aitp-v5 adapter install-audit <runtime> <args>` or
   `aitp_v5_audit_hook_installation`. The audit checks supplied Codex

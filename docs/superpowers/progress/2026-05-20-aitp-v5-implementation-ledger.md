@@ -4158,3 +4158,61 @@ Each entry should record:
   - add OpenCode local plugin lifecycle smoke coverage using the generated
     plugin file, or continue broadening pre-tool policy coverage for remaining
     MCP inputs and active risk dimensions.
+
+### 8c11abb - Smoke Test OpenCode Local Plugin Lifecycle
+
+- Task: make OpenCode project-local plugin installation more host-realistic by
+  generating cwd-independent runner argv and smoke-testing the generated
+  JavaScript plugin lifecycle handlers.
+- Planning source:
+  - previous ledger recommendation after `7298be0`;
+  - hook-installation plan residual gap for live-style host smoke coverage;
+  - v5 invariant that generated runtime files remain metadata and must delegate
+    decisions to typed pre-tool policy and trace surfaces.
+- Changed files:
+  - `brain/v5/hook_opencode_install.py`
+  - `brain/v5/hook_install_contracts.py`
+  - `brain/v5/hook_install_audit.py`
+  - `tests/test_v5_adapter_event_runner.py`
+  - `tests/test_v5_adapters.py`
+- Public/runtime behavior changes:
+  - OpenCode local plugin `pre_tool` and `post_tool` runner argv now use the
+    active Python interpreter and an absolute
+    `hooks/aitp_v5_adapter_event_runner.py` path;
+  - hook installation contracts and read-only install audit accept cwd-independent
+    absolute runner paths while still requiring the adapter runner file and
+    lifecycle command tokens;
+  - generated plugin JavaScript is loaded with Node in tests, then
+    `tool.execute.before` blocks a summary-sourced evidence write and
+    `tool.execute.after` persists a hook trace event.
+- Tests:
+  - added argv-shape coverage for OpenCode local plugin hooks;
+  - added generated-plugin lifecycle smoke coverage using Node dynamic import;
+  - updated OpenCode installer/audit assertions to recognize absolute runner
+    paths.
+- Verification:
+  - red target set:
+    `python -m pytest tests\test_v5_adapter_event_runner.py::test_opencode_local_plugin_runner_argv_is_cwd_independent tests\test_v5_adapter_event_runner.py::test_opencode_local_plugin_lifecycle_smoke_executes_generated_plugin -q`:
+    2 failed because OpenCode plugin argv used `python` plus a relative
+    `hooks/aitp_v5_adapter_event_runner.py` path;
+  - target green set:
+    same command: 2 passed;
+  - focused related set:
+    `python -m pytest tests\test_v5_adapter_event_runner.py tests\test_v5_adapters.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py tests\test_v5_mcp_tools.py tests\test_v5_architecture_boundaries.py -q`:
+    113 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; python -m pytest $files -q`:
+    424 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with line-ending warnings only.
+- Residual risks:
+  - this loads and executes the generated plugin module locally with Node; it
+    still is not a full OpenCode app process integration test;
+  - global/non-workspace host configuration discovery remains deferred unless a
+    runtime integration requires it.
+- Next recommended task:
+  - add a lightweight runtime hook smoke-report/audit surface that summarizes
+    which generated host smoke checks exist for Codex/OpenCode/Claude Code, or
+    continue broadening pre-tool policy coverage for remaining MCP inputs and
+    active risk dimensions.
