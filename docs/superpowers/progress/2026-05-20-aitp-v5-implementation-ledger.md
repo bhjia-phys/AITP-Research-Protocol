@@ -4821,3 +4821,65 @@ Each entry should record:
   - connect failure-mode review results into the failure-mode audit/L2 memory
     audit surfaces, or add strict typed-ref existence checks for the review
     basis ids.
+
+### f5f17b4 - Surface Failure-Mode Review Results In Audits
+
+- Task: make existing audit surfaces show the typed basis behind approved
+  failure-mode reviews.
+- Planning source:
+  - previous ledger recommendation after `e914fcd`;
+  - v5 invariant that review artifacts should remain typed records and that
+    derived audits are orientation-only reviewer views;
+  - user requirement that later reviewers can see why a physics adequacy
+    checkpoint passed without trusting summary prose.
+- Changed files:
+  - `brain/v5/failure_mode_audit.py`
+  - `brain/v5/failure_mode_audit_contracts.py`
+  - `brain/v5/memory_audit.py`
+  - `brain/v5/memory_audit_contracts.py`
+  - `tests/test_v5_memory_audit.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - `failure_mode_audit` now includes
+    `failure_mode_review_result_ids`, `reviewed_failure_modes`, and compact
+    `failure_mode_review_results` basis payloads;
+  - `l2_memory_audit` memory entries now include
+    `failure_mode_review_result_ids` and compact
+    `failure_mode_review_results` for the entry's
+    `failure_mode_review_checkpoint_id`;
+  - both audit payloads remain derived from typed records only and preserve
+    `summary_inputs_trusted=false` and no claim-trust mutation authority.
+- Tests:
+  - added failure-mode audit coverage proving review result basis refs surface
+    from typed `failure_mode_reviews` records;
+  - added L2 memory audit coverage proving promoted memory entries link the
+    checkpoint id to review result basis refs;
+  - updated audit contracts to validate the new review-result subpayloads.
+- Verification:
+  - red target set:
+    `python -m pytest tests\test_v5_memory_audit.py::test_failure_mode_audit_surfaces_review_result_basis tests\test_v5_memory_audit.py::test_l2_memory_audit_links_review_result_basis_to_memory_entry -q`:
+    2 failed because audit payloads did not expose
+    `failure_mode_review_result_ids`;
+  - target green set:
+    same command: 2 passed;
+  - focused related set:
+    `python -m pytest tests\test_v5_memory_audit.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py tests\test_v5_mcp_tools.py tests\test_v5_architecture_boundaries.py -q`:
+    55 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; python -m pytest $files -q`:
+    447 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with line-ending warnings only.
+- Residual risks:
+  - audit surfaces show recorded basis refs, but this slice still does not
+    verify every cited basis id resolves to an existing typed record;
+  - review result records are visible for review, but promotion policy still
+    gates on the approved checkpoint id rather than requiring a specific result
+    id.
+- Next recommended task:
+  - add strict typed-ref existence checks for failure-mode review result basis
+    refs, or decide whether promotion packet creation should require a linked
+    passed review result id in addition to the approved checkpoint id.
