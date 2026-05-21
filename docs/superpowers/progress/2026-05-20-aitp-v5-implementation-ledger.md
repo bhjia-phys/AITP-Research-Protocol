@@ -2270,3 +2270,86 @@ Each entry should record:
   - add host-side installation documentation/tests for native hook APIs, or
     broaden pre-tool policy coverage for the next uncovered trust-relevant MCP
     input.
+
+### f9de0f2 - Gate Promotion Packet Application Through Pre-Tool Policy
+
+- Task: give `apply_promotion_packet` its own pre-tool gate action instead of
+  treating the MCP entrypoint as generic `promote_to_l2`.
+- Planning source:
+  - previous ledger recommendation to broaden pre-tool coverage for the next
+    uncovered trust-relevant MCP input;
+  - v5 invariant that applying a promotion packet creates durable L2 memory and
+    must be distinguishable from creating a packet or generic promotion intent.
+- Changed files:
+  - `brain/v5/policy.py`
+  - `brain/v5/pretool_policy.py`
+  - `brain/v5/hooks.py`
+  - `brain/v5/adapter_protocols.py`
+  - `brain/v5/adapter_runtime.py`
+  - `brain/v5/gate_protocols.py`
+  - `brain/v5/hook_entrypoint_schemas.py`
+  - `hooks/aitp_v5_claude_hook.py`
+  - `tests/test_v5_pretool_policy.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_hooks.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - `apply_promotion_packet` participates in context-aware pre-tool policy
+    evaluation;
+  - summary/task-plan/findings/progress orientation surfaces cannot directly
+    drive promotion-packet application;
+  - generated bridge gate protocols now include `apply_promotion_packet` with
+    `human_checkpoint_required=true` and required typed refs
+    `packet_id`/`checkpoint_id`;
+  - Codex/OpenCode platform pre-tool event normalization now maps
+    `aitp_v5_apply_promotion_packet` to `apply_promotion_packet` instead of
+    `promote_to_l2`;
+  - adapter event schemas advertise optional `checkpoint_id` so promotion
+    application can pass the actual approval identifier without prose parsing;
+  - Claude Code `PreToolUse` maps `aitp_v5_apply_promotion_packet` through
+    `apply_promotion_packet` and emits machine-readable `policy_reasons` in the
+    `aitp` hook payload.
+- Tests:
+  - MCP pre-tool policy blocks `apply_promotion_packet` when sourced from
+    findings orientation;
+  - adapter pre-tool event path infers `apply_promotion_packet` from the MCP
+    tool name and blocks summary-sourced application through bridge gate
+    metadata;
+  - adapter packet tests assert `apply_promotion_packet` is advertised as a
+    kernel-gated trust-relevant action;
+  - Claude hook test asserts native hook output names `apply_promotion_packet`
+    and includes machine-readable summary-source policy reasons.
+- Verification:
+  - red tests failed as expected: direct MCP policy allowed summary-sourced
+    `apply_promotion_packet`, adapter event normalization mapped
+    `aitp_v5_apply_promotion_packet` to `promote_to_l2`, Claude hook output
+    named the coarse action, and adapter protocol payloads omitted
+    `apply_promotion_packet` from the kernel-gated action list;
+  - target green set:
+    `python -m pytest tests/test_v5_pretool_policy.py -q -k "apply_promotion_packet"`:
+    1 passed;
+  - adapter target set:
+    `python -m pytest tests/test_v5_adapters.py -q -k "apply_promotion_packet_policy or orientation_summaries_and_trusted_brief or tampered_summary or hook_bridge_writes_codex"`:
+    4 passed;
+  - Claude hook target set:
+    `python -m pytest tests/test_v5_hooks.py -q -k "apply_promotion_packet"`:
+    1 passed;
+  - focused policy/adapter/hook/public/bridge set:
+    `python -m pytest tests/test_v5_pretool_policy.py tests/test_v5_adapters.py tests/test_v5_hooks.py tests/test_v5_public_surfaces.py tests/test_v5_bridge_runtime.py -q`:
+    95 passed;
+  - focused boundary/runtime/runner set:
+    `python -m pytest tests/test_v5_architecture_boundaries.py tests/test_v5_runtime_entrypoints.py tests/test_v5_adapter_event_runner.py -q`:
+    12 passed;
+  - full v5 regression set:
+    `python -m pytest tests/test_v5_*.py -q`: 344 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed.
+- Residual risks:
+  - native Codex/OpenCode hosts still need true lifecycle installer wiring.
+- Next recommended task:
+  - add host-side installation documentation/tests for native hook APIs, or
+    continue scanning remaining public MCP inputs for pre-tool policy gaps.
