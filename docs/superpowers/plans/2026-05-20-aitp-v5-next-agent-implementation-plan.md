@@ -27,7 +27,7 @@ codex/aitp-v5-kernel-mvp
 Current baseline commit:
 
 ```text
-217acd0 feat(v5): discover runtime hook install paths
+7298be0 feat(v5): make codex native hooks cwd independent
 ```
 
 Current focused v5 verification:
@@ -37,10 +37,10 @@ $files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullNa
 pytest $files -q
 ```
 
-Expected baseline as of `217acd0`:
+Expected baseline as of `7298be0`:
 
 ```text
-420 passed
+422 passed
 ```
 
 Do not treat old full-suite failures as blockers unless a task modifies legacy code. The v5 focused suite is the working regression gate for this plan.
@@ -177,7 +177,9 @@ Implemented:
   `aitp-v5 adapter install-hooks codex <session-id> --settings <hooks.json>` and
   `aitp_v5_install_codex_hook_fixture(..., hooks_path=...)`; the installer
   preserves existing hooks, avoids duplicate AITP commands, writes the bridge
-  sidecar, and returns the contracted `codex_hook_installation` surface.
+  sidecar, writes cwd-independent command strings using the active Python
+  interpreter and absolute adapter runner path, and returns the contracted
+  `codex_hook_installation` surface.
 - OpenCode can now write a native-ish stdin-runner plugin fixture through
   `aitp-v5 adapter install-hooks opencode <session-id> --output <path>` and
   `aitp_v5_install_opencode_hook_fixture`; the fixture writes the plugin
@@ -290,9 +292,11 @@ Major remaining gaps:
   Codex and OpenCode also have generated installation fixtures for pre-tool
   policy decisions and post-tool trace persistence. A read-only install-audit
   surface can inspect supplied host files and report conflicts, and an
-  install-paths surface reports workspace-local targets. The remaining gap is
-  end-to-end host smoke tests for each runtime plus any non-workspace/global
-  host config discovery that proves useful.
+  install-paths surface reports workspace-local targets. Codex native
+  `hooks.json` commands are now smoke-tested from a user workspace cwd rather
+  than the AITP repository cwd. The remaining gap is broader end-to-end host
+  smoke tests for each runtime plus any non-workspace/global host config
+  discovery that proves useful.
 - Pre-tool policy coverage is still partial. It checks trust-apply token
   presence, validation/promotion-packet/promotion context, and summary-sourced
   code-state/evidence/tool-run/tool-execution/tool-recipe/reference-location/

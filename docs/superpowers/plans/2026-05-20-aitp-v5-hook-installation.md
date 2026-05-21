@@ -259,9 +259,12 @@ aitp-v5 --base <workspace> adapter install-hooks codex <session-id> --settings .
 ```
 
 That command preserves existing Codex hook events, adds idempotent `PreToolUse`
-and `PostToolUse` command hooks that call
-`hooks/aitp_v5_adapter_event_runner.py`, writes the Codex bridge Markdown plus
-JSON sidecar, and returns the same contracted `codex_hook_installation` payload.
+and `PostToolUse` command hooks that call the AITP v5 adapter event runner via
+an absolute script path and the active Python interpreter, writes the Codex
+bridge Markdown plus JSON sidecar, and returns the same contracted
+`codex_hook_installation` payload. The generated command strings are
+smoke-tested from a workspace cwd, so they do not rely on the host process
+starting in the AITP repository root.
 The hooks file remains runtime metadata; it cannot update kernel state or claim
 trust directly.
 
@@ -542,5 +545,7 @@ The returned `runtime_hook_installation_audit` surface reports
 
 Future implementation should add tests and installer assets for:
 
-- in-host smoke tests that execute the generated Codex/OpenCode lifecycle hooks
-  in their real host runtimes rather than only through repo-level runner tests.
+- broader in-host smoke tests that execute generated lifecycle hooks in their
+  real Codex/OpenCode host runtimes rather than only through repo-level runner
+  tests. Codex native `hooks.json` command strings are already smoke-tested from
+  a user workspace cwd.

@@ -122,6 +122,11 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `runtime_hook_installation_paths` surface lists preferred and alternate
   Codex/Claude Code/OpenCode install targets plus matching install/audit
   commands. It is convention metadata, not kernel state.
+- Codex native `hooks.json` installation now writes command strings with the
+  active Python interpreter and an absolute
+  `hooks/aitp_v5_adapter_event_runner.py` path. Tests execute those commands
+  from a temporary user workspace cwd, so Codex hooks no longer rely on the host
+  process starting in the AITP repository root.
 - Claude Code can materialize native hook settings with
   `aitp-v5 adapter hook-settings claude-code <session-id> --output .claude/settings.local.json`.
 - Claude Code can also merge AITP v5 hooks into an existing settings file with

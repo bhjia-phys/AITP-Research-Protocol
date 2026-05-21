@@ -4104,3 +4104,57 @@ Each entry should record:
   - add live-style host smoke tests for generated hook/plugin files where
     practical, or broaden pre-tool policy coverage for remaining MCP inputs and
     active risk dimensions.
+
+### 7298be0 - Make Codex Native Hooks Cwd Independent
+
+- Task: make generated Codex native `hooks.json` command strings executable
+  from a user workspace cwd, so host smoke coverage does not assume the host
+  process starts in the AITP repository root.
+- Planning source:
+  - previous ledger recommendation after `217acd0`;
+  - hook-installation plan residual gap for live-style host smoke coverage;
+  - v5 invariant that runtime hook files are metadata only and must route real
+    decisions through typed pre-tool policy and trace surfaces.
+- Changed files:
+  - `brain/v5/hook_codex_install.py`
+  - `tests/test_v5_adapter_event_runner.py`
+- Public/runtime behavior changes:
+  - Codex `install-hooks --settings <hooks.json>` now emits command strings
+    using the active Python interpreter and an absolute
+    `hooks/aitp_v5_adapter_event_runner.py` path;
+  - generated `PreToolUse` and `PostToolUse` command hooks can be executed from
+    the user's workspace cwd while still reading the bridge sidecar and writing
+    trace events through v5 public surfaces;
+  - no kernel truth-source authority was added to runtime hook files.
+- Tests:
+  - added host-cwd smoke coverage for generated Codex native pre-tool command
+    strings, asserting summary-sourced evidence writes are blocked through the
+    typed pre-tool policy;
+  - added host-cwd smoke coverage for generated Codex native post-tool command
+    strings, asserting hook trace events persist to the v5 trace log.
+- Verification:
+  - red target set:
+    `python -m pytest tests\test_v5_adapter_event_runner.py::test_codex_native_hooks_json_pre_tool_command_executes_from_workspace_cwd tests\test_v5_adapter_event_runner.py::test_codex_native_hooks_json_post_tool_command_executes_from_workspace_cwd -q`:
+    2 failed because `python hooks/aitp_v5_adapter_event_runner.py` was resolved
+    relative to the temporary user workspace cwd;
+  - target green set:
+    same command: 2 passed;
+  - focused related set:
+    `python -m pytest tests\test_v5_adapter_event_runner.py tests\test_v5_adapters.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py tests\test_v5_mcp_tools.py tests\test_v5_architecture_boundaries.py -q`:
+    111 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; python -m pytest $files -q`:
+    422 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with line-ending warnings only.
+- Residual risks:
+  - this proves generated Codex native commands from a host-style workspace cwd;
+    broader in-host Codex/OpenCode execution inside the actual app processes is
+    still needed;
+  - OpenCode local plugin JavaScript lifecycle loading still needs a comparable
+    host smoke path where practical.
+- Next recommended task:
+  - add OpenCode local plugin lifecycle smoke coverage using the generated
+    plugin file, or continue broadening pre-tool policy coverage for remaining
+    MCP inputs and active risk dimensions.

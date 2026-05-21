@@ -204,8 +204,10 @@ or it can merge AITP lifecycle hooks into an existing Codex hooks file with
 `aitp-v5 adapter install-hooks codex <session-id> --settings .codex/hooks.json`.
 The `--settings` path preserves existing Codex hook events, adds idempotent
 `PreToolUse` and `PostToolUse` command hooks that call
-`hooks/aitp_v5_adapter_event_runner.py`, and writes the bridge sidecar used by
-the pre-tool policy runner.
+the AITP v5 adapter event runner via an absolute script path, and writes the
+bridge sidecar used by the pre-tool policy runner. Those native command strings
+are smoke-tested from a user workspace cwd, so they do not depend on Codex
+starting in the AITP repository root.
 OpenCode has the matching plugin fixture at
 `aitp-v5 adapter install-hooks opencode <session-id> --output .opencode/AITP_V5_PLUGIN_HOOKS.json`.
 For a real OpenCode project-local plugin, use
