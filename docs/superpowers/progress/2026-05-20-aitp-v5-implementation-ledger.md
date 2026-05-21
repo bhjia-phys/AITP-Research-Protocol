@@ -5136,3 +5136,72 @@ Each entry should record:
   - add a more domain-specific LibRPA/GW formula-code invariant executor or
     diagnostic recipe that checks frequency-grid/basis-cutoff assumptions more
     directly than the generic failure-mode-basis shape checker.
+
+### a96f3e1 - Add Formula-Code Invariant Executor
+
+- Task: add a deterministic LibRPA/GW-oriented formula-code translation checker
+  so code-method research can record explicit formula references, code
+  references, expected relations, observed relations, and matched/failed/missing
+  invariant status.
+- Planning source:
+  - previous ledger recommendation after `2a584a5`;
+  - `docs/superpowers/plans/2026-05-18-aitp-v5-domain-tools-plan.md`;
+  - user requirement that computational theoretical-physics work needs
+    formula-to-code translation checks, not only generic benchmark tables.
+- Changed files:
+  - `brain/v5/tool_executor_kernels.py`
+  - `brain/v5/tool_executors.py`
+  - `brain/v5/domain_packs.py`
+  - `tests/test_v5_tool_executors.py`
+  - `tests/test_v5_domain_packs.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-18-aitp-v5-domain-tools-plan.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - safe executor catalog now includes `formula_code_invariant_check`;
+  - executor input requires `invariants` with `name`, `formula_ref`,
+    `code_ref`, `expected_relation`, and `status`, plus optional
+    `observed_relation`;
+  - executor output reports `all_invariants_checked`,
+    `matched_invariants`, `unchecked_invariants`, `failed_invariants`, and the
+    normalized invariant list;
+  - LibRPA/GW domain pack recommends
+    `recipe-librpa-gw-formula-code-invariant` with required context refs
+    `code_state_ids` and `formula_refs`;
+  - executor kernels moved into `brain/v5/tool_executor_kernels.py`, reducing
+    `brain/v5/tool_executors.py` from 475 lines to 363 lines and keeping the
+    public executor module focused on catalog/execution plumbing.
+- Tests:
+  - added catalog coverage for `formula_code_invariant_check`;
+  - added executor behavior coverage for a LibRPA/GW translation scan with one
+    matched invariant and one missing invariant;
+  - added GW domain-pack and execution-brief recommendation coverage for the
+    new formula-code invariant recipe;
+  - updated CLI catalog coverage for the new executor.
+- Verification:
+  - red target:
+    `pytest tests\test_v5_tool_executors.py::test_tool_executor_catalog_exposes_input_contracts tests\test_v5_tool_executors.py::test_formula_code_invariant_executor_checks_librpa_translation_items tests\test_v5_domain_packs.py::test_builtin_gw_librpa_pack_suggests_code_provenance_and_benchmarks tests\test_v5_domain_packs.py::test_execution_brief_exposes_domain_tool_executor_recommendations -q`:
+    4 failed because the executor and domain recommendation did not exist;
+  - target green:
+    same command: 4 passed;
+  - focused related set:
+    `pytest tests\test_v5_tool_executors.py tests\test_v5_domain_packs.py tests\test_v5_public_surfaces.py tests\test_v5_real_workflows.py -q`:
+    46 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; pytest $files -q`:
+    454 passed;
+  - `python -m compileall -q brain\v5`: passed;
+  - `git diff --check -- .`: passed after removing one trailing blank line at
+    the end of `brain/v5/tool_executors.py`.
+- Residual risks:
+  - the executor checks that formula-code invariant evidence is explicitly
+    recorded and classified; it does not independently parse source code or
+    prove the mathematical formula;
+  - future LibRPA/GW tools should add direct diagnostics for frequency-grid
+    metadata, basis cutoff propagation, Coulomb singularity handling, and
+    versioned benchmark inputs/outputs.
+- Next recommended task:
+  - add a versioned LibRPA/GW diagnostic artifact or executor that records
+    frequency-grid and basis-cutoff metadata from actual run/input/output
+    artifacts, linked to code state and validation results.
