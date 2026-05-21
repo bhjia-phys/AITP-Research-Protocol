@@ -269,9 +269,9 @@ def _validate_pre_tool_hook(payload: Any, path: str, result: ContractResult) -> 
     _require_list(payload.get("argv"), f"{path}.argv", result)
     argv = payload.get("argv")
     if isinstance(argv, list):
-        for token in ("hooks/aitp_v5_adapter_event_runner.py", "--bridge-path"):
-            if token not in argv:
-                result.add(f"{path}.argv", f"must include {token!r}")
+        _validate_adapter_event_runner_arg(argv, f"{path}.argv", result)
+        if "--bridge-path" not in argv:
+            result.add(f"{path}.argv", "must include '--bridge-path'")
 
 
 def _validate_post_tool_hook(payload: Any, path: str, result: ContractResult) -> None:
@@ -291,9 +291,14 @@ def _validate_post_tool_hook(payload: Any, path: str, result: ContractResult) ->
     _require_list(payload.get("argv"), f"{path}.argv", result)
     argv = payload.get("argv")
     if isinstance(argv, list):
-        for token in ("hooks/aitp_v5_adapter_event_runner.py", "post-tool"):
-            if token not in argv:
-                result.add(f"{path}.argv", f"must include {token!r}")
+        _validate_adapter_event_runner_arg(argv, f"{path}.argv", result)
+        if "post-tool" not in argv:
+            result.add(f"{path}.argv", "must include 'post-tool'")
+
+
+def _validate_adapter_event_runner_arg(argv: list[Any], path: str, result: ContractResult) -> None:
+    if not any(str(token).replace("\\", "/").endswith("hooks/aitp_v5_adapter_event_runner.py") for token in argv):
+        result.add(path, "must include the AITP adapter event runner path")
 
 
 def _validate_codex_hooks_file(payload: dict[str, Any], path: str, result: ContractResult) -> None:

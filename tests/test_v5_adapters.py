@@ -1912,7 +1912,7 @@ def test_opencode_local_plugin_installer_writes_native_plugin(tmp_path):
     assert "export const AITPV5Plugin" in source
     assert '"tool.execute.before"' in source
     assert '"tool.execute.after"' in source
-    assert "hooks/aitp_v5_adapter_event_runner.py" in source
+    assert "aitp_v5_adapter_event_runner.py" in source
     assert "--bridge-path" in source
     assert "AITP_V5_PLUGIN_BRIDGE.json" in source
     assert "throw new Error" in source

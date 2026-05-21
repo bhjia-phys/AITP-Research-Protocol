@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -90,13 +91,14 @@ def _default_bridge_path(plugin_path: Path) -> Path:
 
 
 def _pre_tool_hook(*, workspace_base: str, session_id: str, bridge_payload_path: str) -> dict[str, Any]:
+    runner = _adapter_event_runner_path()
     return {
         "lifecycle_event": "pre_tool",
         "command_kind": "stdin_json_runner",
         "cwd": str(_repo_root()),
         "argv": [
-            "python",
-            "hooks/aitp_v5_adapter_event_runner.py",
+            sys.executable,
+            str(runner),
             "pre-tool",
             "--base",
             workspace_base,
@@ -115,13 +117,14 @@ def _pre_tool_hook(*, workspace_base: str, session_id: str, bridge_payload_path:
 
 
 def _post_tool_hook(*, workspace_base: str, session_id: str) -> dict[str, Any]:
+    runner = _adapter_event_runner_path()
     return {
         "lifecycle_event": "post_tool",
         "command_kind": "stdin_json_runner",
         "cwd": str(_repo_root()),
         "argv": [
-            "python",
-            "hooks/aitp_v5_adapter_event_runner.py",
+            sys.executable,
+            str(runner),
             "post-tool",
             "--base",
             workspace_base,
@@ -222,3 +225,7 @@ def _js(value: Any) -> str:
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
+
+
+def _adapter_event_runner_path() -> Path:
+    return _repo_root() / "hooks" / "aitp_v5_adapter_event_runner.py"

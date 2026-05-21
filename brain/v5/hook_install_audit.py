@@ -57,15 +57,15 @@ def _audit_runtime_path(
             return _audit_text_path(
                 settings_path,
                 expected=[
-                    ("PreToolUse pre-tool runner", ["PreToolUse", "hooks/aitp_v5_adapter_event_runner.py", "pre-tool", "--bridge-path", workspace_base]),
-                    ("PostToolUse post-tool runner", ["PostToolUse", "hooks/aitp_v5_adapter_event_runner.py", "post-tool", workspace_base]),
+                    ("PreToolUse pre-tool runner", ["PreToolUse", "aitp_v5_adapter_event_runner.py", "pre-tool", "--bridge-path", workspace_base]),
+                    ("PostToolUse post-tool runner", ["PostToolUse", "aitp_v5_adapter_event_runner.py", "post-tool", workspace_base]),
                 ],
             )
         return _audit_text_path(
             output_path or str(Path(workspace_base) / ".codex" / "AITP_V5_HOOKS.json"),
             expected=[
-                ("fixture pre-tool runner", ["pre_tool", "hooks/aitp_v5_adapter_event_runner.py", "pre-tool", "--bridge-path", workspace_base]),
-                ("fixture post-tool runner", ["post_tool", "hooks/aitp_v5_adapter_event_runner.py", "post-tool", workspace_base]),
+                ("fixture pre-tool runner", ["pre_tool", "aitp_v5_adapter_event_runner.py", "pre-tool", "--bridge-path", workspace_base]),
+                ("fixture post-tool runner", ["post_tool", "aitp_v5_adapter_event_runner.py", "post-tool", workspace_base]),
             ],
         )
     if runtime == "claude_code":
@@ -81,15 +81,15 @@ def _audit_runtime_path(
             return _audit_text_path(
                 plugin_path,
                 expected=[
-                    ("tool.execute.before pre-tool runner", ["tool.execute.before", "hooks/aitp_v5_adapter_event_runner.py", "pre-tool", "--bridge-path", workspace_base]),
-                    ("tool.execute.after post-tool runner", ["tool.execute.after", "hooks/aitp_v5_adapter_event_runner.py", "post-tool", workspace_base]),
+                    ("tool.execute.before pre-tool runner", ["tool.execute.before", "aitp_v5_adapter_event_runner.py", "pre-tool", "--bridge-path", workspace_base]),
+                    ("tool.execute.after post-tool runner", ["tool.execute.after", "aitp_v5_adapter_event_runner.py", "post-tool", workspace_base]),
                 ],
             )
         return _audit_text_path(
             output_path or str(Path(workspace_base) / ".opencode" / "AITP_V5_PLUGIN_HOOKS.json"),
             expected=[
-                ("fixture pre-tool runner", ["plugin_hooks", "pre_tool", "hooks/aitp_v5_adapter_event_runner.py", "pre-tool", "--bridge-path", workspace_base]),
-                ("fixture post-tool runner", ["plugin_hooks", "post_tool", "hooks/aitp_v5_adapter_event_runner.py", "post-tool", workspace_base]),
+                ("fixture pre-tool runner", ["plugin_hooks", "pre_tool", "aitp_v5_adapter_event_runner.py", "pre-tool", "--bridge-path", workspace_base]),
+                ("fixture post-tool runner", ["plugin_hooks", "post_tool", "aitp_v5_adapter_event_runner.py", "post-tool", workspace_base]),
             ],
         )
     raise ValueError(f"unsupported runtime: {runtime}")
