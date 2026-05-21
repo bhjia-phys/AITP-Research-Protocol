@@ -121,7 +121,8 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `register_tool_recipe`/`record_reference_location`/`record_physics_object`/
   `record_object_relation`/`record_sensemaking_report`/
   `ingest_subagent_result`/
-  `create_validation_contract`/`request_human_checkpoint`/
+  `create_validation_contract`/`record_validation_result`/
+  `request_human_checkpoint`/
   `decide_human_checkpoint`/`create_promotion_packet`/
   `apply_promotion_packet` trust-changing attempts through the same CLI/MCP
   entrypoint. For `risk_level=rigorous` or `risk_level=adversarial`,
@@ -130,6 +131,9 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   allow the action. For high-risk `execute_tool`, the supplied validation
   contract must also bind the current `recipe_id` and `executor_id`; for
   high-risk `record_tool_run`, it must bind the current `recipe_id`.
+  After a high-risk tool run, `record_validation_result` can persist whether
+  the run satisfied the bound contract's required evidence outputs; passed
+  results cannot omit required outputs or carry observed failure modes.
 - Generated Codex and OpenCode bridge payloads include a
   `pre_tool_policy_entrypoint` pointing to that shared surface, so runtime
   adapters can wire validation/promotion pre-tool checks without reimplementing
@@ -182,6 +186,7 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `runtime_gate_protocols.record_sensemaking_report`,
   `runtime_gate_protocols.ingest_subagent_result`,
   `runtime_gate_protocols.create_validation_contract`,
+  `runtime_gate_protocols.record_validation_result`,
   `runtime_gate_protocols.request_human_checkpoint`,
   `runtime_gate_protocols.decide_human_checkpoint`,
   `runtime_gate_protocols.create_promotion_packet`,

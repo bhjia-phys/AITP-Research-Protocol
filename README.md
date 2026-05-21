@@ -112,7 +112,7 @@ cannot update kernel state or claim trust. The same shared surface also blocks
 `record_code_state`, `record_evidence`, `record_tool_run`, `execute_tool`,
 `register_tool_recipe`, `record_reference_location`, `record_physics_object`, `record_object_relation`,
 `record_sensemaking_report`, and `ingest_subagent_result` attempts, plus validation-contract and
-human-checkpoint request/decision and promotion-packet creation/application,
+validation-result records, human-checkpoint request/decision and promotion-packet creation/application,
 when their requested source is only a summary/task-plan/findings/progress
 orientation surface. Generated
 Codex/OpenCode bridge
@@ -128,9 +128,12 @@ for the active claim. `execute_tool` requires that contract to bind the current
 `recipe_id` and `executor_id`; `record_tool_run` requires a bound `recipe_id`,
 so high-risk numerical or formula-code work has an explicit check plan for the
 actual tool path before it can affect trust-relevant state. Adapter
+`record_validation_result` records then bind a completed `tool_run_id` back to
+the contract's required evidence outputs; a passed result cannot omit required
+outputs or report observed failure modes. Adapter
 packets and generated bridge files put `aitp_v5_evaluate_pre_tool_policy` into
 the code-state/record-evidence/tool-run/execute-tool/tool-recipe/reference-location/
-physics-object/object-relation/sensemaking-report/subagent-ingestion, validation-contract, human-checkpoint request/decision, promotion-packet
+physics-object/object-relation/sensemaking-report/subagent-ingestion, validation-contract/result, human-checkpoint request/decision, promotion-packet
 creation/application, validation, and promotion gate sequences, so runtimes can see that policy evaluation comes
 before typed record creation, preflight, or promotion. The small
 `brain.v5.adapter_runtime.evaluate_bridge_gate_pre_tool_policy` helper consumes

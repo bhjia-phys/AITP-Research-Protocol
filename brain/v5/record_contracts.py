@@ -166,6 +166,27 @@ def require_valid_validation_contract_record(payload: dict[str, Any]) -> dict[st
     return _require_valid(validate_validation_contract_record(payload), payload)
 
 
+def validate_validation_result_record(payload: dict[str, Any], *, path: str = "validation_result_record") -> ContractResult:
+    result = _validate_base_record(payload, path, kind="validation_result")
+    if result.issues:
+        return result
+    for key in ("result_id", "topic_id", "claim_id", "contract_id", "tool_run_id", "status", "summary"):
+        _require_nonempty_str(payload, key, path, result)
+    if payload.get("status") not in {"passed", "failed", "inconclusive"}:
+        result.add(f"{path}.status", "must be passed, failed, or inconclusive")
+    for key in ("checked_outputs", "missing_outputs", "failure_modes_observed", "evidence_refs", "artifact_ids"):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    if payload.get("status") == "passed" and payload.get("missing_outputs"):
+        result.add(f"{path}.missing_outputs", "must be empty when status is passed")
+    if payload.get("status") == "passed" and payload.get("failure_modes_observed"):
+        result.add(f"{path}.failure_modes_observed", "must be empty when status is passed")
+    return result
+
+
+def require_valid_validation_result_record(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_validation_result_record(payload), payload)
+
+
 def validate_human_checkpoint_record(payload: dict[str, Any], *, path: str = "human_checkpoint_record") -> ContractResult:
     result = _validate_base_record(payload, path, kind="human_checkpoint")
     if result.issues:

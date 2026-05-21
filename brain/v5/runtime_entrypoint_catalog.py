@@ -165,6 +165,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_create_validation_contract",
         "surface": "validation_contract_record",
     },
+    "record_validation_result": {
+        "cli": "aitp-v5 validation result record <args>",
+        "mcp": "aitp_v5_record_validation_result",
+        "surface": "validation_result_record",
+    },
     "request_human_checkpoint": {
         "cli": "aitp-v5 checkpoint request <args>",
         "mcp": "aitp_v5_request_human_checkpoint",
@@ -386,6 +391,23 @@ def sample_args_for_template(template: str) -> list[str]:
             "dirty worktree",
             "--required-output",
             "evidence_or_provenance",
+        ]
+    if template.startswith("validation result record"):
+        return [
+            "--topic",
+            "gw",
+            "--claim",
+            "claim-gw",
+            "--contract",
+            "validation-contract-gw",
+            "--tool-run",
+            "tool-run-gw",
+            "--status",
+            "inconclusive",
+            "--checked-output",
+            "evidence_or_provenance",
+            "--summary",
+            "Validation result sample.",
         ]
     if template.startswith("checkpoint request"):
         return [

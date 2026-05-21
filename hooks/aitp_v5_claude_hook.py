@@ -35,6 +35,7 @@ _AITP_MCP_ACTIONS = {
     "aitp_v5_request_human_checkpoint": "request_human_checkpoint",
     "aitp_v5_decide_human_checkpoint": "decide_human_checkpoint",
     "aitp_v5_create_validation_contract": "validate_claim",
+    "aitp_v5_record_validation_result": "record_validation_result",
 }
 _TRUSTED_APPLY_SOURCE_KINDS = {
     "execution_brief",
@@ -190,6 +191,7 @@ def _context_policy_from_workspace(
         "apply_promotion_packet",
         "request_human_checkpoint",
         "decide_human_checkpoint",
+        "record_validation_result",
         "validate_claim",
         "promote_to_l2",
     }:

@@ -24,6 +24,7 @@ _CONTEXT_ACTIONS = {
     "record_sensemaking_report",
     "ingest_subagent_result",
     "create_validation_contract",
+    "record_validation_result",
     "request_human_checkpoint",
     "decide_human_checkpoint",
     "create_promotion_packet",

@@ -295,6 +295,9 @@ contract must bind the current `recipe_id` and `executor_id`; for high-risk
 `record_tool_run`, it must bind the current `recipe_id`. This keeps heavyweight
 numerical or formula-code execution tied to an auditable validation plan for
 the actual tool path rather than model intuition.
+After execution, `record_validation_result` records whether a completed
+`tool_run_id` satisfied the contract's required evidence outputs. Passed
+validation results must have no missing outputs and no observed failure modes.
 For live-style adapter events, `evaluate_bridge_lifecycle_event` maps an
 adapter-neutral `pre_tool` event payload onto the same helper after confirming
 that the generated bridge declares a pre-tool lifecycle call. Codex/OpenCode

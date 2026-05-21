@@ -19,6 +19,7 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["execute_tool"]["surface"] == "tool_run_record"
     assert entrypoints["list_tool_executors"]["surface"] == "tool_executor_catalog"
     assert entrypoints["migrate_legacy_topic"]["surface"] == "legacy_migration_result"
+    assert entrypoints["record_validation_result"]["surface"] == "validation_result_record"
     assert entrypoints["record_evidence"]["mcp"] == "aitp_v5_record_evidence"
     assert entrypoints["record_code_state"]["mcp"] == "aitp_v5_record_code_state"
     assert entrypoints["register_tool_recipe"]["mcp"] == "aitp_v5_register_tool_recipe"
@@ -26,6 +27,7 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["execute_tool"]["mcp"] == "aitp_v5_execute_tool"
     assert entrypoints["list_tool_executors"]["mcp"] == "aitp_v5_list_tool_executors"
     assert entrypoints["migrate_legacy_topic"]["mcp"] == "aitp_v5_migrate_legacy_topic_to_v5"
+    assert entrypoints["record_validation_result"]["mcp"] == "aitp_v5_record_validation_result"
     assert entrypoints["codex_hook_bridge"] == {
         "cli": "aitp-v5 adapter hook-bridge codex <session-id> <args>",
         "mcp": "aitp_v5_write_codex_hook_bridge",

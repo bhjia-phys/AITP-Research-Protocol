@@ -21,6 +21,7 @@ _LAYOUT_DIRS = [
     "registry/reference_locations",
     "registry/sensemaking_reports",
     "registry/validation_contracts",
+    "registry/validation_results",
     "registry/code_states",
     "registry/code_workspaces",
     "registry/routes",

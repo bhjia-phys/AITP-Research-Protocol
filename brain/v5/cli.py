@@ -17,11 +17,11 @@ from brain.v5.knowledge_connectors import describe_knowledge_connectors
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
 from brain.v5.models import TrustUpdateRequest
 from brain.v5.cli_policy import add_policy_parser, dispatch_policy_command
+from brain.v5.cli_validation import add_validation_parser, dispatch_validation_command
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.physics_objects import record_object_relation, record_physics_object
 from brain.v5.references import record_reference_location
 from brain.v5.sensemaking import record_sensemaking_report
-from brain.v5.validation import create_validation_contract
 from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
 from brain.v5.risk import assess_claim_risk
@@ -235,16 +235,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     add_policy_parser(sp)
 
-    vp = sp.add_parser("validation"); vs = vp.add_subparsers(dest="validation_command", required=True)
-    vcp = vs.add_parser("contract"); vcs = vcp.add_subparsers(dest="validation_contract_command", required=True)
-    vcr = vcs.add_parser("create")
-    vcr.add_argument("--topic", required=True, dest="topic_id"); vcr.add_argument("--claim", required=True, dest="claim_id")
-    vcr.add_argument("--required-check", action="append", default=[], dest="required_checks")
-    vcr.add_argument("--failure-mode", action="append", default=[], dest="failure_modes")
-    vcr.add_argument("--required-output", action="append", default=[], dest="required_evidence_outputs")
-    vcr.add_argument("--recipe-id", action="append", default=[], dest="tool_recipe_ids")
-    vcr.add_argument("--executor-id", action="append", default=[], dest="executor_ids")
-    vcr.add_argument("--validator-role", default="adversarial_reviewer")
+    add_validation_parser(sp)
 
     return parser
 
@@ -356,6 +347,9 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             return {"ok": True, **require_valid_public_surface("trust_update_preflight", preflight_trust_update(ws, req))}
         return {"ok": True, **require_valid_public_surface("trust_update_apply", apply_trust_update(ws, req))}
 
+    if args.command == "validation":
+        return dispatch_validation_command(args, ws)
+
     if args.command == "object" and args.object_command == "record":
         obj = record_physics_object(ws, topic_id=args.topic_id, object_type=args.object_type,
             name=args.name, definition=args.definition, notation=args.notation, assumptions=args.assumptions,
@@ -385,14 +379,6 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             result_payload=_j(args.result_json),
         )
         return _subagent_ingestion_payload(result)
-
-    if args.command == "validation" and args.validation_command == "contract" and args.validation_contract_command == "create":
-        vc = create_validation_contract(ws, topic_id=args.topic_id, claim_id=args.claim_id,
-            required_checks=args.required_checks, failure_modes=args.failure_modes,
-            required_evidence_outputs=args.required_evidence_outputs,
-            tool_recipe_ids=args.tool_recipe_ids, executor_ids=args.executor_ids,
-            validator_role=args.validator_role)
-        return {"ok": True, **require_valid_public_surface("validation_contract_record", {"ok": True, **asdict(vc)})}
 
     if args.command == "checkpoint" and args.checkpoint_command == "request":
         chk = request_human_checkpoint(ws, topic_id=args.topic_id, claim_id=args.claim_id,

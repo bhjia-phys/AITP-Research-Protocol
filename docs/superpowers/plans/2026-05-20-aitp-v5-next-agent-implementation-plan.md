@@ -180,6 +180,7 @@ Implemented:
   `register_tool_recipe`, `record_reference_location`, `record_physics_object`,
   `record_object_relation`, `record_sensemaking_report`,
   `create_validation_contract`, and
+  `record_validation_result`, and
   `request_human_checkpoint`/`decide_human_checkpoint`, plus
   `create_promotion_packet`/`apply_promotion_packet` trust-changing attempts.
 - The shared CLI/MCP/runtime pre-tool policy now carries `risk_level` and
@@ -192,6 +193,10 @@ Implemented:
   also requires the supplied contract to bind the current `recipe_id` and
   `executor_id`; high-risk `record_tool_run` requires a contract bound to the
   current `recipe_id`.
+- Validation result records now link a completed `tool_run_id` back to a
+  `validation_contract_id`, checked outputs, missing outputs, and observed
+  failure modes. A passed validation result cannot omit required contract
+  outputs or include observed failure modes.
 - Generated Codex/OpenCode bridge payloads and JSON sidecars now advertise
   `pre_tool_policy_entrypoint.input_schema` and
   `pre_tool_event_entrypoint.platform_event_schema`, including `risk_level`,
@@ -222,7 +227,7 @@ Major remaining gaps:
   presence, validation/promotion-packet/promotion context, and summary-sourced
   code-state/evidence/tool-run/tool-execution/tool-recipe/reference-location/
   physics-object/object-relation/sensemaking-report/
-  subagent-ingestion/validation-contract/human-checkpoint request/decision/
+  subagent-ingestion/validation-contract/result/human-checkpoint request/decision/
   promotion-packet creation/application attempts through CLI/MCP/runtime/bridge metadata, and
   adversarial-risk trust changes require approved typed human checkpoints.
   Rigorous/adversarial tool execution now requires explicit validation-contract

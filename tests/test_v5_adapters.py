@@ -68,6 +68,7 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
     assert "record_object_relation" in packet["trust_changing_actions"]
     assert "record_sensemaking_report" in packet["trust_changing_actions"]
     assert "create_validation_contract" in packet["trust_changing_actions"]
+    assert "record_validation_result" in packet["trust_changing_actions"]
     assert "request_human_checkpoint" in packet["trust_changing_actions"]
     assert "decide_human_checkpoint" in packet["trust_changing_actions"]
     assert "create_promotion_packet" in packet["trust_changing_actions"]
@@ -100,6 +101,7 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
     assert packet["runtime_gate_protocols"]["promote_to_l2"]["pre_tool_policy"] == "aitp_v5_evaluate_pre_tool_policy"
     assert packet["runtime_gate_protocols"]["promote_to_l2"]["sequence"][1] == "evaluate_pre_tool_policy"
     assert packet["runtime_gate_protocols"]["promote_to_l2"]["policy_reasons_field"] == "policy_reasons"
+    assert packet["runtime_gate_protocols"]["record_validation_result"]["sequence"][1] == "evaluate_pre_tool_policy"
     assert packet["runtime_record_protocols"]["record_evidence"] == {
         "entrypoint": "aitp_v5_record_evidence",
         "sequence": [
@@ -136,6 +138,19 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
         ],
         "required_typed_refs": ["topic_id", "claim_id", "packet_id"],
         "accepted_link_fields": ["evidence_refs", "code_state_refs", "proposed_next_actions"],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+    }
+    assert packet["runtime_record_protocols"]["record_validation_result"] == {
+        "entrypoint": "aitp_v5_record_validation_result",
+        "sequence": [
+            "refresh_execution_brief",
+            "record_validation_result",
+            "refresh_execution_brief",
+            "write_session_summary",
+        ],
+        "required_typed_refs": ["topic_id", "claim_id", "contract_id", "tool_run_id"],
+        "accepted_link_fields": ["checked_outputs", "evidence_refs", "artifact_ids"],
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     }
@@ -1969,6 +1984,7 @@ def test_adapter_packet_ignores_tampered_summary_as_truth_source(tmp_path):
         "record_sensemaking_report",
         "ingest_subagent_result",
         "create_validation_contract",
+        "record_validation_result",
         "request_human_checkpoint",
         "decide_human_checkpoint",
         "create_promotion_packet",

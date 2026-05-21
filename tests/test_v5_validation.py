@@ -1,5 +1,6 @@
 """Tests for AITP v5 validation contract records."""
 
+import json
 from dataclasses import asdict
 from pathlib import Path
 
@@ -26,6 +27,33 @@ def _setup_claim(tmp_path: Path):
         active_uncertainty="formula-code translation",
     )
     return ws, claim
+
+
+def _setup_validation_contract_and_run(tmp_path: Path):
+    from brain.v5.tools import record_tool_run
+    from brain.v5.validation import create_validation_contract
+
+    ws, claim = _setup_claim(tmp_path)
+    contract = create_validation_contract(
+        ws,
+        topic_id="gw",
+        claim_id=claim.claim_id,
+        required_checks=["compare benchmark table", "inspect diagnostic plot"],
+        failure_modes=["wrong frequency grid", "basis mismatch"],
+        required_evidence_outputs=["benchmark_table", "diagnostic_plot"],
+        tool_recipe_ids=["recipe-si-gw"],
+        executor_ids=["pytest"],
+    )
+    run = record_tool_run(
+        ws,
+        recipe_id="recipe-si-gw",
+        tool_family="numerical",
+        tool_name="pytest",
+        topic_id="gw",
+        claim_id=claim.claim_id,
+        outputs={"benchmark_table": "ok", "diagnostic_plot": "ok"},
+    )
+    return ws, claim, contract, run
 
 
 def test_create_validation_contract_requires_claim_checks_and_failure_modes(tmp_path):
@@ -198,6 +226,106 @@ def test_validation_runtime_entrypoint_exists():
     ep = runtime_entrypoints()
     assert "create_validation_contract" in ep
     assert ep["create_validation_contract"]["surface"] == "validation_contract_record"
+
+
+def test_record_validation_result_requires_contract_outputs(tmp_path):
+    ws, claim, contract, run = _setup_validation_contract_and_run(tmp_path)
+
+    from brain.v5.models import ValidationResultRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import list_records
+    from brain.v5.validation import record_validation_result
+
+    result = record_validation_result(
+        ws,
+        topic_id="gw",
+        claim_id=claim.claim_id,
+        contract_id=contract.contract_id,
+        tool_run_id=run.run_id,
+        status="passed",
+        checked_outputs=["benchmark_table", "diagnostic_plot"],
+        summary="Both required validation outputs were inspected.",
+        evidence_refs=["evidence-si-gw-benchmark"],
+        artifact_ids=["artifact-diagnostic-plot"],
+    )
+
+    payload = {"ok": True, **asdict(result)}
+    assert result.kind == "validation_result"
+    assert result.contract_id == contract.contract_id
+    assert result.tool_run_id == run.run_id
+    assert result.missing_outputs == []
+    assert require_valid_public_surface("validation_result_record", payload) == payload
+    records = list_records(ws.registry_dir("validation_results"), ValidationResultRecord)
+    assert [record.result_id for record in records] == [result.result_id]
+
+
+def test_validation_result_rejects_passed_with_missing_required_output(tmp_path):
+    ws, claim, contract, run = _setup_validation_contract_and_run(tmp_path)
+
+    from brain.v5.validation import record_validation_result
+
+    with pytest.raises(ValueError, match="missing required evidence outputs"):
+        record_validation_result(
+            ws,
+            topic_id="gw",
+            claim_id=claim.claim_id,
+            contract_id=contract.contract_id,
+            tool_run_id=run.run_id,
+            status="passed",
+            checked_outputs=["benchmark_table"],
+            summary="The diagnostic plot was not checked.",
+        )
+
+
+def test_validation_result_cli_mcp_and_runtime_surface(tmp_path, capsys):
+    ws, claim, contract, run = _setup_validation_contract_and_run(tmp_path)
+
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_record_validation_result
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+
+    assert main(
+        [
+            "--base",
+            str(tmp_path),
+            "validation",
+            "result",
+            "record",
+            "--topic",
+            "gw",
+            "--claim",
+            claim.claim_id,
+            "--contract",
+            contract.contract_id,
+            "--tool-run",
+            run.run_id,
+            "--status",
+            "passed",
+            "--checked-output",
+            "benchmark_table",
+            "--checked-output",
+            "diagnostic_plot",
+            "--summary",
+            "CLI validation result.",
+        ]
+    ) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    assert cli_payload["kind"] == "validation_result"
+    assert cli_payload["missing_outputs"] == []
+
+    mcp_payload = aitp_v5_record_validation_result(
+        str(tmp_path),
+        topic_id="gw",
+        claim_id=claim.claim_id,
+        contract_id=contract.contract_id,
+        tool_run_id=run.run_id,
+        status="passed",
+        checked_outputs=["benchmark_table", "diagnostic_plot"],
+        summary="MCP validation result.",
+    )
+    assert mcp_payload["kind"] == "validation_result"
+    assert mcp_payload["missing_outputs"] == []
+    assert runtime_entrypoints()["record_validation_result"]["surface"] == "validation_result_record"
 
 
 def test_human_checkpoint_records_reason_and_decision(tmp_path):

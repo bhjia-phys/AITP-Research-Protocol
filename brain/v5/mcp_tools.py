@@ -26,7 +26,7 @@ from brain.v5.public_surfaces import describe_public_surfaces, require_valid_pub
 from brain.v5.physics_objects import record_object_relation, record_physics_object
 from brain.v5.references import record_reference_location
 from brain.v5.sensemaking import record_sensemaking_report
-from brain.v5.validation import create_validation_contract
+from brain.v5.validation import create_validation_contract, record_validation_result
 from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
 from brain.v5.risk import assess_claim_risk
@@ -408,6 +408,19 @@ def aitp_v5_create_validation_contract(
         tool_recipe_ids=tool_recipe_ids, executor_ids=executor_ids,
         validator_role=validator_role)
     return require_valid_public_surface("validation_contract_record", {"ok": True, **asdict(contract)})
+
+
+def aitp_v5_record_validation_result(
+    base: str, *, topic_id: str, claim_id: str, contract_id: str, tool_run_id: str,
+    status: str, checked_outputs: list[str] | None = None, summary: str = "",
+    evidence_refs: list[str] | None = None, artifact_ids: list[str] | None = None,
+    failure_modes_observed: list[str] | None = None,
+) -> dict:
+    result = record_validation_result(_ws(base), topic_id=topic_id, claim_id=claim_id,
+        contract_id=contract_id, tool_run_id=tool_run_id, status=status,
+        checked_outputs=checked_outputs, summary=summary, evidence_refs=evidence_refs,
+        artifact_ids=artifact_ids, failure_modes_observed=failure_modes_observed)
+    return require_valid_public_surface("validation_result_record", {"ok": True, **asdict(result)})
 
 
 def aitp_v5_request_human_checkpoint(

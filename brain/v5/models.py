@@ -292,6 +292,23 @@ class ValidationContractRecord:
 
 
 @dataclass
+class ValidationResultRecord:
+    result_id: str
+    topic_id: str
+    claim_id: str
+    contract_id: str
+    tool_run_id: str
+    status: str
+    checked_outputs: list[str] = field(default_factory=list)
+    missing_outputs: list[str] = field(default_factory=list)
+    failure_modes_observed: list[str] = field(default_factory=list)
+    evidence_refs: list[str] = field(default_factory=list)
+    artifact_ids: list[str] = field(default_factory=list)
+    summary: str = ""
+    kind: str = "validation_result"
+
+
+@dataclass
 class HumanCheckpointRecord:
     checkpoint_id: str
     topic_id: str
