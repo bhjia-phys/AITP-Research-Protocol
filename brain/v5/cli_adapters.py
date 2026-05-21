@@ -10,6 +10,7 @@ from typing import Any
 from brain.v5.adapter_protocols import adapter_protocol_registry, record_gate_coverage_audit
 from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
 from brain.v5.adapters import build_adapter_packet
+from brain.v5.hook_codex_install import install_codex_hooks_json
 from brain.v5.hook_fixture_templates import install_codex_hook_fixture, install_opencode_hook_fixture
 from brain.v5.hook_install_templates import (
     install_claude_code_hook_settings,
@@ -72,8 +73,21 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
         return require_valid_public_surface("claude_code_hook_settings", settings)
     if args.adapter_command == "install-hooks":
         if packet["runtime"] == "codex":
+            if args.settings:
+                installed = {
+                    "ok": True,
+                    **install_codex_hooks_json(
+                        args.settings,
+                        packet["runtime_hook_installation"],
+                        packet["runtime_gate_protocols"],
+                        workspace_base=str(ws.base),
+                        session_id=args.session_id,
+                        bridge_path=args.bridge_output or None,
+                    ),
+                }
+                return require_valid_public_surface("codex_hook_installation", installed)
             if not args.output:
-                raise SystemExit("adapter install-hooks codex requires --output")
+                raise SystemExit("adapter install-hooks codex requires --output or --settings")
             installed = {
                 "ok": True,
                 **install_codex_hook_fixture(

@@ -557,6 +557,124 @@ def test_mcp_codex_hook_installer_returns_contract_payload(tmp_path):
     assert fixture_path.exists()
 
 
+def test_codex_native_hooks_json_installer_merges_lifecycle_hooks(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.hook_codex_install import install_codex_hooks_json
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ws, _ = _seed_session(tmp_path)
+    packet = build_adapter_packet(ws, "s1", runtime="codex")
+    hooks_path = tmp_path / ".codex" / "hooks.json"
+    hooks_path.parent.mkdir(parents=True)
+    hooks_path.write_text(
+        json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "Write|Edit",
+                            "hooks": [{"type": "command", "command": "echo keep-existing"}],
+                        }
+                    ],
+                    "SessionStart": [{"matcher": "startup", "hooks": [{"type": "command", "command": "echo boot"}]}],
+                }
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    payload = install_codex_hooks_json(
+        hooks_path,
+        packet["runtime_hook_installation"],
+        packet["runtime_gate_protocols"],
+        workspace_base=str(tmp_path),
+        session_id="s1",
+    )
+    installed = json.loads(hooks_path.read_text(encoding="utf-8"))
+
+    assert payload["kind"] == "codex_hook_installation"
+    assert payload["runtime"] == "codex"
+    assert payload["native_installer_available"] is True
+    assert payload["native_hooks_path"] == str(hooks_path)
+    assert payload["created"] is False
+    assert payload["merged"] is True
+    assert payload["added_hooks"] == 2
+    assert payload["bridge"]["payload_path"] == str(hooks_path.parent / "AITP_V5_HOOK_BRIDGE.json")
+    assert installed["hooks"]["PreToolUse"][0]["hooks"][0]["command"] == "echo keep-existing"
+    assert installed["hooks"]["SessionStart"][0]["hooks"][0]["command"] == "echo boot"
+    assert "hooks/aitp_v5_adapter_event_runner.py" in installed["hooks"]["PreToolUse"][1]["hooks"][0]["command"]
+    assert "--bridge-path" in installed["hooks"]["PreToolUse"][1]["hooks"][0]["command"]
+    assert "post-tool" in installed["hooks"]["PostToolUse"][0]["hooks"][0]["command"]
+    assert require_valid_public_surface("codex_hook_installation", {"ok": True, **payload}) == {"ok": True, **payload}
+
+    second_payload = install_codex_hooks_json(
+        hooks_path,
+        packet["runtime_hook_installation"],
+        packet["runtime_gate_protocols"],
+        workspace_base=str(tmp_path),
+        session_id="s1",
+    )
+    installed_twice = json.loads(hooks_path.read_text(encoding="utf-8"))
+
+    assert second_payload["added_hooks"] == 0
+    assert installed_twice == installed
+
+
+def test_cli_adapter_install_hooks_merges_codex_hooks_json(tmp_path, capsys):
+    _seed_session(tmp_path)
+    hooks_path = tmp_path / ".codex" / "hooks.json"
+    hooks_path.parent.mkdir(parents=True)
+    hooks_path.write_text(
+        json.dumps({"hooks": {"UserPromptSubmit": [{"hooks": [{"type": "command", "command": "echo route"}]}]}}),
+        encoding="utf-8",
+    )
+
+    payload = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "adapter",
+            "install-hooks",
+            "codex",
+            "s1",
+            "--settings",
+            str(hooks_path),
+        ],
+        capsys,
+    )
+    installed = json.loads(hooks_path.read_text(encoding="utf-8"))
+
+    assert payload["ok"] is True
+    assert payload["kind"] == "codex_hook_installation"
+    assert payload["native_installer_available"] is True
+    assert payload["native_hooks_path"] == str(hooks_path)
+    assert payload["added_hooks"] == 2
+    assert installed["hooks"]["UserPromptSubmit"][0]["hooks"][0]["command"] == "echo route"
+    assert "pre-tool" in installed["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
+    assert "post-tool" in installed["hooks"]["PostToolUse"][0]["hooks"][0]["command"]
+
+
+def test_mcp_codex_native_hook_installer_returns_contract_payload(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_install_codex_hook_fixture
+
+    _seed_session(tmp_path)
+    hooks_path = tmp_path / ".codex" / "hooks.json"
+
+    payload = aitp_v5_install_codex_hook_fixture(
+        str(tmp_path),
+        session_id="s1",
+        output_path="",
+        hooks_path=str(hooks_path),
+    )
+
+    assert payload["ok"] is True
+    assert payload["kind"] == "codex_hook_installation"
+    assert payload["native_installer_available"] is True
+    assert payload["native_hooks_path"] == str(hooks_path)
+    assert hooks_path.exists()
+
+
 def test_cli_adapter_pre_tool_event_evaluates_platform_payload(tmp_path, capsys):
     _, claim = _seed_session(tmp_path)
     bridge_path = tmp_path / "codex" / "AITP_V5_HOOK_BRIDGE.md"

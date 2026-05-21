@@ -10,7 +10,7 @@ from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
 from brain.v5.code import record_code_state
-from brain.v5.hook_fixture_templates import install_codex_hook_fixture, install_opencode_hook_fixture
+from brain.v5.hook_fixture_templates import install_opencode_hook_fixture
 from brain.v5.hook_install_templates import (
     install_claude_code_hook_settings,
     write_claude_code_hook_settings,
@@ -29,6 +29,7 @@ from brain.v5.validation import create_validation_contract, record_validation_re
 from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
 from brain.v5.mcp_evidence import aitp_v5_record_evidence
+from brain.v5.mcp_hook_install import aitp_v5_install_codex_hook_fixture
 from brain.v5.mcp_memory import aitp_v5_audit_l2_memory_context
 from brain.v5.mcp_trust_audit import aitp_v5_audit_claim_trust
 from brain.v5.risk import assess_claim_risk
@@ -226,29 +227,6 @@ def aitp_v5_write_opencode_plugin_bridge(base: str, *, session_id: str, output_p
         ),
     }
     return require_valid_public_surface("opencode_plugin_bridge", bridge)
-
-
-def aitp_v5_install_codex_hook_fixture(
-    base: str,
-    *,
-    session_id: str,
-    output_path: str,
-    bridge_output_path: str = "",
-) -> dict:
-    ws = _ws(base)
-    packet = require_valid_public_surface("adapter_packet", build_adapter_packet(ws, session_id, runtime="codex"))
-    installed = {
-        "ok": True,
-        **install_codex_hook_fixture(
-            output_path,
-            packet["runtime_hook_installation"],
-            packet["runtime_gate_protocols"],
-            workspace_base=str(ws.base),
-            session_id=session_id,
-            bridge_path=bridge_output_path or None,
-        ),
-    }
-    return require_valid_public_surface("codex_hook_installation", installed)
 
 
 def aitp_v5_install_opencode_hook_fixture(

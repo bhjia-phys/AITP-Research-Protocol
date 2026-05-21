@@ -40,7 +40,8 @@ def validate_codex_hook_installation(
     _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
     _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
     _require_bool_value(payload.get("fixture_installer_available"), True, f"{path}.fixture_installer_available", result)
-    _require_bool_value(payload.get("native_installer_available"), False, f"{path}.native_installer_available", result)
+    if not isinstance(payload.get("native_installer_available"), bool):
+        result.add(f"{path}.native_installer_available", "must be a boolean")
     for key in ("path", "bridge_path", "bridge_payload_path"):
         _require_nonempty_str(payload, key, path, result)
 
@@ -52,7 +53,9 @@ def validate_codex_hook_installation(
         _require_mapping(bridge, f"{path}.bridge", result)
 
     fixture = payload.get("fixture")
-    _require_mapping(fixture, f"{path}.fixture", result)
+    hooks_file = payload.get("hooks")
+    if fixture is None and hooks_file is None:
+        result.add(path, "must include either fixture or native hooks payload")
     if isinstance(fixture, dict):
         if fixture.get("kind") != "codex_hook_installation_fixture":
             result.add(f"{path}.fixture.kind", "must be 'codex_hook_installation_fixture'")
@@ -67,6 +70,18 @@ def validate_codex_hook_installation(
         if isinstance(hooks, dict):
             _validate_pre_tool_hook(hooks.get("pre_tool"), f"{path}.fixture.hooks.pre_tool", result)
             _validate_post_tool_hook(hooks.get("post_tool"), f"{path}.fixture.hooks.post_tool", result)
+    elif fixture is not None:
+        _require_mapping(fixture, f"{path}.fixture", result)
+    if isinstance(hooks_file, dict):
+        _validate_codex_hooks_file(hooks_file, f"{path}.hooks", result)
+        for key in ("created", "merged"):
+            if not isinstance(payload.get(key), bool):
+                result.add(f"{path}.{key}", "must be a boolean")
+        if not isinstance(payload.get("added_hooks"), int) or payload.get("added_hooks") < 0:
+            result.add(f"{path}.added_hooks", "must be a non-negative integer")
+        _require_nonempty_str(payload, "native_hooks_path", path, result)
+    elif hooks_file is not None:
+        _require_mapping(hooks_file, f"{path}.hooks", result)
     return result
 
 
@@ -179,3 +194,35 @@ def _validate_post_tool_hook(payload: Any, path: str, result: ContractResult) ->
         for token in ("hooks/aitp_v5_adapter_event_runner.py", "post-tool"):
             if token not in argv:
                 result.add(f"{path}.argv", f"must include {token!r}")
+
+
+def _validate_codex_hooks_file(payload: dict[str, Any], path: str, result: ContractResult) -> None:
+    hooks = payload.get("hooks")
+    _require_mapping(hooks, f"{path}.hooks", result)
+    if not isinstance(hooks, dict):
+        return
+    _validate_codex_native_event_list(hooks.get("PreToolUse"), f"{path}.hooks.PreToolUse", "pre-tool", result)
+    _validate_codex_native_event_list(hooks.get("PostToolUse"), f"{path}.hooks.PostToolUse", "post-tool", result)
+
+
+def _validate_codex_native_event_list(payload: Any, path: str, command_token: str, result: ContractResult) -> None:
+    _require_list(payload, path, result)
+    if not isinstance(payload, list) or not payload:
+        return
+    for index, event in enumerate(payload):
+        _require_mapping(event, f"{path}[{index}]", result)
+        if not isinstance(event, dict):
+            continue
+        event_hooks = event.get("hooks")
+        _require_list(event_hooks, f"{path}[{index}].hooks", result)
+        if not isinstance(event_hooks, list):
+            continue
+        if any(
+            isinstance(hook, dict)
+            and hook.get("type") == "command"
+            and "hooks/aitp_v5_adapter_event_runner.py" in str(hook.get("command", ""))
+            and command_token in str(hook.get("command", ""))
+            for hook in event_hooks
+        ):
+            return
+    result.add(path, f"must include AITP {command_token!r} command hook")
