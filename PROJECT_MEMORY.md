@@ -113,8 +113,8 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `policy_reasons` so reviewers and adapters can inspect policy IDs/severities
   without parsing free-form messages. It now covers validation, L2 promotion,
   and summary-sourced
-  `record_evidence`/`record_tool_run`/`execute_tool`/`ingest_subagent_result`/
-  `create_validation_contract`/`request_human_checkpoint`/
+  `record_code_state`/`record_evidence`/`record_tool_run`/`execute_tool`/
+  `ingest_subagent_result`/`create_validation_contract`/`request_human_checkpoint`/
   `decide_human_checkpoint`/`create_promotion_packet`/
   `apply_promotion_packet` trust-changing attempts through the same CLI/MCP
   entrypoint.
@@ -122,10 +122,10 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `pre_tool_policy_entrypoint` pointing to that shared surface, so runtime
   adapters can wire validation/promotion pre-tool checks without reimplementing
   policy logic. They also carry `gate_protocols` generated from
-  `runtime_gate_protocols`, so bridge files expose record evidence/tool-run,
-  execute-tool, subagent-ingestion, validation-contract, human-checkpoint
-  request/decision, promotion-packet creation/application, and validate/promote
-  sequences as machine-readable payload and rendered Markdown.
+  `runtime_gate_protocols`, so bridge files expose code-state, record
+  evidence/tool-run, execute-tool, subagent-ingestion, validation-contract,
+  human-checkpoint request/decision, promotion-packet creation/application, and
+  validate/promote sequences as machine-readable payload and rendered Markdown.
 - Runtime adapters can consume those generated bridge `gate_protocols` through
   `brain/v5/adapter_runtime.py::evaluate_bridge_gate_pre_tool_policy`, which
   verifies the bridge sequence and then delegates to the shared typed-record
@@ -155,7 +155,8 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   bridge sidecars advertise that host-facing command in
   `pre_tool_event_runner.stdin_runner.argv` or
   `plugin_bridge.pre_tool_event_runner.stdin_runner.argv`.
-- Adapter packet `runtime_gate_protocols.record_evidence`,
+- Adapter packet `runtime_gate_protocols.record_code_state`,
+  `runtime_gate_protocols.record_evidence`,
   `runtime_gate_protocols.record_tool_run`,
   `runtime_gate_protocols.execute_tool`,
   `runtime_gate_protocols.ingest_subagent_result`,
@@ -172,9 +173,9 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `human_checkpoint_id`; for adversarial risk, trust-changing actions are
   hard-blocked unless that checkpoint resolves to a decided typed
   `HumanCheckpointRecord` with `decision=approve` for the active claim.
-- Claude Code `PreToolUse` uses that shared policy for validation,
-  human-checkpoint request/decision, promotion-packet creation/application, and
-  L2 promotion MCP calls: it
+- Claude Code `PreToolUse` uses that shared policy for code-state provenance,
+  validation, human-checkpoint request/decision, promotion-packet
+  creation/application, and L2 promotion MCP calls: it
   resolves the typed claim, cited evidence refs, and linked or requested code
   states, then reuses `evaluate_policy` before the tool runs.
 - Trust-changing confidence updates use a request-bound preflight proof token:

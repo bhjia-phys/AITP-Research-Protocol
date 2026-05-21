@@ -2420,3 +2420,69 @@ Each entry should record:
 - Next recommended task:
   - continue scanning remaining public MCP inputs for pre-tool policy gaps, or
     add host-side installation documentation/tests for native hook APIs.
+
+### c2a99ab - Gate Code State Recording Through Pre-Tool Policy
+
+- Task: make `record_code_state` a first-class pre-tool/gate action rather than
+  leaving code provenance writes as record-only MCP calls.
+- Planning source:
+  - v5 invariant that typed kernel records are authoritative and summaries are
+    orientation-only;
+  - formula-code translation and numerical validation require trustworthy code
+    provenance before code-method claims can be validated;
+  - previous ledger recommendation to continue scanning public MCP inputs for
+    pre-tool policy gaps.
+- Changed files:
+  - `brain/v5/policy.py`
+  - `brain/v5/pretool_policy.py`
+  - `brain/v5/adapter_protocols.py`
+  - `brain/v5/adapter_runtime.py`
+  - `brain/v5/gate_protocols.py`
+  - `hooks/aitp_v5_claude_hook.py`
+  - `tests/test_v5_pretool_policy.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_hooks.py`
+- Public/runtime behavior changes:
+  - `record_code_state` participates in context-aware pre-tool policy
+    evaluation;
+  - summary/task-plan/findings/progress orientation surfaces cannot directly
+    drive code-state provenance records;
+  - adapter `trust_changing_actions` and `requires_kernel_call_before` include
+    `record_code_state`;
+  - generated bridge `runtime_gate_protocols` include a `record_code_state`
+    sequence with `evaluate_pre_tool_policy` before the typed write;
+  - Codex/OpenCode platform event normalization maps
+    `aitp_v5_record_code_state` to the explicit v5 action;
+  - Claude Code `PreToolUse` maps code-state MCP calls through the shared
+    typed-record-backed policy path.
+- Tests:
+  - MCP pre-tool policy blocks progress-summary sourced code-state recording;
+  - adapter pre-tool event path infers `record_code_state` from the MCP tool
+    name and returns the bridge gate protocol;
+  - Claude hook test denies a summary-sourced code-state recording attempt;
+  - adapter packet tests assert `record_code_state` is advertised as a
+    kernel-gated trust-relevant action.
+- Verification:
+  - red tests failed as expected:
+    `python -m pytest tests/test_v5_pretool_policy.py tests/test_v5_adapters.py tests/test_v5_hooks.py -q -k "code_state_from_progress_source or infers_code_state_policy or summary_sourced_code_state"`:
+    3 failed because direct policy returned `log`, adapter runtime could not
+    infer `record_code_state`, and Claude hook allowed the call;
+  - target green set:
+    `python -m pytest tests/test_v5_pretool_policy.py tests/test_v5_adapters.py tests/test_v5_hooks.py -q -k "code_state_from_progress_source or infers_code_state_policy or summary_sourced_code_state"`:
+    3 passed;
+  - focused related set:
+    `python -m pytest tests/test_v5_pretool_policy.py tests/test_v5_adapters.py tests/test_v5_hooks.py tests/test_v5_public_surfaces.py tests/test_v5_contracts.py -q`:
+    131 passed;
+  - full v5 regression set:
+    `python -m pytest tests/test_v5_*.py -q`: 352 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with only line-ending warnings.
+- Residual risks:
+  - native Codex/OpenCode hosts still need true lifecycle installer wiring;
+  - pre-tool coverage still does not cover every public MCP input or every
+    active risk dimension.
+- Next recommended task:
+  - continue scanning remaining public MCP inputs for pre-tool policy gaps,
+    especially reference/physics-object/sensemaking writes, or add host-side
+    installation documentation/tests for native hook APIs.
