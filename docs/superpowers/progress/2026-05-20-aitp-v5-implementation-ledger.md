@@ -4939,3 +4939,82 @@ Each entry should record:
   - decide whether high-risk promotion should require a passed
     `failure_mode_review_result_record` linked to the approved checkpoint, or
     continue hardening domain-tool recipes that produce those review results.
+
+### 584d97f - Require Passed Failure-Mode Review Results
+
+- Task: close the high-risk promotion review loop by requiring a passed
+  `failure_mode_review_result_record` linked to the approved failure-mode review
+  checkpoint.
+- Planning source:
+  - previous ledger recommendation after `be44942`;
+  - v5 invariant that typed kernel records remain authoritative;
+  - user requirement that gates must force real theoretical-physics reasoning
+    rather than checkbox-style passage.
+- Changed files:
+  - `brain/v5/models.py`
+  - `brain/v5/memory.py`
+  - `brain/v5/policy.py`
+  - `brain/v5/pretool_policy.py`
+  - `brain/v5/cli.py`
+  - `brain/v5/cli_policy.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/adapter_runtime.py`
+  - `brain/v5/hook_entrypoint_schemas.py`
+  - `brain/v5/hook_protocol_contracts.py`
+  - `brain/v5/hook_bridge_markdown.py`
+  - `brain/v5/memory_audit.py`
+  - `brain/v5/memory_audit_contracts.py`
+  - `brain/v5/record_contracts.py`
+  - `tests/test_v5_memory.py`
+  - `tests/test_v5_pretool_policy.py`
+  - `tests/test_v5_memory_audit.py`
+  - `tests/test_v5_adapters.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - `PromotionPacketRecord` and `MemoryEntryRecord` now preserve
+    `failure_mode_review_result_id`;
+  - `create_promotion_packet` and `apply_promotion_packet` reject supplied
+    failure-mode review checkpoints unless a same-topic/claim/checkpoint
+    `passed` review result id is also supplied;
+  - high-risk pre-tool policy now blocks rigorous/adversarial promotion with
+    recorded claim risk until both the approved checkpoint and linked passed
+    review result are present;
+  - CLI/MCP promotion creation and pre-tool policy entrypoints accept
+    `--failure-mode-review-result` / `failure_mode_review_result_id`;
+  - adapter runtime and hook schemas propagate the new field, and L2 memory
+    audits expose the exact result id selected by the promoted memory entry.
+- Tests:
+  - added kernel coverage for rejecting checkpoint-only promotion and
+    non-passed review results;
+  - updated CLI/MCP promotion coverage to persist the result id;
+  - added pre-tool policy coverage for blocking checkpoint-only high-risk
+    promotion and allowing promotion only with a linked passed result;
+  - updated adapter schema and L2 memory audit coverage for the new field.
+- Verification:
+  - red target set:
+    `pytest tests\test_v5_memory.py::test_promotion_packet_and_memory_entry_record_failure_mode_review_checkpoint tests\test_v5_memory.py::test_promotion_packet_rejects_checkpoint_without_passed_review_result tests\test_v5_memory.py::test_promotion_cli tests\test_v5_memory.py::test_promotion_mcp tests\test_v5_pretool_policy.py::test_mcp_pre_tool_policy_accepts_high_risk_promotion_with_failure_mode_review_checkpoint tests\test_v5_pretool_policy.py::test_mcp_pre_tool_policy_blocks_high_risk_promotion_without_failure_mode_review_result tests\test_v5_pretool_policy.py::test_cli_pre_tool_policy_accepts_failure_mode_review_checkpoint -q`:
+    7 failed because the kernel/CLI/MCP/policy surfaces did not yet accept or
+    require `failure_mode_review_result_id`;
+  - target green set: same command, 7 passed;
+  - focused related set:
+    `pytest tests\test_v5_memory.py tests\test_v5_pretool_policy.py tests\test_v5_memory_audit.py tests\test_v5_adapters.py tests\test_v5_mcp_tools.py tests\test_v5_public_surfaces.py tests\test_v5_architecture_boundaries.py -q`:
+    185 passed;
+  - focused verification before commit:
+    `pytest tests\test_v5_memory.py tests\test_v5_pretool_policy.py tests\test_v5_memory_audit.py tests\test_v5_adapters.py tests\test_v5_architecture_boundaries.py -q`:
+    153 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; pytest $files -q`:
+    451 passed;
+  - `python -m compileall -q brain\v5`: passed;
+  - `git diff --check -- .`: passed, with CRLF conversion warnings only.
+- Residual risks:
+  - the gate now requires a passed typed review result, but the actual quality
+    of that review still depends on domain-tool recipes and reviewer prompts;
+  - external/literature `basis_refs` remain labels, so future stricter policy
+    may require reference-location ids for literature-backed review results.
+- Next recommended task:
+  - start hardening domain-tool recipes that can produce high-quality
+    failure-mode review results for concrete workflows such as LibRPA/GW
+    formula-code translation and FQHE toy numerics.
