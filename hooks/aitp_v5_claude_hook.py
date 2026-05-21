@@ -26,6 +26,8 @@ _AITP_MCP_ACTIONS = {
     "aitp_v5_apply_trust_update": "change_claim_confidence",
     "aitp_v5_create_promotion_packet": "create_promotion_packet",
     "aitp_v5_apply_promotion_packet": "apply_promotion_packet",
+    "aitp_v5_request_human_checkpoint": "request_human_checkpoint",
+    "aitp_v5_decide_human_checkpoint": "decide_human_checkpoint",
     "aitp_v5_create_validation_contract": "validate_claim",
 }
 _TRUSTED_APPLY_SOURCE_KINDS = {
@@ -171,7 +173,14 @@ def _context_policy_from_workspace(
     base: str,
     session_id: str,
 ) -> PolicyDecision | None:
-    if action not in {"create_promotion_packet", "apply_promotion_packet", "validate_claim", "promote_to_l2"}:
+    if action not in {
+        "create_promotion_packet",
+        "apply_promotion_packet",
+        "request_human_checkpoint",
+        "decide_human_checkpoint",
+        "validate_claim",
+        "promote_to_l2",
+    }:
         return None
     tool_input = payload.get("tool_input")
     if not isinstance(tool_input, dict):

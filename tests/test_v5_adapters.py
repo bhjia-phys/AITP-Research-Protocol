@@ -62,6 +62,8 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
     assert "change_claim_confidence" in packet["trust_changing_actions"]
     assert "ingest_subagent_result" in packet["trust_changing_actions"]
     assert "create_validation_contract" in packet["trust_changing_actions"]
+    assert "request_human_checkpoint" in packet["trust_changing_actions"]
+    assert "decide_human_checkpoint" in packet["trust_changing_actions"]
     assert "create_promotion_packet" in packet["trust_changing_actions"]
     assert "apply_promotion_packet" in packet["trust_changing_actions"]
     assert "aitp_v5_get_execution_brief" in packet["required_kernel_entrypoints"]
@@ -859,6 +861,89 @@ def test_mcp_adapter_pre_tool_event_passes_adversarial_checkpoint_context(tmp_pa
     assert payload["policy_reasons"] == []
 
 
+def test_mcp_adapter_pre_tool_event_infers_human_checkpoint_request_policy(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_adapter_pre_tool_event, aitp_v5_write_codex_hook_bridge
+
+    _, claim = _seed_session(tmp_path)
+    bridge = aitp_v5_write_codex_hook_bridge(
+        str(tmp_path),
+        session_id="s1",
+        output_path=str(tmp_path / "codex" / "AITP_V5_HOOK_BRIDGE.md"),
+    )
+
+    payload = aitp_v5_evaluate_adapter_pre_tool_event(
+        str(tmp_path),
+        bridge_payload=bridge,
+        platform_event={
+            "runtime": "codex",
+            "hook_name": "pre_tool",
+            "session_id": "s1",
+            "tool_name": "mcp__aitp__aitp_v5_request_human_checkpoint",
+            "tool_input": {
+                "topic_id": "librpa-gw",
+                "claim_id": claim.claim_id,
+                "reason": "A summary suggested applying a promotion packet.",
+                "requested_by": "codex",
+                "source_kind": "task_plan",
+                "source_ref": ".aitp/surfaces/session_summaries/s1/task_plan.md",
+                "orientation_only": True,
+            },
+        },
+    )
+
+    assert payload["ok"] is True
+    assert payload["action"] == "request_human_checkpoint"
+    assert payload["mode"] == "block"
+    assert payload["block"] is True
+    assert payload["runtime_gate_protocol"]["action"] == "request_human_checkpoint"
+    assert payload["runtime_gate_protocol"]["human_checkpoint_required"] is False
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "no_summary_surface_as_truth_source"
+    ]
+
+
+def test_mcp_adapter_pre_tool_event_infers_human_checkpoint_decision_policy(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_adapter_pre_tool_event, aitp_v5_write_codex_hook_bridge
+
+    _, claim = _seed_session(tmp_path)
+    bridge = aitp_v5_write_codex_hook_bridge(
+        str(tmp_path),
+        session_id="s1",
+        output_path=str(tmp_path / "codex" / "AITP_V5_HOOK_BRIDGE.md"),
+    )
+
+    payload = aitp_v5_evaluate_adapter_pre_tool_event(
+        str(tmp_path),
+        bridge_payload=bridge,
+        platform_event={
+            "runtime": "codex",
+            "hook_name": "pre_tool",
+            "session_id": "s1",
+            "tool_name": "mcp__aitp__aitp_v5_decide_human_checkpoint",
+            "tool_input": {
+                "checkpoint_id": "checkpoint-human-approval",
+                "claim_id": claim.claim_id,
+                "decision": "approve",
+                "rationale": "The findings summary says this is ready.",
+                "decided_by": "codex",
+                "source_kind": "findings",
+                "source_ref": ".aitp/surfaces/session_summaries/s1/findings.md",
+                "orientation_only": True,
+            },
+        },
+    )
+
+    assert payload["ok"] is True
+    assert payload["action"] == "decide_human_checkpoint"
+    assert payload["mode"] == "block"
+    assert payload["block"] is True
+    assert payload["runtime_gate_protocol"]["action"] == "decide_human_checkpoint"
+    assert payload["runtime_gate_protocol"]["human_checkpoint_required"] is False
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "no_summary_surface_as_truth_source"
+    ]
+
+
 def test_opencode_plugin_bridge_is_rendered_from_installation_template(tmp_path):
     from brain.v5.adapters import build_adapter_packet
     from brain.v5.hook_install_templates import write_opencode_plugin_bridge
@@ -1396,6 +1481,8 @@ def test_adapter_packet_ignores_tampered_summary_as_truth_source(tmp_path):
         "execute_tool",
         "ingest_subagent_result",
         "create_validation_contract",
+        "request_human_checkpoint",
+        "decide_human_checkpoint",
         "create_promotion_packet",
         "apply_promotion_packet",
         "change_claim_confidence",

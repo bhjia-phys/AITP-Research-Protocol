@@ -21,6 +21,7 @@ _HIGH_RISK_LEVELS = {"rigorous", "adversarial"}
 _CRITICAL_ACTIONS = {
     "create_promotion_packet",
     "apply_promotion_packet",
+    "decide_human_checkpoint",
     "promote_to_l2",
     "apply_harness_patch",
     "destructive_action",

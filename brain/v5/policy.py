@@ -17,6 +17,8 @@ _TRUST_CHANGING_ACTIONS = {
     "ingest_subagent_result",
     "change_claim_confidence",
     "create_validation_contract",
+    "request_human_checkpoint",
+    "decide_human_checkpoint",
     "create_promotion_packet",
     "apply_promotion_packet",
     "validate_claim",

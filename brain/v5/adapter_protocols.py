@@ -35,6 +35,8 @@ _TRUST_CHANGING_ACTIONS = [
     "execute_tool",
     "ingest_subagent_result",
     "create_validation_contract",
+    "request_human_checkpoint",
+    "decide_human_checkpoint",
     "create_promotion_packet",
     "apply_promotion_packet",
     "change_claim_confidence",
