@@ -17,6 +17,8 @@ _CONTEXT_ACTIONS = {
     "record_evidence",
     "record_tool_run",
     "execute_tool",
+    "record_physics_object",
+    "record_object_relation",
     "ingest_subagent_result",
     "create_validation_contract",
     "request_human_checkpoint",

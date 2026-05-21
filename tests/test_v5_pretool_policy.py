@@ -221,6 +221,54 @@ def test_mcp_pre_tool_policy_blocks_code_state_from_progress_source(tmp_path):
     ]
 
 
+def test_mcp_pre_tool_policy_blocks_physics_object_from_findings_source(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
+
+    _, claim = _seed_claim(tmp_path)
+
+    payload = aitp_v5_evaluate_pre_tool_policy(
+        str(tmp_path),
+        session_id="s1",
+        action="record_physics_object",
+        claim_id=claim.claim_id,
+        source_kind="findings",
+        source_ref=".aitp/surfaces/session_summaries/s1/findings.md",
+        orientation_only=True,
+    )
+
+    assert payload["action"] == "record_physics_object"
+    assert payload["mode"] == "block"
+    assert payload["block"] is True
+    assert payload["required_actions"] == ["query_execution_brief_or_typed_record"]
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "no_summary_surface_as_truth_source"
+    ]
+
+
+def test_mcp_pre_tool_policy_blocks_object_relation_from_task_plan_source(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
+
+    _, claim = _seed_claim(tmp_path)
+
+    payload = aitp_v5_evaluate_pre_tool_policy(
+        str(tmp_path),
+        session_id="s1",
+        action="record_object_relation",
+        claim_id=claim.claim_id,
+        source_kind="task_plan",
+        source_ref=".aitp/surfaces/session_summaries/s1/task_plan.md",
+        orientation_only=True,
+    )
+
+    assert payload["action"] == "record_object_relation"
+    assert payload["mode"] == "block"
+    assert payload["block"] is True
+    assert payload["required_actions"] == ["query_execution_brief_or_typed_record"]
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "no_summary_surface_as_truth_source"
+    ]
+
+
 def test_mcp_pre_tool_policy_blocks_adversarial_trust_change_without_checkpoint(tmp_path):
     from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
 

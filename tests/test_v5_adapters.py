@@ -62,6 +62,8 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
     assert "record_code_state" in packet["trust_changing_actions"]
     assert "change_claim_confidence" in packet["trust_changing_actions"]
     assert "ingest_subagent_result" in packet["trust_changing_actions"]
+    assert "record_physics_object" in packet["trust_changing_actions"]
+    assert "record_object_relation" in packet["trust_changing_actions"]
     assert "create_validation_contract" in packet["trust_changing_actions"]
     assert "request_human_checkpoint" in packet["trust_changing_actions"]
     assert "decide_human_checkpoint" in packet["trust_changing_actions"]
@@ -646,6 +648,102 @@ def test_mcp_adapter_pre_tool_event_infers_code_state_policy(tmp_path):
         "repo_id",
         "upstream_commit",
         "local_branch",
+    ]
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "no_summary_surface_as_truth_source"
+    ]
+
+
+def test_mcp_adapter_pre_tool_event_infers_physics_object_policy(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_adapter_pre_tool_event, aitp_v5_write_codex_hook_bridge
+
+    _, claim = _seed_session(tmp_path)
+    bridge = aitp_v5_write_codex_hook_bridge(
+        str(tmp_path),
+        session_id="s1",
+        output_path=str(tmp_path / "codex" / "AITP_V5_HOOK_BRIDGE.md"),
+    )
+
+    payload = aitp_v5_evaluate_adapter_pre_tool_event(
+        str(tmp_path),
+        bridge_payload=bridge,
+        platform_event={
+            "runtime": "codex",
+            "hook_name": "pre_tool",
+            "session_id": "s1",
+            "tool_name": "mcp__aitp__aitp_v5_record_physics_object",
+            "tool_input": {
+                "topic_id": "librpa-gw",
+                "claim_id": claim.claim_id,
+                "object_type": "formula",
+                "name": "correlation self-energy",
+                "definition": "GW self-energy expression.",
+                "source_kind": "findings",
+                "source_ref": ".aitp/surfaces/session_summaries/s1/findings.md",
+                "orientation_only": True,
+            },
+        },
+    )
+
+    assert payload["ok"] is True
+    assert payload["action"] == "record_physics_object"
+    assert payload["mode"] == "block"
+    assert payload["block"] is True
+    assert payload["runtime_gate_protocol"]["action"] == "record_physics_object"
+    assert payload["runtime_gate_protocol"]["required_typed_refs"] == [
+        "topic_id",
+        "object_type",
+        "name",
+        "definition",
+    ]
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "no_summary_surface_as_truth_source"
+    ]
+
+
+def test_mcp_adapter_pre_tool_event_infers_object_relation_policy(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_adapter_pre_tool_event, aitp_v5_write_codex_hook_bridge
+
+    _, claim = _seed_session(tmp_path)
+    bridge = aitp_v5_write_codex_hook_bridge(
+        str(tmp_path),
+        session_id="s1",
+        output_path=str(tmp_path / "codex" / "AITP_V5_HOOK_BRIDGE.md"),
+    )
+
+    payload = aitp_v5_evaluate_adapter_pre_tool_event(
+        str(tmp_path),
+        bridge_payload=bridge,
+        platform_event={
+            "runtime": "codex",
+            "hook_name": "pre_tool",
+            "session_id": "s1",
+            "tool_name": "mcp__aitp__aitp_v5_record_object_relation",
+            "tool_input": {
+                "topic_id": "librpa-gw",
+                "claim_id": claim.claim_id,
+                "relation_type": "implements",
+                "subject_id": "object-librpa-kernel",
+                "object_id": "object-self-energy-formula",
+                "statement": "The kernel implements the formula.",
+                "source_kind": "task_plan",
+                "source_ref": ".aitp/surfaces/session_summaries/s1/task_plan.md",
+                "orientation_only": True,
+            },
+        },
+    )
+
+    assert payload["ok"] is True
+    assert payload["action"] == "record_object_relation"
+    assert payload["mode"] == "block"
+    assert payload["block"] is True
+    assert payload["runtime_gate_protocol"]["action"] == "record_object_relation"
+    assert payload["runtime_gate_protocol"]["required_typed_refs"] == [
+        "topic_id",
+        "relation_type",
+        "subject_id",
+        "object_id",
+        "statement",
     ]
     assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
         "no_summary_surface_as_truth_source"
@@ -1527,6 +1625,8 @@ def test_adapter_packet_ignores_tampered_summary_as_truth_source(tmp_path):
         "record_evidence",
         "record_tool_run",
         "execute_tool",
+        "record_physics_object",
+        "record_object_relation",
         "ingest_subagent_result",
         "create_validation_contract",
         "request_human_checkpoint",

@@ -15,6 +15,8 @@ _TRUST_CHANGING_ACTIONS = {
     "record_evidence",
     "record_tool_run",
     "execute_tool",
+    "record_physics_object",
+    "record_object_relation",
     "ingest_subagent_result",
     "change_claim_confidence",
     "create_validation_contract",
