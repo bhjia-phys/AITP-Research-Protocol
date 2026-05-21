@@ -22,6 +22,7 @@ def add_policy_parser(sp: argparse._SubParsersAction) -> None:
     pre.add_argument("--validation-contract-id", action="append", default=[], dest="validation_contract_ids")
     pre.add_argument("--tool-run-id", action="append", default=[], dest="tool_run_ids")
     pre.add_argument("--validation-result-id", action="append", default=[], dest="validation_result_ids")
+    pre.add_argument("--known-failure-mode", action="append", default=[], dest="known_failure_modes")
     pre.add_argument("--recipe", default="", dest="recipe_id")
     pre.add_argument("--executor", default="", dest="executor_id")
     pre.add_argument("--source-kind", default="")
@@ -43,6 +44,7 @@ def dispatch_policy_command(args: argparse.Namespace, ws) -> dict[str, Any]:
         validation_contract_ids=args.validation_contract_ids,
         tool_run_ids=args.tool_run_ids,
         validation_result_ids=args.validation_result_ids,
+        known_failure_modes=args.known_failure_modes,
         recipe_id=args.recipe_id,
         executor_id=args.executor_id,
         source_kind=args.source_kind,

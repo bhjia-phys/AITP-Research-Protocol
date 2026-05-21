@@ -103,7 +103,7 @@ def _shared_pre_tool_policy_lines() -> list[str]:
         "- can_update_kernel_state=false",
         "- can_update_claim_trust=false",
         "- required inputs: `session_id`, `action`, `claim_id`, `risk_level`",
-        "- optional inputs include: `evidence_refs`, `code_state_ids`, `source_kind`, `source_ref`, `orientation_only`, `human_checkpoint_id`",
+        "- optional inputs include: `evidence_refs`, `code_state_ids`, `validation_contract_ids`, `tool_run_ids`, `validation_result_ids`, `known_failure_modes`, `source_kind`, `source_ref`, `orientation_only`, `human_checkpoint_id`",
         "",
     ]
 
@@ -117,7 +117,7 @@ def _adapter_pre_tool_event_lines(*, runner: dict[str, Any], entrypoint: dict[st
         f"- bridge_payload_source: `{runner['bridge_payload_source']}`",
         f"- mcp: `{entrypoint['mcp']}`",
         f"- surface: `{entrypoint['surface']}`",
-        "- platform event optional tool inputs include: `claim_id`, `evidence_refs`, `code_state_ids`, `packet`, `source_kind`, `source_ref`, `orientation_only`, `risk_level`, `human_checkpoint_id`",
+        "- platform event optional tool inputs include: `claim_id`, `evidence_refs`, `code_state_ids`, `validation_contract_ids`, `tool_run_ids`, `validation_result_ids`, `known_failure_modes`, `packet`, `source_kind`, `source_ref`, `orientation_only`, `risk_level`, `human_checkpoint_id`",
         "",
         "```powershell",
         _command_string(runner["argv"]),

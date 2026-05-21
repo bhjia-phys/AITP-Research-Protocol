@@ -329,6 +329,7 @@ def test_public_surface_validator_accepts_pre_tool_policy_decision():
         "validation_contract_ids": [],
         "tool_run_ids": [],
         "validation_result_ids": [],
+        "known_failure_modes": [],
     }
 
     assert require_valid_public_surface("pre_tool_policy_decision", payload) == payload

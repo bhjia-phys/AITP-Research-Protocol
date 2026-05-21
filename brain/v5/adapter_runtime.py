@@ -70,6 +70,7 @@ def evaluate_bridge_lifecycle_event(
         validation_contract_ids=_clean_list(event.get("validation_contract_ids")),
         tool_run_ids=_clean_list(event.get("tool_run_ids")),
         validation_result_ids=_clean_list(event.get("validation_result_ids")),
+        known_failure_modes=_clean_list(event.get("known_failure_modes")),
         recipe_id=str(event.get("recipe_id", "")),
         executor_id=str(event.get("executor_id", "")),
         source_kind=str(event.get("source_kind", "typed_records")),
@@ -98,6 +99,7 @@ def evaluate_bridge_gate_pre_tool_policy(
     validation_contract_ids: list[str] | None = None,
     tool_run_ids: list[str] | None = None,
     validation_result_ids: list[str] | None = None,
+    known_failure_modes: list[str] | None = None,
     recipe_id: str = "",
     executor_id: str = "",
     source_kind: str = "typed_records",
@@ -124,6 +126,7 @@ def evaluate_bridge_gate_pre_tool_policy(
         validation_contract_ids=validation_contract_ids,
         tool_run_ids=tool_run_ids,
         validation_result_ids=validation_result_ids,
+        known_failure_modes=known_failure_modes,
         recipe_id=recipe_id,
         executor_id=executor_id,
         source_kind=source_kind,
@@ -182,6 +185,7 @@ def _platform_pre_tool_event(bridge_payload: dict[str, Any], platform_event: dic
         "validation_contract_ids": _input_list(tool_input, "validation_contract_ids"),
         "tool_run_ids": _input_list(tool_input, "tool_run_ids"),
         "validation_result_ids": _input_list(tool_input, "validation_result_ids"),
+        "known_failure_modes": _input_list(tool_input, "known_failure_modes"),
         "recipe_id": str(tool_input.get("recipe_id") or tool_input.get("recipe") or platform_event.get("recipe_id") or ""),
         "executor_id": str(
             tool_input.get("executor_id")

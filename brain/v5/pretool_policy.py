@@ -51,6 +51,7 @@ def context_policy_decision(
     validation_contract_ids: list[str] | None = None,
     tool_run_ids: list[str] | None = None,
     validation_result_ids: list[str] | None = None,
+    known_failure_modes: list[str] | None = None,
     recipe_id: str = "",
     executor_id: str = "",
     source_kind: str = "",
@@ -93,6 +94,7 @@ def context_policy_decision(
             "executor_id": executor_id,
             "tool_run_ids": _clean_list(tool_run_ids),
             "validation_result_ids": _clean_list(validation_result_ids),
+            "known_failure_modes": _clean_list(known_failure_modes),
         },
     )
 
@@ -108,6 +110,7 @@ def evaluate_context_pre_tool_policy(
     validation_contract_ids: list[str] | None = None,
     tool_run_ids: list[str] | None = None,
     validation_result_ids: list[str] | None = None,
+    known_failure_modes: list[str] | None = None,
     recipe_id: str = "",
     executor_id: str = "",
     source_kind: str = "",
@@ -129,6 +132,7 @@ def evaluate_context_pre_tool_policy(
         validation_contract_ids=validation_contract_ids,
         tool_run_ids=tool_run_ids,
         validation_result_ids=validation_result_ids,
+        known_failure_modes=known_failure_modes,
         recipe_id=recipe_id,
         executor_id=executor_id,
         source_kind=source_kind,
@@ -158,6 +162,7 @@ def evaluate_context_pre_tool_policy(
             "validation_contract_ids": resolved_contract_ids,
             "tool_run_ids": _clean_list(tool_run_ids),
             "validation_result_ids": resolved_result_ids,
+            "known_failure_modes": _clean_list(known_failure_modes),
             "recipe_id": recipe_id,
             "executor_id": executor_id,
             "policy_reasons": [

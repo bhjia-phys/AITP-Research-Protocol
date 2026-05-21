@@ -326,6 +326,10 @@ the actual tool path rather than model intuition.
 After execution, `record_validation_result` records whether a completed
 `tool_run_id` satisfied the contract's required evidence outputs. Passed
 validation results must have no missing outputs and no observed failure modes.
+Promotion-packet pre-tool decisions also carry `known_failure_modes` and block
+packet creation until at least one failure mode is named, so generated runtime
+hooks preserve the same failure-mode reflection required by durable promotion
+packet records.
 For live-style adapter events, `evaluate_bridge_lifecycle_event` maps an
 adapter-neutral `pre_tool` event payload onto the same helper after confirming
 that the generated bridge declares a pre-tool lifecycle call. Codex/OpenCode

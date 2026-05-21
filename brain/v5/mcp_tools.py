@@ -319,6 +319,7 @@ def aitp_v5_evaluate_pre_tool_policy(
     evidence_refs: list[str] | None = None, code_state_ids: list[str] | None = None,
     validation_contract_ids: list[str] | None = None,
     tool_run_ids: list[str] | None = None, validation_result_ids: list[str] | None = None,
+    known_failure_modes: list[str] | None = None,
     recipe_id: str = "", executor_id: str = "",
     source_kind: str = "", source_ref: str = "", orientation_only: bool = False,
     risk_level: str = "guided", human_checkpoint_id: str = "",
@@ -328,6 +329,7 @@ def aitp_v5_evaluate_pre_tool_policy(
         evidence_refs=evidence_refs, code_state_ids=code_state_ids,
         validation_contract_ids=validation_contract_ids,
         tool_run_ids=tool_run_ids, validation_result_ids=validation_result_ids,
+        known_failure_modes=known_failure_modes,
         recipe_id=recipe_id, executor_id=executor_id,
         source_kind=source_kind, source_ref=source_ref, orientation_only=orientation_only,
         risk_level=risk_level, human_checkpoint_id=human_checkpoint_id))

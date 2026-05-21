@@ -244,6 +244,10 @@ Implemented:
   results cover every cited tool run, and the shared CLI/MCP/runtime pre-tool
   policy blocks rigorous/adversarial promotion attempts that omit or mismatch
   those links.
+- Promotion-packet pre-tool policy now carries `known_failure_modes` and blocks
+  packet creation until the agent names at least one way the claim may fail,
+  keeping L2 promotion aligned with the durable promotion packet contract rather
+  than reducing the gate to evidence-link attachment.
 - Execution briefs now expose active-claim L2 memory entries as
   orientation-only `known_context.memory_entries`, with typed memory records
   remaining authoritative. Code-method memory brief entries include

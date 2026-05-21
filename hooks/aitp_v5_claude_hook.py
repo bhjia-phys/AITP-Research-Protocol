@@ -216,6 +216,7 @@ def _context_policy_from_workspace(
             validation_contract_ids=_input_list(tool_input, "validation_contract_ids"),
             tool_run_ids=_input_list(tool_input, "tool_run_ids"),
             validation_result_ids=_input_list(tool_input, "validation_result_ids"),
+            known_failure_modes=_input_list(tool_input, "known_failure_modes"),
             recipe_id=str(tool_input.get("recipe_id") or tool_input.get("recipe") or ""),
             executor_id=str(tool_input.get("executor_id") or tool_input.get("executor") or ""),
             source_kind=str(tool_input.get("source_kind") or ""),

@@ -104,6 +104,9 @@ def evaluate_policy(
         _guard_l2_promotion_requires_evidence(decision, refs)
         _guard_high_risk_promotion_requires_validation_result(decision, risk_level, records, results)
 
+    if action == "create_promotion_packet":
+        _guard_promotion_packet_requires_known_failure_modes(decision, ctx)
+
     if action in {"execute_tool", "record_tool_run"}:
         _guard_high_risk_tool_requires_validation_contract(decision, action, risk_level, contracts, ctx)
 
@@ -180,6 +183,20 @@ def _guard_l2_promotion_requires_evidence(decision: PolicyDecision, evidence_ref
         "no_l2_promotion_without_evidence_ref",
         "L2 promotion requires at least one evidence reference",
         "attach_evidence_ref",
+    )
+
+
+def _guard_promotion_packet_requires_known_failure_modes(
+    decision: PolicyDecision,
+    context: dict[str, Any],
+) -> None:
+    if _context_list(context.get("known_failure_modes")):
+        return
+    decision.add_block(
+        "promotion_packet_requires_known_failure_mode",
+        "promotion packets must name at least one known failure mode before L2 memory promotion",
+        "record_known_failure_mode",
+        severity="hard_block",
     )
 
 

@@ -952,6 +952,7 @@ def test_claude_hook_script_pre_tool_denies_l2_promotion_without_evidence_refs(t
             "topic_id": "fqhe",
             "claim_id": claim.claim_id,
             "scope": "finite-size toy models only",
+            "known_failure_modes": ["finite-size aliasing"],
             "source_kind": "typed_records",
         },
     }

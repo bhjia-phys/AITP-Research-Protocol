@@ -696,6 +696,7 @@ def test_mcp_pre_tool_policy_blocks_promotion_packet_from_findings_source(tmp_pa
         action="create_promotion_packet",
         claim_id=claim.claim_id,
         evidence_refs=["evidence-fqhe-counting"],
+        known_failure_modes=["finite-size aliasing"],
         source_kind="findings",
         source_ref=".aitp/surfaces/session_summaries/s1/findings.md",
         orientation_only=True,
@@ -721,6 +722,7 @@ def test_mcp_pre_tool_policy_blocks_promotion_packet_without_evidence_refs(tmp_p
         action="create_promotion_packet",
         claim_id=claim.claim_id,
         evidence_refs=[],
+        known_failure_modes=["finite-size aliasing"],
         source_kind="typed_records",
     )
 
@@ -744,6 +746,7 @@ def test_mcp_pre_tool_policy_blocks_rigorous_promotion_packet_without_validation
         action="create_promotion_packet",
         claim_id=claim.claim_id,
         evidence_refs=[evidence.evidence_id],
+        known_failure_modes=["finite-size aliasing"],
         source_kind="typed_records",
         risk_level="rigorous",
     )
@@ -772,6 +775,7 @@ def test_mcp_pre_tool_policy_accepts_rigorous_promotion_packet_with_validation_r
         claim_id=claim.claim_id,
         evidence_refs=[evidence.evidence_id],
         validation_result_ids=[result.result_id],
+        known_failure_modes=["finite-size aliasing"],
         source_kind="typed_records",
         risk_level="rigorous",
     )
@@ -779,6 +783,67 @@ def test_mcp_pre_tool_policy_accepts_rigorous_promotion_packet_with_validation_r
     assert payload["action"] == "create_promotion_packet"
     assert payload["evidence_refs"] == [evidence.evidence_id]
     assert payload["validation_result_ids"] == [result.result_id]
+    assert payload["known_failure_modes"] == ["finite-size aliasing"]
+    assert payload["mode"] == "log"
+    assert payload["block"] is False
+    assert payload["policy_reasons"] == []
+
+
+def test_mcp_pre_tool_policy_blocks_promotion_packet_without_known_failure_modes(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
+
+    _, claim, evidence, result = _seed_tool_evidence_for_promotion(tmp_path)
+
+    payload = aitp_v5_evaluate_pre_tool_policy(
+        str(tmp_path),
+        session_id="s1",
+        action="create_promotion_packet",
+        claim_id=claim.claim_id,
+        evidence_refs=[evidence.evidence_id],
+        validation_result_ids=[result.result_id],
+        source_kind="typed_records",
+        risk_level="rigorous",
+    )
+
+    assert payload["action"] == "create_promotion_packet"
+    assert payload["known_failure_modes"] == []
+    assert payload["mode"] == "block"
+    assert payload["block"] is True
+    assert payload["required_actions"] == ["record_known_failure_mode"]
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "promotion_packet_requires_known_failure_mode"
+    ]
+
+
+def test_cli_pre_tool_policy_accepts_promotion_packet_known_failure_mode(tmp_path, capsys):
+    _, claim, evidence, result = _seed_tool_evidence_for_promotion(tmp_path)
+
+    payload = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "policy",
+            "pre-tool",
+            "create_promotion_packet",
+            "--session",
+            "s1",
+            "--claim",
+            claim.claim_id,
+            "--source-kind",
+            "typed_records",
+            "--risk-level",
+            "rigorous",
+            "--evidence-ref",
+            evidence.evidence_id,
+            "--validation-result-id",
+            result.result_id,
+            "--known-failure-mode",
+            "finite-size aliasing",
+        ],
+        capsys,
+    )
+
+    assert payload["known_failure_modes"] == ["finite-size aliasing"]
     assert payload["mode"] == "log"
     assert payload["block"] is False
     assert payload["policy_reasons"] == []

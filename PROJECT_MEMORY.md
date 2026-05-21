@@ -180,7 +180,10 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   links: packet creation and L2 application reject tool-derived evidence unless
   passed validation results cover every cited tool run, and the shared pre-tool
   policy hard-blocks rigorous/adversarial promotion attempts that omit or
-  mismatch those links. Execution briefs expose active claim L2 memory entries
+  mismatch those links. Pre-tool policy calls also carry `known_failure_modes`
+  and block promotion-packet creation until at least one failure mode is named,
+  so agents cannot treat evidence attachment alone as enough for L2 memory
+  promotion. Execution briefs expose active claim L2 memory entries
   as orientation-only `known_context.memory_entries`; typed memory records under
   `memory/l2/entries` remain authoritative. Code-method memory brief entries
   include `code_state_ids` derived from linked evidence tool runs so version
