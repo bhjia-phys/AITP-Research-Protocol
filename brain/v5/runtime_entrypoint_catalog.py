@@ -444,6 +444,8 @@ def sample_args_for_template(template: str) -> list[str]:
             "N<=10 ED",
             "--evidence-ref",
             "evidence-1",
+            "--validation-result-id",
+            "validation-result-1",
             "--failure-mode",
             "misassignment",
         ]

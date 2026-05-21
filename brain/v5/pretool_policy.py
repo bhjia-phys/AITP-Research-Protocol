@@ -6,7 +6,13 @@ from typing import Any
 
 from brain.v5.hook_adapters import hook_decision_payload
 from brain.v5.hooks import decide_pre_tool_use
-from brain.v5.models import CodeStateRecord, HumanCheckpointRecord, ValidationContractRecord, ValidationResultRecord
+from brain.v5.models import (
+    CodeStateRecord,
+    EvidenceRecord,
+    HumanCheckpointRecord,
+    ValidationContractRecord,
+    ValidationResultRecord,
+)
 from brain.v5.policy import PolicyDecision, evaluate_policy
 from brain.v5.store import list_records
 from brain.v5.workspace import get_claim, get_session_binding
@@ -64,6 +70,7 @@ def context_policy_decision(
         action=action,
         claim=claim,
         code_states=_resolve_code_states(ws, claim.claim_id, _clean_list(code_state_ids)),
+        evidence_records=_resolve_evidence_records(ws, claim.claim_id, _clean_list(evidence_refs)),
         evidence_refs=_clean_list(evidence_refs),
         validation_contracts=_resolve_validation_contracts(
             ws,
@@ -181,6 +188,18 @@ def _resolve_code_states(ws, claim_id: str, requested_ids: list[str]) -> list[Co
         wanted = set(requested_ids)
         return [state for state in states if state.code_state_id in wanted]
     return [state for state in states if _record_links_to_claim(state.linked_records, claim_id)]
+
+
+def _resolve_evidence_records(ws, claim_id: str, requested_ids: list[str]) -> list[EvidenceRecord]:
+    if not requested_ids:
+        return []
+    wanted = set(requested_ids)
+    records = list_records(ws.registry_dir("evidence"), EvidenceRecord)
+    return [
+        record
+        for record in records
+        if record.evidence_id in wanted and record.claim_id == claim_id
+    ]
 
 
 def _resolve_validation_contracts(

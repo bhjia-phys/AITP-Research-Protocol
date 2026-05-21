@@ -1,5 +1,6 @@
 """Tests for AITP v5 L2 memory and promotion packets."""
 
+import json
 from dataclasses import asdict
 from pathlib import Path
 
@@ -22,6 +23,54 @@ def _setup_claim(tmp_path: Path):
     return ws, claim
 
 
+def _setup_tool_validated_evidence(tmp_path: Path, *, link_result_to_evidence: bool = True):
+    from brain.v5.evidence import record_evidence
+    from brain.v5.tools import record_tool_run
+    from brain.v5.validation import create_validation_contract, record_validation_result
+
+    ws, claim = _setup_claim(tmp_path)
+    contract = create_validation_contract(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        required_checks=["counting benchmark"],
+        failure_modes=["sector misassignment"],
+        required_evidence_outputs=["counting_table"],
+        tool_recipe_ids=["recipe-fqhe-ed"],
+        executor_ids=["pytest"],
+    )
+    run = record_tool_run(
+        ws,
+        recipe_id="recipe-fqhe-ed",
+        tool_family="numerical",
+        tool_name="pytest",
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        outputs={"counting_table": "ok"},
+    )
+    result = record_validation_result(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        contract_id=contract.contract_id,
+        tool_run_id=run.run_id,
+        status="passed",
+        checked_outputs=["counting_table"],
+        summary="Counting table passed validation.",
+    )
+    evidence = record_evidence(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        evidence_type="toy_numeric",
+        status="supports",
+        summary="Tool-derived counting evidence.",
+        tool_run_ids=[run.run_id],
+        validation_result_ids=[result.result_id] if link_result_to_evidence else [],
+    )
+    return ws, claim, evidence, result
+
+
 def test_create_promotion_packet_requires_evidence_and_scope(tmp_path):
     ws, claim = _setup_claim(tmp_path)
 
@@ -41,6 +90,45 @@ def test_create_promotion_packet_requires_evidence_and_scope(tmp_path):
 
     assert packet.kind == "promotion_packet"
     assert packet.status == "pending_human_checkpoint"
+    payload = {"ok": True, **asdict(packet)}
+    assert require_valid_public_surface("promotion_packet_record", payload) == payload
+
+
+def test_create_promotion_packet_rejects_tool_evidence_without_validation_result(tmp_path):
+    ws, claim, evidence, _ = _setup_tool_validated_evidence(tmp_path, link_result_to_evidence=False)
+
+    from brain.v5.memory import create_promotion_packet
+
+    with pytest.raises(ValueError, match="validation_result_ids"):
+        create_promotion_packet(
+            ws,
+            topic_id="fqhe",
+            claim_id=claim.claim_id,
+            proposed_memory_kind="scoped_claim",
+            scope="fixed sector ED",
+            evidence_refs=[evidence.evidence_id],
+            known_failure_modes=["sector misassignment"],
+        )
+
+
+def test_create_promotion_packet_records_validation_result_links_for_tool_evidence(tmp_path):
+    ws, claim, evidence, result = _setup_tool_validated_evidence(tmp_path)
+
+    from brain.v5.memory import create_promotion_packet
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    packet = create_promotion_packet(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        proposed_memory_kind="scoped_claim",
+        scope="fixed sector ED",
+        evidence_refs=[evidence.evidence_id],
+        validation_result_ids=[result.result_id],
+        known_failure_modes=["sector misassignment"],
+    )
+
+    assert packet.validation_result_ids == [result.result_id]
     payload = {"ok": True, **asdict(packet)}
     assert require_valid_public_surface("promotion_packet_record", payload) == payload
 
@@ -149,32 +237,39 @@ def test_multiple_promotion_packets_for_same_claim_do_not_overwrite(tmp_path):
     assert {record.scope for record in records} == {"fixed sector ED", "larger-size ED"}
 
 
-def test_promotion_cli(tmp_path):
-    ws, claim = _setup_claim(tmp_path)
-
+def test_promotion_cli(tmp_path, capsys):
+    _, claim, evidence, validation_result = _setup_tool_validated_evidence(tmp_path)
     from brain.v5.cli import main
 
     result = main([
         "--base", str(tmp_path), "promotion", "packet", "create",
         "--topic", "fqhe", "--claim", claim.claim_id,
         "--proposed-kind", "scoped_claim", "--scope", "N<=10 ED",
-        "--evidence-ref", "evidence-1", "--failure-mode", "misassignment",
+        "--evidence-ref", evidence.evidence_id,
+        "--validation-result-id", validation_result.result_id,
+        "--failure-mode", "misassignment",
     ])
+    payload = json.loads(capsys.readouterr().out)
+
     assert result == 0
+    assert payload["validation_result_ids"] == [validation_result.result_id]
 
 
 def test_promotion_mcp(tmp_path):
-    ws, claim = _setup_claim(tmp_path)
+    _, claim, evidence, validation_result = _setup_tool_validated_evidence(tmp_path)
 
     from brain.v5.mcp_tools import aitp_v5_create_promotion_packet
 
     result = aitp_v5_create_promotion_packet(
         str(tmp_path), topic_id="fqhe", claim_id=claim.claim_id,
         proposed_memory_kind="scoped_claim", scope="N<=10 ED",
-        evidence_refs=["evidence-1"], known_failure_modes=["test"],
+        evidence_refs=[evidence.evidence_id],
+        validation_result_ids=[validation_result.result_id],
+        known_failure_modes=["test"],
     )
     assert result["ok"] is True
     assert result["kind"] == "promotion_packet"
+    assert result["validation_result_ids"] == [validation_result.result_id]
 
 
 def test_promotion_runtime_entrypoint():
@@ -233,6 +328,44 @@ def test_apply_promotion_requires_approved_human_checkpoint(tmp_path):
     assert memory.kind == "memory_entry"
     assert memory.source_claim_id == claim.claim_id
     assert memory.evidence_refs == ["evidence-counting"]
+
+
+def test_apply_promotion_rejects_tool_evidence_packet_without_validation_result(tmp_path):
+    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
+    from brain.v5.ids import prefixed_id
+    from brain.v5.memory import apply_promotion_packet
+    from brain.v5.models import PromotionPacketRecord
+    from brain.v5.store import write_record
+
+    ws, claim, evidence, _ = _setup_tool_validated_evidence(tmp_path, link_result_to_evidence=False)
+    packet_id = prefixed_id("packet", f"{claim.claim_id}:tool-evidence-without-validation")
+    packet = PromotionPacketRecord(
+        packet_id=packet_id,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        scope="fixed sector ED",
+        evidence_refs=[evidence.evidence_id],
+        known_failure_modes=["sector misassignment"],
+    )
+    write_record(ws.registry_dir("promotion_packets") / f"{packet_id}.md", packet)
+    checkpoint = request_human_checkpoint(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        reason="L2 promotion requires approval.",
+        requested_by="promotion_policy",
+        options=["approve"],
+    )
+    decide_human_checkpoint(
+        ws,
+        checkpoint_id=checkpoint.checkpoint_id,
+        decision="approve",
+        rationale="Human approval is not enough without validation result links.",
+        decided_by="human",
+    )
+
+    with pytest.raises(ValueError, match="validation_result_ids"):
+        apply_promotion_packet(ws, packet_id=packet_id, checkpoint_id=checkpoint.checkpoint_id)
 
 
 def test_apply_promotion_rejects_packet_with_empty_evidence_refs(tmp_path):

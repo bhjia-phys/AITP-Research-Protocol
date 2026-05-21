@@ -222,6 +222,7 @@ def validate_promotion_packet_record(payload: dict[str, Any], *, path: str = "pr
     _require_list(evidence, f"{path}.evidence_refs", result)
     if isinstance(evidence, list) and len(evidence) == 0:
         result.add(f"{path}.evidence_refs", "must not be empty — promotion requires evidence")
+    _require_list(payload.get("validation_result_ids"), f"{path}.validation_result_ids", result)
     failure_modes = payload.get("known_failure_modes")
     _require_list(failure_modes, f"{path}.known_failure_modes", result)
     if isinstance(failure_modes, list) and len(failure_modes) == 0:

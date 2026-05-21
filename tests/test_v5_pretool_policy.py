@@ -63,6 +63,23 @@ def _seed_passed_validation_result(tmp_path):
     return ws, claim, run, result
 
 
+def _seed_tool_evidence_for_promotion(tmp_path, *, link_result_to_evidence: bool = True):
+    from brain.v5.evidence import record_evidence
+
+    ws, claim, run, result = _seed_passed_validation_result(tmp_path)
+    evidence = record_evidence(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        evidence_type="toy_numeric",
+        status="supports",
+        summary="Tool-derived counting evidence.",
+        tool_run_ids=[run.run_id],
+        validation_result_ids=[result.result_id] if link_result_to_evidence else [],
+    )
+    return ws, claim, evidence, result
+
+
 def _invoke(args, capsys):
     from brain.v5.cli import main
 
@@ -714,6 +731,55 @@ def test_mcp_pre_tool_policy_blocks_promotion_packet_without_evidence_refs(tmp_p
     assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
         "no_l2_promotion_without_evidence_ref"
     ]
+
+
+def test_mcp_pre_tool_policy_blocks_rigorous_promotion_packet_without_validation_result(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
+
+    _, claim, evidence, _ = _seed_tool_evidence_for_promotion(tmp_path, link_result_to_evidence=False)
+
+    payload = aitp_v5_evaluate_pre_tool_policy(
+        str(tmp_path),
+        session_id="s1",
+        action="create_promotion_packet",
+        claim_id=claim.claim_id,
+        evidence_refs=[evidence.evidence_id],
+        source_kind="typed_records",
+        risk_level="rigorous",
+    )
+
+    assert payload["action"] == "create_promotion_packet"
+    assert payload["risk_level"] == "rigorous"
+    assert payload["mode"] == "block"
+    assert payload["block"] is True
+    assert payload["validation_result_ids"] == []
+    assert payload["required_actions"] == ["attach_passed_validation_result"]
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "high_risk_promotion_requires_validation_result"
+    ]
+
+
+def test_mcp_pre_tool_policy_accepts_rigorous_promotion_packet_with_validation_result(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
+
+    _, claim, evidence, result = _seed_tool_evidence_for_promotion(tmp_path)
+
+    payload = aitp_v5_evaluate_pre_tool_policy(
+        str(tmp_path),
+        session_id="s1",
+        action="create_promotion_packet",
+        claim_id=claim.claim_id,
+        evidence_refs=[evidence.evidence_id],
+        validation_result_ids=[result.result_id],
+        source_kind="typed_records",
+        risk_level="rigorous",
+    )
+
+    assert payload["action"] == "create_promotion_packet"
+    assert payload["validation_result_ids"] == [result.result_id]
+    assert payload["mode"] == "log"
+    assert payload["block"] is False
+    assert payload["policy_reasons"] == []
 
 
 def test_mcp_pre_tool_policy_blocks_apply_promotion_packet_from_findings_source(tmp_path):

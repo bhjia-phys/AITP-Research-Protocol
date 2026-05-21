@@ -6,7 +6,13 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from brain.v5.evolution import EvolutionProposal
-from brain.v5.models import ClaimRecord, CodeStateRecord, ValidationContractRecord, ValidationResultRecord
+from brain.v5.models import (
+    ClaimRecord,
+    CodeStateRecord,
+    EvidenceRecord,
+    ValidationContractRecord,
+    ValidationResultRecord,
+)
 from brain.v5.risk import RiskAssessment
 
 
@@ -66,6 +72,7 @@ def evaluate_policy(
     action: str,
     claim: ClaimRecord | None = None,
     code_states: list[CodeStateRecord] | None = None,
+    evidence_records: list[EvidenceRecord] | None = None,
     evidence_refs: list[str] | None = None,
     validation_contracts: list[ValidationContractRecord] | None = None,
     validation_results: list[ValidationResultRecord] | None = None,
@@ -77,6 +84,7 @@ def evaluate_policy(
     """Evaluate non-negotiable v5 harness policies for an action."""
 
     states = code_states or []
+    records = evidence_records or []
     refs = evidence_refs or []
     contracts = validation_contracts or []
     results = validation_results or []
@@ -94,6 +102,7 @@ def evaluate_policy(
 
     if action in {"create_promotion_packet", "promote_to_l2"}:
         _guard_l2_promotion_requires_evidence(decision, refs)
+        _guard_high_risk_promotion_requires_validation_result(decision, risk_level, records, results)
 
     if action in {"execute_tool", "record_tool_run"}:
         _guard_high_risk_tool_requires_validation_contract(decision, action, risk_level, contracts, ctx)
@@ -172,6 +181,46 @@ def _guard_l2_promotion_requires_evidence(decision: PolicyDecision, evidence_ref
         "L2 promotion requires at least one evidence reference",
         "attach_evidence_ref",
     )
+
+
+def _guard_high_risk_promotion_requires_validation_result(
+    decision: PolicyDecision,
+    risk_level: str,
+    evidence_records: list[EvidenceRecord],
+    validation_results: list[ValidationResultRecord],
+) -> None:
+    if risk_level not in {"rigorous", "adversarial"}:
+        return
+    tool_run_ids = {
+        run_id
+        for evidence in evidence_records
+        for run_id in getattr(evidence, "tool_run_ids", [])
+        if run_id
+    }
+    if not tool_run_ids:
+        return
+    passed_tool_runs = {
+        result.tool_run_id
+        for result in validation_results
+        if result.status == "passed"
+        and not result.missing_outputs
+        and not result.failure_modes_observed
+    }
+    if not passed_tool_runs:
+        decision.add_block(
+            "high_risk_promotion_requires_validation_result",
+            "rigorous or adversarial promotion using tool-derived evidence requires passed validation-result refs",
+            "attach_passed_validation_result",
+            severity="hard_block",
+        )
+        return
+    if not tool_run_ids.issubset(passed_tool_runs):
+        decision.add_block(
+            "high_risk_promotion_validation_result_mismatch",
+            "provided validation results do not pass every tool-derived evidence run in the promotion packet",
+            "attach_matching_validation_result",
+            severity="hard_block",
+        )
 
 
 def _guard_high_risk_tool_requires_validation_contract(

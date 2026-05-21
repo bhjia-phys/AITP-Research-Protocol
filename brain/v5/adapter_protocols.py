@@ -314,7 +314,7 @@ _RUNTIME_RECORD_PROTOCOLS = {
         "entrypoint": "aitp_v5_create_promotion_packet",
         "sequence": list(_RECORD_SEQUENCE_BY_ACTION["create_promotion_packet"]),
         "required_typed_refs": ["topic_id", "claim_id", "proposed_memory_kind", "scope"],
-        "accepted_link_fields": ["evidence_refs", "non_claims", "known_failure_modes"],
+        "accepted_link_fields": ["evidence_refs", "validation_result_ids", "non_claims", "known_failure_modes"],
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     },
