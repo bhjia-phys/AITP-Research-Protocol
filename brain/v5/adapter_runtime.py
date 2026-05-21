@@ -238,10 +238,13 @@ def _action_from_tool_name(tool_name: str) -> str:
 
 
 def _input_list(payload: dict[str, Any], key: str) -> list[str]:
+    packet = payload.get("packet") if isinstance(payload.get("packet"), dict) else {}
     value = payload.get(key)
+    if not isinstance(value, list):
+        value = packet.get(key)
     if isinstance(value, list):
         return [str(item) for item in value if str(item)]
-    singular = payload.get(key.removesuffix("s"))
+    singular = payload.get(key.removesuffix("s")) or packet.get(key.removesuffix("s"))
     if singular:
         return [str(singular)]
     return []
