@@ -5075,3 +5075,64 @@ Each entry should record:
   - add a real-workflow acceptance test where a failure-mode review result cites
     a `failure_mode_basis_check` tool run and passed validation result before
     high-risk promotion.
+
+### 2a584a5 - Expose Tool-Backed Review Basis In Briefs
+
+- Task: close the real LibRPA/GW high-risk promotion workflow by making the
+  next execution brief show that a failure-mode review basis was produced from
+  typed tool/validation records.
+- Planning source:
+  - previous ledger recommendation after `25cfec0`;
+  - v5 invariant that typed records remain authoritative while execution
+    briefs are orientation-only recovery packets;
+  - user requirement that high-risk theoretical-physics gates force real
+    physics/code-method review rather than superficial checkpoint passing.
+- Changed files:
+  - `brain/v5/evidence.py`
+  - `brain/v5/memory.py`
+  - `tests/test_v5_real_workflows.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - `required_output_coverage` now reports supported evidence outputs that are
+    present in typed evidence records even when they are not part of the current
+    action-budget required output list;
+  - execution briefs can therefore expose outputs such as
+    `failure_mode_review_basis` once a tool-backed review-basis evidence record
+    exists;
+  - `known_context.memory_entries` now includes
+    `failure_mode_review_checkpoint_id` and `failure_mode_review_result_id`
+    when those links exist on the promoted typed memory entry;
+  - the brief remains orientation-only and does not become a truth source.
+- Tests:
+  - added a real GW/code-method workflow acceptance test covering code-state
+    provenance, benchmark validation, failure-mode-basis validation, approved
+    failure-mode review checkpoint, passed review result, high-risk pre-tool
+    policy, promotion packet creation/application, execution brief recovery,
+    and L2 memory audit provenance.
+- Verification:
+  - red target:
+    `pytest tests\test_v5_real_workflows.py::test_gw_high_risk_promotion_uses_tool_backed_failure_mode_review_basis -q`:
+    1 failed because `brief["evidence_coverage"]["satisfied_outputs"]` did not
+    include `failure_mode_review_basis`;
+  - target green:
+    same command: 1 passed;
+  - focused related set:
+    `pytest tests\test_v5_real_workflows.py tests\test_v5_evidence_tools.py tests\test_v5_memory.py tests\test_v5_memory_audit.py tests\test_v5_contracts.py tests\test_v5_domain_packs.py tests\test_v5_public_surfaces.py -q`:
+    113 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; pytest $files -q`:
+    453 passed;
+  - `python -m compileall -q brain\v5`: passed;
+  - `git diff --check -- .`: passed, with CRLF conversion warnings only.
+- Residual risks:
+  - `failure_mode_basis_check` still checks explicit coverage shape rather than
+    independently proving the scientific validity of each basis item;
+  - the brief now exposes additional satisfied outputs, so future consumers
+    should treat `missing_outputs` as the required-output gate and
+    `satisfied_outputs` as observed typed evidence coverage.
+- Next recommended task:
+  - add a more domain-specific LibRPA/GW formula-code invariant executor or
+    diagnostic recipe that checks frequency-grid/basis-cutoff assumptions more
+    directly than the generic failure-mode-basis shape checker.
