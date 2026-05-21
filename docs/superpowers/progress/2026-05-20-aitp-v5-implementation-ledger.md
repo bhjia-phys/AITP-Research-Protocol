@@ -2984,3 +2984,70 @@ Each entry should record:
   - add explicit native-lifecycle adapter installation docs/tests for the actual
     Codex/OpenCode host surfaces, or continue broadening pre-tool policy
     coverage for remaining trust-relevant MCP inputs.
+
+### 234381a - Require Validation Contracts For High-Risk Tool Execution
+
+- Task: add a risk-triggered pre-tool policy gate so rigorous/adversarial tool
+  execution cannot proceed without a typed validation plan.
+- Planning source:
+  - user requirement that AITP should not rely on uncontrolled model intuition
+    for correctness-critical steps;
+  - next-agent plan residual gap that pre-tool policy did not cover every active
+    risk dimension;
+  - hook-installation rule that runtime/hook decisions must delegate to typed
+    kernel records, not generated summaries.
+- Changed files:
+  - `brain/v5/policy.py`
+  - `brain/v5/pretool_policy.py`
+  - `brain/v5/cli_policy.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/adapter_runtime.py`
+  - `brain/v5/hook_entrypoint_schemas.py`
+  - `brain/v5/hook_protocol_contracts.py`
+  - `brain/v5/gate_protocols.py`
+  - `brain/v5/adapter_protocols.py`
+  - `tests/test_v5_pretool_policy.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_public_surfaces.py`
+- Public/runtime behavior changes:
+  - `aitp-v5 policy pre-tool ...` and `aitp_v5_evaluate_pre_tool_policy` accept
+    `validation_contract_ids`;
+  - `pre_tool_policy_decision` now reports the resolved open
+    `validation_contract_ids`;
+  - rigorous/adversarial `execute_tool` and `record_tool_run` are hard-blocked
+    unless at least one provided validation contract is open and belongs to the
+    active claim;
+  - Codex/OpenCode pre-tool event normalization now forwards
+    `validation_contract_ids` from platform tool input;
+  - bridge schemas and record/gate protocol metadata advertise validation
+    contracts as accepted typed refs for tool execution.
+- Tests:
+  - MCP policy blocks rigorous `execute_tool` without a validation contract;
+  - MCP and CLI policy allow rigorous `execute_tool` when an open typed
+    validation contract is provided;
+  - adapter pre-tool events block/allow rigorous `execute_tool` based on
+    `validation_contract_ids`.
+- Verification:
+  - red tests failed as expected:
+    `python -m pytest tests\test_v5_pretool_policy.py tests\test_v5_adapters.py -q -k "validation_contract_id or rigorous_execute"`:
+    5 failed because rigorous tool execution was allowed and CLI/MCP/adapter
+    surfaces did not accept `validation_contract_ids`;
+  - target green set:
+    same command: 5 passed;
+  - focused related set:
+    `python -m pytest tests\test_v5_pretool_policy.py tests\test_v5_adapters.py tests\test_v5_hooks.py tests\test_v5_public_surfaces.py tests\test_v5_contracts.py tests\test_v5_validation.py tests\test_v5_architecture_boundaries.py -q`:
+    179 passed;
+  - full v5 regression set:
+    `python -m pytest tests/test_v5_*.py -q`: 377 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with only line-ending warnings.
+- Residual risks:
+  - current policy checks that the supplied contract is open and claim-linked,
+    but does not yet inspect whether its required checks match the exact tool
+    recipe/executor;
+  - native host events may need additional platform-specific field aliases for
+    validation-contract IDs.
+- Next recommended task:
+  - either deepen the validation-contract/tool-recipe match, or continue toward
+    true native Codex/OpenCode lifecycle installer wiring.

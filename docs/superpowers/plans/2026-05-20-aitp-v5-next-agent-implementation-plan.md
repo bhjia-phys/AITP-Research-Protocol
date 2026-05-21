@@ -186,11 +186,14 @@ Implemented:
   optional `human_checkpoint_id`; adversarial-risk trust-changing actions are
   hard-blocked unless the checkpoint resolves to an approved typed human
   checkpoint for the active claim.
+- The shared CLI/MCP/runtime pre-tool policy now hard-blocks rigorous or
+  adversarial `execute_tool`/`record_tool_run` unless the event carries an open
+  typed `validation_contract_id` for the active claim.
 - Generated Codex/OpenCode bridge payloads and JSON sidecars now advertise
   `pre_tool_policy_entrypoint.input_schema` and
   `pre_tool_event_entrypoint.platform_event_schema`, including `risk_level`,
-  optional `human_checkpoint_id`, optional `checkpoint_id`, and optional nested
-  `packet` input, so
+  optional `validation_contract_ids`, optional `human_checkpoint_id`, optional
+  `checkpoint_id`, and optional nested `packet` input, so
   adapters can discover pre-tool inputs without parsing Markdown.
 - `aitp-v5 adapter record-gate-audit` /
   `aitp_v5_audit_record_gate_coverage` now expose a contracted record/gate
@@ -217,8 +220,9 @@ Major remaining gaps:
   physics-object/object-relation/sensemaking-report/
   subagent-ingestion/validation-contract/human-checkpoint request/decision/
   promotion-packet creation/application attempts through CLI/MCP/runtime/bridge metadata, and
-  adversarial-risk trust changes require approved typed human checkpoints. It
-  still does not yet cover every MCP input or every active risk dimension;
+  adversarial-risk trust changes require approved typed human checkpoints.
+  Rigorous/adversarial tool execution now requires explicit validation-contract
+  refs. It still does not yet cover every MCP input or every active risk dimension;
   bridge metadata and the record-gate audit advertise the current coverage
   explicitly.
 - Domain tools are useful but intentionally lightweight; formal-theory checks are checklist/provenance checks, not automated theorem proving.

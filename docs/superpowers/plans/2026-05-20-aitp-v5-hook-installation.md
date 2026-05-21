@@ -288,6 +288,11 @@ The shared policy carries `risk_level` and optional `human_checkpoint_id`.
 Adversarial-risk trust-changing actions are hard-blocked unless that checkpoint
 is a decided typed human checkpoint with `decision=approve` for the active
 claim.
+Rigorous/adversarial `execute_tool` and `record_tool_run` lifecycle decisions
+also require at least one explicit open typed validation contract for the active
+claim, passed as `validation_contract_ids`; this keeps heavyweight numerical or
+formula-code execution tied to an auditable validation plan rather than model
+intuition.
 For live-style adapter events, `evaluate_bridge_lifecycle_event` maps an
 adapter-neutral `pre_tool` event payload onto the same helper after confirming
 that the generated bridge declares a pre-tool lifecycle call. Codex/OpenCode
@@ -320,9 +325,9 @@ The same generated payloads and sidecars expose
 `pre_tool_policy_entrypoint.input_schema` and
 `pre_tool_event_entrypoint.platform_event_schema`. The schema metadata names
 the required policy inputs (`session_id`, `action`, `claim_id`, `risk_level`),
-optional typed refs/source metadata, optional nested `packet` input, optional
-`human_checkpoint_id`, and optional `checkpoint_id`; it is a machine-readable
-adapter contract, not a truth source.
+optional typed refs/source metadata including `validation_contract_ids`,
+optional nested `packet` input, optional `human_checkpoint_id`, and optional
+`checkpoint_id`; it is a machine-readable adapter contract, not a truth source.
 
 ## Claude Code Template
 

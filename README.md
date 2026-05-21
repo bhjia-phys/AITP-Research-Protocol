@@ -122,7 +122,10 @@ object-graph/sensemaking/checkpoint/validation/promotion-packet sequencing from 
 IDs and severities, so reviewers do not need to parse free-form hook messages. Adapter
 policy calls also carry `risk_level` and optional `human_checkpoint_id`; in
 adversarial risk, trust-changing actions require an approved typed human
-checkpoint before they can proceed. Adapter
+checkpoint before they can proceed. Rigorous or adversarial `execute_tool` and
+`record_tool_run` calls must also reference an open typed validation contract
+for the active claim, so high-risk numerical or formula-code work has an
+explicit check plan before it can affect trust-relevant state. Adapter
 packets and generated bridge files put `aitp_v5_evaluate_pre_tool_policy` into
 the code-state/record-evidence/tool-run/execute-tool/tool-recipe/reference-location/
 physics-object/object-relation/sensemaking-report/subagent-ingestion, validation-contract, human-checkpoint request/decision, promotion-packet
@@ -140,9 +143,9 @@ advertise that event entrypoint alongside the lower-level policy entrypoint.
 Those generated payloads and sidecars also advertise machine-readable
 `pre_tool_policy_entrypoint.input_schema` and
 `pre_tool_event_entrypoint.platform_event_schema`, including `risk_level`,
-optional `human_checkpoint_id`, optional `checkpoint_id`, and optional nested
-`packet` input, so adapters can discover required policy inputs without
-treating Markdown or summaries as authority.
+optional `validation_contract_ids`, optional `human_checkpoint_id`, optional
+`checkpoint_id`, and optional nested `packet` input, so adapters can discover
+required policy inputs without treating Markdown or summaries as authority.
 The bridge materializers also write a JSON sidecar next to the generated
 Markdown and return its `payload_path`; hook runners should pass that sidecar to
 `adapter pre-tool-event` with `--bridge-path` rather than scrape Markdown or
