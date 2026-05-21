@@ -190,6 +190,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_apply_promotion_packet",
         "surface": "memory_entry_record",
     },
+    "audit_l2_memory_context": {
+        "cli": "aitp-v5 memory audit <args>",
+        "mcp": "aitp_v5_audit_l2_memory_context",
+        "surface": "l2_memory_audit",
+    },
 }
 
 
@@ -213,6 +218,11 @@ def sample_args_for_template(template: str) -> list[str]:
             "claim-fqhe",
             "--source-kind",
             "typed_records",
+        ]
+    if template.startswith("memory audit"):
+        return [
+            "--claim",
+            "claim-fqhe",
         ]
     if template.startswith("code state record"):
         return [

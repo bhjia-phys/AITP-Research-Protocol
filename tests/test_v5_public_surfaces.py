@@ -17,6 +17,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "human_checkpoint_record",
         "hook_trace_event_record",
         "knowledge_connector_catalog",
+        "l2_memory_audit",
         "legacy_migration_result",
         "memory_entry_record",
         "object_relation_record",

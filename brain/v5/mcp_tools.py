@@ -29,6 +29,7 @@ from brain.v5.validation import create_validation_contract, record_validation_re
 from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
 from brain.v5.mcp_evidence import aitp_v5_record_evidence
+from brain.v5.mcp_memory import aitp_v5_audit_l2_memory_context
 from brain.v5.risk import assess_claim_risk
 from brain.v5.store import list_records
 from brain.v5.subagents import ingest_subagent_result

@@ -11,6 +11,7 @@ from typing import Any
 
 from brain.v5.brief import build_execution_brief
 from brain.v5.cli_adapters import dispatch_adapter_command
+from brain.v5.cli_memory import add_memory_parser, dispatch_memory_command
 from brain.v5.code import record_code_state
 from brain.v5.evidence import record_evidence
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
@@ -239,6 +240,8 @@ def _build_parser() -> argparse.ArgumentParser:
 
     add_validation_parser(sp)
 
+    add_memory_parser(sp)
+
     return parser
 
 
@@ -352,6 +355,9 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.command == "validation":
         return dispatch_validation_command(args, ws)
+
+    if args.command == "memory":
+        return dispatch_memory_command(args, ws)
 
     if args.command == "object" and args.object_command == "record":
         obj = record_physics_object(ws, topic_id=args.topic_id, object_type=args.object_type,
