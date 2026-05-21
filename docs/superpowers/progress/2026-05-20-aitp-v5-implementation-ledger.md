@@ -4277,3 +4277,76 @@ Each entry should record:
   - deepen real app host smoke coverage where feasible, or continue broadening
     pre-tool policy coverage for remaining MCP inputs and active risk
     dimensions.
+
+### 3231592 - Require Known Failure Modes In Promotion Pre-Tool Policy
+
+- Task: broaden pre-tool policy coverage for promotion-packet creation so an
+  agent cannot pass the L2 memory gate by attaching evidence and validation
+  links while skipping explicit failure-mode reflection.
+- Planning source:
+  - previous ledger recommendation after `b3cdeb5`;
+  - v5 promotion packet contract requiring non-empty `known_failure_modes`;
+  - user requirement that gates should induce real physicist thinking rather
+    than fast checklist completion.
+- Changed files:
+  - `brain/v5/policy.py`
+  - `brain/v5/pretool_policy.py`
+  - `brain/v5/cli_policy.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/adapter_runtime.py`
+  - `brain/v5/hook_entrypoint_schemas.py`
+  - `brain/v5/hook_protocol_contracts.py`
+  - `brain/v5/hook_bridge_markdown.py`
+  - `hooks/aitp_v5_claude_hook.py`
+  - `tests/test_v5_pretool_policy.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_bridge_runtime.py`
+  - `tests/test_v5_hooks.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - shared pre-tool policy accepts `known_failure_modes` through kernel helper,
+    CLI, MCP, generated bridge schemas, Codex/OpenCode platform event
+    normalization, and the Claude Code hook wrapper;
+  - `create_promotion_packet` pre-tool decisions hard-block when no known
+    failure mode is supplied, using policy id
+    `promotion_packet_requires_known_failure_mode` and required action
+    `record_known_failure_mode`;
+  - pre-tool decision payloads now expose `known_failure_modes` as a contracted
+    list, while still carrying no kernel mutation authority.
+- Tests:
+  - added MCP block coverage for promotion-packet creation without known
+    failure modes;
+  - added CLI acceptance coverage when `--known-failure-mode` is supplied;
+  - updated adapter/runtime/Claude-hook smoke tests to propagate
+    `known_failure_modes` where the test focus is another policy dimension.
+- Verification:
+  - red target set:
+    `python -m pytest tests\test_v5_pretool_policy.py::test_mcp_pre_tool_policy_blocks_promotion_packet_without_known_failure_modes tests\test_v5_pretool_policy.py::test_cli_pre_tool_policy_accepts_promotion_packet_known_failure_mode -q`:
+    2 failed because payloads lacked `known_failure_modes` and CLI rejected
+    `--known-failure-mode`;
+  - target green set:
+    same command: 2 passed;
+  - pre-tool set:
+    `python -m pytest tests\test_v5_pretool_policy.py -q`: 35 passed;
+  - focused related set:
+    `python -m pytest tests\test_v5_pretool_policy.py tests\test_v5_policy.py tests\test_v5_mcp_tools.py tests\test_v5_adapters.py tests\test_v5_bridge_runtime.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py -q`:
+    151 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; python -m pytest $files -q`:
+    429 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with line-ending warnings only.
+- Residual risks:
+  - this strengthens the policy contract but does not evaluate whether a named
+    failure mode is physically sufficient; deeper physics adequacy checks remain
+    a later domain-tool/policy task;
+  - real host-process hook smoke coverage remains incomplete.
+- Next recommended task:
+  - add a failure-mode adequacy or active-risk-dimension audit for promotion and
+    validation, or continue real app host smoke coverage for Codex/OpenCode/
+    Claude Code.
