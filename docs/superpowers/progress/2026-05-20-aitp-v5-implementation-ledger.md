@@ -4883,3 +4883,59 @@ Each entry should record:
   - add strict typed-ref existence checks for failure-mode review result basis
     refs, or decide whether promotion packet creation should require a linked
     passed review result id in addition to the approved checkpoint id.
+
+### be44942 - Validate Failure-Mode Review Basis Refs
+
+- Task: prevent failure-mode review results from citing nonexistent local typed
+  evidence, validation, tool-run, reference-location, or artifact ids.
+- Planning source:
+  - previous ledger recommendation after `f5f17b4`;
+  - v5 invariant that typed kernel records remain authoritative;
+  - user requirement that review gates should represent real physics work, not
+    superficial pass-through text.
+- Changed files:
+  - `brain/v5/failure_mode_review.py`
+  - `tests/test_v5_memory_audit.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - `record_failure_mode_review_result` now rejects missing local typed refs in
+    `evidence_refs`, `validation_result_ids`, `tool_run_ids`,
+    `reference_location_ids`, and `artifact_ids`;
+  - evidence, validation result, tool-run, and artifact refs must belong to the
+    same topic and claim as the approved review checkpoint;
+  - reference locations must exist in the same topic and may be claim-specific
+    or topic-level;
+  - external/literature `basis_refs` remain labels and are not required to map
+    to local typed records.
+- Tests:
+  - added rejection coverage for a missing evidence ref;
+  - added acceptance coverage for existing evidence, validation result,
+    tool-run, reference-location, and artifact refs;
+  - updated prior review-result tests to avoid fake typed ids.
+- Verification:
+  - red target set:
+    `python -m pytest tests\test_v5_memory_audit.py::test_failure_mode_review_result_rejects_missing_typed_basis_refs tests\test_v5_memory_audit.py::test_failure_mode_review_result_accepts_existing_typed_basis_refs -q`:
+    1 failed because missing evidence refs were accepted;
+  - target green set:
+    same command: 2 passed;
+  - focused related set:
+    `python -m pytest tests\test_v5_memory_audit.py tests\test_v5_evidence_tools.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py tests\test_v5_mcp_tools.py tests\test_v5_architecture_boundaries.py -q`:
+    63 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; python -m pytest $files -q`:
+    449 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with line-ending warnings only.
+- Residual risks:
+  - `basis_refs` intentionally remain external/literature labels; converting
+    those into mandatory `reference_location_ids` would be a stricter future
+    policy decision;
+  - promotion packet creation still requires the approved review checkpoint id,
+    not a passed review-result id.
+- Next recommended task:
+  - decide whether high-risk promotion should require a passed
+    `failure_mode_review_result_record` linked to the approved checkpoint, or
+    continue hardening domain-tool recipes that produce those review results.
