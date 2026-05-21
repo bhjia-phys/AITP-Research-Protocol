@@ -159,7 +159,8 @@ optional `evidence_refs`, optional `validation_contract_ids`, optional `tool_run
 `validation_result_ids`, optional `recipe_id`, optional
 `executor_id`, optional `human_checkpoint_id`, optional `checkpoint_id`, and
 optional nested `packet` input, so adapters can discover required policy inputs
-without treating Markdown or summaries as authority.
+without treating Markdown or summaries as authority; runtime event normalizers
+also read link fields from that nested `packet` input.
 The bridge materializers also write a JSON sidecar next to the generated
 Markdown and return its `payload_path`; hook runners should pass that sidecar to
 `adapter pre-tool-event` with `--bridge-path` rather than scrape Markdown or

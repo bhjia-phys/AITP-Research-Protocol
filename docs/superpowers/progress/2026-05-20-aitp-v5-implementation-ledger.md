@@ -3437,3 +3437,50 @@ Each entry should record:
   - continue the next high-risk typed-record guard from the implementation
     plan, or add equivalent OpenCode platform-event coverage for promotion
     validation links.
+
+### 0873c7d - Read Nested Packet Links In Adapter Events
+
+- Task: make platform pre-tool event normalization consume promotion link fields
+  from nested `packet` input, matching the adapter schema that already
+  advertises optional nested packet payloads.
+- Planning source:
+  - previous ledger recommendation after `b91032c`;
+  - v5 invariant that generated adapter schemas must match runtime behavior.
+- Changed files:
+  - `brain/v5/adapter_runtime.py`
+  - `tests/test_v5_bridge_runtime.py`
+- Public/runtime behavior changes:
+  - `_input_list` now reads list and singular link fields from top-level tool
+    input first, then falls back to nested `packet`;
+  - OpenCode-style platform events that wrap `claim_id`, `evidence_refs`, and
+    `validation_result_ids` inside `tool.input.packet` now reach the same typed
+    pre-tool policy decision path as top-level Codex events.
+- Tests:
+  - OpenCode platform pre-tool event test uses nested promotion packet input
+    with tool-derived evidence plus passed validation-result links and expects
+    the decision to allow the action while exposing the resolved audit fields.
+- Verification:
+  - red test:
+    `python -m pytest tests\test_v5_bridge_runtime.py -q -k "nested_promotion_packet_links"`:
+    1 failed because nested `packet.evidence_refs` and
+    `packet.validation_result_ids` were not read;
+  - target green set:
+    `python -m pytest tests\test_v5_bridge_runtime.py -q -k "nested_promotion_packet_links or promotion_validation_links or maps_plugin_call_to_gate_policy"`:
+    3 passed, 4 deselected;
+  - focused related set:
+    `python -m pytest tests\test_v5_bridge_runtime.py tests\test_v5_adapter_event_runner.py tests\test_v5_adapters.py tests\test_v5_public_surfaces.py tests\test_v5_contracts.py -q`:
+    116 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; python -m pytest $files -q`:
+    395 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with only line-ending warnings.
+- Residual risks:
+  - nested packet extraction currently covers list-shaped IDs and singular
+    aliases; other nested scalar fields still follow existing explicit helper
+    logic.
+- Next recommended task:
+  - continue broadening high-risk typed-record guard coverage, or start the
+    realistic workflow acceptance skeletons once the remaining public runtime
+    gaps are closed.

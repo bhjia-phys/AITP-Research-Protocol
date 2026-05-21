@@ -213,7 +213,9 @@ Implemented:
   `validation_result_ids`, optional `recipe_id`, optional
   `executor_id`, optional `human_checkpoint_id`, optional `checkpoint_id`, and
   optional nested `packet` input, so
-  adapters can discover pre-tool inputs without parsing Markdown.
+  adapters can discover pre-tool inputs without parsing Markdown. Runtime event
+  normalizers now read link fields from nested `packet` input as well as from
+  top-level tool input.
 - `aitp-v5 adapter record-gate-audit` /
   `aitp_v5_audit_record_gate_coverage` now expose a contracted record/gate
   coverage audit, and the public surface registry plus runtime entrypoint

@@ -169,7 +169,8 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `validation_result_ids`, optional `recipe_id`, optional
   `executor_id`, optional `human_checkpoint_id`, optional `checkpoint_id`, and
   optional nested `packet` input, while typed kernel records remain the
-  authority.
+  authority. Runtime event normalizers read link fields from that nested
+  `packet` input as well as from top-level tool input.
 - Bridge materializers write a machine-readable JSON sidecar beside the generated
   Markdown and return its `payload_path`; runtime hook runners should use
   `adapter pre-tool-event --bridge-path <payload-path> --event-json <json>` to
