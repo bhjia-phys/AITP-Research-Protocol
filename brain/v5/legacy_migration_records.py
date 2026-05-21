@@ -10,6 +10,7 @@ from brain.v5.ids import prefixed_id
 from brain.v5.markdown import read_md
 from brain.v5.models import MemoryEntryRecord
 from brain.v5.paths import WorkspacePaths
+from brain.v5.legacy_record_bodies import legacy_evidence_body
 from brain.v5.references import record_reference_location
 from brain.v5.sensemaking import record_sensemaking_report
 from brain.v5.store import write_record
@@ -65,6 +66,12 @@ def migrate_legacy_l1_understanding(
             summary=summary,
             supports_outputs=["evidence_or_provenance"],
             source_refs=[f"legacy_l1:{path.as_posix()}"],
+            body=legacy_evidence_body(
+                title=title,
+                summary=summary,
+                display_path=path.relative_to(root).as_posix(),
+                body=body,
+            ),
         )
         report = record_sensemaking_report(
             ws,
@@ -94,6 +101,12 @@ def migrate_legacy_l1_understanding(
             summary=summary,
             supports_outputs=["evidence_or_provenance"],
             source_refs=[f"legacy_l1:{path.as_posix()}"],
+            body=legacy_evidence_body(
+                title=f"Legacy L1 intake note: {display_path}",
+                summary=summary,
+                display_path=display_path,
+                body=body,
+            ),
         )
         report = record_sensemaking_report(
             ws,

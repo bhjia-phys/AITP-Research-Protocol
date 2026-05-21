@@ -283,6 +283,7 @@ def test_legacy_migration_cli_mcp_and_runtime_surface(tmp_path, capsys):
 def test_legacy_migration_converts_all_candidates_and_reviews_to_typed_records(tmp_path):
     from brain.v5.evidence import list_evidence_for_claim
     from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
+    from brain.v5.markdown import read_md
     from brain.v5.models import ClaimRecord, SensemakingReportRecord
     from brain.v5.store import list_records
     from brain.v5.workspace import init_workspace
@@ -338,6 +339,9 @@ def test_legacy_migration_converts_all_candidates_and_reviews_to_typed_records(t
     assert "legacy_candidate" in evidence_types
     assert "legacy_l4_review" in evidence_types
     assert any(review.as_posix() in ref for evidence in all_evidence for ref in evidence.source_refs)
+    review_evidence = next(evidence for evidence in all_evidence if evidence.evidence_type == "legacy_l4_review")
+    _fm, review_body = read_md(ws.registry_dir("evidence") / f"{review_evidence.evidence_id}.md")
+    assert "The review accepts the claim only within the recorded finite-size scope." in review_body
 
     reports = list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord)
     assert {report.report_id for report in reports} == set(result["written_records"]["sensemaking_reports"])
@@ -384,6 +388,7 @@ def test_legacy_migration_preserves_runtime_log_as_trace_events(tmp_path):
 def test_legacy_migration_preserves_l1_source_basis_and_conventions(tmp_path):
     from brain.v5.evidence import list_evidence_for_claim
     from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
+    from brain.v5.markdown import read_md
     from brain.v5.models import SensemakingReportRecord
     from brain.v5.store import list_records
     from brain.v5.workspace import init_workspace
@@ -423,6 +428,15 @@ def test_legacy_migration_preserves_l1_source_basis_and_conventions(tmp_path):
     assert {"legacy_l1_source_basis", "legacy_l1_convention_snapshot"} <= evidence_types
     assert any(source_basis.as_posix() in ref for item in evidence for ref in item.source_refs)
     assert any(conventions.as_posix() in ref for item in evidence for ref in item.source_refs)
+    evidence_by_type = {item.evidence_type: item for item in evidence}
+    _fm, source_basis_body = read_md(
+        ws.registry_dir("evidence") / f"{evidence_by_type['legacy_l1_source_basis'].evidence_id}.md"
+    )
+    _fm, conventions_body = read_md(
+        ws.registry_dir("evidence") / f"{evidence_by_type['legacy_l1_convention_snapshot'].evidence_id}.md"
+    )
+    assert "The source roles separate benchmark data from pedagogical context." in source_basis_body
+    assert "finite-size sectors use the same orbital cutoff." in conventions_body
 
     reports = list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord)
     assert {report.report_id for report in reports} >= set(result["written_records"]["sensemaking_reports"])

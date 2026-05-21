@@ -20,6 +20,7 @@ from brain.v5.legacy_l3_process_records import (
     legacy_l3_process_audit_candidates,
     migrate_legacy_l3_process_notes,
 )
+from brain.v5.legacy_record_bodies import legacy_evidence_body
 from brain.v5.markdown import read_md
 from brain.v5.paths import WorkspacePaths
 from brain.v5.sensemaking import record_sensemaking_report
@@ -231,6 +232,12 @@ def migrate_legacy_topic_to_v5(
             summary=review["summary"],
             supports_outputs=["evidence_or_provenance", "minimal_check"],
             source_refs=[f"legacy_l4_review:{review['path'].as_posix()}"],
+            body=legacy_evidence_body(
+                title="Legacy L4 review evidence",
+                summary=review["summary"],
+                display_path=review["display_path"],
+                body=review["body"],
+            ),
         )
         evidence_ids.append(review_evidence.evidence_id)
 
@@ -402,8 +409,10 @@ def _legacy_review_records(root: Path) -> list[dict]:
         records.append(
             {
                 "path": review_path,
+                "display_path": review_path.relative_to(root).as_posix(),
                 "status": str(fm.get("status") or "legacy_review"),
                 "summary": summary,
+                "body": body,
             }
         )
     return records
