@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 import json
+import os
+import shlex
+import subprocess
+import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
@@ -99,13 +103,34 @@ def _codex_hooks_payload(
     session_id: str,
     bridge_payload_path: str,
 ) -> dict[str, Any]:
-    pre_tool = (
-        f'python hooks/aitp_v5_adapter_event_runner.py pre-tool --base "{workspace_base}" '
-        f'--runtime codex --session-id {session_id} --bridge-path "{bridge_payload_path}"'
+    runner = (_repo_root() / "hooks" / "aitp_v5_adapter_event_runner.py").as_posix()
+    pre_tool = _shell_command(
+        [
+            sys.executable,
+            runner,
+            "pre-tool",
+            "--base",
+            workspace_base,
+            "--runtime",
+            "codex",
+            "--session-id",
+            session_id,
+            "--bridge-path",
+            bridge_payload_path,
+        ]
     )
-    post_tool = (
-        f'python hooks/aitp_v5_adapter_event_runner.py post-tool --base "{workspace_base}" '
-        f'--runtime codex --session-id {session_id}'
+    post_tool = _shell_command(
+        [
+            sys.executable,
+            runner,
+            "post-tool",
+            "--base",
+            workspace_base,
+            "--runtime",
+            "codex",
+            "--session-id",
+            session_id,
+        ]
     )
     return {
         "kind": "codex_hooks_json",
@@ -126,3 +151,13 @@ def _read_codex_hooks(hooks_path: Path) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError("Codex hooks file must be a JSON object")
     return payload
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _shell_command(argv: list[str]) -> str:
+    if os.name == "nt":
+        return subprocess.list2cmdline([str(item) for item in argv])
+    return " ".join(shlex.quote(str(item)) for item in argv)

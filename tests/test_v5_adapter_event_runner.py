@@ -53,6 +53,27 @@ def _run_fixture_hook(hook, event):
     )
 
 
+def _codex_native_command(installation, event_name):
+    event_hooks = installation["hooks"]["hooks"][event_name]
+    for event_hook in event_hooks:
+        for hook in event_hook["hooks"]:
+            if hook["type"] == "command":
+                return hook["command"]
+    raise AssertionError(f"missing Codex native command for {event_name}")
+
+
+def _run_codex_native_command(command, event, cwd):
+    return subprocess.run(
+        command,
+        cwd=cwd,
+        input=json.dumps(event),
+        capture_output=True,
+        encoding="utf-8",
+        shell=True,
+        check=False,
+    )
+
+
 def test_adapter_event_runner_reads_stdin_and_uses_bridge_sidecar(tmp_path):
     claim = _seed_session(tmp_path)
     bridge = _write_codex_bridge(tmp_path)
@@ -161,6 +182,78 @@ def test_opencode_install_fixture_runner_executes_from_declared_cwd(tmp_path):
     assert payload["ok"] is True
     assert payload["runtime_event"]["runtime"] == "opencode"
     assert payload["policy_reasons"][0]["policy_id"] == "no_summary_surface_as_truth_source"
+
+
+def test_codex_native_hooks_json_pre_tool_command_executes_from_workspace_cwd(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_install_codex_hook_fixture
+
+    claim = _seed_session(tmp_path)
+    hooks_path = tmp_path / ".codex" / "hooks.json"
+    installation = aitp_v5_install_codex_hook_fixture(
+        str(tmp_path),
+        session_id="s1",
+        hooks_path=str(hooks_path),
+    )
+    command = _codex_native_command(installation, "PreToolUse")
+
+    result = _run_codex_native_command(
+        command,
+        {
+            "tool_name": "mcp__aitp__aitp_v5_record_evidence",
+            "tool_input": {
+                "topic_id": "librpa-gw",
+                "claim_id": claim.claim_id,
+                "source_kind": "findings",
+                "orientation_only": True,
+            },
+        },
+        cwd=tmp_path,
+    )
+
+    assert result.stdout, result.stderr
+    payload = json.loads(result.stdout)
+    assert result.returncode == 2
+    assert payload["ok"] is True
+    assert payload["runtime_event"]["runtime"] == "codex"
+    assert payload["policy_reasons"][0]["policy_id"] == "no_summary_surface_as_truth_source"
+
+
+def test_codex_native_hooks_json_post_tool_command_executes_from_workspace_cwd(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_install_codex_hook_fixture
+    from brain.v5.trace import read_trace_events
+
+    claim = _seed_session(tmp_path)
+    hooks_path = tmp_path / ".codex" / "hooks.json"
+    installation = aitp_v5_install_codex_hook_fixture(
+        str(tmp_path),
+        session_id="s1",
+        hooks_path=str(hooks_path),
+    )
+    command = _codex_native_command(installation, "PostToolUse")
+
+    result = _run_codex_native_command(
+        command,
+        {
+            "tool_name": "pytest",
+            "evidence_status": "supports",
+            "risk_level": "guided",
+        },
+        cwd=tmp_path,
+    )
+
+    assert result.stdout, result.stderr
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["ok"] is True
+    assert payload["kind"] == "hook_trace_event_record"
+
+    events = read_trace_events(payload["trace_path"])
+    assert len(events) == 1
+    assert events[0].session_id == "s1"
+    assert events[0].topic_id == "librpa-gw"
+    assert events[0].claim_id == claim.claim_id
+    assert events[0].payload["tool_name"] == "pytest"
+    assert events[0].payload["evidence_status"] == "supports"
 
 
 def test_codex_install_fixture_post_tool_runner_persists_trace_event(tmp_path):
