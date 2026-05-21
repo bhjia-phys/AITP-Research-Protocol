@@ -707,6 +707,78 @@ def test_claude_hook_script_pre_tool_blocks_summary_sourced_object_relation(tmp_
     ]
 
 
+def test_claude_hook_script_pre_tool_blocks_summary_sourced_sensemaking_report(tmp_path):
+    import json
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="Counting diagnoses the edge CFT sector.",
+        evidence_profile="toy_numeric",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size aliasing",
+    )
+    bind_session(
+        ws,
+        "s1",
+        topic_id="fqhe",
+        context_id="topological-order",
+        active_claim=claim.claim_id,
+    )
+
+    repo_root = Path(__file__).resolve().parents[1]
+    script = repo_root / "hooks" / "aitp_v5_claude_hook.py"
+    hook_input = {
+        "hook_event_name": "PreToolUse",
+        "tool_name": "mcp__aitp__aitp_v5_record_sensemaking_report",
+        "tool_input": {
+            "topic_id": "fqhe",
+            "claim_id": claim.claim_id,
+            "title": "Generated interpretation",
+            "summary": "The generated findings summary says the interpretation is settled.",
+            "source_kind": "findings",
+            "source_ref": ".aitp/surfaces/session_summaries/s1/findings.md",
+            "orientation_only": True,
+        },
+    }
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(script),
+            "pre-tool",
+            "--base",
+            str(tmp_path),
+            "--session-id",
+            "s1",
+        ],
+        input=json.dumps(hook_input),
+        capture_output=True,
+        encoding="utf-8",
+        check=False,
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["hookSpecificOutput"]["permissionDecision"] == "deny"
+    assert payload["aitp"]["action"] == "record_sensemaking_report"
+    assert payload["aitp"]["block"] is True
+    assert payload["aitp"]["policy_reasons"] == [
+        {
+            "policy_id": "no_summary_surface_as_truth_source",
+            "severity": "hard_block",
+            "message": "derived summary surfaces are orientation only and cannot justify trust-changing actions",
+        }
+    ]
+
+
 def test_claude_hook_script_pre_tool_warns_code_method_validation_without_code_state(tmp_path):
     import json
     import subprocess

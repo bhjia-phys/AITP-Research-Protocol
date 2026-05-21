@@ -23,8 +23,10 @@ _AITP_MCP_ACTIONS = {
     "aitp_v5_record_evidence": "record_evidence",
     "aitp_v5_record_tool_run": "record_tool_run",
     "aitp_v5_execute_tool": "execute_tool",
+    "aitp_v5_record_reference_location": "record_reference_location",
     "aitp_v5_record_physics_object": "record_physics_object",
     "aitp_v5_record_object_relation": "record_object_relation",
+    "aitp_v5_record_sensemaking_report": "record_sensemaking_report",
     "aitp_v5_ingest_subagent_result": "ingest_subagent_result",
     "aitp_v5_apply_trust_update": "change_claim_confidence",
     "aitp_v5_create_promotion_packet": "create_promotion_packet",
@@ -178,8 +180,10 @@ def _context_policy_from_workspace(
 ) -> PolicyDecision | None:
     if action not in {
         "record_code_state",
+        "record_reference_location",
         "record_physics_object",
         "record_object_relation",
+        "record_sensemaking_report",
         "create_promotion_packet",
         "apply_promotion_packet",
         "request_human_checkpoint",
