@@ -5399,3 +5399,81 @@ Each entry should record:
   - add a workspace/program-level summary or audit surface that lists active
     topics/claims, promoted memory entries, and validation links across
     concurrent sessions while keeping typed records authoritative.
+
+### d85430d - Add Workspace Summary Surface
+
+- Task: add a workspace/program-level summary surface that gives agents a
+  lightweight overview across concurrent sessions without turning generated
+  markdown into kernel truth.
+- Planning source:
+  - previous ledger recommendation after `c2a97fc`;
+  - AITP v5 goal instruction that multiple active topics/sessions must be
+    resumable from typed kernel state, with summaries used only for
+    orientation.
+- Changed files:
+  - `brain/v5/summaries.py`
+  - `brain/v5/summary_contracts.py`
+  - `brain/v5/contracts.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoint_catalog.py`
+  - `brain/v5/cli.py`
+  - `brain/v5/cli_summaries.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/mcp_summaries.py`
+  - `tests/test_v5_summaries.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `tests/test_v5_cli.py`
+  - `tests/test_v5_mcp_tools.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - added `WorkspaceSummaryBundle` and `write_workspace_summary`;
+  - generated `.aitp/surfaces/workspace_summary/overview.md` lists recorded
+    sessions, active claims, linked promoted L2 memory, and validation-result
+    ids derived from typed records;
+  - added public surface `workspace_summary_bundle`;
+  - exposed the capability through `aitp-v5 summary workspace`,
+    `aitp_v5_write_workspace_summary`, and runtime entrypoint
+    `workspace_summary`;
+  - split summary CLI/MCP routing into `cli_summaries.py` and
+    `mcp_summaries.py` so core adapter modules stay within architecture
+    boundaries.
+- Tests:
+  - added a workspace summary workflow covering two active sessions, active
+    claims, one promoted memory entry, and validation-result links;
+  - added CLI/MCP/runtime exposure checks for the workspace summary surface;
+  - updated public-surface and adapter monkeypatch tests for the focused
+    summary adapter modules.
+- Verification:
+  - red target:
+    `pytest tests\test_v5_summaries.py::test_workspace_summary_lists_sessions_claims_memory_and_validation_links tests\test_v5_summaries.py::test_cli_mcp_and_runtime_expose_workspace_summary -q`:
+    2 failed because the workspace summary contract and MCP wrapper did not
+    exist yet;
+  - target green:
+    same command: 2 passed;
+  - focused related sets:
+    `pytest tests\test_v5_summaries.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py -q`:
+    35 passed;
+    `pytest tests\test_v5_contracts.py tests\test_v5_cli.py tests\test_v5_mcp_tools.py -q`:
+    59 passed before the architecture refactor;
+    `pytest tests\test_v5_architecture_boundaries.py tests\test_v5_summaries.py -q`:
+    16 passed after splitting summary CLI/MCP adapters and reducing
+    `contracts.py`;
+    `pytest tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py tests\test_v5_cli.py tests\test_v5_mcp_tools.py -q`:
+    49 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; pytest $files -q`:
+    458 passed in 147.36s;
+  - `python -m compileall -q brain\v5`: passed;
+  - `git diff --check -- .`: passed, with CRLF conversion warnings only.
+- Residual risks:
+  - workspace summaries expose ids and compact context only; agents must still
+    call typed kernel, validation, memory, and evidence surfaces before trust
+    updates;
+  - the workspace summary is generated on demand and is not yet wired into
+    adapter refresh hooks automatically.
+- Next recommended task:
+  - add adapter/hook refresh behavior that can regenerate or discover the
+    workspace summary at session start while preserving the invariant that
+    typed kernel records remain authoritative.
