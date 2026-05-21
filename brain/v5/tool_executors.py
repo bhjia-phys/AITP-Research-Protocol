@@ -140,6 +140,46 @@ def builtin_tool_executors() -> dict[str, ToolExecutorSpec]:
             },
             run=_run_checklist_consistency_check,
         ),
+        ToolExecutorSpec(
+            executor_id="failure_mode_basis_check",
+            tool_family="sanity_check",
+            tool_name="failure_mode_basis_check",
+            execution_mode="safe_builtin",
+            version="1",
+            purpose="Check that every named failure mode has an explicit review basis before promotion.",
+            evidence_profiles=("toy_numeric", "code_method", "formal_theory", "mixed"),
+            input_schema={
+                "type": "object",
+                "required": ["failure_modes", "basis_items"],
+                "properties": {
+                    "failure_modes": {"type": "array", "items": {"type": "string"}},
+                    "basis_items": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": ["failure_mode", "basis_ref", "basis_type", "question_answered"],
+                            "properties": {
+                                "failure_mode": {"type": "string"},
+                                "basis_ref": {"type": "string"},
+                                "basis_type": {"type": "string"},
+                                "question_answered": {"type": "string"},
+                            },
+                        },
+                    },
+                },
+            },
+            output_schema={
+                "type": "object",
+                "required": ["all_failure_modes_covered", "covered_failure_modes", "uncovered_failure_modes"],
+                "properties": {
+                    "all_failure_modes_covered": {"type": "boolean"},
+                    "covered_failure_modes": {"type": "array"},
+                    "uncovered_failure_modes": {"type": "array"},
+                    "basis_items": {"type": "array"},
+                },
+            },
+            run=_run_failure_mode_basis_check,
+        ),
     ]
     return {spec.executor_id: spec for spec in specs}
 
@@ -326,6 +366,41 @@ def _run_checklist_consistency_check(inputs: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _run_failure_mode_basis_check(inputs: dict[str, Any]) -> dict[str, Any]:
+    raw_modes = inputs.get("failure_modes")
+    raw_items = inputs.get("basis_items")
+    if not isinstance(raw_modes, list) or not raw_modes:
+        raise ValueError("failure_modes must be a non-empty list")
+    if not isinstance(raw_items, list) or not raw_items:
+        raise ValueError("basis_items must be a non-empty list")
+    modes = [_nonempty_string(value, f"failure_modes[{index}]") for index, value in enumerate(raw_modes)]
+    items = [_basis_item(row, index) for index, row in enumerate(raw_items)]
+    covered = []
+    for mode in modes:
+        if any(item["failure_mode"] == mode for item in items):
+            covered.append(mode)
+    uncovered = [mode for mode in modes if mode not in covered]
+    return {
+        "failure_mode_count": len(modes),
+        "basis_item_count": len(items),
+        "all_failure_modes_covered": not uncovered,
+        "covered_failure_modes": covered,
+        "uncovered_failure_modes": uncovered,
+        "basis_items": items,
+    }
+
+
+def _basis_item(row: Any, index: int) -> dict[str, str]:
+    if not isinstance(row, dict):
+        raise ValueError(f"basis_items[{index}] must be an object")
+    return {
+        "failure_mode": _nonempty_string(row.get("failure_mode"), f"basis_items[{index}].failure_mode"),
+        "basis_ref": _nonempty_string(row.get("basis_ref"), f"basis_items[{index}].basis_ref"),
+        "basis_type": _nonempty_string(row.get("basis_type"), f"basis_items[{index}].basis_type"),
+        "question_answered": _nonempty_string(row.get("question_answered"), f"basis_items[{index}].question_answered"),
+    }
+
+
 def _checklist_item(row: Any, index: int) -> dict[str, str]:
     if not isinstance(row, dict):
         raise ValueError(f"checks[{index}] must be an object")
@@ -339,6 +414,12 @@ def _checklist_item(row: Any, index: int) -> dict[str, str]:
     if not isinstance(note, str) or not note.strip():
         raise ValueError(f"checks[{index}].note must be a non-empty string")
     return {"name": name, "status": status, "note": note.strip()}
+
+
+def _nonempty_string(value: Any, path: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{path} must be a non-empty string")
+    return value.strip()
 
 
 def _metric_result(row: Any, index: int) -> dict[str, Any]:
@@ -382,6 +463,10 @@ def _infer_evidence_status(outputs: dict[str, Any]) -> str:
     if outputs.get("all_within_tolerance") is True:
         return "supports"
     if outputs.get("all_within_tolerance") is False:
+        return "refutes"
+    if outputs.get("all_failure_modes_covered") is True:
+        return "supports"
+    if outputs.get("all_failure_modes_covered") is False:
         return "refutes"
     if outputs.get("within_tolerance") is True:
         return "supports"

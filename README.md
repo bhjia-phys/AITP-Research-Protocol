@@ -127,7 +127,13 @@ checkpoint before they can proceed. Rigorous or adversarial `execute_tool` and
 for the active claim. `execute_tool` requires that contract to bind the current
 `recipe_id` and `executor_id`; `record_tool_run` requires a bound `recipe_id`,
 so high-risk numerical or formula-code work has an explicit check plan for the
-actual tool path before it can affect trust-relevant state. Adapter
+actual tool path before it can affect trust-relevant state. Built-in safe
+executors include scalar/table tolerance checks, formal checklist consistency,
+and `failure_mode_basis_check`, which verifies that each named failure mode has
+an explicit calculation, validation, literature, or tool basis before review
+results are used for promotion. FQHE and LibRPA/GW domain packs recommend this
+executor through `recipe-fqhe-failure-mode-review-basis` and
+`recipe-librpa-gw-failure-mode-review-basis`. Adapter
 `record_validation_result` records then bind a completed `tool_run_id` back to
 the contract's required evidence outputs; a passed result cannot omit required
 outputs or report observed failure modes. High-risk `record_evidence` calls

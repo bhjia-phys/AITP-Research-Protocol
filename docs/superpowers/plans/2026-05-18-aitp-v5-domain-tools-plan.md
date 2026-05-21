@@ -6,6 +6,14 @@
 
 **Architecture:** Domain packs suggest question intents, risk signals, safe tool recipes, executor recommendations, and trust-card templates. They never weaken global truth standards and never become evidence by themselves. Tool runs produce auditable `ToolRunRecord` and `EvidenceRecord` objects.
 
+Current implementation note: the safe executor catalog now includes
+`failure_mode_basis_check`, a deterministic in-process review-basis checker.
+FQHE and LibRPA/GW domain packs recommend it through
+`recipe-fqhe-failure-mode-review-basis` and
+`recipe-librpa-gw-failure-mode-review-basis`, so a passed
+`failure_mode_review_result_record` can cite concrete tool/validation basis
+rather than only prose.
+
 **Tech Stack:** Python dataclasses, pytest, Markdown+YAML store, built-in deterministic executors.
 
 ---

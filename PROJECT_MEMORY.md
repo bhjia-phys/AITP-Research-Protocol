@@ -171,6 +171,9 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   allow the action. For high-risk `execute_tool`, the supplied validation
   contract must also bind the current `recipe_id` and `executor_id`; for
   high-risk `record_tool_run`, it must bind the current `recipe_id`.
+  Built-in safe executors now include `failure_mode_basis_check`, which checks
+  that every named failure mode has explicit review basis; FQHE and LibRPA/GW
+  domain packs recommend it through failure-mode review basis recipes.
   After a high-risk tool run, `record_validation_result` can persist whether
   the run satisfied the bound contract's required evidence outputs; passed
   results cannot omit required outputs or carry observed failure modes.

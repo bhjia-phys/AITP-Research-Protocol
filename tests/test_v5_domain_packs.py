@@ -54,6 +54,14 @@ def test_builtin_gw_librpa_pack_suggests_code_provenance_and_benchmarks():
         and recommendation["recipe_id"] == "recipe-librpa-gw-benchmark-table"
         for recommendation in pack.tool_executor_recommendations
     )
+    review_recommendation = next(
+        recommendation
+        for recommendation in pack.tool_executor_recommendations
+        if recommendation["recipe_id"] == "recipe-librpa-gw-failure-mode-review-basis"
+    )
+    assert review_recommendation["executor_id"] == "failure_mode_basis_check"
+    assert review_recommendation["supports_outputs"] == ["failure_mode_review_basis", "minimal_check"]
+    assert review_recommendation["required_context_refs"] == ["code_state_ids", "validation_result_ids"]
     assert "clean_code_state_trust_card" in pack.trust_card_templates
     assert pack.truth_standard_policy == "global_only"
 
@@ -123,6 +131,11 @@ def test_execution_brief_exposes_domain_tool_executor_recommendations(tmp_path):
     assert recommendations[0]["pack_id"] == "gw_librpa"
     assert recommendations[0]["executor_id"] == "metric_table_check"
     assert recommendations[0]["recipe_id"] == "recipe-librpa-gw-benchmark-table"
+    assert any(
+        recommendation["executor_id"] == "failure_mode_basis_check"
+        and recommendation["recipe_id"] == "recipe-librpa-gw-failure-mode-review-basis"
+        for recommendation in recommendations
+    )
 
 
 def test_execution_brief_promotes_recommended_executor_into_next_action(tmp_path):

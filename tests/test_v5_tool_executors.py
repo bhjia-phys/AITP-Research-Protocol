@@ -339,8 +339,15 @@ def test_tool_executor_catalog_exposes_input_contracts():
     assert catalog["kind"] == "tool_executor_catalog"
     assert catalog["truth_source"] == "builtin_executor_registry"
     assert catalog["summary_inputs_trusted"] is False
-    assert set(executors) == {"checklist_consistency_check", "metric_table_check", "scalar_tolerance_check"}
+    assert set(executors) == {
+        "checklist_consistency_check",
+        "failure_mode_basis_check",
+        "metric_table_check",
+        "scalar_tolerance_check",
+    }
     assert executors["checklist_consistency_check"]["input_schema"]["required"] == ["checks"]
+    assert executors["failure_mode_basis_check"]["input_schema"]["required"] == ["failure_modes", "basis_items"]
+    assert "code_method" in executors["failure_mode_basis_check"]["evidence_profiles"]
     assert "formal_theory" in executors["checklist_consistency_check"]["evidence_profiles"]
     assert executors["scalar_tolerance_check"]["input_schema"]["required"] == ["observed", "expected", "tolerance"]
     assert executors["metric_table_check"]["input_schema"]["required"] == ["metrics"]
@@ -360,6 +367,7 @@ def test_cli_tool_executors_returns_catalog(tmp_path, capsys):
     assert payload["kind"] == "tool_executor_catalog"
     assert {executor["executor_id"] for executor in payload["executors"]} == {
         "checklist_consistency_check",
+        "failure_mode_basis_check",
         "metric_table_check",
         "scalar_tolerance_check",
     }
@@ -373,3 +381,49 @@ def test_mcp_tool_executor_catalog_returns_valid_surface():
 
     assert payload["ok"] is True
     assert require_valid_public_surface("tool_executor_catalog", payload) == payload
+
+
+def test_failure_mode_basis_executor_checks_each_mode_has_review_basis(tmp_path):
+    from brain.v5.tool_executors import execute_registered_tool_result
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "librpa-gw", context_id="gw-methods", title="LibRPA GW")
+    claim = create_claim(
+        ws,
+        topic_id="librpa-gw",
+        statement="The self-energy code path reproduces the GW benchmark.",
+        evidence_profile="code_method",
+        confidence_state="hypothesis",
+        active_uncertainty="formula-code translation",
+        strongest_failure_mode="frequency grid mismatch",
+    )
+
+    result = execute_registered_tool_result(
+        ws,
+        executor_id="failure_mode_basis_check",
+        recipe_id="recipe-librpa-gw-failure-mode-review-basis",
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        inputs={
+            "failure_modes": ["frequency grid mismatch", "basis cutoff mismatch"],
+            "basis_items": [
+                {
+                    "failure_mode": "frequency grid mismatch",
+                    "basis_ref": "validation:freq-grid-scan",
+                    "basis_type": "validation_result",
+                    "question_answered": "Changing grid density does not move the benchmark outside tolerance.",
+                }
+            ],
+        },
+        supports_outputs=["failure_mode_review_basis"],
+        evidence_type="code_method",
+        evidence_summary="Failure-mode review basis was checked against GW diagnostics.",
+    )
+
+    assert result.run.evidence_status == "refutes"
+    assert result.run.outputs["all_failure_modes_covered"] is False
+    assert result.run.outputs["covered_failure_modes"] == ["frequency grid mismatch"]
+    assert result.run.outputs["uncovered_failure_modes"] == ["basis cutoff mismatch"]
+    assert result.evidence is not None
+    assert result.evidence.supports_outputs == ["failure_mode_review_basis"]
