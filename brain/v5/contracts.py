@@ -117,37 +117,27 @@ def require_valid_codex_hook_bridge(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def validate_summary_orientation(payload: dict[str, Any], *, path: str = "summary_orientation") -> ContractResult:
-    """Validate a public orientation-only summary view."""
-
-    from brain.v5.summary_contracts import validate_summary_orientation as _validate_summary_orientation
-
-    return _validate_summary_orientation(payload, path=path)
+    from brain.v5.summary_contracts import validate_summary_orientation as _validate; return _validate(payload, path=path)
 
 
 def require_valid_summary_orientation(payload: dict[str, Any]) -> dict[str, Any]:
-    """Return a summary orientation payload or raise a contract error."""
-
-    from brain.v5.summary_contracts import require_valid_summary_orientation as _require_valid_summary_orientation
-
-    return _require_valid_summary_orientation(payload)
+    from brain.v5.summary_contracts import require_valid_summary_orientation as _require; return _require(payload)
 
 
 def validate_session_summary_bundle(payload: dict[str, Any], *, path: str = "session_summary_bundle") -> ContractResult:
-    """Validate a public session-summary write result."""
-
-    from brain.v5.summary_contracts import validate_session_summary_bundle as _validate_session_summary_bundle
-
-    return _validate_session_summary_bundle(payload, path=path)
+    from brain.v5.summary_contracts import validate_session_summary_bundle as _validate; return _validate(payload, path=path)
 
 
 def require_valid_session_summary_bundle(payload: dict[str, Any]) -> dict[str, Any]:
-    """Return a session-summary bundle payload or raise a contract error."""
+    from brain.v5.summary_contracts import require_valid_session_summary_bundle as _require; return _require(payload)
 
-    from brain.v5.summary_contracts import (
-        require_valid_session_summary_bundle as _require_valid_session_summary_bundle,
-    )
 
-    return _require_valid_session_summary_bundle(payload)
+def validate_workspace_summary_bundle(payload: dict[str, Any], *, path: str = "workspace_summary_bundle") -> ContractResult:
+    from brain.v5.summary_contracts import validate_workspace_summary_bundle as _validate; return _validate(payload, path=path)
+
+
+def require_valid_workspace_summary_bundle(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.summary_contracts import require_valid_workspace_summary_bundle as _require; return _require(payload)
 
 
 def validate_trust_update_preflight(payload: dict[str, Any], *, path: str = "trust_preflight") -> ContractResult:

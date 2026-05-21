@@ -334,9 +334,10 @@ def test_cli_summary_orientation_validates_payload_before_return(tmp_path, monke
     import pytest
 
     import brain.v5.cli as cli
+    import brain.v5.cli_summaries as cli_summaries
     from brain.v5.contracts import ContractError
 
-    monkeypatch.setattr(cli, "read_summary_orientation", lambda *args, **kwargs: {"kind": "summary_orientation"})
+    monkeypatch.setattr(cli_summaries, "read_summary_orientation", lambda *args, **kwargs: {"kind": "summary_orientation"})
 
     with pytest.raises(ContractError):
         cli.main(["--base", str(tmp_path), "summary", "orientation", "s1"])
@@ -346,6 +347,7 @@ def test_cli_summary_session_validates_payload_before_return(tmp_path, monkeypat
     import pytest
 
     import brain.v5.cli as cli
+    import brain.v5.cli_summaries as cli_summaries
     from brain.v5.contracts import ContractError
     from brain.v5.summaries import SessionSummaryBundle
 
@@ -357,7 +359,7 @@ def test_cli_summary_session_validates_payload_before_return(tmp_path, monkeypat
         files={"task_plan": "task_plan.md", "findings": "findings.md", "progress": "progress.md"},
         truth_source=True,
     )
-    monkeypatch.setattr(cli, "write_session_summary", lambda *args, **kwargs: bundle)
+    monkeypatch.setattr(cli_summaries, "write_session_summary", lambda *args, **kwargs: bundle)
 
     with pytest.raises(ContractError):
         cli.main(["--base", str(tmp_path), "summary", "session", "s1"])

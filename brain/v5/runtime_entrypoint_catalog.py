@@ -135,6 +135,7 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_write_session_summary",
         "surface": "session_summary_bundle",
     },
+    "workspace_summary": {"cli": "aitp-v5 summary workspace", "mcp": "aitp_v5_write_workspace_summary", "surface": "workspace_summary_bundle"},
     "trust_preflight": {
         "cli": "aitp-v5 trust preflight <args>",
         "mcp": "aitp_v5_preflight_trust_update",

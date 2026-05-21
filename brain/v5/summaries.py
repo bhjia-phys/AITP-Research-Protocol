@@ -10,7 +10,7 @@ from brain.v5.brief import build_execution_brief
 from brain.v5.contracts import require_valid_summary_orientation
 from brain.v5.evidence import list_evidence_for_claim
 from brain.v5.markdown import read_md, write_md
-from brain.v5.models import ToolRunRecord
+from brain.v5.models import ClaimRecord, MemoryEntryRecord, SessionBinding, ToolRunRecord
 from brain.v5.paths import WorkspacePaths
 from brain.v5.store import list_records
 from brain.v5.workspace import get_claim
@@ -27,6 +27,21 @@ class SessionSummaryBundle:
     summary_dir: str
     files: dict[str, str]
     kind: str = "session_summary_bundle"
+    derived_from: str = "kernel_state"
+    truth_source: bool = False
+    orientation_only: bool = True
+    adapter_rule: str = "read_for_orientation_then_call_kernel_before_trust_updates"
+    source_records: dict[str, list[str]] = field(default_factory=dict)
+
+
+@dataclass
+class WorkspaceSummaryBundle:
+    summary_dir: str
+    files: dict[str, str]
+    session_count: int
+    active_claim_count: int
+    memory_entry_count: int
+    kind: str = "workspace_summary_bundle"
     derived_from: str = "kernel_state"
     truth_source: bool = False
     orientation_only: bool = True
@@ -96,6 +111,54 @@ def write_session_summary(ws: WorkspacePaths, session_id: str) -> SessionSummary
     )
 
 
+def write_workspace_summary(ws: WorkspacePaths) -> WorkspaceSummaryBundle:
+    """Write an orientation-only summary across active workspace sessions."""
+
+    summary_dir = ws.root / "surfaces" / "workspace_summary"
+    overview_path = summary_dir / "overview.md"
+    sessions = list_records(ws.root / "runtime" / "sessions", SessionBinding)
+    claims_by_id = {
+        claim.claim_id: claim
+        for claim in list_records(ws.registry_dir("claims"), ClaimRecord)
+    }
+    active_claim_ids = _unique([session.active_claim for session in sessions if session.active_claim])
+    active_claims = [
+        claims_by_id[claim_id]
+        for claim_id in active_claim_ids
+        if claim_id in claims_by_id
+    ]
+    memory_entries = [
+        entry
+        for entry in list_records(ws.root / "memory" / "l2" / "entries", MemoryEntryRecord)
+        if entry.status == "active" and entry.source_claim_id in active_claim_ids
+    ]
+    source_records = {
+        "sessions": [session.session_id for session in sessions],
+        "topics": _unique([session.topic_id for session in sessions if session.topic_id]),
+        "claims": [claim.claim_id for claim in active_claims],
+        "memory_entries": [entry.entry_id for entry in memory_entries],
+        "validation_results": _validation_result_ids_from_memory_records(memory_entries),
+    }
+    write_md(
+        overview_path,
+        _workspace_summary_frontmatter(source_records=source_records),
+        _workspace_overview_body(
+            sessions=sessions,
+            claims_by_id=claims_by_id,
+            active_claims=active_claims,
+            memory_entries=memory_entries,
+        ),
+    )
+    return WorkspaceSummaryBundle(
+        summary_dir=str(summary_dir),
+        files={"overview": str(overview_path)},
+        session_count=len(sessions),
+        active_claim_count=len(active_claims),
+        memory_entry_count=len(memory_entries),
+        source_records=source_records,
+    )
+
+
 def read_summary_orientation(ws: WorkspacePaths, session_id: str) -> dict[str, Any]:
     """Read generated summaries as orientation only.
 
@@ -148,6 +211,62 @@ def _summary_frontmatter(
         "adapter_rule": "read_for_orientation_then_call_kernel_before_trust_updates",
         "source_records": source_records,
     }
+
+
+def _workspace_summary_frontmatter(*, source_records: dict[str, list[str]]) -> dict[str, Any]:
+    return {
+        "kind": "derived_workspace_summary",
+        "summary_role": "workspace_overview",
+        "derived_from": "kernel_state",
+        "truth_source": False,
+        "orientation_only": True,
+        "adapter_rule": "read_for_orientation_then_call_kernel_before_trust_updates",
+        "source_records": source_records,
+    }
+
+
+def _workspace_overview_body(
+    *,
+    sessions: list[SessionBinding],
+    claims_by_id: dict[str, ClaimRecord],
+    active_claims: list[ClaimRecord],
+    memory_entries: list[MemoryEntryRecord],
+) -> str:
+    lines = [
+        "# Workspace Summary",
+        "",
+        "This file is regenerated from typed AITP kernel records. Use it for orientation only.",
+        "",
+        "## Active Sessions",
+        "",
+    ]
+    if sessions:
+        for session in sessions:
+            lines.append(
+                f"- `{session.session_id}` topic `{session.topic_id}` claim `{session.active_claim or 'none'}`"
+            )
+    else:
+        lines.append("- No active session bindings are recorded.")
+
+    lines.extend(["", "## Active Claims", ""])
+    if active_claims:
+        for claim in active_claims:
+            lines.append(f"- `{claim.claim_id}` [{claim.confidence_state}/{claim.evidence_profile}] {claim.statement}")
+    else:
+        lines.append("- No active claims are bound to recorded sessions.")
+
+    lines.extend(["", "## Promoted Memory", ""])
+    if memory_entries:
+        for entry in memory_entries:
+            claim = claims_by_id.get(entry.source_claim_id)
+            statement = claim.statement if claim else entry.statement
+            lines.append(f"- `{entry.entry_id}` for claim `{entry.source_claim_id}`")
+            lines.append(f"  Statement: {statement}")
+            lines.append(f"  Evidence refs: {', '.join(entry.evidence_refs) or 'none'}")
+            lines.append(f"  Validation results: {', '.join(entry.validation_result_ids) or 'none'}")
+    else:
+        lines.append("- No active promoted memory entries are linked to active session claims.")
+    return "\n".join(lines) + "\n"
 
 
 def _summary_body(
@@ -314,6 +433,25 @@ def _validation_result_ids_from_memory_entries(memory_entries: list[dict[str, An
             if result_id and result_id not in seen:
                 seen.add(result_id)
                 result.append(result_id)
+    return result
+
+
+def _validation_result_ids_from_memory_records(memory_entries: list[MemoryEntryRecord]) -> list[str]:
+    return _unique(
+        result_id
+        for entry in memory_entries
+        for result_id in entry.validation_result_ids
+        if result_id
+    )
+
+
+def _unique(values) -> list[str]:
+    seen = set()
+    result: list[str] = []
+    for value in values:
+        if value and value not in seen:
+            seen.add(value)
+            result.append(value)
     return result
 
 

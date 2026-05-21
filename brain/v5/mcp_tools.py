@@ -33,11 +33,11 @@ from brain.v5.memory import apply_promotion_packet, create_promotion_packet
 from brain.v5.mcp_evidence import aitp_v5_record_evidence
 from brain.v5.mcp_hook_install import aitp_v5_install_codex_hook_fixture, aitp_v5_install_opencode_hook_fixture
 from brain.v5.mcp_memory import aitp_v5_audit_failure_mode_coverage, aitp_v5_audit_l2_memory_context, aitp_v5_build_failure_mode_review_packet, aitp_v5_record_failure_mode_review_result, aitp_v5_request_failure_mode_review_checkpoint
+from brain.v5.mcp_summaries import aitp_v5_read_summary_orientation, aitp_v5_write_session_summary, aitp_v5_write_workspace_summary
 from brain.v5.mcp_trust_audit import aitp_v5_audit_claim_trust
 from brain.v5.risk import assess_claim_risk
 from brain.v5.store import list_records
 from brain.v5.subagents import ingest_subagent_result
-from brain.v5.summaries import read_summary_orientation, write_session_summary
 from brain.v5.tool_executors import describe_tool_executors, execute_registered_tool_result
 from brain.v5.tools import record_tool_run, register_tool_recipe
 from brain.v5.trace import persist_hook_trace_event
@@ -187,14 +187,6 @@ def aitp_v5_migrate_legacy_topic_to_v5(
         session_id=session_id,
     )
     return {"ok": True, **require_valid_public_surface("legacy_migration_result", result)}
-
-
-def aitp_v5_write_session_summary(base: str, *, session_id: str) -> dict:
-    return {"ok": True, **require_valid_public_surface("session_summary_bundle", asdict(write_session_summary(_ws(base), session_id)))}
-
-
-def aitp_v5_read_summary_orientation(base: str, *, session_id: str) -> dict:
-    return {"ok": True, **require_valid_public_surface("summary_orientation", read_summary_orientation(_ws(base), session_id))}
 
 
 def aitp_v5_get_adapter_packet(base: str, *, runtime: str, session_id: str) -> dict:

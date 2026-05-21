@@ -12,6 +12,7 @@ from typing import Any
 from brain.v5.brief import build_execution_brief
 from brain.v5.cli_adapters import dispatch_adapter_command
 from brain.v5.cli_memory import add_memory_parser, dispatch_memory_command
+from brain.v5.cli_summaries import add_summary_parser, dispatch_summary_command
 from brain.v5.code import record_code_state
 from brain.v5.evidence import record_evidence
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
@@ -27,7 +28,6 @@ from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoi
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
 from brain.v5.risk import assess_claim_risk
 from brain.v5.subagents import ingest_subagent_result
-from brain.v5.summaries import read_summary_orientation, write_session_summary
 from brain.v5.tool_executors import describe_tool_executors, execute_registered_tool_result
 from brain.v5.tools import record_tool_run, register_tool_recipe
 from brain.v5.trace import persist_hook_trace_event
@@ -156,9 +156,7 @@ def _build_parser() -> argparse.ArgumentParser:
     lm.add_argument("--context", required=True, dest="context_id")
     lm.add_argument("--session", required=True, dest="session_id")
 
-    smp = sp.add_parser("summary"); sms = smp.add_subparsers(dest="summary_command", required=True)
-    sms.add_parser("session").add_argument("session_id")
-    sms.add_parser("orientation").add_argument("session_id")
+    add_summary_parser(sp)
 
     ap = sp.add_parser("adapter"); aps = ap.add_subparsers(dest="adapter_command", required=True)
     aps.add_parser("record-gate-audit")
@@ -347,10 +345,8 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         )
         return {"ok": True, **require_valid_public_surface("legacy_migration_result", result)}
 
-    if args.command == "summary" and args.summary_command == "session":
-        return {"ok": True, **require_valid_public_surface("session_summary_bundle", asdict(write_session_summary(ws, args.session_id)))}
-    if args.command == "summary" and args.summary_command == "orientation":
-        return {"ok": True, **require_valid_public_surface("summary_orientation", read_summary_orientation(ws, args.session_id))}
+    if args.command == "summary":
+        return dispatch_summary_command(args, ws)
     if args.command == "adapter":
         return dispatch_adapter_command(args, ws)
 

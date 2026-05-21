@@ -225,6 +225,11 @@ Session summaries generated through `aitp-v5 summary session <session-id>` /
 `validation_result_ids` in the derived findings/progress files and
 `source_records`, while `summary orientation` still returns
 `truth_source=false` and `can_update_kernel_state=false`.
+For concurrent work, `aitp-v5 summary workspace` /
+`aitp_v5_write_workspace_summary` writes a workspace-level overview across
+session bindings, active claims, promoted L2 memory entries, and validation
+links. It is also a `workspace_summary_bundle` orientation surface, not a
+kernel truth source.
 Adapter
 packets and generated bridge files put `aitp_v5_evaluate_pre_tool_policy` into
 the code-state/record-evidence/tool-run/execute-tool/tool-recipe/reference-location/

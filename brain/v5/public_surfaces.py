@@ -46,6 +46,7 @@ _PUBLIC_SURFACE_NAMES = (
     "trust_update_preflight",
     "validation_contract_record",
     "validation_result_record",
+    "workspace_summary_bundle",
 )
 _PUBLIC_SURFACE_VALIDATOR_REF = "brain.v5.public_surfaces.require_valid_public_surface"
 _PUBLIC_SURFACE_PURPOSES = {
@@ -90,6 +91,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "trust_update_preflight": "contracted preflight gate for trust-changing actions",
     "validation_contract_record": "contracted validation contract requiring explicit checks, failure modes, and evidence outputs before a claim can be validated",
     "validation_result_record": "contracted validation result linking a tool run to a validation contract and checked outputs",
+    "workspace_summary_bundle": "orientation-only workspace summary regenerated from typed sessions, active claims, memory entries, and validation links",
 }
 
 
@@ -169,6 +171,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_trust_update_preflight,
         require_valid_validation_contract_record,
         require_valid_validation_result_record,
+        require_valid_workspace_summary_bundle,
     )
     from brain.v5.legacy_contracts import require_valid_legacy_migration_result
     from brain.v5.hook_protocol_contracts import (
@@ -225,4 +228,5 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "trust_update_preflight": require_valid_trust_update_preflight,
         "validation_contract_record": require_valid_validation_contract_record,
         "validation_result_record": require_valid_validation_result_record,
+        "workspace_summary_bundle": require_valid_workspace_summary_bundle,
     }

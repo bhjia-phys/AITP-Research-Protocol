@@ -305,3 +305,70 @@ def test_mcp_read_summary_orientation_returns_contract_payload(tmp_path):
     assert payload["truth_source"] is False
     assert payload["orientation_only"] is True
     assert validate_summary_orientation(payload).ok is True
+
+
+def test_workspace_summary_lists_sessions_claims_memory_and_validation_links(tmp_path):
+    from dataclasses import asdict
+
+    from brain.v5.contracts import validate_workspace_summary_bundle
+    from brain.v5.markdown import read_md
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.summaries import write_workspace_summary
+    from brain.v5.workspace import bind_session, create_claim, create_topic
+
+    ws, claim, _, _, validation, memory = _seed_promoted_memory_session(tmp_path)
+    create_topic(ws, "librpa-gw", context_id="gw-methods", title="LibRPA GW")
+    gw_claim = create_claim(
+        ws,
+        topic_id="librpa-gw",
+        statement="The GW benchmark needs a versioned metadata check.",
+        evidence_profile="code_method",
+        confidence_state="hypothesis",
+        active_uncertainty="frequency grid mismatch",
+    )
+    bind_session(ws, "s2", topic_id="librpa-gw", context_id="gw-methods", active_claim=gw_claim.claim_id)
+
+    bundle = write_workspace_summary(ws)
+
+    assert validate_workspace_summary_bundle(asdict(bundle)).ok is True
+    assert require_valid_public_surface("workspace_summary_bundle", {"ok": True, **asdict(bundle)})
+    assert bundle.truth_source is False
+    assert bundle.orientation_only is True
+    assert bundle.session_count == 2
+    assert bundle.active_claim_count == 2
+    assert bundle.memory_entry_count == 1
+    assert bundle.source_records["sessions"] == ["s1", "s2"]
+    assert bundle.source_records["claims"] == [claim.claim_id, gw_claim.claim_id]
+    assert bundle.source_records["memory_entries"] == [memory.entry_id]
+    assert bundle.source_records["validation_results"] == [validation.result_id]
+
+    _, overview = read_md(bundle.files["overview"])
+    assert "Workspace Summary" in overview
+    assert "s1" in overview and "s2" in overview
+    assert claim.statement in overview
+    assert gw_claim.statement in overview
+    assert memory.entry_id in overview
+    assert validation.result_id in overview
+    assert "orientation only" in overview
+
+
+def test_cli_mcp_and_runtime_expose_workspace_summary(tmp_path, capsys):
+    from brain.v5.mcp_tools import aitp_v5_write_workspace_summary
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+
+    _seed_promoted_memory_session(tmp_path)
+
+    cli_payload = _invoke(["--base", str(tmp_path), "summary", "workspace"], capsys)
+    mcp_payload = aitp_v5_write_workspace_summary(str(tmp_path))
+
+    assert cli_payload["ok"] is True
+    assert cli_payload["kind"] == "workspace_summary_bundle"
+    assert cli_payload["truth_source"] is False
+    assert cli_payload["files"]["overview"].endswith("overview.md")
+    assert mcp_payload["ok"] is True
+    assert mcp_payload["kind"] == "workspace_summary_bundle"
+    assert runtime_entrypoints()["workspace_summary"] == {
+        "cli": "aitp-v5 summary workspace",
+        "mcp": "aitp_v5_write_workspace_summary",
+        "surface": "workspace_summary_bundle",
+    }

@@ -36,6 +36,19 @@ _SESSION_SUMMARY_BUNDLE_REQUIRED_KEYS = (
     "adapter_rule",
     "source_records",
 )
+_WORKSPACE_SUMMARY_BUNDLE_REQUIRED_KEYS = (
+    "kind",
+    "summary_dir",
+    "files",
+    "session_count",
+    "active_claim_count",
+    "memory_entry_count",
+    "derived_from",
+    "truth_source",
+    "orientation_only",
+    "adapter_rule",
+    "source_records",
+)
 
 
 def validate_summary_orientation(payload: dict[str, Any], *, path: str = "summary_orientation") -> ContractResult:
@@ -118,6 +131,55 @@ def require_valid_session_summary_bundle(payload: dict[str, Any]) -> dict[str, A
     """Return a session-summary bundle payload or raise a contract error."""
 
     result = validate_session_summary_bundle(payload)
+    if not result.ok:
+        raise ContractError(result)
+    return payload
+
+
+def validate_workspace_summary_bundle(payload: dict[str, Any], *, path: str = "workspace_summary_bundle") -> ContractResult:
+    """Validate a public workspace-summary write result."""
+
+    result = ContractResult()
+    _require_mapping(payload, path, result)
+    if result.issues:
+        return result
+
+    for key in _WORKSPACE_SUMMARY_BUNDLE_REQUIRED_KEYS:
+        if key not in payload:
+            result.add(f"{path}.{key}", "missing required workspace summary bundle key")
+
+    if payload.get("kind") != "workspace_summary_bundle":
+        result.add(f"{path}.kind", "must be 'workspace_summary_bundle'")
+    _require_nonempty_str(payload, "summary_dir", path, result)
+    if payload.get("derived_from") != "kernel_state":
+        result.add(f"{path}.derived_from", "must be 'kernel_state'")
+    _require_bool_value(payload.get("truth_source"), False, f"{path}.truth_source", result)
+    _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
+    if payload.get("adapter_rule") != "read_for_orientation_then_call_kernel_before_trust_updates":
+        result.add(
+            f"{path}.adapter_rule",
+            "must be 'read_for_orientation_then_call_kernel_before_trust_updates'",
+        )
+    for key in ("session_count", "active_claim_count", "memory_entry_count"):
+        if not isinstance(payload.get(key), int) or payload[key] < 0:
+            result.add(f"{path}.{key}", "must be a non-negative integer")
+
+    files = payload.get("files")
+    _require_mapping(files, f"{path}.files", result)
+    if isinstance(files, dict):
+        if not isinstance(files.get("overview"), str) or not files.get("overview"):
+            result.add(f"{path}.files.overview", "must be a non-empty string")
+    _require_mapping(payload.get("source_records"), f"{path}.source_records", result)
+    if isinstance(payload.get("source_records"), dict):
+        for key in ("sessions", "topics", "claims", "memory_entries", "validation_results"):
+            _require_list(payload["source_records"].get(key), f"{path}.source_records.{key}", result)
+    return result
+
+
+def require_valid_workspace_summary_bundle(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a workspace-summary bundle payload or raise a contract error."""
+
+    result = validate_workspace_summary_bundle(payload)
     if not result.ok:
         raise ContractError(result)
     return payload

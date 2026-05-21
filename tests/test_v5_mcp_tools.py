@@ -161,10 +161,11 @@ def test_mcp_adapter_packet_validates_payload_before_return(tmp_path, monkeypatc
 def test_mcp_summary_orientation_validates_payload_before_return(tmp_path, monkeypatch):
     import pytest
 
+    import brain.v5.mcp_summaries as mcp_summaries
     import brain.v5.mcp_tools as mcp_tools
     from brain.v5.contracts import ContractError
 
-    monkeypatch.setattr(mcp_tools, "read_summary_orientation", lambda *args, **kwargs: {"kind": "summary_orientation"})
+    monkeypatch.setattr(mcp_summaries, "read_summary_orientation", lambda *args, **kwargs: {"kind": "summary_orientation"})
 
     with pytest.raises(ContractError):
         mcp_tools.aitp_v5_read_summary_orientation(str(tmp_path), session_id="s1")
@@ -173,6 +174,7 @@ def test_mcp_summary_orientation_validates_payload_before_return(tmp_path, monke
 def test_mcp_write_session_summary_validates_payload_before_return(tmp_path, monkeypatch):
     import pytest
 
+    import brain.v5.mcp_summaries as mcp_summaries
     import brain.v5.mcp_tools as mcp_tools
     from brain.v5.contracts import ContractError
     from brain.v5.summaries import SessionSummaryBundle
@@ -185,7 +187,7 @@ def test_mcp_write_session_summary_validates_payload_before_return(tmp_path, mon
         files={"task_plan": "task_plan.md", "findings": "findings.md", "progress": "progress.md"},
         truth_source=True,
     )
-    monkeypatch.setattr(mcp_tools, "write_session_summary", lambda *args, **kwargs: bundle)
+    monkeypatch.setattr(mcp_summaries, "write_session_summary", lambda *args, **kwargs: bundle)
 
     with pytest.raises(ContractError):
         mcp_tools.aitp_v5_write_session_summary(str(tmp_path), session_id="s1")

@@ -95,6 +95,8 @@ Implemented:
 - Real FQHE and GW workflow acceptance tests.
 - Session summaries as orientation-only derived files, including promoted
   memory-entry ids and validation-result links in source records/findings/progress.
+- Workspace summaries as orientation-only cross-session overviews of active
+  sessions, active claims, promoted memory, and validation-result links.
 - CLI, MCP wrappers, public surface contracts, runtime entrypoints, adapter packets.
 - Legacy bridge with dry-run audit, explicit v5 migration result, and CLI/MCP/runtime surface.
 - Legacy migration converts old L3 candidates into v5 claims/evidence/sense-making reports and old L4 reviews into validation evidence.
