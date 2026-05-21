@@ -210,6 +210,11 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   read-only `failure_mode_review_packet`. It lists per-mode source labels,
   coverage labels, and physical adequacy questions for human/adversarial review
   before promotion; it cannot update kernel state or claim trust.
+- Agents can call `aitp-v5 memory request-failure-mode-review --claim
+  <claim-id>` or `aitp_v5_request_failure_mode_review_checkpoint` to create a
+  typed `human_checkpoint_record` from that packet. Adapter pre-tool mapping
+  treats the wrapper as `request_human_checkpoint`, so it inherits summary
+  source blocking; the checkpoint is durable review state, not a trust update.
 - To audit a claim confidence state directly, agents can call
   `aitp-v5 trust audit --claim <claim-id>` or
   `aitp_v5_audit_claim_trust`. This returns the contracted

@@ -163,8 +163,12 @@ records. `aitp-v5 memory failure-mode-review --claim <claim-id>` and
 `aitp_v5_build_failure_mode_review_packet` turn that typed audit into a
 read-only `failure_mode_review_packet`: per-mode physical adequacy questions,
 source labels, and coverage labels for human or adversarial review before
-promotion, with no authority to update kernel state or claim trust. To review
-the current claim confidence itself,
+promotion, with no authority to update kernel state or claim trust. When that
+review should become durable, `aitp-v5 memory request-failure-mode-review
+--claim <claim-id>` and `aitp_v5_request_failure_mode_review_checkpoint`
+create a typed `human_checkpoint_record` from the review packet; this records
+the need for physical adequacy review but still does not update claim trust. To
+review the current claim confidence itself,
 `aitp-v5 trust audit --claim <claim-id>` and `aitp_v5_audit_claim_trust`
 return the contracted `claim_trust_audit` surface: current confidence,
 supporting/challenging evidence, passed/failed validation results, L2 memory

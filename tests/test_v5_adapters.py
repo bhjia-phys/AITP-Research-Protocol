@@ -1605,6 +1605,42 @@ def test_mcp_adapter_pre_tool_event_infers_human_checkpoint_request_policy(tmp_p
     ]
 
 
+def test_mcp_adapter_pre_tool_event_maps_failure_mode_review_checkpoint_to_human_checkpoint(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_adapter_pre_tool_event, aitp_v5_write_codex_hook_bridge
+
+    _, claim = _seed_session(tmp_path)
+    bridge = aitp_v5_write_codex_hook_bridge(
+        str(tmp_path),
+        session_id="s1",
+        output_path=str(tmp_path / "codex" / "AITP_V5_HOOK_BRIDGE.md"),
+    )
+
+    payload = aitp_v5_evaluate_adapter_pre_tool_event(
+        str(tmp_path),
+        bridge_payload=bridge,
+        platform_event={
+            "runtime": "codex",
+            "hook_name": "pre_tool",
+            "session_id": "s1",
+            "tool_name": "mcp__aitp__aitp_v5_request_failure_mode_review_checkpoint",
+            "tool_input": {
+                "claim_id": claim.claim_id,
+                "source_kind": "task_plan",
+                "source_ref": ".aitp/surfaces/session_summaries/s1/task_plan.md",
+                "orientation_only": True,
+            },
+        },
+    )
+
+    assert payload["ok"] is True
+    assert payload["action"] == "request_human_checkpoint"
+    assert payload["block"] is True
+    assert payload["runtime_gate_protocol"]["action"] == "request_human_checkpoint"
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "no_summary_surface_as_truth_source"
+    ]
+
+
 def test_mcp_adapter_pre_tool_event_infers_human_checkpoint_decision_policy(tmp_path):
     from brain.v5.mcp_tools import aitp_v5_evaluate_adapter_pre_tool_event, aitp_v5_write_codex_hook_bridge
 

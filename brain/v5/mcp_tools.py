@@ -32,7 +32,7 @@ from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoi
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
 from brain.v5.mcp_evidence import aitp_v5_record_evidence
 from brain.v5.mcp_hook_install import aitp_v5_install_codex_hook_fixture, aitp_v5_install_opencode_hook_fixture
-from brain.v5.mcp_memory import aitp_v5_audit_failure_mode_coverage, aitp_v5_audit_l2_memory_context, aitp_v5_build_failure_mode_review_packet
+from brain.v5.mcp_memory import aitp_v5_audit_failure_mode_coverage, aitp_v5_audit_l2_memory_context, aitp_v5_build_failure_mode_review_packet, aitp_v5_request_failure_mode_review_checkpoint
 from brain.v5.mcp_trust_audit import aitp_v5_audit_claim_trust
 from brain.v5.risk import assess_claim_risk
 from brain.v5.store import list_records

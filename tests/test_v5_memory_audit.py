@@ -307,6 +307,49 @@ def test_failure_mode_review_packet_cli_mcp_and_runtime_entrypoint(tmp_path, cap
     assert validate_runtime_entrypoints() == []
 
 
+def test_failure_mode_review_checkpoint_requests_typed_human_review(tmp_path):
+    from brain.v5.failure_mode_review import request_failure_mode_review_checkpoint
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ws, claim, _ = _setup_failure_mode_audit_gap(tmp_path)
+
+    checkpoint = request_failure_mode_review_checkpoint(ws, claim_id=claim.claim_id)
+    payload = {"ok": True, **checkpoint.__dict__}
+
+    assert require_valid_public_surface("human_checkpoint_record", payload) == payload
+    assert checkpoint.kind == "human_checkpoint"
+    assert checkpoint.topic_id == "fqhe"
+    assert checkpoint.claim_id == claim.claim_id
+    assert checkpoint.status == "open"
+    assert checkpoint.requested_by == "failure_mode_review_packet"
+    assert checkpoint.options == ["approve_failure_mode_review", "revise_failure_modes"]
+    assert "physical adequacy" in checkpoint.reason
+    assert "frequency grid mismatch" in checkpoint.reason
+    assert "basis cutoff mismatch" in checkpoint.reason
+
+
+def test_failure_mode_review_checkpoint_cli_mcp_and_runtime_entrypoint(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_request_failure_mode_review_checkpoint
+    from brain.v5.runtime_entrypoints import runtime_entrypoints, validate_runtime_entrypoints
+
+    _, claim, _ = _setup_failure_mode_audit_gap(tmp_path)
+
+    assert main(["--base", str(tmp_path), "memory", "request-failure-mode-review", "--claim", claim.claim_id]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_request_failure_mode_review_checkpoint(str(tmp_path), claim_id=claim.claim_id)
+
+    assert cli_payload["kind"] == "human_checkpoint"
+    assert cli_payload["requested_by"] == "failure_mode_review_packet"
+    assert mcp_payload == cli_payload
+    assert runtime_entrypoints()["request_failure_mode_review_checkpoint"] == {
+        "cli": "aitp-v5 memory request-failure-mode-review <args>",
+        "mcp": "aitp_v5_request_failure_mode_review_checkpoint",
+        "surface": "human_checkpoint_record",
+    }
+    assert validate_runtime_entrypoints() == []
+
+
 def test_l2_memory_audit_public_surface_contract_rejects_summary_truth_source():
     import pytest
 

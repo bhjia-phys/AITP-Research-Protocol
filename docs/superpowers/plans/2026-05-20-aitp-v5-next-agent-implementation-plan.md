@@ -272,6 +272,11 @@ Implemented:
   `failure_mode_review_packet` public surface. It is read-only and turns typed
   failure-mode audit gaps into per-mode source labels, coverage labels, and
   physical adequacy questions for human/adversarial review before promotion.
+- `aitp-v5 memory request-failure-mode-review --claim <claim-id>` /
+  `aitp_v5_request_failure_mode_review_checkpoint` now creates a typed
+  `human_checkpoint_record` from the failure-mode review packet. Adapter
+  pre-tool mapping treats the wrapper as `request_human_checkpoint`, preserving
+  summary-source blocking while making physical adequacy review durable.
 - `aitp-v5 trust audit --claim <claim-id>` /
   `aitp_v5_audit_claim_trust` now expose the contracted
   `claim_trust_audit` public surface. It derives current claim-confidence

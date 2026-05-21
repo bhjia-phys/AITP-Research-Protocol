@@ -6,7 +6,9 @@ import argparse
 from typing import Any
 
 from brain.v5.failure_mode_audit import audit_failure_mode_coverage
-from brain.v5.failure_mode_review import build_failure_mode_review_packet
+from dataclasses import asdict
+
+from brain.v5.failure_mode_review import build_failure_mode_review_packet, request_failure_mode_review_checkpoint
 from brain.v5.memory_audit import audit_l2_memory_context
 from brain.v5.public_surfaces import require_valid_public_surface
 
@@ -20,6 +22,8 @@ def add_memory_parser(sp: argparse._SubParsersAction) -> None:
     failure_modes.add_argument("--claim", required=True, dest="claim_id")
     review = ms.add_parser("failure-mode-review")
     review.add_argument("--claim", required=True, dest="claim_id")
+    review_checkpoint = ms.add_parser("request-failure-mode-review")
+    review_checkpoint.add_argument("--claim", required=True, dest="claim_id")
 
 
 def dispatch_memory_command(args: argparse.Namespace, ws: Any) -> dict[str, Any]:
@@ -37,5 +41,10 @@ def dispatch_memory_command(args: argparse.Namespace, ws: Any) -> dict[str, Any]
         return require_valid_public_surface(
             "failure_mode_review_packet",
             build_failure_mode_review_packet(ws, claim_id=args.claim_id),
+        )
+    if args.memory_command == "request-failure-mode-review":
+        return require_valid_public_surface(
+            "human_checkpoint_record",
+            {"ok": True, **asdict(request_failure_mode_review_checkpoint(ws, claim_id=args.claim_id))},
         )
     raise SystemExit(f"unsupported memory command: {args.memory_command}")

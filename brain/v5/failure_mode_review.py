@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from brain.v5.checkpoints import request_human_checkpoint
 from brain.v5.failure_mode_audit import audit_failure_mode_coverage
+from brain.v5.models import HumanCheckpointRecord
 from brain.v5.workspace import WorkspacePaths
 
 
@@ -29,6 +31,24 @@ def build_failure_mode_review_packet(ws: WorkspacePaths, *, claim_id: str) -> di
         "review_items": review_items,
         "recommended_actions": _unique(recommended_actions),
     }
+
+
+def request_failure_mode_review_checkpoint(ws: WorkspacePaths, *, claim_id: str) -> HumanCheckpointRecord:
+    """Create a typed human checkpoint from the failure-mode review packet."""
+
+    packet = build_failure_mode_review_packet(ws, claim_id=claim_id)
+    modes = [item["failure_mode"] for item in packet["review_items"] if item["coverage"] != "covered_by_promotion_packet"]
+    reason = "Review physical adequacy before promotion."
+    if modes:
+        reason = f"{reason} Modes requiring review: {', '.join(modes)}."
+    return request_human_checkpoint(
+        ws,
+        topic_id=packet["topic_id"],
+        claim_id=packet["claim_id"],
+        reason=reason,
+        requested_by="failure_mode_review_packet",
+        options=["approve_failure_mode_review", "revise_failure_modes"],
+    )
 
 
 def _review_items(audit: dict) -> list[dict]:
