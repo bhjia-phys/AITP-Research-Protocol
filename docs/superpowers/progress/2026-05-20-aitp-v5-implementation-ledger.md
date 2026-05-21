@@ -4477,3 +4477,67 @@ Each entry should record:
   - add a physics adequacy review packet or domain-tool-backed failure-mode
     review flow that can assess whether recorded failure modes are physically
     sufficient before promotion, without making summaries authoritative.
+
+### 8746acc - Build Failure-Mode Review Packets
+
+- Task: turn the read-only failure-mode coverage audit into a review packet
+  that asks concrete physical adequacy questions before promotion.
+- Planning source:
+  - previous ledger recommendation after `9498735`;
+  - user requirement that harness questions should be physically meaningful,
+    state-dependent, and not merely checklist gates;
+  - v5 invariant that review surfaces cannot update kernel state or claim trust.
+- Changed files:
+  - `brain/v5/failure_mode_review.py`
+  - `brain/v5/failure_mode_review_contracts.py`
+  - `brain/v5/contracts.py`
+  - `brain/v5/cli_memory.py`
+  - `brain/v5/mcp_memory.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoint_catalog.py`
+  - `tests/test_v5_memory_audit.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - new kernel helper `build_failure_mode_review_packet`;
+  - new CLI command `aitp-v5 memory failure-mode-review --claim <claim-id>`;
+  - new MCP wrapper `aitp_v5_build_failure_mode_review_packet`;
+  - new public surface `failure_mode_review_packet`;
+  - new runtime entrypoint catalog item `build_failure_mode_review_packet`;
+  - packet includes per-failure-mode source labels, coverage labels, and
+    physical adequacy questions for human/adversarial review;
+  - packet remains read-only:
+    `truth_source=typed_records`, `summary_inputs_trusted=false`,
+    `can_update_kernel_state=false`, and `can_update_claim_trust=false`.
+- Tests:
+  - added kernel/public-surface coverage that expects review questions for
+    uncovered claim/validation failure modes and promotion-packet-only modes;
+  - added CLI, MCP, and runtime-entrypoint coverage;
+  - updated the public surface registry expectation.
+- Verification:
+  - red target set:
+    `python -m pytest tests\test_v5_memory_audit.py::test_failure_mode_review_packet_generates_physics_adequacy_questions tests\test_v5_memory_audit.py::test_failure_mode_review_packet_cli_mcp_and_runtime_entrypoint tests\test_v5_public_surfaces.py::test_public_surface_registry_names_all_runtime_facing_payloads -q`:
+    3 failed because the review module, MCP wrapper, and public surface did not
+    exist;
+  - target green set:
+    same command: 3 passed;
+  - focused related set:
+    `python -m pytest tests\test_v5_memory_audit.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py tests\test_v5_mcp_tools.py tests\test_v5_architecture_boundaries.py -q`:
+    48 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; python -m pytest $files -q`:
+    435 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with line-ending warnings only.
+- Residual risks:
+  - questions are deterministic and state-dependent, but they still do not run
+    a domain numerical/symbolic/literature tool;
+  - physical adequacy remains a review target, not an automatic trust update.
+- Next recommended task:
+  - connect this review packet to a typed human/adversarial checkpoint or a
+    domain-tool-backed review result so promotion can require explicit review
+    completion while keeping summaries non-authoritative.
