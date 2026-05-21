@@ -253,13 +253,13 @@ Both surfaces return a contracted `codex_hook_bridge` payload and keep
 `pre_tool_policy_decision` CLI/MCP surface for validation and L2-promotion
 pre-tool checks. It also carries `gate_protocols` generated from the adapter
 packet's `runtime_gate_protocols`, and the generated Markdown renders the
-code-state provenance, reference-location pointers, physics-object/relation
+code-state provenance, tool-recipe registration, reference-location pointers, physics-object/relation
 graph writes, sensemaking reports, validation-contract, human-checkpoint
 request/decision, promotion-packet creation/application, and validate/promote sequences including
 `evaluate_pre_tool_policy` before typed record creation, preflight, or promotion.
 
 Adapter packets also encode the same rule in `runtime_gate_protocols`:
-`record_code_state`, `record_reference_location`, `record_physics_object`,
+`record_code_state`, `register_tool_recipe`, `record_reference_location`, `record_physics_object`,
 `record_object_relation`, `record_sensemaking_report`,
 `create_validation_contract`, `create_promotion_packet`,
 `apply_promotion_packet`, `request_human_checkpoint`,
@@ -274,7 +274,7 @@ sequences `evaluate_pre_tool_policy`, then delegates the decision to the shared
 typed-record-backed pre-tool policy surface. The bridge remains orientation-only;
 the returned decision is still backed by typed kernel records.
 Generated gate protocols now cover code-state, record-evidence,
-record-tool-run, execute-tool, reference-location, physics-object,
+record-tool-run, execute-tool, tool-recipe, reference-location, physics-object,
 object-relation, sensemaking-report, subagent-ingestion, validation-contract,
 promotion-packet creation/application, human-checkpoint request/decision,
 validation, and L2-promotion actions.

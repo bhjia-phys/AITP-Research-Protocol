@@ -2632,3 +2632,71 @@ Each entry should record:
   - audit remaining MCP write surfaces against the pre-tool policy/gate list,
     then either close the current policy-coverage pass or add the next missing
     trust-relevant write surface.
+
+### 4273be0 - Gate Tool Recipe Registration Through Pre-Tool Policy
+
+- Task: make `register_tool_recipe` a first-class pre-tool/gate action instead
+  of leaving tool-recipe creation as a record-only MCP write.
+- Planning source:
+  - v5 invariant that fixed tool-layer behavior and validation recipes must be
+    typed records, not generated summary claims;
+  - tool recipes shape future numerical, literature, and formal-theory checks,
+    so a summary-generated recipe should not become durable kernel context
+    without the same pre-tool policy path as other context-shaping writes;
+  - previous ledger recommendation to audit remaining MCP write surfaces.
+- Changed files:
+  - `brain/v5/policy.py`
+  - `brain/v5/pretool_policy.py`
+  - `brain/v5/adapter_protocols.py`
+  - `brain/v5/adapter_runtime.py`
+  - `brain/v5/gate_protocols.py`
+  - `hooks/aitp_v5_claude_hook.py`
+  - `tests/test_v5_pretool_policy.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_hooks.py`
+- Public/runtime behavior changes:
+  - `register_tool_recipe` participates in context-aware pre-tool policy
+    evaluation;
+  - summary/task-plan/findings/progress orientation surfaces cannot directly
+    drive tool-recipe registration;
+  - adapter `trust_changing_actions` and `requires_kernel_call_before` include
+    `register_tool_recipe`;
+  - generated bridge `runtime_gate_protocols` include a tool-recipe sequence
+    with `evaluate_pre_tool_policy` before the typed write;
+  - Codex/OpenCode platform event normalization maps
+    `aitp_v5_register_tool_recipe` to the explicit v5 action;
+  - Claude Code `PreToolUse` maps tool-recipe MCP calls through the shared
+    typed-record-backed policy path.
+- Tests:
+  - MCP pre-tool policy blocks findings-sourced tool-recipe registration;
+  - adapter pre-tool event path infers `register_tool_recipe` from the MCP tool
+    name and returns the bridge gate protocol;
+  - Claude hook test denies a summary-sourced tool-recipe registration attempt;
+  - adapter packet tests assert the action is advertised as a kernel-gated
+    trust-relevant action.
+- Verification:
+  - red tests failed as expected:
+    `python -m pytest tests/test_v5_pretool_policy.py tests/test_v5_adapters.py tests/test_v5_hooks.py -q -k "tool_recipe_from_findings_source or infers_tool_recipe_policy or summary_sourced_tool_recipe"`:
+    3 failed because direct policy returned `log`, adapter runtime could not
+    infer the action, and Claude hook allowed the write;
+  - target green set:
+    `python -m pytest tests/test_v5_pretool_policy.py tests/test_v5_adapters.py tests/test_v5_hooks.py -q -k "tool_recipe_from_findings_source or infers_tool_recipe_policy or summary_sourced_tool_recipe"`:
+    3 passed;
+  - focused related set:
+    `python -m pytest tests/test_v5_pretool_policy.py tests/test_v5_adapters.py tests/test_v5_hooks.py tests/test_v5_public_surfaces.py tests/test_v5_contracts.py tests/test_v5_evidence_tools.py tests/test_v5_runtime_entrypoints.py -q`:
+    153 passed;
+  - full v5 regression set:
+    `python -m pytest tests/test_v5_*.py -q`: 365 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with only line-ending warnings.
+- Residual risks:
+  - native Codex/OpenCode hosts still need true lifecycle installer wiring;
+  - pre-tool coverage still does not cover every public MCP input or every
+    active risk dimension;
+  - registering a tool recipe remains a typed catalog write, not evidence that
+    the recipe has been executed or validated.
+- Next recommended task:
+  - add an explicit registry consistency audit test that prevents future
+    runtime record protocols from being introduced without a conscious gate
+    decision.
