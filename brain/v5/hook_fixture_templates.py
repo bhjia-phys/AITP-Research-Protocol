@@ -34,10 +34,15 @@ def install_codex_hook_fixture(
         session_id=session_id,
         bridge_payload_path=bridge["payload_path"],
     )
+    post_tool_hook = _post_tool_hook(
+        runtime="codex",
+        workspace_base=workspace_base,
+        session_id=session_id,
+    )
     fixture = {
         "kind": "codex_hook_installation_fixture",
         "runtime": "codex",
-        "hooks": {"pre_tool": pre_tool_hook},
+        "hooks": {"pre_tool": pre_tool_hook, "post_tool": post_tool_hook},
         "truth_rule": "fixture is runtime metadata only; typed records remain authoritative",
         "summary_inputs_trusted": False,
     }
@@ -78,10 +83,15 @@ def install_opencode_hook_fixture(
         session_id=session_id,
         bridge_payload_path=bridge["payload_path"],
     )
+    post_tool_hook = _post_tool_hook(
+        runtime="opencode",
+        workspace_base=workspace_base,
+        session_id=session_id,
+    )
     fixture = {
         "kind": "opencode_hook_installation_fixture",
         "runtime": "opencode",
-        "plugin_hooks": {"pre_tool": pre_tool_hook},
+        "plugin_hooks": {"pre_tool": pre_tool_hook, "post_tool": post_tool_hook},
         "truth_rule": "fixture is runtime metadata only; typed records remain authoritative",
         "summary_inputs_trusted": False,
     }
@@ -142,6 +152,23 @@ def _pre_tool_hook(*, runtime: str, workspace_base: str, session_id: str, bridge
     }
 
 
+def _post_tool_hook(*, runtime: str, workspace_base: str, session_id: str) -> dict[str, Any]:
+    return {
+        "lifecycle_event": "post_tool",
+        "command_kind": "stdin_json_runner",
+        "cwd": str(_repo_root()),
+        "argv": _post_tool_runner_argv(
+            runtime=runtime,
+            workspace_base=workspace_base,
+            session_id=session_id,
+        ),
+        "stdin": "<platform-event-json>",
+        "output_kind": "hook_trace_event_record",
+        "may_block": False,
+        "state_mutation": "append_trace_event",
+    }
+
+
 def _stdin_runner_argv(*, runtime: str, workspace_base: str, session_id: str, bridge_payload_path: str) -> list[str]:
     return [
         "python",
@@ -155,6 +182,20 @@ def _stdin_runner_argv(*, runtime: str, workspace_base: str, session_id: str, br
         session_id,
         "--bridge-path",
         bridge_payload_path,
+    ]
+
+
+def _post_tool_runner_argv(*, runtime: str, workspace_base: str, session_id: str) -> list[str]:
+    return [
+        "python",
+        "hooks/aitp_v5_adapter_event_runner.py",
+        "post-tool",
+        "--base",
+        workspace_base,
+        "--runtime",
+        runtime,
+        "--session-id",
+        session_id,
     ]
 
 

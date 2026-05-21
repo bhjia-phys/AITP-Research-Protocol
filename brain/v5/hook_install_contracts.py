@@ -66,6 +66,7 @@ def validate_codex_hook_installation(
         _require_mapping(hooks, f"{path}.fixture.hooks", result)
         if isinstance(hooks, dict):
             _validate_pre_tool_hook(hooks.get("pre_tool"), f"{path}.fixture.hooks.pre_tool", result)
+            _validate_post_tool_hook(hooks.get("post_tool"), f"{path}.fixture.hooks.post_tool", result)
     return result
 
 
@@ -127,6 +128,7 @@ def validate_opencode_hook_installation(
         _require_mapping(hooks, f"{path}.fixture.plugin_hooks", result)
         if isinstance(hooks, dict):
             _validate_pre_tool_hook(hooks.get("pre_tool"), f"{path}.fixture.plugin_hooks.pre_tool", result)
+            _validate_post_tool_hook(hooks.get("post_tool"), f"{path}.fixture.plugin_hooks.post_tool", result)
     return result
 
 
@@ -153,5 +155,27 @@ def _validate_pre_tool_hook(payload: Any, path: str, result: ContractResult) -> 
     argv = payload.get("argv")
     if isinstance(argv, list):
         for token in ("hooks/aitp_v5_adapter_event_runner.py", "--bridge-path"):
+            if token not in argv:
+                result.add(f"{path}.argv", f"must include {token!r}")
+
+
+def _validate_post_tool_hook(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    if payload.get("lifecycle_event") != "post_tool":
+        result.add(f"{path}.lifecycle_event", "must be 'post_tool'")
+    if payload.get("stdin") != "<platform-event-json>":
+        result.add(f"{path}.stdin", "must be '<platform-event-json>'")
+    if payload.get("output_kind") != "hook_trace_event_record":
+        result.add(f"{path}.output_kind", "must be 'hook_trace_event_record'")
+    if payload.get("state_mutation") != "append_trace_event":
+        result.add(f"{path}.state_mutation", "must be 'append_trace_event'")
+    _require_bool_value(payload.get("may_block"), False, f"{path}.may_block", result)
+    _require_nonempty_str(payload, "cwd", path, result)
+    _require_list(payload.get("argv"), f"{path}.argv", result)
+    argv = payload.get("argv")
+    if isinstance(argv, list):
+        for token in ("hooks/aitp_v5_adapter_event_runner.py", "post-tool"):
             if token not in argv:
                 result.add(f"{path}.argv", f"must include {token!r}")

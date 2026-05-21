@@ -11,8 +11,11 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
+from brain.v5.hook_adapters import hook_trace_event_payload
+from brain.v5.hooks import post_tool_use_trace_event
 from brain.v5.public_surfaces import require_valid_public_surface
-from brain.v5.workspace import init_workspace
+from brain.v5.trace import persist_hook_trace_event
+from brain.v5.workspace import get_session_binding, init_workspace
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -32,10 +35,16 @@ def _build_parser() -> argparse.ArgumentParser:
     pre_tool.add_argument("--runtime", required=True)
     pre_tool.add_argument("--session-id", required=True)
     pre_tool.add_argument("--bridge-path", required=True)
+    post_tool = subparsers.add_parser("post-tool")
+    post_tool.add_argument("--base", required=True)
+    post_tool.add_argument("--runtime", required=True)
+    post_tool.add_argument("--session-id", required=True)
     return parser
 
 
 def _dispatch(args: argparse.Namespace, platform_event: dict[str, Any]) -> dict[str, Any]:
+    if args.command == "post-tool":
+        return _dispatch_post_tool(args, platform_event)
     if args.command != "pre-tool":
         raise SystemExit(f"unsupported adapter event command: {args.command}")
     bridge = _read_bridge(args.bridge_path)
@@ -44,6 +53,24 @@ def _dispatch(args: argparse.Namespace, platform_event: dict[str, Any]) -> dict[
     return require_valid_public_surface(
         "pre_tool_policy_decision",
         evaluate_platform_pre_tool_event(init_workspace(args.base), bridge, event),
+    )
+
+
+def _dispatch_post_tool(args: argparse.Namespace, platform_event: dict[str, Any]) -> dict[str, Any]:
+    ws = init_workspace(args.base)
+    event = _with_post_tool_defaults(platform_event, ws, runtime=args.runtime, session_id=args.session_id)
+    trace_event = post_tool_use_trace_event(
+        session_id=event["session_id"],
+        topic_id=event["topic_id"],
+        risk_level=event["risk_level"],
+        claim_id=event["claim_id"],
+        tool_name=event["tool_name"],
+        evidence_status=event["evidence_status"],
+    )
+    hook_payload = hook_trace_event_payload(trace_event, hook_name="post_tool")
+    return require_valid_public_surface(
+        "hook_trace_event_record",
+        persist_hook_trace_event(ws, hook_payload),
     )
 
 
@@ -71,6 +98,50 @@ def _with_pre_tool_defaults(event: dict[str, Any], *, runtime: str, session_id: 
     payload.setdefault("hook_name", "pre_tool")
     payload.setdefault("lifecycle_event", "pre_tool")
     return payload
+
+
+def _with_post_tool_defaults(event: dict[str, Any], ws, *, runtime: str, session_id: str) -> dict[str, str]:
+    binding = get_session_binding(ws, session_id)
+    return {
+        "runtime": runtime,
+        "session_id": session_id,
+        "topic_id": _string_value(event.get("topic_id")) or binding.topic_id,
+        "claim_id": _string_value(event.get("claim_id")) or binding.active_claim,
+        "risk_level": _string_value(event.get("risk_level")) or "guided",
+        "tool_name": _tool_name(event),
+        "evidence_status": _evidence_status(event),
+    }
+
+
+def _tool_name(event: dict[str, Any]) -> str:
+    return (
+        _string_value(event.get("tool_name"))
+        or _string_value(_nested(event, "tool", "name"))
+        or _string_value(event.get("name"))
+        or "unknown_tool"
+    )
+
+
+def _evidence_status(event: dict[str, Any]) -> str:
+    return (
+        _string_value(event.get("evidence_status"))
+        or _string_value(event.get("status"))
+        or _string_value(_nested(event, "result", "status"))
+        or "unknown"
+    )
+
+
+def _nested(payload: dict[str, Any], *keys: str) -> Any:
+    current: Any = payload
+    for key in keys:
+        if not isinstance(current, dict):
+            return None
+        current = current.get(key)
+    return current
+
+
+def _string_value(value: Any) -> str:
+    return value if isinstance(value, str) and value else ""
 
 
 def _validate_runner(bridge: dict[str, Any], *, runtime: str, session_id: str, bridge_path: str) -> None:

@@ -161,3 +161,80 @@ def test_opencode_install_fixture_runner_executes_from_declared_cwd(tmp_path):
     assert payload["ok"] is True
     assert payload["runtime_event"]["runtime"] == "opencode"
     assert payload["policy_reasons"][0]["policy_id"] == "no_summary_surface_as_truth_source"
+
+
+def test_codex_install_fixture_post_tool_runner_persists_trace_event(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_install_codex_hook_fixture
+    from brain.v5.trace import read_trace_events
+
+    claim = _seed_session(tmp_path)
+    fixture_path = tmp_path / ".codex" / "AITP_V5_HOOKS.json"
+    installation = aitp_v5_install_codex_hook_fixture(
+        str(tmp_path),
+        session_id="s1",
+        output_path=str(fixture_path),
+    )
+    hook = installation["fixture"]["hooks"]["post_tool"]
+
+    result = _run_fixture_hook(
+        hook,
+        {
+            "tool_name": "pytest",
+            "evidence_status": "supports",
+            "risk_level": "guided",
+        },
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["ok"] is True
+    assert payload["kind"] == "hook_trace_event_record"
+    assert payload["source_hook"] == "post_tool"
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["can_update_claim_trust"] is False
+    assert payload["trace_path"].replace("\\", "/").endswith(".aitp/runtime/hook_trace_events.jsonl")
+
+    events = read_trace_events(payload["trace_path"])
+    assert len(events) == 1
+    assert events[0].session_id == "s1"
+    assert events[0].topic_id == "librpa-gw"
+    assert events[0].claim_id == claim.claim_id
+    assert events[0].payload["tool_name"] == "pytest"
+    assert events[0].payload["evidence_status"] == "supports"
+
+
+def test_opencode_install_fixture_post_tool_runner_persists_trace_event(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_install_opencode_hook_fixture
+    from brain.v5.trace import read_trace_events
+
+    claim = _seed_session(tmp_path)
+    fixture_path = tmp_path / ".opencode" / "AITP_V5_PLUGIN_HOOKS.json"
+    installation = aitp_v5_install_opencode_hook_fixture(
+        str(tmp_path),
+        session_id="s1",
+        output_path=str(fixture_path),
+    )
+    hook = installation["fixture"]["plugin_hooks"]["post_tool"]
+
+    result = _run_fixture_hook(
+        hook,
+        {
+            "tool": {"name": "pytest"},
+            "status": "supports",
+            "risk_level": "guided",
+        },
+    )
+
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["ok"] is True
+    assert payload["kind"] == "hook_trace_event_record"
+    assert payload["source_hook"] == "post_tool"
+
+    events = read_trace_events(payload["trace_path"])
+    assert len(events) == 1
+    assert events[0].session_id == "s1"
+    assert events[0].topic_id == "librpa-gw"
+    assert events[0].claim_id == claim.claim_id
+    assert events[0].payload["tool_name"] == "pytest"
+    assert events[0].payload["evidence_status"] == "supports"

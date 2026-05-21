@@ -496,6 +496,14 @@ def test_cli_adapter_install_hooks_writes_codex_stdin_runner_fixture(tmp_path, c
     assert payload["fixture"]["hooks"]["pre_tool"]["argv"][1] == "hooks/aitp_v5_adapter_event_runner.py"
     assert payload["fixture"]["hooks"]["pre_tool"]["argv"][8] == "s1"
     assert payload["fixture"]["hooks"]["pre_tool"]["argv"][10] == payload["bridge"]["payload_path"]
+    assert payload["fixture"]["hooks"]["post_tool"]["stdin"] == "<platform-event-json>"
+    assert payload["fixture"]["hooks"]["post_tool"]["output_kind"] == "hook_trace_event_record"
+    assert payload["fixture"]["hooks"]["post_tool"]["may_block"] is False
+    assert payload["fixture"]["hooks"]["post_tool"]["state_mutation"] == "append_trace_event"
+    assert payload["fixture"]["hooks"]["post_tool"]["argv"][1] == "hooks/aitp_v5_adapter_event_runner.py"
+    assert payload["fixture"]["hooks"]["post_tool"]["argv"][2] == "post-tool"
+    assert payload["fixture"]["hooks"]["post_tool"]["argv"][6] == "codex"
+    assert payload["fixture"]["hooks"]["post_tool"]["argv"][8] == "s1"
 
     fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
     assert fixture == payload["fixture"]
@@ -519,6 +527,8 @@ def test_mcp_codex_hook_installer_returns_contract_payload(tmp_path):
     assert payload["kind"] == "codex_hook_installation"
     assert payload["fixture"]["hooks"]["pre_tool"]["argv"][6] == "codex"
     assert payload["fixture"]["hooks"]["pre_tool"]["argv"][10] == payload["bridge"]["payload_path"]
+    assert payload["fixture"]["hooks"]["post_tool"]["argv"][6] == "codex"
+    assert payload["fixture"]["hooks"]["post_tool"]["output_kind"] == "hook_trace_event_record"
     assert fixture_path.exists()
 
 
@@ -1427,6 +1437,14 @@ def test_cli_adapter_install_hooks_writes_opencode_stdin_runner_fixture(tmp_path
     assert payload["fixture"]["plugin_hooks"]["pre_tool"]["argv"][6] == "opencode"
     assert payload["fixture"]["plugin_hooks"]["pre_tool"]["argv"][8] == "s1"
     assert payload["fixture"]["plugin_hooks"]["pre_tool"]["argv"][10] == payload["bridge_payload_path"]
+    assert payload["fixture"]["plugin_hooks"]["post_tool"]["stdin"] == "<platform-event-json>"
+    assert payload["fixture"]["plugin_hooks"]["post_tool"]["output_kind"] == "hook_trace_event_record"
+    assert payload["fixture"]["plugin_hooks"]["post_tool"]["may_block"] is False
+    assert payload["fixture"]["plugin_hooks"]["post_tool"]["state_mutation"] == "append_trace_event"
+    assert payload["fixture"]["plugin_hooks"]["post_tool"]["argv"][1] == "hooks/aitp_v5_adapter_event_runner.py"
+    assert payload["fixture"]["plugin_hooks"]["post_tool"]["argv"][2] == "post-tool"
+    assert payload["fixture"]["plugin_hooks"]["post_tool"]["argv"][6] == "opencode"
+    assert payload["fixture"]["plugin_hooks"]["post_tool"]["argv"][8] == "s1"
 
     fixture = json.loads(fixture_path.read_text(encoding="utf-8"))
     assert fixture == payload["fixture"]
@@ -1450,6 +1468,8 @@ def test_mcp_opencode_hook_installer_returns_contract_payload(tmp_path):
     assert payload["kind"] == "opencode_hook_installation"
     assert payload["fixture"]["plugin_hooks"]["pre_tool"]["argv"][6] == "opencode"
     assert payload["fixture"]["plugin_hooks"]["pre_tool"]["argv"][10] == payload["bridge_payload_path"]
+    assert payload["fixture"]["plugin_hooks"]["post_tool"]["argv"][6] == "opencode"
+    assert payload["fixture"]["plugin_hooks"]["post_tool"]["output_kind"] == "hook_trace_event_record"
     assert fixture_path.exists()
 
 
