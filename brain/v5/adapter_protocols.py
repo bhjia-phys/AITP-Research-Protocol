@@ -412,6 +412,23 @@ def mandatory_record_protocols() -> dict[str, Any]:
     return deepcopy(_RUNTIME_RECORD_PROTOCOLS)
 
 
+def record_gate_coverage_audit() -> dict[str, Any]:
+    """Return an audit showing whether typed record protocols have gate coverage."""
+
+    record_actions = set(_RUNTIME_RECORD_PROTOCOLS)
+    gate_actions = set(mandatory_gate_protocols())
+    return {
+        "kind": "record_gate_coverage_audit",
+        "record_protocols": sorted(record_actions),
+        "gate_protocols": sorted(gate_actions),
+        "gated_record_protocols": sorted(record_actions & gate_actions),
+        "ungated_record_protocols": sorted(record_actions - gate_actions),
+        "extra_gate_protocols": sorted(gate_actions - record_actions),
+        "truth_source": "adapter_protocol_registry",
+        "summary_inputs_trusted": False,
+    }
+
+
 def mandatory_hook_protocols() -> dict[str, Any]:
     """Return mandatory lifecycle hook protocols for runtime adapters."""
 

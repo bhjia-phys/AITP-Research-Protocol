@@ -158,6 +158,7 @@ def _build_parser() -> argparse.ArgumentParser:
     sms.add_parser("orientation").add_argument("session_id")
 
     ap = sp.add_parser("adapter"); aps = ap.add_subparsers(dest="adapter_command", required=True)
+    aps.add_parser("record-gate-audit")
     apt = aps.add_parser("packet"); apt.add_argument("runtime"); apt.add_argument("session_id")
     ahb = aps.add_parser("hook-bridge"); ahb.add_argument("runtime"); ahb.add_argument("session_id")
     ahb.add_argument("--output", required=True)
@@ -249,7 +250,7 @@ def _build_parser() -> argparse.ArgumentParser:
 def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
     if args.command == "init":
         return {"ok": True, "workspace_root": str(init_workspace(Path(args.base)).root)}
-    if args.command == "adapter" and args.adapter_command in {"registry", "public-surfaces"}:
+    if args.command == "adapter" and args.adapter_command in {"registry", "public-surfaces", "record-gate-audit"}:
         return dispatch_adapter_command(args, None)
 
     ws = init_workspace(Path(args.base))

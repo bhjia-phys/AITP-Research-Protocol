@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from pathlib import Path
 
-from brain.v5.adapter_protocols import adapter_protocol_registry
+from brain.v5.adapter_protocols import adapter_protocol_registry, record_gate_coverage_audit
 from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
@@ -311,6 +311,16 @@ def aitp_v5_install_claude_code_hook_settings(base: str, *, session_id: str, set
 
 def aitp_v5_get_adapter_protocol_registry() -> dict:
     return {"ok": True, "adapter_protocol_registry": require_valid_public_surface("adapter_protocol_registry", adapter_protocol_registry())}
+
+
+def aitp_v5_audit_record_gate_coverage() -> dict:
+    return {
+        "ok": True,
+        "record_gate_coverage_audit": require_valid_public_surface(
+            "record_gate_coverage_audit",
+            record_gate_coverage_audit(),
+        ),
+    }
 
 
 def aitp_v5_describe_public_surfaces() -> dict:

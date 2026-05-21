@@ -7,7 +7,7 @@ from argparse import Namespace
 from pathlib import Path
 from typing import Any
 
-from brain.v5.adapter_protocols import adapter_protocol_registry
+from brain.v5.adapter_protocols import adapter_protocol_registry, record_gate_coverage_audit
 from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.hook_fixture_templates import install_codex_hook_fixture, install_opencode_hook_fixture
@@ -33,6 +33,14 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
         }
     if args.adapter_command == "public-surfaces":
         return {"ok": True, "public_surfaces": describe_public_surfaces()}
+    if args.adapter_command == "record-gate-audit":
+        return {
+            "ok": True,
+            "record_gate_coverage_audit": require_valid_public_surface(
+                "record_gate_coverage_audit",
+                record_gate_coverage_audit(),
+            ),
+        }
     if ws is None:
         raise SystemExit("adapter command requires an initialized v5 workspace")
 

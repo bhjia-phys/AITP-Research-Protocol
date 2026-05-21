@@ -135,11 +135,17 @@ def validate_adapter_protocol_registry(payload: dict[str, Any], *, path: str = "
 
 
 def require_valid_adapter_protocol_registry(payload: dict[str, Any]) -> dict[str, Any]:
-    from brain.v5.adapter_contracts import (
-        require_valid_adapter_protocol_registry as _require_valid_adapter_protocol_registry,
-    )
+    from brain.v5.adapter_contracts import require_valid_adapter_protocol_registry as _require_valid_adapter_protocol_registry
     return _require_valid_adapter_protocol_registry(payload)
 
+
+def validate_record_gate_coverage_audit(payload: dict[str, Any], *, path: str = "record_gate_coverage_audit") -> ContractResult:
+    from brain.v5.record_gate_audit_contracts import validate_record_gate_coverage_audit as _validate
+    return _validate(payload, path=path)
+
+def require_valid_record_gate_coverage_audit(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.record_gate_audit_contracts import require_valid_record_gate_coverage_audit as _require
+    return _require(payload)
 
 def validate_codex_hook_bridge(payload: dict[str, Any], *, path: str = "codex_hook_bridge") -> ContractResult:
     from brain.v5.hook_protocol_contracts import validate_codex_hook_bridge as _validate_codex_hook_bridge

@@ -283,6 +283,15 @@ def test_cli_adapter_public_surfaces_returns_static_audit_payload_without_worksp
     assert not (tmp_path / ".aitp").exists()
 
 
+def test_cli_adapter_record_gate_audit_returns_static_payload_without_workspace(tmp_path, capsys):
+    from brain.v5.adapter_protocols import record_gate_coverage_audit
+
+    payload = _invoke(["--base", str(tmp_path), "adapter", "record-gate-audit"], capsys)
+
+    assert payload == {"ok": True, "record_gate_coverage_audit": record_gate_coverage_audit()}
+    assert not (tmp_path / ".aitp").exists()
+
+
 def test_cli_adapter_registry_validates_payload_before_return(monkeypatch):
     import pytest
 

@@ -71,6 +71,11 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
         "mcp": "aitp_v5_evaluate_adapter_pre_tool_event",
         "surface": "pre_tool_policy_decision",
     }
+    assert entrypoints["record_gate_coverage_audit"] == {
+        "cli": "aitp-v5 adapter record-gate-audit",
+        "mcp": "aitp_v5_audit_record_gate_coverage",
+        "surface": "record_gate_coverage_audit",
+    }
 
 
 def test_runtime_entrypoint_validation_reports_bad_mcp_and_cli_targets():

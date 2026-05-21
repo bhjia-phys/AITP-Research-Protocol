@@ -1734,6 +1734,34 @@ def test_adapter_registry_fingerprint_identifies_protocol_payload():
     assert all(character in "0123456789abcdef" for character in fingerprint)
 
 
+def test_record_gate_coverage_audit_reports_no_ungated_record_protocols():
+    from brain.v5.adapter_protocols import mandatory_record_protocols, record_gate_coverage_audit
+    from brain.v5.gate_protocols import mandatory_gate_protocols
+
+    record_protocols = mandatory_record_protocols()
+    gate_protocols = mandatory_gate_protocols()
+    audit = record_gate_coverage_audit()
+
+    assert audit["kind"] == "record_gate_coverage_audit"
+    assert audit["record_protocols"] == sorted(record_protocols)
+    assert audit["gate_protocols"] == sorted(gate_protocols)
+    assert audit["gated_record_protocols"] == sorted(record_protocols)
+    assert audit["ungated_record_protocols"] == []
+    assert audit["extra_gate_protocols"] == sorted(set(gate_protocols) - set(record_protocols))
+    assert audit["truth_source"] == "adapter_protocol_registry"
+    assert audit["summary_inputs_trusted"] is False
+
+
+def test_mcp_record_gate_coverage_audit_returns_contract_payload():
+    from brain.v5.adapter_protocols import record_gate_coverage_audit
+    from brain.v5.mcp_tools import aitp_v5_audit_record_gate_coverage
+
+    assert aitp_v5_audit_record_gate_coverage() == {
+        "ok": True,
+        "record_gate_coverage_audit": record_gate_coverage_audit(),
+    }
+
+
 def test_adapter_packet_ignores_tampered_summary_as_truth_source(tmp_path):
     from brain.v5.adapters import build_adapter_packet
     from brain.v5.markdown import write_md

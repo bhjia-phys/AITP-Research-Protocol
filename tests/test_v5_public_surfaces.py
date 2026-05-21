@@ -25,6 +25,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "physics_object_record",
         "pre_tool_policy_decision",
         "promotion_packet_record",
+        "record_gate_coverage_audit",
         "reference_location_record",
         "sensemaking_report_record",
         "session_summary_bundle",
@@ -476,6 +477,15 @@ def test_describe_public_surfaces_returns_auditable_contract_payload():
     for surface in payload["surfaces"]:
         assert surface["validator"] == public_surface_validator_ref()
         assert surface["purpose"]
+
+
+def test_public_surface_validator_accepts_record_gate_coverage_audit():
+    from brain.v5.adapter_protocols import record_gate_coverage_audit
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    audit = record_gate_coverage_audit()
+
+    assert require_valid_public_surface("record_gate_coverage_audit", audit) == audit
 
 
 def test_runtime_entrypoint_surfaces_close_over_public_surface_contracts():
