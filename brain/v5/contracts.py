@@ -37,77 +37,12 @@ class ContractError(ValueError):
         super().__init__(summary or "contract validation failed")
 
 
-_BRIEF_REQUIRED_KEYS = (
-    "session",
-    "current_focus",
-    "flow_profile",
-    "risk_assessment",
-    "action_budget",
-    "known_context",
-    "mandatory_reflection",
-    "next_action_candidates",
-    "forbidden_now",
-    "human_checkpoint",
-)
 _RISK_LEVELS = {"fluid", "guided", "rigorous", "adversarial"}
 def validate_execution_brief(payload: dict[str, Any], *, path: str = "brief") -> ContractResult:
     """Validate the public execution-brief payload."""
 
-    result = ContractResult()
-    _require_mapping(payload, path, result)
-    if result.issues:
-        return result
-
-    for key in _BRIEF_REQUIRED_KEYS:
-        if key not in payload:
-            result.add(key, "missing required execution brief key")
-
-    if "session" in payload:
-        _require_mapping(payload["session"], f"{path}.session", result)
-        if isinstance(payload["session"], dict):
-            _require_nonempty_str(payload["session"], "session_id", f"{path}.session", result)
-            _require_nonempty_str(payload["session"], "topic_id", f"{path}.session", result)
-            _require_nonempty_str(payload["session"], "context_id", f"{path}.session", result)
-
-    if "flow_profile" in payload:
-        _validate_flow_profile(payload["flow_profile"], f"{path}.flow_profile", result)
-
-    if "risk_assessment" in payload:
-        result.extend(validate_risk_assessment(payload["risk_assessment"], path=f"{path}.risk_assessment"))
-
-    if "action_budget" in payload:
-        result.extend(validate_action_budget(payload["action_budget"], path=f"{path}.action_budget"))
-
-    if isinstance(payload.get("risk_assessment"), dict) and isinstance(payload.get("action_budget"), dict):
-        risk_level = payload["risk_assessment"].get("level")
-        budget_level = payload["action_budget"].get("level")
-        if risk_level != budget_level:
-            result.add(
-                f"{path}.action_budget.level",
-                f"must match risk_assessment.level ({risk_level!r}), got {budget_level!r}",
-            )
-
-    if "mandatory_reflection" in payload:
-        _require_list(payload["mandatory_reflection"], f"{path}.mandatory_reflection", result)
-        budget = payload.get("action_budget")
-        if isinstance(budget, dict) and isinstance(payload["mandatory_reflection"], list):
-            max_questions = budget.get("max_questions")
-            if isinstance(max_questions, int) and len(payload["mandatory_reflection"]) > max_questions:
-                result.add(
-                    f"{path}.mandatory_reflection",
-                    "contains more questions than action_budget.max_questions",
-                )
-
-    if "human_checkpoint" in payload:
-        _require_mapping(payload["human_checkpoint"], f"{path}.human_checkpoint", result)
-        if isinstance(payload["human_checkpoint"], dict) and not isinstance(payload["human_checkpoint"].get("needed"), bool):
-            result.add(f"{path}.human_checkpoint.needed", "must be a boolean")
-
-    for key in ("next_action_candidates", "forbidden_now"):
-        if key in payload:
-            _require_list(payload[key], f"{path}.{key}", result)
-
-    return result
+    from brain.v5.brief_contracts import validate_execution_brief as _validate_execution_brief
+    return _validate_execution_brief(payload, path=path)
 
 
 def require_valid_execution_brief(payload: dict[str, Any]) -> dict[str, Any]:

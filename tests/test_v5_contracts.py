@@ -1,6 +1,41 @@
 from __future__ import annotations
 
 
+def _minimal_execution_brief_payload():
+    return {
+        "session": {"session_id": "s1", "topic_id": "fqhe", "context_id": "topological-order"},
+        "current_focus": {"active_claim": "claim-1"},
+        "flow_profile": {"profile": "guided", "reason": "test", "escalation_triggers": []},
+        "risk_assessment": {
+            "level": "guided",
+            "score": 2,
+            "signals": [],
+            "trust_reductions": [],
+            "action_budget": {
+                "level": "guided",
+                "max_questions": 3,
+                "required_outputs": ["scoped_claim"],
+                "allowed_actions": ["answer_dynamic_physics_questions"],
+                "requires_human_checkpoint": False,
+            },
+            "human_checkpoint_needed": False,
+            "summary": "guided protocol",
+        },
+        "action_budget": {
+            "level": "guided",
+            "max_questions": 3,
+            "required_outputs": ["scoped_claim"],
+            "allowed_actions": ["answer_dynamic_physics_questions"],
+            "requires_human_checkpoint": False,
+        },
+        "known_context": {"topic_id": "fqhe", "context_id": "topological-order"},
+        "mandatory_reflection": [],
+        "next_action_candidates": [],
+        "forbidden_now": [],
+        "human_checkpoint": {"needed": False, "reason": None},
+    }
+
+
 def test_execution_brief_contract_accepts_current_brief(tmp_path):
     from brain.v5.brief import build_execution_brief
     from brain.v5.contracts import validate_execution_brief
@@ -28,6 +63,56 @@ def test_execution_brief_contract_accepts_current_brief(tmp_path):
 
     assert result.ok is True
     assert result.issues == []
+
+
+def test_execution_brief_contract_rejects_memory_entry_truth_source():
+    from brain.v5.contracts import validate_execution_brief
+
+    payload = _minimal_execution_brief_payload()
+    payload["known_context"]["memory_entries"] = [
+        {
+            "entry_id": "memory-fqhe",
+            "memory_kind": "scoped_claim",
+            "scope": "finite-size sector",
+            "evidence_refs": ["evidence-counting"],
+            "source_packet_id": "packet-fqhe",
+            "human_checkpoint_id": "checkpoint-fqhe",
+            "orientation_only": False,
+        }
+    ]
+
+    result = validate_execution_brief(payload)
+
+    assert result.ok is False
+    assert any(
+        issue.path == "brief.known_context.memory_entries[0].orientation_only"
+        for issue in result.issues
+    )
+
+
+def test_execution_brief_contract_requires_memory_entry_lists():
+    from brain.v5.contracts import validate_execution_brief
+
+    payload = _minimal_execution_brief_payload()
+    payload["known_context"]["memory_entries"] = [
+        {
+            "entry_id": "memory-gw",
+            "memory_kind": "code_method_claim",
+            "scope": "librpa commit abc123",
+            "evidence_refs": "evidence-gw",
+            "code_state_ids": "code-state-gw",
+            "source_packet_id": "packet-gw",
+            "human_checkpoint_id": "checkpoint-gw",
+            "orientation_only": True,
+        }
+    ]
+
+    result = validate_execution_brief(payload)
+
+    assert result.ok is False
+    paths = {issue.path for issue in result.issues}
+    assert "brief.known_context.memory_entries[0].evidence_refs" in paths
+    assert "brief.known_context.memory_entries[0].code_state_ids" in paths
 
 
 def test_execution_brief_contract_rejects_missing_risk_assessment():
