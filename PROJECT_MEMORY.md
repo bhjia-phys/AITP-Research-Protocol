@@ -116,6 +116,12 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   fixtures for expected AITP runner tokens and returns the contracted
   `runtime_hook_installation_audit` surface. It is read-only and
   orientation-only.
+- Default workspace-local runtime hook paths can be discovered with
+  `aitp-v5 adapter install-paths` or
+  `aitp_v5_discover_hook_install_paths`. The returned
+  `runtime_hook_installation_paths` surface lists preferred and alternate
+  Codex/Claude Code/OpenCode install targets plus matching install/audit
+  commands. It is convention metadata, not kernel state.
 - Claude Code can materialize native hook settings with
   `aitp-v5 adapter hook-settings claude-code <session-id> --output .claude/settings.local.json`.
 - Claude Code can also merge AITP v5 hooks into an existing settings file with

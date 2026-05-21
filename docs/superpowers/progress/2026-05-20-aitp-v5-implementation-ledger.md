@@ -4039,3 +4039,68 @@ Each entry should record:
   - implement packaged host-path discovery for Codex, Claude Code, and OpenCode,
     or continue broadening pre-tool policy coverage for remaining MCP inputs and
     active risk dimensions.
+
+### 217acd0 - Discover Runtime Hook Install Paths
+
+- Task: add a read-only path discovery surface for runtime hook installation, so
+  agents can find workspace-local Codex, Claude Code, and OpenCode install
+  targets before calling installer or audit commands.
+- Planning source:
+  - previous ledger recommendation after `cb78039`;
+  - hook-installation plan residual gap for host-path discovery;
+  - v5 invariant that runtime hook files are convention metadata, not typed
+    kernel state.
+- Changed files:
+  - `brain/v5/hook_install_paths.py`
+  - `brain/v5/hook_install_contracts.py`
+  - `brain/v5/contracts.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoint_catalog.py`
+  - `brain/v5/cli.py`
+  - `brain/v5/cli_adapters.py`
+  - `brain/v5/mcp_tools.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `tests/test_v5_runtime_entrypoints.py`
+- Public/runtime behavior changes:
+  - new helper `discover_hook_install_paths(ws)`;
+  - new CLI command `aitp-v5 adapter install-paths`;
+  - new MCP wrapper `aitp_v5_discover_hook_install_paths`;
+  - new public surface `runtime_hook_installation_paths`;
+  - new runtime entrypoint catalog item
+    `runtime_hook_installation_paths`;
+  - payload lists preferred and alternate workspace-local targets for Codex
+    `.codex/hooks.json`/fixture, Claude Code `.claude/settings.local.json`, and
+    OpenCode `.opencode/plugins/aitp-v5.js`/fixture, plus matching install and
+    audit commands.
+- Tests:
+  - direct helper returns Codex/Claude/OpenCode defaults with preferred install
+    args and commands;
+  - CLI `adapter install-paths` returns contracted defaults;
+  - MCP wrapper returns contracted defaults;
+  - public-surface and runtime-entrypoint registries advertise the new surface.
+- Verification:
+  - red target set:
+    `python -m pytest tests\test_v5_adapters.py::test_hook_installation_paths_discover_workspace_defaults tests\test_v5_adapters.py::test_cli_adapter_install_paths_returns_default_paths tests\test_v5_adapters.py::test_mcp_hook_installation_paths_returns_contract_payload tests\test_v5_public_surfaces.py::test_public_surface_validator_accepts_runtime_hook_installation_paths tests\test_v5_runtime_entrypoints.py::test_runtime_entrypoints_advertise_typed_write_surfaces -q`:
+    5 failed because the path module, CLI subcommand, MCP wrapper, public
+    surface, and runtime entrypoint did not exist;
+  - target green set:
+    same command: 5 passed;
+  - focused related set:
+    `python -m pytest tests\test_v5_adapters.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py tests\test_v5_mcp_tools.py tests\test_v5_cli.py tests\test_v5_architecture_boundaries.py -q`:
+    118 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; python -m pytest $files -q`:
+    420 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with line-ending warnings only.
+- Residual risks:
+  - this covers workspace-local path conventions; global host config discovery
+    can be added if later runtime integration needs it;
+  - live host smoke tests are still needed to prove generated hooks execute
+    inside the real Codex/OpenCode host processes.
+- Next recommended task:
+  - add live-style host smoke tests for generated hook/plugin files where
+    practical, or broaden pre-tool policy coverage for remaining MCP inputs and
+    active risk dimensions.

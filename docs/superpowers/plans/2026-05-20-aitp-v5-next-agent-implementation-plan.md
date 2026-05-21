@@ -27,7 +27,7 @@ codex/aitp-v5-kernel-mvp
 Current baseline commit:
 
 ```text
-cb78039 feat(v5): audit runtime hook installation
+217acd0 feat(v5): discover runtime hook install paths
 ```
 
 Current focused v5 verification:
@@ -37,10 +37,10 @@ $files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullNa
 pytest $files -q
 ```
 
-Expected baseline as of `cb78039`:
+Expected baseline as of `217acd0`:
 
 ```text
-416 passed
+420 passed
 ```
 
 Do not treat old full-suite failures as blockers unless a task modifies legacy code. The v5 focused suite is the working regression gate for this plan.
@@ -196,6 +196,12 @@ Implemented:
   Code, or OpenCode runtime files, reports installed/partial/missing/conflict
   status, and remains orientation-only with no kernel or claim-trust mutation
   authority.
+- Runtime hook install paths can now be discovered through
+  `aitp-v5 adapter install-paths` and
+  `aitp_v5_discover_hook_install_paths`; the contracted
+  `runtime_hook_installation_paths` surface reports workspace-local preferred
+  and alternate install targets plus matching install/audit commands for Codex,
+  Claude Code, and OpenCode.
 - The shared CLI/MCP pre-tool policy now also blocks summary/task-plan/findings
   orientation surfaces from driving `record_code_state`, `record_evidence`,
   `record_tool_run`, `execute_tool`, `ingest_subagent_result`,
@@ -283,9 +289,10 @@ Major remaining gaps:
   a generated bridge JSON sidecar, runner argv, advertised stdin host-runner;
   Codex and OpenCode also have generated installation fixtures for pre-tool
   policy decisions and post-tool trace persistence. A read-only install-audit
-  surface can inspect supplied host files and report conflicts. The remaining
-  gap is packaged host-path discovery and end-to-end host smoke tests for each
-  runtime.
+  surface can inspect supplied host files and report conflicts, and an
+  install-paths surface reports workspace-local targets. The remaining gap is
+  end-to-end host smoke tests for each runtime plus any non-workspace/global
+  host config discovery that proves useful.
 - Pre-tool policy coverage is still partial. It checks trust-apply token
   presence, validation/promotion-packet/promotion context, and summary-sourced
   code-state/evidence/tool-run/tool-execution/tool-recipe/reference-location/
@@ -317,7 +324,7 @@ Expected:
 ```text
 branch = codex/aitp-v5-kernel-mvp
 working tree has no unrelated dirty v5 files
-latest commit is cb78039 or a later commit from this plan
+latest commit is 217acd0 or a later commit from this plan
 ```
 
 After each task:

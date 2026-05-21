@@ -27,6 +27,8 @@ Implemented:
   `.opencode/plugins/`, using `tool.execute.before` and `tool.execute.after`;
 - CLI/MCP read-only install audit for supplied Codex, Claude Code, and OpenCode
   runtime hook files;
+- CLI/MCP read-only install path discovery for workspace-local Codex, Claude
+  Code, and OpenCode hook targets;
 - Claude Code hook settings writer derived from `runtime_hook_installation`;
 - Claude Code safe settings merge installer that preserves existing settings and
   deduplicates AITP v5 hook commands;
@@ -60,8 +62,8 @@ Documented here:
 
 Not implemented in this slice:
 
-- packaged host-specific installer UX that discovers default host config paths
-  before calling the existing installer/audit surfaces.
+- end-to-end in-host smoke tests that execute generated hooks inside actual
+  host runtimes.
 
 ## Invariants
 
@@ -500,6 +502,22 @@ failures without giving generated files authority over typed kernel records.
 
 ## Install Audit
 
+Before installation, discover workspace-local targets:
+
+```powershell
+aitp-v5 --base <workspace> adapter install-paths
+```
+
+MCP clients use:
+
+```text
+aitp_v5_discover_hook_install_paths(base)
+```
+
+The returned `runtime_hook_installation_paths` surface lists preferred and
+alternate target paths and matching install/audit commands for Codex, Claude
+Code, and OpenCode. This is workspace convention metadata, not kernel state.
+
 After installation, audit the supplied runtime file without trusting it as
 kernel state:
 
@@ -524,7 +542,5 @@ The returned `runtime_hook_installation_audit` surface reports
 
 Future implementation should add tests and installer assets for:
 
-- packaged runtime installer UX that chooses the correct Codex/Claude/OpenCode
-  host config path before invoking the existing installers and audit surface;
 - in-host smoke tests that execute the generated Codex/OpenCode lifecycle hooks
   in their real host runtimes rather than only through repo-level runner tests.

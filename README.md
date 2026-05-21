@@ -218,6 +218,9 @@ Installed hook files can be checked with
 `--plugin <path>`, or `--output <path>`; the audit reports
 installed/partial/missing/conflict status without treating runtime files as
 kernel truth.
+Default workspace-local hook targets can be listed with
+`aitp-v5 adapter install-paths`, which returns preferred install/audit commands
+for Codex, Claude Code, and OpenCode.
 Both fixtures write the bridge and sidecar, then point pre-tool hooks at the
 stdin runner and post-tool hooks at the trace-persistence runner with a declared
 repository `cwd`, without granting generated files authority over typed records.
