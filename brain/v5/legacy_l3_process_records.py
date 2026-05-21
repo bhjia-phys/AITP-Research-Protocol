@@ -48,6 +48,7 @@ def migrate_legacy_l3_process_notes(
             summary=summary,
             supports_outputs=["evidence_or_provenance"],
             source_refs=[f"legacy_l3_process:{path.as_posix()}"],
+            body=_legacy_l3_process_evidence_body(summary, display_path, body),
         )
         report = record_sensemaking_report(
             ws,
@@ -95,3 +96,14 @@ def _first_paragraph(body: str) -> str:
         if stripped and not stripped.startswith("#"):
             lines.append(stripped)
     return " ".join(lines)
+
+
+def _legacy_l3_process_evidence_body(summary: str, display_path: str, body: str) -> str:
+    original = body.strip() or "(Legacy process note had no Markdown body.)"
+    return (
+        "# Legacy L3 Process Note Evidence\n\n"
+        f"{summary}\n\n"
+        f"Source path: `{display_path}`\n\n"
+        "## Migrated Legacy Body\n\n"
+        f"{original}\n"
+    )

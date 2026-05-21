@@ -611,6 +611,7 @@ def test_legacy_migration_preserves_l2_entries_as_legacy_seed_memory(tmp_path):
 def test_legacy_migration_preserves_l3_process_notes_as_typed_records(tmp_path):
     from brain.v5.evidence import list_evidence_for_claim
     from brain.v5.legacy_bridge import audit_legacy_topic_migration, migrate_legacy_topic_to_v5
+    from brain.v5.markdown import read_md
     from brain.v5.models import SensemakingReportRecord
     from brain.v5.store import list_records
     from brain.v5.workspace import init_workspace
@@ -670,6 +671,22 @@ def test_legacy_migration_preserves_l3_process_notes_as_typed_records(tmp_path):
     assert any(derivation.as_posix() in ref for item in evidence for ref in item.source_refs)
     assert any(gap_audit.as_posix() in ref for item in evidence for ref in item.source_refs)
     assert any(failed_route.as_posix() in ref for item in evidence for ref in item.source_refs)
+    evidence_by_type = {item.evidence_type: item for item in evidence}
+    _fm, derivation_body = read_md(
+        ws.registry_dir("evidence")
+        / f"{evidence_by_type['legacy_l3_derive_process_note'].evidence_id}.md"
+    )
+    _fm, gap_body = read_md(
+        ws.registry_dir("evidence")
+        / f"{evidence_by_type['legacy_l3_gap_audit_process_note'].evidence_id}.md"
+    )
+    _fm, failed_body = read_md(
+        ws.registry_dir("evidence")
+        / f"{evidence_by_type['legacy_l3_diagnose_process_note'].evidence_id}.md"
+    )
+    assert "The main route reconstructs the counting character step by step." in derivation_body
+    assert "Missing neutral-sector assumption before promoting the claim." in gap_body
+    assert "This failed attempt should remain visible after migration." in failed_body
 
     reports = list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord)
     assert {report.report_id for report in reports} >= set(result["written_records"]["sensemaking_reports"])

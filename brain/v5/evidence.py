@@ -62,6 +62,7 @@ def record_evidence(
     source_refs: list[str] | None = None,
     tool_run_ids: list[str] | None = None,
     artifact_ids: list[str] | None = None,
+    body: str | None = None,
 ) -> EvidenceRecord:
     """Record claim-local evidence that may satisfy action-budget outputs."""
 
@@ -81,7 +82,7 @@ def record_evidence(
     write_record(
         ws.registry_dir("evidence") / f"{evidence_id}.md",
         record,
-        body=f"# Evidence\n\n{summary}\n",
+        body=body if body is not None else f"# Evidence\n\n{summary}\n",
     )
     return record
 
