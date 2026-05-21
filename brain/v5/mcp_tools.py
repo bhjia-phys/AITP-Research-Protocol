@@ -330,12 +330,14 @@ def aitp_v5_describe_public_surfaces() -> dict:
 def aitp_v5_evaluate_pre_tool_policy(
     base: str, *, session_id: str, action: str, claim_id: str = "",
     evidence_refs: list[str] | None = None, code_state_ids: list[str] | None = None,
+    validation_contract_ids: list[str] | None = None,
     source_kind: str = "", source_ref: str = "", orientation_only: bool = False,
     risk_level: str = "guided", human_checkpoint_id: str = "",
 ) -> dict:
     return require_valid_public_surface("pre_tool_policy_decision", evaluate_context_pre_tool_policy(
         _ws(base), session_id=session_id, action=action, claim_id=claim_id,
         evidence_refs=evidence_refs, code_state_ids=code_state_ids,
+        validation_contract_ids=validation_contract_ids,
         source_kind=source_kind, source_ref=source_ref, orientation_only=orientation_only,
         risk_level=risk_level, human_checkpoint_id=human_checkpoint_id))
 

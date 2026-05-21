@@ -120,12 +120,12 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
             "record_tool_run",
             "refresh_execution_brief",
             "write_session_summary",
-        ],
-        "required_typed_refs": ["topic_id", "claim_id", "recipe_id"],
-        "accepted_link_fields": ["code_state_ids", "artifact_ids", "source_refs"],
-        "truth_source": "typed_records",
-        "summary_inputs_trusted": False,
-    }
+            ],
+            "required_typed_refs": ["topic_id", "claim_id", "recipe_id"],
+            "accepted_link_fields": ["code_state_ids", "validation_contract_ids", "artifact_ids", "source_refs"],
+            "truth_source": "typed_records",
+            "summary_inputs_trusted": False,
+        }
     assert packet["runtime_record_protocols"]["ingest_subagent_result"] == {
         "entrypoint": "aitp_v5_ingest_subagent_result",
         "sequence": [
@@ -202,7 +202,7 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
             "write_session_summary",
         ],
         "required_typed_refs": ["topic_id", "claim_id", "recipe_id"],
-        "allowed_state_sources": ["typed_records", "typed_tool_run_records"],
+            "allowed_state_sources": ["typed_records", "typed_tool_run_records", "typed_validation_records"],
         "policy_reasons_field": "policy_reasons",
         "human_checkpoint_required": False,
         "truth_source": "typed_records",
@@ -350,11 +350,12 @@ def test_cli_adapter_hook_bridge_writes_codex_bridge_from_packet(tmp_path, capsy
     ]
     assert "human_checkpoint_id" in payload["pre_tool_policy_entrypoint"]["input_schema"]["optional"]
     assert payload["pre_tool_event_entrypoint"]["platform_event_schema"]["tool_input_optional"] == [
-        "claim_id",
-        "evidence_refs",
-        "code_state_ids",
-        "packet",
-        "source_kind",
+            "claim_id",
+            "evidence_refs",
+            "code_state_ids",
+            "validation_contract_ids",
+            "packet",
+            "source_kind",
         "source_ref",
         "orientation_only",
         "risk_level",
@@ -380,6 +381,7 @@ def test_cli_adapter_hook_bridge_writes_codex_bridge_from_packet(tmp_path, capsy
                 "claim_id",
                 "evidence_refs",
                 "code_state_ids",
+                "validation_contract_ids",
                 "packet",
                 "source_kind",
                 "source_ref",
@@ -1023,6 +1025,94 @@ def test_mcp_adapter_pre_tool_event_infers_validation_contract_policy(tmp_path):
     ]
 
 
+def test_mcp_adapter_pre_tool_event_blocks_rigorous_execute_without_validation_contract(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_adapter_pre_tool_event, aitp_v5_write_codex_hook_bridge
+
+    _, claim = _seed_session(tmp_path)
+    bridge = aitp_v5_write_codex_hook_bridge(
+        str(tmp_path),
+        session_id="s1",
+        output_path=str(tmp_path / "codex" / "AITP_V5_HOOK_BRIDGE.md"),
+    )
+
+    payload = aitp_v5_evaluate_adapter_pre_tool_event(
+        str(tmp_path),
+        bridge_payload=bridge,
+        platform_event={
+            "runtime": "codex",
+            "hook_name": "pre_tool",
+            "session_id": "s1",
+            "risk_level": "rigorous",
+            "tool_name": "mcp__aitp__aitp_v5_execute_tool",
+            "tool_input": {
+                "topic_id": "librpa-gw",
+                "claim_id": claim.claim_id,
+                "recipe_id": "recipe-si-gw",
+                "executor_id": "pytest",
+                "source_kind": "typed_records",
+            },
+        },
+    )
+
+    assert payload["ok"] is True
+    assert payload["action"] == "execute_tool"
+    assert payload["mode"] == "block"
+    assert payload["block"] is True
+    assert payload["runtime_gate_protocol"]["action"] == "execute_tool"
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "high_risk_tool_execution_requires_validation_contract"
+    ]
+
+
+def test_mcp_adapter_pre_tool_event_accepts_rigorous_execute_with_validation_contract(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_adapter_pre_tool_event, aitp_v5_write_codex_hook_bridge
+    from brain.v5.validation import create_validation_contract
+    from brain.v5.workspace import init_workspace
+
+    _, claim = _seed_session(tmp_path)
+    ws = init_workspace(tmp_path)
+    contract = create_validation_contract(
+        ws,
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        required_checks=["reproduce Si GW benchmark"],
+        failure_modes=["formula-code mismatch"],
+        required_evidence_outputs=["benchmark table"],
+    )
+    bridge = aitp_v5_write_codex_hook_bridge(
+        str(tmp_path),
+        session_id="s1",
+        output_path=str(tmp_path / "codex" / "AITP_V5_HOOK_BRIDGE.md"),
+    )
+
+    payload = aitp_v5_evaluate_adapter_pre_tool_event(
+        str(tmp_path),
+        bridge_payload=bridge,
+        platform_event={
+            "runtime": "codex",
+            "hook_name": "pre_tool",
+            "session_id": "s1",
+            "risk_level": "rigorous",
+            "tool_name": "mcp__aitp__aitp_v5_execute_tool",
+            "tool_input": {
+                "topic_id": "librpa-gw",
+                "claim_id": claim.claim_id,
+                "recipe_id": "recipe-si-gw",
+                "executor_id": "pytest",
+                "source_kind": "typed_records",
+                "validation_contract_ids": [contract.contract_id],
+            },
+        },
+    )
+
+    assert payload["ok"] is True
+    assert payload["action"] == "execute_tool"
+    assert payload["mode"] == "log"
+    assert payload["block"] is False
+    assert payload["validation_contract_ids"] == [contract.contract_id]
+    assert payload["policy_reasons"] == []
+
+
 def test_mcp_adapter_pre_tool_event_infers_promotion_packet_policy(tmp_path):
     from brain.v5.mcp_tools import aitp_v5_evaluate_adapter_pre_tool_event, aitp_v5_write_codex_hook_bridge
 
@@ -1366,6 +1456,7 @@ def test_cli_adapter_hook_bridge_writes_opencode_bridge_from_packet(tmp_path, ca
                 "claim_id",
                 "evidence_refs",
                 "code_state_ids",
+                "validation_contract_ids",
                 "packet",
                 "source_kind",
                 "source_ref",

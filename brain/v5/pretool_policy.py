@@ -6,7 +6,7 @@ from typing import Any
 
 from brain.v5.hook_adapters import hook_decision_payload
 from brain.v5.hooks import decide_pre_tool_use
-from brain.v5.models import CodeStateRecord, HumanCheckpointRecord
+from brain.v5.models import CodeStateRecord, HumanCheckpointRecord, ValidationContractRecord
 from brain.v5.policy import PolicyDecision, evaluate_policy
 from brain.v5.store import list_records
 from brain.v5.workspace import get_claim, get_session_binding
@@ -41,6 +41,7 @@ def context_policy_decision(
     claim_id: str = "",
     evidence_refs: list[str] | None = None,
     code_state_ids: list[str] | None = None,
+    validation_contract_ids: list[str] | None = None,
     source_kind: str = "",
     source_ref: str = "",
     orientation_only: bool = False,
@@ -59,6 +60,11 @@ def context_policy_decision(
         claim=claim,
         code_states=_resolve_code_states(ws, claim.claim_id, _clean_list(code_state_ids)),
         evidence_refs=_clean_list(evidence_refs),
+        validation_contracts=_resolve_validation_contracts(
+            ws,
+            claim.claim_id,
+            _clean_list(validation_contract_ids),
+        ),
         risk_level=risk_level,
         context={
             "source_kind": source_kind.strip().lower(),
@@ -78,6 +84,7 @@ def evaluate_context_pre_tool_policy(
     claim_id: str = "",
     evidence_refs: list[str] | None = None,
     code_state_ids: list[str] | None = None,
+    validation_contract_ids: list[str] | None = None,
     source_kind: str = "",
     source_ref: str = "",
     orientation_only: bool = False,
@@ -94,6 +101,7 @@ def evaluate_context_pre_tool_policy(
         claim_id=resolved_claim_id,
         evidence_refs=evidence_refs,
         code_state_ids=code_state_ids,
+        validation_contract_ids=validation_contract_ids,
         source_kind=source_kind,
         source_ref=source_ref,
         orientation_only=orientation_only,
@@ -101,6 +109,10 @@ def evaluate_context_pre_tool_policy(
         human_checkpoint_id=human_checkpoint_id,
     ) or PolicyDecision(allowed=True, action=action)
     decision = decide_pre_tool_use(action=action, risk_level=risk_level, policy_decision=policy)
+    resolved_contract_ids = [
+        contract.contract_id
+        for contract in _resolve_validation_contracts(ws, resolved_claim_id, _clean_list(validation_contract_ids))
+    ]
     payload = {"ok": True, **hook_decision_payload(decision, hook_name="pre_tool")}
     payload.update(
         {
@@ -109,6 +121,7 @@ def evaluate_context_pre_tool_policy(
             "claim_id": resolved_claim_id,
             "risk_level": risk_level,
             "human_checkpoint_id": human_checkpoint_id,
+            "validation_contract_ids": resolved_contract_ids,
             "policy_reasons": [
                 {
                     "policy_id": reason.policy_id,
@@ -138,6 +151,22 @@ def _resolve_code_states(ws, claim_id: str, requested_ids: list[str]) -> list[Co
         wanted = set(requested_ids)
         return [state for state in states if state.code_state_id in wanted]
     return [state for state in states if _record_links_to_claim(state.linked_records, claim_id)]
+
+
+def _resolve_validation_contracts(
+    ws,
+    claim_id: str,
+    requested_ids: list[str],
+) -> list[ValidationContractRecord]:
+    if not requested_ids:
+        return []
+    wanted = set(requested_ids)
+    records = list_records(ws.registry_dir("validation_contracts"), ValidationContractRecord)
+    return [
+        record
+        for record in records
+        if record.contract_id in wanted and record.claim_id == claim_id and record.status == "open"
+    ]
 
 
 def _approved_checkpoint_for_claim(ws, claim_id: str, checkpoint_id: str) -> bool:

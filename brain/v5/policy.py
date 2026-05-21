@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from brain.v5.evolution import EvolutionProposal
-from brain.v5.models import ClaimRecord, CodeStateRecord
+from brain.v5.models import ClaimRecord, CodeStateRecord, ValidationContractRecord
 from brain.v5.risk import RiskAssessment
 
 
@@ -66,6 +66,7 @@ def evaluate_policy(
     claim: ClaimRecord | None = None,
     code_states: list[CodeStateRecord] | None = None,
     evidence_refs: list[str] | None = None,
+    validation_contracts: list[ValidationContractRecord] | None = None,
     risk_level: str = "",
     risk_assessment: RiskAssessment | None = None,
     evolution_proposal: EvolutionProposal | None = None,
@@ -75,6 +76,7 @@ def evaluate_policy(
 
     states = code_states or []
     refs = evidence_refs or []
+    contracts = validation_contracts or []
     decision = PolicyDecision(allowed=True, action=action)
     ctx = context or {}
 
@@ -89,6 +91,9 @@ def evaluate_policy(
 
     if action in {"create_promotion_packet", "promote_to_l2"}:
         _guard_l2_promotion_requires_evidence(decision, refs)
+
+    if action in {"execute_tool", "record_tool_run"}:
+        _guard_high_risk_tool_requires_validation_contract(decision, risk_level, contracts)
 
     if action == "reduce_friction_with_trust_card":
         _guard_invalidated_trust_card_cannot_reduce_friction(decision, risk_assessment)
@@ -160,6 +165,23 @@ def _guard_l2_promotion_requires_evidence(decision: PolicyDecision, evidence_ref
         "no_l2_promotion_without_evidence_ref",
         "L2 promotion requires at least one evidence reference",
         "attach_evidence_ref",
+    )
+
+
+def _guard_high_risk_tool_requires_validation_contract(
+    decision: PolicyDecision,
+    risk_level: str,
+    validation_contracts: list[ValidationContractRecord],
+) -> None:
+    if risk_level not in {"rigorous", "adversarial"}:
+        return
+    if validation_contracts:
+        return
+    decision.add_block(
+        "high_risk_tool_execution_requires_validation_contract",
+        "rigorous or adversarial tool execution requires an explicit typed validation contract",
+        "create_validation_contract",
+        severity="hard_block",
     )
 
 

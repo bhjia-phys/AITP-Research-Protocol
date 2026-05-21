@@ -673,3 +673,96 @@ def test_mcp_pre_tool_policy_blocks_human_checkpoint_decision_from_findings_sour
     assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
         "no_summary_surface_as_truth_source"
     ]
+
+
+def test_mcp_pre_tool_policy_blocks_rigorous_execute_tool_without_validation_contract(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
+
+    _, claim = _seed_claim(tmp_path)
+
+    payload = aitp_v5_evaluate_pre_tool_policy(
+        str(tmp_path),
+        session_id="s1",
+        action="execute_tool",
+        claim_id=claim.claim_id,
+        source_kind="typed_records",
+        risk_level="rigorous",
+    )
+
+    assert payload["action"] == "execute_tool"
+    assert payload["risk_level"] == "rigorous"
+    assert payload["mode"] == "block"
+    assert payload["block"] is True
+    assert payload["required_actions"] == ["create_validation_contract"]
+    assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
+        "high_risk_tool_execution_requires_validation_contract"
+    ]
+
+
+def test_mcp_pre_tool_policy_accepts_rigorous_execute_tool_with_validation_contract(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
+    from brain.v5.validation import create_validation_contract
+
+    ws, claim = _seed_claim(tmp_path)
+    contract = create_validation_contract(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        required_checks=["finite-size scaling sanity check"],
+        failure_modes=["finite-size artifact"],
+        required_evidence_outputs=["diagnostic plot"],
+    )
+
+    payload = aitp_v5_evaluate_pre_tool_policy(
+        str(tmp_path),
+        session_id="s1",
+        action="execute_tool",
+        claim_id=claim.claim_id,
+        source_kind="typed_records",
+        risk_level="rigorous",
+        validation_contract_ids=[contract.contract_id],
+    )
+
+    assert payload["risk_level"] == "rigorous"
+    assert payload["validation_contract_ids"] == [contract.contract_id]
+    assert payload["mode"] == "log"
+    assert payload["block"] is False
+    assert payload["policy_reasons"] == []
+
+
+def test_cli_pre_tool_policy_accepts_validation_contract_id(tmp_path, capsys):
+    from brain.v5.validation import create_validation_contract
+
+    ws, claim = _seed_claim(tmp_path)
+    contract = create_validation_contract(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        required_checks=["compare neutral sector counting"],
+        failure_modes=["wrong edge-mode identification"],
+        required_evidence_outputs=["counting table"],
+    )
+
+    payload = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "policy",
+            "pre-tool",
+            "execute_tool",
+            "--session",
+            "s1",
+            "--claim",
+            claim.claim_id,
+            "--source-kind",
+            "typed_records",
+            "--risk-level",
+            "rigorous",
+            "--validation-contract-id",
+            contract.contract_id,
+        ],
+        capsys,
+    )
+
+    assert payload["validation_contract_ids"] == [contract.contract_id]
+    assert payload["block"] is False

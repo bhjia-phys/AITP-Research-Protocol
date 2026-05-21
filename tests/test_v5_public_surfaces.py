@@ -318,6 +318,7 @@ def test_public_surface_validator_accepts_pre_tool_policy_decision():
         "summary_inputs_trusted": False,
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
+        "validation_contract_ids": [],
     }
 
     assert require_valid_public_surface("pre_tool_policy_decision", payload) == payload

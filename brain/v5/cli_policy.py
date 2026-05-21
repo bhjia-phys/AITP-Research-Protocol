@@ -19,6 +19,7 @@ def add_policy_parser(sp: argparse._SubParsersAction) -> None:
     pre.add_argument("--risk-level", default="guided")
     pre.add_argument("--evidence-ref", action="append", default=[], dest="evidence_refs")
     pre.add_argument("--code-state-id", action="append", default=[], dest="code_state_ids")
+    pre.add_argument("--validation-contract-id", action="append", default=[], dest="validation_contract_ids")
     pre.add_argument("--source-kind", default="")
     pre.add_argument("--source-ref", default="")
     pre.add_argument("--orientation-only", action="store_true")
@@ -35,6 +36,7 @@ def dispatch_policy_command(args: argparse.Namespace, ws) -> dict[str, Any]:
         claim_id=args.claim_id,
         evidence_refs=args.evidence_refs,
         code_state_ids=args.code_state_ids,
+        validation_contract_ids=args.validation_contract_ids,
         source_kind=args.source_kind,
         source_ref=args.source_ref,
         orientation_only=args.orientation_only,

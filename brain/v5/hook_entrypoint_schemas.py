@@ -11,6 +11,7 @@ _PRE_TOOL_POLICY_INPUT_SCHEMA = {
     "optional": [
         "evidence_refs",
         "code_state_ids",
+        "validation_contract_ids",
         "source_kind",
         "source_ref",
         "orientation_only",
@@ -30,6 +31,7 @@ _PRE_TOOL_EVENT_PLATFORM_SCHEMA = {
         "claim_id",
         "evidence_refs",
         "code_state_ids",
+        "validation_contract_ids",
         "packet",
         "source_kind",
         "source_ref",
