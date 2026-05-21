@@ -8,6 +8,7 @@ from brain.v5.models import (
     HumanCheckpointRecord,
     MemoryEntryRecord,
     PromotionPacketRecord,
+    ToolRunRecord,
     ValidationResultRecord,
 )
 from brain.v5.store import list_records, read_record, write_record
@@ -165,10 +166,15 @@ def list_memory_entries_for_claim(ws: WorkspacePaths, claim_id: str) -> list[Mem
     ]
 
 
-def memory_entry_brief_payload(entry: MemoryEntryRecord) -> dict:
+def memory_entry_brief_payload(
+    entry: MemoryEntryRecord,
+    *,
+    evidence_records: list[EvidenceRecord] | None = None,
+    tool_run_records: list[ToolRunRecord] | None = None,
+) -> dict:
     """Return orientation-only L2 memory context for execution briefs."""
 
-    return {
+    payload = {
         "entry_id": entry.entry_id,
         "memory_kind": entry.memory_kind,
         "scope": entry.scope,
@@ -177,6 +183,37 @@ def memory_entry_brief_payload(entry: MemoryEntryRecord) -> dict:
         "human_checkpoint_id": entry.human_checkpoint_id,
         "orientation_only": True,
     }
+    code_state_ids = _code_state_ids_for_memory_entry(
+        entry,
+        evidence_records or [],
+        tool_run_records or [],
+    )
+    if code_state_ids:
+        payload["code_state_ids"] = code_state_ids
+    return payload
+
+
+def _code_state_ids_for_memory_entry(
+    entry: MemoryEntryRecord,
+    evidence_records: list[EvidenceRecord],
+    tool_run_records: list[ToolRunRecord],
+) -> list[str]:
+    wanted = set(entry.evidence_refs)
+    runs_by_id = {run.run_id: run for run in tool_run_records}
+    seen = set()
+    result = []
+    for evidence in evidence_records:
+        if evidence.evidence_id not in wanted:
+            continue
+        for run_id in evidence.tool_run_ids:
+            run = runs_by_id.get(run_id)
+            if not run:
+                continue
+            for code_state_id in run.code_state_ids:
+                if code_state_id and code_state_id not in seen:
+                    seen.add(code_state_id)
+                    result.append(code_state_id)
+    return result
 
 
 def _ensure_tool_evidence_has_passed_validation_results(

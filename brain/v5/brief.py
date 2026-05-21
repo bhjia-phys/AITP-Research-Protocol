@@ -10,7 +10,7 @@ from brain.v5.evidence import list_evidence_for_claim, required_output_coverage
 from brain.v5.flow import resolve_flow_profile
 from brain.v5.interaction import prioritize_questions, resolve_interaction_profile
 from brain.v5.knowledge_connectors import suggest_knowledge_connectors_for_claim
-from brain.v5.models import ClaimRecord, CodeStateRecord
+from brain.v5.models import ClaimRecord, CodeStateRecord, ToolRunRecord
 from brain.v5.memory import list_memory_entries_for_claim, memory_entry_brief_payload
 from brain.v5.policy import evaluate_policy
 from brain.v5.question_engine import generate_questions
@@ -54,7 +54,11 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
             for location in list_reference_locations_for_claim(ws, claim.claim_id)
         ]
         memory_entries = [
-            memory_entry_brief_payload(entry)
+            memory_entry_brief_payload(
+                entry,
+                evidence_records=evidence_records,
+                tool_run_records=_tool_runs_for_claim(ws, claim.claim_id),
+            )
             for entry in list_memory_entries_for_claim(ws, claim.claim_id)
         ]
 
@@ -235,6 +239,14 @@ def _knowledge_connector_action(
 def _linked_code_states(ws, claim_id: str) -> list[CodeStateRecord]:
     states = list_records(ws.registry_dir("code_states"), CodeStateRecord)
     return [state for state in states if _record_links_to_claim(state.linked_records, claim_id)]
+
+
+def _tool_runs_for_claim(ws, claim_id: str) -> list[ToolRunRecord]:
+    return [
+        run
+        for run in list_records(ws.registry_dir("tool_runs"), ToolRunRecord)
+        if run.claim_id == claim_id
+    ]
 
 
 def _record_links_to_claim(linked_records: dict, claim_id: str) -> bool:

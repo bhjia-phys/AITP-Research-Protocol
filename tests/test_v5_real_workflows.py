@@ -142,9 +142,12 @@ def test_fqhe_learning_to_idea_to_toy_check_workflow(tmp_path):
 
 def test_gw_formula_code_translation_records_code_state_and_benchmark(tmp_path):
     from brain.v5.brief import build_execution_brief
+    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
     from brain.v5.code import record_code_state
+    from brain.v5.memory import apply_promotion_packet, create_promotion_packet
     from brain.v5.physics_objects import record_object_relation, record_physics_object
     from brain.v5.tool_executors import execute_registered_tool_result
+    from brain.v5.validation import create_validation_contract, record_validation_result
     from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
 
     ws = init_workspace(tmp_path)
@@ -180,7 +183,17 @@ def test_gw_formula_code_translation_records_code_state_and_benchmark(tmp_path):
         claim_id=claim.claim_id,
         failure_modes=["frequency grid mismatch", "basis cutoff mismatch"],
     )
-    execute_registered_tool_result(
+    contract = create_validation_contract(
+        ws,
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        required_checks=["benchmark gap remains within tolerance after formula-code translation"],
+        failure_modes=["frequency grid mismatch", "basis cutoff mismatch"],
+        required_evidence_outputs=["all_within_tolerance"],
+        tool_recipe_ids=["recipe-librpa-gw-benchmark-table"],
+        executor_ids=["metric_table_check"],
+    )
+    result = execute_registered_tool_result(
         ws,
         executor_id="metric_table_check",
         recipe_id="recipe-librpa-gw-benchmark-table",
@@ -192,9 +205,60 @@ def test_gw_formula_code_translation_records_code_state_and_benchmark(tmp_path):
         supports_outputs=["evidence_or_provenance", "minimal_check"],
         evidence_type="code_method",
     )
+    validation = record_validation_result(
+        ws,
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        contract_id=contract.contract_id,
+        tool_run_id=result.run.run_id,
+        status="passed",
+        checked_outputs=["all_within_tolerance"],
+        evidence_refs=[result.evidence.evidence_id],
+        summary="GW benchmark gap passed for the recorded code state.",
+    )
+    packet = create_promotion_packet(
+        ws,
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        proposed_memory_kind="code_method_claim",
+        scope="librpa commit abc123 self-energy worktree",
+        evidence_refs=[result.evidence.evidence_id],
+        validation_result_ids=[validation.result_id],
+        non_claims=["Does not validate other upstream commits."],
+        known_failure_modes=["frequency grid mismatch", "basis cutoff mismatch"],
+    )
+    checkpoint = request_human_checkpoint(
+        ws,
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        reason="Promote validated GW code-method benchmark to scoped L2 memory.",
+        requested_by="real_workflow_acceptance",
+        options=["approve", "reject"],
+    )
+    decide_human_checkpoint(
+        ws,
+        checkpoint_id=checkpoint.checkpoint_id,
+        decision="approve",
+        rationale="Benchmark evidence is tied to the exact code state and passed validation.",
+        decided_by="human",
+    )
+    memory = apply_promotion_packet(ws, packet_id=packet.packet_id, checkpoint_id=checkpoint.checkpoint_id)
     bind_session(ws, "s1", topic_id="librpa-gw", context_id="gw-methods", active_claim=claim.claim_id)
 
     brief = build_execution_brief(ws, "s1")
 
+    assert memory.evidence_refs == [result.evidence.evidence_id]
     assert brief["known_context"]["object_relations"]
     assert "evidence_or_provenance" in brief["evidence_coverage"]["satisfied_outputs"]
+    assert brief["known_context"]["memory_entries"] == [
+        {
+            "entry_id": memory.entry_id,
+            "memory_kind": "code_method_claim",
+            "scope": "librpa commit abc123 self-energy worktree",
+            "evidence_refs": [result.evidence.evidence_id],
+            "code_state_ids": [code_state.code_state_id],
+            "source_packet_id": packet.packet_id,
+            "human_checkpoint_id": checkpoint.checkpoint_id,
+            "orientation_only": True,
+        }
+    ]
