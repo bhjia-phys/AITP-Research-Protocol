@@ -24,6 +24,53 @@ def _seed_session(tmp_path):
     return ws, claim
 
 
+def _seed_tool_validated_evidence(ws, claim):
+    from brain.v5.evidence import record_evidence
+    from brain.v5.tools import record_tool_run
+    from brain.v5.validation import create_validation_contract, record_validation_result
+
+    contract = create_validation_contract(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        required_checks=["edge counting benchmark"],
+        failure_modes=["sector misassignment"],
+        required_evidence_outputs=["counting_table"],
+        tool_recipe_ids=["recipe-fqhe-ed"],
+        executor_ids=["pytest"],
+    )
+    run = record_tool_run(
+        ws,
+        recipe_id="recipe-fqhe-ed",
+        tool_family="numerical",
+        tool_name="pytest",
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        outputs={"counting_table": "ok"},
+    )
+    result = record_validation_result(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        contract_id=contract.contract_id,
+        tool_run_id=run.run_id,
+        status="passed",
+        checked_outputs=["counting_table"],
+        summary="Counting table passed validation.",
+    )
+    evidence = record_evidence(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        evidence_type="toy_numeric",
+        status="supports",
+        summary="Tool-derived counting evidence.",
+        tool_run_ids=[run.run_id],
+        validation_result_ids=[result.result_id],
+    )
+    return evidence, result
+
+
 def test_generated_bridges_can_drive_gate_pre_tool_policy_decision(tmp_path):
     from brain.v5.adapter_runtime import evaluate_bridge_gate_pre_tool_policy
     from brain.v5.adapters import build_adapter_packet
@@ -158,6 +205,51 @@ def test_codex_platform_pre_tool_event_maps_mcp_call_to_gate_policy(tmp_path):
     assert payload["runtime_event"]["runtime"] == "codex"
     assert payload["runtime_event"]["platform_event"] == "codex_pre_tool"
     assert payload["runtime_event"]["tool_name"] == "mcp__aitp__aitp_v5_create_promotion_packet"
+    assert payload["runtime_gate_protocol"]["action"] == "create_promotion_packet"
+
+
+def test_codex_platform_pre_tool_event_passes_promotion_validation_links(tmp_path):
+    from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.hook_install_templates import write_codex_hook_bridge
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ws, claim = _seed_session(tmp_path)
+    evidence, validation_result = _seed_tool_validated_evidence(ws, claim)
+    packet = build_adapter_packet(ws, "s1", runtime="codex")
+    bridge = {
+        "ok": True,
+        **write_codex_hook_bridge(
+            tmp_path / "codex" / "AITP_V5_HOOK_BRIDGE.md",
+            packet["runtime_hook_installation"],
+            packet["runtime_gate_protocols"],
+        ),
+    }
+
+    payload = evaluate_platform_pre_tool_event(
+        ws,
+        bridge,
+        {
+            "runtime": "codex",
+            "hook_name": "pre_tool",
+            "session_id": "s1",
+            "tool_name": "mcp__aitp__aitp_v5_create_promotion_packet",
+            "tool_input": {
+                "topic_id": "fqhe",
+                "claim_id": claim.claim_id,
+                "evidence_refs": [evidence.evidence_id],
+                "validation_result_ids": [validation_result.result_id],
+                "source_kind": "typed_records",
+                "risk_level": "rigorous",
+            },
+        },
+    )
+
+    assert payload["block"] is False
+    assert require_valid_public_surface("pre_tool_policy_decision", payload) == payload
+    assert payload["action"] == "create_promotion_packet"
+    assert payload["evidence_refs"] == [evidence.evidence_id]
+    assert payload["validation_result_ids"] == [validation_result.result_id]
     assert payload["runtime_gate_protocol"]["action"] == "create_promotion_packet"
 
 

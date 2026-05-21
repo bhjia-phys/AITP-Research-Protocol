@@ -154,6 +154,7 @@ def evaluate_context_pre_tool_policy(
             "claim_id": resolved_claim_id,
             "risk_level": risk_level,
             "human_checkpoint_id": human_checkpoint_id,
+            "evidence_refs": _clean_list(evidence_refs),
             "validation_contract_ids": resolved_contract_ids,
             "tool_run_ids": _clean_list(tool_run_ids),
             "validation_result_ids": resolved_result_ids,

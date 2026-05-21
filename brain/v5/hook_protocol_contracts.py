@@ -379,7 +379,8 @@ def validate_pre_tool_policy_decision(
     _require_bool_value(payload.get("summary_inputs_trusted"), False, f"{path}.summary_inputs_trusted", result)
     _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
     _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
-    _require_list(payload.get("validation_contract_ids"), f"{path}.validation_contract_ids", result)
+    for key in ("evidence_refs", "validation_contract_ids", "tool_run_ids", "validation_result_ids"):
+        _require_list(payload.get(key), f"{path}.{key}", result)
     if isinstance(payload.get("validation_contract_ids"), list):
         for index, contract_id in enumerate(payload["validation_contract_ids"]):
             if not isinstance(contract_id, str) or not contract_id.strip():

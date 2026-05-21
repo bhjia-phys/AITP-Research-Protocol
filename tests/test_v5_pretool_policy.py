@@ -752,6 +752,7 @@ def test_mcp_pre_tool_policy_blocks_rigorous_promotion_packet_without_validation
     assert payload["risk_level"] == "rigorous"
     assert payload["mode"] == "block"
     assert payload["block"] is True
+    assert payload["evidence_refs"] == [evidence.evidence_id]
     assert payload["validation_result_ids"] == []
     assert payload["required_actions"] == ["attach_passed_validation_result"]
     assert [reason["policy_id"] for reason in payload["policy_reasons"]] == [
@@ -776,6 +777,7 @@ def test_mcp_pre_tool_policy_accepts_rigorous_promotion_packet_with_validation_r
     )
 
     assert payload["action"] == "create_promotion_packet"
+    assert payload["evidence_refs"] == [evidence.evidence_id]
     assert payload["validation_result_ids"] == [result.result_id]
     assert payload["mode"] == "log"
     assert payload["block"] is False
