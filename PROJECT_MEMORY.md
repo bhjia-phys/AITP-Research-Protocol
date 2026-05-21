@@ -174,6 +174,10 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   Built-in safe executors now include `failure_mode_basis_check`, which checks
   that every named failure mode has explicit review basis; FQHE and LibRPA/GW
   domain packs recommend it through failure-mode review basis recipes.
+  Execution brief evidence coverage includes both required action-budget
+  outputs and additional typed outputs already supported by evidence records,
+  so a later session can see a recorded `failure_mode_review_basis` without
+  trusting summary prose.
   After a high-risk tool run, `record_validation_result` can persist whether
   the run satisfied the bound contract's required evidence outputs; passed
   results cannot omit required outputs or carry observed failure modes.
@@ -196,7 +200,10 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   as orientation-only `known_context.memory_entries`; typed memory records under
   `memory/l2/entries` remain authoritative. Code-method memory brief entries
   include `code_state_ids` derived from linked evidence tool runs so version
-  provenance stays visible without making the brief a truth source. The
+  provenance stays visible without making the brief a truth source. Memory
+  brief entries also include `failure_mode_review_checkpoint_id` and
+  `failure_mode_review_result_id` when those typed links exist on the promoted
+  memory entry. The
   execution-brief contract lives in `brain/v5/brief_contracts.py` and validates
   memory entries as orientation-only payloads with list-shaped refs.
 - For deeper review than the compact execution brief, agents can call

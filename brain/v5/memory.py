@@ -219,6 +219,10 @@ def memory_entry_brief_payload(
     )
     if code_state_ids:
         payload["code_state_ids"] = code_state_ids
+    if entry.failure_mode_review_checkpoint_id:
+        payload["failure_mode_review_checkpoint_id"] = entry.failure_mode_review_checkpoint_id
+    if entry.failure_mode_review_result_id:
+        payload["failure_mode_review_result_id"] = entry.failure_mode_review_result_id
     return payload
 
 

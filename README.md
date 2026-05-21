@@ -133,7 +133,11 @@ and `failure_mode_basis_check`, which verifies that each named failure mode has
 an explicit calculation, validation, literature, or tool basis before review
 results are used for promotion. FQHE and LibRPA/GW domain packs recommend this
 executor through `recipe-fqhe-failure-mode-review-basis` and
-`recipe-librpa-gw-failure-mode-review-basis`. Adapter
+`recipe-librpa-gw-failure-mode-review-basis`. Execution brief evidence coverage
+reports both required action-budget outputs and additional typed outputs already
+supported by evidence records, so later sessions can see that a tool-backed
+`failure_mode_review_basis` exists instead of rediscovering that context from
+prose. Adapter
 `record_validation_result` records then bind a completed `tool_run_id` back to
 the contract's required evidence outputs; a passed result cannot omit required
 outputs or report observed failure modes. High-risk `record_evidence` calls
@@ -159,7 +163,10 @@ orientation-only `known_context.memory_entries`, so agents can see previously
 promoted scoped memory without treating the brief itself as the authority. For
 code-method memory, those brief entries include `code_state_ids` derived from
 the linked evidence's tool runs, so version-sensitive conclusions keep their
-code provenance visible in subsequent sessions. The public execution-brief
+code provenance visible in subsequent sessions. When a promoted memory entry
+used a failure-mode review checkpoint/result, the brief entry also exposes
+`failure_mode_review_checkpoint_id` and `failure_mode_review_result_id` as
+orientation-only pointers to the typed records. The public execution-brief
 contract validates these memory entries as orientation-only payloads with
 list-shaped evidence/code-state references. For review, `aitp-v5 memory audit
 --claim <claim-id>` and `aitp_v5_audit_l2_memory_context` expose the contracted

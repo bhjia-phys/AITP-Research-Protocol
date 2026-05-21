@@ -294,6 +294,12 @@ Implemented:
   refs must resolve to same-topic/claim records, while external/literature
   `basis_refs` remain labels. It keeps `summary_inputs_trusted=false` and
   `can_update_claim_trust=false`.
+- Real LibRPA/GW workflow coverage now verifies the full high-risk path where a
+  benchmark tool run and a `failure_mode_basis_check` tool run each receive a
+  passed validation result, the approved failure-mode review records the basis
+  tool run, high-risk promotion is allowed only with the linked review result,
+  and the next execution brief exposes both `failure_mode_review_basis` evidence
+  coverage and the memory entry's review checkpoint/result ids.
 - `aitp-v5 trust audit --claim <claim-id>` /
   `aitp_v5_audit_claim_trust` now expose the contracted
   `claim_trust_audit` public surface. It derives current claim-confidence

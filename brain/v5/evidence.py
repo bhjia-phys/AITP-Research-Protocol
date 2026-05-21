@@ -104,17 +104,16 @@ def required_output_coverage(
     *,
     required_outputs: list[str],
 ) -> OutputCoverage:
-    """Map evidence records onto the outputs required by an action budget."""
+    """Map evidence records onto required and observed evidence outputs."""
 
     evidence_ids_by_output: dict[str, list[str]] = {output: [] for output in required_outputs}
     for evidence in evidence_records:
         if evidence.status in {"failed", "refutes", "invalid"}:
             continue
         for output in evidence.supports_outputs:
-            if output in evidence_ids_by_output:
-                evidence_ids_by_output[output].append(evidence.evidence_id)
+            evidence_ids_by_output.setdefault(output, []).append(evidence.evidence_id)
 
-    satisfied = [output for output in required_outputs if evidence_ids_by_output[output]]
+    satisfied = [output for output, evidence_ids in evidence_ids_by_output.items() if evidence_ids]
     missing = [output for output in required_outputs if not evidence_ids_by_output[output]]
     return OutputCoverage(
         satisfied_outputs=satisfied,

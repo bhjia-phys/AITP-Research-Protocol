@@ -262,3 +262,198 @@ def test_gw_formula_code_translation_records_code_state_and_benchmark(tmp_path):
             "orientation_only": True,
         }
     ]
+
+
+def test_gw_high_risk_promotion_uses_tool_backed_failure_mode_review_basis(tmp_path):
+    from brain.v5.brief import build_execution_brief
+    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
+    from brain.v5.code import record_code_state
+    from brain.v5.failure_mode_review import (
+        record_failure_mode_review_result,
+        request_failure_mode_review_checkpoint,
+    )
+    from brain.v5.memory import apply_promotion_packet, create_promotion_packet
+    from brain.v5.memory_audit import audit_l2_memory_context
+    from brain.v5.mcp_tools import aitp_v5_evaluate_pre_tool_policy
+    from brain.v5.tool_executors import execute_registered_tool_result
+    from brain.v5.validation import create_validation_contract, record_validation_result
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "librpa-gw", context_id="gw-methods", title="LibRPA GW")
+    claim = create_claim(
+        ws,
+        topic_id="librpa-gw",
+        statement="The self-energy code path reproduces the GW benchmark.",
+        evidence_profile="code_method",
+        confidence_state="hypothesis",
+        active_uncertainty="formula-code translation",
+        strongest_failure_mode="frequency grid mismatch",
+    )
+    code_state = record_code_state(
+        ws,
+        repo_id="librpa",
+        upstream_remote="origin",
+        upstream_branch="master",
+        upstream_commit="abc123",
+        local_branch="topic/self-energy",
+        worktree_path="D:/worktrees/librpa/self-energy",
+        dirty=False,
+        linked_records={"claim_id": claim.claim_id},
+    )
+    benchmark_contract = create_validation_contract(
+        ws,
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        required_checks=["GW benchmark table within tolerance"],
+        failure_modes=["frequency grid mismatch"],
+        required_evidence_outputs=["all_within_tolerance"],
+        tool_recipe_ids=["recipe-librpa-gw-benchmark-table"],
+        executor_ids=["metric_table_check"],
+        validator_role="benchmark_validator",
+    )
+    benchmark = execute_registered_tool_result(
+        ws,
+        executor_id="metric_table_check",
+        recipe_id="recipe-librpa-gw-benchmark-table",
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        inputs={"metrics": [{"name": "gap_ev", "observed": 1.2, "expected": 1.2, "tolerance": 0.01}]},
+        code_state_ids=[code_state.code_state_id],
+        supports_outputs=["evidence_or_provenance", "minimal_check"],
+        evidence_type="code_method",
+    )
+    benchmark_validation = record_validation_result(
+        ws,
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        contract_id=benchmark_contract.contract_id,
+        tool_run_id=benchmark.run.run_id,
+        status="passed",
+        checked_outputs=["all_within_tolerance"],
+        evidence_refs=[benchmark.evidence.evidence_id],
+        summary="GW benchmark table stayed within tolerance.",
+    )
+    basis_contract = create_validation_contract(
+        ws,
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        required_checks=["Each promotion failure mode has concrete review basis"],
+        failure_modes=["frequency grid mismatch"],
+        required_evidence_outputs=["all_failure_modes_covered"],
+        tool_recipe_ids=["recipe-librpa-gw-failure-mode-review-basis"],
+        executor_ids=["failure_mode_basis_check"],
+        validator_role="failure_mode_basis_validator",
+    )
+    basis = execute_registered_tool_result(
+        ws,
+        executor_id="failure_mode_basis_check",
+        recipe_id="recipe-librpa-gw-failure-mode-review-basis",
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        inputs={
+            "failure_modes": ["frequency grid mismatch"],
+            "basis_items": [
+                {
+                    "failure_mode": "frequency grid mismatch",
+                    "basis_ref": benchmark_validation.result_id,
+                    "basis_type": "validation_result",
+                    "question_answered": "The frequency-grid-sensitive benchmark stayed inside tolerance.",
+                }
+            ],
+        },
+        code_state_ids=[code_state.code_state_id],
+        supports_outputs=["failure_mode_review_basis", "minimal_check"],
+        evidence_type="code_method",
+        evidence_summary="Failure-mode basis check covered the recorded GW risk.",
+    )
+    basis_validation = record_validation_result(
+        ws,
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        contract_id=basis_contract.contract_id,
+        tool_run_id=basis.run.run_id,
+        status="passed",
+        checked_outputs=["all_failure_modes_covered"],
+        evidence_refs=[basis.evidence.evidence_id],
+        summary="Failure-mode basis check covered every recorded promotion risk.",
+    )
+    review_checkpoint = request_failure_mode_review_checkpoint(ws, claim_id=claim.claim_id)
+    approved_review = decide_human_checkpoint(
+        ws,
+        checkpoint_id=review_checkpoint.checkpoint_id,
+        decision="approve_failure_mode_review",
+        rationale="The GW frequency-grid risk has a typed tool-backed review basis.",
+        decided_by="human",
+    )
+    review_result = record_failure_mode_review_result(
+        ws,
+        claim_id=claim.claim_id,
+        checkpoint_id=approved_review.checkpoint_id,
+        status="passed",
+        reviewed_failure_modes=["frequency grid mismatch"],
+        evidence_refs=[basis.evidence.evidence_id],
+        validation_result_ids=[basis_validation.result_id],
+        tool_run_ids=[basis.run.run_id],
+        basis_refs=[f"validation:{basis_validation.result_id}"],
+        summary="Tool-backed failure-mode basis review passed for the GW promotion risk.",
+    )
+    policy = aitp_v5_evaluate_pre_tool_policy(
+        str(tmp_path),
+        session_id="s1",
+        action="create_promotion_packet",
+        claim_id=claim.claim_id,
+        evidence_refs=[benchmark.evidence.evidence_id],
+        validation_result_ids=[benchmark_validation.result_id],
+        known_failure_modes=["frequency grid mismatch"],
+        failure_mode_review_checkpoint_id=approved_review.checkpoint_id,
+        failure_mode_review_result_id=review_result.result_id,
+        source_kind="typed_records",
+        risk_level="rigorous",
+    )
+    packet = create_promotion_packet(
+        ws,
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        proposed_memory_kind="code_method_claim",
+        scope="librpa commit abc123 with reviewed frequency-grid risk",
+        evidence_refs=[benchmark.evidence.evidence_id],
+        validation_result_ids=[benchmark_validation.result_id],
+        known_failure_modes=["frequency grid mismatch"],
+        failure_mode_review_checkpoint_id=approved_review.checkpoint_id,
+        failure_mode_review_result_id=review_result.result_id,
+    )
+    promotion_checkpoint = request_human_checkpoint(
+        ws,
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        reason="Promote high-risk GW code-method result after typed review.",
+        requested_by="real_workflow_acceptance",
+        options=["approve", "reject"],
+    )
+    decide_human_checkpoint(
+        ws,
+        checkpoint_id=promotion_checkpoint.checkpoint_id,
+        decision="approve",
+        rationale="Promotion includes validated benchmark evidence and a passed failure-mode review result.",
+        decided_by="human",
+    )
+    memory = apply_promotion_packet(
+        ws,
+        packet_id=packet.packet_id,
+        checkpoint_id=promotion_checkpoint.checkpoint_id,
+    )
+    bind_session(ws, "s1", topic_id="librpa-gw", context_id="gw-methods", active_claim=claim.claim_id)
+
+    brief = build_execution_brief(ws, "s1")
+    audit = audit_l2_memory_context(ws, claim_id=claim.claim_id)
+
+    assert policy["block"] is False
+    assert memory.failure_mode_review_result_id == review_result.result_id
+    assert "failure_mode_review_basis" in brief["evidence_coverage"]["satisfied_outputs"]
+    brief_entry = brief["known_context"]["memory_entries"][0]
+    assert brief_entry["failure_mode_review_checkpoint_id"] == approved_review.checkpoint_id
+    assert brief_entry["failure_mode_review_result_id"] == review_result.result_id
+    audit_entry = audit["memory_entries"][0]
+    assert audit_entry["failure_mode_review_result_ids"] == [review_result.result_id]
+    assert audit_entry["failure_mode_review_results"][0]["tool_run_ids"] == [basis.run.run_id]
