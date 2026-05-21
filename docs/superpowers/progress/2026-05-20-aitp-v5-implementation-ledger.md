@@ -4350,3 +4350,62 @@ Each entry should record:
   - add a failure-mode adequacy or active-risk-dimension audit for promotion and
     validation, or continue real app host smoke coverage for Codex/OpenCode/
     Claude Code.
+
+### 4db4118 - Align Promotion Failure Modes With Claim Risk
+
+- Task: strengthen promotion-packet pre-tool policy from non-empty failure-mode
+  capture to deterministic claim-risk coverage when the active claim already
+  records a `strongest_failure_mode`.
+- Planning source:
+  - previous ledger recommendation after `3231592`;
+  - user requirement that harness gates should induce real physicist-style
+    reflection instead of shallow checklist completion;
+  - v5 invariant that typed claim records are authoritative over derived
+    summaries.
+- Changed files:
+  - `brain/v5/policy.py`
+  - `tests/test_v5_pretool_policy.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - `create_promotion_packet` pre-tool policy still accepts
+    `known_failure_modes`, but now checks them against the claim's
+    `strongest_failure_mode` when that typed field is set;
+  - if the supplied modes miss the recorded claim-local risk, the policy
+    hard-blocks with policy id
+    `promotion_failure_modes_must_cover_claim_failure_mode` and required action
+    `align_failure_mode_with_claim_risk`;
+  - the check is deterministic token coverage from typed record fields, not an
+    LLM adequacy judgment.
+- Tests:
+  - added MCP coverage that blocks a rigorous promotion packet whose supplied
+    failure mode does not cover the claim's `strongest_failure_mode`;
+  - added MCP coverage that accepts the same packet once the supplied failure
+    mode covers the recorded risk;
+  - factored a focused validation/evidence seeding helper for the new cases.
+- Verification:
+  - red target set:
+    `python -m pytest tests\test_v5_pretool_policy.py::test_mcp_pre_tool_policy_blocks_promotion_failure_mode_that_misses_claim_risk tests\test_v5_pretool_policy.py::test_mcp_pre_tool_policy_accepts_promotion_failure_mode_covering_claim_risk -q`:
+    1 failed and 1 passed because mismatched failure modes were still allowed;
+  - target green set:
+    same command: 2 passed;
+  - pre-tool set:
+    `python -m pytest tests\test_v5_pretool_policy.py -q`: 37 passed;
+  - focused related set:
+    `python -m pytest tests\test_v5_pretool_policy.py tests\test_v5_policy.py tests\test_v5_mcp_tools.py tests\test_v5_adapters.py tests\test_v5_bridge_runtime.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py tests\test_v5_hooks.py -q`:
+    177 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; python -m pytest $files -q`:
+    431 passed;
+- Residual risks:
+  - token coverage is intentionally deterministic and reviewable, but it cannot
+    prove physical adequacy across synonyms, conventions, or deeper theoretical
+    equivalences;
+  - a later domain-tool or adversarial reviewer packet should assess whether
+    the named failure mode is physically sufficient for the claim.
+- Next recommended task:
+  - add a read-only failure-mode adequacy/audit surface that reports uncovered
+    claim uncertainty, strongest failure mode, validation-contract failure
+    modes, and promotion-packet known failure modes without mutating trust.
