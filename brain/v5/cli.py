@@ -170,6 +170,8 @@ def _build_parser() -> argparse.ArgumentParser:
     aih = aps.add_parser("install-hooks"); aih.add_argument("runtime"); aih.add_argument("session_id")
     aih.add_argument("--settings", default=""); aih.add_argument("--output", default="")
     aih.add_argument("--plugin", default=""); aih.add_argument("--bridge-output", default="")
+    aia = aps.add_parser("install-audit"); aia.add_argument("runtime")
+    aia.add_argument("--settings", default=""); aia.add_argument("--output", default=""); aia.add_argument("--plugin", default="")
     ape = aps.add_parser("pre-tool-event"); ape.add_argument("runtime"); ape.add_argument("session_id")
     ape.add_argument("--bridge-json", default=""); ape.add_argument("--bridge-path", default="")
     ape.add_argument("--event-json", required=True)

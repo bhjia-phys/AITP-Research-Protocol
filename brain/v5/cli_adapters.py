@@ -18,6 +18,7 @@ from brain.v5.hook_install_templates import (
     write_codex_hook_bridge,
     write_opencode_plugin_bridge,
 )
+from brain.v5.hook_install_audit import audit_hook_installation
 from brain.v5.hook_opencode_install import install_opencode_plugin_file
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
 
@@ -45,6 +46,21 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
         }
     if ws is None:
         raise SystemExit("adapter command requires an initialized v5 workspace")
+
+    if args.adapter_command == "install-audit":
+        return {
+            "ok": True,
+            **require_valid_public_surface(
+                "runtime_hook_installation_audit",
+                audit_hook_installation(
+                    ws,
+                    runtime=args.runtime,
+                    settings_path=args.settings,
+                    plugin_path=args.plugin,
+                    output_path=args.output,
+                ),
+            ),
+        }
 
     packet = require_valid_public_surface(
         "adapter_packet",

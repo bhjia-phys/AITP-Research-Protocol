@@ -29,6 +29,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "promotion_packet_record",
         "record_gate_coverage_audit",
         "reference_location_record",
+        "runtime_hook_installation_audit",
         "sensemaking_report_record",
         "session_summary_bundle",
         "summary_orientation",
@@ -495,6 +496,36 @@ def test_public_surface_validator_accepts_record_gate_coverage_audit():
     audit = record_gate_coverage_audit()
 
     assert require_valid_public_surface("record_gate_coverage_audit", audit) == audit
+
+
+def test_public_surface_validator_accepts_runtime_hook_installation_audit():
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    payload = {
+        "kind": "runtime_hook_installation_audit",
+        "runtime": "codex",
+        "truth_source": "runtime_files",
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+        "status": "installed",
+        "checked_paths": [".codex/hooks.json"],
+        "findings": [
+            {
+                "path": ".codex/hooks.json",
+                "exists": True,
+                "status": "installed",
+                "expected": ["PreToolUse pre-tool runner", "PostToolUse post-tool runner"],
+                "observed": ["PreToolUse pre-tool runner", "PostToolUse post-tool runner"],
+                "messages": [],
+                "runtime_metadata_only": True,
+            }
+        ],
+        "required_actions": [],
+    }
+
+    assert require_valid_public_surface("runtime_hook_installation_audit", payload) == payload
 
 
 def test_runtime_entrypoint_surfaces_close_over_public_surface_contracts():

@@ -82,6 +82,14 @@ def require_valid_record_gate_coverage_audit(payload: dict[str, Any]) -> dict[st
     from brain.v5.record_gate_audit_contracts import require_valid_record_gate_coverage_audit as _require
     return _require(payload)
 
+def validate_runtime_hook_installation_audit(payload: dict[str, Any], *, path: str = "runtime_hook_installation_audit") -> ContractResult:
+    from brain.v5.hook_install_contracts import validate_runtime_hook_installation_audit as _validate
+    return _validate(payload, path=path)
+
+def require_valid_runtime_hook_installation_audit(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.hook_install_contracts import require_valid_runtime_hook_installation_audit as _require
+    return _require(payload)
+
 def validate_codex_hook_bridge(payload: dict[str, Any], *, path: str = "codex_hook_bridge") -> ContractResult:
     from brain.v5.hook_protocol_contracts import validate_codex_hook_bridge as _validate_codex_hook_bridge
     return _validate_codex_hook_bridge(payload, path=path)

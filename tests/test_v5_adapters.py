@@ -1983,6 +1983,106 @@ def test_mcp_opencode_local_plugin_installer_returns_contract_payload(tmp_path):
     assert plugin_path.exists()
 
 
+def test_hook_installation_audit_reports_codex_native_hooks(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.hook_codex_install import install_codex_hooks_json
+    from brain.v5.hook_install_audit import audit_hook_installation
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ws, _ = _seed_session(tmp_path)
+    packet = build_adapter_packet(ws, "s1", runtime="codex")
+    hooks_path = tmp_path / ".codex" / "hooks.json"
+    install_codex_hooks_json(
+        hooks_path,
+        packet["runtime_hook_installation"],
+        packet["runtime_gate_protocols"],
+        workspace_base=str(tmp_path),
+        session_id="s1",
+    )
+
+    payload = audit_hook_installation(ws, runtime="codex", settings_path=str(hooks_path))
+
+    assert payload["kind"] == "runtime_hook_installation_audit"
+    assert payload["runtime"] == "codex"
+    assert payload["status"] == "installed"
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["can_update_claim_trust"] is False
+    assert payload["findings"][0]["path"] == str(hooks_path)
+    assert payload["findings"][0]["status"] == "installed"
+    assert payload["findings"][0]["runtime_metadata_only"] is True
+    assert require_valid_public_surface("runtime_hook_installation_audit", payload) == payload
+
+
+def test_cli_adapter_install_audit_reports_opencode_local_plugin(tmp_path, capsys):
+    _seed_session(tmp_path)
+    plugin_path = tmp_path / ".opencode" / "plugins" / "aitp-v5.js"
+    _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "adapter",
+            "install-hooks",
+            "opencode",
+            "s1",
+            "--plugin",
+            str(plugin_path),
+        ],
+        capsys,
+    )
+
+    payload = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "adapter",
+            "install-audit",
+            "opencode",
+            "--plugin",
+            str(plugin_path),
+        ],
+        capsys,
+    )
+
+    assert payload["ok"] is True
+    assert payload["kind"] == "runtime_hook_installation_audit"
+    assert payload["runtime"] == "opencode"
+    assert payload["status"] == "installed"
+    assert payload["findings"][0]["path"] == str(plugin_path)
+    assert payload["findings"][0]["status"] == "installed"
+    assert payload["required_actions"] == []
+
+
+def test_mcp_hook_installation_audit_reports_claude_settings(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.hook_install_templates import install_claude_code_hook_settings
+    from brain.v5.mcp_tools import aitp_v5_audit_hook_installation
+
+    ws, _ = _seed_session(tmp_path)
+    packet = build_adapter_packet(ws, "s1", runtime="claude-code")
+    settings_path = tmp_path / ".claude" / "settings.local.json"
+    install_claude_code_hook_settings(
+        settings_path,
+        packet["runtime_hook_installation"],
+        workspace_base=str(tmp_path),
+        session_id="s1",
+    )
+
+    payload = aitp_v5_audit_hook_installation(
+        str(tmp_path),
+        runtime="claude-code",
+        settings_path=str(settings_path),
+    )
+
+    assert payload["ok"] is True
+    assert payload["kind"] == "runtime_hook_installation_audit"
+    assert payload["runtime"] == "claude_code"
+    assert payload["status"] == "installed"
+    assert payload["findings"][0]["path"] == str(settings_path)
+    assert payload["findings"][0]["status"] == "installed"
+
+
 def test_cli_adapter_hook_settings_writes_claude_code_settings_from_packet(tmp_path, capsys):
     _seed_session(tmp_path)
 

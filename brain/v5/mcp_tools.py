@@ -10,6 +10,7 @@ from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
 from brain.v5.code import record_code_state
+from brain.v5.hook_install_audit import audit_hook_installation
 from brain.v5.hook_install_templates import (
     install_claude_code_hook_settings,
     write_claude_code_hook_settings,
@@ -263,6 +264,29 @@ def aitp_v5_audit_record_gate_coverage() -> dict:
         "record_gate_coverage_audit": require_valid_public_surface(
             "record_gate_coverage_audit",
             record_gate_coverage_audit(),
+        ),
+    }
+
+
+def aitp_v5_audit_hook_installation(
+    base: str,
+    *,
+    runtime: str,
+    settings_path: str = "",
+    plugin_path: str = "",
+    output_path: str = "",
+) -> dict:
+    return {
+        "ok": True,
+        **require_valid_public_surface(
+            "runtime_hook_installation_audit",
+            audit_hook_installation(
+                _ws(base),
+                runtime=runtime,
+                settings_path=settings_path,
+                plugin_path=plugin_path,
+                output_path=output_path,
+            ),
         ),
     }
 

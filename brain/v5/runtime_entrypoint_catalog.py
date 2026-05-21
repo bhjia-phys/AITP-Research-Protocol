@@ -20,6 +20,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_audit_record_gate_coverage",
         "surface": "record_gate_coverage_audit",
     },
+    "runtime_hook_installation_audit": {
+        "cli": "aitp-v5 adapter install-audit <runtime> <args>",
+        "mcp": "aitp_v5_audit_hook_installation",
+        "surface": "runtime_hook_installation_audit",
+    },
     "adapter_packet": {
         "cli": "aitp-v5 adapter packet <runtime> <session-id>",
         "mcp": "aitp_v5_get_adapter_packet",

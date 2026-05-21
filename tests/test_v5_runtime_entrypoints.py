@@ -83,6 +83,11 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
         "mcp": "aitp_v5_audit_record_gate_coverage",
         "surface": "record_gate_coverage_audit",
     }
+    assert entrypoints["runtime_hook_installation_audit"] == {
+        "cli": "aitp-v5 adapter install-audit <runtime> <args>",
+        "mcp": "aitp_v5_audit_hook_installation",
+        "surface": "runtime_hook_installation_audit",
+    }
 
 
 def test_runtime_entrypoint_validation_reports_bad_mcp_and_cli_targets():

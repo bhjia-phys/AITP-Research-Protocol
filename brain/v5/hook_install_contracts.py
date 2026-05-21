@@ -180,6 +180,47 @@ def require_valid_opencode_hook_installation(payload: dict[str, Any]) -> dict[st
     return payload
 
 
+def validate_runtime_hook_installation_audit(
+    payload: dict[str, Any],
+    *,
+    path: str = "runtime_hook_installation_audit",
+) -> ContractResult:
+    result = ContractResult()
+    _require_mapping(payload, path, result)
+    if result.issues:
+        return result
+    expected_values = {
+        "kind": "runtime_hook_installation_audit",
+        "truth_source": "runtime_files",
+    }
+    for key, value in expected_values.items():
+        if payload.get(key) != value:
+            result.add(f"{path}.{key}", f"must be {value!r}")
+    if payload.get("runtime") not in {"codex", "claude_code", "opencode"}:
+        result.add(f"{path}.runtime", "must be a supported runtime")
+    if payload.get("status") not in {"installed", "partial", "missing", "conflict"}:
+        result.add(f"{path}.status", "must be installed, partial, missing, or conflict")
+    _require_bool_value(payload.get("summary_inputs_trusted"), False, f"{path}.summary_inputs_trusted", result)
+    _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
+    _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
+    _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
+    _require_list(payload.get("checked_paths"), f"{path}.checked_paths", result)
+    _require_list(payload.get("findings"), f"{path}.findings", result)
+    _require_list(payload.get("required_actions"), f"{path}.required_actions", result)
+    findings = payload.get("findings")
+    if isinstance(findings, list):
+        for index, finding in enumerate(findings):
+            _validate_install_audit_finding(finding, f"{path}.findings[{index}]", result)
+    return result
+
+
+def require_valid_runtime_hook_installation_audit(payload: dict[str, Any]) -> dict[str, Any]:
+    result = validate_runtime_hook_installation_audit(payload)
+    if not result.ok:
+        raise ContractError(result)
+    return payload
+
+
 def _validate_pre_tool_hook(payload: Any, path: str, result: ContractResult) -> None:
     _require_mapping(payload, path, result)
     if not isinstance(payload, dict):
@@ -252,3 +293,18 @@ def _validate_codex_native_event_list(payload: Any, path: str, command_token: st
         ):
             return
     result.add(path, f"must include AITP {command_token!r} command hook")
+
+
+def _validate_install_audit_finding(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    _require_nonempty_str(payload, "path", path, result)
+    if not isinstance(payload.get("exists"), bool):
+        result.add(f"{path}.exists", "must be a boolean")
+    if payload.get("status") not in {"installed", "partial", "missing", "conflict"}:
+        result.add(f"{path}.status", "must be installed, partial, missing, or conflict")
+    _require_list(payload.get("expected"), f"{path}.expected", result)
+    _require_list(payload.get("observed"), f"{path}.observed", result)
+    _require_list(payload.get("messages"), f"{path}.messages", result)
+    _require_bool_value(payload.get("runtime_metadata_only"), True, f"{path}.runtime_metadata_only", result)
