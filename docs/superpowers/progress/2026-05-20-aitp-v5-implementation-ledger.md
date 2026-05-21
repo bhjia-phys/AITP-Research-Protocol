@@ -2873,3 +2873,57 @@ Each entry should record:
   - either extend archival-body migration to L1/L4 legacy artifacts, or switch
     to the next planned implementation gap: native Codex/OpenCode lifecycle
     hook wiring.
+
+### b2af15a - Archive Legacy L1 And L4 Bodies
+
+- Task: extend legacy archival-body migration beyond L3 process notes so L1
+  understanding artifacts and L4 reviews also carry their original Markdown
+  bodies inside v5 typed evidence files.
+- Planning source:
+  - goal invariant that old topic content should migrate into v5 typed records,
+    not remain a long-term legacy truth source;
+  - previous ledger residual risk that L1 and L4 evidence still mainly
+    preserved summaries plus provenance refs;
+  - user requirement that reading/framing context and validation reviews remain
+    detailed after migration.
+- Changed files:
+  - `brain/v5/legacy_bridge.py`
+  - `brain/v5/legacy_migration_records.py`
+  - `brain/v5/legacy_record_bodies.py`
+  - `tests/test_v5_legacy_bridge.py`
+- Public/runtime behavior changes:
+  - added a shared legacy evidence Markdown body builder;
+  - L1 source basis, convention snapshot, derivation anchors, contradiction
+    register, question contract, and intake notes now write migrated legacy
+    bodies into v5 evidence Markdown;
+  - L4 review evidence now writes the review body into v5 evidence Markdown;
+  - imported records remain `legacy_seed` and require v5 review before
+    validation or promotion.
+- Tests:
+  - L1 source-basis/convention migration asserts the migrated evidence Markdown
+    contains original source/convention prose;
+  - L4 review migration asserts the migrated evidence Markdown contains the
+    original review prose.
+- Verification:
+  - red tests failed as expected:
+    `python -m pytest tests\test_v5_legacy_bridge.py -q -k "converts_all_candidates_and_reviews or source_basis_and_conventions"`:
+    2 failed because evidence bodies only contained `# Evidence` plus summary;
+  - target green set:
+    same command: 2 passed;
+  - focused related set:
+    `python -m pytest tests\test_v5_legacy_bridge.py tests\test_v5_evidence_tools.py tests\test_v5_public_surfaces.py tests\test_v5_contracts.py tests\test_v5_architecture_boundaries.py -q`:
+    82 passed;
+  - full v5 regression set:
+    `python -m pytest tests/test_v5_*.py -q`: 370 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with only line-ending warnings.
+- Residual risks:
+  - migrated source path placeholders (`legacy_source`) still preserve paths and
+    reference-location metadata, not full PDF/source file content;
+  - very large legacy bodies may need future artifact-ref policy instead of
+    inline archival bodies.
+- Next recommended task:
+  - move from legacy migration completeness back to native Codex/OpenCode
+    lifecycle hook wiring, because the main remaining goal gap is runtime host
+    integration rather than typed-record migration.
