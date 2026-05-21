@@ -51,6 +51,62 @@ def _seed_session(tmp_path):
     return ws, claim, run, evidence
 
 
+def _seed_promoted_memory_session(tmp_path):
+    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
+    from brain.v5.memory import apply_promotion_packet, create_promotion_packet
+    from brain.v5.validation import create_validation_contract, record_validation_result
+
+    ws, claim, run, evidence = _seed_session(tmp_path)
+    contract = create_validation_contract(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        required_checks=["finite-size counting table has typed provenance"],
+        failure_modes=["finite-size artifacts"],
+        required_evidence_outputs=["counting_matches"],
+        tool_recipe_ids=["recipe-ed-counting"],
+        executor_ids=["manual_ed_check"],
+    )
+    validation = record_validation_result(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        contract_id=contract.contract_id,
+        tool_run_id=run.run_id,
+        status="passed",
+        checked_outputs=["counting_matches"],
+        evidence_refs=[evidence.evidence_id],
+        summary="Typed validation passed for the ED counting evidence.",
+    )
+    packet = create_promotion_packet(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        proposed_memory_kind="scoped_claim",
+        scope="finite-size ED counting",
+        evidence_refs=[evidence.evidence_id],
+        validation_result_ids=[validation.result_id],
+        known_failure_modes=["finite-size artifacts"],
+    )
+    checkpoint = request_human_checkpoint(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        reason="Promote validated ED counting memory.",
+        requested_by="summary_test",
+        options=["approve", "reject"],
+    )
+    decide_human_checkpoint(
+        ws,
+        checkpoint_id=checkpoint.checkpoint_id,
+        decision="approve",
+        rationale="Validation result is linked to the evidence.",
+        decided_by="human",
+    )
+    memory = apply_promotion_packet(ws, packet_id=packet.packet_id, checkpoint_id=checkpoint.checkpoint_id)
+    return ws, claim, run, evidence, validation, memory
+
+
 def _invoke(args, capsys):
     from brain.v5.cli import main
 
@@ -90,6 +146,45 @@ def test_write_session_summary_creates_plan_findings_progress_from_kernel_state(
     assert "ED counting was checked" in findings
     assert run.run_id in progress
     assert expected_action in task_plan
+
+
+def test_session_summary_lists_memory_validation_links_without_becoming_truth_source(tmp_path):
+    from brain.v5.markdown import read_md, write_md
+    from brain.v5.memory_audit import audit_l2_memory_context
+    from brain.v5.summaries import read_summary_orientation, write_session_summary
+
+    ws, _, _, _, validation, memory = _seed_promoted_memory_session(tmp_path)
+
+    bundle = write_session_summary(ws, "s1")
+    _, findings = read_md(bundle.files["findings"])
+    _, progress = read_md(bundle.files["progress"])
+
+    assert bundle.source_records["memory_entries"] == [memory.entry_id]
+    assert bundle.source_records["validation_results"] == [validation.result_id]
+    assert memory.entry_id in findings
+    assert validation.result_id in findings
+    assert memory.entry_id in progress
+    assert validation.result_id in progress
+
+    write_md(
+        bundle.files["findings"],
+        {
+            "kind": "derived_summary",
+            "summary_role": "findings",
+            "session_id": "s1",
+            "truth_source": True,
+            "orientation_only": False,
+        },
+        "# Findings\n\nFALSE: `validation-result-fake` supersedes typed memory.\n",
+    )
+
+    orientation = read_summary_orientation(ws, "s1")
+    audit = audit_l2_memory_context(ws, claim_id=memory.source_claim_id)
+
+    assert "validation-result-fake" in orientation["files"]["findings"]["body"]
+    assert orientation["truth_source"] is False
+    assert orientation["can_update_kernel_state"] is False
+    assert audit["memory_entries"][0]["validation_result_ids"] == [validation.result_id]
 
 
 def test_summary_files_do_not_become_truth_source_when_edited(tmp_path):

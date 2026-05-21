@@ -220,6 +220,11 @@ actions. It is read-only and cannot update kernel state or claim trust. Each
 trust apply attempt also writes a contracted `trust_update_record`; reviewers
 can retrieve it with `aitp-v5 trust update-record <update-id>` or
 `aitp_v5_get_trust_update_record` without trusting summaries.
+Session summaries generated through `aitp-v5 summary session <session-id>` /
+`aitp_v5_write_session_summary` list promoted memory entries and their
+`validation_result_ids` in the derived findings/progress files and
+`source_records`, while `summary orientation` still returns
+`truth_source=false` and `can_update_kernel_state=false`.
 Adapter
 packets and generated bridge files put `aitp_v5_evaluate_pre_tool_policy` into
 the code-state/record-evidence/tool-run/execute-tool/tool-recipe/reference-location/

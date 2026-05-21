@@ -93,7 +93,8 @@ Implemented:
 - L2 memory entries preserve promotion validation-result IDs, and execution
   briefs expose those validation links as orientation-only resumption context.
 - Real FQHE and GW workflow acceptance tests.
-- Session summaries as orientation-only derived files.
+- Session summaries as orientation-only derived files, including promoted
+  memory-entry ids and validation-result links in source records/findings/progress.
 - CLI, MCP wrappers, public surface contracts, runtime entrypoints, adapter packets.
 - Legacy bridge with dry-run audit, explicit v5 migration result, and CLI/MCP/runtime surface.
 - Legacy migration converts old L3 candidates into v5 claims/evidence/sense-making reports and old L4 reviews into validation evidence.

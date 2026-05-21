@@ -50,6 +50,7 @@ def write_session_summary(ws: WorkspacePaths, session_id: str) -> SessionSummary
     claim = get_claim(ws, active_claim) if active_claim else None
     evidence_records = list_evidence_for_claim(ws, active_claim) if active_claim else []
     tool_runs = _tool_runs_for_claim(ws, active_claim) if active_claim else []
+    memory_entries = brief.get("known_context", {}).get("memory_entries", [])
     files = {
         "task_plan": summary_dir / "task_plan.md",
         "findings": summary_dir / "findings.md",
@@ -61,6 +62,8 @@ def write_session_summary(ws: WorkspacePaths, session_id: str) -> SessionSummary
         "claims": [active_claim] if active_claim else [],
         "evidence": [record.evidence_id for record in evidence_records],
         "tool_runs": [record.run_id for record in tool_runs],
+        "memory_entries": [entry["entry_id"] for entry in memory_entries],
+        "validation_results": _validation_result_ids_from_memory_entries(memory_entries),
     }
 
     for role, path in files.items():
@@ -79,6 +82,7 @@ def write_session_summary(ws: WorkspacePaths, session_id: str) -> SessionSummary
                 claim_statement=claim.statement if claim else "",
                 evidence_records=evidence_records,
                 tool_runs=tool_runs,
+                memory_entries=memory_entries,
             ),
         )
 
@@ -153,13 +157,14 @@ def _summary_body(
     claim_statement: str,
     evidence_records: list,
     tool_runs: list[ToolRunRecord],
+    memory_entries: list[dict[str, Any]],
 ) -> str:
     if role == "task_plan":
         return _task_plan_body(brief, claim_statement)
     if role == "findings":
-        return _findings_body(brief, claim_statement, evidence_records)
+        return _findings_body(brief, claim_statement, evidence_records, memory_entries)
     if role == "progress":
-        return _progress_body(brief, claim_statement, evidence_records, tool_runs)
+        return _progress_body(brief, claim_statement, evidence_records, tool_runs, memory_entries)
     raise ValueError(f"unknown summary role: {role}")
 
 
@@ -203,7 +208,12 @@ def _task_plan_body(brief: dict[str, Any], claim_statement: str) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _findings_body(brief: dict[str, Any], claim_statement: str, evidence_records: list) -> str:
+def _findings_body(
+    brief: dict[str, Any],
+    claim_statement: str,
+    evidence_records: list,
+    memory_entries: list[dict[str, Any]],
+) -> str:
     focus = brief["current_focus"]
     coverage = brief["evidence_coverage"]
     lines = [
@@ -238,6 +248,8 @@ def _findings_body(brief: dict[str, Any], claim_statement: str, evidence_records
             )
     else:
         lines.append("- No evidence records are linked to this claim.")
+    lines.extend(["", "## L2 Memory Links", ""])
+    _append_memory_entry_lines(lines, memory_entries)
     return "\n".join(lines) + "\n"
 
 
@@ -246,6 +258,7 @@ def _progress_body(
     claim_statement: str,
     evidence_records: list,
     tool_runs: list[ToolRunRecord],
+    memory_entries: list[dict[str, Any]],
 ) -> str:
     session = brief["session"]
     lines = [
@@ -277,7 +290,31 @@ def _progress_body(
             lines.append(f"- `{run.run_id}` via `{run.tool_family}:{run.tool_name}` ({run.evidence_status}); {outputs}")
     else:
         lines.append("- No tool runs are linked to this claim.")
+    lines.extend(["", "## Promoted Memory", ""])
+    _append_memory_entry_lines(lines, memory_entries)
     return "\n".join(lines) + "\n"
+
+
+def _append_memory_entry_lines(lines: list[str], memory_entries: list[dict[str, Any]]) -> None:
+    if not memory_entries:
+        lines.append("- No active L2 memory entries are linked to this claim.")
+        return
+    for entry in memory_entries:
+        validation_ids = entry.get("validation_result_ids") or []
+        lines.append(f"- `{entry['entry_id']}` [{entry['memory_kind']}] scope: {entry['scope']}")
+        lines.append(f"  Evidence refs: {', '.join(entry.get('evidence_refs', [])) or 'none'}")
+        lines.append(f"  Validation results: {', '.join(validation_ids) or 'none'}")
+
+
+def _validation_result_ids_from_memory_entries(memory_entries: list[dict[str, Any]]) -> list[str]:
+    seen = set()
+    result: list[str] = []
+    for entry in memory_entries:
+        for result_id in entry.get("validation_result_ids") or []:
+            if result_id and result_id not in seen:
+                seen.add(result_id)
+                result.append(result_id)
+    return result
 
 
 def _tool_runs_for_claim(ws: WorkspacePaths, claim_id: str) -> list[ToolRunRecord]:
