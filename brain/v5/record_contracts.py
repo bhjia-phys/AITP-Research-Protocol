@@ -212,6 +212,42 @@ def require_valid_human_checkpoint_record(payload: dict[str, Any]) -> dict[str, 
     return _require_valid(validate_human_checkpoint_record(payload), payload)
 
 
+def validate_failure_mode_review_result_record(
+    payload: dict[str, Any], *, path: str = "failure_mode_review_result_record"
+) -> ContractResult:
+    result = _validate_base_record(payload, path, kind="failure_mode_review_result")
+    if result.issues:
+        return result
+    for key in ("result_id", "topic_id", "claim_id", "checkpoint_id", "status", "reviewer_role", "summary"):
+        _require_nonempty_str(payload, key, path, result)
+    if payload.get("status") not in {"passed", "needs_revision", "inconclusive"}:
+        result.add(f"{path}.status", "must be passed, needs_revision, or inconclusive")
+    for key in (
+        "reviewed_failure_modes",
+        "basis_refs",
+        "evidence_refs",
+        "validation_result_ids",
+        "tool_run_ids",
+        "reference_location_ids",
+        "artifact_ids",
+    ):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    if isinstance(payload.get("reviewed_failure_modes"), list) and len(payload["reviewed_failure_modes"]) == 0:
+        result.add(f"{path}.reviewed_failure_modes", "must not be empty")
+    basis_keys = ("basis_refs", "evidence_refs", "validation_result_ids", "tool_run_ids", "reference_location_ids", "artifact_ids")
+    if all(isinstance(payload.get(key), list) and len(payload[key]) == 0 for key in basis_keys):
+        result.add(f"{path}.basis_refs", "review basis must cite at least one typed/literature/tool reference")
+    if payload.get("summary_inputs_trusted") is not False:
+        result.add(f"{path}.summary_inputs_trusted", "must be false")
+    if payload.get("can_update_claim_trust") is not False:
+        result.add(f"{path}.can_update_claim_trust", "must be false")
+    return result
+
+
+def require_valid_failure_mode_review_result_record(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_failure_mode_review_result_record(payload), payload)
+
+
 def validate_promotion_packet_record(payload: dict[str, Any], *, path: str = "promotion_packet_record") -> ContractResult:
     result = _validate_base_record(payload, path, kind="promotion_packet")
     if result.issues:

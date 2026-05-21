@@ -283,6 +283,12 @@ Implemented:
   `--failure-mode-review-checkpoint` / `failure_mode_review_checkpoint_id`;
   promotion packets, resulting L2 memory entries, and `l2_memory_audit` preserve
   that id for provenance review.
+- `aitp-v5 memory failure-mode-review-result --claim <claim-id> --checkpoint
+  <checkpoint-id> ...` / `aitp_v5_record_failure_mode_review_result` now expose
+  the contracted `failure_mode_review_result_record` public surface. It records
+  reviewed failure modes and the actual literature/tool/evidence/validation
+  basis behind an approved failure-mode review checkpoint while keeping
+  `summary_inputs_trusted=false` and `can_update_claim_trust=false`.
 - `aitp-v5 trust audit --claim <claim-id>` /
   `aitp_v5_audit_claim_trust` now expose the contracted
   `claim_trust_audit` public surface. It derives current claim-confidence

@@ -354,6 +354,27 @@ class HumanCheckpointRecord:
 
 
 @dataclass
+class FailureModeReviewResultRecord:
+    result_id: str
+    topic_id: str
+    claim_id: str
+    checkpoint_id: str
+    status: str
+    reviewed_failure_modes: list[str] = field(default_factory=list)
+    basis_refs: list[str] = field(default_factory=list)
+    evidence_refs: list[str] = field(default_factory=list)
+    validation_result_ids: list[str] = field(default_factory=list)
+    tool_run_ids: list[str] = field(default_factory=list)
+    reference_location_ids: list[str] = field(default_factory=list)
+    artifact_ids: list[str] = field(default_factory=list)
+    reviewer_role: str = "adversarial_reviewer"
+    summary: str = ""
+    summary_inputs_trusted: bool = False
+    can_update_claim_trust: bool = False
+    kind: str = "failure_mode_review_result"
+
+
+@dataclass
 class PromotionPacketRecord:
     packet_id: str
     topic_id: str

@@ -175,7 +175,12 @@ the need for physical adequacy review but still does not update claim trust.
 Pass the approved checkpoint as `--failure-mode-review-checkpoint` /
 `failure_mode_review_checkpoint_id` when creating a high-risk promotion packet;
 the id is persisted on both the promotion packet and resulting L2 memory entry,
-and appears in `l2_memory_audit`.
+and appears in `l2_memory_audit`. The actual review basis can be stored with
+`aitp-v5 memory failure-mode-review-result --claim <claim-id> --checkpoint
+<checkpoint-id> ...` or `aitp_v5_record_failure_mode_review_result`; that
+contracted `failure_mode_review_result_record` cites reviewed failure modes plus
+literature/tool/evidence/validation references, keeps
+`summary_inputs_trusted=false`, and cannot update claim trust.
 To review the current claim confidence itself,
 `aitp-v5 trust audit --claim <claim-id>` and `aitp_v5_audit_claim_trust`
 return the contracted `claim_trust_audit` surface: current confidence,

@@ -449,6 +449,124 @@ def test_failure_mode_review_checkpoint_cli_mcp_and_runtime_entrypoint(tmp_path,
     assert validate_runtime_entrypoints() == []
 
 
+def test_failure_mode_review_result_records_typed_review_basis(tmp_path):
+    import pytest
+    from dataclasses import asdict
+
+    from brain.v5.checkpoints import decide_human_checkpoint
+    from brain.v5.failure_mode_review import (
+        record_failure_mode_review_result,
+        request_failure_mode_review_checkpoint,
+    )
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ws, claim, _ = _setup_failure_mode_audit_gap(tmp_path)
+    checkpoint = request_failure_mode_review_checkpoint(ws, claim_id=claim.claim_id)
+    approved = decide_human_checkpoint(
+        ws,
+        checkpoint_id=checkpoint.checkpoint_id,
+        decision="approve_failure_mode_review",
+        rationale="Failure modes were checked against the counting setup.",
+        decided_by="human",
+    )
+
+    result = record_failure_mode_review_result(
+        ws,
+        claim_id=claim.claim_id,
+        checkpoint_id=approved.checkpoint_id,
+        status="passed",
+        reviewed_failure_modes=["frequency grid mismatch", "basis cutoff mismatch"],
+        basis_refs=["literature:fqhe-edge-counting"],
+        evidence_refs=["evidence-counting-note"],
+        validation_result_ids=["validation-grid-check"],
+        reviewer_role="adversarial_reviewer",
+        summary="The review checked whether grid and cutoff mismatches could fake the edge count.",
+    )
+    payload = {"ok": True, **asdict(result)}
+
+    assert require_valid_public_surface("failure_mode_review_result_record", payload) == payload
+    assert result.kind == "failure_mode_review_result"
+    assert result.topic_id == "fqhe"
+    assert result.claim_id == claim.claim_id
+    assert result.checkpoint_id == approved.checkpoint_id
+    assert result.reviewed_failure_modes == ["frequency grid mismatch", "basis cutoff mismatch"]
+    assert result.basis_refs == ["literature:fqhe-edge-counting"]
+    assert result.evidence_refs == ["evidence-counting-note"]
+    assert result.validation_result_ids == ["validation-grid-check"]
+    assert result.summary_inputs_trusted is False
+    assert result.can_update_claim_trust is False
+
+    with pytest.raises(ValueError, match="review basis"):
+        record_failure_mode_review_result(
+            ws,
+            claim_id=claim.claim_id,
+            checkpoint_id=approved.checkpoint_id,
+            status="passed",
+            reviewed_failure_modes=["frequency grid mismatch"],
+            summary="A basis-free review result must not be accepted.",
+        )
+
+
+def test_failure_mode_review_result_cli_mcp_and_runtime_entrypoint(tmp_path, capsys):
+    from brain.v5.checkpoints import decide_human_checkpoint
+    from brain.v5.cli import main
+    from brain.v5.failure_mode_review import request_failure_mode_review_checkpoint
+    from brain.v5.mcp_tools import aitp_v5_record_failure_mode_review_result
+    from brain.v5.runtime_entrypoints import runtime_entrypoints, validate_runtime_entrypoints
+
+    ws, claim, _ = _setup_failure_mode_audit_gap(tmp_path)
+    checkpoint = request_failure_mode_review_checkpoint(ws, claim_id=claim.claim_id)
+    approved = decide_human_checkpoint(
+        ws,
+        checkpoint_id=checkpoint.checkpoint_id,
+        decision="approve_failure_mode_review",
+        rationale="Failure modes were reviewed.",
+        decided_by="human",
+    )
+
+    assert main(
+        [
+            "--base",
+            str(tmp_path),
+            "memory",
+            "failure-mode-review-result",
+            "--claim",
+            claim.claim_id,
+            "--checkpoint",
+            approved.checkpoint_id,
+            "--status",
+            "passed",
+            "--reviewed-mode",
+            "frequency grid mismatch",
+            "--basis-ref",
+            "literature:fqhe-edge-counting",
+            "--summary",
+            "Physical adequacy review linked to literature basis.",
+        ]
+    ) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_record_failure_mode_review_result(
+        str(tmp_path),
+        claim_id=claim.claim_id,
+        checkpoint_id=approved.checkpoint_id,
+        status="passed",
+        reviewed_failure_modes=["frequency grid mismatch"],
+        basis_refs=["literature:fqhe-edge-counting"],
+        summary="Physical adequacy review linked to literature basis.",
+    )
+
+    assert cli_payload["kind"] == "failure_mode_review_result"
+    assert cli_payload["checkpoint_id"] == approved.checkpoint_id
+    assert cli_payload["can_update_claim_trust"] is False
+    assert mcp_payload == cli_payload
+    assert runtime_entrypoints()["record_failure_mode_review_result"] == {
+        "cli": "aitp-v5 memory failure-mode-review-result <args>",
+        "mcp": "aitp_v5_record_failure_mode_review_result",
+        "surface": "failure_mode_review_result_record",
+    }
+    assert validate_runtime_entrypoints() == []
+
+
 def test_l2_memory_audit_public_surface_contract_rejects_summary_truth_source():
     import pytest
 

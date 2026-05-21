@@ -222,6 +222,14 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `--failure-mode-review-checkpoint` / `failure_mode_review_checkpoint_id`;
   promotion packets, resulting L2 memory entries, and `l2_memory_audit` all
   preserve that id for provenance review.
+- Agents can call `aitp-v5 memory failure-mode-review-result --claim
+  <claim-id> --checkpoint <checkpoint-id> ...` or
+  `aitp_v5_record_failure_mode_review_result` after an approved failure-mode
+  review checkpoint. The resulting contracted
+  `failure_mode_review_result_record` persists the actual review basis:
+  reviewed failure modes plus literature/tool/evidence/validation/reference
+  citations. It keeps `summary_inputs_trusted=false` and
+  `can_update_claim_trust=false`.
 - To audit a claim confidence state directly, agents can call
   `aitp-v5 trust audit --claim <claim-id>` or
   `aitp_v5_audit_claim_trust`. This returns the contracted
