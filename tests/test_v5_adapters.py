@@ -1883,6 +1883,106 @@ def test_mcp_opencode_hook_installer_returns_contract_payload(tmp_path):
     assert fixture_path.exists()
 
 
+def test_opencode_local_plugin_installer_writes_native_plugin(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.hook_opencode_install import install_opencode_plugin_file
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ws, _ = _seed_session(tmp_path)
+    packet = build_adapter_packet(ws, "s1", runtime="opencode")
+    plugin_path = tmp_path / ".opencode" / "plugins" / "aitp-v5.js"
+
+    payload = install_opencode_plugin_file(
+        plugin_path,
+        packet["runtime_hook_installation"],
+        packet["runtime_gate_protocols"],
+        workspace_base=str(tmp_path),
+        session_id="s1",
+    )
+    source = plugin_path.read_text(encoding="utf-8")
+
+    assert payload["kind"] == "opencode_hook_installation"
+    assert payload["runtime"] == "opencode"
+    assert payload["native_installer_available"] is True
+    assert payload["plugin_path"] == str(plugin_path)
+    assert payload["created"] is True
+    assert payload["changed"] is True
+    assert payload["bridge_payload_path"] == str(tmp_path / ".opencode" / "AITP_V5_PLUGIN_BRIDGE.json")
+    assert payload["plugin"]["lifecycle_events"] == ["tool.execute.before", "tool.execute.after"]
+    assert "export const AITPV5Plugin" in source
+    assert '"tool.execute.before"' in source
+    assert '"tool.execute.after"' in source
+    assert "hooks/aitp_v5_adapter_event_runner.py" in source
+    assert "--bridge-path" in source
+    assert "AITP_V5_PLUGIN_BRIDGE.json" in source
+    assert "throw new Error" in source
+    assert require_valid_public_surface("opencode_hook_installation", {"ok": True, **payload}) == {
+        "ok": True,
+        **payload,
+    }
+
+    second_payload = install_opencode_plugin_file(
+        plugin_path,
+        packet["runtime_hook_installation"],
+        packet["runtime_gate_protocols"],
+        workspace_base=str(tmp_path),
+        session_id="s1",
+    )
+
+    assert second_payload["created"] is False
+    assert second_payload["changed"] is False
+    assert plugin_path.read_text(encoding="utf-8") == source
+
+
+def test_cli_adapter_install_hooks_writes_opencode_local_plugin(tmp_path, capsys):
+    _seed_session(tmp_path)
+
+    plugin_path = tmp_path / ".opencode" / "plugins" / "aitp-v5.js"
+    payload = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "adapter",
+            "install-hooks",
+            "opencode",
+            "s1",
+            "--plugin",
+            str(plugin_path),
+        ],
+        capsys,
+    )
+    source = plugin_path.read_text(encoding="utf-8")
+
+    assert payload["ok"] is True
+    assert payload["kind"] == "opencode_hook_installation"
+    assert payload["native_installer_available"] is True
+    assert payload["plugin_path"] == str(plugin_path)
+    assert payload["plugin"]["pre_tool"]["argv"][6] == "opencode"
+    assert payload["plugin"]["post_tool"]["argv"][6] == "opencode"
+    assert '"tool.execute.before"' in source
+    assert '"tool.execute.after"' in source
+
+
+def test_mcp_opencode_local_plugin_installer_returns_contract_payload(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_install_opencode_hook_fixture
+
+    _seed_session(tmp_path)
+    plugin_path = tmp_path / ".opencode" / "plugins" / "aitp-v5.js"
+
+    payload = aitp_v5_install_opencode_hook_fixture(
+        str(tmp_path),
+        session_id="s1",
+        output_path="",
+        plugin_path=str(plugin_path),
+    )
+
+    assert payload["ok"] is True
+    assert payload["kind"] == "opencode_hook_installation"
+    assert payload["native_installer_available"] is True
+    assert payload["plugin_path"] == str(plugin_path)
+    assert plugin_path.exists()
+
+
 def test_cli_adapter_hook_settings_writes_claude_code_settings_from_packet(tmp_path, capsys):
     _seed_session(tmp_path)
 

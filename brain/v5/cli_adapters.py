@@ -18,6 +18,7 @@ from brain.v5.hook_install_templates import (
     write_codex_hook_bridge,
     write_opencode_plugin_bridge,
 )
+from brain.v5.hook_opencode_install import install_opencode_plugin_file
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
 
 
@@ -101,8 +102,21 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
             }
             return require_valid_public_surface("codex_hook_installation", installed)
         if packet["runtime"] == "opencode":
+            if args.plugin:
+                installed = {
+                    "ok": True,
+                    **install_opencode_plugin_file(
+                        args.plugin,
+                        packet["runtime_hook_installation"],
+                        packet["runtime_gate_protocols"],
+                        workspace_base=str(ws.base),
+                        session_id=args.session_id,
+                        bridge_path=args.bridge_output or None,
+                    ),
+                }
+                return require_valid_public_surface("opencode_hook_installation", installed)
             if not args.output:
-                raise SystemExit("adapter install-hooks opencode requires --output")
+                raise SystemExit("adapter install-hooks opencode requires --output or --plugin")
             installed = {
                 "ok": True,
                 **install_opencode_hook_fixture(

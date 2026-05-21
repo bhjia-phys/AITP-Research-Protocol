@@ -117,7 +117,8 @@ def validate_opencode_hook_installation(
     _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
     _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
     _require_bool_value(payload.get("fixture_installer_available"), True, f"{path}.fixture_installer_available", result)
-    _require_bool_value(payload.get("native_installer_available"), False, f"{path}.native_installer_available", result)
+    if not isinstance(payload.get("native_installer_available"), bool):
+        result.add(f"{path}.native_installer_available", "must be a boolean")
     for key in ("path", "bridge_path", "bridge_payload_path"):
         _require_nonempty_str(payload, key, path, result)
 
@@ -129,7 +130,9 @@ def validate_opencode_hook_installation(
         _require_mapping(bridge, f"{path}.bridge", result)
 
     fixture = payload.get("fixture")
-    _require_mapping(fixture, f"{path}.fixture", result)
+    plugin = payload.get("plugin")
+    if fixture is None and plugin is None:
+        result.add(path, "must include either fixture or native plugin payload")
     if isinstance(fixture, dict):
         if fixture.get("kind") != "opencode_hook_installation_fixture":
             result.add(f"{path}.fixture.kind", "must be 'opencode_hook_installation_fixture'")
@@ -144,6 +147,29 @@ def validate_opencode_hook_installation(
         if isinstance(hooks, dict):
             _validate_pre_tool_hook(hooks.get("pre_tool"), f"{path}.fixture.plugin_hooks.pre_tool", result)
             _validate_post_tool_hook(hooks.get("post_tool"), f"{path}.fixture.plugin_hooks.post_tool", result)
+    elif fixture is not None:
+        _require_mapping(fixture, f"{path}.fixture", result)
+    if isinstance(plugin, dict):
+        if plugin.get("kind") != "opencode_local_plugin":
+            result.add(f"{path}.plugin.kind", "must be 'opencode_local_plugin'")
+        _require_bool_value(
+            plugin.get("summary_inputs_trusted"),
+            False,
+            f"{path}.plugin.summary_inputs_trusted",
+            result,
+        )
+        lifecycle_events = plugin.get("lifecycle_events")
+        _require_list(lifecycle_events, f"{path}.plugin.lifecycle_events", result)
+        if isinstance(lifecycle_events, list) and lifecycle_events != ["tool.execute.before", "tool.execute.after"]:
+            result.add(f"{path}.plugin.lifecycle_events", "must be ['tool.execute.before', 'tool.execute.after']")
+        _validate_pre_tool_hook(plugin.get("pre_tool"), f"{path}.plugin.pre_tool", result)
+        _validate_post_tool_hook(plugin.get("post_tool"), f"{path}.plugin.post_tool", result)
+        for key in ("created", "changed"):
+            if not isinstance(payload.get(key), bool):
+                result.add(f"{path}.{key}", "must be a boolean")
+        _require_nonempty_str(payload, "plugin_path", path, result)
+    elif plugin is not None:
+        _require_mapping(plugin, f"{path}.plugin", result)
     return result
 
 
