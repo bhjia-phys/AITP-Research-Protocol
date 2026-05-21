@@ -4541,3 +4541,72 @@ Each entry should record:
   - connect this review packet to a typed human/adversarial checkpoint or a
     domain-tool-backed review result so promotion can require explicit review
     completion while keeping summaries non-authoritative.
+
+### 47eee91 - Request Failure-Mode Review Checkpoints
+
+- Task: connect failure-mode review packets to durable typed human checkpoint
+  records so physical adequacy review can be tracked before promotion.
+- Planning source:
+  - previous ledger recommendation after `8746acc`;
+  - v5 invariant that durable review state must be a typed kernel record;
+  - user requirement that physics review should be meaningful without becoming
+    an uncontrolled automatic trust update.
+- Changed files:
+  - `brain/v5/failure_mode_review.py`
+  - `brain/v5/cli_memory.py`
+  - `brain/v5/mcp_memory.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/runtime_entrypoint_catalog.py`
+  - `brain/v5/adapter_runtime.py`
+  - `tests/test_v5_memory_audit.py`
+  - `tests/test_v5_adapters.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - new kernel helper `request_failure_mode_review_checkpoint`;
+  - new CLI command
+    `aitp-v5 memory request-failure-mode-review --claim <claim-id>`;
+  - new MCP wrapper `aitp_v5_request_failure_mode_review_checkpoint`;
+  - new runtime entrypoint catalog item
+    `request_failure_mode_review_checkpoint`;
+  - helper writes a normal `human_checkpoint_record` with options
+    `approve_failure_mode_review` and `revise_failure_modes`;
+  - adapter pre-tool event mapping treats the wrapper as
+    `request_human_checkpoint`, so summary/task-plan sourced calls inherit the
+    same blocking policy as ordinary checkpoint requests.
+- Tests:
+  - added kernel/public-surface coverage that the helper creates an open typed
+    human checkpoint whose reason includes failure modes requiring review;
+  - added CLI/MCP/runtime-entrypoint coverage;
+  - added adapter pre-tool coverage showing the new MCP wrapper maps to
+    `request_human_checkpoint` and blocks task-plan sourced attempts.
+- Verification:
+  - red target set:
+    `python -m pytest tests\test_v5_memory_audit.py::test_failure_mode_review_checkpoint_requests_typed_human_review tests\test_v5_memory_audit.py::test_failure_mode_review_checkpoint_cli_mcp_and_runtime_entrypoint -q`:
+    2 failed because the kernel helper and MCP wrapper did not exist;
+  - adapter red target:
+    `python -m pytest tests\test_v5_adapters.py::test_mcp_adapter_pre_tool_event_maps_failure_mode_review_checkpoint_to_human_checkpoint -q`:
+    1 failed because the adapter normalizer could not infer an AITP action from
+    `aitp_v5_request_failure_mode_review_checkpoint`;
+  - target green set:
+    `python -m pytest tests\test_v5_memory_audit.py::test_failure_mode_review_checkpoint_requests_typed_human_review tests\test_v5_memory_audit.py::test_failure_mode_review_checkpoint_cli_mcp_and_runtime_entrypoint tests\test_v5_adapters.py::test_mcp_adapter_pre_tool_event_maps_failure_mode_review_checkpoint_to_human_checkpoint -q`:
+    3 passed;
+  - focused related set:
+    `python -m pytest tests\test_v5_memory_audit.py tests\test_v5_adapters.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py tests\test_v5_mcp_tools.py tests\test_v5_architecture_boundaries.py -q`:
+    117 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; python -m pytest $files -q`:
+    438 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with line-ending warnings only.
+- Residual risks:
+  - this creates durable review state, but it does not yet require a decided
+    review checkpoint before promotion packet creation or L2 application;
+  - actual physical adequacy can still require domain tools, literature, or
+    adversarial review beyond the generated question packet.
+- Next recommended task:
+  - add policy/promotion awareness of failure-mode review checkpoints so high
+    risk promotion can require an approved review checkpoint before L2 memory
+    promotion, while preserving explicit human decision semantics.
