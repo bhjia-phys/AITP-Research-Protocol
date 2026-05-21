@@ -16,6 +16,10 @@ from brain.v5.legacy_migration_records import (
     migrate_legacy_runtime_log,
     migrate_legacy_source_reference_locations,
 )
+from brain.v5.legacy_l3_process_records import (
+    legacy_l3_process_audit_candidates,
+    migrate_legacy_l3_process_notes,
+)
 from brain.v5.markdown import read_md
 from brain.v5.paths import WorkspacePaths
 from brain.v5.sensemaking import record_sensemaking_report
@@ -208,6 +212,15 @@ def migrate_legacy_topic_to_v5(
     evidence_ids.extend(l1_evidence_ids)
     sensemaking_report_ids.extend(l1_report_ids)
 
+    l3_evidence_ids, l3_report_ids = migrate_legacy_l3_process_notes(
+        ws,
+        root,
+        topic_id=summary.topic_slug,
+        claim_id=active_claim.claim_id,
+    )
+    evidence_ids.extend(l3_evidence_ids)
+    sensemaking_report_ids.extend(l3_report_ids)
+
     for review in _legacy_review_records(root):
         review_evidence = record_evidence(
             ws,
@@ -317,6 +330,8 @@ def audit_legacy_topic_migration(topic_path: str | Path) -> dict:
             mapped_paths[rel] = _PATH_MAP[rel]
 
     for _path, display_path, label in legacy_l2_migration_candidates(root):
+        mapped_paths[display_path] = label
+    for display_path, label in legacy_l3_process_audit_candidates(root):
         mapped_paths[display_path] = label
 
     can_write = len(missing_expected_paths) == 0

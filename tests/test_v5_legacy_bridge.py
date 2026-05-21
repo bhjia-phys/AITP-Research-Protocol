@@ -606,3 +606,74 @@ def test_legacy_migration_preserves_l2_entries_as_legacy_seed_memory(tmp_path):
     assert all(memory.evidence_refs for memory in memories)
     assert any("chiral CFT sector" in memory.statement for memory in memories)
     assert any("edge-counting-rule --[uses]--> edge-cft" in memory.statement for memory in memories)
+
+
+def test_legacy_migration_preserves_l3_process_notes_as_typed_records(tmp_path):
+    from brain.v5.evidence import list_evidence_for_claim
+    from brain.v5.legacy_bridge import audit_legacy_topic_migration, migrate_legacy_topic_to_v5
+    from brain.v5.models import SensemakingReportRecord
+    from brain.v5.store import list_records
+    from brain.v5.workspace import init_workspace
+
+    legacy = _write_legacy_topic(tmp_path / "legacy")
+    derive_dir = legacy / "L3" / "derive"
+    gap_dir = legacy / "L3" / "gap-audit"
+    diagnose_dir = legacy / "L3" / "diagnose"
+    derive_dir.mkdir(parents=True)
+    gap_dir.mkdir(parents=True)
+    diagnose_dir.mkdir(parents=True)
+    derivation = derive_dir / "active_derivation.md"
+    gap_audit = gap_dir / "active_gaps.md"
+    failed_route = diagnose_dir / "failed-route.md"
+    derivation.write_text(
+        "---\n"
+        "summary: Kac-Moody edge counting was traced through the finite-size table.\n"
+        "---\n"
+        "# Active Derivation\n\nThe main route reconstructs the counting character step by step.\n",
+        encoding="utf-8",
+    )
+    gap_audit.write_text(
+        "---\n"
+        "summary: The neutral-sector assumption is still missing from the source trace.\n"
+        "---\n"
+        "# Active Gaps\n\nMissing neutral-sector assumption before promoting the claim.\n",
+        encoding="utf-8",
+    )
+    failed_route.write_text(
+        "---\n"
+        "summary: A wrong angular momentum shift explains the failed comparison route.\n"
+        "---\n"
+        "# Failed Route\n\nThis failed attempt should remain visible after migration.\n",
+        encoding="utf-8",
+    )
+
+    audit = audit_legacy_topic_migration(legacy)
+    assert audit["mapped_paths"]["L3/derive/active_derivation.md"] == "l3/derive process note candidate"
+    assert audit["mapped_paths"]["L3/gap-audit/active_gaps.md"] == "l3/gap-audit process note candidate"
+    assert audit["mapped_paths"]["L3/diagnose/failed-route.md"] == "l3/diagnose process note candidate"
+
+    ws = init_workspace(tmp_path / "v5")
+    result = migrate_legacy_topic_to_v5(
+        ws,
+        legacy,
+        context_id="legacy-context",
+        session_id="s1",
+    )
+
+    evidence = list_evidence_for_claim(ws, result["active_claim_id"])
+    evidence_types = {item.evidence_type for item in evidence}
+    assert {
+        "legacy_l3_derive_process_note",
+        "legacy_l3_gap_audit_process_note",
+        "legacy_l3_diagnose_process_note",
+    } <= evidence_types
+    assert any(derivation.as_posix() in ref for item in evidence for ref in item.source_refs)
+    assert any(gap_audit.as_posix() in ref for item in evidence for ref in item.source_refs)
+    assert any(failed_route.as_posix() in ref for item in evidence for ref in item.source_refs)
+
+    reports = list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord)
+    assert {report.report_id for report in reports} >= set(result["written_records"]["sensemaking_reports"])
+    assert any("Kac-Moody edge counting" in report.summary for report in reports)
+    assert any("neutral-sector assumption" in report.summary for report in reports)
+    assert any("wrong angular momentum shift" in report.summary for report in reports)
+    assert any("review_legacy_l3_process_note" in report.next_actions for report in reports)
