@@ -129,11 +129,16 @@ for the active claim. `execute_tool` requires that contract to bind the current
 so high-risk numerical or formula-code work has an explicit check plan for the
 actual tool path before it can affect trust-relevant state. Built-in safe
 executors include scalar/table tolerance checks, formal checklist consistency,
-and `failure_mode_basis_check`, which verifies that each named failure mode has
-an explicit calculation, validation, literature, or tool basis before review
-results are used for promotion. FQHE and LibRPA/GW domain packs recommend this
-executor through `recipe-fqhe-failure-mode-review-basis` and
-`recipe-librpa-gw-failure-mode-review-basis`. Execution brief evidence coverage
+`formula_code_invariant_check`, and `failure_mode_basis_check`.
+`formula_code_invariant_check` checks explicit formula references, code
+references, expected relations, observed relations, and matched/failed/missing
+status for formula-code translation work such as LibRPA/GW self-energy paths.
+`failure_mode_basis_check` verifies that each named failure mode has an
+explicit calculation, validation, literature, or tool basis before review
+results are used for promotion. FQHE and LibRPA/GW domain packs recommend
+failure-mode basis recipes through `recipe-fqhe-failure-mode-review-basis` and
+`recipe-librpa-gw-failure-mode-review-basis`; the LibRPA/GW pack also
+recommends `recipe-librpa-gw-formula-code-invariant`. Execution brief evidence coverage
 reports both required action-budget outputs and additional typed outputs already
 supported by evidence records, so later sessions can see that a tool-backed
 `failure_mode_review_basis` exists instead of rediscovering that context from

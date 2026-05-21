@@ -120,6 +120,14 @@ def builtin_domain_packs() -> dict[str, DomainPackRecord]:
                     "required_context_refs": ["code_state_ids"],
                 },
                 {
+                    "executor_id": "formula_code_invariant_check",
+                    "recipe_id": "recipe-librpa-gw-formula-code-invariant",
+                    "evidence_type": "code_method",
+                    "supports_outputs": ["formula_code_invariant", "minimal_check"],
+                    "use_when": "Check that formula references, code paths, and expected GW invariants are explicitly matched.",
+                    "required_context_refs": ["code_state_ids", "formula_refs"],
+                },
+                {
                     "executor_id": "failure_mode_basis_check",
                     "recipe_id": "recipe-librpa-gw-failure-mode-review-basis",
                     "evidence_type": "code_method",

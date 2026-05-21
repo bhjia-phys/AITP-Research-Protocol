@@ -342,11 +342,14 @@ def test_tool_executor_catalog_exposes_input_contracts():
     assert set(executors) == {
         "checklist_consistency_check",
         "failure_mode_basis_check",
+        "formula_code_invariant_check",
         "metric_table_check",
         "scalar_tolerance_check",
     }
     assert executors["checklist_consistency_check"]["input_schema"]["required"] == ["checks"]
     assert executors["failure_mode_basis_check"]["input_schema"]["required"] == ["failure_modes", "basis_items"]
+    assert executors["formula_code_invariant_check"]["input_schema"]["required"] == ["invariants"]
+    assert "code_method" in executors["formula_code_invariant_check"]["evidence_profiles"]
     assert "code_method" in executors["failure_mode_basis_check"]["evidence_profiles"]
     assert "formal_theory" in executors["checklist_consistency_check"]["evidence_profiles"]
     assert executors["scalar_tolerance_check"]["input_schema"]["required"] == ["observed", "expected", "tolerance"]
@@ -368,6 +371,7 @@ def test_cli_tool_executors_returns_catalog(tmp_path, capsys):
     assert {executor["executor_id"] for executor in payload["executors"]} == {
         "checklist_consistency_check",
         "failure_mode_basis_check",
+        "formula_code_invariant_check",
         "metric_table_check",
         "scalar_tolerance_check",
     }
@@ -427,3 +431,59 @@ def test_failure_mode_basis_executor_checks_each_mode_has_review_basis(tmp_path)
     assert result.run.outputs["uncovered_failure_modes"] == ["basis cutoff mismatch"]
     assert result.evidence is not None
     assert result.evidence.supports_outputs == ["failure_mode_review_basis"]
+
+
+def test_formula_code_invariant_executor_checks_librpa_translation_items(tmp_path):
+    from brain.v5.tool_executors import execute_registered_tool_result
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "librpa-gw", context_id="gw-methods", title="LibRPA GW")
+    claim = create_claim(
+        ws,
+        topic_id="librpa-gw",
+        statement="The self-energy code path preserves the GW formula invariants.",
+        evidence_profile="code_method",
+        confidence_state="hypothesis",
+        active_uncertainty="formula-code translation",
+        strongest_failure_mode="frequency grid mismatch",
+    )
+
+    result = execute_registered_tool_result(
+        ws,
+        executor_id="formula_code_invariant_check",
+        recipe_id="recipe-librpa-gw-formula-code-invariant",
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        inputs={
+            "invariants": [
+                {
+                    "name": "frequency-grid normalization",
+                    "formula_ref": "eq:sigma-correlation-grid",
+                    "code_ref": "src/gw/self_energy.cpp:214",
+                    "expected_relation": "same quadrature weights enter formula and code",
+                    "observed_relation": "weights are read from the same grid object",
+                    "status": "matched",
+                },
+                {
+                    "name": "basis cutoff propagation",
+                    "formula_ref": "eq:polarizability-basis-cutoff",
+                    "code_ref": "src/gw/basis.cpp:88",
+                    "expected_relation": "cutoff controls both polarizability and self-energy basis",
+                    "observed_relation": "",
+                    "status": "missing",
+                },
+            ]
+        },
+        supports_outputs=["formula_code_invariant", "minimal_check"],
+        evidence_type="code_method",
+        evidence_summary="Formula-code invariant scan found one missing LibRPA GW translation item.",
+    )
+
+    assert result.run.evidence_status == "refutes"
+    assert result.run.outputs["all_invariants_checked"] is False
+    assert result.run.outputs["matched_invariants"] == ["frequency-grid normalization"]
+    assert result.run.outputs["unchecked_invariants"] == ["basis cutoff propagation"]
+    assert result.run.outputs["failed_invariants"] == []
+    assert result.evidence is not None
+    assert result.evidence.supports_outputs == ["formula_code_invariant", "minimal_check"]

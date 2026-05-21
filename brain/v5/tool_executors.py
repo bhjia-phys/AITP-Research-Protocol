@@ -8,6 +8,14 @@ from typing import Any, Callable
 from brain.v5.evidence import record_evidence
 from brain.v5.models import EvidenceRecord, ToolRunRecord
 from brain.v5.paths import WorkspacePaths
+from brain.v5.tool_executor_kernels import (
+    infer_evidence_status,
+    run_checklist_consistency_check,
+    run_failure_mode_basis_check,
+    run_formula_code_invariant_check,
+    run_metric_table_check,
+    run_scalar_tolerance_check,
+)
 from brain.v5.tools import record_tool_run
 
 
@@ -61,7 +69,7 @@ def builtin_tool_executors() -> dict[str, ToolExecutorSpec]:
                     "within_tolerance": {"type": "boolean"},
                 },
             },
-            run=_run_scalar_tolerance_check,
+            run=run_scalar_tolerance_check,
         ),
         ToolExecutorSpec(
             executor_id="metric_table_check",
@@ -100,7 +108,49 @@ def builtin_tool_executors() -> dict[str, ToolExecutorSpec]:
                     "metrics": {"type": "array"},
                 },
             },
-            run=_run_metric_table_check,
+            run=run_metric_table_check,
+        ),
+        ToolExecutorSpec(
+            executor_id="formula_code_invariant_check",
+            tool_family="sanity_check",
+            tool_name="formula_code_invariant_check",
+            execution_mode="safe_builtin",
+            version="1",
+            purpose="Check that formula references, code references, and expected formula-code invariants are explicitly matched.",
+            evidence_profiles=("code_method", "mixed"),
+            input_schema={
+                "type": "object",
+                "required": ["invariants"],
+                "properties": {
+                    "invariants": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": ["name", "formula_ref", "code_ref", "expected_relation", "status"],
+                            "properties": {
+                                "name": {"type": "string"},
+                                "formula_ref": {"type": "string"},
+                                "code_ref": {"type": "string"},
+                                "expected_relation": {"type": "string"},
+                                "observed_relation": {"type": "string"},
+                                "status": {"type": "string"},
+                            },
+                        },
+                    },
+                },
+            },
+            output_schema={
+                "type": "object",
+                "required": ["all_invariants_checked", "matched_invariants", "unchecked_invariants", "failed_invariants"],
+                "properties": {
+                    "all_invariants_checked": {"type": "boolean"},
+                    "matched_invariants": {"type": "array"},
+                    "unchecked_invariants": {"type": "array"},
+                    "failed_invariants": {"type": "array"},
+                    "invariants": {"type": "array"},
+                },
+            },
+            run=run_formula_code_invariant_check,
         ),
         ToolExecutorSpec(
             executor_id="checklist_consistency_check",
@@ -138,7 +188,7 @@ def builtin_tool_executors() -> dict[str, ToolExecutorSpec]:
                     "checks": {"type": "array"},
                 },
             },
-            run=_run_checklist_consistency_check,
+            run=run_checklist_consistency_check,
         ),
         ToolExecutorSpec(
             executor_id="failure_mode_basis_check",
@@ -178,7 +228,7 @@ def builtin_tool_executors() -> dict[str, ToolExecutorSpec]:
                     "basis_items": {"type": "array"},
                 },
             },
-            run=_run_failure_mode_basis_check,
+            run=run_failure_mode_basis_check,
         ),
     ]
     return {spec.executor_id: spec for spec in specs}
@@ -266,7 +316,7 @@ def execute_registered_tool_result(
 
     spec = _resolve_executor(executor_id)
     outputs = spec.run(inputs)
-    status = evidence_status or _infer_evidence_status(outputs)
+    status = evidence_status or infer_evidence_status(outputs)
     environment = {
         "executor_id": spec.executor_id,
         "executor_version": spec.version,
@@ -311,165 +361,3 @@ def _resolve_executor(executor_id: str) -> ToolExecutorSpec:
     except KeyError as exc:
         known = ", ".join(sorted(executors))
         raise ValueError(f"unknown tool executor {executor_id!r}; known executors: {known}") from exc
-
-
-def _run_scalar_tolerance_check(inputs: dict[str, Any]) -> dict[str, Any]:
-    observed = _number(inputs, "observed")
-    expected = _number(inputs, "expected")
-    tolerance = _number(inputs, "tolerance")
-    absolute_error = round(abs(observed - expected), 12)
-    return {
-        "quantity": str(inputs.get("quantity", "scalar")),
-        "observed": observed,
-        "expected": expected,
-        "tolerance": tolerance,
-        "absolute_error": absolute_error,
-        "within_tolerance": absolute_error <= tolerance,
-    }
-
-
-def _run_metric_table_check(inputs: dict[str, Any]) -> dict[str, Any]:
-    raw_metrics = inputs.get("metrics")
-    if not isinstance(raw_metrics, list) or not raw_metrics:
-        raise ValueError("metrics must be a non-empty list")
-
-    metrics = [_metric_result(row, index) for index, row in enumerate(raw_metrics)]
-    failed_metrics = [metric["name"] for metric in metrics if not metric["within_tolerance"]]
-    absolute_errors = [metric["absolute_error"] for metric in metrics]
-    return {
-        "table_id": str(inputs.get("table_id", "metric_table")),
-        "metric_count": len(metrics),
-        "passed_count": len(metrics) - len(failed_metrics),
-        "failed_count": len(failed_metrics),
-        "all_within_tolerance": not failed_metrics,
-        "max_absolute_error": max(absolute_errors),
-        "failed_metrics": failed_metrics,
-        "metrics": metrics,
-    }
-
-
-def _run_checklist_consistency_check(inputs: dict[str, Any]) -> dict[str, Any]:
-    raw_checks = inputs.get("checks")
-    if not isinstance(raw_checks, list) or not raw_checks:
-        raise ValueError("checks must be a non-empty list")
-
-    checks = [_checklist_item(row, index) for index, row in enumerate(raw_checks)]
-    unchecked = [item["name"] for item in checks if item["status"] in {"unchecked", "unknown"}]
-    failed = [item["name"] for item in checks if item["status"] in {"failed", "invalid"}]
-    return {
-        "check_count": len(checks),
-        "checked_count": len(checks) - len(unchecked) - len(failed),
-        "unchecked_items": unchecked,
-        "failed_items": failed,
-        "all_checked": not unchecked and not failed,
-        "checks": checks,
-    }
-
-
-def _run_failure_mode_basis_check(inputs: dict[str, Any]) -> dict[str, Any]:
-    raw_modes = inputs.get("failure_modes")
-    raw_items = inputs.get("basis_items")
-    if not isinstance(raw_modes, list) or not raw_modes:
-        raise ValueError("failure_modes must be a non-empty list")
-    if not isinstance(raw_items, list) or not raw_items:
-        raise ValueError("basis_items must be a non-empty list")
-    modes = [_nonempty_string(value, f"failure_modes[{index}]") for index, value in enumerate(raw_modes)]
-    items = [_basis_item(row, index) for index, row in enumerate(raw_items)]
-    covered = []
-    for mode in modes:
-        if any(item["failure_mode"] == mode for item in items):
-            covered.append(mode)
-    uncovered = [mode for mode in modes if mode not in covered]
-    return {
-        "failure_mode_count": len(modes),
-        "basis_item_count": len(items),
-        "all_failure_modes_covered": not uncovered,
-        "covered_failure_modes": covered,
-        "uncovered_failure_modes": uncovered,
-        "basis_items": items,
-    }
-
-
-def _basis_item(row: Any, index: int) -> dict[str, str]:
-    if not isinstance(row, dict):
-        raise ValueError(f"basis_items[{index}] must be an object")
-    return {
-        "failure_mode": _nonempty_string(row.get("failure_mode"), f"basis_items[{index}].failure_mode"),
-        "basis_ref": _nonempty_string(row.get("basis_ref"), f"basis_items[{index}].basis_ref"),
-        "basis_type": _nonempty_string(row.get("basis_type"), f"basis_items[{index}].basis_type"),
-        "question_answered": _nonempty_string(row.get("question_answered"), f"basis_items[{index}].question_answered"),
-    }
-
-
-def _checklist_item(row: Any, index: int) -> dict[str, str]:
-    if not isinstance(row, dict):
-        raise ValueError(f"checks[{index}] must be an object")
-    name = row.get("name")
-    if not isinstance(name, str) or not name:
-        raise ValueError(f"checks[{index}].name must be a non-empty string")
-    status = str(row.get("status", "")).strip().lower()
-    if status not in {"checked", "unchecked", "unknown", "failed", "invalid"}:
-        raise ValueError(f"checks[{index}].status must be checked, unchecked, unknown, failed, or invalid")
-    note = row.get("note")
-    if not isinstance(note, str) or not note.strip():
-        raise ValueError(f"checks[{index}].note must be a non-empty string")
-    return {"name": name, "status": status, "note": note.strip()}
-
-
-def _nonempty_string(value: Any, path: str) -> str:
-    if not isinstance(value, str) or not value.strip():
-        raise ValueError(f"{path} must be a non-empty string")
-    return value.strip()
-
-
-def _metric_result(row: Any, index: int) -> dict[str, Any]:
-    if not isinstance(row, dict):
-        raise ValueError(f"metrics[{index}] must be an object")
-    name = row.get("name")
-    if not isinstance(name, str) or not name:
-        raise ValueError(f"metrics[{index}].name must be a non-empty string")
-    observed = _number_from(row, "observed", f"metrics[{index}]")
-    expected = _number_from(row, "expected", f"metrics[{index}]")
-    tolerance = _number_from(row, "tolerance", f"metrics[{index}]")
-    if tolerance < 0:
-        raise ValueError(f"metrics[{index}].tolerance must be non-negative")
-    absolute_error = round(abs(observed - expected), 12)
-    return {
-        "name": name,
-        "observed": observed,
-        "expected": expected,
-        "tolerance": tolerance,
-        "absolute_error": absolute_error,
-        "within_tolerance": absolute_error <= tolerance,
-    }
-
-
-def _number(inputs: dict[str, Any], key: str) -> float:
-    return _number_from(inputs, key, "inputs")
-
-
-def _number_from(inputs: dict[str, Any], key: str, path: str) -> float:
-    value = inputs.get(key)
-    if isinstance(value, bool) or not isinstance(value, int | float):
-        raise ValueError(f"{path}.{key} must be numeric")
-    return float(value)
-
-
-def _infer_evidence_status(outputs: dict[str, Any]) -> str:
-    if outputs.get("all_checked") is True:
-        return "supports"
-    if outputs.get("all_checked") is False:
-        return "refutes"
-    if outputs.get("all_within_tolerance") is True:
-        return "supports"
-    if outputs.get("all_within_tolerance") is False:
-        return "refutes"
-    if outputs.get("all_failure_modes_covered") is True:
-        return "supports"
-    if outputs.get("all_failure_modes_covered") is False:
-        return "refutes"
-    if outputs.get("within_tolerance") is True:
-        return "supports"
-    if outputs.get("within_tolerance") is False:
-        return "refutes"
-    return "unreviewed"

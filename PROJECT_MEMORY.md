@@ -171,9 +171,13 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   allow the action. For high-risk `execute_tool`, the supplied validation
   contract must also bind the current `recipe_id` and `executor_id`; for
   high-risk `record_tool_run`, it must bind the current `recipe_id`.
-  Built-in safe executors now include `failure_mode_basis_check`, which checks
-  that every named failure mode has explicit review basis; FQHE and LibRPA/GW
-  domain packs recommend it through failure-mode review basis recipes.
+  Built-in safe executors now include `formula_code_invariant_check`, which
+  checks explicit formula refs, code refs, expected relations, observed
+  relations, and matched/failed/missing status for formula-code translation
+  work, plus `failure_mode_basis_check`, which checks that every named failure
+  mode has explicit review basis. FQHE and LibRPA/GW domain packs recommend
+  failure-mode review basis recipes; the LibRPA/GW pack also recommends
+  `recipe-librpa-gw-formula-code-invariant`.
   Execution brief evidence coverage includes both required action-budget
   outputs and additional typed outputs already supported by evidence records,
   so a later session can see a recorded `failure_mode_review_basis` without

@@ -54,6 +54,14 @@ def test_builtin_gw_librpa_pack_suggests_code_provenance_and_benchmarks():
         and recommendation["recipe_id"] == "recipe-librpa-gw-benchmark-table"
         for recommendation in pack.tool_executor_recommendations
     )
+    invariant_recommendation = next(
+        recommendation
+        for recommendation in pack.tool_executor_recommendations
+        if recommendation["recipe_id"] == "recipe-librpa-gw-formula-code-invariant"
+    )
+    assert invariant_recommendation["executor_id"] == "formula_code_invariant_check"
+    assert invariant_recommendation["supports_outputs"] == ["formula_code_invariant", "minimal_check"]
+    assert invariant_recommendation["required_context_refs"] == ["code_state_ids", "formula_refs"]
     review_recommendation = next(
         recommendation
         for recommendation in pack.tool_executor_recommendations
@@ -131,6 +139,11 @@ def test_execution_brief_exposes_domain_tool_executor_recommendations(tmp_path):
     assert recommendations[0]["pack_id"] == "gw_librpa"
     assert recommendations[0]["executor_id"] == "metric_table_check"
     assert recommendations[0]["recipe_id"] == "recipe-librpa-gw-benchmark-table"
+    assert any(
+        recommendation["executor_id"] == "formula_code_invariant_check"
+        and recommendation["recipe_id"] == "recipe-librpa-gw-formula-code-invariant"
+        for recommendation in recommendations
+    )
     assert any(
         recommendation["executor_id"] == "failure_mode_basis_check"
         and recommendation["recipe_id"] == "recipe-librpa-gw-failure-mode-review-basis"

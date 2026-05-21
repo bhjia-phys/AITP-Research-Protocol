@@ -70,6 +70,9 @@ Implemented:
 - Dynamic question engine and question intents.
 - Evidence records, tool recipes, tool runs, safe built-in tool executors.
 - Formal-theory checklist executor for auditable definition, assumption, derivation-step, and counterexample-search checks.
+- LibRPA/GW formula-code invariant executor for explicit formula references,
+  code references, expected relations, observed relations, and
+  matched/failed/missing translation status.
 - Code workspace and code state provenance.
 - Trust cards and trust-update preflight/apply, including request-bound
   preflight proof tokens required before confidence-state mutation.
