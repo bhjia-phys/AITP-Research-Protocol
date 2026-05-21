@@ -3302,3 +3302,80 @@ Each entry should record:
 - Next recommended task:
   - require high-risk promotion packets or memory promotion paths to reference
     passed validation results for tool-derived evidence before L2 promotion.
+
+### 14a2f9a - Require Passed Validation Results For Promotion Packets
+
+- Task: prevent tool-derived evidence from entering promotion packets or L2
+  memory unless the promotion packet cites passed validation results for the
+  same tool runs.
+- Planning source:
+  - previous ledger recommendation after `14d2b9b`;
+  - v5 invariant that typed kernel records, not summaries or model confidence,
+    are the authority for validation state;
+  - user requirement that numerical/formula-code work leave auditable proof
+    before a result becomes trusted research memory.
+- Changed files:
+  - `brain/v5/models.py`
+  - `brain/v5/record_contracts.py`
+  - `brain/v5/memory.py`
+  - `brain/v5/policy.py`
+  - `brain/v5/pretool_policy.py`
+  - `brain/v5/cli.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/adapter_protocols.py`
+  - `brain/v5/runtime_entrypoint_catalog.py`
+  - `tests/test_v5_memory.py`
+  - `tests/test_v5_pretool_policy.py`
+- Public/runtime behavior changes:
+  - `PromotionPacketRecord` now carries `validation_result_ids`;
+  - kernel `create_promotion_packet` accepts validation-result links and rejects
+    tool-derived evidence unless every linked tool run has a passed validation
+    result with no missing outputs or observed failure modes;
+  - `apply_promotion_packet` repeats the same validation-result guard before
+    writing an L2 memory entry, so stale or manually authored packets cannot
+    bypass the check;
+  - CLI `promotion packet create` accepts `--validation-result-id`;
+  - MCP `aitp_v5_create_promotion_packet` accepts `validation_result_ids`;
+  - the shared pre-tool policy resolves typed evidence records and hard-blocks
+    rigorous/adversarial promotion attempts whose tool-derived evidence lacks
+    matching passed validation results;
+  - adapter protocol metadata and runtime sample args advertise the new link
+    field so adapters can pass it without prose scraping.
+- Tests:
+  - kernel rejects promotion packet creation for tool-derived evidence without
+    validation-result links;
+  - kernel records validation-result links on promotion packets;
+  - applying a manually authored packet without links is rejected before L2
+    memory write;
+  - CLI/MCP promotion packet creation preserves validation-result links;
+  - MCP pre-tool policy blocks rigorous promotion without passed validation
+    results and allows it with matching passed results.
+- Verification:
+  - red tests failed as expected:
+    `python -m pytest tests\test_v5_memory.py tests\test_v5_pretool_policy.py -q -k "validation_result or rigorous_promotion_packet"`:
+    4 failed, 4 passed, 46 deselected because promotion packets did not carry
+    `validation_result_ids` and pre-tool policy did not inspect tool-derived
+    evidence records for promotion;
+  - target green set:
+    `python -m pytest tests\test_v5_memory.py tests\test_v5_pretool_policy.py -q -k "validation_result or promotion_cli or promotion_mcp or rigorous_promotion_packet"`:
+    10 passed, 44 deselected;
+  - focused related set:
+    `python -m pytest tests\test_v5_memory.py tests\test_v5_pretool_policy.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py tests\test_v5_adapters.py tests\test_v5_contracts.py -q`:
+    161 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; python -m pytest $files -q`:
+    393 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with only line-ending warnings.
+- Residual risks:
+  - validation results still assert declared output coverage rather than
+    independently judging physics correctness;
+  - the direct kernel guard only triggers for evidence refs that resolve to
+    typed `EvidenceRecord`s with `tool_run_ids`; placeholder or missing
+    evidence refs remain governed by existing evidence-ref presence checks.
+- Next recommended task:
+  - add an adapter-event or bridge-runtime test that exercises
+    `create_promotion_packet` with tool-derived evidence and
+    `validation_result_ids`, or move to the next high-risk typed-record guard
+    from the implementation plan.

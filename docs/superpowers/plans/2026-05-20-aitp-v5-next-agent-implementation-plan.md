@@ -201,6 +201,11 @@ Implemented:
   passed validation result for each linked tool run. The rule is enforced by
   the shared CLI/MCP/runtime pre-tool policy and surfaced through adapter
   event schemas as `tool_run_ids` plus `validation_result_ids`.
+- Promotion packets now carry typed `validation_result_ids`. Packet creation
+  and L2 application reject tool-derived evidence unless passed validation
+  results cover every cited tool run, and the shared CLI/MCP/runtime pre-tool
+  policy blocks rigorous/adversarial promotion attempts that omit or mismatch
+  those links.
 - Generated Codex/OpenCode bridge payloads and JSON sidecars now advertise
   `pre_tool_policy_entrypoint.input_schema` and
   `pre_tool_event_entrypoint.platform_event_schema`, including `risk_level`,

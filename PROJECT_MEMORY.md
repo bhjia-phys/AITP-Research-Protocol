@@ -136,7 +136,11 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   results cannot omit required outputs or carry observed failure modes.
   High-risk `record_evidence` that cites `tool_run_ids` must also cite passed
   `validation_result_ids` for those runs before it can support trust-relevant
-  claim state.
+  claim state. Promotion packets now also carry `validation_result_ids` typed
+  links: packet creation and L2 application reject tool-derived evidence unless
+  passed validation results cover every cited tool run, and the shared pre-tool
+  policy hard-blocks rigorous/adversarial promotion attempts that omit or
+  mismatch those links.
 - Generated Codex and OpenCode bridge payloads include a
   `pre_tool_policy_entrypoint` pointing to that shared surface, so runtime
   adapters can wire validation/promotion pre-tool checks without reimplementing

@@ -132,7 +132,12 @@ actual tool path before it can affect trust-relevant state. Adapter
 the contract's required evidence outputs; a passed result cannot omit required
 outputs or report observed failure modes. High-risk `record_evidence` calls
 that cite `tool_run_ids` must also cite passed `validation_result_ids` for
-those runs before the evidence can support trust-relevant claim state. Adapter
+those runs before the evidence can support trust-relevant claim state.
+Promotion packets now carry `validation_result_ids` as typed links too:
+promotion-packet creation and L2 application reject tool-derived evidence unless
+passed validation results cover every cited tool run, and the shared pre-tool
+policy hard-blocks rigorous/adversarial promotion attempts that omit or mismatch
+those links. Adapter
 packets and generated bridge files put `aitp_v5_evaluate_pre_tool_policy` into
 the code-state/record-evidence/tool-run/execute-tool/tool-recipe/reference-location/
 physics-object/object-relation/sensemaking-report/subagent-ingestion, validation-contract/result, human-checkpoint request/decision, promotion-packet
