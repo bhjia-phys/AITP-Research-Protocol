@@ -3217,3 +3217,88 @@ Each entry should record:
 - Next recommended task:
   - require high-risk tool-derived evidence or promotion packets to reference a
     passed `ValidationResultRecord` for the relevant `ToolRunRecord`.
+
+### 14d2b9b - Require Passed Validation Results For Tool Evidence
+
+- Task: prevent high-risk tool-derived evidence from supporting a claim unless
+  it links the relevant tool run to a passed validation result.
+- Planning source:
+  - previous ledger recommendation to require passed `ValidationResultRecord`
+    references before high-risk tool-derived evidence can support a claim;
+  - v5 invariant that typed kernel records, not generated summaries or model
+    confidence, are the authority for validation state;
+  - user requirement that numerical/formula-code work leave auditable proof of
+    what was checked before it is trusted.
+- Changed files:
+  - `brain/v5/models.py`
+  - `brain/v5/evidence.py`
+  - `brain/v5/record_contracts.py`
+  - `brain/v5/cli.py`
+  - `brain/v5/cli_policy.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/mcp_evidence.py`
+  - `brain/v5/policy.py`
+  - `brain/v5/pretool_policy.py`
+  - `brain/v5/adapter_protocols.py`
+  - `brain/v5/gate_protocols.py`
+  - `brain/v5/adapter_runtime.py`
+  - `brain/v5/hook_entrypoint_schemas.py`
+  - `hooks/aitp_v5_claude_hook.py`
+  - `tests/test_v5_validation.py`
+  - `tests/test_v5_pretool_policy.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_public_surfaces.py`
+- Public/runtime behavior changes:
+  - `EvidenceRecord` now carries `validation_result_ids`;
+  - kernel, CLI, and MCP evidence recording accept validation-result links;
+  - the shared CLI/MCP/runtime pre-tool policy accepts `tool_run_ids` and
+    `validation_result_ids`;
+  - rigorous/adversarial `record_evidence` with linked `tool_run_ids` is
+    hard-blocked unless passed validation results cover the same tool runs;
+  - Codex/OpenCode adapter event normalization forwards these fields;
+  - hook entrypoint schemas advertise both fields;
+  - Claude hook context policy forwarding now includes record-evidence,
+    record-tool-run, execute-tool, subagent-ingestion, validation contract,
+    tool-run, validation-result, recipe, executor, and risk context;
+  - `brain/v5/mcp_evidence.py` keeps the evidence MCP wrapper out of the
+    already-large `mcp_tools.py` module.
+- Tests:
+  - kernel/CLI/MCP evidence recording preserves `validation_result_ids`;
+  - pre-tool policy blocks rigorous tool evidence without a passed validation
+    result;
+  - pre-tool policy accepts rigorous tool evidence with a passed matching
+    validation result;
+  - adapter pre-tool event normalization blocks/allows the same scenarios;
+  - adapter packet and public-surface contract tests expose the new link field.
+- Verification:
+  - red tests failed as expected:
+    `python -m pytest tests\test_v5_validation.py tests\test_v5_pretool_policy.py tests\test_v5_adapters.py tests\test_v5_public_surfaces.py -q -k "validation_result_id or rigorous_tool_evidence or adapter_packet_includes_orientation or typed_write_records"`:
+    5 failed because MCP/policy entrypoints did not accept `tool_run_ids` or
+    `validation_result_ids`, adapter protocols did not advertise the new field,
+    and adapter events did not block unvalidated high-risk tool evidence;
+  - target green set:
+    same command: 6 passed;
+  - focused related set:
+    `python -m pytest tests\test_v5_validation.py tests\test_v5_pretool_policy.py tests\test_v5_adapters.py tests\test_v5_public_surfaces.py tests\test_v5_cli.py tests\test_v5_mcp_tools.py tests\test_v5_hooks.py tests\test_v5_bridge_runtime.py tests\test_v5_adapter_event_runner.py tests\test_v5_contracts.py tests\test_v5_tool_executors.py -q`:
+    229 passed;
+  - full v5 regression set initially failed only the module-size boundary
+    because `mcp_tools.py` reached 503 lines; after extracting
+    `brain/v5/mcp_evidence.py`, the boundary-focused set passed:
+    `python -m pytest tests\test_v5_mcp_tools.py tests\test_v5_architecture_boundaries.py tests\test_v5_validation.py -q`:
+    41 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; python -m pytest $files -q`:
+    388 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with only line-ending warnings.
+- Residual risks:
+  - the guard verifies that a passed validation result covers each linked tool
+    run, but still trusts the validation-result record's declared checked
+    outputs rather than independently evaluating physics semantics;
+  - promotion packets can still cite evidence without separately requiring
+    validation-result coverage, so promotion should get the same high-risk
+    validation-result gate next.
+- Next recommended task:
+  - require high-risk promotion packets or memory promotion paths to reference
+    passed validation results for tool-derived evidence before L2 promotion.

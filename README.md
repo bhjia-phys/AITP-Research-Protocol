@@ -130,7 +130,9 @@ so high-risk numerical or formula-code work has an explicit check plan for the
 actual tool path before it can affect trust-relevant state. Adapter
 `record_validation_result` records then bind a completed `tool_run_id` back to
 the contract's required evidence outputs; a passed result cannot omit required
-outputs or report observed failure modes. Adapter
+outputs or report observed failure modes. High-risk `record_evidence` calls
+that cite `tool_run_ids` must also cite passed `validation_result_ids` for
+those runs before the evidence can support trust-relevant claim state. Adapter
 packets and generated bridge files put `aitp_v5_evaluate_pre_tool_policy` into
 the code-state/record-evidence/tool-run/execute-tool/tool-recipe/reference-location/
 physics-object/object-relation/sensemaking-report/subagent-ingestion, validation-contract/result, human-checkpoint request/decision, promotion-packet
@@ -148,7 +150,8 @@ advertise that event entrypoint alongside the lower-level policy entrypoint.
 Those generated payloads and sidecars also advertise machine-readable
 `pre_tool_policy_entrypoint.input_schema` and
 `pre_tool_event_entrypoint.platform_event_schema`, including `risk_level`,
-optional `validation_contract_ids`, optional `recipe_id`, optional
+optional `validation_contract_ids`, optional `tool_run_ids`, optional
+`validation_result_ids`, optional `recipe_id`, optional
 `executor_id`, optional `human_checkpoint_id`, optional `checkpoint_id`, and
 optional nested `packet` input, so adapters can discover required policy inputs
 without treating Markdown or summaries as authority.

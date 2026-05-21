@@ -197,10 +197,15 @@ Implemented:
   `validation_contract_id`, checked outputs, missing outputs, and observed
   failure modes. A passed validation result cannot omit required contract
   outputs or include observed failure modes.
+- High-risk `record_evidence` calls that cite tool-run records now must cite a
+  passed validation result for each linked tool run. The rule is enforced by
+  the shared CLI/MCP/runtime pre-tool policy and surfaced through adapter
+  event schemas as `tool_run_ids` plus `validation_result_ids`.
 - Generated Codex/OpenCode bridge payloads and JSON sidecars now advertise
   `pre_tool_policy_entrypoint.input_schema` and
   `pre_tool_event_entrypoint.platform_event_schema`, including `risk_level`,
-  optional `validation_contract_ids`, optional `recipe_id`, optional
+  optional `validation_contract_ids`, optional `tool_run_ids`, optional
+  `validation_result_ids`, optional `recipe_id`, optional
   `executor_id`, optional `human_checkpoint_id`, optional `checkpoint_id`, and
   optional nested `packet` input, so
   adapters can discover pre-tool inputs without parsing Markdown.

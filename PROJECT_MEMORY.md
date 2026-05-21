@@ -134,6 +134,9 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   After a high-risk tool run, `record_validation_result` can persist whether
   the run satisfied the bound contract's required evidence outputs; passed
   results cannot omit required outputs or carry observed failure modes.
+  High-risk `record_evidence` that cites `tool_run_ids` must also cite passed
+  `validation_result_ids` for those runs before it can support trust-relevant
+  claim state.
 - Generated Codex and OpenCode bridge payloads include a
   `pre_tool_policy_entrypoint` pointing to that shared surface, so runtime
   adapters can wire validation/promotion pre-tool checks without reimplementing
@@ -158,7 +161,8 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   the correct CLI/MCP invocation without prose scraping. The bridge entrypoints
   also advertise machine-readable `pre_tool_policy_entrypoint.input_schema` and
   `pre_tool_event_entrypoint.platform_event_schema`, including `risk_level`,
-  optional `validation_contract_ids`, optional `recipe_id`, optional
+  optional `validation_contract_ids`, optional `tool_run_ids`, optional
+  `validation_result_ids`, optional `recipe_id`, optional
   `executor_id`, optional `human_checkpoint_id`, optional `checkpoint_id`, and
   optional nested `packet` input, while typed kernel records remain the
   authority.
