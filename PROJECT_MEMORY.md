@@ -219,7 +219,9 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   treats the wrapper as `request_human_checkpoint`, so it inherits summary
   source blocking; the checkpoint is durable review state, not a trust update.
   High-risk promotion should pass the approved checkpoint as
-  `--failure-mode-review-checkpoint` / `failure_mode_review_checkpoint_id`.
+  `--failure-mode-review-checkpoint` / `failure_mode_review_checkpoint_id`;
+  promotion packets, resulting L2 memory entries, and `l2_memory_audit` all
+  preserve that id for provenance review.
 - To audit a claim confidence state directly, agents can call
   `aitp-v5 trust audit --claim <claim-id>` or
   `aitp_v5_audit_claim_trust`. This returns the contracted

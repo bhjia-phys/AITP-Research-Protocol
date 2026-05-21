@@ -165,6 +165,7 @@ def test_l2_memory_audit_surfaces_typed_promotion_provenance(tmp_path):
     assert audited["source_packet_id"] == packet.packet_id
     assert audited["promotion_packet_status"] == "promoted"
     assert audited["human_checkpoint_id"] == checkpoint.checkpoint_id
+    assert audited["failure_mode_review_checkpoint_id"] == ""
     assert audited["human_checkpoint_decision"] == "approve"
     assert audited["evidence_refs"] == [evidence.evidence_id]
     assert audited["validation_result_ids"] == [validation.result_id]
@@ -193,6 +194,104 @@ def test_l2_memory_audit_cli_mcp_and_runtime_entrypoint(tmp_path, capsys):
         "surface": "l2_memory_audit",
     }
     assert validate_runtime_entrypoints() == []
+
+
+def test_l2_memory_audit_reports_failure_mode_review_checkpoint(tmp_path):
+    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
+    from brain.v5.evidence import record_evidence
+    from brain.v5.failure_mode_review import request_failure_mode_review_checkpoint
+    from brain.v5.memory import apply_promotion_packet, create_promotion_packet
+    from brain.v5.memory_audit import audit_l2_memory_context
+    from brain.v5.validation import create_validation_contract, record_validation_result
+    from brain.v5.tools import record_tool_run
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="Counting identifies the edge CFT in the recorded sector.",
+        evidence_profile="toy_numeric",
+        confidence_state="locally_checked",
+        active_uncertainty="sector assignment",
+    )
+    contract = create_validation_contract(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        required_checks=["counting benchmark"],
+        failure_modes=["sector misassignment"],
+        required_evidence_outputs=["counting_table"],
+    )
+    run = record_tool_run(
+        ws,
+        recipe_id="recipe-fqhe-ed",
+        tool_family="numerical",
+        tool_name="pytest",
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        outputs={"counting_table": "ok"},
+    )
+    validation = record_validation_result(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        contract_id=contract.contract_id,
+        tool_run_id=run.run_id,
+        status="passed",
+        checked_outputs=["counting_table"],
+        summary="Counting table passed validation.",
+    )
+    evidence = record_evidence(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        evidence_type="toy_numeric",
+        status="supports",
+        summary="Tool-derived counting evidence.",
+        tool_run_ids=[run.run_id],
+        validation_result_ids=[validation.result_id],
+    )
+    review = request_failure_mode_review_checkpoint(ws, claim_id=claim.claim_id)
+    approved_review = decide_human_checkpoint(
+        ws,
+        checkpoint_id=review.checkpoint_id,
+        decision="approve_failure_mode_review",
+        rationale="Reviewed failure-mode adequacy.",
+        decided_by="human",
+    )
+    packet = create_promotion_packet(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        scope="fixed sector ED",
+        evidence_refs=[evidence.evidence_id],
+        validation_result_ids=[validation.result_id],
+        known_failure_modes=["sector misassignment"],
+        failure_mode_review_checkpoint_id=approved_review.checkpoint_id,
+    )
+    checkpoint = request_human_checkpoint(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        reason="Approve L2 memory promotion.",
+        requested_by="promotion_policy",
+        options=["approve"],
+    )
+    decided = decide_human_checkpoint(
+        ws,
+        checkpoint_id=checkpoint.checkpoint_id,
+        decision="approve",
+        rationale="Promotion packet is ready.",
+        decided_by="human",
+    )
+    apply_promotion_packet(ws, packet_id=packet.packet_id, checkpoint_id=decided.checkpoint_id)
+
+    payload = audit_l2_memory_context(ws, claim_id=claim.claim_id)
+
+    assert payload["memory_entries"][0]["failure_mode_review_checkpoint_id"] == approved_review.checkpoint_id
+    assert payload["memory_entries"][0]["missing_links"] == []
 
 
 def test_failure_mode_audit_reports_uncovered_claim_and_contract_modes(tmp_path):

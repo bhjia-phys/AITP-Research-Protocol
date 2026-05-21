@@ -133,6 +133,57 @@ def test_create_promotion_packet_records_validation_result_links_for_tool_eviden
     assert require_valid_public_surface("promotion_packet_record", payload) == payload
 
 
+def test_promotion_packet_and_memory_entry_record_failure_mode_review_checkpoint(tmp_path):
+    from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
+    from brain.v5.failure_mode_review import request_failure_mode_review_checkpoint
+    from brain.v5.memory import apply_promotion_packet, create_promotion_packet
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ws, claim, evidence, result = _setup_tool_validated_evidence(tmp_path)
+    review_checkpoint = request_failure_mode_review_checkpoint(ws, claim_id=claim.claim_id)
+    approved_review = decide_human_checkpoint(
+        ws,
+        checkpoint_id=review_checkpoint.checkpoint_id,
+        decision="approve_failure_mode_review",
+        rationale="Reviewed physical adequacy of known failure modes.",
+        decided_by="human",
+    )
+    packet = create_promotion_packet(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        proposed_memory_kind="scoped_claim",
+        scope="fixed sector ED",
+        evidence_refs=[evidence.evidence_id],
+        validation_result_ids=[result.result_id],
+        known_failure_modes=["sector misassignment"],
+        failure_mode_review_checkpoint_id=approved_review.checkpoint_id,
+    )
+
+    assert packet.failure_mode_review_checkpoint_id == approved_review.checkpoint_id
+    assert require_valid_public_surface("promotion_packet_record", {"ok": True, **asdict(packet)})
+
+    promotion_checkpoint = request_human_checkpoint(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        reason="Approve L2 memory promotion.",
+        requested_by="promotion_policy",
+        options=["approve"],
+    )
+    decided = decide_human_checkpoint(
+        ws,
+        checkpoint_id=promotion_checkpoint.checkpoint_id,
+        decision="approve",
+        rationale="Promotion packet is ready.",
+        decided_by="human",
+    )
+    entry = apply_promotion_packet(ws, packet_id=packet.packet_id, checkpoint_id=decided.checkpoint_id)
+
+    assert entry.failure_mode_review_checkpoint_id == approved_review.checkpoint_id
+    assert require_valid_public_surface("memory_entry_record", {"ok": True, **asdict(entry)})
+
+
 def test_promotion_packet_rejects_empty_evidence_refs(tmp_path):
     ws, claim = _setup_claim(tmp_path)
 
@@ -238,8 +289,19 @@ def test_multiple_promotion_packets_for_same_claim_do_not_overwrite(tmp_path):
 
 
 def test_promotion_cli(tmp_path, capsys):
-    _, claim, evidence, validation_result = _setup_tool_validated_evidence(tmp_path)
+    ws, claim, evidence, validation_result = _setup_tool_validated_evidence(tmp_path)
+    from brain.v5.checkpoints import decide_human_checkpoint
     from brain.v5.cli import main
+    from brain.v5.failure_mode_review import request_failure_mode_review_checkpoint
+
+    review = request_failure_mode_review_checkpoint(ws, claim_id=claim.claim_id)
+    approved_review = decide_human_checkpoint(
+        ws,
+        checkpoint_id=review.checkpoint_id,
+        decision="approve_failure_mode_review",
+        rationale="Reviewed failure mode adequacy.",
+        decided_by="human",
+    )
 
     result = main([
         "--base", str(tmp_path), "promotion", "packet", "create",
@@ -248,28 +310,42 @@ def test_promotion_cli(tmp_path, capsys):
         "--evidence-ref", evidence.evidence_id,
         "--validation-result-id", validation_result.result_id,
         "--failure-mode", "misassignment",
+        "--failure-mode-review-checkpoint", approved_review.checkpoint_id,
     ])
     payload = json.loads(capsys.readouterr().out)
 
     assert result == 0
     assert payload["validation_result_ids"] == [validation_result.result_id]
+    assert payload["failure_mode_review_checkpoint_id"] == approved_review.checkpoint_id
 
 
 def test_promotion_mcp(tmp_path):
-    _, claim, evidence, validation_result = _setup_tool_validated_evidence(tmp_path)
+    ws, claim, evidence, validation_result = _setup_tool_validated_evidence(tmp_path)
 
+    from brain.v5.checkpoints import decide_human_checkpoint
+    from brain.v5.failure_mode_review import request_failure_mode_review_checkpoint
     from brain.v5.mcp_tools import aitp_v5_create_promotion_packet
 
+    review = request_failure_mode_review_checkpoint(ws, claim_id=claim.claim_id)
+    approved_review = decide_human_checkpoint(
+        ws,
+        checkpoint_id=review.checkpoint_id,
+        decision="approve_failure_mode_review",
+        rationale="Reviewed failure mode adequacy.",
+        decided_by="human",
+    )
     result = aitp_v5_create_promotion_packet(
         str(tmp_path), topic_id="fqhe", claim_id=claim.claim_id,
         proposed_memory_kind="scoped_claim", scope="N<=10 ED",
         evidence_refs=[evidence.evidence_id],
         validation_result_ids=[validation_result.result_id],
         known_failure_modes=["test"],
+        failure_mode_review_checkpoint_id=approved_review.checkpoint_id,
     )
     assert result["ok"] is True
     assert result["kind"] == "promotion_packet"
     assert result["validation_result_ids"] == [validation_result.result_id]
+    assert result["failure_mode_review_checkpoint_id"] == approved_review.checkpoint_id
 
 
 def test_promotion_runtime_entrypoint():

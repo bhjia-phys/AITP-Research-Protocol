@@ -437,11 +437,12 @@ def aitp_v5_create_promotion_packet(
     base: str, *, topic_id: str, claim_id: str, proposed_memory_kind: str = "scoped_claim",
     scope: str = "", evidence_refs: list[str] | None = None, non_claims: list[str] | None = None,
     known_failure_modes: list[str] | None = None, validation_result_ids: list[str] | None = None,
+    failure_mode_review_checkpoint_id: str = "",
 ) -> dict:
     pkt = create_promotion_packet(_ws(base), topic_id=topic_id, claim_id=claim_id,
         proposed_memory_kind=proposed_memory_kind, scope=scope, evidence_refs=evidence_refs,
         validation_result_ids=validation_result_ids, non_claims=non_claims,
-        known_failure_modes=known_failure_modes)
+        known_failure_modes=known_failure_modes, failure_mode_review_checkpoint_id=failure_mode_review_checkpoint_id)
     return require_valid_public_surface("promotion_packet_record", {"ok": True, **asdict(pkt)})
 
 

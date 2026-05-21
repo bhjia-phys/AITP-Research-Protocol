@@ -24,6 +24,7 @@ def _promotion_packet_identity(
     validation_result_ids: list[str],
     non_claims: list[str],
     known_failure_modes: list[str],
+    failure_mode_review_checkpoint_id: str,
 ) -> str:
     return "\n".join(
         [
@@ -34,6 +35,7 @@ def _promotion_packet_identity(
             "validation_results:" + "|".join(validation_result_ids),
             "non_claims:" + "|".join(non_claims),
             "failure_modes:" + "|".join(known_failure_modes),
+            "failure_mode_review_checkpoint:" + failure_mode_review_checkpoint_id,
         ]
     )
 
@@ -49,6 +51,7 @@ def create_promotion_packet(
     validation_result_ids: list[str] | None = None,
     non_claims: list[str] | None = None,
     known_failure_modes: list[str] | None = None,
+    failure_mode_review_checkpoint_id: str = "",
 ) -> PromotionPacketRecord:
     if not proposed_memory_kind:
         raise ValueError("proposed_memory_kind must not be empty")
@@ -75,6 +78,7 @@ def create_promotion_packet(
             validation_result_ids=validation_result_ids or [],
             non_claims=non_claims or [],
             known_failure_modes=known_failure_modes,
+            failure_mode_review_checkpoint_id=failure_mode_review_checkpoint_id,
         ),
     )
     packet = PromotionPacketRecord(
@@ -87,6 +91,7 @@ def create_promotion_packet(
         validation_result_ids=validation_result_ids or [],
         non_claims=non_claims or [],
         known_failure_modes=known_failure_modes or [],
+        failure_mode_review_checkpoint_id=failure_mode_review_checkpoint_id,
     )
     write_record(ws.registry_dir("promotion_packets") / f"{packet_id}.md", packet)
     return packet
@@ -145,6 +150,7 @@ def apply_promotion_packet(
         known_failure_modes=list(packet.known_failure_modes),
         source_packet_id=packet_id,
         human_checkpoint_id=checkpoint_id,
+        failure_mode_review_checkpoint_id=packet.failure_mode_review_checkpoint_id,
         status="active",
     )
     write_record(ws.root / "memory" / "l2" / "entries" / f"{entry_id}.md", entry)

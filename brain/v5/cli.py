@@ -233,7 +233,7 @@ def _build_parser() -> argparse.ArgumentParser:
     pc.add_argument("--evidence-ref", action="append", default=[], dest="evidence_refs")
     pc.add_argument("--validation-result-id", action="append", default=[], dest="validation_result_ids")
     pc.add_argument("--non-claim", action="append", default=[], dest="non_claims")
-    pc.add_argument("--failure-mode", action="append", default=[], dest="known_failure_modes")
+    pc.add_argument("--failure-mode", action="append", default=[], dest="known_failure_modes"); pc.add_argument("--failure-mode-review-checkpoint", default="", dest="failure_mode_review_checkpoint_id")
     pa = pkts.add_parser("apply")
     pa.add_argument("packet_id")
     pa.add_argument("--checkpoint", required=True, dest="checkpoint_id")
@@ -416,7 +416,7 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             proposed_memory_kind=args.proposed_memory_kind, scope=args.scope,
             evidence_refs=args.evidence_refs, validation_result_ids=args.validation_result_ids,
             non_claims=args.non_claims,
-            known_failure_modes=args.known_failure_modes)
+            known_failure_modes=args.known_failure_modes, failure_mode_review_checkpoint_id=args.failure_mode_review_checkpoint_id)
         return {"ok": True, **require_valid_public_surface("promotion_packet_record", {"ok": True, **asdict(pkt)})}
 
     if args.command == "promotion" and args.promotion_command == "packet" and args.promotion_packet_command == "apply":

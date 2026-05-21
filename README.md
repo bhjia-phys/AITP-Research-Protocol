@@ -173,7 +173,9 @@ review should become durable, `aitp-v5 memory request-failure-mode-review
 create a typed `human_checkpoint_record` from the review packet; this records
 the need for physical adequacy review but still does not update claim trust.
 Pass the approved checkpoint as `--failure-mode-review-checkpoint` /
-`failure_mode_review_checkpoint_id` when creating a high-risk promotion packet.
+`failure_mode_review_checkpoint_id` when creating a high-risk promotion packet;
+the id is persisted on both the promotion packet and resulting L2 memory entry,
+and appears in `l2_memory_audit`.
 To review the current claim confidence itself,
 `aitp-v5 trust audit --claim <claim-id>` and `aitp_v5_audit_claim_trust`
 return the contracted `claim_trust_audit` surface: current confidence,

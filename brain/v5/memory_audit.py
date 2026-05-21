@@ -122,6 +122,7 @@ def _audit_entry(
         "source_packet_id": entry.source_packet_id,
         "promotion_packet_status": packet.status if packet is not None else "",
         "human_checkpoint_id": entry.human_checkpoint_id,
+        "failure_mode_review_checkpoint_id": entry.failure_mode_review_checkpoint_id,
         "human_checkpoint_decision": checkpoint.decision if checkpoint is not None else "",
         "missing_links": missing_links,
         "orientation_only": True,
