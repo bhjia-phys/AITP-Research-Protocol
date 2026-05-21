@@ -100,30 +100,31 @@ Code hook settings generation and safe settings merge installation, Claude
 `PreToolUse` typed policy mapping for high-risk tool calls and trust-changing
 AITP MCP calls, OpenCode plugin bridge materialization, and post-tool
 trace-event persistence through CLI/MCP/runtime public surfaces.
-For code-state provenance, validation, human-checkpoint request/decision,
-promotion-packet creation/application, and L2 promotion MCP calls, Claude
-`PreToolUse` resolves the active typed claim plus evidence and code-state refs,
-then reuses kernel policy before the tool runs. Other adapters can call the same
-contract through
+For code-state provenance, physics-object/relation graph writes, validation,
+human-checkpoint request/decision, promotion-packet creation/application, and
+L2 promotion MCP calls, Claude `PreToolUse` resolves the active typed claim plus
+evidence and code-state refs, then reuses kernel policy before the tool runs.
+Other adapters can call the same contract through
 `aitp-v5 policy pre-tool <args>` or `aitp_v5_evaluate_pre_tool_policy`; the
 returned `pre_tool_policy_decision` is orientation/permission output only and
 cannot update kernel state or claim trust. The same shared surface also blocks
-`record_code_state`, `record_evidence`, `record_tool_run`, `execute_tool`, and
+`record_code_state`, `record_evidence`, `record_tool_run`, `execute_tool`,
+`record_physics_object`, `record_object_relation`, and
 `ingest_subagent_result` attempts, plus validation-contract and
 human-checkpoint request/decision and promotion-packet creation/application,
 when their requested source is only a summary/task-plan/findings/progress
 orientation surface. Generated
 Codex/OpenCode bridge
 payloads carry this shared entrypoint plus `runtime_gate_protocols` explicitly,
-so adapter authors do not need to reconstruct code-state/evidence/checkpoint/
-validation/promotion-packet sequencing from prose. Its `policy_reasons` list exposes machine-readable policy
+so adapter authors do not need to reconstruct code-state/evidence/object-graph/
+checkpoint/validation/promotion-packet sequencing from prose. Its `policy_reasons` list exposes machine-readable policy
 IDs and severities, so reviewers do not need to parse free-form hook messages. Adapter
 policy calls also carry `risk_level` and optional `human_checkpoint_id`; in
 adversarial risk, trust-changing actions require an approved typed human
 checkpoint before they can proceed. Adapter
 packets and generated bridge files put `aitp_v5_evaluate_pre_tool_policy` into
-the code-state/record-evidence/tool-run/execute-tool/subagent-ingestion,
-validation-contract, human-checkpoint request/decision, promotion-packet
+the code-state/record-evidence/tool-run/execute-tool/physics-object/
+object-relation/subagent-ingestion, validation-contract, human-checkpoint request/decision, promotion-packet
 creation/application, validation, and promotion gate sequences, so runtimes can see that policy evaluation comes
 before typed record creation, preflight, or promotion. The small
 `brain.v5.adapter_runtime.evaluate_bridge_gate_pre_tool_policy` helper consumes

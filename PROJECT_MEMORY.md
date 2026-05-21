@@ -114,7 +114,8 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   without parsing free-form messages. It now covers validation, L2 promotion,
   and summary-sourced
   `record_code_state`/`record_evidence`/`record_tool_run`/`execute_tool`/
-  `ingest_subagent_result`/`create_validation_contract`/`request_human_checkpoint`/
+  `record_physics_object`/`record_object_relation`/`ingest_subagent_result`/
+  `create_validation_contract`/`request_human_checkpoint`/
   `decide_human_checkpoint`/`create_promotion_packet`/
   `apply_promotion_packet` trust-changing attempts through the same CLI/MCP
   entrypoint.
@@ -123,9 +124,10 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   adapters can wire validation/promotion pre-tool checks without reimplementing
   policy logic. They also carry `gate_protocols` generated from
   `runtime_gate_protocols`, so bridge files expose code-state, record
-  evidence/tool-run, execute-tool, subagent-ingestion, validation-contract,
-  human-checkpoint request/decision, promotion-packet creation/application, and
-  validate/promote sequences as machine-readable payload and rendered Markdown.
+  evidence/tool-run, execute-tool, physics-object/object-relation,
+  subagent-ingestion, validation-contract, human-checkpoint request/decision,
+  promotion-packet creation/application, and validate/promote sequences as
+  machine-readable payload and rendered Markdown.
 - Runtime adapters can consume those generated bridge `gate_protocols` through
   `brain/v5/adapter_runtime.py::evaluate_bridge_gate_pre_tool_policy`, which
   verifies the bridge sequence and then delegates to the shared typed-record
@@ -159,6 +161,8 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `runtime_gate_protocols.record_evidence`,
   `runtime_gate_protocols.record_tool_run`,
   `runtime_gate_protocols.execute_tool`,
+  `runtime_gate_protocols.record_physics_object`,
+  `runtime_gate_protocols.record_object_relation`,
   `runtime_gate_protocols.ingest_subagent_result`,
   `runtime_gate_protocols.create_validation_contract`,
   `runtime_gate_protocols.request_human_checkpoint`,
@@ -174,7 +178,7 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   hard-blocked unless that checkpoint resolves to a decided typed
   `HumanCheckpointRecord` with `decision=approve` for the active claim.
 - Claude Code `PreToolUse` uses that shared policy for code-state provenance,
-  validation, human-checkpoint request/decision, promotion-packet
+  physics-object/relation graph writes, validation, human-checkpoint request/decision, promotion-packet
   creation/application, and L2 promotion MCP calls: it
   resolves the typed claim, cited evidence refs, and linked or requested code
   states, then reuses `evaluate_policy` before the tool runs.

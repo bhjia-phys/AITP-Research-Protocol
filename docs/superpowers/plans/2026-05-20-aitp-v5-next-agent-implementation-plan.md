@@ -177,6 +177,7 @@ Implemented:
 - The shared CLI/MCP pre-tool policy now also blocks summary/task-plan/findings
   orientation surfaces from driving `record_code_state`, `record_evidence`,
   `record_tool_run`, `execute_tool`, `ingest_subagent_result`,
+  `record_physics_object`, `record_object_relation`,
   `create_validation_contract`, and
   `request_human_checkpoint`/`decide_human_checkpoint`, plus
   `create_promotion_packet`/`apply_promotion_packet` trust-changing attempts.
@@ -205,9 +206,9 @@ Major remaining gaps:
   Codex and OpenCode also have generated installation fixtures.
 - Pre-tool policy coverage is still partial. It checks trust-apply token
   presence, validation/promotion-packet/promotion context, and summary-sourced
-  code-state/evidence/tool-run/tool-execution/subagent-ingestion/
-  validation-contract/human-checkpoint request/decision/promotion-packet
-  creation/application attempts through CLI/MCP/runtime/bridge metadata, and
+  code-state/evidence/tool-run/tool-execution/physics-object/object-relation/
+  subagent-ingestion/validation-contract/human-checkpoint request/decision/
+  promotion-packet creation/application attempts through CLI/MCP/runtime/bridge metadata, and
   adversarial-risk trust changes require approved typed human checkpoints. It
   still does not yet cover every MCP input or every active risk dimension;
   bridge metadata now advertises the current policy input schema explicitly.

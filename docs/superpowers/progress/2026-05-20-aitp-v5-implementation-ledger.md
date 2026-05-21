@@ -2486,3 +2486,74 @@ Each entry should record:
   - continue scanning remaining public MCP inputs for pre-tool policy gaps,
     especially reference/physics-object/sensemaking writes, or add host-side
     installation documentation/tests for native hook APIs.
+
+### f9efbf7 - Gate Physics Object Graph Writes Through Pre-Tool Policy
+
+- Task: make `record_physics_object` and `record_object_relation` first-class
+  pre-tool/gate actions instead of leaving object-graph writes as record-only
+  MCP calls.
+- Planning source:
+  - v5 invariant that typed kernel records are authoritative and summaries are
+    orientation-only;
+  - physics objects and object relations feed known context, mandatory
+    reflection, and later theoretical reasoning, so they must not be written
+    directly from generated summaries;
+  - previous ledger recommendation to scan reference/physics-object/sensemaking
+    writes for pre-tool gaps.
+- Changed files:
+  - `brain/v5/policy.py`
+  - `brain/v5/pretool_policy.py`
+  - `brain/v5/adapter_protocols.py`
+  - `brain/v5/adapter_runtime.py`
+  - `brain/v5/gate_protocols.py`
+  - `hooks/aitp_v5_claude_hook.py`
+  - `tests/test_v5_pretool_policy.py`
+  - `tests/test_v5_adapters.py`
+  - `tests/test_v5_hooks.py`
+- Public/runtime behavior changes:
+  - `record_physics_object` and `record_object_relation` participate in
+    context-aware pre-tool policy evaluation;
+  - summary/task-plan/findings/progress orientation surfaces cannot directly
+    drive physics-object or object-relation records;
+  - adapter `trust_changing_actions` and `requires_kernel_call_before` include
+    both object-graph write actions;
+  - generated bridge `runtime_gate_protocols` include physics-object and
+    object-relation sequences with `evaluate_pre_tool_policy` before the typed
+    write;
+  - Codex/OpenCode platform event normalization maps
+    `aitp_v5_record_physics_object` and `aitp_v5_record_object_relation` to
+    explicit v5 actions;
+  - Claude Code `PreToolUse` maps object-graph MCP calls through the shared
+    typed-record-backed policy path.
+- Tests:
+  - MCP pre-tool policy blocks findings-sourced physics-object recording;
+  - MCP pre-tool policy blocks task-plan-sourced object-relation recording;
+  - adapter pre-tool event path infers both object-graph actions from MCP tool
+    names and returns the bridge gate protocol;
+  - Claude hook test denies a summary-sourced object-relation write attempt;
+  - adapter packet tests assert both actions are advertised as kernel-gated
+    trust-relevant actions.
+- Verification:
+  - red tests failed as expected:
+    `python -m pytest tests/test_v5_pretool_policy.py tests/test_v5_adapters.py tests/test_v5_hooks.py -q -k "physics_object_from_findings_source or object_relation_from_task_plan_source or infers_physics_object_policy or infers_object_relation_policy or summary_sourced_object_relation"`:
+    5 failed because direct policy returned `log`, adapter runtime could not
+    infer the object-graph actions, and Claude hook allowed the relation write;
+  - target green set:
+    `python -m pytest tests/test_v5_pretool_policy.py tests/test_v5_adapters.py tests/test_v5_hooks.py -q -k "physics_object_from_findings_source or object_relation_from_task_plan_source or infers_physics_object_policy or infers_object_relation_policy or summary_sourced_object_relation"`:
+    5 passed;
+  - focused related set:
+    `python -m pytest tests/test_v5_pretool_policy.py tests/test_v5_adapters.py tests/test_v5_hooks.py tests/test_v5_public_surfaces.py tests/test_v5_contracts.py tests/test_v5_physics_objects.py -q`:
+    147 passed;
+  - full v5 regression set:
+    `python -m pytest tests/test_v5_*.py -q`: 357 passed;
+  - `python -m compileall -q brain\v5 hooks\aitp_v5_adapter_event_runner.py hooks\aitp_v5_claude_hook.py`:
+    passed;
+  - `git diff --check -- .`: passed, with only line-ending warnings.
+- Residual risks:
+  - native Codex/OpenCode hosts still need true lifecycle installer wiring;
+  - pre-tool coverage still does not cover every public MCP input or every
+    active risk dimension.
+- Next recommended task:
+  - continue with remaining public write surfaces such as
+    `record_reference_location` and `record_sensemaking_report`, or add
+    host-side installation documentation/tests for native hook APIs.
