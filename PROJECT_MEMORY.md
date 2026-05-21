@@ -200,14 +200,16 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `aitp_v5_audit_l2_memory_context`. This returns the contracted
   `l2_memory_audit` public surface, derived only from typed records, linking
   each active memory entry to its promotion packet, human checkpoint decision,
-  evidence refs, validation result refs, and code-state refs while keeping
-  `summary_inputs_trusted=false` and `can_update_kernel_state=false`.
+  evidence refs, validation result refs, code-state refs, and linked
+  failure-mode review result basis refs while keeping `summary_inputs_trusted=false`
+  and `can_update_kernel_state=false`.
 - Agents can call `aitp-v5 memory failure-modes --claim <claim-id>` or
   `aitp_v5_audit_failure_mode_coverage` for a read-only
   `failure_mode_audit` surface. It reports active uncertainty,
   `strongest_failure_mode`, validation-contract failure modes,
-  promotion-packet known failure modes, uncovered failure modes, and review
-  actions from typed records only; it cannot update kernel state or claim trust.
+  promotion-packet known failure modes, reviewed failure modes, failure-mode
+  review result basis refs, uncovered failure modes, and review actions from
+  typed records only; it cannot update kernel state or claim trust.
 - Agents can call `aitp-v5 memory failure-mode-review --claim <claim-id>` or
   `aitp_v5_build_failure_mode_review_packet` to turn that typed audit into a
   read-only `failure_mode_review_packet`. It lists per-mode source labels,

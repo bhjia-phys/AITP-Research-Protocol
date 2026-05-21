@@ -263,12 +263,14 @@ Implemented:
   `aitp_v5_audit_l2_memory_context` now expose the contracted
   `l2_memory_audit` public surface. It derives active L2 memory review context
   only from typed records, including promotion packet status, human checkpoint
-  decision, evidence refs, validation result refs, and code-state refs.
+  decision, evidence refs, validation result refs, code-state refs, and linked
+  failure-mode review result basis refs.
 - `aitp-v5 memory failure-modes --claim <claim-id>` /
   `aitp_v5_audit_failure_mode_coverage` now expose the contracted
   `failure_mode_audit` public surface. It is read-only and compares the claim's
   active uncertainty and `strongest_failure_mode` with validation-contract
-  failure modes and promotion-packet known failure modes.
+  failure modes, promotion-packet known failure modes, and reviewed failure
+  modes from typed review result records.
 - `aitp-v5 memory failure-mode-review --claim <claim-id>` /
   `aitp_v5_build_failure_mode_review_packet` now expose the contracted
   `failure_mode_review_packet` public surface. It is read-only and turns typed

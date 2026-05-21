@@ -33,6 +33,7 @@ def validate_failure_mode_audit(payload: dict[str, Any], *, path: str = "failure
         "active_uncertainty",
         "strongest_failure_mode",
         "coverage_status",
+        "failure_mode_review_results",
         "recommended_actions",
     ):
         if key not in payload:
@@ -52,13 +53,18 @@ def validate_failure_mode_audit(payload: dict[str, Any], *, path: str = "failure
     for key in (
         "validation_contract_ids",
         "promotion_packet_ids",
+        "failure_mode_review_result_ids",
         "validation_contract_failure_modes",
         "promotion_packet_failure_modes",
+        "reviewed_failure_modes",
+        "failure_mode_review_results",
         "uncovered_claim_failure_modes",
         "uncovered_validation_failure_modes",
         "recommended_actions",
     ):
         _require_list(payload.get(key), f"{path}.{key}", result)
+    for index, item in enumerate(payload.get("failure_mode_review_results", [])):
+        _validate_review_result_item(item, f"{path}.failure_mode_review_results[{index}]", result)
     return result
 
 
@@ -69,3 +75,25 @@ def require_valid_failure_mode_audit(payload: dict[str, Any]) -> dict[str, Any]:
     if not result.ok:
         raise ContractError(result)
     return payload
+
+
+def _validate_review_result_item(item: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(item, path, result)
+    if not isinstance(item, dict):
+        return
+    for key in ("result_id", "checkpoint_id", "status"):
+        _require_nonempty_str(item, key, path, result)
+    if item.get("status") not in {"passed", "needs_revision", "inconclusive"}:
+        result.add(f"{path}.status", "must be passed, needs_revision, or inconclusive")
+    for key in (
+        "reviewed_failure_modes",
+        "basis_refs",
+        "evidence_refs",
+        "validation_result_ids",
+        "tool_run_ids",
+        "reference_location_ids",
+        "artifact_ids",
+    ):
+        _require_list(item.get(key), f"{path}.{key}", result)
+    _require_bool_value(item.get("summary_inputs_trusted"), False, f"{path}.summary_inputs_trusted", result)
+    _require_bool_value(item.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)

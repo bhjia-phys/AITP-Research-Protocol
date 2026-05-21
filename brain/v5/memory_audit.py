@@ -5,6 +5,7 @@ from __future__ import annotations
 from brain.v5.memory import list_memory_entries_for_claim
 from brain.v5.models import (
     EvidenceRecord,
+    FailureModeReviewResultRecord,
     HumanCheckpointRecord,
     PromotionPacketRecord,
     ToolRunRecord,
@@ -43,6 +44,10 @@ def audit_l2_memory_context(ws: WorkspacePaths, *, claim_id: str) -> dict:
         for record in list_records(ws.registry_dir("checkpoints"), HumanCheckpointRecord)
         if record.claim_id == claim_id
     }
+    review_results_by_checkpoint: dict[str, list[FailureModeReviewResultRecord]] = {}
+    for record in list_records(ws.registry_dir("failure_mode_reviews"), FailureModeReviewResultRecord):
+        if record.claim_id == claim_id:
+            review_results_by_checkpoint.setdefault(record.checkpoint_id, []).append(record)
 
     entries = [
         _audit_entry(
@@ -52,6 +57,7 @@ def audit_l2_memory_context(ws: WorkspacePaths, *, claim_id: str) -> dict:
             validations_by_id=validations_by_id,
             packets_by_id=packets_by_id,
             checkpoints_by_id=checkpoints_by_id,
+            review_results_by_checkpoint=review_results_by_checkpoint,
         )
         for entry in list_memory_entries_for_claim(ws, claim_id)
     ]
@@ -77,6 +83,7 @@ def _audit_entry(
     validations_by_id: dict[str, ValidationResultRecord],
     packets_by_id: dict[str, PromotionPacketRecord],
     checkpoints_by_id: dict[str, HumanCheckpointRecord],
+    review_results_by_checkpoint: dict[str, list[FailureModeReviewResultRecord]],
 ) -> dict:
     missing_links: list[str] = []
     packet = packets_by_id.get(entry.source_packet_id)
@@ -105,6 +112,7 @@ def _audit_entry(
     for result_id in validation_result_ids:
         if result_id not in validations_by_id:
             missing_links.append(f"validation_result:{result_id}")
+    review_results = review_results_by_checkpoint.get(entry.failure_mode_review_checkpoint_id, [])
 
     return {
         "entry_id": entry.entry_id,
@@ -123,6 +131,8 @@ def _audit_entry(
         "promotion_packet_status": packet.status if packet is not None else "",
         "human_checkpoint_id": entry.human_checkpoint_id,
         "failure_mode_review_checkpoint_id": entry.failure_mode_review_checkpoint_id,
+        "failure_mode_review_result_ids": [result.result_id for result in review_results],
+        "failure_mode_review_results": [_review_result_payload(result) for result in review_results],
         "human_checkpoint_decision": checkpoint.decision if checkpoint is not None else "",
         "missing_links": missing_links,
         "orientation_only": True,
@@ -135,3 +145,20 @@ def _append_unique(target: list[str], values: list[str]) -> None:
         if value and value not in seen:
             seen.add(value)
             target.append(value)
+
+
+def _review_result_payload(record: FailureModeReviewResultRecord) -> dict:
+    return {
+        "result_id": record.result_id,
+        "checkpoint_id": record.checkpoint_id,
+        "status": record.status,
+        "reviewed_failure_modes": list(record.reviewed_failure_modes),
+        "basis_refs": list(record.basis_refs),
+        "evidence_refs": list(record.evidence_refs),
+        "validation_result_ids": list(record.validation_result_ids),
+        "tool_run_ids": list(record.tool_run_ids),
+        "reference_location_ids": list(record.reference_location_ids),
+        "artifact_ids": list(record.artifact_ids),
+        "summary_inputs_trusted": record.summary_inputs_trusted,
+        "can_update_claim_trust": record.can_update_claim_trust,
+    }

@@ -91,7 +91,33 @@ def _validate_l2_memory_audit_entry(payload: Any, path: str, result: ContractRes
         "code_state_ids",
         "non_claims",
         "known_failure_modes",
+        "failure_mode_review_result_ids",
+        "failure_mode_review_results",
         "missing_links",
     ):
         _require_list(payload.get(key), f"{path}.{key}", result)
+    for index, item in enumerate(payload.get("failure_mode_review_results", [])):
+        _validate_review_result_item(item, f"{path}.failure_mode_review_results[{index}]", result)
     _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
+
+
+def _validate_review_result_item(item: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(item, path, result)
+    if not isinstance(item, dict):
+        return
+    for key in ("result_id", "checkpoint_id", "status"):
+        _require_nonempty_str(item, key, path, result)
+    if item.get("status") not in {"passed", "needs_revision", "inconclusive"}:
+        result.add(f"{path}.status", "must be passed, needs_revision, or inconclusive")
+    for key in (
+        "reviewed_failure_modes",
+        "basis_refs",
+        "evidence_refs",
+        "validation_result_ids",
+        "tool_run_ids",
+        "reference_location_ids",
+        "artifact_ids",
+    ):
+        _require_list(item.get(key), f"{path}.{key}", result)
+    _require_bool_value(item.get("summary_inputs_trusted"), False, f"{path}.summary_inputs_trusted", result)
+    _require_bool_value(item.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)

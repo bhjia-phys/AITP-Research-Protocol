@@ -157,13 +157,14 @@ list-shaped evidence/code-state references. For review, `aitp-v5 memory audit
 --claim <claim-id>` and `aitp_v5_audit_l2_memory_context` expose the contracted
 `l2_memory_audit` surface: active L2 memory entries plus their promotion
 packets, human checkpoint decisions, evidence refs, validation results, and
-derived code-state refs, all from typed records with
+derived code-state refs, plus any linked failure-mode review result basis, all from typed records with
 `summary_inputs_trusted=false`. `aitp-v5 memory failure-modes --claim
 <claim-id>` and `aitp_v5_audit_failure_mode_coverage` expose the read-only
 `failure_mode_audit` surface: active uncertainty, strongest failure mode,
 validation-contract failure modes, promotion-packet known failure modes,
-uncovered risk modes, and recommended review actions, again only from typed
-records. `aitp-v5 memory failure-mode-review --claim <claim-id>` and
+reviewed failure modes, review result basis refs, uncovered risk modes, and
+recommended review actions, again only from typed records.
+`aitp-v5 memory failure-mode-review --claim <claim-id>` and
 `aitp_v5_build_failure_mode_review_packet` turn that typed audit into a
 read-only `failure_mode_review_packet`: per-mode physical adequacy questions,
 source labels, and coverage labels for human or adversarial review before
