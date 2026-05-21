@@ -5018,3 +5018,60 @@ Each entry should record:
   - start hardening domain-tool recipes that can produce high-quality
     failure-mode review results for concrete workflows such as LibRPA/GW
     formula-code translation and FQHE toy numerics.
+
+### 25cfec0 - Add Failure-Mode Review Basis Executor
+
+- Task: add a safe built-in tool executor and domain-pack recommendations that
+  let agents produce tool-backed basis for `failure_mode_review_result_record`
+  instead of relying only on prose.
+- Planning source:
+  - previous ledger recommendation after `584d97f`;
+  - `docs/superpowers/plans/2026-05-18-aitp-v5-domain-tools-plan.md`;
+  - user requirement that AITP expose theory-physics tool layers for checking
+    results and that tools remain fixed, typed, and reviewable.
+- Changed files:
+  - `brain/v5/tool_executors.py`
+  - `brain/v5/domain_packs.py`
+  - `tests/test_v5_tool_executors.py`
+  - `tests/test_v5_domain_packs.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-18-aitp-v5-domain-tools-plan.md`
+- Public/runtime behavior changes:
+  - tool executor catalog now includes `failure_mode_basis_check`;
+  - the executor checks that every named failure mode has an explicit
+    `basis_ref`, `basis_type`, and answered review question;
+  - executor output reports covered and uncovered failure modes and infers
+    support/refutation from `all_failure_modes_covered`;
+  - FQHE and LibRPA/GW domain packs recommend
+    `recipe-fqhe-failure-mode-review-basis` and
+    `recipe-librpa-gw-failure-mode-review-basis`;
+  - execution briefs expose the new recommendation through existing
+    `known_context.recommended_tool_executors`.
+- Tests:
+  - added executor-catalog coverage for `failure_mode_basis_check`;
+  - added executor behavior coverage for covered/uncovered failure modes;
+  - added GW domain-pack and execution-brief recommendation coverage.
+- Verification:
+  - red target set:
+    `pytest tests\test_v5_tool_executors.py::test_tool_executor_catalog_exposes_input_contracts tests\test_v5_tool_executors.py::test_failure_mode_basis_executor_checks_each_mode_has_review_basis tests\test_v5_domain_packs.py::test_builtin_gw_librpa_pack_suggests_code_provenance_and_benchmarks tests\test_v5_domain_packs.py::test_execution_brief_exposes_domain_tool_executor_recommendations -q`:
+    4 failed because the executor and domain recommendations did not exist;
+  - target green set: same command, 4 passed;
+  - focused related set:
+    `pytest tests\test_v5_tool_executors.py tests\test_v5_domain_packs.py tests\test_v5_real_workflows.py tests\test_v5_public_surfaces.py tests\test_v5_mcp_tools.py tests\test_v5_architecture_boundaries.py -q`:
+    60 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; pytest $files -q`:
+    452 passed;
+  - `python -m compileall -q brain\v5`: passed;
+  - `git diff --check -- .`: passed, with CRLF conversion warnings only.
+- Residual risks:
+  - `failure_mode_basis_check` checks coverage and explicit basis shape, not the
+    scientific validity of the basis itself;
+  - future domain packs should add more specialized executors for actual model
+    Hamiltonian checks, LibRPA input/output diagnostics, and formula-code
+    invariant comparisons.
+- Next recommended task:
+  - add a real-workflow acceptance test where a failure-mode review result cites
+    a `failure_mode_basis_check` tool run and passed validation result before
+    high-risk promotion.
