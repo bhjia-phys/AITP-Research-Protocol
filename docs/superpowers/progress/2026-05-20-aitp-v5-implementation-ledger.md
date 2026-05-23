@@ -5478,7 +5478,7 @@ Each entry should record:
     workspace summary at session start while preserving the invariant that
     typed kernel records remain authoritative.
 
-### pending - Enforce Checkpoint And Promotion Record Contracts
+### 461970e - Enforce Checkpoint And Promotion Record Contracts
 
 - Task: address code-review findings that typed kernel mutation paths must not
   rely only on public-surface validation after output construction.
