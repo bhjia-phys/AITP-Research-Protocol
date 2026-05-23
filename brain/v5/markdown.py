@@ -10,6 +10,9 @@ from typing import Any
 import yaml
 
 
+_FRONTMATTER_DELIMITER = "---"
+
+
 def read_md(path: str | Path) -> tuple[dict[str, Any], str]:
     """Read a Markdown file with optional YAML frontmatter."""
 
@@ -18,12 +21,25 @@ def read_md(path: str | Path) -> tuple[dict[str, Any], str]:
         return {}, ""
     text = p.read_text(encoding="utf-8")
     if text.startswith("---\n"):
-        parts = text.split("---", 2)
-        if len(parts) >= 3:
-            fm = yaml.safe_load(parts[1]) or {}
-            body = parts[2].lstrip("\n")
+        frontmatter_text, body = _split_frontmatter(text)
+        if frontmatter_text is not None:
+            fm = yaml.safe_load(frontmatter_text) or {}
             return dict(fm), body
     return {}, text
+
+
+def _split_frontmatter(text: str) -> tuple[str | None, str]:
+    """Split YAML frontmatter on a delimiter line only."""
+
+    lines = text.splitlines(keepends=True)
+    if not lines or lines[0].strip() != _FRONTMATTER_DELIMITER:
+        return None, text
+    for index, line in enumerate(lines[1:], start=1):
+        if line.strip() == _FRONTMATTER_DELIMITER:
+            frontmatter_text = "".join(lines[1:index])
+            body = "".join(lines[index + 1 :]).lstrip("\n")
+            return frontmatter_text, body
+    return None, text
 
 
 def render_md(frontmatter: dict[str, Any], body: str) -> str:

@@ -33,6 +33,27 @@ def test_markdown_store_round_trips_frontmatter_and_body(tmp_path):
     assert "Hello" in body
 
 
+def test_markdown_reader_ignores_body_table_dashes_when_splitting_frontmatter(tmp_path):
+    from brain.v5.markdown import read_md
+
+    path = tmp_path / "record.md"
+    path.write_text(
+        "---\n"
+        "kind: test\n"
+        "summary: table body follows\n"
+        "---\n"
+        "# Body\n\n"
+        "| Symbol | Meaning |\n"
+        "|--------|---------|\n"
+        "| x | coordinate |\n",
+        encoding="utf-8",
+    )
+
+    fm, body = read_md(path)
+    assert fm == {"kind": "test", "summary": "table body follows"}
+    assert "|--------|---------|" in body
+
+
 def test_topic_context_and_session_binding_are_session_local(tmp_path):
     from brain.v5.workspace import (
         bind_session,
