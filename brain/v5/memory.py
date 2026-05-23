@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
+
+from brain.v5.contracts import ContractError
 from brain.v5.ids import prefixed_id
 from brain.v5.models import (
     EvidenceRecord,
@@ -12,6 +15,7 @@ from brain.v5.models import (
     ToolRunRecord,
     ValidationResultRecord,
 )
+from brain.v5.record_contracts import require_valid_memory_entry_record, require_valid_promotion_packet_record
 from brain.v5.store import list_records, read_record, write_record
 from brain.v5.workspace import WorkspacePaths, get_claim
 
@@ -107,6 +111,7 @@ def create_promotion_packet(
         failure_mode_review_checkpoint_id=failure_mode_review_checkpoint_id,
         failure_mode_review_result_id=failure_mode_review_result_id,
     )
+    _require_valid_promotion_packet(packet)
     write_record(ws.registry_dir("promotion_packets") / f"{packet_id}.md", packet)
     return packet
 
@@ -122,6 +127,7 @@ def apply_promotion_packet(
 
     packet_path = ws.registry_dir("promotion_packets") / f"{packet_id}.md"
     packet = read_record(packet_path, PromotionPacketRecord)
+    _require_valid_promotion_packet(packet)
 
     if packet.status == "promoted":
         raise ValueError("promotion packet is already promoted")
@@ -177,10 +183,12 @@ def apply_promotion_packet(
         failure_mode_review_result_id=packet.failure_mode_review_result_id,
         status="active",
     )
+    _require_valid_memory_entry(entry)
     write_record(ws.root / "memory" / "l2" / "entries" / f"{entry_id}.md", entry)
 
     packet.status = "promoted"
     packet.human_checkpoint_id = checkpoint_id
+    _require_valid_promotion_packet(packet)
     write_record(packet_path, packet)
 
     return entry
@@ -346,3 +354,17 @@ def _resolve_validation_results(
         for result in list_records(ws.registry_dir("validation_results"), ValidationResultRecord)
         if result.result_id in wanted and result.claim_id == claim_id
     ]
+
+
+def _require_valid_promotion_packet(packet: PromotionPacketRecord) -> None:
+    try:
+        require_valid_promotion_packet_record({"ok": True, **asdict(packet)})
+    except ContractError as exc:
+        raise ValueError(str(exc)) from exc
+
+
+def _require_valid_memory_entry(entry: MemoryEntryRecord) -> None:
+    try:
+        require_valid_memory_entry_record({"ok": True, **asdict(entry)})
+    except ContractError as exc:
+        raise ValueError(str(exc)) from exc

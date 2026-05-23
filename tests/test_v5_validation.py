@@ -452,6 +452,8 @@ def test_human_checkpoint_contract_rejects_empty_options(tmp_path):
 def test_human_checkpoint_contract_rejects_invalid_decision(tmp_path):
     """Kernel-level validation rejects invalid decision before writing."""
     from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
+    from brain.v5.models import HumanCheckpointRecord
+    from brain.v5.store import read_record
     from brain.v5.workspace import create_topic, init_workspace
 
     ws = init_workspace(tmp_path)
@@ -466,6 +468,12 @@ def test_human_checkpoint_contract_rejects_invalid_decision(tmp_path):
             ws, checkpoint_id=checkpoint.checkpoint_id,
             decision="invalid_choice", rationale="test", decided_by="human",
         )
+    persisted = read_record(
+        ws.registry_dir("checkpoints") / f"{checkpoint.checkpoint_id}.md",
+        HumanCheckpointRecord,
+    )
+    assert persisted.status == "open"
+    assert persisted.decision == ""
 
 
 def test_decided_human_checkpoint_cannot_be_redecided(tmp_path):
@@ -645,3 +653,31 @@ def test_invalid_decision_checkpoint_blocks_promotion(tmp_path):
 
     with pytest.raises(ValueError, match="decision was"):
         apply_promotion_packet(ws, packet_id=packet.packet_id, checkpoint_id=checkpoint.checkpoint_id)
+
+
+def test_decide_human_checkpoint_rejects_corrupt_checkpoint_record_before_write(tmp_path):
+    from brain.v5.checkpoints import decide_human_checkpoint
+    from brain.v5.models import HumanCheckpointRecord
+    from brain.v5.store import write_record
+    from brain.v5.workspace import create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    checkpoint = HumanCheckpointRecord(
+        checkpoint_id="checkpoint-corrupt",
+        topic_id="fqhe",
+        claim_id="claim-fqhe",
+        reason="Corrupt checkpoint has no options.",
+        requested_by="test",
+        options=[],
+    )
+    write_record(ws.registry_dir("checkpoints") / "checkpoint-corrupt.md", checkpoint)
+
+    with pytest.raises(ValueError, match="human_checkpoint_record.options"):
+        decide_human_checkpoint(
+            ws,
+            checkpoint_id="checkpoint-corrupt",
+            decision="approve",
+            rationale="Should fail before mutation.",
+            decided_by="human",
+        )

@@ -5477,3 +5477,71 @@ Each entry should record:
   - add adapter/hook refresh behavior that can regenerate or discover the
     workspace summary at session start while preserving the invariant that
     typed kernel records remain authoritative.
+
+### pending - Enforce Checkpoint And Promotion Record Contracts
+
+- Task: address code-review findings that typed kernel mutation paths must not
+  rely only on public-surface validation after output construction.
+- Planning source:
+  - active goal review findings P1/P2 for checkpoint decisions, promotion
+    apply, and L2 memory record semantics;
+  - AITP v5 invariant that trust-changing actions must go through kernel
+    records and contract validation, with typed records as truth sources.
+- Changed files:
+  - `brain/v5/checkpoints.py`
+  - `brain/v5/memory.py`
+  - `tests/test_v5_validation.py`
+  - `tests/test_v5_memory.py`
+- Public/runtime behavior changes:
+  - no new CLI/MCP/runtime command was added in this slice because
+    `checkpoint decide`, `aitp_v5_decide_human_checkpoint`, and
+    `decide_human_checkpoint` runtime entrypoint already existed;
+  - `request_human_checkpoint` now validates the typed checkpoint record before
+    writing;
+  - `decide_human_checkpoint` validates the existing typed checkpoint before
+    mutating it and validates the decided checkpoint before writing;
+  - `create_promotion_packet` validates the typed promotion packet before
+    writing;
+  - `apply_promotion_packet` validates the loaded promotion packet before any
+    memory mutation, validates the memory entry before writing, and validates
+    the promoted packet before persisting `status=promoted` plus
+    `human_checkpoint_id`.
+- Tests:
+  - extended invalid-decision checkpoint coverage to prove failed decisions do
+    not mutate the persisted checkpoint record;
+  - added a corrupt checkpoint regression showing a record with empty options
+    fails through the typed `human_checkpoint_record` contract before decision
+    mutation;
+  - added a corrupt promotion packet regression showing direct kernel apply
+    cannot promote a packet with an empty `proposed_memory_kind` into L2
+    memory, and no memory entry is written.
+- Verification:
+  - red target:
+    `pytest tests\test_v5_validation.py::test_decide_human_checkpoint_rejects_corrupt_checkpoint_record_before_write -q`:
+    1 failed because the kernel raised only a local options error rather than
+    the typed checkpoint contract error;
+    `pytest tests\test_v5_memory.py::test_apply_promotion_rejects_corrupt_packet_contract_before_memory_write -q`:
+    1 failed because `apply_promotion_packet` wrote a memory entry from a
+    corrupt packet;
+  - target green:
+    `pytest tests\test_v5_validation.py::test_decide_human_checkpoint_rejects_corrupt_checkpoint_record_before_write tests\test_v5_validation.py::test_human_checkpoint_contract_rejects_invalid_decision -q`:
+    2 passed;
+    `pytest tests\test_v5_memory.py::test_apply_promotion_rejects_corrupt_packet_contract_before_memory_write tests\test_v5_memory.py::test_apply_promotion_populates_memory_entry_and_packet_fields -q`:
+    2 passed;
+  - focused review set:
+    `pytest tests\test_v5_memory.py tests\test_v5_validation.py tests\test_v5_physics_objects.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py -q`:
+    86 passed;
+  - full v5 regression set:
+    explicit `pytest` file list for all `tests/test_v5_*.py` files:
+    460 passed in 151.13s;
+  - `python -m compileall -q brain\v5`: passed;
+  - `git diff --check -- .`: passed, with CRLF conversion warnings only.
+- Residual risks:
+  - relation empty-failure-mode prompting still needs a dedicated review-finding
+    slice if current tests do not already prove the desired behavior;
+  - adapter/workspace summary refresh was intentionally left out of this slice
+    to keep the review fix coherent.
+- Next recommended task:
+  - add the focused relation empty-`failure_modes` regression for
+    `object_relation_failure_mode_check`, then fix `brief.py` or
+    `question_intents.py` only if that regression is red.
