@@ -204,6 +204,11 @@ def install_claude_code_hook_settings(
         current_hooks = hooks.setdefault(event_name, [])
         if not isinstance(current_hooks, list):
             raise ValueError(f"Claude Code settings hooks.{event_name} must be a list")
+        current_hooks[:] = [
+            hook
+            for hook in current_hooks
+            if not _is_stale_claude_v5_hook(hook, expected_hooks=event_hooks)
+        ]
         for event_hook in event_hooks:
             if event_hook not in current_hooks:
                 current_hooks.append(deepcopy(event_hook))
@@ -261,6 +266,19 @@ def _claude_event(matcher: str, command: str) -> dict[str, Any]:
     }
 
 
+def _is_stale_claude_v5_hook(event_hook: Any, *, expected_hooks: list[dict[str, Any]]) -> bool:
+    if event_hook in expected_hooks or not isinstance(event_hook, dict):
+        return False
+    command_hooks = event_hook.get("hooks")
+    if not isinstance(command_hooks, list):
+        return False
+    return any(
+        isinstance(command_hook, dict)
+        and "aitp_v5_claude_hook.py" in str(command_hook.get("command", ""))
+        for command_hook in command_hooks
+    )
+
+
 def _claude_settings_payload(
     settings_path: Path,
     installation: dict[str, Any],
@@ -268,7 +286,8 @@ def _claude_settings_payload(
     workspace_base: str,
     session_id: str,
 ) -> dict[str, Any]:
-    command_base = f'python hooks/aitp_v5_claude_hook.py {{command}} --base "{workspace_base}" --session-id {session_id}'
+    hook_script = (Path(__file__).resolve().parents[2] / "hooks" / "aitp_v5_claude_hook.py").as_posix()
+    command_base = f'python "{hook_script}" {{command}} --base "{workspace_base}" --session-id {session_id}'
     settings = {
         "hooks": {
             "PreToolUse": [_claude_event("*", command_base.format(command="pre-tool"))],

@@ -1,6 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
+from pathlib import Path
+from io import BytesIO
+import subprocess
+import sys
 
 
 def _seed_session(tmp_path):
@@ -35,6 +40,79 @@ def _seed_session(tmp_path):
         active_claim=claim.claim_id,
     )
     return ws, claim
+
+
+def _read_content_length_message(stream) -> dict:
+    header = b""
+    while not (header.endswith(b"\r\n\r\n") or header.endswith(b"\n\n")):
+        chunk = stream.read(1)
+        assert chunk, f"unexpected EOF while reading MCP header: {header!r}"
+        header += chunk
+    length = None
+    for line in header.decode("utf-8").replace("\r\n", "\n").split("\n"):
+        if line.lower().startswith("content-length:"):
+            length = int(line.split(":", 1)[1].strip())
+            break
+    assert length is not None
+    return json.loads(stream.read(length).decode("utf-8"))
+
+
+def test_v5_native_mcp_content_length_stdio_smoke(tmp_path):
+    script = Path(__file__).resolve().parents[1] / "brain" / "v5" / "native_mcp.py"
+    env = {**os.environ, "AITP_V5_MCP_LOG": str(tmp_path / "mcp.log")}
+    input_bytes = b""
+    for message in [
+        {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18"}},
+        {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
+        {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
+    ]:
+        body = json.dumps(message).encode("utf-8")
+        input_bytes += f"Content-Length: {len(body)}\r\n\r\n".encode("utf-8") + body
+
+    process = subprocess.run(
+        [sys.executable, str(script)],
+        cwd=tmp_path,
+        input=input_bytes,
+        capture_output=True,
+        env=env,
+        timeout=10,
+    )
+    assert process.returncode == 0, process.stderr.decode("utf-8", "replace")
+    stdout = BytesIO(process.stdout)
+    initialized = _read_content_length_message(stdout)
+    assert initialized["result"]["serverInfo"]["name"] == "aitp-v5-brain"
+    tools = _read_content_length_message(stdout)["result"]["tools"]
+    assert tools
+    assert all(tool["name"].startswith("aitp_v5_") for tool in tools)
+    assert not any(tool["name"].startswith("aitp_") and not tool["name"].startswith("aitp_v5_") for tool in tools)
+
+
+def test_v5_native_mcp_ndjson_stdio_smoke(tmp_path):
+    script = Path(__file__).resolve().parents[1] / "brain" / "v5" / "native_mcp.py"
+    env = {**os.environ, "AITP_V5_MCP_LOG": str(tmp_path / "mcp.log")}
+    input_bytes = b"\n".join(
+        json.dumps(message).encode("utf-8")
+        for message in [
+            {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18"}},
+            {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
+            {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
+        ]
+    ) + b"\n"
+    process = subprocess.run(
+        [sys.executable, str(script)],
+        cwd=tmp_path,
+        input=input_bytes,
+        capture_output=True,
+        env=env,
+        timeout=10,
+    )
+    assert process.returncode == 0, process.stderr.decode("utf-8", "replace")
+    messages = [json.loads(line) for line in process.stdout.decode("utf-8").splitlines() if line.strip()]
+    assert messages[0]["result"]["serverInfo"]["name"] == "aitp-v5-brain"
+    tools = messages[1]["result"]["tools"]
+    assert tools
+    assert all(tool["name"].startswith("aitp_v5_") for tool in tools)
+    assert not any(tool["name"].startswith("aitp_") and not tool["name"].startswith("aitp_v5_") for tool in tools)
 
 
 def _invoke(args, capsys):
@@ -2271,6 +2349,7 @@ def test_cli_adapter_hook_settings_writes_claude_code_settings_from_packet(tmp_p
     pre_command = settings["hooks"]["PreToolUse"][0]["hooks"][0]["command"]
     post_command = settings["hooks"]["PostToolUse"][0]["hooks"][0]["command"]
     assert "hooks/aitp_v5_claude_hook.py" in pre_command
+    assert str(Path.cwd() / "hooks" / "aitp_v5_claude_hook.py").replace("\\", "/") in pre_command
     assert "pre-tool" in pre_command
     assert "--session-id s1" in pre_command
     assert "post-tool" in post_command
@@ -2357,6 +2436,67 @@ def test_claude_code_hook_installer_merges_existing_settings_without_clobbering(
     installed_twice = json.loads(settings_path.read_text(encoding="utf-8"))
     assert second_payload["added_hooks"] == 0
     assert installed_twice == merged
+
+
+def test_claude_code_hook_installer_replaces_stale_relative_v5_hooks(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.hook_install_templates import install_claude_code_hook_settings
+
+    ws, _ = _seed_session(tmp_path)
+    packet = build_adapter_packet(ws, "s1", runtime="claude-code")
+    settings_path = tmp_path / ".claude" / "settings.local.json"
+    settings_path.parent.mkdir(parents=True)
+    settings_path.write_text(
+        json.dumps(
+            {
+                "hooks": {
+                    "PreToolUse": [
+                        {
+                            "matcher": "*",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": 'python hooks/aitp_v5_claude_hook.py pre-tool --base "old" --session-id s1',
+                                }
+                            ],
+                        },
+                        {
+                            "matcher": "Bash",
+                            "hooks": [{"type": "command", "command": "echo keep-existing"}],
+                        },
+                    ],
+                    "PostToolUse": [
+                        {
+                            "matcher": "*",
+                            "hooks": [
+                                {
+                                    "type": "command",
+                                    "command": 'python hooks/aitp_v5_claude_hook.py post-tool --base "old" --session-id s1',
+                                }
+                            ],
+                        }
+                    ],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = install_claude_code_hook_settings(
+        settings_path,
+        packet["runtime_hook_installation"],
+        workspace_base=str(tmp_path),
+        session_id="s1",
+    )
+
+    merged = json.loads(settings_path.read_text(encoding="utf-8"))
+    pre_commands = [entry["hooks"][0]["command"] for entry in merged["hooks"]["PreToolUse"]]
+    post_commands = [entry["hooks"][0]["command"] for entry in merged["hooks"]["PostToolUse"]]
+    assert payload["added_hooks"] == 2
+    assert "echo keep-existing" in pre_commands
+    assert sum("aitp_v5_claude_hook.py" in command for command in pre_commands) == 1
+    assert sum("aitp_v5_claude_hook.py" in command for command in post_commands) == 1
+    assert all("python hooks/aitp_v5_claude_hook.py" not in command for command in pre_commands + post_commands)
 
 
 def test_cli_adapter_install_hooks_merges_claude_code_settings(tmp_path, capsys):
