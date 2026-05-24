@@ -6083,7 +6083,7 @@ Each entry should record:
     workspace smokes, then decide whether remaining items are product polish or
     blockers for the active goal.
 
-### pending - Clarify Host Smoke Coverage Residual
+### 8a7d265 - Clarify Host Smoke Coverage Residual
 
 - Task: update static hook smoke coverage so it recognizes the new dynamic
   host-readiness surface and no longer labels Codex/Claude/Kimi as lacking a
