@@ -13,6 +13,7 @@ from brain.v5.brief import build_execution_brief
 from brain.v5.cli_adapters import dispatch_adapter_command
 from brain.v5.cli_memory import add_memory_parser, dispatch_memory_command
 from brain.v5.cli_summaries import add_summary_parser, dispatch_summary_command
+from brain.v5.cli_source import add_source_parser, dispatch_source_command
 from brain.v5.code import record_code_state
 from brain.v5.evidence import record_evidence
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
@@ -157,6 +158,7 @@ def _build_parser() -> argparse.ArgumentParser:
     lm.add_argument("--session", required=True, dest="session_id")
 
     add_summary_parser(sp)
+    add_source_parser(sp)
 
     ap = sp.add_parser("adapter"); aps = ap.add_subparsers(dest="adapter_command", required=True)
     aps.add_parser("record-gate-audit")
@@ -347,6 +349,8 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.command == "summary":
         return dispatch_summary_command(args, ws)
+    if args.command == "source":
+        return dispatch_source_command(args, ws)
     if args.command == "adapter":
         return dispatch_adapter_command(args, ws)
 

@@ -139,6 +139,12 @@ def validate_workspace_summary_bundle(payload: dict[str, Any], *, path: str = "w
 def require_valid_workspace_summary_bundle(payload: dict[str, Any]) -> dict[str, Any]:
     from brain.v5.summary_contracts import require_valid_workspace_summary_bundle as _require; return _require(payload)
 
+def validate_source_reconstruction_audit(payload: dict[str, Any], *, path: str = "source_reconstruction_audit") -> ContractResult:
+    from brain.v5.source_reconstruction_contracts import validate_source_reconstruction_audit as _validate; return _validate(payload, path=path)
+
+def require_valid_source_reconstruction_audit(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.source_reconstruction_contracts import require_valid_source_reconstruction_audit as _require; return _require(payload)
+
 
 def validate_trust_update_preflight(payload: dict[str, Any], *, path: str = "trust_preflight") -> ContractResult:
     """Validate a public trust-update preflight payload."""

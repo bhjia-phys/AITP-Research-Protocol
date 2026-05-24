@@ -5587,3 +5587,60 @@ Each entry should record:
   - perform a requirement-by-requirement review audit over the five active
     review findings and update the implementation ledger/readme status if any
     remaining evidence is missing.
+
+### d303254 - Add Source Reconstruction Audit
+
+- Task: close the source-stack/reconstruction coverage gap with a read-only
+  typed audit surface for active claims.
+- Planning source:
+  - source-grounded learning-mode design requirement that reusable physics
+    memory must answer definition, assumptions/scope, source location,
+    dependency graph, reconstruction path, and failure conditions;
+  - active final-engineering goal to distinguish source pointers from typed
+    evidence and make reconstruction coverage auditable.
+- Changed files:
+  - `brain/v5/source_reconstruction.py`
+  - `brain/v5/source_reconstruction_contracts.py`
+  - `brain/v5/cli_source.py`
+  - `brain/v5/contracts.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoint_catalog.py`
+  - `brain/v5/cli.py`
+  - `brain/v5/mcp_tools.py`
+  - `tests/test_v5_source_reconstruction.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+- Public/runtime behavior changes:
+  - added contracted public surface `source_reconstruction_audit`;
+  - added kernel helper `audit_source_reconstruction`;
+  - added CLI `aitp-v5 source reconstruction-audit --claim <claim-id>`;
+  - added MCP wrapper `aitp_v5_audit_source_reconstruction`;
+  - added runtime entrypoint `source_reconstruction_audit`.
+- Tests:
+  - incomplete claims report missing reconstruction components;
+  - typed source stacks satisfy definition, scope, source, dependency,
+    reconstruction-path, and failure-condition components;
+  - CLI/MCP/runtime entrypoints expose the new audit.
+- Verification:
+  - red target:
+    `pytest tests\test_v5_source_reconstruction.py -q`: 3 failed because the
+    module and public surfaces did not exist;
+  - target green:
+    same command: 3 passed;
+  - focused related set:
+    `pytest tests\test_v5_source_reconstruction.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py tests\test_v5_mcp_tools.py tests\test_v5_cli.py tests\test_v5_architecture_boundaries.py -q`:
+    60 passed;
+  - full v5 regression set:
+    `$files = Get-ChildItem tests -Filter 'test_v5_*.py' | ForEach-Object { $_.FullName }; pytest $files -q`:
+    484 passed;
+  - `python -m compileall -q brain\v5`: passed.
+- Residual risks:
+  - the audit checks typed reconstruction coverage; it does not parse papers or
+    prove the source content itself was correctly understood;
+  - source locations remain orientation-only pointers, so agents still need
+    evidence/validation records before trust changes.
+- Next recommended task:
+  - add an orientation-only Obsidian/L2 review view or a replay packet that
+    consumes this audit across active claims without making generated markdown a
+    truth source.

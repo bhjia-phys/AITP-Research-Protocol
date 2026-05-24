@@ -198,7 +198,14 @@ reviewed failure modes, validation-result coverage, review result basis refs,
 uncovered risk modes, and recommended review actions, again only from typed
 records. Full passed validation covers its contract failure modes; partial
 validation covers only explicitly declared `covered_failure_modes` or
-unambiguous checked-output coverage, never summary prose.
+unambiguous checked-output coverage, never summary prose. For source-stack
+reconstruction review, `aitp-v5 source reconstruction-audit --claim
+<claim-id>` and `aitp_v5_audit_source_reconstruction` expose a read-only
+`source_reconstruction_audit` surface. It checks typed records for definition
+coverage, assumptions/scope, source locations, object-relation dependency
+graph, explicit reconstruction-path evidence, and failure conditions. Reference
+locations remain orientation-only pointers; the audit only reports whether
+typed records make the claim reconstructable and cannot update claim trust.
 `aitp-v5 memory failure-mode-review --claim <claim-id>` and
 `aitp_v5_build_failure_mode_review_packet` turn that typed audit into a
 read-only `failure_mode_review_packet`: per-mode physical adequacy questions,

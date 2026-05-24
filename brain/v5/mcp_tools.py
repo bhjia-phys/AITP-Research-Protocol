@@ -156,6 +156,10 @@ def aitp_v5_list_tool_executors() -> dict:
 def aitp_v5_list_knowledge_connectors() -> dict:
     return require_valid_public_surface("knowledge_connector_catalog", describe_knowledge_connectors())
 
+def aitp_v5_audit_source_reconstruction(base: str, *, claim_id: str) -> dict:
+    from brain.v5.source_reconstruction import audit_source_reconstruction
+    return require_valid_public_surface("source_reconstruction_audit", audit_source_reconstruction(_ws(base), claim_id=claim_id))
+
 
 def aitp_v5_persist_hook_trace_event(base: str, *, hook_payload: dict) -> dict:
     return require_valid_public_surface("hook_trace_event_record", persist_hook_trace_event(_ws(base), hook_payload))

@@ -88,6 +88,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_list_knowledge_connectors",
         "surface": "knowledge_connector_catalog",
     },
+    "source_reconstruction_audit": {
+        "cli": "aitp-v5 source reconstruction-audit <args>",
+        "mcp": "aitp_v5_audit_source_reconstruction",
+        "surface": "source_reconstruction_audit",
+    },
     "persist_hook_trace_event": {
         "cli": "aitp-v5 trace hook-event persist <args>",
         "mcp": "aitp_v5_persist_hook_trace_event",
@@ -230,6 +235,8 @@ def sample_args_for_template(template: str) -> list[str]:
     if template.startswith("memory failure-mode-review-result"):
         return ["--claim", "claim-fqhe", "--checkpoint", "checkpoint-fqhe", "--status", "passed", "--reviewed-mode", "sector misassignment", "--basis-ref", "literature:fqhe", "--summary", "Review basis."]
     if template.startswith(("memory audit", "memory failure-modes", "memory failure-mode-review", "memory request-failure-mode-review")):
+        return ["--claim", "claim-fqhe"]
+    if template.startswith("source reconstruction-audit"):
         return ["--claim", "claim-fqhe"]
     if template.startswith("code state record"):
         return [

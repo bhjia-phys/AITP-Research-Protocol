@@ -237,6 +237,13 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   evidence refs, validation result refs, code-state refs, and linked
   failure-mode review result basis refs while keeping `summary_inputs_trusted=false`
   and `can_update_kernel_state=false`.
+- Agents can call `aitp-v5 source reconstruction-audit --claim <claim-id>` or
+  `aitp_v5_audit_source_reconstruction` to check whether a claim has a
+  reconstructable typed source stack: definitions, assumptions/scope,
+  source-location coverage, object-relation dependency graph, explicit
+  reconstruction-path evidence, and failure conditions. The contracted
+  `source_reconstruction_audit` surface is read-only, uses only typed records,
+  keeps `summary_inputs_trusted=false`, and cannot update claim trust.
 - Agents can call `aitp-v5 memory failure-modes --claim <claim-id>` or
   `aitp_v5_audit_failure_mode_coverage` for a read-only
   `failure_mode_audit` surface. It reports active uncertainty,

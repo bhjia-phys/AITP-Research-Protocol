@@ -39,6 +39,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "runtime_hook_smoke_coverage",
         "sensemaking_report_record",
         "session_summary_bundle",
+        "source_reconstruction_audit",
         "summary_orientation",
         "tool_executor_catalog",
         "tool_recipe_record",
