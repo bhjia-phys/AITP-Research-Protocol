@@ -5696,7 +5696,7 @@ Each entry should record:
   - add an Obsidian/L2 review export or adapter session-start refresh that
     consumes `workspace_replay_packet` without giving generated files authority.
 
-### TBD - Add L2 Obsidian Review View
+### 568886f - Add L2 Obsidian Review View
 
 - Task: generate Obsidian-friendly Markdown review notes from typed L2 memory
   entries without making the generated notes authoritative.
