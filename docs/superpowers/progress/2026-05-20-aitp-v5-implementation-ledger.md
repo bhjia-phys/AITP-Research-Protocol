@@ -5746,7 +5746,7 @@ Each entry should record:
     replay and Obsidian views can be regenerated automatically when a host
     session begins.
 
-### TBD - Add Workspace Refresh Bundle
+### 31e3736 - Add Workspace Refresh Bundle
 
 - Task: provide one stable host-startup refresh entrypoint that regenerates the
   workspace summary, replay packet, and active-session L2 Obsidian review view
