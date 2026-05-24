@@ -5941,7 +5941,7 @@ Each entry should record:
     exactly what AITP will do in a natural research conversation before it
     writes heavy typed records.
 
-### pending - Add Interaction Recording Preview
+### 9dc95fd - Add Interaction Recording Preview
 
 - Task: add a lightweight natural-conversation preview surface so host adapters
   and agents can see what AITP v5 will record, defer, or escalate before
