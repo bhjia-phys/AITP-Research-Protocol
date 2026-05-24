@@ -8,6 +8,7 @@ from pathlib import Path
 from brain.v5.failure_mode_audit import audit_failure_mode_coverage
 from brain.v5.failure_mode_review import build_failure_mode_review_packet, record_failure_mode_review_result, request_failure_mode_review_checkpoint
 from brain.v5.memory_audit import audit_l2_memory_context
+from brain.v5.obsidian_views import write_l2_obsidian_view
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.workspace import init_workspace
 
@@ -15,6 +16,11 @@ from brain.v5.workspace import init_workspace
 def aitp_v5_audit_l2_memory_context(base: str, *, claim_id: str) -> dict:
     payload = audit_l2_memory_context(init_workspace(Path(base)), claim_id=claim_id)
     return require_valid_public_surface("l2_memory_audit", payload)
+
+
+def aitp_v5_write_l2_obsidian_view(base: str, *, output_dir: str = "") -> dict:
+    payload = write_l2_obsidian_view(init_workspace(Path(base)), output_dir=output_dir)
+    return require_valid_public_surface("l2_obsidian_view_bundle", payload)
 
 
 def aitp_v5_audit_failure_mode_coverage(base: str, *, claim_id: str) -> dict:

@@ -23,6 +23,7 @@ _PUBLIC_SURFACE_NAMES = (
     "kimi_code_hook_config",
     "kimi_code_hook_installation",
     "knowledge_connector_catalog",
+    "l2_obsidian_view_bundle",
     "l2_memory_audit",
     "legacy_migration_result",
     "memory_entry_record",
@@ -72,6 +73,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "kimi_code_hook_config": "contracted Kimi Code TOML hook config generated from runtime hook installation metadata",
     "kimi_code_hook_installation": "contracted safe merge of AITP hooks into Kimi Code TOML config without treating config as truth",
     "knowledge_connector_catalog": "contracted catalog of knowledge connectors for notes, literature, and learning memory",
+    "l2_obsidian_view_bundle": "orientation-only Obsidian Markdown view over typed L2 memory entries",
     "l2_memory_audit": "read-only typed-record audit of L2 memory provenance for one claim",
     "legacy_migration_result": "contracted explicit migration result from legacy topic files into v5 typed records",
     "memory_entry_record": "contracted L2 memory entry created only from evidence-backed promotion packets with human approval",
@@ -184,6 +186,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_workspace_replay_packet,
     )
     from brain.v5.legacy_contracts import require_valid_legacy_migration_result
+    from brain.v5.obsidian_view_contracts import require_valid_l2_obsidian_view_bundle
     from brain.v5.hook_protocol_contracts import (
         require_valid_claude_code_hook_installation,
         require_valid_claude_code_hook_settings,
@@ -219,6 +222,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "kimi_code_hook_config": require_valid_kimi_code_hook_config,
         "kimi_code_hook_installation": require_valid_kimi_code_hook_installation,
         "knowledge_connector_catalog": require_valid_knowledge_connector_catalog,
+        "l2_obsidian_view_bundle": require_valid_l2_obsidian_view_bundle,
         "l2_memory_audit": require_valid_l2_memory_audit,
         "legacy_migration_result": require_valid_legacy_migration_result,
         "memory_entry_record": require_valid_memory_entry_record,

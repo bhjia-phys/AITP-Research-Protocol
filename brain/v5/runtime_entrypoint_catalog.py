@@ -196,6 +196,7 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "surface": "memory_entry_record",
     },
     "audit_l2_memory_context": {"cli": "aitp-v5 memory audit <args>", "mcp": "aitp_v5_audit_l2_memory_context", "surface": "l2_memory_audit"},
+    "l2_obsidian_view": {"cli": "aitp-v5 memory obsidian-view", "mcp": "aitp_v5_write_l2_obsidian_view", "surface": "l2_obsidian_view_bundle"},
     "audit_failure_mode_coverage": {"cli": "aitp-v5 memory failure-modes <args>", "mcp": "aitp_v5_audit_failure_mode_coverage", "surface": "failure_mode_audit"},
     "build_failure_mode_review_packet": {"cli": "aitp-v5 memory failure-mode-review <args>", "mcp": "aitp_v5_build_failure_mode_review_packet", "surface": "failure_mode_review_packet"},
     "request_failure_mode_review_checkpoint": {"cli": "aitp-v5 memory request-failure-mode-review <args>", "mcp": "aitp_v5_request_failure_mode_review_checkpoint", "surface": "human_checkpoint_record"},

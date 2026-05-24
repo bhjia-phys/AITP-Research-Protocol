@@ -10,6 +10,7 @@ from dataclasses import asdict
 
 from brain.v5.failure_mode_review import build_failure_mode_review_packet, record_failure_mode_review_result, request_failure_mode_review_checkpoint
 from brain.v5.memory_audit import audit_l2_memory_context
+from brain.v5.obsidian_views import write_l2_obsidian_view
 from brain.v5.public_surfaces import require_valid_public_surface
 
 
@@ -37,6 +38,8 @@ def add_memory_parser(sp: argparse._SubParsersAction) -> None:
     review_result.add_argument("--artifact-id", action="append", default=[], dest="artifact_ids")
     review_result.add_argument("--reviewer-role", default="adversarial_reviewer")
     review_result.add_argument("--summary", required=True)
+    obsidian_view = ms.add_parser("obsidian-view")
+    obsidian_view.add_argument("--output", default="", dest="output_dir")
 
 
 def dispatch_memory_command(args: argparse.Namespace, ws: Any) -> dict[str, Any]:
@@ -77,4 +80,9 @@ def dispatch_memory_command(args: argparse.Namespace, ws: Any) -> dict[str, Any]
             summary=args.summary,
         )
         return require_valid_public_surface("failure_mode_review_result_record", {"ok": True, **asdict(result)})
+    if args.memory_command == "obsidian-view":
+        return require_valid_public_surface(
+            "l2_obsidian_view_bundle",
+            write_l2_obsidian_view(ws, output_dir=args.output_dir),
+        )
     raise SystemExit(f"unsupported memory command: {args.memory_command}")

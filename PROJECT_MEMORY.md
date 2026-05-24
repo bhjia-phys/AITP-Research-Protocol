@@ -251,6 +251,11 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   linked memory/validation ids, and next actions from typed execution briefs.
   It is a lightweight long-term resumption surface, not a truth source, and
   cannot update kernel state or claim trust.
+- Agents can call `aitp-v5 memory obsidian-view` or
+  `aitp_v5_write_l2_obsidian_view` to generate an orientation-only Markdown
+  review view for active L2 memory entries. The generated notes list memory
+  scope, evidence refs, validation refs, and known failure modes, but keep
+  `truth_source=false`; typed memory/audit records remain authoritative.
 - Agents can call `aitp-v5 memory failure-modes --claim <claim-id>` or
   `aitp_v5_audit_failure_mode_coverage` for a read-only
   `failure_mode_audit` surface. It reports active uncertainty,

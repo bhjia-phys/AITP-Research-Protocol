@@ -213,6 +213,12 @@ evidence-output gaps, source-reconstruction gaps, linked memory/validation ids,
 and next actions derived from typed execution briefs. This is a lightweight
 replay entrypoint for humans and host adapters; it is regenerated from kernel
 state and cannot update kernel state or claim trust.
+For Obsidian review, `aitp-v5 memory obsidian-view` and
+`aitp_v5_write_l2_obsidian_view` generate an orientation-only Markdown view of
+typed L2 memory entries under `.aitp/surfaces/obsidian_l2` by default. These
+notes are convenient for browsing promoted memory, evidence refs, validation
+refs, scope, and known failure modes, but their frontmatter keeps
+`truth_source=false`; trust updates still have to read typed kernel records.
 `aitp-v5 memory failure-mode-review --claim <claim-id>` and
 `aitp_v5_build_failure_mode_review_packet` turn that typed audit into a
 read-only `failure_mode_review_packet`: per-mode physical adequacy questions,

@@ -5695,3 +5695,53 @@ Each entry should record:
 - Next recommended task:
   - add an Obsidian/L2 review export or adapter session-start refresh that
     consumes `workspace_replay_packet` without giving generated files authority.
+
+### TBD - Add L2 Obsidian Review View
+
+- Task: generate Obsidian-friendly Markdown review notes from typed L2 memory
+  entries without making the generated notes authoritative.
+- Planning source:
+  - final-engineering gap for mature L2/Obsidian review views;
+  - AITP invariant that external notes and generated Markdown remain
+    orientation-only while typed kernel records remain the truth source.
+- Changed files:
+  - `brain/v5/obsidian_views.py`
+  - `brain/v5/obsidian_view_contracts.py`
+  - `brain/v5/cli_memory.py`
+  - `brain/v5/mcp_memory.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoint_catalog.py`
+  - `tests/test_v5_obsidian_views.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+- Public/runtime behavior changes:
+  - added contracted public surface `l2_obsidian_view_bundle`;
+  - added `write_l2_obsidian_view`;
+  - added CLI `aitp-v5 memory obsidian-view`;
+  - added MCP wrapper `aitp_v5_write_l2_obsidian_view`;
+  - added runtime entrypoint `l2_obsidian_view`.
+- Tests:
+  - generated overview and per-memory notes have `truth_source=false` and
+    `orientation_only=true`;
+  - notes list scoped memory, evidence refs, validation refs, and known failure
+    modes from typed records;
+  - CLI/MCP/runtime entrypoints expose the view bundle.
+- Verification:
+  - red target:
+    `pytest tests\test_v5_obsidian_views.py -q`: 2 failed because the writer
+    and MCP wrapper did not exist;
+  - target green:
+    same command: 2 passed;
+  - focused related set:
+    `pytest tests\test_v5_obsidian_views.py tests\test_v5_memory.py tests\test_v5_memory_audit.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py tests\test_v5_mcp_tools.py tests\test_v5_cli.py tests\test_v5_architecture_boundaries.py -q`:
+    101 passed.
+- Residual risks:
+  - the view writes Markdown under `.aitp/surfaces/obsidian_l2` by default; it
+    does not yet sync into a user-selected Obsidian vault folder automatically;
+  - the view is for review/browsing only and does not enforce memory quality.
+- Next recommended task:
+  - add adapter/session-start refresh or optional vault-target discovery so
+    replay and Obsidian views can be regenerated automatically when a host
+    session begins.
