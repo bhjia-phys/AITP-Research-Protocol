@@ -6082,3 +6082,30 @@ Each entry should record:
   - produce the final residual-gap audit from current public surfaces and real
     workspace smokes, then decide whether remaining items are product polish or
     blockers for the active goal.
+
+### pending - Clarify Host Smoke Coverage Residual
+
+- Task: update static hook smoke coverage so it recognizes the new dynamic
+  host-readiness surface and no longer labels Codex/Claude/Kimi as lacking a
+  host process smoke path.
+- Planning source:
+  - readiness audit in `0324bc5` proved a callable dynamic process/readiness
+    surface;
+  - static `runtime_hook_smoke_coverage` still used the older
+    `real_host_process_smoke` gap label, which conflated process launch with
+    proprietary interactive lifecycle firing.
+- Changed files:
+  - `brain/v5/hook_smoke_coverage.py`
+  - `tests/test_v5_adapters.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+- Public/runtime behavior changes:
+  - Codex, Claude Code, and Kimi Code smoke coverage now includes
+    `dynamic_host_readiness_audit_surface`;
+  - their remaining static gap is renamed to
+    `real_interactive_lifecycle_event_smoke`, which is narrower and more
+    honest;
+  - OpenCode remains unchanged because it is deferred by current priority.
+- Verification:
+  - targeted related set to be run before commit:
+    `python -m pytest tests/test_v5_adapters.py tests/test_v5_host_readiness.py tests/test_v5_public_surfaces.py tests/test_v5_runtime_entrypoints.py tests/test_v5_architecture_boundaries.py -q`.

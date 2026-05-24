@@ -29,8 +29,9 @@ def runtime_hook_smoke_coverage_report() -> dict[str, Any]:
                         "tests/test_v5_adapter_event_runner.py::test_codex_native_hooks_json_post_tool_command_executes_from_workspace_cwd",
                     ],
                 ),
+                _host_readiness_check(),
             ],
-            "gaps": ["real_host_process_smoke"],
+            "gaps": ["real_interactive_lifecycle_event_smoke"],
         },
         {
             "runtime": "claude_code",
@@ -51,8 +52,9 @@ def runtime_hook_smoke_coverage_report() -> dict[str, Any]:
                         "tests/test_v5_adapter_event_runner.py::test_claude_code_hook_session_start_refreshes_workspace_views",
                     ],
                 ),
+                _host_readiness_check(),
             ],
-            "gaps": ["real_host_process_smoke"],
+            "gaps": ["real_interactive_lifecycle_event_smoke"],
         },
         {
             "runtime": "kimi_code",
@@ -81,8 +83,9 @@ def runtime_hook_smoke_coverage_report() -> dict[str, Any]:
                         "tests/test_v5_adapter_event_runner.py::test_kimi_code_hook_session_start_refreshes_workspace_views",
                     ],
                 ),
+                _host_readiness_check(),
             ],
-            "gaps": ["real_host_process_smoke"],
+            "gaps": ["real_interactive_lifecycle_event_smoke"],
         },
         {
             "runtime": "opencode",
@@ -128,3 +131,14 @@ def _check(name: str, description: str, test_ids: list[str]) -> dict[str, Any]:
         "test_ids": test_ids,
         "runtime_metadata_only": True,
     }
+
+
+def _host_readiness_check() -> dict[str, Any]:
+    return _check(
+        "dynamic_host_readiness_audit_surface",
+        "A dynamic runtime surface can launch the host command, audit installed hook files, and optionally smoke SessionStart.",
+        [
+            "tests/test_v5_host_readiness.py::test_runtime_host_readiness_runs_process_without_trusting_summaries",
+            "tests/test_v5_host_readiness.py::test_runtime_host_readiness_cli_and_mcp",
+        ],
+    )

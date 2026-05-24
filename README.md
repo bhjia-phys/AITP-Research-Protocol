@@ -373,7 +373,8 @@ commands while remaining orientation-only and unable to update claim trust.
 Generated-hook smoke coverage can be reviewed with
 `aitp-v5 adapter smoke-coverage` or `aitp_v5_report_hook_smoke_coverage`; the
 report is orientation-only and lists which Codex/OpenCode/Claude Code hook paths
-have test-backed smoke checks and which real-host gaps remain.
+have test-backed smoke checks, which dynamic host-readiness surface exists, and
+which real interactive lifecycle-event gaps remain.
 Both fixtures write the bridge and sidecar, then point pre-tool hooks at the
 stdin runner and post-tool hooks at the trace-persistence runner with a declared
 repository `cwd`, without granting generated files authority over typed records.

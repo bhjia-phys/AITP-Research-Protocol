@@ -129,8 +129,8 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `aitp-v5 adapter smoke-coverage` or
   `aitp_v5_report_hook_smoke_coverage`. The returned
   `runtime_hook_smoke_coverage` surface is orientation-only and lists
-  test-backed Codex/OpenCode/Claude Code hook smoke checks plus remaining
-  real-host gaps.
+  test-backed Codex/OpenCode/Claude Code hook smoke checks, dynamic
+  host-readiness coverage, and remaining real interactive lifecycle-event gaps.
 - Dynamic host readiness can be checked with
   `aitp-v5 adapter host-readiness <runtime>` or
   `aitp_v5_audit_runtime_host_readiness`. The returned
