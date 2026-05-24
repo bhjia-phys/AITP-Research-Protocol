@@ -5645,7 +5645,7 @@ Each entry should record:
     consumes this audit across active claims without making generated markdown a
     truth source.
 
-### TBD - Add Workspace Replay Packet
+### b487bb1 - Add Workspace Replay Packet
 
 - Task: add a lightweight long-term replay/resumption packet across active
   sessions, claims, evidence gaps, source-reconstruction gaps, and next actions.
