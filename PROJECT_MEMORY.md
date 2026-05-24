@@ -52,6 +52,12 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `_GateResult.__str__` returns its message for human display.
 - **Popup gates**: Tools that require human decisions return popup_gate dicts for
   the agent to render as user prompts.
+- **Human-facing output stability**: `docs/AITP_SPEC.md` defines the stable
+  output spine for chat reports, session summaries, replay packets, and review
+  views. Preserve the spine: core claim, verified content, uncertainty/failure
+  modes, records, next actions, and long-term-memory candidates/non-promotable
+  content. Add new diagnostics only as optional sections or appendices unless a
+  major protocol version and migration note are provided.
 
 ## Development
 
