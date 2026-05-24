@@ -20,6 +20,8 @@ _PUBLIC_SURFACE_NAMES = (
     "failure_mode_review_result_record",
     "human_checkpoint_record",
     "hook_trace_event_record",
+    "kimi_code_hook_config",
+    "kimi_code_hook_installation",
     "knowledge_connector_catalog",
     "l2_memory_audit",
     "legacy_migration_result",
@@ -65,6 +67,8 @@ _PUBLIC_SURFACE_PURPOSES = {
     "failure_mode_review_result_record": "contracted typed record preserving the evidence/tool/literature basis behind an approved failure-mode review",
     "human_checkpoint_record": "contracted human checkpoint requiring explicit options and a decision from the declared option set",
     "hook_trace_event_record": "contracted persisted hook trace-event record that cannot update claim trust",
+    "kimi_code_hook_config": "contracted Kimi Code TOML hook config generated from runtime hook installation metadata",
+    "kimi_code_hook_installation": "contracted safe merge of AITP hooks into Kimi Code TOML config without treating config as truth",
     "knowledge_connector_catalog": "contracted catalog of knowledge connectors for notes, literature, and learning memory",
     "l2_memory_audit": "read-only typed-record audit of L2 memory provenance for one claim",
     "legacy_migration_result": "contracted explicit migration result from legacy topic files into v5 typed records",
@@ -78,7 +82,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "record_gate_coverage_audit": "contracted audit that every runtime record protocol has a conscious runtime gate decision",
     "reference_location_record": "contracted orientation-only pointer to an external paper, note, or knowledge item",
     "runtime_hook_installation_audit": "read-only audit of installed runtime hook files; runtime metadata only, never kernel truth",
-    "runtime_hook_installation_paths": "read-only discovery of workspace-local hook install targets for Codex, Claude Code, and OpenCode",
+    "runtime_hook_installation_paths": "read-only discovery of workspace-local hook install targets for Codex, Claude Code, Kimi Code, and OpenCode",
     "runtime_hook_smoke_coverage": "read-only report of which generated runtime hook paths have test-backed smoke coverage",
     "sensemaking_report_record": "contracted local sense-making report — orientation-only, never a validation gate",
     "session_summary_bundle": "orientation-only summary files regenerated from typed kernel records",
@@ -181,6 +185,10 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_opencode_plugin_bridge,
         require_valid_pre_tool_policy_decision,
     )
+    from brain.v5.hook_kimi_contracts import (
+        require_valid_kimi_code_hook_config,
+        require_valid_kimi_code_hook_installation,
+    )
     from brain.v5.hook_install_contracts import (
         require_valid_codex_hook_installation,
         require_valid_opencode_hook_installation,
@@ -202,6 +210,8 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "failure_mode_review_result_record": require_valid_failure_mode_review_result_record,
         "human_checkpoint_record": require_valid_human_checkpoint_record,
         "hook_trace_event_record": require_valid_hook_trace_event_record,
+        "kimi_code_hook_config": require_valid_kimi_code_hook_config,
+        "kimi_code_hook_installation": require_valid_kimi_code_hook_installation,
         "knowledge_connector_catalog": require_valid_knowledge_connector_catalog,
         "l2_memory_audit": require_valid_l2_memory_audit,
         "legacy_migration_result": require_valid_legacy_migration_result,

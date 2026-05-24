@@ -15,6 +15,7 @@ from brain.v5.hook_runner_payloads import build_pre_tool_event_runner
 _INSTALLATION_MODES = {
     "codex": "explicit_guard_calls",
     "claude_code": "native_lifecycle_hooks",
+    "kimi_code": "native_lifecycle_hooks",
     "opencode": "plugin_bridge",
 }
 _PRE_TOOL_POLICY_ENTRYPOINT = {

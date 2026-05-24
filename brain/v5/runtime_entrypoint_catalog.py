@@ -35,36 +35,14 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_get_adapter_packet",
         "surface": "adapter_packet",
     },
-    "codex_hook_bridge": {
-        "cli": "aitp-v5 adapter hook-bridge codex <session-id> <args>",
-        "mcp": "aitp_v5_write_codex_hook_bridge",
-        "surface": "codex_hook_bridge",
-    },
-    "codex_hook_installation": {
-        "cli": "aitp-v5 adapter install-hooks codex <session-id> <args>",
-        "mcp": "aitp_v5_install_codex_hook_fixture",
-        "surface": "codex_hook_installation",
-    },
-    "opencode_plugin_bridge": {
-        "cli": "aitp-v5 adapter hook-bridge opencode <session-id> <args>",
-        "mcp": "aitp_v5_write_opencode_plugin_bridge",
-        "surface": "opencode_plugin_bridge",
-    },
-    "opencode_hook_installation": {
-        "cli": "aitp-v5 adapter install-hooks opencode <session-id> <args>",
-        "mcp": "aitp_v5_install_opencode_hook_fixture",
-        "surface": "opencode_hook_installation",
-    },
-    "claude_code_hook_settings": {
-        "cli": "aitp-v5 adapter hook-settings claude-code <session-id> <args>",
-        "mcp": "aitp_v5_write_claude_code_hook_settings",
-        "surface": "claude_code_hook_settings",
-    },
-    "claude_code_hook_installation": {
-        "cli": "aitp-v5 adapter install-hooks claude-code <session-id> <args>",
-        "mcp": "aitp_v5_install_claude_code_hook_settings",
-        "surface": "claude_code_hook_installation",
-    },
+    "codex_hook_bridge": {"cli": "aitp-v5 adapter hook-bridge codex <session-id> <args>", "mcp": "aitp_v5_write_codex_hook_bridge", "surface": "codex_hook_bridge"},
+    "codex_hook_installation": {"cli": "aitp-v5 adapter install-hooks codex <session-id> <args>", "mcp": "aitp_v5_install_codex_hook_fixture", "surface": "codex_hook_installation"},
+    "opencode_plugin_bridge": {"cli": "aitp-v5 adapter hook-bridge opencode <session-id> <args>", "mcp": "aitp_v5_write_opencode_plugin_bridge", "surface": "opencode_plugin_bridge"},
+    "opencode_hook_installation": {"cli": "aitp-v5 adapter install-hooks opencode <session-id> <args>", "mcp": "aitp_v5_install_opencode_hook_fixture", "surface": "opencode_hook_installation"},
+    "claude_code_hook_settings": {"cli": "aitp-v5 adapter hook-settings claude-code <session-id> <args>", "mcp": "aitp_v5_write_claude_code_hook_settings", "surface": "claude_code_hook_settings"},
+    "claude_code_hook_installation": {"cli": "aitp-v5 adapter install-hooks claude-code <session-id> <args>", "mcp": "aitp_v5_install_claude_code_hook_settings", "surface": "claude_code_hook_installation"},
+    "kimi_code_hook_config": {"cli": "aitp-v5 adapter hook-settings kimi-code <session-id> <args>", "mcp": "aitp_v5_write_kimi_code_hook_config", "surface": "kimi_code_hook_config"},
+    "kimi_code_hook_installation": {"cli": "aitp-v5 adapter install-hooks kimi-code <session-id> <args>", "mcp": "aitp_v5_install_kimi_code_hook_config", "surface": "kimi_code_hook_installation"},
     "adapter_pre_tool_event": {
         "cli": "aitp-v5 adapter pre-tool-event <runtime> <session-id> <args>",
         "mcp": "aitp_v5_evaluate_adapter_pre_tool_event",
@@ -351,6 +329,11 @@ def sample_args_for_template(template: str) -> list[str]:
         return [
             "--output",
             ".claude/settings.local.json",
+        ]
+    if template.startswith("adapter install-hooks kimi-code"):
+        return [
+            "--settings",
+            ".kimi/config.toml",
         ]
     if template.startswith("adapter install-hooks codex"):
         return [

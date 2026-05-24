@@ -18,6 +18,7 @@ from brain.v5.hook_install_templates import (
     write_codex_hook_bridge,
     write_opencode_plugin_bridge,
 )
+from brain.v5.mcp_kimi_hooks import aitp_v5_install_kimi_code_hook_config, aitp_v5_write_kimi_code_hook_config
 from brain.v5.hook_smoke_coverage import runtime_hook_smoke_coverage_report
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5

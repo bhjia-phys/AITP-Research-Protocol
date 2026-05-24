@@ -196,7 +196,7 @@ def validate_runtime_hook_installation_audit(
     for key, value in expected_values.items():
         if payload.get(key) != value:
             result.add(f"{path}.{key}", f"must be {value!r}")
-    if payload.get("runtime") not in {"codex", "claude_code", "opencode"}:
+    if payload.get("runtime") not in {"codex", "claude_code", "kimi_code", "opencode"}:
         result.add(f"{path}.runtime", "must be a supported runtime")
     if payload.get("status") not in {"installed", "partial", "missing", "conflict"}:
         result.add(f"{path}.status", "must be installed, partial, missing, or conflict")
@@ -386,7 +386,7 @@ def _validate_install_path_entry(payload: Any, path: str, result: ContractResult
     _require_mapping(payload, path, result)
     if not isinstance(payload, dict):
         return
-    if payload.get("runtime") not in {"codex", "claude_code", "opencode"}:
+    if payload.get("runtime") not in {"codex", "claude_code", "kimi_code", "opencode"}:
         result.add(f"{path}.runtime", "must be a supported runtime")
     _validate_install_path_payload(payload.get("preferred"), f"{path}.preferred", result)
     _require_list(payload.get("alternates"), f"{path}.alternates", result)
@@ -413,7 +413,7 @@ def _validate_smoke_runtime(payload: Any, path: str, result: ContractResult) -> 
     _require_mapping(payload, path, result)
     if not isinstance(payload, dict):
         return
-    if payload.get("runtime") not in {"codex", "claude_code", "opencode"}:
+    if payload.get("runtime") not in {"codex", "claude_code", "kimi_code", "opencode"}:
         result.add(f"{path}.runtime", "must be a supported runtime")
     if payload.get("status") not in {"complete", "partial", "missing"}:
         result.add(f"{path}.status", "must be complete, partial, or missing")

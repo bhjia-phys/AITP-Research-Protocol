@@ -80,6 +80,12 @@ def _runtime_rules(runtime: str) -> list[str]:
             "Use MCP wrappers for execution brief, evidence, tool-run, risk, and summary updates.",
             "Before validation or promotion, re-query the kernel and attach typed evidence references.",
         ]
+    if runtime == "kimi_code":
+        return [
+            common_first,
+            "Use Kimi MCP tools for typed AITP writes; use Kimi native hooks only as lifecycle guards and trace emitters.",
+            "Project .kimi/config.toml hooks are runtime metadata and must not be treated as scientific truth.",
+        ]
     if runtime == "opencode":
         return [
             common_first,

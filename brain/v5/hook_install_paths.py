@@ -26,6 +26,13 @@ def discover_hook_install_paths(ws: Any) -> dict[str, Any]:
         ),
         _entry(
             base,
+            runtime="kimi_code",
+            preferred=(".kimi/config.toml", "--settings"),
+            alternates=[(".kimi/AITP_V5_HOOKS.toml", "--output")],
+            cli_runtime="kimi-code",
+        ),
+        _entry(
+            base,
             runtime="opencode",
             preferred=(".opencode/plugins/aitp-v5.js", "--plugin"),
             alternates=[(".opencode/AITP_V5_PLUGIN_HOOKS.json", "--output")],

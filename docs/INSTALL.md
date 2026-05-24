@@ -64,7 +64,7 @@ Claude Code hooks/skills/settings, Kimi Code MCP/config.
 ## Agent-specific details
 
 - [Claude Code](INSTALL_CLAUDE_CODE.md)
-- [Kimi Code](INSTALL_CLAUDE_CODE.md) — same pattern, different paths
+- [Kimi Code](INSTALL_KIMI_CODE.md)
 
 Additional agent adapters are documented in `adapters/`. They are not
 yet integrated into the `aitp-pm.py` one-click installer.

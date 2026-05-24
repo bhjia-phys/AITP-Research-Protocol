@@ -74,6 +74,25 @@ def _run_codex_native_command(command, event, cwd):
     )
 
 
+def _run_kimi_command(command, event, cwd):
+    return subprocess.run(
+        command,
+        cwd=cwd,
+        input=json.dumps(event),
+        capture_output=True,
+        encoding="utf-8",
+        shell=True,
+        check=False,
+    )
+
+
+def _kimi_hook_command(installation, event_name):
+    for event in installation["events"]:
+        if event["hook_event_name"] == event_name:
+            return event["command"]
+    raise AssertionError(f"missing Kimi command for {event_name}")
+
+
 def _run_node_script(script_path, *args):
     return subprocess.run(
         ["node", str(script_path), *[str(arg) for arg in args]],
@@ -350,6 +369,80 @@ def test_codex_native_hooks_json_post_tool_command_executes_from_workspace_cwd(t
     assert events[0].claim_id == claim.claim_id
     assert events[0].payload["tool_name"] == "pytest"
     assert events[0].payload["evidence_status"] == "supports"
+
+
+def test_kimi_code_hook_pre_tool_command_executes_from_workspace_cwd(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_install_kimi_code_hook_config
+
+    claim = _seed_session(tmp_path)
+    config_path = tmp_path / ".kimi" / "config.toml"
+    installation = aitp_v5_install_kimi_code_hook_config(
+        str(tmp_path),
+        session_id="s1",
+        settings_path=str(config_path),
+    )
+    command = _kimi_hook_command(installation, "PreToolUse")
+
+    result = _run_kimi_command(
+        command,
+        {
+            "tool_name": "mcp__aitp__aitp_v5_record_evidence",
+            "tool_input": {
+                "topic_id": "librpa-gw",
+                "claim_id": claim.claim_id,
+                "source_kind": "findings",
+                "orientation_only": True,
+            },
+        },
+        cwd=tmp_path,
+    )
+
+    assert result.stdout, result.stderr
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["hookSpecificOutput"]["hookEventName"] == "PreToolUse"
+    assert payload["hookSpecificOutput"]["permissionDecision"] == "deny"
+    assert payload["aitp"]["action"] == "record_evidence"
+    assert payload["aitp"]["block"] is True
+    assert payload["aitp"]["policy_reasons"][0]["policy_id"] == "no_summary_surface_as_truth_source"
+
+
+def test_kimi_code_hook_post_tool_command_persists_trace_event(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_install_kimi_code_hook_config
+    from brain.v5.trace import read_trace_events
+
+    claim = _seed_session(tmp_path)
+    config_path = tmp_path / ".kimi" / "config.toml"
+    installation = aitp_v5_install_kimi_code_hook_config(
+        str(tmp_path),
+        session_id="s1",
+        settings_path=str(config_path),
+    )
+    command = _kimi_hook_command(installation, "PostToolUse")
+
+    result = _run_kimi_command(
+        command,
+        {
+            "tool": {"name": "pytest"},
+            "result": {"status": "completed", "exit_code": 0},
+        },
+        cwd=tmp_path,
+    )
+
+    assert result.stdout, result.stderr
+    payload = json.loads(result.stdout)
+    assert result.returncode == 0
+    assert payload["continue"] is True
+    assert payload["suppressOutput"] is True
+    assert payload["aitp"]["kind"] == "hook_trace_event_record"
+
+    events = read_trace_events(payload["aitp"]["trace_path"])
+    assert len(events) == 1
+    assert events[0].session_id == "s1"
+    assert events[0].topic_id == "librpa-gw"
+    assert events[0].claim_id == claim.claim_id
+    assert events[0].payload["tool_name"] == "pytest"
+    assert events[0].payload["evidence_status"] == "completed"
 
 
 def test_codex_install_fixture_post_tool_runner_persists_trace_event(tmp_path):

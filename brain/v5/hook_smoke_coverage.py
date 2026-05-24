@@ -48,6 +48,29 @@ def runtime_hook_smoke_coverage_report() -> dict[str, Any]:
             "gaps": ["real_host_process_smoke", "native_hook_process_smoke"],
         },
         {
+            "runtime": "kimi_code",
+            "status": "partial",
+            "checks": [
+                _check(
+                    "config_generation_and_merge_contract",
+                    "Generated Kimi Code TOML hooks preserve existing config while installing AITP lifecycle commands.",
+                    [
+                        "tests/test_v5_adapters.py::test_cli_adapter_hook_settings_writes_kimi_code_config_from_packet",
+                        "tests/test_v5_adapters.py::test_kimi_code_hook_config_installer_merges_existing_config",
+                    ],
+                ),
+                _check(
+                    "native_hook_process_smoke",
+                    "Generated Kimi Code hook commands execute from a user workspace cwd and block unsafe summary-truth writes.",
+                    [
+                        "tests/test_v5_adapter_event_runner.py::test_kimi_code_hook_pre_tool_command_executes_from_workspace_cwd",
+                        "tests/test_v5_adapter_event_runner.py::test_kimi_code_hook_post_tool_command_persists_trace_event",
+                    ],
+                ),
+            ],
+            "gaps": ["real_host_process_smoke"],
+        },
+        {
             "runtime": "opencode",
             "status": "partial",
             "checks": [

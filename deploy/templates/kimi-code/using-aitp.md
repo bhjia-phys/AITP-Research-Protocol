@@ -1,130 +1,66 @@
 ---
 name: using-aitp
-description: HIGHEST PRIORITY — Use for ANY theoretical-physics research, topic continuation, idea steering, paper learning, derivation work, validation planning, or study of physical systems. This skill MUST be loaded BEFORE brainstorming, exploration, or any other skill. Enter AITP before any substantial response.
+description: HIGHEST PRIORITY - Use for ANY theoretical-physics research, topic continuation, idea steering, paper learning, derivation work, validation planning, or study of physical systems. Enter AITP v5 before any substantial response.
 ---
 
-# Using AITP (v2) — Kimi Code
+# Using AITP v5 - Kimi Code
 
-## CRITICAL: Tool-first rules
+## Hard Gate
 
-You MUST follow these rules in this exact order. Violating ANY of them is a protocol error:
+Use this skill before brainstorming, literature exploration, derivation, validation planning, or long-running theoretical-physics work.
 
-1. **NEVER browse files with Grep/Glob/Read to "check what exists"**. Use `aitp_get_execution_brief` or `aitp_get_status` instead.
-2. **NEVER manually read or edit files under the AITP topics directory.** Always use `aitp_*` tools.
-3. **NEVER type out questions as plain text.** Use `AskUserQuestion` tool for ALL questions to the user.
-4. **NEVER guess the topics_root path.** It is always: `{{TOPICS_ROOT}}`
-5. **ALWAYS load domain skills when listed.** Check `brief.domain_prerequisites` after getting the execution brief. If it lists domain skill files (e.g. `skill-librpa`), load them BEFORE the stage skill. Domain skills contain hard invariants that will produce physically wrong results if ignored.
+Do not treat chat summaries, Markdown notes, or generated hook config as scientific truth. AITP v5 truth comes from typed records, execution briefs, validation results, promotion packets, and approved memory entries.
 
 ## Environment
 
-- AITP v2 runs as an MCP server. Tools are available directly as `aitp_*` (no prefix needed).
-- Topics root: `{{TOPICS_ROOT}}`
-- Protocol manual: `{{REPO_ROOT}}/brain/PROTOCOL.md`
+- AITP v5 runs through the native MCP entrypoint at `{{REPO_ROOT}}/brain/v5/native_mcp.py`.
+- Kimi Code should expose the MCP server as `aitp`; tools are named `aitp_v5_*`.
+- Kimi Code project hooks live in `.kimi/config.toml` using `[[hooks]]` entries.
+- Project Kimi config may need `kimi trust` before Kimi Code loads it.
 
-## Override rule
+## Entry Procedure
 
-This skill takes precedence over brainstorming, exploration, and all other process skills when the request involves physics research. Do NOT load brainstorming first. Load this skill, enter AITP, and let the AITP protocol handle ideation internally.
+1. If the request might belong to theoretical physics, call `aitp_v5_get_execution_brief` for the active session before doing substantive work.
+2. If no active v5 session is known, create or bind one with `aitp_v5_create_topic`, `aitp_v5_create_claim`, and `aitp_v5_bind_session`.
+3. Read the execution brief and follow its risk, claim, evidence, validation, and next-action fields.
+4. For every meaningful result, use typed writes:
+   - `aitp_v5_record_physics_object`
+   - `aitp_v5_record_object_relation`
+   - `aitp_v5_record_evidence`
+   - `aitp_v5_record_tool_run`
+   - `aitp_v5_create_validation_contract`
+   - `aitp_v5_record_validation_result`
+   - `aitp_v5_record_sensemaking_report`
+5. Before trust changes or L2 memory promotion, use the v5 trust/promotion gate. Never promote from a summary alone.
 
-## When to use
+## Kimi Hook Installation
 
-- The user asks to study or continue a physics topic.
-- The user says `继续这个 topic`, `current topic`, `this topic`, or equivalent.
-- The user asks to change direction, refine scope, set validation, or update steering.
-- The user asks to learn papers, evaluate an idea, recover a derivation, plan formalization, or build a bounded research loop.
+Generate or merge project-local Kimi hooks from the v5 kernel:
 
-## Hard gate
-
-- If there is even a small chance the request is real theoretical-physics research rather than plain coding, enter AITP first.
-- Do not start with free-form browsing, synthesis, or editing when the task belongs inside AITP.
-- Treat natural-language steering as state, not chat decoration.
-
-## Entry procedure (follow exactly)
-
-When this skill activates, do these steps IN ORDER:
-
-### Step 1: Find matching topic
-```
-Call: aitp_list_topics(topics_root="{{TOPICS_ROOT}}")
-```
-- Read the returned list. Match the user's request to the best topic by title/question/slug.
-- If a matching topic is found → go to Step 3
-- If no match → go to Step 2
-
-### Step 2: Bootstrap new topic
-```
-Call: aitp_bootstrap_topic(
-    topics_root="{{TOPICS_ROOT}}",
-    topic_slug=<slug>,
-    title=<title>,
-    question=<question>,
-    lane=<lane>
-)
+```powershell
+python -m brain.v5.cli --base <workspace> adapter install-hooks kimi-code <session-id> --settings .kimi/config.toml
 ```
 
-### Step 3: Get execution brief
-```
-Call: aitp_get_execution_brief(topics_root="{{TOPICS_ROOT}}", topic_slug=<slug>)
-```
-Read the brief. It tells you exactly what to do next.
+Audit the installed Kimi config:
 
-### Step 4: Ask clarification (if needed)
-Use `AskUserQuestion` for ALL questions. NEVER type options as plain text.
-```
-Call: AskUserQuestion(questions=[{
-    "question": "<your question>",
-    "header": "<short label>",
-    "options": [
-        {"label": "<option1>", "description": "<what it means>"},
-        {"label": "<option2>", "description": "<what it means>"},
-    ],
-    "multi_select": false,
-}])
+```powershell
+python -m brain.v5.cli --base <workspace> adapter install-audit kimi-code --settings .kimi/config.toml
 ```
 
-### Step 5: Follow the brief
-The brief tells you the current stage and what to do. Follow it.
+The installed hooks are lifecycle guards only. They can block risky pre-tool actions and append post-tool trace events, but they cannot update claim trust.
 
-## Protocol stages (quick reference)
+## Working Style
 
-0. **L0 (discover)**: Find, evaluate, and register sources before deep reading begins
-1. **L1 (read → frame)**: Register sources, fill reading notes, frame research question
-2. **L3 (ideation → planning → analysis → integration → distillation)**: Generate ideas, plan derivations, analyze, integrate results, distill claims
-3. **L4 (validate)**: Create validation contract, submit review
-4. **Promote**: Request promotion → resolve gate → promote to global L2
-5. **L2 is the endpoint** — L5 (writing) removed in v4.0
+- Talk naturally with the researcher, but record durable scientific content as typed records.
+- Keep definitions, claims, evidence, tool runs, validation contracts, validation results, and sensemaking separate.
+- Record negative results and failure modes immediately.
+- If Kimi hooks are unavailable, continue through MCP tools and note the hook gap as runtime metadata only.
 
-## Conversation style rules
+## Red Flags
 
-- Do not expose protocol jargon to the user.
-- Ask in plain language, as if you are a research collaborator.
-- Use `AskUserQuestion` for ALL clarification questions — never just type options as plain text.
-- Ask one question at a time by default.
-- If the user says `you decide`, `just go`, `直接做`, stop clarifying and continue.
+Stop and re-enter AITP v5 if you catch yourself saying:
 
-## Clarification sub-protocol
-
-1. Tighten the research question before substantive execution.
-2. Ask at most 3 clarification rounds, with 1-3 questions per round.
-3. Prefer questions that remove the biggest ambiguity first: scope, assumptions, target claims.
-4. If the human says `just go`, proceed and mark missing fields as deferred.
-
-## Stage guidance (compressed)
-
-Because Kimi Code loads all skills into context, stage-specific details are kept concise. After getting the execution brief, consult the brief's `stage`, `posture`, and `l3_subplane` fields, then follow the corresponding section in `aitp-runtime.md` (the companion skill) for detailed workflow guidance.
-
-## Red flags (STOP if you catch yourself doing these)
-
-- "I can just answer this research question directly."
-- "This topic change is small enough to skip routing."
-- "I will read files first and decide later whether AITP applies."
-- "Let me search the codebase to see what already exists."
-- "The notebook was auto-generated, no need to check it."
-
-If one of these is true, stop and enter AITP first.
-
-## Flow Notebook
-
-After `aitp_submit_candidate`, the notebook at the topic root (`flow_notebook.tex`)
-is regenerated. Read the changed section and polish for readability:
-remove pandoc artifacts, condense verbose tables, add narrative context.
-Python builds correct data — AI makes it readable.
+- "I can answer this research question directly without a brief."
+- "This summary is enough to promote memory."
+- "The hook config says this happened, so the claim is validated."
+- "I'll record the tool run later."

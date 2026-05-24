@@ -76,6 +76,14 @@ def _audit_runtime_path(
                 ("PostToolUse Claude hook", ["PostToolUse", "hooks/aitp_v5_claude_hook.py", "post-tool", workspace_base]),
             ],
         )
+    if runtime == "kimi_code":
+        return _audit_text_path(
+            settings_path or output_path or str(Path(workspace_base) / ".kimi" / "config.toml"),
+            expected=[
+                ("PreToolUse Kimi hook", ["[[hooks]]", "PreToolUse", "hooks/aitp_v5_kimi_hook.py", "pre-tool", workspace_base]),
+                ("PostToolUse Kimi hook", ["[[hooks]]", "PostToolUse", "hooks/aitp_v5_kimi_hook.py", "post-tool", workspace_base]),
+            ],
+        )
     if runtime == "opencode":
         if plugin_path:
             return _audit_text_path(
@@ -150,6 +158,8 @@ def _normalize_runtime(runtime: str) -> str:
     normalized = runtime.strip().lower().replace("-", "_")
     if normalized == "claude":
         return "claude_code"
+    if normalized in {"kimi", "kimi_code"}:
+        return "kimi_code"
     if normalized in {"codex", "claude_code", "opencode"}:
         return normalized
     raise ValueError(f"unsupported runtime: {runtime}")

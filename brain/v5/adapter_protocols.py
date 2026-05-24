@@ -12,7 +12,7 @@ from brain.v5.public_surfaces import public_surface_names, public_surface_valida
 
 
 _FINGERPRINT_ALGORITHM = "sha256-canonical-json-v1"
-_SUPPORTED_RUNTIMES = ("codex", "claude_code", "opencode")
+_SUPPORTED_RUNTIMES = ("codex", "claude_code", "kimi_code", "opencode")
 _PROTOCOL_FIELDS = [
     "trust_changing_actions",
     "requires_kernel_call_before",

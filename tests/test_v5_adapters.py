@@ -313,7 +313,7 @@ def test_adapter_packet_protocols_are_generated_from_shared_registry(tmp_path):
     packet = build_adapter_packet(ws, "s1", runtime="codex")
     protocols = build_adapter_protocols()
 
-    assert set(supported_runtimes()) == {"codex", "claude_code", "opencode"}
+    assert set(supported_runtimes()) == {"codex", "claude_code", "kimi_code", "opencode"}
     for key, value in protocols.items():
         assert packet[key] == value
 
@@ -378,6 +378,25 @@ def test_codex_adapter_packet_builds_hook_installation_from_hook_protocols(tmp_p
         assert hook["output_kind"] == protocol["output_kind"]
         assert hook["may_block"] == protocol["may_block"]
         assert hook["state_mutation"] == protocol["state_mutation"]
+
+
+def test_kimi_code_adapter_packet_builds_native_hook_installation_from_hook_protocols(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+
+    ws, _ = _seed_session(tmp_path)
+
+    packet = build_adapter_packet(ws, "s1", runtime="kimi-code")
+
+    assert packet["runtime"] == "kimi_code"
+    assert "Kimi MCP tools" in packet["runtime_rules"][1]
+    installation = packet["runtime_hook_installation"]
+    assert installation["kind"] == "runtime_hook_installation_template"
+    assert installation["runtime"] == "kimi_code"
+    assert installation["source_protocol_field"] == "runtime_hook_protocols"
+    assert installation["installation_mode"] == "native_lifecycle_hooks"
+    assert installation["native_installer_available"] is False
+    assert installation["summary_inputs_trusted"] is False
+    assert {hook["hook_name"] for hook in installation["hooks"]} == {"pre_commit", "pre_tool", "post_tool"}
 
 
 def test_codex_hook_bridge_is_rendered_from_installation_template(tmp_path):
@@ -2214,6 +2233,45 @@ def test_mcp_hook_installation_audit_reports_claude_settings(tmp_path):
     assert payload["findings"][0]["status"] == "installed"
 
 
+def test_cli_adapter_install_audit_reports_kimi_code_config(tmp_path, capsys):
+    _seed_session(tmp_path)
+    config_path = tmp_path / ".kimi" / "config.toml"
+    _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "adapter",
+            "install-hooks",
+            "kimi-code",
+            "s1",
+            "--settings",
+            str(config_path),
+        ],
+        capsys,
+    )
+
+    payload = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "adapter",
+            "install-audit",
+            "kimi-code",
+            "--settings",
+            str(config_path),
+        ],
+        capsys,
+    )
+
+    assert payload["ok"] is True
+    assert payload["kind"] == "runtime_hook_installation_audit"
+    assert payload["runtime"] == "kimi_code"
+    assert payload["status"] == "installed"
+    assert payload["findings"][0]["path"] == str(config_path)
+    assert payload["findings"][0]["status"] == "installed"
+    assert payload["required_actions"] == []
+
+
 def test_hook_installation_paths_discover_workspace_defaults(tmp_path):
     from brain.v5.hook_install_paths import discover_hook_install_paths
     from brain.v5.public_surfaces import require_valid_public_surface
@@ -2229,15 +2287,19 @@ def test_hook_installation_paths_discover_workspace_defaults(tmp_path):
     assert payload["orientation_only"] is True
     assert payload["can_update_kernel_state"] is False
     assert payload["can_update_claim_trust"] is False
-    assert {entry["runtime"] for entry in payload["paths"]} == {"codex", "claude_code", "opencode"}
+    assert {entry["runtime"] for entry in payload["paths"]} == {"codex", "claude_code", "kimi_code", "opencode"}
     by_runtime = {entry["runtime"]: entry for entry in payload["paths"]}
     assert by_runtime["codex"]["preferred"]["path"] == str(tmp_path / ".codex" / "hooks.json")
     assert by_runtime["codex"]["preferred"]["install_arg"] == "--settings"
     assert by_runtime["claude_code"]["preferred"]["path"] == str(tmp_path / ".claude" / "settings.local.json")
     assert by_runtime["claude_code"]["preferred"]["install_arg"] == "--settings"
+    assert by_runtime["kimi_code"]["preferred"]["path"] == str(tmp_path / ".kimi" / "config.toml")
+    assert by_runtime["kimi_code"]["preferred"]["install_arg"] == "--settings"
+    assert by_runtime["kimi_code"]["alternates"][0]["path"] == str(tmp_path / ".kimi" / "AITP_V5_HOOKS.toml")
     assert by_runtime["opencode"]["preferred"]["path"] == str(tmp_path / ".opencode" / "plugins" / "aitp-v5.js")
     assert by_runtime["opencode"]["preferred"]["install_arg"] == "--plugin"
     assert "--settings" in by_runtime["codex"]["install_command"]
+    assert "--settings" in by_runtime["kimi_code"]["install_command"]
     assert "--plugin" in by_runtime["opencode"]["install_command"]
     assert require_valid_public_surface("runtime_hook_installation_paths", payload) == payload
 
@@ -2257,6 +2319,9 @@ def test_cli_adapter_install_paths_returns_default_paths(tmp_path, capsys):
     assert payload["kind"] == "runtime_hook_installation_paths"
     by_runtime = {entry["runtime"]: entry for entry in payload["paths"]}
     assert by_runtime["codex"]["audit_command"].endswith("adapter install-audit codex --settings .codex/hooks.json")
+    assert by_runtime["kimi_code"]["install_command"].endswith(
+        "adapter install-hooks kimi-code <session-id> --settings .kimi/config.toml"
+    )
     assert by_runtime["opencode"]["install_command"].endswith(
         "adapter install-hooks opencode <session-id> --plugin .opencode/plugins/aitp-v5.js"
     )
@@ -2286,8 +2351,9 @@ def test_runtime_hook_smoke_coverage_reports_test_backed_host_smokes():
     assert payload["can_update_claim_trust"] is False
     assert payload["overall_status"] == "partial"
     by_runtime = {entry["runtime"]: entry for entry in payload["runtimes"]}
-    assert {runtime for runtime in by_runtime} == {"codex", "claude_code", "opencode"}
+    assert {runtime for runtime in by_runtime} == {"codex", "claude_code", "kimi_code", "opencode"}
     assert "native_hooks_json_workspace_cwd" in {check["name"] for check in by_runtime["codex"]["checks"]}
+    assert "native_hook_process_smoke" in {check["name"] for check in by_runtime["kimi_code"]["checks"]}
     assert "local_plugin_node_lifecycle" in {check["name"] for check in by_runtime["opencode"]["checks"]}
     assert "real_host_process_smoke" in by_runtime["claude_code"]["gaps"]
     for entry in payload["runtimes"]:
@@ -2303,7 +2369,7 @@ def test_cli_adapter_smoke_coverage_returns_contract_payload(capsys):
     assert payload["ok"] is True
     assert payload["kind"] == "runtime_hook_smoke_coverage"
     assert payload["overall_status"] == "partial"
-    assert {entry["runtime"] for entry in payload["runtimes"]} == {"codex", "claude_code", "opencode"}
+    assert {entry["runtime"] for entry in payload["runtimes"]} == {"codex", "claude_code", "kimi_code", "opencode"}
 
 
 def test_mcp_hook_smoke_coverage_returns_contract_payload():
@@ -2560,6 +2626,162 @@ def test_mcp_claude_code_hook_installer_returns_contract_payload(tmp_path):
     assert settings_path.exists()
 
 
+def test_cli_adapter_hook_settings_writes_kimi_code_config_from_packet(tmp_path, capsys):
+    _seed_session(tmp_path)
+
+    config_path = tmp_path / ".kimi" / "AITP_V5_HOOKS.toml"
+    payload = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "adapter",
+            "hook-settings",
+            "kimi-code",
+            "s1",
+            "--output",
+            str(config_path),
+        ],
+        capsys,
+    )
+
+    assert payload["ok"] is True
+    assert payload["kind"] == "kimi_code_hook_config"
+    assert payload["runtime"] == "kimi_code"
+    assert payload["source_protocol_field"] == "runtime_hook_installation"
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["can_update_claim_trust"] is False
+    assert payload["can_write_trace_events"] is True
+    assert payload["path"] == str(config_path)
+    assert [event["hook_event_name"] for event in payload["events"]] == ["PreToolUse", "PostToolUse"]
+
+    text = config_path.read_text(encoding="utf-8")
+    assert "# BEGIN AITP V5 KIMI HOOKS" in text
+    assert text.count("[[hooks]]") == 2
+    assert 'event = "PreToolUse"' in text
+    assert 'event = "PostToolUse"' in text
+    assert "hooks/aitp_v5_kimi_hook.py" in text
+    assert "pre-tool" in text
+    assert "post-tool" in text
+
+
+def test_mcp_kimi_code_hook_config_wrapper_returns_contract_payload(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_write_kimi_code_hook_config
+
+    _seed_session(tmp_path)
+
+    config_path = tmp_path / ".kimi" / "AITP_V5_HOOKS.toml"
+    payload = aitp_v5_write_kimi_code_hook_config(
+        str(tmp_path),
+        session_id="s1",
+        output_path=str(config_path),
+    )
+
+    assert payload["ok"] is True
+    assert payload["kind"] == "kimi_code_hook_config"
+    assert payload["events"][0]["matcher"] == "*"
+    assert config_path.exists()
+
+
+def test_kimi_code_hook_config_installer_merges_existing_config(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.hook_kimi_install import install_kimi_code_hook_config
+
+    ws, _ = _seed_session(tmp_path)
+    packet = build_adapter_packet(ws, "s1", runtime="kimi-code")
+    config_path = tmp_path / ".kimi" / "config.toml"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        '\n'.join(
+            [
+                'model = "kimi-k2-turbo-preview"',
+                "",
+                "[mcpServers.keep_me]",
+                'command = "python"',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    payload = install_kimi_code_hook_config(
+        config_path,
+        packet["runtime_hook_installation"],
+        workspace_base=str(tmp_path),
+        session_id="s1",
+    )
+
+    merged = config_path.read_text(encoding="utf-8")
+    assert payload["kind"] == "kimi_code_hook_installation"
+    assert payload["config_kind"] == "kimi_code_hook_config"
+    assert payload["created"] is False
+    assert payload["merged"] is True
+    assert payload["added_hooks"] == 2
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["can_update_claim_trust"] is False
+    assert 'model = "kimi-k2-turbo-preview"' in merged
+    assert "[mcpServers.keep_me]" in merged
+    assert "# BEGIN AITP V5 KIMI HOOKS" in merged
+    assert merged.count("aitp_v5_kimi_hook.py") == 2
+
+    second_payload = install_kimi_code_hook_config(
+        config_path,
+        packet["runtime_hook_installation"],
+        workspace_base=str(tmp_path),
+        session_id="s1",
+    )
+
+    installed_twice = config_path.read_text(encoding="utf-8")
+    assert second_payload["added_hooks"] == 0
+    assert installed_twice == merged
+
+
+def test_cli_adapter_install_hooks_merges_kimi_code_config(tmp_path, capsys):
+    _seed_session(tmp_path)
+    config_path = tmp_path / ".kimi" / "config.toml"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text('model = "kimi-k2"\n', encoding="utf-8")
+
+    payload = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "adapter",
+            "install-hooks",
+            "kimi-code",
+            "s1",
+            "--settings",
+            str(config_path),
+        ],
+        capsys,
+    )
+
+    text = config_path.read_text(encoding="utf-8")
+    assert payload["ok"] is True
+    assert payload["kind"] == "kimi_code_hook_installation"
+    assert payload["added_hooks"] == 2
+    assert 'model = "kimi-k2"' in text
+    assert "hooks/aitp_v5_kimi_hook.py" in text
+
+
+def test_mcp_kimi_code_hook_installer_returns_contract_payload(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_install_kimi_code_hook_config
+
+    _seed_session(tmp_path)
+
+    config_path = tmp_path / ".kimi" / "config.toml"
+    payload = aitp_v5_install_kimi_code_hook_config(
+        str(tmp_path),
+        session_id="s1",
+        settings_path=str(config_path),
+    )
+
+    assert payload["ok"] is True
+    assert payload["kind"] == "kimi_code_hook_installation"
+    assert payload["created"] is True
+    assert payload["added_hooks"] == 2
+    assert config_path.exists()
+
+
 def test_adapter_packet_exposes_protocol_registry_metadata(tmp_path):
     from brain.v5.adapter_protocols import adapter_protocol_fingerprint
     from brain.v5.adapters import build_adapter_packet
@@ -2741,15 +2963,19 @@ def test_adapter_packet_runtime_variants_share_safety_contract(tmp_path):
 
     ws, _ = _seed_session(tmp_path)
 
-    packets = [build_adapter_packet(ws, "s1", runtime=runtime) for runtime in ["codex", "claude_code", "opencode"]]
+    packets = [
+        build_adapter_packet(ws, "s1", runtime=runtime)
+        for runtime in ["codex", "claude_code", "kimi_code", "opencode"]
+    ]
 
-    assert {packet["runtime"] for packet in packets} == {"codex", "claude_code", "opencode"}
+    assert {packet["runtime"] for packet in packets} == {"codex", "claude_code", "kimi_code", "opencode"}
     assert len({tuple(packet["requires_kernel_call_before"]) for packet in packets}) == 1
     assert all(packet["summary_orientation"]["truth_source"] is False for packet in packets)
     assert all(packet["adapter_contract"]["summary_files_are_truth_source"] is False for packet in packets)
     assert any("CLI" in packets[0]["runtime_rules"][1] for _ in [0])
     assert any("MCP" in packets[1]["runtime_rules"][1] for _ in [0])
-    assert any("CLI" in packets[2]["runtime_rules"][1] for _ in [0])
+    assert any("Kimi MCP" in packets[2]["runtime_rules"][1] for _ in [0])
+    assert any("CLI" in packets[3]["runtime_rules"][1] for _ in [0])
 
 
 def test_cli_adapter_packet_returns_json(tmp_path, capsys):

@@ -20,6 +20,8 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "failure_mode_review_result_record",
         "human_checkpoint_record",
         "hook_trace_event_record",
+        "kimi_code_hook_config",
+        "kimi_code_hook_installation",
         "knowledge_connector_catalog",
         "l2_memory_audit",
         "legacy_migration_result",
@@ -212,6 +214,78 @@ def test_public_surface_validator_accepts_claude_code_hook_installation():
     }
 
     assert require_valid_public_surface("claude_code_hook_installation", payload) == payload
+
+
+def test_public_surface_validator_accepts_kimi_code_hook_config():
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    payload = {
+        "ok": True,
+        "kind": "kimi_code_hook_config",
+        "runtime": "kimi_code",
+        "source_protocol_field": "runtime_hook_installation",
+        "installation_mode": "native_lifecycle_hooks",
+        "native_installer_available": False,
+        "summary_inputs_trusted": False,
+        "can_update_claim_trust": False,
+        "can_write_trace_events": True,
+        "path": ".kimi/config.toml",
+        "events": [
+            {
+                "hook_event_name": "PreToolUse",
+                "matcher": "*",
+                "protocol_hook": "pre_tool",
+                "command": "python hooks/aitp_v5_kimi_hook.py pre-tool",
+            },
+            {
+                "hook_event_name": "PostToolUse",
+                "matcher": "*",
+                "protocol_hook": "post_tool",
+                "command": "python hooks/aitp_v5_kimi_hook.py post-tool",
+            },
+        ],
+        "config_text": '[[hooks]]\nevent = "PreToolUse"\ncommand = "python hooks/aitp_v5_kimi_hook.py pre-tool"\n[[hooks]]\nevent = "PostToolUse"\ncommand = "python hooks/aitp_v5_kimi_hook.py post-tool"\n',
+    }
+
+    assert require_valid_public_surface("kimi_code_hook_config", payload) == payload
+
+
+def test_public_surface_validator_accepts_kimi_code_hook_installation():
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    payload = {
+        "ok": True,
+        "kind": "kimi_code_hook_installation",
+        "runtime": "kimi_code",
+        "source_protocol_field": "runtime_hook_installation",
+        "config_kind": "kimi_code_hook_config",
+        "installation_mode": "native_lifecycle_hooks",
+        "native_installer_available": False,
+        "summary_inputs_trusted": False,
+        "can_update_claim_trust": False,
+        "can_write_trace_events": True,
+        "created": False,
+        "merged": True,
+        "added_hooks": 2,
+        "path": ".kimi/config.toml",
+        "events": [
+            {
+                "hook_event_name": "PreToolUse",
+                "matcher": "*",
+                "protocol_hook": "pre_tool",
+                "command": "python hooks/aitp_v5_kimi_hook.py pre-tool",
+            },
+            {
+                "hook_event_name": "PostToolUse",
+                "matcher": "*",
+                "protocol_hook": "post_tool",
+                "command": "python hooks/aitp_v5_kimi_hook.py post-tool",
+            },
+        ],
+        "config_text": '[[hooks]]\nevent = "PreToolUse"\ncommand = "python hooks/aitp_v5_kimi_hook.py pre-tool"\n[[hooks]]\nevent = "PostToolUse"\ncommand = "python hooks/aitp_v5_kimi_hook.py post-tool"\n',
+    }
+
+    assert require_valid_public_surface("kimi_code_hook_installation", payload) == payload
 
 
 def test_public_surface_validator_accepts_opencode_plugin_bridge():

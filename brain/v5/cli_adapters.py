@@ -18,6 +18,7 @@ from brain.v5.hook_install_templates import (
     write_codex_hook_bridge,
     write_opencode_plugin_bridge,
 )
+from brain.v5.hook_kimi_install import install_kimi_code_hook_config, write_kimi_code_hook_config
 from brain.v5.hook_install_audit import audit_hook_installation
 from brain.v5.hook_install_paths import discover_hook_install_paths
 from brain.v5.hook_smoke_coverage import runtime_hook_smoke_coverage_report
@@ -92,8 +93,19 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
             evaluate_platform_pre_tool_event(ws, _bridge_payload(args), _json_object(args.event_json)),
         )
     if args.adapter_command == "hook-settings":
+        if packet["runtime"] == "kimi_code":
+            config = {
+                "ok": True,
+                **write_kimi_code_hook_config(
+                    args.output,
+                    packet["runtime_hook_installation"],
+                    workspace_base=str(ws.base),
+                    session_id=args.session_id,
+                ),
+            }
+            return require_valid_public_surface("kimi_code_hook_config", config)
         if packet["runtime"] != "claude_code":
-            raise SystemExit("adapter hook-settings currently supports claude-code runtime only")
+            raise SystemExit("adapter hook-settings currently supports claude-code and kimi-code runtimes only")
         settings = {
             "ok": True,
             **write_claude_code_hook_settings(
@@ -161,8 +173,32 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
                 ),
             }
             return require_valid_public_surface("opencode_hook_installation", installed)
+        if packet["runtime"] == "kimi_code":
+            if args.settings:
+                installed = {
+                    "ok": True,
+                    **install_kimi_code_hook_config(
+                        args.settings,
+                        packet["runtime_hook_installation"],
+                        workspace_base=str(ws.base),
+                        session_id=args.session_id,
+                    ),
+                }
+                return require_valid_public_surface("kimi_code_hook_installation", installed)
+            if not args.output:
+                raise SystemExit("adapter install-hooks kimi-code requires --settings or --output")
+            config = {
+                "ok": True,
+                **write_kimi_code_hook_config(
+                    args.output,
+                    packet["runtime_hook_installation"],
+                    workspace_base=str(ws.base),
+                    session_id=args.session_id,
+                ),
+            }
+            return require_valid_public_surface("kimi_code_hook_config", config)
         if packet["runtime"] != "claude_code":
-            raise SystemExit("adapter install-hooks currently supports codex, opencode, and claude-code runtimes")
+            raise SystemExit("adapter install-hooks currently supports codex, opencode, claude-code, and kimi-code runtimes")
         if not args.settings:
             raise SystemExit("adapter install-hooks claude-code requires --settings")
         installed = {
