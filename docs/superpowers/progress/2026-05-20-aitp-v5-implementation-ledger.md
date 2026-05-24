@@ -6013,7 +6013,7 @@ Each entry should record:
     replay before deciding whether the active AITP v5 goal can be marked
     complete.
 
-### pending - Add Runtime Host Readiness Audit
+### 0324bc5 - Add Runtime Host Readiness Audit
 
 - Task: add a dynamic readiness surface that distinguishes configured hook files
   from host commands that actually launch on the current machine.
