@@ -339,6 +339,94 @@ def test_failure_mode_audit_reports_uncovered_claim_and_contract_modes(tmp_path)
     ]
 
 
+def test_failure_mode_audit_counts_partial_validation_coverage_without_promotion(tmp_path):
+    from brain.v5.failure_mode_audit import audit_failure_mode_coverage
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.tools import record_tool_run
+    from brain.v5.validation import record_validation_result
+
+    ws, claim, _ = _setup_failure_mode_audit_gap(tmp_path)
+    contract_id = audit_failure_mode_coverage(ws, claim_id=claim.claim_id)["validation_contract_ids"][0]
+    run = record_tool_run(
+        ws,
+        recipe_id="recipe-fqhe-ed",
+        tool_family="numerical",
+        tool_name="pytest",
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        outputs={"grid_table": "checked"},
+    )
+    validation = record_validation_result(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        contract_id=contract_id,
+        tool_run_id=run.run_id,
+        status="partial",
+        checked_outputs=["frequency grid sanity check"],
+        covered_failure_modes=["frequency grid mismatch"],
+        summary="Frequency grid mismatch failure mode was checked; basis cutoff remains open.",
+    )
+
+    payload = audit_failure_mode_coverage(ws, claim_id=claim.claim_id)
+
+    assert require_valid_public_surface("failure_mode_audit", payload) == payload
+    assert payload["validation_covered_failure_modes"] == ["frequency grid mismatch"]
+    assert payload["validation_result_coverage"] == [
+        {
+            "result_id": validation.result_id,
+            "contract_id": contract_id,
+            "status": "partial",
+            "checked_outputs": ["frequency grid sanity check"],
+            "missing_outputs": ["grid_table"],
+            "declared_covered_failure_modes": ["frequency grid mismatch"],
+            "covered_failure_modes": ["frequency grid mismatch"],
+            "orientation_only": True,
+        }
+    ]
+    assert payload["uncovered_claim_failure_modes"] == []
+    assert payload["uncovered_validation_failure_modes"] == ["basis cutoff mismatch"]
+    assert payload["coverage_status"] == "gap"
+    assert payload["recommended_actions"] == ["cover_validation_contract_failure_modes"]
+
+
+def test_failure_mode_audit_does_not_count_summary_only_partial_coverage(tmp_path):
+    from brain.v5.failure_mode_audit import audit_failure_mode_coverage
+    from brain.v5.tools import record_tool_run
+    from brain.v5.validation import record_validation_result
+
+    ws, claim, _ = _setup_failure_mode_audit_gap(tmp_path)
+    contract_id = audit_failure_mode_coverage(ws, claim_id=claim.claim_id)["validation_contract_ids"][0]
+    run = record_tool_run(
+        ws,
+        recipe_id="recipe-fqhe-ed",
+        tool_family="numerical",
+        tool_name="pytest",
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        outputs={"grid_table": "checked"},
+    )
+    record_validation_result(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        contract_id=contract_id,
+        tool_run_id=run.run_id,
+        status="partial",
+        checked_outputs=["grid_table"],
+        summary="Mentions frequency grid mismatch but did not declare it covered.",
+    )
+
+    payload = audit_failure_mode_coverage(ws, claim_id=claim.claim_id)
+
+    assert payload["validation_covered_failure_modes"] == []
+    assert payload["uncovered_claim_failure_modes"] == ["frequency grid mismatch"]
+    assert payload["uncovered_validation_failure_modes"] == [
+        "frequency grid mismatch",
+        "basis cutoff mismatch",
+    ]
+
+
 def test_failure_mode_audit_cli_mcp_and_runtime_entrypoint(tmp_path, capsys):
     from brain.v5.cli import main
     from brain.v5.mcp_tools import aitp_v5_audit_failure_mode_coverage

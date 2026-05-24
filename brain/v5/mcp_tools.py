@@ -399,12 +399,14 @@ def aitp_v5_record_validation_result(
     base: str, *, topic_id: str, claim_id: str, contract_id: str, tool_run_id: str,
     status: str, checked_outputs: list[str] | None = None, summary: str = "",
     evidence_refs: list[str] | None = None, artifact_ids: list[str] | None = None,
+    covered_failure_modes: list[str] | None = None,
     failure_modes_observed: list[str] | None = None,
 ) -> dict:
     result = record_validation_result(_ws(base), topic_id=topic_id, claim_id=claim_id,
         contract_id=contract_id, tool_run_id=tool_run_id, status=status,
         checked_outputs=checked_outputs, summary=summary, evidence_refs=evidence_refs,
-        artifact_ids=artifact_ids, failure_modes_observed=failure_modes_observed)
+        artifact_ids=artifact_ids, covered_failure_modes=covered_failure_modes,
+        failure_modes_observed=failure_modes_observed)
     return require_valid_public_surface("validation_result_record", {"ok": True, **asdict(result)})
 
 

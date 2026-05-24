@@ -172,9 +172,9 @@ def validate_validation_result_record(payload: dict[str, Any], *, path: str = "v
         return result
     for key in ("result_id", "topic_id", "claim_id", "contract_id", "tool_run_id", "status", "summary"):
         _require_nonempty_str(payload, key, path, result)
-    if payload.get("status") not in {"passed", "failed", "inconclusive"}:
-        result.add(f"{path}.status", "must be passed, failed, or inconclusive")
-    for key in ("checked_outputs", "missing_outputs", "failure_modes_observed", "evidence_refs", "artifact_ids"):
+    if payload.get("status") not in {"passed", "failed", "inconclusive", "partial"}:
+        result.add(f"{path}.status", "must be passed, failed, inconclusive, or partial")
+    for key in ("checked_outputs", "missing_outputs", "covered_failure_modes", "failure_modes_observed", "evidence_refs", "artifact_ids"):
         _require_list(payload.get(key), f"{path}.{key}", result)
     if payload.get("status") == "passed" and payload.get("missing_outputs"):
         result.add(f"{path}.missing_outputs", "must be empty when status is passed")

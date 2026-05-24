@@ -228,7 +228,7 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
             "write_session_summary",
         ],
         "required_typed_refs": ["topic_id", "claim_id", "contract_id", "tool_run_id"],
-        "accepted_link_fields": ["checked_outputs", "evidence_refs", "artifact_ids"],
+        "accepted_link_fields": ["checked_outputs", "covered_failure_modes", "evidence_refs", "artifact_ids"],
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     }

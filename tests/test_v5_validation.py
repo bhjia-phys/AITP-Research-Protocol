@@ -264,7 +264,7 @@ def test_validation_result_rejects_passed_with_missing_required_output(tmp_path)
 
     from brain.v5.validation import record_validation_result
 
-    with pytest.raises(ValueError, match="missing required evidence outputs"):
+    with pytest.raises(ValueError, match="status='partial'"):
         record_validation_result(
             ws,
             topic_id="gw",
@@ -275,6 +275,41 @@ def test_validation_result_rejects_passed_with_missing_required_output(tmp_path)
             checked_outputs=["benchmark_table"],
             summary="The diagnostic plot was not checked.",
         )
+
+
+def test_validation_result_accepts_status_aliases_and_partial_contract_coverage(tmp_path):
+    ws, claim, contract, run = _setup_validation_contract_and_run(tmp_path)
+
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.validation import record_validation_result
+
+    partial = record_validation_result(
+        ws,
+        topic_id="gw",
+        claim_id=claim.claim_id,
+        contract_id=contract.contract_id,
+        tool_run_id=run.run_id,
+        status="partial_pass",
+        checked_outputs=["benchmark_table"],
+        covered_failure_modes=["wrong frequency grid"],
+        summary="Benchmark table was checked; diagnostic plot remains open.",
+    )
+    assert partial.status == "partial"
+    assert partial.missing_outputs == ["diagnostic_plot"]
+    assert partial.covered_failure_modes == ["wrong frequency grid"]
+    assert require_valid_public_surface("validation_result_record", {"ok": True, **asdict(partial)})["ok"] is True
+
+    passed = record_validation_result(
+        ws,
+        topic_id="gw",
+        claim_id=claim.claim_id,
+        contract_id=contract.contract_id,
+        tool_run_id=run.run_id,
+        status="pass",
+        checked_outputs=["benchmark_table", "diagnostic_plot"],
+        summary="Natural status alias should normalize to passed.",
+    )
+    assert passed.status == "passed"
 
 
 def test_validation_result_cli_mcp_and_runtime_surface(tmp_path, capsys):
@@ -326,6 +361,46 @@ def test_validation_result_cli_mcp_and_runtime_surface(tmp_path, capsys):
     assert mcp_payload["kind"] == "validation_result"
     assert mcp_payload["missing_outputs"] == []
     assert runtime_entrypoints()["record_validation_result"]["surface"] == "validation_result_record"
+
+
+def test_validation_result_rejects_unknown_covered_failure_mode(tmp_path):
+    ws, claim, contract, run = _setup_validation_contract_and_run(tmp_path)
+
+    from brain.v5.validation import record_validation_result
+
+    with pytest.raises(ValueError, match="covered_failure_modes"):
+        record_validation_result(
+            ws,
+            topic_id="gw",
+            claim_id=claim.claim_id,
+            contract_id=contract.contract_id,
+            tool_run_id=run.run_id,
+            status="partial",
+            checked_outputs=["benchmark_table"],
+            covered_failure_modes=["finite-size drift"],
+            summary="Unknown failure-mode coverage should not be accepted.",
+        )
+
+
+def test_validation_result_accepts_new_observed_failure_mode(tmp_path):
+    ws, claim, contract, run = _setup_validation_contract_and_run(tmp_path)
+
+    from brain.v5.validation import record_validation_result
+
+    result = record_validation_result(
+        ws,
+        topic_id="gw",
+        claim_id=claim.claim_id,
+        contract_id=contract.contract_id,
+        tool_run_id=run.run_id,
+        status="failed",
+        checked_outputs=["benchmark_table"],
+        failure_modes_observed=["unexpected aliasing instability"],
+        summary="A new failure mode was observed during validation.",
+    )
+
+    assert result.status == "failed"
+    assert result.failure_modes_observed == ["unexpected aliasing instability"]
 
 
 def test_evidence_record_links_passed_validation_result_cli_mcp_surface(tmp_path, capsys):

@@ -56,6 +56,8 @@ def validate_failure_mode_audit(payload: dict[str, Any], *, path: str = "failure
         "failure_mode_review_result_ids",
         "validation_contract_failure_modes",
         "promotion_packet_failure_modes",
+        "validation_covered_failure_modes",
+        "validation_result_coverage",
         "reviewed_failure_modes",
         "failure_mode_review_results",
         "uncovered_claim_failure_modes",
@@ -65,6 +67,8 @@ def validate_failure_mode_audit(payload: dict[str, Any], *, path: str = "failure
         _require_list(payload.get(key), f"{path}.{key}", result)
     for index, item in enumerate(payload.get("failure_mode_review_results", [])):
         _validate_review_result_item(item, f"{path}.failure_mode_review_results[{index}]", result)
+    for index, item in enumerate(payload.get("validation_result_coverage", [])):
+        _validate_validation_coverage_item(item, f"{path}.validation_result_coverage[{index}]", result)
     return result
 
 
@@ -97,3 +101,16 @@ def _validate_review_result_item(item: Any, path: str, result: ContractResult) -
         _require_list(item.get(key), f"{path}.{key}", result)
     _require_bool_value(item.get("summary_inputs_trusted"), False, f"{path}.summary_inputs_trusted", result)
     _require_bool_value(item.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
+
+
+def _validate_validation_coverage_item(item: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(item, path, result)
+    if not isinstance(item, dict):
+        return
+    for key in ("result_id", "contract_id", "status"):
+        _require_nonempty_str(item, key, path, result)
+    if item.get("status") not in {"passed", "partial"}:
+        result.add(f"{path}.status", "must be passed or partial")
+    for key in ("checked_outputs", "missing_outputs", "declared_covered_failure_modes", "covered_failure_modes"):
+        _require_list(item.get(key), f"{path}.{key}", result)
+    _require_bool_value(item.get("orientation_only"), True, f"{path}.orientation_only", result)

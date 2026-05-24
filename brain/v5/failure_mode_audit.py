@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import re
 
-from brain.v5.models import FailureModeReviewResultRecord, PromotionPacketRecord, ValidationContractRecord
+from brain.v5.models import (
+    FailureModeReviewResultRecord,
+    PromotionPacketRecord,
+    ValidationContractRecord,
+    ValidationResultRecord,
+)
 from brain.v5.store import list_records
 from brain.v5.workspace import WorkspacePaths, get_claim
 
@@ -28,12 +33,22 @@ def audit_failure_mode_coverage(ws: WorkspacePaths, *, claim_id: str) -> dict:
         for record in list_records(ws.registry_dir("failure_mode_reviews"), FailureModeReviewResultRecord)
         if record.claim_id == claim_id
     ]
+    validation_results = [
+        record
+        for record in list_records(ws.registry_dir("validation_results"), ValidationResultRecord)
+        if record.claim_id == claim_id
+    ]
     claim_modes = [claim.strongest_failure_mode] if claim.strongest_failure_mode.strip() else []
     contract_modes = _unique(mode for contract in contracts for mode in contract.failure_modes)
     packet_modes = _unique(mode for packet in packets for mode in packet.known_failure_modes)
     reviewed_modes = _unique(mode for result in review_results for mode in result.reviewed_failure_modes)
-    uncovered_claim = [mode for mode in claim_modes if not _covered_by_modes(mode, packet_modes)]
-    uncovered_contract = [mode for mode in contract_modes if not _covered_by_modes(mode, packet_modes)]
+    validation_covered_modes = _validation_covered_failure_modes(
+        contracts_by_id={contract.contract_id: contract for contract in contracts},
+        validation_results=validation_results,
+    )
+    coverage_modes = _unique([*packet_modes, *reviewed_modes, *validation_covered_modes])
+    uncovered_claim = [mode for mode in claim_modes if not _covered_by_modes(mode, coverage_modes)]
+    uncovered_contract = [mode for mode in contract_modes if not _covered_by_modes(mode, coverage_modes)]
     actions: list[str] = []
     if uncovered_claim:
         actions.append("align_promotion_failure_modes_with_claim_risk")
@@ -55,6 +70,12 @@ def audit_failure_mode_coverage(ws: WorkspacePaths, *, claim_id: str) -> dict:
         "failure_mode_review_result_ids": [result.result_id for result in review_results],
         "validation_contract_failure_modes": contract_modes,
         "promotion_packet_failure_modes": packet_modes,
+        "validation_covered_failure_modes": validation_covered_modes,
+        "validation_result_coverage": [
+            _validation_result_coverage_payload(result, contracts)
+            for result in validation_results
+            if result.status in {"passed", "partial"}
+        ],
         "reviewed_failure_modes": reviewed_modes,
         "failure_mode_review_results": [_review_result_payload(result) for result in review_results],
         "uncovered_claim_failure_modes": uncovered_claim,
@@ -72,6 +93,56 @@ def _covered_by_modes(target: str, modes: list[str]) -> bool:
     for mode in modes:
         mode_tokens.update(_tokens(mode))
     return target_tokens.issubset(mode_tokens)
+
+
+def _validation_covered_failure_modes(
+    *,
+    contracts_by_id: dict[str, ValidationContractRecord],
+    validation_results: list[ValidationResultRecord],
+) -> list[str]:
+    covered: list[str] = []
+    for result in validation_results:
+        if result.status not in {"passed", "partial"}:
+            continue
+        if result.failure_modes_observed:
+            continue
+        contract = contracts_by_id.get(result.contract_id)
+        if contract is None:
+            continue
+        if result.status == "passed" and not result.missing_outputs:
+            covered.extend(contract.failure_modes)
+            continue
+        # Partial validation should only cover what was explicitly checked.
+        # Summaries often mention still-open risks, and generic checked-output
+        # labels can overmatch. Prefer explicit covered_failure_modes.
+        basis = list(result.covered_failure_modes) or list(result.checked_outputs)
+        for mode in contract.failure_modes:
+            if _covered_by_modes(mode, basis):
+                covered.append(mode)
+    return _unique(covered)
+
+
+def _validation_result_coverage_payload(
+    record: ValidationResultRecord,
+    contracts: list[ValidationContractRecord],
+) -> dict:
+    contract = next((item for item in contracts if item.contract_id == record.contract_id), None)
+    modes = []
+    if contract is not None:
+        modes = _validation_covered_failure_modes(
+            contracts_by_id={contract.contract_id: contract},
+            validation_results=[record],
+        )
+    return {
+        "result_id": record.result_id,
+        "contract_id": record.contract_id,
+        "status": record.status,
+        "checked_outputs": list(record.checked_outputs),
+        "missing_outputs": list(record.missing_outputs),
+        "declared_covered_failure_modes": list(record.covered_failure_modes),
+        "covered_failure_modes": modes,
+        "orientation_only": True,
+    }
 
 
 def _review_result_payload(record: FailureModeReviewResultRecord) -> dict:

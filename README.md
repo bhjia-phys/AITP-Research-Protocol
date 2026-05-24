@@ -149,10 +149,15 @@ supported by evidence records, so later sessions can see that a tool-backed
 `failure_mode_review_basis` exists instead of rediscovering that context from
 prose. Adapter
 `record_validation_result` records then bind a completed `tool_run_id` back to
-the contract's required evidence outputs; a passed result cannot omit required
-outputs or report observed failure modes. High-risk `record_evidence` calls
-that cite `tool_run_ids` must also cite passed `validation_result_ids` for
-those runs before the evidence can support trust-relevant claim state.
+the contract's required evidence outputs; status aliases such as `pass` and
+`partial_pass` normalize to canonical `passed` and `partial`. A partial result
+can record broad-contract progress without forcing a narrow throwaway contract,
+and it may name exactly which contract `covered_failure_modes` were checked.
+A passed result cannot omit required outputs or report observed failure modes.
+Partial results and missing-output results remain non-promotable: high-risk
+`record_evidence` calls that cite `tool_run_ids` must still cite passed
+`validation_result_ids` for those runs before the evidence can support
+trust-relevant claim state.
 Promotion packets now carry `validation_result_ids` as typed links too:
 promotion-packet creation and L2 application reject tool-derived evidence unless
 passed validation results cover every cited tool run, and the shared pre-tool
@@ -189,8 +194,11 @@ derived code-state refs, plus any linked failure-mode review result basis, all f
 <claim-id>` and `aitp_v5_audit_failure_mode_coverage` expose the read-only
 `failure_mode_audit` surface: active uncertainty, strongest failure mode,
 validation-contract failure modes, promotion-packet known failure modes,
-reviewed failure modes, review result basis refs, uncovered risk modes, and
-recommended review actions, again only from typed records.
+reviewed failure modes, validation-result coverage, review result basis refs,
+uncovered risk modes, and recommended review actions, again only from typed
+records. Full passed validation covers its contract failure modes; partial
+validation covers only explicitly declared `covered_failure_modes` or
+unambiguous checked-output coverage, never summary prose.
 `aitp-v5 memory failure-mode-review --claim <claim-id>` and
 `aitp_v5_build_failure_mode_review_packet` turn that typed audit into a
 read-only `failure_mode_review_packet`: per-mode physical adequacy questions,

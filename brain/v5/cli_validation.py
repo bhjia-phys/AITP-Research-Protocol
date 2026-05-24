@@ -34,6 +34,7 @@ def add_validation_parser(sp: argparse._SubParsersAction) -> None:
     vrr.add_argument("--tool-run", required=True, dest="tool_run_id")
     vrr.add_argument("--status", required=True)
     vrr.add_argument("--checked-output", action="append", default=[], dest="checked_outputs")
+    vrr.add_argument("--covered-failure-mode", action="append", default=[], dest="covered_failure_modes")
     vrr.add_argument("--failure-mode", action="append", default=[], dest="failure_modes_observed")
     vrr.add_argument("--evidence-ref", action="append", default=[], dest="evidence_refs")
     vrr.add_argument("--artifact-id", action="append", default=[], dest="artifact_ids")
@@ -63,6 +64,7 @@ def dispatch_validation_command(args: argparse.Namespace, ws) -> dict[str, Any]:
             tool_run_id=args.tool_run_id,
             status=args.status,
             checked_outputs=args.checked_outputs,
+            covered_failure_modes=args.covered_failure_modes,
             failure_modes_observed=args.failure_modes_observed,
             evidence_refs=args.evidence_refs,
             artifact_ids=args.artifact_ids,

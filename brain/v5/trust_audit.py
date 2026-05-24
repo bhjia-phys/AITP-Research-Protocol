@@ -37,7 +37,7 @@ def audit_claim_trust(ws: WorkspacePaths, *, claim_id: str) -> dict:
     failed_validation_result_ids = [
         result.result_id
         for result in validation_results
-        if result.status in {"failed", "inconclusive"} or result.missing_outputs or result.failure_modes_observed
+        if result.status in {"failed", "inconclusive", "partial"} or result.missing_outputs or result.failure_modes_observed
     ]
     memory_entries = list_memory_entries_for_claim(ws, claim_id)
     code_state_ids = _code_state_ids_for_claim(ws, claim_id, evidence_records)

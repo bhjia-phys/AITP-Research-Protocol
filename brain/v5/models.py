@@ -331,6 +331,7 @@ class ValidationResultRecord:
     status: str
     checked_outputs: list[str] = field(default_factory=list)
     missing_outputs: list[str] = field(default_factory=list)
+    covered_failure_modes: list[str] = field(default_factory=list)
     failure_modes_observed: list[str] = field(default_factory=list)
     evidence_refs: list[str] = field(default_factory=list)
     artifact_ids: list[str] = field(default_factory=list)

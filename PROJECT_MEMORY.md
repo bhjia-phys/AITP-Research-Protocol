@@ -186,7 +186,11 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   so a later session can see a recorded `failure_mode_review_basis` without
   trusting summary prose.
   After a high-risk tool run, `record_validation_result` can persist whether
-  the run satisfied the bound contract's required evidence outputs; passed
+  the run satisfied the bound contract's required evidence outputs; status
+  aliases such as `pass` and `partial_pass` normalize to canonical `passed` and
+  `partial`. Partial results let agents record broad-contract progress without
+  creating narrow throwaway contracts, including explicit
+  `covered_failure_modes`, but they do not satisfy promotion gates. Passed
   results cannot omit required outputs or carry observed failure modes.
   High-risk `record_evidence` that cites `tool_run_ids` must also cite passed
   `validation_result_ids` for those runs before it can support trust-relevant
@@ -237,9 +241,12 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `aitp_v5_audit_failure_mode_coverage` for a read-only
   `failure_mode_audit` surface. It reports active uncertainty,
   `strongest_failure_mode`, validation-contract failure modes,
-  promotion-packet known failure modes, reviewed failure modes, failure-mode
-  review result basis refs, uncovered failure modes, and review actions from
-  typed records only; it cannot update kernel state or claim trust.
+  promotion-packet known failure modes, reviewed failure modes,
+  validation-result coverage, failure-mode review result basis refs, uncovered
+  failure modes, and review actions from typed records only. Full passed
+  validation covers contract failure modes; partial validation covers only
+  explicit `covered_failure_modes` or unambiguous checked-output coverage,
+  never summary prose. The audit cannot update kernel state or claim trust.
 - Agents can call `aitp-v5 memory failure-mode-review --claim <claim-id>` or
   `aitp_v5_build_failure_mode_review_packet` to turn that typed audit into a
   read-only `failure_mode_review_packet`. It lists per-mode source labels,

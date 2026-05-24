@@ -26,6 +26,19 @@ When validation is more than a lightweight smoke check, it should also declare:
 - `gap_followups`
 - `failure_modes`
 
+## v5 validation result statuses
+
+- Canonical result statuses are `passed`, `partial`, `failed`, and
+  `inconclusive`.
+- Natural aliases are accepted at the tool boundary: for example `pass` becomes
+  `passed`, and `partial_pass` becomes `partial`.
+- Use `partial` when a broad validation contract has only been partly checked.
+  Record the inspected outputs and, when applicable, the exact contract
+  `covered_failure_modes` that were closed.
+- Only full `passed` results with no missing outputs and no observed failure
+  modes can support trust promotion. Partial results are durable progress
+  records, not promotion evidence.
+
 ## Why it matters
 
 Validation should be declared before the result is interpreted.
