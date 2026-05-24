@@ -5644,3 +5644,54 @@ Each entry should record:
   - add an orientation-only Obsidian/L2 review view or a replay packet that
     consumes this audit across active claims without making generated markdown a
     truth source.
+
+### TBD - Add Workspace Replay Packet
+
+- Task: add a lightweight long-term replay/resumption packet across active
+  sessions, claims, evidence gaps, source-reconstruction gaps, and next actions.
+- Planning source:
+  - final-engineering gap for long-term multi-topic replay and a more natural
+    resumption surface;
+  - previous source-reconstruction audit recommendation to consume source
+    coverage across active claims without treating generated markdown as truth.
+- Changed files:
+  - `brain/v5/replay.py`
+  - `brain/v5/replay_contracts.py`
+  - `brain/v5/contracts.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/cli_summaries.py`
+  - `brain/v5/mcp_summaries.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/runtime_entrypoint_catalog.py`
+  - `tests/test_v5_replay.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+- Public/runtime behavior changes:
+  - added contracted public surface `workspace_replay_packet`;
+  - added `write_workspace_replay_packet`;
+  - added CLI `aitp-v5 summary replay`;
+  - added MCP wrapper `aitp_v5_write_workspace_replay_packet`;
+  - added runtime entrypoint `workspace_replay`.
+- Tests:
+  - replay packet lists active sessions and source reconstruction gaps;
+  - generated replay markdown is orientation-only;
+  - CLI/MCP/runtime entrypoints expose the replay packet.
+- Verification:
+  - red target:
+    `pytest tests\test_v5_replay.py -q`: 2 failed because the contract and MCP
+    wrapper did not exist;
+  - target green:
+    same command: 2 passed;
+  - focused related set:
+    `pytest tests\test_v5_replay.py tests\test_v5_summaries.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py tests\test_v5_mcp_tools.py tests\test_v5_cli.py tests\test_v5_architecture_boundaries.py -q`:
+    69 passed.
+- Residual risks:
+  - replay packets are generated on demand; adapters still need session-start
+    refresh wiring if automatic regeneration is desired;
+  - replay entries summarize missing components and next actions but still
+    require agents to call typed evidence/source/memory surfaces before trust
+    updates.
+- Next recommended task:
+  - add an Obsidian/L2 review export or adapter session-start refresh that
+    consumes `workspace_replay_packet` without giving generated files authority.

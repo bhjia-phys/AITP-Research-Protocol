@@ -49,6 +49,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "trust_update_preflight",
         "validation_contract_record",
         "validation_result_record",
+        "workspace_replay_packet",
         "workspace_summary_bundle",
     }
 

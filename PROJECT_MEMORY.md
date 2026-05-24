@@ -244,6 +244,13 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   reconstruction-path evidence, and failure conditions. The contracted
   `source_reconstruction_audit` surface is read-only, uses only typed records,
   keeps `summary_inputs_trusted=false`, and cannot update claim trust.
+- Agents can call `aitp-v5 summary replay` or
+  `aitp_v5_write_workspace_replay_packet` for an orientation-only
+  `workspace_replay_packet` across active sessions. It lists active claims,
+  confidence states, evidence-output gaps, source-reconstruction gaps,
+  linked memory/validation ids, and next actions from typed execution briefs.
+  It is a lightweight long-term resumption surface, not a truth source, and
+  cannot update kernel state or claim trust.
 - Agents can call `aitp-v5 memory failure-modes --claim <claim-id>` or
   `aitp_v5_audit_failure_mode_coverage` for a read-only
   `failure_mode_audit` surface. It reports active uncertainty,

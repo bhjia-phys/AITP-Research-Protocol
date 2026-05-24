@@ -139,6 +139,12 @@ def validate_workspace_summary_bundle(payload: dict[str, Any], *, path: str = "w
 def require_valid_workspace_summary_bundle(payload: dict[str, Any]) -> dict[str, Any]:
     from brain.v5.summary_contracts import require_valid_workspace_summary_bundle as _require; return _require(payload)
 
+def validate_workspace_replay_packet(payload: dict[str, Any], *, path: str = "workspace_replay_packet") -> ContractResult:
+    from brain.v5.replay_contracts import validate_workspace_replay_packet as _validate; return _validate(payload, path=path)
+
+def require_valid_workspace_replay_packet(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.replay_contracts import require_valid_workspace_replay_packet as _require; return _require(payload)
+
 def validate_source_reconstruction_audit(payload: dict[str, Any], *, path: str = "source_reconstruction_audit") -> ContractResult:
     from brain.v5.source_reconstruction_contracts import validate_source_reconstruction_audit as _validate; return _validate(payload, path=path)
 
