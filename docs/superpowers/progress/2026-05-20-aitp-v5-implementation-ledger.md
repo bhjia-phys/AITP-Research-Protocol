@@ -6012,3 +6012,73 @@ Each entry should record:
     source/knowledge stack status, legacy semantic review state, and long-term
     replay before deciding whether the active AITP v5 goal can be marked
     complete.
+
+### pending - Add Runtime Host Readiness Audit
+
+- Task: add a dynamic readiness surface that distinguishes configured hook files
+  from host commands that actually launch on the current machine.
+- Planning source:
+  - final-engineering gap for real host loop proof across Codex, Claude Code,
+    and Kimi Code;
+  - `runtime_hook_smoke_coverage` still reports static test-backed coverage and
+    a `real_host_process_smoke` gap;
+  - user requirement to verify the actual callable path, not just configured
+    state.
+- Changed files:
+  - `brain/v5/host_readiness.py`
+  - `brain/v5/host_readiness_contracts.py`
+  - `brain/v5/mcp_host_readiness.py`
+  - `brain/v5/cli_adapters.py`
+  - `brain/v5/cli.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoint_catalog.py`
+  - `tests/test_v5_host_readiness.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `tests/test_v5_runtime_entrypoints.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+- Public/runtime behavior changes:
+  - added contracted public surface `runtime_host_readiness_audit`;
+  - added CLI `aitp-v5 adapter host-readiness <runtime>`;
+  - added MCP wrapper `aitp_v5_audit_runtime_host_readiness`;
+  - readiness launches the local host command (`codex`, `claude`, `kimi`, or
+    `opencode` by default), optionally audits installed hook files, and can
+    directly smoke Claude/Kimi `SessionStart` refresh commands;
+  - the surface is dynamic runtime evidence only and keeps
+    `summary_inputs_trusted=false`, `orientation_only=true`,
+    `can_update_kernel_state=false`, and `can_update_claim_trust=false`.
+- Tests:
+  - readiness can run a real local process while skipping install audit;
+  - CLI and MCP wrappers expose the contracted surface;
+  - runtime entrypoint validation advertises the CLI/MCP pair;
+  - public-surface registry includes the new contract.
+- Verification:
+  - targeted related set:
+    `python -m pytest tests/test_v5_host_readiness.py tests/test_v5_public_surfaces.py tests/test_v5_runtime_entrypoints.py tests/test_v5_mcp_tools.py tests/test_v5_cli.py tests/test_v5_architecture_boundaries.py -q`:
+    59 passed.
+  - real Theoretical-Physics readiness smokes:
+    - Codex: `status=process_ready`, process `codex-cli 0.132.0`, install
+      `installed`;
+    - Claude Code: `status=ready_with_session_start_smoke`, process
+      `2.1.150 (Claude Code)`, install `installed`, `SessionStart` returned
+      `workspace_refresh_bundle`;
+    - Kimi Code: `status=ready_with_session_start_smoke`, process
+      `kimi, version 1.35.0`, install `installed`, `SessionStart` returned
+      `workspace_refresh_bundle`.
+  - before readiness smoke, real Theoretical-Physics Claude/Kimi configs were
+    audited as `partial` because `SessionStart` was missing; v5 installers
+    reinstalled them and follow-up audits returned `installed`.
+  - full v5 suite:
+    `python -m pytest <all tests/test_v5_*.py> -q`: 499 passed.
+  - `python -m compileall -q brain/v5`: passed.
+  - `git diff --check -- .`: passed.
+- Residual risks:
+  - readiness proves the host process starts and configured hook commands run
+    directly; it still cannot prove every proprietary interactive app will fire
+    lifecycle hooks in all future UI/session modes.
+  - OpenCode remains intentionally deferred by current user priority.
+- Next recommended task:
+  - produce the final residual-gap audit from current public surfaces and real
+    workspace smokes, then decide whether remaining items are product polish or
+    blockers for the active goal.

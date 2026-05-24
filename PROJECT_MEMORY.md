@@ -131,6 +131,14 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `runtime_hook_smoke_coverage` surface is orientation-only and lists
   test-backed Codex/OpenCode/Claude Code hook smoke checks plus remaining
   real-host gaps.
+- Dynamic host readiness can be checked with
+  `aitp-v5 adapter host-readiness <runtime>` or
+  `aitp_v5_audit_runtime_host_readiness`. The returned
+  `runtime_host_readiness_audit` launches the local host command (`codex`,
+  `claude`, `kimi`, or `opencode` by default), optionally audits the installed
+  hook file, and can directly smoke Claude/Kimi `SessionStart` refresh. It is
+  runtime evidence only, remains orientation-only, and cannot update claim
+  trust.
 - Codex native `hooks.json` installation now writes command strings with the
   active Python interpreter and an absolute
   `hooks/aitp_v5_adapter_event_runner.py` path. Tests execute those commands

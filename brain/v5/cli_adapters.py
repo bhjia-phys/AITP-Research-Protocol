@@ -23,6 +23,7 @@ from brain.v5.hook_install_audit import audit_hook_installation
 from brain.v5.hook_install_paths import discover_hook_install_paths
 from brain.v5.hook_smoke_coverage import runtime_hook_smoke_coverage_report
 from brain.v5.hook_opencode_install import install_opencode_plugin_file
+from brain.v5.host_readiness import audit_runtime_host_readiness
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
 
 
@@ -75,6 +76,26 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
                     settings_path=args.settings,
                     plugin_path=args.plugin,
                     output_path=args.output,
+                ),
+            ),
+        }
+    if args.adapter_command == "host-readiness":
+        return {
+            "ok": True,
+            **require_valid_public_surface(
+                "runtime_host_readiness_audit",
+                audit_runtime_host_readiness(
+                    ws,
+                    runtime=args.runtime,
+                    command=args.host_command,
+                    version_args=args.version_args or None,
+                    timeout_seconds=args.timeout,
+                    settings_path=args.settings,
+                    plugin_path=args.plugin,
+                    output_path=args.output,
+                    check_installation=not args.skip_install_audit,
+                    session_id=args.session_id,
+                    run_session_start_smoke=args.run_session_start_smoke,
                 ),
             ),
         }
