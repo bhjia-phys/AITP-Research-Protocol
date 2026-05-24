@@ -6129,7 +6129,7 @@ Each entry should record:
   - update stale planning docs so the next agent sees the current closure
     state rather than the older host-process and pre-tool partial-gap wording.
 
-### pending - Update Final Engineering Gap Audit Docs
+### ab1cee1 - Update Final Engineering Gap Audit Docs
 
 - Task: update stale planning and orientation docs after the closure pass so
   they distinguish implemented kernel surfaces from remaining future
