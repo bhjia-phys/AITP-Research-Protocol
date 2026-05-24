@@ -256,6 +256,11 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   review view for active L2 memory entries. The generated notes list memory
   scope, evidence refs, validation refs, and known failure modes, but keep
   `truth_source=false`; typed memory/audit records remain authoritative.
+- Agents can call `aitp-v5 summary refresh` or
+  `aitp_v5_refresh_workspace_views` as a single host-startup refresh point.
+  It regenerates the workspace summary, replay packet, and active-session L2
+  Obsidian view in a contracted `workspace_refresh_bundle`, remains
+  orientation-only, and cannot update kernel state or claim trust.
 - Agents can call `aitp-v5 memory failure-modes --claim <claim-id>` or
   `aitp_v5_audit_failure_mode_coverage` for a read-only
   `failure_mode_audit` surface. It reports active uncertainty,

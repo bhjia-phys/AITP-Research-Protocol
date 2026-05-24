@@ -51,6 +51,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "validation_contract_record",
         "validation_result_record",
         "workspace_replay_packet",
+        "workspace_refresh_bundle",
         "workspace_summary_bundle",
     }
 

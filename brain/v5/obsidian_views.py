@@ -6,21 +6,23 @@ import re
 from pathlib import Path
 
 from brain.v5.markdown import write_md
+from brain.v5.memory_index import scan_memory_entry_summaries
 from brain.v5.models import ClaimRecord, EvidenceRecord, MemoryEntryRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_records
+from brain.v5.store import list_records, read_record
 
 
-def write_l2_obsidian_view(ws: WorkspacePaths, *, output_dir: str = "") -> dict:
+def write_l2_obsidian_view(
+    ws: WorkspacePaths,
+    *,
+    output_dir: str = "",
+    claim_ids: list[str] | None = None,
+) -> dict:
     """Write Markdown review notes for active L2 memory entries."""
 
     view_dir = Path(output_dir) if output_dir else ws.root / "surfaces" / "obsidian_l2"
     entries_dir = view_dir / "entries"
-    entries = [
-        entry
-        for entry in list_records(ws.root / "memory" / "l2" / "entries", MemoryEntryRecord)
-        if entry.status == "active"
-    ]
+    entries = _active_memory_entries(ws, claim_ids=claim_ids)
     claims = {claim.claim_id: claim for claim in list_records(ws.registry_dir("claims"), ClaimRecord)}
     evidence = {record.evidence_id: record for record in list_records(ws.registry_dir("evidence"), EvidenceRecord)}
     entry_files = []
@@ -60,6 +62,19 @@ def _frontmatter(role: str, source_id: str) -> dict:
         "orientation_only": True,
         "adapter_rule": "read_for_orientation_then_call_kernel_before_trust_updates",
     }
+
+
+def _active_memory_entries(ws: WorkspacePaths, *, claim_ids: list[str] | None) -> list[MemoryEntryRecord]:
+    if claim_ids is None:
+        return [
+            entry
+            for entry in list_records(ws.root / "memory" / "l2" / "entries", MemoryEntryRecord)
+            if entry.status == "active"
+        ]
+    return [
+        read_record(summary.path, MemoryEntryRecord)
+        for summary in scan_memory_entry_summaries(ws, claim_ids=claim_ids, active_only=True)
+    ]
 
 
 def _overview_body(entries: list[MemoryEntryRecord], claims: dict[str, ClaimRecord]) -> str:

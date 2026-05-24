@@ -47,7 +47,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
     payload = _dispatch(args)
-    print(json.dumps(_jsonable(payload), ensure_ascii=False, sort_keys=True))
+    print(json.dumps(_jsonable(payload), ensure_ascii=True, sort_keys=True))
     return 0
 
 

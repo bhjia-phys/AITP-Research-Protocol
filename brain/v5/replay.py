@@ -5,11 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from brain.v5.brief import build_execution_brief
+from brain.v5.evidence import required_output_coverage
+from brain.v5.flow import resolve_flow_profile
 from brain.v5.markdown import write_md
-from brain.v5.models import ClaimRecord, MemoryEntryRecord, SessionBinding
+from brain.v5.memory_index import MemoryEntrySummary, scan_memory_entry_summaries
+from brain.v5.models import ClaimRecord, CodeStateRecord, EvidenceRecord, SessionBinding
 from brain.v5.paths import WorkspacePaths
-from brain.v5.source_reconstruction import audit_source_reconstruction
+from brain.v5.risk import action_budget_for_level, assess_claim_risk
+from brain.v5.source_reconstruction import audit_source_reconstruction_batch
 from brain.v5.store import list_records
 
 
@@ -37,12 +40,15 @@ def write_workspace_replay_packet(ws: WorkspacePaths) -> WorkspaceReplayPacket:
     replay_path = replay_dir / "replay_packet.md"
     sessions = list_records(ws.root / "runtime" / "sessions", SessionBinding)
     claims = {claim.claim_id: claim for claim in list_records(ws.registry_dir("claims"), ClaimRecord)}
-    memory_entries = [
-        entry
-        for entry in list_records(ws.root / "memory" / "l2" / "entries", MemoryEntryRecord)
-        if entry.status == "active"
+    evidence = _group_by_claim(list_records(ws.registry_dir("evidence"), EvidenceRecord))
+    code_states = list_records(ws.registry_dir("code_states"), CodeStateRecord)
+    active_claim_ids = [session.active_claim for session in sessions if session.active_claim]
+    memory_entries = scan_memory_entry_summaries(ws, claim_ids=active_claim_ids, active_only=True)
+    source_audits = audit_source_reconstruction_batch(ws, active_claim_ids)
+    entries = [
+        _entry_for_session(session, claims, memory_entries, evidence, code_states, source_audits)
+        for session in sessions
     ]
-    entries = [_entry_for_session(ws, session, claims, memory_entries) for session in sessions]
     attention = [entry for entry in entries if entry["attention_reasons"]]
     source_records = {
         "sessions": [entry["session_id"] for entry in entries],
@@ -67,10 +73,12 @@ def write_workspace_replay_packet(ws: WorkspacePaths) -> WorkspaceReplayPacket:
 
 
 def _entry_for_session(
-    ws: WorkspacePaths,
     session: SessionBinding,
     claims: dict[str, ClaimRecord],
-    memory_entries: list[MemoryEntryRecord],
+    memory_entries: list[MemoryEntrySummary],
+    evidence_by_claim: dict[str, list[EvidenceRecord]],
+    code_states: list[CodeStateRecord],
+    source_audits: dict[str, dict],
 ) -> dict[str, Any]:
     claim = claims.get(session.active_claim)
     if claim is None:
@@ -90,10 +98,16 @@ def _entry_for_session(
             "validation_result_ids": [],
             "attention_reasons": ["missing_claim_record"],
         }
-    brief = build_execution_brief(ws, session.session_id)
-    source_audit = audit_source_reconstruction(ws, claim_id=claim.claim_id)
+    risk = assess_claim_risk(claim, code_states=_linked_code_states(code_states, claim.claim_id))
+    flow = resolve_flow_profile(claim, assessment=risk)
+    action_budget = risk.action_budget if risk and risk.action_budget else action_budget_for_level("guided")
+    evidence_coverage = required_output_coverage(
+        evidence_by_claim.get(claim.claim_id, []),
+        required_outputs=action_budget.required_outputs,
+    )
+    source_audit = source_audits[claim.claim_id]
     claim_memory = [entry for entry in memory_entries if entry.source_claim_id == claim.claim_id]
-    missing_outputs = brief.get("evidence_coverage", {}).get("missing_outputs", [])
+    missing_outputs = evidence_coverage.missing_outputs
     missing_source = source_audit["missing_components"]
     reasons = []
     if claim.confidence_state == "hypothesis":
@@ -108,10 +122,10 @@ def _entry_for_session(
         "claim_id": claim.claim_id,
         "claim_statement": claim.statement,
         "confidence_state": claim.confidence_state,
-        "risk_level": brief.get("risk_assessment", {}).get("level", ""),
+        "risk_level": risk.level,
         "missing_outputs": list(missing_outputs),
-        "satisfied_outputs": list(brief.get("evidence_coverage", {}).get("satisfied_outputs", [])),
-        "next_actions": [item.get("action", "") for item in brief.get("next_action_candidates", [])],
+        "satisfied_outputs": list(evidence_coverage.satisfied_outputs),
+        "next_actions": _next_actions(flow.profile, missing_outputs, missing_source),
         "source_reconstruction_complete": source_audit["complete"],
         "missing_source_components": list(missing_source),
         "memory_entry_ids": [entry.entry_id for entry in claim_memory],
@@ -164,3 +178,38 @@ def _unique(values: list[str]) -> list[str]:
             seen.add(value)
             result.append(value)
     return result
+
+
+def _group_by_claim(records: list[EvidenceRecord]) -> dict[str, list[EvidenceRecord]]:
+    grouped: dict[str, list[EvidenceRecord]] = {}
+    for record in records:
+        grouped.setdefault(record.claim_id, []).append(record)
+    return grouped
+
+
+def _linked_code_states(code_states: list[CodeStateRecord], claim_id: str) -> list[CodeStateRecord]:
+    return [state for state in code_states if _record_links_to_claim(state.linked_records, claim_id)]
+
+
+def _record_links_to_claim(linked_records: dict, claim_id: str) -> bool:
+    for value in linked_records.values():
+        if value == claim_id:
+            return True
+        if isinstance(value, list) and claim_id in value:
+            return True
+    return False
+
+
+def _next_actions(profile: str, missing_outputs: list[str], missing_source: list[str]) -> list[str]:
+    actions: list[str] = []
+    if missing_outputs:
+        actions.append("collect_required_evidence_or_provenance")
+    if missing_source:
+        actions.append("complete_source_reconstruction")
+    if profile == "adversarial":
+        actions.append("design_falsification_or_counterargument")
+    elif profile == "rigorous":
+        actions.append("run_or_record_minimal_validation")
+    elif not actions:
+        actions.append("refresh_execution_brief_before_acting")
+    return _unique(actions)

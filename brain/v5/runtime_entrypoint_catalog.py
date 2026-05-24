@@ -120,6 +120,7 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
     },
     "workspace_summary": {"cli": "aitp-v5 summary workspace", "mcp": "aitp_v5_write_workspace_summary", "surface": "workspace_summary_bundle"},
     "workspace_replay": {"cli": "aitp-v5 summary replay", "mcp": "aitp_v5_write_workspace_replay_packet", "surface": "workspace_replay_packet"},
+    "workspace_refresh": {"cli": "aitp-v5 summary refresh", "mcp": "aitp_v5_refresh_workspace_views", "surface": "workspace_refresh_bundle"},
     "trust_preflight": {
         "cli": "aitp-v5 trust preflight <args>",
         "mcp": "aitp_v5_preflight_trust_update",

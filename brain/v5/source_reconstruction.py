@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from brain.v5.models import (
+    ClaimRecord,
     EvidenceRecord,
     ObjectRelationRecord,
     PhysicsObjectRecord,
@@ -26,18 +27,50 @@ _REQUIRED_COMPONENTS = (
 def audit_source_reconstruction(ws: WorkspacePaths, *, claim_id: str) -> dict:
     """Check whether a claim has enough typed source stack to be reconstructable."""
 
-    claim = get_claim(ws, claim_id)
-    topic_id = claim.topic_id
-    evidence = _claim_records(ws, EvidenceRecord, "evidence", claim_id=claim_id)
-    references = _claim_records(ws, ReferenceLocationRecord, "reference_locations", claim_id=claim_id)
-    objects = [record for record in list_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord) if record.topic_id == topic_id]
-    relations = [
-        record
-        for record in list_records(ws.registry_dir("object_relations"), ObjectRelationRecord)
-        if record.topic_id == topic_id and (not record.claim_id or record.claim_id == claim_id)
-    ]
-    contracts = _claim_records(ws, ValidationContractRecord, "validation_contracts", claim_id=claim_id)
+    return audit_source_reconstruction_batch(ws, [claim_id])[claim_id]
 
+
+def audit_source_reconstruction_batch(ws: WorkspacePaths, claim_ids: list[str]) -> dict[str, dict]:
+    """Batch source reconstruction audits without repeated registry scans."""
+
+    wanted = _unique(claim_ids)
+    if not wanted:
+        return {}
+    claims_by_id = {claim.claim_id: claim for claim in list_records(ws.registry_dir("claims"), ClaimRecord)}
+    evidence_by_claim = _group_by_claim(list_records(ws.registry_dir("evidence"), EvidenceRecord))
+    references_by_claim = _group_by_claim(list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord))
+    objects_by_topic = _group_by_topic(list_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord))
+    relations = list_records(ws.registry_dir("object_relations"), ObjectRelationRecord)
+    contracts_by_claim = _group_by_claim(list_records(ws.registry_dir("validation_contracts"), ValidationContractRecord))
+    audits = {}
+    for claim_id in wanted:
+        claim = claims_by_id.get(claim_id) or get_claim(ws, claim_id)
+        topic_id = claim.topic_id
+        audits[claim_id] = _audit_claim_source_reconstruction(
+            claim,
+            evidence=evidence_by_claim.get(claim_id, []),
+            references=references_by_claim.get(claim_id, []),
+            objects=objects_by_topic.get(topic_id, []),
+            relations=[
+                record
+                for record in relations
+                if record.topic_id == topic_id and (not record.claim_id or record.claim_id == claim_id)
+            ],
+            contracts=contracts_by_claim.get(claim_id, []),
+        )
+    return audits
+
+
+def _audit_claim_source_reconstruction(
+    claim: ClaimRecord,
+    *,
+    evidence: list[EvidenceRecord],
+    references: list[ReferenceLocationRecord],
+    objects: list[PhysicsObjectRecord],
+    relations: list[ObjectRelationRecord],
+    contracts: list[ValidationContractRecord],
+) -> dict:
+    topic_id = claim.topic_id
     source_refs = _source_refs(evidence, references, objects, relations)
     components = {
         "definitions": _component([record.object_id for record in objects if record.definition.strip()]),
@@ -55,7 +88,7 @@ def audit_source_reconstruction(ws: WorkspacePaths, *, claim_id: str) -> dict:
         "ok": True,
         "kind": "source_reconstruction_audit",
         "topic_id": topic_id,
-        "claim_id": claim_id,
+        "claim_id": claim.claim_id,
         "complete": not missing,
         "required_components": list(_REQUIRED_COMPONENTS),
         "missing_components": missing,
@@ -65,10 +98,6 @@ def audit_source_reconstruction(ws: WorkspacePaths, *, claim_id: str) -> dict:
         "summary_inputs_trusted": False,
         "can_update_claim_trust": False,
     }
-
-
-def _claim_records(ws: WorkspacePaths, cls, registry_name: str, *, claim_id: str) -> list:
-    return [record for record in list_records(ws.registry_dir(registry_name), cls) if record.claim_id == claim_id]
 
 
 def _component(record_ids: list[str]) -> dict:
@@ -104,6 +133,30 @@ def _assumption_refs(claim, objects: list[PhysicsObjectRecord], relations: list[
     refs.extend(record.object_id for record in objects if record.assumptions)
     refs.extend(record.relation_id for record in relations if record.assumptions)
     return refs
+
+
+def _group_by_claim(records) -> dict[str, list]:
+    grouped: dict[str, list] = {}
+    for record in records:
+        grouped.setdefault(record.claim_id, []).append(record)
+    return grouped
+
+
+def _group_by_topic(records) -> dict[str, list]:
+    grouped: dict[str, list] = {}
+    for record in records:
+        grouped.setdefault(record.topic_id, []).append(record)
+    return grouped
+
+
+def _unique(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        if value and value not in seen:
+            seen.add(value)
+            result.append(value)
+    return result
 
 
 def _failure_refs(

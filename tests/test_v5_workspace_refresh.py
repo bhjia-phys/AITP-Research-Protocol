@@ -1,0 +1,96 @@
+from __future__ import annotations
+
+import json
+
+
+def _seed_workspace(tmp_path):
+    from brain.v5.evidence import record_evidence
+    from brain.v5.models import MemoryEntryRecord
+    from brain.v5.store import write_record
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="The counting sequence still needs a replay check.",
+        evidence_profile="literature",
+        confidence_state="hypothesis",
+        active_uncertainty="source reconstruction",
+    )
+    evidence = record_evidence(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        evidence_type="note",
+        status="supports",
+        summary="A source note exists.",
+        supports_outputs=["evidence_or_provenance"],
+    )
+    bind_session(ws, "s1", topic_id="fqhe", context_id="topological-order", active_claim=claim.claim_id)
+    memory = MemoryEntryRecord(
+        entry_id="memory-fqhe-active",
+        topic_id="fqhe",
+        source_claim_id=claim.claim_id,
+        evidence_refs=[evidence.evidence_id],
+        validation_result_ids=["validation-result-fqhe"],
+        statement="Counting replay memory.",
+    )
+    legacy_seed = MemoryEntryRecord(
+        entry_id="memory-fqhe-legacy-seed",
+        topic_id="fqhe",
+        source_claim_id=claim.claim_id,
+        evidence_refs=["legacy:evidence"],
+        status="legacy_seed",
+    )
+    write_record(ws.root / "memory" / "l2" / "entries" / f"{memory.entry_id}.md", memory)
+    write_record(ws.root / "memory" / "l2" / "entries" / f"{legacy_seed.entry_id}.md", legacy_seed)
+    return ws, claim, evidence, memory
+
+
+def test_workspace_refresh_writes_summary_replay_and_obsidian_views(tmp_path):
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace_refresh import refresh_workspace_views
+
+    ws, claim, _, memory = _seed_workspace(tmp_path)
+
+    payload = refresh_workspace_views(ws)
+
+    assert payload["kind"] == "workspace_refresh_bundle"
+    assert payload["truth_source"] is False
+    assert payload["orientation_only"] is True
+    assert payload["refreshed_surfaces"] == [
+        "workspace_summary_bundle",
+        "workspace_replay_packet",
+        "l2_obsidian_view_bundle",
+    ]
+    assert payload["source_records"]["sessions"] == ["s1"]
+    assert payload["source_records"]["claims"] == [claim.claim_id]
+    assert payload["source_records"]["memory_entries"] == [memory.entry_id]
+    assert payload["source_records"]["validation_results"] == ["validation-result-fqhe"]
+    assert payload["workspace_summary"]["files"]["overview"].endswith("overview.md")
+    assert payload["workspace_replay"]["files"]["replay_packet"].endswith("replay_packet.md")
+    assert payload["l2_obsidian_view"]["files"]["overview"].endswith("L2 Memory Overview.md")
+    assert payload["l2_obsidian_view"]["memory_entry_count"] == 1
+    assert require_valid_public_surface("workspace_refresh_bundle", payload) == payload
+
+
+def test_workspace_refresh_cli_mcp_and_runtime(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_refresh_workspace_views
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+
+    _seed_workspace(tmp_path)
+
+    assert main(["--base", str(tmp_path), "summary", "refresh"]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_refresh_workspace_views(str(tmp_path))
+
+    assert cli_payload["kind"] == "workspace_refresh_bundle"
+    assert mcp_payload["kind"] == "workspace_refresh_bundle"
+    assert runtime_entrypoints()["workspace_refresh"] == {
+        "cli": "aitp-v5 summary refresh",
+        "mcp": "aitp_v5_refresh_workspace_views",
+        "surface": "workspace_refresh_bundle",
+    }

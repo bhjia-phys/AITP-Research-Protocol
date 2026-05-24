@@ -7,6 +7,7 @@ from dataclasses import asdict
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.replay import write_workspace_replay_packet
 from brain.v5.summaries import read_summary_orientation, write_session_summary, write_workspace_summary
+from brain.v5.workspace_refresh import refresh_workspace_views
 
 
 def add_summary_parser(subparsers) -> None:
@@ -16,6 +17,7 @@ def add_summary_parser(subparsers) -> None:
     commands.add_parser("orientation").add_argument("session_id")
     commands.add_parser("workspace")
     commands.add_parser("replay")
+    commands.add_parser("refresh")
 
 
 def dispatch_summary_command(args, ws) -> dict:
@@ -30,4 +32,6 @@ def dispatch_summary_command(args, ws) -> dict:
     if args.summary_command == "replay":
         bundle = write_workspace_replay_packet(ws)
         return {"ok": True, **require_valid_public_surface("workspace_replay_packet", asdict(bundle))}
+    if args.summary_command == "refresh":
+        return {"ok": True, **require_valid_public_surface("workspace_refresh_bundle", refresh_workspace_views(ws))}
     raise ValueError(f"unknown summary command: {args.summary_command}")

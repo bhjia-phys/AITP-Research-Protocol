@@ -5745,3 +5745,75 @@ Each entry should record:
   - add adapter/session-start refresh or optional vault-target discovery so
     replay and Obsidian views can be regenerated automatically when a host
     session begins.
+
+### TBD - Add Workspace Refresh Bundle
+
+- Task: provide one stable host-startup refresh entrypoint that regenerates the
+  workspace summary, replay packet, and active-session L2 Obsidian review view
+  without giving generated Markdown or summaries authority.
+- Planning source:
+  - final-engineering gap that replay and L2 review views were generated on
+    demand but not bundled for runtime startup;
+  - AITP invariant that host adapter convenience surfaces must remain
+    orientation-only and cannot update trust.
+- Changed files:
+  - `brain/v5/workspace_refresh.py`
+  - `brain/v5/workspace_refresh_contracts.py`
+  - `brain/v5/memory_index.py`
+  - `brain/v5/source_reconstruction.py`
+  - `brain/v5/replay.py`
+  - `brain/v5/obsidian_views.py`
+  - `brain/v5/cli.py`
+  - `brain/v5/cli_summaries.py`
+  - `brain/v5/mcp_summaries.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoint_catalog.py`
+  - `tests/test_v5_workspace_refresh.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+- Public/runtime behavior changes:
+  - added contracted public surface `workspace_refresh_bundle`;
+  - added `refresh_workspace_views`;
+  - added CLI `aitp-v5 summary refresh`;
+  - added MCP wrapper `aitp_v5_refresh_workspace_views`;
+  - added runtime entrypoint `workspace_refresh`.
+  - replay now uses a batched source reconstruction audit instead of scanning
+    reference locations once per active session;
+  - startup refresh writes the L2 review view to
+    `.aitp/surfaces/obsidian_l2_active` and filters it to active-session claims;
+  - CLI JSON output is ASCII-safe on Windows consoles, avoiding GBK failures on
+    physics symbols in recorded content.
+- Tests:
+  - refresh output lists `workspace_summary_bundle`,
+    `workspace_replay_packet`, and `l2_obsidian_view_bundle`;
+  - combined `source_records` expose the sessions, claims, memory entries, and
+    validation links used by refreshed views;
+  - active L2 memory entries are included while legacy-seed entries are
+    excluded from startup refresh;
+  - CLI/MCP/runtime entrypoints expose the same bundle.
+- Verification:
+  - red target:
+    `pytest tests\test_v5_workspace_refresh.py -q`: 2 failed because the
+    workspace refresh module and MCP wrapper did not exist;
+  - target green:
+    same command: 2 passed;
+  - focused related set:
+    `pytest tests\test_v5_workspace_refresh.py tests\test_v5_summaries.py tests\test_v5_replay.py tests\test_v5_obsidian_views.py tests\test_v5_public_surfaces.py tests\test_v5_runtime_entrypoints.py tests\test_v5_mcp_tools.py tests\test_v5_cli.py tests\test_v5_architecture_boundaries.py -q`:
+    73 passed.
+  - real workspace smoke:
+    `python -m brain.v5.cli --base D:\BaiduSyncdisk\Theoretical-Physics summary replay`:
+    2.95s after batching source audits;
+    `python -m brain.v5.cli --base D:\BaiduSyncdisk\Theoretical-Physics summary refresh`:
+    6.26s and wrote workspace summary, replay packet, and active L2 Obsidian
+    overview under `.aitp/surfaces`.
+- Residual risks:
+  - refresh is a stable callable startup entrypoint, not an automatic installer
+    into every host lifecycle file;
+  - generated views still require agents to call typed kernel surfaces before
+    any trust-changing action.
+- Next recommended task:
+  - run the refresh surface against the real Theoretical-Physics workspace and
+    use the resulting bundle as the common startup target for Codex, Claude
+    Code, and Kimi Code adapters.

@@ -52,6 +52,7 @@ _PUBLIC_SURFACE_NAMES = (
     "validation_result_record",
     "workspace_summary_bundle",
     "workspace_replay_packet",
+    "workspace_refresh_bundle",
 )
 _PUBLIC_SURFACE_VALIDATOR_REF = "brain.v5.public_surfaces.require_valid_public_surface"
 _PUBLIC_SURFACE_PURPOSES = {
@@ -102,6 +103,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "validation_result_record": "contracted validation result linking a tool run to a validation contract and checked outputs",
     "workspace_summary_bundle": "orientation-only workspace summary regenerated from typed sessions, active claims, memory entries, and validation links",
     "workspace_replay_packet": "orientation-only multi-session replay packet listing resume attention, source reconstruction gaps, evidence gaps, and next actions from typed records",
+    "workspace_refresh_bundle": "orientation-only host startup bundle that refreshes workspace summary, replay packet, and L2 Obsidian views from typed records",
 }
 
 
@@ -187,6 +189,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     )
     from brain.v5.legacy_contracts import require_valid_legacy_migration_result
     from brain.v5.obsidian_view_contracts import require_valid_l2_obsidian_view_bundle
+    from brain.v5.workspace_refresh_contracts import require_valid_workspace_refresh_bundle
     from brain.v5.hook_protocol_contracts import (
         require_valid_claude_code_hook_installation,
         require_valid_claude_code_hook_settings,
@@ -251,4 +254,5 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "validation_result_record": require_valid_validation_result_record,
         "workspace_summary_bundle": require_valid_workspace_summary_bundle,
         "workspace_replay_packet": require_valid_workspace_replay_packet,
+        "workspace_refresh_bundle": require_valid_workspace_refresh_bundle,
     }

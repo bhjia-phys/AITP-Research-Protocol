@@ -1,0 +1,65 @@
+"""Workspace refresh bundle for host startup orientation."""
+
+from __future__ import annotations
+
+from dataclasses import asdict
+from typing import Any
+
+from brain.v5.obsidian_views import write_l2_obsidian_view
+from brain.v5.paths import WorkspacePaths
+from brain.v5.replay import write_workspace_replay_packet
+from brain.v5.summaries import write_workspace_summary
+
+
+def refresh_workspace_views(ws: WorkspacePaths) -> dict[str, Any]:
+    """Refresh all orientation-only workspace review views.
+
+    Host adapters can call this once at startup to get a current orientation
+    packet without granting summaries or Markdown files trust authority.
+    """
+
+    summary = asdict(write_workspace_summary(ws))
+    replay = asdict(write_workspace_replay_packet(ws))
+    active_claims = summary.get("source_records", {}).get("claims", [])
+    obsidian = write_l2_obsidian_view(
+        ws,
+        output_dir=str(ws.root / "surfaces" / "obsidian_l2_active"),
+        claim_ids=active_claims,
+    )
+    source_records = _merge_source_records(
+        summary.get("source_records", {}),
+        replay.get("source_records", {}),
+        obsidian.get("source_records", {}),
+    )
+    return {
+        "kind": "workspace_refresh_bundle",
+        "refreshed_surfaces": [
+            summary["kind"],
+            replay["kind"],
+            obsidian["kind"],
+        ],
+        "workspace_summary": summary,
+        "workspace_replay": replay,
+        "l2_obsidian_view": obsidian,
+        "source_records": source_records,
+        "derived_from": "kernel_state",
+        "truth_source": False,
+        "orientation_only": True,
+        "adapter_rule": "read_for_orientation_then_call_kernel_before_trust_updates",
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def _merge_source_records(*records: dict[str, list[str]]) -> dict[str, list[str]]:
+    merged: dict[str, list[str]] = {}
+    seen: dict[str, set[str]] = {}
+    for record in records:
+        for key, values in record.items():
+            merged.setdefault(key, [])
+            seen.setdefault(key, set())
+            for value in values:
+                if value and value not in seen[key]:
+                    seen[key].add(value)
+                    merged[key].append(value)
+    return merged

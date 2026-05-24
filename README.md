@@ -219,6 +219,11 @@ typed L2 memory entries under `.aitp/surfaces/obsidian_l2` by default. These
 notes are convenient for browsing promoted memory, evidence refs, validation
 refs, scope, and known failure modes, but their frontmatter keeps
 `truth_source=false`; trust updates still have to read typed kernel records.
+Host adapters that want one startup refresh point can call
+`aitp-v5 summary refresh` or `aitp_v5_refresh_workspace_views`. The contracted
+`workspace_refresh_bundle` regenerates the workspace summary, replay packet,
+and an active-session L2 Obsidian view in one orientation-only operation, with
+`can_update_kernel_state=false` and `can_update_claim_trust=false`.
 `aitp-v5 memory failure-mode-review --claim <claim-id>` and
 `aitp_v5_build_failure_mode_review_packet` turn that typed audit into a
 read-only `failure_mode_review_packet`: per-mode physical adequacy questions,
