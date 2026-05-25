@@ -93,6 +93,8 @@ def _host_payload(host_smoke: dict[str, Any]) -> dict[str, Any]:
         "deferred_hosts": list(_DEFERRED_HOSTS),
         "priority_host_status": priority,
         "deferred_host_status": deferred,
+        "production_loop_surface": "runtime_host_readiness_audit",
+        "priority_host_production_loops": [_host_production_loop(runtime) for runtime in _PRIORITY_HOSTS],
         "residual_lifecycle_gap": _unique(
             gap
             for runtime in _PRIORITY_HOSTS
@@ -101,6 +103,25 @@ def _host_payload(host_smoke: dict[str, Any]) -> dict[str, Any]:
         "opencode_deferred": True,
         "summary_inputs_trusted": False,
     }
+
+
+def _host_production_loop(runtime: str) -> dict[str, Any]:
+    cli_runtime = _cli_runtime(runtime)
+    session_start_supported = runtime in {"claude_code", "kimi_code"}
+    readiness_cli = f"aitp-v5 adapter host-readiness {cli_runtime}"
+    if session_start_supported:
+        readiness_cli = f"{readiness_cli} --run-session-start-smoke --session <session-id>"
+    return {
+        "runtime": runtime,
+        "readiness_cli": readiness_cli,
+        "lifecycle_cli": f"aitp-v5 adapter host-lifecycle {cli_runtime}",
+        "session_start_smoke_supported": session_start_supported,
+        "can_update_claim_trust": False,
+    }
+
+
+def _cli_runtime(runtime: str) -> str:
+    return {"claude_code": "claude-code", "kimi_code": "kimi-code"}.get(runtime, runtime)
 
 
 def _runtime_status(payload: dict[str, Any]) -> dict[str, Any]:

@@ -175,6 +175,32 @@ def test_final_readiness_audit_keeps_kernel_capability_separate_from_content_bac
     assert payload["kernel_capabilities"]["natural_interaction"]["can_update_claim_trust"] is False
     assert payload["kernel_capabilities"]["host_integration"]["priority_hosts"] == ["codex", "claude_code", "kimi_code"]
     assert payload["kernel_capabilities"]["host_integration"]["deferred_hosts"] == ["opencode"]
+    assert payload["kernel_capabilities"]["host_integration"]["production_loop_surface"] == (
+        "runtime_host_readiness_audit"
+    )
+    assert payload["kernel_capabilities"]["host_integration"]["priority_host_production_loops"] == [
+        {
+            "runtime": "codex",
+            "readiness_cli": "aitp-v5 adapter host-readiness codex",
+            "lifecycle_cli": "aitp-v5 adapter host-lifecycle codex",
+            "session_start_smoke_supported": False,
+            "can_update_claim_trust": False,
+        },
+        {
+            "runtime": "claude_code",
+            "readiness_cli": "aitp-v5 adapter host-readiness claude-code --run-session-start-smoke --session <session-id>",
+            "lifecycle_cli": "aitp-v5 adapter host-lifecycle claude-code",
+            "session_start_smoke_supported": True,
+            "can_update_claim_trust": False,
+        },
+        {
+            "runtime": "kimi_code",
+            "readiness_cli": "aitp-v5 adapter host-readiness kimi-code --run-session-start-smoke --session <session-id>",
+            "lifecycle_cli": "aitp-v5 adapter host-lifecycle kimi-code",
+            "session_start_smoke_supported": True,
+            "can_update_claim_trust": False,
+        },
+    ]
     assert payload["content_backlog"]["legacy_semantic_review"]["review_item_count"] == 2
     assert payload["content_backlog"]["legacy_semantic_review"]["worklist_surface"] == (
         "legacy_semantic_review_worklist"

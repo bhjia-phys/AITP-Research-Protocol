@@ -48,6 +48,25 @@ def validate_final_engineering_readiness_audit(
         for key in ("summary_can_drive_trust", "can_update_kernel_state", "can_update_claim_trust"):
             if natural.get(key) is not False:
                 result.add(f"{path}.kernel_capabilities.natural_interaction.{key}", "must be false")
+    host = _mapping(payload.get("kernel_capabilities")).get("host_integration")
+    _require_mapping(host, f"{path}.kernel_capabilities.host_integration", result)
+    if isinstance(host, dict):
+        if host.get("production_loop_surface") != "runtime_host_readiness_audit":
+            result.add(
+                f"{path}.kernel_capabilities.host_integration.production_loop_surface",
+                "must be runtime_host_readiness_audit",
+            )
+        _require_list(
+            host.get("priority_host_production_loops"),
+            f"{path}.kernel_capabilities.host_integration.priority_host_production_loops",
+            result,
+        )
+        for index, item in enumerate(host.get("priority_host_production_loops") or []):
+            _validate_host_production_loop(
+                item,
+                f"{path}.kernel_capabilities.host_integration.priority_host_production_loops[{index}]",
+                result,
+            )
     _require_mapping(payload.get("content_backlog"), f"{path}.content_backlog", result)
     _require_list(payload.get("blocking_gaps"), f"{path}.blocking_gaps", result)
     _require_list(payload.get("residual_risks"), f"{path}.residual_risks", result)
@@ -195,3 +214,15 @@ def _require_nonempty_str(payload: dict[str, Any], key: str, path: str, result: 
 
 def _mapping(value: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
+
+
+def _validate_host_production_loop(payload: Any, path: str, result: ContractResult) -> None:
+    if not isinstance(payload, dict):
+        result.add(path, "must be a mapping")
+        return
+    for key in ("runtime", "readiness_cli", "lifecycle_cli"):
+        _require_nonempty_str(payload, key, path, result)
+    if not isinstance(payload.get("session_start_smoke_supported"), bool):
+        result.add(f"{path}.session_start_smoke_supported", "must be a bool")
+    if payload.get("can_update_claim_trust") is not False:
+        result.add(f"{path}.can_update_claim_trust", "must be false")
