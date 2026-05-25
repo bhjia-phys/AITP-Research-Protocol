@@ -37,6 +37,8 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["--payload-json", '{"kind":"hook_trace_event","hook_name":"post_tool","event":{"event_id":"event-1","session_id":"s1","topic_id":"fqhe","event_type":"tool_run_recorded","risk_level":"guided","payload":{},"kind":"trace_event"},"exit_code":0,"summary_inputs_trusted":false}']
     if template.startswith("legacy migrate"):
         return ["D:/aitp/legacy-topic", "--context", "legacy-context", "--session", "s1"]
+    if template.startswith("legacy l2-graph-manifest"):
+        return ["--legacy-l2-dir", "D:/aitp/research/aitp-topics/L2"]
     if template.startswith(("legacy migration-audit", "legacy semantic-review-queue")):
         return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run"]
     if template.startswith("legacy semantic-review-manifest"):

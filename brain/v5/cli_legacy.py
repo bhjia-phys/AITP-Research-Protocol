@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from brain.v5.legacy_l2_graph import build_legacy_l2_graph_manifest
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
 from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
@@ -23,6 +24,8 @@ def add_legacy_parser(subparsers) -> None:
     migrate.add_argument("--session", required=True, dest="session_id")
     audit = legacy_subparsers.add_parser("migration-audit")
     audit.add_argument("--migration-dir", default="")
+    l2_graph = legacy_subparsers.add_parser("l2-graph-manifest")
+    l2_graph.add_argument("--legacy-l2-dir", default="")
     review = legacy_subparsers.add_parser("semantic-review-queue")
     review.add_argument("--migration-dir", default="")
     manifest = legacy_subparsers.add_parser("semantic-review-manifest")
@@ -65,6 +68,9 @@ def dispatch_legacy_command(args, ws) -> dict:
     if args.legacy_command == "migration-audit":
         audit = audit_legacy_migration_coverage(ws, migration_dir=args.migration_dir or None)
         return {"ok": True, **require_valid_public_surface("legacy_migration_coverage_audit", audit)}
+    if args.legacy_command == "l2-graph-manifest":
+        manifest = build_legacy_l2_graph_manifest(ws, legacy_l2_dir=args.legacy_l2_dir)
+        return {"ok": True, **require_valid_public_surface("legacy_l2_graph_manifest", manifest)}
     if args.legacy_command == "semantic-review-queue":
         queue = build_legacy_semantic_review_queue(ws, migration_dir=args.migration_dir or None)
         return {"ok": True, **require_valid_public_surface("legacy_semantic_review_queue", queue)}

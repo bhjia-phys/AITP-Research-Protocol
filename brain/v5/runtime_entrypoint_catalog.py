@@ -122,6 +122,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_audit_legacy_migration_coverage",
         "surface": "legacy_migration_coverage_audit",
     },
+    "legacy_l2_graph_manifest": {
+        "cli": "aitp-v5 legacy l2-graph-manifest <args>",
+        "mcp": "aitp_v5_build_legacy_l2_graph_manifest",
+        "surface": "legacy_l2_graph_manifest",
+    },
     "legacy_semantic_review_queue": {
         "cli": "aitp-v5 legacy semantic-review-queue <args>",
         "mcp": "aitp_v5_build_legacy_semantic_review_queue",

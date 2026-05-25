@@ -294,6 +294,12 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   review view for active L2 memory entries. The generated notes list memory
   scope, evidence refs, validation refs, and known failure modes, but keep
   `truth_source=false`; typed memory/audit records remain authoritative.
+- Agents can call `aitp-v5 legacy l2-graph-manifest` or
+  `aitp_v5_build_legacy_l2_graph_manifest` to inspect a legacy global `L2/`
+  index/graph before typed migration. The manifest counts legacy entries,
+  graph nodes/edges/steps/towers, records Obsidian view targets, and recommends
+  typed L2 memory/object-relation migration while keeping the legacy graph
+  orientation-only and unable to update trust.
 - Agents can call `aitp-v5 summary refresh` or
   `aitp_v5_refresh_workspace_views` as a single host-startup refresh point.
   It regenerates the workspace summary, replay packet, and active-session L2

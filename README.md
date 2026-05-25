@@ -221,6 +221,12 @@ typed L2 memory entries under `.aitp/surfaces/obsidian_l2` by default. These
 notes are convenient for browsing promoted memory, evidence refs, validation
 refs, scope, and known failure modes, but their frontmatter keeps
 `truth_source=false`; trust updates still have to read typed kernel records.
+Legacy global `L2/` graphs can be inspected with
+`aitp-v5 legacy l2-graph-manifest` or
+`aitp_v5_build_legacy_l2_graph_manifest`. The manifest is read-only: it counts
+legacy entries and graph files, lists view targets, and recommends typed L2
+memory/object-relation migration without treating the old graph as trusted
+kernel state.
 Host adapters that want one startup refresh point can call
 `aitp-v5 summary refresh` or `aitp_v5_refresh_workspace_views`. The contracted
 `workspace_refresh_bundle` regenerates the workspace summary, replay packet,

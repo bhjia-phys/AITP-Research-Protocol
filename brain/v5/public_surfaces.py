@@ -27,6 +27,7 @@ _PUBLIC_SURFACE_NAMES = (
     "knowledge_connector_catalog",
     "l2_obsidian_view_bundle",
     "l2_memory_audit",
+    "legacy_l2_graph_manifest",
     "legacy_migration_coverage_audit",
     "legacy_migration_result",
     "legacy_semantic_review_manifest",
@@ -90,6 +91,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "knowledge_connector_catalog": "contracted catalog of knowledge connectors for notes, literature, and learning memory",
     "l2_obsidian_view_bundle": "orientation-only Obsidian Markdown view over typed L2 memory entries",
     "l2_memory_audit": "read-only typed-record audit of L2 memory provenance for one claim",
+    "legacy_l2_graph_manifest": "read-only manifest for planning legacy global L2 graph/index migration into typed L2 memory and Obsidian views",
     "legacy_migration_coverage_audit": "read-only audit of legacy migration file accounting, archive references, and per-topic coverage without claiming semantic proof",
     "legacy_migration_result": "contracted explicit migration result from legacy topic files into v5 typed records",
     "legacy_semantic_review_manifest": "orientation-only batch manifest listing per-topic semantic review packets, statuses, and result-record commands",
@@ -213,6 +215,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_workspace_replay_packet,
     )
     from brain.v5.legacy_contracts import require_valid_legacy_migration_result
+    from brain.v5.legacy_l2_graph_contracts import require_valid_legacy_l2_graph_manifest
     from brain.v5.legacy_migration_audit_contracts import require_valid_legacy_migration_coverage_audit
     from brain.v5.source_reconstruction_contracts import require_valid_source_reconstruction_manifest
     from brain.v5.legacy_semantic_review_contracts import (
@@ -267,6 +270,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "knowledge_connector_catalog": require_valid_knowledge_connector_catalog,
         "l2_obsidian_view_bundle": require_valid_l2_obsidian_view_bundle,
         "l2_memory_audit": require_valid_l2_memory_audit,
+        "legacy_l2_graph_manifest": require_valid_legacy_l2_graph_manifest,
         "legacy_migration_coverage_audit": require_valid_legacy_migration_coverage_audit,
         "legacy_migration_result": require_valid_legacy_migration_result,
         "legacy_semantic_review_manifest": require_valid_legacy_semantic_review_manifest,
