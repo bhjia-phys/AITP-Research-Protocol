@@ -650,6 +650,70 @@ def test_legacy_semantic_review_manifest_batches_packets_without_writing(tmp_pat
     assert require_valid_public_surface("legacy_semantic_review_manifest", manifest) == manifest
 
 
+def test_legacy_semantic_review_manifest_summarizes_repair_candidates(tmp_path):
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
+    from brain.v5.models import ClaimRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    legacy_topic = ws.base / "research" / "aitp-topics" / "canonical-topic"
+    candidate = legacy_topic / "L3" / "candidates" / "candidate.md"
+    candidate.parent.mkdir(parents=True)
+    candidate.write_text("# Candidate\n\nA reconstruction sketch.\n", encoding="utf-8")
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Semantic review required.",
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="needs_revision",
+        summary="Claim statement and reconstruction path need typed backfill.",
+        reviewed_legacy_refs=[f"legacy_candidate:{candidate}"],
+        reviewed_typed_refs=["claim-canonical"],
+        remaining_actions=[
+            "Backfill the active claim statement from the legacy Research Question.",
+            "Complete definitions, assumptions_or_scope, dependency_graph, reconstruction_path, and failure_conditions before promotion.",
+        ],
+    )
+    before = {path.as_posix() for path in ws.root.rglob("*") if path.is_file()}
+
+    manifest = build_legacy_semantic_review_manifest(ws, migration_dir=run)
+
+    after = {path.as_posix() for path in ws.root.rglob("*") if path.is_file()}
+    canonical = next(item for item in manifest["items"] if item["topic"] == "canonical-topic")
+    assert before == after
+    assert canonical["repair_candidate_count"] == 1
+    assert canonical["repair_candidates"] == [
+        {
+            "repair_surface": "legacy_source_reconstruction_apply",
+            "repair_type": "reconstruction_path_evidence_backfill",
+            "review_id": review.review_id,
+            "apply_cli": (
+                f"aitp-v5 --base {ws.base} legacy source-reconstruction-apply "
+                f"--migration-dir {run} --topic canonical-topic "
+                "--repair-type reconstruction_path_evidence_backfill"
+                f" --review-id {review.review_id}"
+            ),
+            "can_update_claim_trust": False,
+        }
+    ]
+    assert "repair_candidate:canonical-topic:reconstruction_path_evidence_backfill" in manifest["next_actions"]
+    assert require_valid_public_surface("legacy_semantic_review_manifest", manifest) == manifest
+
+
 def test_legacy_semantic_review_manifest_cli_mcp_and_runtime_surface(tmp_path, capsys):
     import json
 
