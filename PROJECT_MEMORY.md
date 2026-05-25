@@ -139,6 +139,14 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   hook file, and can directly smoke Claude/Kimi `SessionStart` refresh. It is
   runtime evidence only, remains orientation-only, and cannot update claim
   trust.
+- Dynamic lifecycle probing can be checked with
+  `aitp-v5 adapter host-lifecycle <runtime>` or
+  `aitp_v5_audit_runtime_host_lifecycle`. The returned
+  `runtime_host_lifecycle_audit` runs a supplied host command, compares
+  `.aitp/runtime/hook_trace_events.jsonl` before/after, and scans stdout/stderr
+  for AITP hook output kinds. It remains orientation-only and is evidence about
+  that invocation, not a global guarantee about all future host UI/session
+  modes.
 - Codex native `hooks.json` installation now writes command strings with the
   active Python interpreter and an absolute
   `hooks/aitp_v5_adapter_event_runner.py` path. Tests execute those commands

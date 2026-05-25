@@ -370,11 +370,19 @@ Live host readiness can be checked with
 (`codex`, `claude`, `kimi`, or `opencode` by default), optionally audits the
 installed hook file, and can directly smoke Claude/Kimi `SessionStart` refresh
 commands while remaining orientation-only and unable to update claim trust.
+For a closer lifecycle probe, run
+`aitp-v5 adapter host-lifecycle <runtime> --command <host> --arg=<arg>` or
+`aitp_v5_audit_runtime_host_lifecycle`. It runs the supplied host command and
+compares `.aitp/runtime/hook_trace_events.jsonl` before/after while also
+looking for AITP hook output kinds in stdout/stderr. This is runtime evidence
+only: it can show that a particular invocation fired hooks, but it does not make
+summary output trusted or claim that every future UI/session mode is covered.
 Generated-hook smoke coverage can be reviewed with
 `aitp-v5 adapter smoke-coverage` or `aitp_v5_report_hook_smoke_coverage`; the
 report is orientation-only and lists which Codex/Claude Code/Kimi Code/OpenCode
-hook paths have test-backed smoke checks, which dynamic host-readiness surface
-exists, and which real interactive lifecycle-event gaps remain.
+hook paths have test-backed smoke checks, which dynamic host-readiness and
+lifecycle-probe surfaces exist, and which real interactive lifecycle-event gaps
+remain.
 Both fixtures write the bridge and sidecar, then point pre-tool hooks at the
 stdin runner and post-tool hooks at the trace-persistence runner with a declared
 repository `cwd`, without granting generated files authority over typed records.

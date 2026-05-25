@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from brain.v5.host_readiness import audit_runtime_host_readiness
+from brain.v5.host_readiness import audit_runtime_host_lifecycle, audit_runtime_host_readiness
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.workspace import init_workspace
 
@@ -37,5 +37,25 @@ def aitp_v5_audit_runtime_host_readiness(
             check_installation=check_installation,
             session_id=session_id,
             run_session_start_smoke=run_session_start_smoke,
+        ),
+    )
+
+
+def aitp_v5_audit_runtime_host_lifecycle(
+    base: str,
+    *,
+    runtime: str,
+    command: str = "",
+    args: list[str] | None = None,
+    timeout_seconds: int = 60,
+) -> dict:
+    return require_valid_public_surface(
+        "runtime_host_lifecycle_audit",
+        audit_runtime_host_lifecycle(
+            init_workspace(Path(base)),
+            runtime=runtime,
+            command=command,
+            args=args,
+            timeout_seconds=timeout_seconds,
         ),
     )

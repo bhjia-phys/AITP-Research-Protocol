@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from brain.v5.hook_install_audit import audit_hook_installation
+from brain.v5.trace import hook_trace_event_path, read_trace_events
 
 
 _DEFAULT_COMMANDS = {
@@ -64,6 +65,48 @@ def audit_runtime_host_readiness(
         "installation_audit": install,
         "session_start_smoke": session_start,
         "truth_source": "runtime_process_and_files",
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def audit_runtime_host_lifecycle(
+    ws,
+    *,
+    runtime: str,
+    command: str = "",
+    args: list[str] | None = None,
+    timeout_seconds: int = 60,
+) -> dict[str, Any]:
+    """Run a host command and audit whether lifecycle hook signals appeared."""
+
+    runtime = _normalize_runtime(runtime)
+    command = command or _DEFAULT_COMMANDS.get(runtime, runtime)
+    run_args = args if args is not None else ["--version"]
+    trace_path = hook_trace_event_path(ws)
+    before = read_trace_events(trace_path)
+    process = _run_process(command, run_args, cwd=ws.base, timeout_seconds=timeout_seconds)
+    after = read_trace_events(trace_path)
+    new_events = after[len(before):] if len(after) >= len(before) else []
+    hook_output = _hook_output_payload(process)
+    trace_delta = len(new_events)
+    status = _lifecycle_status(process, trace_delta=trace_delta, hook_observed=hook_output["observed"])
+    return {
+        "kind": "runtime_host_lifecycle_audit",
+        "runtime": runtime,
+        "status": status,
+        "process": process,
+        "trace": {
+            "path": str(trace_path),
+            "before_count": len(before),
+            "after_count": len(after),
+            "delta_count": trace_delta,
+            "new_event_ids": [event.event_id for event in new_events],
+        },
+        "hook_output": hook_output,
+        "truth_source": "runtime_process_and_hook_trace",
         "summary_inputs_trusted": False,
         "orientation_only": True,
         "can_update_kernel_state": False,
@@ -201,6 +244,35 @@ def _status(process: dict[str, Any], install: dict[str, Any], session_start: dic
     if session_start.get("ran"):
         return "ready_with_session_start_smoke"
     return "process_ready"
+
+
+def _lifecycle_status(process: dict[str, Any], *, trace_delta: int, hook_observed: bool) -> str:
+    if not process.get("ok"):
+        return "process_unavailable"
+    if trace_delta > 0 and hook_observed:
+        return "lifecycle_observed"
+    if trace_delta > 0:
+        return "trace_delta_observed"
+    if hook_observed:
+        return "hook_output_observed"
+    return "process_ready_no_lifecycle_event_observed"
+
+
+def _hook_output_payload(process: dict[str, Any]) -> dict[str, Any]:
+    text = "\n".join([str(process.get("stdout") or ""), str(process.get("stderr") or "")])
+    kinds = [
+        kind
+        for kind in [
+            "workspace_refresh_bundle",
+            "hook_trace_event_record",
+            "hook_decision",
+            "PreToolUse",
+            "PostToolUse",
+            "SessionStart",
+        ]
+        if kind in text
+    ]
+    return {"observed": bool(kinds), "observed_kinds": kinds}
 
 
 def _parse_json_object(raw: str) -> dict[str, Any]:

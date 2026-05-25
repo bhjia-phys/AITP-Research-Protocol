@@ -2355,6 +2355,9 @@ def test_runtime_hook_smoke_coverage_reports_test_backed_host_smokes():
     assert "native_hooks_json_workspace_cwd" in {check["name"] for check in by_runtime["codex"]["checks"]}
     assert "native_hook_process_smoke" in {check["name"] for check in by_runtime["kimi_code"]["checks"]}
     assert "dynamic_host_readiness_audit_surface" in {check["name"] for check in by_runtime["claude_code"]["checks"]}
+    assert "dynamic_host_lifecycle_audit_surface" in {check["name"] for check in by_runtime["codex"]["checks"]}
+    assert "dynamic_host_lifecycle_audit_surface" in {check["name"] for check in by_runtime["claude_code"]["checks"]}
+    assert "dynamic_host_lifecycle_audit_surface" in {check["name"] for check in by_runtime["kimi_code"]["checks"]}
     assert "local_plugin_node_lifecycle" in {check["name"] for check in by_runtime["opencode"]["checks"]}
     assert "real_interactive_lifecycle_event_smoke" in by_runtime["claude_code"]["gaps"]
     for entry in payload["runtimes"]:

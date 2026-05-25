@@ -349,11 +349,13 @@ Major remaining gaps after the 2026-05-24/25 closure pass:
   and `kimi`, audited installed hooks, and directly verified Claude/Kimi
   `SessionStart` refresh returning `workspace_refresh_bundle`. Static
   `runtime_hook_smoke_coverage` now includes
-  `dynamic_host_readiness_audit_surface` for Codex/Claude/Kimi and narrows the
-  residual to `real_interactive_lifecycle_event_smoke`. The remaining host gap
-  is proving that proprietary interactive host UIs fire every lifecycle event
-  in every future session mode. OpenCode remains intentionally deferred by the
-  current user priority.
+  `dynamic_host_readiness_audit_surface` and
+  `dynamic_host_lifecycle_audit_surface` for Codex/Claude/Kimi. The lifecycle
+  audit runs a supplied host command, compares hook trace counts before/after,
+  and scans host output for AITP hook output kinds. The remaining host gap is
+  broader than a single probe: proving that proprietary interactive host UIs
+  fire every lifecycle event in every future session mode. OpenCode remains
+  intentionally deferred by the current user priority.
 - Pre-tool and record-gate coverage is a current audited surface, not an
   untracked partial promise. `adapter record-gate-audit` reports
   `ungated_record_protocols=[]` for current record protocols; high-risk

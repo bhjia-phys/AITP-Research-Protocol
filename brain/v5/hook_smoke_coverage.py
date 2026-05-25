@@ -30,6 +30,7 @@ def runtime_hook_smoke_coverage_report() -> dict[str, Any]:
                     ],
                 ),
                 _host_readiness_check(),
+                _host_lifecycle_check(),
             ],
             "gaps": ["real_interactive_lifecycle_event_smoke"],
         },
@@ -53,6 +54,7 @@ def runtime_hook_smoke_coverage_report() -> dict[str, Any]:
                     ],
                 ),
                 _host_readiness_check(),
+                _host_lifecycle_check(),
             ],
             "gaps": ["real_interactive_lifecycle_event_smoke"],
         },
@@ -84,6 +86,7 @@ def runtime_hook_smoke_coverage_report() -> dict[str, Any]:
                     ],
                 ),
                 _host_readiness_check(),
+                _host_lifecycle_check(),
             ],
             "gaps": ["real_interactive_lifecycle_event_smoke"],
         },
@@ -140,5 +143,16 @@ def _host_readiness_check() -> dict[str, Any]:
         [
             "tests/test_v5_host_readiness.py::test_runtime_host_readiness_runs_process_without_trusting_summaries",
             "tests/test_v5_host_readiness.py::test_runtime_host_readiness_cli_and_mcp",
+        ],
+    )
+
+
+def _host_lifecycle_check() -> dict[str, Any]:
+    return _check(
+        "dynamic_host_lifecycle_audit_surface",
+        "A dynamic runtime surface can run a host command and audit stdout/stderr plus hook trace deltas for lifecycle-event evidence.",
+        [
+            "tests/test_v5_host_readiness.py::test_runtime_host_lifecycle_probe_detects_trace_delta_and_hook_output",
+            "tests/test_v5_host_readiness.py::test_runtime_host_lifecycle_probe_cli_and_mcp",
         ],
     )

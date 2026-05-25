@@ -105,6 +105,11 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
         "mcp": "aitp_v5_audit_runtime_host_readiness",
         "surface": "runtime_host_readiness_audit",
     }
+    assert entrypoints["runtime_host_lifecycle_audit"] == {
+        "cli": "aitp-v5 adapter host-lifecycle <runtime>",
+        "mcp": "aitp_v5_audit_runtime_host_lifecycle",
+        "surface": "runtime_host_lifecycle_audit",
+    }
     assert entrypoints["runtime_hook_installation_paths"] == {
         "cli": "aitp-v5 adapter install-paths",
         "mcp": "aitp_v5_discover_hook_install_paths",

@@ -6153,3 +6153,67 @@ Each entry should record:
     `python -m pytest <all tests/test_v5_*.py> -q`: 499 passed in 139.17s.
   - `python -m compileall -q brain/v5`: passed.
   - `git diff --check -- .`: passed.
+
+### pending - Add Runtime Host Lifecycle Probe
+
+- Task: add a reusable runtime probe for the remaining host lifecycle-event
+  evidence gap.
+- Planning source:
+  - final host gap required stronger evidence than installed config or process
+    readiness;
+  - Kimi/Claude/Codex hooks emit lifecycle output and post-tool trace records,
+    so a probe can audit one host invocation by comparing hook trace deltas and
+    stdout/stderr hook output kinds.
+- Changed files:
+  - `brain/v5/host_readiness.py`
+  - `brain/v5/host_lifecycle_contracts.py`
+  - `brain/v5/mcp_host_readiness.py`
+  - `brain/v5/cli_adapters.py`
+  - `brain/v5/cli.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoint_catalog.py`
+  - `brain/v5/runtime_entrypoint_samples.py`
+  - `brain/v5/hook_smoke_coverage.py`
+  - `tests/test_v5_host_readiness.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `tests/test_v5_runtime_entrypoints.py`
+  - `tests/test_v5_adapters.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-hook-installation.md`
+  - `docs/superpowers/plans/2026-05-20-aitp-v5-next-agent-implementation-plan.md`
+- Public/runtime behavior changes:
+  - added contracted public surface `runtime_host_lifecycle_audit`;
+  - added CLI `aitp-v5 adapter host-lifecycle <runtime>`;
+  - added MCP wrapper `aitp_v5_audit_runtime_host_lifecycle`;
+  - the probe runs a supplied host command, records stdout/stderr, compares
+    `.aitp/runtime/hook_trace_events.jsonl` before/after, and reports observed
+    AITP hook output kinds without trusting summaries or mutating claim trust.
+- Verification:
+  - targeted related set:
+    `python -m pytest tests/test_v5_host_readiness.py tests/test_v5_public_surfaces.py::test_public_surface_registry_names_all_runtime_facing_payloads tests/test_v5_runtime_entrypoints.py::test_runtime_entrypoints_advertise_typed_write_surfaces tests/test_v5_runtime_entrypoints.py::test_runtime_entrypoint_validation_confirms_advertised_targets_exist tests/test_v5_adapters.py::test_runtime_hook_smoke_coverage_reports_test_backed_host_smokes -q`:
+    8 passed.
+  - architecture-inclusive related set:
+    `python -m pytest tests/test_v5_architecture_boundaries.py tests/test_v5_host_readiness.py tests/test_v5_public_surfaces.py::test_public_surface_registry_names_all_runtime_facing_payloads tests/test_v5_runtime_entrypoints.py::test_runtime_entrypoints_advertise_typed_write_surfaces tests/test_v5_runtime_entrypoints.py::test_runtime_entrypoint_validation_confirms_advertised_targets_exist tests/test_v5_adapters.py::test_runtime_hook_smoke_coverage_reports_test_backed_host_smokes -q`:
+    14 passed.
+  - broader related set:
+    `python -m pytest tests/test_v5_host_readiness.py tests/test_v5_adapters.py tests/test_v5_public_surfaces.py tests/test_v5_runtime_entrypoints.py tests/test_v5_mcp_tools.py tests/test_v5_cli.py tests/test_v5_architecture_boundaries.py -q`:
+    138 passed.
+  - full v5 suite:
+    `python -m pytest <all tests/test_v5_*.py> -q`: 501 passed in 240.44s.
+  - `python -m compileall -q brain/v5`: passed.
+  - `git diff --check -- .`: passed.
+  - real Theoretical-Physics lifecycle probe:
+    - `claude --version`, `kimi --version`, and `codex --version` returned
+      `process_ready_no_lifecycle_event_observed`, correctly showing that
+      version commands do not trigger lifecycle hooks;
+    - direct Claude/Kimi `session-start` hook commands run through
+      `host-lifecycle` returned `hook_output_observed` with
+      `workspace_refresh_bundle`, while preserving
+      `summary_inputs_trusted=false`, `can_update_kernel_state=false`, and
+      `can_update_claim_trust=false`.
+- Residual risks:
+  - this proves the probe surface and can capture lifecycle evidence for a
+    specific invocation; it does not by itself prove every proprietary host UI
+    mode will fire lifecycle hooks.

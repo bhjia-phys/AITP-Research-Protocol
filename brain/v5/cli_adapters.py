@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import argparse
 from argparse import Namespace
 from pathlib import Path
 from typing import Any
@@ -23,8 +24,35 @@ from brain.v5.hook_install_audit import audit_hook_installation
 from brain.v5.hook_install_paths import discover_hook_install_paths
 from brain.v5.hook_smoke_coverage import runtime_hook_smoke_coverage_report
 from brain.v5.hook_opencode_install import install_opencode_plugin_file
-from brain.v5.host_readiness import audit_runtime_host_readiness
+from brain.v5.host_readiness import audit_runtime_host_lifecycle, audit_runtime_host_readiness
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
+
+
+def add_adapter_parser(sp) -> None:
+    ap = sp.add_parser("adapter")
+    aps = ap.add_subparsers(dest="adapter_command", required=True)
+    aps.add_parser("record-gate-audit")
+    apt = aps.add_parser("packet"); apt.add_argument("runtime"); apt.add_argument("session_id")
+    ahb = aps.add_parser("hook-bridge"); ahb.add_argument("runtime"); ahb.add_argument("session_id")
+    ahb.add_argument("--output", required=True)
+    ahs = aps.add_parser("hook-settings"); ahs.add_argument("runtime"); ahs.add_argument("session_id")
+    ahs.add_argument("--output", required=True)
+    aih = aps.add_parser("install-hooks"); aih.add_argument("runtime"); aih.add_argument("session_id")
+    aih.add_argument("--settings", default=""); aih.add_argument("--output", default="")
+    aih.add_argument("--plugin", default=""); aih.add_argument("--bridge-output", default="")
+    aia = aps.add_parser("install-audit"); aia.add_argument("runtime")
+    aia.add_argument("--settings", default=""); aia.add_argument("--output", default=""); aia.add_argument("--plugin", default="")
+    ahr = aps.add_parser("host-readiness"); ahr.add_argument("runtime"); ahr.add_argument("--session", default="", dest="session_id")
+    ahr.add_argument("--command", default="", dest="host_command"); ahr.add_argument("--arg", action="append", default=[], dest="version_args"); ahr.add_argument("--timeout", type=int, default=20)
+    ahr.add_argument("--settings", default=""); ahr.add_argument("--output", default=""); ahr.add_argument("--plugin", default="")
+    ahr.add_argument("--skip-install-audit", action="store_true"); ahr.add_argument("--run-session-start-smoke", action="store_true")
+    ahl = aps.add_parser("host-lifecycle"); ahl.add_argument("runtime")
+    ahl.add_argument("--command", default="", dest="host_command"); ahl.add_argument("--arg", action="append", default=[], dest="host_args"); ahl.add_argument("--timeout", type=int, default=60)
+    aps.add_parser("install-paths"); aps.add_parser("smoke-coverage")
+    ape = aps.add_parser("pre-tool-event"); ape.add_argument("runtime"); ape.add_argument("session_id")
+    ape.add_argument("--bridge-json", default=""); ape.add_argument("--bridge-path", default="")
+    ape.add_argument("--event-json", required=True)
+    aps.add_parser("registry"); aps.add_parser("public-surfaces")
 
 
 def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
@@ -96,6 +124,20 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
                     check_installation=not args.skip_install_audit,
                     session_id=args.session_id,
                     run_session_start_smoke=args.run_session_start_smoke,
+                ),
+            ),
+        }
+    if args.adapter_command == "host-lifecycle":
+        return {
+            "ok": True,
+            **require_valid_public_surface(
+                "runtime_host_lifecycle_audit",
+                audit_runtime_host_lifecycle(
+                    ws,
+                    runtime=args.runtime,
+                    command=args.host_command,
+                    args=args.host_args or None,
+                    timeout_seconds=args.timeout,
                 ),
             ),
         }

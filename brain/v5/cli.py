@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from brain.v5.brief import build_execution_brief
-from brain.v5.cli_adapters import dispatch_adapter_command
+from brain.v5.cli_adapters import add_adapter_parser, dispatch_adapter_command
 from brain.v5.cli_memory import add_memory_parser, dispatch_memory_command
 from brain.v5.cli_summaries import add_summary_parser, dispatch_summary_command
 from brain.v5.cli_source import add_source_parser, dispatch_source_command
@@ -159,27 +159,7 @@ def _build_parser() -> argparse.ArgumentParser:
     add_summary_parser(sp)
     add_source_parser(sp)
 
-    ap = sp.add_parser("adapter"); aps = ap.add_subparsers(dest="adapter_command", required=True)
-    aps.add_parser("record-gate-audit")
-    apt = aps.add_parser("packet"); apt.add_argument("runtime"); apt.add_argument("session_id")
-    ahb = aps.add_parser("hook-bridge"); ahb.add_argument("runtime"); ahb.add_argument("session_id")
-    ahb.add_argument("--output", required=True)
-    ahs = aps.add_parser("hook-settings"); ahs.add_argument("runtime"); ahs.add_argument("session_id")
-    ahs.add_argument("--output", required=True)
-    aih = aps.add_parser("install-hooks"); aih.add_argument("runtime"); aih.add_argument("session_id")
-    aih.add_argument("--settings", default=""); aih.add_argument("--output", default="")
-    aih.add_argument("--plugin", default=""); aih.add_argument("--bridge-output", default="")
-    aia = aps.add_parser("install-audit"); aia.add_argument("runtime")
-    aia.add_argument("--settings", default=""); aia.add_argument("--output", default=""); aia.add_argument("--plugin", default="")
-    ahr = aps.add_parser("host-readiness"); ahr.add_argument("runtime"); ahr.add_argument("--session", default="", dest="session_id")
-    ahr.add_argument("--command", default="", dest="host_command"); ahr.add_argument("--arg", action="append", default=[], dest="version_args"); ahr.add_argument("--timeout", type=int, default=20)
-    ahr.add_argument("--settings", default=""); ahr.add_argument("--output", default=""); ahr.add_argument("--plugin", default="")
-    ahr.add_argument("--skip-install-audit", action="store_true"); ahr.add_argument("--run-session-start-smoke", action="store_true")
-    aps.add_parser("install-paths"); aps.add_parser("smoke-coverage")
-    ape = aps.add_parser("pre-tool-event"); ape.add_argument("runtime"); ape.add_argument("session_id")
-    ape.add_argument("--bridge-json", default=""); ape.add_argument("--bridge-path", default="")
-    ape.add_argument("--event-json", required=True)
-    aps.add_parser("registry"); aps.add_parser("public-surfaces")
+    add_adapter_parser(sp)
 
     op = sp.add_parser("object"); ops = op.add_subparsers(dest="object_command", required=True)
     orr = ops.add_parser("record")
