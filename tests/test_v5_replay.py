@@ -114,6 +114,44 @@ def test_workspace_replay_packet_lists_resume_queue_and_source_gaps(tmp_path):
     assert packet.attention_count == 2
     assert packet.source_records["sessions"] == ["s1", "s2"]
     assert packet.source_records["claims"] == [claim.claim_id, gw_claim.claim_id]
+    assert packet.workspace_backlog_summary["active_session_count"] == 2
+    assert packet.workspace_backlog_summary["active_topic_count"] == 2
+    assert packet.workspace_backlog_summary["active_claim_count"] == 2
+    assert packet.workspace_backlog_summary["attention_count"] == 2
+    source_summary = packet.workspace_backlog_summary["source_reconstruction"]
+    assert source_summary["surface"] == "source_reconstruction_manifest"
+    assert source_summary["complete_claim_count"] == 1
+    assert source_summary["incomplete_claim_count"] == 1
+    assert source_summary["review_status_counts"] == {"passed": 1, "pending": 1}
+    assert source_summary["missing_component_counts"]["definitions"] == 1
+    assert source_summary["top_incomplete_claims"] == [
+        {
+            "session_id": "s2",
+            "topic_id": "gw",
+            "claim_id": gw_claim.claim_id,
+            "review_status": "pending",
+            "missing_components": [
+                "definitions",
+                "assumptions_or_scope",
+                "source_locations",
+                "dependency_graph",
+                "reconstruction_path",
+                "failure_conditions",
+            ],
+            "next_actions": [
+                "collect_required_evidence_or_provenance",
+                "complete_source_reconstruction",
+                "record_source_reconstruction_review_result",
+                "design_falsification_or_counterargument",
+            ],
+            "review_packet_cli": f"aitp-v5 source reconstruction-review --claim {gw_claim.claim_id}",
+            "can_update_claim_trust": False,
+        }
+    ]
+    attention_summary = packet.workspace_backlog_summary["resume_attention"]
+    assert attention_summary["attention_count"] == 2
+    assert attention_summary["top_items"][0]["session_id"] == "s2"
+    assert "missing_source_reconstruction" in attention_summary["top_items"][0]["attention_reasons"]
 
     complete = next(entry for entry in packet.entries if entry["claim_id"] == claim.claim_id)
     incomplete = next(entry for entry in packet.entries if entry["claim_id"] == gw_claim.claim_id)
@@ -133,6 +171,8 @@ def test_workspace_replay_packet_lists_resume_queue_and_source_gaps(tmp_path):
     assert "Workspace Replay Packet" in body
     assert claim.claim_id in body
     assert gw_claim.claim_id in body
+    assert "Cross-Topic Backlog" in body
+    assert f"`{gw_claim.claim_id}`" in body
     assert "Source review: `pending`" in body
     assert "orientation only" in body
 

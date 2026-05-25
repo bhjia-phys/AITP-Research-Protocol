@@ -71,6 +71,13 @@ def test_workspace_refresh_writes_summary_replay_and_obsidian_views(tmp_path):
     assert payload["source_records"]["validation_results"] == ["validation-result-fqhe"]
     assert payload["workspace_summary"]["files"]["overview"].endswith("overview.md")
     assert payload["workspace_replay"]["files"]["replay_packet"].endswith("replay_packet.md")
+    assert payload["workspace_replay"]["workspace_backlog_summary"]["active_session_count"] == 1
+    assert payload["workspace_replay"]["workspace_backlog_summary"]["source_reconstruction"][
+        "incomplete_claim_count"
+    ] == 1
+    assert payload["workspace_replay"]["workspace_backlog_summary"]["source_reconstruction"][
+        "top_incomplete_claims"
+    ][0]["claim_id"] == claim.claim_id
     assert payload["l2_obsidian_view"]["files"]["overview"].endswith("L2 Memory Overview.md")
     assert payload["l2_obsidian_view"]["memory_entry_count"] == 1
     assert require_valid_public_surface("workspace_refresh_bundle", payload) == payload

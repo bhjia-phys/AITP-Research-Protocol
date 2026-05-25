@@ -22,6 +22,7 @@ class WorkspaceReplayPacket:
     files: dict[str, str]
     entry_count: int
     attention_count: int
+    workspace_backlog_summary: dict[str, Any] = field(default_factory=dict)
     entries: list[dict[str, Any]] = field(default_factory=list)
     source_records: dict[str, list[str]] = field(default_factory=dict)
     kind: str = "workspace_replay_packet"
@@ -53,6 +54,7 @@ def write_workspace_replay_packet(ws: WorkspacePaths) -> WorkspaceReplayPacket:
         for session in sessions
     ]
     attention = [entry for entry in entries if entry["attention_reasons"]]
+    workspace_backlog_summary = _workspace_backlog_summary(entries)
     source_records = {
         "sessions": [entry["session_id"] for entry in entries],
         "topics": _unique([entry["topic_id"] for entry in entries if entry["topic_id"]]),
@@ -65,14 +67,15 @@ def write_workspace_replay_packet(ws: WorkspacePaths) -> WorkspaceReplayPacket:
     }
     write_md(
         replay_path,
-        _frontmatter(source_records),
-        _body(entries),
+        _frontmatter(source_records, workspace_backlog_summary),
+        _body(entries, workspace_backlog_summary),
     )
     return WorkspaceReplayPacket(
         replay_dir=str(replay_dir),
         files={"replay_packet": str(replay_path)},
         entry_count=len(entries),
         attention_count=len(attention),
+        workspace_backlog_summary=workspace_backlog_summary,
         entries=entries,
         source_records=source_records,
     )
@@ -150,7 +153,7 @@ def _entry_for_session(
     }
 
 
-def _frontmatter(source_records: dict[str, list[str]]) -> dict[str, Any]:
+def _frontmatter(source_records: dict[str, list[str]], workspace_backlog_summary: dict[str, Any]) -> dict[str, Any]:
     return {
         "kind": "derived_workspace_replay",
         "derived_from": "kernel_state",
@@ -158,16 +161,33 @@ def _frontmatter(source_records: dict[str, list[str]]) -> dict[str, Any]:
         "orientation_only": True,
         "adapter_rule": "read_for_orientation_then_call_kernel_before_trust_updates",
         "source_records": source_records,
+        "workspace_backlog_summary": workspace_backlog_summary,
     }
 
 
-def _body(entries: list[dict[str, Any]]) -> str:
+def _body(entries: list[dict[str, Any]], workspace_backlog_summary: dict[str, Any]) -> str:
     lines = [
         "# Workspace Replay Packet",
         "",
         "This file is regenerated from typed AITP kernel records. Use it for orientation only.",
         "",
+        "## Cross-Topic Backlog",
+        "",
+        f"- Active sessions: {workspace_backlog_summary['active_session_count']}",
+        f"- Active topics: {workspace_backlog_summary['active_topic_count']}",
+        f"- Active claims: {workspace_backlog_summary['active_claim_count']}",
+        f"- Attention items: {workspace_backlog_summary['attention_count']}",
+        f"- Source reconstruction incomplete: {workspace_backlog_summary['source_reconstruction']['incomplete_claim_count']}",
+        f"- Source review pending: {workspace_backlog_summary['source_reconstruction']['review_status_counts'].get('pending', 0)}",
+        "",
     ]
+    for item in workspace_backlog_summary["source_reconstruction"]["top_incomplete_claims"]:
+        lines.append(
+            f"- `{item['claim_id']}` in `{item['topic_id']}`: missing "
+            f"{', '.join(item['missing_components']) or 'none'}; review via `{item['review_packet_cli']}`"
+        )
+    if workspace_backlog_summary["source_reconstruction"]["top_incomplete_claims"]:
+        lines.append("")
     if not entries:
         lines.append("- No active session bindings are recorded.")
         return "\n".join(lines) + "\n"
@@ -185,6 +205,96 @@ def _body(entries: list[dict[str, Any]]) -> str:
         lines.append(f"- Next actions: {', '.join(entry['next_actions']) or 'none'}")
         lines.append("")
     return "\n".join(lines)
+
+
+def _workspace_backlog_summary(entries: list[dict[str, Any]]) -> dict[str, Any]:
+    complete_entries = [entry for entry in entries if entry["claim_id"] and entry["source_reconstruction_complete"]]
+    incomplete_entries = [
+        entry for entry in entries if entry["claim_id"] and not entry["source_reconstruction_complete"]
+    ]
+    attention_entries = _prioritized_attention_entries([entry for entry in entries if entry["attention_reasons"]])
+    return {
+        "active_session_count": len(entries),
+        "active_topic_count": len(_unique([entry["topic_id"] for entry in entries if entry["topic_id"]])),
+        "active_claim_count": len(_unique([entry["claim_id"] for entry in entries if entry["claim_id"]])),
+        "attention_count": len(attention_entries),
+        "source_reconstruction": {
+            "surface": "source_reconstruction_manifest",
+            "complete_claim_count": len(complete_entries),
+            "incomplete_claim_count": len(incomplete_entries),
+            "review_status_counts": _review_status_counts(entries),
+            "missing_component_counts": _missing_component_counts(incomplete_entries),
+            "top_incomplete_claims": [_source_backlog_item(entry) for entry in incomplete_entries[:5]],
+        },
+        "resume_attention": {
+            "attention_count": len(attention_entries),
+            "top_items": [_attention_item(entry) for entry in attention_entries[:5]],
+        },
+        "truth_source": "kernel_state",
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def _source_backlog_item(entry: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "session_id": entry["session_id"],
+        "topic_id": entry["topic_id"],
+        "claim_id": entry["claim_id"],
+        "review_status": entry["source_reconstruction_review_status"],
+        "missing_components": list(entry["missing_source_components"]),
+        "next_actions": list(entry["next_actions"]),
+        "review_packet_cli": f"aitp-v5 source reconstruction-review --claim {entry['claim_id']}",
+        "can_update_claim_trust": False,
+    }
+
+
+def _attention_item(entry: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "session_id": entry["session_id"],
+        "topic_id": entry["topic_id"],
+        "claim_id": entry["claim_id"],
+        "attention_reasons": list(entry["attention_reasons"]),
+        "next_actions": list(entry["next_actions"]),
+    }
+
+
+def _prioritized_attention_entries(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(entries, key=_attention_priority)
+
+
+def _attention_priority(entry: dict[str, Any]) -> tuple[int, int, str, str]:
+    reasons = set(entry["attention_reasons"])
+    severity = 0
+    if "missing_claim_record" in reasons:
+        severity -= 100
+    if "missing_source_reconstruction" in reasons:
+        severity -= 50
+    if "source_reconstruction_review_pending" in reasons:
+        severity -= 25
+    if "missing_evidence_outputs" in reasons:
+        severity -= 10
+    return (severity, -len(reasons), entry["topic_id"], entry["session_id"])
+
+
+def _review_status_counts(entries: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for entry in entries:
+        if not entry["claim_id"]:
+            continue
+        status = entry["source_reconstruction_review_status"] or "pending"
+        counts[status] = counts.get(status, 0) + 1
+    return counts
+
+
+def _missing_component_counts(entries: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for entry in entries:
+        for component in entry["missing_source_components"]:
+            counts[component] = counts.get(component, 0) + 1
+    return counts
 
 
 def _unique(values: list[str]) -> list[str]:
