@@ -6374,3 +6374,62 @@ Each entry should record:
   - priority host integration still has the residual
     `real_interactive_lifecycle_event_smoke` gap for proprietary interactive UI
     modes, while OpenCode remains intentionally deferred.
+
+### 6aa1df4 - Add Legacy Semantic Review Packets
+
+- Task: add a per-topic read-only review packet so the legacy semantic review
+  queue can be turned into actual reviewer work without manually stitching
+  together migration manifests, active claims, typed records, and source refs.
+- Planning source:
+  - `final_engineering_readiness_audit` reported the real workspace as
+    `kernel_ready_content_backlog` with
+    `legacy_semantic_review_backlog`;
+  - user requirement that old AITP content migration not silently drop topics,
+    while still not claiming semantic losslessness from file accounting alone.
+- Changed files:
+  - `brain/v5/legacy_semantic_review_packet.py`
+  - `brain/v5/legacy_semantic_review.py`
+  - `brain/v5/legacy_semantic_review_contracts.py`
+  - `brain/v5/cli_legacy.py`
+  - `brain/v5/mcp_legacy.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoint_catalog.py`
+  - `brain/v5/runtime_entrypoint_samples.py`
+  - `tests/test_v5_legacy_bridge.py`
+  - `tests/test_v5_public_surfaces.py`
+- Public/runtime behavior changes:
+  - added public surface `legacy_semantic_review_packet`;
+  - added CLI `aitp-v5 legacy semantic-review-packet --migration-dir <dir> --topic <topic>`;
+  - added MCP wrapper `aitp_v5_build_legacy_semantic_review_packet`;
+  - added runtime entrypoint `legacy_semantic_review_packet`;
+  - packet includes the queue item, active claim, typed reference/evidence/
+    object/relation/sensemaking/validation records, legacy review refs, and a
+    checklist for actual semantic review;
+  - packet is read-only and keeps `semantic_lossless_proven=false`.
+- Tests:
+  - packet collects review basis for a migrated topic without writing files;
+  - packet validates as a public surface and preserves orientation-only flags;
+  - CLI/MCP/runtime/public-surface registry expose the contracted packet;
+  - architecture line-count boundary remains satisfied after moving packet logic
+    to a focused module.
+- Verification:
+  - targeted related set:
+    `python -m pytest tests/test_v5_legacy_bridge.py tests/test_v5_public_surfaces.py tests/test_v5_runtime_entrypoints.py tests/test_v5_mcp_tools.py tests/test_v5_cli.py tests/test_v5_architecture_boundaries.py -q`:
+    82 passed.
+  - full v5 suite:
+    `python -m pytest <all tests/test_v5_*.py> -q`: 510 passed in 201.14s.
+  - `python -m compileall -q brain/v5`: passed.
+  - `git diff --check -- .`: passed with only Windows CRLF warnings.
+  - real Theoretical-Physics smoke:
+    `aitp-v5 --base D:/BaiduSyncdisk/Theoretical-Physics legacy semantic-review-packet --migration-dir D:/BaiduSyncdisk/Theoretical-Physics/.aitp/migrations/legacy-v5-lossless-20260524-031743 --topic quantum-chaos-long-range-spin-chains`
+    returned `legacy_ref_count=248`, typed counts
+    `reference_locations=255`, `evidence=18`, `physics_objects=4`,
+    `sensemaking_reports=16`, `validation_results=0`, queue status
+    `pending`, and the expected review checklist.
+  - the same real smoke preserved `.aitp` file count before/after:
+    `4426 -> 4426`, confirming the packet is read-only.
+- Residual risks:
+  - packets make semantic review practical, but they still do not perform the
+    physics judgment. The real workspace still has 17 pending topics and 1
+    inconclusive topic until reviewers record per-topic review results.
