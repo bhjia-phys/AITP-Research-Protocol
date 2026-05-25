@@ -503,6 +503,90 @@ def test_legacy_semantic_review_queue_cli_mcp_and_runtime_surface(tmp_path, caps
     )
 
 
+def test_legacy_semantic_review_packet_collects_review_basis_without_writing(tmp_path):
+    from brain.v5.evidence import record_evidence
+    from brain.v5.legacy_semantic_review import build_legacy_semantic_review_packet
+    from brain.v5.models import ClaimRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import create_topic, init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    create_topic(ws, "canonical-topic", context_id="legacy-context", title="Canonical Topic")
+    claim = ClaimRecord(
+        claim_id="claim-canonical",
+        topic_id="canonical-topic",
+        statement="Migrated canonical claim.",
+        evidence_profile="legacy_import",
+        confidence_state="hypothesis",
+        active_uncertainty="Semantic review required.",
+    )
+    write_record(ws.registry_dir("claims") / "claim-canonical.md", claim)
+    evidence = record_evidence(
+        ws,
+        topic_id="canonical-topic",
+        claim_id="claim-canonical",
+        evidence_type="legacy_candidate",
+        status="needs_review",
+        summary="Migrated candidate evidence.",
+        supports_outputs=["legacy_migration"],
+        source_refs=["legacy_source:canonical-topic/state.md"],
+    )
+    before = {path.as_posix() for path in ws.root.rglob("*") if path.is_file()}
+
+    packet = build_legacy_semantic_review_packet(ws, migration_dir=run, topic="canonical-topic")
+
+    after = {path.as_posix() for path in ws.root.rglob("*") if path.is_file()}
+    assert before == after
+    assert packet["kind"] == "legacy_semantic_review_packet"
+    assert packet["topic"] == "canonical-topic"
+    assert packet["active_claim"]["claim_id"] == "claim-canonical"
+    assert packet["active_claim"]["statement"] == "Migrated canonical claim."
+    assert packet["queue_item"]["semantic_review_status"] == "pending"
+    assert packet["typed_records"]["evidence"][0]["evidence_id"] == evidence.evidence_id
+    assert "legacy_source:canonical-topic/state.md" in packet["legacy_review_refs"]
+    assert packet["review_checklist"]
+    assert packet["semantic_lossless_proven"] is False
+    assert packet["orientation_only"] is True
+    assert packet["can_update_kernel_state"] is False
+    assert packet["can_update_claim_trust"] is False
+    assert require_valid_public_surface("legacy_semantic_review_packet", packet) == packet
+
+
+def test_legacy_semantic_review_packet_cli_mcp_and_runtime_surface(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_build_legacy_semantic_review_packet
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.workspace import init_workspace
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+
+    assert main([
+        "--base", str(base), "legacy", "semantic-review-packet",
+        "--migration-dir", str(run), "--topic", "legacy-l2",
+    ]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_legacy_semantic_review_packet(
+        str(base),
+        migration_dir=str(run),
+        topic="legacy-l2",
+    )
+
+    assert cli_payload["kind"] == "legacy_semantic_review_packet"
+    assert cli_payload["topic"] == "legacy-l2"
+    assert mcp_payload["kind"] == "legacy_semantic_review_packet"
+    assert runtime_entrypoints()["legacy_semantic_review_packet"] == {
+        "cli": "aitp-v5 legacy semantic-review-packet <args>",
+        "mcp": "aitp_v5_build_legacy_semantic_review_packet",
+        "surface": "legacy_semantic_review_packet",
+    }
+
+
 def test_legacy_semantic_review_result_records_basis_and_updates_queue(tmp_path):
     from brain.v5.legacy_semantic_review import (
         build_legacy_semantic_review_queue,

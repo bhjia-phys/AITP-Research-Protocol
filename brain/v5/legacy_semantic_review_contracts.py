@@ -69,6 +69,55 @@ def require_valid_legacy_semantic_review_queue(payload: dict[str, Any]) -> dict[
     return payload
 
 
+def validate_legacy_semantic_review_packet(
+    payload: dict[str, Any],
+    *,
+    path: str = "legacy_semantic_review_packet",
+) -> ContractResult:
+    result = ContractResult()
+    if not isinstance(payload, dict):
+        result.add(path, "must be a mapping")
+        return result
+    if payload.get("kind") != "legacy_semantic_review_packet":
+        result.add(f"{path}.kind", "must be 'legacy_semantic_review_packet'")
+    for key in ("run_id", "migration_dir", "topic", "truth_source"):
+        if not isinstance(payload.get(key), str) or not payload.get(key):
+            result.add(f"{path}.{key}", "must be a non-empty string")
+    if payload.get("truth_source") != "migration_manifests_and_typed_records":
+        result.add(f"{path}.truth_source", "must be 'migration_manifests_and_typed_records'")
+    for key, expected in (
+        ("semantic_lossless_proven", False),
+        ("semantic_review_required", True),
+        ("summary_inputs_trusted", False),
+        ("orientation_only", True),
+        ("can_update_kernel_state", False),
+        ("can_update_claim_trust", False),
+    ):
+        if payload.get(key) is not expected:
+            result.add(f"{path}.{key}", f"must be {expected}")
+    _validate_item(payload.get("queue_item"), f"{path}.queue_item", result)
+    if not isinstance(payload.get("active_claim"), dict):
+        result.add(f"{path}.active_claim", "must be a mapping")
+    typed = payload.get("typed_records")
+    if not isinstance(typed, dict):
+        result.add(f"{path}.typed_records", "must be a mapping")
+    else:
+        for key in ("reference_locations", "evidence", "physics_objects", "object_relations", "sensemaking_reports", "validation_results"):
+            if not isinstance(typed.get(key), list):
+                result.add(f"{path}.typed_records.{key}", "must be a list")
+    for key in ("legacy_review_refs", "review_checklist"):
+        if not isinstance(payload.get(key), list) or not all(isinstance(value, str) for value in payload[key]):
+            result.add(f"{path}.{key}", "must be a list of strings")
+    return result
+
+
+def require_valid_legacy_semantic_review_packet(payload: dict[str, Any]) -> dict[str, Any]:
+    result = validate_legacy_semantic_review_packet(payload)
+    if not result.ok:
+        raise ContractError(result)
+    return payload
+
+
 def validate_legacy_semantic_review_result_record(
     payload: dict[str, Any],
     *,

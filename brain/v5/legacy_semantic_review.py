@@ -401,3 +401,16 @@ def _unique(values: list[str]) -> list[str]:
 
 def _clean_list(values: list[str] | None) -> list[str]:
     return [value.strip() for value in values or [] if value.strip()]
+
+
+def build_legacy_semantic_review_packet(
+    ws: WorkspacePaths,
+    *,
+    migration_dir: str | Path,
+    topic: str,
+) -> dict[str, Any]:
+    """Compatibility wrapper for the focused packet module."""
+
+    from brain.v5.legacy_semantic_review_packet import build_legacy_semantic_review_packet as _build
+
+    return _build(ws, migration_dir=migration_dir, topic=topic)

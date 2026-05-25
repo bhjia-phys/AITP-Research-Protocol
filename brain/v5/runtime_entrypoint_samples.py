@@ -39,6 +39,8 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["D:/aitp/legacy-topic", "--context", "legacy-context", "--session", "s1"]
     if template.startswith(("legacy migration-audit", "legacy semantic-review-queue")):
         return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run"]
+    if template.startswith("legacy semantic-review-packet"):
+        return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run", "--topic", "fqhe"]
     if template.startswith("legacy semantic-review-result"):
         return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run", "--topic", "fqhe", "--status", "inconclusive", "--legacy-ref", "legacy-topic:state.md", "--summary", "Semantic review sample."]
     if template.startswith("object record"):
