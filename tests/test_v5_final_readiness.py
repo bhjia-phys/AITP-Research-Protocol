@@ -164,6 +164,19 @@ def test_final_readiness_audit_keeps_kernel_capability_separate_from_content_bac
     assert payload["kernel_capabilities"]["host_integration"]["priority_hosts"] == ["codex", "claude_code", "kimi_code"]
     assert payload["kernel_capabilities"]["host_integration"]["deferred_hosts"] == ["opencode"]
     assert payload["content_backlog"]["legacy_semantic_review"]["review_item_count"] == 2
+    assert payload["content_backlog"]["legacy_semantic_review"]["worklist_surface"] == (
+        "legacy_semantic_review_worklist"
+    )
+    assert payload["content_backlog"]["legacy_semantic_review"]["work_item_count"] == 2
+    assert payload["content_backlog"]["legacy_semantic_review"]["worklist_next_actions"] == [
+        "worklist_item:legacy-topic-0",
+        "worklist_item:legacy-topic-1",
+    ]
+    assert payload["content_backlog"]["legacy_semantic_review"]["top_work_items"][0]["topic"] == (
+        "legacy-topic-0"
+    )
+    assert payload["content_backlog"]["legacy_semantic_review"]["top_work_items"][0]["review_status"] == "pending"
+    assert payload["content_backlog"]["legacy_semantic_review"]["top_work_items"][0]["can_update_claim_trust"] is False
     assert payload["content_backlog"]["legacy_semantic_review"]["pending_count"] == 2
     assert payload["content_backlog"]["legacy_semantic_review"]["passed_count"] == 0
     assert payload["content_backlog"]["legacy_semantic_review"]["semantic_lossless_proven"] is False

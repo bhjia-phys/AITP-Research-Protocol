@@ -40,9 +40,31 @@ def validate_final_engineering_readiness_audit(
                 f"{path}.content_backlog.legacy_semantic_review.semantic_lossless_proven",
                 "must be false",
             )
-        for key in ["review_item_count", "pending_count", "passed_count", "needs_revision_count", "inconclusive_count"]:
+        if legacy.get("worklist_surface") != "legacy_semantic_review_worklist":
+            result.add(
+                f"{path}.content_backlog.legacy_semantic_review.worklist_surface",
+                "must be legacy_semantic_review_worklist",
+            )
+        for key in [
+            "review_item_count",
+            "work_item_count",
+            "pending_count",
+            "passed_count",
+            "needs_revision_count",
+            "inconclusive_count",
+        ]:
             if not isinstance(legacy.get(key), int):
                 result.add(f"{path}.content_backlog.legacy_semantic_review.{key}", "must be an integer")
+        _require_list(
+            legacy.get("worklist_next_actions"),
+            f"{path}.content_backlog.legacy_semantic_review.worklist_next_actions",
+            result,
+        )
+        _require_list(
+            legacy.get("top_work_items"),
+            f"{path}.content_backlog.legacy_semantic_review.top_work_items",
+            result,
+        )
     source = _mapping(payload.get("content_backlog")).get("source_reconstruction")
     _require_mapping(source, f"{path}.content_backlog.source_reconstruction", result)
     if isinstance(source, dict):

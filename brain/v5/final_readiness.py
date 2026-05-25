@@ -8,6 +8,7 @@ from typing import Any
 from brain.v5.adapter_protocols import record_gate_coverage_audit
 from brain.v5.hook_smoke_coverage import runtime_hook_smoke_coverage_report
 from brain.v5.legacy_semantic_review import build_legacy_semantic_review_queue
+from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
 from brain.v5.models import ClaimRecord, MemoryEntryRecord
 from brain.v5.paths import WorkspacePaths
 from brain.v5.source_reconstruction import audit_source_reconstruction_batch
@@ -190,36 +191,61 @@ def _legacy_semantic_review(
 ) -> dict[str, Any]:
     try:
         queue = build_legacy_semantic_review_queue(ws, migration_dir=migration_dir)
+        worklist = build_legacy_semantic_review_worklist(ws, migration_dir=migration_dir)
     except FileNotFoundError:
         return {
             "surface": "legacy_semantic_review_queue",
+            "worklist_surface": "legacy_semantic_review_worklist",
             "status": "missing_migration_run",
             "run_id": "",
             "topic_count": 0,
             "review_item_count": 0,
+            "work_item_count": 0,
             "pending_count": 0,
             "passed_count": 0,
             "needs_revision_count": 0,
             "inconclusive_count": 0,
+            "worklist_next_actions": [],
+            "top_work_items": [],
             "semantic_lossless_proven": False,
             "summary_inputs_trusted": False,
         }
     counts = _semantic_status_counts(queue.get("items", []))
     return {
         "surface": "legacy_semantic_review_queue",
+        "worklist_surface": "legacy_semantic_review_worklist",
         "status": "review_backlog" if counts["pending"] or counts["needs_revision"] else "reviewed",
         "run_id": str(queue.get("run_id") or ""),
         "topic_count": int(queue.get("topic_count") or 0),
         "review_item_count": int(queue.get("review_item_count") or 0),
+        "work_item_count": int(worklist.get("work_item_count") or 0),
         "priority_counts": dict(queue.get("priority_counts") or {}),
         "pending_count": counts["pending"],
         "passed_count": counts["passed"],
         "needs_revision_count": counts["needs_revision"],
         "inconclusive_count": counts["inconclusive"],
+        "worklist_next_actions": list(worklist.get("next_actions") or []),
+        "top_work_items": _top_legacy_work_items(worklist),
         "semantic_lossless_proven": False,
         "can_update_claim_trust": False,
         "summary_inputs_trusted": False,
     }
+
+
+def _top_legacy_work_items(worklist: dict[str, Any], *, limit: int = 5) -> list[dict[str, Any]]:
+    return [
+        {
+            "topic": str(item.get("topic") or ""),
+            "review_status": str(item.get("review_status") or ""),
+            "priority_score": int(item.get("priority_score") or 0),
+            "review_focus": list(item.get("review_focus") or []),
+            "repair_candidate_count": int(item.get("repair_candidate_count") or 0),
+            "missing_source_components": list(item.get("missing_source_components") or []),
+            "packet_cli": str(item.get("packet_cli") or ""),
+            "can_update_claim_trust": False,
+        }
+        for item in list(worklist.get("items") or [])[:limit]
+    ]
 
 
 def _semantic_status_counts(items: list[dict[str, Any]]) -> dict[str, int]:
