@@ -6266,7 +6266,7 @@ Each entry should record:
   - the queue makes semantic review auditable and actionable; it does not
     complete the human/physics review for every migrated topic.
 
-### pending - Record Legacy Semantic Review Results
+### 61bfd95 - Record Legacy Semantic Review Results
 
 - Task: add a typed per-topic review result so migrated legacy topics can be
   closed one by one after actual semantic review.
