@@ -268,6 +268,43 @@ def test_source_reconstruction_manifest_reports_empty_migrated_claim_statements(
     assert require_valid_public_surface("source_reconstruction_manifest", manifest) == manifest
 
 
+def test_source_reconstruction_manifest_counts_missing_components_across_claims(tmp_path):
+    from brain.v5.source_reconstruction import build_source_reconstruction_manifest
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "empty-topic", context_id="legacy-context", title="Empty")
+    create_topic(ws, "scoped-topic", context_id="legacy-context", title="Scoped")
+    create_claim(
+        ws,
+        topic_id="empty-topic",
+        statement="The empty claim has no typed source stack yet.",
+        evidence_profile="legacy_import",
+        confidence_state="legacy_seed",
+        active_uncertainty="semantic review required",
+    )
+    create_claim(
+        ws,
+        topic_id="scoped-topic",
+        statement="The scoped claim records only scope so far.",
+        evidence_profile="legacy_import",
+        confidence_state="legacy_seed",
+        active_uncertainty="semantic review required",
+        scope="Finite systems only.",
+    )
+
+    manifest = build_source_reconstruction_manifest(ws)
+
+    assert manifest["missing_component_counts"] == {
+        "definitions": 2,
+        "assumptions_or_scope": 1,
+        "source_locations": 2,
+        "dependency_graph": 2,
+        "reconstruction_path": 2,
+        "failure_conditions": 2,
+    }
+
+
 def test_source_reconstruction_manifest_cli_mcp_and_runtime(tmp_path, capsys):
     from brain.v5.cli import main
     from brain.v5.mcp_tools import aitp_v5_build_source_reconstruction_manifest

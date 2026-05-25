@@ -55,6 +55,18 @@ def validate_source_reconstruction_manifest(
     for key in ("claim_count", "complete_claim_count", "incomplete_claim_count"):
         if not isinstance(payload.get(key), int) or payload[key] < 0:
             result.add(f"{path}.{key}", "must be a non-negative integer")
+    _require_mapping(payload.get("missing_component_counts"), f"{path}.missing_component_counts", result)
+    if isinstance(payload.get("missing_component_counts"), dict):
+        for key in (
+            "definitions",
+            "assumptions_or_scope",
+            "source_locations",
+            "dependency_graph",
+            "reconstruction_path",
+            "failure_conditions",
+        ):
+            if not isinstance(payload["missing_component_counts"].get(key), int) or payload["missing_component_counts"][key] < 0:
+                result.add(f"{path}.missing_component_counts.{key}", "must be a non-negative integer")
     for key in ("items", "next_actions"):
         _require_list(payload.get(key), f"{path}.{key}", result)
     for key in (

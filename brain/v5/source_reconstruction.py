@@ -52,6 +52,7 @@ def build_source_reconstruction_manifest(ws: WorkspacePaths) -> dict:
         "claim_count": len(items),
         "complete_claim_count": len(complete),
         "incomplete_claim_count": len(incomplete),
+        "missing_component_counts": _missing_component_counts(incomplete),
         "items": items,
         "next_actions": [f"source_reconstruction:{item['claim_id']}" for item in incomplete],
         "truth_source": "typed_records",
@@ -130,6 +131,15 @@ def _recommended_actions_for_missing(missing_components: list[str], *, has_direc
     if not has_direct_reference:
         actions.append("record_reference_location")
     return _unique(actions)
+
+
+def _missing_component_counts(items: list[dict]) -> dict[str, int]:
+    counts = {component: 0 for component in _REQUIRED_COMPONENTS}
+    for item in items:
+        for component in item["missing_components"]:
+            if component in counts:
+                counts[component] += 1
+    return counts
 
 
 def _audit_claim_source_reconstruction(

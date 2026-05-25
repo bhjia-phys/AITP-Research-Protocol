@@ -208,6 +208,10 @@ coverage, assumptions/scope, source locations, object-relation dependency
 graph, explicit reconstruction-path evidence, and failure conditions. Reference
 locations remain orientation-only pointers; the audit only reports whether
 typed records make the claim reconstructable and cannot update claim trust.
+`aitp-v5 source reconstruction-manifest` and
+`aitp_v5_build_source_reconstruction_manifest` batch this across active claims
+and include aggregate missing-component counts so source-stack closeout can be
+prioritized without hand-aggregating per-claim audits.
 For long-running multi-topic resumption, `aitp-v5 summary replay` and
 `aitp_v5_write_workspace_replay_packet` write an orientation-only
 `workspace_replay_packet`. It lists active session claims, confidence states,

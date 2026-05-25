@@ -278,10 +278,11 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
 - Agents can call `aitp-v5 source reconstruction-manifest` or
   `aitp_v5_build_source_reconstruction_manifest` to batch those audits across
   active claims. The contracted `source_reconstruction_manifest` surface lists
-  complete/incomplete counts, per-claim missing components, direct next-action
-  commands, and recommended record types for source-stack closeout. It is
-  orientation-only, handles empty legacy-import claim statements without
-  rejecting the backlog, and cannot update kernel state or claim trust.
+  complete/incomplete counts, aggregate missing-component counts, per-claim
+  missing components, direct next-action commands, and recommended record types
+  for source-stack closeout. It is orientation-only, handles empty
+  legacy-import claim statements without rejecting the backlog, and cannot
+  update kernel state or claim trust.
 - Agents can call `aitp-v5 summary replay` or
   `aitp_v5_write_workspace_replay_packet` for an orientation-only
   `workspace_replay_packet` across active sessions. It lists active claims,
