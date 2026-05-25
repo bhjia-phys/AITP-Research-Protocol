@@ -335,10 +335,12 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `aitp_v5_apply_legacy_semantic_repair` for narrow repairs such as
   `claim_statement_backfill`, `claim_scope_backfill`, and
   `claim_failure_mode_backfill`. Repairs require the matching review id, use
-  reviewed legacy refs as their basis, update only the migrated claim and topic
-  ledger, and write a durable `legacy_semantic_repair` record. The repair apply
-  surface may update kernel content state, but it cannot update claim trust or
-  prove semantic losslessness.
+  reviewed legacy refs as their basis, and can recover scope either from a
+  legacy candidate's `regime_of_validity` or from an L1 question contract's
+  `scope_boundaries`. They update only the migrated claim and topic ledger, and
+  write a durable `legacy_semantic_repair` record. The repair apply surface may
+  update kernel content state, but it cannot update claim trust or prove
+  semantic losslessness.
 - Agents can call `aitp-v5 memory failure-modes --claim <claim-id>` or
   `aitp_v5_audit_failure_mode_coverage` for a read-only
   `failure_mode_audit` surface. It reports active uncertainty,

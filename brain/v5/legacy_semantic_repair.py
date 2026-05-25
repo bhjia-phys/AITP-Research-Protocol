@@ -163,10 +163,13 @@ def _proposed_repairs(
                 "mutation_authority": "none_review_and_apply_separately",
             })
     if (
-        "backfill_active_claim_scope_from_legacy_candidate_regime" in actions
+        (
+            "backfill_active_claim_scope_from_legacy_candidate_regime" in actions
+            or "backfill_active_claim_scope_from_legacy_l1_question_contract" in actions
+        )
         and not str(active_claim.get("scope") or "")
     ):
-        scope = _reviewed_candidate_scope(latest_review)
+        scope = _reviewed_candidate_scope(latest_review) or _reviewed_l1_scope(latest_review)
         if scope:
             repairs.append({
                 "repair_type": "claim_scope_backfill",
@@ -191,6 +194,18 @@ def _proposed_repairs(
                 "mutation_authority": "none_review_and_apply_separately",
             })
     return repairs
+
+
+def _reviewed_l1_scope(latest_review: dict[str, Any]) -> str:
+    for path in _reviewed_paths(latest_review, prefixes=("legacy_l1:",)):
+        frontmatter, body = read_md(path)
+        scope = _clean_text(str(frontmatter.get("scope_boundaries") or ""))
+        if scope:
+            return scope
+        scope = _markdown_section(body, "Scope Boundaries")
+        if scope:
+            return scope
+    return ""
 
 
 def _reviewed_candidate_scope(latest_review: dict[str, Any]) -> str:

@@ -1109,6 +1109,82 @@ def test_legacy_semantic_repair_applies_scope_and_failure_mode_from_reviewed_leg
     assert claims["claim-canonical"].confidence_state == "legacy_seed"
 
 
+def test_legacy_semantic_repair_backfills_scope_from_reviewed_l1_question_contract(tmp_path):
+    from brain.v5.legacy_semantic_repair import (
+        apply_legacy_semantic_repair,
+        build_legacy_semantic_repair_plan,
+    )
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.models import ClaimRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import list_records, write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    legacy_topic = ws.base / "research" / "aitp-topics" / "canonical-topic"
+    l1_contract = legacy_topic / "L1" / "question_contract.md"
+    l1_contract.parent.mkdir(parents=True)
+    l1_contract.write_text(
+        "---\n"
+        "artifact_kind: l1_question_contract\n"
+        "bounded_question: Which contour-deformation question should be preserved?\n"
+        "scope_boundaries: Single-shot QSGW cycle only; no vertex corrections.\n"
+        "---\n"
+        "# Question Contract\n",
+        encoding="utf-8",
+    )
+    claim = ClaimRecord(
+        claim_id="claim-canonical",
+        topic_id="canonical-topic",
+        statement="Which contour-deformation question should be preserved?",
+        evidence_profile="legacy_import",
+        confidence_state="legacy_seed",
+        active_uncertainty="Semantic review required.",
+    )
+    write_record(ws.registry_dir("claims") / "claim-canonical.md", claim)
+    write_record(ws.topic_dir("canonical-topic") / "claims" / "ledger" / "claim-canonical.md", claim)
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="needs_revision",
+        summary="L1 scope boundaries were reviewed but are missing from the migrated claim scope.",
+        reviewed_legacy_refs=[f"legacy_l1:{l1_contract}"],
+        reviewed_typed_refs=["claim-canonical"],
+        remaining_actions=["backfill_active_claim_scope_from_legacy_l1_question_contract"],
+    )
+
+    plan = build_legacy_semantic_repair_plan(ws, migration_dir=run, topic="canonical-topic")
+
+    assert plan["proposed_repairs"] == [
+        {
+            "repair_type": "claim_scope_backfill",
+            "target_ref": "claim-canonical",
+            "current_value": "",
+            "proposed_value": "Single-shot QSGW cycle only; no vertex corrections.",
+            "basis_refs": [f"legacy_l1:{l1_contract}", review.review_id],
+            "mutation_authority": "none_review_and_apply_separately",
+        }
+    ]
+    assert require_valid_public_surface("legacy_semantic_repair_plan", plan) == plan
+
+    result = apply_legacy_semantic_repair(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        repair_type="claim_scope_backfill",
+        review_id=review.review_id,
+    )
+
+    assert result["applied"] is True
+    assert result["repair_type"] == "claim_scope_backfill"
+    assert require_valid_public_surface("legacy_semantic_repair_apply", result) == result
+    claims = {record.claim_id: record for record in list_records(ws.registry_dir("claims"), ClaimRecord)}
+    assert claims["claim-canonical"].scope == "Single-shot QSGW cycle only; no vertex corrections."
+    assert claims["claim-canonical"].confidence_state == "legacy_seed"
+
+
 def test_legacy_semantic_repair_apply_cli_mcp_and_runtime_surface(tmp_path, capsys):
     import json
 
