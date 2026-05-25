@@ -376,6 +376,27 @@ class FailureModeReviewResultRecord:
 
 
 @dataclass
+class SourceReconstructionReviewResultRecord:
+    result_id: str
+    topic_id: str
+    claim_id: str
+    status: str
+    reviewed_components: list[str] = field(default_factory=list)
+    basis_refs: list[str] = field(default_factory=list)
+    evidence_refs: list[str] = field(default_factory=list)
+    validation_result_ids: list[str] = field(default_factory=list)
+    reference_location_ids: list[str] = field(default_factory=list)
+    object_ids: list[str] = field(default_factory=list)
+    relation_ids: list[str] = field(default_factory=list)
+    remaining_actions: list[str] = field(default_factory=list)
+    reviewer_role: str = "human_or_adversarial_reviewer"
+    summary: str = ""
+    summary_inputs_trusted: bool = False
+    can_update_claim_trust: bool = False
+    kind: str = "source_reconstruction_review_result"
+
+
+@dataclass
 class LegacySemanticReviewResultRecord:
     review_id: str
     migration_run_id: str

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
 
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.source_reconstruction import (
@@ -10,6 +11,7 @@ from brain.v5.source_reconstruction import (
     build_source_reconstruction_manifest,
     build_source_reconstruction_review_packet,
 )
+from brain.v5.source_reconstruction_review import record_source_reconstruction_review_result
 
 
 def add_source_parser(sp: argparse._SubParsersAction) -> None:
@@ -20,6 +22,19 @@ def add_source_parser(sp: argparse._SubParsersAction) -> None:
     commands.add_parser("reconstruction-manifest")
     review = commands.add_parser("reconstruction-review")
     review.add_argument("--claim", required=True, dest="claim_id")
+    result = commands.add_parser("reconstruction-review-result")
+    result.add_argument("--claim", required=True, dest="claim_id")
+    result.add_argument("--status", required=True)
+    result.add_argument("--reviewed-component", action="append", default=[], dest="reviewed_components")
+    result.add_argument("--basis-ref", action="append", default=[], dest="basis_refs")
+    result.add_argument("--evidence-ref", action="append", default=[], dest="evidence_refs")
+    result.add_argument("--validation-result-id", action="append", default=[], dest="validation_result_ids")
+    result.add_argument("--reference-location-id", action="append", default=[], dest="reference_location_ids")
+    result.add_argument("--object-id", action="append", default=[], dest="object_ids")
+    result.add_argument("--relation-id", action="append", default=[], dest="relation_ids")
+    result.add_argument("--remaining-action", action="append", default=[], dest="remaining_actions")
+    result.add_argument("--reviewer-role", default="human_or_adversarial_reviewer")
+    result.add_argument("--summary", required=True)
 
 
 def dispatch_source_command(args: argparse.Namespace, ws) -> dict:
@@ -37,5 +52,25 @@ def dispatch_source_command(args: argparse.Namespace, ws) -> dict:
         return require_valid_public_surface(
             "source_reconstruction_review_packet",
             build_source_reconstruction_review_packet(ws, claim_id=args.claim_id),
+        )
+    if args.source_command == "reconstruction-review-result":
+        result = record_source_reconstruction_review_result(
+            ws,
+            claim_id=args.claim_id,
+            status=args.status,
+            reviewed_components=args.reviewed_components,
+            basis_refs=args.basis_refs,
+            evidence_refs=args.evidence_refs,
+            validation_result_ids=args.validation_result_ids,
+            reference_location_ids=args.reference_location_ids,
+            object_ids=args.object_ids,
+            relation_ids=args.relation_ids,
+            remaining_actions=args.remaining_actions,
+            reviewer_role=args.reviewer_role,
+            summary=args.summary,
+        )
+        return require_valid_public_surface(
+            "source_reconstruction_review_result_record",
+            {"ok": True, **asdict(result)},
         )
     raise SystemExit(f"unsupported source command: {args.source_command}")

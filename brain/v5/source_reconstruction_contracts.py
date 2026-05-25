@@ -169,6 +169,58 @@ def require_valid_source_reconstruction_review_packet(payload: dict[str, Any]) -
     return payload
 
 
+def validate_source_reconstruction_review_result_record(
+    payload: dict[str, Any],
+    *,
+    path: str = "source_reconstruction_review_result_record",
+) -> ContractResult:
+    result = ContractResult()
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return result
+    if payload.get("ok") is not True:
+        result.add(f"{path}.ok", "must be true")
+    if payload.get("kind") != "source_reconstruction_review_result":
+        result.add(f"{path}.kind", "must be 'source_reconstruction_review_result'")
+    for key in ("result_id", "topic_id", "claim_id", "status", "reviewer_role", "summary"):
+        _require_nonempty_str(payload, key, path, result)
+    if payload.get("status") not in {"passed", "needs_revision", "inconclusive"}:
+        result.add(f"{path}.status", "must be passed, needs_revision, or inconclusive")
+    for key in (
+        "reviewed_components",
+        "basis_refs",
+        "evidence_refs",
+        "validation_result_ids",
+        "reference_location_ids",
+        "object_ids",
+        "relation_ids",
+        "remaining_actions",
+    ):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    if isinstance(payload.get("reviewed_components"), list) and len(payload["reviewed_components"]) == 0:
+        result.add(f"{path}.reviewed_components", "must not be empty")
+    basis_keys = (
+        "basis_refs",
+        "evidence_refs",
+        "validation_result_ids",
+        "reference_location_ids",
+        "object_ids",
+        "relation_ids",
+    )
+    if all(isinstance(payload.get(key), list) and len(payload[key]) == 0 for key in basis_keys):
+        result.add(f"{path}.basis_refs", "review basis must cite at least one source or typed record")
+    _require_bool_value(payload.get("summary_inputs_trusted"), False, f"{path}.summary_inputs_trusted", result)
+    _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
+    return result
+
+
+def require_valid_source_reconstruction_review_result_record(payload: dict[str, Any]) -> dict[str, Any]:
+    result = validate_source_reconstruction_review_result_record(payload)
+    if not result.ok:
+        raise ContractError(result)
+    return payload
+
+
 def _validate_component(payload: Any, path: str, result: ContractResult) -> None:
     _require_mapping(payload, path, result)
     if not isinstance(payload, dict):

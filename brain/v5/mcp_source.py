@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
 from pathlib import Path
 
 from brain.v5.public_surfaces import require_valid_public_surface
@@ -10,6 +11,7 @@ from brain.v5.source_reconstruction import (
     build_source_reconstruction_manifest,
     build_source_reconstruction_review_packet,
 )
+from brain.v5.source_reconstruction_review import record_source_reconstruction_review_result
 from brain.v5.workspace import init_workspace
 
 
@@ -30,3 +32,37 @@ def aitp_v5_build_source_reconstruction_manifest(base: str) -> dict:
 def aitp_v5_build_source_reconstruction_review_packet(base: str, *, claim_id: str) -> dict:
     result = build_source_reconstruction_review_packet(_ws(base), claim_id=claim_id)
     return require_valid_public_surface("source_reconstruction_review_packet", result)
+
+
+def aitp_v5_record_source_reconstruction_review_result(
+    base: str,
+    *,
+    claim_id: str,
+    status: str,
+    reviewed_components: list[str] | None = None,
+    basis_refs: list[str] | None = None,
+    evidence_refs: list[str] | None = None,
+    validation_result_ids: list[str] | None = None,
+    reference_location_ids: list[str] | None = None,
+    object_ids: list[str] | None = None,
+    relation_ids: list[str] | None = None,
+    remaining_actions: list[str] | None = None,
+    reviewer_role: str = "human_or_adversarial_reviewer",
+    summary: str = "",
+) -> dict:
+    result = record_source_reconstruction_review_result(
+        _ws(base),
+        claim_id=claim_id,
+        status=status,
+        reviewed_components=reviewed_components,
+        basis_refs=basis_refs,
+        evidence_refs=evidence_refs,
+        validation_result_ids=validation_result_ids,
+        reference_location_ids=reference_location_ids,
+        object_ids=object_ids,
+        relation_ids=relation_ids,
+        remaining_actions=remaining_actions,
+        reviewer_role=reviewer_role,
+        summary=summary,
+    )
+    return require_valid_public_surface("source_reconstruction_review_result_record", {"ok": True, **asdict(result)})

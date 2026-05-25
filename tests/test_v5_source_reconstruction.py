@@ -435,3 +435,188 @@ def test_source_reconstruction_review_packet_cli_mcp_and_runtime(tmp_path, capsy
         "mcp": "aitp_v5_build_source_reconstruction_review_packet",
         "surface": "source_reconstruction_review_packet",
     }
+
+
+def test_source_reconstruction_review_result_records_typed_basis(tmp_path):
+    from brain.v5.evidence import record_evidence
+    from brain.v5.models import SourceReconstructionReviewResultRecord
+    from brain.v5.physics_objects import record_object_relation, record_physics_object
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.references import record_reference_location
+    from brain.v5.source_reconstruction_review import record_source_reconstruction_review_result
+    from brain.v5.store import list_records
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "scrpa", context_id="many-body", title="SCRPA")
+    claim = create_claim(
+        ws,
+        topic_id="scrpa",
+        statement="The finite-temperature SCRPA closure is stationary under variational constraints.",
+        evidence_profile="legacy_import",
+        confidence_state="legacy_seed",
+        active_uncertainty="semantic review required",
+    )
+    source = record_reference_location(
+        ws,
+        topic_id="scrpa",
+        claim_id=claim.claim_id,
+        connector_id="local_markdown",
+        location_type="legacy_note",
+        uri="file:///legacy/scrpa/L3.md",
+        label="Legacy SCRPA L3",
+        source_ref="legacy:scrpa/L3.md",
+    )
+    evidence = record_evidence(
+        ws,
+        topic_id="scrpa",
+        claim_id=claim.claim_id,
+        evidence_type="source_reconstruction",
+        status="supports",
+        summary="Legacy L3 note preserves the reconstruction route.",
+        supports_outputs=["reconstruction_path"],
+        source_refs=["legacy:scrpa/L3.md"],
+    )
+    operator = record_physics_object(
+        ws,
+        topic_id="scrpa",
+        object_type="operator",
+        name="SCRPA closure operator",
+        definition="Operator entering the finite-temperature SCRPA closure.",
+        source_refs=["legacy:scrpa/L3.md"],
+    )
+    constraint = record_physics_object(
+        ws,
+        topic_id="scrpa",
+        object_type="constraint",
+        name="variational stationarity constraint",
+        definition="Stationarity condition applied to the closure.",
+        source_refs=["legacy:scrpa/L3.md"],
+    )
+    relation = record_object_relation(
+        ws,
+        topic_id="scrpa",
+        relation_type="constrained_by",
+        subject_id=operator.object_id,
+        object_id=constraint.object_id,
+        statement="The closure operator is constrained by stationarity.",
+        claim_id=claim.claim_id,
+        source_refs=["legacy:scrpa/L3.md"],
+    )
+
+    result = record_source_reconstruction_review_result(
+        ws,
+        claim_id=claim.claim_id,
+        status="needs_revision",
+        reviewed_components=["definitions", "dependency_graph"],
+        basis_refs=["legacy:scrpa/L3.md"],
+        evidence_refs=[evidence.evidence_id],
+        reference_location_ids=[source.location_id],
+        object_ids=[operator.object_id, constraint.object_id],
+        relation_ids=[relation.relation_id],
+        remaining_actions=["clarify operator domain before repair"],
+        summary="Definitions exist, but the dependency graph still needs domain clarification.",
+    )
+
+    payload = {"ok": True, **result.__dict__}
+    assert result.kind == "source_reconstruction_review_result"
+    assert result.status == "needs_revision"
+    assert result.reviewed_components == ["definitions", "dependency_graph"]
+    assert result.can_update_claim_trust is False
+    assert require_valid_public_surface("source_reconstruction_review_result_record", payload) == payload
+    stored = list_records(ws.registry_dir("source_reconstruction_reviews"), SourceReconstructionReviewResultRecord)
+    assert [record.result_id for record in stored] == [result.result_id]
+
+
+def test_source_reconstruction_review_result_rejects_missing_basis(tmp_path):
+    import pytest
+
+    from brain.v5.source_reconstruction_review import record_source_reconstruction_review_result
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="The counting sequence identifies the edge CFT.",
+        evidence_profile="literature",
+        confidence_state="hypothesis",
+        active_uncertainty="source coverage",
+    )
+
+    with pytest.raises(ValueError, match="source reconstruction review basis"):
+        record_source_reconstruction_review_result(
+            ws,
+            claim_id=claim.claim_id,
+            status="inconclusive",
+            reviewed_components=["definitions"],
+            summary="No concrete source basis was supplied.",
+        )
+
+
+def test_source_reconstruction_review_result_cli_mcp_and_runtime(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_record_source_reconstruction_review_result
+    from brain.v5.references import record_reference_location
+    from brain.v5.runtime_entrypoints import runtime_entrypoints, validate_runtime_entrypoints
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="The counting sequence identifies the edge CFT.",
+        evidence_profile="literature",
+        confidence_state="hypothesis",
+        active_uncertainty="source coverage",
+    )
+    source = record_reference_location(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        connector_id="zotero",
+        location_type="paper",
+        uri="zotero://select/items/ABC",
+        label="Counting reference",
+        source_ref="paper:fqhe-counting",
+    )
+
+    assert main(
+        [
+            "--base",
+            str(tmp_path),
+            "source",
+            "reconstruction-review-result",
+            "--claim",
+            claim.claim_id,
+            "--status",
+            "inconclusive",
+            "--reviewed-component",
+            "definitions",
+            "--reference-location-id",
+            source.location_id,
+            "--summary",
+            "Definitions were inspected but remain incomplete.",
+        ]
+    ) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_record_source_reconstruction_review_result(
+        str(tmp_path),
+        claim_id=claim.claim_id,
+        status="inconclusive",
+        reviewed_components=["definitions"],
+        reference_location_ids=[source.location_id],
+        summary="Definitions were inspected but remain incomplete.",
+    )
+
+    assert cli_payload["kind"] == "source_reconstruction_review_result"
+    assert cli_payload["can_update_claim_trust"] is False
+    assert mcp_payload == cli_payload
+    assert runtime_entrypoints()["record_source_reconstruction_review_result"] == {
+        "cli": "aitp-v5 source reconstruction-review-result <args>",
+        "mcp": "aitp_v5_record_source_reconstruction_review_result",
+        "surface": "source_reconstruction_review_result_record",
+    }
+    assert validate_runtime_entrypoints() == []
