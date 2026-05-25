@@ -587,6 +587,63 @@ def test_legacy_semantic_review_packet_cli_mcp_and_runtime_surface(tmp_path, cap
     }
 
 
+def test_legacy_semantic_review_manifest_batches_packets_without_writing(tmp_path):
+    from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    before = {path.as_posix() for path in ws.root.rglob("*") if path.is_file()}
+
+    manifest = build_legacy_semantic_review_manifest(ws, migration_dir=run)
+
+    after = {path.as_posix() for path in ws.root.rglob("*") if path.is_file()}
+    assert before == after
+    assert manifest["kind"] == "legacy_semantic_review_manifest"
+    assert manifest["run_id"] == "legacy-v5-lossless-test"
+    assert manifest["topic_count"] == 2
+    assert manifest["pending_count"] == 2
+    assert manifest["passed_count"] == 0
+    assert manifest["review_progress"] == {"passed": 0, "inconclusive": 0, "needs_revision": 0, "pending": 2}
+    assert "legacy semantic-review-packet" in manifest["items"][0]["packet_cli"]
+    assert "legacy semantic-review-result" in manifest["items"][0]["result_cli_template"]
+    assert manifest["items"][0]["can_update_claim_trust"] is False
+    assert manifest["next_actions"][0] == "review_packet:canonical-topic"
+    assert manifest["semantic_lossless_proven"] is False
+    assert manifest["orientation_only"] is True
+    assert manifest["can_update_kernel_state"] is False
+    assert require_valid_public_surface("legacy_semantic_review_manifest", manifest) == manifest
+
+
+def test_legacy_semantic_review_manifest_cli_mcp_and_runtime_surface(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_build_legacy_semantic_review_manifest
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.workspace import init_workspace
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+
+    assert main([
+        "--base", str(base), "legacy", "semantic-review-manifest",
+        "--migration-dir", str(run),
+    ]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_legacy_semantic_review_manifest(str(base), migration_dir=str(run))
+
+    assert cli_payload["kind"] == "legacy_semantic_review_manifest"
+    assert mcp_payload["kind"] == "legacy_semantic_review_manifest"
+    assert runtime_entrypoints()["legacy_semantic_review_manifest"] == {
+        "cli": "aitp-v5 legacy semantic-review-manifest <args>",
+        "mcp": "aitp_v5_build_legacy_semantic_review_manifest",
+        "surface": "legacy_semantic_review_manifest",
+    }
+
+
 def test_legacy_semantic_review_result_records_basis_and_updates_queue(tmp_path):
     from brain.v5.legacy_semantic_review import (
         build_legacy_semantic_review_queue,

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
+from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
 from brain.v5.legacy_semantic_review import (
     build_legacy_semantic_review_packet,
     build_legacy_semantic_review_queue,
@@ -43,6 +44,11 @@ def aitp_v5_audit_legacy_migration_coverage(base: str, *, migration_dir: str = "
 def aitp_v5_build_legacy_semantic_review_queue(base: str, *, migration_dir: str = "") -> dict:
     result = build_legacy_semantic_review_queue(_ws(base), migration_dir=migration_dir or None)
     return {"ok": True, **require_valid_public_surface("legacy_semantic_review_queue", result)}
+
+
+def aitp_v5_build_legacy_semantic_review_manifest(base: str, *, migration_dir: str) -> dict:
+    result = build_legacy_semantic_review_manifest(_ws(base), migration_dir=migration_dir)
+    return {"ok": True, **require_valid_public_surface("legacy_semantic_review_manifest", result)}
 
 
 def aitp_v5_build_legacy_semantic_review_packet(base: str, *, migration_dir: str, topic: str) -> dict:

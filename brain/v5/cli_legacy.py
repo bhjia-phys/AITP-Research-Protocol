@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
+from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
 from brain.v5.legacy_semantic_review import (
     build_legacy_semantic_review_packet,
     build_legacy_semantic_review_queue,
@@ -23,6 +24,8 @@ def add_legacy_parser(subparsers) -> None:
     audit.add_argument("--migration-dir", default="")
     review = legacy_subparsers.add_parser("semantic-review-queue")
     review.add_argument("--migration-dir", default="")
+    manifest = legacy_subparsers.add_parser("semantic-review-manifest")
+    manifest.add_argument("--migration-dir", required=True)
     packet = legacy_subparsers.add_parser("semantic-review-packet")
     packet.add_argument("--migration-dir", required=True)
     packet.add_argument("--topic", required=True)
@@ -56,6 +59,9 @@ def dispatch_legacy_command(args, ws) -> dict:
     if args.legacy_command == "semantic-review-queue":
         queue = build_legacy_semantic_review_queue(ws, migration_dir=args.migration_dir or None)
         return {"ok": True, **require_valid_public_surface("legacy_semantic_review_queue", queue)}
+    if args.legacy_command == "semantic-review-manifest":
+        manifest = build_legacy_semantic_review_manifest(ws, migration_dir=args.migration_dir)
+        return {"ok": True, **require_valid_public_surface("legacy_semantic_review_manifest", manifest)}
     if args.legacy_command == "semantic-review-packet":
         packet = build_legacy_semantic_review_packet(ws, migration_dir=args.migration_dir, topic=args.topic)
         return {"ok": True, **require_valid_public_surface("legacy_semantic_review_packet", packet)}
