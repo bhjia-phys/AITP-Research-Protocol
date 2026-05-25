@@ -1312,6 +1312,64 @@ def test_legacy_semantic_repair_l1_scope_action_ignores_candidate_assumptions(tm
     ]
 
 
+def test_legacy_semantic_repair_joins_l1_scope_frontmatter_list(tmp_path):
+    from brain.v5.legacy_semantic_repair import build_legacy_semantic_repair_plan
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.models import ClaimRecord
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    legacy_topic = ws.base / "research" / "aitp-topics" / "canonical-topic"
+    l1_contract = legacy_topic / "L1" / "question_contract.md"
+    l1_contract.parent.mkdir(parents=True)
+    l1_contract.write_text(
+        "---\n"
+        "artifact_kind: l1_question_contract\n"
+        "scope_boundaries:\n"
+        "  - Standard RPA correlation energy from ACFD theorem\n"
+        "  - EXCLUDED: vertex corrections and SOC\n"
+        "---\n"
+        "# Question Contract\n",
+        encoding="utf-8",
+    )
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="Claim already present.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Semantic review required.",
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="needs_revision",
+        summary="The reviewed L1 scope is stored as a YAML list.",
+        reviewed_legacy_refs=[f"legacy_l1:{l1_contract}"],
+        reviewed_typed_refs=["claim-canonical"],
+        remaining_actions=["backfill_active_claim_scope_from_legacy_l1_question_contract"],
+    )
+
+    plan = build_legacy_semantic_repair_plan(ws, migration_dir=run, topic="canonical-topic")
+
+    assert plan["proposed_repairs"] == [
+        {
+            "repair_type": "claim_scope_backfill",
+            "target_ref": "claim-canonical",
+            "current_value": "",
+            "proposed_value": "Standard RPA correlation energy from ACFD theorem; EXCLUDED: vertex corrections and SOC",
+            "basis_refs": [f"legacy_l1:{l1_contract}", review.review_id],
+            "mutation_authority": "none_review_and_apply_separately",
+        }
+    ]
+
+
 def test_legacy_semantic_repair_prefers_reviewed_l1_bounded_question_for_statement(tmp_path):
     from brain.v5.legacy_semantic_repair import build_legacy_semantic_repair_plan
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result

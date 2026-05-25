@@ -229,7 +229,7 @@ def _proposed_repairs(
 def _reviewed_l1_scope(latest_review: dict[str, Any]) -> str:
     for path in _reviewed_paths(latest_review, prefixes=("legacy_l1:",)):
         frontmatter, body = read_md(path)
-        scope = _clean_text(str(frontmatter.get("scope_boundaries") or ""))
+        scope = _frontmatter_text(frontmatter.get("scope_boundaries"))
         if scope:
             return scope
         scope = _markdown_section(body, "Scope Boundaries")
@@ -241,10 +241,10 @@ def _reviewed_l1_scope(latest_review: dict[str, Any]) -> str:
 def _reviewed_l1_non_success_conditions(latest_review: dict[str, Any]) -> str:
     for path in _reviewed_paths(latest_review, prefixes=("legacy_l1:",)):
         frontmatter, body = read_md(path)
-        failure_mode = _clean_text(str(frontmatter.get("non_success_conditions") or ""))
+        failure_mode = _frontmatter_text(frontmatter.get("non_success_conditions"))
         if failure_mode:
             return failure_mode
-        failure_mode = _clean_text(str(frontmatter.get("failure_conditions") or ""))
+        failure_mode = _frontmatter_text(frontmatter.get("failure_conditions"))
         if failure_mode:
             return failure_mode
         failure_mode = _markdown_section(body, "Non-Success Conditions")
@@ -256,7 +256,7 @@ def _reviewed_l1_non_success_conditions(latest_review: dict[str, Any]) -> str:
 def _reviewed_l1_bounded_question(latest_review: dict[str, Any]) -> str:
     for path in _reviewed_paths(latest_review, prefixes=("legacy_l1:",)):
         frontmatter, body = read_md(path)
-        bounded_question = _clean_text(str(frontmatter.get("bounded_question") or ""))
+        bounded_question = _frontmatter_text(frontmatter.get("bounded_question"))
         if bounded_question:
             return bounded_question
         bounded_question = _markdown_section(body, "Bounded Question")
@@ -268,7 +268,7 @@ def _reviewed_l1_bounded_question(latest_review: dict[str, Any]) -> str:
 def _reviewed_l3_distilled_claim(latest_review: dict[str, Any]) -> str:
     for path in _reviewed_paths(latest_review, prefixes=("legacy_l3_process:",)):
         frontmatter, body = read_md(path)
-        distilled_claim = _clean_text(str(frontmatter.get("distilled_claim") or ""))
+        distilled_claim = _frontmatter_text(frontmatter.get("distilled_claim"))
         if distilled_claim:
             return distilled_claim
         distilled_claim = _markdown_section(body, "Distilled Claim")
@@ -280,7 +280,7 @@ def _reviewed_l3_distilled_claim(latest_review: dict[str, Any]) -> str:
 def _reviewed_candidate_scope(latest_review: dict[str, Any]) -> str:
     for path in _reviewed_paths(latest_review, prefixes=("legacy_candidate:",)):
         frontmatter, body = read_md(path)
-        scope = _clean_text(str(frontmatter.get("regime_of_validity") or ""))
+        scope = _frontmatter_text(frontmatter.get("regime_of_validity"))
         if scope:
             return scope
         assumptions = _markdown_section(body, "Assumptions")
@@ -292,7 +292,7 @@ def _reviewed_candidate_scope(latest_review: dict[str, Any]) -> str:
 def _reviewed_failure_mode(latest_review: dict[str, Any]) -> str:
     for path in _reviewed_paths(latest_review, prefixes=("legacy_l4_review:",)):
         frontmatter, body = read_md(path)
-        failure_mode = _clean_text(str(frontmatter.get("devils_advocate") or ""))
+        failure_mode = _frontmatter_text(frontmatter.get("devils_advocate"))
         if failure_mode:
             return failure_mode
         failure_mode = _markdown_section(body, "Devil's Advocate")
@@ -332,6 +332,21 @@ def _markdown_section(body: str, heading: str) -> str:
 
 def _clean_text(value: str) -> str:
     return " ".join(value.split())
+
+
+def _frontmatter_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, (list, tuple)):
+        parts = [_frontmatter_text(item) for item in value]
+        return _clean_text("; ".join(part for part in parts if part))
+    if isinstance(value, dict):
+        parts: list[str] = []
+        for key, nested in value.items():
+            nested_text = _frontmatter_text(nested)
+            parts.append(f"{key}: {nested_text}" if nested_text else str(key))
+        return _clean_text("; ".join(parts))
+    return _clean_text(str(value))
 
 
 def _repair_status(latest_review: dict[str, Any], proposed_repairs: list[dict[str, Any]]) -> str:

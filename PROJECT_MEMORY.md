@@ -344,7 +344,9 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   action, so an L1 scope action is not allowed to be satisfied by candidate
   assumptions merely because both refs were reviewed. Claim failure modes can be
   recovered from L4 review basis or from L1 `Non-Success Conditions` when the
-  review action requests that source.
+  review action requests that source. Frontmatter values are normalized before
+  becoming proposed claim text, including YAML lists and maps, so repairs do not
+  write Python collection reprs into claim statements, scopes, or failure modes.
   They update only the migrated claim and topic ledger, and write a durable
   `legacy_semantic_repair` record. The repair apply surface may update kernel
   content state, but it cannot update claim trust or prove semantic
