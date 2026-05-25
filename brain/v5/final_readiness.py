@@ -11,6 +11,7 @@ from brain.v5.legacy_semantic_review import build_legacy_semantic_review_queue
 from brain.v5.models import ClaimRecord, MemoryEntryRecord
 from brain.v5.paths import WorkspacePaths
 from brain.v5.source_reconstruction import audit_source_reconstruction_batch
+from brain.v5.source_reconstruction_review import build_source_reconstruction_review_manifest
 from brain.v5.store import list_records
 
 _PRIORITY_HOSTS = ("codex", "claude_code", "kimi_code")
@@ -31,7 +32,8 @@ def audit_final_engineering_readiness(
     record_gates = record_gate_coverage_audit()
     host_smoke = runtime_hook_smoke_coverage_report()
     source_stack = _source_stack(ws)
-    source_backlog = _source_reconstruction_backlog(source_stack)
+    source_review = build_source_reconstruction_review_manifest(ws)
+    source_backlog = _source_reconstruction_backlog(source_stack, source_review)
     legacy_review = _legacy_semantic_review(ws, migration_dir=migration_dir)
     blocking_gaps = _blocking_gaps(record_gates, host_smoke, legacy_review)
     content_backlog_status = _content_backlog_status(legacy_review, source_backlog)
@@ -144,15 +146,18 @@ def _knowledge_stack(ws: WorkspacePaths) -> dict[str, Any]:
     }
 
 
-def _source_reconstruction_backlog(source_stack: dict[str, Any]) -> dict[str, Any]:
+def _source_reconstruction_backlog(source_stack: dict[str, Any], source_review: dict[str, Any]) -> dict[str, Any]:
     incomplete_claim_ids = list(source_stack["incomplete_claim_ids"])
     return {
         "surface": "source_reconstruction_manifest",
+        "review_surface": "source_reconstruction_review_manifest",
         "status": "reconstruction_backlog" if incomplete_claim_ids else "complete",
         "active_claim_count": source_stack["active_claim_count"],
         "complete_claim_count": source_stack["complete_claim_count"],
         "incomplete_claim_count": source_stack["incomplete_claim_count"],
         "next_actions": [f"source_reconstruction:{claim_id}" for claim_id in incomplete_claim_ids],
+        "review_progress": dict(source_review.get("review_progress") or {}),
+        "review_next_actions": list(source_review.get("next_actions") or []),
         "missing_components_by_claim": dict(source_stack["missing_components_by_claim"]),
         "summary_inputs_trusted": False,
         "orientation_only": True,
@@ -302,6 +307,9 @@ def _backlog_refs(legacy_review: dict[str, Any], source_backlog: dict[str, Any])
         f"semantic_review:{run_id}:needs_revision={legacy_review['needs_revision_count']}",
         f"semantic_review:{run_id}:inconclusive={legacy_review['inconclusive_count']}",
         f"source_reconstruction:incomplete={source_backlog['incomplete_claim_count']}",
+        f"source_reconstruction_review:pending={source_backlog['review_progress'].get('pending', 0)}",
+        f"source_reconstruction_review:needs_revision={source_backlog['review_progress'].get('needs_revision', 0)}",
+        f"source_reconstruction_review:inconclusive={source_backlog['review_progress'].get('inconclusive', 0)}",
     ]
 
 

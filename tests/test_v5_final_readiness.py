@@ -215,8 +215,17 @@ def test_final_readiness_audit_reports_source_reconstruction_content_backlog(tmp
     assert source_backlog["complete_claim_count"] == 0
     assert source_backlog["incomplete_claim_count"] == 1
     assert source_backlog["next_actions"] == [f"source_reconstruction:{claim.claim_id}"]
+    assert source_backlog["review_surface"] == "source_reconstruction_review_manifest"
+    assert source_backlog["review_progress"] == {
+        "passed": 0,
+        "needs_revision": 0,
+        "inconclusive": 0,
+        "pending": 1,
+    }
+    assert source_backlog["review_next_actions"] == [f"source_reconstruction_review:{claim.claim_id}"]
     assert source_backlog["can_update_claim_trust"] is False
     assert f"source_reconstruction:incomplete=1" in payload["backlog_refs"]
+    assert f"source_reconstruction_review:pending=1" in payload["backlog_refs"]
     assert require_valid_public_surface("final_engineering_readiness_audit", payload) == payload
 
 

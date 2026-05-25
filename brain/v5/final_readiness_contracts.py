@@ -48,12 +48,34 @@ def validate_final_engineering_readiness_audit(
     if isinstance(source, dict):
         if source.get("surface") != "source_reconstruction_manifest":
             result.add(f"{path}.content_backlog.source_reconstruction.surface", "must be source_reconstruction_manifest")
+        if source.get("review_surface") != "source_reconstruction_review_manifest":
+            result.add(
+                f"{path}.content_backlog.source_reconstruction.review_surface",
+                "must be source_reconstruction_review_manifest",
+            )
         if source.get("status") not in {"complete", "reconstruction_backlog"}:
             result.add(f"{path}.content_backlog.source_reconstruction.status", "must be complete or reconstruction_backlog")
         for key in ["active_claim_count", "complete_claim_count", "incomplete_claim_count"]:
             if not isinstance(source.get(key), int):
                 result.add(f"{path}.content_backlog.source_reconstruction.{key}", "must be an integer")
         _require_list(source.get("next_actions"), f"{path}.content_backlog.source_reconstruction.next_actions", result)
+        _require_list(
+            source.get("review_next_actions"),
+            f"{path}.content_backlog.source_reconstruction.review_next_actions",
+            result,
+        )
+        _require_mapping(
+            source.get("review_progress"),
+            f"{path}.content_backlog.source_reconstruction.review_progress",
+            result,
+        )
+        if isinstance(source.get("review_progress"), dict):
+            for key in ("passed", "needs_revision", "inconclusive", "pending"):
+                if not isinstance(source["review_progress"].get(key), int):
+                    result.add(
+                        f"{path}.content_backlog.source_reconstruction.review_progress.{key}",
+                        "must be an integer",
+                    )
         _require_mapping(
             source.get("missing_components_by_claim"),
             f"{path}.content_backlog.source_reconstruction.missing_components_by_claim",
