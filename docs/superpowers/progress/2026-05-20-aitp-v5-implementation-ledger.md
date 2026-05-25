@@ -6433,3 +6433,57 @@ Each entry should record:
   - packets make semantic review practical, but they still do not perform the
     physics judgment. The real workspace still has 17 pending topics and 1
     inconclusive topic until reviewers record per-topic review results.
+
+### 8bdc6a2 - Add Legacy Semantic Review Manifest
+
+- Task: add a batch manifest over legacy semantic review packets so the
+  remaining migrated-topic review backlog is machine-readable and executable
+  topic by topic.
+- Planning source:
+  - `final_engineering_readiness_audit` still reports
+    `legacy_semantic_review_backlog`;
+  - after `legacy_semantic_review_packet`, reviewers can inspect one topic, but
+    the system still needed a stable batch list of packet/result commands and
+    review progress.
+- Changed files:
+  - `brain/v5/legacy_semantic_review_manifest.py`
+  - `brain/v5/legacy_semantic_review_contracts.py`
+  - `brain/v5/cli_legacy.py`
+  - `brain/v5/mcp_legacy.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoint_catalog.py`
+  - `brain/v5/runtime_entrypoint_samples.py`
+  - `tests/test_v5_legacy_bridge.py`
+  - `tests/test_v5_public_surfaces.py`
+- Public/runtime behavior changes:
+  - added public surface `legacy_semantic_review_manifest`;
+  - added CLI `aitp-v5 legacy semantic-review-manifest --migration-dir <dir>`;
+  - added MCP wrapper `aitp_v5_build_legacy_semantic_review_manifest`;
+  - added runtime entrypoint `legacy_semantic_review_manifest`;
+  - manifest lists every review item with status, priority, packet CLI,
+    result-record CLI template, recommended actions, and trust protections.
+- Tests:
+  - manifest batches all topics without writing files;
+  - manifest validates as a public surface and preserves orientation-only flags;
+  - CLI/MCP/runtime/public-surface registry expose the contracted surface.
+- Verification:
+  - related set:
+    `python -m pytest tests/test_v5_legacy_bridge.py tests/test_v5_public_surfaces.py tests/test_v5_runtime_entrypoints.py tests/test_v5_mcp_tools.py tests/test_v5_cli.py tests/test_v5_architecture_boundaries.py -q`:
+    84 passed.
+  - full v5 suite:
+    `python -m pytest <all tests/test_v5_*.py> -q`: 512 passed in 144.05s.
+  - `python -m compileall -q brain/v5`: passed.
+  - `git diff --check -- .`: passed with only Windows CRLF warnings.
+  - real Theoretical-Physics smoke:
+    `aitp-v5 --base D:/BaiduSyncdisk/Theoretical-Physics legacy semantic-review-manifest --migration-dir D:/BaiduSyncdisk/Theoretical-Physics/.aitp/migrations/legacy-v5-lossless-20260524-031743`
+    returned `topic_count=18`, `review_item_count=18`,
+    `review_progress={pending:17,inconclusive:1,needs_revision:0,passed:0}`,
+    `next_action_count=18`, and per-topic packet/result commands.
+  - the same real smoke preserved `.aitp` file count before/after:
+    `4426 -> 4426`, confirming the manifest is read-only.
+- Residual risks:
+  - the manifest closes the operational queue/packet bookkeeping gap. It does
+    not perform the semantic physics review; the real content backlog remains
+    17 pending topics and 1 inconclusive topic until review results are
+    recorded.
