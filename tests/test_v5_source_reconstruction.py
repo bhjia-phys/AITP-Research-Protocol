@@ -620,3 +620,106 @@ def test_source_reconstruction_review_result_cli_mcp_and_runtime(tmp_path, capsy
         "surface": "source_reconstruction_review_result_record",
     }
     assert validate_runtime_entrypoints() == []
+
+
+def test_source_reconstruction_review_manifest_tracks_review_results(tmp_path):
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.references import record_reference_location
+    from brain.v5.source_reconstruction_review import (
+        build_source_reconstruction_review_manifest,
+        record_source_reconstruction_review_result,
+    )
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "scrpa", context_id="many-body", title="SCRPA")
+    needs_review = create_claim(
+        ws,
+        topic_id="scrpa",
+        statement="The finite-temperature SCRPA closure is stationary under variational constraints.",
+        evidence_profile="legacy_import",
+        confidence_state="legacy_seed",
+        active_uncertainty="semantic review required",
+    )
+    reviewed = create_claim(
+        ws,
+        topic_id="scrpa",
+        statement="The SCRPA source stack has a reviewed definition gap.",
+        evidence_profile="legacy_import",
+        confidence_state="legacy_seed",
+        active_uncertainty="definition review pending",
+    )
+    source = record_reference_location(
+        ws,
+        topic_id="scrpa",
+        claim_id=reviewed.claim_id,
+        connector_id="local_markdown",
+        location_type="legacy_note",
+        uri="file:///legacy/scrpa/L3.md",
+        label="Legacy SCRPA L3",
+        source_ref="legacy:scrpa/L3.md",
+    )
+    result = record_source_reconstruction_review_result(
+        ws,
+        claim_id=reviewed.claim_id,
+        status="needs_revision",
+        reviewed_components=["definitions"],
+        reference_location_ids=[source.location_id],
+        remaining_actions=["record operator definition from cited source"],
+        summary="Definition gap was reviewed against the source and still needs repair.",
+    )
+
+    manifest = build_source_reconstruction_review_manifest(ws)
+
+    assert manifest["kind"] == "source_reconstruction_review_manifest"
+    assert manifest["claim_count"] == 2
+    assert manifest["review_progress"] == {
+        "passed": 0,
+        "needs_revision": 1,
+        "inconclusive": 0,
+        "pending": 1,
+    }
+    assert manifest["truth_source"] == "typed_records"
+    assert manifest["summary_inputs_trusted"] is False
+    assert manifest["orientation_only"] is True
+    assert manifest["can_update_claim_trust"] is False
+    by_claim = {item["claim_id"]: item for item in manifest["items"]}
+    assert by_claim[reviewed.claim_id]["review_status"] == "needs_revision"
+    assert by_claim[reviewed.claim_id]["latest_review_result"]["result_id"] == result.result_id
+    assert by_claim[reviewed.claim_id]["reviewed_components"] == ["definitions"]
+    assert by_claim[reviewed.claim_id]["remaining_actions"] == ["record operator definition from cited source"]
+    assert by_claim[needs_review.claim_id]["review_status"] == "pending"
+    assert by_claim[needs_review.claim_id]["latest_review_result"] == {}
+    assert "source_reconstruction_review" in by_claim[needs_review.claim_id]["next_actions"]
+    assert require_valid_public_surface("source_reconstruction_review_manifest", manifest) == manifest
+
+
+def test_source_reconstruction_review_manifest_cli_mcp_and_runtime(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_build_source_reconstruction_review_manifest
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="The counting sequence identifies the edge CFT.",
+        evidence_profile="literature",
+        confidence_state="hypothesis",
+        active_uncertainty="source coverage",
+    )
+
+    assert main(["--base", str(tmp_path), "source", "reconstruction-review-manifest"]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_source_reconstruction_review_manifest(str(tmp_path))
+
+    assert cli_payload["kind"] == "source_reconstruction_review_manifest"
+    assert cli_payload["review_progress"]["pending"] == 1
+    assert mcp_payload["kind"] == "source_reconstruction_review_manifest"
+    assert runtime_entrypoints()["source_reconstruction_review_manifest"] == {
+        "cli": "aitp-v5 source reconstruction-review-manifest",
+        "mcp": "aitp_v5_build_source_reconstruction_review_manifest",
+        "surface": "source_reconstruction_review_manifest",
+    }

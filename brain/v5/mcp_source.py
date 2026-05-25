@@ -11,7 +11,10 @@ from brain.v5.source_reconstruction import (
     build_source_reconstruction_manifest,
     build_source_reconstruction_review_packet,
 )
-from brain.v5.source_reconstruction_review import record_source_reconstruction_review_result
+from brain.v5.source_reconstruction_review import (
+    build_source_reconstruction_review_manifest,
+    record_source_reconstruction_review_result,
+)
 from brain.v5.workspace import init_workspace
 
 
@@ -27,6 +30,11 @@ def aitp_v5_audit_source_reconstruction(base: str, *, claim_id: str) -> dict:
 def aitp_v5_build_source_reconstruction_manifest(base: str) -> dict:
     result = build_source_reconstruction_manifest(_ws(base))
     return {"ok": True, **require_valid_public_surface("source_reconstruction_manifest", result)}
+
+
+def aitp_v5_build_source_reconstruction_review_manifest(base: str) -> dict:
+    result = build_source_reconstruction_review_manifest(_ws(base))
+    return require_valid_public_surface("source_reconstruction_review_manifest", result)
 
 
 def aitp_v5_build_source_reconstruction_review_packet(base: str, *, claim_id: str) -> dict:

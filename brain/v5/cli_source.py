@@ -11,7 +11,10 @@ from brain.v5.source_reconstruction import (
     build_source_reconstruction_manifest,
     build_source_reconstruction_review_packet,
 )
-from brain.v5.source_reconstruction_review import record_source_reconstruction_review_result
+from brain.v5.source_reconstruction_review import (
+    build_source_reconstruction_review_manifest,
+    record_source_reconstruction_review_result,
+)
 
 
 def add_source_parser(sp: argparse._SubParsersAction) -> None:
@@ -20,6 +23,7 @@ def add_source_parser(sp: argparse._SubParsersAction) -> None:
     audit = commands.add_parser("reconstruction-audit")
     audit.add_argument("--claim", required=True, dest="claim_id")
     commands.add_parser("reconstruction-manifest")
+    commands.add_parser("reconstruction-review-manifest")
     review = commands.add_parser("reconstruction-review")
     review.add_argument("--claim", required=True, dest="claim_id")
     result = commands.add_parser("reconstruction-review-result")
@@ -47,6 +51,11 @@ def dispatch_source_command(args: argparse.Namespace, ws) -> dict:
         return require_valid_public_surface(
             "source_reconstruction_manifest",
             build_source_reconstruction_manifest(ws),
+        )
+    if args.source_command == "reconstruction-review-manifest":
+        return require_valid_public_surface(
+            "source_reconstruction_review_manifest",
+            build_source_reconstruction_review_manifest(ws),
         )
     if args.source_command == "reconstruction-review":
         return require_valid_public_surface(

@@ -94,6 +94,45 @@ def require_valid_source_reconstruction_manifest(payload: dict[str, Any]) -> dic
     return payload
 
 
+def validate_source_reconstruction_review_manifest(
+    payload: dict[str, Any],
+    *,
+    path: str = "source_reconstruction_review_manifest",
+) -> ContractResult:
+    result = ContractResult()
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return result
+    if payload.get("kind") != "source_reconstruction_review_manifest":
+        result.add(f"{path}.kind", "must be 'source_reconstruction_review_manifest'")
+    if not isinstance(payload.get("claim_count"), int) or payload["claim_count"] < 0:
+        result.add(f"{path}.claim_count", "must be a non-negative integer")
+    _require_mapping(payload.get("review_progress"), f"{path}.review_progress", result)
+    if isinstance(payload.get("review_progress"), dict):
+        for key in ("passed", "needs_revision", "inconclusive", "pending"):
+            if not isinstance(payload["review_progress"].get(key), int) or payload["review_progress"][key] < 0:
+                result.add(f"{path}.review_progress.{key}", "must be a non-negative integer")
+    for key in ("items", "next_actions"):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    if payload.get("truth_source") != "typed_records":
+        result.add(f"{path}.truth_source", "must be 'typed_records'")
+    _require_bool_value(payload.get("summary_inputs_trusted"), False, f"{path}.summary_inputs_trusted", result)
+    _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
+    _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
+    _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
+    if isinstance(payload.get("items"), list):
+        for index, item in enumerate(payload["items"]):
+            _validate_review_manifest_item(item, f"{path}.items[{index}]", result)
+    return result
+
+
+def require_valid_source_reconstruction_review_manifest(payload: dict[str, Any]) -> dict[str, Any]:
+    result = validate_source_reconstruction_review_manifest(payload)
+    if not result.ok:
+        raise ContractError(result)
+    return payload
+
+
 def validate_source_reconstruction_review_packet(
     payload: dict[str, Any],
     *,
@@ -266,5 +305,30 @@ def _validate_review_component(payload: Any, path: str, result: ContractResult) 
     if payload.get("status") not in {"satisfied", "missing"}:
         result.add(f"{path}.status", "must be satisfied or missing")
     for key in ("record_ids", "review_questions", "recommended_actions", "recommended_record_commands"):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
+
+
+def _validate_review_manifest_item(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    for key in (
+        "topic_id",
+        "claim_id",
+        "source_reconstruction_status",
+        "review_status",
+        "review_packet_cli",
+        "result_cli",
+    ):
+        _require_nonempty_str(payload, key, path, result)
+    if not isinstance(payload.get("claim_statement"), str):
+        result.add(f"{path}.claim_statement", "must be a string")
+    if payload.get("source_reconstruction_status") not in {"complete", "incomplete"}:
+        result.add(f"{path}.source_reconstruction_status", "must be complete or incomplete")
+    if payload.get("review_status") not in {"passed", "needs_revision", "inconclusive", "pending"}:
+        result.add(f"{path}.review_status", "must be an allowed review status")
+    _require_mapping(payload.get("latest_review_result"), f"{path}.latest_review_result", result)
+    for key in ("missing_components", "review_result_ids", "reviewed_components", "remaining_actions", "next_actions"):
         _require_list(payload.get(key), f"{path}.{key}", result)
     _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
