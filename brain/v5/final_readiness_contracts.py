@@ -115,6 +115,34 @@ def validate_final_engineering_readiness_audit(
             f"{path}.content_backlog.source_reconstruction.missing_components_by_claim",
             result,
         )
+        _require_list(
+            source.get("top_incomplete_claims"),
+            f"{path}.content_backlog.source_reconstruction.top_incomplete_claims",
+            result,
+        )
+        for index, item in enumerate(source.get("top_incomplete_claims") or []):
+            if isinstance(item, dict):
+                _require_nonempty_str(
+                    item,
+                    "claim_id",
+                    f"{path}.content_backlog.source_reconstruction.top_incomplete_claims[{index}]",
+                    result,
+                )
+                _require_list(
+                    item.get("missing_components"),
+                    f"{path}.content_backlog.source_reconstruction.top_incomplete_claims[{index}].missing_components",
+                    result,
+                )
+                _require_list(
+                    item.get("next_actions"),
+                    f"{path}.content_backlog.source_reconstruction.top_incomplete_claims[{index}].next_actions",
+                    result,
+                )
+                if item.get("can_update_claim_trust") is not False:
+                    result.add(
+                        f"{path}.content_backlog.source_reconstruction.top_incomplete_claims[{index}].can_update_claim_trust",
+                        "must be false",
+                    )
         if source.get("can_update_kernel_state") is not False:
             result.add(f"{path}.content_backlog.source_reconstruction.can_update_kernel_state", "must be false")
         if source.get("can_update_claim_trust") is not False:

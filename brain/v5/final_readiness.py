@@ -160,11 +160,32 @@ def _source_reconstruction_backlog(source_stack: dict[str, Any], source_review: 
         "review_progress": dict(source_review.get("review_progress") or {}),
         "review_next_actions": list(source_review.get("next_actions") or []),
         "missing_components_by_claim": dict(source_stack["missing_components_by_claim"]),
+        "top_incomplete_claims": _top_source_reconstruction_claims(source_review),
         "summary_inputs_trusted": False,
         "orientation_only": True,
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }
+
+
+def _top_source_reconstruction_claims(source_review: dict[str, Any], *, limit: int = 5) -> list[dict[str, Any]]:
+    items = [
+        item
+        for item in source_review.get("items", [])
+        if item.get("source_reconstruction_status") == "incomplete"
+    ]
+    return [
+        {
+            "topic_id": str(item.get("topic_id") or ""),
+            "claim_id": str(item.get("claim_id") or ""),
+            "review_status": str(item.get("review_status") or ""),
+            "missing_components": list(item.get("missing_components") or []),
+            "next_actions": list(item.get("next_actions") or []),
+            "review_packet_cli": str(item.get("review_packet_cli") or ""),
+            "can_update_claim_trust": False,
+        }
+        for item in items[:limit]
+    ]
 
 
 def _long_term_replay() -> dict[str, Any]:

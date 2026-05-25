@@ -242,6 +242,27 @@ def test_final_readiness_audit_reports_source_reconstruction_content_backlog(tmp
         "pending": 1,
     }
     assert source_backlog["review_next_actions"] == [f"source_reconstruction_review:{claim.claim_id}"]
+    assert source_backlog["top_incomplete_claims"] == [
+        {
+            "topic_id": "fqhe",
+            "claim_id": claim.claim_id,
+            "review_status": "pending",
+            "missing_components": [
+                "definitions",
+                "assumptions_or_scope",
+                "source_locations",
+                "dependency_graph",
+                "reconstruction_path",
+                "failure_conditions",
+            ],
+            "next_actions": [
+                "source_reconstruction_review",
+                "complete_source_reconstruction",
+            ],
+            "review_packet_cli": f"aitp-v5 source reconstruction-review --claim {claim.claim_id}",
+            "can_update_claim_trust": False,
+        }
+    ]
     assert source_backlog["can_update_claim_trust"] is False
     assert f"source_reconstruction:incomplete=1" in payload["backlog_refs"]
     assert f"source_reconstruction_review:pending=1" in payload["backlog_refs"]
