@@ -197,6 +197,40 @@ def test_legacy_candidates_map_to_v5_claim_records(tmp_path):
     assert claim.evidence_profile == "toy_numeric"
 
 
+def test_legacy_migration_extracts_research_question_from_state_body(tmp_path):
+    from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
+    from brain.v5.models import ClaimRecord, SensemakingReportRecord
+    from brain.v5.store import list_records
+    from brain.v5.workspace import init_workspace
+
+    topic = tmp_path / "legacy" / "body-question-topic"
+    topic.mkdir(parents=True)
+    question = (
+        "What are the known solutions to Einstein's equations in asymptotically "
+        "AdS spacetime?"
+    )
+    (topic / "state.md").write_text(
+        "---\n"
+        "title: Body Question Topic\n"
+        "lane: formal_theory\n"
+        "---\n"
+        "# Body Question Topic\n\n"
+        "## Research Question\n"
+        f"{question}\n\n"
+        "## Notes\n"
+        "This state file stores the question in the body, as older topics did.\n",
+        encoding="utf-8",
+    )
+    ws = init_workspace(tmp_path / "v5")
+
+    migrate_legacy_topic_to_v5(ws, topic, context_id="legacy-context", session_id="s1")
+
+    claims = list_records(ws.registry_dir("claims"), ClaimRecord)
+    assert [claim.statement for claim in claims] == [question]
+    reports = list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord)
+    assert any(question in report.summary for report in reports)
+
+
 def test_legacy_topic_dry_run_reports_missing_and_mapped_sections(tmp_path):
     from pathlib import Path
 

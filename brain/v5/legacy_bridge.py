@@ -51,7 +51,8 @@ def scan_legacy_topic(topic_dir: str | Path) -> LegacyTopicSummary:
     """Read a legacy topic directory without modifying it."""
 
     root = Path(topic_dir)
-    state_fm, _ = read_md(root / "state.md")
+    state_fm, state_body = read_md(root / "state.md")
+    question = str(state_fm.get("question") or _research_question_from_state_body(state_body))
     source_paths = [str(path) for path in sorted((root / "L0" / "sources").glob("*/source.md"))]
     candidate_claims = []
     for candidate_path in sorted((root / "L3" / "candidates").glob("*.md")):
@@ -63,7 +64,7 @@ def scan_legacy_topic(topic_dir: str | Path) -> LegacyTopicSummary:
     return LegacyTopicSummary(
         topic_slug=root.name,
         title=str(state_fm.get("title") or root.name),
-        question=str(state_fm.get("question") or ""),
+        question=question,
         stage=str(state_fm.get("stage") or ""),
         lane=str(state_fm.get("lane") or ""),
         source_paths=source_paths,
@@ -379,6 +380,23 @@ def _first_nonempty_body_line(body: str) -> str:
         if stripped:
             return stripped
     return ""
+
+
+def _research_question_from_state_body(body: str) -> str:
+    in_section = False
+    section_lines: list[str] = []
+    for line in body.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            heading = stripped.lstrip("#").strip().casefold()
+            if in_section:
+                break
+            if heading == "research question":
+                in_section = True
+            continue
+        if in_section:
+            section_lines.append(line)
+    return _first_paragraph("\n".join(section_lines))
 
 
 def _legacy_candidate_records(root: Path) -> list[dict]:
