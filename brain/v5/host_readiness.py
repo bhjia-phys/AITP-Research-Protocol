@@ -19,6 +19,8 @@ _DEFAULT_COMMANDS = {
     "kimi_code": "kimi",
     "opencode": "opencode",
 }
+_PRIORITY_HOSTS = {"codex", "claude_code", "kimi_code"}
+_DEFERRED_HOSTS = {"opencode"}
 
 
 def audit_runtime_host_readiness(
@@ -64,6 +66,7 @@ def audit_runtime_host_readiness(
         "process": process,
         "installation_audit": install,
         "session_start_smoke": session_start,
+        "production_loop": _production_loop(runtime, status, process, install, session_start),
         "truth_source": "runtime_process_and_files",
         "summary_inputs_trusted": False,
         "orientation_only": True,
@@ -246,6 +249,55 @@ def _status(process: dict[str, Any], install: dict[str, Any], session_start: dic
     return "process_ready"
 
 
+def _production_loop(
+    runtime: str,
+    status: str,
+    process: dict[str, Any],
+    install: dict[str, Any],
+    session_start: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "status": status,
+        "runtime": runtime,
+        "priority_host": runtime in _PRIORITY_HOSTS,
+        "deferred_host": runtime in _DEFERRED_HOSTS,
+        "next_actions": _production_next_actions(runtime, process, install, session_start),
+        "install_audit_required": not install.get("checked") or install.get("status") != "installed",
+        "session_start_smoke_available": runtime in {"claude_code", "kimi_code"},
+        "lifecycle_probe_command": f"aitp-v5 adapter host-lifecycle {_cli_runtime(runtime)}",
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def _production_next_actions(
+    runtime: str,
+    process: dict[str, Any],
+    install: dict[str, Any],
+    session_start: dict[str, Any],
+) -> list[str]:
+    actions: list[str] = []
+    if not process.get("ok"):
+        actions.append("install_or_fix_host_command")
+        return actions
+    if not install.get("checked"):
+        actions.append("install_or_audit_runtime_hooks")
+    elif install.get("status") != "installed":
+        actions.append("install_or_repair_runtime_hooks")
+    if runtime in {"claude_code", "kimi_code"} and not session_start.get("ran"):
+        actions.append("run_session_start_smoke")
+    elif session_start.get("ran") and not session_start.get("ok"):
+        actions.append("repair_session_start_refresh")
+    actions.append("run_runtime_host_lifecycle_probe")
+    return _unique(actions)
+
+
+def _cli_runtime(runtime: str) -> str:
+    return {"claude_code": "claude-code", "kimi_code": "kimi-code"}.get(runtime, runtime)
+
+
 def _lifecycle_status(process: dict[str, Any], *, trace_delta: int, hook_observed: bool) -> str:
     if not process.get("ok"):
         return "process_unavailable"
@@ -273,6 +325,16 @@ def _hook_output_payload(process: dict[str, Any]) -> dict[str, Any]:
         if kind in text
     ]
     return {"observed": bool(kinds), "observed_kinds": kinds}
+
+
+def _unique(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        if value and value not in seen:
+            seen.add(value)
+            result.append(value)
+    return result
 
 
 def _parse_json_object(raw: str) -> dict[str, Any]:

@@ -36,6 +36,7 @@ def validate_runtime_host_readiness_audit(
     _validate_process(payload.get("process"), f"{path}.process", result)
     _validate_install(payload.get("installation_audit"), f"{path}.installation_audit", result)
     _validate_session_start(payload.get("session_start_smoke"), f"{path}.session_start_smoke", result)
+    _validate_production_loop(payload.get("production_loop"), f"{path}.production_loop", result)
     return result
 
 
@@ -82,3 +83,28 @@ def _validate_session_start(payload: Any, path: str, result: ContractResult) -> 
         result.add(f"{path}.ran", "must be a bool")
     if not isinstance(payload.get("ok"), bool):
         result.add(f"{path}.ok", "must be a bool")
+
+
+def _validate_production_loop(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    for key in ("status", "runtime", "lifecycle_probe_command"):
+        _require_nonempty_str(payload, key, path, result)
+    _require_list(payload.get("next_actions"), f"{path}.next_actions", result)
+    for key in (
+        "priority_host",
+        "deferred_host",
+        "install_audit_required",
+        "session_start_smoke_available",
+        "summary_inputs_trusted",
+        "orientation_only",
+        "can_update_kernel_state",
+        "can_update_claim_trust",
+    ):
+        if not isinstance(payload.get(key), bool):
+            result.add(f"{path}.{key}", "must be a bool")
+    _require_bool_value(payload.get("summary_inputs_trusted"), False, f"{path}.summary_inputs_trusted", result)
+    _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
+    _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
+    _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)

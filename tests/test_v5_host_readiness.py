@@ -28,6 +28,23 @@ def test_runtime_host_readiness_runs_process_without_trusting_summaries(tmp_path
     assert validated["can_update_kernel_state"] is False
     assert validated["can_update_claim_trust"] is False
     assert validated["status"] == "process_ready"
+    assert validated["production_loop"] == {
+        "status": "process_ready",
+        "runtime": "codex",
+        "priority_host": True,
+        "deferred_host": False,
+        "next_actions": [
+            "install_or_audit_runtime_hooks",
+            "run_runtime_host_lifecycle_probe",
+        ],
+        "install_audit_required": True,
+        "session_start_smoke_available": False,
+        "lifecycle_probe_command": "aitp-v5 adapter host-lifecycle codex",
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
 
 
 def test_runtime_host_readiness_cli_and_mcp(tmp_path, capsys):
@@ -58,6 +75,45 @@ def test_runtime_host_readiness_cli_and_mcp(tmp_path, capsys):
     assert mcp_payload["kind"] == "runtime_host_readiness_audit"
     assert cli_payload["process"]["ok"] is True
     assert mcp_payload["process"]["ok"] is True
+    assert cli_payload["production_loop"]["priority_host"] is True
+    assert mcp_payload["production_loop"]["next_actions"] == [
+        "install_or_audit_runtime_hooks",
+        "run_runtime_host_lifecycle_probe",
+    ]
+
+
+def test_runtime_host_readiness_production_loop_guides_installation_and_session_smoke(tmp_path):
+    from brain.v5.host_readiness import audit_runtime_host_readiness
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import bind_session, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    bind_session(ws, "s1", topic_id="fqhe", context_id="topological-order")
+
+    payload = audit_runtime_host_readiness(
+        ws,
+        runtime="claude_code",
+        command=sys.executable,
+        version_args=["--version"],
+        session_id="s1",
+        run_session_start_smoke=True,
+    )
+    validated = require_valid_public_surface("runtime_host_readiness_audit", payload)
+
+    assert validated["process"]["ok"] is True
+    assert validated["installation_audit"]["checked"] is True
+    assert validated["installation_audit"]["status"] != "installed"
+    assert validated["session_start_smoke"]["ok"] is True
+    assert validated["production_loop"]["runtime"] == "claude_code"
+    assert validated["production_loop"]["priority_host"] is True
+    assert validated["production_loop"]["session_start_smoke_available"] is True
+    assert validated["production_loop"]["next_actions"] == [
+        "install_or_repair_runtime_hooks",
+        "run_runtime_host_lifecycle_probe",
+    ]
+    assert validated["production_loop"]["lifecycle_probe_command"] == "aitp-v5 adapter host-lifecycle claude-code"
+    assert validated["production_loop"]["can_update_claim_trust"] is False
 
 
 def test_runtime_host_lifecycle_probe_detects_trace_delta_and_hook_output(tmp_path):
