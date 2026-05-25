@@ -742,6 +742,105 @@ def test_legacy_semantic_review_manifest_cli_mcp_and_runtime_surface(tmp_path, c
     }
 
 
+def test_legacy_semantic_review_worklist_prioritizes_backlog_without_writing(tmp_path):
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
+    from brain.v5.models import ClaimRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    legacy_topic = ws.base / "research" / "aitp-topics" / "canonical-topic"
+    state = legacy_topic / "state.md"
+    state.parent.mkdir(parents=True)
+    state.write_text("# Canonical\n\n## Research Question\nWhich claim needs restoration?\n", encoding="utf-8")
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Semantic review required.",
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="needs_revision",
+        summary="Claim statement needs backfill and source reconstruction needs review.",
+        reviewed_legacy_refs=[f"legacy_candidate:{state}"],
+        reviewed_typed_refs=["claim-canonical"],
+        remaining_actions=[
+            "Backfill the active claim statement from the legacy Research Question.",
+            "Complete definitions, assumptions_or_scope, dependency_graph, reconstruction_path, and failure_conditions before promotion.",
+        ],
+    )
+    before = {path.as_posix() for path in ws.root.rglob("*") if path.is_file()}
+
+    worklist = build_legacy_semantic_review_worklist(ws, migration_dir=run)
+
+    after = {path.as_posix() for path in ws.root.rglob("*") if path.is_file()}
+    assert before == after
+    assert worklist["kind"] == "legacy_semantic_review_worklist"
+    assert worklist["work_item_count"] == 2
+    assert worklist["status_counts"] == {"needs_revision": 1, "inconclusive": 0, "pending": 1}
+    assert worklist["items"][0]["topic"] == "canonical-topic"
+    assert worklist["items"][0]["review_status"] == "needs_revision"
+    assert worklist["items"][0]["latest_review_id"] == review.review_id
+    assert worklist["items"][0]["repair_candidate_count"] == 2
+    assert worklist["items"][0]["review_focus"][:2] == [
+        "apply_or_review_typed_repair_candidates",
+        "complete_source_reconstruction_components",
+    ]
+    assert worklist["items"][0]["missing_source_components"] == [
+        "definitions",
+        "assumptions_or_scope",
+        "source_locations",
+        "dependency_graph",
+        "reconstruction_path",
+        "failure_conditions",
+    ]
+    assert worklist["items"][0]["can_update_claim_trust"] is False
+    assert worklist["items"][1]["topic"] == "legacy-l2"
+    assert worklist["next_actions"][0] == "worklist_item:canonical-topic"
+    assert worklist["semantic_lossless_proven"] is False
+    assert worklist["orientation_only"] is True
+    assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
+
+
+def test_legacy_semantic_review_worklist_cli_mcp_and_runtime_surface(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_build_legacy_semantic_review_worklist
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.workspace import init_workspace
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+
+    assert main([
+        "--base", str(base), "legacy", "semantic-review-worklist",
+        "--migration-dir", str(run),
+    ]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_legacy_semantic_review_worklist(str(base), migration_dir=str(run))
+
+    assert cli_payload["kind"] == "legacy_semantic_review_worklist"
+    assert mcp_payload["kind"] == "legacy_semantic_review_worklist"
+    assert runtime_entrypoints()["legacy_semantic_review_worklist"] == {
+        "cli": "aitp-v5 legacy semantic-review-worklist <args>",
+        "mcp": "aitp_v5_build_legacy_semantic_review_worklist",
+        "surface": "legacy_semantic_review_worklist",
+    }
+
+
 def test_legacy_semantic_review_result_records_basis_and_updates_queue(tmp_path):
     from brain.v5.legacy_semantic_review import (
         build_legacy_semantic_review_queue,

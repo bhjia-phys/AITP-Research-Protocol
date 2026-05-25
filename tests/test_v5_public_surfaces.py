@@ -35,6 +35,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "legacy_source_reconstruction_plan",
         "legacy_semantic_review_manifest",
         "legacy_semantic_review_packet",
+        "legacy_semantic_review_worklist",
         "legacy_semantic_repair_apply",
         "legacy_semantic_repair_plan",
         "legacy_semantic_review_result_record",
