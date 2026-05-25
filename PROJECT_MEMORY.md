@@ -321,6 +321,16 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   evidence/validation refs, remaining actions, and an optional checkpoint id.
   The semantic review queue reads these records back as
   `semantic_review_status`; the result record cannot update claim trust.
+- Agents can call `aitp-v5 legacy semantic-repair-plan` or
+  `aitp_v5_build_legacy_semantic_repair_plan` to derive a read-only repair plan
+  from typed `needs_revision` legacy semantic review results. Agents can then
+  call `aitp-v5 legacy semantic-repair-apply` or
+  `aitp_v5_apply_legacy_semantic_repair` for the narrow
+  `claim_statement_backfill` repair, which requires the matching review id,
+  updates only the migrated claim statement and topic ledger, and writes a
+  durable `legacy_semantic_repair` record. The repair apply surface may update
+  kernel content state, but it cannot update claim trust or prove semantic
+  losslessness.
 - Agents can call `aitp-v5 memory failure-modes --claim <claim-id>` or
   `aitp_v5_audit_failure_mode_coverage` for a read-only
   `failure_mode_audit` surface. It reports active uncertainty,

@@ -928,6 +928,162 @@ def test_legacy_semantic_repair_plan_cli_mcp_and_runtime_surface(tmp_path, capsy
     }
 
 
+def test_legacy_semantic_repair_apply_backfills_claim_statement_and_records_provenance(tmp_path):
+    from brain.v5.legacy_semantic_repair import apply_legacy_semantic_repair
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.models import ClaimRecord, LegacySemanticRepairRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import list_records, write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    legacy_topic = ws.base / "research" / "aitp-topics" / "canonical-topic"
+    legacy_topic.mkdir(parents=True)
+    question = "Which AdS solutions should be restored into the migrated claim?"
+    (legacy_topic / "state.md").write_text(
+        "# Canonical Topic\n\n## Research Question\n"
+        f"{question}\n\n"
+        "## Notes\nLegacy review found the migrated claim was empty.\n",
+        encoding="utf-8",
+    )
+    claim = ClaimRecord(
+        claim_id="claim-canonical",
+        topic_id="canonical-topic",
+        statement="",
+        evidence_profile="legacy_import",
+        confidence_state="legacy_seed",
+        active_uncertainty="Semantic review required.",
+    )
+    write_record(ws.registry_dir("claims") / "claim-canonical.md", claim)
+    write_record(ws.topic_dir("canonical-topic") / "claims" / "ledger" / "claim-canonical.md", claim)
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="needs_revision",
+        summary="Active claim statement is empty while legacy state.md preserves the research question.",
+        reviewed_legacy_refs=["legacy-topic:canonical-topic/state.md"],
+        reviewed_typed_refs=["claim-canonical"],
+        remaining_actions=["backfill_active_claim_statement_from_legacy_state_question"],
+    )
+
+    result = apply_legacy_semantic_repair(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        repair_type="claim_statement_backfill",
+        review_id=review.review_id,
+    )
+
+    assert result["kind"] == "legacy_semantic_repair_apply"
+    assert result["applied"] is True
+    assert result["repair_type"] == "claim_statement_backfill"
+    assert result["active_claim_id"] == "claim-canonical"
+    assert result["previous_value"] == ""
+    assert result["new_value"] == question
+    assert result["review_id"] == review.review_id
+    assert result["can_update_claim_trust"] is False
+    assert result["can_update_kernel_state"] is True
+    assert result["semantic_lossless_proven"] is False
+    assert require_valid_public_surface("legacy_semantic_repair_apply", result) == result
+
+    claims = {record.claim_id: record for record in list_records(ws.registry_dir("claims"), ClaimRecord)}
+    ledger_claims = {
+        record.claim_id: record
+        for record in list_records(ws.topic_dir("canonical-topic") / "claims" / "ledger", ClaimRecord)
+    }
+    assert claims["claim-canonical"].statement == question
+    assert ledger_claims["claim-canonical"].statement == question
+    assert claims["claim-canonical"].confidence_state == "legacy_seed"
+
+    repairs = list_records(ws.registry_dir("legacy_semantic_repairs"), LegacySemanticRepairRecord)
+    assert [repair.repair_id for repair in repairs] == [result["repair_id"]]
+    assert repairs[0].review_id == review.review_id
+    assert repairs[0].applied is True
+    assert repairs[0].can_update_claim_trust is False
+
+
+def test_legacy_semantic_repair_apply_cli_mcp_and_runtime_surface(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_apply_legacy_semantic_repair
+    from brain.v5.models import ClaimRecord
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+    legacy_topic = ws.base / "research" / "aitp-topics" / "canonical-topic"
+    legacy_topic.mkdir(parents=True)
+    (legacy_topic / "state.md").write_text(
+        "# Canonical Topic\n\n## Research Question\nWhich question should be applied?\n",
+        encoding="utf-8",
+    )
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Semantic review required.",
+        ),
+    )
+    assert main([
+        "--base",
+        str(base),
+        "legacy",
+        "semantic-review-result",
+        "--migration-dir",
+        str(run),
+        "--topic",
+        "canonical-topic",
+        "--status",
+        "needs_revision",
+        "--legacy-ref",
+        "legacy-topic:canonical-topic/state.md",
+        "--typed-ref",
+        "claim-canonical",
+        "--summary",
+        "Claim statement needs apply-surface backfill.",
+    ]) == 0
+    review_payload = json.loads(capsys.readouterr().out)
+
+    assert main([
+        "--base", str(base), "legacy", "semantic-repair-apply",
+        "--migration-dir", str(run),
+        "--topic", "canonical-topic",
+        "--repair-type", "claim_statement_backfill",
+        "--review-id", review_payload["review_id"],
+    ]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_apply_legacy_semantic_repair(
+        str(base),
+        migration_dir=str(run),
+        topic="canonical-topic",
+        repair_type="claim_statement_backfill",
+        review_id=review_payload["review_id"],
+    )
+
+    assert cli_payload["kind"] == "legacy_semantic_repair_apply"
+    assert cli_payload["applied"] is True
+    assert cli_payload["can_update_claim_trust"] is False
+    assert mcp_payload["ok"] is True
+    assert mcp_payload["kind"] == "legacy_semantic_repair_apply"
+    assert mcp_payload["applied"] is False
+    assert mcp_payload["required_actions"] == ["select_available_repair"]
+    assert runtime_entrypoints()["legacy_semantic_repair_apply"] == {
+        "cli": "aitp-v5 legacy semantic-repair-apply <args>",
+        "mcp": "aitp_v5_apply_legacy_semantic_repair",
+        "surface": "legacy_semantic_repair_apply",
+    }
+
+
 def test_legacy_migration_converts_all_candidates_and_reviews_to_typed_records(tmp_path):
     from brain.v5.evidence import list_evidence_for_claim
     from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5

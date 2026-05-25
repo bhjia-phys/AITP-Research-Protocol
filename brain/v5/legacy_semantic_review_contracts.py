@@ -269,6 +269,55 @@ def require_valid_legacy_semantic_repair_plan(payload: dict[str, Any]) -> dict[s
     return payload
 
 
+def validate_legacy_semantic_repair_apply(
+    payload: dict[str, Any],
+    *,
+    path: str = "legacy_semantic_repair_apply",
+) -> ContractResult:
+    result = ContractResult()
+    if not isinstance(payload, dict):
+        result.add(path, "must be a mapping")
+        return result
+    if payload.get("kind") != "legacy_semantic_repair_apply":
+        result.add(f"{path}.kind", "must be 'legacy_semantic_repair_apply'")
+    for key in (
+        "repair_id",
+        "run_id",
+        "migration_dir",
+        "topic",
+        "active_claim_id",
+        "review_id",
+        "repair_type",
+    ):
+        if not isinstance(payload.get(key), str) or not payload.get(key):
+            result.add(f"{path}.{key}", "must be a non-empty string")
+    if payload.get("repair_type") != "claim_statement_backfill":
+        result.add(f"{path}.repair_type", "must be 'claim_statement_backfill'")
+    for key in ("previous_value", "new_value"):
+        if not isinstance(payload.get(key), str):
+            result.add(f"{path}.{key}", "must be a string")
+    for key in ("basis_refs", "required_actions"):
+        if not isinstance(payload.get(key), list) or not all(isinstance(value, str) for value in payload[key]):
+            result.add(f"{path}.{key}", "must be a list of strings")
+    for key in ("applied", "semantic_lossless_proven", "summary_inputs_trusted", "can_update_kernel_state", "can_update_claim_trust"):
+        if not isinstance(payload.get(key), bool):
+            result.add(f"{path}.{key}", "must be a boolean")
+    if payload.get("semantic_lossless_proven") is not False:
+        result.add(f"{path}.semantic_lossless_proven", "must be false")
+    if payload.get("summary_inputs_trusted") is not False:
+        result.add(f"{path}.summary_inputs_trusted", "must be false")
+    if payload.get("can_update_claim_trust") is not False:
+        result.add(f"{path}.can_update_claim_trust", "must be false")
+    return result
+
+
+def require_valid_legacy_semantic_repair_apply(payload: dict[str, Any]) -> dict[str, Any]:
+    result = validate_legacy_semantic_repair_apply(payload)
+    if not result.ok:
+        raise ContractError(result)
+    return payload
+
+
 def _validate_priority_counts(payload: Any, path: str, result: ContractResult) -> None:
     if not isinstance(payload, dict):
         result.add(path, "must be a mapping")

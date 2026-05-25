@@ -397,6 +397,29 @@ class LegacySemanticReviewResultRecord:
 
 
 @dataclass
+class LegacySemanticRepairRecord:
+    repair_id: str
+    migration_run_id: str
+    migration_dir: str
+    topic: str
+    active_claim_id: str
+    review_id: str
+    repair_type: str
+    previous_value: str
+    new_value: str
+    basis_refs: list[str] = field(default_factory=list)
+    applied: bool = False
+    required_actions: list[str] = field(default_factory=list)
+    summary_inputs_trusted: bool = False
+    can_update_claim_trust: bool = False
+    kind: str = "legacy_semantic_repair"
+
+    @property
+    def record_id(self) -> str:
+        return self.repair_id
+
+
+@dataclass
 class PromotionPacketRecord:
     packet_id: str
     topic_id: str
