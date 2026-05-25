@@ -28,6 +28,7 @@ _PUBLIC_SURFACE_NAMES = (
     "l2_memory_audit",
     "legacy_migration_coverage_audit",
     "legacy_migration_result",
+    "legacy_semantic_review_result_record",
     "legacy_semantic_review_queue",
     "memory_entry_record",
     "object_relation_record",
@@ -84,6 +85,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "l2_memory_audit": "read-only typed-record audit of L2 memory provenance for one claim",
     "legacy_migration_coverage_audit": "read-only audit of legacy migration file accounting, archive references, and per-topic coverage without claiming semantic proof",
     "legacy_migration_result": "contracted explicit migration result from legacy topic files into v5 typed records",
+    "legacy_semantic_review_result_record": "contracted per-topic legacy migration semantic review result with explicit review basis and no claim-trust mutation authority",
     "legacy_semantic_review_queue": "orientation-only per-topic semantic review queue for completed legacy migrations, linking accounting coverage to typed source reconstruction gaps without claiming semantic proof",
     "memory_entry_record": "contracted L2 memory entry created only from evidence-backed promotion packets with human approval",
     "object_relation_record": "contracted object-relation record linking physics objects with typed relations, failure modes, and assumptions",
@@ -199,7 +201,10 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     )
     from brain.v5.legacy_contracts import require_valid_legacy_migration_result
     from brain.v5.legacy_migration_audit_contracts import require_valid_legacy_migration_coverage_audit
-    from brain.v5.legacy_semantic_review_contracts import require_valid_legacy_semantic_review_queue
+    from brain.v5.legacy_semantic_review_contracts import (
+        require_valid_legacy_semantic_review_queue,
+        require_valid_legacy_semantic_review_result_record,
+    )
     from brain.v5.host_readiness_contracts import require_valid_runtime_host_readiness_audit
     from brain.v5.host_lifecycle_contracts import require_valid_runtime_host_lifecycle_audit
     from brain.v5.interaction_preview_contracts import require_valid_interaction_recording_preview
@@ -245,6 +250,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "l2_memory_audit": require_valid_l2_memory_audit,
         "legacy_migration_coverage_audit": require_valid_legacy_migration_coverage_audit,
         "legacy_migration_result": require_valid_legacy_migration_result,
+        "legacy_semantic_review_result_record": require_valid_legacy_semantic_review_result_record,
         "legacy_semantic_review_queue": require_valid_legacy_semantic_review_queue,
         "memory_entry_record": require_valid_memory_entry_record,
         "object_relation_record": require_valid_object_relation_record,

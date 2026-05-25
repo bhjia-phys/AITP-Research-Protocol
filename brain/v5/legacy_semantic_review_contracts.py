@@ -69,6 +69,53 @@ def require_valid_legacy_semantic_review_queue(payload: dict[str, Any]) -> dict[
     return payload
 
 
+def validate_legacy_semantic_review_result_record(
+    payload: dict[str, Any],
+    *,
+    path: str = "legacy_semantic_review_result_record",
+) -> ContractResult:
+    result = ContractResult()
+    if not isinstance(payload, dict):
+        result.add(path, "must be a mapping")
+        return result
+    if payload.get("ok") is not True:
+        result.add(f"{path}.ok", "must be true")
+    if payload.get("kind") != "legacy_semantic_review_result":
+        result.add(f"{path}.kind", "must be 'legacy_semantic_review_result'")
+    for key in ("review_id", "migration_run_id", "migration_dir", "topic", "status", "summary", "reviewer_role"):
+        if not isinstance(payload.get(key), str) or not payload.get(key):
+            result.add(f"{path}.{key}", "must be a non-empty string")
+    if payload.get("status") not in {"passed", "needs_revision", "inconclusive"}:
+        result.add(f"{path}.status", "must be passed, needs_revision, or inconclusive")
+    for key in (
+        "reviewed_legacy_refs",
+        "reviewed_typed_refs",
+        "evidence_refs",
+        "validation_result_ids",
+        "remaining_actions",
+    ):
+        if not isinstance(payload.get(key), list) or not all(isinstance(value, str) for value in payload[key]):
+            result.add(f"{path}.{key}", "must be a list of strings")
+    basis_keys = ("reviewed_legacy_refs", "reviewed_typed_refs", "evidence_refs", "validation_result_ids")
+    if all(isinstance(payload.get(key), list) and len(payload[key]) == 0 for key in basis_keys):
+        result.add(f"{path}.reviewed_legacy_refs", "review basis must cite at least one legacy, typed, evidence, or validation reference")
+    for key in ("active_claim_id", "checkpoint_id"):
+        if not isinstance(payload.get(key, ""), str):
+            result.add(f"{path}.{key}", "must be a string")
+    if payload.get("summary_inputs_trusted") is not False:
+        result.add(f"{path}.summary_inputs_trusted", "must be false")
+    if payload.get("can_update_claim_trust") is not False:
+        result.add(f"{path}.can_update_claim_trust", "must be false")
+    return result
+
+
+def require_valid_legacy_semantic_review_result_record(payload: dict[str, Any]) -> dict[str, Any]:
+    result = validate_legacy_semantic_review_result_record(payload)
+    if not result.ok:
+        raise ContractError(result)
+    return payload
+
+
 def _validate_priority_counts(payload: Any, path: str, result: ContractResult) -> None:
     if not isinstance(payload, dict):
         result.add(path, "must be a mapping")
@@ -119,6 +166,20 @@ def _validate_item(payload: Any, path: str, result: ContractResult) -> None:
     if not isinstance(payload.get("written_records"), dict):
         result.add(f"{path}.written_records", "must be a mapping")
     _validate_source_reconstruction(payload.get("source_reconstruction"), f"{path}.source_reconstruction", result)
+    if payload.get("semantic_review_status") not in {
+        "pending",
+        "reviewed_passed",
+        "reviewed_needs_revision",
+        "reviewed_inconclusive",
+    }:
+        result.add(f"{path}.semantic_review_status", "must be an allowed semantic review status")
+    if not isinstance(payload.get("semantic_review_result_ids"), list) or not all(
+        isinstance(value, str) for value in payload.get("semantic_review_result_ids", [])
+    ):
+        result.add(f"{path}.semantic_review_result_ids", "must be a list of strings")
+    latest = payload.get("latest_semantic_review")
+    if latest is not None and not isinstance(latest, dict):
+        result.add(f"{path}.latest_semantic_review", "must be a mapping")
     for key in ("review_reasons", "recommended_actions"):
         if not isinstance(payload.get(key), list) or not all(isinstance(value, str) for value in payload[key]):
             result.add(f"{path}.{key}", "must be a list of strings")

@@ -31,6 +31,7 @@ _LAYOUT_DIRS = [
     "registry/trust_updates",
     "registry/checkpoints",
     "registry/promotion_packets",
+    "registry/legacy_semantic_reviews",
     "registry/outputs",
     "memory/l2/entries",
     "memory/l2/graph",

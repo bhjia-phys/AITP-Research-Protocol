@@ -23,6 +23,7 @@ from brain.v5.mcp_legacy import (
     aitp_v5_audit_legacy_migration_coverage,
     aitp_v5_build_legacy_semantic_review_queue,
     aitp_v5_migrate_legacy_topic_to_v5,
+    aitp_v5_record_legacy_semantic_review_result,
 )
 from brain.v5.hook_smoke_coverage import runtime_hook_smoke_coverage_report
 from brain.v5.knowledge_connectors import describe_knowledge_connectors

@@ -121,6 +121,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_build_legacy_semantic_review_queue",
         "surface": "legacy_semantic_review_queue",
     },
+    "record_legacy_semantic_review_result": {
+        "cli": "aitp-v5 legacy semantic-review-result <args>",
+        "mcp": "aitp_v5_record_legacy_semantic_review_result",
+        "surface": "legacy_semantic_review_result_record",
+    },
     "summary_orientation": {
         "cli": "aitp-v5 summary orientation <session-id>",
         "mcp": "aitp_v5_read_summary_orientation",
@@ -357,6 +362,19 @@ def sample_args_for_template(template: str) -> list[str]:
         return [
             "--migration-dir",
             "D:/aitp/.aitp/migrations/legacy-v5-lossless-run",
+        ]
+    if template.startswith("legacy semantic-review-result"):
+        return [
+            "--migration-dir",
+            "D:/aitp/.aitp/migrations/legacy-v5-lossless-run",
+            "--topic",
+            "fqhe",
+            "--status",
+            "inconclusive",
+            "--legacy-ref",
+            "legacy-topic:state.md",
+            "--summary",
+            "Semantic review sample.",
         ]
     if template.startswith("object record"):
         return [

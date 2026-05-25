@@ -21,6 +21,9 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["migrate_legacy_topic"]["surface"] == "legacy_migration_result"
     assert entrypoints["legacy_migration_coverage_audit"]["surface"] == "legacy_migration_coverage_audit"
     assert entrypoints["legacy_semantic_review_queue"]["surface"] == "legacy_semantic_review_queue"
+    assert entrypoints["record_legacy_semantic_review_result"]["surface"] == (
+        "legacy_semantic_review_result_record"
+    )
     assert entrypoints["record_validation_result"]["surface"] == "validation_result_record"
     assert entrypoints["record_evidence"]["mcp"] == "aitp_v5_record_evidence"
     assert entrypoints["record_code_state"]["mcp"] == "aitp_v5_record_code_state"
@@ -31,6 +34,9 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["migrate_legacy_topic"]["mcp"] == "aitp_v5_migrate_legacy_topic_to_v5"
     assert entrypoints["legacy_migration_coverage_audit"]["mcp"] == "aitp_v5_audit_legacy_migration_coverage"
     assert entrypoints["legacy_semantic_review_queue"]["mcp"] == "aitp_v5_build_legacy_semantic_review_queue"
+    assert entrypoints["record_legacy_semantic_review_result"]["mcp"] == (
+        "aitp_v5_record_legacy_semantic_review_result"
+    )
     assert entrypoints["record_validation_result"]["mcp"] == "aitp_v5_record_validation_result"
     assert entrypoints["get_trust_update_record"] == {
         "cli": "aitp-v5 trust update-record <args>",

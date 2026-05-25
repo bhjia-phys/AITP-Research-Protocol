@@ -6265,3 +6265,50 @@ Each entry should record:
 - Residual risks:
   - the queue makes semantic review auditable and actionable; it does not
     complete the human/physics review for every migrated topic.
+
+### pending - Record Legacy Semantic Review Results
+
+- Task: add a typed per-topic review result so migrated legacy topics can be
+  closed one by one after actual semantic review.
+- Planning source:
+  - follow-up to `a764fc2`; a queue made old-topic semantic review visible, but
+    the kernel still needed a durable way to record review outcomes and basis
+    without updating claim trust.
+- Changed files:
+  - `brain/v5/models.py`
+  - `brain/v5/paths.py`
+  - `brain/v5/legacy_semantic_review.py`
+  - `brain/v5/legacy_semantic_review_contracts.py`
+  - `brain/v5/cli_legacy.py`
+  - `brain/v5/mcp_legacy.py`
+  - `brain/v5/mcp_tools.py`
+  - `brain/v5/public_surfaces.py`
+  - `brain/v5/runtime_entrypoint_catalog.py`
+  - `tests/test_v5_legacy_bridge.py`
+  - `tests/test_v5_public_surfaces.py`
+  - `tests/test_v5_runtime_entrypoints.py`
+  - `README.md`
+  - `PROJECT_MEMORY.md`
+  - `docs/superpowers/progress/2026-05-20-aitp-v5-implementation-ledger.md`
+- Public/runtime behavior changes:
+  - added typed record `LegacySemanticReviewResultRecord`;
+  - added registry path `registry/legacy_semantic_reviews`;
+  - added public surface `legacy_semantic_review_result_record`;
+  - added CLI `aitp-v5 legacy semantic-review-result`;
+  - added MCP wrapper `aitp_v5_record_legacy_semantic_review_result`;
+  - semantic review queue now reports `semantic_review_status`,
+    `semantic_review_result_ids`, and `latest_semantic_review` for topics with
+    recorded review outcomes.
+- Tests:
+  - record result requires an explicit legacy/typed/evidence/validation review
+    basis and preserves `summary_inputs_trusted=false` plus
+    `can_update_claim_trust=false`;
+  - queue reads back recorded review status;
+  - CLI/MCP/runtime/public-surface registries expose the result record.
+- Verification:
+  - targeted related set:
+    `python -m pytest tests/test_v5_legacy_bridge.py tests/test_v5_public_surfaces.py tests/test_v5_runtime_entrypoints.py tests/test_v5_architecture_boundaries.py -q`:
+    56 passed.
+- Residual risks:
+  - this adds the durable result mechanism; it does not perform the actual
+    human/physics semantic review of all migrated topics by itself.

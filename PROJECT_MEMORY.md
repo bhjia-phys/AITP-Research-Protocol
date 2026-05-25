@@ -314,6 +314,13 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   source-reconstruction status, review priority, review reasons, and
   recommended actions. The queue is orientation-only and cannot update kernel
   state or claim trust; it operationalizes semantic review without proving it.
+- Agents can call `aitp-v5 legacy semantic-review-result` or
+  `aitp_v5_record_legacy_semantic_review_result` to persist a per-topic
+  `legacy_semantic_review_result_record` after actual review. The record stores
+  status, summary, reviewed legacy refs, reviewed typed refs,
+  evidence/validation refs, remaining actions, and an optional checkpoint id.
+  The semantic review queue reads these records back as
+  `semantic_review_status`; the result record cannot update claim trust.
 - Agents can call `aitp-v5 memory failure-modes --claim <claim-id>` or
   `aitp_v5_audit_failure_mode_coverage` for a read-only
   `failure_mode_audit` surface. It reports active uncertainty,

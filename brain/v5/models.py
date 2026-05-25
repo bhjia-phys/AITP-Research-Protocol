@@ -376,6 +376,27 @@ class FailureModeReviewResultRecord:
 
 
 @dataclass
+class LegacySemanticReviewResultRecord:
+    review_id: str
+    migration_run_id: str
+    migration_dir: str
+    topic: str
+    status: str
+    summary: str
+    active_claim_id: str = ""
+    reviewer_role: str = "human_or_adversarial_reviewer"
+    reviewed_legacy_refs: list[str] = field(default_factory=list)
+    reviewed_typed_refs: list[str] = field(default_factory=list)
+    evidence_refs: list[str] = field(default_factory=list)
+    validation_result_ids: list[str] = field(default_factory=list)
+    remaining_actions: list[str] = field(default_factory=list)
+    checkpoint_id: str = ""
+    summary_inputs_trusted: bool = False
+    can_update_claim_trust: bool = False
+    kind: str = "legacy_semantic_review_result"
+
+
+@dataclass
 class PromotionPacketRecord:
     packet_id: str
     topic_id: str

@@ -28,6 +28,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "l2_memory_audit",
         "legacy_migration_coverage_audit",
         "legacy_migration_result",
+        "legacy_semantic_review_result_record",
         "legacy_semantic_review_queue",
         "memory_entry_record",
         "object_relation_record",

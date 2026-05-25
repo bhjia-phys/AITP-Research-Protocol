@@ -249,6 +249,13 @@ review reasons, and recommended actions such as source reconstruction,
 archive-reference sampling, validation/failure-mode recording, and a human
 checkpoint before promotion. This queue is also orientation-only: it makes
 semantic review operational but still keeps `semantic_lossless_proven=false`.
+When a topic is actually reviewed, `aitp-v5 legacy semantic-review-result` and
+`aitp_v5_record_legacy_semantic_review_result` persist a typed
+`legacy_semantic_review_result_record` with status, summary, reviewed legacy
+refs, reviewed typed refs, evidence/validation refs, remaining actions, and an
+optional checkpoint id. The queue reads these records back as
+`semantic_review_status`, so migrated topics can be closed one by one without
+letting the review record update claim trust.
 `aitp-v5 memory failure-mode-review --claim <claim-id>` and
 `aitp_v5_build_failure_mode_review_packet` turn that typed audit into a
 read-only `failure_mode_review_packet`: per-mode physical adequacy questions,
