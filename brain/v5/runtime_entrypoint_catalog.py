@@ -127,6 +127,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_build_legacy_l2_graph_manifest",
         "surface": "legacy_l2_graph_manifest",
     },
+    "legacy_l2_obsidian_view": {
+        "cli": "aitp-v5 legacy l2-obsidian-view <args>",
+        "mcp": "aitp_v5_write_legacy_l2_obsidian_view",
+        "surface": "legacy_l2_obsidian_view_bundle",
+    },
     "legacy_semantic_review_queue": {
         "cli": "aitp-v5 legacy semantic-review-queue <args>",
         "mcp": "aitp_v5_build_legacy_semantic_review_queue",

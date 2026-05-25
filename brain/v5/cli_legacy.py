@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from brain.v5.legacy_l2_graph import build_legacy_l2_graph_manifest
+from brain.v5.legacy_l2_obsidian import write_legacy_l2_obsidian_view
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
 from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
@@ -30,6 +31,9 @@ def add_legacy_parser(subparsers) -> None:
     audit.add_argument("--migration-dir", default="")
     l2_graph = legacy_subparsers.add_parser("l2-graph-manifest")
     l2_graph.add_argument("--legacy-l2-dir", default="")
+    l2_obsidian = legacy_subparsers.add_parser("l2-obsidian-view")
+    l2_obsidian.add_argument("--legacy-l2-dir", default="")
+    l2_obsidian.add_argument("--output-dir", default="")
     review = legacy_subparsers.add_parser("semantic-review-queue")
     review.add_argument("--migration-dir", default="")
     manifest = legacy_subparsers.add_parser("semantic-review-manifest")
@@ -83,6 +87,13 @@ def dispatch_legacy_command(args, ws) -> dict:
     if args.legacy_command == "l2-graph-manifest":
         manifest = build_legacy_l2_graph_manifest(ws, legacy_l2_dir=args.legacy_l2_dir)
         return {"ok": True, **require_valid_public_surface("legacy_l2_graph_manifest", manifest)}
+    if args.legacy_command == "l2-obsidian-view":
+        bundle = write_legacy_l2_obsidian_view(
+            ws,
+            legacy_l2_dir=args.legacy_l2_dir,
+            output_dir=args.output_dir,
+        )
+        return {"ok": True, **require_valid_public_surface("legacy_l2_obsidian_view_bundle", bundle)}
     if args.legacy_command == "semantic-review-queue":
         queue = build_legacy_semantic_review_queue(ws, migration_dir=args.migration_dir or None)
         return {"ok": True, **require_valid_public_surface("legacy_semantic_review_queue", queue)}

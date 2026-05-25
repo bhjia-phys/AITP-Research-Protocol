@@ -237,6 +237,11 @@ Legacy global `L2/` graphs can be inspected with
 legacy entries and graph files, lists view targets, and recommends typed L2
 memory/object-relation migration without treating the old graph as trusted
 kernel state.
+`aitp-v5 legacy l2-obsidian-view` and
+`aitp_v5_write_legacy_l2_obsidian_view` write a derived
+`.aitp/surfaces/legacy_l2_obsidian` view for browsing those legacy entries
+before migration. It keeps `truth_source=false`, `memory_entry_count=0`, and
+cannot update kernel state or claim trust.
 Host adapters that want one startup refresh point can call
 `aitp-v5 summary refresh` or `aitp_v5_refresh_workspace_views`. The contracted
 `workspace_refresh_bundle` regenerates the workspace summary, replay packet,

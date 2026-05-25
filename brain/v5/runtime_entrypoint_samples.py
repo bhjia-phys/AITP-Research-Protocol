@@ -39,6 +39,8 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["D:/aitp/legacy-topic", "--context", "legacy-context", "--session", "s1"]
     if template.startswith("legacy l2-graph-manifest"):
         return ["--legacy-l2-dir", "D:/aitp/research/aitp-topics/L2"]
+    if template.startswith("legacy l2-obsidian-view"):
+        return ["--legacy-l2-dir", "D:/aitp/research/aitp-topics/L2"]
     if template.startswith(("legacy migration-audit", "legacy semantic-review-queue")):
         return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run"]
     if template.startswith("legacy semantic-review-manifest"):

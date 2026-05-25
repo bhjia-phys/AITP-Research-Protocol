@@ -311,6 +311,12 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   graph nodes/edges/steps/towers, records Obsidian view targets, and recommends
   typed L2 memory/object-relation migration while keeping the legacy graph
   orientation-only and unable to update trust.
+- Agents can call `aitp-v5 legacy l2-obsidian-view` or
+  `aitp_v5_write_legacy_l2_obsidian_view` to write a derived
+  orientation-only Obsidian view under `.aitp/surfaces/legacy_l2_obsidian`.
+  The view lists legacy entries and graph counts for browsing/triage, keeps
+  `truth_source=false`, reports `memory_entry_count=0`, and requires typed L2
+  migration before any trust update.
 - Agents can call `aitp-v5 summary refresh` or
   `aitp_v5_refresh_workspace_views` as a single host-startup refresh point.
   It regenerates the workspace summary, replay packet, and active-session L2
