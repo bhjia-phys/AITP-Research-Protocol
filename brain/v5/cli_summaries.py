@@ -18,7 +18,8 @@ def add_summary_parser(subparsers) -> None:
     commands.add_parser("workspace")
     replay = commands.add_parser("replay")
     replay.add_argument("--migration-dir", default="")
-    commands.add_parser("refresh")
+    refresh = commands.add_parser("refresh")
+    refresh.add_argument("--migration-dir", default="")
 
 
 def dispatch_summary_command(args, ws) -> dict:
@@ -34,5 +35,11 @@ def dispatch_summary_command(args, ws) -> dict:
         bundle = write_workspace_replay_packet(ws, migration_dir=args.migration_dir or None)
         return {"ok": True, **require_valid_public_surface("workspace_replay_packet", asdict(bundle))}
     if args.summary_command == "refresh":
-        return {"ok": True, **require_valid_public_surface("workspace_refresh_bundle", refresh_workspace_views(ws))}
+        return {
+            "ok": True,
+            **require_valid_public_surface(
+                "workspace_refresh_bundle",
+                refresh_workspace_views(ws, migration_dir=args.migration_dir or None),
+            ),
+        }
     raise ValueError(f"unknown summary command: {args.summary_command}")

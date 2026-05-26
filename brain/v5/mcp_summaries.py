@@ -31,5 +31,11 @@ def aitp_v5_write_workspace_replay_packet(base: str, *, migration_dir: str = "")
     return {"ok": True, **require_valid_public_surface("workspace_replay_packet", asdict(bundle))}
 
 
-def aitp_v5_refresh_workspace_views(base: str) -> dict:
-    return {"ok": True, **require_valid_public_surface("workspace_refresh_bundle", refresh_workspace_views(init_workspace(base)))}
+def aitp_v5_refresh_workspace_views(base: str, *, migration_dir: str = "") -> dict:
+    return {
+        "ok": True,
+        **require_valid_public_surface(
+            "workspace_refresh_bundle",
+            refresh_workspace_views(init_workspace(base), migration_dir=migration_dir or None),
+        ),
+    }

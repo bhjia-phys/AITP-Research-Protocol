@@ -11,7 +11,11 @@ from brain.v5.replay import write_workspace_replay_packet
 from brain.v5.summaries import write_workspace_summary
 
 
-def refresh_workspace_views(ws: WorkspacePaths) -> dict[str, Any]:
+def refresh_workspace_views(
+    ws: WorkspacePaths,
+    *,
+    migration_dir: str | None = None,
+) -> dict[str, Any]:
     """Refresh all orientation-only workspace review views.
 
     Host adapters can call this once at startup to get a current orientation
@@ -19,7 +23,7 @@ def refresh_workspace_views(ws: WorkspacePaths) -> dict[str, Any]:
     """
 
     summary = asdict(write_workspace_summary(ws))
-    replay = asdict(write_workspace_replay_packet(ws))
+    replay = asdict(write_workspace_replay_packet(ws, migration_dir=migration_dir))
     active_claims = summary.get("source_records", {}).get("claims", [])
     obsidian = write_l2_obsidian_view(
         ws,
