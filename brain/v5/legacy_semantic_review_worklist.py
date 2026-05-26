@@ -30,6 +30,8 @@ def build_legacy_semantic_review_worklist(
         "workspace": manifest["workspace"],
         "work_item_count": len(items),
         "status_counts": _status_counts(items),
+        "pass_readiness_counts": _pass_readiness_counts(items),
+        "pass_blocker_counts": _pass_blocker_counts(items),
         "items": items,
         "next_actions": [f"worklist_item:{item['topic']}" for item in items],
         "semantic_lossless_proven": False,
@@ -551,6 +553,28 @@ def _status_counts(items: list[dict[str, Any]]) -> dict[str, int]:
         if status in counts:
             counts[status] += 1
     return counts
+
+
+def _pass_readiness_counts(items: list[dict[str, Any]]) -> dict[str, int]:
+    counts = {"blocked": 0, "candidate": 0}
+    for item in items:
+        readiness = item.get("pass_readiness")
+        status = readiness.get("status") if isinstance(readiness, dict) else ""
+        if status in counts:
+            counts[status] += 1
+    return counts
+
+
+def _pass_blocker_counts(items: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        readiness = item.get("pass_readiness")
+        blockers = readiness.get("blockers") if isinstance(readiness, dict) else []
+        for blocker in blockers or []:
+            key = str(blocker)
+            if key:
+                counts[key] = counts.get(key, 0) + 1
+    return dict(sorted(counts.items()))
 
 
 def _unique(values: list[str]) -> list[str]:

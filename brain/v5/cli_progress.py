@@ -91,6 +91,8 @@ def compact_final_readiness(payload: dict[str, Any]) -> dict[str, Any]:
             "topic_count": int(legacy.get("topic_count") or 0),
             "review_item_count": int(legacy.get("review_item_count") or 0),
             "work_item_count": int(legacy.get("work_item_count") or 0),
+            "pass_readiness_counts": dict(legacy.get("pass_readiness_counts") or {}),
+            "pass_blocker_counts": dict(legacy.get("pass_blocker_counts") or {}),
             "review_progress": legacy_progress,
             "pending_count": int(legacy.get("pending_count") or legacy_progress.get("pending") or 0),
             "needs_revision_count": int(

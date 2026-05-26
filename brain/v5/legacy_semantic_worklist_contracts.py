@@ -34,6 +34,8 @@ def validate_legacy_semantic_review_worklist(
     if not isinstance(payload.get("work_item_count"), int) or payload["work_item_count"] < 0:
         result.add(f"{path}.work_item_count", "must be a non-negative integer")
     _validate_status_counts(payload.get("status_counts"), f"{path}.status_counts", result)
+    _validate_pass_readiness_counts(payload.get("pass_readiness_counts"), f"{path}.pass_readiness_counts", result)
+    _validate_pass_blocker_counts(payload.get("pass_blocker_counts"), f"{path}.pass_blocker_counts", result)
     if not isinstance(payload.get("next_actions"), list):
         result.add(f"{path}.next_actions", "must be a list")
     items = payload.get("items")
@@ -58,6 +60,26 @@ def _validate_status_counts(payload: Any, path: str, result: ContractResult) -> 
         return
     for key in ("needs_revision", "inconclusive", "pending"):
         if not isinstance(payload.get(key), int) or payload[key] < 0:
+            result.add(f"{path}.{key}", "must be a non-negative integer")
+
+
+def _validate_pass_readiness_counts(payload: Any, path: str, result: ContractResult) -> None:
+    if not isinstance(payload, dict):
+        result.add(path, "must be a mapping")
+        return
+    for key in ("blocked", "candidate"):
+        if not isinstance(payload.get(key), int) or payload[key] < 0:
+            result.add(f"{path}.{key}", "must be a non-negative integer")
+
+
+def _validate_pass_blocker_counts(payload: Any, path: str, result: ContractResult) -> None:
+    if not isinstance(payload, dict):
+        result.add(path, "must be a mapping")
+        return
+    for key, value in payload.items():
+        if not isinstance(key, str) or not key:
+            result.add(path, "keys must be non-empty strings")
+        if not isinstance(value, int) or value < 0:
             result.add(f"{path}.{key}", "must be a non-negative integer")
 
 

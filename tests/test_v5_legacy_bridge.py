@@ -815,6 +815,9 @@ def test_legacy_semantic_review_worklist_prioritizes_backlog_without_writing(tmp
     assert worklist["kind"] == "legacy_semantic_review_worklist"
     assert worklist["work_item_count"] == 2
     assert worklist["status_counts"] == {"needs_revision": 1, "inconclusive": 0, "pending": 1}
+    assert worklist["pass_readiness_counts"] == {"blocked": 2, "candidate": 0}
+    assert worklist["pass_blocker_counts"]["source_reconstruction_incomplete"] == 2
+    assert worklist["pass_blocker_counts"]["latest_review_needs_revision"] == 1
     assert worklist["items"][0]["topic"] == "canonical-topic"
     assert worklist["items"][0]["review_status"] == "needs_revision"
     assert worklist["items"][0]["latest_review_id"] == review.review_id

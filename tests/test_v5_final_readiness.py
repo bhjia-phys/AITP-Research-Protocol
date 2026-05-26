@@ -210,6 +210,13 @@ def test_final_readiness_audit_keeps_kernel_capability_separate_from_content_bac
         "legacy_semantic_review_worklist"
     )
     assert payload["content_backlog"]["legacy_semantic_review"]["work_item_count"] == 2
+    assert payload["content_backlog"]["legacy_semantic_review"]["pass_readiness_counts"] == {
+        "blocked": 2,
+        "candidate": 0,
+    }
+    assert payload["content_backlog"]["legacy_semantic_review"]["pass_blocker_counts"][
+        "initial_semantic_review_not_recorded"
+    ] == 2
     assert payload["content_backlog"]["legacy_semantic_review"]["worklist_next_actions"] == [
         "worklist_item:legacy-topic-0",
         "worklist_item:legacy-topic-1",
