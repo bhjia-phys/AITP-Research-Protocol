@@ -22,6 +22,14 @@ def generic_review_action_command(
             workspace=workspace,
             tool_name=_tool_name(action),
         )
+    if _requests_source_search(normalized):
+        return _source_search_command(
+            action,
+            item,
+            review_id=review_id,
+            workspace=workspace,
+            tool_name=_tool_name(action),
+        )
     if normalized.startswith(("design or import ", "implement or import ")):
         return _implementation_boundary_command(
             action,
@@ -39,8 +47,24 @@ def generic_review_action_command(
             workspace=workspace,
             summary=normalized,
         )
+    if normalized.startswith("choose "):
+        return _choice_checkpoint_command(
+            action,
+            item,
+            review_id=review_id,
+            workspace=workspace,
+            reason=normalized,
+        )
     if normalized.startswith("separate "):
         return _scope_partition_command(
+            action,
+            item,
+            review_id=review_id,
+            workspace=workspace,
+            name=_tool_name(action),
+        )
+    if _requests_scope_or_model_definition(normalized):
+        return _scope_or_model_definition_command(
             action,
             item,
             review_id=review_id,
@@ -74,6 +98,30 @@ def _source_readback_command(
             f"--recipe <source-readback-recipe-id> --family source_readback --name {tool_name} "
             f"--topic {item['topic']} --claim {item['active_claim_id']} "
             "--outputs-json <source-readback-json> --source-ref <source-or-code-ref>"
+        ),
+        mcp="aitp_v5_record_tool_run",
+        surface="tool_run_record",
+        effect="typed_record_write",
+        can_update_kernel_state=True,
+    )
+
+
+def _source_search_command(
+    action: str,
+    item: dict[str, Any],
+    *,
+    review_id: str,
+    workspace: str,
+    tool_name: str,
+) -> dict[str, Any]:
+    return _command(
+        action,
+        review_id=review_id,
+        cli=(
+            f"aitp-v5 --base {workspace} tool run record "
+            f"--recipe <source-search-recipe-id> --family source_search --name {tool_name} "
+            f"--topic {item['topic']} --claim {item['active_claim_id']} "
+            "--outputs-json <source-search-json> --source-ref <source-or-query-ref>"
         ),
         mcp="aitp_v5_record_tool_run",
         surface="tool_run_record",
@@ -132,6 +180,28 @@ def _validation_result_command(
     )
 
 
+def _choice_checkpoint_command(
+    action: str,
+    item: dict[str, Any],
+    *,
+    review_id: str,
+    workspace: str,
+    reason: str,
+) -> dict[str, Any]:
+    return _command(
+        action,
+        review_id=review_id,
+        cli=(
+            f"aitp-v5 --base {workspace} checkpoint request "
+            f"--topic {item['topic']} --claim {item['active_claim_id']} "
+            f"--reason <{reason}> --requested-by legacy_semantic_review "
+            "--option record_choice --option keep_backlog_blocking"
+        ),
+        mcp="aitp_v5_request_human_checkpoint",
+        surface="human_checkpoint_record",
+    )
+
+
 def _scope_partition_command(
     action: str,
     item: dict[str, Any],
@@ -148,6 +218,30 @@ def _scope_partition_command(
             f"--topic {item['topic']} --type <scope_boundary_or_claim_partition> "
             f"--name {name} --definition <source-grounded scope partition> "
             "--assumption <separate claim scopes before promotion> --source-ref <legacy-or-typed-source-ref>"
+        ),
+        mcp="aitp_v5_record_physics_object",
+        surface="physics_object_record",
+        effect="typed_record_write",
+        can_update_kernel_state=True,
+    )
+
+
+def _scope_or_model_definition_command(
+    action: str,
+    item: dict[str, Any],
+    *,
+    review_id: str,
+    workspace: str,
+    name: str,
+) -> dict[str, Any]:
+    return _command(
+        action,
+        review_id=review_id,
+        cli=(
+            f"aitp-v5 --base {workspace} object record "
+            f"--topic {item['topic']} --type <scope_or_model_definition> "
+            f"--name {name} --definition <source-grounded scope or model definition> "
+            "--assumption <reviewed boundary before promotion> --source-ref <legacy-or-typed-source-ref>"
         ),
         mcp="aitp_v5_record_physics_object",
         surface="physics_object_record",
@@ -200,17 +294,31 @@ def _requests_source_readback(normalized_action: str) -> bool:
     )
 
 
+def _requests_source_search(normalized_action: str) -> bool:
+    return (
+        normalized_action.startswith(("perform external source search ", "add "))
+        and ("source" in normalized_action or "sources" in normalized_action)
+    )
+
+
 def _requests_validation_result(normalized_action: str) -> bool:
     return normalized_action.startswith(
         (
+            "audit ",
+            "confirm ",
             "verify ",
             "validate ",
             "compare ",
             "reproduce ",
             "reproduce or audit ",
+            "run ",
             "test ",
         )
     )
+
+
+def _requests_scope_or_model_definition(normalized_action: str) -> bool:
+    return normalized_action.startswith(("define ", "specify ", "retain "))
 
 
 def _requests_sensemaking_report(normalized_action: str) -> bool:

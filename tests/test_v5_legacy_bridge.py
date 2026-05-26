@@ -1319,6 +1319,94 @@ def test_legacy_semantic_review_worklist_maps_generic_readback_and_validation_ac
     assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
 
 
+def test_legacy_semantic_review_worklist_maps_planning_source_search_and_checkpoint_actions(tmp_path):
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
+    from brain.v5.models import ClaimRecord, ValidationContractRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="A broad legacy claim needs source search, scope choices, and validation before promotion.",
+            evidence_profile="formal_theory",
+            confidence_state="legacy_seed",
+            active_uncertainty="Semantic review still needs planning and evidence production.",
+        ),
+    )
+    write_record(
+        ws.registry_dir("validation_contracts") / "validation-contract-planning.md",
+        ValidationContractRecord(
+            contract_id="validation-contract-planning",
+            topic_id="canonical-topic",
+            claim_id="claim-canonical",
+            required_checks=["audit_time_grid_krylov_depth_and_operator_seed_sensitivity"],
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="Planning, source search, and validation actions remain.",
+        reviewed_typed_refs=["claim-canonical", "validation-contract-planning"],
+        remaining_actions=[
+            "perform_external_source_search_for_ads_boundary_conditions_and_open_system_baths",
+            "add_scRPA_theory_and_FHI_aims_interface_sources",
+            "specify_exact_double_ads_geometry_and_flat_bath_matching",
+            "define_stochastic_switch_law_and_regularization",
+            "choose_bulk_matter_model_and_check_energy_flux_unitarity",
+            "confirm_velocity_format_and_meanfield_reference_semantics_against_current_binary",
+            "audit_time_grid_krylov_depth_and_operator_seed_sensitivity",
+            "run_two_level_or_H2_small_temperature_diagonal_potential_test",
+            "retain_haldane_shastry_alpha2_as_integrable_yangian_anchor",
+            "decide_human_checkpoint_before_any_claim_trust_promotion",
+        ],
+    )
+
+    worklist = build_legacy_semantic_review_worklist(ws, migration_dir=run)
+
+    item = next(item for item in worklist["items"] if item["topic"] == "canonical-topic")
+    commands = {command["action"]: command for command in item["review_action_commands"]}
+    source_search = commands["perform_external_source_search_for_ads_boundary_conditions_and_open_system_baths"]
+    assert source_search["latest_review_id"] == review.review_id
+    assert source_search["surface"] == "tool_run_record"
+    assert "--recipe <source-search-recipe-id> --family source_search " in source_search["cli"]
+    assert "--outputs-json <source-search-json> --source-ref <source-or-query-ref>" in source_search["cli"]
+    add_sources = commands["add_scRPA_theory_and_FHI_aims_interface_sources"]
+    assert add_sources["surface"] == "tool_run_record"
+    assert "--family source_search " in add_sources["cli"]
+    specify = commands["specify_exact_double_ads_geometry_and_flat_bath_matching"]
+    assert specify["surface"] == "physics_object_record"
+    assert "--type <scope_or_model_definition> " in specify["cli"]
+    define = commands["define_stochastic_switch_law_and_regularization"]
+    assert define["surface"] == "physics_object_record"
+    choose = commands["choose_bulk_matter_model_and_check_energy_flux_unitarity"]
+    assert choose["surface"] == "human_checkpoint_record"
+    assert "--option record_choice --option keep_backlog_blocking" in choose["cli"]
+    confirm = commands["confirm_velocity_format_and_meanfield_reference_semantics_against_current_binary"]
+    assert confirm["surface"] == "validation_result_record"
+    assert "--contract validation-contract-planning " in confirm["cli"]
+    audit = commands["audit_time_grid_krylov_depth_and_operator_seed_sensitivity"]
+    assert audit["surface"] == "validation_result_record"
+    run_validation = commands["run_two_level_or_H2_small_temperature_diagonal_potential_test"]
+    assert run_validation["surface"] == "validation_result_record"
+    retain = commands["retain_haldane_shastry_alpha2_as_integrable_yangian_anchor"]
+    assert retain["surface"] == "physics_object_record"
+    assert "--type <scope_or_model_definition> " in retain["cli"]
+    trust_checkpoint = commands["decide_human_checkpoint_before_any_claim_trust_promotion"]
+    assert trust_checkpoint["surface"] == "human_checkpoint_record"
+    assert "--reason <legacy semantic review promotion decision>" in trust_checkpoint["cli"]
+    assert all(command["can_update_claim_trust"] is False for command in item["review_action_commands"])
+    assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
+
+
 def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(tmp_path):
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
     from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist

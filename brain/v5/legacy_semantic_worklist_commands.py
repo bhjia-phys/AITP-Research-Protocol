@@ -201,7 +201,7 @@ def _review_action_command(
             effect="typed_review_record_write",
             can_update_kernel_state=True,
         )
-    if action == "decide_human_checkpoint_before_promotion":
+    if action.startswith("decide_human_checkpoint_before"):
         return _command(
             action,
             review_id=review_id,
