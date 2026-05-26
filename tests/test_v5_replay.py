@@ -177,6 +177,55 @@ def test_workspace_replay_packet_lists_resume_queue_and_source_gaps(tmp_path):
     assert "orientation only" in body
 
 
+def test_workspace_replay_packet_uses_temporal_source_review_order(tmp_path):
+    import os
+
+    from brain.v5.models import SourceReconstructionReviewResultRecord
+    from brain.v5.replay import write_workspace_replay_packet
+    from brain.v5.store import write_record
+
+    ws, claim, _, _ = _seed_replay_workspace(tmp_path)
+    review_dir = ws.registry_dir("source_reconstruction_reviews")
+    older_path = review_dir / "source-reconstruction-review-z-older.md"
+    newer_path = review_dir / "source-reconstruction-review-a-newer.md"
+    write_record(
+        older_path,
+        SourceReconstructionReviewResultRecord(
+            result_id=older_path.stem,
+            topic_id=claim.topic_id,
+            claim_id=claim.claim_id,
+            status="passed",
+            reviewed_components=["definitions"],
+            basis_refs=["paper:fqhe-counting"],
+            summary="Older replay review should not win because its id sorts later.",
+        ),
+    )
+    write_record(
+        newer_path,
+        SourceReconstructionReviewResultRecord(
+            result_id=newer_path.stem,
+            topic_id=claim.topic_id,
+            claim_id=claim.claim_id,
+            status="inconclusive",
+            reviewed_components=["definitions"],
+            basis_refs=["paper:fqhe-counting"],
+            remaining_actions=["record_missing_scope_review"],
+            summary="Newer replay review should be selected by file mtime for legacy records.",
+        ),
+    )
+    os.utime(older_path, (1_800_000_000, 1_800_000_000))
+    os.utime(newer_path, (1_800_000_100, 1_800_000_100))
+
+    packet = write_workspace_replay_packet(ws)
+
+    entry = next(entry for entry in packet.entries if entry["claim_id"] == claim.claim_id)
+    assert entry["source_reconstruction_review_status"] == "inconclusive"
+    assert entry["source_reconstruction_review_result_ids"] == [
+        older_path.stem,
+        newer_path.stem,
+    ]
+
+
 def test_workspace_replay_packet_can_include_legacy_semantic_review_backlog(tmp_path):
     from dataclasses import asdict
 

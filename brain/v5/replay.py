@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from brain.v5.evidence import required_output_coverage
@@ -49,7 +51,8 @@ def write_workspace_replay_packet(
     evidence = _group_by_claim(list_records(ws.registry_dir("evidence"), EvidenceRecord))
     code_states = list_records(ws.registry_dir("code_states"), CodeStateRecord)
     source_reviews = _group_source_reviews_by_claim(
-        list_records(ws.registry_dir("source_reconstruction_reviews"), SourceReconstructionReviewResultRecord)
+        list_records(ws.registry_dir("source_reconstruction_reviews"), SourceReconstructionReviewResultRecord),
+        review_dir=ws.registry_dir("source_reconstruction_reviews"),
     )
     active_claim_ids = [session.active_claim for session in sessions if session.active_claim]
     memory_entries = scan_memory_entry_summaries(ws, claim_ids=active_claim_ids, active_only=True)
@@ -384,13 +387,32 @@ def _group_by_claim(records: list[EvidenceRecord]) -> dict[str, list[EvidenceRec
 
 def _group_source_reviews_by_claim(
     records: list[SourceReconstructionReviewResultRecord],
+    *,
+    review_dir: Path,
 ) -> dict[str, list[SourceReconstructionReviewResultRecord]]:
     grouped: dict[str, list[SourceReconstructionReviewResultRecord]] = {}
     for record in records:
         grouped.setdefault(record.claim_id, []).append(record)
     for reviews in grouped.values():
-        reviews.sort(key=lambda review: review.result_id)
+        reviews.sort(key=lambda review: _source_review_sort_key(review, review_dir))
     return grouped
+
+
+def _source_review_sort_key(
+    review: SourceReconstructionReviewResultRecord,
+    review_dir: Path,
+) -> tuple[str, str]:
+    return (review.created_at or _source_review_file_mtime(review, review_dir), review.result_id)
+
+
+def _source_review_file_mtime(
+    review: SourceReconstructionReviewResultRecord,
+    review_dir: Path,
+) -> str:
+    path = review_dir / f"{review.result_id}.md"
+    if not path.exists():
+        return ""
+    return datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).isoformat()
 
 
 def _linked_code_states(code_states: list[CodeStateRecord], claim_id: str) -> list[CodeStateRecord]:
