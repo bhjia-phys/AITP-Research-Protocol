@@ -132,6 +132,16 @@ def validate_final_engineering_readiness_audit(
         for index, item in enumerate(legacy.get("top_work_items") or []):
             if isinstance(item, dict):
                 _require_list(
+                    item.get("open_human_checkpoint_refs"),
+                    f"{path}.content_backlog.legacy_semantic_review.top_work_items[{index}].open_human_checkpoint_refs",
+                    result,
+                )
+                _require_list(
+                    item.get("source_reconstruction_review_refs"),
+                    f"{path}.content_backlog.legacy_semantic_review.top_work_items[{index}].source_reconstruction_review_refs",
+                    result,
+                )
+                _require_list(
                     item.get("satisfied_review_actions"),
                     f"{path}.content_backlog.legacy_semantic_review.top_work_items[{index}].satisfied_review_actions",
                     result,
@@ -144,6 +154,11 @@ def validate_final_engineering_readiness_audit(
                 _require_mapping(
                     item.get("pass_readiness"),
                     f"{path}.content_backlog.legacy_semantic_review.top_work_items[{index}].pass_readiness",
+                    result,
+                )
+                _require_list(
+                    item.get("review_action_commands"),
+                    f"{path}.content_backlog.legacy_semantic_review.top_work_items[{index}].review_action_commands",
                     result,
                 )
     source = _mapping(payload.get("content_backlog")).get("source_reconstruction")

@@ -240,6 +240,73 @@ def test_final_readiness_audit_keeps_kernel_capability_separate_from_content_bac
     assert require_valid_public_surface("final_engineering_readiness_audit", payload) == payload
 
 
+def test_final_readiness_top_legacy_items_include_open_checkpoint_commands(tmp_path):
+    from brain.v5.checkpoints import request_human_checkpoint
+    from brain.v5.final_readiness import audit_final_engineering_readiness
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.models import ClaimRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    run = _write_migration_run(ws, topic_count=1)
+    write_record(
+        ws.registry_dir("claims") / "claim-legacy-0.md",
+        ClaimRecord(
+            claim_id="claim-legacy-0",
+            topic_id="legacy-topic-0",
+            statement="The reviewed legacy topic still needs a human semantic decision.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Human checkpoint required before semantic pass.",
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="legacy-topic-0",
+        status="inconclusive",
+        summary="Only the human semantic review checkpoint remains.",
+        active_claim_id="claim-legacy-0",
+        reviewed_typed_refs=["claim-legacy-0"],
+        remaining_actions=["decide_human_checkpoint_before_promotion"],
+    )
+    checkpoint = request_human_checkpoint(
+        ws,
+        topic_id="legacy-topic-0",
+        claim_id="claim-legacy-0",
+        reason="legacy semantic review promotion decision",
+        requested_by="legacy_semantic_review",
+        options=["approve_semantic_review", "keep_backlog_blocking"],
+    )
+
+    payload = audit_final_engineering_readiness(ws, migration_dir=run)
+
+    item = payload["content_backlog"]["legacy_semantic_review"]["top_work_items"][0]
+    assert item["topic"] == "legacy-topic-0"
+    assert item["open_human_checkpoint_refs"] == [f"human-checkpoint:{checkpoint.checkpoint_id}"]
+    assert item["review_action_commands"] == [
+        {
+            "action": "decide_human_checkpoint_before_promotion",
+            "latest_review_id": review.review_id,
+            "checkpoint_id": checkpoint.checkpoint_id,
+            "cli": (
+                f"aitp-v5 --base {ws.base} checkpoint decide {checkpoint.checkpoint_id} "
+                "--decision <approve_semantic_review|keep_backlog_blocking> "
+                "--rationale <human rationale> --decided-by <reviewer>"
+            ),
+            "mcp": "aitp_v5_decide_human_checkpoint",
+            "surface": "human_checkpoint_record",
+            "effect": "typed_record_write",
+            "can_update_kernel_state": True,
+            "can_update_claim_trust": False,
+        }
+    ]
+    assert item["can_update_claim_trust"] is False
+    assert require_valid_public_surface("final_engineering_readiness_audit", payload) == payload
+
+
 def test_final_readiness_audit_reports_missing_legacy_review_without_migration_run(tmp_path):
     from brain.v5.final_readiness import audit_final_engineering_readiness
     from brain.v5.workspace import init_workspace
