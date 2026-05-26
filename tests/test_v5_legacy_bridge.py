@@ -708,6 +708,126 @@ def test_legacy_semantic_review_packet_cli_mcp_and_runtime_surface(tmp_path, cap
     }
 
 
+def test_legacy_semantic_review_packet_cli_compact_progress(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.models import ClaimRecord
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="Migrated canonical claim.",
+            evidence_profile="legacy_import",
+            confidence_state="hypothesis",
+            active_uncertainty="Semantic review required.",
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="Source reconstruction still needs component review.",
+        active_claim_id="claim-canonical",
+        reviewed_legacy_refs=["legacy_l1:canonical-topic/L1/question_contract.md"],
+        reviewed_typed_refs=["claim-canonical"],
+        remaining_actions=["complete_source_reconstruction"],
+    )
+
+    assert main([
+        "--base", str(base), "legacy", "semantic-review-packet",
+        "--migration-dir", str(run),
+        "--topic", "canonical-topic",
+        "--compact",
+    ]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+
+    assert cli_payload["kind"] == "legacy_semantic_review_packet_progress"
+    assert cli_payload["source_surface"] == "legacy_semantic_review_packet"
+    assert cli_payload["topic"] == "canonical-topic"
+    assert cli_payload["active_claim_id"] == "claim-canonical"
+    assert cli_payload["review_status"] == "inconclusive"
+    assert cli_payload["latest_review_id"] == review.review_id
+    assert cli_payload["source_reconstruction_status"] == "incomplete"
+    assert cli_payload["review_basis_ref_count"] >= 2
+    assert "complete_source_reconstruction" in cli_payload["recommended_actions"]
+    assert cli_payload["can_update_claim_trust"] is False
+    assert "typed_records" not in cli_payload
+    assert "queue_item" not in cli_payload
+
+
+def test_legacy_source_reconstruction_review_cli_compact_progress(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.models import ClaimRecord
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="Migrated canonical claim.",
+            evidence_profile="legacy_import",
+            confidence_state="hypothesis",
+            active_uncertainty="Semantic review required.",
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="Source reconstruction still needs component review.",
+        active_claim_id="claim-canonical",
+        reviewed_legacy_refs=["legacy_l1:canonical-topic/L1/question_contract.md"],
+        reviewed_typed_refs=["claim-canonical"],
+        remaining_actions=["complete_source_reconstruction"],
+    )
+
+    assert main([
+        "--base", str(base), "legacy", "source-reconstruction-review",
+        "--migration-dir", str(run),
+        "--topic", "canonical-topic",
+        "--compact",
+    ]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+
+    assert cli_payload["kind"] == "legacy_source_reconstruction_review_packet_progress"
+    assert cli_payload["source_surface"] == "legacy_source_reconstruction_review_packet"
+    assert cli_payload["topic"] == "canonical-topic"
+    assert cli_payload["active_claim_id"] == "claim-canonical"
+    assert cli_payload["latest_review_id"] == review.review_id
+    assert cli_payload["source_reconstruction_status"] == "incomplete"
+    assert cli_payload["missing_components"] == [
+        "definitions",
+        "assumptions_or_scope",
+        "source_locations",
+        "dependency_graph",
+        "reconstruction_path",
+        "failure_conditions",
+    ]
+    assert cli_payload["component_review_count"] == 6
+    assert "source reconstruction-review-result --claim claim-canonical" in cli_payload["review_result_cli"]
+    assert cli_payload["can_update_claim_trust"] is False
+    assert "source_reconstruction_review_packet" not in cli_payload
+
+
 def test_legacy_semantic_review_manifest_batches_packets_without_writing(tmp_path):
     from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
     from brain.v5.public_surfaces import require_valid_public_surface

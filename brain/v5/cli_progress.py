@@ -165,6 +165,68 @@ def compact_legacy_semantic_review_worklist(payload: dict[str, Any]) -> dict[str
     }
 
 
+def compact_legacy_semantic_review_packet(payload: dict[str, Any]) -> dict[str, Any]:
+    source = payload.get("source_reconstruction") if isinstance(payload.get("source_reconstruction"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "kind": "legacy_semantic_review_packet_progress",
+        "source_surface": "legacy_semantic_review_packet",
+        "run_id": str(payload.get("run_id") or ""),
+        "migration_dir": str(payload.get("migration_dir") or ""),
+        "topic": str(payload.get("topic") or ""),
+        "active_claim_id": str(payload.get("active_claim_id") or ""),
+        "semantic_review_status": str(payload.get("semantic_review_status") or ""),
+        "review_status": str(payload.get("review_status") or ""),
+        "review_priority": str(payload.get("review_priority") or ""),
+        "latest_review_id": str(payload.get("latest_review_id") or ""),
+        "source_reconstruction_status": str(source.get("status") or ""),
+        "missing_components": _limited_strings(source.get("missing_components")),
+        "review_basis_ref_count": len(payload.get("review_basis_refs") or []),
+        "legacy_review_ref_count": len(payload.get("legacy_review_refs") or []),
+        "review_checklist": _limited_strings(payload.get("review_checklist")),
+        "recommended_actions": _limited_strings(payload.get("recommended_actions")),
+        "semantic_lossless_proven": bool(payload.get("semantic_lossless_proven", False)),
+        "semantic_review_required": bool(payload.get("semantic_review_required", True)),
+        "truth_source": str(payload.get("truth_source") or ""),
+        "summary_inputs_trusted": bool(payload.get("summary_inputs_trusted", False)),
+        "orientation_only": bool(payload.get("orientation_only", True)),
+        "can_update_kernel_state": bool(payload.get("can_update_kernel_state", False)),
+        "can_update_claim_trust": bool(payload.get("can_update_claim_trust", False)),
+    }
+
+
+def compact_legacy_source_reconstruction_review_packet(payload: dict[str, Any]) -> dict[str, Any]:
+    legacy_refs = payload.get("legacy_refs") if isinstance(payload.get("legacy_refs"), dict) else {}
+    refs_by_prefix = legacy_refs.get("refs_by_prefix") if isinstance(legacy_refs.get("refs_by_prefix"), dict) else {}
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "kind": "legacy_source_reconstruction_review_packet_progress",
+        "source_surface": "legacy_source_reconstruction_review_packet",
+        "run_id": str(payload.get("run_id") or ""),
+        "migration_dir": str(payload.get("migration_dir") or ""),
+        "topic": str(payload.get("topic") or ""),
+        "active_claim_id": str(payload.get("active_claim_id") or ""),
+        "latest_review_id": str(payload.get("latest_review_id") or ""),
+        "source_reconstruction_status": str(payload.get("source_reconstruction_status") or ""),
+        "missing_components": _limited_strings(payload.get("missing_components"), limit=10),
+        "component_review_count": int(payload.get("component_review_count") or 0),
+        "review_result_cli": str(payload.get("review_result_cli") or ""),
+        "reviewed_legacy_ref_count": len(legacy_refs.get("reviewed_legacy_refs") or []),
+        "source_reconstruction_ref_count": len(legacy_refs.get("source_reconstruction_refs") or []),
+        "refs_by_prefix_counts": {
+            str(key): len(value) if isinstance(value, list) else 0
+            for key, value in refs_by_prefix.items()
+        },
+        "recommended_actions": _limited_strings(payload.get("recommended_actions")),
+        "semantic_lossless_proven": bool(payload.get("semantic_lossless_proven", False)),
+        "truth_source": str(payload.get("truth_source") or ""),
+        "summary_inputs_trusted": bool(payload.get("summary_inputs_trusted", False)),
+        "orientation_only": bool(payload.get("orientation_only", True)),
+        "can_update_kernel_state": bool(payload.get("can_update_kernel_state", False)),
+        "can_update_claim_trust": bool(payload.get("can_update_claim_trust", False)),
+    }
+
+
 def compact_final_readiness(payload: dict[str, Any]) -> dict[str, Any]:
     backlog = payload.get("content_backlog") if isinstance(payload.get("content_backlog"), dict) else {}
     legacy = backlog.get("legacy_semantic_review") if isinstance(backlog.get("legacy_semantic_review"), dict) else {}

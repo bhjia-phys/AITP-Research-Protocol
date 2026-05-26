@@ -16,8 +16,10 @@ from brain.v5.legacy_source_reconstruction import (
     build_legacy_source_reconstruction_review_packet,
 )
 from brain.v5.cli_progress import (
+    compact_legacy_semantic_review_packet,
     compact_legacy_semantic_review_manifest,
     compact_legacy_semantic_review_worklist,
+    compact_legacy_source_reconstruction_review_packet,
 )
 from brain.v5.legacy_semantic_review import (
     build_legacy_semantic_review_packet,
@@ -61,6 +63,7 @@ def add_legacy_parser(subparsers) -> None:
     packet = legacy_subparsers.add_parser("semantic-review-packet")
     packet.add_argument("--migration-dir", required=True)
     packet.add_argument("--topic", required=True)
+    packet.add_argument("--compact", "--progress", action="store_true", dest="compact")
     repair = legacy_subparsers.add_parser("semantic-repair-plan")
     repair.add_argument("--migration-dir", required=True)
     repair.add_argument("--topic", required=True)
@@ -75,6 +78,7 @@ def add_legacy_parser(subparsers) -> None:
     source_review = legacy_subparsers.add_parser("source-reconstruction-review")
     source_review.add_argument("--migration-dir", required=True)
     source_review.add_argument("--topic", required=True)
+    source_review.add_argument("--compact", "--progress", action="store_true", dest="compact")
     source_repair_apply = legacy_subparsers.add_parser("source-reconstruction-apply")
     source_repair_apply.add_argument("--migration-dir", required=True)
     source_repair_apply.add_argument("--topic", required=True)
@@ -148,7 +152,10 @@ def dispatch_legacy_command(args, ws) -> dict:
         return payload
     if args.legacy_command == "semantic-review-packet":
         packet = build_legacy_semantic_review_packet(ws, migration_dir=args.migration_dir, topic=args.topic)
-        return {"ok": True, **require_valid_public_surface("legacy_semantic_review_packet", packet)}
+        payload = {"ok": True, **require_valid_public_surface("legacy_semantic_review_packet", packet)}
+        if getattr(args, "compact", False):
+            return compact_legacy_semantic_review_packet(payload)
+        return payload
     if args.legacy_command == "semantic-repair-plan":
         plan = build_legacy_semantic_repair_plan(ws, migration_dir=args.migration_dir, topic=args.topic)
         return {"ok": True, **require_valid_public_surface("legacy_semantic_repair_plan", plan)}
@@ -166,7 +173,10 @@ def dispatch_legacy_command(args, ws) -> dict:
         return {"ok": True, **require_valid_public_surface("legacy_source_reconstruction_plan", plan)}
     if args.legacy_command == "source-reconstruction-review":
         packet = build_legacy_source_reconstruction_review_packet(ws, migration_dir=args.migration_dir, topic=args.topic)
-        return {"ok": True, **require_valid_public_surface("legacy_source_reconstruction_review_packet", packet)}
+        payload = {"ok": True, **require_valid_public_surface("legacy_source_reconstruction_review_packet", packet)}
+        if getattr(args, "compact", False):
+            return compact_legacy_source_reconstruction_review_packet(payload)
+        return payload
     if args.legacy_command == "source-reconstruction-apply":
         result = apply_legacy_source_reconstruction_repair(
             ws,
