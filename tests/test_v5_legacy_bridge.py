@@ -1067,6 +1067,97 @@ def test_legacy_semantic_review_worklist_maps_source_review_result_action_to_res
     assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
 
 
+def test_legacy_semantic_review_manifest_flags_completed_source_review_result_for_followup(tmp_path):
+    from brain.v5.evidence import record_evidence
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
+    from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
+    from brain.v5.models import ClaimRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.source_reconstruction_review import record_source_reconstruction_review_result
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="A canonical legacy claim needs source reconstruction review.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Semantic review required.",
+        ),
+    )
+    source_ref = "legacy-topic:canonical-topic/state.md"
+    record_evidence(
+        ws,
+        topic_id="canonical-topic",
+        claim_id="claim-canonical",
+        evidence_type="legacy_source",
+        status="legacy_seed",
+        summary="Legacy source basis preserved for review.",
+        source_refs=[source_ref],
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="The legacy claim needs a typed source reconstruction review result before semantic pass.",
+        active_claim_id="claim-canonical",
+        reviewed_legacy_refs=[source_ref],
+        reviewed_typed_refs=["claim-canonical"],
+        remaining_actions=[
+            "record_source_reconstruction_review_result",
+        ],
+    )
+    source_review = record_source_reconstruction_review_result(
+        ws,
+        claim_id="claim-canonical",
+        status="inconclusive",
+        reviewed_components=["definitions", "assumptions_or_scope"],
+        basis_refs=[source_ref],
+        remaining_actions=["record_missing_physics_objects"],
+        summary="Definitions and scope were reviewed but still require typed object records.",
+    )
+
+    manifest = build_legacy_semantic_review_manifest(ws, migration_dir=run)
+    worklist = build_legacy_semantic_review_worklist(ws, migration_dir=run)
+
+    manifest_item = next(item for item in manifest["items"] if item["topic"] == "canonical-topic")
+    work_item = next(item for item in worklist["items"] if item["topic"] == "canonical-topic")
+    assert manifest_item["satisfied_review_actions"] == [
+        "record_source_reconstruction_review_result"
+    ]
+    assert manifest_item["followup_review_actions"] == [
+        "record_followup_semantic_review_result_for_satisfied_actions"
+    ]
+    assert work_item["followup_review_commands"] == [
+        {
+            "action": "record_followup_semantic_review_result_for_satisfied_actions",
+            "latest_review_id": review.review_id,
+            "satisfied_review_actions": [
+                "record_source_reconstruction_review_result"
+            ],
+            "result_cli": (
+                f"aitp-v5 --base {ws.base} legacy semantic-review-result "
+                f"--migration-dir {run} --topic canonical-topic "
+                "--status <passed|inconclusive> "
+                f"--typed-ref claim-canonical --legacy-ref {source_ref} "
+                f"--summary <reviewed satisfied actions; explain any remaining semantic gaps>"
+            ),
+            "result_mcp": "aitp_v5_record_legacy_semantic_review_result",
+            "can_update_claim_trust": False,
+        }
+    ]
+    assert source_review.result_id
+    assert require_valid_public_surface("legacy_semantic_review_manifest", manifest) == manifest
+    assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
+
+
 def test_legacy_semantic_review_queue_uses_latest_written_review_not_lexicographic_id(tmp_path):
     from brain.v5.legacy_semantic_review import build_legacy_semantic_review_queue
     from brain.v5.models import ClaimRecord, LegacySemanticReviewResultRecord

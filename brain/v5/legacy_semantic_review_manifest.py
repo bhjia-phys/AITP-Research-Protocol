@@ -8,7 +8,7 @@ from typing import Any
 from brain.v5.legacy_bridge import scan_legacy_topic
 from brain.v5.legacy_semantic_review import build_legacy_semantic_review_queue
 from brain.v5.markdown import read_md
-from brain.v5.models import ClaimRecord
+from brain.v5.models import ClaimRecord, SourceReconstructionReviewResultRecord
 from brain.v5.paths import WorkspacePaths
 from brain.v5.store import list_records
 
@@ -24,7 +24,20 @@ def build_legacy_semantic_review_manifest(
     migration = str(queue["migration_dir"])
     legacy_root = Path(queue["legacy_root"])
     claims_by_id = {claim.claim_id: claim for claim in list_records(ws.registry_dir("claims"), ClaimRecord)}
-    items = [_manifest_item(ws, migration, legacy_root, item, claims_by_id=claims_by_id) for item in queue["items"]]
+    source_reviews_by_claim = _group_source_reviews_by_claim(
+        list_records(ws.registry_dir("source_reconstruction_reviews"), SourceReconstructionReviewResultRecord)
+    )
+    items = [
+        _manifest_item(
+            ws,
+            migration,
+            legacy_root,
+            item,
+            claims_by_id=claims_by_id,
+            source_reviews_by_claim=source_reviews_by_claim,
+        )
+        for item in queue["items"]
+    ]
     progress = _progress(items)
     return {
         "kind": "legacy_semantic_review_manifest",
@@ -58,6 +71,7 @@ def _manifest_item(
     item: dict[str, Any],
     *,
     claims_by_id: dict[str, ClaimRecord],
+    source_reviews_by_claim: dict[str, list[SourceReconstructionReviewResultRecord]],
 ) -> dict[str, Any]:
     topic = item["topic"]
     status = item["semantic_review_status"].removeprefix("reviewed_")
@@ -73,6 +87,7 @@ def _manifest_item(
         topic,
         latest_review,
         active_claim,
+        source_reviews_by_claim.get(str(item.get("active_claim_id") or ""), []),
     )
     followup_review_actions = _followup_review_actions(satisfied_review_actions)
     packet_cli = (
@@ -240,8 +255,9 @@ def _satisfied_review_actions(
     topic: str,
     latest_review: dict[str, Any],
     active_claim: ClaimRecord | None,
+    source_reviews: list[SourceReconstructionReviewResultRecord],
 ) -> list[str]:
-    if latest_review.get("status") != "needs_revision" or active_claim is None:
+    if latest_review.get("status") not in {"needs_revision", "inconclusive"} or active_claim is None:
         return []
     actions = _action_tokens(latest_review.get("remaining_actions", []))
     satisfied: list[str] = []
@@ -280,7 +296,18 @@ def _satisfied_review_actions(
         _reviewed_l1_non_success_conditions(latest_review),
     ):
         satisfied.append("backfill_active_claim_failure_mode_from_legacy_l1_non_success_conditions")
+    if "record_source_reconstruction_review_result" in actions and source_reviews:
+        satisfied.append("record_source_reconstruction_review_result")
     return _unique(satisfied)
+
+
+def _group_source_reviews_by_claim(
+    records: list[SourceReconstructionReviewResultRecord],
+) -> dict[str, list[SourceReconstructionReviewResultRecord]]:
+    grouped: dict[str, list[SourceReconstructionReviewResultRecord]] = {}
+    for record in records:
+        grouped.setdefault(record.claim_id, []).append(record)
+    return grouped
 
 
 def _followup_review_actions(satisfied_review_actions: list[str]) -> list[str]:
