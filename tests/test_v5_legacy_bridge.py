@@ -1634,9 +1634,12 @@ def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(
     assert commands_by_action["complete_source_reconstruction"] == {
         "action": "complete_source_reconstruction",
         "latest_review_id": review.review_id,
-        "cli": f"aitp-v5 --base {ws.base} source reconstruction-review --claim claim-l2",
-        "mcp": "aitp_v5_build_source_reconstruction_review_packet",
-        "surface": "source_reconstruction_review_packet",
+        "cli": (
+            f"aitp-v5 --base {ws.base} legacy source-reconstruction-review "
+            f"--migration-dir {run} --topic legacy-l2"
+        ),
+        "mcp": "aitp_v5_build_legacy_source_reconstruction_review_packet",
+        "surface": "legacy_source_reconstruction_review_packet",
         "effect": "orientation_only",
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
@@ -1833,9 +1836,12 @@ def test_legacy_semantic_review_worklist_maps_source_review_result_action_to_res
     assert commands_by_action["complete_source_reconstruction_components"] == {
         "action": "complete_source_reconstruction_components",
         "latest_review_id": review.review_id,
-        "cli": f"aitp-v5 --base {ws.base} source reconstruction-review --claim claim-canonical",
-        "mcp": "aitp_v5_build_source_reconstruction_review_packet",
-        "surface": "source_reconstruction_review_packet",
+        "cli": (
+            f"aitp-v5 --base {ws.base} legacy source-reconstruction-review "
+            f"--migration-dir {run} --topic canonical-topic"
+        ),
+        "mcp": "aitp_v5_build_legacy_source_reconstruction_review_packet",
+        "surface": "legacy_source_reconstruction_review_packet",
         "effect": "orientation_only",
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,

@@ -6,6 +6,7 @@ from typing import Any
 
 from brain.v5.legacy_semantic_generic_commands import generic_review_action_command
 from brain.v5.legacy_semantic_qsgw_commands import qsgw_review_action_command
+from brain.v5.legacy_semantic_source_commands import source_reconstruction_review_command
 
 
 def review_action_commands(
@@ -125,7 +126,13 @@ def _review_action_command(
             surface="legacy_l2_obsidian_view_bundle",
         )
     if action == "complete_source_reconstruction":
-        return _source_reconstruction_command(action, item, review_id=review_id, workspace=workspace)
+        return source_reconstruction_review_command(
+            action,
+            item,
+            review_id=review_id,
+            workspace=workspace,
+            migration_dir=migration_dir,
+        )
     if action == "record_source_reconstruction_review_result":
         return _command(
             action,
@@ -282,7 +289,13 @@ def _review_action_command(
     )
     if generic_command is not None:
         return generic_command
-    return _normalized_action_command(action, item, review_id=review_id, workspace=workspace)
+    return _normalized_action_command(
+        action,
+        item,
+        review_id=review_id,
+        workspace=workspace,
+        migration_dir=migration_dir,
+    )
 
 
 def _normalized_action_command(
@@ -291,6 +304,7 @@ def _normalized_action_command(
     *,
     review_id: str,
     workspace: str,
+    migration_dir: str,
 ) -> dict[str, Any] | None:
     normalized = " ".join(action.lower().replace("_", " ").split())
     if _requests_physics_object_backfill(normalized):
@@ -352,24 +366,14 @@ def _normalized_action_command(
             can_update_kernel_state=True,
         )
     if "source reconstruction" in normalized or "reconstruction path" in normalized:
-        return _source_reconstruction_command(action, item, review_id=review_id, workspace=workspace)
+        return source_reconstruction_review_command(
+            action,
+            item,
+            review_id=review_id,
+            workspace=workspace,
+            migration_dir=migration_dir,
+        )
     return None
-
-
-def _source_reconstruction_command(
-    action: str,
-    item: dict[str, Any],
-    *,
-    review_id: str,
-    workspace: str,
-) -> dict[str, Any]:
-    return _command(
-        action,
-        review_id=review_id,
-        cli=f"aitp-v5 --base {workspace} source reconstruction-review --claim {item['active_claim_id']}",
-        mcp="aitp_v5_build_source_reconstruction_review_packet",
-        surface="source_reconstruction_review_packet",
-    )
 
 
 def _validation_contract_id(latest_review: dict[str, Any]) -> str:
