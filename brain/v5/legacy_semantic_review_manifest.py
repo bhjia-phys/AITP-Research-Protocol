@@ -102,6 +102,8 @@ def _manifest_item(
     return {
         "topic": topic,
         "active_claim_id": item["active_claim_id"],
+        "active_claim_statement_present": bool(active_claim and active_claim.statement.strip()),
+        "active_claim_scope_present": bool(active_claim and active_claim.scope.strip()),
         "review_status": status,
         "review_priority": item["review_priority"],
         "review_reasons": item["review_reasons"],

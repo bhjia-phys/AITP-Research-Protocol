@@ -55,6 +55,12 @@ def _work_item(item: dict[str, Any], *, workspace: str, migration_dir: str) -> d
     priority_score = _priority_score(item, repair_count=repair_count, missing_components=missing)
     latest = item.get("latest_semantic_review") if isinstance(item.get("latest_semantic_review"), dict) else {}
     satisfied_actions = list(item.get("satisfied_review_actions", []))
+    pass_readiness = _pass_readiness(
+        item,
+        latest_review=latest,
+        missing_components=missing,
+        followup_review_actions=followup_actions,
+    )
     review_action_commands = _review_action_commands(
         item,
         latest_review=latest,
@@ -73,6 +79,7 @@ def _work_item(item: dict[str, Any], *, workspace: str, migration_dir: str) -> d
         "missing_source_components": missing,
         "satisfied_review_actions": satisfied_actions,
         "followup_review_actions": followup_actions,
+        "pass_readiness": pass_readiness,
         "review_action_commands": review_action_commands,
         "followup_review_commands": _followup_review_commands(
             item,
@@ -86,6 +93,62 @@ def _work_item(item: dict[str, Any], *, workspace: str, migration_dir: str) -> d
         "repair_candidates": list(item.get("repair_candidates", [])),
         "packet_cli": item["packet_cli"],
         "result_cli_template": item["result_cli_template"],
+        "can_update_claim_trust": False,
+    }
+
+
+def _pass_readiness(
+    item: dict[str, Any],
+    *,
+    latest_review: dict[str, Any],
+    missing_components: list[str],
+    followup_review_actions: list[str],
+) -> dict[str, Any]:
+    remaining_actions = [str(action) for action in latest_review.get("remaining_actions", []) if str(action)]
+    reviewed_legacy_refs = [
+        str(ref) for ref in latest_review.get("reviewed_legacy_refs", []) if str(ref)
+    ]
+    needs_archive_sampling = "archive_only_records_require_sampling" in set(item.get("review_reasons", []))
+    archive_sampled = (not needs_archive_sampling) or any(
+        ref.startswith("legacy_archive:") for ref in reviewed_legacy_refs
+    )
+    requirements = {
+        "active_claim_present": bool(str(item.get("active_claim_id") or "")),
+        "active_claim_statement_present": bool(item.get("active_claim_statement_present")),
+        "source_reconstruction_complete": not missing_components
+        and item.get("source_reconstruction", {}).get("status") == "complete",
+        "latest_review_recorded": bool(latest_review),
+        "latest_review_not_needs_revision": item.get("review_status") != "needs_revision",
+        "no_remaining_review_actions": not remaining_actions,
+        "no_followup_review_actions": not followup_review_actions,
+        "archive_sampled_when_needed": archive_sampled,
+    }
+    blockers: list[str] = []
+    if not requirements["active_claim_present"]:
+        blockers.append("missing_active_claim")
+    if not requirements["active_claim_statement_present"]:
+        blockers.append("active_claim_statement_empty")
+    if not requirements["source_reconstruction_complete"]:
+        blockers.append("source_reconstruction_incomplete")
+    if not requirements["latest_review_recorded"] or item.get("review_status") == "pending":
+        blockers.append("initial_semantic_review_not_recorded")
+    if not requirements["latest_review_not_needs_revision"]:
+        blockers.append("latest_review_needs_revision")
+    if not requirements["no_remaining_review_actions"]:
+        blockers.append("latest_review_remaining_actions")
+    if not requirements["no_followup_review_actions"]:
+        blockers.append("followup_review_actions_pending")
+    if not requirements["archive_sampled_when_needed"]:
+        blockers.append("archive_reference_sampling_required")
+    return {
+        "status": "candidate" if not blockers else "blocked",
+        "pass_candidate": not blockers,
+        "latest_review_id": str(latest_review.get("review_id") or ""),
+        "requirements": requirements,
+        "blockers": _unique(blockers),
+        "remaining_actions": remaining_actions,
+        "followup_review_actions": list(followup_review_actions),
+        "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }
 

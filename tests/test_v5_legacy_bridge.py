@@ -1009,6 +1009,55 @@ def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(
     assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
 
 
+def test_legacy_semantic_review_worklist_exposes_pass_readiness_blockers(tmp_path):
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
+    from brain.v5.models import ClaimRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="Migrated canonical claim.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Semantic review still requires a human checkpoint.",
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="The source stack is reviewed, but a human checkpoint remains before semantic pass.",
+        active_claim_id="claim-canonical",
+        reviewed_legacy_refs=["legacy_archive:canonical-topic/state.md"],
+        reviewed_typed_refs=["claim:claim-canonical"],
+        remaining_actions=["decide_human_checkpoint_before_promotion"],
+    )
+
+    worklist = build_legacy_semantic_review_worklist(ws, migration_dir=run)
+
+    item = next(item for item in worklist["items"] if item["topic"] == "canonical-topic")
+    readiness = item["pass_readiness"]
+    assert readiness["status"] == "blocked"
+    assert readiness["pass_candidate"] is False
+    assert readiness["latest_review_id"] == review.review_id
+    assert readiness["requirements"]["active_claim_statement_present"] is True
+    assert "source_reconstruction_incomplete" in readiness["blockers"]
+    assert "latest_review_remaining_actions" in readiness["blockers"]
+    assert "archive_reference_sampling_required" not in readiness["blockers"]
+    assert readiness["remaining_actions"] == ["decide_human_checkpoint_before_promotion"]
+    assert readiness["can_update_claim_trust"] is False
+    assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
+
+
 def test_legacy_semantic_review_worklist_maps_l2_typed_review_actions(tmp_path):
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
     from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
