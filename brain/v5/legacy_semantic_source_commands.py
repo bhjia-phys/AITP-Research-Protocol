@@ -13,7 +13,7 @@ def source_reconstruction_review_command(
     workspace: str,
     migration_dir: str,
 ) -> dict[str, Any]:
-    return {
+    command = {
         "action": action,
         "latest_review_id": review_id,
         "cli": (
@@ -26,3 +26,9 @@ def source_reconstruction_review_command(
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }
+    source_review_refs = [
+        str(ref) for ref in item.get("source_reconstruction_review_refs", []) if str(ref)
+    ]
+    if source_review_refs:
+        command["source_reconstruction_review_refs"] = source_review_refs
+    return command

@@ -58,6 +58,9 @@ def _work_item(item: dict[str, Any], *, workspace: str, migration_dir: str) -> d
     priority_score = _priority_score(item, repair_count=repair_count, missing_components=missing)
     latest = item.get("latest_semantic_review") if isinstance(item.get("latest_semantic_review"), dict) else {}
     satisfied_actions = list(item.get("satisfied_review_actions", []))
+    source_review_refs = [
+        str(ref) for ref in item.get("source_reconstruction_review_refs", []) if str(ref)
+    ]
     pass_readiness = _pass_readiness(
         item,
         latest_review=latest,
@@ -80,6 +83,7 @@ def _work_item(item: dict[str, Any], *, workspace: str, migration_dir: str) -> d
         "latest_review_id": str(latest.get("review_id") or ""),
         "review_focus": focus,
         "missing_source_components": missing,
+        "source_reconstruction_review_refs": source_review_refs,
         "satisfied_review_actions": satisfied_actions,
         "followup_review_actions": followup_actions,
         "pass_readiness": pass_readiness,

@@ -1535,6 +1535,7 @@ def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(
     from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
     from brain.v5.models import ClaimRecord
     from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.source_reconstruction_review import record_source_reconstruction_review_result
     from brain.v5.store import write_record
     from brain.v5.workspace import init_workspace
 
@@ -1574,12 +1575,23 @@ def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(
             "decide_human_checkpoint_before_promotion",
         ],
     )
+    source_review = record_source_reconstruction_review_result(
+        ws,
+        claim_id="claim-l2",
+        status="inconclusive",
+        reviewed_components=["definitions", "source_locations"],
+        basis_refs=["legacy_archive:L2/index.md"],
+        remaining_actions=["split_l2_graph_before_source_component_pass"],
+        summary="L2 archive source locations were sampled, but the global graph still needs split-topic review.",
+    )
 
     worklist = build_legacy_semantic_review_worklist(ws, migration_dir=run)
 
     item = next(item for item in worklist["items"] if item["topic"] == "legacy-l2")
+    source_review_refs = [f"source-reconstruction-review:{source_review.result_id}"]
     assert item["review_status"] == "inconclusive"
     assert item["latest_review_id"] == review.review_id
+    assert item["source_reconstruction_review_refs"] == source_review_refs
     assert [command["action"] for command in item["review_action_commands"]] == [
         "classify_noncanonical_seed_before_promotion",
         "require_human_topic_question_before_claim_backfill",
@@ -1640,6 +1652,7 @@ def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(
         ),
         "mcp": "aitp_v5_build_legacy_source_reconstruction_review_packet",
         "surface": "legacy_source_reconstruction_review_packet",
+        "source_reconstruction_review_refs": source_review_refs,
         "effect": "orientation_only",
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
