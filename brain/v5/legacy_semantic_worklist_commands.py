@@ -178,6 +178,8 @@ def _review_action_command(
             ),
             mcp="aitp_v5_request_human_checkpoint",
             surface="human_checkpoint_record",
+            effect="typed_record_write",
+            can_update_kernel_state=True,
         )
     if action.startswith("decide_archive_or_delete_"):
         return _command(
@@ -192,6 +194,8 @@ def _review_action_command(
             ),
             mcp="aitp_v5_request_human_checkpoint",
             surface="human_checkpoint_record",
+            effect="typed_record_write",
+            can_update_kernel_state=True,
         )
     if action.startswith("keep_semantic_review_blocking_until_"):
         return _command(
@@ -221,6 +225,8 @@ def _review_action_command(
             ),
             mcp="aitp_v5_request_human_checkpoint",
             surface="human_checkpoint_record",
+            effect="typed_record_write",
+            can_update_kernel_state=True,
         )
     if action == "trace_compute_Wc_freq_q_accepts_chi_r_substitution_on_actual_LibRPA_code":
         return _command(

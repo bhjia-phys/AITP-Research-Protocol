@@ -199,6 +199,8 @@ def _choice_checkpoint_command(
         ),
         mcp="aitp_v5_request_human_checkpoint",
         surface="human_checkpoint_record",
+        effect="typed_record_write",
+        can_update_kernel_state=True,
     )
 
 

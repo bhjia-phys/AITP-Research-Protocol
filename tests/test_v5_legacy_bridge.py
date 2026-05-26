@@ -1512,6 +1512,8 @@ def test_legacy_semantic_review_worklist_maps_planning_source_search_and_checkpo
     assert define["surface"] == "physics_object_record"
     choose = commands["choose_bulk_matter_model_and_check_energy_flux_unitarity"]
     assert choose["surface"] == "human_checkpoint_record"
+    assert choose["effect"] == "typed_record_write"
+    assert choose["can_update_kernel_state"] is True
     assert "--option record_choice --option keep_backlog_blocking" in choose["cli"]
     confirm = commands["confirm_velocity_format_and_meanfield_reference_semantics_against_current_binary"]
     assert confirm["surface"] == "validation_result_record"
@@ -1525,6 +1527,8 @@ def test_legacy_semantic_review_worklist_maps_planning_source_search_and_checkpo
     assert "--type <scope_or_model_definition> " in retain["cli"]
     trust_checkpoint = commands["decide_human_checkpoint_before_any_claim_trust_promotion"]
     assert trust_checkpoint["surface"] == "human_checkpoint_record"
+    assert trust_checkpoint["effect"] == "typed_record_write"
+    assert trust_checkpoint["can_update_kernel_state"] is True
     assert "--reason <legacy semantic review promotion decision>" in trust_checkpoint["cli"]
     assert all(command["can_update_claim_trust"] is False for command in item["review_action_commands"])
     assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
@@ -1628,12 +1632,22 @@ def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(
     assert commands_by_action["require_human_topic_question_before_claim_backfill"]["surface"] == (
         "human_checkpoint_record"
     )
+    assert commands_by_action["require_human_topic_question_before_claim_backfill"]["effect"] == (
+        "typed_record_write"
+    )
+    assert commands_by_action["require_human_topic_question_before_claim_backfill"][
+        "can_update_kernel_state"
+    ] is True
     assert "--option provide_topic_question" in commands_by_action[
         "require_human_topic_question_before_claim_backfill"
     ]["cli"]
     assert commands_by_action["decide_archive_or_delete_noncanonical_seed"]["surface"] == (
         "human_checkpoint_record"
     )
+    assert commands_by_action["decide_archive_or_delete_noncanonical_seed"]["effect"] == (
+        "typed_record_write"
+    )
+    assert commands_by_action["decide_archive_or_delete_noncanonical_seed"]["can_update_kernel_state"] is True
     assert "--option archive_seed" in commands_by_action["decide_archive_or_delete_noncanonical_seed"]["cli"]
     assert commands_by_action["keep_semantic_review_blocking_until_legacy_basis_exists"]["surface"] == (
         "legacy_semantic_review_result_record"
@@ -1672,6 +1686,8 @@ def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(
         "can_update_claim_trust": False,
     }
     assert commands_by_action["decide_human_checkpoint_before_promotion"]["surface"] == "human_checkpoint_record"
+    assert commands_by_action["decide_human_checkpoint_before_promotion"]["effect"] == "typed_record_write"
+    assert commands_by_action["decide_human_checkpoint_before_promotion"]["can_update_kernel_state"] is True
     assert all(command["can_update_claim_trust"] is False for command in item["review_action_commands"])
     assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
 
