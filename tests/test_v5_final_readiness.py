@@ -161,6 +161,10 @@ def test_final_readiness_audit_keeps_kernel_capability_separate_from_content_bac
     assert payload["kernel_capabilities"]["source_stack"]["incomplete_claim_ids"] == []
     assert payload["kernel_capabilities"]["knowledge_stack"]["obsidian_view_surface"] == "l2_obsidian_view_bundle"
     assert payload["kernel_capabilities"]["long_term_replay"]["surface"] == "workspace_replay_packet"
+    assert payload["kernel_capabilities"]["long_term_replay"]["legacy_semantic_backlog_surface"] == (
+        "legacy_semantic_review_manifest"
+    )
+    assert payload["kernel_capabilities"]["long_term_replay"]["migration_dir_argument"] == "--migration-dir"
     assert payload["kernel_capabilities"]["natural_interaction"]["surface"] == "interaction_recording_preview"
     assert payload["kernel_capabilities"]["natural_interaction"]["recording_decision_modes"] == [
         "lightweight_trace",

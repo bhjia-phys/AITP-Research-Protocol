@@ -213,8 +213,12 @@ def _long_term_replay() -> dict[str, Any]:
     return {
         "surface": "workspace_replay_packet",
         "workspace_refresh_surface": "workspace_refresh_bundle",
-        "purpose": "multi-session resume packet with source and evidence gaps",
+        "legacy_semantic_backlog_surface": "legacy_semantic_review_manifest",
+        "migration_dir_argument": "--migration-dir",
+        "purpose": "multi-session resume packet with source, evidence, and legacy semantic-review gaps",
+        "host_startup_backlog_supported": True,
         "summary_inputs_trusted": False,
+        "can_update_claim_trust": False,
     }
 
 
