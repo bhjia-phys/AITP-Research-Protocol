@@ -348,7 +348,7 @@ def test_source_reconstruction_manifest_cli_compact_progress(tmp_path, capsys):
 
     ws = init_workspace(tmp_path)
     create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
-    create_claim(
+    claim = create_claim(
         ws,
         topic_id="fqhe",
         statement="The counting sequence identifies the edge CFT.",
@@ -364,6 +364,9 @@ def test_source_reconstruction_manifest_cli_compact_progress(tmp_path, capsys):
     assert cli_payload["source_surface"] == "source_reconstruction_manifest"
     assert cli_payload["claim_count"] == 1
     assert cli_payload["incomplete_claim_count"] == 1
+    assert cli_payload["next_action_refs"] == [f"source_reconstruction:{claim.claim_id}"]
+    assert cli_payload["top_incomplete_claim_refs"] == [f"source_reconstruction:{claim.claim_id}"]
+    assert cli_payload["top_incomplete_claim_topics"] == ["fqhe"]
     assert cli_payload["can_update_claim_trust"] is False
     assert "items" not in cli_payload
 
@@ -818,7 +821,7 @@ def test_source_reconstruction_review_manifest_cli_compact_progress(tmp_path, ca
 
     ws = init_workspace(tmp_path)
     create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
-    create_claim(
+    claim = create_claim(
         ws,
         topic_id="fqhe",
         statement="The counting sequence identifies the edge CFT.",
@@ -835,5 +838,9 @@ def test_source_reconstruction_review_manifest_cli_compact_progress(tmp_path, ca
     assert cli_payload["claim_count"] == 1
     assert cli_payload["review_progress"]["pending"] == 1
     assert cli_payload["pending_review_count"] == 1
+    assert cli_payload["next_action_refs"] == [f"source_reconstruction_review:{claim.claim_id}"]
+    assert cli_payload["top_review_claim_refs"] == [f"source_reconstruction_review:{claim.claim_id}"]
+    assert cli_payload["top_review_claim_topics"] == ["fqhe"]
+    assert cli_payload["top_review_statuses"] == ["pending"]
     assert cli_payload["can_update_claim_trust"] is False
     assert "items" not in cli_payload
