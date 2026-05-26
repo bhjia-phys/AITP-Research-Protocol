@@ -1227,6 +1227,7 @@ def test_legacy_semantic_review_worklist_maps_generic_readback_and_validation_ac
         reviewed_typed_refs=["claim-canonical", "validation-contract-gw-residue"],
         remaining_actions=[
             "readback_cd_formula_from_godby_golze_sources",
+            "complete_full_archive_readback_for_all_fqhe_promoted_candidates",
             "extract_formula_level_cd_equations_from_godby_1988_1989_and_golze_2018_sections",
             "map_wc_real_or_complex_frequency_requirement_to_librpa_ac_boundary",
             "design_or_import_real_axis_cd_or_residue_sum_Wc_sigma_path_for_LibRPA",
@@ -1249,6 +1250,13 @@ def test_legacy_semantic_review_worklist_maps_generic_readback_and_validation_ac
         "--outputs-json <source-readback-json> --source-ref <source-or-code-ref>"
     )
     assert readback["surface"] == "tool_run_record"
+    archive = commands["complete_full_archive_readback_for_all_fqhe_promoted_candidates"]
+    assert archive["surface"] == "tool_run_record"
+    assert archive["mcp"] == "aitp_v5_record_tool_run"
+    assert archive["effect"] == "typed_record_write"
+    assert "--recipe <source-readback-recipe-id> --family source_readback " in archive["cli"]
+    assert "--name complete_full_archive_readback_for_all_fqhe_promoted_candidates " in archive["cli"]
+    assert "--outputs-json <source-readback-json> --source-ref <source-or-code-ref>" in archive["cli"]
     mapped = commands["map_wc_real_or_complex_frequency_requirement_to_librpa_ac_boundary"]
     assert mapped["surface"] == "tool_run_record"
     assert "--name map_wc_real_or_complex_frequency_requirement_to_librpa_ac_boundary " in mapped["cli"]

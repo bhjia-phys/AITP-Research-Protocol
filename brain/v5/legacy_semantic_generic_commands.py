@@ -14,7 +14,7 @@ def generic_review_action_command(
     workspace: str,
 ) -> dict[str, Any] | None:
     normalized = _normalize(action)
-    if normalized.startswith(("readback ", "extract ", "map ")):
+    if _requests_source_readback(normalized):
         return _source_readback_command(
             action,
             item,
@@ -126,6 +126,14 @@ def _validation_contract_id(latest_review: dict[str, Any]) -> str:
 
 def _tool_name(action: str) -> str:
     return "_".join(_normalize(action).split())
+
+
+def _requests_source_readback(normalized_action: str) -> bool:
+    return (
+        normalized_action.startswith(("readback ", "extract ", "map "))
+        or " archive readback" in normalized_action
+        or normalized_action.endswith(" readback")
+    )
 
 
 def _normalize(action: str) -> str:
