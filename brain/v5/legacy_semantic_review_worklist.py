@@ -81,12 +81,16 @@ def _work_item(
         str(ref) for ref in item.get("source_reconstruction_review_refs", []) if str(ref)
     ]
     open_checkpoints = _open_checkpoint_payloads(item, open_human_checkpoints)
+    open_checkpoint_refs = [
+        f"human-checkpoint:{checkpoint['checkpoint_id']}" for checkpoint in open_checkpoints
+    ]
     command_item = {**item, "open_human_checkpoints": open_checkpoints}
     pass_readiness = _pass_readiness(
         item,
         latest_review=latest,
         missing_components=missing,
         followup_review_actions=followup_actions,
+        open_human_checkpoint_refs=open_checkpoint_refs,
     )
     commands = review_action_commands(
         command_item,
@@ -105,9 +109,7 @@ def _work_item(
         "review_focus": focus,
         "missing_source_components": missing,
         "source_reconstruction_review_refs": source_review_refs,
-        "open_human_checkpoint_refs": [
-            f"human-checkpoint:{checkpoint['checkpoint_id']}" for checkpoint in open_checkpoints
-        ],
+        "open_human_checkpoint_refs": open_checkpoint_refs,
         "satisfied_review_actions": satisfied_actions,
         "followup_review_actions": followup_actions,
         "pass_readiness": pass_readiness,
@@ -191,6 +193,7 @@ def _pass_readiness(
     latest_review: dict[str, Any],
     missing_components: list[str],
     followup_review_actions: list[str],
+    open_human_checkpoint_refs: list[str],
 ) -> dict[str, Any]:
     remaining_actions = [str(action) for action in latest_review.get("remaining_actions", []) if str(action)]
     reviewed_legacy_refs = [
@@ -209,6 +212,7 @@ def _pass_readiness(
         "latest_review_not_needs_revision": item.get("review_status") != "needs_revision",
         "no_remaining_review_actions": not remaining_actions,
         "no_followup_review_actions": not followup_review_actions,
+        "no_open_human_checkpoints": not open_human_checkpoint_refs,
         "archive_sampled_when_needed": archive_sampled,
     }
     blockers: list[str] = []
@@ -226,6 +230,8 @@ def _pass_readiness(
         blockers.append("latest_review_remaining_actions")
     if not requirements["no_followup_review_actions"]:
         blockers.append("followup_review_actions_pending")
+    if not requirements["no_open_human_checkpoints"]:
+        blockers.append("open_human_checkpoint_pending")
     if not requirements["archive_sampled_when_needed"]:
         blockers.append("archive_reference_sampling_required")
     return {
@@ -236,6 +242,7 @@ def _pass_readiness(
         "blockers": _unique(blockers),
         "remaining_actions": remaining_actions,
         "followup_review_actions": list(followup_review_actions),
+        "open_human_checkpoint_refs": list(open_human_checkpoint_refs),
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }

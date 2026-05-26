@@ -1786,6 +1786,8 @@ def test_legacy_semantic_review_worklist_surfaces_open_human_checkpoint_for_deci
 
     item = next(item for item in worklist["items"] if item["topic"] == "canonical-topic")
     assert item["open_human_checkpoint_refs"] == [f"human-checkpoint:{checkpoint.checkpoint_id}"]
+    assert "open_human_checkpoint_pending" in item["pass_readiness"]["blockers"]
+    assert item["pass_readiness"]["requirements"]["no_open_human_checkpoints"] is False
     assert worklist["open_human_checkpoint_count"] == 1
     assert worklist["open_human_checkpoints"] == [
         {

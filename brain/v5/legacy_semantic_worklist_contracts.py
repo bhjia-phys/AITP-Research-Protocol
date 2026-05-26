@@ -184,11 +184,12 @@ def _validate_pass_readiness(payload: Any, path: str, result: ContractResult) ->
             "latest_review_not_needs_revision",
             "no_remaining_review_actions",
             "no_followup_review_actions",
+            "no_open_human_checkpoints",
             "archive_sampled_when_needed",
         ):
             if not isinstance(requirements.get(key), bool):
                 result.add(f"{path}.requirements.{key}", "must be a boolean")
-    for key in ("blockers", "remaining_actions", "followup_review_actions"):
+    for key in ("blockers", "remaining_actions", "followup_review_actions", "open_human_checkpoint_refs"):
         if not isinstance(payload.get(key), list) or not all(
             isinstance(value, str) for value in payload.get(key, [])
         ):
