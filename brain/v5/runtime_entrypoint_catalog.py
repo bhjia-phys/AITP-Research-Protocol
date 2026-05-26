@@ -152,6 +152,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_write_legacy_l2_obsidian_view",
         "surface": "legacy_l2_obsidian_view_bundle",
     },
+    "legacy_runtime_log_marker_audit": {
+        "cli": "aitp-v5 legacy runtime-log-marker-audit <args>",
+        "mcp": "aitp_v5_build_legacy_runtime_log_marker_audit",
+        "surface": "legacy_runtime_log_marker_audit",
+    },
     "legacy_semantic_review_queue": {
         "cli": "aitp-v5 legacy semantic-review-queue <args>",
         "mcp": "aitp_v5_build_legacy_semantic_review_queue",

@@ -32,6 +32,7 @@ _PUBLIC_SURFACE_NAMES = (
     "legacy_l2_typed_migration_packet",
     "legacy_migration_coverage_audit",
     "legacy_migration_result",
+    "legacy_runtime_log_marker_audit",
     "legacy_source_reconstruction_apply",
     "legacy_source_reconstruction_plan",
     "legacy_source_reconstruction_review_packet",
@@ -105,6 +106,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "legacy_l2_typed_migration_packet": "orientation-only grouped review packet for converting legacy L2 graph work items into typed records without trusting archive contents",
     "legacy_migration_coverage_audit": "read-only audit of legacy migration file accounting, archive references, and per-topic coverage without claiming semantic proof",
     "legacy_migration_result": "contracted explicit migration result from legacy topic files into v5 typed records",
+    "legacy_runtime_log_marker_audit": "read-only marker audit over explicitly provided raw runtime logs, separating raw evidence from orientation summaries without changing claim trust",
     "legacy_source_reconstruction_apply": "guarded evidence backfill for reconstruction-path coverage derived from typed legacy semantic reviews without changing claim trust",
     "legacy_source_reconstruction_plan": "read-only plan for reconstruction-path evidence backfills derived from typed legacy semantic reviews",
     "legacy_source_reconstruction_review_packet": "read-only legacy-aware source reconstruction review packet that maps migrated refs onto typed reconstruction components without mutating trust",
@@ -237,6 +239,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.legacy_l2_obsidian_contracts import require_valid_legacy_l2_obsidian_view_bundle
     from brain.v5.legacy_l2_typed_migration_contracts import require_valid_legacy_l2_typed_migration_packet
     from brain.v5.legacy_migration_audit_contracts import require_valid_legacy_migration_coverage_audit
+    from brain.v5.legacy_runtime_log_audit_contracts import require_valid_legacy_runtime_log_marker_audit
     from brain.v5.legacy_source_reconstruction_contracts import (
         require_valid_legacy_source_reconstruction_apply,
         require_valid_legacy_source_reconstruction_plan,
@@ -306,6 +309,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "legacy_l2_typed_migration_packet": require_valid_legacy_l2_typed_migration_packet,
         "legacy_migration_coverage_audit": require_valid_legacy_migration_coverage_audit,
         "legacy_migration_result": require_valid_legacy_migration_result,
+        "legacy_runtime_log_marker_audit": require_valid_legacy_runtime_log_marker_audit,
         "legacy_source_reconstruction_apply": require_valid_legacy_source_reconstruction_apply,
         "legacy_source_reconstruction_plan": require_valid_legacy_source_reconstruction_plan,
         "legacy_source_reconstruction_review_packet": require_valid_legacy_source_reconstruction_review_packet,

@@ -6,6 +6,7 @@ from brain.v5.legacy_l2_graph import build_legacy_l2_graph_manifest, build_legac
 from brain.v5.legacy_l2_obsidian import write_legacy_l2_obsidian_view
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
+from brain.v5.legacy_runtime_log_audit import build_legacy_runtime_log_marker_audit
 from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
 from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
 from brain.v5.legacy_semantic_repair import apply_legacy_semantic_repair, build_legacy_semantic_repair_plan
@@ -39,6 +40,13 @@ def add_legacy_parser(subparsers) -> None:
     l2_obsidian = legacy_subparsers.add_parser("l2-obsidian-view")
     l2_obsidian.add_argument("--legacy-l2-dir", default="")
     l2_obsidian.add_argument("--output-dir", default="")
+    runtime_log = legacy_subparsers.add_parser("runtime-log-marker-audit")
+    runtime_log.add_argument("--migration-dir", default="")
+    runtime_log.add_argument("--topic", required=True)
+    runtime_log.add_argument("--marker", action="append", required=True, dest="markers")
+    runtime_log.add_argument("--expected-min-count", type=int, default=1)
+    runtime_log.add_argument("--raw-log-file", action="append", default=[], dest="raw_log_files")
+    runtime_log.add_argument("--orientation-log-file", action="append", default=[], dest="orientation_log_files")
     review = legacy_subparsers.add_parser("semantic-review-queue")
     review.add_argument("--migration-dir", default="")
     manifest = legacy_subparsers.add_parser("semantic-review-manifest")
@@ -108,6 +116,17 @@ def dispatch_legacy_command(args, ws) -> dict:
             output_dir=args.output_dir,
         )
         return {"ok": True, **require_valid_public_surface("legacy_l2_obsidian_view_bundle", bundle)}
+    if args.legacy_command == "runtime-log-marker-audit":
+        audit = build_legacy_runtime_log_marker_audit(
+            ws,
+            migration_dir=args.migration_dir,
+            topic=args.topic,
+            markers=args.markers,
+            expected_min_count=args.expected_min_count,
+            raw_log_files=args.raw_log_files,
+            orientation_log_files=args.orientation_log_files,
+        )
+        return {"ok": True, **require_valid_public_surface("legacy_runtime_log_marker_audit", audit)}
     if args.legacy_command == "semantic-review-queue":
         queue = build_legacy_semantic_review_queue(ws, migration_dir=args.migration_dir or None)
         return {"ok": True, **require_valid_public_surface("legacy_semantic_review_queue", queue)}

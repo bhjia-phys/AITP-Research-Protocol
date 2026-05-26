@@ -269,6 +269,7 @@ def _review_action_command(
         latest_review=latest_review,
         review_id=review_id,
         workspace=workspace,
+        migration_dir=migration_dir,
     )
     if qsgw_command is not None:
         return qsgw_command

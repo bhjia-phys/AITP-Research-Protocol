@@ -12,7 +12,16 @@ def qsgw_review_action_command(
     latest_review: dict[str, Any],
     review_id: str,
     workspace: str,
+    migration_dir: str,
 ) -> dict[str, Any] | None:
+    if action == "verify_runtime_logs_for_recomputed_head_wing_each_qsgw_iteration":
+        return _runtime_log_marker_audit_command(
+            action,
+            item,
+            review_id=review_id,
+            workspace=workspace,
+            migration_dir=migration_dir,
+        )
     code_readbacks = {
         "readback_librpa_task_qsgw_ac_call_site_and_truncation_fallback_logic_from_actual_code_or_preserved_originals": "qsgw_ac_callsite_readback",
         "readback_librpa_analycont_thiele_pade_division_or_pole_instability_points_from_actual_code_or_preserved_originals": "qsgw_ac_pade_readback",
@@ -55,6 +64,28 @@ def qsgw_review_action_command(
             statuses="<partial|passed|failed|inconclusive>",
         )
     return None
+
+
+def _runtime_log_marker_audit_command(
+    action: str,
+    item: dict[str, Any],
+    *,
+    review_id: str,
+    workspace: str,
+    migration_dir: str,
+) -> dict[str, Any]:
+    return _command(
+        action,
+        review_id=review_id,
+        cli=(
+            f"aitp-v5 --base {workspace} legacy runtime-log-marker-audit "
+            f"--migration-dir {migration_dir} --topic {item['topic']} "
+            "--marker \"Recomputed head-wing\" --expected-min-count <qsgw-iteration-count> "
+            "--raw-log-file <raw-runtime-log>"
+        ),
+        mcp="aitp_v5_build_legacy_runtime_log_marker_audit",
+        surface="legacy_runtime_log_marker_audit",
+    )
 
 
 def _code_readback_command(

@@ -1185,6 +1185,60 @@ def test_legacy_semantic_review_worklist_maps_qsgw_ac_remaining_actions(tmp_path
     assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
 
 
+def test_legacy_semantic_review_worklist_maps_qsgw_runtime_log_marker_action(tmp_path):
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
+    from brain.v5.models import ClaimRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="LibRPA QSGW updates recompute the head and wings each iteration.",
+            evidence_profile="code_method",
+            confidence_state="legacy_seed",
+            active_uncertainty="Semantic review requires raw runtime-log markers.",
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="Current summary evidence is not a substitute for raw per-iteration logs.",
+        active_claim_id="claim-canonical",
+        reviewed_typed_refs=["claim-canonical"],
+        remaining_actions=["verify_runtime_logs_for_recomputed_head_wing_each_qsgw_iteration"],
+    )
+
+    worklist = build_legacy_semantic_review_worklist(ws, migration_dir=run)
+
+    item = next(item for item in worklist["items"] if item["topic"] == "canonical-topic")
+    commands = {command["action"]: command for command in item["review_action_commands"]}
+    assert commands["verify_runtime_logs_for_recomputed_head_wing_each_qsgw_iteration"] == {
+        "action": "verify_runtime_logs_for_recomputed_head_wing_each_qsgw_iteration",
+        "latest_review_id": review.review_id,
+        "cli": (
+            f"aitp-v5 --base {ws.base} legacy runtime-log-marker-audit "
+            f"--migration-dir {run} --topic canonical-topic "
+            "--marker \"Recomputed head-wing\" --expected-min-count <qsgw-iteration-count> "
+            "--raw-log-file <raw-runtime-log>"
+        ),
+        "mcp": "aitp_v5_build_legacy_runtime_log_marker_audit",
+        "surface": "legacy_runtime_log_marker_audit",
+        "effect": "orientation_only",
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+    assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
+
+
 def test_legacy_semantic_review_worklist_maps_generic_readback_and_validation_actions(tmp_path):
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
     from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
@@ -2013,6 +2067,108 @@ def test_legacy_semantic_review_worklist_cli_mcp_and_runtime_surface(tmp_path, c
         "cli": "aitp-v5 legacy semantic-review-worklist <args>",
         "mcp": "aitp_v5_build_legacy_semantic_review_worklist",
         "surface": "legacy_semantic_review_worklist",
+    }
+
+
+def test_legacy_runtime_log_marker_audit_counts_only_raw_logs_for_satisfaction(tmp_path):
+    from brain.v5.legacy_runtime_log_audit import build_legacy_runtime_log_marker_audit
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    raw_log = tmp_path / "raw-qsgw.log"
+    raw_log.write_text(
+        "iter 1: Recomputed head-wing dielectric correction\n"
+        "iter 2: Recomputed head-wing dielectric correction\n",
+        encoding="utf-8",
+    )
+    orientation_log = tmp_path / "runtime-log.md"
+    orientation_log.write_text(
+        "# Runtime summary\n\n"
+        "A summary mentions Recomputed head-wing, but it is not a raw runtime log.\n",
+        encoding="utf-8",
+    )
+
+    satisfied = build_legacy_runtime_log_marker_audit(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        markers=["Recomputed head-wing"],
+        expected_min_count=2,
+        raw_log_files=[raw_log],
+        orientation_log_files=[orientation_log],
+    )
+    orientation_only = build_legacy_runtime_log_marker_audit(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        markers=["Recomputed head-wing"],
+        expected_min_count=1,
+        orientation_log_files=[orientation_log],
+    )
+
+    assert satisfied["kind"] == "legacy_runtime_log_marker_audit"
+    assert satisfied["status"] == "satisfied"
+    assert satisfied["total_raw_matches_by_marker"] == {"Recomputed head-wing": 2}
+    assert satisfied["total_orientation_matches_by_marker"] == {"Recomputed head-wing": 1}
+    assert satisfied["summary_inputs_trusted"] is False
+    assert satisfied["can_update_claim_trust"] is False
+    assert orientation_only["status"] == "missing_raw_logs"
+    assert orientation_only["total_raw_matches_by_marker"] == {"Recomputed head-wing": 0}
+    assert "provide_raw_runtime_logs" in orientation_only["next_actions"]
+    assert require_valid_public_surface("legacy_runtime_log_marker_audit", satisfied) == satisfied
+    assert require_valid_public_surface("legacy_runtime_log_marker_audit", orientation_only) == orientation_only
+
+
+def test_legacy_runtime_log_marker_audit_cli_mcp_and_runtime_surface(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_build_legacy_runtime_log_marker_audit
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.workspace import init_workspace
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+    raw_log = tmp_path / "raw-qsgw.log"
+    raw_log.write_text("iter 1: Recomputed head-wing dielectric correction\n", encoding="utf-8")
+
+    assert main([
+        "--base",
+        str(base),
+        "legacy",
+        "runtime-log-marker-audit",
+        "--migration-dir",
+        str(run),
+        "--topic",
+        "canonical-topic",
+        "--marker",
+        "Recomputed head-wing",
+        "--expected-min-count",
+        "1",
+        "--raw-log-file",
+        str(raw_log),
+    ]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_legacy_runtime_log_marker_audit(
+        str(base),
+        migration_dir=str(run),
+        topic="canonical-topic",
+        markers=["Recomputed head-wing"],
+        expected_min_count=1,
+        raw_log_files=[str(raw_log)],
+    )
+
+    assert cli_payload["kind"] == "legacy_runtime_log_marker_audit"
+    assert cli_payload["status"] == "satisfied"
+    assert mcp_payload["kind"] == "legacy_runtime_log_marker_audit"
+    assert mcp_payload["total_raw_matches_by_marker"] == {"Recomputed head-wing": 1}
+    assert runtime_entrypoints()["legacy_runtime_log_marker_audit"] == {
+        "cli": "aitp-v5 legacy runtime-log-marker-audit <args>",
+        "mcp": "aitp_v5_build_legacy_runtime_log_marker_audit",
+        "surface": "legacy_runtime_log_marker_audit",
     }
 
 

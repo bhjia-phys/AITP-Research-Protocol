@@ -8,6 +8,7 @@ from brain.v5.legacy_l2_graph import build_legacy_l2_graph_manifest, build_legac
 from brain.v5.legacy_l2_obsidian import write_legacy_l2_obsidian_view
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
+from brain.v5.legacy_runtime_log_audit import build_legacy_runtime_log_marker_audit
 from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
 from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
 from brain.v5.legacy_semantic_repair import apply_legacy_semantic_repair, build_legacy_semantic_repair_plan
@@ -72,6 +73,28 @@ def aitp_v5_write_legacy_l2_obsidian_view(
         output_dir=output_dir,
     )
     return {"ok": True, **require_valid_public_surface("legacy_l2_obsidian_view_bundle", result)}
+
+
+def aitp_v5_build_legacy_runtime_log_marker_audit(
+    base: str,
+    *,
+    topic: str,
+    markers: list[str] | None = None,
+    expected_min_count: int = 1,
+    raw_log_files: list[str] | None = None,
+    orientation_log_files: list[str] | None = None,
+    migration_dir: str = "",
+) -> dict:
+    result = build_legacy_runtime_log_marker_audit(
+        _ws(base),
+        migration_dir=migration_dir,
+        topic=topic,
+        markers=markers or [],
+        expected_min_count=expected_min_count,
+        raw_log_files=raw_log_files,
+        orientation_log_files=orientation_log_files,
+    )
+    return {"ok": True, **require_valid_public_surface("legacy_runtime_log_marker_audit", result)}
 
 
 def aitp_v5_build_legacy_semantic_review_queue(base: str, *, migration_dir: str = "") -> dict:
