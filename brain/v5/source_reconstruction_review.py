@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+from pathlib import Path
+
 from brain.v5.ids import prefixed_id
 from brain.v5.models import (
     ClaimRecord,
@@ -33,7 +36,8 @@ def build_source_reconstruction_review_manifest(ws: WorkspacePaths) -> dict:
     claims = list_records(ws.registry_dir("claims"), ClaimRecord)
     audits = audit_source_reconstruction_batch(ws, [claim.claim_id for claim in claims])
     reviews_by_claim = _group_reviews_by_claim(
-        list_records(ws.registry_dir("source_reconstruction_reviews"), SourceReconstructionReviewResultRecord)
+        list_records(ws.registry_dir("source_reconstruction_reviews"), SourceReconstructionReviewResultRecord),
+        review_dir=ws.registry_dir("source_reconstruction_reviews"),
     )
     items = [
         _review_manifest_item(claim, audits[claim.claim_id], reviews_by_claim.get(claim.claim_id, []))
@@ -121,6 +125,7 @@ def record_source_reconstruction_review_result(
         remaining_actions=actions,
         reviewer_role=reviewer_role,
         summary=summary,
+        created_at=_now_utc(),
     )
     write_record(
         ws.registry_dir("source_reconstruction_reviews") / f"{result_id}.md",
@@ -191,13 +196,36 @@ def _review_next_actions(review_status: str, audit: dict, remaining_actions: lis
 
 def _group_reviews_by_claim(
     records: list[SourceReconstructionReviewResultRecord],
+    *,
+    review_dir: Path,
 ) -> dict[str, list[SourceReconstructionReviewResultRecord]]:
     grouped: dict[str, list[SourceReconstructionReviewResultRecord]] = {}
     for record in records:
         grouped.setdefault(record.claim_id, []).append(record)
     for reviews in grouped.values():
-        reviews.sort(key=lambda review: review.result_id)
+        reviews.sort(key=lambda review: _review_sort_key(review, review_dir))
     return grouped
+
+
+def _review_sort_key(
+    review: SourceReconstructionReviewResultRecord,
+    review_dir: Path,
+) -> tuple[str, str]:
+    return (review.created_at or _review_file_mtime(review, review_dir), review.result_id)
+
+
+def _review_file_mtime(
+    review: SourceReconstructionReviewResultRecord,
+    review_dir: Path,
+) -> str:
+    path = review_dir / f"{review.result_id}.md"
+    if not path.exists():
+        return ""
+    return datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).isoformat()
+
+
+def _now_utc() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _latest_review(

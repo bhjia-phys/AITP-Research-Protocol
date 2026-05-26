@@ -391,6 +391,7 @@ class SourceReconstructionReviewResultRecord:
     remaining_actions: list[str] = field(default_factory=list)
     reviewer_role: str = "human_or_adversarial_reviewer"
     summary: str = ""
+    created_at: str = ""
     summary_inputs_trusted: bool = False
     can_update_claim_trust: bool = False
     kind: str = "source_reconstruction_review_result"

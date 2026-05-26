@@ -639,7 +639,11 @@ def test_source_reconstruction_review_result_cli_mcp_and_runtime(tmp_path, capsy
 
     assert cli_payload["kind"] == "source_reconstruction_review_result"
     assert cli_payload["can_update_claim_trust"] is False
-    assert mcp_payload == cli_payload
+    assert cli_payload["created_at"]
+    assert mcp_payload["created_at"]
+    assert {key: value for key, value in mcp_payload.items() if key != "created_at"} == {
+        key: value for key, value in cli_payload.items() if key != "created_at"
+    }
     assert runtime_entrypoints()["record_source_reconstruction_review_result"] == {
         "cli": "aitp-v5 source reconstruction-review-result <args>",
         "mcp": "aitp_v5_record_source_reconstruction_review_result",
@@ -718,6 +722,63 @@ def test_source_reconstruction_review_manifest_tracks_review_results(tmp_path):
     assert by_claim[needs_review.claim_id]["latest_review_result"] == {}
     assert "source_reconstruction_review" in by_claim[needs_review.claim_id]["next_actions"]
     assert require_valid_public_surface("source_reconstruction_review_manifest", manifest) == manifest
+
+
+def test_source_reconstruction_review_manifest_uses_file_mtime_for_legacy_latest(tmp_path):
+    import os
+
+    from brain.v5.models import ClaimRecord, SourceReconstructionReviewResultRecord
+    from brain.v5.source_reconstruction_review import build_source_reconstruction_review_manifest
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    claim = ClaimRecord(
+        claim_id="claim-l2",
+        topic_id="L2",
+        statement="",
+        evidence_profile="legacy_import",
+        confidence_state="legacy_seed",
+        active_uncertainty="Legacy L2 needs split-topic source review.",
+    )
+    write_record(ws.registry_dir("claims") / f"{claim.claim_id}.md", claim)
+    review_dir = ws.registry_dir("source_reconstruction_reviews")
+    older_path = review_dir / "source-reconstruction-review-z-older.md"
+    newer_path = review_dir / "source-reconstruction-review-a-newer.md"
+    write_record(
+        older_path,
+        SourceReconstructionReviewResultRecord(
+            result_id=older_path.stem,
+            topic_id="L2",
+            claim_id=claim.claim_id,
+            status="needs_revision",
+            reviewed_components=["source_locations"],
+            basis_refs=["legacy_archive:L2/index.md"],
+            remaining_actions=["sample_more_l2_archive_refs"],
+            summary="Older review should not be treated as latest just because its id sorts later.",
+        ),
+    )
+    write_record(
+        newer_path,
+        SourceReconstructionReviewResultRecord(
+            result_id=newer_path.stem,
+            topic_id="L2",
+            claim_id=claim.claim_id,
+            status="inconclusive",
+            reviewed_components=["definitions"],
+            basis_refs=["legacy_archive:L2/entries/claim-headwing-formula.md"],
+            remaining_actions=["split_global_l2_graph_into_source_grounded_topic_records_before_component_pass"],
+            summary="Newer review should be selected by file mtime when legacy records have no created_at.",
+        ),
+    )
+    os.utime(older_path, (1_800_000_000, 1_800_000_000))
+    os.utime(newer_path, (1_800_000_100, 1_800_000_100))
+
+    manifest = build_source_reconstruction_review_manifest(ws)
+
+    item = next(item for item in manifest["items"] if item["claim_id"] == claim.claim_id)
+    assert item["review_status"] == "inconclusive"
+    assert item["latest_review_result"]["result_id"] == newer_path.stem
 
 
 def test_source_reconstruction_review_manifest_cli_mcp_and_runtime(tmp_path, capsys):
