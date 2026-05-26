@@ -358,7 +358,7 @@ def _blocking_gaps(
             gaps.append(f"priority_host_surface_missing:{runtime}")
     if legacy_review["status"] == "missing_migration_run":
         gaps.append("legacy_semantic_review_queue_unavailable")
-    elif legacy_review["pending_count"] or legacy_review["needs_revision_count"]:
+    elif legacy_review["pending_count"] or legacy_review["needs_revision_count"] or legacy_review["inconclusive_count"]:
         gaps.append("legacy_semantic_review_backlog")
     return gaps
 

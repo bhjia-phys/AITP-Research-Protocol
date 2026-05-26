@@ -243,6 +243,32 @@ def test_final_readiness_audit_reports_missing_legacy_review_without_migration_r
     assert payload["content_backlog"]["legacy_semantic_review"]["semantic_lossless_proven"] is False
 
 
+def test_final_readiness_audit_treats_inconclusive_legacy_review_as_blocking_backlog(tmp_path):
+    from brain.v5.final_readiness import audit_final_engineering_readiness
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    run = _write_migration_run(ws, topic_count=1)
+    record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="legacy-topic-0",
+        status="inconclusive",
+        summary="Semantic review still needs source reconstruction before passing.",
+        reviewed_legacy_refs=["legacy-topic:legacy-topic-0/state.md"],
+        remaining_actions=["complete_source_reconstruction_components"],
+    )
+
+    payload = audit_final_engineering_readiness(ws, migration_dir=run)
+
+    assert payload["content_backlog_status"] == "legacy_semantic_review_backlog"
+    assert payload["content_backlog"]["legacy_semantic_review"]["needs_revision_count"] == 0
+    assert payload["content_backlog"]["legacy_semantic_review"]["inconclusive_count"] == 1
+    assert "legacy_semantic_review_backlog" in payload["blocking_gaps"]
+    assert payload["content_backlog"]["legacy_semantic_review"]["semantic_lossless_proven"] is False
+
+
 def test_final_readiness_audit_reports_source_reconstruction_content_backlog(tmp_path):
     from brain.v5.final_readiness import audit_final_engineering_readiness
     from brain.v5.public_surfaces import require_valid_public_surface
