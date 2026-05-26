@@ -1572,6 +1572,7 @@ def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(
             "migrate_legacy_l2_graph_entries_into_typed_l2_records",
             "rebuild_l2_obsidian_view_from_typed_graph",
             "complete_source_reconstruction",
+            "split_global_l2_graph_into_source_grounded_topic_records_before_component_pass",
             "decide_human_checkpoint_before_promotion",
         ],
     )
@@ -1600,6 +1601,7 @@ def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(
         "migrate_legacy_l2_graph_entries_into_typed_l2_records",
         "rebuild_l2_obsidian_view_from_typed_graph",
         "complete_source_reconstruction",
+        "split_global_l2_graph_into_source_grounded_topic_records_before_component_pass",
         "decide_human_checkpoint_before_promotion",
     ]
     commands_by_action = {
@@ -1653,6 +1655,18 @@ def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(
         "mcp": "aitp_v5_build_legacy_source_reconstruction_review_packet",
         "surface": "legacy_source_reconstruction_review_packet",
         "source_reconstruction_review_refs": source_review_refs,
+        "effect": "orientation_only",
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+    assert commands_by_action[
+        "split_global_l2_graph_into_source_grounded_topic_records_before_component_pass"
+    ] == {
+        "action": "split_global_l2_graph_into_source_grounded_topic_records_before_component_pass",
+        "latest_review_id": review.review_id,
+        "cli": f"aitp-v5 --base {ws.base} legacy l2-typed-migration-packet",
+        "mcp": "aitp_v5_build_legacy_l2_typed_migration_packet",
+        "surface": "legacy_l2_typed_migration_packet",
         "effect": "orientation_only",
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,

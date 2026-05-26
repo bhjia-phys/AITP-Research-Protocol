@@ -93,6 +93,7 @@ def _review_action_command(
         "review_legacy_l2_graph_edges_for_object_relations",
         "review_legacy_l2_steps_for_sensemaking_reports",
         "review_legacy_l2_towers_for_memory_entries",
+        "split_global_l2_graph_into_source_grounded_topic_records_before_component_pass",
     }:
         return _command(
             action,
