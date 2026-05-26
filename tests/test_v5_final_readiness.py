@@ -503,5 +503,13 @@ def test_final_readiness_cli_compact_progress(tmp_path, capsys):
     assert cli_payload["legacy_semantic_review"]["open_human_checkpoint_refs"] == [
         f"human-checkpoint:{checkpoint.checkpoint_id}"
     ]
+    assert cli_payload["source_reconstruction"]["top_incomplete_claim_refs"] == [
+        "source_reconstruction:claim-legacy-0"
+    ]
+    assert cli_payload["source_reconstruction"]["top_incomplete_claim_topics"] == ["legacy-topic-0"]
+    assert cli_payload["source_reconstruction"]["top_incomplete_review_statuses"] == ["pending"]
+    assert cli_payload["source_reconstruction"]["review_next_action_refs"] == [
+        "source_reconstruction_review:claim-legacy-0"
+    ]
     assert cli_payload["can_update_claim_trust"] is False
     assert "kernel_capabilities" not in cli_payload

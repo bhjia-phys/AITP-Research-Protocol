@@ -77,6 +77,9 @@ def compact_final_readiness(payload: dict[str, Any]) -> dict[str, Any]:
     source = backlog.get("source_reconstruction") if isinstance(backlog.get("source_reconstruction"), dict) else {}
     legacy_progress = _legacy_progress(legacy)
     source_progress = dict(source.get("review_progress") or {})
+    top_source_items = [
+        item for item in source.get("top_incomplete_claims", []) if isinstance(item, dict)
+    ]
     return {
         "ok": bool(payload.get("ok", True)),
         "kind": "final_engineering_readiness_progress",
@@ -123,6 +126,24 @@ def compact_final_readiness(payload: dict[str, Any]) -> dict[str, Any]:
             "incomplete_claim_count": int(source.get("incomplete_claim_count") or 0),
             "review_progress": source_progress,
             "pending_review_count": int(source_progress.get("pending") or 0),
+            "top_incomplete_claim_refs": [
+                f"source_reconstruction:{claim_id}"
+                for claim_id in [str(item.get("claim_id") or "") for item in top_source_items]
+                if claim_id
+            ],
+            "top_incomplete_claim_topics": [
+                str(item.get("topic_id") or "")
+                for item in top_source_items
+                if str(item.get("topic_id") or "")
+            ],
+            "top_incomplete_review_statuses": [
+                str(item.get("review_status") or "")
+                for item in top_source_items
+                if str(item.get("review_status") or "")
+            ],
+            "review_next_action_refs": [
+                str(action) for action in list(source.get("review_next_actions") or [])[:5] if str(action)
+            ],
             "can_update_claim_trust": bool(source.get("can_update_claim_trust", False)),
         },
         "backlog_refs": list(payload.get("backlog_refs") or []),
