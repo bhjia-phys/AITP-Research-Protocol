@@ -1109,6 +1109,7 @@ def test_legacy_semantic_review_worklist_maps_qsgw_ac_remaining_actions(tmp_path
             "readback_librpa_task_qsgw_ac_call_site_and_truncation_fallback_logic_from_actual_code_or_preserved_originals",
             "readback_librpa_analycont_thiele_pade_division_or_pole_instability_points_from_actual_code_or_preserved_originals",
             "resolve_n_params_anacon_input_parsing_before_molecular_sensitivity_sweep",
+            "provide_or_patch_n_params_anacon_parameter_injection_before_n_params_sensitivity_sweep",
             "compare_nfreq_and_n_params_anacon_sensitivity_on_molecular_regression_cases",
             "compare_pade_mitigation_against_full_frequency_or_contour_deformation_reference",
         ],
@@ -1140,6 +1141,23 @@ def test_legacy_semantic_review_worklist_maps_qsgw_ac_remaining_actions(tmp_path
     parse = "resolve_n_params_anacon_input_parsing_before_molecular_sensitivity_sweep"
     assert commands[parse]["surface"] == "tool_run_record"
     assert "--name qsgw_ac_parameter_parse_readback " in commands[parse]["cli"]
+    injection = "provide_or_patch_n_params_anacon_parameter_injection_before_n_params_sensitivity_sweep"
+    assert commands[injection] == {
+        "action": injection,
+        "latest_review_id": review.review_id,
+        "cli": (
+            f"aitp-v5 --base {ws.base} code state record "
+            "--repo-id <LibRPA-repo-id> --upstream-remote <remote> --upstream-branch <branch> "
+            "--upstream-commit <commit> --local-branch <branch> --worktree-path <LibRPA-worktree-path> "
+            "--linked-records-json <parameter-injection-validation-links> "
+            "--known-divergence <n_params_anacon parameter injection path or nfreq-only sweep decision>"
+        ),
+        "mcp": "aitp_v5_record_code_state",
+        "surface": "code_state_record",
+        "effect": "typed_record_write",
+        "can_update_kernel_state": True,
+        "can_update_claim_trust": False,
+    }
     sensitivity = commands["compare_nfreq_and_n_params_anacon_sensitivity_on_molecular_regression_cases"]
     assert sensitivity["cli"] == (
         f"aitp-v5 --base {ws.base} validation result record "
