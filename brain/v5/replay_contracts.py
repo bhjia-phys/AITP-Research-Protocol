@@ -105,6 +105,12 @@ def _validate_workspace_backlog_summary(payload: dict[str, Any], path: str, resu
         _require_list(attention.get("top_items"), f"{path}.resume_attention.top_items", result)
     if payload.get("truth_source") != "kernel_state":
         result.add(f"{path}.truth_source", "must be kernel_state")
+    if "legacy_semantic_review" in payload:
+        _validate_legacy_semantic_review_backlog(
+            payload.get("legacy_semantic_review"),
+            f"{path}.legacy_semantic_review",
+            result,
+        )
     for key in ("summary_inputs_trusted", "orientation_only", "can_update_kernel_state", "can_update_claim_trust"):
         if not isinstance(payload.get(key), bool):
             result.add(f"{path}.{key}", "must be a boolean")
@@ -122,4 +128,40 @@ def _validate_source_backlog_item(payload: Any, path: str, result: ContractResul
         _require_nonempty_str(payload, key, path, result)
     for key in ("missing_components", "next_actions"):
         _require_list(payload.get(key), f"{path}.{key}", result)
+    _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
+
+
+def _validate_legacy_semantic_review_backlog(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    if payload.get("surface") != "legacy_semantic_review_manifest":
+        result.add(f"{path}.surface", "must be legacy_semantic_review_manifest")
+    _require_nonempty_str(payload, "migration_dir", path, result)
+    if not isinstance(payload.get("review_item_count"), int) or payload["review_item_count"] < 0:
+        result.add(f"{path}.review_item_count", "must be a non-negative integer")
+    _require_mapping(payload.get("review_progress"), f"{path}.review_progress", result)
+    if not isinstance(payload.get("semantic_lossless_proven"), bool):
+        result.add(f"{path}.semantic_lossless_proven", "must be a boolean")
+    _require_list(payload.get("top_backlog_items"), f"{path}.top_backlog_items", result)
+    if isinstance(payload.get("top_backlog_items"), list):
+        for index, item in enumerate(payload["top_backlog_items"]):
+            _validate_legacy_backlog_item(item, f"{path}.top_backlog_items[{index}]", result)
+    for key in ("summary_inputs_trusted", "orientation_only", "can_update_kernel_state", "can_update_claim_trust"):
+        if not isinstance(payload.get(key), bool):
+            result.add(f"{path}.{key}", "must be a boolean")
+    _require_bool_value(payload.get("summary_inputs_trusted"), False, f"{path}.summary_inputs_trusted", result)
+    _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
+    _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
+    _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
+
+
+def _validate_legacy_backlog_item(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    for key in ("topic", "active_claim_id", "review_status", "review_priority", "packet_cli"):
+        _require_nonempty_str(payload, key, path, result)
+    if not isinstance(payload.get("latest_review_id"), str):
+        result.add(f"{path}.latest_review_id", "must be a string")
     _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)

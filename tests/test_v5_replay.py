@@ -177,6 +177,160 @@ def test_workspace_replay_packet_lists_resume_queue_and_source_gaps(tmp_path):
     assert "orientation only" in body
 
 
+def test_workspace_replay_packet_can_include_legacy_semantic_review_backlog(tmp_path):
+    from dataclasses import asdict
+
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.markdown import read_md
+    from brain.v5.models import ClaimRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.replay import write_workspace_replay_packet
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    migration = ws.root / "migrations" / "legacy-run"
+    migration.mkdir(parents=True)
+    (migration / "migration_summary.json").write_text(
+        json.dumps(
+            {
+                "kind": "legacy_v5_lossless_migration_report",
+                "run_id": "legacy-run",
+                "workspace": str(ws.base),
+                "legacy_root": str(ws.base / "research" / "aitp-topics"),
+                "v5_root": str(ws.root),
+                "totals": {
+                    "topic_count": 1,
+                    "legacy_file_count": 1,
+                    "post_legacy_file_count": 1,
+                    "legacy_manifest_hash_stable": True,
+                    "legacy_manifest_change_count": 0,
+                    "archive_reference_count": 0,
+                    "accounted_file_count": 1,
+                    "summary_inputs_trusted": False,
+                },
+                "topics": [
+                    {
+                        "topic": "legacy-l2",
+                        "status": "ok",
+                        "file_count": 1,
+                        "audit_mapped_file_count": 1,
+                        "structured_file_count": 1,
+                        "archive_reference_count": 0,
+                        "accounted_file_count": 1,
+                        "missing_expected_paths": [],
+                        "can_write_v5_records": False,
+                        "active_claim_id": "claim-l2",
+                        "written_records": {
+                            "topics": 1,
+                            "claims": 1,
+                            "evidence": 1,
+                            "reference_locations": 0,
+                            "sensemaking_reports": 1,
+                            "trace_events": 0,
+                            "memory_entries": 1,
+                        },
+                        "preserved_source_refs": 0,
+                        "summary_inputs_trusted": False,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (migration / "verification_report.json").write_text(
+        json.dumps(
+            {
+                "kind": "legacy_v5_lossless_migration_verification",
+                "run_id": "legacy-run",
+                "file_accounting_ok": True,
+                "manifest_check": {"pre_count": 1, "post_count": 1, "missing": 0, "extra": 0, "changed": 0},
+                "archive_reference_check": {
+                    "archive_records_checked": 0,
+                    "archive_records_expected": 0,
+                    "registry_archive_reference_count": 0,
+                    "problem_count": 0,
+                    "problems": [],
+                },
+                "markdown_readability_check": {
+                    "markdown_files_checked": 1,
+                    "problem_count": 0,
+                    "problems": [],
+                },
+                "all_checks_ok": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    manifest = migration / "legacy_manifest_pre.jsonl"
+    manifest.write_text(
+        json.dumps({"topic": "legacy-l2", "path": "state.md", "sha256": "abc"}) + "\n",
+        encoding="utf-8",
+    )
+    write_record(
+        ws.registry_dir("claims") / "claim-l2.md",
+        ClaimRecord(
+            claim_id="claim-l2",
+            topic_id="legacy-l2",
+            statement="",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Legacy L2 graph needs typed review.",
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=migration,
+        topic="legacy-l2",
+        status="inconclusive",
+        summary="Legacy L2 remains orientation-only until typed review is complete.",
+        active_claim_id="claim-l2",
+        reviewed_legacy_refs=["legacy_archive:L2/index.md"],
+        reviewed_typed_refs=["claim-l2"],
+        remaining_actions=["review_legacy_l2_memory_entry_candidates"],
+    )
+
+    packet = write_workspace_replay_packet(ws, migration_dir=migration)
+    payload = asdict(packet)
+
+    assert require_valid_public_surface("workspace_replay_packet", {"ok": True, **payload})["ok"] is True
+    legacy = packet.workspace_backlog_summary["legacy_semantic_review"]
+    assert legacy == {
+        "surface": "legacy_semantic_review_manifest",
+        "migration_dir": str(migration),
+        "review_item_count": 1,
+        "review_progress": {
+            "passed": 0,
+            "inconclusive": 1,
+            "needs_revision": 0,
+            "pending": 0,
+        },
+        "semantic_lossless_proven": False,
+        "top_backlog_items": [
+            {
+                "topic": "legacy-l2",
+                "active_claim_id": "claim-l2",
+                "review_status": "inconclusive",
+                "review_priority": "high",
+                "latest_review_id": review.review_id,
+                "packet_cli": (
+                    f"aitp-v5 --base {ws.base} legacy semantic-review-packet "
+                    f"--migration-dir {migration} --topic legacy-l2"
+                ),
+                "can_update_claim_trust": False,
+            }
+        ],
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+    _, body = read_md(packet.files["replay_packet"])
+    assert "Legacy Semantic Review Backlog" in body
+    assert "semantic lossless proven: False" in body
+    assert "legacy-l2" in body
+
+
 def test_workspace_replay_packet_cli_mcp_and_runtime(tmp_path, capsys):
     from brain.v5.cli import main
     from brain.v5.mcp_tools import aitp_v5_write_workspace_replay_packet
@@ -196,3 +350,82 @@ def test_workspace_replay_packet_cli_mcp_and_runtime(tmp_path, capsys):
         "mcp": "aitp_v5_write_workspace_replay_packet",
         "surface": "workspace_replay_packet",
     }
+
+
+def test_workspace_replay_packet_cli_mcp_accept_migration_dir(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_write_workspace_replay_packet
+    from brain.v5.models import ClaimRecord
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    migration = ws.root / "migrations" / "legacy-run"
+    migration.mkdir(parents=True)
+    (migration / "migration_summary.json").write_text(
+        json.dumps(
+            {
+                "run_id": "legacy-run",
+                "workspace": str(ws.base),
+                "legacy_root": str(ws.base / "research" / "aitp-topics"),
+                "v5_root": str(ws.root),
+                "totals": {"topic_count": 1, "legacy_file_count": 1, "post_legacy_file_count": 1},
+                "topics": [
+                    {
+                        "topic": "legacy-l2",
+                        "status": "ok",
+                        "file_count": 1,
+                        "accounted_file_count": 1,
+                        "can_write_v5_records": False,
+                        "active_claim_id": "claim-l2",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (migration / "verification_report.json").write_text(
+        json.dumps(
+            {
+                "run_id": "legacy-run",
+                "file_accounting_ok": True,
+                "manifest_check": {"pre_count": 1, "post_count": 1, "missing": 0, "extra": 0, "changed": 0},
+                "archive_reference_check": {
+                    "archive_records_checked": 0,
+                    "archive_records_expected": 0,
+                    "registry_archive_reference_count": 0,
+                    "problem_count": 0,
+                },
+                "markdown_readability_check": {"markdown_files_checked": 1, "problem_count": 0},
+            }
+        ),
+        encoding="utf-8",
+    )
+    write_record(
+        ws.registry_dir("claims") / "claim-l2.md",
+        ClaimRecord(
+            claim_id="claim-l2",
+            topic_id="legacy-l2",
+            statement="",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Legacy L2 graph needs typed review.",
+        ),
+    )
+
+    assert main([
+        "--base",
+        str(ws.base),
+        "summary",
+        "replay",
+        "--migration-dir",
+        str(migration),
+    ]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_write_workspace_replay_packet(str(ws.base), migration_dir=str(migration))
+
+    assert cli_payload["kind"] == "workspace_replay_packet"
+    assert cli_payload["workspace_backlog_summary"]["legacy_semantic_review"]["review_item_count"] == 1
+    assert mcp_payload["workspace_backlog_summary"]["legacy_semantic_review"]["migration_dir"] == str(migration)
+    assert cli_payload["can_update_claim_trust"] is False
+    assert mcp_payload["can_update_kernel_state"] is False

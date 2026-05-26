@@ -16,7 +16,8 @@ def add_summary_parser(subparsers) -> None:
     commands.add_parser("session").add_argument("session_id")
     commands.add_parser("orientation").add_argument("session_id")
     commands.add_parser("workspace")
-    commands.add_parser("replay")
+    replay = commands.add_parser("replay")
+    replay.add_argument("--migration-dir", default="")
     commands.add_parser("refresh")
 
 
@@ -30,7 +31,7 @@ def dispatch_summary_command(args, ws) -> dict:
         bundle = write_workspace_summary(ws)
         return {"ok": True, **require_valid_public_surface("workspace_summary_bundle", asdict(bundle))}
     if args.summary_command == "replay":
-        bundle = write_workspace_replay_packet(ws)
+        bundle = write_workspace_replay_packet(ws, migration_dir=args.migration_dir or None)
         return {"ok": True, **require_valid_public_surface("workspace_replay_packet", asdict(bundle))}
     if args.summary_command == "refresh":
         return {"ok": True, **require_valid_public_surface("workspace_refresh_bundle", refresh_workspace_views(ws))}

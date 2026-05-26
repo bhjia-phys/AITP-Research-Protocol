@@ -7,6 +7,7 @@ from typing import Any
 
 from brain.v5.evidence import required_output_coverage
 from brain.v5.flow import resolve_flow_profile
+from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
 from brain.v5.markdown import write_md
 from brain.v5.memory_index import MemoryEntrySummary, scan_memory_entry_summaries
 from brain.v5.models import ClaimRecord, CodeStateRecord, EvidenceRecord, SessionBinding, SourceReconstructionReviewResultRecord
@@ -34,7 +35,11 @@ class WorkspaceReplayPacket:
     can_update_claim_trust: bool = False
 
 
-def write_workspace_replay_packet(ws: WorkspacePaths) -> WorkspaceReplayPacket:
+def write_workspace_replay_packet(
+    ws: WorkspacePaths,
+    *,
+    migration_dir: str | None = None,
+) -> WorkspaceReplayPacket:
     """Write an orientation-only packet for resuming active sessions."""
 
     replay_dir = ws.root / "surfaces" / "workspace_replay"
@@ -54,7 +59,10 @@ def write_workspace_replay_packet(ws: WorkspacePaths) -> WorkspaceReplayPacket:
         for session in sessions
     ]
     attention = [entry for entry in entries if entry["attention_reasons"]]
-    workspace_backlog_summary = _workspace_backlog_summary(entries)
+    workspace_backlog_summary = _workspace_backlog_summary(
+        entries,
+        legacy_semantic_review=_legacy_semantic_review_summary(ws, migration_dir),
+    )
     source_records = {
         "sessions": [entry["session_id"] for entry in entries],
         "topics": _unique([entry["topic_id"] for entry in entries if entry["topic_id"]]),
@@ -188,6 +196,23 @@ def _body(entries: list[dict[str, Any]], workspace_backlog_summary: dict[str, An
         )
     if workspace_backlog_summary["source_reconstruction"]["top_incomplete_claims"]:
         lines.append("")
+    legacy = workspace_backlog_summary.get("legacy_semantic_review")
+    if isinstance(legacy, dict):
+        lines.extend([
+            "## Legacy Semantic Review Backlog",
+            "",
+            f"- Migration dir: `{legacy['migration_dir']}`",
+            f"- Review items: {legacy['review_item_count']}",
+            f"- Review progress: `{legacy['review_progress']}`",
+            f"- semantic lossless proven: {legacy['semantic_lossless_proven']}",
+            "",
+        ])
+        for item in legacy["top_backlog_items"]:
+            lines.append(
+                f"- `{item['topic']}`: {item['review_status']} priority {item['review_priority']}; "
+                f"review via `{item['packet_cli']}`"
+            )
+        lines.append("")
     if not entries:
         lines.append("- No active session bindings are recorded.")
         return "\n".join(lines) + "\n"
@@ -207,13 +232,17 @@ def _body(entries: list[dict[str, Any]], workspace_backlog_summary: dict[str, An
     return "\n".join(lines)
 
 
-def _workspace_backlog_summary(entries: list[dict[str, Any]]) -> dict[str, Any]:
+def _workspace_backlog_summary(
+    entries: list[dict[str, Any]],
+    *,
+    legacy_semantic_review: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     complete_entries = [entry for entry in entries if entry["claim_id"] and entry["source_reconstruction_complete"]]
     incomplete_entries = [
         entry for entry in entries if entry["claim_id"] and not entry["source_reconstruction_complete"]
     ]
     attention_entries = _prioritized_attention_entries([entry for entry in entries if entry["attention_reasons"]])
-    return {
+    summary = {
         "active_session_count": len(entries),
         "active_topic_count": len(_unique([entry["topic_id"] for entry in entries if entry["topic_id"]])),
         "active_claim_count": len(_unique([entry["claim_id"] for entry in entries if entry["claim_id"]])),
@@ -234,6 +263,45 @@ def _workspace_backlog_summary(entries: list[dict[str, Any]]) -> dict[str, Any]:
         "summary_inputs_trusted": False,
         "orientation_only": True,
         "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+    if legacy_semantic_review is not None:
+        summary["legacy_semantic_review"] = legacy_semantic_review
+    return summary
+
+
+def _legacy_semantic_review_summary(ws: WorkspacePaths, migration_dir: str | None) -> dict[str, Any] | None:
+    if not migration_dir:
+        return None
+    manifest = build_legacy_semantic_review_manifest(ws, migration_dir=migration_dir)
+    backlog = [
+        item
+        for item in manifest["items"]
+        if item["review_status"] in {"pending", "needs_revision", "inconclusive"}
+    ]
+    return {
+        "surface": "legacy_semantic_review_manifest",
+        "migration_dir": manifest["migration_dir"],
+        "review_item_count": manifest["review_item_count"],
+        "review_progress": dict(manifest["review_progress"]),
+        "semantic_lossless_proven": bool(manifest["semantic_lossless_proven"]),
+        "top_backlog_items": [_legacy_backlog_item(item) for item in backlog[:5]],
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def _legacy_backlog_item(item: dict[str, Any]) -> dict[str, Any]:
+    latest = item.get("latest_semantic_review") if isinstance(item.get("latest_semantic_review"), dict) else {}
+    return {
+        "topic": item["topic"],
+        "active_claim_id": item["active_claim_id"],
+        "review_status": item["review_status"],
+        "review_priority": item["review_priority"],
+        "latest_review_id": str(latest.get("review_id") or ""),
+        "packet_cli": item["packet_cli"],
         "can_update_claim_trust": False,
     }
 

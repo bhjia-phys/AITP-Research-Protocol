@@ -26,8 +26,8 @@ def aitp_v5_write_workspace_summary(base: str) -> dict:
     return {"ok": True, **require_valid_public_surface("workspace_summary_bundle", asdict(bundle))}
 
 
-def aitp_v5_write_workspace_replay_packet(base: str) -> dict:
-    bundle = write_workspace_replay_packet(init_workspace(base))
+def aitp_v5_write_workspace_replay_packet(base: str, *, migration_dir: str = "") -> dict:
+    bundle = write_workspace_replay_packet(init_workspace(base), migration_dir=migration_dir or None)
     return {"ok": True, **require_valid_public_surface("workspace_replay_packet", asdict(bundle))}
 
 
