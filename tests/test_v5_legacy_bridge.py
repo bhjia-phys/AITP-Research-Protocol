@@ -1227,7 +1227,9 @@ def test_legacy_semantic_review_worklist_maps_generic_readback_and_validation_ac
         reviewed_typed_refs=["claim-canonical", "validation-contract-gw-residue"],
         remaining_actions=[
             "readback_cd_formula_from_godby_golze_sources",
+            "extract_formula_level_cd_equations_from_godby_1988_1989_and_golze_2018_sections",
             "map_wc_real_or_complex_frequency_requirement_to_librpa_ac_boundary",
+            "design_or_import_real_axis_cd_or_residue_sum_Wc_sigma_path_for_LibRPA",
             "verify_g_pole_residue_windows_sign_and_chemical_potential_conventions",
             "compare_cd_or_ac_of_w_against_pade_sigma_on_molecular_or_qsgw_reference_set_before_promotion",
         ],
@@ -1250,6 +1252,17 @@ def test_legacy_semantic_review_worklist_maps_generic_readback_and_validation_ac
     mapped = commands["map_wc_real_or_complex_frequency_requirement_to_librpa_ac_boundary"]
     assert mapped["surface"] == "tool_run_record"
     assert "--name map_wc_real_or_complex_frequency_requirement_to_librpa_ac_boundary " in mapped["cli"]
+    extract = commands["extract_formula_level_cd_equations_from_godby_1988_1989_and_golze_2018_sections"]
+    assert extract["surface"] == "tool_run_record"
+    assert (
+        "--name extract_formula_level_cd_equations_from_godby_1988_1989_and_golze_2018_sections "
+        in extract["cli"]
+    )
+    assert "--family source_readback " in extract["cli"]
+    design = commands["design_or_import_real_axis_cd_or_residue_sum_Wc_sigma_path_for_LibRPA"]
+    assert design["surface"] == "tool_run_record"
+    assert "--recipe <implementation-boundary-recipe-id> --family implementation_boundary " in design["cli"]
+    assert "--outputs-json <implementation-boundary-json>" in design["cli"]
     verify = commands["verify_g_pole_residue_windows_sign_and_chemical_potential_conventions"]
     assert verify["cli"] == (
         f"aitp-v5 --base {ws.base} validation result record "

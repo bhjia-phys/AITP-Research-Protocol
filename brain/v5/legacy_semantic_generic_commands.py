@@ -1,4 +1,4 @@
-"""Generic command hints for source-readback and validation review actions."""
+"""Generic command hints for source-readback, boundary, and validation actions."""
 
 from __future__ import annotations
 
@@ -14,8 +14,16 @@ def generic_review_action_command(
     workspace: str,
 ) -> dict[str, Any] | None:
     normalized = _normalize(action)
-    if normalized.startswith(("readback ", "map ")):
+    if normalized.startswith(("readback ", "extract ", "map ")):
         return _source_readback_command(
+            action,
+            item,
+            review_id=review_id,
+            workspace=workspace,
+            tool_name=_tool_name(action),
+        )
+    if normalized.startswith("design or import "):
+        return _implementation_boundary_command(
             action,
             item,
             review_id=review_id,
@@ -50,6 +58,30 @@ def _source_readback_command(
             f"--recipe <source-readback-recipe-id> --family source_readback --name {tool_name} "
             f"--topic {item['topic']} --claim {item['active_claim_id']} "
             "--outputs-json <source-readback-json> --source-ref <source-or-code-ref>"
+        ),
+        mcp="aitp_v5_record_tool_run",
+        surface="tool_run_record",
+        effect="typed_record_write",
+        can_update_kernel_state=True,
+    )
+
+
+def _implementation_boundary_command(
+    action: str,
+    item: dict[str, Any],
+    *,
+    review_id: str,
+    workspace: str,
+    tool_name: str,
+) -> dict[str, Any]:
+    return _command(
+        action,
+        review_id=review_id,
+        cli=(
+            f"aitp-v5 --base {workspace} tool run record "
+            f"--recipe <implementation-boundary-recipe-id> --family implementation_boundary --name {tool_name} "
+            f"--topic {item['topic']} --claim {item['active_claim_id']} "
+            "--outputs-json <implementation-boundary-json> --source-ref <source-or-code-ref>"
         ),
         mcp="aitp_v5_record_tool_run",
         surface="tool_run_record",
