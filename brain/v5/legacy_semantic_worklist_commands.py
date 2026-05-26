@@ -198,6 +198,41 @@ def _review_action_command(
             effect="typed_record_write",
             can_update_kernel_state=True,
         )
+    qsgw_code_readbacks = {
+        "readback_librpa_task_qsgw_ac_call_site_and_truncation_fallback_logic_from_actual_code_or_preserved_originals": "qsgw_ac_callsite_readback",
+        "readback_librpa_analycont_thiele_pade_division_or_pole_instability_points_from_actual_code_or_preserved_originals": "qsgw_ac_pade_readback",
+        "resolve_n_params_anacon_input_parsing_before_molecular_sensitivity_sweep": "qsgw_ac_parameter_parse_readback",
+    }
+    if action in qsgw_code_readbacks:
+        return _qsgw_code_readback_command(
+            action,
+            item,
+            review_id=review_id,
+            workspace=workspace,
+            tool_name=qsgw_code_readbacks[action],
+        )
+    qsgw_validation_actions = {
+        "compare_nfreq_and_n_params_anacon_sensitivity_on_molecular_regression_cases": (
+            "molecular-sensitivity-tool-run-id",
+            "nfreq/n_params_anacon molecular regression comparison",
+        ),
+        "compare_pade_mitigation_against_full_frequency_or_contour_deformation_reference": (
+            "pade-mitigation-comparison-tool-run-id",
+            "Padé mitigation against full-frequency or contour-deformation reference",
+        ),
+    }
+    if action in qsgw_validation_actions:
+        tool_run_placeholder, summary = qsgw_validation_actions[action]
+        return _validation_result_command(
+            action,
+            item,
+            latest_review=latest_review,
+            review_id=review_id,
+            workspace=workspace,
+            tool_run_placeholder=tool_run_placeholder,
+            summary=summary,
+            statuses="<partial|passed|failed|inconclusive>",
+        )
     return _normalized_action_command(action, item, review_id=review_id, workspace=workspace)
 
 
@@ -285,6 +320,58 @@ def _source_reconstruction_command(
         cli=f"aitp-v5 --base {workspace} source reconstruction-review --claim {item['active_claim_id']}",
         mcp="aitp_v5_build_source_reconstruction_review_packet",
         surface="source_reconstruction_review_packet",
+    )
+
+
+def _qsgw_code_readback_command(
+    action: str,
+    item: dict[str, Any],
+    *,
+    review_id: str,
+    workspace: str,
+    tool_name: str,
+) -> dict[str, Any]:
+    return _command(
+        action,
+        review_id=review_id,
+        cli=(
+            f"aitp-v5 --base {workspace} tool run record "
+            f"--recipe <code-trace-recipe-id> --family code_trace --name {tool_name} "
+            f"--topic {item['topic']} --claim {item['active_claim_id']} "
+            "--outputs-json <code-readback-json> --source-ref <LibRPA-code-ref>"
+        ),
+        mcp="aitp_v5_record_tool_run",
+        surface="tool_run_record",
+        effect="typed_record_write",
+        can_update_kernel_state=True,
+    )
+
+
+def _validation_result_command(
+    action: str,
+    item: dict[str, Any],
+    *,
+    latest_review: dict[str, Any],
+    review_id: str,
+    workspace: str,
+    tool_run_placeholder: str,
+    summary: str,
+    statuses: str,
+) -> dict[str, Any]:
+    return _command(
+        action,
+        review_id=review_id,
+        cli=(
+            f"aitp-v5 --base {workspace} validation result record "
+            f"--topic {item['topic']} --claim {item['active_claim_id']} "
+            f"--contract {_validation_contract_id(latest_review)} "
+            f"--tool-run <{tool_run_placeholder}> --status {statuses} "
+            f"--checked-output validation_result --summary <{summary}>"
+        ),
+        mcp="aitp_v5_record_validation_result",
+        surface="validation_result_record",
+        effect="typed_record_write",
+        can_update_kernel_state=True,
     )
 
 

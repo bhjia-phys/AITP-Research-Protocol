@@ -1063,6 +1063,97 @@ def test_legacy_semantic_review_worklist_maps_validation_remaining_actions(tmp_p
     assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
 
 
+def test_legacy_semantic_review_worklist_maps_qsgw_ac_remaining_actions(tmp_path):
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
+    from brain.v5.models import ClaimRecord, ValidationContractRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="Padé analytic continuation can amplify QSGW molecule errors.",
+            evidence_profile="code_method",
+            confidence_state="legacy_seed",
+            active_uncertainty="Semantic review requires code readback and molecular regression evidence.",
+        ),
+    )
+    write_record(
+        ws.registry_dir("validation_contracts") / "validation-contract-qsgw-ac.md",
+        ValidationContractRecord(
+            contract_id="validation-contract-qsgw-ac",
+            topic_id="canonical-topic",
+            claim_id="claim-canonical",
+            required_checks=[
+                "readback_librpa_task_qsgw_ac_call_site_and_truncation_fallback_logic_from_actual_code",
+                "readback_librpa_analycont_thiele_pade_division_or_pole_instability_points_from_actual_code",
+                "compare_nfreq_and_n_params_anacon_sensitivity_on_molecular_regression_cases",
+                "compare_pade_mitigation_against_full_frequency_or_contour_deformation_reference",
+            ],
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="QSGW AC review needs code readback and molecule regression validation.",
+        reviewed_typed_refs=["claim-canonical", "validation-contract-qsgw-ac"],
+        remaining_actions=[
+            "readback_librpa_task_qsgw_ac_call_site_and_truncation_fallback_logic_from_actual_code_or_preserved_originals",
+            "readback_librpa_analycont_thiele_pade_division_or_pole_instability_points_from_actual_code_or_preserved_originals",
+            "resolve_n_params_anacon_input_parsing_before_molecular_sensitivity_sweep",
+            "compare_nfreq_and_n_params_anacon_sensitivity_on_molecular_regression_cases",
+            "compare_pade_mitigation_against_full_frequency_or_contour_deformation_reference",
+        ],
+    )
+
+    worklist = build_legacy_semantic_review_worklist(ws, migration_dir=run)
+
+    item = next(item for item in worklist["items"] if item["topic"] == "canonical-topic")
+    commands = {command["action"]: command for command in item["review_action_commands"]}
+    callsite = "readback_librpa_task_qsgw_ac_call_site_and_truncation_fallback_logic_from_actual_code_or_preserved_originals"
+    assert commands[callsite] == {
+        "action": callsite,
+        "latest_review_id": review.review_id,
+        "cli": (
+            f"aitp-v5 --base {ws.base} tool run record "
+            "--recipe <code-trace-recipe-id> --family code_trace --name qsgw_ac_callsite_readback "
+            "--topic canonical-topic --claim claim-canonical "
+            "--outputs-json <code-readback-json> --source-ref <LibRPA-code-ref>"
+        ),
+        "mcp": "aitp_v5_record_tool_run",
+        "surface": "tool_run_record",
+        "effect": "typed_record_write",
+        "can_update_kernel_state": True,
+        "can_update_claim_trust": False,
+    }
+    pade = "readback_librpa_analycont_thiele_pade_division_or_pole_instability_points_from_actual_code_or_preserved_originals"
+    assert commands[pade]["surface"] == "tool_run_record"
+    assert "--name qsgw_ac_pade_readback " in commands[pade]["cli"]
+    parse = "resolve_n_params_anacon_input_parsing_before_molecular_sensitivity_sweep"
+    assert commands[parse]["surface"] == "tool_run_record"
+    assert "--name qsgw_ac_parameter_parse_readback " in commands[parse]["cli"]
+    sensitivity = commands["compare_nfreq_and_n_params_anacon_sensitivity_on_molecular_regression_cases"]
+    assert sensitivity["cli"] == (
+        f"aitp-v5 --base {ws.base} validation result record "
+        "--topic canonical-topic --claim claim-canonical --contract validation-contract-qsgw-ac "
+        "--tool-run <molecular-sensitivity-tool-run-id> --status <partial|passed|failed|inconclusive> "
+        "--checked-output validation_result --summary <nfreq/n_params_anacon molecular regression comparison>"
+    )
+    mitigation = commands["compare_pade_mitigation_against_full_frequency_or_contour_deformation_reference"]
+    assert mitigation["surface"] == "validation_result_record"
+    assert "--tool-run <pade-mitigation-comparison-tool-run-id>" in mitigation["cli"]
+    assert all(command["can_update_claim_trust"] is False for command in item["review_action_commands"])
+    assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
+
+
 def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(tmp_path):
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
     from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
