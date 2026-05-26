@@ -157,6 +157,50 @@ def _review_action_command(
             effect="typed_review_record_write",
             can_update_kernel_state=True,
         )
+    if action == "require_human_topic_question_before_claim_backfill":
+        return _command(
+            action,
+            review_id=review_id,
+            cli=(
+                f"aitp-v5 --base {workspace} checkpoint request "
+                f"--topic {item['topic']} --claim {item['active_claim_id']} "
+                "--reason <human topic question required before claim backfill> "
+                "--requested-by legacy_semantic_review --option provide_topic_question "
+                "--option keep_backlog_blocking"
+            ),
+            mcp="aitp_v5_request_human_checkpoint",
+            surface="human_checkpoint_record",
+        )
+    if action.startswith("decide_archive_or_delete_"):
+        return _command(
+            action,
+            review_id=review_id,
+            cli=(
+                f"aitp-v5 --base {workspace} checkpoint request "
+                f"--topic {item['topic']} --claim {item['active_claim_id']} "
+                "--reason <archive or delete noncanonical legacy seed> "
+                "--requested-by legacy_semantic_review --option archive_seed "
+                "--option delete_seed --option keep_backlog_blocking"
+            ),
+            mcp="aitp_v5_request_human_checkpoint",
+            surface="human_checkpoint_record",
+        )
+    if action.startswith("keep_semantic_review_blocking_until_"):
+        return _command(
+            action,
+            review_id=review_id,
+            cli=(
+                f"aitp-v5 --base {workspace} legacy semantic-review-result "
+                f"--migration-dir {migration_dir} --topic {item['topic']} "
+                "--status inconclusive --legacy-ref <missing-or-reviewed-legacy-ref> "
+                "--typed-ref <reviewed-typed-basis-ref> "
+                "--summary <keep semantic review blocking until source basis exists>"
+            ),
+            mcp="aitp_v5_record_legacy_semantic_review_result",
+            surface="legacy_semantic_review_result_record",
+            effect="typed_review_record_write",
+            can_update_kernel_state=True,
+        )
     if action == "decide_human_checkpoint_before_promotion":
         return _command(
             action,

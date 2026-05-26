@@ -1315,6 +1315,9 @@ def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(
         reviewed_typed_refs=["claim-l2"],
         remaining_actions=[
             "classify_noncanonical_seed_before_promotion",
+            "require_human_topic_question_before_claim_backfill",
+            "decide_archive_or_delete_noncanonical_seed",
+            "keep_semantic_review_blocking_until_legacy_basis_exists",
             "migrate_legacy_l2_graph_entries_into_typed_l2_records",
             "rebuild_l2_obsidian_view_from_typed_graph",
             "complete_source_reconstruction",
@@ -1329,6 +1332,9 @@ def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(
     assert item["latest_review_id"] == review.review_id
     assert [command["action"] for command in item["review_action_commands"]] == [
         "classify_noncanonical_seed_before_promotion",
+        "require_human_topic_question_before_claim_backfill",
+        "decide_archive_or_delete_noncanonical_seed",
+        "keep_semantic_review_blocking_until_legacy_basis_exists",
         "migrate_legacy_l2_graph_entries_into_typed_l2_records",
         "rebuild_l2_obsidian_view_from_typed_graph",
         "complete_source_reconstruction",
@@ -1355,6 +1361,23 @@ def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(
     )
     assert commands_by_action["classify_noncanonical_seed_before_promotion"]["can_update_kernel_state"] is True
     assert commands_by_action["classify_noncanonical_seed_before_promotion"]["can_update_claim_trust"] is False
+    assert commands_by_action["require_human_topic_question_before_claim_backfill"]["surface"] == (
+        "human_checkpoint_record"
+    )
+    assert "--option provide_topic_question" in commands_by_action[
+        "require_human_topic_question_before_claim_backfill"
+    ]["cli"]
+    assert commands_by_action["decide_archive_or_delete_noncanonical_seed"]["surface"] == (
+        "human_checkpoint_record"
+    )
+    assert "--option archive_seed" in commands_by_action["decide_archive_or_delete_noncanonical_seed"]["cli"]
+    assert commands_by_action["keep_semantic_review_blocking_until_legacy_basis_exists"]["surface"] == (
+        "legacy_semantic_review_result_record"
+    )
+    assert (
+        "--status inconclusive"
+        in commands_by_action["keep_semantic_review_blocking_until_legacy_basis_exists"]["cli"]
+    )
     assert commands_by_action["rebuild_l2_obsidian_view_from_typed_graph"]["surface"] == (
         "legacy_l2_obsidian_view_bundle"
     )
