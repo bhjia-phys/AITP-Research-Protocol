@@ -1185,6 +1185,88 @@ def test_legacy_semantic_review_worklist_maps_qsgw_ac_remaining_actions(tmp_path
     assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
 
 
+def test_legacy_semantic_review_worklist_maps_generic_readback_and_validation_actions(tmp_path):
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
+    from brain.v5.models import ClaimRecord, ValidationContractRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="Contour-deformation source readback can bound Padé residue risks.",
+            evidence_profile="code_method",
+            confidence_state="legacy_seed",
+            active_uncertainty="Semantic review requires source readback and regression comparison.",
+        ),
+    )
+    write_record(
+        ws.registry_dir("validation_contracts") / "validation-contract-gw-residue.md",
+        ValidationContractRecord(
+            contract_id="validation-contract-gw-residue",
+            topic_id="canonical-topic",
+            claim_id="claim-canonical",
+            required_checks=[
+                "verify_g_pole_residue_windows_sign_and_chemical_potential_conventions",
+                "compare_cd_or_ac_of_w_against_pade_sigma_on_molecular_or_qsgw_reference_set_before_promotion",
+            ],
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="GW residue review needs paper/code readback and validation comparison.",
+        reviewed_typed_refs=["claim-canonical", "validation-contract-gw-residue"],
+        remaining_actions=[
+            "readback_cd_formula_from_godby_golze_sources",
+            "map_wc_real_or_complex_frequency_requirement_to_librpa_ac_boundary",
+            "verify_g_pole_residue_windows_sign_and_chemical_potential_conventions",
+            "compare_cd_or_ac_of_w_against_pade_sigma_on_molecular_or_qsgw_reference_set_before_promotion",
+        ],
+    )
+
+    worklist = build_legacy_semantic_review_worklist(ws, migration_dir=run)
+
+    item = next(item for item in worklist["items"] if item["topic"] == "canonical-topic")
+    commands = {command["action"]: command for command in item["review_action_commands"]}
+    readback = commands["readback_cd_formula_from_godby_golze_sources"]
+    assert readback["latest_review_id"] == review.review_id
+    assert readback["cli"] == (
+        f"aitp-v5 --base {ws.base} tool run record "
+        "--recipe <source-readback-recipe-id> --family source_readback "
+        "--name readback_cd_formula_from_godby_golze_sources "
+        "--topic canonical-topic --claim claim-canonical "
+        "--outputs-json <source-readback-json> --source-ref <source-or-code-ref>"
+    )
+    assert readback["surface"] == "tool_run_record"
+    mapped = commands["map_wc_real_or_complex_frequency_requirement_to_librpa_ac_boundary"]
+    assert mapped["surface"] == "tool_run_record"
+    assert "--name map_wc_real_or_complex_frequency_requirement_to_librpa_ac_boundary " in mapped["cli"]
+    verify = commands["verify_g_pole_residue_windows_sign_and_chemical_potential_conventions"]
+    assert verify["cli"] == (
+        f"aitp-v5 --base {ws.base} validation result record "
+        "--topic canonical-topic --claim claim-canonical --contract validation-contract-gw-residue "
+        "--tool-run <validation-tool-run-id> --status <partial|passed|failed|inconclusive> "
+        "--checked-output validation_result "
+        "--summary <verify g pole residue windows sign and chemical potential conventions>"
+    )
+    compare = commands[
+        "compare_cd_or_ac_of_w_against_pade_sigma_on_molecular_or_qsgw_reference_set_before_promotion"
+    ]
+    assert compare["surface"] == "validation_result_record"
+    assert "--summary <compare cd or ac of w against pade sigma on molecular or qsgw reference set before promotion>" in compare["cli"]
+    assert all(command["can_update_claim_trust"] is False for command in item["review_action_commands"])
+    assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
+
+
 def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(tmp_path):
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
     from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist

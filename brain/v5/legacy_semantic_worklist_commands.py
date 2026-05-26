@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from brain.v5.legacy_semantic_generic_commands import generic_review_action_command
 from brain.v5.legacy_semantic_qsgw_commands import qsgw_review_action_command
 
 
@@ -227,6 +228,15 @@ def _review_action_command(
     )
     if qsgw_command is not None:
         return qsgw_command
+    generic_command = generic_review_action_command(
+        action,
+        item,
+        latest_review=latest_review,
+        review_id=review_id,
+        workspace=workspace,
+    )
+    if generic_command is not None:
+        return generic_command
     return _normalized_action_command(action, item, review_id=review_id, workspace=workspace)
 
 
