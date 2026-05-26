@@ -452,11 +452,44 @@ def test_final_readiness_cli_mcp_and_runtime_entrypoint(tmp_path, capsys):
 
 
 def test_final_readiness_cli_compact_progress(tmp_path, capsys):
+    from brain.v5.checkpoints import request_human_checkpoint
     from brain.v5.cli import main
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.models import ClaimRecord
+    from brain.v5.store import write_record
     from brain.v5.workspace import init_workspace
 
     ws = init_workspace(tmp_path)
-    _write_migration_run(ws, topic_count=1)
+    run = _write_migration_run(ws, topic_count=1)
+    write_record(
+        ws.registry_dir("claims") / "claim-legacy-0.md",
+        ClaimRecord(
+            claim_id="claim-legacy-0",
+            topic_id="legacy-topic-0",
+            statement="The legacy topic needs human semantic review.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Human checkpoint required.",
+        ),
+    )
+    record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="legacy-topic-0",
+        status="inconclusive",
+        summary="A human checkpoint remains before semantic pass.",
+        active_claim_id="claim-legacy-0",
+        reviewed_typed_refs=["claim-legacy-0"],
+        remaining_actions=["decide_human_checkpoint_before_promotion"],
+    )
+    checkpoint = request_human_checkpoint(
+        ws,
+        topic_id="legacy-topic-0",
+        claim_id="claim-legacy-0",
+        reason="legacy semantic review promotion decision",
+        requested_by="legacy_semantic_review",
+        options=["approve_semantic_review", "keep_backlog_blocking"],
+    )
 
     assert main(["--base", str(tmp_path), "adapter", "final-readiness", "--compact"]) == 0
     cli_payload = json.loads(capsys.readouterr().out)
@@ -466,5 +499,9 @@ def test_final_readiness_cli_compact_progress(tmp_path, capsys):
     assert cli_payload["completion_status"] == "kernel_ready_content_backlog"
     assert "legacy_semantic_review_backlog" in cli_payload["blocking_gaps"]
     assert cli_payload["legacy_semantic_review"]["semantic_lossless_proven"] is False
+    assert cli_payload["legacy_semantic_review"]["open_human_checkpoint_count"] == 1
+    assert cli_payload["legacy_semantic_review"]["open_human_checkpoint_refs"] == [
+        f"human-checkpoint:{checkpoint.checkpoint_id}"
+    ]
     assert cli_payload["can_update_claim_trust"] is False
     assert "kernel_capabilities" not in cli_payload
