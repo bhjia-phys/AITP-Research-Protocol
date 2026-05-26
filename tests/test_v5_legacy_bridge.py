@@ -985,6 +985,84 @@ def test_legacy_semantic_review_worklist_flags_satisfied_backfill_actions_for_fo
     assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
 
 
+def test_legacy_semantic_review_worklist_maps_validation_remaining_actions(tmp_path):
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
+    from brain.v5.models import ClaimRecord, ValidationContractRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="A code-validation-backed claim.",
+            evidence_profile="code_method",
+            confidence_state="legacy_seed",
+            active_uncertainty="Semantic review required.",
+        ),
+    )
+    write_record(
+        ws.registry_dir("validation_contracts") / "validation-contract-canonical.md",
+        ValidationContractRecord(
+            contract_id="validation-contract-canonical",
+            topic_id="canonical-topic",
+            claim_id="claim-canonical",
+            required_checks=[
+                "trace_compute_Wc_freq_q_accepts_chi_r_substitution",
+                "validate_static_U_and_J_against_SrVO3_reference",
+            ],
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="Remaining validation actions need typed tool runs and validation results.",
+        reviewed_typed_refs=["claim-canonical", "validation-contract-canonical"],
+        remaining_actions=[
+            "trace_compute_Wc_freq_q_accepts_chi_r_substitution_on_actual_LibRPA_code",
+            "validate_static_U_and_J_against_SrVO3_reference",
+        ],
+    )
+
+    worklist = build_legacy_semantic_review_worklist(ws, migration_dir=run)
+
+    item = next(item for item in worklist["items"] if item["topic"] == "canonical-topic")
+    commands = {command["action"]: command for command in item["review_action_commands"]}
+    trace_action = "trace_compute_Wc_freq_q_accepts_chi_r_substitution_on_actual_LibRPA_code"
+    assert commands[trace_action] == {
+        "action": trace_action,
+        "latest_review_id": review.review_id,
+        "cli": (
+            f"aitp-v5 --base {ws.base} tool run record "
+            "--recipe <code-trace-recipe-id> --family code_trace --name trace_compute_Wc_freq_q "
+            "--topic canonical-topic --claim claim-canonical "
+            "--outputs-json <trace-result-json> --source-ref <LibRPA-code-ref>"
+        ),
+        "mcp": "aitp_v5_record_tool_run",
+        "surface": "tool_run_record",
+        "effect": "typed_record_write",
+        "can_update_kernel_state": True,
+        "can_update_claim_trust": False,
+    }
+    srvo3 = commands["validate_static_U_and_J_against_SrVO3_reference"]
+    assert srvo3["cli"] == (
+        f"aitp-v5 --base {ws.base} validation result record "
+        "--topic canonical-topic --claim claim-canonical --contract validation-contract-canonical "
+        "--tool-run <srvo3-validation-tool-run-id> --status <partial|passed|failed> "
+        "--checked-output validation_result --summary <SrVO3 U/J benchmark result>"
+    )
+    assert srvo3["surface"] == "validation_result_record"
+    assert srvo3["can_update_claim_trust"] is False
+    assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
+
+
 def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(tmp_path):
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
     from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist

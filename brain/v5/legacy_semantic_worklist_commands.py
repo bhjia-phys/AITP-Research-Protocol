@@ -167,6 +167,37 @@ def _review_action_command(
             mcp="aitp_v5_request_human_checkpoint",
             surface="human_checkpoint_record",
         )
+    if action == "trace_compute_Wc_freq_q_accepts_chi_r_substitution_on_actual_LibRPA_code":
+        return _command(
+            action,
+            review_id=review_id,
+            cli=(
+                f"aitp-v5 --base {workspace} tool run record "
+                "--recipe <code-trace-recipe-id> --family code_trace --name trace_compute_Wc_freq_q "
+                f"--topic {item['topic']} --claim {item['active_claim_id']} "
+                "--outputs-json <trace-result-json> --source-ref <LibRPA-code-ref>"
+            ),
+            mcp="aitp_v5_record_tool_run",
+            surface="tool_run_record",
+            effect="typed_record_write",
+            can_update_kernel_state=True,
+        )
+    if action == "validate_static_U_and_J_against_SrVO3_reference":
+        return _command(
+            action,
+            review_id=review_id,
+            cli=(
+                f"aitp-v5 --base {workspace} validation result record "
+                f"--topic {item['topic']} --claim {item['active_claim_id']} "
+                f"--contract {_validation_contract_id(latest_review)} "
+                "--tool-run <srvo3-validation-tool-run-id> --status <partial|passed|failed> "
+                "--checked-output validation_result --summary <SrVO3 U/J benchmark result>"
+            ),
+            mcp="aitp_v5_record_validation_result",
+            surface="validation_result_record",
+            effect="typed_record_write",
+            can_update_kernel_state=True,
+        )
     return _normalized_action_command(action, item, review_id=review_id, workspace=workspace)
 
 
@@ -255,6 +286,14 @@ def _source_reconstruction_command(
         mcp="aitp_v5_build_source_reconstruction_review_packet",
         surface="source_reconstruction_review_packet",
     )
+
+
+def _validation_contract_id(latest_review: dict[str, Any]) -> str:
+    for ref in latest_review.get("reviewed_typed_refs", []):
+        text = str(ref)
+        if text.startswith("validation-contract"):
+            return text.removeprefix("validation-contract:")
+    return "<validation-contract-id>"
 
 
 def _requests_physics_object_backfill(normalized_action: str) -> bool:
