@@ -42,6 +42,7 @@ def validate_workspace_refresh_bundle(payload: dict[str, Any], *, path: str = "w
         ]
         legacy_expected = [
             *base_expected,
+            "legacy_source_reconstruction_obsidian_view_bundle",
             "legacy_semantic_review_obsidian_view_bundle",
             "legacy_human_checkpoint_obsidian_view_bundle",
         ]
@@ -53,6 +54,12 @@ def validate_workspace_refresh_bundle(payload: dict[str, Any], *, path: str = "w
     _require_mapping(payload.get("l2_obsidian_view"), f"{path}.l2_obsidian_view", result)
     _require_mapping(payload.get("source_reconstruction_obsidian_view"), f"{path}.source_reconstruction_obsidian_view", result)
     _require_mapping(payload.get("workspace_interaction_preview"), f"{path}.workspace_interaction_preview", result)
+    if "legacy_source_reconstruction_obsidian_view" in payload:
+        _require_mapping(
+            payload.get("legacy_source_reconstruction_obsidian_view"),
+            f"{path}.legacy_source_reconstruction_obsidian_view",
+            result,
+        )
     if "legacy_semantic_review_obsidian_view" in payload:
         _require_mapping(
             payload.get("legacy_semantic_review_obsidian_view"),

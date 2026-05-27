@@ -160,9 +160,15 @@ def test_workspace_refresh_can_include_legacy_semantic_backlog_in_replay(tmp_pat
         "l2_obsidian_view_bundle",
         "source_reconstruction_obsidian_view_bundle",
         "workspace_interaction_preview_bundle",
+        "legacy_source_reconstruction_obsidian_view_bundle",
         "legacy_semantic_review_obsidian_view_bundle",
         "legacy_human_checkpoint_obsidian_view_bundle",
     ]
+    assert payload["legacy_source_reconstruction_obsidian_view"]["files"]["review_worklist"].endswith(
+        "Legacy Source Reconstruction Worklist.md"
+    )
+    assert payload["legacy_source_reconstruction_obsidian_view"]["work_item_count"] == 1
+    assert payload["legacy_source_reconstruction_obsidian_view"]["can_update_claim_trust"] is False
     assert payload["legacy_semantic_review_obsidian_view"]["files"]["review_worklist"].endswith(
         "Legacy Semantic Review Worklist.md"
     )
@@ -318,6 +324,8 @@ def test_workspace_refresh_cli_mcp_accept_migration_dir(tmp_path, capsys):
 
     assert cli_payload["workspace_replay"]["workspace_backlog_summary"]["legacy_semantic_review"]["review_item_count"] == 1
     assert mcp_payload["workspace_replay"]["workspace_backlog_summary"]["legacy_semantic_review"]["migration_dir"] == str(migration)
+    assert cli_payload["legacy_source_reconstruction_obsidian_view"]["work_item_count"] == 1
+    assert mcp_payload["legacy_source_reconstruction_obsidian_view"]["derived_from"] == "legacy_source_reconstruction_manifest"
     assert cli_payload["workspace_interaction_preview"]["session_count"] == 1
     assert mcp_payload["workspace_interaction_preview"]["can_update_kernel_state"] is False
     assert cli_payload["can_update_claim_trust"] is False
@@ -394,7 +402,16 @@ def test_workspace_refresh_cli_compact_progress_accepts_migration_dir(tmp_path, 
     ]) == 0
     cli_payload = json.loads(capsys.readouterr().out)
 
-    assert cli_payload["refreshed_surface_count"] == 7
+    assert cli_payload["refreshed_surface_count"] == 8
+    assert cli_payload["legacy_source_reconstruction"] == {
+        "work_item_count": 1,
+        "repair_status_counts": {
+            "awaiting_needs_revision_review": 1,
+            "no_repair_candidates": 0,
+            "proposed_repairs": 0,
+        },
+        "proposed_repair_count": 0,
+    }
     assert cli_payload["legacy_semantic_review"]["work_item_count"] == 1
     assert cli_payload["source_reconstruction_review"]["claim_count"] == 2
     assert cli_payload["source_reconstruction_review"]["incomplete_claim_count"] == 2
