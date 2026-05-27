@@ -117,6 +117,12 @@ def _validate_workspace_backlog_summary(payload: dict[str, Any], path: str, resu
             f"{path}.legacy_source_reconstruction",
             result,
         )
+    if "legacy_human_checkpoints" in payload:
+        _validate_legacy_human_checkpoint_backlog(
+            payload.get("legacy_human_checkpoints"),
+            f"{path}.legacy_human_checkpoints",
+            result,
+        )
     for key in ("summary_inputs_trusted", "orientation_only", "can_update_kernel_state", "can_update_claim_trust"):
         if not isinstance(payload.get(key), bool):
             result.add(f"{path}.{key}", "must be a boolean")
@@ -202,6 +208,53 @@ def _validate_legacy_source_backlog_item(payload: Any, path: str, result: Contra
         result.add(f"{path}.latest_review_id", "must be a string")
     for key in ("missing_components", "required_actions"):
         _require_list(payload.get(key), f"{path}.{key}", result)
+    _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
+
+
+def _validate_legacy_human_checkpoint_backlog(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    if payload.get("surface") != "legacy_human_checkpoint_packet":
+        result.add(f"{path}.surface", "must be legacy_human_checkpoint_packet")
+    _require_nonempty_str(payload, "migration_dir", path, result)
+    for key in ("checkpoint_item_count", "open_decision_count", "pending_request_count", "next_action_count"):
+        if not isinstance(payload.get(key), int) or payload[key] < 0:
+            result.add(f"{path}.{key}", "must be a non-negative integer")
+    _require_list(payload.get("top_checkpoint_items"), f"{path}.top_checkpoint_items", result)
+    if isinstance(payload.get("top_checkpoint_items"), list):
+        for index, item in enumerate(payload["top_checkpoint_items"]):
+            _validate_legacy_human_checkpoint_item(item, f"{path}.top_checkpoint_items[{index}]", result)
+    for key in ("summary_inputs_trusted", "orientation_only", "can_update_kernel_state", "can_update_claim_trust"):
+        if not isinstance(payload.get(key), bool):
+            result.add(f"{path}.{key}", "must be a boolean")
+    _require_bool_value(payload.get("summary_inputs_trusted"), False, f"{path}.summary_inputs_trusted", result)
+    _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
+    _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
+    _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
+
+
+def _validate_legacy_human_checkpoint_item(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    for key in (
+        "topic",
+        "active_claim_id",
+        "latest_review_id",
+        "review_status",
+        "action",
+        "mode",
+        "reason",
+        "cli",
+        "mcp",
+    ):
+        _require_nonempty_str(payload, key, path, result)
+    if payload.get("mode") == "decide_open_checkpoint":
+        _require_nonempty_str(payload, "checkpoint_id", path, result)
+    elif not isinstance(payload.get("checkpoint_id"), str):
+        result.add(f"{path}.checkpoint_id", "must be a string")
+    _require_list(payload.get("options"), f"{path}.options", result)
     _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
 
 

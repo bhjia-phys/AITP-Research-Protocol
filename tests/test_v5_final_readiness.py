@@ -180,10 +180,14 @@ def test_final_readiness_audit_keeps_kernel_capability_separate_from_content_bac
     assert payload["kernel_capabilities"]["long_term_replay"]["legacy_human_checkpoint_view_surface"] == (
         "legacy_human_checkpoint_obsidian_view_bundle"
     )
+    assert payload["kernel_capabilities"]["long_term_replay"]["legacy_human_checkpoint_backlog_surface"] == (
+        "legacy_human_checkpoint_packet"
+    )
     assert payload["kernel_capabilities"]["long_term_replay"]["migration_dir_argument"] == "--migration-dir"
     assert payload["kernel_capabilities"]["long_term_replay"]["host_startup_semantic_worklist_supported"] is True
     assert payload["kernel_capabilities"]["long_term_replay"]["host_startup_source_reconstruction_worklist_supported"] is True
     assert payload["kernel_capabilities"]["long_term_replay"]["host_startup_checkpoint_view_supported"] is True
+    assert payload["kernel_capabilities"]["long_term_replay"]["host_startup_checkpoint_packet_supported"] is True
     assert payload["kernel_capabilities"]["natural_interaction"]["surface"] == "interaction_recording_preview"
     assert payload["kernel_capabilities"]["natural_interaction"]["workspace_preview_surface"] == (
         "workspace_interaction_preview_bundle"

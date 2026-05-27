@@ -87,6 +87,19 @@ def validate_final_engineering_readiness_audit(
                 f"{path}.kernel_capabilities.host_integration.priority_host_production_loops[{index}]",
                 result,
             )
+    replay = _mapping(payload.get("kernel_capabilities")).get("long_term_replay")
+    _require_mapping(replay, f"{path}.kernel_capabilities.long_term_replay", result)
+    if isinstance(replay, dict):
+        if replay.get("legacy_human_checkpoint_backlog_surface") != "legacy_human_checkpoint_packet":
+            result.add(
+                f"{path}.kernel_capabilities.long_term_replay.legacy_human_checkpoint_backlog_surface",
+                "must be legacy_human_checkpoint_packet",
+            )
+        if replay.get("host_startup_checkpoint_packet_supported") is not True:
+            result.add(
+                f"{path}.kernel_capabilities.long_term_replay.host_startup_checkpoint_packet_supported",
+                "must be true",
+            )
     _require_mapping(payload.get("content_backlog"), f"{path}.content_backlog", result)
     _require_list(payload.get("blocking_gaps"), f"{path}.blocking_gaps", result)
     _require_list(payload.get("residual_risks"), f"{path}.residual_risks", result)

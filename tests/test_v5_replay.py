@@ -357,6 +357,7 @@ def test_workspace_replay_packet_can_include_legacy_semantic_review_backlog(tmp_
     assert require_valid_public_surface("workspace_replay_packet", {"ok": True, **payload})["ok"] is True
     legacy = packet.workspace_backlog_summary["legacy_semantic_review"]
     legacy_source = packet.workspace_backlog_summary["legacy_source_reconstruction"]
+    legacy_checkpoints = packet.workspace_backlog_summary["legacy_human_checkpoints"]
     assert legacy == {
         "surface": "legacy_semantic_review_manifest",
         "migration_dir": str(migration),
@@ -445,10 +446,44 @@ def test_workspace_replay_packet_can_include_legacy_semantic_review_backlog(tmp_
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }
+    assert legacy_checkpoints == {
+        "surface": "legacy_human_checkpoint_packet",
+        "migration_dir": str(migration),
+        "checkpoint_item_count": 1,
+        "open_decision_count": 1,
+        "pending_request_count": 0,
+        "next_action_count": 1,
+        "top_checkpoint_items": [
+            {
+                "topic": "legacy-l2",
+                "active_claim_id": "claim-l2",
+                "latest_review_id": review.review_id,
+                "review_status": "inconclusive",
+                "action": "decide_human_checkpoint_before_promotion",
+                "mode": "decide_open_checkpoint",
+                "checkpoint_id": checkpoint.checkpoint_id,
+                "reason": "legacy semantic review promotion decision",
+                "options": ["approve_semantic_review", "keep_backlog_blocking"],
+                "cli": (
+                    f"aitp-v5 --base {ws.base} checkpoint decide {checkpoint.checkpoint_id} "
+                    "--decision <approve_semantic_review|keep_backlog_blocking> "
+                    "--rationale <human rationale> --decided-by <reviewer>"
+                ),
+                "mcp": "aitp_v5_decide_human_checkpoint",
+                "can_update_claim_trust": False,
+            }
+        ],
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
     _, body = read_md(packet.files["replay_packet"])
     assert "Legacy Semantic Review Backlog" in body
     assert "Legacy Source Reconstruction Backlog" in body
+    assert "Legacy Human Checkpoints" in body
     assert "Source reconstruction items: 1" in body
+    assert "Checkpoint decisions: 1 open, 0 pending request" in body
     assert "Open human checkpoints: 1" in body
     assert checkpoint.checkpoint_id in body
     assert "semantic lossless proven: False" in body

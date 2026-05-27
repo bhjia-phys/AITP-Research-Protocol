@@ -9,6 +9,7 @@ from typing import Any
 
 from brain.v5.evidence import required_output_coverage
 from brain.v5.flow import resolve_flow_profile
+from brain.v5.legacy_human_checkpoint_packet import build_legacy_human_checkpoint_packet
 from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
 from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
 from brain.v5.legacy_source_reconstruction import build_legacy_source_reconstruction_manifest
@@ -68,6 +69,7 @@ def write_workspace_replay_packet(
         entries,
         legacy_semantic_review=_legacy_semantic_review_summary(ws, migration_dir),
         legacy_source_reconstruction=_legacy_source_reconstruction_summary(ws, migration_dir),
+        legacy_human_checkpoints=_legacy_human_checkpoint_summary(ws, migration_dir),
     )
     source_records = {
         "sessions": [entry["session_id"] for entry in entries],
@@ -244,6 +246,25 @@ def _body(entries: list[dict[str, Any]], workspace_backlog_summary: dict[str, An
                 f"{', '.join(item['missing_components']) or 'none'}; review via `{item['review_packet_cli']}`"
             )
         lines.append("")
+    legacy_checkpoints = workspace_backlog_summary.get("legacy_human_checkpoints")
+    if isinstance(legacy_checkpoints, dict):
+        lines.extend([
+            "## Legacy Human Checkpoints",
+            "",
+            f"- Migration dir: `{legacy_checkpoints['migration_dir']}`",
+            (
+                "- Checkpoint decisions: "
+                f"{legacy_checkpoints['open_decision_count']} open, "
+                f"{legacy_checkpoints['pending_request_count']} pending request"
+            ),
+            f"- Next actions: {legacy_checkpoints['next_action_count']}",
+            "",
+        ])
+        for item in legacy_checkpoints["top_checkpoint_items"]:
+            lines.append(
+                f"- `{item['topic']}`: {item['action']} via `{item['cli']}`"
+            )
+        lines.append("")
     if not entries:
         lines.append("- No active session bindings are recorded.")
         return "\n".join(lines) + "\n"
@@ -268,6 +289,7 @@ def _workspace_backlog_summary(
     *,
     legacy_semantic_review: dict[str, Any] | None = None,
     legacy_source_reconstruction: dict[str, Any] | None = None,
+    legacy_human_checkpoints: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     complete_entries = [entry for entry in entries if entry["claim_id"] and entry["source_reconstruction_complete"]]
     incomplete_entries = [
@@ -301,6 +323,8 @@ def _workspace_backlog_summary(
         summary["legacy_semantic_review"] = legacy_semantic_review
     if legacy_source_reconstruction is not None:
         summary["legacy_source_reconstruction"] = legacy_source_reconstruction
+    if legacy_human_checkpoints is not None:
+        summary["legacy_human_checkpoints"] = legacy_human_checkpoints
     return summary
 
 
@@ -344,6 +368,46 @@ def _legacy_source_reconstruction_summary(ws: WorkspacePaths, migration_dir: str
         "summary_inputs_trusted": False,
         "orientation_only": True,
         "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def _legacy_human_checkpoint_summary(ws: WorkspacePaths, migration_dir: str | None) -> dict[str, Any] | None:
+    if not migration_dir:
+        return None
+    packet = build_legacy_human_checkpoint_packet(ws, migration_dir=migration_dir)
+    return {
+        "surface": "legacy_human_checkpoint_packet",
+        "migration_dir": packet["migration_dir"],
+        "checkpoint_item_count": int(packet["checkpoint_item_count"]),
+        "open_decision_count": int(packet["open_decision_count"]),
+        "pending_request_count": int(packet["pending_request_count"]),
+        "next_action_count": len(packet.get("next_actions") or []),
+        "top_checkpoint_items": [
+            _legacy_human_checkpoint_item(item)
+            for item in packet.get("checkpoint_items", [])[:5]
+        ],
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def _legacy_human_checkpoint_item(item: dict[str, Any]) -> dict[str, Any]:
+    command = item.get("command") if isinstance(item.get("command"), dict) else {}
+    return {
+        "topic": str(item.get("topic") or ""),
+        "active_claim_id": str(item.get("active_claim_id") or ""),
+        "latest_review_id": str(item.get("latest_review_id") or ""),
+        "review_status": str(item.get("review_status") or ""),
+        "action": str(item.get("action") or ""),
+        "mode": str(item.get("mode") or ""),
+        "checkpoint_id": str(item.get("checkpoint_id") or ""),
+        "reason": str(item.get("reason") or ""),
+        "options": list(item.get("options") or []),
+        "cli": str(command.get("cli") or ""),
+        "mcp": str(command.get("mcp") or ""),
         "can_update_claim_trust": False,
     }
 
