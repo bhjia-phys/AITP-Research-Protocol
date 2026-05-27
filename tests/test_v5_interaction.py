@@ -206,6 +206,68 @@ def test_interaction_recording_preview_without_claim_stays_orientation_only(tmp_
     ]
 
 
+def test_workspace_interaction_preview_bundle_summarizes_active_sessions(tmp_path):
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+    from brain.v5.workspace_interaction_preview import build_workspace_interaction_preview
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "hs-otoc", context_id="quantum-chaos", title="HS OTOC")
+    claim = create_claim(
+        ws,
+        topic_id="hs-otoc",
+        statement="The fixed-Sz OTOC definition is the correct finite-size baseline.",
+        evidence_profile="toy_numeric",
+        confidence_state="hypothesis",
+        active_uncertainty="finite-size and operator-choice artifacts remain possible",
+    )
+    bind_session(
+        ws,
+        "s-claim",
+        topic_id="hs-otoc",
+        context_id="quantum-chaos",
+        active_claim=claim.claim_id,
+        interaction_profile="collaborator",
+        interaction_steering="lighter, keep it moving",
+    )
+    create_topic(ws, "scratch", context_id="scratch", title="Scratch")
+    bind_session(ws, "s-empty", topic_id="scratch", context_id="scratch")
+
+    payload = require_valid_public_surface(
+        "workspace_interaction_preview_bundle",
+        build_workspace_interaction_preview(ws),
+    )
+
+    assert payload["kind"] == "workspace_interaction_preview_bundle"
+    assert payload["session_count"] == 2
+    assert payload["decision_mode_counts"] == {
+        "guarded_recording": 1,
+        "lightweight_trace": 1,
+    }
+    assert payload["source_records"]["sessions"] == ["s-claim", "s-empty"]
+    assert payload["source_records"]["topics"] == ["hs-otoc", "scratch"]
+    assert payload["source_records"]["claims"] == [claim.claim_id]
+    assert payload["preview_refs"] == [
+        "interaction_recording_preview:s-claim",
+        "interaction_recording_preview:s-empty",
+    ]
+    by_session = {item["session_id"]: item for item in payload["items"]}
+    assert by_session["s-claim"]["topic_id"] == "hs-otoc"
+    assert by_session["s-claim"]["active_claim"] == claim.claim_id
+    assert by_session["s-claim"]["recording_mode"] == "guarded_recording"
+    assert by_session["s-claim"]["next_kernel_entrypoint"] == "aitp_v5_record_sensemaking_report"
+    assert by_session["s-empty"]["active_claim"] == ""
+    assert by_session["s-empty"]["recording_mode"] == "lightweight_trace"
+    assert by_session["s-empty"]["can_stay_lightweight"] is True
+    assert all(item["can_update_claim_trust"] is False for item in payload["items"])
+    assert payload["derived_from"] == "interaction_recording_preview"
+    assert payload["truth_source"] == "typed_records"
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["can_update_claim_trust"] is False
+
+
 def test_interaction_recording_preview_cli_and_mcp(tmp_path, capsys):
     import json
 
@@ -227,6 +289,35 @@ def test_interaction_recording_preview_cli_and_mcp(tmp_path, capsys):
     assert mcp_payload["recording_decision"]["mode"] == "lightweight_trace"
     assert cli_payload["can_update_kernel_state"] is False
     assert mcp_payload["can_update_claim_trust"] is False
+
+
+def test_workspace_interaction_preview_cli_mcp_and_runtime(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_build_workspace_interaction_preview
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.workspace import bind_session, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "new-topic", context_id="scratch", title="New Topic")
+    bind_session(ws, "s1", topic_id="new-topic", context_id="scratch")
+
+    assert main(["--base", str(tmp_path), "interaction", "workspace-preview"]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_workspace_interaction_preview(str(tmp_path))
+
+    assert cli_payload["kind"] == "workspace_interaction_preview_bundle"
+    assert mcp_payload["kind"] == "workspace_interaction_preview_bundle"
+    assert cli_payload["session_count"] == 1
+    assert mcp_payload["decision_mode_counts"] == {"lightweight_trace": 1}
+    assert cli_payload["can_update_kernel_state"] is False
+    assert mcp_payload["can_update_claim_trust"] is False
+    assert runtime_entrypoints()["workspace_interaction_preview"] == {
+        "cli": "aitp-v5 interaction workspace-preview",
+        "mcp": "aitp_v5_build_workspace_interaction_preview",
+        "surface": "workspace_interaction_preview_bundle",
+    }
 
 
 def test_interaction_recording_preview_blocks_natural_recording_at_adversarial_checkpoint(tmp_path):

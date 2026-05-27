@@ -143,6 +143,11 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
         "mcp": "aitp_v5_preview_interaction_recording",
         "surface": "interaction_recording_preview",
     }
+    assert entrypoints["workspace_interaction_preview"] == {
+        "cli": "aitp-v5 interaction workspace-preview",
+        "mcp": "aitp_v5_build_workspace_interaction_preview",
+        "surface": "workspace_interaction_preview_bundle",
+    }
 
 
 def test_runtime_entrypoint_validation_reports_bad_mcp_and_cli_targets():

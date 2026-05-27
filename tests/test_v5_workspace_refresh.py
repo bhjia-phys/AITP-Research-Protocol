@@ -65,6 +65,7 @@ def test_workspace_refresh_writes_summary_replay_and_obsidian_views(tmp_path):
         "workspace_replay_packet",
         "l2_obsidian_view_bundle",
         "source_reconstruction_obsidian_view_bundle",
+        "workspace_interaction_preview_bundle",
     ]
     assert payload["source_records"]["sessions"] == ["s1"]
     assert payload["source_records"]["claims"] == [claim.claim_id]
@@ -84,6 +85,9 @@ def test_workspace_refresh_writes_summary_replay_and_obsidian_views(tmp_path):
     assert payload["source_reconstruction_obsidian_view"]["files"]["review_worklist"].endswith(
         "Source Reconstruction Review Worklist.md"
     )
+    assert payload["workspace_interaction_preview"]["session_count"] == 1
+    assert payload["workspace_interaction_preview"]["decision_mode_counts"] == {"guarded_recording": 1}
+    assert payload["workspace_interaction_preview"]["can_update_claim_trust"] is False
     assert require_valid_public_surface("workspace_refresh_bundle", payload) == payload
 
 
@@ -155,6 +159,7 @@ def test_workspace_refresh_can_include_legacy_semantic_backlog_in_replay(tmp_pat
         "workspace_replay_packet",
         "l2_obsidian_view_bundle",
         "source_reconstruction_obsidian_view_bundle",
+        "workspace_interaction_preview_bundle",
         "legacy_semantic_review_obsidian_view_bundle",
         "legacy_human_checkpoint_obsidian_view_bundle",
     ]
@@ -164,6 +169,7 @@ def test_workspace_refresh_can_include_legacy_semantic_backlog_in_replay(tmp_pat
     assert payload["legacy_human_checkpoint_obsidian_view"]["files"]["checkpoint_worklist"].endswith(
         "Legacy Human Checkpoints.md"
     )
+    assert payload["workspace_interaction_preview"]["session_count"] == 1
     assert legacy["surface"] == "legacy_semantic_review_manifest"
     assert legacy["review_item_count"] == 1
     assert legacy["semantic_lossless_proven"] is False
@@ -184,6 +190,8 @@ def test_workspace_refresh_cli_mcp_and_runtime(tmp_path, capsys):
 
     assert cli_payload["kind"] == "workspace_refresh_bundle"
     assert mcp_payload["kind"] == "workspace_refresh_bundle"
+    assert cli_payload["workspace_interaction_preview"]["session_count"] == 1
+    assert mcp_payload["workspace_interaction_preview"]["decision_mode_counts"] == {"guarded_recording": 1}
     assert runtime_entrypoints()["workspace_refresh"] == {
         "cli": "aitp-v5 summary refresh",
         "mcp": "aitp_v5_refresh_workspace_views",
@@ -264,5 +272,7 @@ def test_workspace_refresh_cli_mcp_accept_migration_dir(tmp_path, capsys):
 
     assert cli_payload["workspace_replay"]["workspace_backlog_summary"]["legacy_semantic_review"]["review_item_count"] == 1
     assert mcp_payload["workspace_replay"]["workspace_backlog_summary"]["legacy_semantic_review"]["migration_dir"] == str(migration)
+    assert cli_payload["workspace_interaction_preview"]["session_count"] == 1
+    assert mcp_payload["workspace_interaction_preview"]["can_update_kernel_state"] is False
     assert cli_payload["can_update_claim_trust"] is False
     assert mcp_payload["can_update_kernel_state"] is False

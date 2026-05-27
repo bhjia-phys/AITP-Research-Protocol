@@ -178,6 +178,10 @@ def test_final_readiness_audit_keeps_kernel_capability_separate_from_content_bac
     assert payload["kernel_capabilities"]["long_term_replay"]["host_startup_semantic_worklist_supported"] is True
     assert payload["kernel_capabilities"]["long_term_replay"]["host_startup_checkpoint_view_supported"] is True
     assert payload["kernel_capabilities"]["natural_interaction"]["surface"] == "interaction_recording_preview"
+    assert payload["kernel_capabilities"]["natural_interaction"]["workspace_preview_surface"] == (
+        "workspace_interaction_preview_bundle"
+    )
+    assert payload["kernel_capabilities"]["natural_interaction"]["host_refresh_preview_supported"] is True
     assert payload["kernel_capabilities"]["natural_interaction"]["recording_decision_modes"] == [
         "lightweight_trace",
         "guarded_recording",

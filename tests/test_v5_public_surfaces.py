@@ -22,6 +22,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "human_checkpoint_record",
         "hook_trace_event_record",
         "interaction_recording_preview",
+        "workspace_interaction_preview_bundle",
             "kimi_code_hook_config",
             "kimi_code_hook_installation",
             "knowledge_connector_catalog",

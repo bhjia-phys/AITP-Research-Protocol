@@ -22,6 +22,7 @@ _PUBLIC_SURFACE_NAMES = (
     "human_checkpoint_record",
     "hook_trace_event_record",
     "interaction_recording_preview",
+    "workspace_interaction_preview_bundle",
     "kimi_code_hook_config",
     "kimi_code_hook_installation",
     "knowledge_connector_catalog",
@@ -102,6 +103,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "human_checkpoint_record": "contracted human checkpoint requiring explicit options and a decision from the declared option set",
     "hook_trace_event_record": "contracted persisted hook trace-event record that cannot update claim trust",
     "interaction_recording_preview": "read-only preview of natural conversation recording boundaries, lightweight mode, and heavier triggers",
+    "workspace_interaction_preview_bundle": "orientation-only host startup bundle summarizing per-session natural conversation recording boundaries without updating kernel state",
     "kimi_code_hook_config": "contracted Kimi Code TOML hook config generated from runtime hook installation metadata",
     "kimi_code_hook_installation": "contracted safe merge of AITP hooks into Kimi Code TOML config without treating config as truth",
     "knowledge_connector_catalog": "contracted catalog of knowledge connectors for notes, literature, and learning memory",
@@ -281,6 +283,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.host_readiness_contracts import require_valid_runtime_host_readiness_audit
     from brain.v5.host_lifecycle_contracts import require_valid_runtime_host_lifecycle_audit
     from brain.v5.interaction_preview_contracts import require_valid_interaction_recording_preview
+    from brain.v5.workspace_interaction_preview_contracts import require_valid_workspace_interaction_preview_bundle
     from brain.v5.obsidian_view_contracts import require_valid_l2_obsidian_view_bundle
     from brain.v5.workspace_refresh_contracts import require_valid_workspace_refresh_bundle
     from brain.v5.hook_protocol_contracts import (
@@ -317,6 +320,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "human_checkpoint_record": require_valid_human_checkpoint_record,
         "hook_trace_event_record": require_valid_hook_trace_event_record,
         "interaction_recording_preview": require_valid_interaction_recording_preview,
+        "workspace_interaction_preview_bundle": require_valid_workspace_interaction_preview_bundle,
         "kimi_code_hook_config": require_valid_kimi_code_hook_config,
         "kimi_code_hook_installation": require_valid_kimi_code_hook_installation,
         "knowledge_connector_catalog": require_valid_knowledge_connector_catalog,

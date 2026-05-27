@@ -12,6 +12,7 @@ from brain.v5.paths import WorkspacePaths
 from brain.v5.replay import write_workspace_replay_packet
 from brain.v5.source_reconstruction_obsidian import write_source_reconstruction_obsidian_view
 from brain.v5.summaries import write_workspace_summary
+from brain.v5.workspace_interaction_preview import build_workspace_interaction_preview
 
 
 def refresh_workspace_views(
@@ -37,6 +38,7 @@ def refresh_workspace_views(
         ws,
         output_dir=str(ws.root / "surfaces" / "source_reconstruction_active"),
     )
+    workspace_interaction = build_workspace_interaction_preview(ws)
     legacy_checkpoint_view = (
         write_legacy_human_checkpoint_obsidian_view(ws, migration_dir=migration_dir)
         if migration_dir
@@ -52,6 +54,7 @@ def refresh_workspace_views(
         replay.get("source_records", {}),
         obsidian.get("source_records", {}),
         source_reconstruction.get("source_records", {}),
+        workspace_interaction.get("source_records", {}),
         legacy_semantic_view.get("source_records", {}) if legacy_semantic_view else {},
         legacy_checkpoint_view.get("source_records", {}) if legacy_checkpoint_view else {},
     )
@@ -60,6 +63,7 @@ def refresh_workspace_views(
         replay["kind"],
         obsidian["kind"],
         source_reconstruction["kind"],
+        workspace_interaction["kind"],
     ]
     if legacy_semantic_view:
         refreshed_surfaces.append(legacy_semantic_view["kind"])
@@ -72,6 +76,7 @@ def refresh_workspace_views(
         "workspace_replay": replay,
         "l2_obsidian_view": obsidian,
         "source_reconstruction_obsidian_view": source_reconstruction,
+        "workspace_interaction_preview": workspace_interaction,
         "source_records": source_records,
         "derived_from": "kernel_state",
         "truth_source": False,

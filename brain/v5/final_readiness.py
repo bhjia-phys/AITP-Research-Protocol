@@ -232,7 +232,9 @@ def _long_term_replay() -> dict[str, Any]:
 def _natural_interaction() -> dict[str, Any]:
     return {
         "surface": "interaction_recording_preview",
+        "workspace_preview_surface": "workspace_interaction_preview_bundle",
         "default_mode": "natural_conversation_with_escalation_at_trust_boundaries",
+        "host_refresh_preview_supported": True,
         "recording_decision_modes": [
             "lightweight_trace",
             "guarded_recording",

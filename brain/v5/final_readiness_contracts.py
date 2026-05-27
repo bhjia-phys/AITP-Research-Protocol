@@ -35,6 +35,16 @@ def validate_final_engineering_readiness_audit(
                 f"{path}.kernel_capabilities.natural_interaction.surface",
                 "must be interaction_recording_preview",
             )
+        if natural.get("workspace_preview_surface") != "workspace_interaction_preview_bundle":
+            result.add(
+                f"{path}.kernel_capabilities.natural_interaction.workspace_preview_surface",
+                "must be workspace_interaction_preview_bundle",
+            )
+        if natural.get("host_refresh_preview_supported") is not True:
+            result.add(
+                f"{path}.kernel_capabilities.natural_interaction.host_refresh_preview_supported",
+                "must be true",
+            )
         _require_list(
             natural.get("recording_decision_modes"),
             f"{path}.kernel_capabilities.natural_interaction.recording_decision_modes",
