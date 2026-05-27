@@ -90,6 +90,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "strategy_memory_record",
         "summary_orientation",
         "tool_executor_catalog",
+        "topic_status_bundle",
         "tool_recipe_record",
         "tool_run_record",
         "trust_update_record",

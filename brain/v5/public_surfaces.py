@@ -90,6 +90,7 @@ _PUBLIC_SURFACE_NAMES = (
     "strategy_memory_record",
     "summary_orientation",
     "tool_executor_catalog",
+    "topic_status_bundle",
     "tool_recipe_record",
     "tool_run_record",
     "trust_update_record",
@@ -188,6 +189,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "strategy_memory_record": "contracted run-local workflow lesson for future topic continuation; non-promotional and not claim evidence",
     "summary_orientation": "read-only summary view with explicit truth-source protections",
     "tool_executor_catalog": "contracted catalog of safe built-in tool executors and input schemas",
+    "topic_status_bundle": "orientation-only topic status files explaining current route, blockers, last evidence return, and operator needs",
     "tool_recipe_record": "contracted reusable tool recipe record with inputs, outputs, and invariants",
     "tool_run_record": "contracted tool-run provenance record linked to claims, code states, and artifacts",
     "trust_update_record": "contracted durable history record for a trust-update apply attempt",
@@ -289,6 +291,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.output_stability_contracts import require_valid_final_output_profile
     from brain.v5.operator_checkpoint_contracts import require_valid_operator_checkpoint_record
     from brain.v5.strategy_memory_contracts import require_valid_strategy_memory_record
+    from brain.v5.topic_status_contracts import require_valid_topic_status_bundle
     from brain.v5.legacy_contracts import require_valid_legacy_migration_result
     from brain.v5.legacy_executable_evidence_contracts import require_valid_legacy_executable_evidence_packet
     from brain.v5.legacy_human_checkpoint_obsidian_contracts import require_valid_legacy_human_checkpoint_obsidian_view_bundle
@@ -445,6 +448,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "strategy_memory_record": require_valid_strategy_memory_record,
         "summary_orientation": require_valid_summary_orientation,
         "tool_executor_catalog": require_valid_tool_executor_catalog,
+        "topic_status_bundle": require_valid_topic_status_bundle,
         "tool_recipe_record": require_valid_tool_recipe_record,
         "tool_run_record": require_valid_tool_run_record,
         "trust_update_record": require_valid_trust_update_record,
