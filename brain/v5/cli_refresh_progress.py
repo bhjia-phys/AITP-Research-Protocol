@@ -188,6 +188,11 @@ def compact_workspace_refresh(payload: dict[str, Any]) -> dict[str, Any]:
         if isinstance(payload.get("interaction_recording_worklist"), dict)
         else {}
     )
+    topic_status_bundles = [
+        bundle
+        for bundle in payload.get("topic_status_bundles", [])
+        if isinstance(bundle, dict)
+    ]
     legacy = (
         payload.get("legacy_semantic_review_obsidian_view")
         if isinstance(payload.get("legacy_semantic_review_obsidian_view"), dict)
@@ -265,6 +270,30 @@ def compact_workspace_refresh(payload: dict[str, Any]) -> dict[str, Any]:
             "work_item_count": int(interaction_worklist.get("work_item_count") or 0),
             "required_now_count": int(interaction_worklist.get("required_now_count") or 0),
             "decision_mode_counts": dict(interaction_worklist.get("decision_mode_counts") or {}),
+        },
+        "topic_status": {
+            "bundle_count": len(topic_status_bundles),
+            "topic_refs": [
+                f"topic:{topic_id}"
+                for topic_id in [
+                    str(bundle.get("topic_id") or "")
+                    for bundle in topic_status_bundles
+                ]
+                if topic_id
+            ],
+            "session_refs": [
+                f"session:{session_id}"
+                for session_id in [
+                    str(bundle.get("session_id") or "")
+                    for bundle in topic_status_bundles
+                ]
+                if session_id
+            ],
+            "blocked_claim_trust_count": sum(
+                1
+                for bundle in topic_status_bundles
+                if bundle.get("can_update_claim_trust") is False
+            ),
         },
         "truth_source": str(payload.get("truth_source") or ""),
         "summary_inputs_trusted": bool(payload.get("summary_inputs_trusted", False)),

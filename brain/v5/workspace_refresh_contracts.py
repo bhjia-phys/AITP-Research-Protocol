@@ -11,6 +11,7 @@ from brain.v5.contracts import (
     _require_list,
     _require_mapping,
 )
+from brain.v5.topic_status_contracts import validate_topic_status_bundle
 
 
 def validate_workspace_refresh_bundle(payload: dict[str, Any], *, path: str = "workspace_refresh_bundle") -> ContractResult:
@@ -42,6 +43,10 @@ def validate_workspace_refresh_bundle(payload: dict[str, Any], *, path: str = "w
             "workspace_interaction_preview_bundle",
             "interaction_recording_worklist",
         ]
+        topic_status_expected = [
+            *base_expected,
+            "topic_status_bundle",
+        ]
         legacy_expected = [
             *base_expected,
             "legacy_source_reconstruction_obsidian_view_bundle",
@@ -49,8 +54,20 @@ def validate_workspace_refresh_bundle(payload: dict[str, Any], *, path: str = "w
             "legacy_semantic_needs_revision_basis_obsidian_view_bundle",
             "legacy_human_checkpoint_obsidian_view_bundle",
         ]
+        legacy_with_topic_status_expected = [
+            *topic_status_expected,
+            "legacy_source_reconstruction_obsidian_view_bundle",
+            "legacy_semantic_review_obsidian_view_bundle",
+            "legacy_semantic_needs_revision_basis_obsidian_view_bundle",
+            "legacy_human_checkpoint_obsidian_view_bundle",
+        ]
         surfaces = tuple(payload["refreshed_surfaces"])
-        if surfaces not in {tuple(base_expected), tuple(legacy_expected)}:
+        if surfaces not in {
+            tuple(base_expected),
+            tuple(topic_status_expected),
+            tuple(legacy_expected),
+            tuple(legacy_with_topic_status_expected),
+        }:
             result.add(f"{path}.refreshed_surfaces", "must list the refreshed workspace surfaces in order")
     _require_mapping(payload.get("workspace_summary"), f"{path}.workspace_summary", result)
     _require_mapping(payload.get("workspace_replay"), f"{path}.workspace_replay", result)
@@ -59,6 +76,11 @@ def validate_workspace_refresh_bundle(payload: dict[str, Any], *, path: str = "w
     _require_mapping(payload.get("source_reconstruction_obsidian_view"), f"{path}.source_reconstruction_obsidian_view", result)
     _require_mapping(payload.get("workspace_interaction_preview"), f"{path}.workspace_interaction_preview", result)
     _require_mapping(payload.get("interaction_recording_worklist"), f"{path}.interaction_recording_worklist", result)
+    _require_list(payload.get("topic_status_bundles"), f"{path}.topic_status_bundles", result)
+    if isinstance(payload.get("topic_status_bundles"), list):
+        for index, item in enumerate(payload["topic_status_bundles"]):
+            result.extend(validate_topic_status_bundle(item, path=f"{path}.topic_status_bundles[{index}]"))
+    _require_mapping(payload.get("topic_status_refresh_policy"), f"{path}.topic_status_refresh_policy", result)
     if "legacy_source_reconstruction_obsidian_view" in payload:
         _require_mapping(
             payload.get("legacy_source_reconstruction_obsidian_view"),

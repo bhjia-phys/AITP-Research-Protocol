@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 
 
 def _seed_workspace(tmp_path):
@@ -68,11 +69,25 @@ def test_workspace_refresh_writes_summary_replay_and_obsidian_views(tmp_path):
         "source_reconstruction_obsidian_view_bundle",
         "workspace_interaction_preview_bundle",
         "interaction_recording_worklist",
+        "topic_status_bundle",
     ]
     assert payload["source_records"]["sessions"] == ["s1"]
     assert payload["source_records"]["claims"] == [claim.claim_id]
     assert payload["source_records"]["memory_entries"] == [memory.entry_id]
     assert payload["source_records"]["validation_results"] == ["validation-result-fqhe"]
+    assert [bundle["session_id"] for bundle in payload["topic_status_bundles"]] == ["s1"]
+    assert payload["topic_status_bundles"][0]["topic_id"] == "fqhe"
+    assert payload["topic_status_bundles"][0]["topic_state"]["active_claim_id"] == claim.claim_id
+    assert payload["topic_status_bundles"][0]["can_update_claim_trust"] is False
+    assert payload["topic_status_bundles"][0]["files"]["topic_state"].replace("\\", "/").endswith(
+        ".aitp/topics/fqhe/runtime/topic_state.json"
+    )
+    assert payload["topic_status_refresh_policy"] == {
+        "selection": "recent_attention_sessions",
+        "max_session_count": 5,
+        "candidate_session_count": 1,
+        "refreshed_session_count": 1,
+    }
     assert payload["workspace_summary"]["files"]["overview"].endswith("overview.md")
     assert payload["workspace_replay"]["files"]["replay_packet"].endswith("replay_packet.md")
     assert payload["workspace_replay"]["workspace_backlog_summary"]["active_session_count"] == 1
@@ -98,6 +113,58 @@ def test_workspace_refresh_writes_summary_replay_and_obsidian_views(tmp_path):
     )
     assert payload["interaction_recording_worklist"]["can_update_kernel_state"] is False
     assert require_valid_public_surface("workspace_refresh_bundle", payload) == payload
+
+
+def test_workspace_refresh_bounds_topic_status_generation_to_recent_sessions(tmp_path, monkeypatch):
+    from brain.v5.workspace import bind_session
+    from brain.v5.workspace_refresh import refresh_workspace_views
+
+    ws, claim, _evidence, _memory = _seed_workspace(tmp_path)
+    session_ids = ["s1", "s2", "s3", "s4", "s5", "s6"]
+    for session_id in session_ids[1:]:
+        bind_session(
+            ws,
+            session_id,
+            topic_id="fqhe",
+            context_id="topological-order",
+            active_claim=claim.claim_id,
+        )
+    for index, session_id in enumerate(session_ids):
+        timestamp = 1_700_000_000 + index
+        os.utime(ws.session_path(session_id), (timestamp, timestamp))
+
+    calls = []
+
+    def fake_write_topic_status_surfaces(ws_arg, *, session_id):
+        calls.append(session_id)
+        return {
+            "kind": "topic_status_bundle",
+            "topic_id": "fqhe",
+            "session_id": session_id,
+            "source_records": {
+                "topics": ["fqhe"],
+                "sessions": [session_id],
+                "claims": [claim.claim_id],
+                "evidence": [],
+            },
+            "can_update_claim_trust": False,
+        }
+
+    monkeypatch.setattr(
+        "brain.v5.workspace_refresh.write_topic_status_surfaces",
+        fake_write_topic_status_surfaces,
+    )
+
+    payload = refresh_workspace_views(ws)
+
+    assert calls == ["s6", "s5", "s4", "s3", "s2"]
+    assert [bundle["session_id"] for bundle in payload["topic_status_bundles"]] == calls
+    assert payload["topic_status_refresh_policy"] == {
+        "selection": "recent_attention_sessions",
+        "max_session_count": 5,
+        "candidate_session_count": 6,
+        "refreshed_session_count": 5,
+    }
 
 
 def test_workspace_refresh_can_include_legacy_semantic_backlog_in_replay(tmp_path):
@@ -171,6 +238,7 @@ def test_workspace_refresh_can_include_legacy_semantic_backlog_in_replay(tmp_pat
         "source_reconstruction_obsidian_view_bundle",
         "workspace_interaction_preview_bundle",
         "interaction_recording_worklist",
+        "topic_status_bundle",
         "legacy_source_reconstruction_obsidian_view_bundle",
         "legacy_semantic_review_obsidian_view_bundle",
         "legacy_semantic_needs_revision_basis_obsidian_view_bundle",
@@ -221,6 +289,8 @@ def test_workspace_refresh_cli_mcp_and_runtime(tmp_path, capsys):
     assert mcp_payload["workspace_interaction_preview"]["decision_mode_counts"] == {"guarded_recording": 1}
     assert cli_payload["interaction_recording_worklist"]["work_item_count"] == 1
     assert mcp_payload["interaction_recording_worklist"]["can_update_claim_trust"] is False
+    assert cli_payload["topic_status_bundles"][0]["kind"] == "topic_status_bundle"
+    assert mcp_payload["topic_status_bundles"][0]["session_id"] == "s1"
     assert runtime_entrypoints()["workspace_refresh"] == {
         "cli": "aitp-v5 summary refresh",
         "mcp": "aitp_v5_refresh_workspace_views",
@@ -238,7 +308,7 @@ def test_workspace_refresh_cli_compact_progress(tmp_path, capsys):
 
     assert cli_payload["kind"] == "workspace_refresh_progress"
     assert cli_payload["source_surface"] == "workspace_refresh_bundle"
-    assert cli_payload["refreshed_surface_count"] == 7
+    assert cli_payload["refreshed_surface_count"] == 8
     assert cli_payload["refreshed_surfaces"] == [
         "workspace_summary_bundle",
         "workspace_replay_packet",
@@ -247,6 +317,7 @@ def test_workspace_refresh_cli_compact_progress(tmp_path, capsys):
         "source_reconstruction_obsidian_view_bundle",
         "workspace_interaction_preview_bundle",
         "interaction_recording_worklist",
+        "topic_status_bundle",
     ]
     assert cli_payload["workspace_summary"] == {
         "session_count": 1,
@@ -271,6 +342,12 @@ def test_workspace_refresh_cli_compact_progress(tmp_path, capsys):
         "work_item_count": 1,
         "required_now_count": 0,
         "decision_mode_counts": {"guarded_recording": 1},
+    }
+    assert cli_payload["topic_status"] == {
+        "bundle_count": 1,
+        "topic_refs": ["topic:fqhe"],
+        "session_refs": ["session:s1"],
+        "blocked_claim_trust_count": 1,
     }
     assert cli_payload["source_reconstruction"]["incomplete_claim_count"] == 1
     assert cli_payload["source_reconstruction_review"] == {
@@ -451,7 +528,7 @@ def test_workspace_refresh_cli_compact_progress_accepts_migration_dir(tmp_path, 
     ]) == 0
     cli_payload = json.loads(capsys.readouterr().out)
 
-    assert cli_payload["refreshed_surface_count"] == 11
+    assert cli_payload["refreshed_surface_count"] == 12
     assert cli_payload["legacy_source_reconstruction"] == {
         "work_item_count": 1,
         "repair_status_counts": {

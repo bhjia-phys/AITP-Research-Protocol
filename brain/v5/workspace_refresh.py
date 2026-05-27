@@ -16,7 +16,11 @@ from brain.v5.source_stack_coverage import build_source_stack_coverage_manifest
 from brain.v5.source_reconstruction_obsidian import write_source_reconstruction_obsidian_view
 from brain.v5.summaries import write_workspace_summary
 from brain.v5.interaction_worklist import build_interaction_recording_worklist
+from brain.v5.topic_status import write_topic_status_surfaces
 from brain.v5.workspace_interaction_preview import build_workspace_interaction_preview
+
+
+_TOPIC_STATUS_REFRESH_SESSION_LIMIT = 5
 
 
 def refresh_workspace_views(
@@ -45,6 +49,23 @@ def refresh_workspace_views(
     )
     workspace_interaction = build_workspace_interaction_preview(ws)
     interaction_worklist = build_interaction_recording_worklist(ws)
+    topic_status_candidates = _topic_status_candidate_session_ids(summary, replay)
+    topic_status_session_ids = _select_topic_status_session_ids(
+        ws,
+        topic_status_candidates,
+        replay,
+        limit=_TOPIC_STATUS_REFRESH_SESSION_LIMIT,
+    )
+    topic_status_bundles = [
+        write_topic_status_surfaces(ws, session_id=session_id)
+        for session_id in topic_status_session_ids
+    ]
+    topic_status_refresh_policy = {
+        "selection": "recent_attention_sessions",
+        "max_session_count": _TOPIC_STATUS_REFRESH_SESSION_LIMIT,
+        "candidate_session_count": len(topic_status_candidates),
+        "refreshed_session_count": len(topic_status_bundles),
+    }
     legacy_checkpoint_view = (
         write_legacy_human_checkpoint_obsidian_view(ws, migration_dir=migration_dir)
         if migration_dir
@@ -73,6 +94,7 @@ def refresh_workspace_views(
         source_reconstruction.get("source_records", {}),
         workspace_interaction.get("source_records", {}),
         interaction_worklist.get("source_records", {}),
+        *(bundle.get("source_records", {}) for bundle in topic_status_bundles),
         legacy_source_reconstruction_view.get("source_records", {}) if legacy_source_reconstruction_view else {},
         legacy_semantic_view.get("source_records", {}) if legacy_semantic_view else {},
         legacy_needs_revision_view.get("source_records", {}) if legacy_needs_revision_view else {},
@@ -87,6 +109,8 @@ def refresh_workspace_views(
         workspace_interaction["kind"],
         interaction_worklist["kind"],
     ]
+    if topic_status_bundles:
+        refreshed_surfaces.append("topic_status_bundle")
     if legacy_source_reconstruction_view:
         refreshed_surfaces.append(legacy_source_reconstruction_view["kind"])
     if legacy_semantic_view:
@@ -105,6 +129,8 @@ def refresh_workspace_views(
         "source_reconstruction_obsidian_view": source_reconstruction,
         "workspace_interaction_preview": workspace_interaction,
         "interaction_recording_worklist": interaction_worklist,
+        "topic_status_bundles": topic_status_bundles,
+        "topic_status_refresh_policy": topic_status_refresh_policy,
         "source_records": source_records,
         "derived_from": "kernel_state",
         "truth_source": False,
@@ -151,3 +177,56 @@ def _source_records_from_coverage(payload: dict[str, Any]) -> dict[str, list[str
             if isinstance(item, dict) and str(item.get("topic_id") or "")
         ],
     }
+
+
+def _topic_status_candidate_session_ids(summary: dict[str, Any], replay: dict[str, Any]) -> list[str]:
+    return _unique_strings([
+        *[
+            str(session_id or "")
+            for session_id in summary.get("source_records", {}).get("sessions", [])
+        ],
+        *[
+            str(session_id or "")
+            for session_id in replay.get("source_records", {}).get("sessions", [])
+        ],
+    ])
+
+
+def _select_topic_status_session_ids(
+    ws: WorkspacePaths,
+    session_ids: list[str],
+    replay: dict[str, Any],
+    *,
+    limit: int,
+) -> list[str]:
+    entries = {
+        str(entry.get("session_id") or ""): entry
+        for entry in replay.get("entries", [])
+        if isinstance(entry, dict) and str(entry.get("session_id") or "")
+    }
+    return sorted(
+        session_ids,
+        key=lambda session_id: (
+            bool(entries.get(session_id, {}).get("attention_reasons")),
+            _session_mtime(ws, session_id),
+            session_id,
+        ),
+        reverse=True,
+    )[:limit]
+
+
+def _session_mtime(ws: WorkspacePaths, session_id: str) -> float:
+    try:
+        return ws.session_path(session_id).stat().st_mtime
+    except OSError:
+        return 0.0
+
+
+def _unique_strings(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        if value and value not in seen:
+            seen.add(value)
+            result.append(value)
+    return result
