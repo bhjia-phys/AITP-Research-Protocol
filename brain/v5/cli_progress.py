@@ -327,6 +327,64 @@ def compact_legacy_source_reconstruction_review_packet(payload: dict[str, Any]) 
     }
 
 
+def compact_legacy_source_reconstruction_manifest(payload: dict[str, Any]) -> dict[str, Any]:
+    top_items = [
+        item for item in payload.get("items", []) if isinstance(item, dict)
+    ][:5]
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "kind": "legacy_source_reconstruction_manifest_progress",
+        "source_surface": "legacy_source_reconstruction_manifest",
+        "run_id": str(payload.get("run_id") or ""),
+        "migration_dir": str(payload.get("migration_dir") or ""),
+        "work_item_count": int(payload.get("work_item_count") or 0),
+        "proposed_repair_count": int(payload.get("proposed_repair_count") or 0),
+        "repair_status_counts": dict(payload.get("repair_status_counts") or {}),
+        "missing_component_counts": dict(payload.get("missing_component_counts") or {}),
+        "required_action_counts": dict(payload.get("required_action_counts") or {}),
+        "next_action_count": len(payload.get("next_actions") or []),
+        "next_action_refs": _limited_strings(payload.get("next_actions")),
+        "top_work_item_refs": [
+            f"legacy_source_reconstruction:{topic}"
+            for topic in [str(item.get("topic") or "") for item in top_items]
+            if topic
+        ],
+        "top_work_item_topics": [
+            str(item.get("topic") or "")
+            for item in top_items
+            if str(item.get("topic") or "")
+        ],
+        "top_work_item_active_claim_ids": [
+            str(item.get("active_claim_id") or "")
+            for item in top_items
+            if str(item.get("active_claim_id") or "")
+        ],
+        "top_work_item_latest_review_ids": [
+            str(item.get("latest_review_id") or "")
+            for item in top_items
+            if str(item.get("latest_review_id") or "")
+        ],
+        "top_work_item_repair_statuses": [
+            str(item.get("repair_status") or "")
+            for item in top_items
+            if str(item.get("repair_status") or "")
+        ],
+        "top_work_item_missing_components": [
+            _limited_strings(item.get("missing_components"), limit=10) for item in top_items
+        ],
+        "top_work_item_required_actions": [
+            _limited_strings(item.get("required_actions"), limit=10) for item in top_items
+        ],
+        "semantic_lossless_proven": bool(payload.get("semantic_lossless_proven", False)),
+        "semantic_review_required": bool(payload.get("semantic_review_required", True)),
+        "truth_source": str(payload.get("truth_source") or ""),
+        "summary_inputs_trusted": bool(payload.get("summary_inputs_trusted", False)),
+        "orientation_only": bool(payload.get("orientation_only", True)),
+        "can_update_kernel_state": bool(payload.get("can_update_kernel_state", False)),
+        "can_update_claim_trust": bool(payload.get("can_update_claim_trust", False)),
+    }
+
+
 def compact_legacy_human_checkpoint_packet(payload: dict[str, Any]) -> dict[str, Any]:
     checkpoint_items = [
         item for item in payload.get("checkpoint_items", []) if isinstance(item, dict)

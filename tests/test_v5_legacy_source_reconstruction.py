@@ -219,6 +219,65 @@ def test_legacy_source_reconstruction_manifest_batches_backlog(tmp_path):
     assert item["can_update_claim_trust"] is False
 
 
+def test_legacy_source_reconstruction_manifest_cli_compact_progress(tmp_path, capsys):
+    from brain.v5.cli import main
+
+    ws, run, review, _candidate, _derivation = _seed_reviewed_legacy_topic(tmp_path)
+
+    assert main([
+        "--base",
+        str(ws.base),
+        "legacy",
+        "source-reconstruction-manifest",
+        "--migration-dir",
+        str(run),
+        "--compact",
+    ]) == 0
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["kind"] == "legacy_source_reconstruction_manifest_progress"
+    assert payload["source_surface"] == "legacy_source_reconstruction_manifest"
+    assert payload["migration_dir"] == str(run)
+    assert payload["run_id"] == "legacy-v5-lossless-source-test"
+    assert payload["work_item_count"] == 1
+    assert payload["proposed_repair_count"] == 1
+    assert payload["repair_status_counts"]["proposed_repairs"] == 1
+    assert payload["missing_component_counts"]["reconstruction_path"] == 1
+    assert payload["required_action_counts"]["apply_selected_source_reconstruction_repair_with_latest_review_id"] == 1
+    assert payload["next_action_count"] == 1
+    assert payload["next_action_refs"] == ["legacy_source_reconstruction:canonical-topic"]
+    assert payload["top_work_item_refs"] == ["legacy_source_reconstruction:canonical-topic"]
+    assert payload["top_work_item_topics"] == ["canonical-topic"]
+    assert payload["top_work_item_active_claim_ids"] == ["claim-canonical"]
+    assert payload["top_work_item_latest_review_ids"] == [review.review_id]
+    assert payload["top_work_item_repair_statuses"] == ["proposed_repairs"]
+    assert payload["top_work_item_missing_components"] == [
+        [
+            "definitions",
+            "assumptions_or_scope",
+            "source_locations",
+            "dependency_graph",
+            "reconstruction_path",
+            "failure_conditions",
+        ]
+    ]
+    assert payload["top_work_item_required_actions"] == [
+        [
+            "inspect_legacy_refs_for_source_reconstruction_components",
+            "record_source_reconstruction_review_result",
+            "review_proposed_source_reconstruction_repair_before_apply",
+            "apply_selected_source_reconstruction_repair_with_latest_review_id",
+        ]
+    ]
+    assert payload["semantic_lossless_proven"] is False
+    assert payload["semantic_review_required"] is True
+    assert payload["truth_source"] == "typed_review_results_legacy_refs_and_source_reconstruction_audit"
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["can_update_claim_trust"] is False
+
+
 def test_legacy_source_reconstruction_obsidian_view_writes_worklist(tmp_path):
     from brain.v5.legacy_source_reconstruction_obsidian import write_legacy_source_reconstruction_obsidian_view
     from brain.v5.public_surfaces import require_valid_public_surface
