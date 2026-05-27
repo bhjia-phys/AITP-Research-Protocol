@@ -8,6 +8,7 @@ from brain.v5.legacy_l2_graph import build_legacy_l2_graph_manifest, build_legac
 from brain.v5.legacy_l2_obsidian import write_legacy_l2_obsidian_view
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
 from brain.v5.legacy_executable_evidence import build_legacy_executable_evidence_packet
+from brain.v5.legacy_human_checkpoint_packet import build_legacy_human_checkpoint_packet
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
 from brain.v5.legacy_runtime_log_audit import build_legacy_runtime_log_marker_audit
 from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
@@ -170,6 +171,16 @@ def aitp_v5_build_legacy_executable_evidence_packet(
 ) -> dict:
     result = build_legacy_executable_evidence_packet(_ws(base), migration_dir=migration_dir, topic=topic)
     return {"ok": True, **require_valid_public_surface("legacy_executable_evidence_packet", result)}
+
+
+def aitp_v5_build_legacy_human_checkpoint_packet(
+    base: str,
+    *,
+    migration_dir: str,
+    topic: str = "",
+) -> dict:
+    result = build_legacy_human_checkpoint_packet(_ws(base), migration_dir=migration_dir, topic=topic)
+    return {"ok": True, **require_valid_public_surface("legacy_human_checkpoint_packet", result)}
 
 
 def aitp_v5_apply_legacy_source_reconstruction_repair(

@@ -6,6 +6,7 @@ from brain.v5.legacy_l2_graph import build_legacy_l2_graph_manifest, build_legac
 from brain.v5.legacy_l2_obsidian import write_legacy_l2_obsidian_view
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
 from brain.v5.legacy_executable_evidence import build_legacy_executable_evidence_packet
+from brain.v5.legacy_human_checkpoint_packet import build_legacy_human_checkpoint_packet
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
 from brain.v5.legacy_runtime_log_audit import build_legacy_runtime_log_marker_audit
 from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
@@ -87,6 +88,9 @@ def add_legacy_parser(subparsers) -> None:
     executable = legacy_subparsers.add_parser("executable-evidence-packet")
     executable.add_argument("--migration-dir", required=True)
     executable.add_argument("--topic", default="")
+    human_checkpoint = legacy_subparsers.add_parser("human-checkpoint-packet")
+    human_checkpoint.add_argument("--migration-dir", required=True)
+    human_checkpoint.add_argument("--topic", default="")
     source_repair_apply = legacy_subparsers.add_parser("source-reconstruction-apply")
     source_repair_apply.add_argument("--migration-dir", required=True)
     source_repair_apply.add_argument("--topic", required=True)
@@ -199,6 +203,13 @@ def dispatch_legacy_command(args, ws) -> dict:
             topic=args.topic,
         )
         return {"ok": True, **require_valid_public_surface("legacy_executable_evidence_packet", packet)}
+    if args.legacy_command == "human-checkpoint-packet":
+        packet = build_legacy_human_checkpoint_packet(
+            ws,
+            migration_dir=args.migration_dir,
+            topic=args.topic,
+        )
+        return {"ok": True, **require_valid_public_surface("legacy_human_checkpoint_packet", packet)}
     if args.legacy_command == "source-reconstruction-apply":
         result = apply_legacy_source_reconstruction_repair(
             ws,

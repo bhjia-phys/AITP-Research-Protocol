@@ -69,6 +69,8 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run", "--topic", "fqhe"]
     if template.startswith("legacy executable-evidence-packet"):
         return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run", "--topic", "fqhe"]
+    if template.startswith("legacy human-checkpoint-packet"):
+        return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run", "--topic", "fqhe"]
     if template.startswith("legacy source-reconstruction-apply"):
         return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run", "--topic", "fqhe", "--repair-type", "reconstruction_path_evidence_backfill", "--review-id", "legacy-semantic-review-sample"]
     if template.startswith("legacy semantic-review-result"):
