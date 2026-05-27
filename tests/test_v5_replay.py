@@ -357,6 +357,7 @@ def test_workspace_replay_packet_can_include_legacy_semantic_review_backlog(tmp_
     assert require_valid_public_surface("workspace_replay_packet", {"ok": True, **payload})["ok"] is True
     legacy = packet.workspace_backlog_summary["legacy_semantic_review"]
     legacy_source = packet.workspace_backlog_summary["legacy_source_reconstruction"]
+    legacy_repair = packet.workspace_backlog_summary["legacy_semantic_repair"]
     legacy_checkpoints = packet.workspace_backlog_summary["legacy_human_checkpoints"]
     assert legacy == {
         "surface": "legacy_semantic_review_manifest",
@@ -446,6 +447,45 @@ def test_workspace_replay_packet_can_include_legacy_semantic_review_backlog(tmp_
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }
+    assert legacy_repair == {
+        "surface": "legacy_semantic_repair_manifest",
+        "migration_dir": str(migration),
+        "work_item_count": 1,
+        "repair_status_counts": {
+            "awaiting_needs_revision_review": 1,
+            "no_repair_candidates": 0,
+            "proposed_repairs": 0,
+        },
+        "proposed_repair_count": 0,
+        "required_action_counts": {
+            "keep_semantic_review_blocking_until_typed_review_basis_exists": 1,
+            "record_needs_revision_review_with_specific_repair_basis": 1,
+        },
+        "top_repair_items": [
+            {
+                "topic": "legacy-l2",
+                "active_claim_id": "claim-l2",
+                "latest_review_id": review.review_id,
+                "review_status": "inconclusive",
+                "repair_status": "awaiting_needs_revision_review",
+                "proposed_repair_count": 0,
+                "proposed_repair_types": [],
+                "required_actions": [
+                    "record_needs_revision_review_with_specific_repair_basis",
+                    "keep_semantic_review_blocking_until_typed_review_basis_exists",
+                ],
+                "repair_plan_cli": (
+                    f"aitp-v5 --base {ws.base} legacy semantic-repair-plan "
+                    f"--migration-dir {migration} --topic legacy-l2"
+                ),
+                "can_update_claim_trust": False,
+            }
+        ],
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
     assert legacy_checkpoints == {
         "surface": "legacy_human_checkpoint_packet",
         "migration_dir": str(migration),
@@ -481,8 +521,11 @@ def test_workspace_replay_packet_can_include_legacy_semantic_review_backlog(tmp_
     _, body = read_md(packet.files["replay_packet"])
     assert "Legacy Semantic Review Backlog" in body
     assert "Legacy Source Reconstruction Backlog" in body
+    assert "Legacy Semantic Repair Triage" in body
     assert "Legacy Human Checkpoints" in body
     assert "Source reconstruction items: 1" in body
+    assert "Semantic repair items: 1" in body
+    assert "Proposed semantic repairs: 0" in body
     assert "Checkpoint decisions: 1 open, 0 pending request" in body
     assert "Open human checkpoints: 1" in body
     assert checkpoint.checkpoint_id in body

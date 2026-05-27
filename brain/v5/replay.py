@@ -10,6 +10,7 @@ from typing import Any
 from brain.v5.evidence import required_output_coverage
 from brain.v5.flow import resolve_flow_profile
 from brain.v5.legacy_human_checkpoint_packet import build_legacy_human_checkpoint_packet
+from brain.v5.legacy_semantic_repair_manifest import build_legacy_semantic_repair_manifest
 from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
 from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
 from brain.v5.legacy_source_reconstruction import build_legacy_source_reconstruction_manifest
@@ -69,6 +70,7 @@ def write_workspace_replay_packet(
         entries,
         legacy_semantic_review=_legacy_semantic_review_summary(ws, migration_dir),
         legacy_source_reconstruction=_legacy_source_reconstruction_summary(ws, migration_dir),
+        legacy_semantic_repair=_legacy_semantic_repair_summary(ws, migration_dir),
         legacy_human_checkpoints=_legacy_human_checkpoint_summary(ws, migration_dir),
     )
     source_records = {
@@ -246,6 +248,23 @@ def _body(entries: list[dict[str, Any]], workspace_backlog_summary: dict[str, An
                 f"{', '.join(item['missing_components']) or 'none'}; review via `{item['review_packet_cli']}`"
             )
         lines.append("")
+    legacy_repair = workspace_backlog_summary.get("legacy_semantic_repair")
+    if isinstance(legacy_repair, dict):
+        lines.extend([
+            "## Legacy Semantic Repair Triage",
+            "",
+            f"- Migration dir: `{legacy_repair['migration_dir']}`",
+            f"- Semantic repair items: {legacy_repair['work_item_count']}",
+            f"- Repair status: `{legacy_repair['repair_status_counts']}`",
+            f"- Proposed semantic repairs: {legacy_repair['proposed_repair_count']}",
+            "",
+        ])
+        for item in legacy_repair["top_repair_items"]:
+            lines.append(
+                f"- `{item['topic']}`: {item['repair_status']}; required "
+                f"{', '.join(item['required_actions']) or 'none'}; plan via `{item['repair_plan_cli']}`"
+            )
+        lines.append("")
     legacy_checkpoints = workspace_backlog_summary.get("legacy_human_checkpoints")
     if isinstance(legacy_checkpoints, dict):
         lines.extend([
@@ -289,6 +308,7 @@ def _workspace_backlog_summary(
     *,
     legacy_semantic_review: dict[str, Any] | None = None,
     legacy_source_reconstruction: dict[str, Any] | None = None,
+    legacy_semantic_repair: dict[str, Any] | None = None,
     legacy_human_checkpoints: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     complete_entries = [entry for entry in entries if entry["claim_id"] and entry["source_reconstruction_complete"]]
@@ -323,6 +343,8 @@ def _workspace_backlog_summary(
         summary["legacy_semantic_review"] = legacy_semantic_review
     if legacy_source_reconstruction is not None:
         summary["legacy_source_reconstruction"] = legacy_source_reconstruction
+    if legacy_semantic_repair is not None:
+        summary["legacy_semantic_repair"] = legacy_semantic_repair
     if legacy_human_checkpoints is not None:
         summary["legacy_human_checkpoints"] = legacy_human_checkpoints
     return summary
@@ -365,6 +387,28 @@ def _legacy_source_reconstruction_summary(ws: WorkspacePaths, migration_dir: str
         "repair_status_counts": dict(manifest["repair_status_counts"]),
         "proposed_repair_count": int(manifest["proposed_repair_count"]),
         "top_backlog_items": [_legacy_source_backlog_item(item) for item in manifest["items"][:5]],
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def _legacy_semantic_repair_summary(ws: WorkspacePaths, migration_dir: str | None) -> dict[str, Any] | None:
+    if not migration_dir:
+        return None
+    manifest = build_legacy_semantic_repair_manifest(ws, migration_dir=migration_dir)
+    return {
+        "surface": "legacy_semantic_repair_manifest",
+        "migration_dir": manifest["migration_dir"],
+        "work_item_count": int(manifest["work_item_count"]),
+        "repair_status_counts": dict(manifest["repair_status_counts"]),
+        "proposed_repair_count": int(manifest["proposed_repair_count"]),
+        "required_action_counts": dict(manifest["required_action_counts"]),
+        "top_repair_items": [
+            _legacy_semantic_repair_item(item)
+            for item in manifest["items"][:5]
+        ],
         "summary_inputs_trusted": False,
         "orientation_only": True,
         "can_update_kernel_state": False,
@@ -421,6 +465,21 @@ def _legacy_source_backlog_item(item: dict[str, Any]) -> dict[str, Any]:
         "missing_components": list(item.get("missing_components") or []),
         "required_actions": list(item.get("required_actions") or []),
         "review_packet_cli": str(item.get("review_packet_cli") or ""),
+        "can_update_claim_trust": False,
+    }
+
+
+def _legacy_semantic_repair_item(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "topic": str(item.get("topic") or ""),
+        "active_claim_id": str(item.get("active_claim_id") or ""),
+        "latest_review_id": str(item.get("latest_review_id") or ""),
+        "review_status": str(item.get("review_status") or ""),
+        "repair_status": str(item.get("repair_status") or ""),
+        "proposed_repair_count": int(item.get("proposed_repair_count") or 0),
+        "proposed_repair_types": list(item.get("proposed_repair_types") or []),
+        "required_actions": list(item.get("required_actions") or []),
+        "repair_plan_cli": str(item.get("repair_plan_cli") or ""),
         "can_update_claim_trust": False,
     }
 

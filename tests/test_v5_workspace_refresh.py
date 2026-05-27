@@ -345,7 +345,9 @@ def test_workspace_refresh_cli_mcp_accept_migration_dir(tmp_path, capsys):
     mcp_payload = aitp_v5_refresh_workspace_views(str(tmp_path), migration_dir=str(migration))
 
     assert cli_payload["workspace_replay"]["workspace_backlog_summary"]["legacy_semantic_review"]["review_item_count"] == 1
+    assert cli_payload["workspace_replay"]["workspace_backlog_summary"]["legacy_semantic_repair"]["work_item_count"] == 1
     assert mcp_payload["workspace_replay"]["workspace_backlog_summary"]["legacy_semantic_review"]["migration_dir"] == str(migration)
+    assert mcp_payload["workspace_replay"]["workspace_backlog_summary"]["legacy_semantic_repair"]["surface"] == "legacy_semantic_repair_manifest"
     assert cli_payload["legacy_source_reconstruction_obsidian_view"]["work_item_count"] == 1
     assert mcp_payload["legacy_source_reconstruction_obsidian_view"]["derived_from"] == "legacy_source_reconstruction_manifest"
     assert cli_payload["workspace_interaction_preview"]["session_count"] == 1
@@ -435,6 +437,19 @@ def test_workspace_refresh_cli_compact_progress_accepts_migration_dir(tmp_path, 
             "proposed_repairs": 0,
         },
         "proposed_repair_count": 0,
+    }
+    assert cli_payload["legacy_semantic_repair"] == {
+        "work_item_count": 1,
+        "repair_status_counts": {
+            "awaiting_needs_revision_review": 1,
+            "no_repair_candidates": 0,
+            "proposed_repairs": 0,
+        },
+        "proposed_repair_count": 0,
+        "required_action_counts": {
+            "keep_semantic_review_blocking_until_typed_review_basis_exists": 1,
+            "record_initial_semantic_review_result": 1,
+        },
     }
     assert cli_payload["legacy_semantic_review"]["work_item_count"] == 1
     assert cli_payload["source_reconstruction_review"]["claim_count"] == 2
