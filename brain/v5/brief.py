@@ -12,6 +12,7 @@ from brain.v5.interaction import prioritize_questions, resolve_interaction_profi
 from brain.v5.knowledge_connectors import suggest_knowledge_connectors_for_claim
 from brain.v5.models import ClaimRecord, CodeStateRecord, ToolRunRecord
 from brain.v5.memory import list_memory_entries_for_claim, memory_entry_brief_payload
+from brain.v5.operator_checkpoint import load_operator_checkpoint
 from brain.v5.policy import evaluate_policy
 from brain.v5.question_engine import generate_questions
 from brain.v5.physics_objects import list_object_relations_for_claim, object_relation_brief_payload
@@ -41,6 +42,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
     research_intent_gate = load_research_intent_gate(ws, session.topic_id)
     innovation_direction = load_innovation_direction(ws, session.topic_id)
     final_output_profile = load_final_output_profile(ws, session.topic_id)
+    operator_checkpoint = load_operator_checkpoint(ws, session.topic_id)
 
     if session.active_claim:
         claim = get_claim(ws, session.active_claim)
@@ -160,6 +162,20 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
                 "clarification_questions": research_intent_gate.get("clarification_questions", []),
             },
         )
+    if operator_checkpoint.get("active"):
+        vnext_forbidden.append("vnext:continue_without_answering_operator_checkpoint")
+        next_action_candidates.insert(
+            0,
+            {
+                "action": "answer_operator_checkpoint",
+                "rank": 1,
+                "why": "vNext operator checkpoint is active",
+                "expected_evidence_gain": "record the human route choice before continuing or branching",
+                "checkpoint_id": operator_checkpoint.get("checkpoint_id", ""),
+                "question": operator_checkpoint.get("question", ""),
+                "options": operator_checkpoint.get("options", []),
+            },
+        )
 
     return {
         "session": asdict(session),
@@ -188,6 +204,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
             "research_intent_gate": research_intent_gate,
             "innovation_direction": innovation_direction,
             "final_output_profile": final_output_profile,
+            "operator_checkpoint": operator_checkpoint,
             "object_relations": object_relations,
             "memory_entries": memory_entries,
         },
@@ -195,10 +212,19 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
         "next_action_candidates": next_action_candidates,
         "forbidden_now": _forbidden_actions(flow.profile if flow else "guided") + policy_forbidden + vnext_forbidden,
         "human_checkpoint": {
-            "needed": action_budget.requires_human_checkpoint,
-            "reason": "risk budget requires human checkpoint" if action_budget.requires_human_checkpoint else None,
+            "needed": action_budget.requires_human_checkpoint or bool(operator_checkpoint.get("active")),
+            "reason": _human_checkpoint_reason(action_budget.requires_human_checkpoint, operator_checkpoint),
         },
     }
+
+
+def _human_checkpoint_reason(risk_requires_checkpoint: bool, operator_checkpoint: dict[str, Any]) -> str | None:
+    if operator_checkpoint.get("active"):
+        question = str(operator_checkpoint.get("question") or "")
+        return f"active operator checkpoint: {question}" if question else "active operator checkpoint"
+    if risk_requires_checkpoint:
+        return "risk budget requires human checkpoint"
+    return None
 
 
 def _forbidden_actions(profile: str) -> list[str]:

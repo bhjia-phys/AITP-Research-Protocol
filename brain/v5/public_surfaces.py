@@ -62,6 +62,7 @@ _PUBLIC_SURFACE_NAMES = (
     "legacy_semantic_review_queue",
     "memory_entry_record",
     "object_relation_record",
+    "operator_checkpoint_record",
     "opencode_hook_installation",
     "opencode_plugin_bridge",
     "physics_object_record",
@@ -158,6 +159,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "legacy_semantic_review_queue": "orientation-only per-topic semantic review queue for completed legacy migrations, linking accounting coverage to typed source reconstruction gaps without claiming semantic proof",
     "memory_entry_record": "contracted L2 memory entry created only from evidence-backed promotion packets with human approval",
     "object_relation_record": "contracted object-relation record linking physics objects with typed relations, failure modes, and assumptions",
+    "operator_checkpoint_record": "contracted topic-local operator question that survives restarts and cannot update claim trust",
     "opencode_hook_installation": "contracted OpenCode stdin-runner hook installation fixture generated from runtime metadata",
     "opencode_plugin_bridge": "contracted OpenCode plugin bridge generated from runtime hook installation metadata",
     "physics_object_record": "contracted physics-object record for theoretical objects, systems, operators, sectors, and definitions",
@@ -283,6 +285,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_steering_decision_record,
     )
     from brain.v5.output_stability_contracts import require_valid_final_output_profile
+    from brain.v5.operator_checkpoint_contracts import require_valid_operator_checkpoint_record
     from brain.v5.legacy_contracts import require_valid_legacy_migration_result
     from brain.v5.legacy_executable_evidence_contracts import require_valid_legacy_executable_evidence_packet
     from brain.v5.legacy_human_checkpoint_obsidian_contracts import require_valid_legacy_human_checkpoint_obsidian_view_bundle
@@ -411,6 +414,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "legacy_semantic_review_queue": require_valid_legacy_semantic_review_queue,
         "memory_entry_record": require_valid_memory_entry_record,
         "object_relation_record": require_valid_object_relation_record,
+        "operator_checkpoint_record": require_valid_operator_checkpoint_record,
         "opencode_hook_installation": require_valid_opencode_hook_installation,
         "opencode_plugin_bridge": require_valid_opencode_plugin_bridge,
         "physics_object_record": require_valid_physics_object_record,

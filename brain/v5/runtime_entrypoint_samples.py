@@ -101,6 +101,33 @@ def sample_args_for_template(template: str) -> list[str]:
             "--change-policy",
             "Breaking changes require a new output version.",
         ]
+    if template.startswith("operator checkpoint request"):
+        return [
+            "--topic",
+            "fqhe",
+            "--kind",
+            "promotion_approval",
+            "--question",
+            "Can this scoped result be promoted?",
+            "--option",
+            "approve",
+            "--option",
+            "defer",
+            "--requested-by",
+            "promotion_preflight",
+        ]
+    if template.startswith("operator checkpoint answer"):
+        return [
+            "operator-checkpoint-sample",
+            "--topic",
+            "fqhe",
+            "--selected-option",
+            "defer",
+            "--rationale",
+            "Need one more validation result.",
+            "--answered-by",
+            "human",
+        ]
     if template.startswith("trace hook-event persist"):
         return ["--payload-json", '{"kind":"hook_trace_event","hook_name":"post_tool","event":{"event_id":"event-1","session_id":"s1","topic_id":"fqhe","event_type":"tool_run_recorded","risk_level":"guided","payload":{},"kind":"trace_event"},"exit_code":0,"summary_inputs_trusted":false}']
     if template.startswith("legacy migrate"):

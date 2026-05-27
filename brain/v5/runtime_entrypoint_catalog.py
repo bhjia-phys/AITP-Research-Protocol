@@ -87,6 +87,16 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_record_final_output_profile",
         "surface": "final_output_profile",
     },
+    "request_operator_checkpoint": {
+        "cli": "aitp-v5 operator checkpoint request <args>",
+        "mcp": "aitp_v5_request_operator_checkpoint",
+        "surface": "operator_checkpoint_record",
+    },
+    "answer_operator_checkpoint": {
+        "cli": "aitp-v5 operator checkpoint answer <args>",
+        "mcp": "aitp_v5_answer_operator_checkpoint",
+        "surface": "operator_checkpoint_record",
+    },
     "record_research_intent_packet": {
         "cli": "aitp-v5 intent packet record <args>",
         "mcp": "aitp_v5_record_research_intent_packet",
