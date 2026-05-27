@@ -17,6 +17,7 @@ from brain.v5.question_engine import generate_questions
 from brain.v5.physics_objects import list_object_relations_for_claim, object_relation_brief_payload
 from brain.v5.references import list_reference_locations_for_claim, reference_location_brief_payload
 from brain.v5.research_intent import load_innovation_direction, load_research_intent_gate
+from brain.v5.output_stability import load_final_output_profile
 from brain.v5.risk import action_budget_for_level, assess_claim_risk
 from brain.v5.store import list_records
 from brain.v5.workspace import get_claim, get_session_binding
@@ -39,6 +40,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
     memory_entries = []
     research_intent_gate = load_research_intent_gate(ws, session.topic_id)
     innovation_direction = load_innovation_direction(ws, session.topic_id)
+    final_output_profile = load_final_output_profile(ws, session.topic_id)
 
     if session.active_claim:
         claim = get_claim(ws, session.active_claim)
@@ -185,6 +187,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
             "operating_notes": operating_notes,
             "research_intent_gate": research_intent_gate,
             "innovation_direction": innovation_direction,
+            "final_output_profile": final_output_profile,
             "object_relations": object_relations,
             "memory_entries": memory_entries,
         },

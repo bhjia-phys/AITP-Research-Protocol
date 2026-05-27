@@ -84,6 +84,23 @@ def sample_args_for_template(template: str) -> list[str]:
             "--session",
             "s1",
         ]
+    if template.startswith("output profile record"):
+        return [
+            "--topic",
+            "fqhe",
+            "--version",
+            "fqhe-final-output-v1",
+            "--audience",
+            "future_agent",
+            "--stable-section",
+            "current_state",
+            "--stable-section",
+            "next_actions",
+            "--flexible-section",
+            "open_questions",
+            "--change-policy",
+            "Breaking changes require a new output version.",
+        ]
     if template.startswith("trace hook-event persist"):
         return ["--payload-json", '{"kind":"hook_trace_event","hook_name":"post_tool","event":{"event_id":"event-1","session_id":"s1","topic_id":"fqhe","event_type":"tool_run_recorded","risk_level":"guided","payload":{},"kind":"trace_event"},"exit_code":0,"summary_inputs_trusted":false}']
     if template.startswith("legacy migrate"):

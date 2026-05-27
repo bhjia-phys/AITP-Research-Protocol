@@ -19,6 +19,7 @@ _PUBLIC_SURFACE_NAMES = (
     "failure_mode_review_packet",
     "failure_mode_review_result_record",
     "final_engineering_readiness_audit",
+    "final_output_profile",
     "human_checkpoint_record",
     "hook_trace_event_record",
     "interaction_recording_preview",
@@ -114,6 +115,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "failure_mode_review_packet": "read-only physics adequacy review questions for recorded failure modes",
     "failure_mode_review_result_record": "contracted typed record preserving the evidence/tool/literature basis behind an approved failure-mode review",
     "final_engineering_readiness_audit": "orientation-only final-gap audit separating AITP v5 kernel capability from remaining host and legacy semantic-review backlog",
+    "final_output_profile": "contracted topic-local output shape profile for stable final/handoff reports without claim-trust authority",
     "human_checkpoint_record": "contracted human checkpoint requiring explicit options and a decision from the declared option set",
     "hook_trace_event_record": "contracted persisted hook trace-event record that cannot update claim trust",
     "interaction_recording_preview": "read-only preview of natural conversation recording boundaries, lightweight mode, and heavier triggers",
@@ -280,6 +282,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_research_intent_packet,
         require_valid_steering_decision_record,
     )
+    from brain.v5.output_stability_contracts import require_valid_final_output_profile
     from brain.v5.legacy_contracts import require_valid_legacy_migration_result
     from brain.v5.legacy_executable_evidence_contracts import require_valid_legacy_executable_evidence_packet
     from brain.v5.legacy_human_checkpoint_obsidian_contracts import require_valid_legacy_human_checkpoint_obsidian_view_bundle
@@ -365,6 +368,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "failure_mode_review_packet": require_valid_failure_mode_review_packet,
         "failure_mode_review_result_record": require_valid_failure_mode_review_result_record,
         "final_engineering_readiness_audit": require_valid_final_engineering_readiness_audit,
+        "final_output_profile": require_valid_final_output_profile,
         "human_checkpoint_record": require_valid_human_checkpoint_record,
         "hook_trace_event_record": require_valid_hook_trace_event_record,
         "interaction_recording_preview": require_valid_interaction_recording_preview,
