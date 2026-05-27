@@ -9,7 +9,13 @@ from brain.v5.adapter_protocols import record_gate_coverage_audit
 from brain.v5.hook_smoke_coverage import runtime_hook_smoke_coverage_report
 from brain.v5.legacy_semantic_review import build_legacy_semantic_review_queue
 from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
-from brain.v5.models import ClaimRecord, MemoryEntryRecord
+from brain.v5.models import (
+    ClaimRecord,
+    MemoryEntryRecord,
+    ObjectRelationRecord,
+    PhysicsObjectRecord,
+    SensemakingReportRecord,
+)
 from brain.v5.paths import WorkspacePaths
 from brain.v5.source_reconstruction import audit_source_reconstruction_batch
 from brain.v5.source_reconstruction_review import build_source_reconstruction_review_manifest
@@ -162,13 +168,25 @@ def _source_stack(ws: WorkspacePaths) -> dict[str, Any]:
 def _knowledge_stack(ws: WorkspacePaths) -> dict[str, Any]:
     entries = list_records(ws.root / "memory" / "l2" / "entries", MemoryEntryRecord)
     active_entries = [entry for entry in entries if entry.status == "active"]
+    objects = list_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord)
+    relations = list_records(ws.registry_dir("object_relations"), ObjectRelationRecord)
+    reports = list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord)
     return {
         "promotion_surface": "promotion_packet_record",
         "memory_surface": "memory_entry_record",
         "l2_audit_surface": "l2_memory_audit",
         "obsidian_view_surface": "l2_obsidian_view_bundle",
+        "obsidian_typed_graph_supported": True,
+        "typed_graph_sources": [
+            "physics_object_record",
+            "object_relation_record",
+            "sensemaking_report_record",
+        ],
         "memory_entry_count": len(entries),
         "active_memory_entry_count": len(active_entries),
+        "physics_object_count": len(objects),
+        "object_relation_count": len(relations),
+        "sensemaking_report_count": len(reports),
         "summary_inputs_trusted": False,
     }
 

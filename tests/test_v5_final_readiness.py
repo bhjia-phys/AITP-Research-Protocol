@@ -164,6 +164,12 @@ def test_final_readiness_audit_keeps_kernel_capability_separate_from_content_bac
     )
     assert payload["kernel_capabilities"]["source_stack"]["host_refresh_review_view_supported"] is True
     assert payload["kernel_capabilities"]["knowledge_stack"]["obsidian_view_surface"] == "l2_obsidian_view_bundle"
+    assert payload["kernel_capabilities"]["knowledge_stack"]["obsidian_typed_graph_supported"] is True
+    assert payload["kernel_capabilities"]["knowledge_stack"]["typed_graph_sources"] == [
+        "physics_object_record",
+        "object_relation_record",
+        "sensemaking_report_record",
+    ]
     assert payload["kernel_capabilities"]["long_term_replay"]["surface"] == "workspace_replay_packet"
     assert payload["kernel_capabilities"]["long_term_replay"]["legacy_semantic_backlog_surface"] == (
         "legacy_semantic_review_manifest"

@@ -68,6 +68,37 @@ def validate_final_engineering_readiness_audit(
         for key in ("summary_can_drive_trust", "can_update_kernel_state", "can_update_claim_trust"):
             if natural.get(key) is not False:
                 result.add(f"{path}.kernel_capabilities.natural_interaction.{key}", "must be false")
+    knowledge = _mapping(payload.get("kernel_capabilities")).get("knowledge_stack")
+    _require_mapping(knowledge, f"{path}.kernel_capabilities.knowledge_stack", result)
+    if isinstance(knowledge, dict):
+        if knowledge.get("obsidian_view_surface") != "l2_obsidian_view_bundle":
+            result.add(
+                f"{path}.kernel_capabilities.knowledge_stack.obsidian_view_surface",
+                "must be l2_obsidian_view_bundle",
+            )
+        if knowledge.get("obsidian_typed_graph_supported") is not True:
+            result.add(
+                f"{path}.kernel_capabilities.knowledge_stack.obsidian_typed_graph_supported",
+                "must be true",
+            )
+        if knowledge.get("typed_graph_sources") != [
+            "physics_object_record",
+            "object_relation_record",
+            "sensemaking_report_record",
+        ]:
+            result.add(
+                f"{path}.kernel_capabilities.knowledge_stack.typed_graph_sources",
+                "must list typed graph source records",
+            )
+        for key in (
+            "memory_entry_count",
+            "active_memory_entry_count",
+            "physics_object_count",
+            "object_relation_count",
+            "sensemaking_report_count",
+        ):
+            if not isinstance(knowledge.get(key), int) or knowledge[key] < 0:
+                result.add(f"{path}.kernel_capabilities.knowledge_stack.{key}", "must be a non-negative integer")
     host = _mapping(payload.get("kernel_capabilities")).get("host_integration")
     _require_mapping(host, f"{path}.kernel_capabilities.host_integration", result)
     if isinstance(host, dict):
