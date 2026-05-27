@@ -10,6 +10,7 @@ from brain.v5.legacy_runtime_log_audit import build_legacy_runtime_log_marker_au
 from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
 from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
 from brain.v5.legacy_semantic_repair import apply_legacy_semantic_repair, build_legacy_semantic_repair_plan
+from brain.v5.legacy_source_metadata_repair import build_legacy_source_metadata_repair_packet
 from brain.v5.legacy_source_reconstruction import (
     apply_legacy_source_reconstruction_repair,
     build_legacy_source_reconstruction_plan,
@@ -79,6 +80,9 @@ def add_legacy_parser(subparsers) -> None:
     source_review.add_argument("--migration-dir", required=True)
     source_review.add_argument("--topic", required=True)
     source_review.add_argument("--compact", "--progress", action="store_true", dest="compact")
+    source_metadata = legacy_subparsers.add_parser("source-metadata-repair-packet")
+    source_metadata.add_argument("--migration-dir", required=True)
+    source_metadata.add_argument("--topic", default="")
     source_repair_apply = legacy_subparsers.add_parser("source-reconstruction-apply")
     source_repair_apply.add_argument("--migration-dir", required=True)
     source_repair_apply.add_argument("--topic", required=True)
@@ -177,6 +181,13 @@ def dispatch_legacy_command(args, ws) -> dict:
         if getattr(args, "compact", False):
             return compact_legacy_source_reconstruction_review_packet(payload)
         return payload
+    if args.legacy_command == "source-metadata-repair-packet":
+        packet = build_legacy_source_metadata_repair_packet(
+            ws,
+            migration_dir=args.migration_dir,
+            topic=args.topic,
+        )
+        return {"ok": True, **require_valid_public_surface("legacy_source_metadata_repair_packet", packet)}
     if args.legacy_command == "source-reconstruction-apply":
         result = apply_legacy_source_reconstruction_repair(
             ws,

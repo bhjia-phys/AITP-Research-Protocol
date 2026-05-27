@@ -33,6 +33,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "legacy_migration_coverage_audit",
         "legacy_migration_result",
         "legacy_runtime_log_marker_audit",
+        "legacy_source_metadata_repair_packet",
         "legacy_source_reconstruction_apply",
         "legacy_source_reconstruction_plan",
         "legacy_source_reconstruction_review_packet",

@@ -1994,6 +1994,155 @@ def test_legacy_semantic_review_worklist_classifies_source_metadata_repair(tmp_p
     assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
 
 
+def test_legacy_source_metadata_repair_packet_groups_reference_location_work(tmp_path):
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.legacy_source_metadata_repair import build_legacy_source_metadata_repair_packet
+    from brain.v5.models import ClaimRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="The Green-function formula source genealogy needs DOI metadata repair.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Bibliographic metadata mismatch blocks semantic pass.",
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="Formula source readback found an Ishikawa-Matsuyama DOI mismatch.",
+        active_claim_id="claim-canonical",
+        reviewed_legacy_refs=["legacy_archive:canonical-topic/runtime/bibliography/key_papers.bib"],
+        reviewed_typed_refs=["claim:claim-canonical"],
+        remaining_actions=[
+            "resolve_ishikawa_matsuyama_doi_metadata_mismatch_before_formula_promotion",
+            "verify_topological_hamiltonian_static_limit_regime_gap_and_g_invertibility",
+        ],
+    )
+
+    packet = build_legacy_source_metadata_repair_packet(ws, migration_dir=run)
+
+    assert packet["kind"] == "legacy_source_metadata_repair_packet"
+    assert packet["repair_item_count"] == 1
+    assert packet["next_actions"] == [
+        "source_metadata_repair:canonical-topic:resolve_ishikawa_matsuyama_doi_metadata_mismatch_before_formula_promotion"
+    ]
+    item = packet["repair_items"][0]
+    assert item["topic"] == "canonical-topic"
+    assert item["active_claim_id"] == "claim-canonical"
+    assert item["latest_review_id"] == review.review_id
+    assert item["source_metadata_actions"] == [
+        "resolve_ishikawa_matsuyama_doi_metadata_mismatch_before_formula_promotion"
+    ]
+    assert item["reviewed_legacy_refs"] == [
+        "legacy_archive:canonical-topic/runtime/bibliography/key_papers.bib"
+    ]
+    assert item["reviewed_typed_refs"] == ["claim:claim-canonical"]
+    assert item["reference_location_commands"] == [
+        {
+            "action": "resolve_ishikawa_matsuyama_doi_metadata_mismatch_before_formula_promotion",
+            "latest_review_id": review.review_id,
+            "cli": (
+                f"aitp-v5 --base {ws.base} reference location record --topic canonical-topic "
+                "--claim claim-canonical --connector <connector_id> --type external_literature "
+                "--uri <canonical-uri-or-doi> --label <corrected-source-label> "
+                "--source-ref <corrected-source-ref> --status located "
+                "--summary <source metadata repair basis>"
+            ),
+            "mcp": "aitp_v5_record_reference_location",
+            "surface": "reference_location_record",
+            "effect": "typed_record_write",
+            "can_update_kernel_state": True,
+            "can_update_claim_trust": False,
+        }
+    ]
+    assert item["followup_result_cli"] == (
+        f"aitp-v5 --base {ws.base} legacy semantic-review-result "
+        f"--migration-dir {run} --topic canonical-topic --status <inconclusive|passed> "
+        "--legacy-ref <reviewed-source-metadata-ref> --typed-ref <reference-location-id> "
+        "--summary <source metadata repair review basis and remaining semantic gaps>"
+    )
+    assert item["can_update_claim_trust"] is False
+    assert packet["semantic_lossless_proven"] is False
+    assert packet["orientation_only"] is True
+    assert packet["can_update_kernel_state"] is False
+    assert packet["can_update_claim_trust"] is False
+    assert require_valid_public_surface("legacy_source_metadata_repair_packet", packet) == packet
+
+
+def test_legacy_source_metadata_repair_packet_cli_mcp_and_runtime_surface(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.mcp_tools import aitp_v5_build_legacy_source_metadata_repair_packet
+    from brain.v5.models import ClaimRecord
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+    import json
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="The source metadata repair packet should be host-callable.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Source metadata mismatch remains.",
+        ),
+    )
+    record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="A citation metadata mismatch remains.",
+        active_claim_id="claim-canonical",
+        reviewed_typed_refs=["claim:claim-canonical"],
+        remaining_actions=["resolve_citation_metadata_mismatch_before_promotion"],
+    )
+
+    main([
+        "--base",
+        str(base),
+        "legacy",
+        "source-metadata-repair-packet",
+        "--migration-dir",
+        str(run),
+        "--topic",
+        "canonical-topic",
+    ])
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_legacy_source_metadata_repair_packet(
+        str(base),
+        migration_dir=str(run),
+        topic="canonical-topic",
+    )
+
+    assert cli_payload["kind"] == "legacy_source_metadata_repair_packet"
+    assert mcp_payload["kind"] == "legacy_source_metadata_repair_packet"
+    assert cli_payload["repair_item_count"] == 1
+    assert mcp_payload["repair_item_count"] == 1
+    assert runtime_entrypoints()["legacy_source_metadata_repair_packet"] == {
+        "cli": "aitp-v5 legacy source-metadata-repair-packet <args>",
+        "mcp": "aitp_v5_build_legacy_source_metadata_repair_packet",
+        "surface": "legacy_source_metadata_repair_packet",
+    }
+
+
 def test_legacy_semantic_review_worklist_surfaces_open_human_checkpoint_for_decision(tmp_path):
     from brain.v5.checkpoints import request_human_checkpoint
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
