@@ -2143,6 +2143,76 @@ def test_legacy_source_metadata_repair_packet_cli_mcp_and_runtime_surface(tmp_pa
     }
 
 
+def test_legacy_source_metadata_repair_packet_cli_compact_progress(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.models import ClaimRecord
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+    import json
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="The source metadata repair packet compact progress should be host-callable.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Source metadata mismatch remains.",
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="A citation metadata mismatch remains.",
+        active_claim_id="claim-canonical",
+        reviewed_legacy_refs=["legacy_archive:canonical-topic/runtime/bibliography/key_papers.bib"],
+        reviewed_typed_refs=["claim:claim-canonical"],
+        remaining_actions=["resolve_citation_metadata_mismatch_before_promotion"],
+    )
+
+    assert main([
+        "--base",
+        str(base),
+        "legacy",
+        "source-metadata-repair-packet",
+        "--migration-dir",
+        str(run),
+        "--topic",
+        "canonical-topic",
+        "--compact",
+    ]) == 0
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["kind"] == "legacy_source_metadata_repair_packet_progress"
+    assert payload["source_surface"] == "legacy_source_metadata_repair_packet"
+    assert payload["migration_dir"] == str(run)
+    assert payload["topic_filter"] == "canonical-topic"
+    assert payload["repair_item_count"] == 1
+    assert payload["next_action_count"] == 1
+    assert payload["top_repair_item_refs"] == ["legacy_source_metadata_repair:canonical-topic"]
+    assert payload["top_repair_item_topics"] == ["canonical-topic"]
+    assert payload["top_repair_item_active_claim_ids"] == ["claim-canonical"]
+    assert payload["top_repair_item_latest_review_ids"] == [review.review_id]
+    assert payload["top_repair_item_review_statuses"] == ["inconclusive"]
+    assert payload["top_repair_item_source_metadata_actions"] == [
+        ["resolve_citation_metadata_mismatch_before_promotion"]
+    ]
+    assert payload["top_repair_item_reference_location_command_counts"] == [1]
+    assert payload["semantic_lossless_proven"] is False
+    assert payload["truth_source"] == "legacy_semantic_review_worklist_remaining_actions"
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["can_update_claim_trust"] is False
+
+
 def test_legacy_executable_evidence_packet_groups_validation_and_tool_runs(tmp_path):
     from brain.v5.legacy_executable_evidence import build_legacy_executable_evidence_packet
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result

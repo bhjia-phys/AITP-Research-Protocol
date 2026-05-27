@@ -29,6 +29,7 @@ from brain.v5.cli_legacy_progress import (
     compact_legacy_semantic_review_packet,
     compact_legacy_semantic_review_manifest,
     compact_legacy_semantic_review_worklist,
+    compact_legacy_source_metadata_repair_packet,
     compact_legacy_source_reconstruction_manifest,
     compact_legacy_source_reconstruction_review_packet,
 )
@@ -110,6 +111,7 @@ def add_legacy_parser(subparsers) -> None:
     source_metadata = legacy_subparsers.add_parser("source-metadata-repair-packet")
     source_metadata.add_argument("--migration-dir", required=True)
     source_metadata.add_argument("--topic", default="")
+    source_metadata.add_argument("--compact", "--progress", action="store_true", dest="compact")
     executable = legacy_subparsers.add_parser("executable-evidence-packet")
     executable.add_argument("--migration-dir", required=True)
     executable.add_argument("--topic", default="")
@@ -255,7 +257,10 @@ def dispatch_legacy_command(args, ws) -> dict:
             migration_dir=args.migration_dir,
             topic=args.topic,
         )
-        return {"ok": True, **require_valid_public_surface("legacy_source_metadata_repair_packet", packet)}
+        payload = {"ok": True, **require_valid_public_surface("legacy_source_metadata_repair_packet", packet)}
+        if getattr(args, "compact", False):
+            return compact_legacy_source_metadata_repair_packet(payload)
+        return payload
     if args.legacy_command == "executable-evidence-packet":
         packet = build_legacy_executable_evidence_packet(
             ws,

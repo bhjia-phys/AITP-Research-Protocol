@@ -295,6 +295,61 @@ def compact_legacy_executable_evidence_packet(payload: dict[str, Any]) -> dict[s
     }
 
 
+def compact_legacy_source_metadata_repair_packet(payload: dict[str, Any]) -> dict[str, Any]:
+    repair_items = [
+        item for item in payload.get("repair_items", []) if isinstance(item, dict)
+    ][:5]
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "kind": "legacy_source_metadata_repair_packet_progress",
+        "source_surface": "legacy_source_metadata_repair_packet",
+        "run_id": str(payload.get("run_id") or ""),
+        "migration_dir": str(payload.get("migration_dir") or ""),
+        "workspace": str(payload.get("workspace") or ""),
+        "topic_filter": str(payload.get("topic_filter") or ""),
+        "repair_item_count": int(payload.get("repair_item_count") or 0),
+        "next_action_count": len(payload.get("next_actions") or []),
+        "next_action_refs": _limited_strings(payload.get("next_actions")),
+        "top_repair_item_refs": [
+            f"legacy_source_metadata_repair:{topic}"
+            for topic in [str(item.get("topic") or "") for item in repair_items]
+            if topic
+        ],
+        "top_repair_item_topics": [
+            str(item.get("topic") or "")
+            for item in repair_items
+            if str(item.get("topic") or "")
+        ],
+        "top_repair_item_active_claim_ids": [
+            str(item.get("active_claim_id") or "")
+            for item in repair_items
+            if str(item.get("active_claim_id") or "")
+        ],
+        "top_repair_item_latest_review_ids": [
+            str(item.get("latest_review_id") or "")
+            for item in repair_items
+            if str(item.get("latest_review_id") or "")
+        ],
+        "top_repair_item_review_statuses": [
+            str(item.get("review_status") or "")
+            for item in repair_items
+            if str(item.get("review_status") or "")
+        ],
+        "top_repair_item_source_metadata_actions": [
+            _limited_strings(item.get("source_metadata_actions"), limit=10) for item in repair_items
+        ],
+        "top_repair_item_reference_location_command_counts": [
+            len(item.get("reference_location_commands") or []) for item in repair_items
+        ],
+        "semantic_lossless_proven": bool(payload.get("semantic_lossless_proven", False)),
+        "truth_source": str(payload.get("truth_source") or ""),
+        "summary_inputs_trusted": bool(payload.get("summary_inputs_trusted", False)),
+        "orientation_only": bool(payload.get("orientation_only", True)),
+        "can_update_kernel_state": bool(payload.get("can_update_kernel_state", False)),
+        "can_update_claim_trust": bool(payload.get("can_update_claim_trust", False)),
+    }
+
+
 def compact_legacy_human_checkpoint_packet(payload: dict[str, Any]) -> dict[str, Any]:
     checkpoint_items = [
         item for item in payload.get("checkpoint_items", []) if isinstance(item, dict)
