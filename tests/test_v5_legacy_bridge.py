@@ -3855,6 +3855,77 @@ def test_legacy_semantic_repair_plan_cli_mcp_and_runtime_surface(tmp_path, capsy
     }
 
 
+def test_legacy_semantic_repair_plan_cli_compact_progress(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.models import ClaimRecord
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+    legacy_topic = ws.base / "research" / "aitp-topics" / "canonical-topic"
+    legacy_topic.mkdir(parents=True)
+    (legacy_topic / "state.md").write_text(
+        "# Canonical Topic\n\n## Research Question\nWhich question should be reviewed first?\n",
+        encoding="utf-8",
+    )
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Human topic question review is still required.",
+        ),
+    )
+    record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="The legacy question exists, but the review did not approve it as the active claim statement.",
+        active_claim_id="claim-canonical",
+        reviewed_legacy_refs=[f"legacy_candidate:{legacy_topic / 'state.md'}"],
+        reviewed_typed_refs=["claim-canonical"],
+        remaining_actions=["require_human_topic_question_before_claim_backfill"],
+    )
+
+    assert main([
+        "--base",
+        str(base),
+        "legacy",
+        "semantic-repair-plan",
+        "--migration-dir",
+        str(run),
+        "--topic",
+        "canonical-topic",
+        "--compact",
+    ]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+
+    assert cli_payload["kind"] == "legacy_semantic_repair_plan_progress"
+    assert cli_payload["source_surface"] == "legacy_semantic_repair_plan"
+    assert cli_payload["topic"] == "canonical-topic"
+    assert cli_payload["active_claim_id"] == "claim-canonical"
+    assert cli_payload["repair_status"] == "awaiting_needs_revision_review"
+    assert cli_payload["proposed_repair_count"] == 0
+    assert cli_payload["required_actions"] == [
+        "record_needs_revision_review_with_specific_repair_basis",
+        "supply_or_review_human_topic_question_before_claim_statement_backfill",
+        "keep_semantic_review_blocking_until_typed_review_basis_exists",
+    ]
+    assert cli_payload["semantic_lossless_proven"] is False
+    assert cli_payload["can_update_kernel_state"] is False
+    assert cli_payload["can_update_claim_trust"] is False
+    assert "latest_semantic_review" not in cli_payload
+
+
 def test_legacy_semantic_repair_apply_backfills_claim_statement_and_records_provenance(tmp_path):
     from brain.v5.legacy_semantic_repair import apply_legacy_semantic_repair
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
