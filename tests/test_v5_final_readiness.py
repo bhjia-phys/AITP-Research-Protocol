@@ -615,8 +615,10 @@ def test_final_readiness_cli_compact_progress(tmp_path, capsys):
         "legacy_semantic_backlog_surface": "legacy_semantic_review_manifest",
         "legacy_source_reconstruction_backlog_surface": "legacy_source_reconstruction_manifest",
         "legacy_semantic_repair_surface": "legacy_semantic_repair_manifest",
+        "legacy_executable_evidence_surface": "legacy_executable_evidence_packet",
         "legacy_human_checkpoint_backlog_surface": "legacy_human_checkpoint_packet",
         "host_startup_semantic_repair_supported": True,
+        "host_startup_executable_evidence_supported": True,
         "host_startup_checkpoint_packet_supported": True,
     }
     assert cli_payload["natural_interaction"] == {

@@ -459,6 +459,10 @@ def test_workspace_refresh_cli_compact_progress_accepts_migration_dir(tmp_path, 
             "record_initial_semantic_review_result": 1,
         },
     }
+    assert cli_payload["legacy_executable_evidence"] == {
+        "evidence_item_count": 0,
+        "executable_action_count": 0,
+    }
     assert cli_payload["legacy_semantic_review"]["work_item_count"] == 1
     assert cli_payload["source_stack_coverage"]["claim_count"] == 2
     assert cli_payload["source_reconstruction_review"]["claim_count"] == 2

@@ -28,6 +28,11 @@ def compact_workspace_refresh(payload: dict[str, Any]) -> dict[str, Any]:
         if isinstance(backlog.get("legacy_semantic_repair"), dict)
         else {}
     )
+    executable = (
+        backlog.get("legacy_executable_evidence")
+        if isinstance(backlog.get("legacy_executable_evidence"), dict)
+        else {}
+    )
     source_review = (
         payload.get("source_reconstruction_obsidian_view")
         if isinstance(payload.get("source_reconstruction_obsidian_view"), dict)
@@ -147,6 +152,11 @@ def compact_workspace_refresh(payload: dict[str, Any]) -> dict[str, Any]:
             "repair_status_counts": dict(semantic_repair.get("repair_status_counts") or {}),
             "proposed_repair_count": int(semantic_repair.get("proposed_repair_count") or 0),
             "required_action_counts": dict(semantic_repair.get("required_action_counts") or {}),
+        }
+    if executable:
+        compact["legacy_executable_evidence"] = {
+            "evidence_item_count": int(executable.get("evidence_item_count") or 0),
+            "executable_action_count": int(executable.get("executable_action_count") or 0),
         }
     if checkpoints:
         compact["legacy_human_checkpoints"] = {

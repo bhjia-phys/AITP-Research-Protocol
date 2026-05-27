@@ -367,6 +367,7 @@ def test_workspace_replay_packet_can_include_legacy_semantic_review_backlog(tmp_
     legacy_source = packet.workspace_backlog_summary["legacy_source_reconstruction"]
     legacy_repair = packet.workspace_backlog_summary["legacy_semantic_repair"]
     legacy_checkpoints = packet.workspace_backlog_summary["legacy_human_checkpoints"]
+    legacy_executable = packet.workspace_backlog_summary["legacy_executable_evidence"]
     assert legacy == {
         "surface": "legacy_semantic_review_manifest",
         "migration_dir": str(migration),
@@ -526,19 +527,126 @@ def test_workspace_replay_packet_can_include_legacy_semantic_review_backlog(tmp_
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }
+    assert legacy_executable == {
+        "surface": "legacy_executable_evidence_packet",
+        "migration_dir": str(migration),
+        "evidence_item_count": 0,
+        "executable_action_count": 0,
+        "top_evidence_items": [],
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
     _, body = read_md(packet.files["replay_packet"])
     assert "Legacy Semantic Review Backlog" in body
     assert "Legacy Source Reconstruction Backlog" in body
     assert "Legacy Semantic Repair Triage" in body
     assert "Legacy Human Checkpoints" in body
+    assert "Legacy Executable Evidence" in body
     assert "Source reconstruction items: 1" in body
     assert "Semantic repair items: 1" in body
     assert "Proposed semantic repairs: 0" in body
     assert "Checkpoint decisions: 1 open, 0 pending request" in body
+    assert "Executable evidence items: 0" in body
     assert "Open human checkpoints: 1" in body
     assert checkpoint.checkpoint_id in body
     assert "semantic lossless proven: False" in body
     assert "legacy-l2" in body
+
+
+def test_workspace_replay_includes_legacy_executable_evidence_blockers(tmp_path):
+    from dataclasses import asdict
+
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.models import ClaimRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.replay import write_workspace_replay_packet
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    migration = ws.root / "migrations" / "legacy-run"
+    migration.mkdir(parents=True)
+    (migration / "migration_summary.json").write_text(
+        json.dumps(
+            {
+                "run_id": "legacy-run",
+                "workspace": str(ws.base),
+                "legacy_root": str(ws.base / "research" / "aitp-topics"),
+                "v5_root": str(ws.root),
+                "totals": {"topic_count": 1, "legacy_file_count": 1, "post_legacy_file_count": 1},
+                "topics": [
+                    {
+                        "topic": "crpa",
+                        "status": "ok",
+                        "file_count": 1,
+                        "accounted_file_count": 1,
+                        "can_write_v5_records": False,
+                        "active_claim_id": "claim-crpa",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (migration / "verification_report.json").write_text(
+        json.dumps(
+            {
+                "run_id": "legacy-run",
+                "file_accounting_ok": True,
+                "manifest_check": {"pre_count": 1, "post_count": 1, "missing": 0, "extra": 0, "changed": 0},
+                "archive_reference_check": {
+                    "archive_records_checked": 0,
+                    "archive_records_expected": 0,
+                    "registry_archive_reference_count": 0,
+                    "problem_count": 0,
+                },
+                "markdown_readability_check": {"markdown_files_checked": 1, "problem_count": 0},
+            }
+        ),
+        encoding="utf-8",
+    )
+    write_record(
+        ws.registry_dir("claims") / "claim-crpa.md",
+        ClaimRecord(
+            claim_id="claim-crpa",
+            topic_id="crpa",
+            statement="The cRPA benchmark still needs executable validation.",
+            evidence_profile="code_method",
+            confidence_state="legacy_seed",
+            active_uncertainty="Executable SrVO3 benchmark missing.",
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=migration,
+        topic="crpa",
+        status="inconclusive",
+        summary="Executable evidence remains missing before semantic pass.",
+        active_claim_id="claim-crpa",
+        reviewed_typed_refs=["claim-crpa", "validation-contract:validation-contract-crpa"],
+        remaining_actions=[
+            "implement_or_import_executable_SrVO3_t2g_crpa_benchmark_with_Wannier_U_J_outputs"
+        ],
+    )
+
+    packet = write_workspace_replay_packet(ws, migration_dir=migration)
+    payload = asdict(packet)
+
+    assert require_valid_public_surface("workspace_replay_packet", {"ok": True, **payload})["ok"] is True
+    executable = packet.workspace_backlog_summary["legacy_executable_evidence"]
+    assert executable["surface"] == "legacy_executable_evidence_packet"
+    assert executable["evidence_item_count"] == 1
+    assert executable["executable_action_count"] == 1
+    assert executable["top_evidence_items"][0]["topic"] == "crpa"
+    assert executable["top_evidence_items"][0]["latest_review_id"] == review.review_id
+    assert executable["top_evidence_items"][0]["executable_actions"] == [
+        "implement_or_import_executable_SrVO3_t2g_crpa_benchmark_with_Wannier_U_J_outputs"
+    ]
+    assert executable["top_evidence_items"][0]["validation_command_count"] == 1
+    assert executable["top_evidence_items"][0]["tool_run_command_count"] == 0
+    assert executable["can_update_claim_trust"] is False
 
 
 def test_workspace_replay_packet_cli_mcp_and_runtime(tmp_path, capsys):
