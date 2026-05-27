@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
-from brain.v5.cli_refresh_progress import compact_workspace_refresh
+from brain.v5.cli_refresh_progress import compact_workspace_refresh, compact_workspace_replay_packet
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.replay import write_workspace_replay_packet
 from brain.v5.summaries import read_summary_orientation, write_session_summary, write_workspace_summary
@@ -19,6 +19,7 @@ def add_summary_parser(subparsers) -> None:
     commands.add_parser("workspace")
     replay = commands.add_parser("replay")
     replay.add_argument("--migration-dir", default="")
+    replay.add_argument("--compact", "--progress", action="store_true", dest="compact")
     refresh = commands.add_parser("refresh")
     refresh.add_argument("--migration-dir", default="")
     refresh.add_argument("--compact", "--progress", action="store_true", dest="compact")
@@ -35,7 +36,10 @@ def dispatch_summary_command(args, ws) -> dict:
         return {"ok": True, **require_valid_public_surface("workspace_summary_bundle", asdict(bundle))}
     if args.summary_command == "replay":
         bundle = write_workspace_replay_packet(ws, migration_dir=args.migration_dir or None)
-        return {"ok": True, **require_valid_public_surface("workspace_replay_packet", asdict(bundle))}
+        payload = {"ok": True, **require_valid_public_surface("workspace_replay_packet", asdict(bundle))}
+        if getattr(args, "compact", False):
+            return compact_workspace_replay_packet(payload)
+        return payload
     if args.summary_command == "refresh":
         payload = {
             "ok": True,

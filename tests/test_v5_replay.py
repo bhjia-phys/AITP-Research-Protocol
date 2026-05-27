@@ -670,6 +670,41 @@ def test_workspace_replay_packet_cli_mcp_and_runtime(tmp_path, capsys):
     }
 
 
+def test_workspace_replay_packet_cli_compact_progress(tmp_path, capsys):
+    from brain.v5.cli import main
+
+    _ws, claim, gw_claim, _evidence = _seed_replay_workspace(tmp_path)
+
+    assert main(["--base", str(tmp_path), "summary", "replay", "--compact"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["kind"] == "workspace_replay_packet_progress"
+    assert payload["source_surface"] == "workspace_replay_packet"
+    assert payload["entry_count"] == 2
+    assert payload["attention_count"] == 2
+    assert payload["active_session_count"] == 2
+    assert payload["active_claim_count"] == 2
+    assert payload["source_reconstruction"]["incomplete_claim_count"] == 1
+    assert payload["source_reconstruction"]["top_incomplete_claim_refs"] == [
+        f"source_reconstruction:{gw_claim.claim_id}"
+    ]
+    assert payload["resume_attention"]["attention_count"] == 2
+    assert payload["resume_attention"]["top_session_refs"] == ["session:s2", "session:s1"]
+    assert payload["source_stack_coverage"]["claim_count"] == 2
+    assert payload["source_stack_coverage"]["coverage_status_counts"]["complete"] == 0
+    assert payload["source_stack_coverage"]["coverage_status_counts"]["evidence_gap"] == 2
+    assert payload["source_record_counts"]["sessions"] == 2
+    assert payload["source_record_counts"]["claims"] == 2
+    assert payload["source_record_counts"]["memory_entries"] == 0
+    assert payload["top_entry_refs"] == [f"replay_entry:s1:{claim.claim_id}", f"replay_entry:s2:{gw_claim.claim_id}"]
+    assert payload["derived_from"] == "kernel_state"
+    assert payload["truth_source"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["can_update_claim_trust"] is False
+    assert "entries" not in payload
+
+
 def test_workspace_replay_packet_cli_mcp_accept_migration_dir(tmp_path, capsys):
     from brain.v5.cli import main
     from brain.v5.mcp_tools import aitp_v5_write_workspace_replay_packet
