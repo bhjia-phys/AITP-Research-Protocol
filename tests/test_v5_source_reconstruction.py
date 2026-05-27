@@ -887,3 +887,70 @@ def test_source_reconstruction_review_manifest_cli_compact_progress(tmp_path, ca
     assert cli_payload["top_review_statuses"] == ["pending"]
     assert cli_payload["can_update_claim_trust"] is False
     assert "items" not in cli_payload
+
+
+def test_source_reconstruction_obsidian_view_writes_review_worklist(tmp_path):
+    from brain.v5.markdown import read_md
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.source_reconstruction_obsidian import write_source_reconstruction_obsidian_view
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="The counting sequence identifies the edge CFT.",
+        evidence_profile="literature",
+        confidence_state="hypothesis",
+        active_uncertainty="source coverage",
+    )
+
+    payload = write_source_reconstruction_obsidian_view(ws)
+
+    assert require_valid_public_surface("source_reconstruction_obsidian_view_bundle", payload) == payload
+    assert payload["kind"] == "source_reconstruction_obsidian_view_bundle"
+    assert payload["claim_count"] == 1
+    assert payload["incomplete_claim_count"] == 1
+    assert payload["review_progress"]["pending"] == 1
+    assert payload["source_records"]["claim_ids"] == [claim.claim_id]
+    assert payload["orientation_only"] is True
+    assert payload["can_update_claim_trust"] is False
+    frontmatter, body = read_md(payload["files"]["review_worklist"])
+    assert frontmatter["view_role"] == "source_reconstruction_review_worklist"
+    assert frontmatter["truth_source"] is False
+    assert "fqhe" in body
+    assert claim.claim_id in body
+    assert "source_locations" in body
+    assert "source reconstruction-review --claim" in body
+    assert "Use typed source reconstruction records for review results" in body
+
+
+def test_source_reconstruction_obsidian_view_cli_mcp_and_runtime(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_write_source_reconstruction_obsidian_view
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="The counting sequence identifies the edge CFT.",
+        evidence_profile="literature",
+        confidence_state="hypothesis",
+        active_uncertainty="source coverage",
+    )
+
+    assert main(["--base", str(tmp_path), "source", "reconstruction-obsidian-view"]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_write_source_reconstruction_obsidian_view(str(tmp_path))
+
+    assert cli_payload["kind"] == "source_reconstruction_obsidian_view_bundle"
+    assert mcp_payload["kind"] == "source_reconstruction_obsidian_view_bundle"
+    assert runtime_entrypoints()["source_reconstruction_obsidian_view"] == {
+        "cli": "aitp-v5 source reconstruction-obsidian-view",
+        "mcp": "aitp_v5_write_source_reconstruction_obsidian_view",
+        "surface": "source_reconstruction_obsidian_view_bundle",
+    }

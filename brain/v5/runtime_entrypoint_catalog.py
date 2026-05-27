@@ -107,6 +107,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_build_source_reconstruction_review_manifest",
         "surface": "source_reconstruction_review_manifest",
     },
+    "source_reconstruction_obsidian_view": {
+        "cli": "aitp-v5 source reconstruction-obsidian-view",
+        "mcp": "aitp_v5_write_source_reconstruction_obsidian_view",
+        "surface": "source_reconstruction_obsidian_view_bundle",
+    },
     "source_reconstruction_review_packet": {
         "cli": "aitp-v5 source reconstruction-review <args>",
         "mcp": "aitp_v5_build_source_reconstruction_review_packet",

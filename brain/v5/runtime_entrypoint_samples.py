@@ -23,6 +23,8 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["--claim", "claim-fqhe"]
     if template.startswith("source reconstruction-review-result"):
         return ["--claim", "claim-fqhe", "--status", "inconclusive", "--reviewed-component", "definitions", "--basis-ref", "source:fqhe", "--summary", "Source reconstruction review sample."]
+    if template.startswith("source reconstruction-obsidian-view"):
+        return []
     if template.startswith("source reconstruction-review"):
         return ["--claim", "claim-fqhe"]
     if template.startswith("code state record"):

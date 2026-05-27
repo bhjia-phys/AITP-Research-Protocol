@@ -65,6 +65,7 @@ _PUBLIC_SURFACE_NAMES = (
     "session_summary_bundle",
     "source_reconstruction_audit",
     "source_reconstruction_manifest",
+    "source_reconstruction_obsidian_view_bundle",
     "source_reconstruction_review_manifest",
     "source_reconstruction_review_packet",
     "source_reconstruction_review_result_record",
@@ -143,6 +144,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "session_summary_bundle": "orientation-only summary files regenerated from typed kernel records",
     "source_reconstruction_audit": "read-only typed-record audit of whether a claim has definition, scope, source, dependency, reconstruction, and failure-condition coverage",
     "source_reconstruction_manifest": "read-only backlog manifest batching source reconstruction gaps and next actions across active claims",
+    "source_reconstruction_obsidian_view_bundle": "orientation-only Obsidian Markdown worklist over source reconstruction review gaps from typed records",
     "source_reconstruction_review_manifest": "orientation-only manifest of typed source reconstruction review results and remaining component-review actions",
     "source_reconstruction_review_packet": "read-only packet guiding human typed-record backfill for source reconstruction gaps without mutating kernel state or claim trust",
     "source_reconstruction_review_result_record": "contracted typed result preserving the basis for source reconstruction component review without changing claim trust",
@@ -263,6 +265,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_source_reconstruction_review_packet,
         require_valid_source_reconstruction_review_result_record,
     )
+    from brain.v5.source_reconstruction_obsidian_contracts import require_valid_source_reconstruction_obsidian_view_bundle
     from brain.v5.legacy_semantic_review_contracts import (
         require_valid_legacy_semantic_review_manifest,
         require_valid_legacy_semantic_review_packet,
@@ -354,6 +357,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "session_summary_bundle": require_valid_session_summary_bundle,
         "source_reconstruction_audit": require_valid_source_reconstruction_audit,
         "source_reconstruction_manifest": require_valid_source_reconstruction_manifest,
+        "source_reconstruction_obsidian_view_bundle": require_valid_source_reconstruction_obsidian_view_bundle,
         "source_reconstruction_review_manifest": require_valid_source_reconstruction_review_manifest,
         "source_reconstruction_review_packet": require_valid_source_reconstruction_review_packet,
         "source_reconstruction_review_result_record": require_valid_source_reconstruction_review_result_record,

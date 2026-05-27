@@ -9,6 +9,7 @@ from brain.v5.legacy_human_checkpoint_obsidian import write_legacy_human_checkpo
 from brain.v5.obsidian_views import write_l2_obsidian_view
 from brain.v5.paths import WorkspacePaths
 from brain.v5.replay import write_workspace_replay_packet
+from brain.v5.source_reconstruction_obsidian import write_source_reconstruction_obsidian_view
 from brain.v5.summaries import write_workspace_summary
 
 
@@ -31,6 +32,10 @@ def refresh_workspace_views(
         output_dir=str(ws.root / "surfaces" / "obsidian_l2_active"),
         claim_ids=active_claims,
     )
+    source_reconstruction = write_source_reconstruction_obsidian_view(
+        ws,
+        output_dir=str(ws.root / "surfaces" / "source_reconstruction_active"),
+    )
     legacy_checkpoint_view = (
         write_legacy_human_checkpoint_obsidian_view(ws, migration_dir=migration_dir)
         if migration_dir
@@ -40,12 +45,14 @@ def refresh_workspace_views(
         summary.get("source_records", {}),
         replay.get("source_records", {}),
         obsidian.get("source_records", {}),
+        source_reconstruction.get("source_records", {}),
         legacy_checkpoint_view.get("source_records", {}) if legacy_checkpoint_view else {},
     )
     refreshed_surfaces = [
         summary["kind"],
         replay["kind"],
         obsidian["kind"],
+        source_reconstruction["kind"],
     ]
     if legacy_checkpoint_view:
         refreshed_surfaces.append(legacy_checkpoint_view["kind"])
@@ -55,6 +62,7 @@ def refresh_workspace_views(
         "workspace_summary": summary,
         "workspace_replay": replay,
         "l2_obsidian_view": obsidian,
+        "source_reconstruction_obsidian_view": source_reconstruction,
         "source_records": source_records,
         "derived_from": "kernel_state",
         "truth_source": False,

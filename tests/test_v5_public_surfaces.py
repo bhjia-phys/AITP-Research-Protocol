@@ -65,6 +65,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "session_summary_bundle",
         "source_reconstruction_audit",
         "source_reconstruction_manifest",
+        "source_reconstruction_obsidian_view_bundle",
         "source_reconstruction_review_manifest",
         "source_reconstruction_review_packet",
         "source_reconstruction_review_result_record",

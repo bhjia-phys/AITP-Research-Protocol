@@ -6,6 +6,7 @@ import argparse
 from dataclasses import asdict
 
 from brain.v5.public_surfaces import require_valid_public_surface
+from brain.v5.source_reconstruction_obsidian import write_source_reconstruction_obsidian_view
 from brain.v5.cli_progress import (
     compact_source_reconstruction_manifest,
     compact_source_reconstruction_review_manifest,
@@ -31,6 +32,8 @@ def add_source_parser(sp: argparse._SubParsersAction) -> None:
     manifest.add_argument("--compact", "--progress", action="store_true", dest="compact")
     review_manifest = commands.add_parser("reconstruction-review-manifest")
     review_manifest.add_argument("--compact", "--progress", action="store_true", dest="compact")
+    obsidian = commands.add_parser("reconstruction-obsidian-view")
+    obsidian.add_argument("--output-dir", default="")
     review = commands.add_parser("reconstruction-review")
     review.add_argument("--claim", required=True, dest="claim_id")
     review.add_argument("--compact", "--progress", action="store_true", dest="compact")
@@ -71,6 +74,11 @@ def dispatch_source_command(args: argparse.Namespace, ws) -> dict:
         if getattr(args, "compact", False):
             return compact_source_reconstruction_review_manifest(manifest)
         return manifest
+    if args.source_command == "reconstruction-obsidian-view":
+        return require_valid_public_surface(
+            "source_reconstruction_obsidian_view_bundle",
+            write_source_reconstruction_obsidian_view(ws, output_dir=args.output_dir),
+        )
     if args.source_command == "reconstruction-review":
         packet = require_valid_public_surface(
             "source_reconstruction_review_packet",

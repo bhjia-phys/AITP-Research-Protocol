@@ -64,6 +64,7 @@ def test_workspace_refresh_writes_summary_replay_and_obsidian_views(tmp_path):
         "workspace_summary_bundle",
         "workspace_replay_packet",
         "l2_obsidian_view_bundle",
+        "source_reconstruction_obsidian_view_bundle",
     ]
     assert payload["source_records"]["sessions"] == ["s1"]
     assert payload["source_records"]["claims"] == [claim.claim_id]
@@ -80,6 +81,9 @@ def test_workspace_refresh_writes_summary_replay_and_obsidian_views(tmp_path):
     ][0]["claim_id"] == claim.claim_id
     assert payload["l2_obsidian_view"]["files"]["overview"].endswith("L2 Memory Overview.md")
     assert payload["l2_obsidian_view"]["memory_entry_count"] == 1
+    assert payload["source_reconstruction_obsidian_view"]["files"]["review_worklist"].endswith(
+        "Source Reconstruction Review Worklist.md"
+    )
     assert require_valid_public_surface("workspace_refresh_bundle", payload) == payload
 
 
@@ -150,6 +154,7 @@ def test_workspace_refresh_can_include_legacy_semantic_backlog_in_replay(tmp_pat
         "workspace_summary_bundle",
         "workspace_replay_packet",
         "l2_obsidian_view_bundle",
+        "source_reconstruction_obsidian_view_bundle",
         "legacy_human_checkpoint_obsidian_view_bundle",
     ]
     assert payload["legacy_human_checkpoint_obsidian_view"]["files"]["checkpoint_worklist"].endswith(
