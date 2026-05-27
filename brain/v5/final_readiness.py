@@ -214,9 +214,11 @@ def _long_term_replay() -> dict[str, Any]:
         "surface": "workspace_replay_packet",
         "workspace_refresh_surface": "workspace_refresh_bundle",
         "legacy_semantic_backlog_surface": "legacy_semantic_review_manifest",
+        "legacy_human_checkpoint_view_surface": "legacy_human_checkpoint_obsidian_view_bundle",
         "migration_dir_argument": "--migration-dir",
         "purpose": "multi-session resume packet with source, evidence, and legacy semantic-review gaps",
         "host_startup_backlog_supported": True,
+        "host_startup_checkpoint_view_supported": True,
         "summary_inputs_trusted": False,
         "can_update_claim_trust": False,
     }
