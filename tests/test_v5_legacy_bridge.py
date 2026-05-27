@@ -3466,6 +3466,57 @@ def test_legacy_semantic_review_obsidian_view_cli_mcp_and_runtime_surface(tmp_pa
     }
 
 
+def test_legacy_semantic_review_obsidian_view_cli_compact_progress(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.workspace import init_workspace
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+
+    assert main([
+        "--base",
+        str(base),
+        "legacy",
+        "semantic-review-obsidian-view",
+        "--migration-dir",
+        str(run),
+        "--compact",
+    ]) == 0
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["kind"] == "legacy_semantic_review_obsidian_view_bundle_progress"
+    assert payload["source_surface"] == "legacy_semantic_review_obsidian_view_bundle"
+    assert payload["migration_dir"] == str(run)
+    assert payload["work_item_count"] == 2
+    assert payload["status_counts"] == {"inconclusive": 0, "needs_revision": 0, "pending": 2}
+    assert payload["blocking_class_counts"] == {
+        "archive_sampling_required": 1,
+        "claim_statement_backfill_required": 2,
+        "initial_semantic_review_required": 2,
+        "source_reconstruction_required": 2,
+    }
+    assert payload["open_human_checkpoint_count"] == 0
+    assert payload["next_action_count"] == 2
+    assert payload["next_action_refs"] == [
+        "worklist_item:canonical-topic",
+        "worklist_item:legacy-l2",
+    ]
+    assert payload["view_file_count"] == 1
+    assert payload["view_files"] == [
+        str(base / ".aitp" / "surfaces" / "legacy_semantic_review" / "Legacy Semantic Review Worklist.md")
+    ]
+    assert payload["semantic_lossless_proven"] is False
+    assert payload["semantic_review_required"] is True
+    assert payload["truth_source"] is False
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["can_update_claim_trust"] is False
+
+
 def test_legacy_runtime_log_marker_audit_counts_only_raw_logs_for_satisfaction(tmp_path):
     from brain.v5.legacy_runtime_log_audit import build_legacy_runtime_log_marker_audit
     from brain.v5.public_surfaces import require_valid_public_surface

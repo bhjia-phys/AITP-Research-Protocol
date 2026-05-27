@@ -28,6 +28,7 @@ from brain.v5.cli_legacy_progress import (
     compact_legacy_human_checkpoint_packet,
     compact_legacy_semantic_review_packet,
     compact_legacy_semantic_review_manifest,
+    compact_legacy_semantic_review_obsidian_view_bundle,
     compact_legacy_semantic_review_worklist,
     compact_legacy_source_metadata_repair_packet,
     compact_legacy_source_reconstruction_manifest,
@@ -87,6 +88,7 @@ def add_legacy_parser(subparsers) -> None:
     worklist_obsidian = legacy_subparsers.add_parser("semantic-review-obsidian-view")
     worklist_obsidian.add_argument("--migration-dir", required=True)
     worklist_obsidian.add_argument("--output-dir", default="")
+    worklist_obsidian.add_argument("--compact", "--progress", action="store_true", dest="compact")
     packet = legacy_subparsers.add_parser("semantic-review-packet")
     packet.add_argument("--migration-dir", required=True)
     packet.add_argument("--topic", required=True)
@@ -218,7 +220,10 @@ def dispatch_legacy_command(args, ws) -> dict:
             migration_dir=args.migration_dir,
             output_dir=args.output_dir,
         )
-        return {"ok": True, **require_valid_public_surface("legacy_semantic_review_obsidian_view_bundle", bundle)}
+        payload = {"ok": True, **require_valid_public_surface("legacy_semantic_review_obsidian_view_bundle", bundle)}
+        if getattr(args, "compact", False):
+            return compact_legacy_semantic_review_obsidian_view_bundle(payload)
+        return payload
     if args.legacy_command == "semantic-review-packet":
         packet = build_legacy_semantic_review_packet(ws, migration_dir=args.migration_dir, topic=args.topic)
         payload = {"ok": True, **require_valid_public_surface("legacy_semantic_review_packet", packet)}
