@@ -44,6 +44,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "legacy_source_reconstruction_obsidian_view_bundle",
         "legacy_source_reconstruction_plan",
         "legacy_source_reconstruction_review_packet",
+        "legacy_semantic_needs_revision_basis_queue",
         "legacy_semantic_review_manifest",
         "legacy_semantic_review_obsidian_view_bundle",
         "legacy_semantic_review_packet",

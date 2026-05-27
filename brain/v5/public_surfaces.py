@@ -44,6 +44,7 @@ _PUBLIC_SURFACE_NAMES = (
     "legacy_source_reconstruction_obsidian_view_bundle",
     "legacy_source_reconstruction_plan",
     "legacy_source_reconstruction_review_packet",
+    "legacy_semantic_needs_revision_basis_queue",
     "legacy_semantic_review_manifest",
     "legacy_semantic_review_obsidian_view_bundle",
     "legacy_semantic_review_packet",
@@ -131,6 +132,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "legacy_source_reconstruction_obsidian_view_bundle": "orientation-only Obsidian Markdown worklist over legacy source reconstruction repair and review backlog",
     "legacy_source_reconstruction_plan": "read-only plan for reconstruction-path evidence backfills derived from typed legacy semantic reviews",
     "legacy_source_reconstruction_review_packet": "read-only legacy-aware source reconstruction review packet that maps migrated refs onto typed reconstruction components without mutating trust",
+    "legacy_semantic_needs_revision_basis_queue": "read-only queue for converting inconclusive legacy semantic reviews into specific needs-revision review basis without changing claim trust",
     "legacy_semantic_review_manifest": "orientation-only batch manifest listing per-topic semantic review packets, statuses, and result-record commands",
     "legacy_semantic_review_obsidian_view_bundle": "orientation-only Obsidian Markdown worklist over legacy semantic-review backlog items, blockers, and result commands",
     "legacy_semantic_review_packet": "orientation-only per-topic packet collecting migrated legacy refs, typed records, and checklist for actual semantic review",
@@ -294,6 +296,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_legacy_semantic_review_result_record,
     )
     from brain.v5.legacy_semantic_repair_manifest_contracts import require_valid_legacy_semantic_repair_manifest
+    from brain.v5.legacy_semantic_needs_revision_contracts import require_valid_legacy_semantic_needs_revision_basis_queue
     from brain.v5.legacy_semantic_worklist_contracts import require_valid_legacy_semantic_review_worklist
     from brain.v5.legacy_semantic_review_obsidian_contracts import require_valid_legacy_semantic_review_obsidian_view_bundle
     from brain.v5.host_readiness_contracts import (
@@ -362,6 +365,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "legacy_source_reconstruction_obsidian_view_bundle": require_valid_legacy_source_reconstruction_obsidian_view_bundle,
         "legacy_source_reconstruction_plan": require_valid_legacy_source_reconstruction_plan,
         "legacy_source_reconstruction_review_packet": require_valid_legacy_source_reconstruction_review_packet,
+        "legacy_semantic_needs_revision_basis_queue": require_valid_legacy_semantic_needs_revision_basis_queue,
         "legacy_semantic_review_manifest": require_valid_legacy_semantic_review_manifest,
         "legacy_semantic_review_obsidian_view_bundle": require_valid_legacy_semantic_review_obsidian_view_bundle,
         "legacy_semantic_review_packet": require_valid_legacy_semantic_review_packet,

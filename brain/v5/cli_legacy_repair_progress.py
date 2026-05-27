@@ -70,3 +70,37 @@ def compact_legacy_semantic_repair_manifest(payload: dict[str, Any]) -> dict[str
         "can_update_kernel_state": bool(payload.get("can_update_kernel_state", False)),
         "can_update_claim_trust": bool(payload.get("can_update_claim_trust", False)),
     }
+
+
+def compact_legacy_semantic_needs_revision_basis_queue(payload: dict[str, Any]) -> dict[str, Any]:
+    top_items = [item for item in payload.get("items", []) if isinstance(item, dict)][:5]
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "kind": "legacy_semantic_needs_revision_basis_queue_progress",
+        "source_surface": "legacy_semantic_needs_revision_basis_queue",
+        "run_id": str(payload.get("run_id") or ""),
+        "migration_dir": str(payload.get("migration_dir") or ""),
+        "workspace": str(payload.get("workspace") or ""),
+        "basis_item_count": int(payload.get("basis_item_count") or 0),
+        "status_counts": dict(payload.get("status_counts") or {}),
+        "required_action_counts": dict(payload.get("required_action_counts") or {}),
+        "next_action_count": len(payload.get("next_actions") or []),
+        "next_action_refs": [str(action) for action in payload.get("next_actions", [])[:5] if str(action)],
+        "top_topics": [str(item.get("topic") or "") for item in top_items if str(item.get("topic") or "")],
+        "top_latest_review_ids": [
+            str(item.get("latest_review_id") or "")
+            for item in top_items
+            if str(item.get("latest_review_id") or "")
+        ],
+        "top_required_actions": [
+            [str(action) for action in item.get("required_actions", []) if str(action)]
+            for item in top_items
+        ],
+        "semantic_lossless_proven": bool(payload.get("semantic_lossless_proven", False)),
+        "semantic_review_required": bool(payload.get("semantic_review_required", True)),
+        "truth_source": str(payload.get("truth_source") or ""),
+        "summary_inputs_trusted": bool(payload.get("summary_inputs_trusted", False)),
+        "orientation_only": bool(payload.get("orientation_only", True)),
+        "can_update_kernel_state": bool(payload.get("can_update_kernel_state", False)),
+        "can_update_claim_trust": bool(payload.get("can_update_claim_trust", False)),
+    }
