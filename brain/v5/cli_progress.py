@@ -458,8 +458,14 @@ def compact_final_readiness(payload: dict[str, Any]) -> dict[str, Any]:
             "legacy_source_reconstruction_backlog_surface": str(
                 replay.get("legacy_source_reconstruction_backlog_surface") or ""
             ),
+            "legacy_semantic_repair_surface": str(
+                replay.get("legacy_semantic_repair_surface") or ""
+            ),
             "legacy_human_checkpoint_backlog_surface": str(
                 replay.get("legacy_human_checkpoint_backlog_surface") or ""
+            ),
+            "host_startup_semantic_repair_supported": bool(
+                replay.get("host_startup_semantic_repair_supported", False)
             ),
             "host_startup_checkpoint_packet_supported": bool(
                 replay.get("host_startup_checkpoint_packet_supported", False)

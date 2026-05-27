@@ -126,6 +126,16 @@ def validate_final_engineering_readiness_audit(
                 f"{path}.kernel_capabilities.long_term_replay.legacy_human_checkpoint_backlog_surface",
                 "must be legacy_human_checkpoint_packet",
             )
+        if replay.get("legacy_semantic_repair_surface") != "legacy_semantic_repair_manifest":
+            result.add(
+                f"{path}.kernel_capabilities.long_term_replay.legacy_semantic_repair_surface",
+                "must be legacy_semantic_repair_manifest",
+            )
+        if replay.get("host_startup_semantic_repair_supported") is not True:
+            result.add(
+                f"{path}.kernel_capabilities.long_term_replay.host_startup_semantic_repair_supported",
+                "must be true",
+            )
         if replay.get("host_startup_checkpoint_packet_supported") is not True:
             result.add(
                 f"{path}.kernel_capabilities.long_term_replay.host_startup_checkpoint_packet_supported",
