@@ -219,6 +219,40 @@ def test_legacy_source_reconstruction_manifest_batches_backlog(tmp_path):
     assert item["can_update_claim_trust"] is False
 
 
+def test_legacy_source_reconstruction_obsidian_view_writes_worklist(tmp_path):
+    from brain.v5.legacy_source_reconstruction_obsidian import write_legacy_source_reconstruction_obsidian_view
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ws, run, review, _candidate, _derivation = _seed_reviewed_legacy_topic(tmp_path)
+
+    bundle = write_legacy_source_reconstruction_obsidian_view(ws, migration_dir=run)
+
+    assert require_valid_public_surface("legacy_source_reconstruction_obsidian_view_bundle", bundle) == bundle
+    assert bundle["kind"] == "legacy_source_reconstruction_obsidian_view_bundle"
+    assert bundle["migration_dir"] == str(run)
+    assert bundle["work_item_count"] == 1
+    assert bundle["proposed_repair_count"] == 1
+    assert bundle["repair_status_counts"]["proposed_repairs"] == 1
+    assert bundle["source_records"] == {
+        "topics": ["canonical-topic"],
+        "active_claim_ids": ["claim-canonical"],
+        "latest_review_ids": [review.review_id],
+    }
+    assert bundle["semantic_lossless_proven"] is False
+    assert bundle["orientation_only"] is True
+    assert bundle["can_update_kernel_state"] is False
+    assert bundle["can_update_claim_trust"] is False
+    worklist = (tmp_path / "v5" / ".aitp" / "surfaces" / "legacy_source_reconstruction" / "Legacy Source Reconstruction Worklist.md").read_text(
+        encoding="utf-8"
+    )
+    assert "# Legacy Source Reconstruction Worklist" in worklist
+    assert "`canonical-topic`" in worklist
+    assert "`proposed_repairs`" in worklist
+    assert "reconstruction_path_evidence_backfill" in worklist
+    assert "Use typed source reconstruction review records" in worklist
+    assert "cannot update claim trust" in worklist
+
+
 def test_legacy_source_reconstruction_review_packet_carries_legacy_refs(tmp_path):
     from brain.v5.legacy_source_reconstruction import build_legacy_source_reconstruction_review_packet
     from brain.v5.public_surfaces import require_valid_public_surface
@@ -350,6 +384,7 @@ def test_legacy_source_reconstruction_cli_mcp_and_runtime_surface(tmp_path, caps
         aitp_v5_build_legacy_source_reconstruction_manifest,
         aitp_v5_build_legacy_source_reconstruction_plan,
         aitp_v5_build_legacy_source_reconstruction_review_packet,
+        aitp_v5_write_legacy_source_reconstruction_obsidian_view,
     )
     from brain.v5.runtime_entrypoints import runtime_entrypoints
 
@@ -400,6 +435,28 @@ def test_legacy_source_reconstruction_cli_mcp_and_runtime_surface(tmp_path, caps
         "cli": "aitp-v5 legacy source-reconstruction-manifest <args>",
         "mcp": "aitp_v5_build_legacy_source_reconstruction_manifest",
         "surface": "legacy_source_reconstruction_manifest",
+    }
+
+    assert main([
+        "--base",
+        str(ws.base),
+        "legacy",
+        "source-reconstruction-obsidian-view",
+        "--migration-dir",
+        str(run),
+    ]) == 0
+    cli_obsidian_payload = json.loads(capsys.readouterr().out)
+    mcp_obsidian_payload = aitp_v5_write_legacy_source_reconstruction_obsidian_view(
+        str(ws.base),
+        migration_dir=str(run),
+    )
+
+    assert cli_obsidian_payload["kind"] == "legacy_source_reconstruction_obsidian_view_bundle"
+    assert mcp_obsidian_payload["kind"] == "legacy_source_reconstruction_obsidian_view_bundle"
+    assert runtime_entrypoints()["legacy_source_reconstruction_obsidian_view"] == {
+        "cli": "aitp-v5 legacy source-reconstruction-obsidian-view <args>",
+        "mcp": "aitp_v5_write_legacy_source_reconstruction_obsidian_view",
+        "surface": "legacy_source_reconstruction_obsidian_view_bundle",
     }
 
     assert main([

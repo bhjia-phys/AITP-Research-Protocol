@@ -16,6 +16,7 @@ from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_revie
 from brain.v5.legacy_semantic_repair import apply_legacy_semantic_repair, build_legacy_semantic_repair_plan
 from brain.v5.legacy_semantic_repair_manifest import build_legacy_semantic_repair_manifest
 from brain.v5.legacy_source_metadata_repair import build_legacy_source_metadata_repair_packet
+from brain.v5.legacy_source_reconstruction_obsidian import write_legacy_source_reconstruction_obsidian_view
 from brain.v5.legacy_source_reconstruction import (
     apply_legacy_source_reconstruction_repair,
     build_legacy_source_reconstruction_manifest,
@@ -92,6 +93,9 @@ def add_legacy_parser(subparsers) -> None:
     source_repair.add_argument("--topic", required=True)
     source_manifest = legacy_subparsers.add_parser("source-reconstruction-manifest")
     source_manifest.add_argument("--migration-dir", required=True)
+    source_obsidian = legacy_subparsers.add_parser("source-reconstruction-obsidian-view")
+    source_obsidian.add_argument("--migration-dir", required=True)
+    source_obsidian.add_argument("--output-dir", default="")
     source_review = legacy_subparsers.add_parser("source-reconstruction-review")
     source_review.add_argument("--migration-dir", required=True)
     source_review.add_argument("--topic", required=True)
@@ -218,6 +222,13 @@ def dispatch_legacy_command(args, ws) -> dict:
     if args.legacy_command == "source-reconstruction-manifest":
         manifest = build_legacy_source_reconstruction_manifest(ws, migration_dir=args.migration_dir)
         return {"ok": True, **require_valid_public_surface("legacy_source_reconstruction_manifest", manifest)}
+    if args.legacy_command == "source-reconstruction-obsidian-view":
+        bundle = write_legacy_source_reconstruction_obsidian_view(
+            ws,
+            migration_dir=args.migration_dir,
+            output_dir=args.output_dir,
+        )
+        return {"ok": True, **require_valid_public_surface("legacy_source_reconstruction_obsidian_view_bundle", bundle)}
     if args.legacy_command == "source-reconstruction-review":
         packet = build_legacy_source_reconstruction_review_packet(ws, migration_dir=args.migration_dir, topic=args.topic)
         payload = {"ok": True, **require_valid_public_surface("legacy_source_reconstruction_review_packet", packet)}
