@@ -26,7 +26,7 @@ from brain.v5.hook_install_audit import audit_hook_installation
 from brain.v5.hook_install_paths import discover_hook_install_paths
 from brain.v5.hook_smoke_coverage import runtime_hook_smoke_coverage_report
 from brain.v5.hook_opencode_install import install_opencode_plugin_file
-from brain.v5.host_readiness import audit_runtime_host_lifecycle, audit_runtime_host_readiness
+from brain.v5.host_readiness import audit_priority_host_production_loops, audit_runtime_host_lifecycle, audit_runtime_host_readiness
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
 
 
@@ -48,6 +48,9 @@ def add_adapter_parser(sp) -> None:
     ahr.add_argument("--command", default="", dest="host_command"); ahr.add_argument("--arg", action="append", default=[], dest="version_args"); ahr.add_argument("--timeout", type=int, default=20)
     ahr.add_argument("--settings", default=""); ahr.add_argument("--output", default=""); ahr.add_argument("--plugin", default="")
     ahr.add_argument("--skip-install-audit", action="store_true"); ahr.add_argument("--run-session-start-smoke", action="store_true")
+    ahp = aps.add_parser("host-production-loop"); ahp.add_argument("--session", default="", dest="session_id")
+    ahp.add_argument("--command", default="", dest="host_command"); ahp.add_argument("--arg", action="append", default=[], dest="version_args"); ahp.add_argument("--timeout", type=int, default=20)
+    ahp.add_argument("--skip-install-audit", action="store_true"); ahp.add_argument("--run-session-start-smoke", action="store_true")
     ahl = aps.add_parser("host-lifecycle"); ahl.add_argument("runtime")
     ahl.add_argument("--command", default="", dest="host_command"); ahl.add_argument("--arg", action="append", default=[], dest="host_args"); ahl.add_argument("--timeout", type=int, default=60)
     afr = aps.add_parser("final-readiness"); afr.add_argument("--migration-dir", default="")
@@ -137,6 +140,22 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
                     settings_path=args.settings,
                     plugin_path=args.plugin,
                     output_path=args.output,
+                    check_installation=not args.skip_install_audit,
+                    session_id=args.session_id,
+                    run_session_start_smoke=args.run_session_start_smoke,
+                ),
+            ),
+        }
+    if args.adapter_command == "host-production-loop":
+        return {
+            "ok": True,
+            **require_valid_public_surface(
+                "runtime_host_production_loop_audit",
+                audit_priority_host_production_loops(
+                    ws,
+                    command=args.host_command,
+                    version_args=args.version_args or None,
+                    timeout_seconds=args.timeout,
                     check_installation=not args.skip_install_audit,
                     session_id=args.session_id,
                     run_session_start_smoke=args.run_session_start_smoke,

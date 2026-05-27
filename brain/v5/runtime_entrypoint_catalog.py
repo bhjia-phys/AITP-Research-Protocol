@@ -38,6 +38,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_get_adapter_packet",
         "surface": "adapter_packet",
     },
+    "runtime_host_production_loop_audit": {
+        "cli": "aitp-v5 adapter host-production-loop",
+        "mcp": "aitp_v5_audit_priority_host_production_loops",
+        "surface": "runtime_host_production_loop_audit",
+    },
     "codex_hook_bridge": {"cli": "aitp-v5 adapter hook-bridge codex <session-id> <args>", "mcp": "aitp_v5_write_codex_hook_bridge", "surface": "codex_hook_bridge"},
     "codex_hook_installation": {"cli": "aitp-v5 adapter install-hooks codex <session-id> <args>", "mcp": "aitp_v5_install_codex_hook_fixture", "surface": "codex_hook_installation"},
     "opencode_plugin_bridge": {"cli": "aitp-v5 adapter hook-bridge opencode <session-id> <args>", "mcp": "aitp_v5_write_opencode_plugin_bridge", "surface": "opencode_plugin_bridge"},

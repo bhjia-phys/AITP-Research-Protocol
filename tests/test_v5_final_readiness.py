@@ -205,6 +205,12 @@ def test_final_readiness_audit_keeps_kernel_capability_separate_from_content_bac
     assert payload["kernel_capabilities"]["host_integration"]["production_loop_surface"] == (
         "runtime_host_readiness_audit"
     )
+    assert payload["kernel_capabilities"]["host_integration"]["priority_host_batch_surface"] == (
+        "runtime_host_production_loop_audit"
+    )
+    assert payload["kernel_capabilities"]["host_integration"]["priority_host_batch_cli"] == (
+        "aitp-v5 adapter host-production-loop"
+    )
     assert payload["kernel_capabilities"]["host_integration"]["priority_host_production_loops"] == [
         {
             "runtime": "codex",

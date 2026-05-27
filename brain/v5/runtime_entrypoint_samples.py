@@ -134,4 +134,6 @@ def adapter_sample_args(template: str) -> list[str] | None:
         ]
     if template.startswith("adapter host-lifecycle"):
         return ["--command", "python", "--arg", "--version"]
+    if template.startswith("adapter host-production-loop"):
+        return ["--command", "python", "--arg", "--version", "--skip-install-audit"]
     return None

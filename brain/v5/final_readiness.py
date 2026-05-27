@@ -94,6 +94,8 @@ def _host_payload(host_smoke: dict[str, Any]) -> dict[str, Any]:
         "priority_host_status": priority,
         "deferred_host_status": deferred,
         "production_loop_surface": "runtime_host_readiness_audit",
+        "priority_host_batch_surface": "runtime_host_production_loop_audit",
+        "priority_host_batch_cli": "aitp-v5 adapter host-production-loop",
         "priority_host_production_loops": [_host_production_loop(runtime) for runtime in _PRIORITY_HOSTS],
         "residual_lifecycle_gap": _unique(
             gap

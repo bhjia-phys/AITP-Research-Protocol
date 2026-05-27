@@ -116,6 +116,78 @@ def test_runtime_host_readiness_production_loop_guides_installation_and_session_
     assert validated["production_loop"]["can_update_claim_trust"] is False
 
 
+def test_priority_host_production_loop_batches_codex_claude_and_kimi(tmp_path):
+    from brain.v5.host_readiness import audit_priority_host_production_loops
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+
+    payload = audit_priority_host_production_loops(
+        ws,
+        command=sys.executable,
+        version_args=["--version"],
+        check_installation=False,
+    )
+    validated = require_valid_public_surface("runtime_host_production_loop_audit", payload)
+
+    assert validated["kind"] == "runtime_host_production_loop_audit"
+    assert validated["runtimes"] == ["codex", "claude_code", "kimi_code"]
+    assert validated["priority_hosts"] == ["codex", "claude_code", "kimi_code"]
+    assert validated["deferred_hosts"] == ["opencode"]
+    assert validated["runtime_count"] == 3
+    assert validated["ready_count"] == 3
+    assert validated["status_counts"] == {"process_ready": 3}
+    assert validated["next_action_counts"] == {
+        "install_or_audit_runtime_hooks": 3,
+        "run_runtime_host_lifecycle_probe": 3,
+        "run_session_start_smoke": 2,
+    }
+    assert [item["runtime"] for item in validated["items"]] == ["codex", "claude_code", "kimi_code"]
+    assert all(item["process_ok"] is True for item in validated["items"])
+    assert validated["items"][1]["session_start_smoke_available"] is True
+    assert validated["items"][2]["lifecycle_probe_command"] == "aitp-v5 adapter host-lifecycle kimi-code"
+    assert validated["truth_source"] == "runtime_process_and_files"
+    assert validated["summary_inputs_trusted"] is False
+    assert validated["orientation_only"] is True
+    assert validated["can_update_kernel_state"] is False
+    assert validated["can_update_claim_trust"] is False
+
+
+def test_priority_host_production_loop_cli_mcp_and_runtime(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_audit_priority_host_production_loops
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+
+    assert main([
+        "--base",
+        str(tmp_path),
+        "adapter",
+        "host-production-loop",
+        "--command",
+        sys.executable,
+        "--arg=--version",
+        "--skip-install-audit",
+    ]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_audit_priority_host_production_loops(
+        str(tmp_path),
+        command=sys.executable,
+        version_args=["--version"],
+        check_installation=False,
+    )
+
+    assert cli_payload["kind"] == "runtime_host_production_loop_audit"
+    assert mcp_payload["kind"] == "runtime_host_production_loop_audit"
+    assert cli_payload["ready_count"] == 3
+    assert mcp_payload["next_action_counts"]["run_runtime_host_lifecycle_probe"] == 3
+    assert runtime_entrypoints()["runtime_host_production_loop_audit"] == {
+        "cli": "aitp-v5 adapter host-production-loop",
+        "mcp": "aitp_v5_audit_priority_host_production_loops",
+        "surface": "runtime_host_production_loop_audit",
+    }
+
+
 def test_runtime_host_lifecycle_probe_detects_trace_delta_and_hook_output(tmp_path):
     from brain.v5.host_readiness import audit_runtime_host_lifecycle
     from brain.v5.public_surfaces import require_valid_public_surface

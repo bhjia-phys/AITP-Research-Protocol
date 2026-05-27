@@ -21,6 +21,7 @@ _DEFAULT_COMMANDS = {
 }
 _PRIORITY_HOSTS = {"codex", "claude_code", "kimi_code"}
 _DEFERRED_HOSTS = {"opencode"}
+_PRIORITY_HOST_ORDER = ("codex", "claude_code", "kimi_code")
 
 
 def audit_runtime_host_readiness(
@@ -112,6 +113,71 @@ def audit_runtime_host_lifecycle(
         "truth_source": "runtime_process_and_hook_trace",
         "summary_inputs_trusted": False,
         "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def audit_priority_host_production_loops(
+    ws,
+    *,
+    command: str = "",
+    version_args: list[str] | None = None,
+    timeout_seconds: int = 20,
+    check_installation: bool = True,
+    session_id: str = "",
+    run_session_start_smoke: bool = False,
+) -> dict[str, Any]:
+    """Run readiness audits for priority hosts as one production-loop packet."""
+
+    audits = [
+        audit_runtime_host_readiness(
+            ws,
+            runtime=runtime,
+            command=command,
+            version_args=version_args,
+            timeout_seconds=timeout_seconds,
+            check_installation=check_installation,
+            session_id=session_id,
+            run_session_start_smoke=run_session_start_smoke,
+        )
+        for runtime in _PRIORITY_HOST_ORDER
+    ]
+    items = [_production_item(audit) for audit in audits]
+    return {
+        "kind": "runtime_host_production_loop_audit",
+        "runtimes": list(_PRIORITY_HOST_ORDER),
+        "priority_hosts": list(_PRIORITY_HOST_ORDER),
+        "deferred_hosts": ["opencode"],
+        "runtime_count": len(items),
+        "ready_count": sum(1 for item in items if item["process_ok"]),
+        "status_counts": _counts(item["status"] for item in items),
+        "next_action_counts": _counts(action for item in items for action in item["next_actions"]),
+        "items": items,
+        "truth_source": "runtime_process_and_files",
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def _production_item(audit: dict[str, Any]) -> dict[str, Any]:
+    loop = audit.get("production_loop") if isinstance(audit.get("production_loop"), dict) else {}
+    process = audit.get("process") if isinstance(audit.get("process"), dict) else {}
+    install = audit.get("installation_audit") if isinstance(audit.get("installation_audit"), dict) else {}
+    return {
+        "runtime": str(audit.get("runtime") or ""),
+        "status": str(audit.get("status") or ""),
+        "process_ok": bool(process.get("ok")),
+        "process_found": bool(process.get("found")),
+        "command": str(process.get("command") or ""),
+        "command_path": str(process.get("command_path") or ""),
+        "install_status": str(install.get("status") or ""),
+        "install_audit_required": bool(loop.get("install_audit_required")),
+        "session_start_smoke_available": bool(loop.get("session_start_smoke_available")),
+        "lifecycle_probe_command": str(loop.get("lifecycle_probe_command") or ""),
+        "next_actions": list(loop.get("next_actions") or []),
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }
@@ -335,6 +401,15 @@ def _unique(values: list[str]) -> list[str]:
             seen.add(value)
             result.append(value)
     return result
+
+
+def _counts(values) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for value in values:
+        if not value:
+            continue
+        counts[value] = counts.get(value, 0) + 1
+    return {key: counts[key] for key in sorted(counts)}
 
 
 def _parse_json_object(raw: str) -> dict[str, Any]:

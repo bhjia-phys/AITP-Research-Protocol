@@ -63,6 +63,7 @@ _PUBLIC_SURFACE_NAMES = (
     "reference_location_record",
     "runtime_hook_installation_audit",
     "runtime_host_lifecycle_audit",
+    "runtime_host_production_loop_audit",
     "runtime_host_readiness_audit",
     "runtime_hook_installation_paths",
     "runtime_hook_smoke_coverage",
@@ -147,6 +148,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "reference_location_record": "contracted orientation-only pointer to an external paper, note, or knowledge item",
     "runtime_hook_installation_audit": "read-only audit of installed runtime hook files; runtime metadata only, never kernel truth",
     "runtime_host_lifecycle_audit": "dynamic read-only probe that runs a host command and checks stdout/stderr plus hook trace deltas for lifecycle-event evidence",
+    "runtime_host_production_loop_audit": "dynamic read-only batch audit over priority runtime host production loops without updating kernel truth",
     "runtime_host_readiness_audit": "dynamic read-only audit that launches the local host command and checks installed hook files without updating kernel truth",
     "runtime_hook_installation_paths": "read-only discovery of workspace-local hook install targets for Codex, Claude Code, Kimi Code, and OpenCode",
     "runtime_hook_smoke_coverage": "read-only report of which generated runtime hook paths have test-backed smoke coverage",
@@ -289,7 +291,10 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.legacy_semantic_repair_manifest_contracts import require_valid_legacy_semantic_repair_manifest
     from brain.v5.legacy_semantic_worklist_contracts import require_valid_legacy_semantic_review_worklist
     from brain.v5.legacy_semantic_review_obsidian_contracts import require_valid_legacy_semantic_review_obsidian_view_bundle
-    from brain.v5.host_readiness_contracts import require_valid_runtime_host_readiness_audit
+    from brain.v5.host_readiness_contracts import (
+        require_valid_runtime_host_production_loop_audit,
+        require_valid_runtime_host_readiness_audit,
+    )
     from brain.v5.host_lifecycle_contracts import require_valid_runtime_host_lifecycle_audit
     from brain.v5.interaction_preview_contracts import require_valid_interaction_recording_preview
     from brain.v5.workspace_interaction_preview_contracts import require_valid_workspace_interaction_preview_bundle
@@ -370,6 +375,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "reference_location_record": require_valid_reference_location_record,
         "runtime_hook_installation_audit": require_valid_runtime_hook_installation_audit,
         "runtime_host_lifecycle_audit": require_valid_runtime_host_lifecycle_audit,
+        "runtime_host_production_loop_audit": require_valid_runtime_host_production_loop_audit,
         "runtime_host_readiness_audit": require_valid_runtime_host_readiness_audit,
         "runtime_hook_installation_paths": require_valid_runtime_hook_installation_paths,
         "runtime_hook_smoke_coverage": require_valid_runtime_hook_smoke_coverage,

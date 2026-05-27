@@ -47,6 +47,43 @@ def require_valid_runtime_host_readiness_audit(payload: dict[str, Any]) -> dict[
     return payload
 
 
+def validate_runtime_host_production_loop_audit(
+    payload: dict[str, Any],
+    *,
+    path: str = "runtime_host_production_loop_audit",
+) -> ContractResult:
+    result = ContractResult()
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return result
+    if payload.get("kind") != "runtime_host_production_loop_audit":
+        result.add(f"{path}.kind", "must be 'runtime_host_production_loop_audit'")
+    if payload.get("truth_source") != "runtime_process_and_files":
+        result.add(f"{path}.truth_source", "must be 'runtime_process_and_files'")
+    for key in ("runtimes", "priority_hosts", "deferred_hosts", "items"):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    for key in ("runtime_count", "ready_count"):
+        if not isinstance(payload.get(key), int) or payload[key] < 0:
+            result.add(f"{path}.{key}", "must be a non-negative integer")
+    for key in ("status_counts", "next_action_counts"):
+        _require_mapping(payload.get(key), f"{path}.{key}", result)
+    if isinstance(payload.get("items"), list):
+        for index, item in enumerate(payload["items"]):
+            _validate_production_item(item, f"{path}.items[{index}]", result)
+    _require_bool_value(payload.get("summary_inputs_trusted"), False, f"{path}.summary_inputs_trusted", result)
+    _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
+    _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
+    _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
+    return result
+
+
+def require_valid_runtime_host_production_loop_audit(payload: dict[str, Any]) -> dict[str, Any]:
+    result = validate_runtime_host_production_loop_audit(payload)
+    if not result.ok:
+        raise ContractError(result)
+    return payload
+
+
 def _validate_process(payload: Any, path: str, result: ContractResult) -> None:
     _require_mapping(payload, path, result)
     if not isinstance(payload, dict):
@@ -106,5 +143,28 @@ def _validate_production_loop(payload: Any, path: str, result: ContractResult) -
             result.add(f"{path}.{key}", "must be a bool")
     _require_bool_value(payload.get("summary_inputs_trusted"), False, f"{path}.summary_inputs_trusted", result)
     _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
+    _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
+    _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
+
+
+def _validate_production_item(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    for key in ("runtime", "status", "command", "install_status", "lifecycle_probe_command"):
+        _require_nonempty_str(payload, key, path, result)
+    for key in (
+        "process_ok",
+        "process_found",
+        "install_audit_required",
+        "session_start_smoke_available",
+        "can_update_kernel_state",
+        "can_update_claim_trust",
+    ):
+        if not isinstance(payload.get(key), bool):
+            result.add(f"{path}.{key}", "must be a bool")
+    if not isinstance(payload.get("command_path"), str):
+        result.add(f"{path}.command_path", "must be a string")
+    _require_list(payload.get("next_actions"), f"{path}.next_actions", result)
     _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
     _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
