@@ -2143,6 +2143,139 @@ def test_legacy_source_metadata_repair_packet_cli_mcp_and_runtime_surface(tmp_pa
     }
 
 
+def test_legacy_executable_evidence_packet_groups_validation_and_tool_runs(tmp_path):
+    from brain.v5.legacy_executable_evidence import build_legacy_executable_evidence_packet
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.models import ClaimRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="Executable evidence is required before semantic pass.",
+            evidence_profile="code_method",
+            confidence_state="legacy_seed",
+            active_uncertainty="Benchmark and code trace evidence remain open.",
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="Executable benchmark and code trace evidence remain open.",
+        active_claim_id="claim-canonical",
+        reviewed_typed_refs=["claim:claim-canonical"],
+        remaining_actions=[
+            "implement_or_import_executable_SrVO3_t2g_crpa_benchmark_with_Wannier_U_J_outputs",
+            "trace_compute_Wc_freq_q_accepts_chi_r_substitution_on_actual_LibRPA_code",
+            "decide_human_checkpoint_before_promotion",
+        ],
+    )
+
+    packet = build_legacy_executable_evidence_packet(ws, migration_dir=run)
+
+    assert packet["kind"] == "legacy_executable_evidence_packet"
+    assert packet["evidence_item_count"] == 1
+    assert packet["executable_action_count"] == 2
+    assert packet["next_actions"] == [
+        "executable_evidence:canonical-topic:implement_or_import_executable_SrVO3_t2g_crpa_benchmark_with_Wannier_U_J_outputs",
+        "executable_evidence:canonical-topic:trace_compute_Wc_freq_q_accepts_chi_r_substitution_on_actual_LibRPA_code",
+    ]
+    item = packet["evidence_items"][0]
+    assert item["topic"] == "canonical-topic"
+    assert item["active_claim_id"] == "claim-canonical"
+    assert item["latest_review_id"] == review.review_id
+    assert item["executable_actions"] == [
+        "implement_or_import_executable_SrVO3_t2g_crpa_benchmark_with_Wannier_U_J_outputs",
+        "trace_compute_Wc_freq_q_accepts_chi_r_substitution_on_actual_LibRPA_code",
+    ]
+    assert [command["surface"] for command in item["validation_commands"]] == ["validation_result_record"]
+    assert [command["surface"] for command in item["tool_run_commands"]] == ["tool_run_record"]
+    assert item["reviewed_typed_refs"] == ["claim:claim-canonical"]
+    assert item["followup_result_cli"] == (
+        f"aitp-v5 --base {ws.base} legacy semantic-review-result "
+        f"--migration-dir {run} --topic canonical-topic --status <inconclusive|passed> "
+        "--typed-ref <validation-or-tool-run-ref> --evidence-ref <evidence-ref> "
+        "--summary <executable evidence review basis and remaining semantic gaps>"
+    )
+    assert packet["semantic_lossless_proven"] is False
+    assert packet["orientation_only"] is True
+    assert packet["can_update_claim_trust"] is False
+    assert require_valid_public_surface("legacy_executable_evidence_packet", packet) == packet
+
+
+def test_legacy_executable_evidence_packet_cli_mcp_and_runtime_surface(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.mcp_tools import aitp_v5_build_legacy_executable_evidence_packet
+    from brain.v5.models import ClaimRecord
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+    import json
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="Executable evidence packet is host-callable.",
+            evidence_profile="code_method",
+            confidence_state="legacy_seed",
+            active_uncertainty="Benchmark remains open.",
+        ),
+    )
+    record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="Executable benchmark remains open.",
+        active_claim_id="claim-canonical",
+        reviewed_typed_refs=["claim:claim-canonical"],
+        remaining_actions=[
+            "implement_or_import_executable_SrVO3_t2g_crpa_benchmark_with_Wannier_U_J_outputs",
+        ],
+    )
+
+    main([
+        "--base",
+        str(base),
+        "legacy",
+        "executable-evidence-packet",
+        "--migration-dir",
+        str(run),
+        "--topic",
+        "canonical-topic",
+    ])
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_legacy_executable_evidence_packet(
+        str(base),
+        migration_dir=str(run),
+        topic="canonical-topic",
+    )
+
+    assert cli_payload["kind"] == "legacy_executable_evidence_packet"
+    assert mcp_payload["kind"] == "legacy_executable_evidence_packet"
+    assert cli_payload["executable_action_count"] == 1
+    assert mcp_payload["executable_action_count"] == 1
+    assert runtime_entrypoints()["legacy_executable_evidence_packet"] == {
+        "cli": "aitp-v5 legacy executable-evidence-packet <args>",
+        "mcp": "aitp_v5_build_legacy_executable_evidence_packet",
+        "surface": "legacy_executable_evidence_packet",
+    }
+
+
 def test_legacy_semantic_review_worklist_surfaces_open_human_checkpoint_for_decision(tmp_path):
     from brain.v5.checkpoints import request_human_checkpoint
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result

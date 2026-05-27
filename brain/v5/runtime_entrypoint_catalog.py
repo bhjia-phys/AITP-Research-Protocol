@@ -202,6 +202,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_build_legacy_source_metadata_repair_packet",
         "surface": "legacy_source_metadata_repair_packet",
     },
+    "legacy_executable_evidence_packet": {
+        "cli": "aitp-v5 legacy executable-evidence-packet <args>",
+        "mcp": "aitp_v5_build_legacy_executable_evidence_packet",
+        "surface": "legacy_executable_evidence_packet",
+    },
     "legacy_source_reconstruction_apply": {
         "cli": "aitp-v5 legacy source-reconstruction-apply <args>",
         "mcp": "aitp_v5_apply_legacy_source_reconstruction_repair",
