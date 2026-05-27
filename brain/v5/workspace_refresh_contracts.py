@@ -39,7 +39,11 @@ def validate_workspace_refresh_bundle(payload: dict[str, Any], *, path: str = "w
             "l2_obsidian_view_bundle",
             "source_reconstruction_obsidian_view_bundle",
         ]
-        legacy_expected = [*base_expected, "legacy_human_checkpoint_obsidian_view_bundle"]
+        legacy_expected = [
+            *base_expected,
+            "legacy_semantic_review_obsidian_view_bundle",
+            "legacy_human_checkpoint_obsidian_view_bundle",
+        ]
         surfaces = tuple(payload["refreshed_surfaces"])
         if surfaces not in {tuple(base_expected), tuple(legacy_expected)}:
             result.add(f"{path}.refreshed_surfaces", "must list the refreshed workspace surfaces in order")
@@ -47,6 +51,12 @@ def validate_workspace_refresh_bundle(payload: dict[str, Any], *, path: str = "w
     _require_mapping(payload.get("workspace_replay"), f"{path}.workspace_replay", result)
     _require_mapping(payload.get("l2_obsidian_view"), f"{path}.l2_obsidian_view", result)
     _require_mapping(payload.get("source_reconstruction_obsidian_view"), f"{path}.source_reconstruction_obsidian_view", result)
+    if "legacy_semantic_review_obsidian_view" in payload:
+        _require_mapping(
+            payload.get("legacy_semantic_review_obsidian_view"),
+            f"{path}.legacy_semantic_review_obsidian_view",
+            result,
+        )
     if "legacy_human_checkpoint_obsidian_view" in payload:
         _require_mapping(
             payload.get("legacy_human_checkpoint_obsidian_view"),

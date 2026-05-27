@@ -3254,6 +3254,71 @@ def test_legacy_semantic_review_worklist_cli_compact_progress(tmp_path, capsys):
     assert "items" not in cli_payload
 
 
+def test_legacy_semantic_review_obsidian_view_writes_review_worklist(tmp_path):
+    from brain.v5.legacy_semantic_review_obsidian import write_legacy_semantic_review_obsidian_view
+    from brain.v5.markdown import read_md
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+
+    payload = write_legacy_semantic_review_obsidian_view(ws, migration_dir=run)
+
+    assert require_valid_public_surface("legacy_semantic_review_obsidian_view_bundle", payload) == payload
+    assert payload["kind"] == "legacy_semantic_review_obsidian_view_bundle"
+    assert payload["work_item_count"] == 2
+    assert payload["status_counts"]["pending"] == 2
+    assert payload["blocking_class_counts"]["source_reconstruction_required"] == 2
+    assert payload["source_records"]["topics"] == ["canonical-topic", "legacy-l2"]
+    assert payload["source_records"]["active_claim_ids"] == ["claim-canonical", "claim-l2"]
+    assert payload["semantic_lossless_proven"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_claim_trust"] is False
+    frontmatter, body = read_md(payload["files"]["review_worklist"])
+    assert frontmatter["view_role"] == "legacy_semantic_review_worklist"
+    assert frontmatter["truth_source"] is False
+    assert "canonical-topic" in body
+    assert "legacy-l2" in body
+    assert "source_reconstruction_required" in body
+    assert "active_claim_statement_empty" in body
+    assert "record_next_legacy_semantic_review_result" in body
+    assert "semantic-review-result" in body
+    assert "Use typed legacy semantic review records for review results" in body
+
+
+def test_legacy_semantic_review_obsidian_view_cli_mcp_and_runtime_surface(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_write_legacy_semantic_review_obsidian_view
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.workspace import init_workspace
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+
+    assert main([
+        "--base",
+        str(base),
+        "legacy",
+        "semantic-review-obsidian-view",
+        "--migration-dir",
+        str(run),
+    ]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_write_legacy_semantic_review_obsidian_view(str(base), migration_dir=str(run))
+
+    assert cli_payload["kind"] == "legacy_semantic_review_obsidian_view_bundle"
+    assert mcp_payload["kind"] == "legacy_semantic_review_obsidian_view_bundle"
+    assert runtime_entrypoints()["legacy_semantic_review_obsidian_view"] == {
+        "cli": "aitp-v5 legacy semantic-review-obsidian-view <args>",
+        "mcp": "aitp_v5_write_legacy_semantic_review_obsidian_view",
+        "surface": "legacy_semantic_review_obsidian_view_bundle",
+    }
+
+
 def test_legacy_runtime_log_marker_audit_counts_only_raw_logs_for_satisfaction(tmp_path):
     from brain.v5.legacy_runtime_log_audit import build_legacy_runtime_log_marker_audit
     from brain.v5.public_surfaces import require_valid_public_surface

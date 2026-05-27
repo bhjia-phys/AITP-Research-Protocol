@@ -155,8 +155,12 @@ def test_workspace_refresh_can_include_legacy_semantic_backlog_in_replay(tmp_pat
         "workspace_replay_packet",
         "l2_obsidian_view_bundle",
         "source_reconstruction_obsidian_view_bundle",
+        "legacy_semantic_review_obsidian_view_bundle",
         "legacy_human_checkpoint_obsidian_view_bundle",
     ]
+    assert payload["legacy_semantic_review_obsidian_view"]["files"]["review_worklist"].endswith(
+        "Legacy Semantic Review Worklist.md"
+    )
     assert payload["legacy_human_checkpoint_obsidian_view"]["files"]["checkpoint_worklist"].endswith(
         "Legacy Human Checkpoints.md"
     )

@@ -13,6 +13,7 @@ from brain.v5.legacy_human_checkpoint_packet import build_legacy_human_checkpoin
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
 from brain.v5.legacy_runtime_log_audit import build_legacy_runtime_log_marker_audit
 from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
+from brain.v5.legacy_semantic_review_obsidian import write_legacy_semantic_review_obsidian_view
 from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
 from brain.v5.legacy_semantic_repair import apply_legacy_semantic_repair, build_legacy_semantic_repair_plan
 from brain.v5.legacy_source_metadata_repair import build_legacy_source_metadata_repair_packet
@@ -114,6 +115,20 @@ def aitp_v5_build_legacy_semantic_review_manifest(base: str, *, migration_dir: s
 def aitp_v5_build_legacy_semantic_review_worklist(base: str, *, migration_dir: str) -> dict:
     result = build_legacy_semantic_review_worklist(_ws(base), migration_dir=migration_dir)
     return {"ok": True, **require_valid_public_surface("legacy_semantic_review_worklist", result)}
+
+
+def aitp_v5_write_legacy_semantic_review_obsidian_view(
+    base: str,
+    *,
+    migration_dir: str,
+    output_dir: str = "",
+) -> dict:
+    result = write_legacy_semantic_review_obsidian_view(
+        _ws(base),
+        migration_dir=migration_dir,
+        output_dir=output_dir,
+    )
+    return {"ok": True, **require_valid_public_surface("legacy_semantic_review_obsidian_view_bundle", result)}
 
 
 def aitp_v5_build_legacy_semantic_review_packet(base: str, *, migration_dir: str, topic: str) -> dict:

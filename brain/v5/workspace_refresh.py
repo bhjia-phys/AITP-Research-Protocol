@@ -6,6 +6,7 @@ from dataclasses import asdict
 from typing import Any
 
 from brain.v5.legacy_human_checkpoint_obsidian import write_legacy_human_checkpoint_obsidian_view
+from brain.v5.legacy_semantic_review_obsidian import write_legacy_semantic_review_obsidian_view
 from brain.v5.obsidian_views import write_l2_obsidian_view
 from brain.v5.paths import WorkspacePaths
 from brain.v5.replay import write_workspace_replay_packet
@@ -41,11 +42,17 @@ def refresh_workspace_views(
         if migration_dir
         else None
     )
+    legacy_semantic_view = (
+        write_legacy_semantic_review_obsidian_view(ws, migration_dir=migration_dir)
+        if migration_dir
+        else None
+    )
     source_records = _merge_source_records(
         summary.get("source_records", {}),
         replay.get("source_records", {}),
         obsidian.get("source_records", {}),
         source_reconstruction.get("source_records", {}),
+        legacy_semantic_view.get("source_records", {}) if legacy_semantic_view else {},
         legacy_checkpoint_view.get("source_records", {}) if legacy_checkpoint_view else {},
     )
     refreshed_surfaces = [
@@ -54,6 +61,8 @@ def refresh_workspace_views(
         obsidian["kind"],
         source_reconstruction["kind"],
     ]
+    if legacy_semantic_view:
+        refreshed_surfaces.append(legacy_semantic_view["kind"])
     if legacy_checkpoint_view:
         refreshed_surfaces.append(legacy_checkpoint_view["kind"])
     payload = {
@@ -71,6 +80,8 @@ def refresh_workspace_views(
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }
+    if legacy_semantic_view:
+        payload["legacy_semantic_review_obsidian_view"] = legacy_semantic_view
     if legacy_checkpoint_view:
         payload["legacy_human_checkpoint_obsidian_view"] = legacy_checkpoint_view
     return payload

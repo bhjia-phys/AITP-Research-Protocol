@@ -11,6 +11,7 @@ from brain.v5.legacy_human_checkpoint_packet import build_legacy_human_checkpoin
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
 from brain.v5.legacy_runtime_log_audit import build_legacy_runtime_log_marker_audit
 from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
+from brain.v5.legacy_semantic_review_obsidian import write_legacy_semantic_review_obsidian_view
 from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
 from brain.v5.legacy_semantic_repair import apply_legacy_semantic_repair, build_legacy_semantic_repair_plan
 from brain.v5.legacy_source_metadata_repair import build_legacy_source_metadata_repair_packet
@@ -65,6 +66,9 @@ def add_legacy_parser(subparsers) -> None:
     worklist = legacy_subparsers.add_parser("semantic-review-worklist")
     worklist.add_argument("--migration-dir", required=True)
     worklist.add_argument("--compact", "--progress", action="store_true", dest="compact")
+    worklist_obsidian = legacy_subparsers.add_parser("semantic-review-obsidian-view")
+    worklist_obsidian.add_argument("--migration-dir", required=True)
+    worklist_obsidian.add_argument("--output-dir", default="")
     packet = legacy_subparsers.add_parser("semantic-review-packet")
     packet.add_argument("--migration-dir", required=True)
     packet.add_argument("--topic", required=True)
@@ -169,6 +173,13 @@ def dispatch_legacy_command(args, ws) -> dict:
         if getattr(args, "compact", False):
             return compact_legacy_semantic_review_worklist(payload)
         return payload
+    if args.legacy_command == "semantic-review-obsidian-view":
+        bundle = write_legacy_semantic_review_obsidian_view(
+            ws,
+            migration_dir=args.migration_dir,
+            output_dir=args.output_dir,
+        )
+        return {"ok": True, **require_valid_public_surface("legacy_semantic_review_obsidian_view_bundle", bundle)}
     if args.legacy_command == "semantic-review-packet":
         packet = build_legacy_semantic_review_packet(ws, migration_dir=args.migration_dir, topic=args.topic)
         payload = {"ok": True, **require_valid_public_surface("legacy_semantic_review_packet", packet)}
