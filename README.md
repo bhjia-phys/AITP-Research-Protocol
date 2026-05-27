@@ -254,6 +254,32 @@ recommended, which trust-changing records are deferred, which triggers make the
 workflow heavier, and whether the current session can stay in lightweight mode.
 The preview is derived from the typed execution brief, keeps
 `summary_inputs_trusted=false`, and cannot update kernel state or claim trust.
+For literature search, `aitp-v5 literature suggest-intake` and
+`aitp_v5_suggest_literature_intake` provide a conservative
+`literature_intake_suggestion`: every discovered paper can become an
+orientation-only `reference_location` candidate, but evidence and
+sense-making are only suggested when a claim relation is explicit. The
+suggestion emits exact CLI/MCP templates and keeps
+`trust_update_forbidden=true`; a paper summary is never validated evidence by
+itself. `aitp-v5 literature record-candidate` and
+`aitp_v5_record_literature_candidate` write only the orientation reference
+location, then return guarded next steps for `record_sensemaking_report` or
+scoped `record_evidence`.
+
+Stable boundary for research records:
+
+- `reference_location`: where a paper, arXiv page, DOI, note, or web source
+  lives. It is orientation-only and never changes claim confidence.
+- `sensemaking_report`: how the source changes interpretation, prior-art
+  closeness, claim scope, open proof gaps, or failure modes. It keeps
+  `validation_status=not_validation`.
+- `evidence`: a claim-local source-grounded record with explicit `topic_id`,
+  `claim_id`, `evidence_type`, `status`, `summary`, source refs, and named
+  scoped output. It must not say merely "useful"; it must say what scoped
+  output the source supports, contradicts, limits, or leaves inconclusive.
+- Trust updates, promotion, and confidence increases still require the trust
+  preflight / validation / human-checkpoint path. Literature intake can make
+  the next call obvious, but it cannot execute those high-risk actions.
 For legacy migration review, `aitp-v5 legacy migration-audit` and
 `aitp_v5_audit_legacy_migration_coverage` read a completed
 `legacy-v5-lossless-*` migration run and report file accounting, archive

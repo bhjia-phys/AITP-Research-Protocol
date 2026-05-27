@@ -39,6 +39,19 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["scalar_tolerance_check", "--recipe", "recipe-ed", "--topic", "fqhe", "--claim", "claim-fqhe", "--inputs-json", '{"observed":1,"expected":1,"tolerance":0}']
     if template.startswith("reference location record"):
         return ["--topic", "fqhe", "--connector", "local_pdf", "--type", "paper_pdf", "--uri", "file:///papers/fqhe.pdf", "--label", "FQHE paper PDF"]
+    if template.startswith("literature suggest-intake") or template.startswith("literature record-candidate"):
+        return [
+            "--session",
+            "s1",
+            "--uri",
+            "https://arxiv.org/abs/2604.14695",
+            "--label",
+            "Long-range spin-chain level statistics",
+            "--summary",
+            "Close prior art.",
+            "--detected-relevance",
+            "close_prior_art",
+        ]
     if template.startswith("trace hook-event persist"):
         return ["--payload-json", '{"kind":"hook_trace_event","hook_name":"post_tool","event":{"event_id":"event-1","session_id":"s1","topic_id":"fqhe","event_type":"tool_run_recorded","risk_level":"guided","payload":{},"kind":"trace_event"},"exit_code":0,"summary_inputs_trusted":false}']
     if template.startswith("legacy migrate"):

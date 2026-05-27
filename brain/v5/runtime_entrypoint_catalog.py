@@ -72,6 +72,16 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_build_interaction_recording_worklist",
         "surface": "interaction_recording_worklist",
     },
+    "suggest_literature_intake": {
+        "cli": "aitp-v5 literature suggest-intake <args>",
+        "mcp": "aitp_v5_suggest_literature_intake",
+        "surface": "literature_intake_suggestion",
+    },
+    "record_literature_candidate": {
+        "cli": "aitp-v5 literature record-candidate <args>",
+        "mcp": "aitp_v5_record_literature_candidate",
+        "surface": "literature_intake_record_result",
+    },
     "record_code_state": {
         "cli": "aitp-v5 code state record <args>",
         "mcp": "aitp_v5_record_code_state",

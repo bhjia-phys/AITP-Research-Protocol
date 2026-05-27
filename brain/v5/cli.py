@@ -19,6 +19,7 @@ from brain.v5.evidence import record_evidence
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
 from brain.v5.cli_legacy import add_legacy_parser, dispatch_legacy_command
 from brain.v5.cli_interaction import add_interaction_parser, dispatch_interaction_command
+from brain.v5.cli_literature import add_literature_parser, dispatch_literature_command
 from brain.v5.models import TrustUpdateRequest
 from brain.v5.cli_policy import add_policy_parser, dispatch_policy_command
 from brain.v5.cli_validation import add_validation_parser, dispatch_validation_command
@@ -155,6 +156,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     add_legacy_parser(sp)
     add_interaction_parser(sp)
+    add_literature_parser(sp)
 
     add_summary_parser(sp)
     add_source_parser(sp)
@@ -325,6 +327,8 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         return dispatch_legacy_command(args, ws)
     if args.command == "interaction":
         return dispatch_interaction_command(args, ws)
+    if args.command == "literature":
+        return dispatch_literature_command(args, ws)
 
     if args.command == "summary":
         return dispatch_summary_command(args, ws)

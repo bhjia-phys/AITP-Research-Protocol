@@ -24,6 +24,8 @@ _PUBLIC_SURFACE_NAMES = (
     "interaction_recording_preview",
     "interaction_recording_worklist",
     "workspace_interaction_preview_bundle",
+    "literature_intake_record_result",
+    "literature_intake_suggestion",
     "kimi_code_hook_config",
     "kimi_code_hook_installation",
     "knowledge_connector_catalog",
@@ -115,6 +117,8 @@ _PUBLIC_SURFACE_PURPOSES = {
     "interaction_recording_preview": "read-only preview of natural conversation recording boundaries, lightweight mode, and heavier triggers",
     "interaction_recording_worklist": "orientation-only workspace worklist translating natural conversation recording boundaries into conservative kernel entrypoint templates",
     "workspace_interaction_preview_bundle": "orientation-only host startup bundle summarizing per-session natural conversation recording boundaries without updating kernel state",
+    "literature_intake_record_result": "guarded literature intake write result that records only an orientation reference location and returns non-trust-changing evidence/sensemaking candidates",
+    "literature_intake_suggestion": "read-only literature intake suggestion that proposes reference, sensemaking, and scoped evidence templates without treating summaries as evidence",
     "kimi_code_hook_config": "contracted Kimi Code TOML hook config generated from runtime hook installation metadata",
     "kimi_code_hook_installation": "contracted safe merge of AITP hooks into Kimi Code TOML config without treating config as truth",
     "knowledge_connector_catalog": "contracted catalog of knowledge connectors for notes, literature, and learning memory",
@@ -316,6 +320,10 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.interaction_preview_contracts import require_valid_interaction_recording_preview
     from brain.v5.interaction_worklist_contracts import require_valid_interaction_recording_worklist
     from brain.v5.workspace_interaction_preview_contracts import require_valid_workspace_interaction_preview_bundle
+    from brain.v5.literature_intake_contracts import (
+        require_valid_literature_intake_record_result,
+        require_valid_literature_intake_suggestion,
+    )
     from brain.v5.obsidian_view_contracts import require_valid_l2_obsidian_view_bundle
     from brain.v5.workspace_refresh_contracts import require_valid_workspace_refresh_bundle
     from brain.v5.hook_protocol_contracts import (
@@ -354,6 +362,8 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "interaction_recording_preview": require_valid_interaction_recording_preview,
         "interaction_recording_worklist": require_valid_interaction_recording_worklist,
         "workspace_interaction_preview_bundle": require_valid_workspace_interaction_preview_bundle,
+        "literature_intake_record_result": require_valid_literature_intake_record_result,
+        "literature_intake_suggestion": require_valid_literature_intake_suggestion,
         "kimi_code_hook_config": require_valid_kimi_code_hook_config,
         "kimi_code_hook_installation": require_valid_kimi_code_hook_installation,
         "knowledge_connector_catalog": require_valid_knowledge_connector_catalog,
