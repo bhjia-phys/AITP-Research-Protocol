@@ -241,6 +241,12 @@ def test_workspace_refresh_cli_compact_progress(tmp_path, capsys):
     }
     assert cli_payload["workspace_replay"]["entry_count"] == 1
     assert cli_payload["workspace_replay"]["attention_count"] == 1
+    assert cli_payload["l2_typed_graph"] == {
+        "memory_entry_count": 1,
+        "physics_object_count": 0,
+        "object_relation_count": 0,
+        "sensemaking_report_count": 0,
+    }
     assert cli_payload["workspace_interaction_preview"] == {
         "session_count": 1,
         "decision_mode_counts": {"guarded_recording": 1},

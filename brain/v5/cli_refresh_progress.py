@@ -23,6 +23,11 @@ def compact_workspace_refresh(payload: dict[str, Any]) -> dict[str, Any]:
         if isinstance(payload.get("source_reconstruction_obsidian_view"), dict)
         else {}
     )
+    l2_view = (
+        payload.get("l2_obsidian_view")
+        if isinstance(payload.get("l2_obsidian_view"), dict)
+        else {}
+    )
     interaction = (
         payload.get("workspace_interaction_preview")
         if isinstance(payload.get("workspace_interaction_preview"), dict)
@@ -63,6 +68,12 @@ def compact_workspace_refresh(payload: dict[str, Any]) -> dict[str, Any]:
             "entry_count": int(replay.get("entry_count") or 0),
             "attention_count": int(replay.get("attention_count") or 0),
             "active_session_count": int(backlog.get("active_session_count") or 0),
+        },
+        "l2_typed_graph": {
+            "memory_entry_count": int(l2_view.get("memory_entry_count") or 0),
+            "physics_object_count": int(l2_view.get("physics_object_count") or 0),
+            "object_relation_count": int(l2_view.get("object_relation_count") or 0),
+            "sensemaking_report_count": int(l2_view.get("sensemaking_report_count") or 0),
         },
         "source_reconstruction": {
             "incomplete_claim_count": int(source.get("incomplete_claim_count") or 0),
