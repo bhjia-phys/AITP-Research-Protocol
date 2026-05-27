@@ -164,6 +164,25 @@ def sample_args_for_template(template: str) -> list[str]:
             "--status",
             "planned",
         ]
+    if template.startswith("exemplar lane record"):
+        return [
+            "--topic",
+            "fqhe",
+            "--lane",
+            "toy_numeric",
+            "--title",
+            "Finite-size diagnostic exemplar",
+            "--summary",
+            "Toy numeric exemplar with explicit trust boundary.",
+            "--gate",
+            "G3_verification",
+            "--artifact-ref",
+            "test:test_v5_lane_exemplars.py",
+            "--trust-boundary",
+            "Exemplar only; not evidence.",
+            "--status",
+            "accepted",
+        ]
     if template.startswith("trace hook-event persist"):
         return ["--payload-json", '{"kind":"hook_trace_event","hook_name":"post_tool","event":{"event_id":"event-1","session_id":"s1","topic_id":"fqhe","event_type":"tool_run_recorded","risk_level":"guided","payload":{},"kind":"trace_event"},"exit_code":0,"summary_inputs_trusted":false}']
     if template.startswith("legacy migrate"):

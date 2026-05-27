@@ -102,6 +102,16 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_record_strategy_memory",
         "surface": "strategy_memory_record",
     },
+    "record_lane_exemplar": {
+        "cli": "aitp-v5 exemplar lane record <args>",
+        "mcp": "aitp_v5_record_lane_exemplar",
+        "surface": "lane_exemplar_record",
+    },
+    "lane_exemplar_manifest": {
+        "cli": "aitp-v5 exemplar lane manifest",
+        "mcp": "aitp_v5_build_lane_exemplar_manifest",
+        "surface": "lane_exemplar_manifest",
+    },
     "record_research_intent_packet": {
         "cli": "aitp-v5 intent packet record <args>",
         "mcp": "aitp_v5_record_research_intent_packet",

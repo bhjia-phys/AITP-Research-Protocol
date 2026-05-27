@@ -30,6 +30,8 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
             "kimi_code_hook_config",
             "kimi_code_hook_installation",
             "knowledge_connector_catalog",
+        "lane_exemplar_manifest",
+        "lane_exemplar_record",
         "l2_obsidian_view_bundle",
         "l2_memory_audit",
         "legacy_executable_evidence_packet",

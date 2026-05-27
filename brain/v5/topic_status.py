@@ -78,6 +78,7 @@ def _topic_state(ws: WorkspacePaths, brief: dict[str, Any]) -> dict[str, Any]:
         "final_output_profile": known_context.get("final_output_profile", {}),
         "strategy_memory": known_context.get("strategy_memory", {}),
         "run_iterations": known_context.get("run_iterations", {}),
+        "lane_exemplars": known_context.get("lane_exemplars", {}),
         "summary_inputs_trusted": False,
         "can_update_claim_trust": False,
     }

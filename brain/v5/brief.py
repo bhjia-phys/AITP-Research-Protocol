@@ -10,6 +10,7 @@ from brain.v5.evidence import list_evidence_for_claim, required_output_coverage
 from brain.v5.flow import resolve_flow_profile
 from brain.v5.interaction import prioritize_questions, resolve_interaction_profile
 from brain.v5.knowledge_connectors import suggest_knowledge_connectors_for_claim
+from brain.v5.lane_exemplars import load_lane_exemplars
 from brain.v5.models import ClaimRecord, CodeStateRecord, ToolRunRecord
 from brain.v5.memory import list_memory_entries_for_claim, memory_entry_brief_payload
 from brain.v5.operator_checkpoint import load_operator_checkpoint
@@ -47,6 +48,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
     operator_checkpoint = load_operator_checkpoint(ws, session.topic_id)
     strategy_memory = load_strategy_memory(ws, session.topic_id)
     run_iterations = load_run_iterations(ws, session.topic_id)
+    lane_exemplars = load_lane_exemplars(ws, session.topic_id)
 
     if session.active_claim:
         claim = get_claim(ws, session.active_claim)
@@ -211,6 +213,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
             "operator_checkpoint": operator_checkpoint,
             "strategy_memory": strategy_memory,
             "run_iterations": run_iterations,
+            "lane_exemplars": lane_exemplars,
             "object_relations": object_relations,
             "memory_entries": memory_entries,
         },

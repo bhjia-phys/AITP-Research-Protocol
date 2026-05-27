@@ -30,6 +30,8 @@ _PUBLIC_SURFACE_NAMES = (
     "kimi_code_hook_config",
     "kimi_code_hook_installation",
     "knowledge_connector_catalog",
+    "lane_exemplar_manifest",
+    "lane_exemplar_record",
     "l2_obsidian_view_bundle",
     "l2_memory_audit",
     "legacy_executable_evidence_packet",
@@ -130,6 +132,8 @@ _PUBLIC_SURFACE_PURPOSES = {
     "kimi_code_hook_config": "contracted Kimi Code TOML hook config generated from runtime hook installation metadata",
     "kimi_code_hook_installation": "contracted safe merge of AITP hooks into Kimi Code TOML config without treating config as truth",
     "knowledge_connector_catalog": "contracted catalog of knowledge connectors for notes, literature, and learning memory",
+    "lane_exemplar_manifest": "orientation-only vNext Phase 5 lane exemplar closure manifest that cannot update claim trust",
+    "lane_exemplar_record": "contracted vNext lane-specific exemplar record for workflow closure, not evidence or promotion",
     "l2_obsidian_view_bundle": "orientation-only Obsidian Markdown view over typed L2 memory entries",
     "l2_memory_audit": "read-only typed-record audit of L2 memory provenance for one claim",
     "legacy_executable_evidence_packet": "read-only packet grouping validation and tool-run evidence actions that block legacy semantic review pass without changing claim trust",
@@ -347,6 +351,10 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_literature_intake_record_result,
         require_valid_literature_intake_suggestion,
     )
+    from brain.v5.lane_exemplar_contracts import (
+        require_valid_lane_exemplar_manifest,
+        require_valid_lane_exemplar_record,
+    )
     from brain.v5.obsidian_view_contracts import require_valid_l2_obsidian_view_bundle
     from brain.v5.workspace_refresh_contracts import require_valid_workspace_refresh_bundle
     from brain.v5.hook_protocol_contracts import (
@@ -391,6 +399,8 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "kimi_code_hook_config": require_valid_kimi_code_hook_config,
         "kimi_code_hook_installation": require_valid_kimi_code_hook_installation,
         "knowledge_connector_catalog": require_valid_knowledge_connector_catalog,
+        "lane_exemplar_manifest": require_valid_lane_exemplar_manifest,
+        "lane_exemplar_record": require_valid_lane_exemplar_record,
         "l2_obsidian_view_bundle": require_valid_l2_obsidian_view_bundle,
         "l2_memory_audit": require_valid_l2_memory_audit,
         "legacy_executable_evidence_packet": require_valid_legacy_executable_evidence_packet,
