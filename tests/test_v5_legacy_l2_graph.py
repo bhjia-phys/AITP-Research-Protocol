@@ -225,3 +225,64 @@ def test_legacy_l2_typed_migration_packet_cli_mcp_and_runtime_surface(tmp_path, 
         "mcp": "aitp_v5_build_legacy_l2_typed_migration_packet",
         "surface": "legacy_l2_typed_migration_packet",
     }
+
+
+def test_legacy_l2_typed_migration_packet_cli_compact_progress(tmp_path, capsys):
+    from brain.v5.cli import main
+
+    l2 = _write_legacy_l2(tmp_path)
+    for index in range(2, 121):
+        (l2 / "graph" / "steps" / f"s{index:03d}.md").write_text(
+            f"# Step {index}\n",
+            encoding="utf-8",
+        )
+
+    assert main([
+        "--base",
+        str(tmp_path),
+        "legacy",
+        "l2-typed-migration-packet",
+        "--legacy-l2-dir",
+        str(l2),
+        "--compact",
+    ]) == 0
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["kind"] == "legacy_l2_typed_migration_packet_progress"
+    assert payload["source_surface"] == "legacy_l2_typed_migration_packet"
+    assert payload["legacy_l2_dir"] == str(l2)
+    assert payload["typed_migration_status"] == "needs_review"
+    assert payload["work_item_count"] == 125
+    assert payload["work_item_counts_by_kind"] == {
+        "entry": 2,
+        "graph_edge": 1,
+        "graph_node": 1,
+        "graph_step": 120,
+        "graph_tower": 1,
+    }
+    assert payload["review_group_counts"] == {
+        "memory_entry_record": 3,
+        "object_relation_record": 1,
+        "physics_object_record": 1,
+        "sensemaking_report_record": 120,
+    }
+    assert payload["next_action_count"] == 7
+    assert payload["next_action_refs"] == [
+        "review_legacy_l2_memory_entry_candidates",
+        "review_legacy_l2_graph_nodes_for_physics_objects",
+        "review_legacy_l2_graph_edges_for_object_relations",
+        "review_legacy_l2_steps_for_sensemaking_reports",
+        "review_legacy_l2_towers_for_memory_entries",
+    ]
+    assert payload["top_review_group_surfaces"] == [
+        "memory_entry_record",
+        "object_relation_record",
+        "physics_object_record",
+        "sensemaking_report_record",
+    ]
+    assert payload["semantic_lossless_proven"] is False
+    assert payload["truth_source"] == "legacy_l2_filesystem"
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["can_update_claim_trust"] is False
