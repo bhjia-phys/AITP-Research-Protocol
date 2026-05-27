@@ -18,6 +18,11 @@ def compact_workspace_refresh(payload: dict[str, Any]) -> dict[str, Any]:
         if isinstance(backlog.get("source_reconstruction"), dict)
         else {}
     )
+    source_review = (
+        payload.get("source_reconstruction_obsidian_view")
+        if isinstance(payload.get("source_reconstruction_obsidian_view"), dict)
+        else {}
+    )
     interaction = (
         payload.get("workspace_interaction_preview")
         if isinstance(payload.get("workspace_interaction_preview"), dict)
@@ -61,6 +66,12 @@ def compact_workspace_refresh(payload: dict[str, Any]) -> dict[str, Any]:
                 ]
                 if claim_id
             ],
+        },
+        "source_reconstruction_review": {
+            "claim_count": int(source_review.get("claim_count") or 0),
+            "incomplete_claim_count": int(source_review.get("incomplete_claim_count") or 0),
+            "review_progress": dict(source_review.get("review_progress") or {}),
+            "next_action_count": len(source_review.get("next_actions") or []),
         },
         "workspace_interaction_preview": {
             "session_count": int(interaction.get("session_count") or 0),

@@ -229,6 +229,17 @@ def test_workspace_refresh_cli_compact_progress(tmp_path, capsys):
         "decision_mode_counts": {"guarded_recording": 1},
     }
     assert cli_payload["source_reconstruction"]["incomplete_claim_count"] == 1
+    assert cli_payload["source_reconstruction_review"] == {
+        "claim_count": 1,
+        "incomplete_claim_count": 1,
+        "review_progress": {
+            "passed": 0,
+            "needs_revision": 0,
+            "inconclusive": 0,
+            "pending": 1,
+        },
+        "next_action_count": 1,
+    }
     assert cli_payload["can_update_claim_trust"] is False
     assert "l2_obsidian_view" not in cli_payload
     assert "items" not in cli_payload
@@ -385,6 +396,9 @@ def test_workspace_refresh_cli_compact_progress_accepts_migration_dir(tmp_path, 
 
     assert cli_payload["refreshed_surface_count"] == 7
     assert cli_payload["legacy_semantic_review"]["work_item_count"] == 1
+    assert cli_payload["source_reconstruction_review"]["claim_count"] == 2
+    assert cli_payload["source_reconstruction_review"]["incomplete_claim_count"] == 2
+    assert cli_payload["source_reconstruction_review"]["review_progress"]["pending"] == 2
     assert cli_payload["legacy_semantic_review"]["semantic_lossless_proven"] is False
     assert cli_payload["legacy_human_checkpoints"]["open_decision_count"] == 0
     assert cli_payload["can_update_kernel_state"] is False
