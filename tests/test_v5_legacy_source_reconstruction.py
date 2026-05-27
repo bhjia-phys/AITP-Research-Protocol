@@ -312,6 +312,44 @@ def test_legacy_source_reconstruction_obsidian_view_writes_worklist(tmp_path):
     assert "cannot update claim trust" in worklist
 
 
+def test_legacy_source_reconstruction_obsidian_view_cli_compact_progress(tmp_path, capsys):
+    from brain.v5.cli import main
+
+    ws, run, _review, _candidate, _derivation = _seed_reviewed_legacy_topic(tmp_path)
+
+    assert main([
+        "--base",
+        str(ws.base),
+        "legacy",
+        "source-reconstruction-obsidian-view",
+        "--migration-dir",
+        str(run),
+        "--compact",
+    ]) == 0
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["kind"] == "legacy_source_reconstruction_obsidian_view_bundle_progress"
+    assert payload["source_surface"] == "legacy_source_reconstruction_obsidian_view_bundle"
+    assert payload["migration_dir"] == str(run)
+    assert payload["work_item_count"] == 1
+    assert payload["proposed_repair_count"] == 1
+    assert payload["repair_status_counts"]["proposed_repairs"] == 1
+    assert payload["missing_component_counts"]["reconstruction_path"] == 1
+    assert payload["required_action_counts"]["apply_selected_source_reconstruction_repair_with_latest_review_id"] == 1
+    assert payload["next_action_count"] == 1
+    assert payload["view_file_count"] == 1
+    assert payload["view_files"] == [
+        str(ws.root / "surfaces" / "legacy_source_reconstruction" / "Legacy Source Reconstruction Worklist.md")
+    ]
+    assert payload["semantic_lossless_proven"] is False
+    assert payload["semantic_review_required"] is True
+    assert payload["truth_source"] is False
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["can_update_claim_trust"] is False
+
+
 def test_legacy_source_reconstruction_review_packet_carries_legacy_refs(tmp_path):
     from brain.v5.legacy_source_reconstruction import build_legacy_source_reconstruction_review_packet
     from brain.v5.public_surfaces import require_valid_public_surface

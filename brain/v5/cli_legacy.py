@@ -32,6 +32,7 @@ from brain.v5.cli_legacy_progress import (
     compact_legacy_semantic_review_worklist,
     compact_legacy_source_metadata_repair_packet,
     compact_legacy_source_reconstruction_manifest,
+    compact_legacy_source_reconstruction_obsidian_view_bundle,
     compact_legacy_source_reconstruction_review_packet,
 )
 from brain.v5.cli_legacy_l2_progress import (
@@ -114,6 +115,7 @@ def add_legacy_parser(subparsers) -> None:
     source_obsidian = legacy_subparsers.add_parser("source-reconstruction-obsidian-view")
     source_obsidian.add_argument("--migration-dir", required=True)
     source_obsidian.add_argument("--output-dir", default="")
+    source_obsidian.add_argument("--compact", "--progress", action="store_true", dest="compact")
     source_review = legacy_subparsers.add_parser("source-reconstruction-review")
     source_review.add_argument("--migration-dir", required=True)
     source_review.add_argument("--topic", required=True)
@@ -266,7 +268,10 @@ def dispatch_legacy_command(args, ws) -> dict:
             migration_dir=args.migration_dir,
             output_dir=args.output_dir,
         )
-        return {"ok": True, **require_valid_public_surface("legacy_source_reconstruction_obsidian_view_bundle", bundle)}
+        payload = {"ok": True, **require_valid_public_surface("legacy_source_reconstruction_obsidian_view_bundle", bundle)}
+        if getattr(args, "compact", False):
+            return compact_legacy_source_reconstruction_obsidian_view_bundle(payload)
+        return payload
     if args.legacy_command == "source-reconstruction-review":
         packet = build_legacy_source_reconstruction_review_packet(ws, migration_dir=args.migration_dir, topic=args.topic)
         payload = {"ok": True, **require_valid_public_surface("legacy_source_reconstruction_review_packet", packet)}
