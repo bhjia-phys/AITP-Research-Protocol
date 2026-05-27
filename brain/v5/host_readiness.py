@@ -127,6 +127,7 @@ def audit_priority_host_production_loops(
     check_installation: bool = True,
     session_id: str = "",
     run_session_start_smoke: bool = False,
+    run_lifecycle_smoke: bool = False,
 ) -> dict[str, Any]:
     """Run readiness audits for priority hosts as one production-loop packet."""
 
@@ -143,7 +144,17 @@ def audit_priority_host_production_loops(
         )
         for runtime in _PRIORITY_HOST_ORDER
     ]
-    items = [_production_item(audit) for audit in audits]
+    lifecycle_audits = {
+        runtime: audit_runtime_host_lifecycle(
+            ws,
+            runtime=runtime,
+            command=command,
+            args=version_args,
+            timeout_seconds=timeout_seconds,
+        )
+        for runtime in _PRIORITY_HOST_ORDER
+    } if run_lifecycle_smoke else {}
+    items = [_production_item(audit, lifecycle=lifecycle_audits.get(audit["runtime"])) for audit in audits]
     return {
         "kind": "runtime_host_production_loop_audit",
         "runtimes": list(_PRIORITY_HOST_ORDER),
@@ -151,6 +162,12 @@ def audit_priority_host_production_loops(
         "deferred_hosts": ["opencode"],
         "runtime_count": len(items),
         "ready_count": sum(1 for item in items if item["process_ok"]),
+        "lifecycle_smoke_ran": run_lifecycle_smoke,
+        "lifecycle_status_counts": _counts(
+            item["lifecycle_smoke_status"]
+            for item in items
+            if item["lifecycle_smoke_ran"]
+        ),
         "status_counts": _counts(item["status"] for item in items),
         "next_action_counts": _counts(action for item in items for action in item["next_actions"]),
         "items": items,
@@ -162,11 +179,17 @@ def audit_priority_host_production_loops(
     }
 
 
-def _production_item(audit: dict[str, Any]) -> dict[str, Any]:
+def _production_item(audit: dict[str, Any], *, lifecycle: dict[str, Any] | None = None) -> dict[str, Any]:
     loop = audit.get("production_loop") if isinstance(audit.get("production_loop"), dict) else {}
     process = audit.get("process") if isinstance(audit.get("process"), dict) else {}
     install = audit.get("installation_audit") if isinstance(audit.get("installation_audit"), dict) else {}
     session_start = audit.get("session_start_smoke") if isinstance(audit.get("session_start_smoke"), dict) else {}
+    lifecycle_process = lifecycle.get("process") if isinstance(lifecycle, dict) else {}
+    lifecycle_trace = lifecycle.get("trace") if isinstance(lifecycle, dict) else {}
+    lifecycle_hook = lifecycle.get("hook_output") if isinstance(lifecycle, dict) else {}
+    next_actions = list(loop.get("next_actions") or [])
+    if _lifecycle_probe_observed(lifecycle):
+        next_actions = [action for action in next_actions if action != "run_runtime_host_lifecycle_probe"]
     return {
         "runtime": str(audit.get("runtime") or ""),
         "status": str(audit.get("status") or ""),
@@ -180,7 +203,12 @@ def _production_item(audit: dict[str, Any]) -> dict[str, Any]:
         "session_start_smoke_ran": bool(session_start.get("ran")),
         "session_start_smoke_ok": bool(session_start.get("ok")),
         "lifecycle_probe_command": str(loop.get("lifecycle_probe_command") or ""),
-        "next_actions": list(loop.get("next_actions") or []),
+        "lifecycle_smoke_ran": isinstance(lifecycle, dict),
+        "lifecycle_smoke_status": str(lifecycle.get("status") or "not_run") if isinstance(lifecycle, dict) else "not_run",
+        "lifecycle_process_ok": bool(lifecycle_process.get("ok")),
+        "lifecycle_trace_delta_count": int(lifecycle_trace.get("delta_count") or 0),
+        "lifecycle_hook_output_observed": bool(lifecycle_hook.get("observed")),
+        "next_actions": next_actions,
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }
@@ -377,6 +405,12 @@ def _lifecycle_status(process: dict[str, Any], *, trace_delta: int, hook_observe
     if hook_observed:
         return "hook_output_observed"
     return "process_ready_no_lifecycle_event_observed"
+
+
+def _lifecycle_probe_observed(lifecycle: dict[str, Any] | None) -> bool:
+    if not isinstance(lifecycle, dict):
+        return False
+    return lifecycle.get("status") in {"lifecycle_observed", "trace_delta_observed", "hook_output_observed"}
 
 
 def _hook_output_payload(process: dict[str, Any]) -> dict[str, Any]:

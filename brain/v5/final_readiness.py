@@ -102,6 +102,8 @@ def _host_payload(host_smoke: dict[str, Any]) -> dict[str, Any]:
         "production_loop_surface": "runtime_host_readiness_audit",
         "priority_host_batch_surface": "runtime_host_production_loop_audit",
         "priority_host_batch_cli": "aitp-v5 adapter host-production-loop",
+        "priority_host_lifecycle_smoke_cli": "aitp-v5 adapter host-production-loop --run-lifecycle-smoke",
+        "priority_host_lifecycle_smoke_supported": True,
         "priority_host_production_loops": [_host_production_loop(runtime) for runtime in _PRIORITY_HOSTS],
         "residual_lifecycle_gap": _unique(
             gap
@@ -123,6 +125,8 @@ def _host_production_loop(runtime: str) -> dict[str, Any]:
         "runtime": runtime,
         "readiness_cli": readiness_cli,
         "lifecycle_cli": f"aitp-v5 adapter host-lifecycle {cli_runtime}",
+        "batch_lifecycle_smoke_cli": "aitp-v5 adapter host-production-loop --run-lifecycle-smoke",
+        "batch_lifecycle_smoke_supported": True,
         "session_start_smoke_supported": session_start_supported,
         "can_update_claim_trust": False,
     }

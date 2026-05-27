@@ -120,6 +120,11 @@ def validate_final_engineering_readiness_audit(
                 f"{path}.kernel_capabilities.host_integration.production_loop_surface",
                 "must be runtime_host_readiness_audit",
             )
+        if host.get("priority_host_lifecycle_smoke_supported") is not True:
+            result.add(
+                f"{path}.kernel_capabilities.host_integration.priority_host_lifecycle_smoke_supported",
+                "must be true",
+            )
         _require_list(
             host.get("priority_host_production_loops"),
             f"{path}.kernel_capabilities.host_integration.priority_host_production_loops",
@@ -384,9 +389,11 @@ def _validate_host_production_loop(payload: Any, path: str, result: ContractResu
     if not isinstance(payload, dict):
         result.add(path, "must be a mapping")
         return
-    for key in ("runtime", "readiness_cli", "lifecycle_cli"):
+    for key in ("runtime", "readiness_cli", "lifecycle_cli", "batch_lifecycle_smoke_cli"):
         _require_nonempty_str(payload, key, path, result)
     if not isinstance(payload.get("session_start_smoke_supported"), bool):
         result.add(f"{path}.session_start_smoke_supported", "must be a bool")
+    if payload.get("batch_lifecycle_smoke_supported") is not True:
+        result.add(f"{path}.batch_lifecycle_smoke_supported", "must be true")
     if payload.get("can_update_claim_trust") is not False:
         result.add(f"{path}.can_update_claim_trust", "must be false")

@@ -51,6 +51,7 @@ def add_adapter_parser(sp) -> None:
     ahp = aps.add_parser("host-production-loop"); ahp.add_argument("--session", default="", dest="session_id")
     ahp.add_argument("--command", default="", dest="host_command"); ahp.add_argument("--arg", action="append", default=[], dest="version_args"); ahp.add_argument("--timeout", type=int, default=20)
     ahp.add_argument("--skip-install-audit", action="store_true"); ahp.add_argument("--run-session-start-smoke", action="store_true")
+    ahp.add_argument("--run-lifecycle-smoke", action="store_true")
     ahl = aps.add_parser("host-lifecycle"); ahl.add_argument("runtime")
     ahl.add_argument("--command", default="", dest="host_command"); ahl.add_argument("--arg", action="append", default=[], dest="host_args"); ahl.add_argument("--timeout", type=int, default=60)
     afr = aps.add_parser("final-readiness"); afr.add_argument("--migration-dir", default="")
@@ -159,6 +160,7 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
                     check_installation=not args.skip_install_audit,
                     session_id=args.session_id,
                     run_session_start_smoke=args.run_session_start_smoke,
+                    run_lifecycle_smoke=args.run_lifecycle_smoke,
                 ),
             ),
         }

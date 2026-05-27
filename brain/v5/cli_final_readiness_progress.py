@@ -133,6 +133,9 @@ def compact_final_readiness(payload: dict[str, Any]) -> dict[str, Any]:
             "deferred_hosts": _limited_strings(host.get("deferred_hosts"), limit=10),
             "priority_host_batch_surface": str(host.get("priority_host_batch_surface") or ""),
             "priority_host_batch_cli": str(host.get("priority_host_batch_cli") or ""),
+            "priority_host_lifecycle_smoke_supported": bool(
+                host.get("priority_host_lifecycle_smoke_supported", False)
+            ),
             "priority_host_loop_count": len(host.get("priority_host_production_loops") or []),
         },
         "backlog_refs": list(payload.get("backlog_refs") or []),

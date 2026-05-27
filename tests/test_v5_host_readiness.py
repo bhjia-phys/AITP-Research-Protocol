@@ -191,6 +191,61 @@ def test_priority_host_production_loop_exposes_session_start_smoke_results(tmp_p
     assert validated["can_update_claim_trust"] is False
 
 
+def test_priority_host_production_loop_can_run_lifecycle_smoke(tmp_path):
+    from brain.v5.host_readiness import audit_priority_host_production_loops
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.trace import hook_trace_event_path
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    script = tmp_path / "emit_hook_signal.py"
+    script.write_text(
+        "\n".join(
+            [
+                "import json",
+                "import sys",
+                "from pathlib import Path",
+                "trace_path = Path(sys.argv[1])",
+                "trace_path.parent.mkdir(parents=True, exist_ok=True)",
+                "event_id = f'event-{len(trace_path.read_text(encoding=\"utf-8\").splitlines()) if trace_path.exists() else 0}'",
+                "event = {",
+                "  'event_id': event_id,",
+                "  'session_id': 's1',",
+                "  'topic_id': 'fqhe',",
+                "  'event_type': 'tool_run_recorded',",
+                "  'risk_level': 'guided',",
+                "  'payload': {},",
+                "  'timestamp': '',",
+                "  'kind': 'trace_event',",
+                "}",
+                "with trace_path.open('a', encoding='utf-8') as handle:",
+                "    handle.write(json.dumps(event, sort_keys=True) + '\\n')",
+                "print(json.dumps({'aitp': {'kind': 'hook_trace_event_record'}}))",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    payload = audit_priority_host_production_loops(
+        ws,
+        command=sys.executable,
+        version_args=[str(script), str(hook_trace_event_path(ws))],
+        check_installation=False,
+        run_lifecycle_smoke=True,
+        timeout_seconds=10,
+    )
+    validated = require_valid_public_surface("runtime_host_production_loop_audit", payload)
+
+    assert validated["lifecycle_smoke_ran"] is True
+    assert validated["lifecycle_status_counts"] == {"lifecycle_observed": 3}
+    assert "run_runtime_host_lifecycle_probe" not in validated["next_action_counts"]
+    assert all(item["lifecycle_smoke_ran"] is True for item in validated["items"])
+    assert all(item["lifecycle_smoke_status"] == "lifecycle_observed" for item in validated["items"])
+    assert all(item["lifecycle_trace_delta_count"] == 1 for item in validated["items"])
+    assert all(item["lifecycle_hook_output_observed"] is True for item in validated["items"])
+    assert validated["can_update_claim_trust"] is False
+
+
 def test_priority_host_production_loop_cli_mcp_and_runtime(tmp_path, capsys):
     from brain.v5.cli import main
     from brain.v5.mcp_tools import aitp_v5_audit_priority_host_production_loops
@@ -223,6 +278,38 @@ def test_priority_host_production_loop_cli_mcp_and_runtime(tmp_path, capsys):
         "mcp": "aitp_v5_audit_priority_host_production_loops",
         "surface": "runtime_host_production_loop_audit",
     }
+
+
+def test_priority_host_production_loop_cli_mcp_can_run_lifecycle_smoke(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.mcp_tools import aitp_v5_audit_priority_host_production_loops
+
+    assert main([
+        "--base",
+        str(tmp_path),
+        "adapter",
+        "host-production-loop",
+        "--command",
+        sys.executable,
+        "--arg=--version",
+        "--skip-install-audit",
+        "--run-lifecycle-smoke",
+    ]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_audit_priority_host_production_loops(
+        str(tmp_path),
+        command=sys.executable,
+        version_args=["--version"],
+        check_installation=False,
+        run_lifecycle_smoke=True,
+    )
+
+    assert cli_payload["lifecycle_smoke_ran"] is True
+    assert mcp_payload["lifecycle_smoke_ran"] is True
+    assert cli_payload["lifecycle_status_counts"] == {"process_ready_no_lifecycle_event_observed": 3}
+    assert mcp_payload["lifecycle_status_counts"] == {"process_ready_no_lifecycle_event_observed": 3}
+    assert all(item["lifecycle_smoke_ran"] is True for item in cli_payload["items"])
+    assert all(item["lifecycle_smoke_status"] for item in mcp_payload["items"])
 
 
 def test_runtime_host_lifecycle_probe_detects_trace_delta_and_hook_output(tmp_path):

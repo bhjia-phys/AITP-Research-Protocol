@@ -65,8 +65,10 @@ def validate_runtime_host_production_loop_audit(
     for key in ("runtime_count", "ready_count"):
         if not isinstance(payload.get(key), int) or payload[key] < 0:
             result.add(f"{path}.{key}", "must be a non-negative integer")
-    for key in ("status_counts", "next_action_counts"):
+    for key in ("status_counts", "next_action_counts", "lifecycle_status_counts"):
         _require_mapping(payload.get(key), f"{path}.{key}", result)
+    if not isinstance(payload.get("lifecycle_smoke_ran"), bool):
+        result.add(f"{path}.lifecycle_smoke_ran", "must be a bool")
     if isinstance(payload.get("items"), list):
         for index, item in enumerate(payload["items"]):
             _validate_production_item(item, f"{path}.items[{index}]", result)
@@ -160,11 +162,18 @@ def _validate_production_item(payload: Any, path: str, result: ContractResult) -
         "session_start_smoke_available",
         "session_start_smoke_ran",
         "session_start_smoke_ok",
+        "lifecycle_smoke_ran",
+        "lifecycle_process_ok",
+        "lifecycle_hook_output_observed",
         "can_update_kernel_state",
         "can_update_claim_trust",
     ):
         if not isinstance(payload.get(key), bool):
             result.add(f"{path}.{key}", "must be a bool")
+    if not isinstance(payload.get("lifecycle_smoke_status"), str):
+        result.add(f"{path}.lifecycle_smoke_status", "must be a string")
+    if not isinstance(payload.get("lifecycle_trace_delta_count"), int) or payload["lifecycle_trace_delta_count"] < 0:
+        result.add(f"{path}.lifecycle_trace_delta_count", "must be a non-negative integer")
     if not isinstance(payload.get("command_path"), str):
         result.add(f"{path}.command_path", "must be a string")
     _require_list(payload.get("next_actions"), f"{path}.next_actions", result)

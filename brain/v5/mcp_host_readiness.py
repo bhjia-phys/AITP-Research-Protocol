@@ -70,6 +70,7 @@ def aitp_v5_audit_priority_host_production_loops(
     check_installation: bool = True,
     session_id: str = "",
     run_session_start_smoke: bool = False,
+    run_lifecycle_smoke: bool = False,
 ) -> dict:
     return require_valid_public_surface(
         "runtime_host_production_loop_audit",
@@ -81,5 +82,6 @@ def aitp_v5_audit_priority_host_production_loops(
             check_installation=check_installation,
             session_id=session_id,
             run_session_start_smoke=run_session_start_smoke,
+            run_lifecycle_smoke=run_lifecycle_smoke,
         ),
     )

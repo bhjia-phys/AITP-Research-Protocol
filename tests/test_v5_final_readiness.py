@@ -233,11 +233,17 @@ def test_final_readiness_audit_keeps_kernel_capability_separate_from_content_bac
     assert payload["kernel_capabilities"]["host_integration"]["priority_host_batch_cli"] == (
         "aitp-v5 adapter host-production-loop"
     )
+    assert payload["kernel_capabilities"]["host_integration"]["priority_host_lifecycle_smoke_cli"] == (
+        "aitp-v5 adapter host-production-loop --run-lifecycle-smoke"
+    )
+    assert payload["kernel_capabilities"]["host_integration"]["priority_host_lifecycle_smoke_supported"] is True
     assert payload["kernel_capabilities"]["host_integration"]["priority_host_production_loops"] == [
         {
             "runtime": "codex",
             "readiness_cli": "aitp-v5 adapter host-readiness codex",
             "lifecycle_cli": "aitp-v5 adapter host-lifecycle codex",
+            "batch_lifecycle_smoke_cli": "aitp-v5 adapter host-production-loop --run-lifecycle-smoke",
+            "batch_lifecycle_smoke_supported": True,
             "session_start_smoke_supported": False,
             "can_update_claim_trust": False,
         },
@@ -245,6 +251,8 @@ def test_final_readiness_audit_keeps_kernel_capability_separate_from_content_bac
             "runtime": "claude_code",
             "readiness_cli": "aitp-v5 adapter host-readiness claude-code --run-session-start-smoke --session <session-id>",
             "lifecycle_cli": "aitp-v5 adapter host-lifecycle claude-code",
+            "batch_lifecycle_smoke_cli": "aitp-v5 adapter host-production-loop --run-lifecycle-smoke",
+            "batch_lifecycle_smoke_supported": True,
             "session_start_smoke_supported": True,
             "can_update_claim_trust": False,
         },
@@ -252,6 +260,8 @@ def test_final_readiness_audit_keeps_kernel_capability_separate_from_content_bac
             "runtime": "kimi_code",
             "readiness_cli": "aitp-v5 adapter host-readiness kimi-code --run-session-start-smoke --session <session-id>",
             "lifecycle_cli": "aitp-v5 adapter host-lifecycle kimi-code",
+            "batch_lifecycle_smoke_cli": "aitp-v5 adapter host-production-loop --run-lifecycle-smoke",
+            "batch_lifecycle_smoke_supported": True,
             "session_start_smoke_supported": True,
             "can_update_claim_trust": False,
         },
@@ -636,6 +646,7 @@ def test_final_readiness_cli_compact_progress(tmp_path, capsys):
         "deferred_hosts": ["opencode"],
         "priority_host_batch_surface": "runtime_host_production_loop_audit",
         "priority_host_batch_cli": "aitp-v5 adapter host-production-loop",
+        "priority_host_lifecycle_smoke_supported": True,
         "priority_host_loop_count": 3,
     }
     assert cli_payload["can_update_claim_trust"] is False
