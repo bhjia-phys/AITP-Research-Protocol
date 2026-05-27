@@ -2588,6 +2588,145 @@ def test_legacy_human_checkpoint_packet_cli_compact_progress(tmp_path, capsys):
     assert payload["can_update_claim_trust"] is False
 
 
+def test_legacy_human_checkpoint_obsidian_view_writes_decision_worklist(tmp_path):
+    from brain.v5.checkpoints import request_human_checkpoint
+    from brain.v5.legacy_human_checkpoint_obsidian import write_legacy_human_checkpoint_obsidian_view
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.markdown import read_md
+    from brain.v5.models import ClaimRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="A reviewed legacy claim still needs a human checkpoint.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Human checkpoint required.",
+        ),
+    )
+    write_record(
+        ws.registry_dir("claims") / "claim-l2.md",
+        ClaimRecord(
+            claim_id="claim-l2",
+            topic_id="legacy-l2",
+            statement="A second legacy claim still needs a checkpoint request.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Human checkpoint request required.",
+        ),
+    )
+    record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="Only a human semantic review promotion decision remains.",
+        active_claim_id="claim-canonical",
+        reviewed_typed_refs=["claim-canonical"],
+        remaining_actions=["decide_human_checkpoint_before_promotion"],
+    )
+    record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="legacy-l2",
+        status="inconclusive",
+        summary="A human semantic review promotion decision must be requested.",
+        active_claim_id="claim-l2",
+        reviewed_typed_refs=["claim-l2"],
+        remaining_actions=["decide_human_checkpoint_before_promotion"],
+    )
+    checkpoint = request_human_checkpoint(
+        ws,
+        topic_id="canonical-topic",
+        claim_id="claim-canonical",
+        reason="legacy semantic review promotion decision",
+        requested_by="legacy_semantic_review",
+        options=["approve_semantic_review", "keep_backlog_blocking"],
+    )
+
+    payload = write_legacy_human_checkpoint_obsidian_view(ws, migration_dir=run)
+
+    assert require_valid_public_surface("legacy_human_checkpoint_obsidian_view_bundle", payload) == payload
+    assert payload["kind"] == "legacy_human_checkpoint_obsidian_view_bundle"
+    assert payload["checkpoint_item_count"] == 2
+    assert payload["open_decision_count"] == 1
+    assert payload["pending_request_count"] == 1
+    assert payload["source_records"]["checkpoint_ids"] == [checkpoint.checkpoint_id]
+    assert payload["orientation_only"] is True
+    assert payload["can_update_claim_trust"] is False
+    frontmatter, body = read_md(payload["files"]["checkpoint_worklist"])
+    assert frontmatter["view_role"] == "legacy_human_checkpoint_worklist"
+    assert frontmatter["truth_source"] is False
+    assert "canonical-topic" in body
+    assert "legacy-l2" in body
+    assert "decide_open_checkpoint" in body
+    assert "request_checkpoint" in body
+    assert "approve_semantic_review" in body
+    assert "Use typed checkpoint records for decisions" in body
+
+
+def test_legacy_human_checkpoint_obsidian_view_cli_mcp_and_runtime_surface(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.mcp_tools import aitp_v5_write_legacy_human_checkpoint_obsidian_view
+    from brain.v5.models import ClaimRecord
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+    import json
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="The human checkpoint Obsidian view should be host-callable.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Human checkpoint required.",
+        ),
+    )
+    record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="A human checkpoint request remains.",
+        active_claim_id="claim-canonical",
+        reviewed_typed_refs=["claim-canonical"],
+        remaining_actions=["decide_human_checkpoint_before_promotion"],
+    )
+
+    assert main([
+        "--base",
+        str(base),
+        "legacy",
+        "human-checkpoint-obsidian-view",
+        "--migration-dir",
+        str(run),
+    ]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_write_legacy_human_checkpoint_obsidian_view(str(base), migration_dir=str(run))
+
+    assert cli_payload["kind"] == "legacy_human_checkpoint_obsidian_view_bundle"
+    assert mcp_payload["kind"] == "legacy_human_checkpoint_obsidian_view_bundle"
+    assert runtime_entrypoints()["legacy_human_checkpoint_obsidian_view"] == {
+        "cli": "aitp-v5 legacy human-checkpoint-obsidian-view <args>",
+        "mcp": "aitp_v5_write_legacy_human_checkpoint_obsidian_view",
+        "surface": "legacy_human_checkpoint_obsidian_view_bundle",
+    }
+
+
 def test_legacy_semantic_review_worklist_maps_l2_typed_review_actions(tmp_path):
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
     from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist

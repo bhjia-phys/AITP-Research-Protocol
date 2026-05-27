@@ -28,6 +28,7 @@ _PUBLIC_SURFACE_NAMES = (
     "l2_obsidian_view_bundle",
     "l2_memory_audit",
     "legacy_executable_evidence_packet",
+    "legacy_human_checkpoint_obsidian_view_bundle",
     "legacy_human_checkpoint_packet",
     "legacy_l2_graph_manifest",
     "legacy_l2_obsidian_view_bundle",
@@ -105,6 +106,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "l2_obsidian_view_bundle": "orientation-only Obsidian Markdown view over typed L2 memory entries",
     "l2_memory_audit": "read-only typed-record audit of L2 memory provenance for one claim",
     "legacy_executable_evidence_packet": "read-only packet grouping validation and tool-run evidence actions that block legacy semantic review pass without changing claim trust",
+    "legacy_human_checkpoint_obsidian_view_bundle": "orientation-only Obsidian Markdown worklist over open and pending legacy semantic-review human checkpoints",
     "legacy_human_checkpoint_packet": "read-only packet grouping open and pending human checkpoint decisions required by legacy semantic review without changing claim trust",
     "legacy_l2_graph_manifest": "read-only manifest for planning legacy global L2 graph/index migration into typed L2 memory and Obsidian views",
     "legacy_l2_obsidian_view_bundle": "orientation-only Obsidian Markdown view over legacy global L2 entries and graph counts before typed migration",
@@ -242,6 +244,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     )
     from brain.v5.legacy_contracts import require_valid_legacy_migration_result
     from brain.v5.legacy_executable_evidence_contracts import require_valid_legacy_executable_evidence_packet
+    from brain.v5.legacy_human_checkpoint_obsidian_contracts import require_valid_legacy_human_checkpoint_obsidian_view_bundle
     from brain.v5.legacy_human_checkpoint_packet_contracts import require_valid_legacy_human_checkpoint_packet
     from brain.v5.legacy_l2_graph_contracts import require_valid_legacy_l2_graph_manifest
     from brain.v5.legacy_l2_obsidian_contracts import require_valid_legacy_l2_obsidian_view_bundle
@@ -314,6 +317,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "l2_obsidian_view_bundle": require_valid_l2_obsidian_view_bundle,
         "l2_memory_audit": require_valid_l2_memory_audit,
         "legacy_executable_evidence_packet": require_valid_legacy_executable_evidence_packet,
+        "legacy_human_checkpoint_obsidian_view_bundle": require_valid_legacy_human_checkpoint_obsidian_view_bundle,
         "legacy_human_checkpoint_packet": require_valid_legacy_human_checkpoint_packet,
         "legacy_l2_graph_manifest": require_valid_legacy_l2_graph_manifest,
         "legacy_l2_obsidian_view_bundle": require_valid_legacy_l2_obsidian_view_bundle,

@@ -212,6 +212,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_build_legacy_human_checkpoint_packet",
         "surface": "legacy_human_checkpoint_packet",
     },
+    "legacy_human_checkpoint_obsidian_view": {
+        "cli": "aitp-v5 legacy human-checkpoint-obsidian-view <args>",
+        "mcp": "aitp_v5_write_legacy_human_checkpoint_obsidian_view",
+        "surface": "legacy_human_checkpoint_obsidian_view_bundle",
+    },
     "legacy_source_reconstruction_apply": {
         "cli": "aitp-v5 legacy source-reconstruction-apply <args>",
         "mcp": "aitp_v5_apply_legacy_source_reconstruction_repair",
