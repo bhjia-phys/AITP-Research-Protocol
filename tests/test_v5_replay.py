@@ -366,6 +366,7 @@ def test_workspace_replay_packet_can_include_legacy_semantic_review_backlog(tmp_
     legacy = packet.workspace_backlog_summary["legacy_semantic_review"]
     legacy_source = packet.workspace_backlog_summary["legacy_source_reconstruction"]
     legacy_repair = packet.workspace_backlog_summary["legacy_semantic_repair"]
+    legacy_needs_revision = packet.workspace_backlog_summary["legacy_semantic_needs_revision_basis"]
     legacy_checkpoints = packet.workspace_backlog_summary["legacy_human_checkpoints"]
     legacy_executable = packet.workspace_backlog_summary["legacy_executable_evidence"]
     assert legacy == {
@@ -495,6 +496,44 @@ def test_workspace_replay_packet_can_include_legacy_semantic_review_backlog(tmp_
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }
+    assert legacy_needs_revision == {
+        "surface": "legacy_semantic_needs_revision_basis_queue",
+        "migration_dir": str(migration),
+        "basis_item_count": 1,
+        "status_counts": {"inconclusive": 1},
+        "required_action_counts": {
+            "record_needs_revision_review_with_specific_repair_basis": 1,
+            "keep_semantic_review_blocking_until_typed_review_basis_exists": 1,
+        },
+        "top_basis_items": [
+            {
+                "topic": "legacy-l2",
+                "active_claim_id": "claim-l2",
+                "latest_review_id": review.review_id,
+                "review_status": "inconclusive",
+                "required_actions": [
+                    "record_needs_revision_review_with_specific_repair_basis",
+                    "keep_semantic_review_blocking_until_typed_review_basis_exists",
+                ],
+                "needs_revision_result_cli": (
+                    f"aitp-v5 --base {ws.base} legacy semantic-review-result "
+                    f"--migration-dir {migration} --topic legacy-l2 "
+                    "--status needs_revision --legacy-ref <reviewed-legacy-ref> "
+                    "--typed-ref <reviewed-typed-basis-ref> "
+                    "--summary <specific repair basis and remaining semantic gaps>"
+                ),
+                "repair_plan_cli": (
+                    f"aitp-v5 --base {ws.base} legacy semantic-repair-plan "
+                    f"--migration-dir {migration} --topic legacy-l2"
+                ),
+                "can_update_claim_trust": False,
+            }
+        ],
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
     assert legacy_checkpoints == {
         "surface": "legacy_human_checkpoint_packet",
         "migration_dir": str(migration),
@@ -542,11 +581,13 @@ def test_workspace_replay_packet_can_include_legacy_semantic_review_backlog(tmp_
     assert "Legacy Semantic Review Backlog" in body
     assert "Legacy Source Reconstruction Backlog" in body
     assert "Legacy Semantic Repair Triage" in body
+    assert "Legacy Needs-Revision Basis" in body
     assert "Legacy Human Checkpoints" in body
     assert "Legacy Executable Evidence" in body
     assert "Source reconstruction items: 1" in body
     assert "Semantic repair items: 1" in body
     assert "Proposed semantic repairs: 0" in body
+    assert "Needs-revision basis items: 1" in body
     assert "Checkpoint decisions: 1 open, 0 pending request" in body
     assert "Executable evidence items: 0" in body
     assert "Open human checkpoints: 1" in body
@@ -785,6 +826,7 @@ def test_workspace_replay_reuses_legacy_review_worklist_for_compact_backlog(monk
 
     assert calls == {"manifest": 1, "worklist": 1}
     assert summary["legacy_semantic_review"]["review_item_count"] == 1
+    assert summary["legacy_semantic_needs_revision_basis"]["basis_item_count"] == 1
     assert summary["legacy_executable_evidence"]["evidence_item_count"] == 1
     assert summary["legacy_executable_evidence"]["executable_action_count"] == 1
     assert summary["legacy_executable_evidence"]["top_evidence_items"][0]["latest_review_id"] == "legacy-review-crpa"

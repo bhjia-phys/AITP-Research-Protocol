@@ -12,6 +12,10 @@ from brain.v5.paths import WorkspacePaths
 from brain.v5.store import list_records
 
 _EXECUTABLE_SURFACES = {"validation_result_record", "tool_run_record"}
+_NEEDS_REVISION_BASIS_ACTIONS = [
+    "record_needs_revision_review_with_specific_repair_basis",
+    "keep_semantic_review_blocking_until_typed_review_basis_exists",
+]
 
 
 @dataclass
@@ -124,6 +128,29 @@ def legacy_human_checkpoint_summary(context: LegacyBacklogContext) -> dict[str, 
     }
 
 
+def legacy_needs_revision_basis_summary(context: LegacyBacklogContext) -> dict[str, Any] | None:
+    worklist = context.worklist()
+    if worklist is None:
+        return None
+    items = [
+        _needs_revision_basis_item(context.ws, worklist, item)
+        for item in worklist["items"]
+        if item.get("review_status") == "inconclusive"
+    ]
+    return {
+        "surface": "legacy_semantic_needs_revision_basis_queue",
+        "migration_dir": worklist["migration_dir"],
+        "basis_item_count": len(items),
+        "status_counts": _status_counts(items),
+        "required_action_counts": _required_action_counts(items),
+        "top_basis_items": [_legacy_needs_revision_basis_item(item) for item in items[:5]],
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
 def _legacy_backlog_item(item: dict[str, Any]) -> dict[str, Any]:
     latest = item.get("latest_semantic_review") if isinstance(item.get("latest_semantic_review"), dict) else {}
     return {
@@ -133,6 +160,46 @@ def _legacy_backlog_item(item: dict[str, Any]) -> dict[str, Any]:
         "review_priority": item["review_priority"],
         "latest_review_id": str(latest.get("review_id") or ""),
         "packet_cli": item["packet_cli"],
+        "can_update_claim_trust": False,
+    }
+
+
+def _needs_revision_basis_item(
+    ws: WorkspacePaths,
+    worklist: dict[str, Any],
+    item: dict[str, Any],
+) -> dict[str, Any]:
+    topic = str(item.get("topic") or "")
+    return {
+        "topic": topic,
+        "active_claim_id": str(item.get("active_claim_id") or ""),
+        "latest_review_id": str(item.get("latest_review_id") or ""),
+        "review_status": str(item.get("review_status") or ""),
+        "required_actions": list(_NEEDS_REVISION_BASIS_ACTIONS),
+        "needs_revision_result_cli": (
+            f"aitp-v5 --base {ws.base} legacy semantic-review-result "
+            f"--migration-dir {worklist['migration_dir']} --topic {topic} "
+            "--status needs_revision "
+            "--legacy-ref <reviewed-legacy-ref> --typed-ref <reviewed-typed-basis-ref> "
+            "--summary <specific repair basis and remaining semantic gaps>"
+        ),
+        "repair_plan_cli": (
+            f"aitp-v5 --base {ws.base} legacy semantic-repair-plan "
+            f"--migration-dir {worklist['migration_dir']} --topic {topic}"
+        ),
+        "can_update_claim_trust": False,
+    }
+
+
+def _legacy_needs_revision_basis_item(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "topic": str(item.get("topic") or ""),
+        "active_claim_id": str(item.get("active_claim_id") or ""),
+        "latest_review_id": str(item.get("latest_review_id") or ""),
+        "review_status": str(item.get("review_status") or ""),
+        "required_actions": list(item.get("required_actions") or []),
+        "needs_revision_result_cli": str(item.get("needs_revision_result_cli") or ""),
+        "repair_plan_cli": str(item.get("repair_plan_cli") or ""),
         "can_update_claim_trust": False,
     }
 
@@ -301,3 +368,22 @@ def _checkpoint_options(
     if checkpoint is not None:
         return list(checkpoint.options)
     return list(open_checkpoint.get("options") or _options_from_cli(command))
+
+
+def _status_counts(items: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        status = str(item.get("review_status") or "")
+        if status:
+            counts[status] = counts.get(status, 0) + 1
+    return counts
+
+
+def _required_action_counts(items: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for item in items:
+        for action in item.get("required_actions", []):
+            action = str(action)
+            if action:
+                counts[action] = counts.get(action, 0) + 1
+    return counts

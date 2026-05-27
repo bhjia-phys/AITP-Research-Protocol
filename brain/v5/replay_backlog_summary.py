@@ -11,6 +11,7 @@ from brain.v5.replay_legacy_backlog_summary import (
     LegacyBacklogContext,
     legacy_executable_evidence_summary,
     legacy_human_checkpoint_summary,
+    legacy_needs_revision_basis_summary,
     legacy_semantic_review_summary,
 )
 from brain.v5.source_stack_coverage import build_source_stack_coverage_manifest
@@ -54,6 +55,7 @@ def build_workspace_backlog_summary(
     _maybe_add(summary, "legacy_semantic_review", legacy_semantic_review_summary(legacy_context))
     _maybe_add(summary, "legacy_source_reconstruction", _legacy_source_reconstruction_summary(ws, migration_dir))
     _maybe_add(summary, "legacy_semantic_repair", _legacy_semantic_repair_summary(ws, migration_dir))
+    _maybe_add(summary, "legacy_semantic_needs_revision_basis", legacy_needs_revision_basis_summary(legacy_context))
     _maybe_add(summary, "legacy_executable_evidence", legacy_executable_evidence_summary(legacy_context))
     _maybe_add(summary, "legacy_human_checkpoints", legacy_human_checkpoint_summary(legacy_context))
     return summary
@@ -85,6 +87,7 @@ def workspace_replay_body(entries: list[dict[str, Any]], workspace_backlog_summa
     _extend_legacy_semantic_review(lines, workspace_backlog_summary)
     _extend_legacy_source_reconstruction(lines, workspace_backlog_summary)
     _extend_legacy_semantic_repair(lines, workspace_backlog_summary)
+    _extend_legacy_needs_revision_basis(lines, workspace_backlog_summary)
     _extend_legacy_executable_evidence(lines, workspace_backlog_summary)
     _extend_legacy_human_checkpoints(lines, workspace_backlog_summary)
     if not entries:
@@ -195,6 +198,27 @@ def _extend_legacy_semantic_repair(lines: list[str], summary: dict[str, Any]) ->
             f"{', '.join(item['required_actions']) or 'none'}; plan via `{item['repair_plan_cli']}`"
         )
     lines.append("")
+
+
+def _extend_legacy_needs_revision_basis(lines: list[str], summary: dict[str, Any]) -> None:
+    legacy_basis = summary.get("legacy_semantic_needs_revision_basis")
+    if not isinstance(legacy_basis, dict):
+        return
+    lines.extend([
+        "## Legacy Needs-Revision Basis",
+        "",
+        f"- Migration dir: `{legacy_basis['migration_dir']}`",
+        f"- Needs-revision basis items: {legacy_basis['basis_item_count']}",
+        f"- Required actions: `{legacy_basis['required_action_counts']}`",
+        "",
+    ])
+    for item in legacy_basis["top_basis_items"]:
+        lines.append(
+            f"- `{item['topic']}`: required {', '.join(item['required_actions']) or 'none'}; "
+            f"record via `{item['needs_revision_result_cli']}`"
+        )
+    lines.append("")
+
 
 def _extend_legacy_executable_evidence(lines: list[str], summary: dict[str, Any]) -> None:
     legacy_executable = summary.get("legacy_executable_evidence")

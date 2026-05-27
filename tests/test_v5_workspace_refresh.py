@@ -191,6 +191,9 @@ def test_workspace_refresh_can_include_legacy_semantic_backlog_in_replay(tmp_pat
     assert payload["interaction_recording_worklist"]["work_item_count"] == 1
     assert legacy["surface"] == "legacy_semantic_review_manifest"
     assert legacy["review_item_count"] == 1
+    assert payload["workspace_replay"]["workspace_backlog_summary"]["legacy_semantic_needs_revision_basis"][
+        "basis_item_count"
+    ] == 0
     assert legacy["semantic_lossless_proven"] is False
     assert payload["can_update_claim_trust"] is False
     assert require_valid_public_surface("workspace_refresh_bundle", payload) == payload
@@ -354,6 +357,9 @@ def test_workspace_refresh_cli_mcp_accept_migration_dir(tmp_path, capsys):
 
     assert cli_payload["workspace_replay"]["workspace_backlog_summary"]["legacy_semantic_review"]["review_item_count"] == 1
     assert cli_payload["workspace_replay"]["workspace_backlog_summary"]["legacy_semantic_repair"]["work_item_count"] == 1
+    assert cli_payload["workspace_replay"]["workspace_backlog_summary"]["legacy_semantic_needs_revision_basis"][
+        "basis_item_count"
+    ] == 0
     assert mcp_payload["workspace_replay"]["workspace_backlog_summary"]["legacy_semantic_review"]["migration_dir"] == str(migration)
     assert mcp_payload["workspace_replay"]["workspace_backlog_summary"]["legacy_semantic_repair"]["surface"] == "legacy_semantic_repair_manifest"
     assert cli_payload["legacy_source_reconstruction_obsidian_view"]["work_item_count"] == 1
@@ -458,6 +464,11 @@ def test_workspace_refresh_cli_compact_progress_accepts_migration_dir(tmp_path, 
             "keep_semantic_review_blocking_until_typed_review_basis_exists": 1,
             "record_initial_semantic_review_result": 1,
         },
+    }
+    assert cli_payload["legacy_semantic_needs_revision_basis"] == {
+        "basis_item_count": 0,
+        "status_counts": {},
+        "required_action_counts": {},
     }
     assert cli_payload["legacy_executable_evidence"] == {
         "evidence_item_count": 0,

@@ -109,6 +109,17 @@ def compact_workspace_replay_packet(payload: dict[str, Any]) -> dict[str, Any]:
             "proposed_repair_count": int(repair.get("proposed_repair_count") or 0),
             "required_action_counts": dict(repair.get("required_action_counts") or {}),
         }
+    if "legacy_semantic_needs_revision_basis" in backlog:
+        basis = (
+            backlog.get("legacy_semantic_needs_revision_basis")
+            if isinstance(backlog.get("legacy_semantic_needs_revision_basis"), dict)
+            else {}
+        )
+        compact["legacy_semantic_needs_revision_basis"] = {
+            "basis_item_count": int(basis.get("basis_item_count") or 0),
+            "status_counts": dict(basis.get("status_counts") or {}),
+            "required_action_counts": dict(basis.get("required_action_counts") or {}),
+        }
     if "legacy_human_checkpoints" in backlog:
         checkpoints = (
             backlog.get("legacy_human_checkpoints")
@@ -145,6 +156,11 @@ def compact_workspace_refresh(payload: dict[str, Any]) -> dict[str, Any]:
     semantic_repair = (
         backlog.get("legacy_semantic_repair")
         if isinstance(backlog.get("legacy_semantic_repair"), dict)
+        else {}
+    )
+    needs_revision_basis = (
+        backlog.get("legacy_semantic_needs_revision_basis")
+        if isinstance(backlog.get("legacy_semantic_needs_revision_basis"), dict)
         else {}
     )
     executable = (
@@ -271,6 +287,12 @@ def compact_workspace_refresh(payload: dict[str, Any]) -> dict[str, Any]:
             "repair_status_counts": dict(semantic_repair.get("repair_status_counts") or {}),
             "proposed_repair_count": int(semantic_repair.get("proposed_repair_count") or 0),
             "required_action_counts": dict(semantic_repair.get("required_action_counts") or {}),
+        }
+    if needs_revision_basis:
+        compact["legacy_semantic_needs_revision_basis"] = {
+            "basis_item_count": int(needs_revision_basis.get("basis_item_count") or 0),
+            "status_counts": dict(needs_revision_basis.get("status_counts") or {}),
+            "required_action_counts": dict(needs_revision_basis.get("required_action_counts") or {}),
         }
     if executable:
         compact["legacy_executable_evidence"] = {
