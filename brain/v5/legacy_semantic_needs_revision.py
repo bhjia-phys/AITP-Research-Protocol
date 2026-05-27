@@ -71,6 +71,10 @@ def _basis_item(ws: WorkspacePaths, worklist: dict[str, Any], item: dict[str, An
             "--legacy-ref <reviewed-legacy-ref> --typed-ref <reviewed-typed-basis-ref> "
             "--summary <specific repair basis and remaining semantic gaps>"
         ),
+        "basis_packet_cli": (
+            f"aitp-v5 --base {ws.base} legacy semantic-needs-revision-basis-packet "
+            f"--migration-dir {worklist['migration_dir']} --topic {topic}"
+        ),
         "repair_plan_cli": (
             f"aitp-v5 --base {ws.base} legacy semantic-repair-plan "
             f"--migration-dir {worklist['migration_dir']} --topic {topic}"

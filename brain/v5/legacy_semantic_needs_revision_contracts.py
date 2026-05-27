@@ -66,6 +66,7 @@ def _validate_item(payload: Any, path: str, result: ContractResult) -> None:
         "active_claim_id",
         "latest_review_id",
         "review_status",
+        "basis_packet_cli",
         "needs_revision_result_cli",
         "repair_plan_cli",
     ):

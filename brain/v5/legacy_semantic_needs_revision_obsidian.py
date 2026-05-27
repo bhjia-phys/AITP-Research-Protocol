@@ -98,16 +98,17 @@ def _worklist_body(queue: dict[str, Any]) -> str:
         "",
         "## Basis Worklist",
         "",
-        "| Topic | Claim | Latest Review | Required Actions | Needs-Revision Result | Repair Plan |",
-        "|---|---|---|---|---|---|",
+        "| Topic | Claim | Latest Review | Required Actions | Basis Packet | Needs-Revision Result | Repair Plan |",
+        "|---|---|---|---|---|---|---|",
     ]
     if not items:
-        lines.append("| None |  |  |  |  |  |")
+        lines.append("| None |  |  |  |  |  |  |")
     for item in items:
         lines.append(
             f"| `{_cell(item.get('topic'))}` | `{_cell(item.get('active_claim_id'))}` | "
             f"`{_cell(item.get('latest_review_id'))}` | "
             f"`{_cell(', '.join(item.get('required_actions') or []))}` | "
+            f"`{_cell(item.get('basis_packet_cli'))}` | "
             f"`{_cell(item.get('needs_revision_result_cli'))}` | "
             f"`{_cell(item.get('repair_plan_cli'))}` |"
         )

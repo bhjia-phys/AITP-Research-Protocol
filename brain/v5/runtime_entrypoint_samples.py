@@ -58,7 +58,10 @@ def sample_args_for_template(template: str) -> list[str]:
     if template.startswith("legacy semantic-review-worklist"):
         return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run"]
     if template.startswith("legacy semantic-needs-revision-basis"):
-        return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run"]
+        args = ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run"]
+        if template.startswith("legacy semantic-needs-revision-basis-packet"):
+            args.extend(["--topic", "fqhe"])
+        return args
     if template.startswith("legacy semantic-review-obsidian-view"):
         return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run"]
     if template.startswith("legacy semantic-review-packet"):

@@ -183,6 +183,10 @@ def _needs_revision_basis_item(
             "--legacy-ref <reviewed-legacy-ref> --typed-ref <reviewed-typed-basis-ref> "
             "--summary <specific repair basis and remaining semantic gaps>"
         ),
+        "basis_packet_cli": (
+            f"aitp-v5 --base {ws.base} legacy semantic-needs-revision-basis-packet "
+            f"--migration-dir {worklist['migration_dir']} --topic {topic}"
+        ),
         "repair_plan_cli": (
             f"aitp-v5 --base {ws.base} legacy semantic-repair-plan "
             f"--migration-dir {worklist['migration_dir']} --topic {topic}"
@@ -199,6 +203,7 @@ def _legacy_needs_revision_basis_item(item: dict[str, Any]) -> dict[str, Any]:
         "review_status": str(item.get("review_status") or ""),
         "required_actions": list(item.get("required_actions") or []),
         "needs_revision_result_cli": str(item.get("needs_revision_result_cli") or ""),
+        "basis_packet_cli": str(item.get("basis_packet_cli") or ""),
         "repair_plan_cli": str(item.get("repair_plan_cli") or ""),
         "can_update_claim_trust": False,
     }

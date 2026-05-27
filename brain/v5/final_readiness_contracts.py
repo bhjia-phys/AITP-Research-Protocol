@@ -155,6 +155,14 @@ def validate_final_engineering_readiness_audit(
                 "must be legacy_semantic_needs_revision_basis_queue",
             )
         if (
+            replay.get("legacy_semantic_needs_revision_basis_packet_surface")
+            != "legacy_semantic_needs_revision_basis_packet"
+        ):
+            result.add(
+                f"{path}.kernel_capabilities.long_term_replay.legacy_semantic_needs_revision_basis_packet_surface",
+                "must be legacy_semantic_needs_revision_basis_packet",
+            )
+        if (
             replay.get("legacy_semantic_needs_revision_basis_view_surface")
             != "legacy_semantic_needs_revision_basis_obsidian_view_bundle"
         ):
@@ -175,6 +183,11 @@ def validate_final_engineering_readiness_audit(
         if replay.get("host_startup_needs_revision_basis_supported") is not True:
             result.add(
                 f"{path}.kernel_capabilities.long_term_replay.host_startup_needs_revision_basis_supported",
+                "must be true",
+            )
+        if replay.get("host_startup_needs_revision_basis_packet_supported") is not True:
+            result.add(
+                f"{path}.kernel_capabilities.long_term_replay.host_startup_needs_revision_basis_packet_supported",
                 "must be true",
             )
         if replay.get("host_startup_needs_revision_basis_view_supported") is not True:

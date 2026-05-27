@@ -202,6 +202,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_build_legacy_semantic_needs_revision_basis_queue",
         "surface": "legacy_semantic_needs_revision_basis_queue",
     },
+    "legacy_semantic_needs_revision_basis_packet": {
+        "cli": "aitp-v5 legacy semantic-needs-revision-basis-packet <args>",
+        "mcp": "aitp_v5_build_legacy_semantic_needs_revision_basis_packet",
+        "surface": "legacy_semantic_needs_revision_basis_packet",
+    },
     "legacy_semantic_needs_revision_basis_obsidian_view": {
         "cli": "aitp-v5 legacy semantic-needs-revision-basis-obsidian-view <args>",
         "mcp": "aitp_v5_write_legacy_semantic_needs_revision_basis_obsidian_view",

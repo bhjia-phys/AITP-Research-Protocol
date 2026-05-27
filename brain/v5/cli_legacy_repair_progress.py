@@ -106,6 +106,42 @@ def compact_legacy_semantic_needs_revision_basis_queue(payload: dict[str, Any]) 
     }
 
 
+def compact_legacy_semantic_needs_revision_basis_packet(payload: dict[str, Any]) -> dict[str, Any]:
+    review_basis = payload.get("review_basis") if isinstance(payload.get("review_basis"), dict) else {}
+    likely = [item for item in payload.get("likely_repair_basis", []) if isinstance(item, dict)]
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "kind": "legacy_semantic_needs_revision_basis_packet_progress",
+        "source_surface": "legacy_semantic_needs_revision_basis_packet",
+        "run_id": str(payload.get("run_id") or ""),
+        "migration_dir": str(payload.get("migration_dir") or ""),
+        "workspace": str(payload.get("workspace") or ""),
+        "topic": str(payload.get("topic") or ""),
+        "active_claim_id": str(payload.get("active_claim_id") or ""),
+        "latest_review_id": str(payload.get("latest_review_id") or ""),
+        "review_status": str(payload.get("review_status") or ""),
+        "required_actions": [str(action) for action in payload.get("required_actions", []) if str(action)],
+        "likely_repair_basis_count": len(likely),
+        "likely_repair_basis_actions": [
+            str(item.get("action") or "")
+            for item in likely
+            if str(item.get("action") or "")
+        ],
+        "reviewed_legacy_ref_count": len(review_basis.get("reviewed_legacy_refs") or []),
+        "reviewed_typed_ref_count": len(review_basis.get("reviewed_typed_refs") or []),
+        "evidence_ref_count": len(review_basis.get("evidence_refs") or []),
+        "validation_result_id_count": len(review_basis.get("validation_result_ids") or []),
+        "open_checkpoint_ref_count": len(review_basis.get("open_checkpoint_refs") or []),
+        "semantic_lossless_proven": bool(payload.get("semantic_lossless_proven", False)),
+        "semantic_review_required": bool(payload.get("semantic_review_required", True)),
+        "truth_source": str(payload.get("truth_source") or ""),
+        "summary_inputs_trusted": bool(payload.get("summary_inputs_trusted", False)),
+        "orientation_only": bool(payload.get("orientation_only", True)),
+        "can_update_kernel_state": bool(payload.get("can_update_kernel_state", False)),
+        "can_update_claim_trust": bool(payload.get("can_update_claim_trust", False)),
+    }
+
+
 def compact_legacy_semantic_needs_revision_basis_obsidian_view_bundle(payload: dict[str, Any]) -> dict[str, Any]:
     files = payload.get("files") if isinstance(payload.get("files"), dict) else {}
     view_files = [str(path) for path in files.values() if str(path)]

@@ -4549,6 +4549,10 @@ def test_legacy_semantic_needs_revision_basis_queue_guides_inconclusive_followup
         "--legacy-ref <reviewed-legacy-ref> --typed-ref <reviewed-typed-basis-ref> "
         "--summary <specific repair basis and remaining semantic gaps>"
     )
+    assert item["basis_packet_cli"] == (
+        f"aitp-v5 --base {base} legacy semantic-needs-revision-basis-packet "
+        f"--migration-dir {run} --topic canonical-topic"
+    )
     assert item["repair_plan_cli"] == (
         f"aitp-v5 --base {base} legacy semantic-repair-plan --migration-dir {run} "
         "--topic canonical-topic"
@@ -4649,6 +4653,203 @@ def test_legacy_semantic_needs_revision_basis_queue_cli_mcp_runtime_and_compact(
     assert "items" not in compact_payload
 
 
+def test_legacy_semantic_needs_revision_basis_packet_collects_review_basis(tmp_path):
+    from brain.v5.legacy_semantic_needs_revision_packet import (
+        build_legacy_semantic_needs_revision_basis_packet,
+    )
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.models import ClaimRecord, EvidenceRecord, HumanCheckpointRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="A canonical legacy claim.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Semantic review still needs a specific repair basis.",
+        ),
+    )
+    write_record(
+        ws.registry_dir("evidence") / "evidence-canonical.md",
+        EvidenceRecord(
+            evidence_id="evidence-canonical",
+            topic_id="canonical-topic",
+            claim_id="claim-canonical",
+            evidence_type="legacy_import",
+            status="supports",
+            summary="Reviewed migrated legacy evidence.",
+            source_refs=["legacy-topic:canonical-topic/state.md"],
+        ),
+    )
+    write_record(
+        ws.registry_dir("checkpoints") / "checkpoint-canonical-approval.md",
+        HumanCheckpointRecord(
+            checkpoint_id="checkpoint-canonical-approval",
+            topic_id="canonical-topic",
+            claim_id="claim-canonical",
+            reason="legacy semantic review promotion decision",
+            requested_by="legacy_semantic_review",
+            options=["approve_semantic_review", "keep_backlog_blocking"],
+            status="open",
+        ),
+    )
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="The legacy topic is preserved, but the exact repair basis is not yet typed.",
+        active_claim_id="claim-canonical",
+        reviewed_legacy_refs=["legacy-topic:canonical-topic/state.md"],
+        reviewed_typed_refs=["claim-canonical"],
+        evidence_refs=["evidence-canonical"],
+        remaining_actions=["decide_human_checkpoint_before_promotion", "complete_source_reconstruction"],
+    )
+
+    packet = require_valid_public_surface(
+        "legacy_semantic_needs_revision_basis_packet",
+        build_legacy_semantic_needs_revision_basis_packet(
+            ws,
+            migration_dir=run,
+            topic="canonical-topic",
+        ),
+    )
+
+    assert packet["kind"] == "legacy_semantic_needs_revision_basis_packet"
+    assert packet["topic"] == "canonical-topic"
+    assert packet["active_claim_id"] == "claim-canonical"
+    assert packet["latest_review_id"] == review.review_id
+    assert packet["review_status"] == "inconclusive"
+    assert packet["review_basis"] == {
+        "reviewed_legacy_refs": ["legacy-topic:canonical-topic/state.md"],
+        "reviewed_typed_refs": ["claim-canonical"],
+        "evidence_refs": ["evidence-canonical"],
+        "validation_result_ids": [],
+        "source_reconstruction_review_refs": [],
+        "open_checkpoint_refs": ["human-checkpoint:checkpoint-canonical-approval"],
+    }
+    assert [basis["action"] for basis in packet["likely_repair_basis"]] == [
+        "decide_human_checkpoint_before_promotion",
+        "complete_source_reconstruction",
+    ]
+    assert packet["likely_repair_basis"][0]["candidate_command"]["mcp"] == "aitp_v5_decide_human_checkpoint"
+    assert packet["likely_repair_basis"][0]["candidate_command"]["checkpoint_id"] == (
+        "checkpoint-canonical-approval"
+    )
+    assert packet["review_action_commands"][0]["surface"] == "human_checkpoint_record"
+    assert packet["needs_revision_result_cli"] == (
+        f"aitp-v5 --base {base} legacy semantic-review-result --migration-dir {run} "
+        "--topic canonical-topic --status needs_revision --active-claim claim-canonical "
+        "--legacy-ref legacy-topic:canonical-topic/state.md --typed-ref claim-canonical "
+        "--evidence-ref evidence-canonical "
+        "--remaining-action decide_human_checkpoint_before_promotion "
+        "--remaining-action complete_source_reconstruction "
+        "--summary <specific repair basis and remaining semantic gaps>"
+    )
+    assert packet["repair_plan"]["repair_status"] == "awaiting_needs_revision_review"
+    assert packet["semantic_lossless_proven"] is False
+    assert packet["summary_inputs_trusted"] is False
+    assert packet["orientation_only"] is True
+    assert packet["can_update_kernel_state"] is False
+    assert packet["can_update_claim_trust"] is False
+
+
+def test_legacy_semantic_needs_revision_basis_packet_cli_mcp_runtime_and_compact(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.mcp_tools import aitp_v5_build_legacy_semantic_needs_revision_basis_packet
+    from brain.v5.models import ClaimRecord
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="A canonical legacy claim.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Semantic review still needs a specific repair basis.",
+        ),
+    )
+    record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="The legacy topic is preserved, but the review has not named the exact repair basis.",
+        active_claim_id="claim-canonical",
+        reviewed_legacy_refs=["legacy-topic:canonical-topic/state.md"],
+        reviewed_typed_refs=["claim-canonical"],
+        remaining_actions=["complete_source_reconstruction"],
+    )
+
+    assert main([
+        "--base",
+        str(base),
+        "legacy",
+        "semantic-needs-revision-basis-packet",
+        "--migration-dir",
+        str(run),
+        "--topic",
+        "canonical-topic",
+    ]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_legacy_semantic_needs_revision_basis_packet(
+        str(base),
+        migration_dir=str(run),
+        topic="canonical-topic",
+    )
+
+    assert cli_payload["kind"] == "legacy_semantic_needs_revision_basis_packet"
+    assert cli_payload["topic"] == "canonical-topic"
+    assert mcp_payload["ok"] is True
+    assert mcp_payload["kind"] == "legacy_semantic_needs_revision_basis_packet"
+    assert runtime_entrypoints()["legacy_semantic_needs_revision_basis_packet"] == {
+        "cli": "aitp-v5 legacy semantic-needs-revision-basis-packet <args>",
+        "mcp": "aitp_v5_build_legacy_semantic_needs_revision_basis_packet",
+        "surface": "legacy_semantic_needs_revision_basis_packet",
+    }
+
+    assert main([
+        "--base",
+        str(base),
+        "legacy",
+        "semantic-needs-revision-basis-packet",
+        "--migration-dir",
+        str(run),
+        "--topic",
+        "canonical-topic",
+        "--compact",
+    ]) == 0
+    compact_payload = json.loads(capsys.readouterr().out)
+
+    assert compact_payload["kind"] == "legacy_semantic_needs_revision_basis_packet_progress"
+    assert compact_payload["source_surface"] == "legacy_semantic_needs_revision_basis_packet"
+    assert compact_payload["topic"] == "canonical-topic"
+    assert compact_payload["latest_review_id"]
+    assert compact_payload["likely_repair_basis_count"] == 1
+    assert compact_payload["reviewed_legacy_ref_count"] == 1
+    assert compact_payload["reviewed_typed_ref_count"] == 1
+    assert compact_payload["can_update_claim_trust"] is False
+    assert "likely_repair_basis" not in compact_payload
+
+
 def test_legacy_semantic_needs_revision_basis_obsidian_view_writes_review_worklist(tmp_path):
     from brain.v5.legacy_semantic_needs_revision_obsidian import (
         write_legacy_semantic_needs_revision_basis_obsidian_view,
@@ -4707,6 +4908,7 @@ def test_legacy_semantic_needs_revision_basis_obsidian_view_writes_review_workli
     assert "canonical-topic" in body
     assert review.review_id in body
     assert "record_needs_revision_review_with_specific_repair_basis" in body
+    assert "semantic-needs-revision-basis-packet" in body
     assert "semantic-review-result" in body
     assert "Use typed legacy semantic review records for needs-revision results" in body
 

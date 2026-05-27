@@ -12,6 +12,7 @@ from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
 from brain.v5.legacy_runtime_log_audit import build_legacy_runtime_log_marker_audit
 from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
 from brain.v5.legacy_semantic_needs_revision_obsidian import write_legacy_semantic_needs_revision_basis_obsidian_view
+from brain.v5.legacy_semantic_needs_revision_packet import build_legacy_semantic_needs_revision_basis_packet
 from brain.v5.legacy_semantic_review_obsidian import write_legacy_semantic_review_obsidian_view
 from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist
 from brain.v5.legacy_semantic_needs_revision import build_legacy_semantic_needs_revision_basis_queue
@@ -45,6 +46,7 @@ from brain.v5.cli_legacy_l2_progress import (
     compact_legacy_l2_typed_migration_packet,
 )
 from brain.v5.cli_legacy_repair_progress import (
+    compact_legacy_semantic_needs_revision_basis_packet,
     compact_legacy_semantic_needs_revision_basis_queue,
     compact_legacy_semantic_needs_revision_basis_obsidian_view_bundle,
     compact_legacy_semantic_repair_manifest,
@@ -96,6 +98,10 @@ def add_legacy_parser(subparsers) -> None:
     needs_revision = legacy_subparsers.add_parser("semantic-needs-revision-basis")
     needs_revision.add_argument("--migration-dir", required=True)
     needs_revision.add_argument("--compact", "--progress", action="store_true", dest="compact")
+    needs_revision_packet = legacy_subparsers.add_parser("semantic-needs-revision-basis-packet")
+    needs_revision_packet.add_argument("--migration-dir", required=True)
+    needs_revision_packet.add_argument("--topic", required=True)
+    needs_revision_packet.add_argument("--compact", "--progress", action="store_true", dest="compact")
     needs_revision_obsidian = legacy_subparsers.add_parser("semantic-needs-revision-basis-obsidian-view")
     needs_revision_obsidian.add_argument("--migration-dir", required=True)
     needs_revision_obsidian.add_argument("--output-dir", default="")
@@ -239,6 +245,19 @@ def dispatch_legacy_command(args, ws) -> dict:
         payload = {"ok": True, **require_valid_public_surface("legacy_semantic_needs_revision_basis_queue", queue)}
         if getattr(args, "compact", False):
             return compact_legacy_semantic_needs_revision_basis_queue(payload)
+        return payload
+    if args.legacy_command == "semantic-needs-revision-basis-packet":
+        packet = build_legacy_semantic_needs_revision_basis_packet(
+            ws,
+            migration_dir=args.migration_dir,
+            topic=args.topic,
+        )
+        payload = {
+            "ok": True,
+            **require_valid_public_surface("legacy_semantic_needs_revision_basis_packet", packet),
+        }
+        if getattr(args, "compact", False):
+            return compact_legacy_semantic_needs_revision_basis_packet(payload)
         return payload
     if args.legacy_command == "semantic-needs-revision-basis-obsidian-view":
         bundle = write_legacy_semantic_needs_revision_basis_obsidian_view(

@@ -522,6 +522,10 @@ def test_workspace_replay_packet_can_include_legacy_semantic_review_backlog(tmp_
                     "--typed-ref <reviewed-typed-basis-ref> "
                     "--summary <specific repair basis and remaining semantic gaps>"
                 ),
+                "basis_packet_cli": (
+                    f"aitp-v5 --base {ws.base} legacy semantic-needs-revision-basis-packet "
+                    f"--migration-dir {migration} --topic legacy-l2"
+                ),
                 "repair_plan_cli": (
                     f"aitp-v5 --base {ws.base} legacy semantic-repair-plan "
                     f"--migration-dir {migration} --topic legacy-l2"

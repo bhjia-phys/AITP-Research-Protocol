@@ -111,6 +111,9 @@ def compact_final_readiness(payload: dict[str, Any]) -> dict[str, Any]:
             "legacy_semantic_needs_revision_basis_surface": str(
                 replay.get("legacy_semantic_needs_revision_basis_surface") or ""
             ),
+            "legacy_semantic_needs_revision_basis_packet_surface": str(
+                replay.get("legacy_semantic_needs_revision_basis_packet_surface") or ""
+            ),
             "legacy_semantic_needs_revision_basis_view_surface": str(
                 replay.get("legacy_semantic_needs_revision_basis_view_surface") or ""
             ),
@@ -123,6 +126,9 @@ def compact_final_readiness(payload: dict[str, Any]) -> dict[str, Any]:
             ),
             "host_startup_needs_revision_basis_supported": bool(
                 replay.get("host_startup_needs_revision_basis_supported", False)
+            ),
+            "host_startup_needs_revision_basis_packet_supported": bool(
+                replay.get("host_startup_needs_revision_basis_packet_supported", False)
             ),
             "host_startup_needs_revision_basis_view_supported": bool(
                 replay.get("host_startup_needs_revision_basis_view_supported", False)

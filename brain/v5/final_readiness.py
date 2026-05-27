@@ -246,6 +246,9 @@ def _long_term_replay() -> dict[str, Any]:
         "legacy_source_reconstruction_backlog_surface": "legacy_source_reconstruction_manifest",
         "legacy_semantic_repair_surface": "legacy_semantic_repair_manifest",
         "legacy_semantic_needs_revision_basis_surface": "legacy_semantic_needs_revision_basis_queue",
+        "legacy_semantic_needs_revision_basis_packet_surface": (
+            "legacy_semantic_needs_revision_basis_packet"
+        ),
         "legacy_executable_evidence_surface": "legacy_executable_evidence_packet",
         "legacy_semantic_review_view_surface": "legacy_semantic_review_obsidian_view_bundle",
         "legacy_semantic_needs_revision_basis_view_surface": (
@@ -261,6 +264,7 @@ def _long_term_replay() -> dict[str, Any]:
         "host_startup_source_reconstruction_worklist_supported": True,
         "host_startup_semantic_repair_supported": True,
         "host_startup_needs_revision_basis_supported": True,
+        "host_startup_needs_revision_basis_packet_supported": True,
         "host_startup_needs_revision_basis_view_supported": True,
         "host_startup_executable_evidence_supported": True,
         "host_startup_checkpoint_view_supported": True,
