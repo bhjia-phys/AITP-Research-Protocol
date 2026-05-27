@@ -71,6 +71,7 @@ _PUBLIC_SURFACE_NAMES = (
     "record_gate_coverage_audit",
     "reference_location_record",
     "research_intent_packet",
+    "run_iteration_record",
     "runtime_hook_installation_audit",
     "runtime_host_lifecycle_audit",
     "runtime_host_production_loop_audit",
@@ -170,6 +171,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "record_gate_coverage_audit": "contracted audit that every runtime record protocol has a conscious runtime gate decision",
     "reference_location_record": "contracted orientation-only pointer to an external paper, note, or knowledge item",
     "research_intent_packet": "contracted vNext idea gate packet for vague or materially redefined research topics",
+    "run_iteration_record": "contracted run-local L3/L4/L3 iteration continuity record with Markdown-first review and no claim-trust authority",
     "runtime_hook_installation_audit": "read-only audit of installed runtime hook files; runtime metadata only, never kernel truth",
     "runtime_host_lifecycle_audit": "dynamic read-only probe that runs a host command and checks stdout/stderr plus hook trace deltas for lifecycle-event evidence",
     "runtime_host_production_loop_audit": "dynamic read-only batch audit over priority runtime host production loops without updating kernel truth",
@@ -288,6 +290,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_research_intent_packet,
         require_valid_steering_decision_record,
     )
+    from brain.v5.run_iteration_contracts import require_valid_run_iteration_record
     from brain.v5.output_stability_contracts import require_valid_final_output_profile
     from brain.v5.operator_checkpoint_contracts import require_valid_operator_checkpoint_record
     from brain.v5.strategy_memory_contracts import require_valid_strategy_memory_record
@@ -429,6 +432,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "record_gate_coverage_audit": require_valid_record_gate_coverage_audit,
         "reference_location_record": require_valid_reference_location_record,
         "research_intent_packet": require_valid_research_intent_packet,
+        "run_iteration_record": require_valid_run_iteration_record,
         "runtime_hook_installation_audit": require_valid_runtime_hook_installation_audit,
         "runtime_host_lifecycle_audit": require_valid_runtime_host_lifecycle_audit,
         "runtime_host_production_loop_audit": require_valid_runtime_host_production_loop_audit,

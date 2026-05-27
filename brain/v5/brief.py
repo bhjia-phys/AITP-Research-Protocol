@@ -20,6 +20,7 @@ from brain.v5.references import list_reference_locations_for_claim, reference_lo
 from brain.v5.research_intent import load_innovation_direction, load_research_intent_gate
 from brain.v5.output_stability import load_final_output_profile
 from brain.v5.risk import action_budget_for_level, assess_claim_risk
+from brain.v5.run_iterations import load_run_iterations
 from brain.v5.store import list_records
 from brain.v5.strategy_memory import load_strategy_memory
 from brain.v5.workspace import get_claim, get_session_binding
@@ -45,6 +46,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
     final_output_profile = load_final_output_profile(ws, session.topic_id)
     operator_checkpoint = load_operator_checkpoint(ws, session.topic_id)
     strategy_memory = load_strategy_memory(ws, session.topic_id)
+    run_iterations = load_run_iterations(ws, session.topic_id)
 
     if session.active_claim:
         claim = get_claim(ws, session.active_claim)
@@ -208,6 +210,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
             "final_output_profile": final_output_profile,
             "operator_checkpoint": operator_checkpoint,
             "strategy_memory": strategy_memory,
+            "run_iterations": run_iterations,
             "object_relations": object_relations,
             "memory_entries": memory_entries,
         },

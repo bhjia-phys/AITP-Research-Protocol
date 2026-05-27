@@ -145,6 +145,25 @@ def sample_args_for_template(template: str) -> list[str]:
             "--scope",
             "finite-size evidence review",
         ]
+    if template.startswith("run iteration record"):
+        return [
+            "--topic",
+            "fqhe",
+            "--run",
+            "run-fqhe-iteration",
+            "--iteration",
+            "iter-001",
+            "--plan-summary",
+            "Run a bounded diagnostic check.",
+            "--deliverable",
+            "diagnostic note",
+            "--check",
+            "do not promote diagnostic output",
+            "--stop-rule",
+            "stop before trust update",
+            "--status",
+            "planned",
+        ]
     if template.startswith("trace hook-event persist"):
         return ["--payload-json", '{"kind":"hook_trace_event","hook_name":"post_tool","event":{"event_id":"event-1","session_id":"s1","topic_id":"fqhe","event_type":"tool_run_recorded","risk_level":"guided","payload":{},"kind":"trace_event"},"exit_code":0,"summary_inputs_trusted":false}']
     if template.startswith("legacy migrate"):

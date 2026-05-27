@@ -71,6 +71,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "record_gate_coverage_audit",
         "reference_location_record",
         "research_intent_packet",
+        "run_iteration_record",
         "runtime_hook_installation_audit",
         "runtime_host_lifecycle_audit",
         "runtime_host_production_loop_audit",

@@ -107,6 +107,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_record_research_intent_packet",
         "surface": "research_intent_packet",
     },
+    "record_run_iteration": {
+        "cli": "aitp-v5 run iteration record <args>",
+        "mcp": "aitp_v5_record_run_iteration",
+        "surface": "run_iteration_record",
+    },
     "materialize_steering_redirect": {
         "cli": "aitp-v5 intent steering materialize <args>",
         "mcp": "aitp_v5_materialize_steering_redirect",

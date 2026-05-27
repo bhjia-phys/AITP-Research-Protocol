@@ -77,6 +77,7 @@ def _topic_state(ws: WorkspacePaths, brief: dict[str, Any]) -> dict[str, Any]:
         "active_operator_checkpoint": known_context.get("operator_checkpoint", {}),
         "final_output_profile": known_context.get("final_output_profile", {}),
         "strategy_memory": known_context.get("strategy_memory", {}),
+        "run_iterations": known_context.get("run_iterations", {}),
         "summary_inputs_trusted": False,
         "can_update_claim_trust": False,
     }
