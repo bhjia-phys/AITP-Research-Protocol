@@ -6,6 +6,7 @@ from dataclasses import asdict
 from typing import Any
 
 from brain.v5.ids import prefixed_id
+from brain.v5.output_stability import load_final_output_profile
 from brain.v5.references import record_reference_location
 from brain.v5.workspace import get_session_binding
 
@@ -45,6 +46,7 @@ def suggest_literature_intake(
     sensemaking = _sensemaking_candidate(session.topic_id, claim_id, label, short_summary, detected_relevance)
     evidence = _evidence_candidate(session.topic_id, claim_id, reference["location_id"], short_summary, scoped_output)
     next_steps = _guarded_next_steps(claim_id, clear_relation, sensemaking, evidence)
+    output_profile = _topic_output_profile(ws, session.topic_id)
     return {
         "ok": True,
         "kind": "literature_intake_suggestion",
@@ -59,6 +61,7 @@ def suggest_literature_intake(
         "mcp_templates": _mcp_templates(reference, sensemaking, evidence, claim_id, clear_relation, scoped_output),
         "cli_templates": _cli_templates(reference, sensemaking, evidence, claim_id, clear_relation, scoped_output),
         "risk_notes": _risk_notes(claim_id, clear_relation, scoped_output),
+        "output_profile_context": output_profile,
         "forbidden_without_preflight": [
             "aitp_v5_preflight_trust_update",
             "aitp_v5_create_promotion_packet",
@@ -340,3 +343,14 @@ def _sensemaking_summary(short_summary: str, detected_relevance: str) -> str:
     if "close" in lowered and "level statistics" in lowered and "classification" in lowered:
         return "close prior art; level statistics already studied; algebraic classification remains open"
     return short_summary or detected_relevance or "Literature item may affect claim scope or open proof gaps."
+
+
+def _topic_output_profile(ws, topic_id: str) -> dict[str, Any]:
+    profile = load_final_output_profile(ws, topic_id)
+    if not profile or not profile.get("present"):
+        return {}
+    return {
+        "output_version": str(profile.get("output_version") or ""),
+        "stable_sections": list(profile.get("stable_sections") or []),
+        "lane_boundary_note": "Final lane evidence must use usable_for_final=True sources; diagnostic lane may use assumptions with explicit labels. Literature evidence must not mix lanes.",
+    }

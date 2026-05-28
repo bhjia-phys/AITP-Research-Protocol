@@ -1,6 +1,9 @@
 # Human-Idea, AI-Execution, Human-Steering Protocol (vNext)
 
-Status: implementation target
+Status: **implemented** — all workstreams are in production on branch `codex/aitp-v5-kernel-mvp`.
+Control-plane status: `ready`. Covered lanes: `toy_numeric`, `semi_formal_theory`, `code_backed_algorithm`.
+Missing workstreams: none. Trust update forbidden: true. Human output stability: implemented.
+Legacy semantic review backlog remains blocking until human-reviewed.
 
 Scope: next-stage protocol and runtime hardening on top of existing AITP
 `L0 -> L1 -> L3 -> L4 -> L2`
@@ -298,6 +301,11 @@ hard enough to support them.
 
 ### Phase 1: Research Intent Gate + Steering Hardening
 
+Status: **implemented.** `aitp_v5_record_research_intent_packet` and
+`aitp_v5_materialize_steering_redirect` are production surfaces with
+CLI/MCP/runtime entrypoints. Runtime entrypoint catalog validates all
+entrypoints against real CLI/MCP targets.
+
 Deliverables:
 
 - `idea_packet` artifacts,
@@ -314,6 +322,10 @@ Acceptance:
 
 ### Phase 2: Operator Checkpoint Protocol
 
+Status: **implemented.** `aitp_v5_request_operator_checkpoint` and
+`aitp_v5_answer_operator_checkpoint` are production surfaces.
+`session_start.generated.md` renders active checkpoint as stable resume handoff.
+
 Deliverables:
 
 - active operator checkpoint artifact,
@@ -328,6 +340,15 @@ Acceptance:
 - a checkpoint can be answered later without losing continuity.
 
 ### Phase 3: Explainability And Status Hardening
+
+Status: **implemented.** `topic_state.json`, `operator_console.md`,
+`topic_dashboard.md`, `runtime_protocol.generated.md`,
+`session_start.generated.md` are production surfaces.
+`aitp-v5 status topic <session-id> --compact` returns compact
+`topic_status_bundle_progress` while writing full files on disk.
+`workspace_refresh_progress` returns lightweight chat output.
+Goal continuation audit packets (`aitp-v5 goal write/latest/list`) enable
+cross-session context recovery.
 
 Deliverables:
 
@@ -373,6 +394,11 @@ Rule:
 
 ### Phase 4: Strategy Memory
 
+Status: **implemented.** `aitp_v5_record_strategy_memory` and
+`session_start.generated.md` strategy-rules section are production surfaces.
+Strategy types include scope_control, verification_guardrail, resource_plan,
+search_route, debug_pattern.
+
 Deliverables:
 
 - run-local strategy-memory write path,
@@ -385,6 +411,11 @@ Acceptance:
   confused with `L2` scientific truth.
 
 ### Phase 5: Lane-Specific Closure Exemplars
+
+Status: **implemented.** Covered lanes: `toy_numeric`, `semi_formal_theory`,
+`code_backed_algorithm`. `aitp_v5_record_lane_exemplar` and
+`aitp_v5_build_lane_exemplar_manifest` are production surfaces.
+`session_start.generated.md` renders lane exemplars with trust boundaries.
 
 Deliverables:
 
@@ -455,3 +486,44 @@ This document extends, and does not replace:
 - `research/knowledge-hub/runtime/CONTROL_NOTE_CONTRACT.md`
 - `research/knowledge-hub/runtime/README.md`
 - `docs/LESSONS_FROM_GET_PHYSICS_DONE.md`
+
+## 11) Post-Implementation Status (2026-05-28)
+
+All five phases are implemented and tested on branch `codex/aitp-v5-kernel-mvp`.
+
+### Implemented additional surfaces beyond original spec
+
+- **Goal continuation audit packets** (`aitp-v5 goal write/latest/list`):
+  cross-session context recovery via local `.aitp/surfaces/goal_continuation/`
+  JSON+Markdown packets. Orientation-only, no kernel state mutation.
+- **Compact session-start refresh** (`workspace_refresh_progress`):
+  Claude/Kimi SessionStart hooks return lightweight projection instead of
+  full `workspace_refresh_bundle`. Full topic-status files still written to disk.
+- **Compact topic status handoff** (`aitp-v5 status topic --compact`):
+  returns `topic_status_bundle_progress` with handoff paths, not full state.
+- **Legacy semantic review backlog system**:
+  full backlog triage, repair, review queue, needs-revision basis,
+  source reconstruction, and human checkpoint backlog surfaces.
+  All reviewed via typed records with explicit review basis.
+  Remains blocking until human-reviewed.
+
+### Current blocking state
+
+- `completion_status`: `kernel_ready_content_backlog`
+- `blocking_gaps`: `["legacy_semantic_review_backlog"]`
+- `can_update_claim_trust`: false
+- `semantic_lossless_proven`: false
+- `control_plane_status`: ready
+- `adapter_bootstrap_conformance`: `priority_hosts_ready_opencode_deferred`
+
+### Known remaining work
+
+1. **Legacy semantic review backlog** (18 topics, 16 needs_revision, 2 inconclusive):
+   each item requires human-reviewed typed semantic review result before
+   the backlog clears. This cannot be automated away.
+2. **Theory workspace AITP update**: sync kernel worktree changes to
+   `D:/BaiduSyncdisk/Theoretical-Physics` AITP installation.
+3. **Literature intake optimization for qsgw dual-lane workflow**:
+   ensure literature intake templates correctly reference final/diagnostic
+   lane boundaries and usable_for_final provenance guards.
+4. **OpenCode adapter**: deferred until OpenCode hook model stabilizes.
