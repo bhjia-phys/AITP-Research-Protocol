@@ -372,6 +372,12 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   review action requests that source. Frontmatter values are normalized before
   becoming proposed claim text, including YAML lists and maps, so repairs do not
   write Python collection reprs into claim statements, scopes, or failure modes.
+  Failed validation-result follow-up is not a mechanical apply repair:
+  `validation_result_revision` candidates are marked
+  `external_evidence_required` with required action
+  `record_revised_validation_result_before_semantic_pass`, because they need a
+  repaired or replaced run and a new typed validation result before semantic
+  pass.
   They update only the migrated claim and topic ledger, and write a durable
   `legacy_semantic_repair` record. The repair apply surface may update kernel
   content state, but it cannot update claim trust or prove semantic

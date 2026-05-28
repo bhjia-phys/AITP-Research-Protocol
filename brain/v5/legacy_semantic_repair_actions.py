@@ -12,7 +12,17 @@ def required_repair_actions(
     proposed_repairs: list[dict[str, Any]],
 ) -> list[str]:
     if proposed_repairs:
-        return ["review_proposed_repairs_before_apply"]
+        actions: list[str] = []
+        if any(not _requires_external_evidence(repair) for repair in proposed_repairs):
+            actions.append("review_proposed_repairs_before_apply")
+        for repair in proposed_repairs:
+            if _requires_external_evidence(repair):
+                repair_type = str(repair.get("repair_type") or "")
+                if repair_type == "validation_result_revision":
+                    actions.append("record_revised_validation_result_before_semantic_pass")
+                else:
+                    actions.append("perform_manual_non_claim_repair")
+        return _unique(actions)
     actions: list[str] = []
     if not latest_review:
         actions.append("record_initial_semantic_review_result")
@@ -29,6 +39,10 @@ def required_repair_actions(
         actions.append("supply_or_review_human_topic_question_before_claim_statement_backfill")
     actions.append("keep_semantic_review_blocking_until_typed_review_basis_exists")
     return _unique(actions)
+
+
+def _requires_external_evidence(repair: dict[str, Any]) -> bool:
+    return bool(repair.get("requires_external_evidence") is True)
 
 
 def _unique(values: list[str]) -> list[str]:

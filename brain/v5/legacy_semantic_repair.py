@@ -380,6 +380,8 @@ def _frontmatter_text(value: Any) -> str:
 
 def _repair_status(latest_review: dict[str, Any], proposed_repairs: list[dict[str, Any]]) -> str:
     if proposed_repairs:
+        if all(bool(repair.get("requires_external_evidence") is True) for repair in proposed_repairs):
+            return "external_evidence_required"
         return "proposed_repairs"
     if latest_review.get("status") != "needs_revision":
         return "awaiting_needs_revision_review"

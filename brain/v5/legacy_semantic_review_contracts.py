@@ -261,6 +261,7 @@ def validate_legacy_semantic_repair_plan(
             result.add(f"{path}.{key}", "must be a non-empty string")
     if payload.get("repair_status") not in {
         "proposed_repairs",
+        "external_evidence_required",
         "awaiting_needs_revision_review",
         "no_repair_candidates",
     }:

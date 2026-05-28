@@ -572,6 +572,7 @@ def test_workspace_refresh_cli_compact_progress_accepts_migration_dir(tmp_path, 
         "work_item_count": 1,
         "repair_status_counts": {
             "awaiting_needs_revision_review": 1,
+            "external_evidence_required": 0,
             "no_repair_candidates": 0,
             "proposed_repairs": 0,
         },

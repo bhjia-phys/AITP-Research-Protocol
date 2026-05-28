@@ -464,6 +464,7 @@ def test_workspace_replay_packet_can_include_legacy_semantic_review_backlog(tmp_
         "work_item_count": 1,
         "repair_status_counts": {
             "awaiting_needs_revision_review": 1,
+            "external_evidence_required": 0,
             "no_repair_candidates": 0,
             "proposed_repairs": 0,
         },

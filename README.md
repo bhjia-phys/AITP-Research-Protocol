@@ -321,6 +321,15 @@ refs, reviewed typed refs, evidence/validation refs, remaining actions, and an
 optional checkpoint id. The queue reads these records back as
 `semantic_review_status`, so migrated topics can be closed one by one without
 letting the review record update claim trust.
+`aitp-v5 legacy semantic-repair-plan` and
+`aitp_v5_build_legacy_semantic_repair_plan` derive guarded follow-up from
+typed `needs_revision` reviews. Narrow claim-content repairs, such as reviewed
+statement/scope/failure-mode backfills, remain review-and-apply candidates.
+Failed validation results are different: they are reported as
+`external_evidence_required`, because they require a repaired or replaced run
+and a new validation result before any semantic pass. The repair manifest keeps
+that distinction so agents do not treat a failed validation surface as a
+mechanical migration fix.
 `aitp-v5 memory failure-mode-review --claim <claim-id>` and
 `aitp_v5_build_failure_mode_review_packet` turn that typed audit into a
 read-only `failure_mode_review_packet`: per-mode physical adequacy questions,

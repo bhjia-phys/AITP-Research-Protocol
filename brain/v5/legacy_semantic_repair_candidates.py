@@ -37,6 +37,7 @@ def validation_result_revision_repairs(
             "proposed_value": VALIDATION_RESULT_REVISION_PROPOSED_VALUE,
             "basis_refs": _unique([result.result_id, review_id]),
             "mutation_authority": "none_review_and_apply_separately",
+            "requires_external_evidence": True,
         })
     return repairs
 
@@ -93,8 +94,9 @@ def manifest_repair_candidate(
     surface: str,
     command: str,
     repair_type: str,
+    requires_external_evidence: bool = False,
 ) -> dict[str, Any]:
-    return {
+    payload = {
         "repair_surface": surface,
         "repair_type": repair_type,
         "review_id": review_id,
@@ -105,6 +107,9 @@ def manifest_repair_candidate(
         ),
         "can_update_claim_trust": False,
     }
+    if requires_external_evidence:
+        payload["requires_external_evidence"] = True
+    return payload
 
 
 def _unique(values: list[str]) -> list[str]:

@@ -194,6 +194,7 @@ def _repair_candidates(
                 surface="legacy_semantic_repair_apply",
                 command="semantic-repair-apply",
                 repair_type="validation_result_revision",
+                requires_external_evidence=True,
             )
         )
     if (

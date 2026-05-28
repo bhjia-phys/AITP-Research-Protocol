@@ -12,6 +12,7 @@ from brain.v5.paths import WorkspacePaths
 
 _REPAIR_STATUSES = (
     "proposed_repairs",
+    "external_evidence_required",
     "awaiting_needs_revision_review",
     "no_repair_candidates",
 )
@@ -91,6 +92,8 @@ def _repair_item(ws: WorkspacePaths, manifest: dict[str, Any], item: dict[str, A
 
 def _repair_status(latest_review: dict[str, Any], repairs: list[dict[str, Any]]) -> str:
     if repairs:
+        if all(bool(repair.get("requires_external_evidence") is True) for repair in repairs):
+            return "external_evidence_required"
         return "proposed_repairs"
     if latest_review.get("status") != "needs_revision":
         return "awaiting_needs_revision_review"

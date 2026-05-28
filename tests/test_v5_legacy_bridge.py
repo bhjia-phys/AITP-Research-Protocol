@@ -1025,6 +1025,7 @@ def test_legacy_semantic_review_manifest_summarizes_failed_validation_repair_can
                 f" --review-id {review.review_id}"
             ),
             "can_update_claim_trust": False,
+            "requires_external_evidence": True,
         }
     ]
     assert "repair_candidate:canonical-topic:validation_result_revision" in manifest["next_actions"]
@@ -4264,7 +4265,8 @@ def test_legacy_semantic_repair_plan_proposes_validation_revision_from_failed_re
 
     plan = build_legacy_semantic_repair_plan(ws, migration_dir=run, topic="canonical-topic")
 
-    assert plan["repair_status"] == "proposed_repairs"
+    assert plan["repair_status"] == "external_evidence_required"
+    assert plan["required_actions"] == ["record_revised_validation_result_before_semantic_pass"]
     assert plan["proposed_repairs"] == [
         {
             "repair_type": "validation_result_revision",
@@ -4276,6 +4278,7 @@ def test_legacy_semantic_repair_plan_proposes_validation_revision_from_failed_re
                 review.review_id,
             ],
             "mutation_authority": "none_review_and_apply_separately",
+            "requires_external_evidence": True,
         }
     ]
     assert require_valid_public_surface("legacy_semantic_repair_plan", plan) == plan
@@ -4293,6 +4296,69 @@ def test_legacy_semantic_repair_plan_proposes_validation_revision_from_failed_re
     assert result["can_update_kernel_state"] is False
     assert result["can_update_claim_trust"] is False
     assert require_valid_public_surface("legacy_semantic_repair_apply", result) == result
+
+
+def test_legacy_semantic_repair_manifest_marks_validation_revision_as_external_evidence(tmp_path):
+    from brain.v5.legacy_semantic_repair_manifest import build_legacy_semantic_repair_manifest
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.models import ClaimRecord, ValidationResultRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="A validation-backed legacy claim.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Semantic review required.",
+        ),
+    )
+    failed_result = ValidationResultRecord(
+        result_id="validation-result-failed-toy",
+        topic_id="canonical-topic",
+        claim_id="claim-canonical",
+        contract_id="validation-contract-canonical",
+        tool_run_id="tool-run-failed-toy",
+        status="failed",
+        checked_outputs=["toy script reported 0/3 checks passed"],
+        failure_modes_observed=["target projector weights zeroed the checked transition"],
+        summary="The legacy toy validation failed and must be repaired before semantic pass.",
+    )
+    write_record(ws.registry_dir("validation_results") / f"{failed_result.result_id}.md", failed_result)
+    record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="needs_revision",
+        summary="The legacy validation surface failed and needs revision.",
+        reviewed_typed_refs=["claim-canonical"],
+        validation_result_ids=[failed_result.result_id],
+        remaining_actions=["repair_or_replace_validate_wcrpa_toy_model_to_exercise_target_screening"],
+    )
+
+    payload = require_valid_public_surface(
+        "legacy_semantic_repair_manifest",
+        build_legacy_semantic_repair_manifest(ws, migration_dir=run),
+    )
+
+    by_topic = {item["topic"]: item for item in payload["items"]}
+    assert by_topic["canonical-topic"]["repair_status"] == "external_evidence_required"
+    assert by_topic["canonical-topic"]["required_actions"] == [
+        "record_revised_validation_result_before_semantic_pass"
+    ]
+    assert payload["repair_status_counts"]["external_evidence_required"] == 1
+    assert payload["required_action_counts"]["record_revised_validation_result_before_semantic_pass"] == 1
+    assert "review_repair_plan:canonical-topic" not in payload["next_actions"]
+    assert (
+        "repair_basis:canonical-topic:record_revised_validation_result_before_semantic_pass"
+        in payload["next_actions"]
+    )
 
 
 def test_legacy_semantic_repair_plan_cli_mcp_and_runtime_surface(tmp_path, capsys):
@@ -4510,6 +4576,7 @@ def test_legacy_semantic_repair_manifest_batches_repair_triage(tmp_path):
     assert payload["work_item_count"] == 2
     assert payload["repair_status_counts"] == {
         "proposed_repairs": 1,
+        "external_evidence_required": 0,
         "awaiting_needs_revision_review": 1,
         "no_repair_candidates": 0,
     }
@@ -4641,6 +4708,7 @@ def test_legacy_semantic_repair_manifest_cli_compact_progress(tmp_path, capsys):
     assert cli_payload["work_item_count"] == 2
     assert cli_payload["repair_status_counts"] == {
         "proposed_repairs": 1,
+        "external_evidence_required": 0,
         "awaiting_needs_revision_review": 1,
         "no_repair_candidates": 0,
     }

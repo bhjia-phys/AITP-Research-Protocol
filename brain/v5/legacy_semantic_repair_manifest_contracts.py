@@ -14,7 +14,12 @@ from brain.v5.contracts import (
 )
 
 
-_REPAIR_STATUSES = {"proposed_repairs", "awaiting_needs_revision_review", "no_repair_candidates"}
+_REPAIR_STATUSES = {
+    "proposed_repairs",
+    "external_evidence_required",
+    "awaiting_needs_revision_review",
+    "no_repair_candidates",
+}
 
 
 def validate_legacy_semantic_repair_manifest(
