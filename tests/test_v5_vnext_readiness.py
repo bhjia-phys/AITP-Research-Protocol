@@ -76,3 +76,45 @@ def test_vnext_readiness_cli_mcp_and_runtime_surface(tmp_path, capsys):
         "mcp": "aitp_v5_build_vnext_readiness_manifest",
         "surface": "vnext_readiness_manifest",
     }
+
+
+def test_vnext_readiness_cli_compact_progress(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.lane_exemplars import record_lane_exemplar
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    record_lane_exemplar(
+        ws,
+        topic_id="toy-topic",
+        lane="toy_numeric",
+        title="Toy numeric lane",
+        summary="A toy numeric workflow exemplar exists.",
+        gates_demonstrated=["G2"],
+        artifact_refs=["artifact:toy"],
+        trust_boundary="Workflow exemplar only.",
+        status="accepted",
+    )
+
+    assert main(["--base", str(ws.base), "status", "vnext-readiness", "--compact"]) == 0
+    compact_payload = json.loads(capsys.readouterr().out)
+
+    assert compact_payload["kind"] == "vnext_readiness_manifest_progress"
+    assert compact_payload["source_surface"] == "vnext_readiness_manifest"
+    assert compact_payload["control_plane_status"] == "ready_with_lane_exemplar_backlog"
+    assert compact_payload["phase_statuses"]["human_output_stability"] == "implemented"
+    assert compact_payload["phase_statuses"]["literature_intake_assistant"] == "implemented"
+    assert compact_payload["covered_lanes"] == ["toy_numeric"]
+    assert compact_payload["missing_lanes"] == ["semi_formal_theory", "code_backed_algorithm"]
+    assert compact_payload["stable_output_spine"] == [
+        "core_claim_or_current_focus",
+        "verified_or_validated_content",
+        "hypotheses_uncertainty_and_known_failure_modes",
+        "aitp_records_written_or_referenced",
+        "next_actions",
+        "long_term_memory_candidates_and_non_promotable_content",
+    ]
+    assert compact_payload["trust_update_forbidden"] is True
+    assert compact_payload["can_update_claim_trust"] is False
+    assert "workstreams" not in compact_payload
+    assert "lane_exemplar_manifest" not in compact_payload

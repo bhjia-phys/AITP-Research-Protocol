@@ -135,6 +135,34 @@ def build_vnext_readiness_manifest(ws: WorkspacePaths) -> dict[str, Any]:
     }
 
 
+def compact_vnext_readiness_manifest(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a host-friendly vNext readiness projection without bulky item lists."""
+
+    lane_manifest = payload.get("lane_exemplar_manifest")
+    if not isinstance(lane_manifest, dict):
+        lane_manifest = {}
+    return {
+        "kind": "vnext_readiness_manifest_progress",
+        "source_surface": "vnext_readiness_manifest",
+        "control_plane_status": str(payload.get("control_plane_status") or ""),
+        "phase_statuses": dict(payload.get("phase_statuses") or {}),
+        "missing_workstreams": _limited_strings(payload.get("missing_workstreams"), limit=20),
+        "backlog_workstreams": _limited_strings(payload.get("backlog_workstreams"), limit=20),
+        "covered_lanes": _limited_strings(lane_manifest.get("covered_lanes"), limit=10),
+        "missing_lanes": _limited_strings(lane_manifest.get("missing_lanes"), limit=10),
+        "stable_output_spine": _limited_strings(payload.get("stable_output_spine"), limit=20),
+        "stable_output_contract_doc": str(payload.get("stable_output_contract_doc") or ""),
+        "priority_hosts": _limited_strings(payload.get("priority_hosts"), limit=10),
+        "deferred_hosts": _limited_strings(payload.get("deferred_hosts"), limit=10),
+        "trust_update_forbidden": bool(payload.get("trust_update_forbidden", False)),
+        "truth_source": str(payload.get("truth_source") or ""),
+        "summary_inputs_trusted": bool(payload.get("summary_inputs_trusted", False)),
+        "orientation_only": bool(payload.get("orientation_only", True)),
+        "can_update_kernel_state": bool(payload.get("can_update_kernel_state", False)),
+        "can_update_claim_trust": bool(payload.get("can_update_claim_trust", False)),
+    }
+
+
 def _workstream(
     name: str,
     phase: str,
@@ -215,3 +243,9 @@ def _control_plane_status(missing_workstreams: list[str], backlog_workstreams: l
     if backlog_workstreams:
         return "ready_with_lane_exemplar_backlog"
     return "ready"
+
+
+def _limited_strings(value: Any, *, limit: int) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value[:limit] if str(item)]
