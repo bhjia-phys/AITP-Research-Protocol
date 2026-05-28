@@ -296,6 +296,36 @@ researcher can steer, approve, correct, or pause the system at any layer.
 
 See: `docs/protocols/H_human_interaction.md`
 
+### Human-Facing Output Stability Contract
+
+AITP's human-facing research output has a stable spine. This applies to direct
+chat reports, session summaries, workspace replay packets, Obsidian review
+views, and any adapter-rendered research report derived from AITP state.
+
+The stable spine is:
+
+1. Core claim or current focus.
+2. Verified or validated content.
+3. Hypotheses, uncertainty, and known failure modes.
+4. AITP records written or referenced.
+5. Next actions.
+6. Long-term memory candidates and content that must not be promoted.
+
+Future versions may add optional sections, diagnostics, or appendices after this
+spine, but they must not rename, remove, reorder, or change the meaning of the
+spine without a major protocol-version change and an explicit migration note.
+Internal typed records may evolve through additive optional fields or new record
+types, but existing records and generated reports must remain readable.
+
+Generated summaries, replay packets, and review views remain orientation-only.
+They help humans and adapters resume work; they do not become evidence,
+validation, or trust sources by their presence alone.
+
+Any implementation change that breaks this output contract must include a
+compatibility plan and should add or update contract/snapshot tests for the
+human-facing headings or fields. The human researcher should experience AITP
+updates as incremental additions, not as recurring format conversions.
+
 ## S6. Mode Envelope
 
 The Brain operates in one of three modes. Each mode represents a distinct

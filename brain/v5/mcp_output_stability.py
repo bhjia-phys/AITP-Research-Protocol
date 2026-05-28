@@ -7,6 +7,7 @@ from pathlib import Path
 
 from brain.v5.output_stability import record_final_output_profile
 from brain.v5.public_surfaces import require_valid_public_surface
+from brain.v5.vnext_readiness import build_vnext_readiness_manifest
 from brain.v5.workspace import init_workspace
 
 
@@ -31,3 +32,7 @@ def aitp_v5_record_final_output_profile(
         status=status,
     )
     return require_valid_public_surface("final_output_profile", {"ok": True, **asdict(profile)})
+
+
+def aitp_v5_build_vnext_readiness_manifest(base: str) -> dict:
+    return require_valid_public_surface("vnext_readiness_manifest", build_vnext_readiness_manifest(_ws(base)))

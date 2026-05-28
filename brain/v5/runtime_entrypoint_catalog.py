@@ -33,6 +33,7 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
     },
     "runtime_hook_smoke_coverage": {"cli": "aitp-v5 adapter smoke-coverage", "mcp": "aitp_v5_report_hook_smoke_coverage", "surface": "runtime_hook_smoke_coverage"},
     "final_engineering_readiness_audit": {"cli": "aitp-v5 adapter final-readiness", "mcp": "aitp_v5_audit_final_engineering_readiness", "surface": "final_engineering_readiness_audit"},
+    "vnext_readiness_manifest": {"cli": "aitp-v5 status vnext-readiness", "mcp": "aitp_v5_build_vnext_readiness_manifest", "surface": "vnext_readiness_manifest"},
     "adapter_packet": {
         "cli": "aitp-v5 adapter packet <runtime> <session-id>",
         "mcp": "aitp_v5_get_adapter_packet",

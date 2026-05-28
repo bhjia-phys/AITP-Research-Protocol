@@ -520,6 +520,31 @@ def test_final_readiness_audit_reports_source_reconstruction_content_backlog(tmp
     assert require_valid_public_surface("final_engineering_readiness_audit", payload) == payload
 
 
+def test_final_readiness_audit_reports_vnext_backlog_without_calling_it_complete(tmp_path):
+    from brain.v5.final_readiness import audit_final_engineering_readiness
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    run = _write_migration_run(ws, topic_count=0)
+
+    payload = audit_final_engineering_readiness(ws, migration_dir=run)
+
+    assert payload["completion_status"] == "kernel_ready_content_backlog"
+    assert payload["content_backlog_status"] == "vnext_lane_exemplar_backlog"
+    assert payload["blocking_gaps"] == []
+    assert payload["vnext_readiness"]["control_plane_status"] == "ready_with_lane_exemplar_backlog"
+    assert payload["vnext_readiness"]["lane_exemplar_manifest"]["missing_lanes"] == [
+        "toy_numeric",
+        "semi_formal_theory",
+        "code_backed_algorithm",
+    ]
+    assert payload["vnext_readiness"]["trust_update_forbidden"] is True
+    assert payload["vnext_readiness"]["can_update_claim_trust"] is False
+    assert "vnext_lane_exemplars:missing=3" in payload["backlog_refs"]
+    assert require_valid_public_surface("final_engineering_readiness_audit", payload) == payload
+
+
 def test_final_readiness_cli_mcp_and_runtime_entrypoint(tmp_path, capsys):
     from brain.v5.cli import main
     from brain.v5.mcp_tools import aitp_v5_audit_final_engineering_readiness
@@ -680,6 +705,17 @@ def test_final_readiness_cli_compact_progress(tmp_path, capsys):
         "priority_host_batch_cli": "aitp-v5 adapter host-production-loop",
         "priority_host_lifecycle_smoke_supported": True,
         "priority_host_loop_count": 3,
+    }
+    assert cli_payload["vnext_readiness"] == {
+        "control_plane_status": "ready_with_lane_exemplar_backlog",
+        "backlog_workstreams": ["lane_exemplars"],
+        "missing_workstreams": [],
+        "covered_lanes": [],
+        "missing_lanes": ["toy_numeric", "semi_formal_theory", "code_backed_algorithm"],
+        "human_output_stability": "implemented",
+        "adapter_bootstrap_conformance": "priority_hosts_ready_opencode_deferred",
+        "trust_update_forbidden": True,
+        "can_update_claim_trust": False,
     }
     assert cli_payload["can_update_claim_trust"] is False
     assert "kernel_capabilities" not in cli_payload

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from brain.v5.contracts import ContractError, ContractResult
+from brain.v5.vnext_readiness_contracts import validate_vnext_readiness_manifest
 
 
 def validate_final_engineering_readiness_audit(
@@ -216,6 +217,9 @@ def validate_final_engineering_readiness_audit(
                 "must be true",
             )
     _require_mapping(payload.get("content_backlog"), f"{path}.content_backlog", result)
+    _require_mapping(payload.get("vnext_readiness"), f"{path}.vnext_readiness", result)
+    if isinstance(payload.get("vnext_readiness"), dict):
+        result.extend(validate_vnext_readiness_manifest(payload["vnext_readiness"], path=f"{path}.vnext_readiness"))
     _require_list(payload.get("blocking_gaps"), f"{path}.blocking_gaps", result)
     _require_list(payload.get("residual_risks"), f"{path}.residual_risks", result)
     _require_list(payload.get("evidence_refs"), f"{path}.evidence_refs", result)

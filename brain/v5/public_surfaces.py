@@ -101,6 +101,7 @@ _PUBLIC_SURFACE_NAMES = (
     "trust_update_preflight",
     "validation_contract_record",
     "validation_result_record",
+    "vnext_readiness_manifest",
     "workspace_summary_bundle",
     "workspace_replay_packet",
     "workspace_refresh_bundle",
@@ -203,6 +204,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "trust_update_preflight": "contracted preflight gate for trust-changing actions",
     "validation_contract_record": "contracted validation contract requiring explicit checks, failure modes, and evidence outputs before a claim can be validated",
     "validation_result_record": "contracted validation result linking a tool run to a validation contract and checked outputs",
+    "vnext_readiness_manifest": "orientation-only vNext readiness manifest separating implemented control-plane surfaces from lane exemplar and content backlog",
     "workspace_summary_bundle": "orientation-only workspace summary regenerated from typed sessions, active claims, memory entries, and validation links",
     "workspace_replay_packet": "orientation-only multi-session replay packet listing resume attention, source reconstruction gaps, evidence gaps, and next actions from typed records",
     "workspace_refresh_bundle": "orientation-only host startup bundle that refreshes workspace summary, replay packet, and L2 Obsidian views from typed records",
@@ -347,6 +349,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.interaction_preview_contracts import require_valid_interaction_recording_preview
     from brain.v5.interaction_worklist_contracts import require_valid_interaction_recording_worklist
     from brain.v5.workspace_interaction_preview_contracts import require_valid_workspace_interaction_preview_bundle
+    from brain.v5.vnext_readiness_contracts import require_valid_vnext_readiness_manifest
     from brain.v5.literature_intake_contracts import (
         require_valid_literature_intake_record_result,
         require_valid_literature_intake_suggestion,
@@ -470,6 +473,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "trust_update_preflight": require_valid_trust_update_preflight,
         "validation_contract_record": require_valid_validation_contract_record,
         "validation_result_record": require_valid_validation_result_record,
+        "vnext_readiness_manifest": require_valid_vnext_readiness_manifest,
         "workspace_summary_bundle": require_valid_workspace_summary_bundle,
         "workspace_replay_packet": require_valid_workspace_replay_packet,
         "workspace_refresh_bundle": require_valid_workspace_refresh_bundle,

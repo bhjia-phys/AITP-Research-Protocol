@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.topic_status import write_topic_status_surfaces
+from brain.v5.vnext_readiness import build_vnext_readiness_manifest
 
 
 def add_status_parser(sp) -> None:
     status = sp.add_parser("status"); ss = status.add_subparsers(dest="status_command", required=True)
     topic = ss.add_parser("topic")
     topic.add_argument("session_id")
+    ss.add_parser("vnext-readiness")
 
 
 def dispatch_status_command(args, ws) -> dict:
@@ -18,4 +20,6 @@ def dispatch_status_command(args, ws) -> dict:
             "topic_status_bundle",
             write_topic_status_surfaces(ws, session_id=args.session_id),
         )
+    if args.status_command == "vnext-readiness":
+        return require_valid_public_surface("vnext_readiness_manifest", build_vnext_readiness_manifest(ws))
     raise SystemExit(f"unsupported status command: {args.status_command}")

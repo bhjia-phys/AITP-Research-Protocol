@@ -270,6 +270,15 @@ itself. `aitp-v5 literature record-candidate` and
 `aitp_v5_record_literature_candidate` write only the orientation reference
 location, then return guarded next steps for `record_sensemaking_report` or
 scoped `record_evidence`.
+The vNext control-plane plan in
+`docs/HUMAN_IDEA_AI_EXECUTION_STEERING_PROTOCOL_VNEXT.md` is exposed as a
+read-only readiness surface through `aitp-v5 status vnext-readiness` and
+`aitp_v5_build_vnext_readiness_manifest`. It reports which vNext workstreams
+are implemented, which lane exemplars remain backlog, the priority-host vs
+OpenCode-deferred adapter boundary, and the stable human-facing output spine.
+`aitp-v5 adapter final-readiness` includes this manifest, so a kernel-ready
+state is not confused with unfinished vNext exemplar or legacy semantic-review
+content backlog.
 
 Stable boundary for research records:
 

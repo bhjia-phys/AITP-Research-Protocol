@@ -124,3 +124,19 @@ def test_final_output_profile_cli_mcp_and_runtime_surfaces(tmp_path, capsys):
         "mcp": "aitp_v5_record_final_output_profile",
         "surface": "final_output_profile",
     }
+
+
+def test_aitp_spec_documents_human_facing_output_stability_spine():
+    spec = Path("docs/AITP_SPEC.md").read_text(encoding="utf-8")
+
+    assert "### Human-Facing Output Stability Contract" in spec
+    for section in [
+        "Core claim or current focus.",
+        "Verified or validated content.",
+        "Hypotheses, uncertainty, and known failure modes.",
+        "AITP records written or referenced.",
+        "Next actions.",
+        "Long-term memory candidates and content that must not be promoted.",
+    ]:
+        assert section in spec
+    assert "major protocol-version change" in spec

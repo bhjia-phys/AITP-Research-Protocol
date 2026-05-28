@@ -510,6 +510,18 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   request carries the matching token.
 - Hook trace events are durable process history only. They do not create
   evidence, memory, validation, or claim-confidence records.
+- The vNext human-idea/AI-execution/human-steering plan is a first-class
+  readiness input. Agents can call `aitp-v5 status vnext-readiness` or
+  `aitp_v5_build_vnext_readiness_manifest` for the contracted
+  `vnext_readiness_manifest`, which reports implemented control-plane
+  workstreams, output-stability support, literature intake support, priority
+  host conformance with OpenCode deferred, and remaining lane-exemplar backlog.
+  `adapter final-readiness` includes this manifest but still keeps legacy
+  semantic review as a separate blocking content backlog and cannot update
+  claim trust.
+- Human-facing reports have a stable output spine defined in `docs/AITP_SPEC.md`
+  and topic-local `final_output_profile` records. Future report changes should
+  be additive unless a new output version and compatibility note are recorded.
 
 ## Protocol Layer Map
 

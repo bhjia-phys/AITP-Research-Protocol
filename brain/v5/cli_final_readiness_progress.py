@@ -15,6 +15,8 @@ def compact_final_readiness(payload: dict[str, Any]) -> dict[str, Any]:
     replay = capabilities.get("long_term_replay") if isinstance(capabilities.get("long_term_replay"), dict) else {}
     natural = capabilities.get("natural_interaction") if isinstance(capabilities.get("natural_interaction"), dict) else {}
     host = capabilities.get("host_integration") if isinstance(capabilities.get("host_integration"), dict) else {}
+    vnext = payload.get("vnext_readiness") if isinstance(payload.get("vnext_readiness"), dict) else {}
+    lane_manifest = vnext.get("lane_exemplar_manifest") if isinstance(vnext.get("lane_exemplar_manifest"), dict) else {}
     legacy_progress = _legacy_progress(legacy)
     source_progress = dict(source.get("review_progress") or {})
     top_source_items = [item for item in source.get("top_incomplete_claims", []) if isinstance(item, dict)]
@@ -161,6 +163,19 @@ def compact_final_readiness(payload: dict[str, Any]) -> dict[str, Any]:
                 host.get("priority_host_lifecycle_smoke_supported", False)
             ),
             "priority_host_loop_count": len(host.get("priority_host_production_loops") or []),
+        },
+        "vnext_readiness": {
+            "control_plane_status": str(vnext.get("control_plane_status") or ""),
+            "backlog_workstreams": _limited_strings(vnext.get("backlog_workstreams"), limit=10),
+            "missing_workstreams": _limited_strings(vnext.get("missing_workstreams"), limit=10),
+            "covered_lanes": _limited_strings(lane_manifest.get("covered_lanes"), limit=10),
+            "missing_lanes": _limited_strings(lane_manifest.get("missing_lanes"), limit=10),
+            "human_output_stability": str((vnext.get("phase_statuses") or {}).get("human_output_stability") or ""),
+            "adapter_bootstrap_conformance": str(
+                (vnext.get("phase_statuses") or {}).get("adapter_bootstrap_conformance") or ""
+            ),
+            "trust_update_forbidden": bool(vnext.get("trust_update_forbidden", False)),
+            "can_update_claim_trust": bool(vnext.get("can_update_claim_trust", False)),
         },
         "backlog_refs": list(payload.get("backlog_refs") or []),
         "truth_source": str(payload.get("truth_source") or ""),

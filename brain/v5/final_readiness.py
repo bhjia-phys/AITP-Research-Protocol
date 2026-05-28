@@ -20,6 +20,7 @@ from brain.v5.paths import WorkspacePaths
 from brain.v5.source_reconstruction import audit_source_reconstruction_batch
 from brain.v5.source_reconstruction_review import build_source_reconstruction_review_manifest
 from brain.v5.store import list_records
+from brain.v5.vnext_readiness import build_vnext_readiness_manifest
 
 _PRIORITY_HOSTS = ("codex", "claude_code", "kimi_code")
 _DEFERRED_HOSTS = ("opencode",)
@@ -42,8 +43,9 @@ def audit_final_engineering_readiness(
     source_review = build_source_reconstruction_review_manifest(ws)
     source_backlog = _source_reconstruction_backlog(source_stack, source_review)
     legacy_review = _legacy_semantic_review(ws, migration_dir=migration_dir)
+    vnext_readiness = build_vnext_readiness_manifest(ws)
     blocking_gaps = _blocking_gaps(record_gates, host_smoke, legacy_review)
-    content_backlog_status = _content_backlog_status(legacy_review, source_backlog)
+    content_backlog_status = _content_backlog_status(legacy_review, source_backlog, vnext_readiness)
     completion_status = (
         "complete"
         if not blocking_gaps and content_backlog_status == "none"
@@ -66,10 +68,11 @@ def audit_final_engineering_readiness(
             "legacy_semantic_review": legacy_review,
             "source_reconstruction": source_backlog,
         },
+        "vnext_readiness": vnext_readiness,
         "blocking_gaps": blocking_gaps,
         "residual_risks": _residual_risks(host_smoke, legacy_review),
         "evidence_refs": _evidence_refs(source_stack),
-        "backlog_refs": _backlog_refs(legacy_review, source_backlog),
+        "backlog_refs": _backlog_refs(legacy_review, source_backlog, vnext_readiness),
         "truth_source": "typed_records_and_contract_audits",
         "summary_inputs_trusted": False,
         "orientation_only": True,
@@ -409,13 +412,17 @@ def _kernel_capability_status(record_gates: dict[str, Any], host_smoke: dict[str
     return "ready_for_priority_hosts"
 
 
-def _content_backlog_status(legacy_review: dict[str, Any], source_backlog: dict[str, Any]) -> str:
+def _content_backlog_status(legacy_review: dict[str, Any], source_backlog: dict[str, Any], vnext_readiness: dict[str, Any]) -> str:
     if legacy_review["status"] == "missing_migration_run":
         return "legacy_semantic_review_backlog"
     if legacy_review["pending_count"] or legacy_review["needs_revision_count"] or legacy_review["inconclusive_count"]:
         return "legacy_semantic_review_backlog"
     if source_backlog["incomplete_claim_count"]:
         return "source_reconstruction_backlog"
+    if vnext_readiness.get("missing_workstreams"):
+        return "vnext_control_plane_backlog"
+    if vnext_readiness.get("backlog_workstreams"):
+        return "vnext_lane_exemplar_backlog"
     return "none"
 
 
@@ -458,9 +465,13 @@ def _evidence_refs(source_stack: dict[str, Any]) -> list[str]:
     return refs
 
 
-def _backlog_refs(legacy_review: dict[str, Any], source_backlog: dict[str, Any]) -> list[str]:
+def _backlog_refs(
+    legacy_review: dict[str, Any],
+    source_backlog: dict[str, Any],
+    vnext_readiness: dict[str, Any],
+) -> list[str]:
     run_id = legacy_review.get("run_id") or "missing"
-    return [
+    refs = [
         f"semantic_review:{run_id}:pending={legacy_review['pending_count']}",
         f"semantic_review:{run_id}:needs_revision={legacy_review['needs_revision_count']}",
         f"semantic_review:{run_id}:inconclusive={legacy_review['inconclusive_count']}",
@@ -469,6 +480,11 @@ def _backlog_refs(legacy_review: dict[str, Any], source_backlog: dict[str, Any])
         f"source_reconstruction_review:needs_revision={source_backlog['review_progress'].get('needs_revision', 0)}",
         f"source_reconstruction_review:inconclusive={source_backlog['review_progress'].get('inconclusive', 0)}",
     ]
+    lane_manifest = vnext_readiness.get("lane_exemplar_manifest") or {}
+    refs.append(f"vnext_lane_exemplars:missing={len(lane_manifest.get('missing_lanes') or [])}")
+    refs.extend(f"vnext_workstream_backlog:{name}" for name in vnext_readiness.get("backlog_workstreams") or [])
+    refs.extend(f"vnext_workstream_missing:{name}" for name in vnext_readiness.get("missing_workstreams") or [])
+    return refs
 
 
 def _unique(values) -> list[str]:
