@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 
 
@@ -93,6 +94,37 @@ def test_write_topic_status_surfaces_materializes_explainability_files(tmp_path)
     assert "Last meaningful evidence return" in dashboard
     assert "Should the next artifact" in console
     assert require_valid_public_surface("topic_status_bundle", bundle) == bundle
+
+
+def test_topic_status_uses_latest_evidence_file_mtime_not_id_order(tmp_path):
+    from brain.v5.evidence import record_evidence
+    from brain.v5.topic_status import write_topic_status_surfaces
+
+    ws, claim, first_evidence = _setup_workspace(tmp_path)
+    latest_evidence = None
+    for index in range(128):
+        candidate = record_evidence(
+            ws,
+            topic_id="qsgw-headwing-update-librpa",
+            claim_id=claim.claim_id,
+            evidence_type=f"freshness_guardrail_{index:03d}",
+            status="contradicts",
+            summary=f"Latest freshness guardrail candidate {index}.",
+            supports_outputs=["freshness_guardrail"],
+        )
+        if candidate.evidence_id < first_evidence.evidence_id:
+            latest_evidence = candidate
+            break
+    assert latest_evidence is not None
+    latest_path = ws.registry_dir("evidence") / f"{latest_evidence.evidence_id}.md"
+    for path in ws.registry_dir("evidence").glob("*.md"):
+        os.utime(path, (1000, 1000))
+    os.utime(latest_path, (2000, 2000))
+
+    bundle = write_topic_status_surfaces(ws, session_id="qsgw-session")
+
+    assert latest_evidence.evidence_id < first_evidence.evidence_id
+    assert bundle["topic_state"]["last_evidence_return"]["evidence_id"] == latest_evidence.evidence_id
 
 
 def test_topic_status_cli_mcp_and_runtime_surface(tmp_path, capsys):

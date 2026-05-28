@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from brain.v5.ids import prefixed_id, short_hash
 from brain.v5.models import ArtifactRecord, EvidenceRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_records, write_record
+from brain.v5.store import read_record, write_record
 
 
 @dataclass
@@ -92,11 +92,15 @@ def record_evidence(
 def list_evidence_for_claim(ws: WorkspacePaths, claim_id: str) -> list[EvidenceRecord]:
     """Return evidence records linked to a claim."""
 
-    return [
-        evidence
-        for evidence in list_records(ws.registry_dir("evidence"), EvidenceRecord)
-        if evidence.claim_id == claim_id
-    ]
+    root = ws.registry_dir("evidence")
+    if not root.exists():
+        return []
+    records: list[tuple[int, str, EvidenceRecord]] = []
+    for path in root.glob("*.md"):
+        evidence = read_record(path, EvidenceRecord)
+        if evidence.claim_id == claim_id:
+            records.append((path.stat().st_mtime_ns, path.name, evidence))
+    return [evidence for _, _, evidence in sorted(records)]
 
 
 def required_output_coverage(
