@@ -49,6 +49,57 @@ def write_topic_status_surfaces(ws: WorkspacePaths, *, session_id: str) -> dict[
     }
 
 
+def compact_topic_status_bundle(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a small continuation view after the full topic status is written."""
+
+    topic_state = payload.get("topic_state") or {}
+    evidence = topic_state.get("last_evidence_return") or {}
+    blocker = topic_state.get("blocker_summary") or {}
+    checkpoint = topic_state.get("active_operator_checkpoint") or {}
+    output_profile = topic_state.get("final_output_profile") or {}
+    strategy_items = list((topic_state.get("strategy_memory") or {}).get("items") or [])
+    lane_items = list((topic_state.get("lane_exemplars") or {}).get("items") or [])
+    next_action = topic_state.get("next_bounded_action") or {}
+    return {
+        "kind": "topic_status_bundle_progress",
+        "topic_id": str(payload.get("topic_id") or topic_state.get("topic_id") or ""),
+        "session_id": str(payload.get("session_id") or topic_state.get("session_id") or ""),
+        "source_surface": "topic_status_bundle",
+        "files": dict(payload.get("files") or {}),
+        "active_claim_id": str(topic_state.get("active_claim_id") or ""),
+        "confidence_state": str(topic_state.get("confidence_state") or ""),
+        "current_route_choice": str(topic_state.get("current_route_choice") or ""),
+        "why_here": _excerpt(topic_state.get("why_here") or ""),
+        "last_evidence_return": {
+            "evidence_id": str(evidence.get("evidence_id") or ""),
+            "evidence_type": str(evidence.get("evidence_type") or ""),
+            "status": str(evidence.get("status") or ""),
+            "supports_outputs": list(evidence.get("supports_outputs") or []),
+            "summary_excerpt": _excerpt(evidence.get("summary") or ""),
+        },
+        "missing_output_count": len(blocker.get("missing_outputs") or []),
+        "forbidden_now": list(blocker.get("forbidden_now") or []),
+        "human_checkpoint_needed": bool(blocker.get("human_checkpoint_needed")),
+        "human_checkpoint_reason_excerpt": _excerpt(blocker.get("human_checkpoint_reason") or ""),
+        "next_action": str(next_action.get("action") or ""),
+        "active_operator_checkpoint": _compact_checkpoint(checkpoint),
+        "final_output_profile": {
+            "present": bool(output_profile.get("present")),
+            "output_version": str(output_profile.get("output_version") or ""),
+            "stable_sections": list(output_profile.get("stable_sections") or []),
+            "change_policy_excerpt": _excerpt(output_profile.get("change_policy") or ""),
+        },
+        "strategy_rule_count": len(strategy_items),
+        "strategy_rules": [_compact_strategy_rule(item) for item in strategy_items[:5]],
+        "lane_exemplar_count": len(lane_items),
+        "lane_exemplars": [_compact_lane_exemplar(item) for item in lane_items[:5]],
+        "orientation_only": True,
+        "summary_inputs_trusted": False,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
 def _topic_state(ws: WorkspacePaths, brief: dict[str, Any]) -> dict[str, Any]:
     session = brief["session"]
     focus = brief["current_focus"]
@@ -230,6 +281,41 @@ def _checkpoint_section(checkpoint: dict[str, Any]) -> str:
 
 def _bullets(values: list[str]) -> str:
     return "\n".join(f"- {value}" for value in values) if values else "- None"
+
+
+def _compact_checkpoint(checkpoint: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "active": bool(checkpoint.get("active")),
+        "checkpoint_id": str(checkpoint.get("checkpoint_id") or ""),
+        "checkpoint_kind": str(checkpoint.get("checkpoint_kind") or ""),
+        "required_next_action": str(checkpoint.get("required_next_action") or ""),
+        "question_excerpt": _excerpt(checkpoint.get("question") or ""),
+        "options": list(checkpoint.get("options") or []),
+    }
+
+
+def _compact_strategy_rule(item: dict[str, Any]) -> dict[str, str]:
+    return {
+        "strategy_type": str(item.get("strategy_type") or ""),
+        "scope": str(item.get("scope") or ""),
+        "next_time_rule": str(item.get("next_time_rule") or ""),
+    }
+
+
+def _compact_lane_exemplar(item: dict[str, Any]) -> dict[str, str]:
+    return {
+        "lane": str(item.get("lane") or ""),
+        "title": str(item.get("title") or ""),
+        "status": str(item.get("status") or ""),
+        "trust_boundary": str(item.get("trust_boundary") or ""),
+    }
+
+
+def _excerpt(value: Any, *, limit: int = 260) -> str:
+    text = str(value or "").strip()
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3].rstrip() + "..."
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:

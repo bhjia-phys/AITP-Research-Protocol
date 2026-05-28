@@ -262,6 +262,10 @@ final-output profile, strategy-memory next-time rules, lane exemplars, and
 active operator checkpoint so a resumed session can follow prior workflow
 lessons without reading chat history. This file is still orientation-only and
 cannot update kernel state or claim trust.
+For chat-sensitive startup paths, `aitp-v5 status topic <session-id> --compact`
+or `aitp_v5_write_topic_status_surfaces_compact` writes the same topic-status
+files but returns only a small handoff projection instead of the full
+`topic_state` payload.
 For lighter natural conversations, `aitp-v5 interaction preview <session-id>`
 and `aitp_v5_preview_interaction_recording` expose a read-only
 `interaction_recording_preview`. It tells the host which records are merely

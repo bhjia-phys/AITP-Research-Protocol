@@ -538,6 +538,10 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `final_output_profile`, strategy-memory `next_time_rule` items, lane exemplar
   trust boundaries, and any required operator checkpoint. It remains
   orientation-only and cannot update kernel state or claim trust.
+- `aitp-v5 status topic <session-id> --compact` and
+  `aitp_v5_write_topic_status_surfaces_compact` should be preferred when a host
+  needs only a small continuation payload; they still write the full status
+  files but do not dump the complete `topic_state` JSON into chat.
 
 ## Protocol Layer Map
 

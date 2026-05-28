@@ -237,6 +237,9 @@ Required hardening:
 - `session_start.generated.md` should render the active final-output profile,
   strategy-memory next-time rules, lane exemplar trust boundaries, and any
   required operator checkpoint as a stable resume-first handoff surface;
+- compact status calls should return a small continuation payload while still
+  writing the full topic-status files, so chat-native hosts do not need to
+  ingest the entire machine `topic_state.json`;
 - `topic_state.json` should remain the machine-readable answer surface;
 - `operator_console.md` should remain the human-facing action and checkpoint
   surface.

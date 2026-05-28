@@ -178,3 +178,47 @@ def test_topic_status_cli_mcp_and_runtime_surface(tmp_path, capsys):
         "mcp": "aitp_v5_write_topic_status_surfaces",
         "surface": "topic_status_bundle",
     }
+
+
+def test_topic_status_compact_cli_mcp_and_runtime_surface(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.lane_exemplars import record_lane_exemplar
+    from brain.v5.mcp_tools import aitp_v5_write_topic_status_surfaces_compact
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+
+    ws, claim, _ = _setup_workspace(tmp_path)
+    record_lane_exemplar(
+        ws,
+        topic_id="qsgw-headwing-update-librpa",
+        lane="code_backed_algorithm",
+        title="QSGW dual-lane compact handoff",
+        summary="Compact status should show the reusable workflow without dumping the full topic state.",
+        claim_id=claim.claim_id,
+        run_id="run-qsgw",
+        trust_boundary="Workflow memory only.",
+        status="accepted",
+    )
+
+    assert main(["--base", str(ws.base), "status", "topic", "qsgw-session", "--compact"]) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_write_topic_status_surfaces_compact(str(ws.base), session_id="qsgw-session")
+
+    for payload in (cli_payload, mcp_payload):
+        assert payload["kind"] == "topic_status_bundle_progress"
+        assert payload["topic_id"] == "qsgw-headwing-update-librpa"
+        assert payload["orientation_only"] is True
+        assert payload["can_update_claim_trust"] is False
+        assert "topic_state" not in payload
+        assert payload["files"]["session_start"].endswith("session_start.generated.md")
+        assert payload["next_action"] == "answer_operator_checkpoint"
+        assert payload["active_operator_checkpoint"]["required_next_action"] == "answer_operator_checkpoint"
+        assert payload["final_output_profile"]["output_version"] == "qsgw-headwing-dual-lane-v1"
+        assert payload["strategy_rule_count"] == 1
+        assert payload["lane_exemplar_count"] == 1
+        assert payload["lane_exemplars"][0]["title"] == "QSGW dual-lane compact handoff"
+
+    assert runtime_entrypoints()["topic_status_compact"] == {
+        "cli": "aitp-v5 status topic <session-id> --compact",
+        "mcp": "aitp_v5_write_topic_status_surfaces_compact",
+        "surface": "topic_status_bundle",
+    }
