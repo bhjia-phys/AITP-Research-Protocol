@@ -349,8 +349,18 @@ def _topic_output_profile(ws, topic_id: str) -> dict[str, Any]:
     profile = load_final_output_profile(ws, topic_id)
     if not profile or not profile.get("present"):
         return {}
+    note_parts = [
+        part
+        for part in (
+            str(profile.get("change_policy") or ""),
+            str(profile.get("compatibility_note") or ""),
+        )
+        if part
+    ]
     return {
         "output_version": str(profile.get("output_version") or ""),
         "stable_sections": list(profile.get("stable_sections") or []),
-        "lane_boundary_note": "Final lane evidence must use usable_for_final=True sources; diagnostic lane may use assumptions with explicit labels. Literature evidence must not mix lanes.",
+        "flexible_sections": list(profile.get("flexible_sections") or []),
+        "lane_boundary_note": " ".join(note_parts) or "Use the topic output profile when deciding whether literature belongs to a final or diagnostic/scoping output.",
+        "artifact_path": str(profile.get("artifact_path") or ""),
     }

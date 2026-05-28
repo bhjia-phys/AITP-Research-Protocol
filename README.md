@@ -278,6 +278,12 @@ latest packet via `aitp-v5 goal latest` or `aitp_v5_read_latest_goal_continuatio
 to understand what was done, what passed, what's blocking, and what to do next
 — without relying on chat history. These packets are orientation-only and cannot
 update kernel state or claim trust.
+Goal continuation packets are structured audit artifacts, not prose dumps: use
+repeated arguments such as `--changed-file`, `--test-run`, `--next-action`, and
+`--audit-command`, plus `--commits-json` for per-commit metadata, when values
+contain commas or need machine parsing. The legacy comma-separated flags remain
+accepted for simple values, but the repeated/JSON fields are preferred for
+handoffs intended for another agent to audit.
 For lighter natural conversations, `aitp-v5 interaction preview <session-id>`
 and `aitp_v5_preview_interaction_recording` expose a read-only
 `interaction_recording_preview`. It tells the host which records are merely

@@ -106,6 +106,7 @@ _PUBLIC_SURFACE_NAMES = (
     "workspace_replay_packet",
     "workspace_refresh_bundle",
     "goal_continuation_packet",
+    "goal_continuation_list",
 )
 _PUBLIC_SURFACE_VALIDATOR_REF = "brain.v5.public_surfaces.require_valid_public_surface"
 _PUBLIC_SURFACE_PURPOSES = {
@@ -209,7 +210,8 @@ _PUBLIC_SURFACE_PURPOSES = {
     "workspace_summary_bundle": "orientation-only workspace summary regenerated from typed sessions, active claims, memory entries, and validation links",
     "workspace_replay_packet": "orientation-only multi-session replay packet listing resume attention, source reconstruction gaps, evidence gaps, and next actions from typed records",
     "workspace_refresh_bundle": "orientation-only host refresh bundle; full mode refreshes replay/source/L2 views, while startup_lightweight mode refreshes current-session orientation only",
-    "goal_continuation_packet": "orientation-only local audit packet for cross-session goal continuation; records objective, tests, smoke, readiness, next actions, and blocking backlog without changing kernel state",
+    "goal_continuation_packet": "orientation-only local audit packet for cross-session goal continuation; records objective, commits, changed files, tests, smoke, readiness, next actions, and blocking backlog without changing kernel state",
+    "goal_continuation_list": "orientation-only index of local goal continuation packets for cross-session audit discovery without changing kernel state",
 }
 
 
@@ -362,7 +364,10 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     )
     from brain.v5.obsidian_view_contracts import require_valid_l2_obsidian_view_bundle
     from brain.v5.workspace_refresh_contracts import require_valid_workspace_refresh_bundle
-    from brain.v5.goal_continuation_contracts import require_valid_goal_continuation_packet
+    from brain.v5.goal_continuation_contracts import (
+        require_valid_goal_continuation_list,
+        require_valid_goal_continuation_packet,
+    )
     from brain.v5.hook_protocol_contracts import (
         require_valid_claude_code_hook_installation,
         require_valid_claude_code_hook_settings,
@@ -481,4 +486,5 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "workspace_replay_packet": require_valid_workspace_replay_packet,
         "workspace_refresh_bundle": require_valid_workspace_refresh_bundle,
         "goal_continuation_packet": require_valid_goal_continuation_packet,
+        "goal_continuation_list": require_valid_goal_continuation_list,
     }

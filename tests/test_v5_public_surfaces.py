@@ -106,6 +106,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "workspace_refresh_bundle",
         "workspace_summary_bundle",
         "goal_continuation_packet",
+        "goal_continuation_list",
     }
 
 

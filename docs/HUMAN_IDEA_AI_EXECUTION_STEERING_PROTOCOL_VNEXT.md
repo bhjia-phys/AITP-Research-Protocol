@@ -1,9 +1,12 @@
 # Human-Idea, AI-Execution, Human-Steering Protocol (vNext)
 
-Status: **implemented** — all workstreams are in production on branch `codex/aitp-v5-kernel-mvp`.
-Control-plane status: `ready`. Covered lanes: `toy_numeric`, `semi_formal_theory`, `code_backed_algorithm`.
-Missing workstreams: none. Trust update forbidden: true. Human output stability: implemented.
-Legacy semantic review backlog remains blocking until human-reviewed.
+Status: **control plane implemented** on branch `codex/aitp-v5-kernel-mvp`;
+content migration is not complete until the legacy semantic review backlog is
+human-reviewed.
+Control-plane status: `ready`. Covered exemplar lanes: `toy_numeric`,
+`semi_formal_theory`, `code_backed_algorithm`.
+Blocking content backlog: `legacy_semantic_review_backlog`. Trust update
+forbidden from orientation surfaces: true. Human output stability: implemented.
 
 Scope: next-stage protocol and runtime hardening on top of existing AITP
 `L0 -> L1 -> L3 -> L4 -> L2`
@@ -489,13 +492,18 @@ This document extends, and does not replace:
 
 ## 11) Post-Implementation Status (2026-05-28)
 
-All five phases are implemented and tested on branch `codex/aitp-v5-kernel-mvp`.
+All five control-plane phases are implemented and tested on branch
+`codex/aitp-v5-kernel-mvp`; this does not prove migrated legacy content is
+semantically lossless.
 
 ### Implemented additional surfaces beyond original spec
 
 - **Goal continuation audit packets** (`aitp-v5 goal write/latest/list`):
   cross-session context recovery via local `.aitp/surfaces/goal_continuation/`
-  JSON+Markdown packets. Orientation-only, no kernel state mutation.
+  JSON+Markdown packets. Packets include structured commit ranges, commit
+  metadata, changed files, verification, smoke runs, audit commands, next
+  actions, trust boundaries, and blocking backlog. Orientation-only, no kernel
+  state mutation.
 - **Compact session-start refresh** (`workspace_refresh_progress`):
   Claude/Kimi SessionStart hooks return lightweight projection instead of
   full `workspace_refresh_bundle`. Full topic-status files still written to disk.

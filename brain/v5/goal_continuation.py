@@ -20,6 +20,7 @@ def write_goal_continuation(
     *,
     objective: str,
     changed_files: list[str] | None = None,
+    changed_file_stats: list[dict[str, Any]] | None = None,
     tests_run: list[str] | None = None,
     tests_passed: bool | None = None,
     smoke_commands: list[str] | None = None,
@@ -31,15 +32,28 @@ def write_goal_continuation(
     notes: str | None = None,
     session_id: str | None = None,
     commit_ref: str | None = None,
+    commit_range: str | None = None,
+    commits: list[dict[str, Any]] | None = None,
+    audit_commands: list[str] | None = None,
 ) -> dict[str, Any]:
     surface_dir = ws.root / "surfaces" / "goal_continuation"
     surface_dir.mkdir(parents=True, exist_ok=True)
-    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H-%M-%S-%f")
-    packet_id = f"goal-continuation-{now}"
+    now = datetime.now(timezone.utc)
+    packet_id = f"goal-continuation-{now.strftime('%Y-%m-%dT%H-%M-%S-%f')}"
+    json_path = surface_dir / f"{packet_id}.json"
+    md_path = surface_dir / f"{packet_id}.md"
+    files = {
+        "json": str(json_path),
+        "markdown": str(md_path),
+        "latest_json": str(surface_dir / "latest.json"),
+        "latest_markdown": str(surface_dir / "latest.md"),
+    }
     packet = _build_packet(
         packet_id=packet_id,
+        timestamp=now.isoformat(),
         objective=objective,
         changed_files=changed_files or [],
+        changed_file_stats=changed_file_stats or [],
         tests_run=tests_run or [],
         tests_passed=tests_passed,
         smoke_commands=smoke_commands or [],
@@ -51,29 +65,18 @@ def write_goal_continuation(
         notes=notes or "",
         session_id=session_id or "",
         commit_ref=commit_ref or "",
+        commit_range=commit_range or "",
+        commits=commits or [],
+        audit_commands=audit_commands or [],
+        files=files,
     )
-    json_path = surface_dir / f"{packet_id}.json"
-    md_path = surface_dir / f"{packet_id}.md"
     json_path.write_text(
         json.dumps(packet, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
     md_path.write_text(_render_md(packet), encoding="utf-8")
     _update_latest(surface_dir, packet_id, json_path, md_path)
-    return {
-        "kind": "goal_continuation_packet",
-        "packet_id": packet_id,
-        "files": {
-            "json": str(json_path),
-            "markdown": str(md_path),
-            "latest_json": str(surface_dir / "latest.json"),
-            "latest_markdown": str(surface_dir / "latest.md"),
-        },
-        "orientation_only": True,
-        "can_update_kernel_state": False,
-        "can_update_claim_trust": False,
-        "truth_source": False,
-    }
+    return packet
 
 
 def read_latest_goal_continuation(ws: WorkspacePaths) -> dict[str, Any] | None:
@@ -99,8 +102,10 @@ def list_goal_continuations(ws: WorkspacePaths) -> list[dict[str, Any]]:
 def _build_packet(
     *,
     packet_id: str,
+    timestamp: str,
     objective: str,
     changed_files: list[str],
+    changed_file_stats: list[dict[str, Any]],
     tests_run: list[str],
     tests_passed: bool | None,
     smoke_commands: list[str],
@@ -112,29 +117,41 @@ def _build_packet(
     notes: str,
     session_id: str,
     commit_ref: str,
+    commit_range: str,
+    commits: list[dict[str, Any]],
+    audit_commands: list[str],
+    files: dict[str, str],
 ) -> dict[str, Any]:
     return {
+        "schema_version": "0.2",
         "kind": "goal_continuation_packet",
         "packet_id": packet_id,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": timestamp,
         "session_id": session_id,
         "commit_ref": commit_ref,
+        "commit_range": commit_range,
+        "commits": [_normalize_commit(c) for c in commits],
         "objective": objective,
         "changed_files": changed_files,
+        "changed_file_stats": [_normalize_file_stat(s) for s in changed_file_stats],
         "verification": {
             "tests_run": tests_run,
             "tests_passed": tests_passed,
             "smoke_commands": smoke_commands,
             "smoke_passed": smoke_passed,
         },
+        "audit_commands": audit_commands,
         "readiness_outcome": _compact_readiness(readiness_outcome),
         "next_actions": next_actions,
         "trust_boundary": trust_boundary,
         "blocking_backlog": blocking_backlog,
         "notes": notes,
+        "files": files,
         "orientation_only": True,
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
+        "summary_inputs_trusted": False,
+        "truth_source": False,
     }
 
 
@@ -152,55 +169,107 @@ def _compact_readiness(outcome: dict[str, Any] | None) -> dict[str, Any]:
 
 def _render_md(packet: dict[str, Any]) -> str:
     lines = [
-        f"# Goal Continuation: {packet['packet_id']}\n",
-        f"\n**Timestamp:** {packet['timestamp']}",
-        f"\n**Session:** {packet['session_id'] or 'unknown'}",
-        f"\n**Commit:** {packet['commit_ref'] or 'unknown'}\n",
-        f"\n## Objective\n\n{packet['objective']}\n",
+        f"# Goal Continuation: {packet['packet_id']}",
+        "",
+        f"**Timestamp:** {packet['timestamp']}",
+        f"**Session:** {packet['session_id'] or 'unknown'}",
+        f"**Commit:** {packet['commit_ref'] or 'unknown'}",
     ]
+    if packet.get("commit_range"):
+        lines.append(f"**Commit range:** {packet['commit_range']}")
+    lines.extend(["", "## Objective", "", str(packet["objective"]), ""])
+    commits = packet.get("commits") or []
+    if commits:
+        lines.extend(["## Commits", ""])
+        for commit in commits:
+            stat = _commit_stat_text(commit)
+            lines.append(f"- `{commit.get('hash', '')}` {commit.get('subject', '')}{stat}")
+        lines.append("")
     changed = packet.get("changed_files") or []
     if changed:
-        lines.append("\n## Changed Files\n")
+        lines.extend(["## Changed Files", ""])
         for f in changed:
             lines.append(f"- `{f}`")
         lines.append("")
     v = packet.get("verification") or {}
-    lines.append("\n## Verification\n")
+    lines.extend(["## Verification", ""])
     tests = v.get("tests_run") or []
     if tests:
-        lines.append(f"\nTests run: {', '.join(tests)}")
-    lines.append(f"\nTests passed: {v.get('tests_passed')}")
+        lines.append("Tests run:")
+        for t in tests:
+            lines.append(f"- `{t}`")
+        lines.append("")
+    lines.append(f"Tests passed: `{v.get('tests_passed')}`")
     smokes = v.get("smoke_commands") or []
     if smokes:
-        lines.append(f"\nSmoke commands: {', '.join(smokes)}")
-    lines.append(f"\nSmoke passed: {v.get('smoke_passed')}")
+        lines.append("")
+        lines.append("Smoke commands:")
+        for s in smokes:
+            lines.append(f"- `{s}`")
+    lines.append("")
+    lines.append(f"Smoke passed: `{v.get('smoke_passed')}`")
+    audit_commands = packet.get("audit_commands") or []
+    if audit_commands:
+        lines.extend(["", "Audit commands:", ""])
+        for command in audit_commands:
+            lines.append(f"- `{command}`")
     r = packet.get("readiness_outcome") or {}
     if r:
-        lines.append("\n## Readiness Outcome\n")
-        lines.append(f"\n- completion_status: `{r.get('completion_status', '')}`")
-        lines.append(f"\n- blocking_gaps: {r.get('blocking_gaps', [])}")
-        lines.append(f"\n- can_update_claim_trust: `{r.get('can_update_claim_trust')}`")
-        lines.append(f"\n- semantic_lossless_proven: `{r.get('semantic_lossless_proven')}`")
+        lines.extend(["", "## Readiness Outcome", ""])
+        lines.append(f"- completion_status: `{r.get('completion_status', '')}`")
+        lines.append(f"- blocking_gaps: {r.get('blocking_gaps', [])}")
+        lines.append(f"- can_update_claim_trust: `{r.get('can_update_claim_trust')}`")
+        lines.append(f"- semantic_lossless_proven: `{r.get('semantic_lossless_proven')}`")
     next_acts = packet.get("next_actions") or []
     if next_acts:
-        lines.append("\n## Next Actions\n")
+        lines.extend(["", "## Next Actions", ""])
         for a in next_acts:
             lines.append(f"- {a}")
         lines.append("")
     trust = packet.get("trust_boundary") or ""
     if trust:
-        lines.append(f"\n## Trust Boundary\n\n{trust}\n")
+        lines.extend(["## Trust Boundary", "", trust, ""])
     backlog = packet.get("blocking_backlog") or []
     if backlog:
-        lines.append("\n## Blocking Backlog\n")
+        lines.extend(["## Blocking Backlog", ""])
         for b in backlog:
             lines.append(f"- {b}")
         lines.append("")
     notes = packet.get("notes") or ""
     if notes:
-        lines.append(f"\n## Notes\n\n{notes}\n")
-    lines.append("\n---\n*This is an orientation-only surface. Do not update claim trust or kernel state from it.*\n")
-    return "".join(lines)
+        lines.extend(["## Notes", "", notes, ""])
+    lines.extend(["---", "*This is an orientation-only surface. Do not update claim trust or kernel state from it.*", ""])
+    return "\n".join(lines)
+
+
+def _normalize_commit(commit: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "hash": str(commit.get("hash") or ""),
+        "subject": str(commit.get("subject") or ""),
+        "files_changed": int(commit.get("files_changed") or 0),
+        "insertions": int(commit.get("insertions") or 0),
+        "deletions": int(commit.get("deletions") or 0),
+    }
+
+
+def _normalize_file_stat(stat: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "path": str(stat.get("path") or ""),
+        "status": str(stat.get("status") or ""),
+        "insertions": int(stat.get("insertions") or 0),
+        "deletions": int(stat.get("deletions") or 0),
+    }
+
+
+def _commit_stat_text(commit: dict[str, Any]) -> str:
+    parts = []
+    if commit.get("files_changed"):
+        parts.append(f"{commit['files_changed']} files")
+    if commit.get("insertions"):
+        parts.append(f"+{commit['insertions']}")
+    if commit.get("deletions"):
+        parts.append(f"-{commit['deletions']}")
+    return f" ({', '.join(parts)})" if parts else ""
 
 
 def _update_latest(

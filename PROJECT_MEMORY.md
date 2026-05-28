@@ -337,6 +337,11 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   next actions, trust boundary, and blocking backlog. Future sessions can read
   the latest packet via `aitp-v5 goal latest` or `aitp_v5_read_latest_goal_continuation`
   to reconstruct context without chat history. These packets are orientation-only.
+  Use repeated CLI args (`--changed-file`, `--test-run`, `--next-action`,
+  `--audit-command`) and JSON args (`--commits-json`,
+  `--changed-file-stats-json`) for audit handoffs; comma-separated legacy args
+  are only for simple values. Stored `latest.json` packets must themselves pass
+  the public `goal_continuation_packet` contract.
 - Agents can call `aitp-v5 interaction preview <session-id>` or
   `aitp_v5_preview_interaction_recording` before or during a natural research
   conversation. The contracted `interaction_recording_preview` is read-only

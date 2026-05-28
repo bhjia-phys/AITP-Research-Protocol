@@ -8,6 +8,7 @@ import sys
 
 import pytest
 
+from brain.v5.contracts import ContractError
 from brain.v5.goal_continuation import (
     list_goal_continuations,
     read_latest_goal_continuation,
@@ -161,3 +162,104 @@ def test_goal_cli_write_and_read(tmp_path, capsys):
     assert listing["kind"] == "goal_continuation_list"
     assert listing["count"] == 1
     assert len(listing["latest_objectives"]) == 1
+    assert require_valid_public_surface("goal_continuation_list", listing) == listing
+
+
+def test_goal_latest_packet_passes_public_surface_contract(tmp_path):
+    ws = _ws(tmp_path)
+    write_goal_continuation(
+        ws,
+        objective="Make continuation packets auditable",
+        changed_files=["brain/v5/goal_continuation.py"],
+        tests_run=["tests/test_v5_goal_continuation.py"],
+        tests_passed=True,
+        commit_ref="abc1234",
+        commit_range="base..head",
+        commits=[
+            {
+                "hash": "abc1234",
+                "subject": "Make continuation packets auditable",
+                "files_changed": 3,
+                "insertions": 42,
+                "deletions": 5,
+            }
+        ],
+        audit_commands=["git show --stat abc1234"],
+    )
+    latest = read_latest_goal_continuation(ws)
+    assert latest is not None
+    assert require_valid_public_surface("goal_continuation_packet", latest) == latest
+    assert latest["commit_range"] == "base..head"
+    assert latest["commits"][0]["hash"] == "abc1234"
+    assert latest["audit_commands"] == ["git show --stat abc1234"]
+
+
+def test_goal_contract_raises_contract_error_not_assertion(tmp_path):
+    with pytest.raises(ContractError):
+        require_valid_public_surface(
+            "goal_continuation_packet",
+            {"kind": "goal_continuation_packet", "orientation_only": True},
+        )
+
+
+def test_goal_markdown_renders_bullets_on_separate_lines(tmp_path):
+    ws = _ws(tmp_path)
+    write_goal_continuation(
+        ws,
+        objective="Readable audit packet",
+        changed_files=["brain/v5/goal_continuation.py", "tests/test_v5_goal_continuation.py"],
+        next_actions=[
+            "resolve legacy semantic review backlog (18 topics, 16 needs_revision, 2 inconclusive)",
+            "respect qsgw operator checkpoint",
+        ],
+    )
+    md_text = (
+        tmp_path / ".aitp" / "surfaces" / "goal_continuation" / "latest.md"
+    ).read_text(encoding="utf-8")
+    assert "- `brain/v5/goal_continuation.py`\n- `tests/test_v5_goal_continuation.py`" in md_text
+    assert "topics- 16" not in md_text
+    assert "inconclusive)\n- respect qsgw" in md_text
+
+
+def test_goal_cli_repeated_args_preserve_commas(tmp_path):
+    base = str(tmp_path)
+    action = "resolve legacy semantic review backlog (18 topics, 16 needs_revision, 2 inconclusive)"
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "brain.v5.cli",
+            "--base",
+            base,
+            "goal",
+            "write",
+            "--objective",
+            "Preserve structured audit fields",
+            "--changed-file",
+            "brain/v5/goal_continuation.py",
+            "--test-run",
+            "tests/test_v5_goal_continuation.py",
+            "--next-action",
+            action,
+            "--commit-range",
+            "base..head",
+            "--commits-json",
+            '[{"hash":"abc1234","subject":"subject, with comma","files_changed":1}]',
+            "--audit-command",
+            "git show --stat abc1234",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    result = subprocess.run(
+        [sys.executable, "-m", "brain.v5.cli", "--base", base, "goal", "latest"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    latest = json.loads(result.stdout.strip())
+    assert latest["next_actions"] == [action]
+    assert latest["commit_range"] == "base..head"
+    assert latest["commits"][0]["subject"] == "subject, with comma"
+    assert latest["audit_commands"] == ["git show --stat abc1234"]
