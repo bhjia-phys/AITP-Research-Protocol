@@ -533,6 +533,11 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
 - Human-facing reports have a stable output spine defined in `docs/AITP_SPEC.md`
   and topic-local `final_output_profile` records. Future report changes should
   be additive unless a new output version and compatibility note are recorded.
+- Current-session topic status now renders `session_start.generated.md` as the
+  resume-first surface for future agents: it includes the active
+  `final_output_profile`, strategy-memory `next_time_rule` items, lane exemplar
+  trust boundaries, and any required operator checkpoint. It remains
+  orientation-only and cannot update kernel state or claim trust.
 
 ## Protocol Layer Map
 

@@ -127,6 +127,38 @@ def test_topic_status_uses_latest_evidence_file_mtime_not_id_order(tmp_path):
     assert bundle["topic_state"]["last_evidence_return"]["evidence_id"] == latest_evidence.evidence_id
 
 
+def test_session_start_surfaces_stable_output_strategy_and_lane_rules(tmp_path):
+    from brain.v5.lane_exemplars import record_lane_exemplar
+    from brain.v5.topic_status import write_topic_status_surfaces
+
+    ws, claim, _ = _setup_workspace(tmp_path)
+    record_lane_exemplar(
+        ws,
+        topic_id="qsgw-headwing-update-librpa",
+        lane="code_backed_algorithm",
+        title="QSGW final/diagnostic dual-lane workflow",
+        summary="Use final-only evidence for paper claims and diagnostic evidence only for trend finding.",
+        claim_id=claim.claim_id,
+        run_id="run-qsgw",
+        gates_demonstrated=["final_lane_gate", "diagnostic_lane_labeling"],
+        artifact_refs=["report:research/librpa/reports/aitp_qsgw_headwing_dual_lane_strategy_20260528.md"],
+        trust_boundary="Workflow exemplar only; it must not update claim trust.",
+        status="accepted",
+    )
+
+    bundle = write_topic_status_surfaces(ws, session_id="qsgw-session")
+    session_start = Path(bundle["files"]["session_start"]).read_text(encoding="utf-8")
+
+    assert "qsgw-headwing-dual-lane-v1" in session_start
+    assert "Stable sections" in session_start
+    assert "current_data_state" in session_start
+    assert "Never mix diagnostic trend plots into final claims." in session_start
+    assert "code_backed_algorithm: QSGW final/diagnostic dual-lane workflow" in session_start
+    assert "Workflow exemplar only; it must not update claim trust." in session_start
+    assert "answer_operator_checkpoint" in session_start
+    assert "must not update claim trust" in session_start
+
+
 def test_topic_status_cli_mcp_and_runtime_surface(tmp_path, capsys):
     from brain.v5.cli import main
     from brain.v5.mcp_tools import aitp_v5_write_topic_status_surfaces

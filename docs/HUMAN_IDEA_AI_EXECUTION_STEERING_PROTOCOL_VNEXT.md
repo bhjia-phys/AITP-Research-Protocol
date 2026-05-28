@@ -234,6 +234,9 @@ Required hardening:
 
 - `topic_dashboard.md` should explicitly expose last evidence return, current
   route choice, blocker summary, and active human checkpoint when present;
+- `session_start.generated.md` should render the active final-output profile,
+  strategy-memory next-time rules, lane exemplar trust boundaries, and any
+  required operator checkpoint as a stable resume-first handoff surface;
 - `topic_state.json` should remain the machine-readable answer surface;
 - `operator_console.md` should remain the human-facing action and checkpoint
   surface.

@@ -151,11 +151,85 @@ def _runtime_protocol(topic_state: dict[str, Any]) -> str:
 
 
 def _session_start(topic_state: dict[str, Any]) -> str:
-    return (
-        "# Session Start\n\n"
+    checkpoint = topic_state.get("active_operator_checkpoint") or {}
+    parts = [
+        "# Session Start\n\n",
         f"Start from topic `{topic_state['topic_id']}` using the current route "
-        f"`{topic_state['current_route_choice']}` and the operator console.\n"
-    )
+        f"`{topic_state['current_route_choice']}` and the operator console.\n\n",
+        _final_output_profile_section(topic_state.get("final_output_profile") or {}),
+        _strategy_rules_section(topic_state.get("strategy_memory") or {}),
+        _lane_exemplars_section(topic_state.get("lane_exemplars") or {}),
+    ]
+    if checkpoint.get("active"):
+        parts.append(_checkpoint_section(checkpoint))
+    parts.append("Do not update claim trust from this orientation surface.\n")
+    return "".join(part for part in parts if part)
+
+
+def _final_output_profile_section(profile: dict[str, Any]) -> str:
+    if not profile.get("present"):
+        return ""
+    lines = [
+        "## Stable Output Profile\n\n",
+        f"Output version: {profile.get('output_version', '')}\n\n",
+        "Stable sections:\n",
+        f"{_bullets(profile.get('stable_sections') or [])}\n\n",
+        "Flexible sections:\n",
+        f"{_bullets(profile.get('flexible_sections') or [])}\n",
+    ]
+    change_policy = str(profile.get("change_policy") or "")
+    if change_policy:
+        lines.append(f"\nChange policy: {change_policy}\n")
+    compatibility_note = str(profile.get("compatibility_note") or "")
+    if compatibility_note:
+        lines.append(f"\nCompatibility note: {compatibility_note}\n")
+    return "".join(lines) + "\n"
+
+
+def _strategy_rules_section(strategy_memory: dict[str, Any]) -> str:
+    items = list(strategy_memory.get("items") or [])
+    if not items:
+        return ""
+    lines = ["## Strategy Rules\n\n"]
+    for item in items:
+        rule = str(item.get("next_time_rule") or item.get("lesson") or "")
+        if not rule:
+            continue
+        scope = str(item.get("scope") or "")
+        prefix = f"{scope}: " if scope else ""
+        lines.append(f"- {prefix}{rule}\n")
+    return "".join(lines) + "\n"
+
+
+def _lane_exemplars_section(lane_exemplars: dict[str, Any]) -> str:
+    items = list(lane_exemplars.get("items") or [])
+    if not items:
+        return ""
+    lines = ["## Lane Exemplars\n\n"]
+    for item in items:
+        lane = str(item.get("lane") or "lane")
+        title = str(item.get("title") or "Untitled exemplar")
+        trust_boundary = str(item.get("trust_boundary") or "Workflow exemplar only; not claim evidence.")
+        lines.append(f"- {lane}: {title} - {trust_boundary}\n")
+    return "".join(lines) + "\n"
+
+
+def _checkpoint_section(checkpoint: dict[str, Any]) -> str:
+    question = str(checkpoint.get("question") or "")
+    next_action = str(checkpoint.get("required_next_action") or "answer_operator_checkpoint")
+    lines = [
+        "## Operator Checkpoint\n\n",
+        f"Required next action: {next_action}\n\n",
+    ]
+    if question:
+        lines.append(f"Question: {question}\n\n")
+    lines.append("Options:\n")
+    lines.append(f"{_bullets(checkpoint.get('options') or [])}\n\n")
+    return "".join(lines)
+
+
+def _bullets(values: list[str]) -> str:
+    return "\n".join(f"- {value}" for value in values) if values else "- None"
 
 
 def _write_json(path: Path, payload: dict[str, Any]) -> None:

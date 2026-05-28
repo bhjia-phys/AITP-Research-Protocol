@@ -256,6 +256,12 @@ Claude/Kimi `SessionStart` hooks use the lighter `startup_lightweight` mode of
 the same bundle: they refresh the workspace summary, interaction worklist, and
 current-session topic status, while deferring replay, source-stack, L2 Obsidian,
 and source-reconstruction views to explicit refresh commands.
+The generated current-session topic status includes `session_start.generated.md`
+as a stable handoff surface for future agents. It renders the topic's active
+final-output profile, strategy-memory next-time rules, lane exemplars, and
+active operator checkpoint so a resumed session can follow prior workflow
+lessons without reading chat history. This file is still orientation-only and
+cannot update kernel state or claim trust.
 For lighter natural conversations, `aitp-v5 interaction preview <session-id>`
 and `aitp_v5_preview_interaction_recording` expose a read-only
 `interaction_recording_preview`. It tells the host which records are merely
