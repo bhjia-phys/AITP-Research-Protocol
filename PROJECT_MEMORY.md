@@ -164,9 +164,11 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
 - Claude Code and Kimi Code host installers now emit `SessionStart`,
   `PreToolUse`, and `PostToolUse` lifecycle commands with absolute hook script
   paths and the active Python interpreter. Their `SessionStart` commands call
-  `refresh_workspace_views`, regenerating workspace summary, replay packet, and
-  active-session L2 Obsidian views as orientation-only startup context. Tests
-  execute the generated `session-start` commands from a temporary user
+  `refresh_workspace_startup_views`, regenerating a lightweight workspace
+  summary, interaction worklist, and current-session topic status as
+  orientation-only startup context. Full replay/source-stack/L2/source
+  reconstruction refresh remains explicit through `refresh_workspace_views`.
+  Tests execute the generated `session-start` commands from a temporary user
   workspace cwd.
 - `hooks/aitp_v5_claude_hook.py` reads Claude Code hook JSON from stdin. Its
   `PreToolUse` path maps destructive, remote, and expensive Bash commands to a

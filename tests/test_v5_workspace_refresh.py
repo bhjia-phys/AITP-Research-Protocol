@@ -115,6 +115,36 @@ def test_workspace_refresh_writes_summary_replay_and_obsidian_views(tmp_path):
     assert require_valid_public_surface("workspace_refresh_bundle", payload) == payload
 
 
+def test_workspace_startup_refresh_defers_heavy_workspace_views(tmp_path):
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace_refresh import refresh_workspace_startup_views
+
+    ws, claim, _, _memory = _seed_workspace(tmp_path)
+
+    payload = refresh_workspace_startup_views(ws, session_id="s1")
+
+    assert payload["kind"] == "workspace_refresh_bundle"
+    assert payload["refresh_mode"] == "startup_lightweight"
+    assert payload["refreshed_surfaces"] == [
+        "workspace_summary_bundle",
+        "workspace_interaction_preview_bundle",
+        "interaction_recording_worklist",
+        "topic_status_bundle",
+    ]
+    assert payload["deferred_surfaces"] == [
+        "workspace_replay_packet",
+        "source_stack_coverage_manifest",
+        "l2_obsidian_view_bundle",
+        "source_reconstruction_obsidian_view_bundle",
+    ]
+    assert payload["topic_status_bundles"][0]["session_id"] == "s1"
+    assert payload["topic_status_bundles"][0]["topic_state"]["active_claim_id"] == claim.claim_id
+    assert payload["can_update_claim_trust"] is False
+    assert "workspace_replay" not in payload
+    assert "l2_obsidian_view" not in payload
+    assert require_valid_public_surface("workspace_refresh_bundle", payload) == payload
+
+
 def test_workspace_refresh_bounds_topic_status_generation_to_recent_sessions(tmp_path, monkeypatch):
     from brain.v5.workspace import bind_session
     from brain.v5.workspace_refresh import refresh_workspace_views

@@ -434,11 +434,13 @@ def test_kimi_code_hook_session_start_refreshes_workspace_views(tmp_path):
     assert payload["continue"] is True
     assert payload["suppressOutput"] is True
     assert payload["aitp"]["kind"] == "workspace_refresh_bundle"
+    assert payload["aitp"]["refresh_mode"] == "startup_lightweight"
     assert payload["aitp"]["truth_source"] is False
     assert payload["aitp"]["orientation_only"] is True
     assert (tmp_path / ".aitp" / "surfaces" / "workspace_summary" / "overview.md").exists()
-    assert (tmp_path / ".aitp" / "surfaces" / "workspace_replay" / "replay_packet.md").exists()
-    assert (tmp_path / ".aitp" / "surfaces" / "obsidian_l2_active" / "L2 Memory Overview.md").exists()
+    assert (tmp_path / ".aitp" / "topics" / "librpa-gw" / "runtime" / "topic_state.json").exists()
+    assert not (tmp_path / ".aitp" / "surfaces" / "workspace_replay" / "replay_packet.md").exists()
+    assert not (tmp_path / ".aitp" / "surfaces" / "obsidian_l2_active" / "L2 Memory Overview.md").exists()
 
 
 def test_claude_code_hook_session_start_refreshes_workspace_views(tmp_path):
@@ -461,11 +463,13 @@ def test_claude_code_hook_session_start_refreshes_workspace_views(tmp_path):
     assert payload["continue"] is True
     assert payload["suppressOutput"] is True
     assert payload["aitp"]["kind"] == "workspace_refresh_bundle"
+    assert payload["aitp"]["refresh_mode"] == "startup_lightweight"
     assert payload["aitp"]["truth_source"] is False
     assert payload["aitp"]["orientation_only"] is True
     assert (tmp_path / ".aitp" / "surfaces" / "workspace_summary" / "overview.md").exists()
-    assert (tmp_path / ".aitp" / "surfaces" / "workspace_replay" / "replay_packet.md").exists()
-    assert (tmp_path / ".aitp" / "surfaces" / "obsidian_l2_active" / "L2 Memory Overview.md").exists()
+    assert (tmp_path / ".aitp" / "topics" / "librpa-gw" / "runtime" / "topic_state.json").exists()
+    assert not (tmp_path / ".aitp" / "surfaces" / "workspace_replay" / "replay_packet.md").exists()
+    assert not (tmp_path / ".aitp" / "surfaces" / "obsidian_l2_active" / "L2 Memory Overview.md").exists()
 
 
 def test_kimi_code_hook_post_tool_command_persists_trace_event(tmp_path):

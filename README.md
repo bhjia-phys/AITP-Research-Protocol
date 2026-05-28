@@ -252,6 +252,10 @@ Host adapters that want one startup refresh point can call
 `workspace_refresh_bundle` regenerates the workspace summary, replay packet,
 and an active-session L2 Obsidian view in one orientation-only operation, with
 `can_update_kernel_state=false` and `can_update_claim_trust=false`.
+Claude/Kimi `SessionStart` hooks use the lighter `startup_lightweight` mode of
+the same bundle: they refresh the workspace summary, interaction worklist, and
+current-session topic status, while deferring replay, source-stack, L2 Obsidian,
+and source-reconstruction views to explicit refresh commands.
 For lighter natural conversations, `aitp-v5 interaction preview <session-id>`
 and `aitp_v5_preview_interaction_recording` expose a read-only
 `interaction_recording_preview`. It tells the host which records are merely
@@ -417,11 +421,12 @@ or merge it into `.kimi/config.toml` with
 Both native host installers emit `SessionStart`, `PreToolUse`, and
 `PostToolUse` commands with absolute hook script paths and the active Python
 interpreter. `SessionStart` calls the contracted `workspace_refresh_bundle`, so
-Claude/Kimi sessions can refresh workspace summary, replay packet, and
-active-session L2 Obsidian views at startup/resume without granting those
-generated files truth authority. Kimi hook generation follows the official Kimi
-Code hook model of `[[hooks]]` entries in `~/.kimi/config.toml`, stdin JSON
-input, and `SessionStart`/`PreToolUse`/`PostToolUse` lifecycle events:
+Claude/Kimi sessions can refresh a lightweight current-session orientation at
+startup/resume without granting generated files truth authority. Heavy replay,
+source-stack, L2 Obsidian, and source-reconstruction refreshes remain available
+through explicit `summary refresh`/MCP calls. Kimi hook generation follows the
+official Kimi Code hook model of `[[hooks]]` entries in `~/.kimi/config.toml`,
+stdin JSON input, and `SessionStart`/`PreToolUse`/`PostToolUse` lifecycle events:
 [Kimi Code hooks](https://www.kimi.com/code/docs/kimi-code-cli/customization/hooks.html).
 OpenCode has the matching plugin fixture at
 `aitp-v5 adapter install-hooks opencode <session-id> --output .opencode/AITP_V5_PLUGIN_HOOKS.json`.

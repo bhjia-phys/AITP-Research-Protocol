@@ -207,7 +207,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "vnext_readiness_manifest": "orientation-only vNext readiness manifest separating implemented control-plane surfaces from lane exemplar and content backlog",
     "workspace_summary_bundle": "orientation-only workspace summary regenerated from typed sessions, active claims, memory entries, and validation links",
     "workspace_replay_packet": "orientation-only multi-session replay packet listing resume attention, source reconstruction gaps, evidence gaps, and next actions from typed records",
-    "workspace_refresh_bundle": "orientation-only host startup bundle that refreshes workspace summary, replay packet, and L2 Obsidian views from typed records",
+    "workspace_refresh_bundle": "orientation-only host refresh bundle; full mode refreshes replay/source/L2 views, while startup_lightweight mode refreshes current-session orientation only",
 }
 
 

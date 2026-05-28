@@ -150,6 +150,65 @@ def refresh_workspace_views(
     return payload
 
 
+def refresh_workspace_startup_views(
+    ws: WorkspacePaths,
+    *,
+    session_id: str,
+) -> dict[str, Any]:
+    """Refresh the lightweight host-startup orientation surface for one session.
+
+    Full workspace refresh is intentionally heavier: it rewrites replay,
+    source-stack, L2, and source-reconstruction views. Session-start hooks run on
+    every host startup, so they keep only the current-session surfaces warm and
+    leave full refresh to explicit CLI/MCP calls.
+    """
+
+    summary = asdict(write_workspace_summary(ws))
+    workspace_interaction = build_workspace_interaction_preview(ws)
+    interaction_worklist = build_interaction_recording_worklist(ws)
+    topic_status_bundle = write_topic_status_surfaces(ws, session_id=session_id)
+    source_records = _merge_source_records(
+        summary.get("source_records", {}),
+        workspace_interaction.get("source_records", {}),
+        interaction_worklist.get("source_records", {}),
+        topic_status_bundle.get("source_records", {}),
+    )
+    return {
+        "kind": "workspace_refresh_bundle",
+        "refresh_mode": "startup_lightweight",
+        "refreshed_surfaces": [
+            summary["kind"],
+            workspace_interaction["kind"],
+            interaction_worklist["kind"],
+            topic_status_bundle["kind"],
+        ],
+        "deferred_surfaces": [
+            "workspace_replay_packet",
+            "source_stack_coverage_manifest",
+            "l2_obsidian_view_bundle",
+            "source_reconstruction_obsidian_view_bundle",
+        ],
+        "workspace_summary": summary,
+        "workspace_interaction_preview": workspace_interaction,
+        "interaction_recording_worklist": interaction_worklist,
+        "topic_status_bundles": [topic_status_bundle],
+        "topic_status_refresh_policy": {
+            "selection": "current_session",
+            "max_session_count": 1,
+            "candidate_session_count": 1,
+            "refreshed_session_count": 1,
+        },
+        "source_records": source_records,
+        "derived_from": "kernel_state",
+        "truth_source": False,
+        "orientation_only": True,
+        "adapter_rule": "read_for_orientation_then_call_kernel_before_trust_updates",
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+        "summary_inputs_trusted": False,
+    }
+
+
 def _merge_source_records(*records: dict[str, list[str]]) -> dict[str, list[str]]:
     merged: dict[str, list[str]] = {}
     seen: dict[str, set[str]] = {}
