@@ -9,6 +9,7 @@ Both decorators are idempotent and can be stacked.
 
 from __future__ import annotations
 
+import inspect
 from functools import wraps
 from pathlib import Path
 from typing import Any
@@ -136,7 +137,15 @@ def require_stage(func):
     Uses the STAGE_PERMISSIONS table to check allow/deny lists.
     """
     @wraps(func)
-    def wrapper(topics_root=None, topic_slug=None, **kwargs):
+    def wrapper(*args, **kwargs):
+        try:
+            bound = inspect.signature(func).bind_partial(*args, **kwargs)
+            topics_root = bound.arguments.get("topics_root")
+            topic_slug = bound.arguments.get("topic_slug")
+        except TypeError:
+            topics_root = kwargs.get("topics_root")
+            topic_slug = kwargs.get("topic_slug")
+
         if topic_slug:
             topic_root = _resolve_topic_root(topics_root, topic_slug)
             if topic_root and topic_root.exists():
@@ -176,7 +185,7 @@ def require_stage(func):
                             "current_stage": stage,
                         }
 
-        return func(topics_root=topics_root, topic_slug=topic_slug, **kwargs)
+        return func(*args, **kwargs)
     return wrapper
 
 
@@ -187,7 +196,15 @@ def with_preflight(command_name: str):
     """
     def decorator(func):
         @wraps(func)
-        def wrapper(topics_root=None, topic_slug=None, **kwargs):
+        def wrapper(*args, **kwargs):
+            try:
+                bound = inspect.signature(func).bind_partial(*args, **kwargs)
+                topics_root = bound.arguments.get("topics_root")
+                topic_slug = bound.arguments.get("topic_slug")
+            except TypeError:
+                topics_root = kwargs.get("topics_root")
+                topic_slug = kwargs.get("topic_slug")
+
             if topic_slug:
                 topic_root = _resolve_topic_root(topics_root, topic_slug)
                 if topic_root and topic_root.exists():
@@ -203,6 +220,6 @@ def with_preflight(command_name: str):
                             "preflight_failures": failures,
                             "command": command_name,
                         }
-            return func(topics_root=topics_root, topic_slug=topic_slug, **kwargs)
+            return func(*args, **kwargs)
         return wrapper
     return decorator

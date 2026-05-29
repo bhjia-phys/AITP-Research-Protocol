@@ -1,6 +1,10 @@
 """L2 knowledge graph CLI commands."""
 from __future__ import annotations
 from pathlib import Path
+import re
+
+from brain.domains import topics_dir
+from brain.state import L2_EDGE_TYPES, L2_NODE_TYPES
 
 
 def _now_iso():
@@ -32,6 +36,11 @@ def _write_md(path: Path, fm: dict, body: str):
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
+def _slugify(value: str) -> str:
+    slug = re.sub(r"[^A-Za-z0-9_.-]+", "-", str(value).strip()).strip("-")
+    return slug or "node"
+
+
 def _resolve_topic_root(topic_slug: str) -> Path:
     import os
     base = Path(os.environ.get("AITP_TOPICS_ROOT",
@@ -46,14 +55,12 @@ def cmd_l2_node_create(args):
     """Create an L2 graph node."""
     topics_root = Path(args.topics_root) if getattr(args, 'topics_root') else Path(
         "D:/BaiduSyncdisk/Theoretical-Physics/research/aitp-topics")
-    l2_dir = topics_root / "L2" / "graph" / "nodes"
+    l2_dir = topics_dir(topics_root) / "L2" / "graph" / "nodes"
     l2_dir.mkdir(parents=True, exist_ok=True)
 
-    valid_types = ["concept", "theorem", "technique", "derivation_chain", "result",
-                   "approximation", "open_question", "regime_boundary"]
     node_type = args.node_type or "concept"
-    if node_type not in valid_types:
-        print(f"Invalid node_type. Valid: {valid_types}")
+    if node_type not in L2_NODE_TYPES:
+        print(f"Invalid node_type. Valid: {L2_NODE_TYPES}")
         return 1
 
     fm = {
@@ -71,17 +78,27 @@ def cmd_l2_edge_create(args):
     """Create an L2 graph edge."""
     topics_root = Path(args.topics_root) if getattr(args, 'topics_root') else Path(
         "D:/BaiduSyncdisk/Theoretical-Physics/research/aitp-topics")
-    l2_dir = topics_root / "L2" / "graph" / "edges"
+    l2_root = topics_dir(topics_root) / "L2"
+    l2_dir = l2_root / "graph" / "edges"
     l2_dir.mkdir(parents=True, exist_ok=True)
 
-    valid_types = ["limits_to", "specializes", "generalizes", "approximates", "derives_from",
-                   "proven_by", "assumes", "uses", "component_of", "equivalent_to", "contradicts",
-                   "matches_onto", "decouples_at", "emerges_from", "refines", "motivates",
-                   "falsifies", "dual_to", "conjugate_to", "perturbative_in", "superseded_by",
-                   "invariant_under"]
     edge_type = args.edge_type or "uses"
-    if edge_type not in valid_types:
-        print(f"Invalid edge_type. Valid: {valid_types[:8]}...")
+    if edge_type not in L2_EDGE_TYPES:
+        print(f"Invalid edge_type. Valid: {L2_EDGE_TYPES[:8]}...")
+        return 1
+
+    if not (args.source_ref or "").strip():
+        print("source_ref is REQUIRED for L2 edges. Every relation must have provenance.")
+        return 1
+
+    nodes_dir = l2_root / "graph" / "nodes"
+    missing = [
+        node
+        for node in [args.from_node, args.to_node]
+        if not (nodes_dir / f"{_slugify(node)}.md").exists()
+    ]
+    if missing:
+        print(f"L2 edge endpoint not found: {', '.join(missing)}")
         return 1
 
     fm = {
@@ -100,7 +117,7 @@ def cmd_l2_merge(args):
     # Collect all derivation steps + edges from topic
     steps_dir = root / "L2" / "graph" / "steps"
     edges_dir = root / "L2" / "graph" / "edges"
-    topics_root = Path("D:/BaiduSyncdisk/Theoretical-Physics/research/aitp-topics")
+    topics_root = topics_dir(Path("D:/BaiduSyncdisk/Theoretical-Physics/research/aitp-topics"))
     global_l2 = topics_root / "L2" / "graph"
 
     count = 0
@@ -120,7 +137,7 @@ def cmd_l2_merge(args):
 
 def cmd_l2_query(args):
     """Query L2 knowledge graph."""
-    topics_root = Path("D:/BaiduSyncdisk/Theoretical-Physics/research/aitp-topics")
+    topics_root = topics_dir(Path("D:/BaiduSyncdisk/Theoretical-Physics/research/aitp-topics"))
     query = " ".join(args.query) if hasattr(args.query, '__iter__') else str(args.query)
     nodes_dir = topics_root / "L2" / "graph" / "nodes"
     if not nodes_dir.exists():

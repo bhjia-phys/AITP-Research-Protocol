@@ -2,7 +2,9 @@
 Native MCP stdio server — zero dependencies beyond Python stdlib.
 
 Replaces FastMCP 3.x (ndjson) + claude_code_bridge.py (Content-Length converter)
-with a single file that speaks MCP's native Content-Length framing directly.
+with a single file that speaks both newline-delimited JSON and MCP's native
+Content-Length framing. Codex CLI/App uses newline-delimited local stdio, while
+Claude-style clients use Content-Length.
 
 The tool functions are imported from mcp_server.py — they remain unchanged.
 Only the transport and JSON-RPC dispatch are replaced.
@@ -19,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 _DIAG = Path(__file__).resolve().parent / "_mcp_boot.log"
+_FRAMING_MODE = "headers"
 
 # Suppress any stderr warnings before importing mcp_server (which triggers
 # fastmcp -> requests, which emits RequestsDependencyWarning on stderr).
@@ -36,12 +39,33 @@ _log(f"BOOT python={sys.executable} cwd={Path.cwd()}")
 
 
 # ---------------------------------------------------------------------------
-# Content-Length framed stdio (MCP spec)
+# Stdio framing
 # ---------------------------------------------------------------------------
 
 def _read_message() -> dict | None:
-    """Read one Content-Length-prefixed JSON-RPC message from stdin."""
-    header = b""
+    """Read one JSON-RPC message from stdin.
+
+    Codex CLI currently speaks newline-delimited JSON for local stdio MCP,
+    while other clients use Content-Length framing. Support both and mirror the
+    first frame type when writing responses.
+    """
+    global _FRAMING_MODE
+
+    first = sys.stdin.buffer.read(1)
+    if not first:
+        return None
+    while first in b" \t\r\n":
+        first = sys.stdin.buffer.read(1)
+        if not first:
+            return None
+
+    if first == b"{":
+        _FRAMING_MODE = "lines"
+        line = first + sys.stdin.buffer.readline()
+        return json.loads(line.decode("utf-8"))
+
+    _FRAMING_MODE = "headers"
+    header = first
     while True:
         ch = sys.stdin.buffer.read(1)
         if not ch:
@@ -67,9 +91,13 @@ def _read_message() -> dict | None:
 
 
 def _write_message(msg: dict) -> None:
-    """Write one Content-Length-prefixed JSON-RPC message to stdout."""
+    """Write one JSON-RPC message using the active stdin framing mode."""
     body = json.dumps(msg, ensure_ascii=False, default=str)
     encoded = body.encode("utf-8")
+    if _FRAMING_MODE == "lines":
+        sys.stdout.buffer.write(encoded + b"\n")
+        sys.stdout.buffer.flush()
+        return
     header = f"Content-Length: {len(encoded)}\r\n\r\n".encode("utf-8")
     sys.stdout.buffer.write(header + encoded)
     sys.stdout.buffer.flush()

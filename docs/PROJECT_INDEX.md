@@ -16,6 +16,7 @@
 | Integrate AITP into my agent platform | [adapters/README.md](../adapters/README.md) | [protocols/adapter_interface.md](protocols/adapter_interface.md) → pick your platform |
 | Understand the research protocol mechanics | [AITP_SPEC.md](AITP_SPEC.md) | [contracts/README.md](../contracts/README.md) → [schemas/README.md](../schemas/README.md) |
 | Understand the runtime engine | [protocols/brain_protocol.md](protocols/brain_protocol.md) | [research/knowledge-hub/runtime/README.md](../research/knowledge-hub/runtime/README.md) |
+| Audit Codex app support and physics harness fit | [CODEX_APP_ADAPTATION_AND_PHYSICS_HARNESS_AUDIT.md](CODEX_APP_ADAPTATION_AND_PHYSICS_HARNESS_AUDIT.md) | [INSTALL_CODEX.md](INSTALL_CODEX.md) |
 
 ---
 

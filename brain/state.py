@@ -215,6 +215,7 @@ L2_NODE_TYPES = [
     # Core knowledge types
     "concept", "theorem", "technique", "derivation_chain",
     "result", "approximation", "open_question", "regime_boundary",
+    "known_limit",          # benchmark limit or exactly/securely known case
     "negative_result",      # a claim that was tested and failed — equal value to positive
     # Fine-grained types (from LAYER2_OBJECT_FAMILIES)
     "definition",           # definition_card

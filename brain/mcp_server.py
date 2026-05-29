@@ -5911,6 +5911,19 @@ def aitp_create_l2_edge(
     """Create a typed edge between two L2 graph nodes.
     TODO: align with CLI l2 edge-create (global L2 vs topic subgraph path).
     """
+    if not source_ref.strip():
+        return "source_ref is REQUIRED for L2 edges. Every relation must have provenance."
+
+    global_l2 = _ensure_l2_graph_dirs(topics_root)
+    nodes_dir = global_l2 / "graph" / "nodes"
+    missing = [
+        node
+        for node in [from_node, to_node]
+        if not (nodes_dir / f"{_slugify(node)}.md").exists()
+    ]
+    if missing:
+        return f"L2 edge endpoint not found: {', '.join(missing)}"
+
     from brain.cli._dispatch_helpers import dispatch
     from brain.cli.commands.l2 import cmd_l2_edge_create
     return dispatch(cmd_l2_edge_create,
