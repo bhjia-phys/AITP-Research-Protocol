@@ -566,6 +566,17 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `aitp_v5_write_topic_status_surfaces_compact` should be preferred when a host
   needs only a small continuation payload; they still write the full status
   files but do not dump the complete `topic_state` JSON into chat.
+- For the active QSGW/LibRPA theory workflow, prioritize a lightweight
+  "research cockpit" slice over heavier bookkeeping: maintain a
+  final/diagnostic lane manifest, make final plotting scripts read explicit
+  final allowlists, require diagnostic plot/profile labels for assumption-based
+  outputs, let refresh/status scripts emit AITP-ready intake manifests or JSONL,
+  and generate compact dashboard/report dry-runs for group meetings and
+  cross-session continuation. This should reduce friction, not require every
+  monitor note or exploratory plot to become a typed record. It must not auto
+  update trust, promote diagnostic observations, or treat unfinished,
+  nonconverged, negative-gap, noiter, or contaminated-root data as final
+  evidence.
 
 ## Protocol Layer Map
 

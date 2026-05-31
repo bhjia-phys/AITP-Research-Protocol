@@ -65,9 +65,12 @@ kernel capability:
    not semantic proof.
 2. Clear source-reconstruction inconclusive items for the remaining active
    claims.
-3. Continue qsgw/librpa topic hardening with the final/diagnostic lane
-   boundary: final outputs require final-usable provenance; diagnostic outputs
-   may carry assumptions only when labeled.
+3. Continue qsgw/librpa topic hardening with a lightweight "research cockpit"
+   slice before adding more bookkeeping: maintain a final/diagnostic lane
+   manifest, make plotting scripts read explicit lane allowlists, and generate
+   a dashboard/report dry-run from typed records plus report manifests.
+   Final outputs require final-usable provenance; diagnostic outputs may carry
+   assumptions only when labeled.
 4. Keep literature intake conservative: record references as orientation-only,
    record evidence only with explicit claim, status, source refs, and scoped
    output, and route trust changes through preflight/checkpoints.

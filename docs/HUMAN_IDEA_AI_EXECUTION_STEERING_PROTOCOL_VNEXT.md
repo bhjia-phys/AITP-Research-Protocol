@@ -531,7 +531,26 @@ semantically lossless.
    the backlog clears. This cannot be automated away.
 2. **Theory workspace AITP update**: sync kernel worktree changes to
    `D:/BaiduSyncdisk/Theoretical-Physics` AITP installation.
-3. **Literature intake optimization for qsgw dual-lane workflow**:
+3. **QSGW/LibRPA lightweight research cockpit slice**:
+   implement this before heavier domain-schema migration. The slice should:
+   - materialize a final/diagnostic lane manifest for the active
+     `qsgw-headwing-update-librpa` topic, with forbidden roots and
+     final-usable provenance visible to future agents;
+   - make final plotting paths read only explicit final allowlists, while
+     diagnostic plotting paths require an explicit diagnostic flag/profile and
+     cannot overwrite final-only outputs;
+   - let refresh/status scripts emit AITP-ready intake manifests or JSONL
+     records so repeated Slurm monitoring does not require manual typed-record
+     bookkeeping;
+   - generate a compact current dashboard/report dry-run from typed records,
+     report manifests, and lane state for group-meeting and cross-session
+     continuation use.
+   This slice must reduce operator friction: temporary monitor notes and
+   exploratory plots may remain ordinary report files unless they affect final
+   evidence, validation, forbidden-root state, or claim scope.
+4. **Literature intake optimization for qsgw dual-lane workflow**:
    ensure literature intake templates correctly reference final/diagnostic
-   lane boundaries and usable_for_final provenance guards.
-4. **OpenCode adapter**: deferred until OpenCode hook model stabilizes.
+   lane boundaries and usable_for_final provenance guards. Literature intake
+   may suggest scope-limiting evidence or sensemaking, but must never promote
+   diagnostic observations into final claim confidence.
+5. **OpenCode adapter**: deferred until OpenCode hook model stabilizes.
