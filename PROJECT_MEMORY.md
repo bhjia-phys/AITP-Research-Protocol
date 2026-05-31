@@ -577,6 +577,15 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   update trust, promote diagnostic observations, or treat unfinished,
   nonconverged, negative-gap, noiter, or contaminated-root data as final
   evidence.
+- The first kernel surface for that slice is `aitp-v5 status qsgw-cockpit`
+  (`aitp_v5_write_qsgw_cockpit_surfaces` for MCP). It writes
+  `.aitp/topics/qsgw-headwing-update-librpa/runtime/qsgw_cockpit_manifest.json`,
+  `qsgw_cockpit_dashboard.md`, and `qsgw_plot_guard.generated.md` from typed
+  records plus `research/librpa/reports` and `research/librpa/scripts` scans.
+  The surface is `qsgw_cockpit_bundle`, orientation-only, and explicitly forbids
+  trust updates; downstream theory-workspace work should wire refresh scripts to
+  emit intake JSONL/manifests and plotting scripts to read explicit lane
+  allowlists.
 
 ## Protocol Layer Map
 

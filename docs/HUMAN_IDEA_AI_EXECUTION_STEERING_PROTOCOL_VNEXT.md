@@ -532,10 +532,15 @@ semantically lossless.
 2. **Theory workspace AITP update**: sync kernel worktree changes to
    `D:/BaiduSyncdisk/Theoretical-Physics` AITP installation.
 3. **QSGW/LibRPA lightweight research cockpit slice**:
-   implement this before heavier domain-schema migration. The slice should:
-   - materialize a final/diagnostic lane manifest for the active
-     `qsgw-headwing-update-librpa` topic, with forbidden roots and
-     final-usable provenance visible to future agents;
+   the first orientation-only kernel surface is implemented as
+   `aitp-v5 status qsgw-cockpit` /
+   `aitp_v5_write_qsgw_cockpit_surfaces`. It writes a topic-local
+   `qsgw_cockpit_manifest.json`, dashboard dry-run, and generated plot guard.
+   Continue downstream hardening by using this before heavier domain-schema
+   migration. The slice should:
+   - keep the generated final/diagnostic lane manifest visible for the active
+     `qsgw-headwing-update-librpa` topic, including forbidden roots and
+     final-usable provenance guidance for future agents;
    - make final plotting paths read only explicit final allowlists, while
      diagnostic plotting paths require an explicit diagnostic flag/profile and
      cannot overwrite final-only outputs;

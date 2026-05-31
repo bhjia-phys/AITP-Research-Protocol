@@ -70,6 +70,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "physics_object_record",
         "pre_tool_policy_decision",
         "promotion_packet_record",
+        "qsgw_cockpit_bundle",
         "record_gate_coverage_audit",
         "reference_location_record",
         "research_intent_packet",

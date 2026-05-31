@@ -363,6 +363,8 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
     "workspace_refresh": {"cli": "aitp-v5 summary refresh", "mcp": "aitp_v5_refresh_workspace_views", "surface": "workspace_refresh_bundle"},
     "topic_status": {"cli": "aitp-v5 status topic <session-id>", "mcp": "aitp_v5_write_topic_status_surfaces", "surface": "topic_status_bundle"},
     "topic_status_compact": {"cli": "aitp-v5 status topic <session-id> --compact", "mcp": "aitp_v5_write_topic_status_surfaces_compact", "surface": "topic_status_bundle"},
+    "qsgw_cockpit": {"cli": "aitp-v5 status qsgw-cockpit", "mcp": "aitp_v5_write_qsgw_cockpit_surfaces", "surface": "qsgw_cockpit_bundle"},
+    "qsgw_cockpit_compact": {"cli": "aitp-v5 status qsgw-cockpit --compact", "mcp": "aitp_v5_write_qsgw_cockpit_surfaces_compact", "surface": "qsgw_cockpit_bundle"},
     "trust_preflight": {
         "cli": "aitp-v5 trust preflight <args>",
         "mcp": "aitp_v5_preflight_trust_update",

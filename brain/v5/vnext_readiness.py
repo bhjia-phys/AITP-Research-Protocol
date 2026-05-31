@@ -99,6 +99,15 @@ def build_vnext_readiness_manifest(ws: WorkspacePaths) -> dict[str, Any]:
             surfaces,
         ),
         _workstream(
+            "qsgw_research_cockpit",
+            "qsgw_research_cockpit",
+            ["qsgw_cockpit"],
+            ["qsgw_cockpit_bundle"],
+            "QSGW/LibRPA final-diagnostic lane cockpit surfaces summarize plot guards and dashboard dry-runs without trust authority",
+            entrypoints,
+            surfaces,
+        ),
+        _workstream(
             "adapter_bootstrap_conformance",
             "adapter_bootstrap_conformance",
             ["runtime_host_production_loop_audit", "final_engineering_readiness_audit"],
@@ -226,6 +235,7 @@ def _phase_statuses(workstreams: list[dict[str, Any]]) -> dict[str, str]:
         "adapter_bootstrap_conformance": by_name.get("adapter_bootstrap_conformance", ""),
         "human_output_stability": by_name.get("human_output_stability", ""),
         "literature_intake_assistant": by_name.get("literature_intake_assistant", ""),
+        "qsgw_research_cockpit": by_name.get("qsgw_research_cockpit", ""),
     }
 
 

@@ -70,6 +70,7 @@ _PUBLIC_SURFACE_NAMES = (
     "physics_object_record",
     "pre_tool_policy_decision",
     "promotion_packet_record",
+    "qsgw_cockpit_bundle",
     "record_gate_coverage_audit",
     "reference_location_record",
     "research_intent_packet",
@@ -175,6 +176,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "physics_object_record": "contracted physics-object record for theoretical objects, systems, operators, sectors, and definitions",
     "pre_tool_policy_decision": "contracted pre-tool policy decision derived from typed kernel records, not summaries",
     "promotion_packet_record": "contracted promotion packet requiring explicit evidence refs, known failure modes, and scope before L2 memory promotion",
+    "qsgw_cockpit_bundle": "orientation-only QSGW/LibRPA research cockpit bundle with final/diagnostic lane manifest, plot guard, and dashboard dry-run that cannot update claim trust",
     "record_gate_coverage_audit": "contracted audit that every runtime record protocol has a conscious runtime gate decision",
     "reference_location_record": "contracted orientation-only pointer to an external paper, note, or knowledge item",
     "research_intent_packet": "contracted vNext idea gate packet for vague or materially redefined research topics",
@@ -364,6 +366,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     )
     from brain.v5.obsidian_view_contracts import require_valid_l2_obsidian_view_bundle
     from brain.v5.workspace_refresh_contracts import require_valid_workspace_refresh_bundle
+    from brain.v5.qsgw_cockpit_contracts import require_valid_qsgw_cockpit_bundle
     from brain.v5.goal_continuation_contracts import (
         require_valid_goal_continuation_list,
         require_valid_goal_continuation_packet,
@@ -450,6 +453,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "physics_object_record": require_valid_physics_object_record,
         "pre_tool_policy_decision": require_valid_pre_tool_policy_decision,
         "promotion_packet_record": require_valid_promotion_packet_record,
+        "qsgw_cockpit_bundle": require_valid_qsgw_cockpit_bundle,
         "record_gate_coverage_audit": require_valid_record_gate_coverage_audit,
         "reference_location_record": require_valid_reference_location_record,
         "research_intent_packet": require_valid_research_intent_packet,

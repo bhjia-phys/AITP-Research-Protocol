@@ -36,6 +36,7 @@ def test_vnext_readiness_manifest_reports_control_plane_and_lane_backlog(tmp_pat
         "adapter_bootstrap_conformance": "priority_hosts_ready_opencode_deferred",
         "human_output_stability": "implemented",
         "literature_intake_assistant": "implemented",
+        "qsgw_research_cockpit": "implemented",
     }
     assert payload["backlog_workstreams"] == ["lane_exemplars"]
     assert payload["missing_workstreams"] == []
@@ -104,6 +105,7 @@ def test_vnext_readiness_cli_compact_progress(tmp_path, capsys):
     assert compact_payload["control_plane_status"] == "ready_with_lane_exemplar_backlog"
     assert compact_payload["phase_statuses"]["human_output_stability"] == "implemented"
     assert compact_payload["phase_statuses"]["literature_intake_assistant"] == "implemented"
+    assert compact_payload["phase_statuses"]["qsgw_research_cockpit"] == "implemented"
     assert compact_payload["covered_lanes"] == ["toy_numeric"]
     assert compact_payload["missing_lanes"] == ["semi_formal_theory", "code_backed_algorithm"]
     assert compact_payload["stable_output_spine"] == [

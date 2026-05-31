@@ -34,6 +34,7 @@ surfaces.
 | OpenCode | Adapter/plugin surfaces exist, but OpenCode remains deferred until its hook model and packaging path stabilize |
 | Goal continuation | Implemented: local `.aitp/surfaces/goal_continuation/` JSON+Markdown packets capture objective, commit range, changed files, tests, smoke commands, readiness, next actions, and blocking backlog |
 | Literature intake | Implemented conservative intake: references are orientation-only, evidence/sensemaking are guarded suggestions, and trust updates stay forbidden without preflight/checkpoints |
+| QSGW cockpit | Implemented first surface: `aitp-v5 status qsgw-cockpit` writes a topic-local final/diagnostic lane manifest, plot guard, and dashboard dry-run from typed records plus `research/librpa` report/script scans |
 
 The latest real readiness audit reports:
 
@@ -65,12 +66,12 @@ kernel capability:
    not semantic proof.
 2. Clear source-reconstruction inconclusive items for the remaining active
    claims.
-3. Continue qsgw/librpa topic hardening with a lightweight "research cockpit"
-   slice before adding more bookkeeping: maintain a final/diagnostic lane
-   manifest, make plotting scripts read explicit lane allowlists, and generate
-   a dashboard/report dry-run from typed records plus report manifests.
-   Final outputs require final-usable provenance; diagnostic outputs may carry
-   assumptions only when labeled.
+3. Continue qsgw/librpa topic hardening from the first lightweight "research
+   cockpit" surface: run `aitp-v5 status qsgw-cockpit` to materialize the
+   topic-local lane manifest, plot guard, and dashboard dry-run, then wire
+   downstream refresh/plot scripts to emit/read explicit final/diagnostic
+   manifests. Final outputs require final-usable provenance; diagnostic outputs
+   may carry assumptions only when labeled.
 4. Keep literature intake conservative: record references as orientation-only,
    record evidence only with explicit claim, status, source refs, and scoped
    output, and route trust changes through preflight/checkpoints.
