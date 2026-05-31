@@ -34,7 +34,7 @@ surfaces.
 | OpenCode | Adapter/plugin surfaces exist, but OpenCode remains deferred until its hook model and packaging path stabilize |
 | Goal continuation | Implemented: local `.aitp/surfaces/goal_continuation/` JSON+Markdown packets capture objective, commit range, changed files, tests, smoke commands, readiness, next actions, and blocking backlog |
 | Literature intake | Implemented conservative intake: references are orientation-only, evidence/sensemaking are guarded suggestions, and trust updates stay forbidden without preflight/checkpoints |
-| QSGW cockpit | Implemented first surface: `aitp-v5 status qsgw-cockpit` writes a topic-local final/diagnostic lane manifest, plot guard, and dashboard dry-run from typed records plus `research/librpa` report/script scans |
+| QSGW cockpit | Implemented first surface: `aitp-v5 status qsgw-cockpit` writes a topic-local final/diagnostic lane manifest, plot guard, and dashboard dry-run from typed records plus `research/librpa` report/script scans; it also discovers downstream `*_lane_manifest_current.json` and `*_aitp_intake_current.jsonl` files without treating them as trust updates |
 
 The latest real readiness audit reports:
 
@@ -66,12 +66,13 @@ kernel capability:
    not semantic proof.
 2. Clear source-reconstruction inconclusive items for the remaining active
    claims.
-3. Continue qsgw/librpa topic hardening from the first lightweight "research
+3. Continue qsgw/librpa topic hardening from the lightweight "research
    cockpit" surface: run `aitp-v5 status qsgw-cockpit` to materialize the
-   topic-local lane manifest, plot guard, and dashboard dry-run, then wire
-   downstream refresh/plot scripts to emit/read explicit final/diagnostic
-   manifests. Final outputs require final-usable provenance; diagnostic outputs
-   may carry assumptions only when labeled.
+   topic-local lane manifest, plot guard, and dashboard dry-run. The cockpit now
+   detects downstream lane/intake files, so the remaining work is to make actual
+   result refresh scripts emit guarded result candidates and make final plot
+   scripts fail closed on non-final rows. Final outputs require final-usable
+   provenance; diagnostic outputs may carry assumptions only when labeled.
 4. Keep literature intake conservative: record references as orientation-only,
    record evidence only with explicit claim, status, source refs, and scoped
    output, and route trust changes through preflight/checkpoints.

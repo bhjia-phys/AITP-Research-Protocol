@@ -586,6 +586,12 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   trust updates; downstream theory-workspace work should wire refresh scripts to
   emit intake JSONL/manifests and plotting scripts to read explicit lane
   allowlists.
+- The cockpit also discovers downstream `*_lane_manifest_current.json` and
+  `*_aitp_intake_current.jsonl` files in `research/librpa/reports`. Compact
+  output reports how many downstream lane manifests/intake files/records exist
+  and whether intake rows are guarded. Audit/intake JSONL by itself is still
+  orientation-only; result-refresh candidates and plot-script fail-closed guards
+  remain separate follow-up work unless the compact next-actions say otherwise.
 
 ## Protocol Layer Map
 

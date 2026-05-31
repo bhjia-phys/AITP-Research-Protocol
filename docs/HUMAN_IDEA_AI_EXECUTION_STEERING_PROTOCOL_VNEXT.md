@@ -536,8 +536,10 @@ semantically lossless.
    `aitp-v5 status qsgw-cockpit` /
    `aitp_v5_write_qsgw_cockpit_surfaces`. It writes a topic-local
    `qsgw_cockpit_manifest.json`, dashboard dry-run, and generated plot guard.
-   Continue downstream hardening by using this before heavier domain-schema
-   migration. The slice should:
+   It also scans `research/librpa/reports` for downstream
+   `*_lane_manifest_current.json` and `*_aitp_intake_current.jsonl` files and
+   exposes their guarded counts in compact output. Continue downstream hardening
+   by using this before heavier domain-schema migration. The slice should:
    - keep the generated final/diagnostic lane manifest visible for the active
      `qsgw-headwing-update-librpa` topic, including forbidden roots and
      final-usable provenance guidance for future agents;
@@ -546,7 +548,8 @@ semantically lossless.
      cannot overwrite final-only outputs;
    - let refresh/status scripts emit AITP-ready intake manifests or JSONL
      records so repeated Slurm monitoring does not require manual typed-record
-     bookkeeping;
+     bookkeeping; audit intake may exist before result-refresh intake, and the
+     cockpit must keep that distinction explicit;
    - generate a compact current dashboard/report dry-run from typed records,
      report manifests, and lane state for group-meeting and cross-session
      continuation use.

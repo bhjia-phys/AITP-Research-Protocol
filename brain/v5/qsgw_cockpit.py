@@ -32,6 +32,8 @@ _DEFAULT_REPORTS_REL = Path("research") / "librpa" / "reports"
 _DEFAULT_SCRIPTS_REL = Path("research") / "librpa" / "scripts"
 _ARTIFACT_SUFFIXES = {".csv", ".json", ".md", ".pdf", ".png", ".svg", ".tsv", ".txt"}
 _SCRIPT_SUFFIXES = {".ipynb", ".md", ".ps1", ".py", ".sh"}
+_LANE_MANIFEST_GLOB = "*lane_manifest_current.json"
+_AITP_INTAKE_GLOB = "*aitp_intake_current.jsonl"
 _REMOTE_ROOT_RE = re.compile(r"/data/home/[^\s,'\")\]]+")
 
 _FORBIDDEN_ROOTS = [
@@ -108,10 +110,11 @@ def build_qsgw_cockpit_manifest(
     )
     report_artifacts = _scan_artifacts(reports_root, suffixes=_ARTIFACT_SUFFIXES, limit=80)
     script_artifacts = _scan_artifacts(scripts_root, suffixes=_SCRIPT_SUFFIXES, limit=80)
+    downstream_intake = _downstream_intake(reports_root)
     lane_manifest = _lane_manifest(ws, topic_id, current_records, observed_roots)
     plot_guard = _plot_guard()
-    refresh_intake = _refresh_intake()
-    next_actions = _next_actions(lane_manifest, report_artifacts, script_artifacts)
+    refresh_intake = _refresh_intake(downstream_intake)
+    next_actions = _next_actions(lane_manifest, report_artifacts, script_artifacts, downstream_intake)
     return {
         "kind": "qsgw_cockpit_manifest",
         "manifest_version": _MANIFEST_VERSION,
@@ -120,10 +123,11 @@ def build_qsgw_cockpit_manifest(
         "current_records": current_records,
         "report_artifacts": report_artifacts,
         "script_artifacts": script_artifacts,
+        "downstream_intake": downstream_intake,
         "plot_guard": plot_guard,
         "refresh_intake": refresh_intake,
         "typed_record_templates": _typed_record_templates(topic_id),
-        "dashboard": _dashboard_summary(current_records, report_artifacts, script_artifacts),
+        "dashboard": _dashboard_summary(current_records, report_artifacts, script_artifacts, downstream_intake),
         "next_actions": next_actions,
         "trust_update_forbidden": True,
         "orientation_only": True,
@@ -141,6 +145,7 @@ def compact_qsgw_cockpit_bundle(payload: dict[str, Any]) -> dict[str, Any]:
     evidence_counts = records.get("evidence_counts_by_lane") if isinstance(records.get("evidence_counts_by_lane"), dict) else {}
     lane_manifest = manifest.get("lane_manifest") if isinstance(manifest.get("lane_manifest"), dict) else {}
     plot_guard = manifest.get("plot_guard") if isinstance(manifest.get("plot_guard"), dict) else {}
+    downstream_intake = manifest.get("downstream_intake") if isinstance(manifest.get("downstream_intake"), dict) else {}
     return {
         "kind": "qsgw_cockpit_bundle_progress",
         "source_surface": "qsgw_cockpit_bundle",
@@ -153,6 +158,11 @@ def compact_qsgw_cockpit_bundle(payload: dict[str, Any]) -> dict[str, Any]:
         "forbidden_roots": [item["root"] for item in lane_manifest.get("forbidden_roots", []) if isinstance(item, dict) and item.get("root")],
         "final_plot_guard_required": bool(plot_guard.get("final_lane", {}).get("requires_explicit_allowlist", False)),
         "diagnostic_label_required": bool(plot_guard.get("diagnostic_lane", {}).get("requires_explicit_profile", False)),
+        "downstream_lane_manifests": int(downstream_intake.get("lane_manifest_count", 0) or 0),
+        "downstream_intake_jsonl": int(downstream_intake.get("intake_jsonl_count", 0) or 0),
+        "downstream_intake_records": int(downstream_intake.get("intake_record_count", 0) or 0),
+        "downstream_intake_all_guarded": bool(downstream_intake.get("all_intake_rows_guarded", False)),
+        "downstream_result_intake_candidates": bool(downstream_intake.get("has_result_intake_candidates", False)),
         "next_actions": [item.get("action", "") for item in manifest.get("next_actions", []) if isinstance(item, dict)],
         "trust_update_forbidden": True,
         "orientation_only": True,
@@ -296,12 +306,19 @@ def _plot_guard() -> dict[str, Any]:
     }
 
 
-def _refresh_intake() -> dict[str, Any]:
+def _refresh_intake(downstream_intake: dict[str, Any] | None = None) -> dict[str, Any]:
+    downstream_intake = downstream_intake or {}
     return {
         "recommended_outputs": [
             "research/librpa/reports/qsgw_status_manifest.json",
             "research/librpa/reports/aitp_intake.jsonl",
         ],
+        "observed_outputs": {
+            "lane_manifests": downstream_intake.get("lane_manifests", []),
+            "intake_jsonl": downstream_intake.get("intake_jsonl", []),
+            "intake_record_count": downstream_intake.get("intake_record_count", 0),
+            "all_intake_rows_guarded": downstream_intake.get("all_intake_rows_guarded", False),
+        },
         "jsonl_record_kinds": [
             "qsgw_kpoint_status_candidate",
             "tool_run_candidate",
@@ -362,6 +379,7 @@ def _dashboard_summary(
     current_records: dict[str, Any],
     report_artifacts: dict[str, Any],
     script_artifacts: dict[str, Any],
+    downstream_intake: dict[str, Any],
 ) -> dict[str, Any]:
     evidence_counts = current_records.get("evidence_counts_by_lane") or {}
     report_counts = report_artifacts.get("counts_by_lane") or {}
@@ -384,6 +402,9 @@ def _dashboard_summary(
             "reports_unclassified": report_counts.get("unclassified", 0),
             "refresh_scripts": script_roles.get("refresh", 0),
             "plot_scripts": script_roles.get("plot", 0),
+            "downstream_lane_manifests": downstream_intake.get("lane_manifest_count", 0),
+            "downstream_intake_jsonl": downstream_intake.get("intake_jsonl_count", 0),
+            "downstream_intake_records": downstream_intake.get("intake_record_count", 0),
         },
         "blocking_notes": [
             "legacy semantic review backlog remains a separate blocking backlog",
@@ -396,25 +417,42 @@ def _next_actions(
     lane_manifest: dict[str, Any],
     report_artifacts: dict[str, Any],
     script_artifacts: dict[str, Any],
+    downstream_intake: dict[str, Any],
 ) -> list[dict[str, str]]:
-    actions = [
-        {
-            "action": "materialize_final_diagnostic_lane_manifest",
-            "why": "future agents need a local allowlist boundary before reading reports as final or diagnostic",
-        },
+    actions: list[dict[str, str]] = []
+    if not downstream_intake.get("lane_manifest_count"):
+        actions.append(
+            {
+                "action": "materialize_final_diagnostic_lane_manifest",
+                "why": "future agents need a local allowlist boundary before reading reports as final or diagnostic",
+            }
+        )
+    actions.append(
         {
             "action": "add_plot_guard_to_final_scripts",
             "why": "final plots should fail closed unless inputs are final-usable and clean",
-        },
-        {
-            "action": "emit_refresh_aitp_intake_jsonl",
-            "why": "monitoring should produce reviewable candidates without manual bookkeeping",
-        },
+        }
+    )
+    if not downstream_intake.get("intake_jsonl_count"):
+        actions.append(
+            {
+                "action": "emit_refresh_aitp_intake_jsonl",
+                "why": "monitoring should produce reviewable candidates without manual bookkeeping",
+            }
+        )
+    elif not downstream_intake.get("has_result_intake_candidates"):
+        actions.append(
+            {
+                "action": "extend_refresh_monitor_to_emit_result_intake_jsonl",
+                "why": "audit intake exists, but completed/diagnostic result rows still need the same guarded JSONL shape",
+            }
+        )
+    actions.append(
         {
             "action": "review_dashboard_dry_run_before_claim_updates",
             "why": "dashboard can guide work, but trust updates still require preflight and human checkpoints",
-        },
-    ]
+        }
+    )
     if lane_manifest.get("status") == "topic_missing":
         actions.insert(0, {"action": "bind_or_create_qsgw_topic", "why": "cockpit is most useful once the topic exists"})
     if not report_artifacts.get("present"):
@@ -422,6 +460,133 @@ def _next_actions(
     if not script_artifacts.get("present"):
         actions.append({"action": "point_scripts_dir_at_research_librpa_scripts", "why": "no refresh or plot scripts were found"})
     return actions
+
+
+def _downstream_intake(reports_root: Path) -> dict[str, Any]:
+    lane_manifests = _scan_lane_manifests(reports_root)
+    intake_files = _scan_intake_jsonl(reports_root)
+    intake_record_count = sum(int(item.get("record_count", 0) or 0) for item in intake_files)
+    all_guarded = bool(intake_files) and all(bool(item.get("all_rows_guarded", False)) for item in intake_files)
+    return {
+        "root": str(reports_root),
+        "present": reports_root.exists(),
+        "lane_manifest_count": len(lane_manifests),
+        "intake_jsonl_count": len(intake_files),
+        "intake_record_count": intake_record_count,
+        "all_intake_rows_guarded": all_guarded,
+        "has_result_intake_candidates": any(bool(item.get("has_result_candidates", False)) for item in intake_files),
+        "lane_manifests": lane_manifests,
+        "intake_jsonl": intake_files,
+        "summary_inputs_trusted": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def _scan_lane_manifests(reports_root: Path) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    if not reports_root.exists():
+        return items
+    for path in sorted(reports_root.glob(_LANE_MANIFEST_GLOB), key=lambda p: p.name.lower()):
+        payload, error = _read_json(path)
+        item: dict[str, Any] = {
+            "path": str(path),
+            "relative_path": path.name,
+            "readable": error is None,
+            "error": error,
+            "trust_update_forbidden": True,
+            "claim_confidence_update_allowed": False,
+        }
+        if isinstance(payload, dict):
+            counts = payload.get("counts") if isinstance(payload.get("counts"), dict) else {}
+            final_allowlist = payload.get("final_allowlist") if isinstance(payload.get("final_allowlist"), list) else []
+            diagnostic_candidates = (
+                payload.get("diagnostic_candidates") if isinstance(payload.get("diagnostic_candidates"), list) else []
+            )
+            item.update(
+                {
+                    "kind": payload.get("kind", ""),
+                    "topic_id": payload.get("topic_id", ""),
+                    "counts": counts,
+                    "final_allowlist_count": len(final_allowlist),
+                    "diagnostic_candidate_count": len(diagnostic_candidates),
+                    "trust_update_forbidden": bool(payload.get("trust_update_forbidden", True)),
+                    "claim_confidence_update_allowed": bool(payload.get("claim_confidence_update_allowed", False)),
+                }
+            )
+        items.append(item)
+    return items
+
+
+def _scan_intake_jsonl(reports_root: Path) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    if not reports_root.exists():
+        return items
+    for path in sorted(reports_root.glob(_AITP_INTAKE_GLOB), key=lambda p: p.name.lower()):
+        records, errors = _read_jsonl(path)
+        record_kinds = sorted({str(record.get("record_kind") or "") for record in records if isinstance(record, dict)})
+        all_guarded = bool(records) and all(_intake_record_is_guarded(record) for record in records)
+        items.append(
+            {
+                "path": str(path),
+                "relative_path": path.name,
+                "record_count": len(records),
+                "record_kinds": record_kinds,
+                "read_errors": errors,
+                "all_rows_guarded": all_guarded,
+                "has_final_usable_rows": any(bool(record.get("usable_for_final", False)) for record in records),
+                "has_result_candidates": any(_is_result_candidate(record) for record in records),
+                "summary_inputs_trusted": False,
+                "can_update_claim_trust": False,
+            }
+        )
+    return items
+
+
+def _intake_record_is_guarded(record: dict[str, Any]) -> bool:
+    plot_guard = record.get("plot_guard") if isinstance(record.get("plot_guard"), dict) else {}
+    return (
+        bool(record.get("trust_update_forbidden", False))
+        and not bool(record.get("usable_for_final", False))
+        and not bool(plot_guard.get("allowed_in_final_plot", False))
+    )
+
+
+def _is_result_candidate(record: dict[str, Any]) -> bool:
+    kind = str(record.get("record_kind") or "")
+    if kind in {"qsgw_kpoint_status_candidate", "final_evidence_candidate", "diagnostic_evidence_candidate"}:
+        return True
+    raw = record.get("raw_row") if isinstance(record.get("raw_row"), dict) else {}
+    keys = set(str(key).lower() for key in raw)
+    return bool({"gap_ev", "finished", "converged", "usable_for_final"} & keys)
+
+
+def _read_json(path: Path) -> tuple[Any, str | None]:
+    try:
+        return json.loads(path.read_text(encoding="utf-8")), None
+    except (OSError, json.JSONDecodeError) as exc:
+        return None, str(exc)
+
+
+def _read_jsonl(path: Path) -> tuple[list[dict[str, Any]], list[str]]:
+    records: list[dict[str, Any]] = []
+    errors: list[str] = []
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        return records, [str(exc)]
+    for index, line in enumerate(lines, start=1):
+        if not line.strip():
+            continue
+        try:
+            payload = json.loads(line)
+        except json.JSONDecodeError as exc:
+            errors.append(f"line {index}: {exc}")
+            continue
+        if isinstance(payload, dict):
+            records.append(payload)
+        else:
+            errors.append(f"line {index}: expected object")
+    return records, errors
 
 
 def _scan_artifacts(root: Path, *, suffixes: set[str], limit: int) -> dict[str, Any]:

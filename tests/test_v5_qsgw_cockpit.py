@@ -207,3 +207,58 @@ def test_qsgw_cockpit_cli_mcp_compact_and_runtime_entrypoints(tmp_path, capsys):
         "mcp": "aitp_v5_write_qsgw_cockpit_surfaces_compact",
         "surface": "qsgw_cockpit_bundle",
     }
+
+
+def test_qsgw_cockpit_discovers_downstream_intake_without_promotion(tmp_path):
+    from brain.v5.qsgw_cockpit import compact_qsgw_cockpit_bundle, write_qsgw_cockpit_surfaces
+
+    ws, _, _, _ = _setup_workspace(tmp_path)
+    reports = ws.base / "research" / "librpa" / "reports"
+    lane_manifest = reports / "qsgw_benchmark_extension_lane_manifest_current.json"
+    intake_jsonl = reports / "qsgw_benchmark_extension_aitp_intake_current.jsonl"
+    lane_manifest.write_text(
+        json.dumps(
+            {
+                "kind": "qsgw_aitp_lane_manifest",
+                "topic_id": TOPIC_ID,
+                "trust_update_forbidden": True,
+                "claim_confidence_update_allowed": False,
+                "counts": {"total": 1, "by_lane": {"diagnostic": 1}},
+                "final_allowlist": [],
+                "diagnostic_candidates": [{"material": "C", "status": "ready"}],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    intake_jsonl.write_text(
+        json.dumps(
+            {
+                "record_kind": "qsgw_aitp_intake_candidate",
+                "topic_id": TOPIC_ID,
+                "trust_update_forbidden": True,
+                "usable_for_final": False,
+                "plot_guard": {"allowed_in_final_plot": False},
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    bundle = write_qsgw_cockpit_surfaces(ws)
+    manifest = bundle["manifest"]
+    compact = compact_qsgw_cockpit_bundle(bundle)
+
+    assert manifest["downstream_intake"]["lane_manifest_count"] == 1
+    assert manifest["downstream_intake"]["intake_jsonl_count"] == 1
+    assert manifest["downstream_intake"]["intake_record_count"] == 1
+    assert manifest["downstream_intake"]["all_intake_rows_guarded"] is True
+    assert manifest["downstream_intake"]["has_result_intake_candidates"] is False
+    assert compact["downstream_lane_manifests"] == 1
+    assert compact["downstream_intake_jsonl"] == 1
+    assert compact["downstream_intake_all_guarded"] is True
+    assert compact["can_update_claim_trust"] is False
+    actions = [item["action"] for item in manifest["next_actions"]]
+    assert "materialize_final_diagnostic_lane_manifest" not in actions
+    assert "emit_refresh_aitp_intake_jsonl" not in actions
+    assert "extend_refresh_monitor_to_emit_result_intake_jsonl" in actions
