@@ -34,6 +34,7 @@ surfaces.
 | OpenCode | Adapter/plugin surfaces exist, but OpenCode remains deferred until its hook model and packaging path stabilize |
 | Goal continuation | Implemented: local `.aitp/surfaces/goal_continuation/` JSON+Markdown packets capture objective, commit range, changed files, tests, smoke commands, readiness, next actions, and blocking backlog |
 | Literature intake | Implemented conservative intake: references are orientation-only, evidence/sensemaking are guarded suggestions, and trust updates stay forbidden without preflight/checkpoints |
+| Theory research state | Implemented minimal conservative surface: `research-state register-source`, `attach-artifact`, `update-claim-status`, `create-proof-obligation`, `classify-event`, and `bounded-evidence` connect literature/results/artifacts/Fisherd-style runs to typed records without claim-trust promotion |
 | QSGW cockpit | Implemented first surface: `aitp-v5 status qsgw-cockpit` writes a topic-local final/diagnostic lane manifest, plot guard, and dashboard dry-run from typed records plus `research/librpa` report/script scans; it also discovers downstream `*_lane_manifest_current.json` and `*_aitp_intake_current.jsonl` files without treating them as trust updates |
 
 The latest real readiness audit reports:
@@ -76,9 +77,13 @@ kernel capability:
 4. Keep literature intake conservative: record references as orientation-only,
    record evidence only with explicit claim, status, source refs, and scoped
    output, and route trust changes through preflight/checkpoints.
-5. Update downstream theory workspaces to the latest v5 kernel and regenerate
+5. Use the theory `research-state` surface for bounded numerical results and
+   proof obligations: attach result artifacts by reference, record tool-run
+   provenance, write scoped evidence, append claim maturity/status, and keep
+   publishable/trust changes behind validation and human gates.
+6. Update downstream theory workspaces to the latest v5 kernel and regenerate
    topic-local runtime handoff files where needed.
-6. Revisit OpenCode after its host hook model is stable enough for the same
+7. Revisit OpenCode after its host hook model is stable enough for the same
    production-loop guarantees as Codex, Claude Code, and Kimi Code.
 
 ## Why AITP Exists

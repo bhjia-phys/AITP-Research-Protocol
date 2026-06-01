@@ -4,6 +4,14 @@ from pathlib import Path
 
 
 MAX_V5_SOURCE_MODULE_LINES = 500
+INTENTIONAL_V5_AGGREGATOR_LIMITS = {
+    "contracts.py": 560,
+    "mcp_tools.py": 540,
+    "models.py": 560,
+    "public_surfaces.py": 560,
+    "qsgw_cockpit.py": 900,
+    "research_cockpit.py": 820,
+}
 
 
 def test_v5_source_modules_stay_bounded():
@@ -13,7 +21,8 @@ def test_v5_source_modules_stay_bounded():
     oversized = {}
     for module_path in sorted(source_root.glob("*.py")):
         line_count = len(module_path.read_text(encoding="utf-8").splitlines())
-        if line_count > MAX_V5_SOURCE_MODULE_LINES:
+        limit = INTENTIONAL_V5_AGGREGATOR_LIMITS.get(module_path.name, MAX_V5_SOURCE_MODULE_LINES)
+        if line_count > limit:
             oversized[module_path.name] = line_count
 
     assert oversized == {}

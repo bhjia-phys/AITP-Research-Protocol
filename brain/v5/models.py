@@ -54,6 +54,47 @@ class ClaimRecord:
 
 
 @dataclass
+class ClaimStatusRecord:
+    status_id: str
+    topic_id: str
+    claim_id: str
+    maturity_level: str
+    claim_status: str
+    scope: str
+    risk: str
+    next_action: str
+    assumptions: list[str] = field(default_factory=list)
+    open_gaps: list[str] = field(default_factory=list)
+    source_refs: list[str] = field(default_factory=list)
+    evidence_refs: list[str] = field(default_factory=list)
+    artifact_ids: list[str] = field(default_factory=list)
+    human_gate_required: bool = True
+    can_update_claim_trust: bool = False
+    kind: str = "claim_status"
+
+
+@dataclass
+class ProofObligationRecord:
+    obligation_id: str
+    topic_id: str
+    claim_id: str
+    statement: str
+    obligation_type: str
+    status: str
+    maturity_level: str
+    next_action: str
+    required_evidence: list[str] = field(default_factory=list)
+    proof_strategy: list[str] = field(default_factory=list)
+    failure_modes: list[str] = field(default_factory=list)
+    source_refs: list[str] = field(default_factory=list)
+    evidence_refs: list[str] = field(default_factory=list)
+    artifact_ids: list[str] = field(default_factory=list)
+    human_gate_required: bool = True
+    can_update_claim_trust: bool = False
+    kind: str = "proof_obligation"
+
+
+@dataclass
 class TrustUpdateRequest:
     request_id: str
     action: str

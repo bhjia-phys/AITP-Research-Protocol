@@ -13,6 +13,8 @@ _LAYOUT_DIRS = [
     "registry/questions",
     "registry/ideas",
     "registry/claims",
+    "registry/claim_statuses",
+    "registry/proof_obligations",
     "registry/physics_objects",
     "registry/object_relations",
     "registry/evidence",

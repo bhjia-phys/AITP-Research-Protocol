@@ -7,7 +7,7 @@ from brain.v5.models import ClaimRecord, EvidenceRecord, SourceReconstructionRev
 from brain.v5.paths import WorkspacePaths
 from brain.v5.risk import action_budget_for_level, assess_claim_risk
 from brain.v5.source_reconstruction import audit_source_reconstruction_batch
-from brain.v5.store import list_records
+from brain.v5.store import list_valid_records
 
 _COVERAGE_STATUSES = (
     "complete",
@@ -20,11 +20,11 @@ _COVERAGE_STATUSES = (
 def build_source_stack_coverage_manifest(ws: WorkspacePaths) -> dict:
     """Combine evidence-output, reconstruction, and review coverage for claims."""
 
-    claims = list_records(ws.registry_dir("claims"), ClaimRecord)
+    claims = list_valid_records(ws.registry_dir("claims"), ClaimRecord)
     audits = audit_source_reconstruction_batch(ws, [claim.claim_id for claim in claims])
-    evidence_by_claim = _group_by_claim(list_records(ws.registry_dir("evidence"), EvidenceRecord))
+    evidence_by_claim = _group_by_claim(list_valid_records(ws.registry_dir("evidence"), EvidenceRecord))
     reviews_by_claim = _group_reviews_by_claim(
-        list_records(ws.registry_dir("source_reconstruction_reviews"), SourceReconstructionReviewResultRecord)
+        list_valid_records(ws.registry_dir("source_reconstruction_reviews"), SourceReconstructionReviewResultRecord)
     )
     items = [
         _coverage_item(

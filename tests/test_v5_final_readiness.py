@@ -178,6 +178,36 @@ def test_final_readiness_audit_keeps_kernel_capability_separate_from_content_bac
     assert payload["kernel_capabilities"]["long_term_replay"]["legacy_semantic_backlog_surface"] == (
         "legacy_semantic_review_manifest"
     )
+
+
+def test_final_readiness_skips_malformed_legacy_evidence_records(tmp_path):
+    from brain.v5.final_readiness import audit_final_engineering_readiness
+    from brain.v5.markdown import write_md
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    claim = _seed_claim(ws)
+    run = _write_migration_run(ws, topic_count=2)
+    write_md(
+        ws.registry_dir("evidence") / "evidence-legacy-missing-claim.md",
+        {
+            "kind": "evidence",
+            "evidence_id": "evidence-legacy-missing-claim",
+            "topic_id": "fqhe",
+            "evidence_type": "legacy_note",
+            "status": "mixed",
+            "summary": "Malformed legacy imported record missing claim_id.",
+            "supports_outputs": ["diagnostic_trace"],
+        },
+        "# Malformed Legacy Evidence\n",
+    )
+
+    payload = audit_final_engineering_readiness(ws, migration_dir=run)
+
+    assert payload["kind"] == "final_engineering_readiness_audit"
+    assert payload["completion_status"] == "kernel_ready_content_backlog"
+    assert payload["kernel_capabilities"]["source_stack"]["active_claim_count"] == 1
     assert payload["kernel_capabilities"]["long_term_replay"]["legacy_source_reconstruction_backlog_surface"] == (
         "legacy_source_reconstruction_manifest"
     )

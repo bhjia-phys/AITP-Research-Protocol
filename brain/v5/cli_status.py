@@ -8,6 +8,7 @@ from brain.v5.qsgw_cockpit import (
     compact_qsgw_cockpit_bundle,
     write_qsgw_cockpit_surfaces,
 )
+from brain.v5.research_cockpit import compact_research_cockpit_bundle, write_research_cockpit_surfaces
 from brain.v5.topic_status import compact_topic_status_bundle, write_topic_status_surfaces
 from brain.v5.vnext_readiness import build_vnext_readiness_manifest, compact_vnext_readiness_manifest
 
@@ -22,6 +23,8 @@ def add_status_parser(sp) -> None:
     cockpit.add_argument("--reports-dir", default="")
     cockpit.add_argument("--scripts-dir", default="")
     cockpit.add_argument("--compact", "--progress", action="store_true", dest="compact")
+    research = ss.add_parser("research-cockpit")
+    research.add_argument("--compact", "--progress", action="store_true", dest="compact")
     vnext = ss.add_parser("vnext-readiness")
     vnext.add_argument("--compact", "--progress", action="store_true", dest="compact")
 
@@ -52,5 +55,13 @@ def dispatch_status_command(args, ws) -> dict:
         )
         if getattr(args, "compact", False):
             return compact_qsgw_cockpit_bundle(bundle)
+        return bundle
+    if args.status_command == "research-cockpit":
+        bundle = require_valid_public_surface(
+            "research_cockpit_bundle",
+            write_research_cockpit_surfaces(ws),
+        )
+        if getattr(args, "compact", False):
+            return compact_research_cockpit_bundle(bundle)
         return bundle
     raise SystemExit(f"unsupported status command: {args.status_command}")

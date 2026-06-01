@@ -138,6 +138,36 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_record_evidence",
         "surface": "evidence_record",
     },
+    "register_source": {
+        "cli": "aitp-v5 research-state register-source <args>",
+        "mcp": "aitp_v5_register_source",
+        "surface": "reference_location_record",
+    },
+    "attach_artifact": {
+        "cli": "aitp-v5 research-state attach-artifact <args>",
+        "mcp": "aitp_v5_attach_artifact",
+        "surface": "artifact_record",
+    },
+    "update_claim_status": {
+        "cli": "aitp-v5 research-state update-claim-status <args>",
+        "mcp": "aitp_v5_update_claim_status",
+        "surface": "claim_status_record",
+    },
+    "create_proof_obligation": {
+        "cli": "aitp-v5 research-state create-proof-obligation <args>",
+        "mcp": "aitp_v5_create_proof_obligation",
+        "surface": "proof_obligation_record",
+    },
+    "research_event_classifier": {
+        "cli": "aitp-v5 research-state classify-event <args>",
+        "mcp": "aitp_v5_classify_research_event",
+        "surface": "research_event_classification",
+    },
+    "record_bounded_numerical_evidence": {
+        "cli": "aitp-v5 research-state bounded-evidence <args>",
+        "mcp": "aitp_v5_record_bounded_numerical_evidence",
+        "surface": "bounded_numerical_evidence_bundle",
+    },
     "register_tool_recipe": {
         "cli": "aitp-v5 tool recipe register <args>",
         "mcp": "aitp_v5_register_tool_recipe",
@@ -365,6 +395,8 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
     "topic_status_compact": {"cli": "aitp-v5 status topic <session-id> --compact", "mcp": "aitp_v5_write_topic_status_surfaces_compact", "surface": "topic_status_bundle"},
     "qsgw_cockpit": {"cli": "aitp-v5 status qsgw-cockpit", "mcp": "aitp_v5_write_qsgw_cockpit_surfaces", "surface": "qsgw_cockpit_bundle"},
     "qsgw_cockpit_compact": {"cli": "aitp-v5 status qsgw-cockpit --compact", "mcp": "aitp_v5_write_qsgw_cockpit_surfaces_compact", "surface": "qsgw_cockpit_bundle"},
+    "research_cockpit": {"cli": "aitp-v5 status research-cockpit", "mcp": "aitp_v5_write_research_cockpit_surfaces", "surface": "research_cockpit_bundle"},
+    "research_cockpit_compact": {"cli": "aitp-v5 status research-cockpit --compact", "mcp": "aitp_v5_write_research_cockpit_surfaces_compact", "surface": "research_cockpit_bundle"},
     "trust_preflight": {
         "cli": "aitp-v5 trust preflight <args>",
         "mcp": "aitp_v5_preflight_trust_update",

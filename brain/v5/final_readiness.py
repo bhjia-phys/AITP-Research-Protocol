@@ -19,7 +19,7 @@ from brain.v5.models import (
 from brain.v5.paths import WorkspacePaths
 from brain.v5.source_reconstruction import audit_source_reconstruction_batch
 from brain.v5.source_reconstruction_review import build_source_reconstruction_review_manifest
-from brain.v5.store import list_records
+from brain.v5.store import list_valid_records
 from brain.v5.vnext_readiness import build_vnext_readiness_manifest
 
 _PRIORITY_HOSTS = ("codex", "claude_code", "kimi_code")
@@ -148,7 +148,7 @@ def _runtime_status(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def _source_stack(ws: WorkspacePaths) -> dict[str, Any]:
-    claims = list_records(ws.registry_dir("claims"), ClaimRecord)
+    claims = list_valid_records(ws.registry_dir("claims"), ClaimRecord)
     claim_ids = [claim.claim_id for claim in claims]
     audits = audit_source_reconstruction_batch(ws, claim_ids)
     complete = [claim_id for claim_id, audit in audits.items() if audit.get("complete") is True]
@@ -175,11 +175,11 @@ def _source_stack(ws: WorkspacePaths) -> dict[str, Any]:
 
 
 def _knowledge_stack(ws: WorkspacePaths) -> dict[str, Any]:
-    entries = list_records(ws.root / "memory" / "l2" / "entries", MemoryEntryRecord)
+    entries = list_valid_records(ws.root / "memory" / "l2" / "entries", MemoryEntryRecord)
     active_entries = [entry for entry in entries if entry.status == "active"]
-    objects = list_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord)
-    relations = list_records(ws.registry_dir("object_relations"), ObjectRelationRecord)
-    reports = list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord)
+    objects = list_valid_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord)
+    relations = list_valid_records(ws.registry_dir("object_relations"), ObjectRelationRecord)
+    reports = list_valid_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord)
     return {
         "promotion_surface": "promotion_packet_record",
         "memory_surface": "memory_entry_record",

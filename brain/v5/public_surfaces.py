@@ -7,6 +7,9 @@ from typing import Any, Callable
 _PUBLIC_SURFACE_NAMES = (
     "adapter_packet",
     "adapter_protocol_registry",
+    "artifact_record",
+    "bounded_numerical_evidence_bundle",
+    "claim_status_record",
     "claim_trust_audit",
     "claude_code_hook_installation",
     "claude_code_hook_settings",
@@ -70,9 +73,12 @@ _PUBLIC_SURFACE_NAMES = (
     "physics_object_record",
     "pre_tool_policy_decision",
     "promotion_packet_record",
+    "proof_obligation_record",
     "qsgw_cockpit_bundle",
     "record_gate_coverage_audit",
     "reference_location_record",
+    "research_event_classification",
+    "research_cockpit_bundle",
     "research_intent_packet",
     "run_iteration_record",
     "runtime_hook_installation_audit",
@@ -113,6 +119,9 @@ _PUBLIC_SURFACE_VALIDATOR_REF = "brain.v5.public_surfaces.require_valid_public_s
 _PUBLIC_SURFACE_PURPOSES = {
     "adapter_packet": "runtime adapter packet carrying brief, summary orientation, and trust protocol metadata",
     "adapter_protocol_registry": "auditable registry metadata for adapter protocol fields and validator surfaces",
+    "artifact_record": "contracted artifact pointer preserving provenance, hashes, and by-reference result files",
+    "bounded_numerical_evidence_bundle": "guarded composition of artifact, tool-run, evidence, and claim-status records for finite/run-bounded numerical results without trust promotion",
+    "claim_status_record": "contracted append-only claim maturity/status observation that never mutates claim trust",
     "claim_trust_audit": "read-only typed-record audit of whether a claim confidence state has evidence, validation, memory, and code provenance support",
     "claude_code_hook_installation": "contracted safe merge of AITP hooks into Claude Code settings without treating settings as truth",
     "claude_code_hook_settings": "contracted Claude Code hook settings generated from runtime hook installation metadata",
@@ -176,9 +185,12 @@ _PUBLIC_SURFACE_PURPOSES = {
     "physics_object_record": "contracted physics-object record for theoretical objects, systems, operators, sectors, and definitions",
     "pre_tool_policy_decision": "contracted pre-tool policy decision derived from typed kernel records, not summaries",
     "promotion_packet_record": "contracted promotion packet requiring explicit evidence refs, known failure modes, and scope before L2 memory promotion",
+    "proof_obligation_record": "contracted proof/theorem obligation record for open gaps, finite audits, and theorem-candidate status without trust mutation",
     "qsgw_cockpit_bundle": "orientation-only QSGW/LibRPA research cockpit bundle with final/diagnostic lane manifest, plot guard, and dashboard dry-run that cannot update claim trust",
     "record_gate_coverage_audit": "contracted audit that every runtime record protocol has a conscious runtime gate decision",
     "reference_location_record": "contracted orientation-only pointer to an external paper, note, or knowledge item",
+    "research_event_classification": "orientation-only event classifier that recommends source, evidence, failed-route, open-gap, claim-update, or prior-art handling without writing trust",
+    "research_cockpit_bundle": "orientation-only workspace research cockpit that aggregates topic status, learning gaps, reading queue, and operator decisions without becoming a truth source",
     "research_intent_packet": "contracted vNext idea gate packet for vague or materially redefined research topics",
     "run_iteration_record": "contracted run-local L3/L4/L3 iteration continuity record with Markdown-first review and no claim-trust authority",
     "runtime_hook_installation_audit": "read-only audit of installed runtime hook files; runtime metadata only, never kernel truth",
@@ -262,6 +274,8 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.contracts import (
         require_valid_adapter_packet,
         require_valid_adapter_protocol_registry,
+        require_valid_artifact_record,
+        require_valid_claim_status_record,
         require_valid_claim_trust_audit,
         require_valid_codex_hook_bridge,
         require_valid_code_state_record,
@@ -278,6 +292,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_object_relation_record,
         require_valid_physics_object_record,
         require_valid_promotion_packet_record,
+        require_valid_proof_obligation_record,
         require_valid_record_gate_coverage_audit,
         require_valid_reference_location_record,
         require_valid_runtime_hook_installation_audit,
@@ -297,6 +312,10 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_validation_result_record,
         require_valid_workspace_summary_bundle,
         require_valid_workspace_replay_packet,
+    )
+    from brain.v5.research_state_contracts import (
+        require_valid_bounded_numerical_evidence_bundle,
+        require_valid_research_event_classification,
     )
     from brain.v5.research_intent_contracts import (
         require_valid_research_intent_packet,
@@ -367,6 +386,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.obsidian_view_contracts import require_valid_l2_obsidian_view_bundle
     from brain.v5.workspace_refresh_contracts import require_valid_workspace_refresh_bundle
     from brain.v5.qsgw_cockpit_contracts import require_valid_qsgw_cockpit_bundle
+    from brain.v5.research_cockpit_contracts import require_valid_research_cockpit_bundle
     from brain.v5.goal_continuation_contracts import (
         require_valid_goal_continuation_list,
         require_valid_goal_continuation_packet,
@@ -390,6 +410,9 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     return {
         "adapter_packet": require_valid_adapter_packet,
         "adapter_protocol_registry": require_valid_adapter_protocol_registry,
+        "artifact_record": require_valid_artifact_record,
+        "bounded_numerical_evidence_bundle": require_valid_bounded_numerical_evidence_bundle,
+        "claim_status_record": require_valid_claim_status_record,
         "claim_trust_audit": require_valid_claim_trust_audit,
         "claude_code_hook_installation": require_valid_claude_code_hook_installation,
         "claude_code_hook_settings": require_valid_claude_code_hook_settings,
@@ -453,9 +476,12 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "physics_object_record": require_valid_physics_object_record,
         "pre_tool_policy_decision": require_valid_pre_tool_policy_decision,
         "promotion_packet_record": require_valid_promotion_packet_record,
+        "proof_obligation_record": require_valid_proof_obligation_record,
         "qsgw_cockpit_bundle": require_valid_qsgw_cockpit_bundle,
         "record_gate_coverage_audit": require_valid_record_gate_coverage_audit,
         "reference_location_record": require_valid_reference_location_record,
+        "research_event_classification": require_valid_research_event_classification,
+        "research_cockpit_bundle": require_valid_research_cockpit_bundle,
         "research_intent_packet": require_valid_research_intent_packet,
         "run_iteration_record": require_valid_run_iteration_record,
         "runtime_hook_installation_audit": require_valid_runtime_hook_installation_audit,

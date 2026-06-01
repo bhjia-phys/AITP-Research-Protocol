@@ -13,7 +13,7 @@ from brain.v5.models import (
     ValidationContractRecord,
 )
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_records
+from brain.v5.store import list_valid_records
 from brain.v5.workspace import get_claim
 
 _REQUIRED_COMPONENTS = (
@@ -35,9 +35,9 @@ def audit_source_reconstruction(ws: WorkspacePaths, *, claim_id: str) -> dict:
 def build_source_reconstruction_manifest(ws: WorkspacePaths) -> dict:
     """Build an actionable read-only manifest for source reconstruction gaps."""
 
-    claims = list_records(ws.registry_dir("claims"), ClaimRecord)
+    claims = list_valid_records(ws.registry_dir("claims"), ClaimRecord)
     audits = audit_source_reconstruction_batch(ws, [claim.claim_id for claim in claims])
-    references_by_claim = _group_by_claim(list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord))
+    references_by_claim = _group_by_claim(list_valid_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord))
     items = [
         _manifest_item(
             claim,
@@ -117,12 +117,12 @@ def audit_source_reconstruction_batch(ws: WorkspacePaths, claim_ids: list[str]) 
     wanted = _unique(claim_ids)
     if not wanted:
         return {}
-    claims_by_id = {claim.claim_id: claim for claim in list_records(ws.registry_dir("claims"), ClaimRecord)}
-    evidence_by_claim = _group_by_claim(list_records(ws.registry_dir("evidence"), EvidenceRecord))
-    references_by_claim = _group_by_claim(list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord))
-    objects_by_topic = _group_by_topic(list_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord))
-    relations = list_records(ws.registry_dir("object_relations"), ObjectRelationRecord)
-    contracts_by_claim = _group_by_claim(list_records(ws.registry_dir("validation_contracts"), ValidationContractRecord))
+    claims_by_id = {claim.claim_id: claim for claim in list_valid_records(ws.registry_dir("claims"), ClaimRecord)}
+    evidence_by_claim = _group_by_claim(list_valid_records(ws.registry_dir("evidence"), EvidenceRecord))
+    references_by_claim = _group_by_claim(list_valid_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord))
+    objects_by_topic = _group_by_topic(list_valid_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord))
+    relations = list_valid_records(ws.registry_dir("object_relations"), ObjectRelationRecord)
+    contracts_by_claim = _group_by_claim(list_valid_records(ws.registry_dir("validation_contracts"), ValidationContractRecord))
     audits = {}
     for claim_id in wanted:
         claim = claims_by_id.get(claim_id) or get_claim(ws, claim_id)
@@ -146,27 +146,27 @@ def _typed_records_for_review(ws: WorkspacePaths, claim: ClaimRecord) -> dict[st
     return {
         "reference_locations": [
             _record_payload(record, "location_id")
-            for record in list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord)
+            for record in list_valid_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord)
             if record.claim_id == claim.claim_id
         ],
         "evidence": [
             _record_payload(record, "evidence_id")
-            for record in list_records(ws.registry_dir("evidence"), EvidenceRecord)
+            for record in list_valid_records(ws.registry_dir("evidence"), EvidenceRecord)
             if record.claim_id == claim.claim_id
         ],
         "physics_objects": [
             _record_payload(record, "object_id")
-            for record in list_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord)
+            for record in list_valid_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord)
             if record.topic_id == claim.topic_id
         ],
         "object_relations": [
             _record_payload(record, "relation_id")
-            for record in list_records(ws.registry_dir("object_relations"), ObjectRelationRecord)
+            for record in list_valid_records(ws.registry_dir("object_relations"), ObjectRelationRecord)
             if record.topic_id == claim.topic_id and (not record.claim_id or record.claim_id == claim.claim_id)
         ],
         "validation_contracts": [
             _record_payload(record, "contract_id")
-            for record in list_records(ws.registry_dir("validation_contracts"), ValidationContractRecord)
+            for record in list_valid_records(ws.registry_dir("validation_contracts"), ValidationContractRecord)
             if record.claim_id == claim.claim_id
         ],
     }

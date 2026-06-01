@@ -7,6 +7,22 @@ from typing import Any
 from brain.v5.contracts import ContractError, ContractResult, _require_list, _require_mapping, _require_nonempty_str
 
 
+def validate_artifact_record(payload: dict[str, Any], *, path: str = "artifact_record") -> ContractResult:
+    result = _validate_base_record(payload, path, kind="artifact")
+    if result.issues:
+        return result
+    for key in ("artifact_id", "topic_id", "claim_id", "artifact_type", "uri", "summary"):
+        _require_nonempty_str(payload, key, path, result)
+    if not isinstance(payload.get("size_bytes"), int):
+        result.add(f"{path}.size_bytes", "must be an integer")
+    _require_mapping(payload.get("metadata"), f"{path}.metadata", result)
+    return result
+
+
+def require_valid_artifact_record(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_artifact_record(payload), payload)
+
+
 def validate_evidence_record(payload: dict[str, Any], *, path: str = "evidence_record") -> ContractResult:
     result = _validate_base_record(payload, path, kind="evidence")
     if result.issues:
@@ -77,6 +93,60 @@ def validate_tool_recipe_record(payload: dict[str, Any], *, path: str = "tool_re
 
 def require_valid_tool_recipe_record(payload: dict[str, Any]) -> dict[str, Any]:
     return _require_valid(validate_tool_recipe_record(payload), payload)
+
+
+def validate_claim_status_record(payload: dict[str, Any], *, path: str = "claim_status_record") -> ContractResult:
+    result = _validate_base_record(payload, path, kind="claim_status")
+    if result.issues:
+        return result
+    for key in ("status_id", "topic_id", "claim_id", "maturity_level", "claim_status", "scope", "risk", "next_action"):
+        _require_nonempty_str(payload, key, path, result)
+    for key in ("assumptions", "open_gaps", "source_refs", "evidence_refs", "artifact_ids"):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    if payload.get("human_gate_required") is not True:
+        result.add(f"{path}.human_gate_required", "must be true")
+    if payload.get("can_update_claim_trust") is not False:
+        result.add(f"{path}.can_update_claim_trust", "must be false")
+    return result
+
+
+def require_valid_claim_status_record(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_claim_status_record(payload), payload)
+
+
+def validate_proof_obligation_record(payload: dict[str, Any], *, path: str = "proof_obligation_record") -> ContractResult:
+    result = _validate_base_record(payload, path, kind="proof_obligation")
+    if result.issues:
+        return result
+    for key in (
+        "obligation_id",
+        "topic_id",
+        "claim_id",
+        "statement",
+        "obligation_type",
+        "status",
+        "maturity_level",
+        "next_action",
+    ):
+        _require_nonempty_str(payload, key, path, result)
+    for key in (
+        "required_evidence",
+        "proof_strategy",
+        "failure_modes",
+        "source_refs",
+        "evidence_refs",
+        "artifact_ids",
+    ):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    if payload.get("human_gate_required") is not True:
+        result.add(f"{path}.human_gate_required", "must be true")
+    if payload.get("can_update_claim_trust") is not False:
+        result.add(f"{path}.can_update_claim_trust", "must be false")
+    return result
+
+
+def require_valid_proof_obligation_record(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_proof_obligation_record(payload), payload)
 
 
 def validate_reference_location_record(payload: dict[str, Any], *, path: str = "reference_location_record") -> ContractResult:

@@ -204,6 +204,16 @@ def require_valid_claim_trust_audit(payload: dict[str, Any]) -> dict[str, Any]:
     return _require(payload)
 
 
+def validate_artifact_record(payload: dict[str, Any], *, path: str = "artifact_record") -> ContractResult:
+    from brain.v5.record_contracts import validate_artifact_record as _validate
+    return _validate(payload, path=path)
+
+
+def require_valid_artifact_record(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.record_contracts import require_valid_artifact_record as _require
+    return _require(payload)
+
+
 def validate_evidence_record(payload: dict[str, Any], *, path: str = "evidence_record") -> ContractResult:
     """Validate a public evidence-record write payload."""
 
@@ -266,6 +276,26 @@ def require_valid_tool_recipe_record(payload: dict[str, Any]) -> dict[str, Any]:
     from brain.v5.record_contracts import require_valid_tool_recipe_record as _require_valid_tool_recipe_record
 
     return _require_valid_tool_recipe_record(payload)
+
+
+def validate_claim_status_record(payload: dict[str, Any], *, path: str = "claim_status_record") -> ContractResult:
+    from brain.v5.record_contracts import validate_claim_status_record as _validate
+    return _validate(payload, path=path)
+
+
+def require_valid_claim_status_record(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.record_contracts import require_valid_claim_status_record as _require
+    return _require(payload)
+
+
+def validate_proof_obligation_record(payload: dict[str, Any], *, path: str = "proof_obligation_record") -> ContractResult:
+    from brain.v5.record_contracts import validate_proof_obligation_record as _validate
+    return _validate(payload, path=path)
+
+
+def require_valid_proof_obligation_record(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.record_contracts import require_valid_proof_obligation_record as _require
+    return _require(payload)
 
 
 def validate_reference_location_record(

@@ -44,6 +44,21 @@ def list_records(directory: str | Path, cls: type[T]) -> list[T]:
     return [read_record(path, cls) for path in sorted(root.glob("*.md"))]
 
 
+def list_valid_records(directory: str | Path, cls: type[T]) -> list[T]:
+    """Read valid Markdown records and skip malformed legacy leftovers."""
+
+    root = Path(directory)
+    if not root.exists():
+        return []
+    records: list[T] = []
+    for path in sorted(root.glob("*.md")):
+        try:
+            records.append(read_record(path, cls))
+        except (TypeError, ValueError):
+            continue
+    return records
+
+
 def default_body(record: Any) -> str:
     """Create a minimal human-readable body for a record."""
 

@@ -31,6 +31,18 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["--repo-id", "librpa", "--upstream-remote", "origin", "--upstream-branch", "master", "--upstream-commit", "abc123", "--local-branch", "topic/gw", "--worktree-path", "D:/worktrees/librpa/gw"]
     if template.startswith("evidence record"):
         return ["--topic", "fqhe", "--claim", "claim-fqhe", "--type", "toy_numeric", "--status", "supports", "--summary", "Finite-size check."]
+    if template.startswith("research-state register-source"):
+        return ["--topic", "fqhe", "--claim", "claim-fqhe", "--uri", "arxiv:2604.14695", "--label", "Close prior art"]
+    if template.startswith("research-state attach-artifact"):
+        return ["--topic", "fqhe", "--claim", "claim-fqhe", "--type", "result_json", "--uri", "results/check.json", "--summary", "Finite-size result file."]
+    if template.startswith("research-state update-claim-status"):
+        return ["--topic", "fqhe", "--claim", "claim-fqhe", "--maturity-level", "finite-size evidence", "--claim-status", "bounded_check_recorded", "--scope", "N<=10", "--risk", "not a theorem", "--next-action", "human review"]
+    if template.startswith("research-state create-proof-obligation"):
+        return ["--topic", "fqhe", "--claim", "claim-fqhe", "--statement", "Prove the finite-size pattern for all N.", "--type", "theorem_gap", "--status", "open", "--maturity-level", "theorem-candidate", "--next-action", "derive symbolic proof"]
+    if template.startswith("research-state classify-event"):
+        return ["--topic", "fqhe", "--claim", "claim-fqhe", "--event-kind", "result_json", "--summary", "JSON result with a finite-size check.", "--source-uri", "results/check.json"]
+    if template.startswith("research-state bounded-evidence"):
+        return ["--topic", "fqhe", "--claim", "claim-fqhe", "--artifact-uri", "results/check.json", "--artifact-summary", "Finite-size result file.", "--supports-output", "finite_size_check", "--scope", "N<=10 only"]
     if template.startswith("tool recipe register"):
         return ["recipe-ed", "--family", "numerical", "--name", "exact-diagonalization", "--purpose", "Run an ED check."]
     if template.startswith("tool run record"):

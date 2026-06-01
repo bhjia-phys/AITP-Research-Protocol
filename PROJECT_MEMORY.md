@@ -348,6 +348,19 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `--changed-file-stats-json`) for audit handoffs; comma-separated legacy args
   are only for simple values. Stored `latest.json` packets must themselves pass
   the public `goal_continuation_packet` contract.
+- Agents can call the theory research-state surface when a project produces a
+  real source, result file, Fisherd/remote run, or theorem/proof gap. The CLI
+  entrypoints are `aitp-v5 research-state register-source`,
+  `attach-artifact`, `update-claim-status`, `create-proof-obligation`,
+  `classify-event`, and `bounded-evidence`; MCP wrappers are
+  `aitp_v5_register_source`, `aitp_v5_attach_artifact`,
+  `aitp_v5_update_claim_status`, `aitp_v5_create_proof_obligation`,
+  `aitp_v5_classify_research_event`, and
+  `aitp_v5_record_bounded_numerical_evidence`. This surface composes
+  reference locations, artifact refs, tool runs, scoped evidence, append-only
+  claim maturity/status, and proof obligations. It cannot update claim trust,
+  cannot promote L2 memory, and must keep finite numerical results scoped to
+  explicit outputs such as `finite_L_H4_motif_formula_check_L10_L12`.
 - Agents can call `aitp-v5 interaction preview <session-id>` or
   `aitp_v5_preview_interaction_recording` before or during a natural research
   conversation. The contracted `interaction_recording_preview` is read-only

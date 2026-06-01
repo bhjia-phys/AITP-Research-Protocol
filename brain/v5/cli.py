@@ -22,6 +22,7 @@ from brain.v5.cli_interaction import add_interaction_parser, dispatch_interactio
 from brain.v5.cli_literature import add_literature_parser, dispatch_literature_command
 from brain.v5.models import TrustUpdateRequest
 from brain.v5.cli_policy import add_policy_parser, dispatch_policy_command
+from brain.v5.cli_research_state import add_research_state_parser, dispatch_research_state_command
 from brain.v5.cli_validation import add_validation_parser, dispatch_validation_command
 from brain.v5.cli_vnext import VNEXT_COMMANDS, add_vnext_parsers, dispatch_vnext_command
 from brain.v5.cli_goal import add_goal_parser, dispatch_goal_command
@@ -237,6 +238,7 @@ def _build_parser() -> argparse.ArgumentParser:
     add_validation_parser(sp)
 
     add_memory_parser(sp)
+    add_research_state_parser(sp)
 
     return parser
 
@@ -361,6 +363,9 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.command == "memory":
         return dispatch_memory_command(args, ws)
+
+    if args.command == "research-state":
+        return dispatch_research_state_command(args, ws)
 
     if args.command == "object" and args.object_command == "record":
         obj = record_physics_object(ws, topic_id=args.topic_id, object_type=args.object_type,
