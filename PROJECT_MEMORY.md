@@ -615,9 +615,10 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
 - Goal continuation CLI supports JSON file arguments for Windows-safe audit
   writes: use `--readiness-json-file`, `--commits-json-file`, and
   `--changed-file-stats-json-file` when PowerShell would otherwise strip JSON
-  quotes from inline arguments. The packet remains orientation-only and should
-  be used to preserve commit ranges, tests, smoke commands, blocking backlogs,
-  and next actions for cross-session review.
+  quotes from inline arguments. File reads accept UTF-8 with or without BOM so
+  PowerShell `Set-Content -Encoding UTF8` output is safe. The packet remains
+  orientation-only and should be used to preserve commit ranges, tests, smoke
+  commands, blocking backlogs, and next actions for cross-session review.
 
 ## Protocol Layer Map
 

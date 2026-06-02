@@ -68,7 +68,7 @@ def _bool_or_none(value: str | None) -> bool | None:
 def _json_arg(inline_value: str, file_value: str, default: str) -> Any:
     raw = default
     if file_value:
-        raw = Path(file_value).read_text(encoding="utf-8")
+        raw = Path(file_value).read_text(encoding="utf-8-sig")
     elif inline_value:
         raw = inline_value
     return json.loads(raw)

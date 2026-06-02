@@ -278,7 +278,7 @@ def test_goal_cli_json_file_args_are_windows_shell_safe(tmp_path):
             "can_update_kernel_state": False,
             "semantic_lossless_proven": False,
         }),
-        encoding="utf-8",
+        encoding="utf-8-sig",
     )
     commits_path.write_text(
         json.dumps([
