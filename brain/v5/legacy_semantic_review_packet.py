@@ -17,7 +17,7 @@ from brain.v5.models import (
     ValidationResultRecord,
 )
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_records
+from brain.v5.store import list_valid_records
 
 
 def build_legacy_semantic_review_packet(
@@ -73,7 +73,7 @@ def _queue_item(queue: dict[str, Any], topic: str) -> dict[str, Any]:
 def _claim_payload(ws: WorkspacePaths, claim_id: str) -> dict[str, Any]:
     if not claim_id:
         return {}
-    claims = {claim.claim_id: claim for claim in list_records(ws.registry_dir("claims"), ClaimRecord)}
+    claims = {claim.claim_id: claim for claim in list_valid_records(ws.registry_dir("claims"), ClaimRecord)}
     claim = claims.get(claim_id)
     if claim is None:
         return {"claim_id": claim_id, "missing": True}
@@ -94,32 +94,32 @@ def _typed_records_for_claim(ws: WorkspacePaths, topic: str, claim_id: str) -> d
     return {
         "reference_locations": [
             _record_payload(record, "location_id")
-            for record in list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord)
+            for record in list_valid_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord)
             if record.claim_id == claim_id
         ],
         "evidence": [
             _record_payload(record, "evidence_id")
-            for record in list_records(ws.registry_dir("evidence"), EvidenceRecord)
+            for record in list_valid_records(ws.registry_dir("evidence"), EvidenceRecord)
             if record.claim_id == claim_id
         ],
         "physics_objects": [
             _record_payload(record, "object_id")
-            for record in list_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord)
+            for record in list_valid_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord)
             if record.topic_id == topic
         ],
         "object_relations": [
             _record_payload(record, "relation_id")
-            for record in list_records(ws.registry_dir("object_relations"), ObjectRelationRecord)
+            for record in list_valid_records(ws.registry_dir("object_relations"), ObjectRelationRecord)
             if record.topic_id == topic and (not record.claim_id or record.claim_id == claim_id)
         ],
         "sensemaking_reports": [
             _record_payload(record, "report_id")
-            for record in list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord)
+            for record in list_valid_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord)
             if record.claim_id == claim_id
         ],
         "validation_results": [
             _record_payload(record, "result_id")
-            for record in list_records(ws.registry_dir("validation_results"), ValidationResultRecord)
+            for record in list_valid_records(ws.registry_dir("validation_results"), ValidationResultRecord)
             if record.claim_id == claim_id
         ],
     }

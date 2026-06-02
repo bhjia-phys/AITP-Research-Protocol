@@ -3099,6 +3099,53 @@ def test_legacy_topic_question_backfill_packet_blocks_ambiguous_claim_statement_
     assert packet["can_update_claim_trust"] is False
 
 
+def test_legacy_topic_question_backfill_packet_skips_malformed_reference_locations(tmp_path):
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.legacy_topic_question_backfill import build_legacy_topic_question_backfill_packet
+    from brain.v5.models import ClaimRecord
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    base = tmp_path / "v5"
+    ws = init_workspace(base)
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-l2.md",
+        ClaimRecord(
+            claim_id="claim-l2",
+            topic_id="legacy-l2",
+            statement="",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Legacy L2 graph must be split before claim backfill.",
+        ),
+    )
+    stale_location = ws.registry_dir("reference_locations") / "stale-reference-location.md"
+    stale_location.write_text(
+        "---\nkind: stale_legacy_reference_location\n---\n# stale legacy record\n",
+        encoding="utf-8",
+    )
+    record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="legacy-l2",
+        status="inconclusive",
+        summary="Legacy L2 is an aggregate index, not a reviewed claim statement.",
+        active_claim_id="claim-l2",
+        reviewed_legacy_refs=["legacy_archive:L2/index.md"],
+        reviewed_typed_refs=["claim-l2"],
+        remaining_actions=["require_human_topic_question_before_claim_backfill"],
+    )
+
+    packet = build_legacy_topic_question_backfill_packet(ws, migration_dir=run)
+
+    assert packet["kind"] == "legacy_topic_question_backfill_packet"
+    assert packet["backfill_item_count"] == 1
+    assert packet["items"][0]["topic"] == "legacy-l2"
+    assert packet["items"][0]["auto_backfill_allowed"] is False
+    assert packet["can_update_claim_trust"] is False
+
+
 def test_legacy_topic_question_backfill_packet_cli_mcp_runtime_and_compact(tmp_path, capsys):
     import json
 

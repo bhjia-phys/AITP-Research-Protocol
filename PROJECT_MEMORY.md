@@ -605,6 +605,13 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   and whether intake rows are guarded. Audit/intake JSONL by itself is still
   orientation-only; result-refresh candidates and plot-script fail-closed guards
   remain separate follow-up work unless the compact next-actions say otherwise.
+- Legacy semantic review packets are read-only audit surfaces and must tolerate
+  malformed legacy leftover records in unrelated registry files. They should use
+  valid-record reads for packet context so a stale Markdown stub cannot crash
+  topic-question backfill or semantic-review inspection. This robustness does
+  not make any legacy item semantically lossless: final readiness still reports
+  `legacy_semantic_review_backlog` until the typed reviews, source
+  reconstruction, archive sampling, and human checkpoints actually clear.
 
 ## Protocol Layer Map
 
