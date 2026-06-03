@@ -116,10 +116,21 @@ def test_workspace_refresh_writes_summary_replay_and_obsidian_views(tmp_path):
 
 
 def test_workspace_startup_refresh_defers_heavy_workspace_views(tmp_path):
+    from brain.v5.markdown import write_md
     from brain.v5.public_surfaces import require_valid_public_surface
     from brain.v5.workspace_refresh import refresh_workspace_startup_views
 
     ws, claim, _, _memory = _seed_workspace(tmp_path)
+    write_md(
+        ws.registry_dir("evidence") / "legacy-malformed-evidence.md",
+        {"kind": "evidence", "id": "legacy-malformed"},
+        "# Legacy malformed evidence\n",
+    )
+    write_md(
+        ws.registry_dir("code_states") / "legacy-malformed-code-state.md",
+        {"kind": "code_state", "id": "legacy-malformed"},
+        "# Legacy malformed code state\n",
+    )
 
     payload = refresh_workspace_startup_views(ws, session_id="s1")
 

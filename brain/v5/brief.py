@@ -22,7 +22,7 @@ from brain.v5.research_intent import load_innovation_direction, load_research_in
 from brain.v5.output_stability import load_final_output_profile
 from brain.v5.risk import action_budget_for_level, assess_claim_risk
 from brain.v5.run_iterations import load_run_iterations
-from brain.v5.store import list_records
+from brain.v5.store import list_records, list_valid_records
 from brain.v5.strategy_memory import load_strategy_memory
 from brain.v5.workspace import get_claim, get_session_binding
 
@@ -302,14 +302,14 @@ def _knowledge_connector_action(
 
 
 def _linked_code_states(ws, claim_id: str) -> list[CodeStateRecord]:
-    states = list_records(ws.registry_dir("code_states"), CodeStateRecord)
+    states = list_valid_records(ws.registry_dir("code_states"), CodeStateRecord)
     return [state for state in states if _record_links_to_claim(state.linked_records, claim_id)]
 
 
 def _tool_runs_for_claim(ws, claim_id: str) -> list[ToolRunRecord]:
     return [
         run
-        for run in list_records(ws.registry_dir("tool_runs"), ToolRunRecord)
+        for run in list_valid_records(ws.registry_dir("tool_runs"), ToolRunRecord)
         if run.claim_id == claim_id
     ]
 

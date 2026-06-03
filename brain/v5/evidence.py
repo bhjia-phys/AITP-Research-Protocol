@@ -97,7 +97,10 @@ def list_evidence_for_claim(ws: WorkspacePaths, claim_id: str) -> list[EvidenceR
         return []
     records: list[tuple[int, str, EvidenceRecord]] = []
     for path in root.glob("*.md"):
-        evidence = read_record(path, EvidenceRecord)
+        try:
+            evidence = read_record(path, EvidenceRecord)
+        except (TypeError, ValueError):
+            continue
         if evidence.claim_id == claim_id:
             records.append((path.stat().st_mtime_ns, path.name, evidence))
     return [evidence for _, _, evidence in sorted(records)]

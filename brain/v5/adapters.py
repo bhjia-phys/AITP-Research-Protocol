@@ -84,7 +84,7 @@ def _runtime_rules(runtime: str) -> list[str]:
         return [
             common_first,
             "Use Kimi MCP tools for typed AITP writes; use Kimi native hooks only as lifecycle guards and trace emitters.",
-            "Project .kimi/config.toml hooks are runtime metadata and must not be treated as scientific truth.",
+            "Project .kimi/config.toml or .kimi-code/config.toml hooks are runtime metadata and must not be treated as scientific truth.",
         ]
     if runtime == "opencode":
         return [

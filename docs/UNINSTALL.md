@@ -52,15 +52,19 @@ claude mcp remove aitp
 ```bash
 rm -rf ~/.kimi/skills/using-aitp
 rm -rf ~/.kimi/skills/aitp-runtime
+rm -rf ~/.kimi-code/skills/using-aitp
+rm -rf ~/.kimi-code/skills/aitp-runtime
 ```
 
 Remove `[mcp.servers.aitp]` section from `~/.kimi/config.toml` and the
-`aitp` entry from `~/.kimi/mcp.json`.
+`aitp` entry from `~/.kimi/mcp.json`. For migrated Kimi Code installs, remove
+the marked AITP hook block from `~/.kimi-code/config.toml` and the `aitp`
+entry from `~/.kimi-code/mcp.json` if those files exist.
 
 ### Project scope
 
 Same paths but under `<workspace>/.claude/` or `<workspace>/.kimi/` instead
-of `~/`.
+of `~/`; for newer Kimi Code, also check `<workspace>/.kimi-code/`.
 
 ### CLI wrapper
 

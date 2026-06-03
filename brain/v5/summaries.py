@@ -12,7 +12,7 @@ from brain.v5.evidence import list_evidence_for_claim
 from brain.v5.markdown import read_md, write_md
 from brain.v5.models import ClaimRecord, MemoryEntryRecord, SessionBinding, ToolRunRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_records
+from brain.v5.store import list_records, list_valid_records
 from brain.v5.workspace import get_claim
 
 
@@ -458,6 +458,6 @@ def _unique(values) -> list[str]:
 def _tool_runs_for_claim(ws: WorkspacePaths, claim_id: str) -> list[ToolRunRecord]:
     return [
         run
-        for run in list_records(ws.registry_dir("tool_runs"), ToolRunRecord)
+        for run in list_valid_records(ws.registry_dir("tool_runs"), ToolRunRecord)
         if run.claim_id == claim_id
     ]

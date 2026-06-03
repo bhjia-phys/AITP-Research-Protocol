@@ -5,7 +5,7 @@ from __future__ import annotations
 from brain.v5.ids import prefixed_id
 from brain.v5.models import ReferenceLocationRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import list_records, write_record
+from brain.v5.store import list_valid_records, write_record
 
 
 def record_reference_location(
@@ -68,7 +68,7 @@ def list_reference_locations_for_claim(ws: WorkspacePaths, claim_id: str) -> lis
 
     return [
         location
-        for location in list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord)
+        for location in list_valid_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord)
         if location.claim_id == claim_id
     ]
 

@@ -39,13 +39,15 @@ Kimi Code supports TOML lifecycle hooks. AITP v5 installs:
 Install:
 
 ```powershell
-python -m brain.v5.cli --base <workspace> adapter install-hooks kimi-code <session-id> --settings .kimi/config.toml
+python -m brain.v5.cli --base <workspace> adapter install-hooks kimi-code <session-id> --settings <workspace>/.kimi/config.toml
+python -m brain.v5.cli --base <workspace> adapter install-hooks kimi-code <session-id> --settings <workspace>/.kimi-code/config.toml
 ```
 
 Audit:
 
 ```powershell
-python -m brain.v5.cli --base <workspace> adapter install-audit kimi-code --settings .kimi/config.toml
+python -m brain.v5.cli --base <workspace> adapter install-audit kimi-code --settings <workspace>/.kimi/config.toml
+python -m brain.v5.cli --base <workspace> adapter install-audit kimi-code --settings <workspace>/.kimi-code/config.toml
 ```
 
 Smoke coverage is visible through:
@@ -54,12 +56,13 @@ Smoke coverage is visible through:
 python -m brain.v5.cli adapter smoke-coverage
 ```
 
-For a real Kimi CLI session on 1.35.0, launch with the project assets explicitly:
+For Kimi CLI builds that support explicit project paths, launch with project
+assets directly:
 
 ```powershell
 $env:PYTHONIOENCODING = "utf-8"
 $env:PYTHONUTF8 = "1"
-kimi --work-dir <workspace> --config-file .kimi/config.toml --mcp-config-file $env:USERPROFILE\.kimi\mcp.json --skills-dir .kimi\skills
+kimi --work-dir <workspace> --config-file .kimi-code/config.toml --mcp-config-file .kimi-code/mcp.json --skills-dir .kimi-code/skills
 ```
 
 ## Research Workflow

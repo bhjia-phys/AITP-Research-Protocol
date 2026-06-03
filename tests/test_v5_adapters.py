@@ -2295,7 +2295,10 @@ def test_hook_installation_paths_discover_workspace_defaults(tmp_path):
     assert by_runtime["claude_code"]["preferred"]["install_arg"] == "--settings"
     assert by_runtime["kimi_code"]["preferred"]["path"] == str(tmp_path / ".kimi" / "config.toml")
     assert by_runtime["kimi_code"]["preferred"]["install_arg"] == "--settings"
-    assert by_runtime["kimi_code"]["alternates"][0]["path"] == str(tmp_path / ".kimi" / "AITP_V5_HOOKS.toml")
+    assert by_runtime["kimi_code"]["alternates"][0]["path"] == str(tmp_path / ".kimi-code" / "config.toml")
+    assert by_runtime["kimi_code"]["alternates"][0]["install_arg"] == "--settings"
+    assert by_runtime["kimi_code"]["alternates"][1]["path"] == str(tmp_path / ".kimi" / "AITP_V5_HOOKS.toml")
+    assert by_runtime["kimi_code"]["alternates"][2]["path"] == str(tmp_path / ".kimi-code" / "AITP_V5_HOOKS.toml")
     assert by_runtime["opencode"]["preferred"]["path"] == str(tmp_path / ".opencode" / "plugins" / "aitp-v5.js")
     assert by_runtime["opencode"]["preferred"]["install_arg"] == "--plugin"
     assert "--settings" in by_runtime["codex"]["install_command"]

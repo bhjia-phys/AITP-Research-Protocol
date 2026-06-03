@@ -49,8 +49,11 @@ For Claude Code (user scope):
 - `~/.claude/mcp.json` or user MCP config — AITP MCP server registration
 
 For Kimi Code (user scope):
-- `~/.kimi/skills/using-aitp/` and `~/.kimi/skills/aitp-runtime/`
-- `~/.kimi/mcp.json` and `~/.kimi/config.toml`
+- Current/legacy CLI: `~/.kimi/skills/using-aitp/`,
+  `~/.kimi/skills/aitp-runtime/`, `~/.kimi/mcp.json`, and
+  `~/.kimi/config.toml`
+- Newer migrated Kimi Code: matching assets under `~/.kimi-code/`, with
+  project installs mirrored under `<workspace>/.kimi-code/` when needed
 
 ## Verify
 

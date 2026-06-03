@@ -187,6 +187,117 @@ def test_execution_brief_combines_session_claim_flow_and_questions(tmp_path):
     assert "forbidden_now" in brief
 
 
+def test_execution_brief_skips_malformed_code_state_and_tool_run_records(tmp_path):
+    from brain.v5.brief import build_execution_brief
+    from brain.v5.markdown import write_md
+    from brain.v5.models import CodeStateRecord, ToolRunRecord
+    from brain.v5.store import write_record
+    from brain.v5.summaries import write_session_summary
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "qsgw", context_id="librpa-qsgw", title="QSGW")
+    claim = create_claim(
+        ws,
+        topic_id="qsgw",
+        statement="Final rows are separated from diagnostic rows.",
+        evidence_profile="code_method",
+        confidence_state="hypothesis",
+        active_uncertainty="dirty code state may contaminate final plots",
+    )
+    bind_session(
+        ws,
+        "s1",
+        topic_id="qsgw",
+        context_id="librpa-qsgw",
+        active_claim=claim.claim_id,
+    )
+    write_md(
+        ws.registry_dir("code_states") / "malformed-code-state.md",
+        {"kind": "code_state", "id": "legacy-malformed"},
+        "# Legacy malformed code state\n",
+    )
+    write_md(
+        ws.registry_dir("tool_runs") / "malformed-tool-run.md",
+        {"kind": "tool_run", "id": "legacy-malformed"},
+        "# Legacy malformed tool run\n",
+    )
+    write_md(
+        ws.registry_dir("reference_locations") / "malformed-reference-location.md",
+        {"kind": "reference_location", "id": "legacy-malformed"},
+        "# Legacy malformed reference location\n",
+    )
+    write_record(
+        ws.registry_dir("code_states") / "code-state-dirty.md",
+        CodeStateRecord(
+            code_state_id="code-state-dirty",
+            repo_id="theory-workspace",
+            upstream_remote="origin",
+            upstream_branch="main",
+            upstream_commit="abc123",
+            local_branch="main",
+            worktree_path=str(tmp_path),
+            dirty=True,
+            linked_records={"claim_id": claim.claim_id},
+        ),
+    )
+    write_record(
+        ws.registry_dir("tool_runs") / "tool-run-valid.md",
+        ToolRunRecord(
+            run_id="tool-run-valid",
+            recipe_id="recipe-final-lane-check",
+            tool_family="python",
+            tool_name="plot_guard",
+            topic_id="qsgw",
+            claim_id=claim.claim_id,
+        ),
+    )
+
+    brief = build_execution_brief(ws, "s1")
+
+    assert brief["current_focus"]["active_claim"] == claim.claim_id
+    assert any(
+        signal["kind"] == "reproducibility_risk"
+        for signal in brief["risk_assessment"]["signals"]
+    )
+    summary = write_session_summary(ws, "s1")
+    assert summary.source_records["tool_runs"] == ["tool-run-valid"]
+
+
+def test_list_evidence_for_claim_skips_malformed_legacy_records(tmp_path):
+    from brain.v5.evidence import list_evidence_for_claim, record_evidence
+    from brain.v5.markdown import write_md
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "qsgw", context_id="librpa-qsgw", title="QSGW")
+    claim = create_claim(
+        ws,
+        topic_id="qsgw",
+        statement="Final rows are separated from diagnostic rows.",
+        evidence_profile="code_method",
+        confidence_state="hypothesis",
+        active_uncertainty="diagnostic rows may be mistaken for final rows",
+    )
+    write_md(
+        ws.registry_dir("evidence") / "legacy-malformed-evidence.md",
+        {"kind": "evidence", "id": "legacy-malformed"},
+        "# Legacy malformed evidence\n",
+    )
+    evidence = record_evidence(
+        ws,
+        topic_id="qsgw",
+        claim_id=claim.claim_id,
+        evidence_type="code_method",
+        status="supports",
+        summary="Plot guard uses final-lane allowlist.",
+    )
+
+    records = list_evidence_for_claim(ws, claim.claim_id)
+
+    assert [record.evidence_id for record in records] == [evidence.evidence_id]
+
+
 def test_execution_brief_highlights_orientation_operating_notes(tmp_path):
     from brain.v5.brief import build_execution_brief
     from brain.v5.references import record_reference_location

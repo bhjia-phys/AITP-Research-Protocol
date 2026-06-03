@@ -15,8 +15,9 @@ Do not treat chat summaries, Markdown notes, or generated hook config as scienti
 
 - AITP v5 runs through the native MCP entrypoint at `{{REPO_ROOT}}/brain/v5/native_mcp.py`.
 - Kimi Code should expose the MCP server as `aitp`; tools are named `aitp_v5_*`.
-- Kimi Code project hooks live in `.kimi/config.toml` using `[[hooks]]` entries.
-- On Kimi CLI 1.35.0, load project assets explicitly with `--config-file .kimi/config.toml --mcp-config-file ~/.kimi/mcp.json --skills-dir .kimi/skills`.
+- Current AITP project installs use `.kimi/config.toml` and `.kimi/skills/`.
+- Newer Kimi Code installs may use `.kimi-code/config.toml`, `.kimi-code/mcp.json`, and `.kimi-code/skills/`.
+- If the local Kimi CLI supports explicit paths, load project assets with `--config-file`, `--mcp-config-file`, and `--skills-dir`.
 - On Windows terminals, set `PYTHONIOENCODING=utf-8` and `PYTHONUTF8=1` before `kimi mcp test` if the CLI crashes while printing Unicode status symbols.
 
 ## Entry Procedure
@@ -39,13 +40,15 @@ Do not treat chat summaries, Markdown notes, or generated hook config as scienti
 Generate or merge project-local Kimi hooks from the v5 kernel:
 
 ```powershell
-python -m brain.v5.cli --base <workspace> adapter install-hooks kimi-code <session-id> --settings .kimi/config.toml
+python -m brain.v5.cli --base <workspace> adapter install-hooks kimi-code <session-id> --settings <workspace>/.kimi/config.toml
+python -m brain.v5.cli --base <workspace> adapter install-hooks kimi-code <session-id> --settings <workspace>/.kimi-code/config.toml
 ```
 
 Audit the installed Kimi config:
 
 ```powershell
-python -m brain.v5.cli --base <workspace> adapter install-audit kimi-code --settings .kimi/config.toml
+python -m brain.v5.cli --base <workspace> adapter install-audit kimi-code --settings <workspace>/.kimi/config.toml
+python -m brain.v5.cli --base <workspace> adapter install-audit kimi-code --settings <workspace>/.kimi-code/config.toml
 ```
 
 The installed hooks are lifecycle guards only. They can block risky pre-tool actions and append post-tool trace events, but they cannot update claim trust.
