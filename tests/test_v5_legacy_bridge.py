@@ -231,6 +231,38 @@ def test_legacy_migration_extracts_research_question_from_state_body(tmp_path):
     assert any(question in report.summary for report in reports)
 
 
+def test_legacy_migration_uses_nonempty_placeholder_for_source_only_topic(tmp_path):
+    from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
+    from brain.v5.models import ClaimRecord
+    from brain.v5.store import list_records
+    from brain.v5.workspace import init_workspace
+
+    topic = tmp_path / "legacy" / "source-only-topic"
+    (topic / "L0" / "sources" / "paper-a").mkdir(parents=True)
+    (topic / "research.md").write_text(
+        "# Research Trail\n\n"
+        "- 2026-06-05 [L0] Registered source: paper-a\n",
+        encoding="utf-8",
+    )
+    (topic / "L0" / "sources" / "paper-a" / "source.md").write_text("# Paper A\n", encoding="utf-8")
+    ws = init_workspace(tmp_path / "v5")
+
+    result = migrate_legacy_topic_to_v5(ws, topic, context_id="legacy-context", session_id="s1")
+
+    claims = list_records(ws.registry_dir("claims"), ClaimRecord)
+    assert len(claims) == 1
+    assert claims[0].statement
+    assert "source-only-topic" in claims[0].statement
+    assert "no explicit candidate claim" in claims[0].statement
+    assert result["written_records"]["claims"] == [claims[0].claim_id]
+    index_path = ws.topic_dir("source-only-topic") / "indexes" / "legacy_v5_generic_migration.md"
+    assert result["index_path"] == str(index_path)
+    assert index_path.exists()
+    index_text = index_path.read_text(encoding="utf-8")
+    assert "preservation-only" in index_text
+    assert "does not promote L2 memory" in index_text
+
+
 def test_legacy_topic_dry_run_reports_missing_and_mapped_sections(tmp_path):
     from pathlib import Path
 
@@ -6466,7 +6498,7 @@ def test_legacy_migration_preserves_l2_entries_as_legacy_seed_memory(tmp_path):
     from brain.v5.workspace import init_workspace
 
     legacy = _write_legacy_topic(tmp_path / "legacy")
-    l2 = legacy.parent / "L2"
+    l2 = legacy / "L2"
     entries = l2 / "entries"
     nodes = l2 / "graph" / "nodes"
     edges = l2 / "graph" / "edges"
@@ -6539,6 +6571,31 @@ def test_legacy_migration_preserves_l2_entries_as_legacy_seed_memory(tmp_path):
     assert all(memory.evidence_refs for memory in memories)
     assert any("chiral CFT sector" in memory.statement for memory in memories)
     assert any("edge-counting-rule --[uses]--> edge-cft" in memory.statement for memory in memories)
+
+
+def test_legacy_migration_does_not_import_sibling_l2_into_topic(tmp_path):
+    from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
+    from brain.v5.models import MemoryEntryRecord
+    from brain.v5.store import list_records
+    from brain.v5.workspace import init_workspace
+
+    legacy = _write_legacy_topic(tmp_path / "legacy")
+    sibling_l2 = legacy.parent / "L2" / "entries"
+    sibling_l2.mkdir(parents=True)
+    (sibling_l2 / "global-entry.md").write_text(
+        "---\n"
+        "role: claim\n"
+        "statement: Global L2 should not be imported into each topic migration.\n"
+        "---\n"
+        "# Global Entry\n",
+        encoding="utf-8",
+    )
+    ws = init_workspace(tmp_path / "v5")
+
+    migrate_legacy_topic_to_v5(ws, legacy, context_id="legacy-context", session_id="s1")
+
+    memories = list_records(ws.root / "memory" / "l2" / "entries", MemoryEntryRecord)
+    assert memories == []
 
 
 def test_legacy_migration_preserves_l3_process_notes_as_typed_records(tmp_path):

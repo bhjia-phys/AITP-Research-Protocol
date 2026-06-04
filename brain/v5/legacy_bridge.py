@@ -21,7 +21,7 @@ from brain.v5.legacy_l3_process_records import (
     migrate_legacy_l3_process_notes,
 )
 from brain.v5.legacy_record_bodies import legacy_evidence_body
-from brain.v5.markdown import read_md
+from brain.v5.markdown import read_md, write_text_atomic
 from brain.v5.paths import WorkspacePaths
 from brain.v5.sensemaking import record_sensemaking_report
 from brain.v5.workspace import bind_session, create_claim, create_context, create_topic, init_workspace
@@ -52,7 +52,12 @@ def scan_legacy_topic(topic_dir: str | Path) -> LegacyTopicSummary:
 
     root = Path(topic_dir)
     state_fm, state_body = read_md(root / "state.md")
-    question = str(state_fm.get("question") or _research_question_from_state_body(state_body))
+    question = str(
+        state_fm.get("question")
+        or _research_question_from_state_body(state_body)
+        or _legacy_research_trail_summary(root)
+        or _legacy_placeholder_question(root)
+    )
     source_paths = [str(path) for path in sorted((root / "L0" / "sources").glob("*/source.md"))]
     candidate_claims = []
     for candidate_path in sorted((root / "L3" / "candidates").glob("*.md")):
@@ -137,9 +142,10 @@ def migrate_legacy_topic_to_v5(
 
     candidate_records = _legacy_candidate_records(root)
     if not candidate_records:
+        fallback_path = _legacy_fallback_candidate_path(root)
         candidate_records = [
             {
-                "path": root / "state.md",
+                "path": fallback_path,
                 "statement": summary.question,
                 "evidence_summary": "Legacy topic question imported as candidate claim.",
                 "body_summary": summary.question,
@@ -263,6 +269,20 @@ def migrate_legacy_topic_to_v5(
         context_id=context_id,
         active_claim=active_claim.claim_id,
     )
+    index_path = _write_generic_migration_index(
+        ws,
+        summary=summary,
+        context_id=context_id,
+        session_id=session_id,
+        active_claim_id=active_claim.claim_id,
+        claims=[claim.claim_id for claim in claims],
+        evidence_ids=evidence_ids,
+        reference_location_ids=reference_location_ids,
+        sensemaking_report_ids=sensemaking_report_ids,
+        trace_event_ids=trace_event_ids,
+        memory_entry_ids=memory_entry_ids,
+        preserved_refs=preserved_refs,
+    )
 
     return {
         "kind": "legacy_topic_migration_result",
@@ -280,6 +300,7 @@ def migrate_legacy_topic_to_v5(
             "memory_entries": memory_entry_ids,
         },
         "preserved_source_refs": preserved_refs,
+        "index_path": str(index_path),
         "summary_inputs_trusted": False,
     }
 
@@ -399,6 +420,36 @@ def _research_question_from_state_body(body: str) -> str:
     return _first_paragraph("\n".join(section_lines))
 
 
+def _legacy_research_trail_summary(root: Path) -> str:
+    """Return a conservative non-claim summary for source-only legacy topics."""
+
+    trail_path = root / "research.md"
+    if not trail_path.exists():
+        return ""
+    _fm, body = read_md(trail_path)
+    first_line = _first_paragraph(body)
+    if first_line:
+        return (
+            f"Legacy topic {root.name} has a preserved research trail but no "
+            f"explicit candidate claim; first trail entry: {first_line}"
+        )
+    return f"Legacy topic {root.name} has a preserved research trail but no explicit candidate claim."
+
+
+def _legacy_placeholder_question(root: Path) -> str:
+    return (
+        f"Legacy topic {root.name} was imported for v5 review; no explicit "
+        "research question or candidate claim was recorded in the legacy folder."
+    )
+
+
+def _legacy_fallback_candidate_path(root: Path) -> Path:
+    for candidate in (root / "state.md", root / "research.md"):
+        if candidate.exists():
+            return candidate
+    return root
+
+
 def _legacy_candidate_records(root: Path) -> list[dict]:
     records = []
     for candidate_path in sorted((root / "L3" / "candidates").glob("*.md")):
@@ -417,6 +468,65 @@ def _legacy_candidate_records(root: Path) -> list[dict]:
             }
         )
     return records
+
+
+def _write_generic_migration_index(
+    ws: WorkspacePaths,
+    *,
+    summary: LegacyTopicSummary,
+    context_id: str,
+    session_id: str,
+    active_claim_id: str,
+    claims: list[str],
+    evidence_ids: list[str],
+    reference_location_ids: list[str],
+    sensemaking_report_ids: list[str],
+    trace_event_ids: list[str],
+    memory_entry_ids: list[str],
+    preserved_refs: list[str],
+) -> Path:
+    path = ws.topic_dir(summary.topic_slug) / "indexes" / "legacy_v5_generic_migration.md"
+    lines = [
+        "---",
+        "kind: legacy_v5_generic_migration_index",
+        f"topic_id: {summary.topic_slug}",
+        f"context_id: {context_id}",
+        f"session_id: {session_id}",
+        f"active_claim_id: {active_claim_id}",
+        "summary_inputs_trusted: false",
+        "---",
+        f"# Generic Legacy v5 Migration: {summary.topic_slug}",
+        "",
+        "This index records a preservation-only v5 migration of a legacy topic.",
+        "It does not validate the scientific claim and does not promote L2 memory.",
+        "",
+        "## Status",
+        "",
+        "- Confidence state: `legacy_seed`",
+        f"- Legacy stage: `{summary.stage or 'unknown'}`",
+        f"- Legacy lane: `{summary.lane or 'unknown'}`",
+        "- Trust: orientation only until reviewed through v5 validation/trust gates.",
+        "",
+        "## Written Records",
+        "",
+        f"- Claims: {len(claims)}",
+        f"- Evidence records: {len(evidence_ids)}",
+        f"- Reference locations: {len(reference_location_ids)}",
+        f"- Sensemaking reports: {len(sensemaking_report_ids)}",
+        f"- Trace events: {len(trace_event_ids)}",
+        f"- Topic-local legacy L2 memory entries: {len(memory_entry_ids)}",
+        f"- Preserved source refs: {len(preserved_refs)}",
+        "",
+        "## Next Required Review",
+        "",
+        "- Confirm the active claim scope before using it as a scientific claim.",
+        "- Review migrated evidence and source provenance.",
+        "- Run validation checks required by the v5 execution brief.",
+        "- Use dedicated legacy L2 migration surfaces for global L2 memory; do not trust imported legacy seeds directly.",
+        "",
+    ]
+    write_text_atomic(path, "\n".join(lines))
+    return path
 
 
 def _legacy_review_records(root: Path) -> list[dict]:

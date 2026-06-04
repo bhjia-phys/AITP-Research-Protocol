@@ -399,14 +399,29 @@ Use the v5 legacy commands for audit/migration review:
 ```bash
 python -m brain.v5.cli --base /path/to/workspace legacy --help
 python -m brain.v5.cli --base /path/to/workspace legacy curated-known-topics
+python -m brain.v5.cli --base /path/to/workspace legacy migrate \
+  /path/to/workspace/research/aitp-topics/<legacy-topic-slug> \
+  --context <context-id> \
+  --session <session-id>
 python -m brain.v5.cli --base /path/to/workspace legacy curated-migrate \
   /path/to/workspace/research/aitp-topics/<legacy-topic-slug>
 ```
+
+`legacy migrate` is a topic-local, preservation-only migration. It writes a v5
+session, legacy-seed claims/evidence/sensemaking records, and a topic-local
+`legacy_v5_generic_migration.md` index. It imports only `topic/L2` if that
+folder exists; it never imports a sibling or workspace-global `L2` directory
+into each topic.
 
 `curated-migrate` is for known topics whose current scientific boundary has
 been hand-curated into a v5 active claim, claim status, validation contract,
 evidence records, proof obligations, artifact links, and a topic-local migration
 index. It does not promote the claim to L2.
+
+Workspace-global legacy `L2` migration is a separate review surface. Use
+`legacy l2-graph-manifest`, `legacy l2-typed-migration-packet`, or
+`legacy l2-obsidian-view` to inspect global L2 memory before any typed L2 trust
+or promotion work.
 
 ## Repository Map
 

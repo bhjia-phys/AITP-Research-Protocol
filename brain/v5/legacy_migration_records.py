@@ -373,20 +373,10 @@ def _legacy_note_uri(value: str) -> str:
 
 
 def _legacy_l2_roots(root: Path) -> list[Path]:
-    candidates = [root / "L2", root.parent / "L2"]
-    if root.parent.name == "topics":
-        candidates.append(root.parent.parent / "L2")
-
-    roots: list[Path] = []
-    seen: set[str] = set()
-    for candidate in candidates:
-        if not candidate.exists():
-            continue
-        resolved = str(candidate.resolve())
-        if resolved not in seen:
-            seen.add(resolved)
-            roots.append(candidate)
-    return roots
+    topic_local_l2 = root / "L2"
+    if topic_local_l2.exists():
+        return [topic_local_l2]
+    return []
 
 
 def _legacy_l2_display_path(root: Path, l2_root: Path, path: Path) -> str:
