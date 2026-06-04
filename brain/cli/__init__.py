@@ -57,6 +57,44 @@ def _write_md(path: Path, fm, body):
     atomic_write(path, "\n".join(lines))
 
 
+def _live_gate_snapshot(root: Path, fm: dict):
+    """Evaluate the current gate from artifacts instead of cached state.md."""
+    from brain.gates import (
+        evaluate_l0_stage,
+        evaluate_l1_stage,
+        evaluate_l3_stage,
+        evaluate_l4_stage,
+    )
+
+    stage = str(fm.get("stage", "L0")).strip() or "L0"
+    lane = str(fm.get("lane", "unspecified")).strip() or "unspecified"
+    if stage == "L3":
+        return evaluate_l3_stage(_parse_md, root, lane=lane)
+    if stage == "L4":
+        return evaluate_l4_stage(_parse_md, root, lane=lane)
+    if stage == "L0":
+        return evaluate_l0_stage(_parse_md, root, lane=lane)
+    return evaluate_l1_stage(_parse_md, root, lane=lane)
+
+
+def _gate_display(root: Path, fm: dict) -> tuple[str, str, list[str]]:
+    stored_gate = str(fm.get("gate_status", "?"))
+    override = bool(fm.get("gate_override", False))
+    scope = str(fm.get("gate_override_scope", ""))
+    if override and scope in ("current_gate", "this_session"):
+        return stored_gate, "", []
+
+    try:
+        snapshot = _live_gate_snapshot(root, fm)
+    except Exception as exc:
+        return stored_gate, f"Live gate evaluation failed: {exc}", []
+
+    stale_note = ""
+    if stored_gate != snapshot.gate_status:
+        stale_note = f"Stored gate: {stored_gate} (stale; live evaluation used)"
+    return snapshot.gate_status, stale_note, list(snapshot.missing_requirements)
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Commands
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -70,13 +108,19 @@ def cmd_state_show(args):
         return 1
     stage = fm.get("stage", "L0")
     lane = fm.get("lane", "unspecified")
-    gate = fm.get("gate_status", "?")
+    gate, stale_note, missing = _gate_display(root, fm)
     activity = fm.get("l3_activity", "")
     cycle = fm.get("l4_cycle_count", 0)
     loop = fm.get("research_loop_active", False)
     override = fm.get("gate_override", False)
     override_reason = fm.get("gate_override_reason", "")
     print(f"Stage: {stage}  Lane: {lane}  Gate: {gate}  Activity: {activity or '-'}")
+    if stale_note:
+        print(stale_note)
+    if missing:
+        print("Missing requirements:")
+        for item in missing:
+            print(f"  - {item}")
     print(f"Cycle: {cycle}  Loop: {loop}  Override: {override}")
     if override:
         print(f"Override reason: {override_reason}")
@@ -111,8 +155,16 @@ def cmd_state_retreat(args):
 def cmd_gate_check(args):
     """Check gate readiness for a topic."""
     root = _resolve_topic_root(args.topic)
-    gs, override = current_gate_status(root)
+    fm, _ = load_state(root)
+    gs, stale_note, missing = _gate_display(root, fm)
+    _, override = current_gate_status(root)
     print(f"Gate: {gs}")
+    if stale_note:
+        print(stale_note)
+    if missing:
+        print("Missing requirements:")
+        for item in missing:
+            print(f"  - {item}")
     print(f"Override: {'active' if override else 'none'}")
     return 0 if gs.startswith("ready") else 1
 
@@ -280,13 +332,19 @@ def cmd_session_resume(args):
 
     stage = fm.get("stage", "L0")
     lane = fm.get("lane", "unspecified")
-    gate = fm.get("gate_status", "?")
+    gate, stale_note, missing = _gate_display(root, fm)
     activity = fm.get("l3_activity", "")
     cycle = fm.get("l4_cycle_count", 0)
     bg_status = fm.get("l4_background_status", "")
     job_id = fm.get("l4_job_id", "")
     print(f"Resumed: {args.topic}")
     print(f"Stage: {stage}  Lane: {lane}  Gate: {gate}  Activity: {activity or '-'}")
+    if stale_note:
+        print(stale_note)
+    if missing:
+        print("Missing requirements:")
+        for item in missing:
+            print(f"  - {item}")
     print(f"Cycle: {cycle}  HPC: {bg_status}" + (f" (job #{job_id})" if job_id else ""))
     # Show last 10 log events from observability
     from brain.cli.observability import recent_events
@@ -318,9 +376,15 @@ def cmd_session_status(args):
             stage = fm.get("stage", "L0")
             lane = fm.get("lane", "unspecified")
             activity = fm.get("l3_activity", "")
-            gate = fm.get("gate_status", "?")
+            gate, stale_note, missing = _gate_display(root, fm)
             print(f"Current topic: {current}")
             print(f"Stage: {stage}  Lane: {lane}  Gate: {gate}  Activity: {activity or '-'}")
+            if stale_note:
+                print(stale_note)
+            if missing:
+                print("Missing requirements:")
+                for item in missing:
+                    print(f"  - {item}")
     return 0
 
 

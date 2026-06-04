@@ -198,6 +198,180 @@ def _enforce_project_install_consistency(record: dict, variables: dict) -> None:
                 )
 
 
+def _recorded_install_path(raw: str) -> Path | None:
+    """Return the filesystem path component from an install-record entry."""
+    value = str(raw or "")
+    if not value or value.startswith("- stale:"):
+        return None
+    return Path(value.split(" (", 1)[0])
+
+
+def _check_mcp_json(path: Path, issues: list[str], label: str) -> None:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        issues.append(f"{label} cannot parse MCP json: {exc}")
+        print(f"      {path.name}: PARSE ERROR")
+        return
+    has_aitp = "aitp" in data.get("mcpServers", {})
+    if not has_aitp:
+        issues.append(f"{label} missing aitp MCP entry")
+    print(f"      {path.name} aitp MCP entry: {'OK' if has_aitp else 'MISSING'}")
+
+
+def _check_agent_toml(path: Path, issues: list[str], label: str) -> None:
+    try:
+        content = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        issues.append(f"{label} cannot read config.toml: {exc}")
+        print("      config.toml: READ ERROR")
+        return
+    parent_names = {p.name for p in path.parents}
+    if ".kimi" in parent_names:
+        section = "[mcp.servers.aitp]"
+    else:
+        section = "[mcp_servers.aitp]"
+    has_section = section in content
+    has_entrypoint = _has_supported_mcp_entrypoint(content)
+    if not (has_section and has_entrypoint):
+        issues.append(f"{label} config.toml missing supported aitp MCP config")
+    status = "OK" if has_section and has_entrypoint else "NOT CONFIGURED"
+    print(f"      config.toml {section}: {status}")
+
+
+def _check_claude_settings(
+    path: Path,
+    issues: list[str],
+    label: str,
+    require_mcp: bool,
+) -> None:
+    try:
+        settings = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        issues.append(f"{label} cannot parse settings.json: {exc}")
+        print("      settings.json: PARSE ERROR")
+        return
+
+    has_mcp = "aitp" in settings.get("mcpServers", {})
+    if require_mcp and not has_mcp:
+        issues.append(f"{label} settings.json missing aitp MCP entry")
+    elif not has_mcp:
+        print("      settings.json aitp MCP entry: not present (project .mcp.json expected)")
+    if has_mcp or require_mcp:
+        print(f"      settings.json aitp MCP entry: {'OK' if has_mcp else 'MISSING'}")
+
+    hooks = settings.get("hooks", {})
+    for event in ("SessionStart", "UserPromptSubmit", "PreToolUse"):
+        has_aitp = any(
+            "aitp" in str(h.get("command", "")).lower()
+            or "run-hook" in str(h.get("command", "")).lower()
+            for block in hooks.get(event, [])
+            for h in block.get("hooks", [])
+        )
+        if not has_aitp:
+            issues.append(f"{label} settings.json hooks.{event} not configured")
+        print(f"      settings.json hooks.{event}: {'OK' if has_aitp else 'NOT CONFIGURED'}")
+
+
+def _doctor_check_recorded_installs(installs: dict, issues: list[str]) -> None:
+    """Validate recorded installs and avoid stale user-scope path assumptions."""
+    print("\n  --- Agent Installs (recorded) ---")
+    installed_agents: set[str] = set()
+    project_records: dict[str, dict] = {}
+
+    for key, inst in sorted(installs.items()):
+        try:
+            agent, scope = key.split(":", 1)
+        except ValueError:
+            issues.append(f"Malformed install record key: {key}")
+            print(f"    {key}: MALFORMED")
+            continue
+
+        installed_agents.add(agent)
+        if scope == "project":
+            project_records[key] = inst
+
+        print(f"\n    {agent} ({scope})")
+        variables = inst.get("variables", {})
+        for field in ("REPO_ROOT", "TOPICS_ROOT", "TARGET_ROOT"):
+            if variables.get(field):
+                print(f"      {field}: {variables[field]}")
+
+        files = inst.get("files", [])
+        missing = 0
+        checked = 0
+        for raw in files:
+            path = _recorded_install_path(raw)
+            if path is None:
+                continue
+            checked += 1
+            if not path.exists():
+                missing += 1
+                issues.append(f"{agent} ({scope}) recorded file missing: {path}")
+                print(f"      MISSING: {path}")
+        if missing == 0:
+            print(f"      Files: all present ({checked} items)")
+
+        for raw in files:
+            path = _recorded_install_path(raw)
+            if path is None or not path.exists():
+                continue
+            if path.name in {"mcp.json", ".mcp.json"}:
+                _check_mcp_json(path, issues, f"{agent} ({scope})")
+            elif path.name == "config.toml":
+                _check_agent_toml(path, issues, f"{agent} ({scope})")
+            elif path.name == "settings.json" and ".claude" in {p.name for p in path.parents}:
+                _check_claude_settings(
+                    path,
+                    issues,
+                    f"{agent} ({scope})",
+                    require_mcp=(scope == "user"),
+                )
+
+    for agent in AGENTS:
+        if agent not in installed_agents:
+            issues.append(f"No recorded install for {agent}")
+
+    if project_records:
+        for agent in AGENTS:
+            if f"{agent}:project" not in project_records:
+                issues.append(f"No project-scope install recorded for {agent}")
+
+        expected_fields = ("REPO_ROOT", "TOPICS_ROOT", "TARGET_ROOT")
+        baselines: dict[str, tuple[str, str]] = {}
+        for key, inst in sorted(project_records.items()):
+            variables = inst.get("variables", {})
+            for field in expected_fields:
+                value = _norm_install_value(variables.get(field, ""))
+                if not value:
+                    issues.append(f"{key} missing {field}")
+                    continue
+                if field not in baselines:
+                    baselines[field] = (key, value)
+                    continue
+                base_key, base_value = baselines[field]
+                if value != base_value:
+                    issues.append(
+                        f"Project install mismatch: {key} has {field}={value}, "
+                        f"but {base_key} has {field}={base_value}"
+                    )
+        if not any(issue.startswith("Project install mismatch") for issue in issues):
+            print("\n    Project-scope consistency: OK")
+
+    print("\n  Legacy user-scope host checks: skipped (install record is authoritative).")
+
+
+def _print_doctor_summary(issues: list[str]) -> None:
+    print(f"\n{'=' * 60}")
+    if issues:
+        print(f"  {len(issues)} issue(s) found:")
+        for i, issue in enumerate(issues, 1):
+            print(f"    {i}. {issue}")
+        print(f"\n  Run: python scripts/aitp-pm.py install --agent all")
+    else:
+        print("  All checks passed. AITP is healthy.")
+
+
 # ---------------------------------------------------------------------------
 # Template & variable helpers
 # ---------------------------------------------------------------------------
@@ -1777,6 +1951,13 @@ def cmd_doctor(args) -> None:
         issues.append(f"Topics root path does not exist: {topics_root}")
         print("    FAIL: path does not exist")
 
+    record = _load_record()
+    installs = record.get("installs", {})
+    if installs:
+        _doctor_check_recorded_installs(installs, issues)
+        _print_doctor_summary(issues)
+        return
+
     # 5. Claude Code
     print("\n  --- Claude Code ---")
     claude_dir = Path.home() / ".claude"
@@ -1930,14 +2111,7 @@ def cmd_doctor(args) -> None:
         issues.append("Codex App compatibility mcp.json missing aitp entry")
 
     # 8. Summary
-    print(f"\n{'=' * 60}")
-    if issues:
-        print(f"  {len(issues)} issue(s) found:")
-        for i, issue in enumerate(issues, 1):
-            print(f"    {i}. {issue}")
-        print(f"\n  Run: python scripts/aitp-pm.py install --agent all")
-    else:
-        print("  All checks passed. AITP is healthy.")
+    _print_doctor_summary(issues)
 
 
 # ---------------------------------------------------------------------------
