@@ -2,10 +2,9 @@
 """UserPromptSubmit hook: detect AITP keywords, list existing topics, inject context.
 
 When AITP keywords are detected in the user's message, this hook:
-1. Scans the AITP topics directory for existing topics
-2. Reads each topic's title, stage, and slug
-3. Injects the full topic list into the agent's context so it can match
-   the user's request without needing to call aitp_list_topics first.
+1. Scans the legacy AITP topics directory for topic slugs and titles.
+2. Injects a v5-safe orientation list so the agent can match the request.
+3. Reminds the agent to bind or migrate to a v5 session before research.
 """
 
 import json
@@ -81,13 +80,13 @@ def scan_topics() -> list[dict]:
             topics.append({
                 "slug": d.name,
                 "title": fm.get("title", d.name),
-                "stage": fm.get("stage", "unknown"),
+                "legacy_stage": fm.get("stage", "unknown"),
                 "lane": fm.get("lane", ""),
                 "question": question[:120],
                 "memory": memory_text,
             })
         except Exception:
-            topics.append({"slug": d.name, "title": d.name, "stage": "unknown", "lane": "", "question": "", "memory": ""})
+            topics.append({"slug": d.name, "title": d.name, "legacy_stage": "unknown", "lane": "", "question": "", "memory": ""})
     return topics
 
 
@@ -121,7 +120,7 @@ def main() -> int:
     topic_lines = []
     topic_memories = []
     for t in topics:
-        line = f"  - slug: {t['slug']}  |  title: {t['title']}  |  stage: {t['stage']}  |  lane: {t['lane']}"
+        line = f"  - slug: {t['slug']}  |  title: {t['title']}  |  legacy_stage: {t['legacy_stage']}  |  lane: {t['lane']}"
         if t['question']:
             line += f"\n    question: {t['question']}"
         topic_lines.append(line)
@@ -143,17 +142,16 @@ def main() -> int:
         )
 
     reminder += (
-        "INSTRUCTIONS (follow exactly):\n"
+        "AITP V5 INSTRUCTIONS (follow exactly):\n"
         "1. Match the user's request to ONE of the topics above by comparing title/question.\n"
-        "2. If a match is found, call mcp__aitp__aitp_get_execution_brief("
-        f"topics_root='{AITP_TOPICS_ROOT.as_posix()}', "
-        "topic_slug='<matched_slug>') to get current state.\n"
-        "3. If NO match, call mcp__aitp__aitp_bootstrap_topic to create a new topic.\n"
-        "4. Do NOT create a duplicate topic if one already matches.\n"
+        "2. Do not treat legacy_stage/gate fields as v5 truth; they are orientation only.\n"
+        "3. If a v5 session id is known, call mcp__aitp__aitp_v5_get_execution_brief("
+        f"base='{AITP_TOPICS_ROOT.as_posix()}', session_id='<session-id>').\n"
+        "4. If only a legacy slug is known, migrate or bind v5 state before research.\n"
+        "5. If no topic matches, create a v5 topic/claim/session.\n"
+        "6. Do NOT create a duplicate topic if one already matches.\n"
         "5. Do NOT read AITP topic files directly with Read/Grep/Glob — use MCP tools only.\n"
-        "6. When you need to ask the user a question, you MUST use the AskUserQuestion tool. "
-        "First call ToolSearch(query='select:AskUserQuestion', max_results=1) to load it, "
-        "then call AskUserQuestion with your question and options. NEVER type questions as plain text."
+        "8. Record durable scientific content through typed v5 records; summaries and hooks are orientation only."
     )
 
     payload = {

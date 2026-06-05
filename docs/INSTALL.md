@@ -1,12 +1,12 @@
 # Install Guide
 
-The single install path for AITP.
+This is the single install path for AITP v5.
 
 ## Prerequisites
 
 - Python 3.10+
 - Git
-- An AI agent (Claude Code, Kimi Code)
+- At least one supported agent: Claude Code, Kimi Code, or Codex
 
 ## Install
 
@@ -16,15 +16,18 @@ cd AITP-Research-Protocol
 python scripts/aitp-pm.py install
 ```
 
-The installer detects your installed AI agents, prompts for where to store
-research topics, and deploys hooks, skills, and MCP configs automatically.
-
-After install, the `aitp` command is available globally:
+For research workspaces, prefer a project-scope install so every agent uses the
+same repository, topic store, and MCP entrypoint:
 
 ```bash
-aitp doctor     # Full health check
-aitp status     # Show what's installed and file health
+python scripts/aitp-pm.py install --agent all --scope project \
+  --target-root /path/to/workspace \
+  --topics-root /path/to/workspace/research/aitp-topics
 ```
+
+The installer deploys v5 gateway skills, v5-safe hooks, and MCP configs. User
+scope also registers a global `aitp` wrapper when possible; project scope does
+not.
 
 ## Options
 
@@ -32,48 +35,57 @@ aitp status     # Show what's installed and file health
 # Install for a specific agent only
 python scripts/aitp-pm.py install --agent claude-code
 
-# Project-level install (writes to workspace/.claude/ instead of ~/.claude/)
-python scripts/aitp-pm.py install --scope project
+# Project-level install
+python scripts/aitp-pm.py install --scope project --target-root /path/to/workspace
 
 # Custom topics directory
-python scripts/aitp-pm.py install --topics-root /path/to/your/topics
+python scripts/aitp-pm.py install --topics-root /path/to/workspace/research/aitp-topics
 ```
 
-## What gets installed
+## What Gets Installed
 
-For Claude Code (user scope):
-- `~/.claude/hooks/` — session-start, keyword router, routing guard
-- `~/.claude/skills/using-aitp/` — routes theory requests into AITP
-- `~/.claude/skills/aitp-runtime/` — protocol execution loop
-- `~/.claude/settings.json` — hook configuration (merged, not replaced)
-- `~/.claude/mcp.json` or user MCP config — AITP MCP server registration
+For Claude Code:
+- v5-safe prompt/router hooks: `aitp-keyword-router.py` and
+  `aitp-routing-guard.py`
+- v5 adapter hooks: `aitp-v5-*.py`
+- `using-aitp` and `aitp-runtime` gateway skills
+- `.mcp.json` or user MCP config pointing at `brain/v5/native_mcp.py`
 
-For Kimi Code (user scope):
-- Current/legacy CLI: `~/.kimi/skills/using-aitp/`,
-  `~/.kimi/skills/aitp-runtime/`, `~/.kimi/mcp.json`, and
-  `~/.kimi/config.toml`
-- Newer migrated Kimi Code: matching assets under `~/.kimi-code/`, with
-  project installs mirrored under `<workspace>/.kimi-code/` when needed
+For Kimi Code:
+- `using-aitp` and `aitp-runtime` gateway skills
+- `.kimi/mcp.json` and `.kimi/config.toml` pointing at
+  `brain/v5/native_mcp.py`
+
+For Codex:
+- `.codex/skills/using-aitp/` and `.codex/skills/aitp-runtime/`
+- `.codex/mcp.json` and `.codex/config.toml` pointing at
+  `brain/v5/native_mcp.py`
+
+Legacy L0/L1/L3/L4 stage skills and lifecycle hooks are not deployed by
+default. They are available only for explicit compatibility installs:
+
+```bash
+AITP_INSTALL_LEGACY_STAGE_SKILLS=1 python scripts/aitp-pm.py install ...
+AITP_INSTALL_LEGACY_STAGE_HOOKS=1 python scripts/aitp-pm.py install ...
+```
 
 ## Verify
 
 ```bash
-aitp doctor
+python scripts/aitp-pm.py doctor
+python scripts/aitp-pm.py status
 ```
 
-Checks: Python version, dependencies, repo integrity, topics root,
-Claude Code hooks/skills/settings, Kimi Code MCP/config.
+The health check verifies Python dependencies, repository files, topics root,
+v5 MCP entrypoints, project-scope consistency across Claude/Kimi/Codex, and
+local stale residue that could route an agent back to old paths or legacy MCP.
 
-## Agent-specific details
+## Agent Details
 
 - [Claude Code](INSTALL_CLAUDE_CODE.md)
 - [Kimi Code](INSTALL_KIMI_CODE.md)
-
-Additional agent adapters are documented in `adapters/`. They are not
-yet integrated into the `aitp-pm.py` one-click installer.
-
-## Next steps
+- [Codex](INSTALL_CODEX.md)
 
 After install verification, continue with:
-- [QUICKSTART.md](QUICKSTART.md) — your first research topic
-- [README.md](../README.md) — protocol overview
+- [QUICKSTART.md](QUICKSTART.md)
+- [README.md](../README.md)

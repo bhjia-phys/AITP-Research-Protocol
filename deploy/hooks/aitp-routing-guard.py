@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""PreToolUse guard for AITP routing enforcement.
+"""PreToolUse guard for AITP v5 routing discipline.
 
-Narrow scope: only blocks Write/Edit to files inside the AITP topics directory
-unless routing has been confirmed via marker.
-
-Always allows: MCP tools, Read, Grep, Glob, Bash, and writes outside aitp-topics/.
+Scope: only blocks Write/Edit to files inside the configured AITP topics
+directory unless routing has been confirmed via a short-lived marker.
 """
 
 from __future__ import annotations
@@ -30,9 +28,8 @@ def safe_json_loads(raw: str):
         return json.loads(raw)
     except json.JSONDecodeError:
         try:
-            import re as _re
-            fixed = _re.sub(r'\\([^"\\/bfnrtu])', r'\\\\\1', raw)
-            fixed = _re.sub(r'\\u(?![0-9a-fA-F]{4})', r'\\\\u', fixed)
+            fixed = re.sub(r'\\([^"\\/bfnrtu])', r'\\\\\1', raw)
+            fixed = re.sub(r'\\u(?![0-9a-fA-F]{4})', r'\\\\u', fixed)
             return json.loads(fixed)
         except json.JSONDecodeError:
             return None
@@ -78,20 +75,22 @@ def main() -> int:
         return 0
 
     normalized = file_path.replace("\\", "/")
-    if AITP_TOPICS_DIR not in normalized:
+    if AITP_TOPICS_DIR not in normalized and AITP_TOPICS_FULL.as_posix() not in normalized:
         return 0
 
     if has_routed_this_session():
         return 0
 
+    marker = get_marker_path()
     message = (
-        f"AITP WRITE GUARD: You are about to write to an AITP topic file:\n"
+        "AITP V5 WRITE GUARD: You are about to write to an AITP topic file:\n"
         f"  {file_path}\n\n"
-        f"Before modifying AITP topic files, you MUST:\n"
-        f"1. Call mcp__aitp__aitp_get_execution_brief to check current state\n"
-        f"2. Follow the protocol workflow — use MCP tools for state changes\n"
-        f"3. Create routing marker: Bash 'echo routed > {get_marker_path()}'\n\n"
-        f"This ensures AITP protocol consistency. For non-AITP files, no restriction applies."
+        "Before modifying AITP topic files, you MUST:\n"
+        "1. Get a v5 execution brief if a v5 session id is known.\n"
+        "2. Otherwise migrate or bind the legacy topic into v5 first.\n"
+        "3. Use typed v5 records for state changes, not legacy stage files.\n"
+        f"4. Create routing marker after routing is confirmed: echo routed > {marker}\n\n"
+        "This guard protects protocol consistency. Non-AITP files are not restricted."
     )
 
     payload = {

@@ -38,7 +38,7 @@ TEMPLATES_DIR = REPO_ROOT / "deploy" / "templates"
 INSTALL_DIR = Path.home() / ".aitp"
 RECORD_PATH = INSTALL_DIR / "install-record.json"
 MCP_ENTRYPOINT = "brain/v5/native_mcp.py"
-LEGACY_MCP_ENTRYPOINT = "brain/native_mcp.py"
+LEGACY_MCP_ENTRYPOINTS = ("brain/native_mcp.py", "brain/mcp_server.py")
 
 AGENTS = ("claude-code", "kimi-code", "codex")
 AGENT_CHOICES = (*AGENTS, "all")
@@ -206,6 +206,11 @@ def _recorded_install_path(raw: str) -> Path | None:
     return Path(value.split(" (", 1)[0])
 
 
+def _record_install_files(paths: list[str]) -> list[str]:
+    """Keep install records to durable deployed files, not cleanup log entries."""
+    return [str(path) for path in paths if not str(path).startswith("- stale:")]
+
+
 def _check_mcp_json(path: Path, issues: list[str], label: str) -> None:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -213,10 +218,21 @@ def _check_mcp_json(path: Path, issues: list[str], label: str) -> None:
         issues.append(f"{label} cannot parse MCP json: {exc}")
         print(f"      {path.name}: PARSE ERROR")
         return
-    has_aitp = "aitp" in data.get("mcpServers", {})
+    servers = data.get("mcpServers", {})
+    has_aitp = "aitp" in servers
     if not has_aitp:
         issues.append(f"{label} missing aitp MCP entry")
     print(f"      {path.name} aitp MCP entry: {'OK' if has_aitp else 'MISSING'}")
+    if has_aitp:
+        entry_text = json.dumps(servers.get("aitp", {}), sort_keys=True)
+        has_v5 = _has_v5_mcp_entrypoint(entry_text)
+        has_legacy = _has_legacy_mcp_entrypoint(entry_text)
+        if not has_v5:
+            issues.append(f"{label} aitp MCP entry does not point to {MCP_ENTRYPOINT}")
+        if has_legacy:
+            issues.append(f"{label} aitp MCP entry still references a legacy MCP entrypoint")
+        print(f"      {path.name} v5 MCP entrypoint: {'OK' if has_v5 else 'MISSING'}")
+        print(f"      {path.name} legacy MCP entrypoint: {'ABSENT' if not has_legacy else 'PRESENT'}")
 
 
 def _check_agent_toml(path: Path, issues: list[str], label: str) -> None:
@@ -232,11 +248,15 @@ def _check_agent_toml(path: Path, issues: list[str], label: str) -> None:
     else:
         section = "[mcp_servers.aitp]"
     has_section = section in content
-    has_entrypoint = _has_supported_mcp_entrypoint(content)
+    has_entrypoint = _has_v5_mcp_entrypoint(content)
+    has_legacy = _has_legacy_mcp_entrypoint(content)
     if not (has_section and has_entrypoint):
-        issues.append(f"{label} config.toml missing supported aitp MCP config")
+        issues.append(f"{label} config.toml missing v5 aitp MCP config")
+    if has_legacy:
+        issues.append(f"{label} config.toml still references a legacy MCP entrypoint")
     status = "OK" if has_section and has_entrypoint else "NOT CONFIGURED"
     print(f"      config.toml {section}: {status}")
+    print(f"      config.toml legacy MCP entrypoint: {'ABSENT' if not has_legacy else 'PRESENT'}")
 
 
 def _check_claude_settings(
@@ -261,16 +281,72 @@ def _check_claude_settings(
         print(f"      settings.json aitp MCP entry: {'OK' if has_mcp else 'MISSING'}")
 
     hooks = settings.get("hooks", {})
-    for event in ("SessionStart", "UserPromptSubmit", "PreToolUse"):
-        has_aitp = any(
-            "aitp" in str(h.get("command", "")).lower()
-            or "run-hook" in str(h.get("command", "")).lower()
-            for block in hooks.get(event, [])
-            for h in block.get("hooks", [])
+    hook_commands = [
+        str(h.get("command", ""))
+        for blocks in hooks.values()
+        for block in blocks
+        for h in block.get("hooks", [])
+    ]
+    has_v5_safe_hook = any(
+        token in command
+        for command in hook_commands
+        for token in (
+            "aitp-keyword-router.py",
+            "aitp-routing-guard.py",
+            "aitp_v5_claude_hook.py",
         )
-        if not has_aitp:
-            issues.append(f"{label} settings.json hooks.{event} not configured")
-        print(f"      settings.json hooks.{event}: {'OK' if has_aitp else 'NOT CONFIGURED'}")
+    )
+    has_legacy_stage_hook = any(
+        token in command
+        for command in hook_commands
+        for token in ("session-start", "aitp_get_execution_brief", "brain/mcp_server.py")
+    )
+    if not has_v5_safe_hook:
+        issues.append(f"{label} settings.json missing v5-safe AITP hook")
+    if has_legacy_stage_hook:
+        issues.append(f"{label} settings.json still contains legacy stage hook command")
+    print(f"      settings.json v5-safe hook: {'OK' if has_v5_safe_hook else 'NOT CONFIGURED'}")
+    print(f"      settings.json legacy stage hooks: {'ABSENT' if not has_legacy_stage_hook else 'PRESENT'}")
+
+
+def _check_project_local_residue(target_root: Path, issues: list[str]) -> None:
+    """Detect ignored project files that can silently route hosts to old wiring."""
+    checks = [
+        (target_root / ".claude" / "settings.local.json", "Claude settings.local.json"),
+        (target_root / ".claude" / "hooks" / "hooks.json", "Claude hooks/hooks.json"),
+        (target_root / ".kimi" / "config.toml", "Kimi config.toml"),
+        (target_root / ".codex" / "config.toml", "Codex config.toml"),
+    ]
+    expected_topics = _norm_install_value(str(target_root / "research" / "aitp-topics"))
+    expected_project = _norm_install_value(str(target_root))
+    stale_tokens = (
+        "D:/BaiduSyncdisk/Theoretical-Physics",
+        "D:\\BaiduSyncdisk\\Theoretical-Physics",
+        "qsgw-headwing-update-librpa-current-20260525",
+        "brain/mcp_server.py",
+        "brain/native_mcp.py",
+        "aitp_get_execution_brief(",
+    )
+    for path, label in checks:
+        if not path.exists() or not path.is_file():
+            continue
+        try:
+            content = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            issues.append(f"{label} cannot be read: {exc}")
+            continue
+        stale_hits = [token for token in stale_tokens if token in content]
+        if stale_hits:
+            issues.append(f"{label} contains stale AITP/path tokens: {', '.join(stale_hits)}")
+            print(f"      {label} stale tokens: PRESENT")
+        elif expected_topics and "AITP_TOPICS_ROOT" in content and expected_topics not in _norm_install_value(content):
+            issues.append(f"{label} has AITP_TOPICS_ROOT outside expected project topics root")
+            print(f"      {label} topics root: DRIFT")
+        elif expected_project and str(path).endswith("hooks.json") and expected_project not in _norm_install_value(content):
+            issues.append(f"{label} hook commands do not point at project-local .claude hooks")
+            print(f"      {label} project-local hooks: DRIFT")
+        else:
+            print(f"      {label}: OK")
 
 
 def _doctor_check_recorded_installs(installs: dict, issues: list[str]) -> None:
@@ -333,6 +409,7 @@ def _doctor_check_recorded_installs(installs: dict, issues: list[str]) -> None:
             issues.append(f"No recorded install for {agent}")
 
     if project_records:
+        first_target_root = ""
         for agent in AGENTS:
             if f"{agent}:project" not in project_records:
                 issues.append(f"No project-scope install recorded for {agent}")
@@ -346,6 +423,8 @@ def _doctor_check_recorded_installs(installs: dict, issues: list[str]) -> None:
                 if not value:
                     issues.append(f"{key} missing {field}")
                     continue
+                if field == "TARGET_ROOT" and not first_target_root:
+                    first_target_root = variables.get(field, "")
                 if field not in baselines:
                     baselines[field] = (key, value)
                     continue
@@ -357,6 +436,9 @@ def _doctor_check_recorded_installs(installs: dict, issues: list[str]) -> None:
                     )
         if not any(issue.startswith("Project install mismatch") for issue in issues):
             print("\n    Project-scope consistency: OK")
+        if first_target_root:
+            print("\n    Project-local residue checks:")
+            _check_project_local_residue(Path(first_target_root), issues)
 
     print("\n  Legacy user-scope host checks: skipped (install record is authoritative).")
 
@@ -402,8 +484,13 @@ def _mcp_entrypoint(repo_root: str) -> str:
     return f"{repo_root}/{MCP_ENTRYPOINT}"
 
 
-def _has_supported_mcp_entrypoint(text: str) -> bool:
-    return MCP_ENTRYPOINT in text or LEGACY_MCP_ENTRYPOINT in text
+def _has_v5_mcp_entrypoint(text: str) -> bool:
+    return MCP_ENTRYPOINT in text.replace("\\", "/")
+
+
+def _has_legacy_mcp_entrypoint(text: str) -> bool:
+    normalized = text.replace("\\", "/")
+    return any(entrypoint in normalized for entrypoint in LEGACY_MCP_ENTRYPOINTS)
 
 
 def _v5_topics_root_for(legacy_topics_root: Path) -> Path | None:
@@ -540,14 +627,23 @@ def _merge_claude_settings(settings_path: Path, variables: dict, remove: bool = 
             pass
 
     if not aitp_hooks:
-        # Fallback: hardcoded minimum
+        # Fallback: v5-safe routing guards only. Session-specific lifecycle
+        # hooks require an explicit v5 session id and are not installed here.
         hooks_dir = variables["CLAUDE_USER_DIR"].replace("\\", "/") + "/hooks"
         aitp_hooks = {
-            "SessionStart": [{
-                "matcher": "startup|clear|compact",
+            "UserPromptSubmit": [{
+                "matcher": "",
                 "hooks": [{
                     "type": "command",
-                    "command": f'"{hooks_dir}/run-hook.cmd" session-start',
+                    "command": f'python "{hooks_dir}/aitp-keyword-router.py"',
+                    "async": False,
+                }],
+            }],
+            "PreToolUse": [{
+                "matcher": "Write|Edit",
+                "hooks": [{
+                    "type": "command",
+                    "command": f'python "{hooks_dir}/aitp-routing-guard.py"',
                     "async": False,
                 }],
             }],
@@ -834,6 +930,27 @@ def _merge_kimi_config_toml(
     _atomic_write(config_path, result)
 
 
+def _remove_kimi_v5_hook_block(config_path: Path) -> bool:
+    """Remove session-specific Kimi v5 hooks from a generic project install."""
+    if not config_path.exists():
+        return False
+    text = config_path.read_text(encoding="utf-8")
+    begin_marker = "# BEGIN AITP V5 KIMI HOOKS"
+    end_marker = "# END AITP V5 KIMI HOOKS"
+    begin = text.find(begin_marker)
+    if begin == -1:
+        return False
+    end = text.find(end_marker, begin)
+    if end == -1:
+        return False
+    end += len(end_marker)
+    cleaned = (text[:begin] + text[end:]).strip()
+    if cleaned:
+        cleaned += "\n"
+    _atomic_write(config_path, cleaned)
+    return True
+
+
 # ---------------------------------------------------------------------------
 # Deploy: Claude Code
 # ---------------------------------------------------------------------------
@@ -864,9 +981,11 @@ def _discover_deploy_skills() -> list[tuple[Path, str]]:
                 seen.add(name)
                 results.append((p, f"{name}/SKILL.md"))
 
-    # Protocol skills from repo skills/ (plain, no template vars)
+    # Legacy stage skills from repo skills/ are not deployed by default because
+    # they mention L0/L1/L3/L4 and legacy tool names. Keep them available only
+    # for explicit compatibility installs.
     repo_skills_dir = REPO_ROOT / "skills"
-    if repo_skills_dir.is_dir():
+    if repo_skills_dir.is_dir() and _install_legacy_stage_skills():
         for p in sorted(repo_skills_dir.glob("*.md")):
             name = p.stem
             if name not in seen:
@@ -874,6 +993,14 @@ def _discover_deploy_skills() -> list[tuple[Path, str]]:
                 results.append((p, f"{name}/SKILL.md"))
 
     return results
+
+
+def _install_legacy_stage_skills() -> bool:
+    return os.environ.get("AITP_INSTALL_LEGACY_STAGE_SKILLS", "").lower() in {"1", "true", "yes"}
+
+
+def _install_legacy_stage_hooks() -> bool:
+    return os.environ.get("AITP_INSTALL_LEGACY_STAGE_HOOKS", "").lower() in {"1", "true", "yes"}
 
 
 def _discover_deploy_hooks() -> list[tuple[Path, str]]:
@@ -897,12 +1024,21 @@ def _discover_deploy_hooks() -> list[tuple[Path, str]]:
                     results.append((p, dst_name))
 
     # Repo hooks from hooks/ (need brain path injection)
+    v5_repo_hooks = {
+        "aitp_v5_adapter_event_runner.py",
+        "aitp_v5_claude_hook.py",
+        "aitp_v5_hook.py",
+        "aitp_v5_kimi_hook.py",
+    }
+
     repo_hooks_dir = REPO_ROOT / "hooks"
     if repo_hooks_dir.is_dir():
         for p in sorted(repo_hooks_dir.iterdir()):
             if p.name == "__init__.py" or p.suffix == ".pyc":
                 continue
             if p.is_file():
+                if not _install_legacy_stage_hooks() and p.name not in v5_repo_hooks:
+                    continue
                 # .py files get underscore→hyphen rename; other files keep original name
                 if p.suffix == ".py":
                     dst_name = p.stem.replace("_", "-") + ".py"
@@ -917,6 +1053,8 @@ def _discover_deploy_hooks() -> list[tuple[Path, str]]:
 
 def _discover_deploy_runners() -> list[tuple[Path, str]]:
     """Discover runner scripts (.cmd, .sh) from deploy/runners/."""
+    if not _install_legacy_stage_hooks():
+        return []
     runners_dir = REPO_ROOT / "deploy" / "runners"
     if not runners_dir.is_dir():
         return []
@@ -1072,10 +1210,13 @@ def _deploy_claude_code(
         deployed.append(str(dst))
 
     # 3. Deploy config (.json)
+    config_vars = variables
+    if scope == "project":
+        config_vars = {**variables, "CLAUDE_USER_DIR": str(base).replace("\\", "/")}
     for src, dst_name in all_configs:
         if not src.exists():
             continue
-        content = _fill(src.read_text(encoding="utf-8"), variables)
+        content = _fill(src.read_text(encoding="utf-8"), config_vars)
         dst = hooks_dir / dst_name
         _atomic_write(dst, content)
         deployed.append(str(dst))
@@ -1099,12 +1240,13 @@ def _deploy_claude_code(
         except OSError:
             print(f"    SKIP {dst_rel} (cannot write to {dst.parent} — junction/mount point)")
 
-    # 5. Sync protocol skills to workspace skills-shared/ (flat .md files)
+    # 5. Sync v5 gateway skills to workspace skills-shared/. Legacy stage
+    # skills stay in the protocol repo unless explicitly requested.
     ws_skills = _discover_workspace_skills_root()
     if ws_skills:
         deployed_ws = 0
         repo_skills_dir = REPO_ROOT / "skills"
-        if repo_skills_dir.is_dir():
+        if repo_skills_dir.is_dir() and _install_legacy_stage_skills():
             for src in sorted(repo_skills_dir.glob("*.md")):
                 dst = ws_skills / src.name
                 dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
@@ -1118,6 +1260,13 @@ def _deploy_claude_code(
                 dst_dir.mkdir(parents=True, exist_ok=True)
                 (dst_dir / "SKILL.md").write_text(content, encoding="utf-8")
                 deployed_ws += 1
+        if not _install_legacy_stage_skills():
+            for existing in ws_skills.iterdir():
+                if existing.name.startswith(("skill-", "aitp-push-after-feature")):
+                    if existing.is_dir():
+                        shutil.rmtree(existing, ignore_errors=True)
+                    elif existing.is_file():
+                        existing.unlink()
         if deployed_ws:
             print(f"  Synced {deployed_ws} skills to workspace {ws_skills}")
             deployed.append(f"{ws_skills} ({deployed_ws} skills synced)")
@@ -1142,11 +1291,19 @@ def _deploy_claude_code(
                 pass
         if not project_hooks:
             project_hooks = {
-                "SessionStart": [{
-                    "matcher": "startup|clear|compact",
+                "UserPromptSubmit": [{
+                    "matcher": "",
                     "hooks": [{
                         "type": "command",
-                        "command": f'"{hooks_dir_str}/run-hook.cmd" session-start',
+                        "command": f'python "{hooks_dir_str}/aitp-keyword-router.py"',
+                        "async": False,
+                    }],
+                }],
+                "PreToolUse": [{
+                    "matcher": "Write|Edit",
+                    "hooks": [{
+                        "type": "command",
+                        "command": f'python "{hooks_dir_str}/aitp-routing-guard.py"',
                         "async": False,
                     }],
                 }],
@@ -1167,7 +1324,7 @@ def _deploy_claude_code(
     # 7. Clean up stale AITP files (deployed files with no matching source)
     # Only remove files that match AITP naming patterns to avoid touching
     # skills/hooks installed by other tools.
-    _AITP_HOOK_PREFIXES = ("aitp-", "hook-", "compact", "session-start", "stop")
+    _AITP_HOOK_PREFIXES = ("aitp-", "hook-", "compact", "run-hook", "session-start", "stop")
     _AITP_SKILL_PREFIXES = ("aitp-", "skill-", "using-aitp")
 
     expected_hook_names = set()
@@ -1284,6 +1441,8 @@ def _deploy_kimi_code(
         variables["REPO_ROOT"],
         variables.get("TOPICS_ROOT", ""),
     )
+    if scope == "project" and _remove_kimi_v5_hook_block(config_path):
+        deployed.append(f"{config_path} (session-specific hooks removed)")
     deployed.append(f"{config_path} ([mcp.servers.aitp] merged)")
 
     return deployed
@@ -1368,7 +1527,7 @@ def _discover_codex_skills() -> list[tuple[Path, str, bool]]:
         seen.add(name)
 
     repo_skills_dir = REPO_ROOT / "skills"
-    if repo_skills_dir.is_dir():
+    if repo_skills_dir.is_dir() and _install_legacy_stage_skills():
         for src in sorted(repo_skills_dir.glob("*.md")):
             name = src.stem
             if name in seen:
@@ -1455,6 +1614,13 @@ def _deploy_codex_app(
             except OSError:
                 print(f"    SKIP {skill_name}/SKILL.md (cannot write to {dst.parent})")
 
+        expected_skill_dirs = {skill_name for _, skill_name, _ in skills}
+        for existing in root.iterdir():
+            if existing.is_dir() and existing.name not in expected_skill_dirs:
+                if existing.name.startswith(("aitp-", "skill-", "using-aitp")):
+                    shutil.rmtree(existing, ignore_errors=True)
+                    deployed.append(f"- stale: {existing}")
+
         mcp_path = root.parent / "mcp.json"
         _write_mcp_json(
             mcp_path,
@@ -1523,7 +1689,7 @@ def cmd_install(args) -> None:
             "timestamp": datetime.now().isoformat(timespec="seconds"),
             "package_version": pkg_ver,
             "variables": {k: v for k, v in variables.items()},
-            "files": paths,
+            "files": _record_install_files(paths),
         }
 
         for p in paths:
@@ -1653,7 +1819,7 @@ def cmd_update(args) -> None:
                 "timestamp": datetime.now().isoformat(timespec="seconds"),
                 "package_version": pkg_ver,
                 "variables": {k: v for k, v in variables.items()},
-                "files": paths,
+                "files": _record_install_files(paths),
             }
 
             for p in paths:
@@ -1793,7 +1959,7 @@ def cmd_upgrade(args) -> None:
             "timestamp": datetime.now().isoformat(timespec="seconds"),
             "package_version": new_ver,
             "variables": {k: v for k, v in variables.items()},
-            "files": paths,
+            "files": _record_install_files(paths),
         }
         print(f"  Done. {len(paths)} items synced.")
 
@@ -1877,10 +2043,10 @@ def cmd_doctor(args) -> None:
     # 3. Repo files
     print(f"\n  Repo root: {REPO_ROOT}")
     critical_files = [
-        "brain/native_mcp.py",
         "brain/v5/native_mcp.py",
-        "brain/mcp_server.py",
-        "brain/state_model.py",
+        "brain/v5/mcp_tools.py",
+        "brain/v5/brief.py",
+        "brain/v5/models.py",
         "brain/PROTOCOL.md",
     ]
     for f in critical_files:
@@ -1888,6 +2054,11 @@ def cmd_doctor(args) -> None:
         status = "OK" if p.exists() else "MISSING"
         if status == "MISSING":
             issues.append(f"Missing repo file: {f}")
+        print(f"    {f}: {status}")
+    legacy_files = ["brain/native_mcp.py", "brain/mcp_server.py", "brain/state_model.py"]
+    for f in legacy_files:
+        p = REPO_ROOT / f
+        status = "present (compatibility)" if p.exists() else "absent"
         print(f"    {f}: {status}")
 
     # 4. Topics root
@@ -1993,18 +2164,32 @@ def cmd_doctor(args) -> None:
         try:
             settings = json.loads(settings_path.read_text(encoding="utf-8"))
             hooks = settings.get("hooks", {})
-            aitp_events = ["SessionStart", "UserPromptSubmit", "PreToolUse"]
-            for event in aitp_events:
-                has_aitp = any(
-                    "aitp" in str(h.get("command", "")).lower() or
-                    "run-hook" in str(h.get("command", ""))
-                    for block in hooks.get(event, [])
-                    for h in block.get("hooks", [])
+            hook_commands = [
+                str(h.get("command", ""))
+                for blocks in hooks.values()
+                for block in blocks
+                for h in block.get("hooks", [])
+            ]
+            has_v5_safe_hook = any(
+                token in command
+                for command in hook_commands
+                for token in (
+                    "aitp-keyword-router.py",
+                    "aitp-routing-guard.py",
+                    "aitp_v5_claude_hook.py",
                 )
-                status = "OK" if has_aitp else "NOT CONFIGURED"
-                if not has_aitp:
-                    issues.append(f"Claude Code {event} hook not configured")
-                print(f"    settings.json hooks.{event}: {status}")
+            )
+            has_legacy_stage_hook = any(
+                token in command
+                for command in hook_commands
+                for token in ("session-start", "aitp_get_execution_brief", "brain/mcp_server.py")
+            )
+            if not has_v5_safe_hook:
+                issues.append("Claude Code v5-safe hook not configured")
+            if has_legacy_stage_hook:
+                issues.append("Claude Code settings.json still contains legacy stage hook command")
+            print(f"    settings.json v5-safe hook: {'OK' if has_v5_safe_hook else 'NOT CONFIGURED'}")
+            print(f"    settings.json legacy stage hooks: {'ABSENT' if not has_legacy_stage_hook else 'PRESENT'}")
         except (json.JSONDecodeError, OSError) as e:
             issues.append(f"Cannot parse settings.json: {e}")
             print(f"    settings.json: PARSE ERROR ({e})")
@@ -2093,7 +2278,9 @@ def cmd_doctor(args) -> None:
             try:
                 content = config_path.read_text(encoding="utf-8")
                 has_aitp = "[mcp_servers.aitp]" in content
-                has_cwd = "cwd =" in content and _has_supported_mcp_entrypoint(content)
+                has_v5 = _has_v5_mcp_entrypoint(content)
+                has_legacy = _has_legacy_mcp_entrypoint(content)
+                has_cwd = "cwd =" in content and has_v5 and not has_legacy
                 status = "OK" if has_aitp and has_cwd else "NOT CONFIGURED"
                 codex_config_ready = codex_config_ready or (has_aitp and has_cwd)
             except OSError:

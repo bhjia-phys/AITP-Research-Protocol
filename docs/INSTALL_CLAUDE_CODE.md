@@ -1,12 +1,8 @@
 # Install Claude Code Adapter
 
-Claude Code uses AITP through SessionStart bootstrap plus a native AITP
-MCP server.
-
-## Prerequisites
-
-- Claude Code installed locally
-- Python 3.10+
+Claude Code should use AITP through the v5 native MCP server and v5-safe
+project hooks. Legacy SessionStart/stage hooks are compatibility-only and are
+not installed by default.
 
 ## Install
 
@@ -16,152 +12,104 @@ From the AITP repo:
 python scripts/aitp-pm.py install --agent claude-code
 ```
 
-Or if `aitp` is already on PATH:
+For a research workspace, prefer project scope:
 
 ```bash
-aitp install --agent claude-code
+python scripts/aitp-pm.py install --agent claude-code --scope project \
+  --target-root /path/to/workspace \
+  --topics-root /path/to/workspace/research/aitp-topics
 ```
 
-Options:
+Project-scope installs write under `<workspace>/.claude/` and register MCP in
+`<workspace>/.mcp.json`. User-scope installs write under `~/.claude/`.
 
-```bash
-aitp install --agent claude-code --scope user      # User-level (default)
-aitp install --agent claude-code --scope project    # Project-level
-aitp install --agent claude-code --topics-root /path/to/topics
-```
+## What Gets Installed
 
-## What gets installed
+Default v5 install:
+- `hooks/aitp-keyword-router.py`: keyword/topic orientation only
+- `hooks/aitp-routing-guard.py`: blocks direct topic-file writes until v5
+  routing is confirmed
+- `hooks/aitp-v5-claude-hook.py` and related `aitp-v5-*` adapter hooks for
+  explicit session-bound lifecycle/pre-tool/post-tool integration
+- `skills/using-aitp/SKILL.md`
+- `skills/aitp-runtime/SKILL.md`
+- `settings.json` hook wiring for the v5-safe router/guard
+- project `.mcp.json` or user MCP config pointing at `brain/v5/native_mcp.py`
 
-**User scope** (`~/.claude/`):
-- `hooks/session-start.py`, `hooks/compact.py`, `hooks/stop.py` — lifecycle hooks
-- `hooks/run-hook.cmd` — Windows hook launcher
-- `hooks/aitp-keyword-router.py` — routes theory keywords at prompt submit
-- `hooks/aitp-routing-guard.py` — prevents bypassing AITP for topic edits
-- `skills/using-aitp/SKILL.md` — entry skill for theory requests
-- `skills/aitp-runtime/SKILL.md` — protocol execution loop
-- `settings.json` — merged hook configuration (SessionStart, UserPromptSubmit, PreToolUse)
-
-**Project scope** (`<workspace>/.claude/`):
-- Same hooks and skills under the workspace
-- `.mcp.json` — MCP server registration for the project
+The old `session-start.py`, `compact.py`, `stop.py`, `aitp-l4-watchdog.py`, and
+`run-hook.cmd` lifecycle stack is not deployed by default. Use
+`AITP_INSTALL_LEGACY_STAGE_HOOKS=1` only when deliberately maintaining an old
+L0/L1/L3/L4 Markdown workspace.
 
 ## Verify
 
 ```bash
-aitp doctor
+python scripts/aitp-pm.py doctor
+python scripts/aitp-pm.py status
 ```
 
-This checks:
-- Hook files present and match canonical versions
-- Skills deployed correctly
-- `settings.json` wires the expected SessionStart, UserPromptSubmit, PreToolUse hooks
-- MCP server registration is correct
-- Topics root is configured
+The doctor check requires:
+- the active MCP entrypoint to be `brain/v5/native_mcp.py`
+- `settings.json` to contain v5-safe hook commands
+- no legacy stage hook command in active settings
+- no local project residue pointing at old paths or legacy MCP
 
-Or inspect directly:
+## How It Works
 
-```bash
-ls ~/.claude/hooks/
-ls ~/.claude/skills/
-claude mcp list
-```
+1. `UserPromptSubmit` provides orientation when AITP/theory keywords appear.
+2. The agent binds or migrates into a v5 topic/session before research work.
+3. `PreToolUse` prevents direct writes into AITP topic files unless v5 routing
+   has been confirmed.
+4. Research execution uses `aitp_v5_get_execution_brief` and typed v5 records.
+5. Summaries, hooks, and old Markdown stage fields are orientation-only.
 
-## How it works
+## Session-Bound v5 Hook Settings
 
-1. **SessionStart**: Claude Code loads `using-aitp` skill at startup
-2. **UserPromptSubmit**: AITP keyword router checks if the request is theory research
-3. **PreToolUse**: Routing guard prevents Write/Edit to AITP topic files outside the protocol
-4. **MCP tools**: `mcp__aitp__aitp_*` tools available for structured protocol actions
-
-## AITP v5 hook settings
-
-Repo-backed v5 workspaces can generate a Claude Code settings template from the
-typed adapter packet:
+For a specific v5 session, the typed adapter can generate Claude Code hook
+settings:
 
 ```powershell
-aitp-v5 --base <workspace> adapter hook-settings claude-code <session-id> --output .claude/settings.local.json
+python -m brain.v5.cli --base <topics-root> adapter hook-settings claude-code <session-id> --output .claude/settings.local.json
 ```
 
-To preserve existing Claude Code settings and append only missing AITP v5 hook
-entries, use the merge installer:
+To merge session-bound settings into an existing settings file:
 
 ```powershell
-aitp-v5 --base <workspace> adapter install-hooks claude-code <session-id> --settings .claude/settings.local.json
+python -m brain.v5.cli --base <topics-root> adapter install-hooks claude-code <session-id> --settings .claude/settings.local.json
 ```
 
-The generated settings use Claude Code `PreToolUse` and `PostToolUse` hook
-entries that call:
+The generated hook entries call `hooks/aitp_v5_claude_hook.py` for
+`SessionStart`, `PreToolUse`, and `PostToolUse`. These hooks emit process
+guards and trace events. They do not update claim trust; trust changes still
+require kernel preflight, validation, and human checkpoints.
 
-```text
-hooks/aitp_v5_claude_hook.py
-```
+## Manual MCP Setup
 
-`PostToolUse` persists process trace events through
-`.aitp/runtime/hook_trace_events.jsonl`. These events are durable process
-history, not evidence records and not claim-confidence updates.
-
-`PreToolUse` maps Claude tool JSON into a v5 typed pre-tool decision. Destructive,
-remote, or expensive Bash commands produce `permissionDecision=deny` with a
-required human checkpoint; ordinary web/literature tool use produces
-`permissionDecision=allow` plus a logged AITP hook decision. AITP MCP calls are
-also mapped into v5 actions: unqualified direct
-`aitp_v5_apply_trust_update` calls are denied with
-`required_actions=["aitp_v5_preflight_trust_update"]`; a direct trust apply is
-only allowed through the hook when the tool input carries both a trusted
-`source_kind` and a `trust-preflight-*` token. The kernel still validates the
-token during `aitp_v5_apply_trust_update`. Typed writes such as
-`aitp_v5_record_evidence` are allowed and logged as `record_evidence`.
-Validation and L2 promotion MCP calls are checked against the active v5
-workspace context before the tool runs: the hook resolves the typed claim,
-evidence refs, and linked or requested code-state records and reuses kernel
-policy to warn or deny.
-This context-aware decision is also available outside Claude through the shared
-public surface:
-
-```text
-aitp-v5 --base <workspace> policy pre-tool <action> --session <session-id> [--claim <claim-id>]
-aitp_v5_evaluate_pre_tool_policy(base, session_id, action, claim_id, ...)
-```
-
-The returned `pre_tool_policy_decision` is a permission/orientation payload only:
-it records `truth_source=typed_records`, keeps `summary_inputs_trusted=false`,
-and cannot update kernel state or claim trust. Its `policy_reasons` field lists
-machine-readable policy IDs and severities for review and adapter routing.
-
-MCP clients can call:
-
-```text
-aitp_v5_write_claude_code_hook_settings(base, session_id, output_path)
-aitp_v5_install_claude_code_hook_settings(base, session_id, settings_path)
-```
-
-The expected UX:
-- Natural-language theory requests enter AITP before substantive work
-- `Continue this topic` routes to the current topic automatically
-- Ordinary topic work stays in a light runtime profile
-- The agent follows the protocol stages guided by `aitp_get_execution_brief`
-
-## Manual MCP setup
-
-If you prefer to wire the MCP server manually, add to `~/.claude/mcp.json`:
+If you wire MCP manually, use the v5 entrypoint:
 
 ```json
 {
   "mcpServers": {
     "aitp": {
-      "command": "python",
-      "args": ["/path/to/AITP-Research-Protocol/brain/mcp_server.py"]
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "pyyaml",
+        "--with",
+        "jsonschema",
+        "--with",
+        "fastmcp",
+        "python",
+        "/path/to/AITP-Research-Protocol/brain/v5/native_mcp.py"
+      ],
+      "cwd": "/path/to/AITP-Research-Protocol",
+      "env": {
+        "AITP_TOPICS_ROOT": "/path/to/workspace/research/aitp-topics"
+      }
     }
   }
 }
 ```
 
-Then `/reload-plugins` in Claude Code.
-
-## Remove
-
-```bash
-aitp uninstall --agent claude-code
-```
-
-Or see [UNINSTALL.md](UNINSTALL.md) for manual cleanup.
+Do not install `brain/mcp_server.py` as the active MCP server for v5 work.
