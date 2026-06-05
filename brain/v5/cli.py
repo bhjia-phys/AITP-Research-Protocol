@@ -26,6 +26,7 @@ from brain.v5.cli_research_state import add_research_state_parser, dispatch_rese
 from brain.v5.cli_validation import add_validation_parser, dispatch_validation_command
 from brain.v5.cli_vnext import VNEXT_COMMANDS, add_vnext_parsers, dispatch_vnext_command
 from brain.v5.cli_goal import add_goal_parser, dispatch_goal_command
+from brain.v5.process_graph import build_process_graph_slice
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.physics_objects import record_object_relation, record_physics_object
 from brain.v5.references import record_reference_location
@@ -81,6 +82,10 @@ def _build_parser() -> argparse.ArgumentParser:
     sb.add_argument("--interaction-profile", default="collaborator"); sb.add_argument("--interaction-steering", default="")
 
     sp.add_parser("brief").add_argument("session_id")
+
+    gp = sp.add_parser("graph"); gs = gp.add_subparsers(dest="graph_command", required=True)
+    sl = gs.add_parser("slice"); sl.add_argument("session_id")
+    sl.add_argument("--claim", default="", dest="claim_id"); sl.add_argument("--limit", type=int, default=80)
 
     rp = sp.add_parser("risk"); rs = rp.add_subparsers(dest="risk_command", required=True)
     rs.add_parser("assess").add_argument("claim_id")
@@ -266,6 +271,11 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             interaction_profile=args.interaction_profile, interaction_steering=args.interaction_steering))}
     if args.command == "brief":
         return require_valid_public_surface("execution_brief", build_execution_brief(ws, args.session_id))
+    if args.command == "graph" and args.graph_command == "slice":
+        return require_valid_public_surface(
+            "process_graph_slice",
+            build_process_graph_slice(ws, args.session_id, claim_id=args.claim_id, limit=args.limit),
+        )
     if args.command == "risk" and args.risk_command == "assess":
         return {"ok": True, "claim_id": args.claim_id, "risk_assessment": asdict(assess_claim_risk(get_claim(ws, args.claim_id)))}
 

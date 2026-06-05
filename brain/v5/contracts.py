@@ -152,6 +152,16 @@ def require_valid_source_reconstruction_audit(payload: dict[str, Any]) -> dict[s
     from brain.v5.source_reconstruction_contracts import require_valid_source_reconstruction_audit as _require; return _require(payload)
 
 
+def validate_process_graph_slice(payload: dict[str, Any], *, path: str = "process_graph_slice") -> ContractResult:
+    from brain.v5.process_graph_contracts import validate_process_graph_slice as _validate
+    return _validate(payload, path=path)
+
+
+def require_valid_process_graph_slice(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.process_graph_contracts import require_valid_process_graph_slice as _require
+    return _require(payload)
+
+
 def validate_trust_update_preflight(payload: dict[str, Any], *, path: str = "trust_preflight") -> ContractResult:
     """Validate a public trust-update preflight payload."""
 

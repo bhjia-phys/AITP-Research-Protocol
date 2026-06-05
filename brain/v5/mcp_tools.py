@@ -27,6 +27,7 @@ from brain.v5.models import CodeStateRecord, TrustUpdateRequest
 from brain.v5.pretool_policy import evaluate_context_pre_tool_policy
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
 from brain.v5.physics_objects import record_object_relation, record_physics_object
+from brain.v5.process_graph import build_process_graph_slice
 from brain.v5.references import record_reference_location
 from brain.v5.sensemaking import record_sensemaking_report
 from brain.v5.validation import create_validation_contract, record_validation_result
@@ -98,6 +99,13 @@ def aitp_v5_bind_session(
 
 def aitp_v5_get_execution_brief(base: str, *, session_id: str) -> dict:
     return require_valid_public_surface("execution_brief", build_execution_brief(_ws(base), session_id))
+
+
+def aitp_v5_get_process_graph_slice(base: str, *, session_id: str, claim_id: str = "", limit: int = 80) -> dict:
+    return require_valid_public_surface(
+        "process_graph_slice",
+        build_process_graph_slice(_ws(base), session_id, claim_id=claim_id, limit=limit),
+    )
 
 
 def aitp_list_topics(topics_root: str) -> list[dict]:

@@ -72,6 +72,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "opencode_plugin_bridge",
         "physics_object_record",
         "pre_tool_policy_decision",
+        "process_graph_slice",
         "promotion_packet_record",
         "proof_obligation_record",
         "qsgw_cockpit_bundle",

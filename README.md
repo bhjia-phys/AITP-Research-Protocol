@@ -35,6 +35,7 @@ surfaces.
 | Goal continuation | Implemented: local `.aitp/surfaces/goal_continuation/` JSON+Markdown packets capture objective, commit range, changed files, tests, smoke commands, readiness, next actions, and blocking backlog |
 | Literature intake | Implemented conservative intake: references are orientation-only, evidence/sensemaking are guarded suggestions, and trust updates stay forbidden without preflight/checkpoints |
 | Theory research state | Implemented minimal conservative surface: `research-state register-source`, `attach-artifact`, `update-claim-status`, `create-proof-obligation`, `classify-event`, and `bounded-evidence` connect literature/results/artifacts/Fisherd-style runs to typed records without claim-trust promotion |
+| Typed process graph | Implemented first read-only slice: `aitp-v5 graph slice <session-id>` and `aitp_v5_get_process_graph_slice` compile typed records into orientation-only nodes, edges, source backtrace, relation neighborhoods, open obligations, trust-boundary reasons, and recommended research moments for agents such as Hakimi |
 | QSGW cockpit | Implemented first surface: `aitp-v5 status qsgw-cockpit` writes a topic-local final/diagnostic lane manifest, plot guard, and dashboard dry-run from typed records plus `research/librpa` report/script scans; it also discovers downstream `*_lane_manifest_current.json` and `*_aitp_intake_current.jsonl` files without treating them as trust updates |
 
 The latest real readiness audit reports:
@@ -52,6 +53,8 @@ The practical rule is:
 
 - Use v5 for real research workflows now.
 - Treat typed v5 records as the authority.
+- Treat process graph slices as local navigation/compilation aids, not as new
+  truth records.
 - Treat generated summaries, replay packets, README text, adapter packets, and
   Obsidian views as orientation surfaces.
 - Do not call the whole migration complete until the legacy semantic review
@@ -81,9 +84,17 @@ kernel capability:
    proof obligations: attach result artifacts by reference, record tool-run
    provenance, write scoped evidence, append claim maturity/status, and keep
    publishable/trust changes behind validation and human gates.
-6. Update downstream theory workspaces to the latest v5 kernel and regenerate
+6. Promote raw research assets into a stable source-store contract: local
+   lectures, PDFs, notes, code repositories, git commits, and generated
+   artifacts need typed source identities and version anchors before they can
+   reliably drive backtrace-heavy theory work.
+7. Add first-class brainstorming and backtrace records for exploratory theory:
+   question decomposition, relation-path hypotheses, definition/source
+   backtraces, original-question drift checks, and human steering decisions
+   should be recordable without forcing premature claim promotion.
+8. Update downstream theory workspaces to the latest v5 kernel and regenerate
    topic-local runtime handoff files where needed.
-7. Revisit OpenCode after its host hook model is stable enough for the same
+9. Revisit OpenCode after its host hook model is stable enough for the same
    production-loop guarantees as Codex, Claude Code, and Kimi Code.
 
 ## Why AITP Exists
@@ -183,6 +194,7 @@ The v5 kernel is exposed through several thin surfaces:
 | `brain/v5/native_mcp.py` | MCP entrypoint for Codex, Claude Code, Kimi Code, and other MCP hosts |
 | `brain/v5/mcp_tools.py` | MCP tool wrappers over kernel functions |
 | `brain/v5/public_surfaces.py` | Contracted public payload validators |
+| `aitp-v5 graph slice <session-id>` | Read-only typed process graph slice for local agent compilation |
 | `brain/v5/adapter_*` | Host adapter packets, bridge runners, and install/audit helpers |
 | `hooks/aitp_v5_*` | Host lifecycle hooks and event runners |
 | `<topics-root>/.aitp/surfaces/` | Generated orientation outputs such as summaries and review views |

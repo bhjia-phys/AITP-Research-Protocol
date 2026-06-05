@@ -62,6 +62,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_get_execution_brief",
         "surface": "execution_brief",
     },
+    "process_graph_slice": {
+        "cli": "aitp-v5 graph slice <session-id>",
+        "mcp": "aitp_v5_get_process_graph_slice",
+        "surface": "process_graph_slice",
+    },
     "interaction_recording_preview": {"cli": "aitp-v5 interaction preview <session-id>", "mcp": "aitp_v5_preview_interaction_recording", "surface": "interaction_recording_preview"},
     "workspace_interaction_preview": {
         "cli": "aitp-v5 interaction workspace-preview",
