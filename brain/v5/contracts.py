@@ -74,6 +74,24 @@ def require_valid_adapter_protocol_registry(payload: dict[str, Any]) -> dict[str
     return _require_valid_adapter_protocol_registry(payload)
 
 
+def validate_runtime_bridge_target_manifest(
+    payload: dict[str, Any],
+    *,
+    path: str = "runtime_bridge_target_manifest",
+) -> ContractResult:
+    from brain.v5.runtime_bridge_target_contracts import (
+        validate_runtime_bridge_target_manifest as _validate,
+    )
+    return _validate(payload, path=path)
+
+
+def require_valid_runtime_bridge_target_manifest(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.runtime_bridge_target_contracts import (
+        require_valid_runtime_bridge_target_manifest as _require,
+    )
+    return _require(payload)
+
+
 def validate_record_gate_coverage_audit(payload: dict[str, Any], *, path: str = "record_gate_coverage_audit") -> ContractResult:
     from brain.v5.record_gate_audit_contracts import validate_record_gate_coverage_audit as _validate
     return _validate(payload, path=path)

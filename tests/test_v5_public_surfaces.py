@@ -89,6 +89,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "runtime_host_lifecycle_audit",
         "runtime_host_production_loop_audit",
         "runtime_host_readiness_audit",
+        "runtime_bridge_target_manifest",
         "runtime_hook_installation_paths",
         "runtime_hook_smoke_coverage",
         "sensemaking_report_record",

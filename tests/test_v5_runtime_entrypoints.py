@@ -34,6 +34,7 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["record_exploratory_record"]["surface"] == "exploratory_record"
     assert entrypoints["record_research_route"]["surface"] == "research_route_record"
     assert entrypoints["host_agnostic_moment_policy"]["surface"] == "host_agnostic_moment_policy"
+    assert entrypoints["runtime_bridge_target_manifest"]["surface"] == "runtime_bridge_target_manifest"
     assert entrypoints["record_evidence"]["mcp"] == "aitp_v5_record_evidence"
     assert entrypoints["record_code_state"]["mcp"] == "aitp_v5_record_code_state"
     assert entrypoints["register_tool_recipe"]["mcp"] == "aitp_v5_register_tool_recipe"
@@ -62,6 +63,11 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["record_exploratory_record"]["mcp"] == "aitp_v5_record_exploratory_record"
     assert entrypoints["record_research_route"]["mcp"] == "aitp_v5_record_research_route"
     assert entrypoints["host_agnostic_moment_policy"]["mcp"] == "aitp_v5_get_host_agnostic_moment_policy"
+    assert entrypoints["runtime_bridge_target_manifest"] == {
+        "cli": "aitp-v5 adapter bridge-targets",
+        "mcp": "aitp_v5_get_runtime_bridge_target_manifest",
+        "surface": "runtime_bridge_target_manifest",
+    }
     assert entrypoints["get_trust_update_record"] == {
         "cli": "aitp-v5 trust update-record <args>",
         "mcp": "aitp_v5_get_trust_update_record",
@@ -170,9 +176,11 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
 
 
 def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
+    from brain.v5.runtime_bridge_targets import runtime_bridge_target_manifest
     from brain.v5.runtime_entrypoints import runtime_entrypoints
 
     entrypoints = runtime_entrypoints()
+    manifest = runtime_bridge_target_manifest()
 
     expected = {
         "process_graph_slice": {
@@ -249,6 +257,33 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
 
     for key, contract in expected.items():
         assert entrypoints[key] == contract
+
+    by_operation = {target["operation"]: target for target in manifest["targets"]}
+    assert by_operation["readProcessGraphSlice"] == {
+        "operation": "readProcessGraphSlice",
+        "entrypoint_key": "process_graph_slice",
+        "mcp_tool": "aitp_v5_get_process_graph_slice",
+        "cli_fallback": "aitp-v5 graph slice <session-id>",
+        "surface": "process_graph_slice",
+        "preferred_transport": "mcp",
+        "fallback_transport": "cli",
+        "execution_role": "read",
+        "state_effect": "read_only",
+        "canonical_store": ".aitp",
+        "claim_trust_mutation": "none",
+        "summary_inputs_trusted": False,
+        "can_update_claim_trust": False,
+    }
+    assert by_operation["recordEvidence"]["mcp_tool"] == "aitp_v5_record_evidence"
+    assert by_operation["recordEvidence"]["cli_fallback"] == "aitp-v5 evidence record <args>"
+    assert by_operation["captureCodeStateAuto"]["mcp_tool"] == "aitp_v5_capture_code_state_auto"
+    assert by_operation["preflightTrustUpdate"]["mcp_tool"] == "aitp_v5_preflight_trust_update"
+    assert by_operation["preflightTrustUpdate"]["state_effect"] == "preflight_only"
+    assert "trustApply" not in by_operation
+    assert manifest["excluded_entrypoints"]["trust_apply"].startswith("claim trust mutation")
+    assert manifest["preferred_transport"] == "mcp"
+    assert manifest["fallback_transport"] == "cli"
+    assert manifest["can_update_claim_trust"] is False
 
 
 def test_runtime_entrypoint_validation_reports_bad_mcp_and_cli_targets():

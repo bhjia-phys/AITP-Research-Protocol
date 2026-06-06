@@ -2947,6 +2947,35 @@ def test_mcp_record_gate_coverage_audit_returns_contract_payload():
     }
 
 
+def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
+    from brain.v5.mcp_tools import aitp_v5_get_runtime_bridge_target_manifest
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.runtime_bridge_targets import runtime_bridge_target_manifest
+
+    manifest = runtime_bridge_target_manifest()
+    by_operation = {target["operation"]: target for target in manifest["targets"]}
+
+    assert require_valid_public_surface("runtime_bridge_target_manifest", manifest) == manifest
+    assert manifest["target_groups"]["read"] == ["readProcessGraphSlice", "readMomentPolicy"]
+    assert manifest["target_groups"]["preflight"] == ["preflightTrustUpdate"]
+    assert by_operation["recordEvidence"]["preferred_transport"] == "mcp"
+    assert by_operation["recordEvidence"]["mcp_tool"] == "aitp_v5_record_evidence"
+    assert by_operation["recordEvidence"]["cli_fallback"] == "aitp-v5 evidence record <args>"
+    assert by_operation["preflightTrustUpdate"]["claim_trust_mutation"] == "none"
+    assert "trustApply" not in by_operation
+
+    cli_payload = _invoke(["adapter", "bridge-targets"], capsys)
+    mcp_payload = aitp_v5_get_runtime_bridge_target_manifest()
+    assert cli_payload == {
+        "ok": True,
+        "runtime_bridge_target_manifest": manifest,
+    }
+    assert mcp_payload == {
+        "ok": True,
+        "runtime_bridge_target_manifest": manifest,
+    }
+
+
 def test_adapter_packet_ignores_tampered_summary_as_truth_source(tmp_path):
     from brain.v5.adapters import build_adapter_packet
     from brain.v5.markdown import write_md

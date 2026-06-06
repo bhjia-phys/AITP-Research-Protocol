@@ -28,12 +28,14 @@ from brain.v5.hook_smoke_coverage import runtime_hook_smoke_coverage_report
 from brain.v5.hook_opencode_install import install_opencode_plugin_file
 from brain.v5.host_readiness import audit_priority_host_production_loops, audit_runtime_host_lifecycle, audit_runtime_host_readiness
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
+from brain.v5.runtime_bridge_targets import runtime_bridge_target_manifest
 
 
 def add_adapter_parser(sp) -> None:
     ap = sp.add_parser("adapter")
     aps = ap.add_subparsers(dest="adapter_command", required=True)
     aps.add_parser("record-gate-audit")
+    aps.add_parser("bridge-targets")
     apt = aps.add_parser("packet"); apt.add_argument("runtime"); apt.add_argument("session_id")
     ahb = aps.add_parser("hook-bridge"); ahb.add_argument("runtime"); ahb.add_argument("session_id")
     ahb.add_argument("--output", required=True)
@@ -77,6 +79,14 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
         }
     if args.adapter_command == "public-surfaces":
         return {"ok": True, "public_surfaces": describe_public_surfaces()}
+    if args.adapter_command == "bridge-targets":
+        return {
+            "ok": True,
+            "runtime_bridge_target_manifest": require_valid_public_surface(
+                "runtime_bridge_target_manifest",
+                runtime_bridge_target_manifest(),
+            ),
+        }
     if args.adapter_command == "record-gate-audit":
         return {
             "ok": True,

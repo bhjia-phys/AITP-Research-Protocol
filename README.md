@@ -30,7 +30,7 @@ surfaces.
 | Long-term memory | Implemented core: L2 memory entries, promotion packets, memory audits, failure-mode audits, trust audits, Obsidian review views |
 | Replay and review | Implemented core: session summaries, workspace summaries, workspace replay packets, source reconstruction audits |
 | Legacy migration | Implemented generic migration plus curated v5 migration for priority legacy topics, coverage, semantic-review, repair, source-reconstruction, human-checkpoint, and Obsidian worklist surfaces; the real legacy semantic review backlog remains blocking |
-| Host integration | Priority hosts are ready for Codex, Claude Code, and Kimi Code through v5 MCP/hook/adapter surfaces and production-loop audits; Hakimi now auto-configures a WorkFrame-scoped typed session bridge that can read `process_graph_slice`, compile `moment_policy.decisions` into required call obligations, and expose model-facing AITP write-bridge execution for exploratory records, research routes, source assets, auto-captured code state, proof obligations, validation contracts/results, human checkpoints, and non-mutating trust preflight instead of duplicating the schema |
+| Host integration | Priority hosts are ready for Codex, Claude Code, and Kimi Code through v5 MCP/hook/adapter surfaces and production-loop audits; `aitp-v5 adapter bridge-targets` / `aitp_v5_get_runtime_bridge_target_manifest` now expose MCP-first host bridge targets with CLI fallback templates; Hakimi auto-configures a WorkFrame-scoped typed session bridge that can read `process_graph_slice`, compile `moment_policy.decisions` into required call obligations, and expose model-facing AITP write-bridge execution for exploratory records, research routes, source assets, auto-captured code state, proof obligations, validation contracts/results, human checkpoints, and non-mutating trust preflight instead of duplicating the schema |
 | OpenCode | Adapter/plugin surfaces exist, but OpenCode remains deferred until its hook model and packaging path stabilize |
 | Goal continuation | Implemented: local `.aitp/surfaces/goal_continuation/` JSON+Markdown packets capture objective, commit range, changed files, tests, smoke commands, readiness, next actions, and blocking backlog |
 | Literature intake | Implemented conservative intake: references are orientation-only, evidence/sensemaking are guarded suggestions, and trust updates stay forbidden without preflight/checkpoints |
@@ -89,6 +89,11 @@ The practical rule is:
 - Treat `moment_policy.decisions[].entrypoints` as the host-facing call surface
   summary. Hakimi may compile it into blocking/current-turn call obligations,
   but the policy remains derived from AITP typed records and contracts.
+- Treat `runtime_bridge_target_manifest` as the canonical host target table for
+  AITP reads, writes, and preflight. It names the preferred MCP tool, CLI
+  fallback template, public surface, and state effect for each host operation;
+  it excludes `trust_apply`, remains orientation-only, and cannot update claim
+  trust.
 - Treat route moments as process-continuity guidance unless AITP explicitly
   marks a trust boundary. Recording a route choice, failed-route lesson, or
   pivot checkpoint should make the agent less forgetful without turning route
@@ -199,9 +204,12 @@ kernel capability:
    proof obligation and checkpoint, and verifies the resulting `.aitp` records
    when `HAKIMI_AITP_REAL_CLI_SMOKE=1`, `AITP_V5_REPO`, and `AITP_V5_PYTHON`
    point at a working AITP Python environment. The first strict AITP preflight
-   bridge is implemented as a non-mutating policy-evidence call; `trust apply`
-   remains an AITP-owned future boundary for hosts. MCP-first execution and
-   richer evidence write-back still need later runtime integration slices.
+   bridge is implemented as a non-mutating policy-evidence call. The
+   MCP-first bridge target manifest is implemented and gives hosts canonical
+   MCP tool names plus CLI fallback templates; actual MCP transport execution
+   inside Hakimi and richer evidence write-back still need later runtime
+   integration slices. `trust apply` remains an AITP-owned future boundary for
+   hosts.
 8. Update downstream theory workspaces to the latest v5 kernel and regenerate
    topic-local runtime handoff files where needed.
 9. Revisit OpenCode after its host hook model is stable enough for the same
@@ -304,6 +312,7 @@ The v5 kernel is exposed through several thin surfaces:
 | `brain/v5/native_mcp.py` | MCP entrypoint for Codex, Claude Code, Kimi Code, and other MCP hosts |
 | `brain/v5/mcp_tools.py` | MCP tool wrappers over kernel functions |
 | `brain/v5/public_surfaces.py` | Contracted public payload validators |
+| `aitp-v5 adapter bridge-targets` | MCP-first host bridge target manifest with CLI fallback templates and no claim-trust mutation authority |
 | `aitp-v5 graph slice <session-id>` | Read-only typed process graph slice for local agent compilation |
 | `aitp-v5 graph moment-policy <session-id>` | Read-only host-agnostic policy for when to record, brainstorm, backtrace, or stop at trust boundaries |
 | `aitp-v5 exploration record` | Orientation-only typed record for brainstorming, backtrace, source-asset, and steering continuity |
@@ -341,6 +350,7 @@ these names as the stable bridge contract, not infer names from README prose:
 |--------------|--------------|----------|---------|
 | `process_graph_slice` | `aitp-v5 graph slice <session-id>` | `aitp_v5_get_process_graph_slice` | `process_graph_slice` |
 | `host_agnostic_moment_policy` | `aitp-v5 graph moment-policy <session-id>` | `aitp_v5_get_host_agnostic_moment_policy` | `host_agnostic_moment_policy` |
+| `runtime_bridge_target_manifest` | `aitp-v5 adapter bridge-targets` | `aitp_v5_get_runtime_bridge_target_manifest` | `runtime_bridge_target_manifest` |
 | `record_evidence` | `aitp-v5 evidence record <args>` | `aitp_v5_record_evidence` | `evidence_record` |
 | `record_tool_run` | `aitp-v5 tool run record <args>` | `aitp_v5_record_tool_run` | `tool_run_record` |
 | `record_reference_location` | `aitp-v5 reference location record <args>` | `aitp_v5_record_reference_location` | `reference_location_record` |
@@ -357,6 +367,14 @@ these names as the stable bridge contract, not infer names from README prose:
 | `request_human_checkpoint` | `aitp-v5 checkpoint request <args>` | `aitp_v5_request_human_checkpoint` | `human_checkpoint_record` |
 | `decide_human_checkpoint` | `aitp-v5 checkpoint decide <args>` | `aitp_v5_decide_human_checkpoint` | `human_checkpoint_record` |
 | `trust_preflight` | `aitp-v5 trust preflight <args>` | `aitp_v5_preflight_trust_update` | `trust_update_preflight` |
+
+Hosts can query `runtime_bridge_target_manifest` directly instead of
+hard-coding the operation-to-entrypoint map. Each target names a Hakimi-facing
+operation such as `recordEvidence`, `captureCodeStateAuto`, or
+`preflightTrustUpdate`, its canonical AITP entrypoint key, preferred MCP tool,
+CLI fallback template, public surface, and state effect. The manifest is
+derived from `runtime_entrypoints()`, has `preferred_transport=mcp`, keeps
+`fallback_transport=cli`, and explicitly excludes `trust_apply`.
 
 The graph slice returns `moment_policy.decisions` as the typed policy surface
 for hosts. Each decision carries whether it is `required_now`, which

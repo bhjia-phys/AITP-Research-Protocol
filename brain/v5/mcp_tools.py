@@ -32,6 +32,7 @@ from brain.v5.physics_objects import record_object_relation, record_physics_obje
 from brain.v5.process_graph import build_process_graph_slice
 from brain.v5.references import record_reference_location
 from brain.v5.routes import record_research_route, research_route_payload
+from brain.v5.runtime_bridge_targets import runtime_bridge_target_manifest
 from brain.v5.sensemaking import record_sensemaking_report
 from brain.v5.source_assets import register_source_asset, source_asset_payload
 from brain.v5.validation import create_validation_contract, record_validation_result
@@ -520,6 +521,18 @@ def aitp_v5_install_claude_code_hook_settings(base: str, *, session_id: str, set
 
 def aitp_v5_get_adapter_protocol_registry() -> dict:
     return {"ok": True, "adapter_protocol_registry": require_valid_public_surface("adapter_protocol_registry", adapter_protocol_registry())}
+
+
+def aitp_v5_get_runtime_bridge_target_manifest() -> dict:
+    """Return MCP-first host bridge targets with CLI fallback templates."""
+
+    return {
+        "ok": True,
+        "runtime_bridge_target_manifest": require_valid_public_surface(
+            "runtime_bridge_target_manifest",
+            runtime_bridge_target_manifest(),
+        ),
+    }
 
 
 def aitp_v5_audit_record_gate_coverage() -> dict:

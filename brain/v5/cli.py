@@ -344,7 +344,13 @@ def _build_parser() -> argparse.ArgumentParser:
 def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
     if args.command == "init":
         return {"ok": True, "workspace_root": str(init_workspace(Path(args.base)).root)}
-    if args.command == "adapter" and args.adapter_command in {"registry", "public-surfaces", "record-gate-audit", "smoke-coverage"}:
+    if args.command == "adapter" and args.adapter_command in {
+        "registry",
+        "public-surfaces",
+        "bridge-targets",
+        "record-gate-audit",
+        "smoke-coverage",
+    }:
         return dispatch_adapter_command(args, None)
 
     ws = init_workspace(Path(args.base))
