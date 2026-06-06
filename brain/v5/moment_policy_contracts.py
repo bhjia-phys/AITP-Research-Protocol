@@ -79,7 +79,7 @@ def _validate_decision(payload: Any, path: str, result: ContractResult) -> None:
     _validate_trust_boundary_inputs(payload.get("trust_boundary_inputs"), payload, f"{path}.trust_boundary_inputs", result)
     if isinstance(payload.get("payload_hints"), list):
         for index, hint in enumerate(payload["payload_hints"]):
-            _validate_payload_hint(hint, f"{path}.payload_hints[{index}]", result)
+            validate_payload_hint(hint, f"{path}.payload_hints[{index}]", result)
     if payload.get("summary_inputs_trusted") is not False:
         result.add(f"{path}.summary_inputs_trusted", "must be false")
     if payload.get("orientation_only") is not True:
@@ -150,7 +150,7 @@ def _validate_trust_boundary_inputs(
             result.add(f"{path}.final_gate_required", f"must be {expected_final_gate}")
 
 
-def _validate_payload_hint(payload: Any, path: str, result: ContractResult) -> None:
+def validate_payload_hint(payload: Any, path: str, result: ContractResult) -> None:
     _require_mapping(payload, path, result)
     if not isinstance(payload, dict):
         return

@@ -522,9 +522,30 @@ def test_process_graph_slice_exposes_source_code_provenance_gaps(tmp_path):
     code_gap = by_type["code_state_missing"]
     assert code_gap["recommended_entrypoints"] == ["aitp_v5_capture_code_state_auto", "aitp_v5_record_code_state"]
     assert code_gap["recommended_actions"] == ["aitp.capture_code_state_auto", "aitp.record_code_state"]
+    code_hint = _hint_by_entrypoint(code_gap, "aitp_v5_capture_code_state_auto")
+    assert code_hint["record_action"] == "capture_code_state_auto"
+    assert code_hint["orientation_only"] is True
+    assert code_hint["summary_inputs_trusted"] is False
+    assert code_hint["can_update_claim_trust"] is False
+    assert code_hint["draft"]["topic_id"] == "gw"
+    assert code_hint["draft"]["claim_id"] == claim.claim_id
+    assert code_hint["draft"]["worktree_path"] == "<local worktree path>"
+    assert code_hint["draft"]["linked_records"]["claim_id"] == claim.claim_id
     assert code_gap["required_now"] is False
     assert code_gap["required_before_trust_change"] is False
     assert "benchmark_basis" in code_gap["blocking_when_used_as"]
+    tool_hint = _hint_by_entrypoint(by_type["tool_run_missing"], "aitp_v5_record_tool_run")
+    assert tool_hint["record_action"] == "record_tool_run"
+    assert tool_hint["draft"]["topic_id"] == "gw"
+    assert tool_hint["draft"]["claim_id"] == claim.claim_id
+    assert tool_hint["draft"]["recipe_id"] == "<tool recipe id>"
+    contract_hint = _hint_by_entrypoint(
+        by_type["validation_contract_missing"],
+        "aitp_v5_create_validation_contract",
+    )
+    assert contract_hint["record_action"] == "create_validation_contract"
+    assert "check expected outputs" in contract_hint["draft"]["required_checks"]
+    assert contract_hint["draft"]["validator_role"] == "adversarial_reviewer"
     moments = [item for item in payload["recommended_moments"] if item["moment"] == "capture_source_or_code_provenance"]
     assert moments
 

@@ -117,7 +117,11 @@ The practical rule is:
   benchmark artifacts should be fixed before reusing a ref as evidence,
   validation, benchmark basis, memory, or checked conclusion, but they are not
   final-gate blockers unless AITP explicitly marks `final_gate_required` or
-  `required_before_trust_change`.
+  `required_before_trust_change`. Their `payload_hints[]` are AITP-owned draft
+  shapes for the next host write, such as code-state capture, tool-run,
+  validation-contract/result, source-asset, reference-location, or artifact
+  records. Hosts must replace placeholders with real local provenance before
+  calling the entrypoint, and the draft itself cannot update claim trust.
 - Treat auto-captured code-state records as provenance records, not validation
   results. A dirty diff hash or patch artifact explains what code state was
   used; it does not prove the result correct.
@@ -369,7 +373,13 @@ hashes, code state, tool runs, validation artifacts, and benchmark artifacts.
 Those gaps compile into recommended `capture_source_or_code_provenance`
 moments, but they remain process guidance by default. They only become strict
 trust boundaries when the typed AITP payload explicitly says they are required
-before a trust change or final gate.
+before a trust change or final gate. Gaps may also carry `payload_hints[]` for
+the concrete typed record that should repair the gap: `code state auto`,
+`record_tool_run`, `create_validation_contract`, `record_validation_result`,
+`attach_artifact`, `register_source_asset`, or `record_reference_location`.
+These hints are canonical AITP guidance for host write drafts, not canonical
+truth records; placeholders must be resolved by the host at execution time and
+AITP still validates/stores the resulting record.
 
 The same slice now exposes `source_stack_coverage`: the scoped
 `source_stack_coverage_manifest` for claims present in the slice. Hosts can see

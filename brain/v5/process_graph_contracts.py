@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from brain.v5.contracts import ContractError, ContractResult, _require_bool_value, _require_list, _require_mapping
-from brain.v5.moment_policy_contracts import validate_host_agnostic_moment_policy
+from brain.v5.moment_policy_contracts import validate_host_agnostic_moment_policy, validate_payload_hint
 from brain.v5.source_reconstruction_contracts import (
     validate_source_reconstruction_review_manifest,
     validate_source_stack_coverage_manifest,
@@ -39,6 +39,9 @@ def validate_process_graph_slice(payload: dict[str, Any], *, path: str = "proces
         "recommended_moments",
     ):
         _require_list(payload.get(key), f"{path}.{key}", result)
+    if isinstance(payload.get("provenance_gaps"), list):
+        for index, gap in enumerate(payload["provenance_gaps"]):
+            _validate_provenance_gap(gap, f"{path}.provenance_gaps[{index}]", result)
     _require_mapping(payload.get("route_state"), f"{path}.route_state", result)
     _require_mapping(payload.get("source_stack_coverage"), f"{path}.source_stack_coverage", result)
     if isinstance(payload.get("source_stack_coverage"), dict):
@@ -70,3 +73,20 @@ def require_valid_process_graph_slice(payload: dict[str, Any]) -> dict[str, Any]
     if not result.ok:
         raise ContractError(result)
     return payload
+
+
+def _validate_provenance_gap(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    for key in ("gap_id", "gap_type", "target_type", "target_id", "provenance_kind"):
+        if not isinstance(payload.get(key), str) or not payload.get(key):
+            result.add(f"{path}.{key}", "must be a non-empty string")
+    for key in ("target_refs", "recommended_actions", "recommended_entrypoints", "payload_hints"):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    for key in ("required_now", "required_before_trust_change"):
+        if not isinstance(payload.get(key), bool):
+            result.add(f"{path}.{key}", "must be a boolean")
+    if isinstance(payload.get("payload_hints"), list):
+        for index, hint in enumerate(payload["payload_hints"]):
+            validate_payload_hint(hint, f"{path}.payload_hints[{index}]", result)
