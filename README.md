@@ -116,8 +116,11 @@ kernel capability:
    through explicit WorkFrame scope, compile them into context packs before
    research-context injection, and expose write-bridge hints and execution for
    exploratory records, proof obligations, human checkpoints, source assets,
-   and validation records. The current downstream tests are still fake-runner
-   contract tests; richer MCP-first execution, real topic-store smoke, and
+   and validation records. Hakimi also has an opt-in real CLI smoke that creates
+   a temporary AITP topic store, reads a real `process_graph_slice`, writes a
+   proof obligation and checkpoint, and verifies the resulting `.aitp` records
+   when `HAKIMI_AITP_REAL_CLI_SMOKE=1`, `AITP_V5_REPO`, and `AITP_V5_PYTHON`
+   point at a working AITP Python environment. Richer MCP-first execution and
    strict validation/checkpoint enforcement still need the next runtime
    integration slice.
 8. Update downstream theory workspaces to the latest v5 kernel and regenerate
@@ -242,6 +245,17 @@ register`, `checkpoint request`, `research-state create-proof-obligation`,
 `validation contract create`, and `validation result record`. If the
 `aitp-v5` console command is not installed in a local environment, use the
 equivalent module invocation shown below.
+
+The downstream Hakimi real CLI smoke is opt-in so Hakimi unit tests do not
+depend on Python packages. To run it from the Hakimi checkout after installing
+AITP dependencies:
+
+```bash
+HAKIMI_AITP_REAL_CLI_SMOKE=1 \
+AITP_V5_REPO=/path/to/AITP-Research-Protocol \
+AITP_V5_PYTHON=/path/to/python \
+pnpm -C packages/agent-core vitest run test/aitp/real-cli-smoke.e2e.test.ts
+```
 
 For a quick CLI check:
 
