@@ -134,6 +134,11 @@ The practical rule is:
   path for configured sessions, not as a new authority. It should write through
   AITP and record scoped action evidence; if the bridge is not configured, the
   host must fail closed.
+- Treat Hakimi source reconstruction review result writes as calls into AITP's
+  canonical `record_source_reconstruction_review_result` surface. The host may
+  pass reviewed components and typed basis refs, but the resulting
+  `source_reconstruction_review_result_record` remains an AITP record and still
+  cannot update claim trust.
 - Treat generated summaries, replay packets, README text, adapter packets, and
   Obsidian views as orientation surfaces.
 - Do not call the whole migration complete until the legacy semantic review
@@ -309,7 +314,8 @@ Hakimi's current bridge calls the same CLI surface with structured arguments:
 `exploration record`, `route record`, `asset register`, `code state auto`,
 `research-state attach-artifact`, `checkpoint request`,
 `research-state create-proof-obligation`,
-`validation contract create`, and `validation result record`. If the
+`validation contract create`, `validation result record`, and
+`source reconstruction-review-result`. If the
 `aitp-v5` console command is not installed in a local environment, use the
 equivalent module invocation shown below.
 
@@ -326,6 +332,7 @@ these names as the stable bridge contract, not infer names from README prose:
 | `record_tool_run` | `aitp-v5 tool run record <args>` | `aitp_v5_record_tool_run` | `tool_run_record` |
 | `record_reference_location` | `aitp-v5 reference location record <args>` | `aitp_v5_record_reference_location` | `reference_location_record` |
 | `record_validation_result` | `aitp-v5 validation result record <args>` | `aitp_v5_record_validation_result` | `validation_result_record` |
+| `record_source_reconstruction_review_result` | `aitp-v5 source reconstruction-review-result <args>` | `aitp_v5_record_source_reconstruction_review_result` | `source_reconstruction_review_result_record` |
 | `record_exploratory_record` | `aitp-v5 exploration record <args>` | `aitp_v5_record_exploratory_record` | `exploratory_record` |
 | `record_research_route` | `aitp-v5 route record <args>` | `aitp_v5_record_research_route` | `research_route_record` |
 | `register_source_asset` | `aitp-v5 asset register <args>` | `aitp_v5_register_source_asset` | `source_asset_record` |
@@ -378,6 +385,11 @@ pending, needs-revision, inconclusive, and passed review state, plus review
 packet/result CLI hints and remaining actions. This lets a runtime surface the
 actual review worklist beside coverage gaps instead of inferring review state
 from a loose next-action string.
+
+When that worklist recommends `record_source_reconstruction_review_result`,
+Hakimi can now call the same canonical CLI entrypoint through its write bridge.
+AITP still validates the reviewed components and basis refs and stores the
+result as orientation-only review evidence with `can_update_claim_trust=false`.
 
 Exploratory record reasoning fields are likewise host-facing process handles:
 Hakimi normalizes them into `params.theoryReasoning`, then renders them into the
