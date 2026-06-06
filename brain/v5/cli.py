@@ -14,7 +14,7 @@ from brain.v5.cli_adapters import add_adapter_parser, dispatch_adapter_command
 from brain.v5.cli_memory import add_memory_parser, dispatch_memory_command
 from brain.v5.cli_summaries import add_summary_parser, dispatch_summary_command
 from brain.v5.cli_source import add_source_parser, dispatch_source_command
-from brain.v5.code import record_code_state
+from brain.v5.code import capture_code_state_from_git, record_code_state
 from brain.v5.evidence import record_evidence
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
 from brain.v5.cli_legacy import add_legacy_parser, dispatch_legacy_command
@@ -127,6 +127,17 @@ def _build_parser() -> argparse.ArgumentParser:
     csr.add_argument("--patch-id", default=""); csr.add_argument("--diff-hash", default="")
     csr.add_argument("--build-config-json", default="{}"); csr.add_argument("--runtime-environment-json", default="{}")
     csr.add_argument("--linked-records-json", default="{}"); csr.add_argument("--known-divergence", default="")
+    csa = css.add_parser("auto")
+    csa.add_argument("--worktree-path", required=True)
+    csa.add_argument("--repo-id", default="")
+    csa.add_argument("--topic", default="", dest="topic_id")
+    csa.add_argument("--claim", default="", dest="claim_id")
+    csa.add_argument("--session", default="", dest="session_id")
+    csa.add_argument("--build-config-json", default="{}")
+    csa.add_argument("--runtime-environment-json", default="{}")
+    csa.add_argument("--linked-records-json", default="{}")
+    csa.add_argument("--known-divergence", default="")
+    csa.add_argument("--write-patch-artifact", action="store_true")
 
     ep = sp.add_parser("evidence"); es = ep.add_subparsers(dest="evidence_command", required=True)
     evr = es.add_parser("record")
@@ -395,6 +406,22 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             patch_id=args.patch_id, diff_hash=args.diff_hash,
             build_config=_j(args.build_config_json), runtime_environment=_j(args.runtime_environment_json),
             linked_records=_j(args.linked_records_json), known_divergence=args.known_divergence)
+        return {"ok": True, **require_valid_public_surface("code_state_record", {"ok": True, **asdict(st)})}
+
+    if args.command == "code" and args.code_command == "state" and args.code_state_command == "auto":
+        st = capture_code_state_from_git(
+            ws,
+            worktree_path=args.worktree_path,
+            repo_id=args.repo_id,
+            topic_id=args.topic_id,
+            claim_id=args.claim_id,
+            session_id=args.session_id,
+            build_config=_j(args.build_config_json),
+            runtime_environment=_j(args.runtime_environment_json),
+            linked_records=_j(args.linked_records_json),
+            known_divergence=args.known_divergence,
+            write_patch_artifact=args.write_patch_artifact,
+        )
         return {"ok": True, **require_valid_public_surface("code_state_record", {"ok": True, **asdict(st)})}
 
     if args.command == "evidence" and args.evidence_command == "record":

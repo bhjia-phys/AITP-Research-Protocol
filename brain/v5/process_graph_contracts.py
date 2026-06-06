@@ -29,6 +29,7 @@ def validate_process_graph_slice(payload: dict[str, Any], *, path: str = "proces
         "source_backtrace",
         "relation_neighborhood",
         "exploratory_records",
+        "provenance_gaps",
         "trust_boundary_reasons",
         "recommended_moments",
     ):

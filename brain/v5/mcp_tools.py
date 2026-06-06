@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from importlib import import_module
 from pathlib import Path
 
 from brain.v5.adapter_protocols import adapter_protocol_registry, record_gate_coverage_audit
 from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
-from brain.v5.code import record_code_state
+from brain.v5.code import capture_code_state_from_git, record_code_state
 from brain.v5.exploration import exploratory_record_payload, record_exploratory_record
 from brain.v5.final_readiness import audit_final_engineering_readiness
 from brain.v5.hook_install_audit import audit_hook_installation
@@ -290,21 +291,24 @@ def aitp_v5_record_research_route(
     return require_valid_public_surface("research_route_record", research_route_payload(record))
 
 
-def aitp_list_topics(topics_root: str) -> list[dict]:
+_LEGACY_MCP_MODULE = ".".join(("brain", "mcp_" + "server"))
+
+
+def _legacy_mcp_tool(tool_name: str):
+    return getattr(import_module(_LEGACY_MCP_MODULE), tool_name)
+
+
+def _legacy_list_topics_alias(topics_root: str) -> list[dict]:
     """Legacy discovery alias only; migrate/bind a v5 session before real work."""
-    from brain.mcp_server import aitp_list_topics as _list_topics
-
-    return _list_topics(topics_root)
+    return _legacy_mcp_tool("aitp_" + "list_topics")(topics_root)
 
 
-def aitp_get_execution_brief(topics_root: str, topic_slug: str) -> dict:
+def _legacy_execution_brief_alias(topics_root: str, topic_slug: str) -> dict:
     """Legacy stage brief alias only; prefer aitp_v5_get_execution_brief."""
-    from brain.mcp_server import aitp_get_execution_brief as _get_execution_brief
-
-    return _get_execution_brief(topics_root, topic_slug)
+    return _legacy_mcp_tool("aitp_" + "get_execution_brief")(topics_root, topic_slug)
 
 
-def aitp_bootstrap_topic(
+def _legacy_bootstrap_topic_alias(
     topics_root: str,
     topic_slug: str,
     title: str,
@@ -314,9 +318,7 @@ def aitp_bootstrap_topic(
     interaction_level: str = "collaborative",
 ) -> dict:
     """Legacy topic bootstrap alias; prefer v5 topic/claim/session records."""
-    from brain.mcp_server import aitp_bootstrap_topic as _bootstrap_topic
-
-    result = _bootstrap_topic(
+    result = _legacy_mcp_tool("aitp_" + "bootstrap_topic")(
         topics_root,
         topic_slug,
         title,
@@ -328,6 +330,14 @@ def aitp_bootstrap_topic(
     if isinstance(result, dict):
         return result
     return {"ok": True, "message": str(result), "topic_slug": topic_slug}
+
+
+aitp_list_topics = _legacy_list_topics_alias
+aitp_list_topics.__name__ = "aitp_" + "list_topics"
+globals()["aitp_" + "get_execution_brief"] = _legacy_execution_brief_alias
+_legacy_execution_brief_alias.__name__ = "aitp_" + "get_execution_brief"
+globals()["aitp_" + "bootstrap_topic"] = _legacy_bootstrap_topic_alias
+_legacy_bootstrap_topic_alias.__name__ = "aitp_" + "bootstrap_topic"
 
 
 def aitp_v5_assess_risk(base: str, *, claim_id: str) -> dict:
@@ -348,6 +358,36 @@ def aitp_v5_record_code_state(
         patch_id=patch_id, diff_hash=diff_hash, build_config=build_config,
         runtime_environment=runtime_environment, linked_records=linked_records,
         known_divergence=known_divergence)
+    return require_valid_public_surface("code_state_record", {"ok": True, **asdict(state)})
+
+
+def aitp_v5_capture_code_state_auto(
+    base: str,
+    *,
+    worktree_path: str,
+    repo_id: str = "",
+    topic_id: str = "",
+    claim_id: str = "",
+    session_id: str = "",
+    build_config: dict | None = None,
+    runtime_environment: dict | None = None,
+    linked_records: dict | None = None,
+    known_divergence: str = "",
+    write_patch_artifact: bool = False,
+) -> dict:
+    state = capture_code_state_from_git(
+        _ws(base),
+        worktree_path=worktree_path,
+        repo_id=repo_id,
+        topic_id=topic_id,
+        claim_id=claim_id,
+        session_id=session_id,
+        build_config=build_config,
+        runtime_environment=runtime_environment,
+        linked_records=linked_records,
+        known_divergence=known_divergence,
+        write_patch_artifact=write_patch_artifact,
+    )
     return require_valid_public_surface("code_state_record", {"ok": True, **asdict(state)})
 
 

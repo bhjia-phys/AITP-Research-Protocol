@@ -163,6 +163,16 @@ def build_process_graph_slice(
     relation_neighborhood = _relation_neighborhood(objects, relations, exploratory_records)
     exploratory_slices = [_exploratory_slice(record) for record in exploratory_records]
     route_state = _route_state(session, routes)
+    provenance_gaps = _provenance_gaps(
+        claims=claims,
+        references=references,
+        source_assets=source_assets,
+        evidence=evidence,
+        validation_contracts=validation_contracts,
+        validation_results=validation_results,
+        tool_runs=tool_runs,
+        code_states=code_states,
+    )
     trust_boundary_reasons = [
         "process_graph_slice is orientation-only",
         "truth_source is typed_records",
@@ -200,6 +210,7 @@ def build_process_graph_slice(
         "trust_boundary_reasons": trust_boundary_reasons,
         "exploratory_records": exploratory_slices,
         "route_state": route_state,
+        "provenance_gaps": provenance_gaps,
         "moment_policy": moment_policy,
         "recommended_moments": _recommended_moments(
             open_obligations,
@@ -207,6 +218,7 @@ def build_process_graph_slice(
             relations,
             exploratory_records,
             route_state,
+            provenance_gaps,
         ),
         "record_counts": {
             "claim": len(claims),
@@ -225,6 +237,7 @@ def build_process_graph_slice(
             "exploratory_record": len(exploratory_records),
             "human_checkpoint": len(checkpoints),
             "research_route": len(routes),
+            "provenance_gap": len(provenance_gaps),
         },
         "truncation": {
             "limit": limit,
@@ -533,6 +546,293 @@ def _filter_human_checkpoints(
     ]
 
 
+def _provenance_gaps(
+    *,
+    claims: list[ClaimRecord],
+    references: list[ReferenceLocationRecord],
+    source_assets: list[SourceAssetRecord],
+    evidence: list[EvidenceRecord],
+    validation_contracts: list[ValidationContractRecord],
+    validation_results: list[ValidationResultRecord],
+    tool_runs: list[ToolRunRecord],
+    code_states: list[CodeStateRecord],
+) -> list[dict[str, Any]]:
+    gaps: list[dict[str, Any]] = []
+    for claim in claims:
+        claim_id = claim.claim_id
+        claim_refs = [record for record in references if record.claim_id == claim_id]
+        claim_assets = [
+            record
+            for record in source_assets
+            if record.claim_id == claim_id or _mapping_links_any(record.linked_records, {claim_id})
+        ]
+        claim_runs = [record for record in tool_runs if record.claim_id == claim_id]
+        claim_contracts = [record for record in validation_contracts if record.claim_id == claim_id]
+        claim_results = [record for record in validation_results if record.claim_id == claim_id]
+        claim_code_state_ids = {
+            code_id
+            for run in claim_runs
+            for code_id in run.code_state_ids
+            if code_id
+        }
+        claim_code_state_ids.update(
+            code_id
+            for asset in claim_assets
+            for code_id in asset.code_state_ids
+            if code_id
+        )
+        claim_code_states = [
+            record
+            for record in code_states
+            if record.code_state_id in claim_code_state_ids or _mapping_links_any(record.linked_records, {claim_id})
+        ]
+        if not claim_refs:
+            gaps.append(
+                _provenance_gap(
+                    gap_type="reference_location_missing",
+                    reason="claim has no typed source/reference pointer",
+                    topic_id=claim.topic_id,
+                    claim_id=claim_id,
+                    target_type="claim",
+                    target_id=claim_id,
+                    recommended_actions=["aitp.record_reference_location"],
+                    recommended_entrypoints=["aitp_v5_record_reference_location"],
+                    severity="high",
+                    provenance_kind="source",
+                )
+            )
+        if not claim_assets:
+            gaps.append(
+                _provenance_gap(
+                    gap_type="source_asset_missing",
+                    reason="claim has no canonical source asset identity",
+                    topic_id=claim.topic_id,
+                    claim_id=claim_id,
+                    target_type="claim",
+                    target_id=claim_id,
+                    recommended_actions=["aitp.register_source_asset"],
+                    recommended_entrypoints=["aitp_v5_register_source_asset"],
+                    severity="high",
+                    provenance_kind="source",
+                )
+            )
+        for asset in claim_assets:
+            if not asset.content_hash:
+                gaps.append(
+                    _provenance_gap(
+                        gap_type="source_asset_hash_missing",
+                        reason="source asset identity lacks a stable content hash",
+                        topic_id=asset.topic_id,
+                        claim_id=asset.claim_id or claim_id,
+                        target_type="source_asset",
+                        target_id=asset.asset_id,
+                        recommended_actions=["aitp.register_source_asset"],
+                        recommended_entrypoints=["aitp_v5_register_source_asset"],
+                        severity="normal",
+                        provenance_kind="source",
+                    )
+                )
+            duplicate = asset.metadata.get("duplicate_hash_diagnostics", {})
+            if isinstance(duplicate, dict) and duplicate.get("duplicate_hash"):
+                gaps.append(
+                    _provenance_gap(
+                        gap_type="source_asset_duplicate_hash",
+                        reason="source asset content hash matches another registered asset",
+                        topic_id=asset.topic_id,
+                        claim_id=asset.claim_id or claim_id,
+                        target_type="source_asset",
+                        target_id=asset.asset_id,
+                        recommended_actions=["aitp.review_source_asset_duplicate"],
+                        recommended_entrypoints=["aitp_v5_register_source_asset"],
+                        severity="normal",
+                        provenance_kind="source",
+                    )
+                )
+        if _claim_needs_code_provenance(claim):
+            if not claim_code_states:
+                gaps.append(
+                    _provenance_gap(
+                        gap_type="code_state_missing",
+                        reason="code-dependent claim has no captured git code state",
+                        topic_id=claim.topic_id,
+                        claim_id=claim_id,
+                        target_type="claim",
+                        target_id=claim_id,
+                        recommended_actions=["aitp.capture_code_state_auto", "aitp.record_code_state"],
+                        recommended_entrypoints=["aitp_v5_capture_code_state_auto", "aitp_v5_record_code_state"],
+                        severity="high",
+                        provenance_kind="code",
+                    )
+                )
+            if not claim_runs:
+                gaps.append(
+                    _provenance_gap(
+                        gap_type="tool_run_missing",
+                        reason="code-dependent claim has no typed tool-run provenance",
+                        topic_id=claim.topic_id,
+                        claim_id=claim_id,
+                        target_type="claim",
+                        target_id=claim_id,
+                        recommended_actions=["aitp.record_tool_run"],
+                        recommended_entrypoints=["aitp_v5_record_tool_run"],
+                        severity="high",
+                        provenance_kind="tool_run",
+                    )
+                )
+            if not claim_contracts:
+                gaps.append(
+                    _provenance_gap(
+                        gap_type="validation_contract_missing",
+                        reason="code/benchmark-dependent claim has no validation contract",
+                        topic_id=claim.topic_id,
+                        claim_id=claim_id,
+                        target_type="claim",
+                        target_id=claim_id,
+                        recommended_actions=["aitp.create_validation_contract"],
+                        recommended_entrypoints=["aitp_v5_create_validation_contract"],
+                        severity="normal",
+                        provenance_kind="validation",
+                    )
+                )
+        for run in claim_runs:
+            if _tool_run_needs_code_state(run) and not run.code_state_ids:
+                gaps.append(
+                    _provenance_gap(
+                        gap_type="tool_run_code_state_missing",
+                        reason="tool run looks code-backed but is not linked to a code state",
+                        topic_id=run.topic_id,
+                        claim_id=run.claim_id,
+                        target_type="tool_run",
+                        target_id=run.run_id,
+                        recommended_actions=["aitp.capture_code_state_auto", "aitp.record_tool_run"],
+                        recommended_entrypoints=["aitp_v5_capture_code_state_auto", "aitp_v5_record_tool_run"],
+                        severity="high",
+                        provenance_kind="code",
+                    )
+                )
+            if _tool_run_needs_artifact(run) and not run.artifact_ids:
+                gaps.append(
+                    _provenance_gap(
+                        gap_type="benchmark_artifact_missing",
+                        reason="benchmark/result-like tool run has no artifact reference",
+                        topic_id=run.topic_id,
+                        claim_id=run.claim_id,
+                        target_type="tool_run",
+                        target_id=run.run_id,
+                        recommended_actions=["aitp.attach_artifact", "aitp.record_tool_run"],
+                        recommended_entrypoints=["aitp_v5_attach_artifact", "aitp_v5_record_tool_run"],
+                        severity="normal",
+                        provenance_kind="artifact",
+                    )
+                )
+        for result in claim_results:
+            if _validation_result_needs_artifact(result) and not result.artifact_ids:
+                gaps.append(
+                    _provenance_gap(
+                        gap_type="validation_result_artifact_missing",
+                        reason="validation result has no artifact reference for its checked output",
+                        topic_id=result.topic_id,
+                        claim_id=result.claim_id,
+                        target_type="validation_result",
+                        target_id=result.result_id,
+                        recommended_actions=["aitp.attach_artifact", "aitp.record_validation_result"],
+                        recommended_entrypoints=["aitp_v5_attach_artifact", "aitp_v5_record_validation_result"],
+                        severity="normal",
+                        provenance_kind="artifact",
+                    )
+                )
+    return _dedupe_gaps(gaps)
+
+
+def _provenance_gap(
+    *,
+    gap_type: str,
+    reason: str,
+    topic_id: str,
+    claim_id: str,
+    target_type: str,
+    target_id: str,
+    recommended_actions: list[str],
+    recommended_entrypoints: list[str],
+    severity: str,
+    provenance_kind: str,
+) -> dict[str, Any]:
+    return {
+        "gap_id": f"provenance-gap:{gap_type}:{target_type}:{target_id}",
+        "gap_type": gap_type,
+        "provenance_kind": provenance_kind,
+        "reason": reason,
+        "topic_id": topic_id,
+        "claim_id": claim_id,
+        "target_type": target_type,
+        "target_id": target_id,
+        "target_refs": [f"{target_type}:{target_id}"],
+        "recommended_actions": list(recommended_actions),
+        "recommended_entrypoints": list(recommended_entrypoints),
+        "severity": severity,
+        "required_now": False,
+        "required_before_trust_change": False,
+        "strict_boundary": "before_using_as_evidence_validation_benchmark_memory_or_checked_conclusion",
+        "blocking_when_used_as": [
+            "evidence",
+            "validation_input",
+            "benchmark_basis",
+            "memory_promotion_input",
+            "human_facing_checked_conclusion",
+        ],
+        "orientation_only": True,
+        "can_update_claim_trust": False,
+    }
+
+
+def _claim_needs_code_provenance(claim: ClaimRecord) -> bool:
+    text = " ".join(
+        [
+            claim.evidence_profile,
+            claim.statement,
+            claim.active_uncertainty,
+            claim.recipe_id,
+            claim.scope,
+        ]
+    ).lower()
+    return any(token in text for token in ("code", "benchmark", "git", "repo", "tool", "run", "numerical"))
+
+
+def _tool_run_needs_code_state(record: ToolRunRecord) -> bool:
+    text = " ".join([record.recipe_id, record.tool_family, record.tool_name]).lower()
+    return any(token in text for token in ("code", "python", "git", "benchmark", "runner", "numeric"))
+
+
+def _tool_run_needs_artifact(record: ToolRunRecord) -> bool:
+    text = " ".join(
+        [
+            record.recipe_id,
+            record.tool_family,
+            record.tool_name,
+            str(record.outputs),
+            record.evidence_status,
+        ]
+    ).lower()
+    return any(token in text for token in ("benchmark", "result", "stdout", "log", "artifact", "plot", "json"))
+
+
+def _validation_result_needs_artifact(record: ValidationResultRecord) -> bool:
+    text = " ".join([record.summary, " ".join(record.checked_outputs)]).lower()
+    return any(token in text for token in ("benchmark", "result", "log", "plot", "artifact", "json"))
+
+
+def _dedupe_gaps(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    seen = set()
+    result: list[dict[str, Any]] = []
+    for item in items:
+        key = (item.get("gap_type"), item.get("target_type"), item.get("target_id"))
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(item)
+    return result
+
+
 def _linked_code_state_ids_for_claim(records: list[CodeStateRecord], claim_ids: set[str]) -> set[str]:
     result = set()
     for record in records:
@@ -817,6 +1117,7 @@ def _recommended_moments(
     relations: list[ObjectRelationRecord],
     exploratory_records: list[ExploratoryRecord],
     route_state: dict[str, Any],
+    provenance_gaps: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     moments: list[dict[str, Any]] = []
     for obligation in open_obligations:
@@ -944,6 +1245,19 @@ def _recommended_moments(
                     trust_boundary="route_switch_checkpoint",
                 )
             )
+    for gap in provenance_gaps:
+        moments.append(
+            _moment(
+                "capture_source_or_code_provenance",
+                reason=str(gap.get("reason") or "source/code provenance gap"),
+                target_type=str(gap.get("target_type") or "claim"),
+                target_id=str(gap.get("target_id") or ""),
+                priority=str(gap.get("severity") or "normal"),
+                timing="before_using_as_evidence_or_validation",
+                trust_boundary="provenance_before_reuse",
+                missing_components=[str(gap.get("gap_type") or "provenance_gap")],
+            )
+        )
     return _dedupe_moments(moments)
 
 

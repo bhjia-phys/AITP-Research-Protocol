@@ -34,6 +34,7 @@ def test_source_asset_record_is_canonical_orientation_asset(tmp_path):
     assert payload["kind"] == "source_asset"
     assert payload["content_hash"] == expected_hash
     assert payload["hash_algorithm"] == "sha256"
+    assert payload["metadata"]["duplicate_hash_diagnostics"]["duplicate_hash"] is False
     assert payload["orientation_only"] is True
     assert payload["can_update_claim_trust"] is False
     assert validate_source_asset_record(payload).ok is True
@@ -55,6 +56,22 @@ def test_source_asset_record_is_canonical_orientation_asset(tmp_path):
     assert mcp_payload["asset_type"] == "paper"
     assert mcp_payload["orientation_only"] is True
     assert mcp_payload["can_update_claim_trust"] is False
+
+    duplicate_file = tmp_path / "lecture-copy.md"
+    duplicate_file.write_text("von Neumann algebra notes\n", encoding="utf-8")
+    duplicate = register_source_asset(
+        ws,
+        topic_id="qg",
+        claim_id="claim-qg-mipt",
+        asset_type="lecture",
+        uri=str(duplicate_file),
+        title="Operator algebra lecture notes copy",
+        source_kind="local_notes",
+    )
+
+    diagnostics = duplicate.metadata["duplicate_hash_diagnostics"]
+    assert diagnostics["duplicate_hash"] is True
+    assert record.asset_id in diagnostics["duplicate_asset_ids"]
 
 
 def test_source_asset_contract_rejects_trust_mutation():

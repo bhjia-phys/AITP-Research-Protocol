@@ -273,6 +273,10 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     assert payload["source_backtrace"][0]["complete"] is True
     assert payload["source_backtrace"][0]["topic_id"] == "fqhe"
     assert payload["source_backtrace"][0]["source_asset_ids"] == [asset.asset_id]
+    provenance_gap = next(item for item in payload["provenance_gaps"] if item["gap_type"] == "source_asset_hash_missing")
+    assert provenance_gap["target_refs"] == [f"source_asset:{asset.asset_id}"]
+    assert provenance_gap["recommended_entrypoints"] == ["aitp_v5_register_source_asset"]
+    assert provenance_gap["required_before_trust_change"] is False
     assert payload["relation_neighborhood"][0]["relation_id"] == relation.relation_id
     assert payload["relation_neighborhood"][0]["topic_id"] == "fqhe"
     assert "relation-path brainstorming" in payload["relation_neighborhood"][0]["reasoning_moves"]
@@ -447,6 +451,44 @@ def test_process_graph_policy_payload_hints_for_missing_source_components(tmp_pa
     assert reference_hint["draft"]["claim_id"] == claim.claim_id
     assert reference_hint["draft"]["location_type"] == "paper_section"
     assert reference_hint["draft"]["uri"] == "<source URI>"
+
+
+def test_process_graph_slice_exposes_source_code_provenance_gaps(tmp_path):
+    from brain.v5.process_graph import build_process_graph_slice
+    from brain.v5.process_graph_contracts import validate_process_graph_slice
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "gw", context_id="code-method", title="GW code method")
+    claim = create_claim(
+        ws,
+        topic_id="gw",
+        statement="A code benchmark reproduces the Si GW reference.",
+        evidence_profile="code_method",
+        confidence_state="hypothesis",
+        active_uncertainty="code provenance and benchmark artifact not captured",
+    )
+    bind_session(ws, "s-gw", topic_id="gw", context_id="code-method", active_claim=claim.claim_id)
+
+    payload = build_process_graph_slice(ws, "s-gw", limit=40)
+
+    assert validate_process_graph_slice(payload).ok is True
+    by_type = {item["gap_type"]: item for item in payload["provenance_gaps"]}
+    assert {
+        "reference_location_missing",
+        "source_asset_missing",
+        "code_state_missing",
+        "tool_run_missing",
+        "validation_contract_missing",
+    }.issubset(by_type)
+    code_gap = by_type["code_state_missing"]
+    assert code_gap["recommended_entrypoints"] == ["aitp_v5_capture_code_state_auto", "aitp_v5_record_code_state"]
+    assert code_gap["recommended_actions"] == ["aitp.capture_code_state_auto", "aitp.record_code_state"]
+    assert code_gap["required_now"] is False
+    assert code_gap["required_before_trust_change"] is False
+    assert "benchmark_basis" in code_gap["blocking_when_used_as"]
+    moments = [item for item in payload["recommended_moments"] if item["moment"] == "capture_source_or_code_provenance"]
+    assert moments
 
 
 def test_process_graph_slice_is_registered_for_native_mcp_and_runtime_entrypoints():

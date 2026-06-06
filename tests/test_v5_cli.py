@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import inspect
 import json
+import subprocess
 
 
 def _invoke(args, capsys):
@@ -265,6 +266,79 @@ def test_cli_evidence_and_code_state_record_provenance(tmp_path, capsys):
     assert evidence["artifact_ids"] == ["artifact-si-log"]
 
 
+def test_cli_and_mcp_auto_capture_git_code_state(tmp_path, capsys):
+    import pytest
+
+    _require_git(pytest)
+    from brain.v5.mcp_tools import aitp_v5_capture_code_state_auto
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init")
+    _git(repo, "config", "user.email", "aitp@example.invalid")
+    _git(repo, "config", "user.name", "AITP Test")
+    (repo / "kernel.py").write_text("value = 1\n", encoding="utf-8")
+    _git(repo, "add", "kernel.py")
+    _git(repo, "commit", "-m", "seed")
+    (repo / "kernel.py").write_text("value = 2\n", encoding="utf-8")
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "gw", context_id="code-method", title="GW code method")
+    claim = create_claim(
+        ws,
+        topic_id="gw",
+        statement="The code patch should preserve provenance.",
+        evidence_profile="code_method",
+        confidence_state="hypothesis",
+        active_uncertainty="git diff provenance",
+    )
+
+    payload = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "code",
+            "state",
+            "auto",
+            "--worktree-path",
+            str(repo),
+            "--repo-id",
+            "toy-gw",
+            "--topic",
+            "gw",
+            "--claim",
+            claim.claim_id,
+            "--session",
+            "s-gw",
+            "--build-config-json",
+            '{"python":"3.x"}',
+            "--write-patch-artifact",
+        ],
+        capsys,
+    )
+    mcp_payload = aitp_v5_capture_code_state_auto(
+        str(tmp_path),
+        worktree_path=str(repo),
+        repo_id="toy-gw",
+        topic_id="gw",
+        claim_id=claim.claim_id,
+    )
+
+    assert payload["ok"] is True
+    assert payload["kind"] == "code_state"
+    assert payload["repo_id"] == "toy-gw"
+    assert payload["dirty"] is True
+    assert len(payload["diff_hash"]) == 64
+    assert payload["patch_id"].startswith("artifact-git_patch-")
+    assert payload["runtime_environment"]["capture_tool"] == "aitp_v5_capture_code_state_auto"
+    assert payload["runtime_environment"]["git_head_commit"]
+    assert payload["runtime_environment"]["diff_hash_algorithm"] == "sha256"
+    assert payload["linked_records"]["claim_id"] == claim.claim_id
+    assert payload["linked_records"]["topic_id"] == "gw"
+    assert mcp_payload["code_state_id"].startswith("code-state-toy-gw-")
+
+
 def test_cli_adapter_registry_returns_static_protocol_metadata_without_workspace(tmp_path, capsys):
     from brain.v5.adapter_protocols import adapter_protocol_registry
 
@@ -376,3 +450,14 @@ def test_cli_does_not_import_legacy_mcp_monolith():
     assert "mcp__aitp" not in source
     assert "aitp_get_execution_brief" not in source
     assert "brain.PROTOCOL" not in source
+
+
+def _require_git(pytest_module) -> None:
+    try:
+        subprocess.run(["git", "--version"], check=True, capture_output=True, text=True, timeout=10)
+    except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        pytest_module.skip("git is required for auto code-state capture")
+
+
+def _git(cwd, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=str(cwd), check=True, capture_output=True, text=True, timeout=20)

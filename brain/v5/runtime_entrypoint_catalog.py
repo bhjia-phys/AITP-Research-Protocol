@@ -158,6 +158,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_record_code_state",
         "surface": "code_state_record",
     },
+    "capture_code_state_auto": {
+        "cli": "aitp-v5 code state auto <args>",
+        "mcp": "aitp_v5_capture_code_state_auto",
+        "surface": "code_state_record",
+    },
     "record_evidence": {
         "cli": "aitp-v5 evidence record <args>",
         "mcp": "aitp_v5_record_evidence",
