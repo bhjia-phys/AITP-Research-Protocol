@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from brain.v5.contracts import ContractError, ContractResult, _require_bool_value, _require_list, _require_mapping
+from brain.v5.moment_policy_contracts import validate_host_agnostic_moment_policy
 
 
 def validate_process_graph_slice(payload: dict[str, Any], *, path: str = "process_graph_slice") -> ContractResult:
@@ -32,6 +33,10 @@ def validate_process_graph_slice(payload: dict[str, Any], *, path: str = "proces
         "recommended_moments",
     ):
         _require_list(payload.get(key), f"{path}.{key}", result)
+    moment_policy = payload.get("moment_policy")
+    _require_mapping(moment_policy, f"{path}.moment_policy", result)
+    if isinstance(moment_policy, dict):
+        result.extend(validate_host_agnostic_moment_policy(moment_policy, path=f"{path}.moment_policy"))
     _require_mapping(payload.get("record_counts"), f"{path}.record_counts", result)
     _require_mapping(payload.get("truncation"), f"{path}.truncation", result)
     return result

@@ -71,6 +71,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "operator_checkpoint_record",
         "opencode_hook_installation",
         "opencode_plugin_bridge",
+        "host_agnostic_moment_policy",
         "physics_object_record",
         "pre_tool_policy_decision",
         "process_graph_slice",

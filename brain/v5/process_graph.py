@@ -22,6 +22,7 @@ from brain.v5.models import (
     ValidationResultRecord,
     SensemakingReportRecord,
 )
+from brain.v5.moment_policy import build_host_agnostic_moment_policy
 from brain.v5.paths import WorkspacePaths
 from brain.v5.store import list_valid_records, read_record
 
@@ -140,6 +141,7 @@ def build_process_graph_slice(
     open_obligations = [_obligation_slice(record) for record in obligations if not _closed(record.status)]
     source_backtrace = _source_backtrace(claims, references, source_assets, evidence, obligations, objects, relations, exploratory_records)
     relation_neighborhood = _relation_neighborhood(objects, relations)
+    exploratory_slices = [_exploratory_slice(record) for record in exploratory_records]
     trust_boundary_reasons = [
         "process_graph_slice is orientation-only",
         "truth_source is typed_records",
@@ -147,6 +149,16 @@ def build_process_graph_slice(
         "this API cannot update kernel state",
         "this API cannot update claim trust",
     ]
+    moment_policy = build_host_agnostic_moment_policy(
+        session_id=session_id,
+        topic_id=topic_id,
+        claim_id=focus_claim_id,
+        open_obligations=open_obligations,
+        source_backtrace=source_backtrace,
+        relation_neighborhood=relation_neighborhood,
+        exploratory_records=exploratory_slices,
+        trust_boundary_reasons=trust_boundary_reasons,
+    )
 
     return {
         "ok": True,
@@ -164,7 +176,8 @@ def build_process_graph_slice(
         "source_backtrace": source_backtrace,
         "relation_neighborhood": relation_neighborhood,
         "trust_boundary_reasons": trust_boundary_reasons,
-        "exploratory_records": [_exploratory_slice(record) for record in exploratory_records],
+        "exploratory_records": exploratory_slices,
+        "moment_policy": moment_policy,
         "recommended_moments": _recommended_moments(open_obligations, source_backtrace, relations, exploratory_records),
         "record_counts": {
             "claim": len(claims),
@@ -482,12 +495,18 @@ def _closed(status: str) -> bool:
 
 
 def _obligation_slice(record: ProofObligationRecord) -> dict[str, Any]:
+    suggested_moments = _suggested_moments_for_obligation(record)
     return {
         "obligation_id": record.obligation_id,
         "claim_id": record.claim_id,
         "status": record.status,
         "obligation_type": record.obligation_type,
         "statement": record.statement,
+        "severity": _obligation_severity(record),
+        "target_node_id": f"proof_obligation:{record.obligation_id}",
+        "suggested_moments": suggested_moments,
+        "source_refs": list(record.source_refs),
+        "trust_boundary": "before_final_or_promotion" if record.human_gate_required else "before_validation",
         "next_action": record.next_action,
         "required_evidence": list(record.required_evidence),
     }
@@ -600,72 +619,170 @@ def _recommended_moments(
     moments: list[dict[str, Any]] = []
     for obligation in open_obligations:
         moments.append(
-            {
-                "moment": "record_or_validate_open_obligation",
-                "reason": "open proof obligation requires typed evidence or validation",
-                "target_type": "proof_obligation",
-                "target_id": obligation["obligation_id"],
-            }
+            _moment(
+                "record_or_validate_open_obligation",
+                reason="open proof obligation requires typed evidence or validation",
+                target_type="proof_obligation",
+                target_id=obligation["obligation_id"],
+                priority=obligation.get("severity", "recommended"),
+                timing="before_final_or_promotion",
+                trust_boundary=obligation.get("trust_boundary", "before_final_or_promotion"),
+            )
         )
     for item in source_backtrace:
         if item["missing_components"]:
             moments.append(
-                {
-                    "moment": "backtrace_source_reconstruction",
-                    "reason": "missing source reconstruction components",
-                    "target_type": "claim",
-                    "target_id": item["claim_id"],
-                    "missing_components": list(item["missing_components"]),
-                }
+                _moment(
+                    "backtrace_source_reconstruction",
+                    reason="missing source reconstruction components",
+                    target_type="claim",
+                    target_id=item["claim_id"],
+                    priority="high",
+                    timing="before_using_as_support",
+                    trust_boundary="source_support",
+                    missing_components=list(item["missing_components"]),
+                )
             )
     for relation in relations:
         if relation.status.strip().lower() == "hypothesis":
             moments.append(
-                {
-                    "moment": "brainstorm_relation_path",
-                    "reason": "object relation is still a hypothesis",
-                    "target_type": "object_relation",
-                    "target_id": relation.relation_id,
-                }
+                _moment(
+                    "brainstorm_relation_path",
+                    reason="object relation is still a hypothesis",
+                    target_type="object_relation",
+                    target_id=relation.relation_id,
+                    priority="high",
+                    timing="before_using_relation_as_claim",
+                    trust_boundary="hypothesis_relation",
+                )
             )
     for record in exploratory_records:
         if record.exploration_type == "question_decomposition" and record.status in {"open", "active"}:
             moments.append(
-                {
-                    "moment": "direction.brainstorm",
-                    "reason": "open question decomposition should steer the next local analysis",
-                    "target_type": "exploratory_record",
-                    "target_id": record.record_id,
-                }
+                _moment(
+                    "direction.brainstorm",
+                    reason="open question decomposition should steer the next local analysis",
+                    target_type="exploratory_record",
+                    target_id=record.record_id,
+                    priority="high",
+                    timing="before_next_local_step",
+                    trust_boundary="exploratory_direction",
+                )
             )
         if record.exploration_type == "relation_path_brainstorm" and record.status in {"open", "active"}:
             moments.append(
-                {
-                    "moment": "brainstorm_relation_path",
-                    "reason": "relation path brainstorming is open",
-                    "target_type": "exploratory_record",
-                    "target_id": record.record_id,
-                }
+                _moment(
+                    "brainstorm_relation_path",
+                    reason="relation path brainstorming is open",
+                    target_type="exploratory_record",
+                    target_id=record.record_id,
+                    priority="high",
+                    timing="before_using_relation_as_claim",
+                    trust_boundary="exploratory_relation_path",
+                )
             )
         if record.exploration_type in {"source_asset", "backtrace_step"} and record.status in {"open", "active"}:
             moments.append(
-                {
-                    "moment": "backtrace_source_reconstruction",
-                    "reason": "exploratory source/backtrace record is still open",
-                    "target_type": "exploratory_record",
-                    "target_id": record.record_id,
-                }
+                _moment(
+                    "backtrace_source_reconstruction",
+                    reason="exploratory source/backtrace record is still open",
+                    target_type="exploratory_record",
+                    target_id=record.record_id,
+                    priority="high",
+                    timing="before_following_source_chain",
+                    trust_boundary="source_backtrace",
+                )
             )
         if record.original_question and record.local_question and record.status in {"open", "active"}:
             moments.append(
-                {
-                    "moment": "audit_original_question_drift",
-                    "reason": "exploratory local question must stay tied to the original question",
-                    "target_type": "exploratory_record",
-                    "target_id": record.record_id,
-                }
+                _moment(
+                    "audit_original_question_drift",
+                    reason="exploratory local question must stay tied to the original question",
+                    target_type="exploratory_record",
+                    target_id=record.record_id,
+                    priority="high",
+                    timing="during_backtrace_loop",
+                    trust_boundary="question_continuity",
+                )
             )
     return _dedupe_moments(moments)
+
+
+def _moment(
+    moment: str,
+    *,
+    reason: str,
+    target_type: str,
+    target_id: str,
+    priority: str,
+    timing: str,
+    trust_boundary: str,
+    missing_components: list[str] | None = None,
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "moment": moment,
+        "priority": _moment_priority(priority),
+        "reason": reason,
+        "target_type": target_type,
+        "target_id": target_id,
+        "target_refs": [f"{target_type}:{target_id}"],
+        "timing": timing,
+        "trust_boundary": trust_boundary,
+    }
+    if missing_components:
+        payload["missing_components"] = missing_components
+    return payload
+
+
+def _moment_priority(value: str) -> str:
+    normalized = value.strip().lower().replace("-", "_")
+    if normalized in {"blocking", "high", "normal", "low"}:
+        return normalized
+    if normalized == "recommended":
+        return "high"
+    if normalized == "advisory":
+        return "normal"
+    return "normal"
+
+
+def _obligation_severity(record: ProofObligationRecord) -> str:
+    text = " ".join(
+        [
+            record.obligation_type,
+            record.maturity_level,
+            record.statement,
+            record.next_action,
+            " ".join(record.required_evidence),
+        ]
+    ).lower()
+    if record.human_gate_required and any(
+        token in text
+        for token in ("validation", "human", "final", "promotion", "publish", "trust", "theorem", "proof_gap")
+    ):
+        return "blocking"
+    if any(token in text for token in ("source", "proof", "derive", "definition", "failure", "limit")):
+        return "recommended"
+    return "advisory"
+
+
+def _suggested_moments_for_obligation(record: ProofObligationRecord) -> list[str]:
+    text = " ".join(
+        [
+            record.obligation_type,
+            record.statement,
+            record.next_action,
+            " ".join(record.required_evidence),
+            " ".join(record.source_refs),
+        ]
+    ).lower()
+    result = ["aitp.create_open_obligation"]
+    if any(token in text for token in ("source", "citation", "reference", "provenance")):
+        result.append("trace.follow_source_dependency")
+    if any(token in text for token in ("definition", "define", "term", "notation")):
+        result.append("trace.reconstruct_definition")
+    if any(token in text for token in ("relation", "bridge", "connect", "path")):
+        result.append("physics.brainstorm_relation_path")
+    return result
 
 
 def _dedupe_moments(items: list[dict[str, Any]]) -> list[dict[str, Any]]:

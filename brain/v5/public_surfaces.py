@@ -71,6 +71,7 @@ _PUBLIC_SURFACE_NAMES = (
     "operator_checkpoint_record",
     "opencode_hook_installation",
     "opencode_plugin_bridge",
+    "host_agnostic_moment_policy",
     "physics_object_record",
     "pre_tool_policy_decision",
     "process_graph_slice",
@@ -186,6 +187,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "operator_checkpoint_record": "contracted topic-local operator question that survives restarts and cannot update claim trust",
     "opencode_hook_installation": "contracted OpenCode stdin-runner hook installation fixture generated from runtime metadata",
     "opencode_plugin_bridge": "contracted OpenCode plugin bridge generated from runtime hook installation metadata",
+    "host_agnostic_moment_policy": "read-only policy over typed process-graph records for when to record, brainstorm/backtrace, or stop at a trust boundary",
     "physics_object_record": "contracted physics-object record for theoretical objects, systems, operators, sectors, and definitions",
     "pre_tool_policy_decision": "contracted pre-tool policy decision derived from typed kernel records, not summaries",
     "process_graph_slice": "read-only host-agnostic process graph slice over typed records; orientation-only and unable to mutate kernel state or claim trust",
@@ -396,6 +398,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.workspace_refresh_contracts import require_valid_workspace_refresh_bundle
     from brain.v5.qsgw_cockpit_contracts import require_valid_qsgw_cockpit_bundle
     from brain.v5.research_cockpit_contracts import require_valid_research_cockpit_bundle
+    from brain.v5.moment_policy_contracts import require_valid_host_agnostic_moment_policy
     from brain.v5.goal_continuation_contracts import (
         require_valid_goal_continuation_list,
         require_valid_goal_continuation_packet,
@@ -483,6 +486,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "operator_checkpoint_record": require_valid_operator_checkpoint_record,
         "opencode_hook_installation": require_valid_opencode_hook_installation,
         "opencode_plugin_bridge": require_valid_opencode_plugin_bridge,
+        "host_agnostic_moment_policy": require_valid_host_agnostic_moment_policy,
         "physics_object_record": require_valid_physics_object_record,
         "pre_tool_policy_decision": require_valid_pre_tool_policy_decision,
         "process_graph_slice": require_valid_process_graph_slice,

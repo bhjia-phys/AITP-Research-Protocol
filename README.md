@@ -35,7 +35,7 @@ surfaces.
 | Goal continuation | Implemented: local `.aitp/surfaces/goal_continuation/` JSON+Markdown packets capture objective, commit range, changed files, tests, smoke commands, readiness, next actions, and blocking backlog |
 | Literature intake | Implemented conservative intake: references are orientation-only, evidence/sensemaking are guarded suggestions, and trust updates stay forbidden without preflight/checkpoints |
 | Theory research state | Implemented minimal conservative surface: `research-state register-source`, `attach-artifact`, `update-claim-status`, `create-proof-obligation`, `classify-event`, and `bounded-evidence` connect literature/results/artifacts/Fisherd-style runs to typed records without claim-trust promotion |
-| Typed process graph | Implemented first read-only slice: `aitp-v5 graph slice <session-id>` and `aitp_v5_get_process_graph_slice` compile typed records into orientation-only nodes, edges, source backtrace, relation neighborhoods, open obligations, trust-boundary reasons, and recommended research moments for agents such as Hakimi |
+| Typed process graph | Implemented first read-only slice: `aitp-v5 graph slice <session-id>` and `aitp_v5_get_process_graph_slice` compile typed records into orientation-only nodes, edges, source backtrace, relation neighborhoods, open obligations, trust-boundary reasons, recommended research moments, and a host-agnostic moment policy for when to record, brainstorm/backtrace, or stop at a trust boundary |
 | Exploratory research graph | Implemented first typed record: `aitp-v5 exploration record` and `aitp_v5_record_exploratory_record` capture source assets, question decomposition, relation-path brainstorming, backtrace steps, and steering checkpoints as orientation-only graph records |
 | Canonical source assets | Implemented first typed record: `aitp-v5 asset register` and `aitp_v5_register_source_asset` assign orientation-only identities, hashes, version anchors, and source/code/artifact links to papers, lectures, notes, code repositories, snapshots, datasets, and generated artifacts |
 | QSGW cockpit | Implemented first surface: `aitp-v5 status qsgw-cockpit` writes a topic-local final/diagnostic lane manifest, plot guard, and dashboard dry-run from typed records plus `research/librpa` report/script scans; it also discovers downstream `*_lane_manifest_current.json` and `*_aitp_intake_current.jsonl` files without treating them as trust updates |
@@ -57,6 +57,9 @@ The practical rule is:
 - Treat typed v5 records as the authority.
 - Treat process graph slices as local navigation/compilation aids, not as new
   truth records.
+- Treat host-agnostic moment policy as read-only process guidance; it explains
+  when typed records, brainstorming/backtrace, or trust preflight are needed,
+  but it cannot update kernel state or claim trust.
 - Treat exploratory records as canonical process records for navigation,
   brainstorming, and backtrace continuity, but not as evidence or validation.
 - Treat source asset records as canonical identities for raw papers, lectures,

@@ -6,8 +6,10 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     from brain.v5.evidence import record_evidence
     from brain.v5.exploration import record_exploratory_record
     from brain.v5.mcp_tools import aitp_v5_get_process_graph_slice
+    from brain.v5.moment_policy_contracts import validate_host_agnostic_moment_policy
     from brain.v5.physics_objects import record_object_relation, record_physics_object
     from brain.v5.process_graph import build_process_graph_slice
+    from brain.v5.public_surfaces import require_valid_public_surface
     from brain.v5.process_graph_contracts import validate_process_graph_slice
     from brain.v5.references import record_reference_location
     from brain.v5.research_state import create_proof_obligation
@@ -253,6 +255,9 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     ) in edges
 
     assert payload["open_obligations"][0]["obligation_id"] == obligation.obligation_id
+    assert payload["open_obligations"][0]["severity"] == "blocking"
+    assert payload["open_obligations"][0]["trust_boundary"] == "before_final_or_promotion"
+    assert "aitp.create_open_obligation" in payload["open_obligations"][0]["suggested_moments"]
     assert payload["source_backtrace"][0]["complete"] is True
     assert payload["source_backtrace"][0]["source_asset_ids"] == [asset.asset_id]
     assert payload["relation_neighborhood"][0]["relation_id"] == relation.relation_id
@@ -261,10 +266,25 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     assert backtrace.record_id in exploratory_ids
     assert payload["source_backtrace"][0]["exploratory_record_ids"] == [backtrace.record_id]
     assert "this API cannot update claim trust" in payload["trust_boundary_reasons"]
+    policy = payload["moment_policy"]
+    assert validate_host_agnostic_moment_policy(policy).ok is True
+    assert require_valid_public_surface("host_agnostic_moment_policy", policy) == policy
+    assert policy["kind"] == "host_agnostic_moment_policy"
+    assert policy["derived_from"] == "process_graph_slice"
+    assert policy["orientation_only"] is True
+    assert policy["can_update_claim_trust"] is False
+    decision_types = {item["decision_type"] for item in policy["decisions"]}
+    assert {"recording", "brainstorming", "backtrace", "trust_boundary"}.issubset(decision_types)
+    assert any(item["moment"] == "trust_boundary_before_claim_update" for item in policy["decisions"])
     moments = {item["moment"] for item in payload["recommended_moments"]}
     assert "record_or_validate_open_obligation" in moments
     assert "brainstorm_relation_path" in moments
     assert "audit_original_question_drift" in moments
+    by_moment = {item["moment"]: item for item in payload["recommended_moments"]}
+    assert by_moment["record_or_validate_open_obligation"]["priority"] == "blocking"
+    assert by_moment["record_or_validate_open_obligation"]["timing"] == "before_final_or_promotion"
+    assert by_moment["brainstorm_relation_path"]["timing"] == "before_using_relation_as_claim"
+    assert by_moment["audit_original_question_drift"]["trust_boundary"] == "question_continuity"
 
 
 def test_process_graph_slice_is_registered_for_native_mcp_and_runtime_entrypoints():
