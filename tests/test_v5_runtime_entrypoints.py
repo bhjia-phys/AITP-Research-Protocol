@@ -165,6 +165,78 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     }
 
 
+def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+
+    entrypoints = runtime_entrypoints()
+
+    expected = {
+        "process_graph_slice": {
+            "cli": "aitp-v5 graph slice <session-id>",
+            "mcp": "aitp_v5_get_process_graph_slice",
+            "surface": "process_graph_slice",
+        },
+        "record_evidence": {
+            "cli": "aitp-v5 evidence record <args>",
+            "mcp": "aitp_v5_record_evidence",
+            "surface": "evidence_record",
+        },
+        "record_tool_run": {
+            "cli": "aitp-v5 tool run record <args>",
+            "mcp": "aitp_v5_record_tool_run",
+            "surface": "tool_run_record",
+        },
+        "record_reference_location": {
+            "cli": "aitp-v5 reference location record <args>",
+            "mcp": "aitp_v5_record_reference_location",
+            "surface": "reference_location_record",
+        },
+        "record_validation_result": {
+            "cli": "aitp-v5 validation result record <args>",
+            "mcp": "aitp_v5_record_validation_result",
+            "surface": "validation_result_record",
+        },
+        "record_exploratory_record": {
+            "cli": "aitp-v5 exploration record <args>",
+            "mcp": "aitp_v5_record_exploratory_record",
+            "surface": "exploratory_record",
+        },
+        "register_source_asset": {
+            "cli": "aitp-v5 asset register <args>",
+            "mcp": "aitp_v5_register_source_asset",
+            "surface": "source_asset_record",
+        },
+        "create_proof_obligation": {
+            "cli": "aitp-v5 research-state create-proof-obligation <args>",
+            "mcp": "aitp_v5_create_proof_obligation",
+            "surface": "proof_obligation_record",
+        },
+        "update_proof_obligation": {
+            "cli": "aitp-v5 research-state update-proof-obligation <args>",
+            "mcp": "aitp_v5_update_proof_obligation",
+            "surface": "proof_obligation_record",
+        },
+        "create_validation_contract": {
+            "cli": "aitp-v5 validation contract create <args>",
+            "mcp": "aitp_v5_create_validation_contract",
+            "surface": "validation_contract_record",
+        },
+        "request_human_checkpoint": {
+            "cli": "aitp-v5 checkpoint request <args>",
+            "mcp": "aitp_v5_request_human_checkpoint",
+            "surface": "human_checkpoint_record",
+        },
+        "decide_human_checkpoint": {
+            "cli": "aitp-v5 checkpoint decide <args>",
+            "mcp": "aitp_v5_decide_human_checkpoint",
+            "surface": "human_checkpoint_record",
+        },
+    }
+
+    for key, contract in expected.items():
+        assert entrypoints[key] == contract
+
+
 def test_runtime_entrypoint_validation_reports_bad_mcp_and_cli_targets():
     from brain.v5.runtime_entrypoints import runtime_entrypoints, validate_runtime_entrypoints
 

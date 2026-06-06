@@ -254,6 +254,26 @@ register`, `checkpoint request`, `research-state create-proof-obligation`,
 `aitp-v5` console command is not installed in a local environment, use the
 equivalent module invocation shown below.
 
+The canonical runtime entrypoint contract is defined by
+`brain/v5/runtime_entrypoints.py` and covered by
+`tests/test_v5_runtime_entrypoints.py`. Hakimi and other hosts should consume
+these names as the stable bridge contract, not infer names from README prose:
+
+| Contract key | CLI template | MCP tool | Surface |
+|--------------|--------------|----------|---------|
+| `process_graph_slice` | `aitp-v5 graph slice <session-id>` | `aitp_v5_get_process_graph_slice` | `process_graph_slice` |
+| `record_evidence` | `aitp-v5 evidence record <args>` | `aitp_v5_record_evidence` | `evidence_record` |
+| `record_tool_run` | `aitp-v5 tool run record <args>` | `aitp_v5_record_tool_run` | `tool_run_record` |
+| `record_reference_location` | `aitp-v5 reference location record <args>` | `aitp_v5_record_reference_location` | `reference_location_record` |
+| `record_validation_result` | `aitp-v5 validation result record <args>` | `aitp_v5_record_validation_result` | `validation_result_record` |
+| `record_exploratory_record` | `aitp-v5 exploration record <args>` | `aitp_v5_record_exploratory_record` | `exploratory_record` |
+| `register_source_asset` | `aitp-v5 asset register <args>` | `aitp_v5_register_source_asset` | `source_asset_record` |
+| `create_proof_obligation` | `aitp-v5 research-state create-proof-obligation <args>` | `aitp_v5_create_proof_obligation` | `proof_obligation_record` |
+| `update_proof_obligation` | `aitp-v5 research-state update-proof-obligation <args>` | `aitp_v5_update_proof_obligation` | `proof_obligation_record` |
+| `create_validation_contract` | `aitp-v5 validation contract create <args>` | `aitp_v5_create_validation_contract` | `validation_contract_record` |
+| `request_human_checkpoint` | `aitp-v5 checkpoint request <args>` | `aitp_v5_request_human_checkpoint` | `human_checkpoint_record` |
+| `decide_human_checkpoint` | `aitp-v5 checkpoint decide <args>` | `aitp_v5_decide_human_checkpoint` | `human_checkpoint_record` |
+
 The graph slice returns `moment_policy.decisions` as the typed policy surface
 for hosts. Each decision carries whether it is `required_now`, which
 `required_before_trust_change` prerequisites apply, and which AITP
