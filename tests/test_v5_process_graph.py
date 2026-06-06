@@ -171,7 +171,12 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
         object_ids=[counting.object_id, cft.object_id],
         relation_ids=[relation.relation_id],
         source_refs=[ref.location_id],
+        reasoning_moves=["why-question decomposition", "relation-path brainstorming"],
+        backtrace_targets=[f"object:{counting.object_id}", f"object:{cft.object_id}"],
         candidate_paths=["counting sequence -> sector matching -> edge CFT"],
+        relation_path_questions=["Which intermediate definition connects counting to edge CFT labels?"],
+        definition_boundary_questions=["Where is sector matching defined on both sides?"],
+        original_question_guard=["Keep relation brainstorming tied to edge-CFT identification."],
         unresolved_points=["finite-size aliasing"],
         next_actions=["open source backtrace"],
     )
@@ -188,6 +193,12 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
         local_question="Locate the sector matching convention.",
         source_refs=[ref.location_id],
         parent_record_ids=[exploratory.record_id],
+        reasoning_moves=["source dependency backtrace", "bidirectional definition backtrace"],
+        backtrace_targets=[f"source:{ref.location_id}", f"relation:{relation.relation_id}"],
+        definition_boundary_questions=["Which source defines the sector matching convention?"],
+        derivation_backtrace_questions=["Which derivation step assumes sector matching?"],
+        source_dependency_questions=["Which cited source introduces the matching convention?"],
+        original_question_guard=["Do not lose the edge-CFT identification question while tracing notation."],
         unresolved_points=["definition boundary not fully reconstructed"],
         next_actions=["reconstruct definition"],
     )
@@ -264,10 +275,31 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     assert payload["source_backtrace"][0]["source_asset_ids"] == [asset.asset_id]
     assert payload["relation_neighborhood"][0]["relation_id"] == relation.relation_id
     assert payload["relation_neighborhood"][0]["topic_id"] == "fqhe"
+    assert "relation-path brainstorming" in payload["relation_neighborhood"][0]["reasoning_moves"]
+    assert "counting sequence -> sector matching -> edge CFT" in payload["relation_neighborhood"][0][
+        "candidate_paths"
+    ]
+    assert "Which intermediate definition connects counting to edge CFT labels?" in payload[
+        "relation_neighborhood"
+    ][0]["relation_path_questions"]
+    assert "Where is sector matching defined on both sides?" in payload["relation_neighborhood"][0][
+        "definition_boundary_questions"
+    ]
     exploratory_ids = {item["record_id"] for item in payload["exploratory_records"]}
     assert exploratory.record_id in exploratory_ids
     assert backtrace.record_id in exploratory_ids
     assert payload["source_backtrace"][0]["exploratory_record_ids"] == [backtrace.record_id]
+    assert "source dependency backtrace" in payload["source_backtrace"][0]["reasoning_moves"]
+    assert f"source:{ref.location_id}" in payload["source_backtrace"][0]["backtrace_targets"]
+    assert "Which source defines the sector matching convention?" in payload["source_backtrace"][0][
+        "definition_boundary_questions"
+    ]
+    assert "Which derivation step assumes sector matching?" in payload["source_backtrace"][0][
+        "derivation_backtrace_questions"
+    ]
+    assert "Which cited source introduces the matching convention?" in payload["source_backtrace"][0][
+        "source_dependency_questions"
+    ]
     assert "this API cannot update claim trust" in payload["trust_boundary_reasons"]
     policy = payload["moment_policy"]
     assert validate_host_agnostic_moment_policy(policy).ok is True
@@ -324,6 +356,17 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     assert exploration_hint["draft"]["topic_id"] == "fqhe"
     assert exploration_hint["draft"]["claim_id"] == claim.claim_id
     assert exploration_hint["draft"]["exploration_type"] == "relation_path_brainstorm"
+    assert "relation-path brainstorming" in exploration_hint["draft"]["reasoning_moves"]
+    assert f"object:{counting.object_id}" in exploration_hint["draft"]["backtrace_targets"]
+    assert "Which intermediate definition connects counting to edge CFT labels?" in exploration_hint[
+        "draft"
+    ]["relation_path_questions"]
+    assert "Where is sector matching defined on both sides?" in exploration_hint["draft"][
+        "definition_boundary_questions"
+    ]
+    assert "Keep relation brainstorming tied to edge-CFT identification." in exploration_hint["draft"][
+        "original_question_guard"
+    ]
     assert relation_decision["lifecycle_phases"] == ["pre_turn", "pre_action", "pre_final"]
     assert relation_decision["recording_threshold"] == "recommended_before_using_hypothesis_or_exploration"
     assert "before using the brainstormed path as claim support or validation basis" in relation_decision[

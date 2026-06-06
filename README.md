@@ -36,7 +36,7 @@ surfaces.
 | Literature intake | Implemented conservative intake: references are orientation-only, evidence/sensemaking are guarded suggestions, and trust updates stay forbidden without preflight/checkpoints |
 | Theory research state | Implemented minimal conservative surface: `research-state register-source`, `attach-artifact`, `update-claim-status`, `create-proof-obligation`, `classify-event`, and `bounded-evidence` connect literature/results/artifacts/Fisherd-style runs to typed records without claim-trust promotion |
 | Typed process graph | Implemented first read-only slice: `aitp-v5 graph slice <session-id>` and `aitp_v5_get_process_graph_slice` compile typed records into orientation-only nodes, edges, source backtrace, relation neighborhoods, open obligations, trust-boundary reasons, recommended research moments, and a host-agnostic `moment_policy.decisions` list with `required_now`, `required_before_trust_change`, lifecycle trigger phases/conditions, split record/exploration entrypoints, and a host-facing `entrypoints` summary |
-| Exploratory research graph | Implemented first typed record: `aitp-v5 exploration record` and `aitp_v5_record_exploratory_record` capture source assets, question decomposition, relation-path brainstorming, backtrace steps, and steering checkpoints as orientation-only graph records |
+| Exploratory research graph | Implemented first typed record: `aitp-v5 exploration record` and `aitp_v5_record_exploratory_record` capture source assets, question decomposition, relation-path brainstorming, backtrace steps, and steering checkpoints as orientation-only graph records. Theory-facing fields now preserve why-question decomposition, relation-path questions, definition/derivation/source backtrace questions, backtrace targets, and original-question guards without updating claim trust |
 | Canonical source assets | Implemented first typed record: `aitp-v5 asset register` and `aitp_v5_register_source_asset` assign orientation-only identities, hashes, version anchors, and source/code/artifact links to papers, lectures, notes, code repositories, snapshots, datasets, and generated artifacts |
 | QSGW cockpit | Implemented first surface: `aitp-v5 status qsgw-cockpit` writes a topic-local final/diagnostic lane manifest, plot guard, and dashboard dry-run from typed records plus `research/librpa` report/script scans; it also discovers downstream `*_lane_manifest_current.json` and `*_aitp_intake_current.jsonl` files without treating them as trust updates |
 
@@ -64,6 +64,12 @@ The practical rule is:
   policy derived from typed records. They are not canonical truth records; a
   host may use them to decide when to call AITP entrypoints or final gates, but
   successful typed writes and trust preflight remain the authority.
+- Treat exploratory-record reasoning fields as local theory-process handles.
+  `reasoning_moves`, `backtrace_targets`, `relation_path_questions`,
+  `definition_boundary_questions`, `derivation_backtrace_questions`,
+  `source_dependency_questions`, and `original_question_guard` help hosts
+  preserve nonlinear theoretical-physics thinking without promoting the
+  exploration to evidence or claim trust.
 - Treat `moment_policy.decisions[].entrypoints` as the host-facing call surface
   summary. Hakimi may compile it into blocking/current-turn call obligations,
   but the policy remains derived from AITP typed records and contracts.

@@ -140,7 +140,7 @@ def build_process_graph_slice(
 
     open_obligations = [_obligation_slice(record) for record in obligations if not _closed(record.status)]
     source_backtrace = _source_backtrace(claims, references, source_assets, evidence, obligations, objects, relations, exploratory_records)
-    relation_neighborhood = _relation_neighborhood(objects, relations)
+    relation_neighborhood = _relation_neighborhood(objects, relations, exploratory_records)
     exploratory_slices = [_exploratory_slice(record) for record in exploratory_records]
     trust_boundary_reasons = [
         "process_graph_slice is orientation-only",
@@ -536,7 +536,7 @@ def _source_backtrace(
         claim_obligations = [record.obligation_id for record in obligations if record.claim_id == claim_id]
         claim_relations = [record.relation_id for record in relations if record.claim_id == claim_id]
         claim_backtrace_records = [
-            record.record_id
+            record
             for record in exploratory_records
             if record.claim_id == claim_id and record.exploration_type in {"backtrace_step", "source_asset"}
         ]
@@ -562,7 +562,22 @@ def _source_backtrace(
                 "proof_obligation_ids": claim_obligations,
                 "object_relation_ids": claim_relations,
                 "physics_object_ids": [record.object_id for record in objects],
-                "exploratory_record_ids": claim_backtrace_records,
+                "exploratory_record_ids": [record.record_id for record in claim_backtrace_records],
+                "reasoning_moves": _record_values(claim_backtrace_records, "reasoning_moves"),
+                "backtrace_targets": _record_values(claim_backtrace_records, "backtrace_targets"),
+                "definition_boundary_questions": _record_values(
+                    claim_backtrace_records,
+                    "definition_boundary_questions",
+                ),
+                "derivation_backtrace_questions": _record_values(
+                    claim_backtrace_records,
+                    "derivation_backtrace_questions",
+                ),
+                "source_dependency_questions": _record_values(
+                    claim_backtrace_records,
+                    "source_dependency_questions",
+                ),
+                "original_question_guard": _record_values(claim_backtrace_records, "original_question_guard"),
                 "missing_components": missing,
                 "complete": not missing,
             }
@@ -573,10 +588,18 @@ def _source_backtrace(
 def _relation_neighborhood(
     objects: list[PhysicsObjectRecord],
     relations: list[ObjectRelationRecord],
+    exploratory_records: list[ExploratoryRecord],
 ) -> list[dict[str, Any]]:
     object_names = {record.object_id: record.name for record in objects}
-    return [
-        {
+    result = []
+    for record in relations:
+        relation_explorations = [
+            item
+            for item in exploratory_records
+            if item.exploration_type == "relation_path_brainstorm" and record.relation_id in item.relation_ids
+        ]
+        result.append(
+            {
             "topic_id": record.topic_id,
             "relation_id": record.relation_id,
             "claim_id": record.claim_id,
@@ -587,9 +610,18 @@ def _relation_neighborhood(
             "object_id": record.object_id,
             "object_name": object_names.get(record.object_id, ""),
             "failure_modes": list(record.failure_modes),
+            "exploratory_record_ids": [item.record_id for item in relation_explorations],
+            "reasoning_moves": _record_values(relation_explorations, "reasoning_moves"),
+            "candidate_paths": _record_values(relation_explorations, "candidate_paths"),
+            "relation_path_questions": _record_values(relation_explorations, "relation_path_questions"),
+            "definition_boundary_questions": _record_values(
+                relation_explorations,
+                "definition_boundary_questions",
+            ),
+            "original_question_guard": _record_values(relation_explorations, "original_question_guard"),
         }
-        for record in relations
-    ]
+        )
+    return result
 
 
 def _exploratory_slice(record: ExploratoryRecord) -> dict[str, Any]:
@@ -607,10 +639,27 @@ def _exploratory_slice(record: ExploratoryRecord) -> dict[str, Any]:
         "object_ids": list(record.object_ids),
         "relation_ids": list(record.relation_ids),
         "source_refs": list(record.source_refs),
+        "reasoning_moves": list(record.reasoning_moves),
+        "backtrace_targets": list(record.backtrace_targets),
         "candidate_paths": list(record.candidate_paths),
+        "relation_path_questions": list(record.relation_path_questions),
+        "definition_boundary_questions": list(record.definition_boundary_questions),
+        "derivation_backtrace_questions": list(record.derivation_backtrace_questions),
+        "source_dependency_questions": list(record.source_dependency_questions),
+        "original_question_guard": list(record.original_question_guard),
         "unresolved_points": list(record.unresolved_points),
         "next_actions": list(record.next_actions),
     }
+
+
+def _record_values(records: list[ExploratoryRecord], field_name: str) -> list[str]:
+    values: list[str] = []
+    for record in records:
+        for value in getattr(record, field_name, []):
+            text = str(value)
+            if text and text not in values:
+                values.append(text)
+    return values
 
 
 def _recommended_moments(

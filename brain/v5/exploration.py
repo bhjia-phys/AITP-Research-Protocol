@@ -41,7 +41,14 @@ def record_exploratory_record(
     artifact_ids: list[str] | None = None,
     parent_record_ids: list[str] | None = None,
     derived_record_ids: list[str] | None = None,
+    reasoning_moves: list[str] | None = None,
+    backtrace_targets: list[str] | None = None,
     candidate_paths: list[str] | None = None,
+    relation_path_questions: list[str] | None = None,
+    definition_boundary_questions: list[str] | None = None,
+    derivation_backtrace_questions: list[str] | None = None,
+    source_dependency_questions: list[str] | None = None,
+    original_question_guard: list[str] | None = None,
     unresolved_points: list[str] | None = None,
     next_actions: list[str] | None = None,
     human_steering: str = "",
@@ -78,7 +85,14 @@ def record_exploratory_record(
         artifact_ids=artifact_ids or [],
         parent_record_ids=parent_record_ids or [],
         derived_record_ids=derived_record_ids or [],
+        reasoning_moves=reasoning_moves or [],
+        backtrace_targets=backtrace_targets or [],
         candidate_paths=candidate_paths or [],
+        relation_path_questions=relation_path_questions or [],
+        definition_boundary_questions=definition_boundary_questions or [],
+        derivation_backtrace_questions=derivation_backtrace_questions or [],
+        source_dependency_questions=source_dependency_questions or [],
+        original_question_guard=original_question_guard or [],
         unresolved_points=unresolved_points or [],
         next_actions=next_actions or [],
         human_steering=human_steering,
@@ -97,7 +111,14 @@ def exploratory_record_payload(record: ExploratoryRecord) -> dict[str, Any]:
 
 
 def _body(record: ExploratoryRecord) -> str:
+    moves = "\n".join(f"- {item}" for item in record.reasoning_moves) or "- None"
+    backtrace_targets = "\n".join(f"- {item}" for item in record.backtrace_targets) or "- None"
     candidates = "\n".join(f"- {item}" for item in record.candidate_paths) or "- None"
+    relation_questions = "\n".join(f"- {item}" for item in record.relation_path_questions) or "- None"
+    definition_questions = "\n".join(f"- {item}" for item in record.definition_boundary_questions) or "- None"
+    derivation_questions = "\n".join(f"- {item}" for item in record.derivation_backtrace_questions) or "- None"
+    source_questions = "\n".join(f"- {item}" for item in record.source_dependency_questions) or "- None"
+    original_guard = "\n".join(f"- {item}" for item in record.original_question_guard) or "- None"
     unresolved = "\n".join(f"- {item}" for item in record.unresolved_points) or "- None"
     next_actions = "\n".join(f"- {item}" for item in record.next_actions) or "- None"
     return (
@@ -107,7 +128,14 @@ def _body(record: ExploratoryRecord) -> str:
         f"Original question: {record.original_question}\n\n"
         f"Local question: {record.local_question}\n\n"
         f"Summary: {record.summary}\n\n"
+        f"Reasoning moves:\n{moves}\n\n"
+        f"Backtrace targets:\n{backtrace_targets}\n\n"
         f"Candidate paths:\n{candidates}\n\n"
+        f"Relation path questions:\n{relation_questions}\n\n"
+        f"Definition boundary questions:\n{definition_questions}\n\n"
+        f"Derivation backtrace questions:\n{derivation_questions}\n\n"
+        f"Source dependency questions:\n{source_questions}\n\n"
+        f"Original question guard:\n{original_guard}\n\n"
         f"Unresolved points:\n{unresolved}\n\n"
         f"Next actions:\n{next_actions}\n"
     )

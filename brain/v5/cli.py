@@ -246,7 +246,14 @@ def _build_parser() -> argparse.ArgumentParser:
     er.add_argument("--artifact-id", action="append", default=[], dest="artifact_ids")
     er.add_argument("--parent-record-id", action="append", default=[], dest="parent_record_ids")
     er.add_argument("--derived-record-id", action="append", default=[], dest="derived_record_ids")
+    er.add_argument("--reasoning-move", action="append", default=[], dest="reasoning_moves")
+    er.add_argument("--backtrace-target", action="append", default=[], dest="backtrace_targets")
     er.add_argument("--candidate-path", action="append", default=[], dest="candidate_paths")
+    er.add_argument("--relation-path-question", action="append", default=[], dest="relation_path_questions")
+    er.add_argument("--definition-boundary-question", action="append", default=[], dest="definition_boundary_questions")
+    er.add_argument("--derivation-backtrace-question", action="append", default=[], dest="derivation_backtrace_questions")
+    er.add_argument("--source-dependency-question", action="append", default=[], dest="source_dependency_questions")
+    er.add_argument("--original-question-guard", action="append", default=[], dest="original_question_guard")
     er.add_argument("--unresolved-point", action="append", default=[], dest="unresolved_points")
     er.add_argument("--next-action", action="append", default=[], dest="next_actions")
     er.add_argument("--human-steering", default="")
@@ -489,7 +496,14 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             artifact_ids=args.artifact_ids,
             parent_record_ids=args.parent_record_ids,
             derived_record_ids=args.derived_record_ids,
+            reasoning_moves=args.reasoning_moves,
+            backtrace_targets=args.backtrace_targets,
             candidate_paths=args.candidate_paths,
+            relation_path_questions=args.relation_path_questions,
+            definition_boundary_questions=args.definition_boundary_questions,
+            derivation_backtrace_questions=args.derivation_backtrace_questions,
+            source_dependency_questions=args.source_dependency_questions,
+            original_question_guard=args.original_question_guard,
             unresolved_points=args.unresolved_points,
             next_actions=args.next_actions,
             human_steering=args.human_steering,

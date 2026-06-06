@@ -623,6 +623,14 @@ def _payload_hint(
                     "object_ids": list(target_record.get("object_ids") or []),
                     "relation_ids": list(target_record.get("relation_ids") or []),
                     "source_refs": _source_refs(target_record),
+                    "reasoning_moves": _reasoning_moves(action_kind, target_record),
+                    "backtrace_targets": _backtrace_targets(target_record),
+                    "relation_path_questions": _relation_path_questions(action_kind, target_record),
+                    "definition_boundary_questions": _definition_boundary_questions(action_kind, target_record),
+                    "derivation_backtrace_questions": _derivation_backtrace_questions(action_kind, target_record),
+                    "source_dependency_questions": _source_dependency_questions(action_kind, target_record),
+                    "original_question_guard": _original_question_guard(target_record),
+                    "candidate_paths": list(target_record.get("candidate_paths") or []),
                     "unresolved_points": list(target_record.get("unresolved_points") or []),
                     "next_actions": list(target_record.get("next_actions") or []),
                 }
@@ -688,6 +696,87 @@ def _source_refs(record: dict[str, Any]) -> list[str]:
     values = record.get("source_refs")
     if isinstance(values, list):
         return [str(value) for value in values if str(value)]
+    return []
+
+
+def _reasoning_moves(action_kind: str, record: dict[str, Any]) -> list[str]:
+    values = _string_list(record.get("reasoning_moves"))
+    if values:
+        return values
+    if "relation_path" in action_kind:
+        return ["why-question decomposition", "relation-path brainstorming"]
+    if "source" in action_kind or "backtrace" in action_kind:
+        return ["source dependency backtrace", "bidirectional definition backtrace"]
+    if "original" in action_kind:
+        return ["original-question continuity check"]
+    return ["local research steering checkpoint"]
+
+
+def _backtrace_targets(record: dict[str, Any]) -> list[str]:
+    values = _string_list(record.get("backtrace_targets"))
+    if values:
+        return values
+    targets = [
+        *[f"object:{value}" for value in _string_list(record.get("object_ids"))],
+        *[f"relation:{value}" for value in _string_list(record.get("relation_ids"))],
+        *[f"source:{value}" for value in _source_refs(record)],
+    ]
+    return targets
+
+
+def _relation_path_questions(action_kind: str, record: dict[str, Any]) -> list[str]:
+    values = _string_list(record.get("relation_path_questions"))
+    if values:
+        return values
+    if "relation_path" not in action_kind:
+        return []
+    local_question = str(record.get("local_question") or "")
+    if local_question:
+        return [local_question]
+    return ["Which intermediate physical objects or definitions could connect the two sides?"]
+
+
+def _definition_boundary_questions(action_kind: str, record: dict[str, Any]) -> list[str]:
+    values = _string_list(record.get("definition_boundary_questions"))
+    if values:
+        return values
+    if "source" in action_kind or "backtrace" in action_kind or "relation_path" in action_kind:
+        return ["Which definitions, assumptions, or convention boundaries must be traced on both sides?"]
+    return []
+
+
+def _derivation_backtrace_questions(action_kind: str, record: dict[str, Any]) -> list[str]:
+    values = _string_list(record.get("derivation_backtrace_questions"))
+    if values:
+        return values
+    if "source" in action_kind or "backtrace" in action_kind:
+        return ["Which derivation step should be traced back to first principles or assumptions?"]
+    return []
+
+
+def _source_dependency_questions(action_kind: str, record: dict[str, Any]) -> list[str]:
+    values = _string_list(record.get("source_dependency_questions"))
+    if values:
+        return values
+    if "source" in action_kind or "backtrace" in action_kind:
+        return ["Which paper, lecture note, theorem, or technique must be followed before this concept is clear?"]
+    return []
+
+
+def _original_question_guard(record: dict[str, Any]) -> list[str]:
+    values = _string_list(record.get("original_question_guard"))
+    if values:
+        return values
+    original = str(record.get("original_question") or "")
+    local = str(record.get("local_question") or "")
+    if original and local:
+        return [f"Keep local question '{local}' tied to original question '{original}'."]
+    return []
+
+
+def _string_list(value: Any) -> list[str]:
+    if isinstance(value, list):
+        return [str(item) for item in value if str(item)]
     return []
 
 
