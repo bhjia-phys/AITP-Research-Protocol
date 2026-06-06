@@ -6,6 +6,7 @@ from typing import Any
 
 from brain.v5.contracts import ContractError, ContractResult, _require_bool_value, _require_list, _require_mapping
 from brain.v5.moment_policy_contracts import validate_host_agnostic_moment_policy
+from brain.v5.source_reconstruction_contracts import validate_source_stack_coverage_manifest
 
 
 def validate_process_graph_slice(payload: dict[str, Any], *, path: str = "process_graph_slice") -> ContractResult:
@@ -36,6 +37,14 @@ def validate_process_graph_slice(payload: dict[str, Any], *, path: str = "proces
     ):
         _require_list(payload.get(key), f"{path}.{key}", result)
     _require_mapping(payload.get("route_state"), f"{path}.route_state", result)
+    _require_mapping(payload.get("source_stack_coverage"), f"{path}.source_stack_coverage", result)
+    if isinstance(payload.get("source_stack_coverage"), dict):
+        result.extend(
+            validate_source_stack_coverage_manifest(
+                payload["source_stack_coverage"],
+                path=f"{path}.source_stack_coverage",
+            )
+        )
     moment_policy = payload.get("moment_policy")
     _require_mapping(moment_policy, f"{path}.moment_policy", result)
     if isinstance(moment_policy, dict):

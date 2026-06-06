@@ -26,6 +26,7 @@ from brain.v5.models import (
 )
 from brain.v5.moment_policy import build_host_agnostic_moment_policy
 from brain.v5.paths import WorkspacePaths
+from brain.v5.source_stack_coverage import build_source_stack_coverage_slice
 from brain.v5.store import list_valid_records, read_record
 
 
@@ -174,6 +175,11 @@ def build_process_graph_slice(
         code_states=code_states,
     )
     source_asset_index = _source_asset_index(source_assets, references, provenance_gaps)
+    source_stack_coverage = build_source_stack_coverage_slice(
+        ws,
+        topic_id=topic_id,
+        claim_ids=claim_ids,
+    )
     trust_boundary_reasons = [
         "process_graph_slice is orientation-only",
         "truth_source is typed_records",
@@ -208,6 +214,7 @@ def build_process_graph_slice(
         "open_obligations": open_obligations,
         "source_backtrace": source_backtrace,
         "source_asset_index": source_asset_index,
+        "source_stack_coverage": source_stack_coverage,
         "relation_neighborhood": relation_neighborhood,
         "trust_boundary_reasons": trust_boundary_reasons,
         "exploratory_records": exploratory_slices,
@@ -229,6 +236,7 @@ def build_process_graph_slice(
             "reference_location": len(references),
             "source_asset": len(source_assets),
             "source_asset_index": len(source_asset_index),
+            "source_stack_coverage": len(source_stack_coverage["items"]),
             "evidence": len(evidence),
             "proof_obligation": len(obligations),
             "code_state": len(code_states),

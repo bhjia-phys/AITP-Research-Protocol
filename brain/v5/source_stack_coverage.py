@@ -58,6 +58,39 @@ def build_source_stack_coverage_manifest(ws: WorkspacePaths) -> dict:
     }
 
 
+def build_source_stack_coverage_slice(
+    ws: WorkspacePaths,
+    *,
+    topic_id: str = "",
+    claim_ids: set[str] | None = None,
+) -> dict:
+    """Return source-stack coverage scoped for a process graph slice."""
+
+    manifest = build_source_stack_coverage_manifest(ws)
+    wanted_claims = claim_ids or set()
+    items = [
+        item
+        for item in manifest["items"]
+        if (not topic_id or item["topic_id"] == topic_id)
+        and (not wanted_claims or item["claim_id"] in wanted_claims)
+    ]
+    return {
+        **manifest,
+        "claim_count": len(items),
+        "coverage_status_counts": _status_counts(items),
+        "missing_required_output_counts": _missing_required_output_counts(items),
+        "source_component_gap_counts": _source_component_gap_counts(items),
+        "source_review_status_counts": _review_status_counts(items),
+        "items": items,
+        "next_actions": [
+            action
+            for item in items
+            if item["coverage_status"] != "complete"
+            for action in item["next_actions"]
+        ],
+    }
+
+
 def _coverage_item(
     claim: ClaimRecord,
     *,

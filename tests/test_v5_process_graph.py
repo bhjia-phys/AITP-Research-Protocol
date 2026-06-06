@@ -287,6 +287,20 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     assert provenance_gap["required_before_trust_change"] is False
     assert payload["source_asset_index"][0]["provenance_gap_ids"] == [provenance_gap["gap_id"]]
     assert payload["source_asset_index"][0]["provenance_gap_types"] == ["source_asset_hash_missing"]
+    assert payload["source_stack_coverage"]["kind"] == "source_stack_coverage_manifest"
+    assert payload["source_stack_coverage"]["claim_count"] == 1
+    assert payload["source_stack_coverage"]["orientation_only"] is True
+    assert payload["source_stack_coverage"]["can_update_claim_trust"] is False
+    assert payload["source_stack_coverage"]["coverage_status_counts"]["evidence_gap"] == 1
+    coverage_item = payload["source_stack_coverage"]["items"][0]
+    assert coverage_item["claim_id"] == claim.claim_id
+    assert coverage_item["coverage_status"] == "evidence_gap"
+    assert coverage_item["risk_level"] == "guided"
+    assert coverage_item["missing_required_outputs"] == ["scoped_claim", "evidence_or_provenance"]
+    assert "reconstruction_path" in coverage_item["missing_source_components"]
+    assert coverage_item["source_reconstruction_review_status"] == "pending"
+    assert "record_evidence_for_required_outputs:" + claim.claim_id in coverage_item["next_actions"]
+    assert payload["record_counts"]["source_stack_coverage"] == 1
     assert payload["relation_neighborhood"][0]["relation_id"] == relation.relation_id
     assert payload["relation_neighborhood"][0]["topic_id"] == "fqhe"
     assert "relation-path brainstorming" in payload["relation_neighborhood"][0]["reasoning_moves"]

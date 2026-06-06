@@ -35,7 +35,7 @@ surfaces.
 | Goal continuation | Implemented: local `.aitp/surfaces/goal_continuation/` JSON+Markdown packets capture objective, commit range, changed files, tests, smoke commands, readiness, next actions, and blocking backlog |
 | Literature intake | Implemented conservative intake: references are orientation-only, evidence/sensemaking are guarded suggestions, and trust updates stay forbidden without preflight/checkpoints |
 | Theory research state | Implemented minimal conservative surface: `research-state register-source`, `attach-artifact`, `update-claim-status`, `create-proof-obligation`, `classify-event`, and `bounded-evidence` connect literature/results/artifacts/Fisherd-style runs to typed records without claim-trust promotion. `attach-artifact` is the stable artifact pointer write surface for benchmark logs, validation outputs, patches, plots, JSON results, and generated files |
-| Typed process graph | Implemented first read-only slice: `aitp-v5 graph slice <session-id>` and `aitp_v5_get_process_graph_slice` compile typed records into orientation-only nodes, edges, source backtrace, `source_asset_index`, relation neighborhoods, route state, provenance gaps, open obligations, trust-boundary reasons, recommended research moments, and a host-agnostic `moment_policy.decisions` list with `required_now`, `required_before_trust_change`, lifecycle trigger phases/conditions, split record/exploration entrypoints, and a host-facing `entrypoints` summary. The same policy is also exposed directly through `aitp-v5 graph moment-policy <session-id>` / `aitp_v5_get_host_agnostic_moment_policy` |
+| Typed process graph | Implemented first read-only slice: `aitp-v5 graph slice <session-id>` and `aitp_v5_get_process_graph_slice` compile typed records into orientation-only nodes, edges, source backtrace, `source_asset_index`, `source_stack_coverage`, relation neighborhoods, route state, provenance gaps, open obligations, trust-boundary reasons, recommended research moments, and a host-agnostic `moment_policy.decisions` list with `required_now`, `required_before_trust_change`, lifecycle trigger phases/conditions, split record/exploration entrypoints, and a host-facing `entrypoints` summary. The same policy is also exposed directly through `aitp-v5 graph moment-policy <session-id>` / `aitp_v5_get_host_agnostic_moment_policy` |
 | Exploratory research graph | Implemented first typed record: `aitp-v5 exploration record` and `aitp_v5_record_exploratory_record` capture source assets, question decomposition, relation-path brainstorming, backtrace steps, and steering checkpoints as orientation-only graph records. Theory-facing fields now preserve why-question decomposition, relation-path questions, definition/derivation/source backtrace questions, backtrace targets, and original-question guards without updating claim trust |
 | Research route state | Implemented first typed record: `aitp-v5 route record` and `aitp_v5_record_research_route` capture live routes, abandoned/blocked routes, branches, failed-attempt lessons, pivots, checkpoint links, and next actions as orientation-only process graph records. Route state can steer agents and preserve nonlinear research continuity, but it is not evidence, validation, or claim-trust authority |
 | Canonical source assets | Implemented first typed record and projection: `aitp-v5 asset register` and `aitp_v5_register_source_asset` assign orientation-only identities, hashes, version anchors, duplicate-hash diagnostics, and source/code/artifact links to papers, lectures, notes, code repositories, snapshots, datasets, and generated artifacts; `process_graph_slice.source_asset_index[]` exposes that canonical source asset state to hosts without creating a second store |
@@ -101,6 +101,12 @@ The practical rule is:
   hash status, version anchors, reference locations, linked artifact/code
   refs, duplicate diagnostics, and related provenance gap ids, but it remains
   orientation-only and cannot update claim trust.
+- Treat `process_graph_slice.source_stack_coverage` as the read-only source
+  stack coverage projection for hosts. It carries current claim coverage over
+  required evidence outputs, source reconstruction components, review status,
+  and next actions, but it is still derived guidance: it cannot update claim
+  trust and does not become a final-gate blocker unless an explicit AITP
+  trust/final prerequisite says so.
 - Treat `provenance_gaps[]` in process graph slices as orientation-only capture
   reminders. Missing source locations, source hashes, code state, tool runs, or
   benchmark artifacts should be fixed before reusing a ref as evidence,
@@ -352,6 +358,14 @@ Those gaps compile into recommended `capture_source_or_code_provenance`
 moments, but they remain process guidance by default. They only become strict
 trust boundaries when the typed AITP payload explicitly says they are required
 before a trust change or final gate.
+
+The same slice now exposes `source_stack_coverage`: the scoped
+`source_stack_coverage_manifest` for claims present in the slice. Hosts can see
+which required outputs are still missing, which source reconstruction
+components are incomplete, whether the latest source reconstruction review has
+passed, and which coverage next actions AITP recommends. This is a compact
+coverage/readiness projection for local action planning, not a second truth
+store and not a claim-trust update.
 
 Exploratory record reasoning fields are likewise host-facing process handles:
 Hakimi normalizes them into `params.theoryReasoning`, then renders them into the
