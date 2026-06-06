@@ -63,6 +63,9 @@ The practical rule is:
 - Treat `moment_policy.decisions[].entrypoints` as the host-facing call surface
   summary. Hakimi may compile it into blocking/current-turn call obligations,
   but the policy remains derived from AITP typed records and contracts.
+- Treat Hakimi final-gate checks over those call obligations as downstream host
+  enforcement. They can force a status downgrade or require a recorded blocker,
+  but they still do not mutate AITP trust or replace AITP preflight.
 - Treat exploratory records as canonical process records for navigation,
   brainstorming, and backtrace continuity, but not as evidence or validation.
 - Treat source asset records as canonical identities for raw papers, lectures,
@@ -117,16 +120,17 @@ kernel capability:
 7. Harden the Hakimi runtime bridge against real topic stores. Hakimi sessions
    now auto-configure a dynamic AITP CLI bridge, consume process graph slices
    through explicit WorkFrame scope, compile `moment_policy.decisions` into
-   ContextPack call obligations before research-context injection, and expose
-   write-bridge hints and execution for
+   ContextPack call obligations before research-context injection, preserve the
+   cached AITP context when no fresh slice is available, run soft final-gate
+   checks over unhandled required calls, and expose write-bridge hints and execution for
    exploratory records, proof obligations, human checkpoints, source assets,
    and validation records. Hakimi also has an opt-in real CLI smoke that creates
    a temporary AITP topic store, reads a real `process_graph_slice`, writes a
    proof obligation and checkpoint, and verifies the resulting `.aitp` records
    when `HAKIMI_AITP_REAL_CLI_SMOKE=1`, `AITP_V5_REPO`, and `AITP_V5_PYTHON`
    point at a working AITP Python environment. Richer MCP-first execution and
-   strict validation/checkpoint enforcement and richer evidence write-back
-   still need the next runtime integration slice.
+   MCP-first execution, strict AITP preflight/checkpoint enforcement, and richer
+   evidence write-back still need later runtime integration slices.
 8. Update downstream theory workspaces to the latest v5 kernel and regenerate
    topic-local runtime handoff files where needed.
 9. Revisit OpenCode after its host hook model is stable enough for the same
@@ -254,8 +258,10 @@ The graph slice returns `moment_policy.decisions` as the typed policy surface
 for hosts. Each decision carries whether it is `required_now`, which
 `required_before_trust_change` prerequisites apply, and which AITP
 `entrypoints` should be used. Hakimi compiles these decisions into ContextPack
-call obligations; other hosts can consume the same read-only policy without
-adopting Hakimi's runtime internals.
+call obligations and now uses them in its final gate to downgrade trust-sensitive
+answers when required calls are neither passed nor explicitly blocked. Other
+hosts can consume the same read-only policy without adopting Hakimi's runtime
+internals.
 
 The downstream Hakimi real CLI smoke is opt-in so Hakimi unit tests do not
 depend on Python packages. To run it from the Hakimi checkout after installing
