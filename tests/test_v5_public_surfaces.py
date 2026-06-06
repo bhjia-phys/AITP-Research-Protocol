@@ -92,6 +92,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "sensemaking_report_record",
         "session_summary_bundle",
         "source_reconstruction_audit",
+        "source_asset_record",
         "source_stack_coverage_manifest",
         "source_reconstruction_manifest",
         "source_reconstruction_obsidian_view_bundle",
@@ -634,12 +635,39 @@ def test_public_surface_validator_accepts_typed_write_records():
         "human_checkpoint_id": "checkpoint-fqhe-counting",
         "status": "active",
     }
+    source_asset = {
+        "ok": True,
+        "kind": "source_asset",
+        "asset_id": "source-asset-fqhe-paper",
+        "topic_id": "fqhe",
+        "claim_id": "claim-fqhe-counting",
+        "asset_type": "paper",
+        "uri": "arxiv:2601.00001",
+        "title": "Edge counting source",
+        "label": "",
+        "content_hash": "",
+        "hash_algorithm": "",
+        "version_anchor": {"arxiv_version": "v1"},
+        "acquired_at": "",
+        "source_kind": "literature",
+        "summary": "Canonical raw paper identity.",
+        "source_refs": ["paper:edge-counting"],
+        "artifact_ids": [],
+        "code_state_ids": [],
+        "reference_location_ids": [],
+        "derived_from": [],
+        "metadata": {},
+        "linked_records": {"claim_id": "claim-fqhe-counting"},
+        "orientation_only": True,
+        "can_update_claim_trust": False,
+    }
 
     assert require_valid_public_surface("evidence_record", evidence) == evidence
     assert require_valid_public_surface("tool_run_record", tool_run) == tool_run
     assert require_valid_public_surface("code_state_record", code_state) == code_state
     assert require_valid_public_surface("tool_recipe_record", recipe) == recipe
     assert require_valid_public_surface("memory_entry_record", memory) == memory
+    assert require_valid_public_surface("source_asset_record", source_asset) == source_asset
 
 
 def test_adapter_registry_exposes_public_surface_contract_names():

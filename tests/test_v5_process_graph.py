@@ -12,6 +12,7 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     from brain.v5.references import record_reference_location
     from brain.v5.research_state import create_proof_obligation
     from brain.v5.sensemaking import record_sensemaking_report
+    from brain.v5.source_assets import register_source_asset
     from brain.v5.tools import record_tool_run
     from brain.v5.validation import create_validation_contract, record_validation_result
     from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
@@ -51,6 +52,19 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
         uri="arxiv:2601.00001",
         label="Edge counting source",
         source_ref="paper:edge-counting",
+    )
+    asset = register_source_asset(
+        ws,
+        topic_id="fqhe",
+        claim_id=claim.claim_id,
+        asset_type="paper",
+        uri="arxiv:2601.00001",
+        title="Edge counting source asset",
+        source_kind="literature",
+        source_refs=[ref.location_id],
+        reference_location_ids=[ref.location_id],
+        version_anchor={"arxiv_version": "v1"},
+        summary="Canonical raw paper identity for source reconstruction.",
     )
     code_state = record_code_state(
         ws,
@@ -193,6 +207,7 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
         "claim",
         "physics_object",
         "object_relation",
+        "source_asset",
         "reference_location",
         "evidence",
         "proof_obligation",
@@ -205,6 +220,7 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     }.issubset(node_types)
     assert f"claim:{claim.claim_id}" in node_ids
     assert f"reference_location:{ref.location_id}" in node_ids
+    assert f"source_asset:{asset.asset_id}" in node_ids
     assert f"proof_obligation:{obligation.obligation_id}" in node_ids
     assert f"sensemaking_report:{report.report_id}" in node_ids
     assert f"exploratory_record:{exploratory.record_id}" in node_ids
@@ -212,6 +228,12 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     edges = {(edge["source"], edge["type"], edge["target"]) for edge in payload["edges"]}
     assert (f"claim:{claim.claim_id}", "has_evidence", f"evidence:{evidence.evidence_id}") in edges
     assert (f"claim:{claim.claim_id}", "has_reference_location", f"reference_location:{ref.location_id}") in edges
+    assert (f"claim:{claim.claim_id}", "has_source_asset", f"source_asset:{asset.asset_id}") in edges
+    assert (
+        f"source_asset:{asset.asset_id}",
+        "has_reference_location",
+        f"reference_location:{ref.location_id}",
+    ) in edges
     assert (f"claim:{claim.claim_id}", "has_proof_obligation", f"proof_obligation:{obligation.obligation_id}") in edges
     assert (f"claim:{claim.claim_id}", "has_object_relation", f"object_relation:{relation.relation_id}") in edges
     assert (f"object_relation:{relation.relation_id}", "relation_subject", f"physics_object:{counting.object_id}") in edges
@@ -232,6 +254,7 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
 
     assert payload["open_obligations"][0]["obligation_id"] == obligation.obligation_id
     assert payload["source_backtrace"][0]["complete"] is True
+    assert payload["source_backtrace"][0]["source_asset_ids"] == [asset.asset_id]
     assert payload["relation_neighborhood"][0]["relation_id"] == relation.relation_id
     exploratory_ids = {item["record_id"] for item in payload["exploratory_records"]}
     assert exploratory.record_id in exploratory_ids

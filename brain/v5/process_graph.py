@@ -16,6 +16,7 @@ from brain.v5.models import (
     ProofObligationRecord,
     ReferenceLocationRecord,
     SessionBinding,
+    SourceAssetRecord,
     ToolRunRecord,
     ValidationContractRecord,
     ValidationResultRecord,
@@ -52,6 +53,7 @@ def build_process_graph_slice(
         for record in _records(ws, "reference_locations", ReferenceLocationRecord)
         if record.topic_id == topic_id and (not claim_ids or not record.claim_id or record.claim_id in claim_ids)
     ]
+    source_assets = _filter_source_assets(_records(ws, "source_assets", SourceAssetRecord), topic_id, claim_ids)
     evidence = _filter_by_topic_and_claim(_records(ws, "evidence", EvidenceRecord), topic_id, claim_ids)
     obligations = _filter_by_topic_and_claim(_records(ws, "proof_obligations", ProofObligationRecord), topic_id, claim_ids)
     objects = [record for record in _records(ws, "physics_objects", PhysicsObjectRecord) if record.topic_id == topic_id]
@@ -90,6 +92,7 @@ def build_process_graph_slice(
         session_id,
     )
     code_state_ids = {code_id for run in tool_runs for code_id in run.code_state_ids if code_id}
+    code_state_ids.update(code_id for asset in source_assets for code_id in asset.code_state_ids if code_id)
     code_state_ids.update(_linked_code_state_ids_for_claim(_records(ws, "code_states", CodeStateRecord), claim_ids))
     code_states = [
         record
@@ -103,6 +106,8 @@ def build_process_graph_slice(
         builder.add_node("claim", record.claim_id, record, label=record.statement)
     for record in references:
         builder.add_node("reference_location", record.location_id, record, label=record.label)
+    for record in source_assets:
+        builder.add_node("source_asset", record.asset_id, record, label=record.title)
     for record in evidence:
         builder.add_node("evidence", record.evidence_id, record, label=record.summary)
     for record in obligations:
@@ -128,12 +133,12 @@ def build_process_graph_slice(
 
     for claim in claims:
         builder.add_edge("session", session.session_id, "claim", claim.claim_id, "session_focus")
-    _add_edges(builder, session, claims, references, evidence, obligations, objects, relations,
+    _add_edges(builder, session, claims, references, source_assets, evidence, obligations, objects, relations,
                validation_contracts, validation_results, tool_runs, code_states, memory_entries, sensemaking_reports,
                exploratory_records)
 
     open_obligations = [_obligation_slice(record) for record in obligations if not _closed(record.status)]
-    source_backtrace = _source_backtrace(claims, references, evidence, obligations, objects, relations, exploratory_records)
+    source_backtrace = _source_backtrace(claims, references, source_assets, evidence, obligations, objects, relations, exploratory_records)
     relation_neighborhood = _relation_neighborhood(objects, relations)
     trust_boundary_reasons = [
         "process_graph_slice is orientation-only",
@@ -166,6 +171,7 @@ def build_process_graph_slice(
             "physics_object": len(objects),
             "object_relation": len(relations),
             "reference_location": len(references),
+            "source_asset": len(source_assets),
             "evidence": len(evidence),
             "proof_obligation": len(obligations),
             "code_state": len(code_states),
@@ -246,6 +252,7 @@ def _add_edges(
     session: SessionBinding,
     claims: list[ClaimRecord],
     references: list[ReferenceLocationRecord],
+    source_assets: list[SourceAssetRecord],
     evidence: list[EvidenceRecord],
     obligations: list[ProofObligationRecord],
     objects: list[PhysicsObjectRecord],
@@ -259,6 +266,7 @@ def _add_edges(
     exploratory_records: list[ExploratoryRecord],
 ) -> None:
     reference_lookup = _reference_lookup(references)
+    source_asset_lookup = _source_asset_lookup(source_assets)
     object_ids = {record.object_id for record in objects}
     validation_result_ids = {record.result_id for record in validation_results}
     tool_run_ids = {record.run_id for record in tool_runs}
@@ -267,6 +275,20 @@ def _add_edges(
     for record in references:
         if record.claim_id:
             builder.add_edge("claim", record.claim_id, "reference_location", record.location_id, "has_reference_location")
+    for record in source_assets:
+        if record.claim_id:
+            builder.add_edge("claim", record.claim_id, "source_asset", record.asset_id, "has_source_asset")
+        for location_id in record.reference_location_ids:
+            builder.add_edge("source_asset", record.asset_id, "reference_location", location_id, "has_reference_location")
+        for code_state_id in record.code_state_ids:
+            if code_state_id in code_state_ids:
+                builder.add_edge("source_asset", record.asset_id, "code_state", code_state_id, "has_code_state")
+        for ref in record.source_refs:
+            location_id = reference_lookup.get(ref)
+            if location_id:
+                builder.add_edge("source_asset", record.asset_id, "reference_location", location_id, "uses_source")
+        for parent_id in record.derived_from:
+            builder.add_edge("source_asset", record.asset_id, "source_asset", parent_id, "derived_from")
     for record in evidence:
         builder.add_edge("claim", record.claim_id, "evidence", record.evidence_id, "has_evidence")
         for ref in record.source_refs:
@@ -337,6 +359,9 @@ def _add_edges(
             location_id = reference_lookup.get(ref)
             if location_id:
                 builder.add_edge("exploratory_record", record.record_id, "reference_location", location_id, "explores_source")
+            asset_id = source_asset_lookup.get(ref)
+            if asset_id:
+                builder.add_edge("exploratory_record", record.record_id, "source_asset", asset_id, "explores_source_asset")
         for parent_id in record.parent_record_ids:
             builder.add_edge("exploratory_record", record.record_id, "exploratory_record", parent_id, "continues_from")
     if session.active_claim:
@@ -363,6 +388,14 @@ def _filter_by_topic_and_claim(records: list, topic_id: str, claim_ids: set[str]
         for record in records
         if getattr(record, "topic_id", "") == topic_id
         and (not claim_ids or getattr(record, "claim_id", "") in claim_ids)
+    ]
+
+
+def _filter_source_assets(records: list[SourceAssetRecord], topic_id: str, claim_ids: set[str]) -> list[SourceAssetRecord]:
+    return [
+        record
+        for record in records
+        if record.topic_id == topic_id and (not claim_ids or not record.claim_id or record.claim_id in claim_ids)
     ]
 
 
@@ -427,6 +460,23 @@ def _reference_lookup(records: list[ReferenceLocationRecord]) -> dict[str, str]:
     return lookup
 
 
+def _source_asset_lookup(records: list[SourceAssetRecord]) -> dict[str, str]:
+    lookup: dict[str, str] = {}
+    for record in records:
+        for value in (
+            record.asset_id,
+            f"source_asset:{record.asset_id}",
+            f"source-asset:{record.asset_id}",
+            record.uri,
+            record.title,
+            record.label,
+            *record.source_refs,
+        ):
+            if value:
+                lookup[value] = record.asset_id
+    return lookup
+
+
 def _closed(status: str) -> bool:
     return status.strip().lower().replace("-", "_") in _CLOSED_OBLIGATION_STATUSES
 
@@ -446,6 +496,7 @@ def _obligation_slice(record: ProofObligationRecord) -> dict[str, Any]:
 def _source_backtrace(
     claims: list[ClaimRecord],
     references: list[ReferenceLocationRecord],
+    source_assets: list[SourceAssetRecord],
     evidence: list[EvidenceRecord],
     obligations: list[ProofObligationRecord],
     objects: list[PhysicsObjectRecord],
@@ -456,6 +507,11 @@ def _source_backtrace(
     result = []
     for claim_id, claim in by_claim.items():
         claim_refs = [record.location_id for record in references if record.claim_id == claim_id]
+        claim_assets = [
+            record.asset_id
+            for record in source_assets
+            if record.claim_id == claim_id or _mapping_links_any(record.linked_records, {claim_id})
+        ]
         claim_evidence = [record.evidence_id for record in evidence if record.claim_id == claim_id]
         claim_obligations = [record.obligation_id for record in obligations if record.claim_id == claim_id]
         claim_relations = [record.relation_id for record in relations if record.claim_id == claim_id]
@@ -480,6 +536,7 @@ def _source_backtrace(
                 "claim_id": claim_id,
                 "statement": claim.statement,
                 "reference_location_ids": claim_refs,
+                "source_asset_ids": claim_assets,
                 "evidence_ids": claim_evidence,
                 "proof_obligation_ids": claim_obligations,
                 "object_relation_ids": claim_relations,

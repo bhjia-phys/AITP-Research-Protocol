@@ -80,6 +80,25 @@ def sample_args_for_template(template: str) -> list[str]:
             "--next-action",
             "trace source definitions",
         ]
+    if template.startswith("asset register"):
+        return [
+            "--topic",
+            "fqhe",
+            "--claim",
+            "claim-fqhe",
+            "--type",
+            "paper",
+            "--uri",
+            "arxiv:2601.00001",
+            "--title",
+            "Edge counting source",
+            "--version-anchor-json",
+            '{"arxiv_version":"v1"}',
+            "--source-kind",
+            "literature",
+            "--summary",
+            "Canonical source asset identity for the raw paper.",
+        ]
     if template.startswith("literature suggest-intake") or template.startswith("literature record-candidate"):
         return [
             "--session",

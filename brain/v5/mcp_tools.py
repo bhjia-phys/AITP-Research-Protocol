@@ -31,6 +31,7 @@ from brain.v5.physics_objects import record_object_relation, record_physics_obje
 from brain.v5.process_graph import build_process_graph_slice
 from brain.v5.references import record_reference_location
 from brain.v5.sensemaking import record_sensemaking_report
+from brain.v5.source_assets import register_source_asset, source_asset_payload
 from brain.v5.validation import create_validation_contract, record_validation_result
 from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
@@ -159,6 +160,54 @@ def aitp_v5_record_exploratory_record(
         metadata=metadata,
     )
     return require_valid_public_surface("exploratory_record", exploratory_record_payload(record))
+
+
+def aitp_v5_register_source_asset(
+    base: str,
+    *,
+    topic_id: str,
+    asset_type: str,
+    uri: str,
+    title: str,
+    claim_id: str = "",
+    label: str = "",
+    content_hash: str = "",
+    hash_algorithm: str = "",
+    version_anchor: dict | None = None,
+    acquired_at: str = "",
+    source_kind: str = "manual",
+    summary: str = "",
+    source_refs: list[str] | None = None,
+    artifact_ids: list[str] | None = None,
+    code_state_ids: list[str] | None = None,
+    reference_location_ids: list[str] | None = None,
+    derived_from: list[str] | None = None,
+    metadata: dict | None = None,
+    linked_records: dict | None = None,
+) -> dict:
+    record = register_source_asset(
+        _ws(base),
+        topic_id=topic_id,
+        claim_id=claim_id,
+        asset_type=asset_type,
+        uri=uri,
+        title=title,
+        label=label,
+        content_hash=content_hash,
+        hash_algorithm=hash_algorithm,
+        version_anchor=version_anchor,
+        acquired_at=acquired_at,
+        source_kind=source_kind,
+        summary=summary,
+        source_refs=source_refs,
+        artifact_ids=artifact_ids,
+        code_state_ids=code_state_ids,
+        reference_location_ids=reference_location_ids,
+        derived_from=derived_from,
+        metadata=metadata,
+        linked_records=linked_records,
+    )
+    return require_valid_public_surface("source_asset_record", source_asset_payload(record))
 
 
 def aitp_list_topics(topics_root: str) -> list[dict]:

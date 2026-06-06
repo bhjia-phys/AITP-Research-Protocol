@@ -328,6 +328,22 @@ def require_valid_reference_location_record(payload: dict[str, Any]) -> dict[str
     return _require_valid_reference_location_record(payload)
 
 
+def validate_source_asset_record(payload: dict[str, Any], *, path: str = "source_asset_record") -> ContractResult:
+    """Validate a public source-asset-record write payload."""
+
+    from brain.v5.record_contracts import validate_source_asset_record as _validate
+
+    return _validate(payload, path=path)
+
+
+def require_valid_source_asset_record(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a source-asset-record write payload or raise a contract error."""
+
+    from brain.v5.record_contracts import require_valid_source_asset_record as _require
+
+    return _require(payload)
+
+
 def validate_physics_object_record(payload: dict[str, Any], *, path: str = "physics_object_record") -> ContractResult:
     """Validate a public physics-object-record write payload."""
 

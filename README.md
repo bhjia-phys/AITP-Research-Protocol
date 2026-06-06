@@ -25,7 +25,7 @@ surfaces.
 
 | Area | Status |
 |------|--------|
-| Typed research records | Implemented: topics, sessions, claims, evidence, code state, tool recipes/runs, references, physics objects, object relations, sensemaking, validation, checkpoints, promotion packets, L2 memory |
+| Typed research records | Implemented: topics, sessions, claims, evidence, source assets, code state, tool recipes/runs, references, physics objects, object relations, sensemaking, validation, checkpoints, promotion packets, L2 memory |
 | Trust discipline | Implemented: summaries are orientation-only, validation gates trust, high-risk promotion needs evidence, passed validation, failure modes, and human review checkpoints |
 | Long-term memory | Implemented core: L2 memory entries, promotion packets, memory audits, failure-mode audits, trust audits, Obsidian review views |
 | Replay and review | Implemented core: session summaries, workspace summaries, workspace replay packets, source reconstruction audits |
@@ -37,6 +37,7 @@ surfaces.
 | Theory research state | Implemented minimal conservative surface: `research-state register-source`, `attach-artifact`, `update-claim-status`, `create-proof-obligation`, `classify-event`, and `bounded-evidence` connect literature/results/artifacts/Fisherd-style runs to typed records without claim-trust promotion |
 | Typed process graph | Implemented first read-only slice: `aitp-v5 graph slice <session-id>` and `aitp_v5_get_process_graph_slice` compile typed records into orientation-only nodes, edges, source backtrace, relation neighborhoods, open obligations, trust-boundary reasons, and recommended research moments for agents such as Hakimi |
 | Exploratory research graph | Implemented first typed record: `aitp-v5 exploration record` and `aitp_v5_record_exploratory_record` capture source assets, question decomposition, relation-path brainstorming, backtrace steps, and steering checkpoints as orientation-only graph records |
+| Canonical source assets | Implemented first typed record: `aitp-v5 asset register` and `aitp_v5_register_source_asset` assign orientation-only identities, hashes, version anchors, and source/code/artifact links to papers, lectures, notes, code repositories, snapshots, datasets, and generated artifacts |
 | QSGW cockpit | Implemented first surface: `aitp-v5 status qsgw-cockpit` writes a topic-local final/diagnostic lane manifest, plot guard, and dashboard dry-run from typed records plus `research/librpa` report/script scans; it also discovers downstream `*_lane_manifest_current.json` and `*_aitp_intake_current.jsonl` files without treating them as trust updates |
 
 The latest real readiness audit reports:
@@ -58,6 +59,9 @@ The practical rule is:
   truth records.
 - Treat exploratory records as canonical process records for navigation,
   brainstorming, and backtrace continuity, but not as evidence or validation.
+- Treat source asset records as canonical identities for raw papers, lectures,
+  notes, code snapshots, datasets, and generated artifacts; they orient source
+  backtrace and provenance, but they do not update claim trust by themselves.
 - Treat generated summaries, replay packets, README text, adapter packets, and
   Obsidian views as orientation surfaces.
 - Do not call the whole migration complete until the legacy semantic review
@@ -87,10 +91,10 @@ kernel capability:
    proof obligations: attach result artifacts by reference, record tool-run
    provenance, write scoped evidence, append claim maturity/status, and keep
    publishable/trust changes behind validation and human gates.
-6. Promote raw research assets into a fuller source-store contract. The first
-   `source_asset` exploratory record exists, but local lectures, PDFs, notes,
-   code repositories, git commits, and generated artifacts still need stronger
-   typed source identities, content hashes, and version anchors.
+6. Harden the source-store contract beyond the first `SourceAssetRecord` slice:
+   add ingestion/de-duplication policy, stronger local PDF/lecture/code snapshot
+   indexing, and source-stack queries that can keep a backtrace focused on the
+   original physics question.
 7. Wire exploratory records into host runtimes. Hakimi can consume process graph
    slices through a WorkFrame-scoped typed bridge, compile them into context
    packs before research-context injection, and write exploratory records back
@@ -201,6 +205,7 @@ The v5 kernel is exposed through several thin surfaces:
 | `brain/v5/public_surfaces.py` | Contracted public payload validators |
 | `aitp-v5 graph slice <session-id>` | Read-only typed process graph slice for local agent compilation |
 | `aitp-v5 exploration record` | Orientation-only typed record for brainstorming, backtrace, source-asset, and steering continuity |
+| `aitp-v5 asset register` | Orientation-only canonical identity for raw papers, lectures, notes, code snapshots, datasets, and generated artifacts |
 | `brain/v5/adapter_*` | Host adapter packets, bridge runners, and install/audit helpers |
 | `hooks/aitp_v5_*` | Host lifecycle hooks and event runners |
 | `<topics-root>/.aitp/surfaces/` | Generated orientation outputs such as summaries and review views |

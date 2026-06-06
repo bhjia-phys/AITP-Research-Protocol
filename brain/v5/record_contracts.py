@@ -166,6 +166,50 @@ def require_valid_reference_location_record(payload: dict[str, Any]) -> dict[str
     return _require_valid(validate_reference_location_record(payload), payload)
 
 
+def validate_source_asset_record(payload: dict[str, Any], *, path: str = "source_asset_record") -> ContractResult:
+    result = _validate_base_record(payload, path, kind="source_asset")
+    if result.issues:
+        return result
+    for key in ("asset_id", "topic_id", "asset_type", "uri", "title", "source_kind"):
+        _require_nonempty_str(payload, key, path, result)
+    if payload.get("asset_type") not in {
+        "paper",
+        "lecture",
+        "note",
+        "book",
+        "code_repo",
+        "code_snapshot",
+        "dataset",
+        "generated_artifact",
+        "web_page",
+        "correspondence",
+        "other",
+    }:
+        result.add(
+            f"{path}.asset_type",
+            "must be a supported source asset type",
+        )
+    for key in ("version_anchor", "metadata", "linked_records"):
+        _require_mapping(payload.get(key), f"{path}.{key}", result)
+    for key in (
+        "source_refs",
+        "artifact_ids",
+        "code_state_ids",
+        "reference_location_ids",
+        "derived_from",
+    ):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    if payload.get("orientation_only") is not True:
+        result.add(f"{path}.orientation_only", "must be true")
+    if payload.get("can_update_claim_trust") is not False:
+        result.add(f"{path}.can_update_claim_trust", "must be false")
+    return result
+
+
+def require_valid_source_asset_record(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_source_asset_record(payload), payload)
+
+
 def validate_physics_object_record(payload: dict[str, Any], *, path: str = "physics_object_record") -> ContractResult:
     result = _validate_base_record(payload, path, kind="physics_object")
     if result.issues:

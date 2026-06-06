@@ -270,6 +270,33 @@ class ReferenceLocationRecord:
 
 
 @dataclass
+class SourceAssetRecord:
+    asset_id: str
+    topic_id: str
+    asset_type: str
+    uri: str
+    title: str
+    claim_id: str = ""
+    label: str = ""
+    content_hash: str = ""
+    hash_algorithm: str = ""
+    version_anchor: dict = field(default_factory=dict)
+    acquired_at: str = ""
+    source_kind: str = "manual"
+    summary: str = ""
+    source_refs: list[str] = field(default_factory=list)
+    artifact_ids: list[str] = field(default_factory=list)
+    code_state_ids: list[str] = field(default_factory=list)
+    reference_location_ids: list[str] = field(default_factory=list)
+    derived_from: list[str] = field(default_factory=list)
+    metadata: dict = field(default_factory=dict)
+    linked_records: dict = field(default_factory=dict)
+    orientation_only: bool = True
+    can_update_claim_trust: bool = False
+    kind: str = "source_asset"
+
+
+@dataclass
 class EvidenceRecord:
     evidence_id: str
     topic_id: str

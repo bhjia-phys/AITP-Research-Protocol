@@ -32,6 +32,7 @@ from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.physics_objects import record_object_relation, record_physics_object
 from brain.v5.references import record_reference_location
 from brain.v5.sensemaking import record_sensemaking_report
+from brain.v5.source_assets import register_source_asset, source_asset_payload
 from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
 from brain.v5.risk import assess_claim_risk
@@ -83,6 +84,28 @@ def _build_parser() -> argparse.ArgumentParser:
     sb.add_argument("--interaction-profile", default="collaborator"); sb.add_argument("--interaction-steering", default="")
 
     sp.add_parser("brief").add_argument("session_id")
+
+    ap = sp.add_parser("asset"); aps = ap.add_subparsers(dest="asset_command", required=True)
+    ar = aps.add_parser("register")
+    ar.add_argument("--topic", required=True, dest="topic_id")
+    ar.add_argument("--type", required=True, dest="asset_type")
+    ar.add_argument("--uri", required=True)
+    ar.add_argument("--title", required=True)
+    ar.add_argument("--claim", default="", dest="claim_id")
+    ar.add_argument("--label", default="")
+    ar.add_argument("--content-hash", default="")
+    ar.add_argument("--hash-algorithm", default="")
+    ar.add_argument("--version-anchor-json", default="{}")
+    ar.add_argument("--acquired-at", default="")
+    ar.add_argument("--source-kind", default="manual")
+    ar.add_argument("--summary", default="")
+    ar.add_argument("--source-ref", action="append", default=[], dest="source_refs")
+    ar.add_argument("--artifact-id", action="append", default=[], dest="artifact_ids")
+    ar.add_argument("--code-state-id", action="append", default=[], dest="code_state_ids")
+    ar.add_argument("--reference-location-id", action="append", default=[], dest="reference_location_ids")
+    ar.add_argument("--derived-from", action="append", default=[], dest="derived_from")
+    ar.add_argument("--metadata-json", default="{}")
+    ar.add_argument("--linked-records-json", default="{}")
 
     gp = sp.add_parser("graph"); gs = gp.add_subparsers(dest="graph_command", required=True)
     sl = gs.add_parser("slice"); sl.add_argument("session_id")
@@ -296,6 +319,30 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             interaction_profile=args.interaction_profile, interaction_steering=args.interaction_steering))}
     if args.command == "brief":
         return require_valid_public_surface("execution_brief", build_execution_brief(ws, args.session_id))
+    if args.command == "asset" and args.asset_command == "register":
+        asset = register_source_asset(
+            ws,
+            topic_id=args.topic_id,
+            claim_id=args.claim_id,
+            asset_type=args.asset_type,
+            uri=args.uri,
+            title=args.title,
+            label=args.label,
+            content_hash=args.content_hash,
+            hash_algorithm=args.hash_algorithm,
+            version_anchor=_j(args.version_anchor_json),
+            acquired_at=args.acquired_at,
+            source_kind=args.source_kind,
+            summary=args.summary,
+            source_refs=args.source_refs,
+            artifact_ids=args.artifact_ids,
+            code_state_ids=args.code_state_ids,
+            reference_location_ids=args.reference_location_ids,
+            derived_from=args.derived_from,
+            metadata=_j(args.metadata_json),
+            linked_records=_j(args.linked_records_json),
+        )
+        return require_valid_public_surface("source_asset_record", source_asset_payload(asset))
     if args.command == "graph" and args.graph_command == "slice":
         return require_valid_public_surface(
             "process_graph_slice",
