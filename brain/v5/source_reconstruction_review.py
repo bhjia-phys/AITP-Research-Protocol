@@ -62,6 +62,35 @@ def build_source_reconstruction_review_manifest(ws: WorkspacePaths) -> dict:
     }
 
 
+def build_source_reconstruction_review_slice(
+    ws: WorkspacePaths,
+    *,
+    topic_id: str = "",
+    claim_ids: set[str] | None = None,
+) -> dict:
+    """Return source reconstruction review progress scoped for a graph slice."""
+
+    manifest = build_source_reconstruction_review_manifest(ws)
+    wanted_claims = claim_ids or set()
+    items = [
+        item
+        for item in manifest["items"]
+        if (not topic_id or item["topic_id"] == topic_id)
+        and (not wanted_claims or item["claim_id"] in wanted_claims)
+    ]
+    return {
+        **manifest,
+        "claim_count": len(items),
+        "review_progress": _review_progress(items),
+        "items": items,
+        "next_actions": [
+            f"source_reconstruction_review:{item['claim_id']}"
+            for item in items
+            if item["review_status"] in {"pending", "needs_revision", "inconclusive"}
+        ],
+    }
+
+
 def record_source_reconstruction_review_result(
     ws: WorkspacePaths,
     *,

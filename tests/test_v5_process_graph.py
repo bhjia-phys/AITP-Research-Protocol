@@ -301,6 +301,20 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     assert coverage_item["source_reconstruction_review_status"] == "pending"
     assert "record_evidence_for_required_outputs:" + claim.claim_id in coverage_item["next_actions"]
     assert payload["record_counts"]["source_stack_coverage"] == 1
+    assert payload["source_reconstruction_review"]["kind"] == "source_reconstruction_review_manifest"
+    assert payload["source_reconstruction_review"]["claim_count"] == 1
+    assert payload["source_reconstruction_review"]["orientation_only"] is True
+    assert payload["source_reconstruction_review"]["can_update_claim_trust"] is False
+    assert payload["source_reconstruction_review"]["review_progress"]["pending"] == 1
+    review_item = payload["source_reconstruction_review"]["items"][0]
+    assert review_item["claim_id"] == claim.claim_id
+    assert review_item["source_reconstruction_status"] == "incomplete"
+    assert review_item["review_status"] == "pending"
+    assert "reconstruction_path" in review_item["missing_components"]
+    assert review_item["review_packet_cli"] == f"aitp-v5 source reconstruction-review --claim {claim.claim_id}"
+    assert "source_reconstruction_review" in review_item["next_actions"]
+    assert f"source_reconstruction_review:{claim.claim_id}" in payload["source_reconstruction_review"]["next_actions"]
+    assert payload["record_counts"]["source_reconstruction_review"] == 1
     assert payload["relation_neighborhood"][0]["relation_id"] == relation.relation_id
     assert payload["relation_neighborhood"][0]["topic_id"] == "fqhe"
     assert "relation-path brainstorming" in payload["relation_neighborhood"][0]["reasoning_moves"]
