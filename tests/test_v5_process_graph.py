@@ -372,6 +372,17 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     assert evidence_hint["draft"]["evidence_type"] == "proof_obligation_resolution"
     assert "analytic derivation" in evidence_hint["draft"]["supports_outputs"]
     assert "source-grounded evidence summary" in evidence_hint["draft"]["summary"]
+    recording_preflight_hint = _hint_by_entrypoint(recording_decision, "aitp_v5_preflight_trust_update")
+    assert recording_preflight_hint["record_action"] == "preflight_trust_update"
+    assert recording_preflight_hint["orientation_only"] is True
+    assert recording_preflight_hint["summary_inputs_trusted"] is False
+    assert recording_preflight_hint["can_update_claim_trust"] is False
+    assert recording_preflight_hint["draft"]["action"] == "change_claim_confidence"
+    assert recording_preflight_hint["draft"]["session_id"] == "s1"
+    assert recording_preflight_hint["draft"]["topic_id"] == "fqhe"
+    assert recording_preflight_hint["draft"]["claim_id"] == claim.claim_id
+    assert recording_preflight_hint["draft"]["source_kind"] == "proof_obligation_record"
+    assert recording_preflight_hint["draft"]["source_ref"] == f"proof_obligation:{obligation.obligation_id}"
     assert recording_decision["lifecycle_phases"] == ["pre_turn", "pre_action", "pre_final"]
     assert recording_decision["recording_threshold"] == "blocking_before_final_or_promotion"
     assert "at pre_turn because required_now is true" in recording_decision["trigger_conditions"]
@@ -435,6 +446,12 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     assert trust_decision["required_now"] is True
     assert trust_decision["decision_type"] == "trust_boundary"
     assert trust_decision["entrypoints"] == ["aitp_v5_preflight_trust_update"]
+    trust_preflight_hint = _hint_by_entrypoint(trust_decision, "aitp_v5_preflight_trust_update")
+    assert trust_preflight_hint["record_action"] == "preflight_trust_update"
+    assert trust_preflight_hint["draft"]["session_id"] == "s1"
+    assert trust_preflight_hint["draft"]["topic_id"] == "fqhe"
+    assert trust_preflight_hint["draft"]["claim_id"] == claim.claim_id
+    assert trust_preflight_hint["draft"]["source_ref"] == f"claim:{claim.claim_id}"
     assert trust_decision["lifecycle_phases"] == ["pre_action", "pre_final"]
     assert trust_decision["recording_threshold"] == "blocking_before_claim_trust_update"
     assert "before any claim-trust update" in trust_decision["trigger_conditions"]

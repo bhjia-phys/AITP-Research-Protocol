@@ -30,7 +30,7 @@ surfaces.
 | Long-term memory | Implemented core: L2 memory entries, promotion packets, memory audits, failure-mode audits, trust audits, Obsidian review views |
 | Replay and review | Implemented core: session summaries, workspace summaries, workspace replay packets, source reconstruction audits |
 | Legacy migration | Implemented generic migration plus curated v5 migration for priority legacy topics, coverage, semantic-review, repair, source-reconstruction, human-checkpoint, and Obsidian worklist surfaces; the real legacy semantic review backlog remains blocking |
-| Host integration | Priority hosts are ready for Codex, Claude Code, and Kimi Code through v5 MCP/hook/adapter surfaces and production-loop audits; Hakimi now auto-configures a WorkFrame-scoped typed session bridge that can read `process_graph_slice`, compile `moment_policy.decisions` into required call obligations, and expose model-facing AITP write-bridge execution for exploratory records, research routes, source assets, auto-captured code state, proof obligations, validation contracts/results, and human checkpoints instead of duplicating the schema |
+| Host integration | Priority hosts are ready for Codex, Claude Code, and Kimi Code through v5 MCP/hook/adapter surfaces and production-loop audits; Hakimi now auto-configures a WorkFrame-scoped typed session bridge that can read `process_graph_slice`, compile `moment_policy.decisions` into required call obligations, and expose model-facing AITP write-bridge execution for exploratory records, research routes, source assets, auto-captured code state, proof obligations, validation contracts/results, human checkpoints, and non-mutating trust preflight instead of duplicating the schema |
 | OpenCode | Adapter/plugin surfaces exist, but OpenCode remains deferred until its hook model and packaging path stabilize |
 | Goal continuation | Implemented: local `.aitp/surfaces/goal_continuation/` JSON+Markdown packets capture objective, commit range, changed files, tests, smoke commands, readiness, next actions, and blocking backlog |
 | Literature intake | Implemented conservative intake: references are orientation-only, evidence/sensemaking are guarded suggestions, and trust updates stay forbidden without preflight/checkpoints |
@@ -70,6 +70,11 @@ The practical rule is:
   policy derived from typed records. They are not canonical truth records; a
   host may use them to decide when to call AITP entrypoints or final gates, but
   successful typed writes and trust preflight remain the authority.
+- Treat `aitp_v5_preflight_trust_update` payload hints as non-mutating
+  trust-boundary drafts. A host such as Hakimi may execute
+  `aitp-v5 trust preflight` and record the returned token/result as policy
+  evidence, but that evidence is not `trust apply` and does not update claim
+  trust.
 - Treat exploratory-record reasoning fields as local theory-process handles.
   `reasoning_moves`, `backtrace_targets`, `relation_path_questions`,
   `definition_boundary_questions`, `derivation_backtrace_questions`,
@@ -135,9 +140,11 @@ The practical rule is:
   `aitp:session:<id>` scope, and can be disabled or replaced by host-provided
   bridges.
 - Treat Hakimi's `ResearchAction.execute_aitp_write_bridge` as a host execution
-  path for configured sessions, not as a new authority. It should write through
-  AITP and record scoped action evidence; if the bridge is not configured, the
-  host must fail closed.
+  path for configured sessions, not as a new authority. It should write or
+  preflight through AITP and record scoped action evidence; a trust-preflight
+  result such as `aitp:trust_preflight:<token>` is policy evidence only, not an
+  applied trust update. If the bridge is not configured, the host must fail
+  closed.
 - Treat Hakimi source reconstruction review result writes as calls into AITP's
   canonical `record_source_reconstruction_review_result` surface. The host may
   pass reviewed components and typed basis refs, but the resulting
@@ -185,14 +192,16 @@ kernel capability:
    cached AITP context when no fresh slice is available, run soft final-gate
    checks over unhandled required calls, and expose write-bridge hints and
    execution for exploratory records, research routes, proof obligations, human
-   checkpoints, source assets, auto-captured code state, and validation records.
+   checkpoints, trust preflight, source assets, auto-captured code state, and
+   validation records.
    Hakimi also has an opt-in real CLI smoke that creates
    a temporary AITP topic store, reads a real `process_graph_slice`, writes a
    proof obligation and checkpoint, and verifies the resulting `.aitp` records
    when `HAKIMI_AITP_REAL_CLI_SMOKE=1`, `AITP_V5_REPO`, and `AITP_V5_PYTHON`
-   point at a working AITP Python environment. Richer MCP-first execution and
-   MCP-first execution, strict AITP preflight/checkpoint enforcement, and richer
-   evidence write-back still need later runtime integration slices.
+   point at a working AITP Python environment. The first strict AITP preflight
+   bridge is implemented as a non-mutating policy-evidence call; `trust apply`
+   remains an AITP-owned future boundary for hosts. MCP-first execution and
+   richer evidence write-back still need later runtime integration slices.
 8. Update downstream theory workspaces to the latest v5 kernel and regenerate
    topic-local runtime handoff files where needed.
 9. Revisit OpenCode after its host hook model is stable enough for the same
@@ -319,7 +328,7 @@ Hakimi's current bridge calls the same CLI surface with structured arguments:
 `research-state attach-artifact`, `checkpoint request`,
 `research-state create-proof-obligation`,
 `validation contract create`, `validation result record`, and
-`source reconstruction-review-result`. If the
+`source reconstruction-review-result`, plus `trust preflight`. If the
 `aitp-v5` console command is not installed in a local environment, use the
 equivalent module invocation shown below.
 
@@ -347,6 +356,7 @@ these names as the stable bridge contract, not infer names from README prose:
 | `create_validation_contract` | `aitp-v5 validation contract create <args>` | `aitp_v5_create_validation_contract` | `validation_contract_record` |
 | `request_human_checkpoint` | `aitp-v5 checkpoint request <args>` | `aitp_v5_request_human_checkpoint` | `human_checkpoint_record` |
 | `decide_human_checkpoint` | `aitp-v5 checkpoint decide <args>` | `aitp_v5_decide_human_checkpoint` | `human_checkpoint_record` |
+| `trust_preflight` | `aitp-v5 trust preflight <args>` | `aitp_v5_preflight_trust_update` | `trust_update_preflight` |
 
 The graph slice returns `moment_policy.decisions` as the typed policy surface
 for hosts. Each decision carries whether it is `required_now`, which
@@ -359,9 +369,13 @@ run a final gate, but they are policy guidance derived from typed records, not
 canonical truth records themselves. Decisions also expose orientation-only
 `payload_hints`: host-agnostic draft fields for the typed record that should be
 written next, such as evidence, reference-location, exploratory, source-asset,
-or validation-result records. These hints are not canonical truth and cannot
-update claim trust; they keep hosts from inventing payload shapes while AITP
-remains the authority for the actual record. Hakimi compiles these decisions
+or validation-result records. For `aitp_v5_preflight_trust_update`, the hint
+uses `record_action=preflight_trust_update` and drafts the action/session/topic/
+claim/source/evidence fields for `trust preflight`, while keeping
+`summary_inputs_trusted=false` and `can_update_claim_trust=false`. These hints
+are not canonical truth and cannot update claim trust; they keep hosts from
+inventing payload shapes while AITP remains the authority for the actual record.
+Hakimi compiles these decisions
 into ContextPack call obligations and now uses them in its final gate to
 downgrade trust-sensitive answers when required calls are neither passed nor
 explicitly blocked. Other hosts can consume the same read-only policy without
@@ -400,6 +414,12 @@ When that worklist recommends `record_source_reconstruction_review_result`,
 Hakimi can now call the same canonical CLI entrypoint through its write bridge.
 AITP still validates the reviewed components and basis refs and stores the
 result as orientation-only review evidence with `can_update_claim_trust=false`.
+
+When a trust-boundary decision recommends `aitp_v5_preflight_trust_update`,
+Hakimi can call `aitp-v5 trust preflight` through its bridge and record the
+returned `trust_update_preflight` token as scoped policy evidence. This closes
+the preflight loop only; Hakimi does not call `trust apply` or mutate AITP
+claim trust.
 
 Exploratory record reasoning fields are likewise host-facing process handles:
 Hakimi normalizes them into `params.theoryReasoning`, then renders them into the

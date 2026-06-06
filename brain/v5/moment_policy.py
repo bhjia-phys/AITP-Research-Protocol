@@ -23,12 +23,12 @@ def build_host_agnostic_moment_policy(
     """Return read-only policy decisions for recording, exploration, and trust boundaries."""
 
     decisions: list[dict[str, Any]] = []
-    decisions.extend(_recording_decisions(open_obligations))
-    decisions.extend(_source_backtrace_decisions(source_backtrace))
-    decisions.extend(_relation_brainstorm_decisions(relation_neighborhood))
+    decisions.extend(_recording_decisions(open_obligations, session_id=session_id))
+    decisions.extend(_source_backtrace_decisions(source_backtrace, session_id=session_id))
+    decisions.extend(_relation_brainstorm_decisions(relation_neighborhood, session_id=session_id))
     decisions.extend(_exploratory_decisions(exploratory_records))
     decisions.extend(_route_decisions(route_state or {}))
-    decisions.extend(_trust_boundary_decisions(source_backtrace, decisions))
+    decisions.extend(_trust_boundary_decisions(source_backtrace, decisions, topic_id=topic_id, session_id=session_id))
     decisions = _dedupe_decisions(decisions)
 
     return {
@@ -51,7 +51,7 @@ def build_host_agnostic_moment_policy(
     }
 
 
-def _recording_decisions(open_obligations: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _recording_decisions(open_obligations: list[dict[str, Any]], *, session_id: str) -> list[dict[str, Any]]:
     return [
         _decision(
             moment="record_or_validate_open_obligation",
@@ -64,6 +64,7 @@ def _recording_decisions(open_obligations: list[dict[str, Any]]) -> list[dict[st
             topic_id=str(obligation.get("topic_id") or ""),
             claim_id=str(obligation.get("claim_id") or ""),
             target_record=obligation,
+            session_id=session_id,
             record_entrypoints=["aitp_v5_record_evidence", "aitp_v5_record_validation_result"],
             required_before_trust_change=[
                 "record typed evidence or validation for the open obligation",
@@ -74,7 +75,7 @@ def _recording_decisions(open_obligations: list[dict[str, Any]]) -> list[dict[st
     ]
 
 
-def _source_backtrace_decisions(source_backtrace: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _source_backtrace_decisions(source_backtrace: list[dict[str, Any]], *, session_id: str) -> list[dict[str, Any]]:
     decisions = []
     for item in source_backtrace:
         missing = list(item.get("missing_components") or [])
@@ -92,6 +93,7 @@ def _source_backtrace_decisions(source_backtrace: list[dict[str, Any]]) -> list[
                 topic_id=str(item.get("topic_id") or ""),
                 claim_id=str(item.get("claim_id") or ""),
                 target_record=item,
+                session_id=session_id,
                 missing_components=missing,
                 record_entrypoints=[
                     "aitp_v5_record_exploratory_record",
@@ -109,7 +111,7 @@ def _source_backtrace_decisions(source_backtrace: list[dict[str, Any]]) -> list[
     return decisions
 
 
-def _relation_brainstorm_decisions(relations: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _relation_brainstorm_decisions(relations: list[dict[str, Any]], *, session_id: str) -> list[dict[str, Any]]:
     decisions = []
     for relation in relations:
         if str(relation.get("status") or "").strip().lower() != "hypothesis":
@@ -125,6 +127,7 @@ def _relation_brainstorm_decisions(relations: list[dict[str, Any]]) -> list[dict
                 target_id=str(relation.get("relation_id") or ""),
                 topic_id=str(relation.get("topic_id") or ""),
                 claim_id=str(relation.get("claim_id") or ""),
+                session_id=session_id,
                 target_record=relation,
                 exploration_entrypoints=["aitp_v5_record_exploratory_record"],
                 required_before_trust_change=[
@@ -279,7 +282,13 @@ def _route_decisions(route_state: dict[str, Any]) -> list[dict[str, Any]]:
     return decisions
 
 
-def _trust_boundary_decisions(source_backtrace: list[dict[str, Any]], decisions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _trust_boundary_decisions(
+    source_backtrace: list[dict[str, Any]],
+    decisions: list[dict[str, Any]],
+    *,
+    topic_id: str,
+    session_id: str,
+) -> list[dict[str, Any]]:
     claim_ids = {str(item.get("claim_id") or "") for item in source_backtrace if item.get("claim_id")}
     risky_targets = [item for item in decisions if item["required_before_trust_change"]]
     if not risky_targets:
@@ -299,7 +308,9 @@ def _trust_boundary_decisions(source_backtrace: list[dict[str, Any]], decisions:
             reason="recording, brainstorming, or backtrace prerequisites exist before any claim-trust update",
             target_type="claim",
             target_id=claim_id,
+            topic_id=topic_id,
             claim_id=claim_id,
+            session_id=session_id,
             required_before_trust_change=[
                 "resolve required recording/backtrace/brainstorm policy decisions",
                 "run aitp_v5_preflight_trust_update",
@@ -365,6 +376,7 @@ def _decision(
             target_record=target_record or {},
             record_entrypoints=record_points,
             exploration_entrypoints=exploration_points,
+            trust_entrypoints=[item for item in entrypoints if item == "aitp_v5_preflight_trust_update"],
         ),
         "required_before_trust_change": trust_prerequisites,
         "trust_boundary": bool(trust_prerequisites),
@@ -600,9 +612,10 @@ def _payload_hints(
     target_record: dict[str, Any],
     record_entrypoints: list[str],
     exploration_entrypoints: list[str],
+    trust_entrypoints: list[str],
 ) -> list[dict[str, Any]]:
     hints: list[dict[str, Any]] = []
-    for entrypoint in [*record_entrypoints, *exploration_entrypoints]:
+    for entrypoint in [*record_entrypoints, *exploration_entrypoints, *trust_entrypoints]:
         hint = _payload_hint(
             entrypoint=entrypoint,
             action_kind=action_kind,
@@ -785,6 +798,26 @@ def _payload_hint(
                 }
             ),
         }
+    if entrypoint == "aitp_v5_preflight_trust_update":
+        return {
+            **base,
+            "record_action": "preflight_trust_update",
+            "required_fields": ["action", "session_id", "topic_id", "claim_id"],
+            "draft": _clean_mapping(
+                {
+                    "action": "change_claim_confidence",
+                    "session_id": session_id,
+                    "topic_id": topic_id,
+                    "claim_id": claim_id or (target_id if target_type == "claim" else ""),
+                    "requested_state": _placeholder("requested claim confidence state"),
+                    "source_kind": _preflight_source_kind(action_kind, target_type),
+                    "source_ref": _source_ref_for_target(target_type, target_id),
+                    "evidence_refs": _source_refs(target_record),
+                    "code_state_ids": _string_list(target_record.get("code_state_ids")),
+                    "rationale": _preflight_rationale(action_kind, target_type, target_id),
+                }
+            ),
+        }
     return None
 
 
@@ -794,6 +827,25 @@ def _evidence_type_for_target(target_type: str, action_kind: str) -> str:
     if "source" in action_kind or "backtrace" in action_kind:
         return "source_reconstruction"
     return "process_record"
+
+
+def _preflight_source_kind(action_kind: str, target_type: str) -> str:
+    if "source" in action_kind or "backtrace" in action_kind:
+        return "source_record"
+    if "relation" in action_kind or target_type == "object_relation":
+        return "theory_reasoning_record"
+    if target_type == "proof_obligation":
+        return "proof_obligation_record"
+    if target_type == "research_route":
+        return "route_record"
+    return "typed_record"
+
+
+def _preflight_rationale(action_kind: str, target_type: str, target_id: str) -> str:
+    return (
+        f"Run AITP trust preflight before using {target_type}:{target_id} "
+        f"for action {action_kind} as a claim-trust change or trust-sensitive final conclusion."
+    )
 
 
 def _exploration_type_for_action(action_kind: str) -> str:
@@ -829,6 +881,10 @@ def _source_refs(record: dict[str, Any]) -> list[str]:
     if isinstance(values, list):
         return [str(value) for value in values if str(value)]
     return []
+
+
+def _source_ref_for_target(target_type: str, target_id: str) -> str:
+    return f"{target_type}:{target_id}" if target_type and target_id else ""
 
 
 def _reasoning_moves(action_kind: str, record: dict[str, Any]) -> list[str]:
