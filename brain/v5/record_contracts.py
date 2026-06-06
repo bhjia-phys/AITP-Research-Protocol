@@ -310,6 +310,49 @@ def require_valid_exploratory_record(payload: dict[str, Any]) -> dict[str, Any]:
     return _require_valid(validate_exploratory_record(payload), payload)
 
 
+def validate_research_route_record(payload: dict[str, Any], *, path: str = "research_route_record") -> ContractResult:
+    result = _validate_base_record(payload, path, kind="research_route")
+    if result.issues:
+        return result
+    for key in ("route_id", "topic_id", "title", "route_type", "status", "rationale"):
+        _require_nonempty_str(payload, key, path, result)
+    if payload.get("route_type") not in {
+        "derivation",
+        "source_backtrace",
+        "relation_path",
+        "code_validation",
+        "benchmark_validation",
+        "literature_route",
+        "steering_route",
+        "other",
+    }:
+        result.add(f"{path}.route_type", "must be a known route type")
+    if payload.get("status") not in {"live", "blocked", "abandoned", "superseded", "selected"}:
+        result.add(f"{path}.status", "must be live, blocked, abandoned, superseded, or selected")
+    for key in (
+        "failure_modes",
+        "source_refs",
+        "evidence_refs",
+        "artifact_ids",
+        "parent_route_ids",
+        "checkpoint_ids",
+        "exploratory_record_ids",
+        "object_ids",
+        "relation_ids",
+    ):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    _require_mapping(payload.get("metadata"), f"{path}.metadata", result)
+    if payload.get("orientation_only") is not True:
+        result.add(f"{path}.orientation_only", "must be true")
+    if payload.get("can_update_claim_trust") is not False:
+        result.add(f"{path}.can_update_claim_trust", "must be false")
+    return result
+
+
+def require_valid_research_route_record(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_research_route_record(payload), payload)
+
+
 def validate_validation_contract_record(payload: dict[str, Any], *, path: str = "validation_contract_record") -> ContractResult:
     result = _validate_base_record(payload, path, kind="validation_contract")
     if result.issues:

@@ -17,6 +17,7 @@ def build_host_agnostic_moment_policy(
     source_backtrace: list[dict[str, Any]],
     relation_neighborhood: list[dict[str, Any]],
     exploratory_records: list[dict[str, Any]],
+    route_state: dict[str, Any] | None = None,
     trust_boundary_reasons: list[str],
 ) -> dict[str, Any]:
     """Return read-only policy decisions for recording, exploration, and trust boundaries."""
@@ -26,6 +27,7 @@ def build_host_agnostic_moment_policy(
     decisions.extend(_source_backtrace_decisions(source_backtrace))
     decisions.extend(_relation_brainstorm_decisions(relation_neighborhood))
     decisions.extend(_exploratory_decisions(exploratory_records))
+    decisions.extend(_route_decisions(route_state or {}))
     decisions.extend(_trust_boundary_decisions(source_backtrace, decisions))
     decisions = _dedupe_decisions(decisions)
 
@@ -35,7 +37,7 @@ def build_host_agnostic_moment_policy(
         "session_id": session_id,
         "topic_id": topic_id,
         "claim_id": claim_id,
-        "policy_axes": ["recording", "brainstorming", "backtrace", "trust_boundary"],
+        "policy_axes": ["recording", "brainstorming", "backtrace", "route", "trust_boundary"],
         "decisions": decisions,
         "recommended_moments": [_moment_summary(item) for item in decisions],
         "trust_boundary_reasons": list(trust_boundary_reasons),
@@ -213,6 +215,70 @@ def _exploratory_decisions(records: list[dict[str, Any]]) -> list[dict[str, Any]
     return decisions
 
 
+def _route_decisions(route_state: dict[str, Any]) -> list[dict[str, Any]]:
+    decisions = []
+    for route in route_state.get("routes") or []:
+        if not isinstance(route, dict):
+            continue
+        status = str(route.get("status") or "")
+        route_id = str(route.get("route_id") or "")
+        if not route_id:
+            continue
+        if status in {"live", "selected"}:
+            decisions.append(
+                _decision(
+                    moment="record_route_choice",
+                    decision_type="route",
+                    action_kind="record_route_choice_rationale",
+                    required_now=False,
+                    reason="live research route should preserve route-choice rationale",
+                    target_type="research_route",
+                    target_id=route_id,
+                    topic_id=str(route.get("topic_id") or ""),
+                    claim_id=str(route.get("claim_id") or ""),
+                    session_id=str(route.get("session_id") or ""),
+                    target_record=route,
+                    record_entrypoints=["aitp_v5_record_research_route"],
+                )
+            )
+        if status in {"blocked", "abandoned"}:
+            decisions.append(
+                _decision(
+                    moment="record_failed_route_lesson",
+                    decision_type="route",
+                    action_kind="record_failed_route_lesson",
+                    required_now=False,
+                    reason="blocked or abandoned research route should preserve failure-mode lesson",
+                    target_type="research_route",
+                    target_id=route_id,
+                    topic_id=str(route.get("topic_id") or ""),
+                    claim_id=str(route.get("claim_id") or ""),
+                    session_id=str(route.get("session_id") or ""),
+                    target_record=route,
+                    record_entrypoints=["aitp_v5_record_research_route"],
+                )
+            )
+        if route.get("checkpoint_ids") or route.get("pivot_reason"):
+            decisions.append(
+                _decision(
+                    moment="checkpoint_before_route_switch",
+                    decision_type="route",
+                    action_kind="checkpoint_before_route_switch",
+                    required_now=False,
+                    reason="route switch or pivot has checkpoint/pivot metadata",
+                    target_type="research_route",
+                    target_id=route_id,
+                    topic_id=str(route.get("topic_id") or ""),
+                    claim_id=str(route.get("claim_id") or ""),
+                    session_id=str(route.get("session_id") or ""),
+                    target_record=route,
+                    record_entrypoints=["aitp_v5_record_research_route"],
+                    exploration_entrypoints=["aitp_v5_request_human_checkpoint"],
+                )
+            )
+    return decisions
+
+
 def _trust_boundary_decisions(source_backtrace: list[dict[str, Any]], decisions: list[dict[str, Any]]) -> list[dict[str, Any]]:
     claim_ids = {str(item.get("claim_id") or "") for item in source_backtrace if item.get("claim_id")}
     risky_targets = [item for item in decisions if item["required_before_trust_change"]]
@@ -370,6 +436,8 @@ def _lifecycle_phases(
         return ["pre_turn", "pre_action", "pre_final"]
     if decision_type == "backtrace":
         return ["pre_turn", "pre_action"]
+    if decision_type == "route":
+        return ["pre_turn", "pre_action"]
     if decision_type == "brainstorming" and "original" in action_kind:
         return ["pre_turn", "pre_action", "pre_final"]
     if decision_type == "brainstorming":
@@ -420,6 +488,15 @@ def _trigger_conditions(
                 "before trust-sensitive final output for the target claim",
             ]
         )
+    if decision_type == "route":
+        conditions.extend(
+            [
+                "when choosing, abandoning, or pivoting a nonlinear research route",
+                "before route-dependent work loses the route-choice rationale",
+            ]
+        )
+        if "checkpoint" in action_kind:
+            conditions.append("before switching route when a pivot checkpoint is recorded or needed")
     if required_before_trust_change:
         conditions.append("before claim-trust changes until required_before_trust_change is satisfied")
     return _dedupe_strings(conditions)
@@ -434,6 +511,12 @@ def _recording_threshold(*, decision_type: str, required_now: bool, action_kind:
         return "required_before_source_dependent_support"
     if decision_type == "backtrace":
         return "recommended_before_following_source_chain"
+    if decision_type == "route" and "checkpoint" in action_kind:
+        return "recommended_before_route_switch"
+    if decision_type == "route" and "failed" in action_kind:
+        return "recommended_before_retry_or_pivot"
+    if decision_type == "route":
+        return "recommended_before_route_dependent_work"
     if decision_type == "brainstorming" and "original" in action_kind:
         return "recommended_before_next_local_step_or_final_synthesis"
     if decision_type == "brainstorming":
@@ -461,6 +544,8 @@ def _recommended_host_behavior(
         behavior.append("call the backtrace or source-record entrypoint before source-dependent actions")
     if decision_type == "brainstorming":
         behavior.append("call the brainstorming entrypoint before using the path as evidence or validation input")
+    if decision_type == "route":
+        behavior.append("record route choice, failed route lesson, or pivot checkpoint as process state, not evidence")
     if decision_type == "trust_boundary":
         behavior.append("at pre_final, require passed calls or explicit blockers before trust-sensitive final output")
     if required_before_trust_change:
@@ -636,6 +721,53 @@ def _payload_hint(
                 }
             ),
         }
+    if entrypoint == "aitp_v5_record_research_route":
+        return {
+            **base,
+            "record_action": "record_research_route",
+            "required_fields": ["topic_id", "title", "route_type", "status", "rationale"],
+            "draft": _clean_mapping(
+                {
+                    "topic_id": topic_id,
+                    "claim_id": claim_id,
+                    "session_id": session_id,
+                    "title": target_record.get("title") or _placeholder("route title"),
+                    "route_type": target_record.get("route_type") or "steering_route",
+                    "status": target_record.get("status") or "live",
+                    "rationale": target_record.get("rationale") or _placeholder("route-choice rationale"),
+                    "current_question": target_record.get("current_question", ""),
+                    "next_action": target_record.get("next_action", ""),
+                    "failure_modes": list(target_record.get("failure_modes") or []),
+                    "source_refs": _source_refs(target_record),
+                    "evidence_refs": _string_list(target_record.get("evidence_refs")),
+                    "artifact_ids": _string_list(target_record.get("artifact_ids")),
+                    "parent_route_ids": _string_list(target_record.get("parent_route_ids")),
+                    "checkpoint_ids": _string_list(target_record.get("checkpoint_ids")),
+                    "exploratory_record_ids": _string_list(target_record.get("exploratory_record_ids")),
+                    "object_ids": _string_list(target_record.get("object_ids")),
+                    "relation_ids": _string_list(target_record.get("relation_ids")),
+                    "decision_rationale": target_record.get("decision_rationale", ""),
+                    "pivot_reason": target_record.get("pivot_reason", ""),
+                }
+            ),
+        }
+    if entrypoint == "aitp_v5_request_human_checkpoint":
+        return {
+            **base,
+            "record_action": "request_human_checkpoint",
+            "required_fields": ["topic_id", "claim_id", "reason", "requested_by"],
+            "draft": _clean_mapping(
+                {
+                    "topic_id": topic_id,
+                    "claim_id": claim_id,
+                    "reason": target_record.get("pivot_reason")
+                    or target_record.get("decision_rationale")
+                    or _placeholder("route switch checkpoint reason"),
+                    "requested_by": "route_policy",
+                    "options": ["continue_route", "switch_route", "pause_for_review"],
+                }
+            ),
+        }
     if entrypoint == "aitp_v5_record_validation_result":
         return {
             **base,
@@ -717,11 +849,13 @@ def _backtrace_targets(record: dict[str, Any]) -> list[str]:
     if values:
         return values
     targets = [
+        *[f"object:{value}" for value in _string_list([record.get("subject_id"), record.get("object_id")])],
         *[f"object:{value}" for value in _string_list(record.get("object_ids"))],
+        *[f"relation:{value}" for value in _string_list([record.get("relation_id")])],
         *[f"relation:{value}" for value in _string_list(record.get("relation_ids"))],
         *[f"source:{value}" for value in _source_refs(record)],
     ]
-    return targets
+    return _dedupe_strings(targets)
 
 
 def _relation_path_questions(action_kind: str, record: dict[str, Any]) -> list[str]:

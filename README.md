@@ -30,13 +30,14 @@ surfaces.
 | Long-term memory | Implemented core: L2 memory entries, promotion packets, memory audits, failure-mode audits, trust audits, Obsidian review views |
 | Replay and review | Implemented core: session summaries, workspace summaries, workspace replay packets, source reconstruction audits |
 | Legacy migration | Implemented generic migration plus curated v5 migration for priority legacy topics, coverage, semantic-review, repair, source-reconstruction, human-checkpoint, and Obsidian worklist surfaces; the real legacy semantic review backlog remains blocking |
-| Host integration | Priority hosts are ready for Codex, Claude Code, and Kimi Code through v5 MCP/hook/adapter surfaces and production-loop audits; Hakimi now auto-configures a WorkFrame-scoped typed session bridge that can read `process_graph_slice`, compile `moment_policy.decisions` into required call obligations, and expose model-facing AITP write-bridge execution for exploratory records, source assets, proof obligations, validation contracts/results, and human checkpoints instead of duplicating the schema |
+| Host integration | Priority hosts are ready for Codex, Claude Code, and Kimi Code through v5 MCP/hook/adapter surfaces and production-loop audits; Hakimi now auto-configures a WorkFrame-scoped typed session bridge that can read `process_graph_slice`, compile `moment_policy.decisions` into required call obligations, and expose model-facing AITP write-bridge execution for exploratory records, research routes, source assets, proof obligations, validation contracts/results, and human checkpoints instead of duplicating the schema |
 | OpenCode | Adapter/plugin surfaces exist, but OpenCode remains deferred until its hook model and packaging path stabilize |
 | Goal continuation | Implemented: local `.aitp/surfaces/goal_continuation/` JSON+Markdown packets capture objective, commit range, changed files, tests, smoke commands, readiness, next actions, and blocking backlog |
 | Literature intake | Implemented conservative intake: references are orientation-only, evidence/sensemaking are guarded suggestions, and trust updates stay forbidden without preflight/checkpoints |
 | Theory research state | Implemented minimal conservative surface: `research-state register-source`, `attach-artifact`, `update-claim-status`, `create-proof-obligation`, `classify-event`, and `bounded-evidence` connect literature/results/artifacts/Fisherd-style runs to typed records without claim-trust promotion |
-| Typed process graph | Implemented first read-only slice: `aitp-v5 graph slice <session-id>` and `aitp_v5_get_process_graph_slice` compile typed records into orientation-only nodes, edges, source backtrace, relation neighborhoods, open obligations, trust-boundary reasons, recommended research moments, and a host-agnostic `moment_policy.decisions` list with `required_now`, `required_before_trust_change`, lifecycle trigger phases/conditions, split record/exploration entrypoints, and a host-facing `entrypoints` summary |
+| Typed process graph | Implemented first read-only slice: `aitp-v5 graph slice <session-id>` and `aitp_v5_get_process_graph_slice` compile typed records into orientation-only nodes, edges, source backtrace, relation neighborhoods, route state, open obligations, trust-boundary reasons, recommended research moments, and a host-agnostic `moment_policy.decisions` list with `required_now`, `required_before_trust_change`, lifecycle trigger phases/conditions, split record/exploration entrypoints, and a host-facing `entrypoints` summary. The same policy is also exposed directly through `aitp-v5 graph moment-policy <session-id>` / `aitp_v5_get_host_agnostic_moment_policy` |
 | Exploratory research graph | Implemented first typed record: `aitp-v5 exploration record` and `aitp_v5_record_exploratory_record` capture source assets, question decomposition, relation-path brainstorming, backtrace steps, and steering checkpoints as orientation-only graph records. Theory-facing fields now preserve why-question decomposition, relation-path questions, definition/derivation/source backtrace questions, backtrace targets, and original-question guards without updating claim trust |
+| Research route state | Implemented first typed record: `aitp-v5 route record` and `aitp_v5_record_research_route` capture live routes, abandoned/blocked routes, branches, failed-attempt lessons, pivots, checkpoint links, and next actions as orientation-only process graph records. Route state can steer agents and preserve nonlinear research continuity, but it is not evidence, validation, or claim-trust authority |
 | Canonical source assets | Implemented first typed record: `aitp-v5 asset register` and `aitp_v5_register_source_asset` assign orientation-only identities, hashes, version anchors, and source/code/artifact links to papers, lectures, notes, code repositories, snapshots, datasets, and generated artifacts |
 | QSGW cockpit | Implemented first surface: `aitp-v5 status qsgw-cockpit` writes a topic-local final/diagnostic lane manifest, plot guard, and dashboard dry-run from typed records plus `research/librpa` report/script scans; it also discovers downstream `*_lane_manifest_current.json` and `*_aitp_intake_current.jsonl` files without treating them as trust updates |
 
@@ -57,6 +58,10 @@ The practical rule is:
 - Treat typed v5 records as the authority.
 - Treat process graph slices as local navigation/compilation aids, not as new
   truth records.
+- Treat research route records as local nonlinear process state: they preserve
+  live routes, failed routes, branch/pivot rationale, checkpoint links, and next
+  actions, but they are not evidence or validation and cannot update claim
+  trust.
 - Treat host-agnostic moment policy as read-only process guidance; it explains
   when typed records, brainstorming/backtrace, or trust preflight are needed,
   but it cannot update kernel state or claim trust.
@@ -78,6 +83,10 @@ The practical rule is:
 - Treat `moment_policy.decisions[].entrypoints` as the host-facing call surface
   summary. Hakimi may compile it into blocking/current-turn call obligations,
   but the policy remains derived from AITP typed records and contracts.
+- Treat route moments as process-continuity guidance unless AITP explicitly
+  marks a trust boundary. Recording a route choice, failed-route lesson, or
+  pivot checkpoint should make the agent less forgetful without turning route
+  notes into final-gate blockers by default.
 - Treat Hakimi final-gate checks over those call obligations as downstream host
   enforcement. They can force a status downgrade or require a recorded blocker,
   but they still do not mutate AITP trust or replace AITP preflight.
@@ -249,7 +258,9 @@ The v5 kernel is exposed through several thin surfaces:
 | `brain/v5/mcp_tools.py` | MCP tool wrappers over kernel functions |
 | `brain/v5/public_surfaces.py` | Contracted public payload validators |
 | `aitp-v5 graph slice <session-id>` | Read-only typed process graph slice for local agent compilation |
+| `aitp-v5 graph moment-policy <session-id>` | Read-only host-agnostic policy for when to record, brainstorm, backtrace, or stop at trust boundaries |
 | `aitp-v5 exploration record` | Orientation-only typed record for brainstorming, backtrace, source-asset, and steering continuity |
+| `aitp-v5 route record` | Orientation-only typed record for live routes, failed routes, branches, pivots, checkpoint links, and nonlinear research continuity |
 | `aitp-v5 asset register` | Orientation-only canonical identity for raw papers, lectures, notes, code snapshots, datasets, and generated artifacts |
 | `brain/v5/adapter_*` | Host adapter packets, bridge runners, and install/audit helpers |
 | `hooks/aitp_v5_*` | Host lifecycle hooks and event runners |
@@ -263,8 +274,9 @@ is not the v5 topic/claim/evidence store and should not be used as the
 execution contract.
 
 Hakimi's current bridge calls the same CLI surface with structured arguments:
-`aitp-v5 --base <base> graph slice <session-id>`, `exploration record`, `asset
-register`, `checkpoint request`, `research-state create-proof-obligation`,
+`aitp-v5 --base <base> graph slice <session-id>`, `graph moment-policy`,
+`exploration record`, `route record`, `asset register`, `checkpoint request`,
+`research-state create-proof-obligation`,
 `validation contract create`, and `validation result record`. If the
 `aitp-v5` console command is not installed in a local environment, use the
 equivalent module invocation shown below.
@@ -277,11 +289,13 @@ these names as the stable bridge contract, not infer names from README prose:
 | Contract key | CLI template | MCP tool | Surface |
 |--------------|--------------|----------|---------|
 | `process_graph_slice` | `aitp-v5 graph slice <session-id>` | `aitp_v5_get_process_graph_slice` | `process_graph_slice` |
+| `host_agnostic_moment_policy` | `aitp-v5 graph moment-policy <session-id>` | `aitp_v5_get_host_agnostic_moment_policy` | `host_agnostic_moment_policy` |
 | `record_evidence` | `aitp-v5 evidence record <args>` | `aitp_v5_record_evidence` | `evidence_record` |
 | `record_tool_run` | `aitp-v5 tool run record <args>` | `aitp_v5_record_tool_run` | `tool_run_record` |
 | `record_reference_location` | `aitp-v5 reference location record <args>` | `aitp_v5_record_reference_location` | `reference_location_record` |
 | `record_validation_result` | `aitp-v5 validation result record <args>` | `aitp_v5_record_validation_result` | `validation_result_record` |
 | `record_exploratory_record` | `aitp-v5 exploration record <args>` | `aitp_v5_record_exploratory_record` | `exploratory_record` |
+| `record_research_route` | `aitp-v5 route record <args>` | `aitp_v5_record_research_route` | `research_route_record` |
 | `register_source_asset` | `aitp-v5 asset register <args>` | `aitp_v5_register_source_asset` | `source_asset_record` |
 | `create_proof_obligation` | `aitp-v5 research-state create-proof-obligation <args>` | `aitp_v5_create_proof_obligation` | `proof_obligation_record` |
 | `update_proof_obligation` | `aitp-v5 research-state update-proof-obligation <args>` | `aitp_v5_update_proof_obligation` | `proof_obligation_record` |

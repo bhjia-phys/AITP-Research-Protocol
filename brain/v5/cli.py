@@ -31,6 +31,7 @@ from brain.v5.process_graph import build_process_graph_slice
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.physics_objects import record_object_relation, record_physics_object
 from brain.v5.references import record_reference_location
+from brain.v5.routes import record_research_route, research_route_payload
 from brain.v5.sensemaking import record_sensemaking_report
 from brain.v5.source_assets import register_source_asset, source_asset_payload
 from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
@@ -110,6 +111,8 @@ def _build_parser() -> argparse.ArgumentParser:
     gp = sp.add_parser("graph"); gs = gp.add_subparsers(dest="graph_command", required=True)
     sl = gs.add_parser("slice"); sl.add_argument("session_id")
     sl.add_argument("--claim", default="", dest="claim_id"); sl.add_argument("--limit", type=int, default=80)
+    mp = gs.add_parser("moment-policy"); mp.add_argument("session_id")
+    mp.add_argument("--claim", default="", dest="claim_id"); mp.add_argument("--limit", type=int, default=80)
 
     rp = sp.add_parser("risk"); rs = rp.add_subparsers(dest="risk_command", required=True)
     rs.add_parser("assess").add_argument("claim_id")
@@ -259,6 +262,30 @@ def _build_parser() -> argparse.ArgumentParser:
     er.add_argument("--human-steering", default="")
     er.add_argument("--metadata-json", default="{}")
 
+    rt_p = sp.add_parser("route"); rt_s = rt_p.add_subparsers(dest="route_command", required=True)
+    rtr = rt_s.add_parser("record")
+    rtr.add_argument("--topic", required=True, dest="topic_id")
+    rtr.add_argument("--claim", default="", dest="claim_id")
+    rtr.add_argument("--session", default="", dest="session_id")
+    rtr.add_argument("--type", required=True, dest="route_type")
+    rtr.add_argument("--status", required=True)
+    rtr.add_argument("--title", required=True)
+    rtr.add_argument("--rationale", required=True)
+    rtr.add_argument("--current-question", default="")
+    rtr.add_argument("--next-action", default="")
+    rtr.add_argument("--failure-mode", action="append", default=[], dest="failure_modes")
+    rtr.add_argument("--source-ref", action="append", default=[], dest="source_refs")
+    rtr.add_argument("--evidence-ref", action="append", default=[], dest="evidence_refs")
+    rtr.add_argument("--artifact-id", action="append", default=[], dest="artifact_ids")
+    rtr.add_argument("--parent-route-id", action="append", default=[], dest="parent_route_ids")
+    rtr.add_argument("--checkpoint-id", action="append", default=[], dest="checkpoint_ids")
+    rtr.add_argument("--exploratory-record-id", action="append", default=[], dest="exploratory_record_ids")
+    rtr.add_argument("--object-id", action="append", default=[], dest="object_ids")
+    rtr.add_argument("--relation-id", action="append", default=[], dest="relation_ids")
+    rtr.add_argument("--decision-rationale", default="")
+    rtr.add_argument("--pivot-reason", default="")
+    rtr.add_argument("--metadata-json", default="{}")
+
     sap = sp.add_parser("subagent"); sas = sap.add_subparsers(dest="subagent_command", required=True)
     sai = sas.add_parser("ingest-result")
     sai.add_argument("--topic", required=True, dest="topic_id")
@@ -355,6 +382,9 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             "process_graph_slice",
             build_process_graph_slice(ws, args.session_id, claim_id=args.claim_id, limit=args.limit),
         )
+    if args.command == "graph" and args.graph_command == "moment-policy":
+        graph = build_process_graph_slice(ws, args.session_id, claim_id=args.claim_id, limit=args.limit)
+        return require_valid_public_surface("host_agnostic_moment_policy", graph["moment_policy"])
     if args.command == "risk" and args.risk_command == "assess":
         return {"ok": True, "claim_id": args.claim_id, "risk_assessment": asdict(assess_claim_risk(get_claim(ws, args.claim_id)))}
 
@@ -510,6 +540,33 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             metadata=_j(args.metadata_json),
         )
         return require_valid_public_surface("exploratory_record", exploratory_record_payload(rec))
+
+    if args.command == "route" and args.route_command == "record":
+        route = record_research_route(
+            ws,
+            topic_id=args.topic_id,
+            claim_id=args.claim_id,
+            session_id=args.session_id,
+            title=args.title,
+            route_type=args.route_type,
+            status=args.status,
+            rationale=args.rationale,
+            current_question=args.current_question,
+            next_action=args.next_action,
+            failure_modes=args.failure_modes,
+            source_refs=args.source_refs,
+            evidence_refs=args.evidence_refs,
+            artifact_ids=args.artifact_ids,
+            parent_route_ids=args.parent_route_ids,
+            checkpoint_ids=args.checkpoint_ids,
+            exploratory_record_ids=args.exploratory_record_ids,
+            object_ids=args.object_ids,
+            relation_ids=args.relation_ids,
+            decision_rationale=args.decision_rationale,
+            pivot_reason=args.pivot_reason,
+            metadata=_j(args.metadata_json),
+        )
+        return require_valid_public_surface("research_route_record", research_route_payload(route))
 
     if args.command == "subagent" and args.subagent_command == "ingest-result":
         result = ingest_subagent_result(

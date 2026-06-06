@@ -80,6 +80,27 @@ def sample_args_for_template(template: str) -> list[str]:
             "--next-action",
             "trace source definitions",
         ]
+    if template.startswith("route record"):
+        return [
+            "--topic",
+            "fqhe",
+            "--claim",
+            "claim-fqhe",
+            "--session",
+            "s1",
+            "--type",
+            "relation_path",
+            "--status",
+            "live",
+            "--title",
+            "Counting to CFT route",
+            "--rationale",
+            "Try the sector-counting relation path before validation.",
+            "--current-question",
+            "Can sector counting be traced to a CFT label definition?",
+            "--next-action",
+            "open source backtrace",
+        ]
     if template.startswith("asset register"):
         return [
             "--topic",

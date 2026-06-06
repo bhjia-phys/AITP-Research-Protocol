@@ -67,6 +67,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_get_process_graph_slice",
         "surface": "process_graph_slice",
     },
+    "host_agnostic_moment_policy": {
+        "cli": "aitp-v5 graph moment-policy <session-id>",
+        "mcp": "aitp_v5_get_host_agnostic_moment_policy",
+        "surface": "host_agnostic_moment_policy",
+    },
     "record_exploratory_record": {
         "cli": "aitp-v5 exploration record <args>",
         "mcp": "aitp_v5_record_exploratory_record",
@@ -76,6 +81,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "cli": "aitp-v5 asset register <args>",
         "mcp": "aitp_v5_register_source_asset",
         "surface": "source_asset_record",
+    },
+    "record_research_route": {
+        "cli": "aitp-v5 route record <args>",
+        "mcp": "aitp_v5_record_research_route",
+        "surface": "research_route_record",
     },
     "interaction_recording_preview": {"cli": "aitp-v5 interaction preview <session-id>", "mcp": "aitp_v5_preview_interaction_recording", "surface": "interaction_recording_preview"},
     "workspace_interaction_preview": {

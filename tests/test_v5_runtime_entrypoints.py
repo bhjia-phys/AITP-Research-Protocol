@@ -32,6 +32,8 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     )
     assert entrypoints["record_validation_result"]["surface"] == "validation_result_record"
     assert entrypoints["record_exploratory_record"]["surface"] == "exploratory_record"
+    assert entrypoints["record_research_route"]["surface"] == "research_route_record"
+    assert entrypoints["host_agnostic_moment_policy"]["surface"] == "host_agnostic_moment_policy"
     assert entrypoints["record_evidence"]["mcp"] == "aitp_v5_record_evidence"
     assert entrypoints["record_code_state"]["mcp"] == "aitp_v5_record_code_state"
     assert entrypoints["register_tool_recipe"]["mcp"] == "aitp_v5_register_tool_recipe"
@@ -58,6 +60,8 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     )
     assert entrypoints["record_validation_result"]["mcp"] == "aitp_v5_record_validation_result"
     assert entrypoints["record_exploratory_record"]["mcp"] == "aitp_v5_record_exploratory_record"
+    assert entrypoints["record_research_route"]["mcp"] == "aitp_v5_record_research_route"
+    assert entrypoints["host_agnostic_moment_policy"]["mcp"] == "aitp_v5_get_host_agnostic_moment_policy"
     assert entrypoints["get_trust_update_record"] == {
         "cli": "aitp-v5 trust update-record <args>",
         "mcp": "aitp_v5_get_trust_update_record",
@@ -176,6 +180,11 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "mcp": "aitp_v5_get_process_graph_slice",
             "surface": "process_graph_slice",
         },
+        "host_agnostic_moment_policy": {
+            "cli": "aitp-v5 graph moment-policy <session-id>",
+            "mcp": "aitp_v5_get_host_agnostic_moment_policy",
+            "surface": "host_agnostic_moment_policy",
+        },
         "record_evidence": {
             "cli": "aitp-v5 evidence record <args>",
             "mcp": "aitp_v5_record_evidence",
@@ -200,6 +209,11 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "cli": "aitp-v5 exploration record <args>",
             "mcp": "aitp_v5_record_exploratory_record",
             "surface": "exploratory_record",
+        },
+        "record_research_route": {
+            "cli": "aitp-v5 route record <args>",
+            "mcp": "aitp_v5_record_research_route",
+            "surface": "research_route_record",
         },
         "register_source_asset": {
             "cli": "aitp-v5 asset register <args>",

@@ -80,6 +80,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "qsgw_cockpit_bundle",
         "record_gate_coverage_audit",
         "reference_location_record",
+        "research_route_record",
         "research_event_classification",
         "research_cockpit_bundle",
         "research_intent_packet",

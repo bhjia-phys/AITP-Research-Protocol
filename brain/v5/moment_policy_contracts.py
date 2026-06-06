@@ -7,7 +7,7 @@ from typing import Any
 from brain.v5.contracts import ContractError, ContractResult, _require_bool_value, _require_list, _require_mapping
 
 
-_DECISION_TYPES = {"recording", "brainstorming", "backtrace", "trust_boundary"}
+_DECISION_TYPES = {"recording", "brainstorming", "backtrace", "route", "trust_boundary"}
 _LIFECYCLE_PHASES = {"pre_turn", "pre_action", "pre_final"}
 
 

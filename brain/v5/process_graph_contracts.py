@@ -33,6 +33,7 @@ def validate_process_graph_slice(payload: dict[str, Any], *, path: str = "proces
         "recommended_moments",
     ):
         _require_list(payload.get(key), f"{path}.{key}", result)
+    _require_mapping(payload.get("route_state"), f"{path}.route_state", result)
     moment_policy = payload.get("moment_policy")
     _require_mapping(moment_policy, f"{path}.moment_policy", result)
     if isinstance(moment_policy, dict):

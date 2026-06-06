@@ -30,6 +30,7 @@ from brain.v5.public_surfaces import describe_public_surfaces, require_valid_pub
 from brain.v5.physics_objects import record_object_relation, record_physics_object
 from brain.v5.process_graph import build_process_graph_slice
 from brain.v5.references import record_reference_location
+from brain.v5.routes import record_research_route, research_route_payload
 from brain.v5.sensemaking import record_sensemaking_report
 from brain.v5.source_assets import register_source_asset, source_asset_payload
 from brain.v5.validation import create_validation_contract, record_validation_result
@@ -108,6 +109,19 @@ def aitp_v5_get_process_graph_slice(base: str, *, session_id: str, claim_id: str
         "process_graph_slice",
         build_process_graph_slice(_ws(base), session_id, claim_id=claim_id, limit=limit),
     )
+
+
+def aitp_v5_get_host_agnostic_moment_policy(
+    base: str,
+    *,
+    session_id: str,
+    claim_id: str = "",
+    limit: int = 80,
+) -> dict:
+    """Return the read-only host-agnostic moment policy for a process graph slice."""
+
+    graph = build_process_graph_slice(_ws(base), session_id, claim_id=claim_id, limit=limit)
+    return require_valid_public_surface("host_agnostic_moment_policy", graph["moment_policy"])
 
 
 def aitp_v5_record_exploratory_record(
@@ -222,6 +236,58 @@ def aitp_v5_register_source_asset(
         linked_records=linked_records,
     )
     return require_valid_public_surface("source_asset_record", source_asset_payload(record))
+
+
+def aitp_v5_record_research_route(
+    base: str,
+    *,
+    topic_id: str,
+    title: str,
+    route_type: str,
+    status: str,
+    rationale: str,
+    claim_id: str = "",
+    session_id: str = "",
+    current_question: str = "",
+    next_action: str = "",
+    failure_modes: list[str] | None = None,
+    source_refs: list[str] | None = None,
+    evidence_refs: list[str] | None = None,
+    artifact_ids: list[str] | None = None,
+    parent_route_ids: list[str] | None = None,
+    checkpoint_ids: list[str] | None = None,
+    exploratory_record_ids: list[str] | None = None,
+    object_ids: list[str] | None = None,
+    relation_ids: list[str] | None = None,
+    decision_rationale: str = "",
+    pivot_reason: str = "",
+    metadata: dict | None = None,
+) -> dict:
+    record = record_research_route(
+        _ws(base),
+        topic_id=topic_id,
+        claim_id=claim_id,
+        session_id=session_id,
+        title=title,
+        route_type=route_type,
+        status=status,
+        rationale=rationale,
+        current_question=current_question,
+        next_action=next_action,
+        failure_modes=failure_modes,
+        source_refs=source_refs,
+        evidence_refs=evidence_refs,
+        artifact_ids=artifact_ids,
+        parent_route_ids=parent_route_ids,
+        checkpoint_ids=checkpoint_ids,
+        exploratory_record_ids=exploratory_record_ids,
+        object_ids=object_ids,
+        relation_ids=relation_ids,
+        decision_rationale=decision_rationale,
+        pivot_reason=pivot_reason,
+        metadata=metadata,
+    )
+    return require_valid_public_surface("research_route_record", research_route_payload(record))
 
 
 def aitp_list_topics(topics_root: str) -> list[dict]:

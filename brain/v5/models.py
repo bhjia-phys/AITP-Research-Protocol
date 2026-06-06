@@ -411,6 +411,35 @@ class ExploratoryRecord:
 
 
 @dataclass
+class ResearchRouteRecord:
+    route_id: str
+    topic_id: str
+    title: str
+    route_type: str
+    status: str
+    rationale: str
+    claim_id: str = ""
+    session_id: str = ""
+    current_question: str = ""
+    next_action: str = ""
+    failure_modes: list[str] = field(default_factory=list)
+    source_refs: list[str] = field(default_factory=list)
+    evidence_refs: list[str] = field(default_factory=list)
+    artifact_ids: list[str] = field(default_factory=list)
+    parent_route_ids: list[str] = field(default_factory=list)
+    checkpoint_ids: list[str] = field(default_factory=list)
+    exploratory_record_ids: list[str] = field(default_factory=list)
+    object_ids: list[str] = field(default_factory=list)
+    relation_ids: list[str] = field(default_factory=list)
+    decision_rationale: str = ""
+    pivot_reason: str = ""
+    metadata: dict = field(default_factory=dict)
+    orientation_only: bool = True
+    can_update_claim_trust: bool = False
+    kind: str = "research_route"
+
+
+@dataclass
 class ValidationContractRecord:
     contract_id: str
     topic_id: str

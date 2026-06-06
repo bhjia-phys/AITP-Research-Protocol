@@ -10,11 +10,13 @@ from brain.v5.models import (
     CodeStateRecord,
     EvidenceRecord,
     ExploratoryRecord,
+    HumanCheckpointRecord,
     MemoryEntryRecord,
     ObjectRelationRecord,
     PhysicsObjectRecord,
     ProofObligationRecord,
     ReferenceLocationRecord,
+    ResearchRouteRecord,
     SessionBinding,
     SourceAssetRecord,
     ToolRunRecord,
@@ -92,6 +94,20 @@ def build_process_graph_slice(
         claim_ids,
         session_id,
     )
+    routes = _filter_research_routes(
+        _records(ws, "routes", ResearchRouteRecord),
+        topic_id,
+        claim_ids,
+        session_id,
+        session.active_route,
+    )
+    route_checkpoint_ids = {checkpoint_id for route in routes for checkpoint_id in route.checkpoint_ids}
+    checkpoints = _filter_human_checkpoints(
+        _records(ws, "checkpoints", HumanCheckpointRecord),
+        topic_id,
+        claim_ids,
+        route_checkpoint_ids,
+    )
     code_state_ids = {code_id for run in tool_runs for code_id in run.code_state_ids if code_id}
     code_state_ids.update(code_id for asset in source_assets for code_id in asset.code_state_ids if code_id)
     code_state_ids.update(_linked_code_state_ids_for_claim(_records(ws, "code_states", CodeStateRecord), claim_ids))
@@ -131,17 +147,22 @@ def build_process_graph_slice(
         builder.add_node("sensemaking_report", record.report_id, record, label=record.title)
     for record in exploratory_records:
         builder.add_node("exploratory_record", record.record_id, record, label=record.title)
+    for record in checkpoints:
+        builder.add_node("human_checkpoint", record.checkpoint_id, record, label=record.reason)
+    for record in routes:
+        builder.add_node("research_route", record.route_id, record, label=record.title)
 
     for claim in claims:
         builder.add_edge("session", session.session_id, "claim", claim.claim_id, "session_focus")
     _add_edges(builder, session, claims, references, source_assets, evidence, obligations, objects, relations,
                validation_contracts, validation_results, tool_runs, code_states, memory_entries, sensemaking_reports,
-               exploratory_records)
+               exploratory_records, checkpoints, routes)
 
     open_obligations = [_obligation_slice(record) for record in obligations if not _closed(record.status)]
     source_backtrace = _source_backtrace(claims, references, source_assets, evidence, obligations, objects, relations, exploratory_records)
     relation_neighborhood = _relation_neighborhood(objects, relations, exploratory_records)
     exploratory_slices = [_exploratory_slice(record) for record in exploratory_records]
+    route_state = _route_state(session, routes)
     trust_boundary_reasons = [
         "process_graph_slice is orientation-only",
         "truth_source is typed_records",
@@ -157,6 +178,7 @@ def build_process_graph_slice(
         source_backtrace=source_backtrace,
         relation_neighborhood=relation_neighborhood,
         exploratory_records=exploratory_slices,
+        route_state=route_state,
         trust_boundary_reasons=trust_boundary_reasons,
     )
 
@@ -177,8 +199,15 @@ def build_process_graph_slice(
         "relation_neighborhood": relation_neighborhood,
         "trust_boundary_reasons": trust_boundary_reasons,
         "exploratory_records": exploratory_slices,
+        "route_state": route_state,
         "moment_policy": moment_policy,
-        "recommended_moments": _recommended_moments(open_obligations, source_backtrace, relations, exploratory_records),
+        "recommended_moments": _recommended_moments(
+            open_obligations,
+            source_backtrace,
+            relations,
+            exploratory_records,
+            route_state,
+        ),
         "record_counts": {
             "claim": len(claims),
             "physics_object": len(objects),
@@ -194,6 +223,8 @@ def build_process_graph_slice(
             "memory_entry": len(memory_entries),
             "sensemaking_report": len(sensemaking_reports),
             "exploratory_record": len(exploratory_records),
+            "human_checkpoint": len(checkpoints),
+            "research_route": len(routes),
         },
         "truncation": {
             "limit": limit,
@@ -277,6 +308,8 @@ def _add_edges(
     memory_entries: list[MemoryEntryRecord],
     sensemaking_reports: list[SensemakingReportRecord],
     exploratory_records: list[ExploratoryRecord],
+    checkpoints: list[HumanCheckpointRecord],
+    routes: list[ResearchRouteRecord],
 ) -> None:
     reference_lookup = _reference_lookup(references)
     source_asset_lookup = _source_asset_lookup(source_assets)
@@ -284,6 +317,10 @@ def _add_edges(
     validation_result_ids = {record.result_id for record in validation_results}
     tool_run_ids = {record.run_id for record in tool_runs}
     code_state_ids = {record.code_state_id for record in code_states}
+    exploratory_ids = {record.record_id for record in exploratory_records}
+    checkpoint_ids = {record.checkpoint_id for record in checkpoints}
+    route_ids = {record.route_id for record in routes}
+    evidence_ids = {record.evidence_id for record in evidence}
 
     for record in references:
         if record.claim_id:
@@ -377,10 +414,40 @@ def _add_edges(
                 builder.add_edge("exploratory_record", record.record_id, "source_asset", asset_id, "explores_source_asset")
         for parent_id in record.parent_record_ids:
             builder.add_edge("exploratory_record", record.record_id, "exploratory_record", parent_id, "continues_from")
+    for record in routes:
+        if record.claim_id:
+            builder.add_edge("claim", record.claim_id, "research_route", record.route_id, "has_research_route")
+        if record.session_id:
+            builder.add_edge("session", record.session_id, "research_route", record.route_id, "recorded_route")
+        for parent_id in record.parent_route_ids:
+            if parent_id in route_ids:
+                builder.add_edge("research_route", record.route_id, "research_route", parent_id, "branches_from")
+        for checkpoint_id in record.checkpoint_ids:
+            if checkpoint_id in checkpoint_ids:
+                builder.add_edge("research_route", record.route_id, "human_checkpoint", checkpoint_id, "requires_checkpoint")
+        for exploratory_id in record.exploratory_record_ids:
+            if exploratory_id in exploratory_ids:
+                builder.add_edge("research_route", record.route_id, "exploratory_record", exploratory_id, "uses_exploration")
+        for object_id in record.object_ids:
+            builder.add_edge("research_route", record.route_id, "physics_object", object_id, "route_mentions_object")
+        for relation_id in record.relation_ids:
+            builder.add_edge("research_route", record.route_id, "object_relation", relation_id, "route_mentions_relation")
+        for evidence_id in record.evidence_refs:
+            if evidence_id in evidence_ids:
+                builder.add_edge("research_route", record.route_id, "evidence", evidence_id, "uses_evidence")
+        for ref in record.source_refs:
+            location_id = reference_lookup.get(ref)
+            if location_id:
+                builder.add_edge("research_route", record.route_id, "reference_location", location_id, "uses_source")
+            asset_id = source_asset_lookup.get(ref)
+            if asset_id:
+                builder.add_edge("research_route", record.route_id, "source_asset", asset_id, "uses_source_asset")
     if session.active_claim:
         for claim in claims:
             if claim.claim_id == session.active_claim:
                 builder.add_edge("session", session.session_id, "claim", claim.claim_id, "active_claim")
+    if session.active_route:
+        builder.add_edge("session", session.session_id, "research_route", session.active_route, "active_route")
 
 
 def _records(ws: WorkspacePaths, family: str, cls: type) -> list:
@@ -428,6 +495,41 @@ def _filter_exploratory_records(
             or not record.claim_id
             or record.session_id == session_id
         )
+    ]
+
+
+def _filter_research_routes(
+    records: list[ResearchRouteRecord],
+    topic_id: str,
+    claim_ids: set[str],
+    session_id: str,
+    active_route: str,
+) -> list[ResearchRouteRecord]:
+    return [
+        record
+        for record in records
+        if record.topic_id == topic_id
+        and (
+            not claim_ids
+            or record.claim_id in claim_ids
+            or not record.claim_id
+            or record.session_id == session_id
+            or record.route_id == active_route
+        )
+    ]
+
+
+def _filter_human_checkpoints(
+    records: list[HumanCheckpointRecord],
+    topic_id: str,
+    claim_ids: set[str],
+    checkpoint_ids: set[str],
+) -> list[HumanCheckpointRecord]:
+    return [
+        record
+        for record in records
+        if record.topic_id == topic_id
+        and (record.checkpoint_id in checkpoint_ids or not claim_ids or record.claim_id in claim_ids)
     ]
 
 
@@ -652,6 +754,53 @@ def _exploratory_slice(record: ExploratoryRecord) -> dict[str, Any]:
     }
 
 
+def _route_state(session: SessionBinding, routes: list[ResearchRouteRecord]) -> dict[str, Any]:
+    route_slices = [_route_slice(record, active=record.route_id == session.active_route) for record in routes]
+    return {
+        "active_route_id": session.active_route,
+        "routes": route_slices,
+        "live_route_ids": [record.route_id for record in routes if record.status in {"live", "selected"}],
+        "blocked_route_ids": [record.route_id for record in routes if record.status == "blocked"],
+        "abandoned_route_ids": [record.route_id for record in routes if record.status == "abandoned"],
+        "pivot_required_route_ids": [
+            record.route_id
+            for record in routes
+            if record.parent_route_ids or record.pivot_reason or record.checkpoint_ids
+        ],
+        "orientation_only": True,
+        "can_update_claim_trust": False,
+    }
+
+
+def _route_slice(record: ResearchRouteRecord, *, active: bool) -> dict[str, Any]:
+    return {
+        "route_id": record.route_id,
+        "topic_id": record.topic_id,
+        "claim_id": record.claim_id,
+        "session_id": record.session_id,
+        "title": record.title,
+        "route_type": record.route_type,
+        "status": record.status,
+        "active": active,
+        "rationale": record.rationale,
+        "current_question": record.current_question,
+        "next_action": record.next_action,
+        "failure_modes": list(record.failure_modes),
+        "source_refs": list(record.source_refs),
+        "evidence_refs": list(record.evidence_refs),
+        "artifact_ids": list(record.artifact_ids),
+        "parent_route_ids": list(record.parent_route_ids),
+        "checkpoint_ids": list(record.checkpoint_ids),
+        "exploratory_record_ids": list(record.exploratory_record_ids),
+        "object_ids": list(record.object_ids),
+        "relation_ids": list(record.relation_ids),
+        "decision_rationale": record.decision_rationale,
+        "pivot_reason": record.pivot_reason,
+        "orientation_only": record.orientation_only,
+        "can_update_claim_trust": record.can_update_claim_trust,
+    }
+
+
 def _record_values(records: list[ExploratoryRecord], field_name: str) -> list[str]:
     values: list[str] = []
     for record in records:
@@ -667,6 +816,7 @@ def _recommended_moments(
     source_backtrace: list[dict[str, Any]],
     relations: list[ObjectRelationRecord],
     exploratory_records: list[ExploratoryRecord],
+    route_state: dict[str, Any],
 ) -> list[dict[str, Any]]:
     moments: list[dict[str, Any]] = []
     for obligation in open_obligations:
@@ -755,6 +905,43 @@ def _recommended_moments(
                     priority="high",
                     timing="during_backtrace_loop",
                     trust_boundary="question_continuity",
+                )
+            )
+    for route in route_state.get("routes", []):
+        if route.get("status") in {"live", "selected"}:
+            moments.append(
+                _moment(
+                    "record_route_choice",
+                    reason="live research route should preserve route-choice rationale",
+                    target_type="research_route",
+                    target_id=str(route.get("route_id") or ""),
+                    priority="normal",
+                    timing="before_route_dependent_work",
+                    trust_boundary="route_continuity",
+                )
+            )
+        if route.get("status") in {"blocked", "abandoned"}:
+            moments.append(
+                _moment(
+                    "record_failed_route_lesson",
+                    reason="blocked or abandoned research route should preserve failure-mode lesson",
+                    target_type="research_route",
+                    target_id=str(route.get("route_id") or ""),
+                    priority="high",
+                    timing="before_retry_or_pivot",
+                    trust_boundary="failed_route_memory",
+                )
+            )
+        if route.get("checkpoint_ids") or route.get("pivot_reason"):
+            moments.append(
+                _moment(
+                    "checkpoint_before_route_switch",
+                    reason="route switch or pivot has checkpoint/pivot metadata",
+                    target_type="research_route",
+                    target_id=str(route.get("route_id") or ""),
+                    priority="high",
+                    timing="before_switching_route",
+                    trust_boundary="route_switch_checkpoint",
                 )
             )
     return _dedupe_moments(moments)
