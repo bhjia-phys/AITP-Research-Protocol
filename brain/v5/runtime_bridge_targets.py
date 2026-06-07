@@ -16,6 +16,7 @@ _BRIDGE_TARGET_SPECS: tuple[tuple[str, str, str, str], ...] = (
     ("captureSourceAssetAuto", "capture_source_asset_auto", "write", "typed_record_write"),
     ("recordEvidence", "record_evidence", "write", "typed_record_write"),
     ("recordToolRun", "record_tool_run", "write", "typed_record_write"),
+    ("captureToolRunAuto", "capture_tool_run_auto", "write", "typed_record_write"),
     ("captureCodeStateAuto", "capture_code_state_auto", "write", "typed_record_write"),
     ("attachArtifact", "attach_artifact", "write", "typed_record_write"),
     ("recordReferenceLocation", "record_reference_location", "write", "typed_record_write"),

@@ -39,7 +39,7 @@ surfaces.
 | Exploratory research graph | Implemented first typed record: `aitp-v5 exploration record` and `aitp_v5_record_exploratory_record` capture source assets, question decomposition, relation-path brainstorming, backtrace steps, and steering checkpoints as orientation-only graph records. Theory-facing fields now preserve why-question decomposition, relation-path questions, definition/derivation/source backtrace questions, backtrace targets, and original-question guards without updating claim trust |
 | Research route state | Implemented first typed record: `aitp-v5 route record` and `aitp_v5_record_research_route` capture live routes, abandoned/blocked routes, branches, failed-attempt lessons, pivots, checkpoint links, and next actions as orientation-only process graph records. Route state can steer agents and preserve nonlinear research continuity, but it is not evidence, validation, or claim-trust authority |
 | Canonical source assets | Implemented first typed record and projection: `aitp-v5 asset register` / `aitp_v5_register_source_asset` and `aitp-v5 asset capture-auto` / `aitp_v5_capture_source_asset_auto` assign orientation-only identities, local file hashes, version anchors, duplicate-hash diagnostics, and source/code/artifact links to papers, lectures, notes, code repositories, snapshots, datasets, and generated artifacts; `process_graph_slice.source_asset_index[]` exposes that canonical source asset state to hosts without creating a second store |
-| Source/code provenance automation | Implemented first automations: `aitp-v5 asset capture-auto` and `aitp_v5_capture_source_asset_auto` capture local source file hash/size/mtime/MIME-ish metadata into canonical source asset records, while `aitp-v5 code state auto` and `aitp_v5_capture_code_state_auto` capture git HEAD, branch/upstream, dirty status, diff hash, optional patch artifacts, and linked topic/claim/session refs without requiring a host to hand-fill provenance fields |
+| Source/code/tool provenance automation | Implemented first automations: `aitp-v5 asset capture-auto` and `aitp_v5_capture_source_asset_auto` capture local source file hash/size/mtime/MIME-ish metadata into canonical source asset records, `aitp-v5 code state auto` and `aitp_v5_capture_code_state_auto` capture git HEAD, branch/upstream, dirty status, diff hash, optional patch artifacts, and linked topic/claim/session refs, and `aitp-v5 tool run capture-auto` / `aitp_v5_capture_tool_run_auto` captures local tool transcript/result hash, size, mtime, MIME-ish metadata, and bounded preview into a `tool_run_record` without treating it as validation |
 | QSGW cockpit | Implemented first surface: `aitp-v5 status qsgw-cockpit` writes a topic-local final/diagnostic lane manifest, plot guard, and dashboard dry-run from typed records plus `research/librpa` report/script scans; it also discovers downstream `*_lane_manifest_current.json` and `*_aitp_intake_current.jsonl` files without treating them as trust updates |
 
 The latest real readiness audit reports:
@@ -142,6 +142,10 @@ The practical rule is:
 - Treat auto-captured code-state records as provenance records, not validation
   results. A dirty diff hash or patch artifact explains what code state was
   used; it does not prove the result correct.
+- Treat auto-captured tool-run records as provenance records, not evidence or
+  validation promotion. AITP may compute transcript/result file hash, size,
+  mtime, MIME-ish metadata, and a bounded preview, but a host must still create
+  explicit evidence and validation records before using that run for trust.
 - Treat Hakimi bridge smoke tests as downstream contract checks: they show that
   an AITP-shaped slice, moment policy, and write CLI contract can be consumed by
   Hakimi without making Hakimi a second source of truth. They are not a
@@ -361,6 +365,7 @@ these names as the stable bridge contract, not infer names from README prose:
 | `runtime_bridge_target_manifest` | `aitp-v5 adapter bridge-targets` | `aitp_v5_get_runtime_bridge_target_manifest` | `runtime_bridge_target_manifest` |
 | `record_evidence` | `aitp-v5 evidence record <args>` | `aitp_v5_record_evidence` | `evidence_record` |
 | `record_tool_run` | `aitp-v5 tool run record <args>` | `aitp_v5_record_tool_run` | `tool_run_record` |
+| `capture_tool_run_auto` | `aitp-v5 tool run capture-auto <args>` | `aitp_v5_capture_tool_run_auto` | `tool_run_record` |
 | `record_reference_location` | `aitp-v5 reference location record <args>` | `aitp_v5_record_reference_location` | `reference_location_record` |
 | `record_validation_result` | `aitp-v5 validation result record <args>` | `aitp_v5_record_validation_result` | `validation_result_record` |
 | `record_source_reconstruction_review_result` | `aitp-v5 source reconstruction-review-result <args>` | `aitp_v5_record_source_reconstruction_review_result` | `source_reconstruction_review_result_record` |

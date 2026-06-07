@@ -62,7 +62,7 @@ from brain.v5.risk import assess_claim_risk
 from brain.v5.store import list_records
 from brain.v5.subagents import ingest_subagent_result
 from brain.v5.tool_executors import describe_tool_executors, execute_registered_tool_result
-from brain.v5.tools import record_tool_run, register_tool_recipe
+from brain.v5.tools import capture_tool_run_from_local_path, record_tool_run, register_tool_recipe, tool_run_payload
 from brain.v5.trace import persist_hook_trace_event
 from brain.v5.trust_updates import apply_trust_update, get_trust_update_record, preflight_trust_update
 from brain.v5.workspace import bind_session, create_claim, create_topic, get_claim, init_workspace
@@ -461,6 +461,48 @@ def aitp_v5_record_tool_run(
         outputs=outputs, environment=environment, evidence_status=evidence_status,
         code_state_ids=code_state_ids, artifact_ids=artifact_ids, source_refs=source_refs)
     return require_valid_public_surface("tool_run_record", {"ok": True, **asdict(run)})
+
+
+def aitp_v5_capture_tool_run_auto(
+    base: str,
+    *,
+    path: str,
+    recipe_id: str,
+    tool_family: str,
+    tool_name: str,
+    topic_id: str,
+    claim_id: str,
+    inputs: dict | None = None,
+    outputs: dict | None = None,
+    environment: dict | None = None,
+    evidence_status: str = "unreviewed",
+    code_state_ids: list[str] | None = None,
+    artifact_ids: list[str] | None = None,
+    source_refs: list[str] | None = None,
+    summary: str = "",
+    max_preview_chars: int = 1200,
+) -> dict:
+    """Inspect a local transcript/result file and record tool-run provenance."""
+
+    run = capture_tool_run_from_local_path(
+        _ws(base),
+        path=path,
+        recipe_id=recipe_id,
+        tool_family=tool_family,
+        tool_name=tool_name,
+        topic_id=topic_id,
+        claim_id=claim_id,
+        inputs=inputs,
+        outputs=outputs,
+        environment=environment,
+        evidence_status=evidence_status,
+        code_state_ids=code_state_ids,
+        artifact_ids=artifact_ids,
+        source_refs=source_refs,
+        summary=summary,
+        max_preview_chars=max_preview_chars,
+    )
+    return require_valid_public_surface("tool_run_record", tool_run_payload(run))
 
 
 def aitp_v5_execute_tool(

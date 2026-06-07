@@ -223,6 +223,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_record_tool_run",
         "surface": "tool_run_record",
     },
+    "capture_tool_run_auto": {
+        "cli": "aitp-v5 tool run capture-auto <args>",
+        "mcp": "aitp_v5_capture_tool_run_auto",
+        "surface": "tool_run_record",
+    },
     "execute_tool": {
         "cli": "aitp-v5 tool execute <args>",
         "mcp": "aitp_v5_execute_tool",

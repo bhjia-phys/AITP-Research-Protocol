@@ -16,6 +16,7 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["record_code_state"]["surface"] == "code_state_record"
     assert entrypoints["register_tool_recipe"]["surface"] == "tool_recipe_record"
     assert entrypoints["record_tool_run"]["surface"] == "tool_run_record"
+    assert entrypoints["capture_tool_run_auto"]["surface"] == "tool_run_record"
     assert entrypoints["execute_tool"]["surface"] == "tool_run_record"
     assert entrypoints["list_tool_executors"]["surface"] == "tool_executor_catalog"
     assert entrypoints["migrate_legacy_topic"]["surface"] == "legacy_migration_result"
@@ -40,6 +41,7 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["record_code_state"]["mcp"] == "aitp_v5_record_code_state"
     assert entrypoints["register_tool_recipe"]["mcp"] == "aitp_v5_register_tool_recipe"
     assert entrypoints["record_tool_run"]["mcp"] == "aitp_v5_record_tool_run"
+    assert entrypoints["capture_tool_run_auto"]["mcp"] == "aitp_v5_capture_tool_run_auto"
     assert entrypoints["execute_tool"]["mcp"] == "aitp_v5_execute_tool"
     assert entrypoints["list_tool_executors"]["mcp"] == "aitp_v5_list_tool_executors"
     assert entrypoints["migrate_legacy_topic"]["mcp"] == "aitp_v5_migrate_legacy_topic_to_v5"
@@ -205,6 +207,11 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "mcp": "aitp_v5_record_tool_run",
             "surface": "tool_run_record",
         },
+        "capture_tool_run_auto": {
+            "cli": "aitp-v5 tool run capture-auto <args>",
+            "mcp": "aitp_v5_capture_tool_run_auto",
+            "surface": "tool_run_record",
+        },
         "record_reference_location": {
             "cli": "aitp-v5 reference location record <args>",
             "mcp": "aitp_v5_record_reference_location",
@@ -283,6 +290,9 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
     }
     assert by_operation["recordEvidence"]["mcp_tool"] == "aitp_v5_record_evidence"
     assert by_operation["recordEvidence"]["cli_fallback"] == "aitp-v5 evidence record <args>"
+    assert by_operation["captureToolRunAuto"]["mcp_tool"] == "aitp_v5_capture_tool_run_auto"
+    assert by_operation["captureToolRunAuto"]["cli_fallback"] == "aitp-v5 tool run capture-auto <args>"
+    assert by_operation["captureToolRunAuto"]["surface"] == "tool_run_record"
     assert by_operation["captureSourceAssetAuto"]["mcp_tool"] == "aitp_v5_capture_source_asset_auto"
     assert by_operation["captureSourceAssetAuto"]["cli_fallback"] == "aitp-v5 asset capture-auto <args>"
     assert by_operation["captureSourceAssetAuto"]["surface"] == "source_asset_record"

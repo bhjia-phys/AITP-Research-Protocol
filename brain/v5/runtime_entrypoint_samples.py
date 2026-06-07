@@ -49,6 +49,8 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["--topic", "fqhe", "--claim", "claim-fqhe", "--artifact-uri", "results/check.json", "--artifact-summary", "Finite-size result file.", "--supports-output", "finite_size_check", "--scope", "N<=10 only"]
     if template.startswith("tool recipe register"):
         return ["recipe-ed", "--family", "numerical", "--name", "exact-diagonalization", "--purpose", "Run an ED check."]
+    if template.startswith("tool run capture-auto"):
+        return ["--path", "results/ed-transcript.txt", "--recipe", "recipe-ed", "--family", "numerical", "--name", "exact-diagonalization", "--topic", "fqhe", "--claim", "claim-fqhe"]
     if template.startswith("tool run record"):
         return ["--recipe", "recipe-ed", "--family", "numerical", "--name", "exact-diagonalization", "--topic", "fqhe", "--claim", "claim-fqhe"]
     if template.startswith("tool execute"):

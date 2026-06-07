@@ -46,6 +46,83 @@ def test_tool_run_records_inputs_outputs_environment_linked_claim_and_status(tmp
     assert (ws.root / "registry" / "tool_runs" / f"{run.run_id}.md").exists()
 
 
+def test_cli_and_mcp_capture_tool_run_auto_from_local_transcript(tmp_path, capsys):
+    import hashlib
+
+    from brain.v5.mcp_tools import aitp_v5_capture_tool_run_auto
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "librpa-gw", context_id="gw-methods", title="LibRPA GW")
+    claim = create_claim(
+        ws,
+        topic_id="librpa-gw",
+        statement="The Si GW benchmark is reproducible from this transcript.",
+        evidence_profile="code_method",
+        confidence_state="hypothesis",
+        active_uncertainty="tool transcript identity not captured",
+    )
+    transcript = tmp_path / "si-gw-transcript.txt"
+    transcript.write_text("pytest tests/test_si_gw.py\nPASSED gap=1.23\n", encoding="utf-8")
+    expected_hash = hashlib.sha256(transcript.read_bytes()).hexdigest()
+
+    payload = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "tool",
+            "run",
+            "capture-auto",
+            "--path",
+            str(transcript),
+            "--recipe",
+            "recipe-librpa-si-gw",
+            "--family",
+            "code",
+            "--name",
+            "pytest",
+            "--topic",
+            "librpa-gw",
+            "--claim",
+            claim.claim_id,
+            "--inputs-json",
+            '{"test":"tests/test_si_gw.py"}',
+            "--summary",
+            "Local benchmark transcript.",
+            "--max-preview-chars",
+            "20",
+        ],
+        capsys,
+    )
+    mcp_payload = aitp_v5_capture_tool_run_auto(
+        str(tmp_path),
+        path=str(transcript),
+        recipe_id="recipe-librpa-si-gw",
+        tool_family="code",
+        tool_name="pytest",
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        inputs={"test": "tests/test_si_gw.py"},
+    )
+
+    assert payload["ok"] is True
+    assert payload["kind"] == "tool_run"
+    assert payload["topic_id"] == "librpa-gw"
+    assert payload["claim_id"] == claim.claim_id
+    assert payload["inputs"]["test"] == "tests/test_si_gw.py"
+    assert payload["outputs"]["transcript_sha256"] == expected_hash
+    assert payload["outputs"]["transcript_hash_algorithm"] == "sha256"
+    assert payload["outputs"]["transcript_size_bytes"] == transcript.stat().st_size
+    assert payload["outputs"]["transcript_preview"] == "pytest tests/test_si"
+    assert payload["outputs"]["transcript_preview_truncated"] is True
+    assert payload["environment"]["capture_tool"] == "aitp_v5_capture_tool_run_auto"
+    assert payload["environment"]["summary_inputs_trusted"] is False
+    assert payload["environment"]["can_update_claim_trust"] is False
+    assert payload["evidence_status"] == "unreviewed"
+    assert mcp_payload["run_id"].startswith("tool-run-recipe-librpa-si-gw-")
+    assert mcp_payload["outputs"]["transcript_sha256"] == expected_hash
+
+
 def test_large_artifact_is_stored_by_reference_not_inline_frontmatter(tmp_path):
     from brain.v5.evidence import record_artifact_ref
     from brain.v5.markdown import read_md
@@ -234,3 +311,10 @@ def test_checklist_executor_records_formal_theory_evidence(tmp_path):
     assert result.evidence is not None
     assert result.evidence.evidence_type == "formal_theory"
     assert result.evidence.status == "supports"
+
+
+def _invoke(argv, capsys):
+    from brain.v5.cli import main
+
+    assert main(argv) == 0
+    return __import__("json").loads(capsys.readouterr().out)

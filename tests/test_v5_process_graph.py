@@ -571,7 +571,19 @@ def test_process_graph_slice_exposes_source_code_provenance_gaps(tmp_path):
     assert code_gap["required_now"] is False
     assert code_gap["required_before_trust_change"] is False
     assert "benchmark_basis" in code_gap["blocking_when_used_as"]
-    tool_hint = _hint_by_entrypoint(by_type["tool_run_missing"], "aitp_v5_record_tool_run")
+    tool_gap = by_type["tool_run_missing"]
+    assert tool_gap["recommended_entrypoints"] == [
+        "aitp_v5_capture_tool_run_auto",
+        "aitp_v5_record_tool_run",
+    ]
+    assert tool_gap["recommended_actions"] == ["aitp.capture_tool_run_auto", "aitp.record_tool_run"]
+    tool_auto_hint = _hint_by_entrypoint(tool_gap, "aitp_v5_capture_tool_run_auto")
+    assert tool_auto_hint["record_action"] == "capture_tool_run_auto"
+    assert tool_auto_hint["draft"]["path"] == "<local tool transcript or result file path>"
+    assert tool_auto_hint["draft"]["topic_id"] == "gw"
+    assert tool_auto_hint["draft"]["claim_id"] == claim.claim_id
+    assert tool_auto_hint["draft"]["recipe_id"] == "<tool recipe id>"
+    tool_hint = _hint_by_entrypoint(tool_gap, "aitp_v5_record_tool_run")
     assert tool_hint["record_action"] == "record_tool_run"
     assert tool_hint["draft"]["topic_id"] == "gw"
     assert tool_hint["draft"]["claim_id"] == claim.claim_id

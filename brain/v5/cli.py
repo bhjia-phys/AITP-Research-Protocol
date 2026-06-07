@@ -39,7 +39,12 @@ from brain.v5.memory import apply_promotion_packet, create_promotion_packet
 from brain.v5.risk import assess_claim_risk
 from brain.v5.subagents import ingest_subagent_result
 from brain.v5.tool_executors import describe_tool_executors, execute_registered_tool_result
-from brain.v5.tools import record_tool_run, register_tool_recipe
+from brain.v5.tools import (
+    capture_tool_run_from_local_path,
+    record_tool_run,
+    register_tool_recipe,
+    tool_run_payload,
+)
 from brain.v5.trace import persist_hook_trace_event
 from brain.v5.trust_audit import audit_claim_trust
 from brain.v5.trust_updates import apply_trust_update, get_trust_update_record, preflight_trust_update
@@ -188,6 +193,22 @@ def _build_parser() -> argparse.ArgumentParser:
     trr.add_argument("--code-state-id", action="append", default=[], dest="code_state_ids")
     trr.add_argument("--artifact-id", action="append", default=[], dest="artifact_ids")
     trr.add_argument("--source-ref", action="append", default=[], dest="source_refs")
+    tra = trus.add_parser("capture-auto")
+    tra.add_argument("--path", required=True)
+    tra.add_argument("--recipe", required=True, dest="recipe_id")
+    tra.add_argument("--family", required=True, dest="tool_family")
+    tra.add_argument("--name", required=True, dest="tool_name")
+    tra.add_argument("--topic", required=True, dest="topic_id")
+    tra.add_argument("--claim", required=True, dest="claim_id")
+    tra.add_argument("--inputs-json", default="{}")
+    tra.add_argument("--outputs-json", default="{}")
+    tra.add_argument("--environment-json", default="{}")
+    tra.add_argument("--evidence-status", default="unreviewed")
+    tra.add_argument("--code-state-id", action="append", default=[], dest="code_state_ids")
+    tra.add_argument("--artifact-id", action="append", default=[], dest="artifact_ids")
+    tra.add_argument("--source-ref", action="append", default=[], dest="source_refs")
+    tra.add_argument("--summary", default="")
+    tra.add_argument("--max-preview-chars", type=int, default=1200)
 
     te = tls.add_parser("execute"); te.add_argument("executor_id")
     te.add_argument("--recipe", required=True, dest="recipe_id")
@@ -491,6 +512,27 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             environment=_j(args.environment_json), evidence_status=args.evidence_status,
             code_state_ids=args.code_state_ids, artifact_ids=args.artifact_ids, source_refs=args.source_refs)
         return {"ok": True, **require_valid_public_surface("tool_run_record", {"ok": True, **asdict(rn)})}
+
+    if args.command == "tool" and args.tool_command == "run" and args.tool_run_command == "capture-auto":
+        rn = capture_tool_run_from_local_path(
+            ws,
+            path=args.path,
+            recipe_id=args.recipe_id,
+            tool_family=args.tool_family,
+            tool_name=args.tool_name,
+            topic_id=args.topic_id,
+            claim_id=args.claim_id,
+            inputs=_j(args.inputs_json),
+            outputs=_j(args.outputs_json),
+            environment=_j(args.environment_json),
+            evidence_status=args.evidence_status,
+            code_state_ids=args.code_state_ids,
+            artifact_ids=args.artifact_ids,
+            source_refs=args.source_refs,
+            summary=args.summary,
+            max_preview_chars=args.max_preview_chars,
+        )
+        return require_valid_public_surface("tool_run_record", tool_run_payload(rn))
 
     if args.command == "tool" and args.tool_command == "executors":
         return require_valid_public_surface("tool_executor_catalog", describe_tool_executors())

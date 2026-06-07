@@ -703,8 +703,8 @@ def _provenance_gaps(
                         claim_id=claim_id,
                         target_type="claim",
                         target_id=claim_id,
-                        recommended_actions=["aitp.record_tool_run"],
-                        recommended_entrypoints=["aitp_v5_record_tool_run"],
+                        recommended_actions=["aitp.capture_tool_run_auto", "aitp.record_tool_run"],
+                        recommended_entrypoints=["aitp_v5_capture_tool_run_auto", "aitp_v5_record_tool_run"],
                         severity="high",
                         provenance_kind="tool_run",
                         target_record=claim,
@@ -1046,6 +1046,37 @@ def _provenance_payload_hint(
                     "code_state_ids": _string_list(target_record.get("code_state_ids")),
                     "artifact_ids": _string_list(target_record.get("artifact_ids")),
                     "source_refs": _source_refs_for_record(target_record, target_type, target_id),
+                }
+            ),
+        }
+    if entrypoint == "aitp_v5_capture_tool_run_auto":
+        return {
+            **base,
+            "record_action": "capture_tool_run_auto",
+            "required_fields": [
+                "path",
+                "recipe_id",
+                "tool_family",
+                "tool_name",
+                "topic_id",
+                "claim_id",
+            ],
+            "draft": _clean_mapping(
+                {
+                    "path": _placeholder("local tool transcript or result file path"),
+                    "recipe_id": target_record.get("recipe_id") or _placeholder("tool recipe id"),
+                    "tool_family": target_record.get("tool_family") or _tool_family_for_gap(provenance_kind, gap_type),
+                    "tool_name": target_record.get("tool_name") or _placeholder("tool name"),
+                    "topic_id": topic_id,
+                    "claim_id": claim_id,
+                    "inputs": target_record.get("inputs") or {},
+                    "outputs": target_record.get("outputs") or {},
+                    "environment": target_record.get("environment") or {},
+                    "evidence_status": target_record.get("evidence_status") or "unreviewed",
+                    "code_state_ids": _string_list(target_record.get("code_state_ids")),
+                    "artifact_ids": _string_list(target_record.get("artifact_ids")),
+                    "source_refs": _source_refs_for_record(target_record, target_type, target_id),
+                    "summary": reason,
                 }
             ),
         }
