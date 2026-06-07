@@ -93,6 +93,7 @@ def test_research_state_cli_mcp_and_runtime_entrypoints(tmp_path, capsys):
     from brain.v5.cli import main
     from brain.v5.mcp_tools import (
         aitp_v5_attach_artifact,
+        aitp_v5_attach_artifact_auto,
         aitp_v5_classify_research_event,
         aitp_v5_create_proof_obligation,
         aitp_v5_record_bounded_numerical_evidence,
@@ -157,6 +158,15 @@ def test_research_state_cli_mcp_and_runtime_entrypoints(tmp_path, capsys):
         summary="Fisherd result file.",
         size_bytes=str(result_path.stat().st_size),
     )
+    auto_artifact = aitp_v5_attach_artifact_auto(
+        str(ws.base),
+        path=str(result_path),
+        topic_id=claim.topic_id,
+        claim_id=claim.claim_id,
+        artifact_type="fisherd_result_json",
+        summary="Auto-attached Fisherd result file.",
+        metadata={"role": "benchmark_output"},
+    )
     status = aitp_v5_update_claim_status(
         str(ws.base),
         topic_id=claim.topic_id,
@@ -212,6 +222,13 @@ def test_research_state_cli_mcp_and_runtime_entrypoints(tmp_path, capsys):
     assert source["orientation_only"] is True
     assert artifact["kind"] == "artifact"
     assert isinstance(artifact["size_bytes"], int)
+    assert auto_artifact["kind"] == "artifact"
+    assert auto_artifact["uri"].startswith("file://")
+    assert auto_artifact["size_bytes"] == result_path.stat().st_size
+    assert auto_artifact["metadata"]["capture_tool"] == "aitp_v5_attach_artifact_auto"
+    assert auto_artifact["metadata"]["sha256"]
+    assert auto_artifact["metadata"]["mtime_utc"]
+    assert auto_artifact["metadata"]["role"] == "benchmark_output"
     assert status["kind"] == "claim_status"
     assert status["can_update_claim_trust"] is False
     assert obligation["kind"] == "proof_obligation"
@@ -224,6 +241,7 @@ def test_research_state_cli_mcp_and_runtime_entrypoints(tmp_path, capsys):
     assert mcp_payload["trust_update_forbidden"] is True
     assert runtime_entrypoints()["register_source"]["mcp"] == "aitp_v5_register_source"
     assert runtime_entrypoints()["attach_artifact"]["surface"] == "artifact_record"
+    assert runtime_entrypoints()["attach_artifact_auto"]["mcp"] == "aitp_v5_attach_artifact_auto"
     assert runtime_entrypoints()["update_proof_obligation"]["mcp"] == "aitp_v5_update_proof_obligation"
     assert runtime_entrypoints()["research_event_classifier"]["surface"] == "research_event_classification"
 
@@ -286,6 +304,63 @@ def test_attach_artifact_cli_preserves_hash_metadata_and_entrypoint_contract(tmp
     assert "--type" in sample_args
     assert "result_json" in sample_args
     assert "--uri" in sample_args
+
+
+def test_attach_artifact_auto_cli_captures_local_file_metadata(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.runtime_bridge_targets import runtime_bridge_target_manifest
+    from brain.v5.runtime_entrypoints import runtime_entrypoints, validate_runtime_entrypoints
+    from brain.v5.runtime_entrypoint_samples import sample_args_for_template
+
+    ws, claim, result_path = _seed_workspace(tmp_path)
+
+    assert main(
+        [
+            "--base",
+            str(ws.base),
+            "research-state",
+            "attach-artifact-auto",
+            "--path",
+            str(result_path),
+            "--topic",
+            claim.topic_id,
+            "--claim",
+            claim.claim_id,
+            "--type",
+            "benchmark_log",
+            "--summary",
+            "Benchmark log/result artifact auto-attached by reference.",
+            "--metadata-json",
+            '{"role":"benchmark_output"}',
+        ]
+    ) == 0
+
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["kind"] == "artifact"
+    assert payload["artifact_type"] == "benchmark_log"
+    assert payload["uri"].startswith("file://")
+    assert payload["size_bytes"] == result_path.stat().st_size
+    assert payload["metadata"]["capture_tool"] == "aitp_v5_attach_artifact_auto"
+    assert payload["metadata"]["sha256"]
+    assert payload["metadata"]["hash_algorithm"] == "sha256"
+    assert payload["metadata"]["mtime_utc"]
+    assert payload["metadata"]["mime_type"]
+    assert payload["metadata"]["can_update_claim_trust"] is False
+    attach_auto_entrypoint = runtime_entrypoints()["attach_artifact_auto"]
+    assert attach_auto_entrypoint == {
+        "cli": "aitp-v5 research-state attach-artifact-auto <args>",
+        "mcp": "aitp_v5_attach_artifact_auto",
+        "surface": "artifact_record",
+    }
+    manifest = runtime_bridge_target_manifest()
+    by_operation = {target["operation"]: target for target in manifest["targets"]}
+    assert by_operation["attachArtifactAuto"]["mcp_tool"] == "aitp_v5_attach_artifact_auto"
+    assert by_operation["attachArtifactAuto"]["cli_fallback"] == (
+        "aitp-v5 research-state attach-artifact-auto <args>"
+    )
+    assert sample_args_for_template("research-state attach-artifact-auto <args>")[0] == "--path"
+    assert validate_runtime_entrypoints() == []
 
 
 def test_public_surface_validators_accept_research_state_payloads():

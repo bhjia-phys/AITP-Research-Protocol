@@ -30,16 +30,16 @@ surfaces.
 | Long-term memory | Implemented core: L2 memory entries, promotion packets, memory audits, failure-mode audits, trust audits, Obsidian review views |
 | Replay and review | Implemented core: session summaries, workspace summaries, workspace replay packets, source reconstruction audits |
 | Legacy migration | Implemented generic migration plus curated v5 migration for priority legacy topics, coverage, semantic-review, repair, source-reconstruction, human-checkpoint, and Obsidian worklist surfaces; the real legacy semantic review backlog remains blocking |
-| Host integration | Priority hosts are ready for Codex, Claude Code, and Kimi Code through v5 MCP/hook/adapter surfaces and production-loop audits; `aitp-v5 adapter bridge-targets` / `aitp_v5_get_runtime_bridge_target_manifest` now expose MCP-first host bridge targets with CLI fallback templates; Hakimi auto-configures a WorkFrame-scoped typed session bridge that can read `process_graph_slice`, compile `moment_policy.decisions` into required call obligations, and expose model-facing AITP write-bridge execution for exploratory records, research routes, source assets, auto-captured local source assets, auto-captured code state, proof obligations, validation contracts/results, human checkpoints, and non-mutating trust preflight instead of duplicating the schema |
+| Host integration | Priority hosts are ready for Codex, Claude Code, and Kimi Code through v5 MCP/hook/adapter surfaces and production-loop audits; `aitp-v5 adapter bridge-targets` / `aitp_v5_get_runtime_bridge_target_manifest` now expose MCP-first host bridge targets with CLI fallback templates; Hakimi auto-configures a WorkFrame-scoped typed session bridge that can read `process_graph_slice`, compile `moment_policy.decisions` into required call obligations, and expose model-facing AITP write-bridge execution for exploratory records, research routes, source assets, auto-captured local source assets, auto-captured code state, auto-captured local artifacts, proof obligations, validation contracts/results, human checkpoints, and non-mutating trust preflight instead of duplicating the schema |
 | OpenCode | Adapter/plugin surfaces exist, but OpenCode remains deferred until its hook model and packaging path stabilize |
 | Goal continuation | Implemented: local `.aitp/surfaces/goal_continuation/` JSON+Markdown packets capture objective, commit range, changed files, tests, smoke commands, readiness, next actions, and blocking backlog |
 | Literature intake | Implemented conservative intake: references are orientation-only, evidence/sensemaking are guarded suggestions, and trust updates stay forbidden without preflight/checkpoints |
-| Theory research state | Implemented minimal conservative surface: `research-state register-source`, `attach-artifact`, `update-claim-status`, `create-proof-obligation`, `classify-event`, and `bounded-evidence` connect literature/results/artifacts/Fisherd-style runs to typed records without claim-trust promotion. `attach-artifact` is the stable artifact pointer write surface for benchmark logs, validation outputs, patches, plots, JSON results, and generated files |
+| Theory research state | Implemented minimal conservative surface: `research-state register-source`, `attach-artifact`, `attach-artifact-auto`, `update-claim-status`, `create-proof-obligation`, `classify-event`, and `bounded-evidence` connect literature/results/artifacts/Fisherd-style runs to typed records without claim-trust promotion. `attach-artifact` is the stable artifact pointer write surface for benchmark logs, validation outputs, patches, plots, JSON results, and generated files; `attach-artifact-auto` lets AITP compute local artifact file metadata before writing the same artifact record |
 | Typed process graph | Implemented first read-only slice: `aitp-v5 graph slice <session-id>` and `aitp_v5_get_process_graph_slice` compile typed records into orientation-only nodes, edges, source backtrace, `source_asset_index`, `source_stack_coverage`, `source_reconstruction_review`, relation neighborhoods, route state, provenance gaps, open obligations, trust-boundary reasons, recommended research moments, and a host-agnostic `moment_policy.decisions` list with `required_now`, `required_before_trust_change`, lifecycle trigger phases/conditions, split record/exploration entrypoints, and a host-facing `entrypoints` summary. The same policy is also exposed directly through `aitp-v5 graph moment-policy <session-id>` / `aitp_v5_get_host_agnostic_moment_policy` |
 | Exploratory research graph | Implemented first typed record: `aitp-v5 exploration record` and `aitp_v5_record_exploratory_record` capture source assets, question decomposition, relation-path brainstorming, backtrace steps, and steering checkpoints as orientation-only graph records. Theory-facing fields now preserve why-question decomposition, relation-path questions, definition/derivation/source backtrace questions, backtrace targets, and original-question guards without updating claim trust |
 | Research route state | Implemented first typed record: `aitp-v5 route record` and `aitp_v5_record_research_route` capture live routes, abandoned/blocked routes, branches, failed-attempt lessons, pivots, checkpoint links, and next actions as orientation-only process graph records. Route state can steer agents and preserve nonlinear research continuity, but it is not evidence, validation, or claim-trust authority |
 | Canonical source assets | Implemented first typed record and projection: `aitp-v5 asset register` / `aitp_v5_register_source_asset` and `aitp-v5 asset capture-auto` / `aitp_v5_capture_source_asset_auto` assign orientation-only identities, local file hashes, version anchors, duplicate-hash diagnostics, and source/code/artifact links to papers, lectures, notes, code repositories, snapshots, datasets, and generated artifacts; `process_graph_slice.source_asset_index[]` exposes that canonical source asset state to hosts without creating a second store |
-| Source/code/tool provenance automation | Implemented first automations: `aitp-v5 asset capture-auto` and `aitp_v5_capture_source_asset_auto` capture local source file hash/size/mtime/MIME-ish metadata into canonical source asset records, `aitp-v5 code state auto` and `aitp_v5_capture_code_state_auto` capture git HEAD, branch/upstream, dirty status, diff hash, optional patch artifacts, and linked topic/claim/session refs, and `aitp-v5 tool run capture-auto` / `aitp_v5_capture_tool_run_auto` captures local tool transcript/result hash, size, mtime, MIME-ish metadata, and bounded preview into a `tool_run_record` without treating it as validation |
+| Source/code/tool provenance automation | Implemented first automations: `aitp-v5 asset capture-auto` and `aitp_v5_capture_source_asset_auto` capture local source file hash/size/mtime/MIME-ish metadata into canonical source asset records, `aitp-v5 code state auto` and `aitp_v5_capture_code_state_auto` capture git HEAD, branch/upstream, dirty status, diff hash, optional patch artifacts, and linked topic/claim/session refs, `aitp-v5 tool run capture-auto` / `aitp_v5_capture_tool_run_auto` captures local tool transcript/result hash, size, mtime, MIME-ish metadata, and bounded preview into a `tool_run_record`, and `aitp-v5 research-state attach-artifact-auto` / `aitp_v5_attach_artifact_auto` captures local artifact hash/size/mtime/MIME-ish metadata into an `artifact_record` without treating it as evidence, validation, or trust |
 | QSGW cockpit | Implemented first surface: `aitp-v5 status qsgw-cockpit` writes a topic-local final/diagnostic lane manifest, plot guard, and dashboard dry-run from typed records plus `research/librpa` report/script scans; it also discovers downstream `*_lane_manifest_current.json` and `*_aitp_intake_current.jsonl` files without treating them as trust updates |
 
 The latest real readiness audit reports:
@@ -146,6 +146,13 @@ The practical rule is:
   validation promotion. AITP may compute transcript/result file hash, size,
   mtime, MIME-ish metadata, and a bounded preview, but a host must still create
   explicit evidence and validation records before using that run for trust.
+- Treat `aitp_v5_attach_artifact_auto` as the local-artifact analogue of source
+  and tool-run auto capture. A host may pass a benchmark log, validation output,
+  patch, plot, JSON result, or generated file path, and AITP will compute the
+  artifact hash, size, mtime, MIME-ish metadata, local path, and file identity
+  before writing the canonical `artifact_record`. The resulting artifact ref is
+  provenance by reference only; it is not evidence, validation, or claim-trust
+  authority.
 - Treat Hakimi bridge smoke tests as downstream contract checks: they show that
   an AITP-shaped slice, moment policy, and write CLI contract can be consumed by
   Hakimi without making Hakimi a second source of truth. They are not a
@@ -332,6 +339,7 @@ The v5 kernel is exposed through several thin surfaces:
 | `aitp-v5 asset register` | Orientation-only canonical identity for raw papers, lectures, notes, code snapshots, datasets, and generated artifacts |
 | `aitp-v5 code state auto` | Auto-capture git HEAD, branch/upstream, dirty status, diff hash, optional patch artifact, and linked topic/claim/session refs |
 | `aitp-v5 research-state attach-artifact` | Attach a benchmark log, validation output, patch, plot, JSON result, or generated file by reference as an artifact record with hash/size metadata when local |
+| `aitp-v5 research-state attach-artifact-auto` | Auto-attach a local benchmark log, validation output, patch, plot, JSON result, or generated file as an artifact record with hash/size/mtime/MIME-ish metadata |
 | `brain/v5/adapter_*` | Host adapter packets, bridge runners, and install/audit helpers |
 | `hooks/aitp_v5_*` | Host lifecycle hooks and event runners |
 | `<topics-root>/.aitp/surfaces/` | Generated orientation outputs such as summaries and review views |
@@ -346,7 +354,8 @@ execution contract.
 Hakimi's current bridge calls the same CLI surface with structured arguments:
 `aitp-v5 --base <base> graph slice <session-id>`, `graph moment-policy`,
 `exploration record`, `route record`, `asset register`, `code state auto`,
-`research-state attach-artifact`, `checkpoint request`,
+`research-state attach-artifact`, `research-state attach-artifact-auto`,
+`checkpoint request`,
 `research-state create-proof-obligation`,
 `validation contract create`, `validation result record`, and
 `source reconstruction-review-result`, plus `trust preflight`. If the
@@ -375,6 +384,7 @@ these names as the stable bridge contract, not infer names from README prose:
 | `capture_source_asset_auto` | `aitp-v5 asset capture-auto <args>` | `aitp_v5_capture_source_asset_auto` | `source_asset_record` |
 | `capture_code_state_auto` | `aitp-v5 code state auto <args>` | `aitp_v5_capture_code_state_auto` | `code_state_record` |
 | `attach_artifact` | `aitp-v5 research-state attach-artifact <args>` | `aitp_v5_attach_artifact` | `artifact_record` |
+| `attach_artifact_auto` | `aitp-v5 research-state attach-artifact-auto <args>` | `aitp_v5_attach_artifact_auto` | `artifact_record` |
 | `create_proof_obligation` | `aitp-v5 research-state create-proof-obligation <args>` | `aitp_v5_create_proof_obligation` | `proof_obligation_record` |
 | `update_proof_obligation` | `aitp-v5 research-state update-proof-obligation <args>` | `aitp_v5_update_proof_obligation` | `proof_obligation_record` |
 | `create_validation_contract` | `aitp-v5 validation contract create <args>` | `aitp_v5_create_validation_contract` | `validation_contract_record` |
@@ -385,7 +395,7 @@ these names as the stable bridge contract, not infer names from README prose:
 Hosts can query `runtime_bridge_target_manifest` directly instead of
 hard-coding the operation-to-entrypoint map. Each target names a Hakimi-facing
 operation such as `recordEvidence`, `captureSourceAssetAuto`,
-`captureCodeStateAuto`, or
+`captureCodeStateAuto`, `attachArtifactAuto`, or
 `preflightTrustUpdate`, its canonical AITP entrypoint key, preferred MCP tool,
 CLI fallback template, public surface, and state effect. The manifest is
 derived from `runtime_entrypoints()`, has `preferred_transport=mcp`, keeps
@@ -423,8 +433,8 @@ trust boundaries when the typed AITP payload explicitly says they are required
 before a trust change or final gate. Gaps may also carry `payload_hints[]` for
 the concrete typed record that should repair the gap: `asset capture-auto`,
 `code state auto`, `record_tool_run`, `create_validation_contract`,
-`record_validation_result`, `attach_artifact`, `register_source_asset`, or
-`record_reference_location`.
+`record_validation_result`, `attach_artifact_auto`, `attach_artifact`,
+`register_source_asset`, or `record_reference_location`.
 These hints are canonical AITP guidance for host write drafts, not canonical
 truth records; placeholders must be resolved by the host at execution time and
 AITP still validates/stores the resulting record.

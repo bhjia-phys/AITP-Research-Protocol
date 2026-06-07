@@ -35,6 +35,8 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["--topic", "fqhe", "--claim", "claim-fqhe", "--type", "toy_numeric", "--status", "supports", "--summary", "Finite-size check."]
     if template.startswith("research-state register-source"):
         return ["--topic", "fqhe", "--claim", "claim-fqhe", "--uri", "arxiv:2604.14695", "--label", "Close prior art"]
+    if template.startswith("research-state attach-artifact-auto"):
+        return ["--path", "results/check.json", "--topic", "fqhe", "--claim", "claim-fqhe", "--type", "result_json", "--summary", "Finite-size result file."]
     if template.startswith("research-state attach-artifact"):
         return ["--topic", "fqhe", "--claim", "claim-fqhe", "--type", "result_json", "--uri", "results/check.json", "--summary", "Finite-size result file."]
     if template.startswith("research-state update-claim-status"):

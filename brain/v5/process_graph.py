@@ -752,8 +752,12 @@ def _provenance_gaps(
                         claim_id=run.claim_id,
                         target_type="tool_run",
                         target_id=run.run_id,
-                        recommended_actions=["aitp.attach_artifact", "aitp.record_tool_run"],
-                        recommended_entrypoints=["aitp_v5_attach_artifact", "aitp_v5_record_tool_run"],
+                        recommended_actions=["aitp.attach_artifact_auto", "aitp.attach_artifact", "aitp.record_tool_run"],
+                        recommended_entrypoints=[
+                            "aitp_v5_attach_artifact_auto",
+                            "aitp_v5_attach_artifact",
+                            "aitp_v5_record_tool_run",
+                        ],
                         severity="normal",
                         provenance_kind="artifact",
                         target_record=run,
@@ -769,8 +773,16 @@ def _provenance_gaps(
                         claim_id=result.claim_id,
                         target_type="validation_result",
                         target_id=result.result_id,
-                        recommended_actions=["aitp.attach_artifact", "aitp.record_validation_result"],
-                        recommended_entrypoints=["aitp_v5_attach_artifact", "aitp_v5_record_validation_result"],
+                        recommended_actions=[
+                            "aitp.attach_artifact_auto",
+                            "aitp.attach_artifact",
+                            "aitp.record_validation_result",
+                        ],
+                        recommended_entrypoints=[
+                            "aitp_v5_attach_artifact_auto",
+                            "aitp_v5_attach_artifact",
+                            "aitp_v5_record_validation_result",
+                        ],
                         severity="normal",
                         provenance_kind="artifact",
                         target_record=result,
@@ -1130,6 +1142,26 @@ def _provenance_payload_hint(
                     "claim_id": claim_id,
                     "artifact_type": _artifact_type_for_gap(gap_type),
                     "uri": _placeholder("artifact URI"),
+                    "summary": reason,
+                    "metadata": {
+                        "target_type": target_type,
+                        "target_id": target_id,
+                        "provenance_kind": provenance_kind,
+                    },
+                }
+            ),
+        }
+    if entrypoint == "aitp_v5_attach_artifact_auto":
+        return {
+            **base,
+            "record_action": "attach_artifact_auto",
+            "required_fields": ["path", "topic_id", "claim_id", "artifact_type", "summary"],
+            "draft": _clean_mapping(
+                {
+                    "path": _placeholder("local artifact file path"),
+                    "topic_id": topic_id,
+                    "claim_id": claim_id,
+                    "artifact_type": _artifact_type_for_gap(gap_type),
                     "summary": reason,
                     "metadata": {
                         "target_type": target_type,

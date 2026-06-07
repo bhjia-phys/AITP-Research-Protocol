@@ -9,6 +9,7 @@ from typing import Any
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.research_state import (
     attach_artifact,
+    attach_artifact_from_local_path,
     classify_research_event,
     create_proof_obligation,
     record_bounded_numerical_evidence,
@@ -42,6 +43,13 @@ def add_research_state_parser(sp) -> None:
     art.add_argument("--summary", required=True)
     art.add_argument("--size-bytes", default=0)
     art.add_argument("--metadata-json", default="{}")
+    auta = sub.add_parser("attach-artifact-auto")
+    auta.add_argument("--path", required=True)
+    auta.add_argument("--topic", required=True, dest="topic_id")
+    auta.add_argument("--claim", required=True, dest="claim_id")
+    auta.add_argument("--type", required=True, dest="artifact_type")
+    auta.add_argument("--summary", required=True)
+    auta.add_argument("--metadata-json", default="{}")
 
     status = sub.add_parser("update-claim-status")
     status.add_argument("--topic", required=True, dest="topic_id")
@@ -146,6 +154,17 @@ def dispatch_research_state_command(args, ws) -> dict:
             uri=args.uri,
             summary=args.summary,
             size_bytes=args.size_bytes,
+            metadata=_j(args.metadata_json),
+        )
+        return {"ok": True, **require_valid_public_surface("artifact_record", {"ok": True, **asdict(record)})}
+    if args.research_state_command == "attach-artifact-auto":
+        record = attach_artifact_from_local_path(
+            ws,
+            path=args.path,
+            topic_id=args.topic_id,
+            claim_id=args.claim_id,
+            artifact_type=args.artifact_type,
+            summary=args.summary,
             metadata=_j(args.metadata_json),
         )
         return {"ok": True, **require_valid_public_surface("artifact_record", {"ok": True, **asdict(record)})}

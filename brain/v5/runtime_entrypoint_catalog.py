@@ -188,6 +188,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_attach_artifact",
         "surface": "artifact_record",
     },
+    "attach_artifact_auto": {
+        "cli": "aitp-v5 research-state attach-artifact-auto <args>",
+        "mcp": "aitp_v5_attach_artifact_auto",
+        "surface": "artifact_record",
+    },
     "update_claim_status": {
         "cli": "aitp-v5 research-state update-claim-status <args>",
         "mcp": "aitp_v5_update_claim_status",

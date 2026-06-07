@@ -9,6 +9,7 @@ from typing import Any
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.research_state import (
     attach_artifact,
+    attach_artifact_from_local_path,
     classify_research_event,
     create_proof_obligation,
     record_bounded_numerical_evidence,
@@ -72,6 +73,28 @@ def aitp_v5_attach_artifact(
         uri=uri,
         summary=summary,
         size_bytes=size_bytes,
+        metadata=metadata,
+    )
+    return require_valid_public_surface("artifact_record", {"ok": True, **asdict(record)})
+
+
+def aitp_v5_attach_artifact_auto(
+    base: str,
+    *,
+    path: str,
+    topic_id: str,
+    claim_id: str,
+    artifact_type: str,
+    summary: str,
+    metadata: dict[str, Any] | None = None,
+) -> dict:
+    record = attach_artifact_from_local_path(
+        _ws(base),
+        path=path,
+        topic_id=topic_id,
+        claim_id=claim_id,
+        artifact_type=artifact_type,
+        summary=summary,
         metadata=metadata,
     )
     return require_valid_public_surface("artifact_record", {"ok": True, **asdict(record)})

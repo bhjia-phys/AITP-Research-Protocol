@@ -7,7 +7,9 @@ They do not mutate claim trust, topic_state, or L2 memory.
 from __future__ import annotations
 
 import hashlib
+import mimetypes
 from dataclasses import asdict
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -95,6 +97,52 @@ def attach_artifact(
         uri=uri,
         summary=summary,
         size_bytes=size_bytes,
+        metadata=enriched,
+    )
+
+
+def attach_artifact_from_local_path(
+    ws: WorkspacePaths,
+    *,
+    path: str,
+    topic_id: str,
+    claim_id: str,
+    artifact_type: str,
+    summary: str,
+    metadata: dict[str, Any] | None = None,
+) -> Any:
+    """Inspect a local artifact file and attach it by reference."""
+
+    local_path = Path(path).expanduser()
+    if not local_path.exists():
+        raise FileNotFoundError(f"artifact path does not exist: {path}")
+    if not local_path.is_file():
+        raise ValueError(f"artifact path must be a file: {path}")
+
+    resolved = local_path.resolve()
+    stat = resolved.stat()
+    mime_type, _ = mimetypes.guess_type(str(resolved))
+    enriched = dict(metadata or {})
+    enriched.setdefault("capture_tool", "aitp_v5_attach_artifact_auto")
+    enriched.setdefault("captured_at", datetime.now(UTC).isoformat())
+    enriched.setdefault("local_path", str(resolved))
+    enriched.setdefault("file_name", resolved.name)
+    enriched.setdefault("file_suffix", resolved.suffix.lower())
+    enriched.setdefault("mime_type", mime_type or "")
+    enriched.setdefault("mtime_utc", datetime.fromtimestamp(stat.st_mtime, UTC).isoformat())
+    enriched.setdefault("sha256", _sha256(resolved))
+    enriched.setdefault("hash_algorithm", "sha256")
+    enriched.setdefault("content_hash_basis", "local artifact file bytes")
+    enriched.setdefault("can_update_claim_trust", False)
+
+    return attach_artifact(
+        ws,
+        topic_id=topic_id,
+        claim_id=claim_id,
+        artifact_type=artifact_type,
+        uri=f"file://{resolved}",
+        summary=summary or f"Auto-attached local artifact: {resolved.name}.",
+        size_bytes=stat.st_size,
         metadata=enriched,
     )
 
