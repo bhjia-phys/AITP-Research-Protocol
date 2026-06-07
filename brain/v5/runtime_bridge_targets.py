@@ -13,6 +13,7 @@ _BRIDGE_TARGET_SPECS: tuple[tuple[str, str, str, str], ...] = (
     ("readMomentPolicy", "host_agnostic_moment_policy", "read", "read_only"),
     ("recordExploratoryRecord", "record_exploratory_record", "write", "typed_record_write"),
     ("registerSourceAsset", "register_source_asset", "write", "typed_record_write"),
+    ("captureSourceAssetAuto", "capture_source_asset_auto", "write", "typed_record_write"),
     ("recordEvidence", "record_evidence", "write", "typed_record_write"),
     ("recordToolRun", "record_tool_run", "write", "typed_record_write"),
     ("captureCodeStateAuto", "capture_code_state_auto", "write", "typed_record_write"),

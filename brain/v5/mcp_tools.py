@@ -34,7 +34,7 @@ from brain.v5.references import record_reference_location
 from brain.v5.routes import record_research_route, research_route_payload
 from brain.v5.runtime_bridge_targets import runtime_bridge_target_manifest
 from brain.v5.sensemaking import record_sensemaking_report
-from brain.v5.source_assets import register_source_asset, source_asset_payload
+from brain.v5.source_assets import capture_source_asset_from_local_path, register_source_asset, source_asset_payload
 from brain.v5.validation import create_validation_contract, record_validation_result
 from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
@@ -225,6 +225,52 @@ def aitp_v5_register_source_asset(
         label=label,
         content_hash=content_hash,
         hash_algorithm=hash_algorithm,
+        version_anchor=version_anchor,
+        acquired_at=acquired_at,
+        source_kind=source_kind,
+        summary=summary,
+        source_refs=source_refs,
+        artifact_ids=artifact_ids,
+        code_state_ids=code_state_ids,
+        reference_location_ids=reference_location_ids,
+        derived_from=derived_from,
+        metadata=metadata,
+        linked_records=linked_records,
+    )
+    return require_valid_public_surface("source_asset_record", source_asset_payload(record))
+
+
+def aitp_v5_capture_source_asset_auto(
+    base: str,
+    *,
+    path: str,
+    topic_id: str,
+    claim_id: str = "",
+    asset_type: str = "",
+    title: str = "",
+    label: str = "",
+    version_anchor: dict | None = None,
+    acquired_at: str = "",
+    source_kind: str = "local_file_auto",
+    summary: str = "",
+    source_refs: list[str] | None = None,
+    artifact_ids: list[str] | None = None,
+    code_state_ids: list[str] | None = None,
+    reference_location_ids: list[str] | None = None,
+    derived_from: list[str] | None = None,
+    metadata: dict | None = None,
+    linked_records: dict | None = None,
+) -> dict:
+    """Inspect a local file and register it as an AITP source asset."""
+
+    record = capture_source_asset_from_local_path(
+        _ws(base),
+        path=path,
+        topic_id=topic_id,
+        claim_id=claim_id,
+        asset_type=asset_type,
+        title=title,
+        label=label,
         version_anchor=version_anchor,
         acquired_at=acquired_at,
         source_kind=source_kind,

@@ -630,8 +630,11 @@ def _provenance_gaps(
                     claim_id=claim_id,
                     target_type="claim",
                     target_id=claim_id,
-                    recommended_actions=["aitp.register_source_asset"],
-                    recommended_entrypoints=["aitp_v5_register_source_asset"],
+                    recommended_actions=["aitp.capture_source_asset_auto", "aitp.register_source_asset"],
+                    recommended_entrypoints=[
+                        "aitp_v5_capture_source_asset_auto",
+                        "aitp_v5_register_source_asset",
+                    ],
                     severity="high",
                     provenance_kind="source",
                     target_record=claim,
@@ -647,8 +650,11 @@ def _provenance_gaps(
                         claim_id=asset.claim_id or claim_id,
                         target_type="source_asset",
                         target_id=asset.asset_id,
-                        recommended_actions=["aitp.register_source_asset"],
-                        recommended_entrypoints=["aitp_v5_register_source_asset"],
+                        recommended_actions=["aitp.capture_source_asset_auto", "aitp.register_source_asset"],
+                        recommended_entrypoints=[
+                            "aitp_v5_capture_source_asset_auto",
+                            "aitp_v5_register_source_asset",
+                        ],
                         severity="normal",
                         provenance_kind="source",
                         target_record=asset,
@@ -971,6 +977,30 @@ def _provenance_payload_hint(
                     "hash_algorithm": target_record.get("hash_algorithm") or "sha256",
                     "version_anchor": target_record.get("version_anchor") or {},
                     "source_kind": target_record.get("source_kind") or "literature",
+                    "summary": reason,
+                    "source_refs": _string_list(target_record.get("source_refs")),
+                    "artifact_ids": _string_list(target_record.get("artifact_ids")),
+                    "code_state_ids": _string_list(target_record.get("code_state_ids")),
+                    "reference_location_ids": _string_list(target_record.get("reference_location_ids")),
+                    "linked_records": _linked_records(target_type, target_id, claim_id),
+                }
+            ),
+        }
+    if entrypoint == "aitp_v5_capture_source_asset_auto":
+        return {
+            **base,
+            "record_action": "capture_source_asset_auto",
+            "required_fields": ["path", "topic_id"],
+            "draft": _clean_mapping(
+                {
+                    "path": _placeholder("local source file path"),
+                    "topic_id": topic_id,
+                    "claim_id": claim_id,
+                    "asset_type": target_record.get("asset_type") or "",
+                    "title": target_record.get("title") or target_record.get("label") or "",
+                    "label": target_record.get("label") or "",
+                    "version_anchor": target_record.get("version_anchor") or {},
+                    "source_kind": target_record.get("source_kind") or "local_file_auto",
                     "summary": reason,
                     "source_refs": _string_list(target_record.get("source_refs")),
                     "artifact_ids": _string_list(target_record.get("artifact_ids")),

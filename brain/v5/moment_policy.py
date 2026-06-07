@@ -98,6 +98,7 @@ def _source_backtrace_decisions(source_backtrace: list[dict[str, Any]], *, sessi
                 record_entrypoints=[
                     "aitp_v5_record_exploratory_record",
                     "aitp_v5_record_reference_location",
+                    "aitp_v5_capture_source_asset_auto",
                     "aitp_v5_register_source_asset",
                 ],
                 exploration_entrypoints=["aitp_v5_record_exploratory_record"],
@@ -699,6 +700,23 @@ def _payload_hint(
                     "uri": _placeholder("source URI"),
                     "title": _placeholder("source title"),
                     "source_kind": "literature",
+                }
+            ),
+        }
+    if entrypoint == "aitp_v5_capture_source_asset_auto":
+        return {
+            **base,
+            "record_action": "capture_source_asset_auto",
+            "required_fields": ["path", "topic_id"],
+            "draft": _clean_mapping(
+                {
+                    "path": _placeholder("local source file path"),
+                    "topic_id": topic_id,
+                    "claim_id": claim_id,
+                    "asset_type": "",
+                    "title": "",
+                    "source_kind": "local_file_auto",
+                    "summary": _placeholder("orientation-only local source capture summary"),
                 }
             ),
         }

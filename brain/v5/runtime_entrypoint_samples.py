@@ -103,6 +103,17 @@ def sample_args_for_template(template: str) -> list[str]:
             "--next-action",
             "open source backtrace",
         ]
+    if template.startswith("asset capture-auto"):
+        return [
+            "--path",
+            "D:/sources/edge-counting.pdf",
+            "--topic",
+            "fqhe",
+            "--claim",
+            "claim-fqhe",
+            "--summary",
+            "Auto-captured local source file identity.",
+        ]
     if template.startswith("asset register"):
         return [
             "--topic",

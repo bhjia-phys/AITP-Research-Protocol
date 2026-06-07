@@ -74,6 +74,69 @@ def test_source_asset_record_is_canonical_orientation_asset(tmp_path):
     assert record.asset_id in diagnostics["duplicate_asset_ids"]
 
 
+def test_cli_and_mcp_capture_source_asset_auto_from_local_file(tmp_path, capsys):
+    import hashlib
+
+    from brain.v5.mcp_tools import aitp_v5_capture_source_asset_auto
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "qg", context_id="theory", title="Quantum gravity source stack")
+    claim = create_claim(
+        ws,
+        topic_id="qg",
+        statement="The derivation depends on the local notes.",
+        evidence_profile="source_backtrace",
+        confidence_state="hypothesis",
+        active_uncertainty="source file identity not captured",
+    )
+    source_file = tmp_path / "operator-algebra-notes.md"
+    source_file.write_text("# Operator algebra notes\n\nDefinition backtrace.\n", encoding="utf-8")
+    expected_hash = hashlib.sha256(source_file.read_bytes()).hexdigest()
+
+    payload = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "asset",
+            "capture-auto",
+            "--path",
+            str(source_file),
+            "--topic",
+            "qg",
+            "--claim",
+            claim.claim_id,
+            "--summary",
+            "Local source notes for the derivation.",
+        ],
+        capsys,
+    )
+    mcp_payload = aitp_v5_capture_source_asset_auto(
+        str(tmp_path),
+        path=str(source_file),
+        topic_id="qg",
+        claim_id=claim.claim_id,
+        title="Operator algebra notes",
+    )
+
+    assert payload["ok"] is True
+    assert payload["kind"] == "source_asset"
+    assert payload["asset_type"] == "note"
+    assert payload["title"] == "operator algebra notes"
+    assert payload["uri"].startswith("file://")
+    assert payload["content_hash"] == expected_hash
+    assert payload["hash_algorithm"] == "sha256"
+    assert payload["source_kind"] == "local_file_auto"
+    assert payload["metadata"]["capture_tool"] == "aitp_v5_capture_source_asset_auto"
+    assert payload["metadata"]["size_bytes"] == source_file.stat().st_size
+    assert payload["version_anchor"]["sha256"] == expected_hash
+    assert payload["linked_records"]["claim_id"] == claim.claim_id
+    assert payload["orientation_only"] is True
+    assert payload["can_update_claim_trust"] is False
+    assert mcp_payload["asset_id"].startswith("source-asset-qg-")
+    assert mcp_payload["title"] == "Operator algebra notes"
+
+
 def test_source_asset_contract_rejects_trust_mutation():
     from brain.v5.contracts import validate_source_asset_record
 
@@ -117,9 +180,22 @@ def test_source_asset_is_registered_for_native_mcp_and_runtime_entrypoints():
     from brain.v5.runtime_entrypoints import runtime_entrypoints, validate_runtime_entrypoints
 
     assert "aitp_v5_register_source_asset" in _TOOLS
+    assert "aitp_v5_capture_source_asset_auto" in _TOOLS
     assert runtime_entrypoints()["register_source_asset"] == {
         "cli": "aitp-v5 asset register <args>",
         "mcp": "aitp_v5_register_source_asset",
         "surface": "source_asset_record",
     }
+    assert runtime_entrypoints()["capture_source_asset_auto"] == {
+        "cli": "aitp-v5 asset capture-auto <args>",
+        "mcp": "aitp_v5_capture_source_asset_auto",
+        "surface": "source_asset_record",
+    }
     assert validate_runtime_entrypoints() == []
+
+
+def _invoke(argv, capsys):
+    from brain.v5.cli import main
+
+    assert main(argv) == 0
+    return __import__("json").loads(capsys.readouterr().out)

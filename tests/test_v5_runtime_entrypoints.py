@@ -33,6 +33,7 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["record_validation_result"]["surface"] == "validation_result_record"
     assert entrypoints["record_exploratory_record"]["surface"] == "exploratory_record"
     assert entrypoints["record_research_route"]["surface"] == "research_route_record"
+    assert entrypoints["capture_source_asset_auto"]["surface"] == "source_asset_record"
     assert entrypoints["host_agnostic_moment_policy"]["surface"] == "host_agnostic_moment_policy"
     assert entrypoints["runtime_bridge_target_manifest"]["surface"] == "runtime_bridge_target_manifest"
     assert entrypoints["record_evidence"]["mcp"] == "aitp_v5_record_evidence"
@@ -62,6 +63,7 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["record_validation_result"]["mcp"] == "aitp_v5_record_validation_result"
     assert entrypoints["record_exploratory_record"]["mcp"] == "aitp_v5_record_exploratory_record"
     assert entrypoints["record_research_route"]["mcp"] == "aitp_v5_record_research_route"
+    assert entrypoints["capture_source_asset_auto"]["mcp"] == "aitp_v5_capture_source_asset_auto"
     assert entrypoints["host_agnostic_moment_policy"]["mcp"] == "aitp_v5_get_host_agnostic_moment_policy"
     assert entrypoints["runtime_bridge_target_manifest"] == {
         "cli": "aitp-v5 adapter bridge-targets",
@@ -228,6 +230,11 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "mcp": "aitp_v5_register_source_asset",
             "surface": "source_asset_record",
         },
+        "capture_source_asset_auto": {
+            "cli": "aitp-v5 asset capture-auto <args>",
+            "mcp": "aitp_v5_capture_source_asset_auto",
+            "surface": "source_asset_record",
+        },
         "create_proof_obligation": {
             "cli": "aitp-v5 research-state create-proof-obligation <args>",
             "mcp": "aitp_v5_create_proof_obligation",
@@ -276,6 +283,9 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
     }
     assert by_operation["recordEvidence"]["mcp_tool"] == "aitp_v5_record_evidence"
     assert by_operation["recordEvidence"]["cli_fallback"] == "aitp-v5 evidence record <args>"
+    assert by_operation["captureSourceAssetAuto"]["mcp_tool"] == "aitp_v5_capture_source_asset_auto"
+    assert by_operation["captureSourceAssetAuto"]["cli_fallback"] == "aitp-v5 asset capture-auto <args>"
+    assert by_operation["captureSourceAssetAuto"]["surface"] == "source_asset_record"
     assert by_operation["captureCodeStateAuto"]["mcp_tool"] == "aitp_v5_capture_code_state_auto"
     assert by_operation["preflightTrustUpdate"]["mcp_tool"] == "aitp_v5_preflight_trust_update"
     assert by_operation["preflightTrustUpdate"]["state_effect"] == "preflight_only"

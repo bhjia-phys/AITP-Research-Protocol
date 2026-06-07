@@ -87,6 +87,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_register_source_asset",
         "surface": "source_asset_record",
     },
+    "capture_source_asset_auto": {
+        "cli": "aitp-v5 asset capture-auto <args>",
+        "mcp": "aitp_v5_capture_source_asset_auto",
+        "surface": "source_asset_record",
+    },
     "record_research_route": {
         "cli": "aitp-v5 route record <args>",
         "mcp": "aitp_v5_record_research_route",

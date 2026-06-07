@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import hashlib
+import mimetypes
 from dataclasses import asdict
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -118,6 +120,91 @@ def register_source_asset(
     return record
 
 
+def capture_source_asset_from_local_path(
+    ws: WorkspacePaths,
+    *,
+    path: str,
+    topic_id: str,
+    claim_id: str = "",
+    asset_type: str = "",
+    title: str = "",
+    label: str = "",
+    version_anchor: dict[str, Any] | None = None,
+    acquired_at: str = "",
+    source_kind: str = "local_file_auto",
+    summary: str = "",
+    source_refs: list[str] | None = None,
+    artifact_ids: list[str] | None = None,
+    code_state_ids: list[str] | None = None,
+    reference_location_ids: list[str] | None = None,
+    derived_from: list[str] | None = None,
+    metadata: dict[str, Any] | None = None,
+    linked_records: dict[str, Any] | None = None,
+) -> SourceAssetRecord:
+    """Inspect a local file and register it as a canonical source asset."""
+
+    local_path = Path(path).expanduser()
+    if not local_path.exists():
+        raise FileNotFoundError(f"source asset path does not exist: {path}")
+    if not local_path.is_file():
+        raise ValueError(f"source asset path must be a file: {path}")
+
+    resolved = local_path.resolve()
+    stat = resolved.stat()
+    content_hash = _sha256(resolved)
+    mime_type, _ = mimetypes.guess_type(str(resolved))
+    inferred_type = asset_type or _asset_type_for_path(resolved)
+    inferred_title = title or _title_for_path(resolved)
+    captured_at = datetime.now(UTC).isoformat()
+
+    enriched_metadata = dict(metadata or {})
+    enriched_metadata.setdefault("capture_tool", "aitp_v5_capture_source_asset_auto")
+    enriched_metadata.setdefault("captured_at", captured_at)
+    enriched_metadata.setdefault("local_path", str(resolved))
+    enriched_metadata.setdefault("file_name", resolved.name)
+    enriched_metadata.setdefault("file_suffix", resolved.suffix.lower())
+    enriched_metadata.setdefault("mime_type", mime_type or "")
+    enriched_metadata.setdefault("size_bytes", stat.st_size)
+    enriched_metadata.setdefault("mtime_utc", datetime.fromtimestamp(stat.st_mtime, UTC).isoformat())
+    enriched_metadata.setdefault("auto_asset_type", inferred_type)
+    enriched_metadata.setdefault("content_hash_basis", "local file bytes")
+
+    anchors = dict(version_anchor or {})
+    anchors.setdefault("local_path", str(resolved))
+    anchors.setdefault("sha256", content_hash)
+    anchors.setdefault("mtime_utc", enriched_metadata["mtime_utc"])
+    anchors.setdefault("size_bytes", stat.st_size)
+
+    links = dict(linked_records or {})
+    if topic_id:
+        links.setdefault("topic_id", topic_id)
+    if claim_id:
+        links.setdefault("claim_id", claim_id)
+
+    return register_source_asset(
+        ws,
+        topic_id=topic_id,
+        claim_id=claim_id,
+        asset_type=inferred_type,
+        uri=f"file://{resolved}",
+        title=inferred_title,
+        label=label or inferred_title,
+        content_hash=content_hash,
+        hash_algorithm="sha256",
+        version_anchor=anchors,
+        acquired_at=acquired_at or captured_at,
+        source_kind=source_kind,
+        summary=summary or f"Auto-captured local source asset: {resolved.name}.",
+        source_refs=source_refs,
+        artifact_ids=artifact_ids,
+        code_state_ids=code_state_ids,
+        reference_location_ids=reference_location_ids,
+        derived_from=derived_from,
+        metadata=enriched_metadata,
+        linked_records=links,
+    )
+
+
 def list_source_assets_for_topic(ws: WorkspacePaths, topic_id: str) -> list[SourceAssetRecord]:
     """Return source assets registered for a topic."""
 
@@ -154,6 +241,24 @@ def _local_path_from_uri(uri: str) -> Path | None:
     if path.exists():
         return path
     return None
+
+
+def _asset_type_for_path(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".pdf":
+        return "paper"
+    if suffix in {".tex", ".md", ".rst", ".txt", ".ipynb"}:
+        return "note"
+    if suffix in {".csv", ".json", ".jsonl", ".parquet", ".h5", ".hdf5"}:
+        return "dataset"
+    if suffix in {".py", ".ts", ".tsx", ".js", ".jsx", ".rs", ".cpp", ".c", ".h", ".hpp", ".f90", ".jl", ".m"}:
+        return "code_snapshot"
+    return "other"
+
+
+def _title_for_path(path: Path) -> str:
+    stem = path.stem.replace("_", " ").replace("-", " ").strip()
+    return stem or path.name
 
 
 def _sha256(path: Path) -> str:

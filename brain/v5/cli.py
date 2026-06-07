@@ -33,7 +33,7 @@ from brain.v5.physics_objects import record_object_relation, record_physics_obje
 from brain.v5.references import record_reference_location
 from brain.v5.routes import record_research_route, research_route_payload
 from brain.v5.sensemaking import record_sensemaking_report
-from brain.v5.source_assets import register_source_asset, source_asset_payload
+from brain.v5.source_assets import capture_source_asset_from_local_path, register_source_asset, source_asset_payload
 from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
 from brain.v5.risk import assess_claim_risk
@@ -107,6 +107,24 @@ def _build_parser() -> argparse.ArgumentParser:
     ar.add_argument("--derived-from", action="append", default=[], dest="derived_from")
     ar.add_argument("--metadata-json", default="{}")
     ar.add_argument("--linked-records-json", default="{}")
+    aa = aps.add_parser("capture-auto")
+    aa.add_argument("--path", required=True)
+    aa.add_argument("--topic", required=True, dest="topic_id")
+    aa.add_argument("--claim", default="", dest="claim_id")
+    aa.add_argument("--type", default="", dest="asset_type")
+    aa.add_argument("--title", default="")
+    aa.add_argument("--label", default="")
+    aa.add_argument("--version-anchor-json", default="{}")
+    aa.add_argument("--acquired-at", default="")
+    aa.add_argument("--source-kind", default="local_file_auto")
+    aa.add_argument("--summary", default="")
+    aa.add_argument("--source-ref", action="append", default=[], dest="source_refs")
+    aa.add_argument("--artifact-id", action="append", default=[], dest="artifact_ids")
+    aa.add_argument("--code-state-id", action="append", default=[], dest="code_state_ids")
+    aa.add_argument("--reference-location-id", action="append", default=[], dest="reference_location_ids")
+    aa.add_argument("--derived-from", action="append", default=[], dest="derived_from")
+    aa.add_argument("--metadata-json", default="{}")
+    aa.add_argument("--linked-records-json", default="{}")
 
     gp = sp.add_parser("graph"); gs = gp.add_subparsers(dest="graph_command", required=True)
     sl = gs.add_parser("slice"); sl.add_argument("session_id")
@@ -381,6 +399,28 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             label=args.label,
             content_hash=args.content_hash,
             hash_algorithm=args.hash_algorithm,
+            version_anchor=_j(args.version_anchor_json),
+            acquired_at=args.acquired_at,
+            source_kind=args.source_kind,
+            summary=args.summary,
+            source_refs=args.source_refs,
+            artifact_ids=args.artifact_ids,
+            code_state_ids=args.code_state_ids,
+            reference_location_ids=args.reference_location_ids,
+            derived_from=args.derived_from,
+            metadata=_j(args.metadata_json),
+            linked_records=_j(args.linked_records_json),
+        )
+        return require_valid_public_surface("source_asset_record", source_asset_payload(asset))
+    if args.command == "asset" and args.asset_command == "capture-auto":
+        asset = capture_source_asset_from_local_path(
+            ws,
+            path=args.path,
+            topic_id=args.topic_id,
+            claim_id=args.claim_id,
+            asset_type=args.asset_type,
+            title=args.title,
+            label=args.label,
             version_anchor=_j(args.version_anchor_json),
             acquired_at=args.acquired_at,
             source_kind=args.source_kind,

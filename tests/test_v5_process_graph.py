@@ -283,7 +283,17 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     assert payload["source_asset_index"][0]["can_update_claim_trust"] is False
     provenance_gap = next(item for item in payload["provenance_gaps"] if item["gap_type"] == "source_asset_hash_missing")
     assert provenance_gap["target_refs"] == [f"source_asset:{asset.asset_id}"]
-    assert provenance_gap["recommended_entrypoints"] == ["aitp_v5_register_source_asset"]
+    assert provenance_gap["recommended_entrypoints"] == [
+        "aitp_v5_capture_source_asset_auto",
+        "aitp_v5_register_source_asset",
+    ]
+    auto_hint = _hint_by_entrypoint(provenance_gap, "aitp_v5_capture_source_asset_auto")
+    assert auto_hint["record_action"] == "capture_source_asset_auto"
+    assert auto_hint["required_fields"] == ["path", "topic_id"]
+    assert auto_hint["draft"]["path"] == "<local source file path>"
+    assert auto_hint["draft"]["topic_id"] == "fqhe"
+    assert auto_hint["draft"]["claim_id"] == claim.claim_id
+    assert auto_hint["draft"]["source_kind"] == "literature"
     assert provenance_gap["required_before_trust_change"] is False
     assert payload["source_asset_index"][0]["provenance_gap_ids"] == [provenance_gap["gap_id"]]
     assert payload["source_asset_index"][0]["provenance_gap_types"] == ["source_asset_hash_missing"]
@@ -536,6 +546,16 @@ def test_process_graph_slice_exposes_source_code_provenance_gaps(tmp_path):
         "tool_run_missing",
         "validation_contract_missing",
     }.issubset(by_type)
+    source_gap = by_type["source_asset_missing"]
+    assert source_gap["recommended_entrypoints"] == [
+        "aitp_v5_capture_source_asset_auto",
+        "aitp_v5_register_source_asset",
+    ]
+    source_auto_hint = _hint_by_entrypoint(source_gap, "aitp_v5_capture_source_asset_auto")
+    assert source_auto_hint["record_action"] == "capture_source_asset_auto"
+    assert source_auto_hint["draft"]["path"] == "<local source file path>"
+    assert source_auto_hint["draft"]["topic_id"] == "gw"
+    assert source_auto_hint["draft"]["claim_id"] == claim.claim_id
     code_gap = by_type["code_state_missing"]
     assert code_gap["recommended_entrypoints"] == ["aitp_v5_capture_code_state_auto", "aitp_v5_record_code_state"]
     assert code_gap["recommended_actions"] == ["aitp.capture_code_state_auto", "aitp.record_code_state"]
