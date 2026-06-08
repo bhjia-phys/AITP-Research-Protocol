@@ -660,6 +660,9 @@ Publishing the same taxonomy as machine-readable host tool metadata, such as a
 `ResearchAction.list_actions` section, remains the same kind of host-runtime
 guidance. AITP still treats the canonical contract as the typed entrypoint,
 record, evidence, validation, and trust-preflight surfaces it owns.
+Even if a host adds a dedicated read-only taxonomy inspection action, that
+action remains a host convenience wrapper over runtime metadata rather than an
+AITP entrypoint, record, validation result, or trust operation.
 
 Exploratory record reasoning fields are likewise host-facing process handles:
 Hakimi normalizes them into `params.theoryReasoning`, then renders them into the
