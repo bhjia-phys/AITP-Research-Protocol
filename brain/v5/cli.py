@@ -387,6 +387,7 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         "registry",
         "public-surfaces",
         "bridge-targets",
+        "payload-profiles",
         "record-gate-audit",
         "smoke-coverage",
     }:

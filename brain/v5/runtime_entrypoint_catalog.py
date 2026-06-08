@@ -19,6 +19,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_get_runtime_bridge_target_manifest",
         "surface": "runtime_bridge_target_manifest",
     },
+    "runtime_payload_profiles": {
+        "cli": "aitp-v5 adapter payload-profiles",
+        "mcp": "aitp_v5_get_runtime_payload_profiles",
+        "surface": "runtime_payload_profiles",
+    },
     "record_gate_coverage_audit": {
         "cli": "aitp-v5 adapter record-gate-audit",
         "mcp": "aitp_v5_audit_record_gate_coverage",

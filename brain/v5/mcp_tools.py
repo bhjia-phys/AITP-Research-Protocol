@@ -33,6 +33,7 @@ from brain.v5.process_graph import build_process_graph_slice
 from brain.v5.references import record_reference_location
 from brain.v5.routes import record_research_route, research_route_payload
 from brain.v5.runtime_bridge_targets import runtime_bridge_target_manifest
+from brain.v5.runtime_payload_profiles import runtime_payload_profiles
 from brain.v5.sensemaking import record_sensemaking_report
 from brain.v5.source_assets import capture_source_asset_from_local_path, register_source_asset, source_asset_payload
 from brain.v5.validation import create_validation_contract, record_validation_result
@@ -619,6 +620,18 @@ def aitp_v5_get_runtime_bridge_target_manifest() -> dict:
         "runtime_bridge_target_manifest": require_valid_public_surface(
             "runtime_bridge_target_manifest",
             runtime_bridge_target_manifest(),
+        ),
+    }
+
+
+def aitp_v5_get_runtime_payload_profiles() -> dict:
+    """Return host-event to AITP typed-write payload profiles."""
+
+    return {
+        "ok": True,
+        "runtime_payload_profiles": require_valid_public_surface(
+            "runtime_payload_profiles",
+            runtime_payload_profiles(),
         ),
     }
 

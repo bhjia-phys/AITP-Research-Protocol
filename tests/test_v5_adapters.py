@@ -2928,6 +2928,24 @@ def test_adapter_packet_exposes_runtime_payload_profiles_for_benchmark_provenanc
     assert "validation result still requires" in profile["strict_boundary"]
 
 
+def test_runtime_payload_profiles_are_public_cli_and_mcp(capsys):
+    from brain.v5.mcp_tools import aitp_v5_get_runtime_payload_profiles
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.runtime_payload_profiles import runtime_payload_profiles
+
+    profiles = runtime_payload_profiles()
+
+    assert require_valid_public_surface("runtime_payload_profiles", profiles) == profiles
+    assert _invoke(["adapter", "payload-profiles"], capsys) == {
+        "ok": True,
+        "runtime_payload_profiles": profiles,
+    }
+    assert aitp_v5_get_runtime_payload_profiles() == {
+        "ok": True,
+        "runtime_payload_profiles": profiles,
+    }
+
+
 def test_adapter_registry_protocol_fields_match_builder_keys():
     from brain.v5.adapter_protocols import adapter_protocol_fields, build_adapter_protocols
 
@@ -2986,8 +3004,17 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
     by_operation = {target["operation"]: target for target in manifest["targets"]}
 
     assert require_valid_public_surface("runtime_bridge_target_manifest", manifest) == manifest
-    assert manifest["target_groups"]["read"] == ["readProcessGraphSlice", "readMomentPolicy"]
+    assert manifest["target_groups"]["read"] == [
+        "readProcessGraphSlice",
+        "readMomentPolicy",
+        "readRuntimePayloadProfiles",
+    ]
     assert manifest["target_groups"]["preflight"] == ["preflightTrustUpdate"]
+    assert by_operation["readRuntimePayloadProfiles"]["mcp_tool"] == "aitp_v5_get_runtime_payload_profiles"
+    assert by_operation["readRuntimePayloadProfiles"]["cli_fallback"] == "aitp-v5 adapter payload-profiles"
+    assert by_operation["readRuntimePayloadProfiles"]["surface"] == "runtime_payload_profiles"
+    assert by_operation["readRuntimePayloadProfiles"]["execution_role"] == "read"
+    assert by_operation["readRuntimePayloadProfiles"]["state_effect"] == "read_only"
     assert by_operation["recordEvidence"]["preferred_transport"] == "mcp"
     assert by_operation["recordEvidence"]["mcp_tool"] == "aitp_v5_record_evidence"
     assert by_operation["recordEvidence"]["cli_fallback"] == "aitp-v5 evidence record <args>"

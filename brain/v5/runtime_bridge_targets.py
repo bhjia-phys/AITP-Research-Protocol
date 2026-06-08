@@ -11,6 +11,7 @@ from brain.v5.runtime_entrypoints import runtime_entrypoints
 _BRIDGE_TARGET_SPECS: tuple[tuple[str, str, str, str], ...] = (
     ("readProcessGraphSlice", "process_graph_slice", "read", "read_only"),
     ("readMomentPolicy", "host_agnostic_moment_policy", "read", "read_only"),
+    ("readRuntimePayloadProfiles", "runtime_payload_profiles", "read", "read_only"),
     ("recordExploratoryRecord", "record_exploratory_record", "write", "typed_record_write"),
     ("registerSourceAsset", "register_source_asset", "write", "typed_record_write"),
     ("captureSourceAssetAuto", "capture_source_asset_auto", "write", "typed_record_write"),
