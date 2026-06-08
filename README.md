@@ -617,6 +617,12 @@ for possible next write-bridge calls. That rendering is downstream UI/runtime
 guidance only: the AITP surface still remains read-only until a host explicitly
 calls one of the normal AITP write or preflight entrypoints with reviewed
 payload fields.
+If a host also turns a selected decision-tree option into a prefilled
+`execute_aitp_write_bridge` call draft, that draft is still downstream guidance
+over AITP-owned `payload_draft` / `payload_template` fields. It may expose
+placeholder diagnostics for missing source/evidence review, record ids, or
+preflight scope, but it does not create records, execute preflight, satisfy
+final gates, or update claim trust.
 
 Exploratory record reasoning fields are likewise host-facing process handles:
 Hakimi normalizes them into `params.theoryReasoning`, then renders them into the
