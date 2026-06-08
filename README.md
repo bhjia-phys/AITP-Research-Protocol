@@ -633,6 +633,11 @@ AITP trust preflight. It may classify remaining placeholder, source-review, and
 preflight-scope diagnostics before a pending explicit AITP call, but it does
 not record validation, satisfy final gates, convert the curated chunk into
 evidence, or mutate claim trust.
+Hosts may finally wrap the reviewed/confirmed call draft in a local handoff
+artifact carrying a confirmation id, diagnostic hash, exact tool-call JSON, and
+non-execution provenance. That artifact is not an AITP typed record and does
+not rewrite the curated RAG draft; it is only a downstream transfer envelope
+for a later explicit `execute_aitp_write_bridge` call.
 
 Exploratory record reasoning fields are likewise host-facing process handles:
 Hakimi normalizes them into `params.theoryReasoning`, then renders them into the
