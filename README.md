@@ -628,6 +628,11 @@ AITP draft payload/template before execution. Those overrides are still
 host-side review proposals: they do not rewrite the AITP draft surface, do not
 prove source support, and do not create source, evidence, validation, preflight,
 or trust records until a normal explicit AITP entrypoint is called.
+A host-side confirmation summary over that reviewed call draft is also not an
+AITP trust preflight. It may classify remaining placeholder, source-review, and
+preflight-scope diagnostics before a pending explicit AITP call, but it does
+not record validation, satisfy final gates, convert the curated chunk into
+evidence, or mutate claim trust.
 
 Exploratory record reasoning fields are likewise host-facing process handles:
 Hakimi normalizes them into `params.theoryReasoning`, then renders them into the
