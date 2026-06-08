@@ -678,6 +678,11 @@ repair-scoped handoff for that same transfer, but the boundary is unchanged:
 the handoff creates no AITP record, records no source support or validation,
 does not run trust preflight, and does not relax typed write-entrypoint
 validation.
+Hosts may prepare such repair drafts for missing `source_asset` as well as
+missing `reference_location` refs, but that only broadens downstream draft
+coverage over existing AITP write entrypoints; it does not create a repair
+writer outside the normal `source_asset_record` and `reference_location_record`
+surfaces.
 If a host re-checks such a handoff before executing the later call, that guard
 is still host-side consistency checking over the transfer envelope. It does not
 replace AITP validation, trust preflight, final-gate checks, or the canonical
