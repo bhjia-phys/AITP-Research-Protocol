@@ -646,6 +646,9 @@ Downstream guard tests may pin missing-field and tamper rejection, but they
 remain host-contract tests. AITP's own write surface is still the explicit
 typed entrypoint list, with non-mutating trust preflight but no `trustApply`
 write target exposed to hosts.
+Structured guard-failure diagnostics produced by a host are likewise
+downstream diagnostics only: field/path hints and `bridge_called=false` do not
+create AITP records or replace validation/preflight evidence.
 
 Exploratory record reasoning fields are likewise host-facing process handles:
 Hakimi normalizes them into `params.theoryReasoning`, then renders them into the
