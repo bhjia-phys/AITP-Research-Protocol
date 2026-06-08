@@ -649,6 +649,10 @@ write target exposed to hosts.
 Structured guard-failure diagnostics produced by a host are likewise
 downstream diagnostics only: field/path hints and `bridge_called=false` do not
 create AITP records or replace validation/preflight evidence.
+Host execution-precheck summaries around guarded handoffs are the same kind of
+downstream consistency status: they may say whether the host guard allowed or
+blocked a bridge call, but they are not AITP validation, trust preflight,
+evidence, or final-gate state.
 Host remediation summaries over those diagnostics are also advisory repair
 hints only. They may suggest which handoff field or explicit execute argument
 to fix, but they do not mutate the handoff or perform an AITP write/preflight.
