@@ -632,6 +632,10 @@ If a host renders canonical-identity alignment for a curated RAG draft, that
 alignment is only a future-record map: it may show which AITP record kind and
 canonical ref prefix a later explicit write result would produce, but it is not
 an AITP record inventory and does not reserve or create ids.
+Host placeholder-vs-concrete ref readiness inside that alignment is likewise
+only local draft classification. It does not prove the referenced AITP records
+exist, validate source support, or replace the explicit AITP write/preflight
+entrypoint.
 A host-side confirmation summary over that reviewed call draft is also not an
 AITP trust preflight. It may classify remaining placeholder, source-review, and
 preflight-scope diagnostics before a pending explicit AITP call, but it does
