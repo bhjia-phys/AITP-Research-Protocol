@@ -654,6 +654,8 @@ hints only. They may suggest which handoff field or explicit execute argument
 to fix, but they do not mutate the handoff or perform an AITP write/preflight.
 If a host centralizes those repair hints into a reusable taxonomy, that
 taxonomy remains a host-runtime helper rather than an AITP contract surface.
+Publishing that taxonomy in a host tool description is still model-facing
+runtime guidance; it does not expose new AITP write or trust surfaces.
 
 Exploratory record reasoning fields are likewise host-facing process handles:
 Hakimi normalizes them into `params.theoryReasoning`, then renders them into the
