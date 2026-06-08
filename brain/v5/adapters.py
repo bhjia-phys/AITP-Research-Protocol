@@ -11,6 +11,7 @@ from brain.v5.hook_install_templates import build_runtime_hook_installation
 from brain.v5.paths import WorkspacePaths
 from brain.v5.public_surfaces import describe_public_surfaces
 from brain.v5.runtime_entrypoints import runtime_entrypoints
+from brain.v5.runtime_payload_profiles import runtime_payload_profiles
 from brain.v5.summaries import read_summary_orientation, write_session_summary
 
 
@@ -55,6 +56,7 @@ def build_adapter_packet(ws: WorkspacePaths, session_id: str, *, runtime: str = 
         },
         "public_surface_audit": describe_public_surfaces(),
         "runtime_entrypoints": runtime_entrypoints(),
+        "runtime_payload_profiles": runtime_payload_profiles(),
         **adapter_protocols,
         "runtime_hook_installation": build_runtime_hook_installation(
             normalized_runtime,

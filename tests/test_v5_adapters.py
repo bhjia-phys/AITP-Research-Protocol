@@ -2898,6 +2898,36 @@ def test_adapter_packet_exposes_runtime_entrypoints_for_public_surfaces(tmp_path
     ]
 
 
+def test_adapter_packet_exposes_runtime_payload_profiles_for_benchmark_provenance(tmp_path):
+    from brain.v5.adapters import build_adapter_packet
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.runtime_payload_profiles import runtime_payload_profiles
+
+    ws, _ = _seed_session(tmp_path)
+
+    packet = build_adapter_packet(ws, "s1", runtime="codex")
+    profiles = packet["runtime_payload_profiles"]
+
+    assert profiles == runtime_payload_profiles()
+    assert require_valid_public_surface("runtime_payload_profiles", profiles) == profiles
+    profile = profiles["profiles"][0]
+    assert profile["profile_id"] == "benchmark_adapter_run_to_tool_run"
+    assert profile["host_event"] == "benchmark_adapter_run"
+    assert profile["target_operation"] == "recordToolRun"
+    assert profile["target_entrypoint"] == "aitp_v5_record_tool_run"
+    assert profile["payload_template"]["tool_family"] == "benchmark_adapter"
+    assert profile["payload_template"]["evidence_status"] == "unreviewed"
+    assert profile["result_semantics"] == {
+        "record_kind": "tool_run",
+        "evidence_ref_prefix": "aitp:tool_run",
+        "records_validation_result": False,
+        "claim_trust_mutation": "none",
+        "can_update_claim_trust": False,
+        "summary_inputs_trusted": False,
+    }
+    assert "validation result still requires" in profile["strict_boundary"]
+
+
 def test_adapter_registry_protocol_fields_match_builder_keys():
     from brain.v5.adapter_protocols import adapter_protocol_fields, build_adapter_protocols
 

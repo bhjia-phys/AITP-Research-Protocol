@@ -43,6 +43,7 @@ _ADAPTER_REQUIRED_KEYS = (
     "adapter_contract",
     "public_surface_audit",
     "runtime_entrypoints",
+    "runtime_payload_profiles",
     "adapter_protocol_registry",
     "runtime_hook_installation",
     "trust_changing_actions",
@@ -99,6 +100,13 @@ def validate_adapter_packet(payload: dict[str, Any], *, path: str = "adapter") -
 
     if "runtime_entrypoints" in payload:
         _validate_runtime_entrypoints(payload["runtime_entrypoints"], f"{path}.runtime_entrypoints", result)
+
+    if "runtime_payload_profiles" in payload:
+        _validate_runtime_payload_profiles(
+            payload["runtime_payload_profiles"],
+            f"{path}.runtime_payload_profiles",
+            result,
+        )
 
     if "adapter_protocol_registry" in payload:
         _validate_adapter_protocol_registry(
@@ -267,6 +275,12 @@ def _validate_runtime_entrypoints(payload: Any, path: str, result: ContractResul
     for error in contracts.validate_runtime_entrypoints(payload):
         error_path = error.split(":", 1)[0]
         result.add(f"{path}.{error_path}", error)
+
+
+def _validate_runtime_payload_profiles(payload: Any, path: str, result: ContractResult) -> None:
+    from brain.v5.runtime_payload_profile_contracts import validate_runtime_payload_profiles
+
+    result.extend(validate_runtime_payload_profiles(payload, path=path))
 
 
 def _validate_adapter_protocol_registry(payload: Any, path: str, result: ContractResult) -> None:

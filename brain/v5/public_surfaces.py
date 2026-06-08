@@ -90,6 +90,7 @@ _PUBLIC_SURFACE_NAMES = (
     "runtime_host_production_loop_audit",
     "runtime_host_readiness_audit",
     "runtime_bridge_target_manifest",
+    "runtime_payload_profiles",
     "runtime_hook_installation_paths",
     "runtime_hook_smoke_coverage",
     "sensemaking_report_record",
@@ -208,6 +209,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "runtime_host_production_loop_audit": "dynamic read-only batch audit over priority runtime host production loops without updating kernel truth",
     "runtime_host_readiness_audit": "dynamic read-only audit that launches the local host command and checks installed hook files without updating kernel truth",
     "runtime_bridge_target_manifest": "MCP-first host bridge target manifest derived from canonical runtime entrypoints with CLI fallback templates and no claim-trust mutation authority",
+    "runtime_payload_profiles": "host-event to typed AITP write payload profiles for provenance capture without validation or claim-trust authority",
     "runtime_hook_installation_paths": "read-only discovery of workspace-local hook install targets for Codex, Claude Code, Kimi Code, and OpenCode",
     "runtime_hook_smoke_coverage": "read-only report of which generated runtime hook paths have test-backed smoke coverage",
     "sensemaking_report_record": "contracted local sense-making report — orientation-only, never a validation gate",
@@ -388,6 +390,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_runtime_host_readiness_audit,
     )
     from brain.v5.host_lifecycle_contracts import require_valid_runtime_host_lifecycle_audit
+    from brain.v5.runtime_payload_profile_contracts import require_valid_runtime_payload_profiles
     from brain.v5.interaction_preview_contracts import require_valid_interaction_recording_preview
     from brain.v5.interaction_worklist_contracts import require_valid_interaction_recording_worklist
     from brain.v5.workspace_interaction_preview_contracts import require_valid_workspace_interaction_preview_bundle
@@ -511,6 +514,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "runtime_host_production_loop_audit": require_valid_runtime_host_production_loop_audit,
         "runtime_host_readiness_audit": require_valid_runtime_host_readiness_audit,
         "runtime_bridge_target_manifest": require_valid_runtime_bridge_target_manifest,
+        "runtime_payload_profiles": require_valid_runtime_payload_profiles,
         "runtime_hook_installation_paths": require_valid_runtime_hook_installation_paths,
         "runtime_hook_smoke_coverage": require_valid_runtime_hook_smoke_coverage,
         "sensemaking_report_record": require_valid_sensemaking_report_record,
