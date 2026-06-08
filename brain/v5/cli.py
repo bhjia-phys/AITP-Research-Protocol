@@ -15,6 +15,7 @@ from brain.v5.cli_memory import add_memory_parser, dispatch_memory_command
 from brain.v5.cli_summaries import add_summary_parser, dispatch_summary_command
 from brain.v5.cli_source import add_source_parser, dispatch_source_command
 from brain.v5.code import capture_code_state_from_git, record_code_state
+from brain.v5.curated_rag_corpus import ingest_curated_rag_corpus
 from brain.v5.evidence import record_evidence
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
 from brain.v5.cli_legacy import add_legacy_parser, dispatch_legacy_command
@@ -223,6 +224,20 @@ def _build_parser() -> argparse.ArgumentParser:
 
     kp = sp.add_parser("knowledge"); ks = kp.add_subparsers(dest="knowledge_command", required=True)
     ks.add_parser("connectors")
+
+    crp = sp.add_parser("curated-rag"); crs = crp.add_subparsers(dest="curated_rag_command", required=True)
+    cri = crs.add_parser("ingest")
+    cri.add_argument("--path", action="append", required=True, dest="paths")
+    cri.add_argument("--corpus-id", default="")
+    cri.add_argument("--tag", action="append", default=[], dest="tags")
+    cri.add_argument("--domain-hint", action="append", default=[], dest="domain_hints")
+    cri.add_argument("--topic-hint", action="append", default=[], dest="topic_hints")
+    cri.add_argument("--language", default="en")
+    cri.add_argument("--priority", default="medium")
+    cri.add_argument("--chunk-token-limit", type=int, default=220)
+    cri.add_argument("--title-prefix", default="")
+    cri.add_argument("--asset-type", default="")
+    cri.add_argument("--no-rebuild-index", action="store_true")
 
     trcp = sp.add_parser("trace"); trcs = trcp.add_subparsers(dest="trace_command", required=True)
     the = trcs.add_parser("hook-event"); thes = the.add_subparsers(dest="trace_hook_event_command", required=True)
@@ -553,6 +568,25 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.command == "knowledge" and args.knowledge_command == "connectors":
         return require_valid_public_surface("knowledge_connector_catalog", describe_knowledge_connectors())
+
+    if args.command == "curated-rag" and args.curated_rag_command == "ingest":
+        return require_valid_public_surface(
+            "curated_rag_ingest_result",
+            ingest_curated_rag_corpus(
+                ws,
+                paths=args.paths,
+                corpus_id=args.corpus_id,
+                tags=args.tags,
+                domain_hints=args.domain_hints,
+                topic_hints=args.topic_hints,
+                language=args.language,
+                priority=args.priority,
+                chunk_token_limit=args.chunk_token_limit,
+                title_prefix=args.title_prefix,
+                asset_type=args.asset_type,
+                rebuild_index=not args.no_rebuild_index,
+            ),
+        )
 
     if args.command == "trace" and args.trace_command == "hook-event" and args.trace_hook_event_command == "persist":
         return require_valid_public_surface("hook_trace_event_record", persist_hook_trace_event(ws, _j(args.payload_json)))

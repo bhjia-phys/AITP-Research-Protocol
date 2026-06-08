@@ -110,6 +110,75 @@ def require_valid_curated_rag_search_result(payload: dict[str, Any]) -> dict[str
     return payload
 
 
+def validate_curated_rag_ingest_result(
+    payload: Any,
+    *,
+    path: str = "curated_rag_ingest_result",
+) -> ContractResult:
+    result = ContractResult()
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return result
+
+    _validate_common_no_trust(payload, path, result)
+    if payload.get("kind") != "curated_rag_ingest_result":
+        result.add(f"{path}.kind", "must be 'curated_rag_ingest_result'")
+    if payload.get("ok") is not True:
+        result.add(f"{path}.ok", "must be true")
+    if payload.get("state_effect") != "curated_rag_manifest_write":
+        result.add(f"{path}.state_effect", "must be 'curated_rag_manifest_write'")
+    if payload.get("truth_source") != "curated_rag_ingestion":
+        result.add(f"{path}.truth_source", "must be 'curated_rag_ingestion'")
+    for key in ("corpus_id", "manifest_path", "index_path", "manifest_hash", "index_status"):
+        if not isinstance(payload.get(key), str) or not payload.get(key):
+            result.add(f"{path}.{key}", "must be a non-empty string")
+    for key in ("document_count", "chunk_count"):
+        if not isinstance(payload.get(key), int) or payload[key] < 0:
+            result.add(f"{path}.{key}", "must be a non-negative integer")
+    for key in ("document_ids", "chunk_ids", "source_paths", "forbidden_uses", "promotion_path"):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    if isinstance(payload.get("document_ids"), list) and payload.get("document_count") != len(payload["document_ids"]):
+        result.add(f"{path}.document_count", "must equal len(document_ids)")
+    if isinstance(payload.get("chunk_ids"), list) and payload.get("chunk_count") != len(payload["chunk_ids"]):
+        result.add(f"{path}.chunk_count", "must equal len(chunk_ids)")
+    if payload.get("retrieval_role") != "heuristic_context":
+        result.add(f"{path}.retrieval_role", "must be 'heuristic_context'")
+    if payload.get("orientation_only") is not True:
+        result.add(f"{path}.orientation_only", "must be true")
+    if payload.get("records_validation_result") is not False:
+        result.add(f"{path}.records_validation_result", "must be false")
+    if payload.get("claim_trust_mutation") != "none":
+        result.add(f"{path}.claim_trust_mutation", "must be 'none'")
+    if payload.get("requires_promotion_for_claim_support") is not True:
+        result.add(f"{path}.requires_promotion_for_claim_support", "must be true")
+    if payload.get("promotion_required_before_claim_support") is not True:
+        result.add(f"{path}.promotion_required_before_claim_support", "must be true")
+    if payload.get("forbidden_uses") != [
+        "evidence_support",
+        "validation_result",
+        "claim_trust_update",
+        "trust_apply",
+        "final_gate_satisfaction",
+    ]:
+        result.add(f"{path}.forbidden_uses", "must list evidence/validation/trust exclusions")
+    if payload.get("promotion_path") != [
+        "source_asset",
+        "reference_location",
+        "evidence",
+        "validation",
+        "trust_preflight",
+    ]:
+        result.add(f"{path}.promotion_path", "must describe the normal AITP promotion path")
+    return result
+
+
+def require_valid_curated_rag_ingest_result(payload: dict[str, Any]) -> dict[str, Any]:
+    result = validate_curated_rag_ingest_result(payload)
+    if not result.ok:
+        raise ContractError(result)
+    return payload
+
+
 def _validate_common_no_trust(payload: dict[str, Any], path: str, result: ContractResult) -> None:
     if payload.get("catalog_version") != CATALOG_VERSION:
         result.add(f"{path}.catalog_version", f"must be '{CATALOG_VERSION}'")

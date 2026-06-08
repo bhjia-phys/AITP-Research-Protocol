@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -60,6 +61,132 @@ def curated_rag_corpus(base: str | Path | WorkspacePaths | None = None) -> dict[
         index_mode="lexical_fixture",
         index_extra={},
     )
+
+
+def ingest_curated_rag_corpus(
+    base: str | Path | WorkspacePaths,
+    *,
+    paths: list[str],
+    corpus_id: str = "",
+    tags: list[str] | None = None,
+    domain_hints: list[str] | None = None,
+    topic_hints: list[str] | None = None,
+    language: str = "en",
+    priority: str = "medium",
+    chunk_token_limit: int = 220,
+    title_prefix: str = "",
+    asset_type: str = "",
+    rebuild_index: bool = True,
+) -> dict[str, Any]:
+    """Create or update a file-backed curated RAG corpus from local files.
+
+    This writes only the lightweight curated RAG manifest/index lane under
+    ``.aitp/curated_rag``. It does not create evidence, validation, trust, or
+    final-gate records.
+    """
+
+    if not paths:
+        raise ValueError("curated RAG ingestion requires at least one path")
+    resolved_files = _resolve_input_files(base, paths)
+    if not resolved_files:
+        raise ValueError("curated RAG ingestion found no readable files")
+
+    documents: list[dict[str, Any]] = []
+    chunks: list[dict[str, Any]] = []
+    for ordinal, file_path in enumerate(resolved_files, start=1):
+        text, reader = _read_curated_source_text(file_path)
+        document_id = f"curated_rag_doc:{_stable_slug(file_path.stem)}"
+        document_tags = _unique_strings([*(tags or []), file_path.suffix.lower().lstrip(".")])
+        document = {
+            "document_id": document_id,
+            "title": _document_title(file_path, title_prefix=title_prefix),
+            "asset_type": _string(asset_type) or _asset_type_for_path(file_path),
+            "source_uri": file_path.resolve().as_uri(),
+            "version_anchor": {
+                "path": str(file_path),
+                "mtime_ns": file_path.stat().st_mtime_ns,
+                "size_bytes": file_path.stat().st_size,
+                "reader": reader,
+                "ordinal": ordinal,
+            },
+            "content_hash": _hash_text(text),
+            "tags": document_tags,
+            "domain_hints": _string_list(domain_hints or []),
+            "topic_hints": _string_list(topic_hints or []),
+            "language": _string(language) or "en",
+            "priority": _string(priority) or "medium",
+            "intended_use": "background_rag",
+            "trust_status": "heuristic_context",
+            "orientation_only": True,
+            "can_update_claim_trust": False,
+        }
+        documents.append(document)
+        chunks.extend(
+            _chunks_for_text(
+                document_id=document_id,
+                text=text,
+                tags=document_tags,
+                chunk_token_limit=chunk_token_limit,
+            )
+        )
+
+    manifest = {
+        "corpus_id": _string(corpus_id) or "aitp.curated.user_background.v1",
+        "documents": documents,
+        "chunks": chunks,
+    }
+    corpus_path = _corpus_manifest_path(base)
+    corpus_path.parent.mkdir(parents=True, exist_ok=True)
+    corpus_path.write_text(
+        json.dumps(manifest, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    catalog = curated_rag_corpus(base)
+    index_payload = _lexical_index_payload(catalog)
+    index_path = _lexical_index_path(base)
+    if rebuild_index:
+        index_path.parent.mkdir(parents=True, exist_ok=True)
+        index_path.write_text(
+            json.dumps(index_payload, ensure_ascii=True, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        catalog = curated_rag_corpus(base)
+
+    return {
+        "kind": "curated_rag_ingest_result",
+        "catalog_version": CATALOG_VERSION,
+        "ok": True,
+        "state_effect": "curated_rag_manifest_write",
+        "truth_source": "curated_rag_ingestion",
+        "corpus_id": catalog["corpus_id"],
+        "manifest_path": str(corpus_path),
+        "index_path": str(index_path),
+        "manifest_hash": catalog["index_policy"].get("manifest_hash", index_payload["manifest_hash"]),
+        "index_status": catalog["index_policy"].get("index_status", "derived_in_memory"),
+        "document_count": catalog["document_count"],
+        "chunk_count": catalog["chunk_count"],
+        "document_ids": catalog["document_index"],
+        "chunk_ids": catalog["chunk_index"],
+        "source_paths": [str(path) for path in resolved_files],
+        "rebuild_index": rebuild_index,
+        "retrieval_role": "heuristic_context",
+        "orientation_only": True,
+        "summary_inputs_trusted": False,
+        "can_update_claim_trust": False,
+        "records_validation_result": False,
+        "claim_trust_mutation": "none",
+        "requires_promotion_for_claim_support": True,
+        "forbidden_uses": _FORBIDDEN_USES,
+        "promotion_required_before_claim_support": True,
+        "promotion_path": [
+            "source_asset",
+            "reference_location",
+            "evidence",
+            "validation",
+            "trust_preflight",
+        ],
+    }
 
 
 def _fixture_documents() -> list[dict[str, Any]]:
@@ -357,6 +484,167 @@ def _normalize_chunks(value: Any, *, source: str) -> list[dict[str, Any]]:
             }
         )
     return chunks
+
+
+def _resolve_input_files(base: str | Path | WorkspacePaths, paths: list[str]) -> list[Path]:
+    base_path = base.base if isinstance(base, WorkspacePaths) else Path(base)
+    resolved: list[Path] = []
+    for raw_path in paths:
+        value = _string(raw_path)
+        if not value:
+            continue
+        path = Path(value)
+        if not path.is_absolute():
+            path = base_path / path
+        if path.is_dir():
+            candidates = sorted(
+                item
+                for item in path.rglob("*")
+                if item.is_file() and item.suffix.lower() in {".md", ".markdown", ".txt", ".tex", ".rst", ".pdf"}
+            )
+            resolved.extend(candidates)
+        elif path.is_file():
+            resolved.append(path)
+        else:
+            raise FileNotFoundError(f"curated RAG source path does not exist: {path}")
+    unique: list[Path] = []
+    seen: set[str] = set()
+    for path in resolved:
+        key = str(path.resolve())
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(path)
+    return unique
+
+
+def _read_curated_source_text(path: Path) -> tuple[str, str]:
+    suffix = path.suffix.lower()
+    if suffix == ".pdf":
+        try:
+            from pypdf import PdfReader  # type: ignore[import-not-found]
+        except ImportError as exc:
+            raise ValueError("PDF curated RAG ingestion requires pypdf") from exc
+        reader = PdfReader(str(path))
+        parts = [page.extract_text() or "" for page in reader.pages]
+        text = "\n\n".join(part.strip() for part in parts if part.strip())
+        return _nonempty_text(text, path), "pypdf"
+    text = path.read_text(encoding="utf-8-sig")
+    return _nonempty_text(text, path), "utf-8-sig"
+
+
+def _nonempty_text(text: str, path: Path) -> str:
+    value = text.replace("\r\n", "\n").replace("\r", "\n").strip()
+    if not value:
+        raise ValueError(f"curated RAG source file has no extractable text: {path}")
+    return value
+
+
+def _chunks_for_text(
+    *,
+    document_id: str,
+    text: str,
+    tags: list[str],
+    chunk_token_limit: int,
+) -> list[dict[str, Any]]:
+    limit = chunk_token_limit if chunk_token_limit > 0 else 220
+    paragraphs = [part.strip() for part in re.split(r"\n\s*\n+", text) if part.strip()]
+    chunks: list[dict[str, Any]] = []
+    current: list[str] = []
+    current_tokens = 0
+    for paragraph in paragraphs:
+        tokens = paragraph.split()
+        token_count = len(tokens)
+        if current and current_tokens + token_count > limit:
+            chunks.append(_chunk_payload(document_id, len(chunks) + 1, "\n\n".join(current), tags))
+            current = []
+            current_tokens = 0
+        if token_count > limit:
+            for start in range(0, token_count, limit):
+                chunks.append(
+                    _chunk_payload(
+                        document_id,
+                        len(chunks) + 1,
+                        " ".join(tokens[start : start + limit]),
+                        tags,
+                    )
+                )
+            continue
+        current.append(paragraph)
+        current_tokens += token_count
+    if current:
+        chunks.append(_chunk_payload(document_id, len(chunks) + 1, "\n\n".join(current), tags))
+    if not chunks:
+        chunks.append(_chunk_payload(document_id, 1, text, tags))
+    return chunks
+
+
+def _chunk_payload(document_id: str, ordinal: int, text: str, tags: list[str]) -> dict[str, Any]:
+    chunk_id = f"curated_rag_chunk:{document_id.split(':', 1)[-1]}:{ordinal:04d}"
+    summary = " ".join(text.split())[:240]
+    return {
+        "chunk_id": chunk_id,
+        "document_id": document_id,
+        "anchor": {"ordinal": ordinal},
+        "text": text,
+        "summary": summary,
+        "tags": tags,
+        "token_estimate": max(1, len(text.split())),
+        "content_hash": _hash_text(text),
+        "retrieval_role": "heuristic_context",
+        "orientation_only": True,
+        "can_update_claim_trust": False,
+    }
+
+
+def _lexical_index_payload(catalog: dict[str, Any]) -> dict[str, Any]:
+    chunks = catalog["chunks"]
+    terms_by_chunk: dict[str, list[str]] = {}
+    for chunk in chunks:
+        text = " ".join([chunk["text"], chunk["summary"], " ".join(chunk["tags"])])
+        terms_by_chunk[chunk["chunk_id"]] = sorted(set(_tokenize(text)))
+    return {
+        "kind": "curated_rag_lexical_index",
+        "catalog_version": CATALOG_VERSION,
+        "index_mode": "lexical_file_backed",
+        "manifest_hash": catalog["index_policy"]["manifest_hash"],
+        "document_index": catalog["document_index"],
+        "chunk_index": catalog["chunk_index"],
+        "terms_by_chunk": terms_by_chunk,
+        "summary_inputs_trusted": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def _document_title(path: Path, *, title_prefix: str) -> str:
+    title = path.stem.replace("_", " ").replace("-", " ").strip() or path.name
+    prefix = _string(title_prefix)
+    return f"{prefix} {title}".strip() if prefix else title
+
+
+def _asset_type_for_path(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".pdf":
+        return "paper"
+    if suffix in {".md", ".markdown", ".txt", ".rst"}:
+        return "note"
+    if suffix == ".tex":
+        return "lecture"
+    return "other"
+
+
+def _stable_slug(value: str) -> str:
+    slug = re.sub(r"[^a-zA-Z0-9]+", "_", value.strip().lower()).strip("_")
+    return slug or "document"
+
+
+def _unique_strings(values: list[str]) -> list[str]:
+    out: list[str] = []
+    for value in values:
+        item = _string(value)
+        if item and item not in out:
+            out.append(item)
+    return out
 
 
 def _file_index_policy_extra(

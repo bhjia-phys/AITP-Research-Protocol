@@ -120,6 +120,20 @@ def require_valid_curated_rag_search_result(payload: dict[str, Any]) -> dict[str
     return _require(payload)
 
 
+def validate_curated_rag_ingest_result(
+    payload: dict[str, Any],
+    *,
+    path: str = "curated_rag_ingest_result",
+) -> ContractResult:
+    from brain.v5.curated_rag_contracts import validate_curated_rag_ingest_result as _validate
+    return _validate(payload, path=path)
+
+
+def require_valid_curated_rag_ingest_result(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.curated_rag_contracts import require_valid_curated_rag_ingest_result as _require
+    return _require(payload)
+
+
 def validate_record_gate_coverage_audit(payload: dict[str, Any], *, path: str = "record_gate_coverage_audit") -> ContractResult:
     from brain.v5.record_gate_audit_contracts import validate_record_gate_coverage_audit as _validate
     return _validate(payload, path=path)

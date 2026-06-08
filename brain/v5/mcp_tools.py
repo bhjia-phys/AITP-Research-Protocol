@@ -11,7 +11,11 @@ from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
 from brain.v5.code import capture_code_state_from_git, record_code_state
-from brain.v5.curated_rag_corpus import curated_rag_corpus, search_curated_rag_corpus
+from brain.v5.curated_rag_corpus import (
+    curated_rag_corpus,
+    ingest_curated_rag_corpus,
+    search_curated_rag_corpus,
+)
 from brain.v5.exploration import exploratory_record_payload, record_exploratory_record
 from brain.v5.final_readiness import audit_final_engineering_readiness
 from brain.v5.hook_install_audit import audit_hook_installation
@@ -659,6 +663,42 @@ def aitp_v5_search_curated_rag_corpus(query: str, *, limit: int = 5, base: str =
             search_curated_rag_corpus(query, limit=limit, base=base or None),
         ),
     }
+
+
+def aitp_v5_ingest_curated_rag_corpus(
+    base: str,
+    *,
+    paths: list[str],
+    corpus_id: str = "",
+    tags: list[str] | None = None,
+    domain_hints: list[str] | None = None,
+    topic_hints: list[str] | None = None,
+    language: str = "en",
+    priority: str = "medium",
+    chunk_token_limit: int = 220,
+    title_prefix: str = "",
+    asset_type: str = "",
+    rebuild_index: bool = True,
+) -> dict:
+    """Create or refresh a file-backed curated RAG manifest/index."""
+
+    return require_valid_public_surface(
+        "curated_rag_ingest_result",
+        ingest_curated_rag_corpus(
+            _ws(base),
+            paths=paths,
+            corpus_id=corpus_id,
+            tags=tags,
+            domain_hints=domain_hints,
+            topic_hints=topic_hints,
+            language=language,
+            priority=priority,
+            chunk_token_limit=chunk_token_limit,
+            title_prefix=title_prefix,
+            asset_type=asset_type,
+            rebuild_index=rebuild_index,
+        ),
+    )
 
 
 def aitp_v5_audit_record_gate_coverage() -> dict:

@@ -3171,6 +3171,106 @@ def test_curated_rag_corpus_reads_file_backed_workspace_manifest(tmp_path, capsy
     }
 
 
+def test_curated_rag_ingestion_writes_manifest_index_and_no_trust_surface(tmp_path, capsys):
+    from brain.v5.curated_rag_corpus import (
+        curated_rag_corpus,
+        ingest_curated_rag_corpus,
+        search_curated_rag_corpus,
+    )
+    from brain.v5.mcp_tools import aitp_v5_ingest_curated_rag_corpus
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    note = tmp_path / "dmft-orientation.md"
+    note.write_text(
+        "\n\n".join(
+            [
+                "# DMFT orientation",
+                "DMFT explanations should separate impurity self energy, lattice embedding, and double counting before solver selection.",
+                "The note is background scaffolding only and must be promoted through source and evidence records before claim support.",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = ingest_curated_rag_corpus(
+        ws,
+        paths=[str(note)],
+        corpus_id="aitp.curated.test_background.v1",
+        tags=["dmft", "orientation"],
+        domain_hints=["theoretical-physics/condensed-matter"],
+        topic_hints=["gw-dmft"],
+        chunk_token_limit=24,
+    )
+    corpus = curated_rag_corpus(ws)
+    search = search_curated_rag_corpus("DMFT impurity solver double counting", limit=2, base=ws)
+
+    assert require_valid_public_surface("curated_rag_ingest_result", result) == result
+    assert require_valid_public_surface("curated_rag_corpus", corpus) == corpus
+    assert require_valid_public_surface("curated_rag_search_result", search) == search
+    assert result["state_effect"] == "curated_rag_manifest_write"
+    assert result["retrieval_role"] == "heuristic_context"
+    assert result["records_validation_result"] is False
+    assert result["claim_trust_mutation"] == "none"
+    assert result["requires_promotion_for_claim_support"] is True
+    assert result["promotion_path"] == [
+        "source_asset",
+        "reference_location",
+        "evidence",
+        "validation",
+        "trust_preflight",
+    ]
+    assert result["document_count"] == 1
+    assert result["chunk_count"] >= 1
+    assert (ws.root / "curated_rag" / "corpus.json").exists()
+    assert (ws.root / "curated_rag" / "indexes" / "lexical_index.json").exists()
+    assert corpus["corpus_id"] == "aitp.curated.test_background.v1"
+    assert corpus["index_policy"]["active_index_mode"] == "lexical_file_backed"
+    assert corpus["index_policy"]["index_status"] == "fresh"
+    assert corpus["documents"][0]["document_id"] == result["document_ids"][0]
+    assert corpus["chunks"][0]["retrieval_role"] == "heuristic_context"
+    assert search["result_count"] >= 1
+    assert search["results"][0]["document_id"] == result["document_ids"][0]
+    assert search["results"][0]["can_update_claim_trust"] is False
+
+    cli_payload = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "curated-rag",
+            "ingest",
+            "--path",
+            str(note),
+            "--corpus-id",
+            "aitp.curated.test_background.v1",
+            "--tag",
+            "dmft",
+            "--domain-hint",
+            "theoretical-physics/condensed-matter",
+            "--topic-hint",
+            "gw-dmft",
+            "--chunk-token-limit",
+            "24",
+        ],
+        capsys,
+    )
+    assert cli_payload["kind"] == "curated_rag_ingest_result"
+    assert cli_payload["state_effect"] == "curated_rag_manifest_write"
+    assert cli_payload["manifest_hash"] == curated_rag_corpus(ws)["index_policy"]["manifest_hash"]
+
+    mcp_payload = aitp_v5_ingest_curated_rag_corpus(
+        str(tmp_path),
+        paths=[str(note)],
+        corpus_id="aitp.curated.test_background.v1",
+        tags=["dmft"],
+        topic_hints=["gw-dmft"],
+        chunk_token_limit=24,
+    )
+    assert mcp_payload["kind"] == "curated_rag_ingest_result"
+    assert mcp_payload["can_update_claim_trust"] is False
+
+
 def test_adapter_registry_protocol_fields_match_builder_keys():
     from brain.v5.adapter_protocols import adapter_protocol_fields, build_adapter_protocols
 
@@ -3236,6 +3336,7 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
         "readCuratedRagCorpus",
         "searchCuratedRagCorpus",
     ]
+    assert "ingestCuratedRagCorpus" in manifest["target_groups"]["write"]
     assert manifest["target_groups"]["preflight"] == ["preflightTrustUpdate"]
     assert by_operation["readRuntimePayloadProfiles"]["mcp_tool"] == "aitp_v5_get_runtime_payload_profiles"
     assert by_operation["readRuntimePayloadProfiles"]["cli_fallback"] == "aitp-v5 adapter payload-profiles"
@@ -3248,6 +3349,13 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
     assert by_operation["searchCuratedRagCorpus"]["mcp_tool"] == "aitp_v5_search_curated_rag_corpus"
     assert by_operation["searchCuratedRagCorpus"]["cli_fallback"] == "aitp-v5 adapter curated-rag-search <query> <args>"
     assert by_operation["searchCuratedRagCorpus"]["surface"] == "curated_rag_search_result"
+    assert by_operation["ingestCuratedRagCorpus"]["mcp_tool"] == "aitp_v5_ingest_curated_rag_corpus"
+    assert by_operation["ingestCuratedRagCorpus"]["cli_fallback"] == "aitp-v5 curated-rag ingest <args>"
+    assert by_operation["ingestCuratedRagCorpus"]["surface"] == "curated_rag_ingest_result"
+    assert by_operation["ingestCuratedRagCorpus"]["execution_role"] == "write"
+    assert by_operation["ingestCuratedRagCorpus"]["state_effect"] == "curated_rag_manifest_write"
+    assert by_operation["ingestCuratedRagCorpus"]["claim_trust_mutation"] == "none"
+    assert by_operation["ingestCuratedRagCorpus"]["can_update_claim_trust"] is False
     assert by_operation["readProcessGraphSlice"]["mcp_arguments"] == {
         "required": ["base", "session_id"],
         "optional": ["claim_id", "limit"],

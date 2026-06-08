@@ -133,6 +133,11 @@ def _validate_targets(targets: list[Any], path: str, result: ContractResult) -> 
             result.add(f"{item_path}.claim_trust_mutation", "must be 'none'")
         if target.get("can_update_claim_trust") is not False:
             result.add(f"{item_path}.can_update_claim_trust", "must be false")
+        if entrypoint_key == "ingest_curated_rag_corpus":
+            if target.get("execution_role") != "write":
+                result.add(f"{item_path}.execution_role", "must be 'write'")
+            if target.get("state_effect") != "curated_rag_manifest_write":
+                result.add(f"{item_path}.state_effect", "must be 'curated_rag_manifest_write'")
         _validate_mcp_arguments(target, item_path, result)
 
 

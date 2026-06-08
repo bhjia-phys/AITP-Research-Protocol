@@ -42,6 +42,7 @@ _BRIDGE_TARGET_SPECS: tuple[tuple[str, str, str, str], ...] = (
     ("readRuntimePayloadProfiles", "runtime_payload_profiles", "read", "read_only"),
     ("readCuratedRagCorpus", "curated_rag_corpus", "read", "read_only"),
     ("searchCuratedRagCorpus", "curated_rag_search", "read", "read_only"),
+    ("ingestCuratedRagCorpus", "ingest_curated_rag_corpus", "write", "curated_rag_manifest_write"),
     ("recordExploratoryRecord", "record_exploratory_record", "write", "typed_record_write"),
     ("registerSourceAsset", "register_source_asset", "write", "typed_record_write"),
     ("captureSourceAssetAuto", "capture_source_asset_auto", "write", "typed_record_write"),
