@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from brain.v5.payload_hints import with_draft_schema
+
 
 _ACTIVE_STATUSES = {"open", "active"}
 
@@ -628,7 +630,7 @@ def _payload_hints(
             target_record=target_record,
         )
         if hint is not None:
-            hints.append(hint)
+            hints.append(with_draft_schema(hint))
     return hints
 
 

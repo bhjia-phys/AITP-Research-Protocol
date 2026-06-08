@@ -26,6 +26,7 @@ from brain.v5.models import (
 )
 from brain.v5.moment_policy import build_host_agnostic_moment_policy
 from brain.v5.paths import WorkspacePaths
+from brain.v5.payload_hints import with_draft_schema
 from brain.v5.source_reconstruction_review import build_source_reconstruction_review_slice
 from brain.v5.source_stack_coverage import build_source_stack_coverage_slice
 from brain.v5.store import list_valid_records, read_record
@@ -919,7 +920,7 @@ def _provenance_payload_hints(
             target_record=target_record,
         )
         if hint is not None:
-            hints.append(hint)
+            hints.append(with_draft_schema(hint))
     return hints
 
 

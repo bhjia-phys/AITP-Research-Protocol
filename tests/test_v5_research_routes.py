@@ -181,6 +181,15 @@ def test_process_graph_slice_exposes_route_state_and_route_policy(tmp_path):
     assert choice_hint["record_action"] == "record_research_route"
     assert choice_hint["draft"]["route_type"] == "derivation"
     assert choice_hint["draft"]["status"] == "live"
+    assert choice_hint["draft_schema"]["required_fields"] == [
+        "topic_id",
+        "title",
+        "route_type",
+        "status",
+        "rationale",
+    ]
+    assert choice_hint["draft_schema"]["placeholder_fields"] == []
+    assert choice_hint["draft_schema"]["host_must_resolve"] == []
 
     failed_decision = next(item for item in route_decisions if item["moment"] == "record_failed_route_lesson")
     failed_hint = _hint_by_entrypoint(failed_decision, "aitp_v5_record_research_route")
@@ -192,6 +201,9 @@ def test_process_graph_slice_exposes_route_state_and_route_policy(tmp_path):
     checkpoint_hint = _hint_by_entrypoint(checkpoint_decision, "aitp_v5_request_human_checkpoint")
     assert checkpoint_hint["record_action"] == "request_human_checkpoint"
     assert checkpoint_hint["draft"]["requested_by"] == "route_policy"
+    assert checkpoint_hint["draft_schema"]["field_case"] == "snake_case"
+    assert checkpoint_hint["draft_schema"]["summary_inputs_trusted"] is False
+    assert checkpoint_hint["draft_schema"]["can_update_claim_trust"] is False
 
 
 def test_research_route_entrypoint_is_registered():

@@ -154,8 +154,11 @@ The practical rule is:
   shapes for the next host write, such as source-asset auto-capture,
   code-state capture, tool-run, validation-contract/result, source-asset,
   reference-location, or artifact records. Hosts must replace placeholders
-  with real local provenance before calling the entrypoint, and the draft
-  itself cannot update claim trust.
+  with real local provenance before calling the entrypoint. Each hint also
+  carries `draft_schema` metadata with required fields, placeholder field
+  paths, placeholder values, and `host_must_resolve` paths so hosts can tell
+  which local values must be supplied before execution. The draft and schema
+  themselves cannot update claim trust.
 - Treat auto-captured code-state records as provenance records, not validation
   results. A dirty diff hash or patch artifact explains what code state was
   used; it does not prove the result correct.
@@ -442,8 +445,11 @@ or validation-result records. For `aitp_v5_preflight_trust_update`, the hint
 uses `record_action=preflight_trust_update` and drafts the action/session/topic/
 claim/source/evidence fields for `trust preflight`, while keeping
 `summary_inputs_trusted=false` and `can_update_claim_trust=false`. These hints
-are not canonical truth and cannot update claim trust; they keep hosts from
-inventing payload shapes while AITP remains the authority for the actual record.
+also carry `draft_schema` metadata: required field names, placeholder field
+paths, placeholder values, `host_must_resolve`, `field_case=snake_case`, and
+the same no-trust flags. They are not canonical truth and cannot update claim
+trust; they keep hosts from inventing payload shapes while AITP remains the
+authority for the actual record.
 Hakimi compiles these decisions
 into ContextPack call obligations and now uses them in its final gate to
 downgrade trust-sensitive answers when required calls are neither passed nor
@@ -463,7 +469,9 @@ the concrete typed record that should repair the gap: `asset capture-auto`,
 `register_source_asset`, or `record_reference_location`.
 These hints are canonical AITP guidance for host write drafts, not canonical
 truth records; placeholders must be resolved by the host at execution time and
-AITP still validates/stores the resulting record.
+AITP still validates/stores the resulting record. Their `draft_schema`
+identifies exactly which draft paths are placeholders and must be resolved by
+the host before the write bridge is called.
 
 The same slice now exposes `source_stack_coverage`: the scoped
 `source_stack_coverage_manifest` for claims present in the slice. Hosts can see

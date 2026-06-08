@@ -168,3 +168,44 @@ def validate_payload_hint(payload: Any, path: str, result: ContractResult) -> No
         result.add(f"{path}.orientation_only", "must be true")
     if payload.get("can_update_claim_trust") is not False:
         result.add(f"{path}.can_update_claim_trust", "must be false")
+    _validate_payload_draft_schema(payload, path, result)
+
+
+def _validate_payload_draft_schema(payload: dict[str, Any], path: str, result: ContractResult) -> None:
+    schema = payload.get("draft_schema")
+    _require_mapping(schema, f"{path}.draft_schema", result)
+    if not isinstance(schema, dict):
+        return
+    _require_list(schema.get("required_fields"), f"{path}.draft_schema.required_fields", result)
+    _require_list(schema.get("placeholder_fields"), f"{path}.draft_schema.placeholder_fields", result)
+    _require_mapping(schema.get("placeholder_values"), f"{path}.draft_schema.placeholder_values", result)
+    _require_list(schema.get("host_must_resolve"), f"{path}.draft_schema.host_must_resolve", result)
+    if schema.get("field_case") != "snake_case":
+        result.add(f"{path}.draft_schema.field_case", "must be 'snake_case'")
+    if schema.get("summary_inputs_trusted") is not False:
+        result.add(f"{path}.draft_schema.summary_inputs_trusted", "must be false")
+    if schema.get("can_update_claim_trust") is not False:
+        result.add(f"{path}.draft_schema.can_update_claim_trust", "must be false")
+
+    if isinstance(schema.get("required_fields"), list) and isinstance(payload.get("required_fields"), list):
+        if schema["required_fields"] != payload["required_fields"]:
+            result.add(f"{path}.draft_schema.required_fields", "must match payload required_fields")
+
+    placeholder_fields = schema.get("placeholder_fields")
+    placeholder_values = schema.get("placeholder_values")
+    host_must_resolve = schema.get("host_must_resolve")
+    if not isinstance(placeholder_fields, list) or not isinstance(placeholder_values, dict):
+        return
+    placeholder_field_strings = [str(item) for item in placeholder_fields if str(item)]
+    if list(placeholder_values) != placeholder_field_strings:
+        result.add(f"{path}.draft_schema.placeholder_values", "must use the same field paths as placeholder_fields")
+    if isinstance(host_must_resolve, list) and host_must_resolve != placeholder_fields:
+        result.add(f"{path}.draft_schema.host_must_resolve", "must match placeholder_fields")
+    for key, value in placeholder_values.items():
+        if not isinstance(value, str) or not _is_placeholder(value):
+            result.add(f"{path}.draft_schema.placeholder_values.{key}", "must be a placeholder string")
+
+
+def _is_placeholder(value: str) -> bool:
+    stripped = value.strip()
+    return len(stripped) > 2 and stripped.startswith("<") and stripped.endswith(">")

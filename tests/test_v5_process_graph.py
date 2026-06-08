@@ -294,6 +294,12 @@ def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     assert auto_hint["draft"]["topic_id"] == "fqhe"
     assert auto_hint["draft"]["claim_id"] == claim.claim_id
     assert auto_hint["draft"]["source_kind"] == "literature"
+    assert auto_hint["draft_schema"]["required_fields"] == ["path", "topic_id"]
+    assert auto_hint["draft_schema"]["placeholder_fields"] == ["path"]
+    assert auto_hint["draft_schema"]["placeholder_values"] == {"path": "<local source file path>"}
+    assert auto_hint["draft_schema"]["host_must_resolve"] == ["path"]
+    assert auto_hint["draft_schema"]["summary_inputs_trusted"] is False
+    assert auto_hint["draft_schema"]["can_update_claim_trust"] is False
     assert provenance_gap["required_before_trust_change"] is False
     assert payload["source_asset_index"][0]["provenance_gap_ids"] == [provenance_gap["gap_id"]]
     assert payload["source_asset_index"][0]["provenance_gap_types"] == ["source_asset_hash_missing"]
@@ -516,6 +522,15 @@ def test_process_graph_policy_payload_hints_for_missing_source_components(tmp_pa
     assert reference_hint["draft"]["claim_id"] == claim.claim_id
     assert reference_hint["draft"]["location_type"] == "paper_section"
     assert reference_hint["draft"]["uri"] == "<source URI>"
+    assert reference_hint["draft_schema"]["required_fields"] == [
+        "topic_id",
+        "connector_id",
+        "location_type",
+        "uri",
+        "label",
+    ]
+    assert reference_hint["draft_schema"]["placeholder_values"]["uri"] == "<source URI>"
+    assert "uri" in reference_hint["draft_schema"]["host_must_resolve"]
 
 
 def test_process_graph_slice_exposes_source_code_provenance_gaps(tmp_path):
@@ -556,6 +571,8 @@ def test_process_graph_slice_exposes_source_code_provenance_gaps(tmp_path):
     assert source_auto_hint["draft"]["path"] == "<local source file path>"
     assert source_auto_hint["draft"]["topic_id"] == "gw"
     assert source_auto_hint["draft"]["claim_id"] == claim.claim_id
+    assert source_auto_hint["draft_schema"]["placeholder_fields"] == ["path"]
+    assert source_auto_hint["draft_schema"]["host_must_resolve"] == ["path"]
     code_gap = by_type["code_state_missing"]
     assert code_gap["recommended_entrypoints"] == ["aitp_v5_capture_code_state_auto", "aitp_v5_record_code_state"]
     assert code_gap["recommended_actions"] == ["aitp.capture_code_state_auto", "aitp.record_code_state"]
@@ -568,6 +585,8 @@ def test_process_graph_slice_exposes_source_code_provenance_gaps(tmp_path):
     assert code_hint["draft"]["claim_id"] == claim.claim_id
     assert code_hint["draft"]["worktree_path"] == "<local worktree path>"
     assert code_hint["draft"]["linked_records"]["claim_id"] == claim.claim_id
+    assert code_hint["draft_schema"]["placeholder_values"]["worktree_path"] == "<local worktree path>"
+    assert "worktree_path" in code_hint["draft_schema"]["host_must_resolve"]
     assert code_gap["required_now"] is False
     assert code_gap["required_before_trust_change"] is False
     assert "benchmark_basis" in code_gap["blocking_when_used_as"]
@@ -583,6 +602,10 @@ def test_process_graph_slice_exposes_source_code_provenance_gaps(tmp_path):
     assert tool_auto_hint["draft"]["topic_id"] == "gw"
     assert tool_auto_hint["draft"]["claim_id"] == claim.claim_id
     assert tool_auto_hint["draft"]["recipe_id"] == "<tool recipe id>"
+    assert tool_auto_hint["draft_schema"]["placeholder_values"]["path"] == (
+        "<local tool transcript or result file path>"
+    )
+    assert tool_auto_hint["draft_schema"]["placeholder_values"]["recipe_id"] == "<tool recipe id>"
     tool_hint = _hint_by_entrypoint(tool_gap, "aitp_v5_record_tool_run")
     assert tool_hint["record_action"] == "record_tool_run"
     assert tool_hint["draft"]["topic_id"] == "gw"
