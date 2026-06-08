@@ -628,6 +628,10 @@ AITP draft payload/template before execution. Those overrides are still
 host-side review proposals: they do not rewrite the AITP draft surface, do not
 prove source support, and do not create source, evidence, validation, preflight,
 or trust records until a normal explicit AITP entrypoint is called.
+If a host renders canonical-identity alignment for a curated RAG draft, that
+alignment is only a future-record map: it may show which AITP record kind and
+canonical ref prefix a later explicit write result would produce, but it is not
+an AITP record inventory and does not reserve or create ids.
 A host-side confirmation summary over that reviewed call draft is also not an
 AITP trust preflight. It may classify remaining placeholder, source-review, and
 preflight-scope diagnostics before a pending explicit AITP call, but it does
