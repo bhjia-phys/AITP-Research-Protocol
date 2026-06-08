@@ -30,7 +30,7 @@ surfaces.
 | Long-term memory | Implemented core: L2 memory entries, promotion packets, memory audits, failure-mode audits, trust audits, Obsidian review views |
 | Replay and review | Implemented core: session summaries, workspace summaries, workspace replay packets, source reconstruction audits |
 | Legacy migration | Implemented generic migration plus curated v5 migration for priority legacy topics, coverage, semantic-review, repair, source-reconstruction, human-checkpoint, and Obsidian worklist surfaces; the real legacy semantic review backlog remains blocking |
-| Host integration | Priority hosts are ready for Codex, Claude Code, and Kimi Code through v5 MCP/hook/adapter surfaces and production-loop audits; `aitp-v5 adapter bridge-targets` / `aitp_v5_get_runtime_bridge_target_manifest` now expose MCP-first host bridge targets with CLI fallback templates; `aitp-v5 adapter payload-profiles` / `aitp_v5_get_runtime_payload_profiles` expose the read-only runtime payload profile catalog directly; `runtime_payload_profiles` tells hosts how to turn benchmark adapter runs and primitive tool lifecycle completions into AITP `tool_run_record` provenance without creating validation/trust, and now includes `capture_policy` metadata for controlled adapter auto-capture versus explicit primitive-tool capture; Hakimi auto-configures a WorkFrame-scoped typed session bridge that can read `process_graph_slice`, compile `moment_policy.decisions` into required call obligations, and expose model-facing AITP write-bridge execution for exploratory records, research routes, source assets, auto-captured local source assets, auto-captured code state, auto-captured local artifacts, proof obligations, validation contracts/results, human checkpoints, and non-mutating trust preflight instead of duplicating the schema |
+| Host integration | Priority hosts are ready for Codex, Claude Code, and Kimi Code through v5 MCP/hook/adapter surfaces and production-loop audits; `aitp-v5 adapter bridge-targets` / `aitp_v5_get_runtime_bridge_target_manifest` now expose MCP-first host bridge targets with CLI fallback templates; `aitp-v5 adapter payload-profiles` / `aitp_v5_get_runtime_payload_profiles` expose the read-only runtime payload profile catalog directly; `runtime_payload_profiles` tells hosts how to turn benchmark adapter runs and primitive tool lifecycle completions into AITP `tool_run_record` provenance without creating validation/trust, now includes `catalog_version`, `profile_count`, `profile_index`, and `capture_policy` metadata for controlled adapter auto-capture versus explicit primitive-tool capture; Hakimi auto-configures a WorkFrame-scoped typed session bridge that can read `process_graph_slice`, compile `moment_policy.decisions` into required call obligations, read the runtime payload profile catalog as AITP-owned metadata, and expose model-facing AITP write-bridge execution for exploratory records, research routes, source assets, auto-captured local source assets, auto-captured code state, auto-captured local artifacts, proof obligations, validation contracts/results, human checkpoints, and non-mutating trust preflight instead of duplicating the schema |
 | OpenCode | Adapter/plugin surfaces exist, but OpenCode remains deferred until its hook model and packaging path stabilize |
 | Goal continuation | Implemented: local `.aitp/surfaces/goal_continuation/` JSON+Markdown packets capture objective, commit range, changed files, tests, smoke commands, readiness, next actions, and blocking backlog |
 | Literature intake | Implemented conservative intake: references are orientation-only, evidence/sensemaking are guarded suggestions, and trust updates stay forbidden without preflight/checkpoints |
@@ -104,7 +104,10 @@ The practical rule is:
   contract. The catalog maps Hakimi benchmark adapter runs and primitive tool
   lifecycle completions to `recordToolRun` / `aitp_v5_record_tool_run`
   payloads so runtime execution outcomes become AITP tool-run provenance, not
-  validation results or claim-trust updates.
+  validation results or claim-trust updates. Its
+  `catalog_version=aitp.v5.runtime_payload_profiles.v1`, `profile_count`, and
+  `profile_index` let hosts verify that the profile array they parsed is the
+  canonical AITP catalog order.
 - Treat each runtime payload profile's `capture_policy` as AITP-owned host
   guidance for when a host may write the payload. Benchmark adapter capture is
   controlled-auto and scoped to one adapter run; primitive tool lifecycle
@@ -117,7 +120,8 @@ The practical rule is:
   `aitp-v5 adapter payload-profiles` or `aitp_v5_get_runtime_payload_profiles`,
   or discover the same surface through the `readRuntimePayloadProfiles` bridge
   target. The catalog remains profile metadata only and cannot update claim
-  trust.
+  trust; a host-side parser may reject tampered no-trust flags, but it still
+  does not become evidence, validation, or trust authority.
 - Treat route moments as process-continuity guidance unless AITP explicitly
   marks a trust boundary. Recording a route choice, failed-route lesson, or
   pivot checkpoint should make the agent less forgetful without turning route
@@ -512,7 +516,11 @@ tool lifecycle completion into a `recordToolRun` /
 `aitp_v5_record_tool_run` payload. The mapped records are provenance for what
 ran, with `summary_inputs_trusted=false` and `can_update_claim_trust=false`;
 they do not create a `validation_result_record`, satisfy a validation contract
-by themselves, or change claim trust.
+by themselves, or change claim trust. The catalog now carries
+`catalog_version=aitp.v5.runtime_payload_profiles.v1`, `profile_count`, and
+`profile_index` beside the `profiles[]` array so hosts can parse the public
+surface as a stable typed catalog instead of inferring profile identity from
+README prose.
 
 Hosts can now read the same catalog without building a full adapter packet:
 `aitp-v5 adapter payload-profiles` and `aitp_v5_get_runtime_payload_profiles`
@@ -520,7 +528,10 @@ return the public `runtime_payload_profiles` surface directly, and
 `runtime_bridge_target_manifest.targets[]` includes the read-only
 `readRuntimePayloadProfiles` operation. This keeps payload-profile discovery in
 the same MCP-first target table as `readProcessGraphSlice` and
-`readMomentPolicy` while preserving `claim_trust_mutation=none`.
+`readMomentPolicy` while preserving `claim_trust_mutation=none`. Hakimi now has
+a typed reader for this surface and uses it only as AITP-owned payload metadata;
+the reader does not write records, record evidence, create validation results,
+or mutate claim trust.
 
 Exploratory record reasoning fields are likewise host-facing process handles:
 Hakimi normalizes them into `params.theoryReasoning`, then renders them into the

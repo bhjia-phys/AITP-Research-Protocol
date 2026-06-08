@@ -20,6 +20,11 @@ def validate_runtime_payload_profiles(
 
     if payload.get("kind") != "runtime_payload_profiles":
         result.add(f"{path}.kind", "must be 'runtime_payload_profiles'")
+    if payload.get("catalog_version") != "aitp.v5.runtime_payload_profiles.v1":
+        result.add(
+            f"{path}.catalog_version",
+            "must be 'aitp.v5.runtime_payload_profiles.v1'",
+        )
     if payload.get("truth_source") != "runtime_payload_profile_catalog":
         result.add(f"{path}.truth_source", "must be 'runtime_payload_profile_catalog'")
     if payload.get("summary_inputs_trusted") is not False:
@@ -29,6 +34,11 @@ def validate_runtime_payload_profiles(
     _require_list(payload.get("profiles"), f"{path}.profiles", result)
     if isinstance(payload.get("profiles"), list):
         _validate_profiles(payload["profiles"], f"{path}.profiles", result)
+        profile_index = [profile.get("profile_id") for profile in payload["profiles"] if isinstance(profile, dict)]
+        if payload.get("profile_count") != len(payload["profiles"]):
+            result.add(f"{path}.profile_count", "must equal len(profiles)")
+        if payload.get("profile_index") != profile_index:
+            result.add(f"{path}.profile_index", "must list profile ids in catalog order")
     if payload != runtime_payload_profiles():
         result.add(path, "must match runtime_payload_profiles()")
     return result

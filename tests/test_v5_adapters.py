@@ -2910,6 +2910,12 @@ def test_adapter_packet_exposes_runtime_payload_profiles_for_benchmark_provenanc
 
     assert profiles == runtime_payload_profiles()
     assert require_valid_public_surface("runtime_payload_profiles", profiles) == profiles
+    assert profiles["catalog_version"] == "aitp.v5.runtime_payload_profiles.v1"
+    assert profiles["profile_count"] == 2
+    assert profiles["profile_index"] == [
+        "benchmark_adapter_run_to_tool_run",
+        "primitive_tool_lifecycle_to_tool_run",
+    ]
     by_id = {profile["profile_id"]: profile for profile in profiles["profiles"]}
     assert set(by_id) == {
         "benchmark_adapter_run_to_tool_run",
@@ -2989,6 +2995,9 @@ def test_runtime_payload_profiles_are_public_cli_and_mcp(capsys):
     profiles = runtime_payload_profiles()
 
     assert require_valid_public_surface("runtime_payload_profiles", profiles) == profiles
+    assert profiles["catalog_version"] == "aitp.v5.runtime_payload_profiles.v1"
+    assert profiles["profile_count"] == len(profiles["profiles"])
+    assert profiles["profile_index"] == [profile["profile_id"] for profile in profiles["profiles"]]
     assert _invoke(["adapter", "payload-profiles"], capsys) == {
         "ok": True,
         "runtime_payload_profiles": profiles,
