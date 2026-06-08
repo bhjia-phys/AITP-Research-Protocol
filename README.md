@@ -649,6 +649,9 @@ write target exposed to hosts.
 Structured guard-failure diagnostics produced by a host are likewise
 downstream diagnostics only: field/path hints and `bridge_called=false` do not
 create AITP records or replace validation/preflight evidence.
+Host remediation summaries over those diagnostics are also advisory repair
+hints only. They may suggest which handoff field or explicit execute argument
+to fix, but they do not mutate the handoff or perform an AITP write/preflight.
 
 Exploratory record reasoning fields are likewise host-facing process handles:
 Hakimi normalizes them into `params.theoryReasoning`, then renders them into the
