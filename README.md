@@ -704,6 +704,11 @@ the repair-draft root, the root pointer is only a navigation aid to the nested
 handoff/readiness call. It does not change the draft, reserve an AITP id, call
 the bridge, or add any new AITP surface beyond the existing typed
 write/preflight entrypoints.
+If a host adds a model-facing summary over that root pointer and nested
+readiness call, the summary is the same downstream annotation. It may help a
+model distinguish inspection material from execution material, but it is not an
+AITP typed record, validation, source-support record, trust preflight, or write
+authorization.
 Downstream guard tests may pin missing-field and tamper rejection, but they
 remain host-contract tests. AITP's own write surface is still the explicit
 typed entrypoint list, with non-mutating trust preflight but no `trustApply`
