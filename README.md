@@ -623,6 +623,11 @@ over AITP-owned `payload_draft` / `payload_template` fields. It may expose
 placeholder diagnostics for missing source/evidence review, record ids, or
 preflight scope, but it does not create records, execute preflight, satisfy
 final gates, or update claim trust.
+Hosts may additionally compare reviewed field overrides against the original
+AITP draft payload/template before execution. Those overrides are still
+host-side review proposals: they do not rewrite the AITP draft surface, do not
+prove source support, and do not create source, evidence, validation, preflight,
+or trust records until a normal explicit AITP entrypoint is called.
 
 Exploratory record reasoning fields are likewise host-facing process handles:
 Hakimi normalizes them into `params.theoryReasoning`, then renders them into the
