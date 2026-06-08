@@ -604,6 +604,15 @@ Every operation carries `draft_only=true`, `creates_record_now=false`, and
 `can_update_claim_trust=false`. It is a controlled construction sheet, not a
 promotion writer.
 
+Downstream hosts may project this draft surface into model-visible action
+suggestions when a retrieved curated RAG chunk looks claim-relevant. For
+example, Hakimi can add a read-only `draft_aitp_curated_rag_promotion` binding
+beside `ResearchContextPack.curatedRag.results` so the model sees which chunk
+could be reviewed for promotion. That binding is still a host projection over
+AITP-owned chunk ids and hashes: it does not make the chunk evidence, does not
+execute any AITP write operation, and does not relax the requirement for an
+explicit later source/reference/evidence/validation/trust-preflight path.
+
 Exploratory record reasoning fields are likewise host-facing process handles:
 Hakimi normalizes them into `params.theoryReasoning`, then renders them into the
 injected WorkFrame reminder and ContextPack XML `<theory_reasoning>` bindings.
