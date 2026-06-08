@@ -89,6 +89,80 @@ def runtime_payload_profiles() -> dict[str, Any]:
                     "a validation result still requires an AITP validation contract "
                     "and explicit record_validation_result"
                 ),
+            },
+            {
+                "profile_id": "primitive_tool_lifecycle_to_tool_run",
+                "host_event": "primitive_tool_lifecycle_completed",
+                "target_operation": "recordToolRun",
+                "target_entrypoint": "aitp_v5_record_tool_run",
+                "target_record_action": "record_tool_run",
+                "target_surface": "tool_run_record",
+                "required_host_fields": [
+                    "tool_call_id",
+                    "tool_name",
+                    "status",
+                    "output_summary",
+                    "topic_id",
+                    "claim_id",
+                ],
+                "optional_host_fields": [
+                    "args_summary",
+                    "cwd",
+                    "turn_id",
+                    "step_uuid",
+                    "duration_ms",
+                    "artifact_refs",
+                    "source_refs",
+                    "workframe_id",
+                    "action_call_id",
+                ],
+                "payload_key_case": "camel_or_snake",
+                "payload_template": {
+                    "recipe_id": "primitive_tool:<tool_name>:<tool_call_id>",
+                    "tool_family": "primitive_tool",
+                    "tool_name": "<tool_name>",
+                    "topic_id": "<topic_id>",
+                    "claim_id": "<claim_id>",
+                    "inputs": {
+                        "args_summary": "<args_summary>",
+                        "cwd": "<cwd>",
+                        "source_refs": "<source_refs>",
+                    },
+                    "outputs": {
+                        "tool_call_id": "<tool_call_id>",
+                        "tool_name": "<tool_name>",
+                        "status": "<status>",
+                        "output_summary": "<output_summary>",
+                        "turn_id": "<turn_id>",
+                        "step_uuid": "<step_uuid>",
+                        "duration_ms": "<duration_ms>",
+                        "artifact_refs": "<artifact_refs>",
+                        "workframe_id": "<workframe_id>",
+                        "action_call_id": "<action_call_id>",
+                    },
+                    "environment": {
+                        "capture_tool": "hakimi.primitive_tool_lifecycle",
+                        "payload_profile": "primitive_tool_lifecycle_to_tool_run",
+                        "summary_inputs_trusted": False,
+                        "can_update_claim_trust": False,
+                    },
+                    "evidence_status": "unreviewed",
+                    "artifact_ids": "<artifact_refs_normalized_to_artifact_ids>",
+                    "source_refs": "<source_refs_plus_tool_call_ref>",
+                },
+                "result_semantics": {
+                    "record_kind": "tool_run",
+                    "evidence_ref_prefix": "aitp:tool_run",
+                    "records_validation_result": False,
+                    "claim_trust_mutation": "none",
+                    "can_update_claim_trust": False,
+                    "summary_inputs_trusted": False,
+                },
+                "strict_boundary": (
+                    "primitive tool lifecycle output is tool-run provenance only; "
+                    "hosts must still create explicit evidence or validation records "
+                    "before using it for claim support or trust changes"
+                ),
             }
         ],
     }

@@ -2910,7 +2910,12 @@ def test_adapter_packet_exposes_runtime_payload_profiles_for_benchmark_provenanc
 
     assert profiles == runtime_payload_profiles()
     assert require_valid_public_surface("runtime_payload_profiles", profiles) == profiles
-    profile = profiles["profiles"][0]
+    by_id = {profile["profile_id"]: profile for profile in profiles["profiles"]}
+    assert set(by_id) == {
+        "benchmark_adapter_run_to_tool_run",
+        "primitive_tool_lifecycle_to_tool_run",
+    }
+    profile = by_id["benchmark_adapter_run_to_tool_run"]
     assert profile["profile_id"] == "benchmark_adapter_run_to_tool_run"
     assert profile["host_event"] == "benchmark_adapter_run"
     assert profile["target_operation"] == "recordToolRun"
@@ -2926,6 +2931,26 @@ def test_adapter_packet_exposes_runtime_payload_profiles_for_benchmark_provenanc
         "summary_inputs_trusted": False,
     }
     assert "validation result still requires" in profile["strict_boundary"]
+
+    primitive_profile = by_id["primitive_tool_lifecycle_to_tool_run"]
+    assert primitive_profile["host_event"] == "primitive_tool_lifecycle_completed"
+    assert primitive_profile["target_operation"] == "recordToolRun"
+    assert primitive_profile["target_entrypoint"] == "aitp_v5_record_tool_run"
+    assert primitive_profile["target_surface"] == "tool_run_record"
+    assert primitive_profile["required_host_fields"] == [
+        "tool_call_id",
+        "tool_name",
+        "status",
+        "output_summary",
+        "topic_id",
+        "claim_id",
+    ]
+    assert primitive_profile["payload_template"]["tool_family"] == "primitive_tool"
+    assert primitive_profile["payload_template"]["environment"]["payload_profile"] == (
+        "primitive_tool_lifecycle_to_tool_run"
+    )
+    assert primitive_profile["result_semantics"]["records_validation_result"] is False
+    assert "explicit evidence or validation" in primitive_profile["strict_boundary"]
 
 
 def test_runtime_payload_profiles_are_public_cli_and_mcp(capsys):

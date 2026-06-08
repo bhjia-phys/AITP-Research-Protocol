@@ -73,6 +73,8 @@ def _validate_profiles(profiles: list[Any], path: str, result: ContractResult) -
 
         if profile_id == "benchmark_adapter_run_to_tool_run":
             _validate_benchmark_adapter_profile(profile, item_path, result)
+        if profile_id == "primitive_tool_lifecycle_to_tool_run":
+            _validate_primitive_tool_lifecycle_profile(profile, item_path, result)
 
 
 def _validate_benchmark_adapter_profile(
@@ -104,6 +106,45 @@ def _validate_benchmark_adapter_profile(
     if isinstance(template, dict):
         if template.get("tool_family") != "benchmark_adapter":
             result.add(f"{path}.payload_template.tool_family", "must be 'benchmark_adapter'")
+        if template.get("evidence_status") != "unreviewed":
+            result.add(f"{path}.payload_template.evidence_status", "must be 'unreviewed'")
+    semantics = profile.get("result_semantics")
+    if isinstance(semantics, dict):
+        if semantics.get("records_validation_result") is not False:
+            result.add(f"{path}.result_semantics.records_validation_result", "must be false")
+        if semantics.get("claim_trust_mutation") != "none":
+            result.add(f"{path}.result_semantics.claim_trust_mutation", "must be 'none'")
+        if semantics.get("can_update_claim_trust") is not False:
+            result.add(f"{path}.result_semantics.can_update_claim_trust", "must be false")
+
+
+def _validate_primitive_tool_lifecycle_profile(
+    profile: dict[str, Any],
+    path: str,
+    result: ContractResult,
+) -> None:
+    expected_required = [
+        "tool_call_id",
+        "tool_name",
+        "status",
+        "output_summary",
+        "topic_id",
+        "claim_id",
+    ]
+    if profile.get("host_event") != "primitive_tool_lifecycle_completed":
+        result.add(f"{path}.host_event", "must be 'primitive_tool_lifecycle_completed'")
+    if profile.get("target_operation") != "recordToolRun":
+        result.add(f"{path}.target_operation", "must be 'recordToolRun'")
+    if profile.get("target_entrypoint") != "aitp_v5_record_tool_run":
+        result.add(f"{path}.target_entrypoint", "must be 'aitp_v5_record_tool_run'")
+    if profile.get("target_surface") != "tool_run_record":
+        result.add(f"{path}.target_surface", "must be 'tool_run_record'")
+    if profile.get("required_host_fields") != expected_required:
+        result.add(f"{path}.required_host_fields", "must name the primitive tool lifecycle contract")
+    template = profile.get("payload_template")
+    if isinstance(template, dict):
+        if template.get("tool_family") != "primitive_tool":
+            result.add(f"{path}.payload_template.tool_family", "must be 'primitive_tool'")
         if template.get("evidence_status") != "unreviewed":
             result.add(f"{path}.payload_template.evidence_status", "must be 'unreviewed'")
     semantics = profile.get("result_semantics")
