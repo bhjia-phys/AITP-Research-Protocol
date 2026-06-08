@@ -680,8 +680,9 @@ downstream diagnostics only: field/path hints and `bridge_called=false` do not
 create AITP records or replace validation/preflight evidence.
 Host execution-precheck summaries around guarded handoffs are the same kind of
 downstream consistency status: they may say whether the host guard allowed or
-blocked a bridge call, but they are not AITP validation, trust preflight,
-evidence, or final-gate state.
+blocked a bridge call, and may echo guard-verified repair-count metadata from
+the handoff hash input. They are still not AITP validation, trust preflight,
+evidence, final-gate state, or missing-ref repair execution.
 Host remediation summaries over those diagnostics are also advisory repair
 hints only. They may suggest which handoff field or explicit execute argument
 to fix, but they do not mutate the handoff or perform an AITP write/preflight.
