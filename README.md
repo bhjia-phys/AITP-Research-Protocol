@@ -656,6 +656,10 @@ If a host centralizes those repair hints into a reusable taxonomy, that
 taxonomy remains a host-runtime helper rather than an AITP contract surface.
 Publishing that taxonomy in a host tool description is still model-facing
 runtime guidance; it does not expose new AITP write or trust surfaces.
+Publishing the same taxonomy as machine-readable host tool metadata, such as a
+`ResearchAction.list_actions` section, remains the same kind of host-runtime
+guidance. AITP still treats the canonical contract as the typed entrypoint,
+record, evidence, validation, and trust-preflight surfaces it owns.
 
 Exploratory record reasoning fields are likewise host-facing process handles:
 Hakimi normalizes them into `params.theoryReasoning`, then renders them into the
