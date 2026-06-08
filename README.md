@@ -655,7 +655,9 @@ no-trust boundary.
 Hosts may summarize those suggested fields in a local repair checklist for
 model ergonomics, but that checklist is downstream rendering over
 `record_ref_lookup`; it is not a new AITP entrypoint, validation result, trust
-preflight, or write execution.
+preflight, or write execution. A host may also name the exact later bridge
+operation implied by `suggested_next_operation`, but that is a repair-action
+hint only and must not alter the currently selected write/preflight call.
 A host-side confirmation summary over that reviewed call draft is also not an
 AITP trust preflight. It may classify remaining placeholder, source-review, and
 preflight-scope diagnostics, and may count repair-hinted missing refs so its
