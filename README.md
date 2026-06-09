@@ -683,6 +683,11 @@ claim-trust signal.
 If the host exposes that taxonomy in a model-facing action listing, the listing
 is still read-only host metadata. It does not add an AITP public surface or
 permit a model to bypass fresh draft review and explicit write execution.
+If a host carries this into a runtime `ContextPack` reminder, that reminder is
+also downstream host navigation. It may point to taxonomy inspection, a fresh
+draft, reviewed overrides, readiness inspection, and explicit execution, but it
+does not authorize writes or become AITP evidence, validation, final-gate, or
+trust state.
 If a host also turns a selected decision-tree option into a prefilled
 `execute_aitp_write_bridge` call draft, that draft is still downstream guidance
 over AITP-owned `payload_draft` / `payload_template` fields. It may expose
