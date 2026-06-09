@@ -707,6 +707,12 @@ returned result. It is not an AITP public surface, not a second canonical
 record, not a next-payload mutation, not a next write, and not evidence
 validation, source-support proof, final-gate satisfaction, or claim-trust
 authority.
+If a host later compiles that summary into a continuation binding, the binding
+is also downstream runtime navigation. It may carry the returned canonical ref
+as candidate reviewed override input for a fresh draft, but it must not infer
+chunk ids, promotion stages, payload values, source support, validation, final
+gate satisfaction, or trust changes; normal AITP lookup/write/validation/
+trust-preflight surfaces still own those facts.
 If a host also turns a selected decision-tree option into a prefilled
 `execute_aitp_write_bridge` call draft, that draft is still downstream guidance
 over AITP-owned `payload_draft` / `payload_template` fields. It may expose
