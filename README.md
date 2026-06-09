@@ -664,6 +664,11 @@ model copy `source_asset:<id>`, `reference_location:<id>`, or `evidence:<id>`
 into later reviewed payloads, but it does not mutate the next payload, execute
 the next write, validate source support, satisfy final gates, or change claim
 trust.
+Hosts may also turn those carried refs into copyable reviewed-override
+suggestions for a later draft. Such suggestions are still advisory host output:
+the payload changes only when the model or user explicitly provides reviewed
+override fields to a fresh draft action, and the resulting write still requires
+the normal readiness checks and separate explicit AITP write/preflight call.
 If a host also turns a selected decision-tree option into a prefilled
 `execute_aitp_write_bridge` call draft, that draft is still downstream guidance
 over AITP-owned `payload_draft` / `payload_template` fields. It may expose
