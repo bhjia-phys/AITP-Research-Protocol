@@ -36,6 +36,7 @@ _PUBLIC_SURFACE_NAMES = (
     "workspace_interaction_preview_bundle",
     "literature_intake_record_result",
     "literature_intake_suggestion",
+    "literature_source_review_handoff",
     "kimi_code_hook_config",
     "kimi_code_hook_installation",
     "knowledge_connector_catalog",
@@ -161,6 +162,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "workspace_interaction_preview_bundle": "orientation-only host startup bundle summarizing per-session natural conversation recording boundaries without updating kernel state",
     "literature_intake_record_result": "guarded literature intake write result that records only an orientation reference location and returns non-trust-changing evidence/sensemaking candidates",
     "literature_intake_suggestion": "read-only literature intake suggestion that proposes reference, sensemaking, and scoped evidence templates without treating summaries as evidence",
+    "literature_source_review_handoff": "read-only handoff packet composing literature intake, record-ref lookup, source-stack coverage, and source reconstruction review without source-support, validation, write, final-gate, or trust authority",
     "kimi_code_hook_config": "contracted Kimi Code TOML hook config generated from runtime hook installation metadata",
     "kimi_code_hook_installation": "contracted safe merge of AITP hooks into Kimi Code TOML config without treating config as truth",
     "knowledge_connector_catalog": "contracted catalog of knowledge connectors for notes, literature, and learning memory",
@@ -419,6 +421,9 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_literature_intake_record_result,
         require_valid_literature_intake_suggestion,
     )
+    from brain.v5.literature_source_review_handoff_contracts import (
+        require_valid_literature_source_review_handoff,
+    )
     from brain.v5.lane_exemplar_contracts import (
         require_valid_lane_exemplar_manifest,
         require_valid_lane_exemplar_record,
@@ -480,6 +485,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "workspace_interaction_preview_bundle": require_valid_workspace_interaction_preview_bundle,
         "literature_intake_record_result": require_valid_literature_intake_record_result,
         "literature_intake_suggestion": require_valid_literature_intake_suggestion,
+        "literature_source_review_handoff": require_valid_literature_source_review_handoff,
         "kimi_code_hook_config": require_valid_kimi_code_hook_config,
         "kimi_code_hook_installation": require_valid_kimi_code_hook_installation,
         "knowledge_connector_catalog": require_valid_knowledge_connector_catalog,

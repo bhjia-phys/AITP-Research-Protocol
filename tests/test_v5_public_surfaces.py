@@ -36,6 +36,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "workspace_interaction_preview_bundle",
         "literature_intake_record_result",
         "literature_intake_suggestion",
+        "literature_source_review_handoff",
             "kimi_code_hook_config",
             "kimi_code_hook_installation",
             "knowledge_connector_catalog",

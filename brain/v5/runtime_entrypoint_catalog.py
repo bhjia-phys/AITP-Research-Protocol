@@ -153,6 +153,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_record_literature_candidate",
         "surface": "literature_intake_record_result",
     },
+    "literature_source_review_handoff": {
+        "cli": "aitp-v5 literature source-review-handoff <args>",
+        "mcp": "aitp_v5_build_literature_source_review_handoff",
+        "surface": "literature_source_review_handoff",
+    },
     "record_final_output_profile": {
         "cli": "aitp-v5 output profile record <args>",
         "mcp": "aitp_v5_record_final_output_profile",

@@ -232,6 +232,113 @@ def test_literature_intake_cli_mcp_runtime_and_surface_contract(tmp_path, capsys
     )
 
 
+def test_literature_source_review_handoff_composes_read_only_surfaces(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.literature_source_review_handoff import build_literature_source_review_handoff
+    from brain.v5.mcp_tools import aitp_v5_build_literature_source_review_handoff
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+
+    ws, claim = _setup_topic(tmp_path, active_claim=True)
+
+    payload = build_literature_source_review_handoff(
+        ws,
+        session_id="chaos-lit",
+        uri="https://arxiv.org/abs/2604.14695",
+        label="Level statistics in long-range spin chains",
+        external_id="arXiv:2604.14695",
+        short_summary="Level statistics prior art.",
+        detected_relevance="close_prior_art",
+        scoped_output="alpha-axis classification scope",
+        reviewed_refs=["source_asset:missing-source", "reference_location:missing-location"],
+    )
+    assert require_valid_public_surface("literature_source_review_handoff", payload) == payload
+    assert payload["kind"] == "literature_source_review_handoff"
+    assert payload["claim_id"] == claim.claim_id
+    assert payload["literature_intake_suggestion"]["kind"] == "literature_intake_suggestion"
+    assert payload["record_ref_lookup"]["kind"] == "record_ref_lookup"
+    assert payload["record_ref_lookup"]["source_support_result"] is False
+    assert payload["record_ref_lookup"]["evidence_created"] is False
+    assert payload["source_stack_coverage_item"]["claim_id"] == claim.claim_id
+    assert payload["source_reconstruction_review_packet"]["claim_id"] == claim.claim_id
+    assert payload["handoff_policy"]["requires_explicit_next_entrypoint"] is True
+    assert "source_support_result" in payload["handoff_policy"]["forbidden_uses"]
+    assert payload["allowed_next_tool_call"] == {
+        "action": "plan_primitive_tools",
+        "action_id": "source.review_context",
+        "requires_explicit_next_action": True,
+        "records_validation_result": False,
+        "source_support_result": False,
+        "claim_trust_mutation": "none",
+    }
+    assert payload["read_only"] is True
+    assert payload["requires_explicit_next_action"] is True
+    assert payload["bridge_called"] is False
+    assert payload["executes_write_now"] is False
+    assert payload["mutates_next_payload_now"] is False
+    assert payload["infers_payload_values"] is False
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["can_update_claim_trust"] is False
+    assert payload["records_validation_result"] is False
+    assert payload["source_support_result"] is False
+    assert payload["evidence_created"] is False
+    assert payload["validation_created"] is False
+    assert payload["write_executed"] is False
+    assert payload["trust_update_forbidden"] is True
+    assert payload["claim_trust_mutation"] == "none"
+
+    assert main(
+        [
+            "--base",
+            str(ws.base),
+            "literature",
+            "source-review-handoff",
+            "--session",
+            "chaos-lit",
+            "--uri",
+            "https://arxiv.org/abs/2604.14695",
+            "--label",
+            "Level statistics in long-range spin chains",
+            "--external-id",
+            "arXiv:2604.14695",
+            "--summary",
+            "Level statistics prior art.",
+            "--detected-relevance",
+            "close_prior_art",
+            "--scoped-output",
+            "alpha-axis classification scope",
+            "--reviewed-ref",
+            "source_asset:missing-source",
+        ]
+    ) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_literature_source_review_handoff(
+        str(ws.base),
+        session_id="chaos-lit",
+        uri="https://arxiv.org/abs/2604.14695",
+        label="Level statistics in long-range spin chains",
+        external_id="arXiv:2604.14695",
+        short_summary="Level statistics prior art.",
+        detected_relevance="close_prior_art",
+        scoped_output="alpha-axis classification scope",
+        reviewed_refs=["source_asset:missing-source"],
+    )
+
+    assert require_valid_public_surface("literature_source_review_handoff", cli_payload) == cli_payload
+    assert require_valid_public_surface("literature_source_review_handoff", mcp_payload) == mcp_payload
+    assert cli_payload["record_ref_lookup"]["lookup_count"] == 1
+    assert mcp_payload["record_ref_lookup"]["refs"][0]["suggested_next_entrypoint"] == "register_source_asset"
+    assert runtime_entrypoints()["literature_source_review_handoff"] == {
+        "cli": "aitp-v5 literature source-review-handoff <args>",
+        "mcp": "aitp_v5_build_literature_source_review_handoff",
+        "surface": "literature_source_review_handoff",
+    }
+
+
 def test_literature_intake_includes_output_profile_context_when_topic_has_profile(tmp_path):
     from brain.v5.literature_intake import suggest_literature_intake
     from brain.v5.output_stability import record_final_output_profile

@@ -145,7 +145,11 @@ def sample_args_for_template(template: str) -> list[str]:
             "--summary",
             "Canonical source asset identity for the raw paper.",
         ]
-    if template.startswith("literature suggest-intake") or template.startswith("literature record-candidate"):
+    if (
+        template.startswith("literature suggest-intake")
+        or template.startswith("literature record-candidate")
+        or template.startswith("literature source-review-handoff")
+    ):
         return [
             "--session",
             "s1",
@@ -157,6 +161,8 @@ def sample_args_for_template(template: str) -> list[str]:
             "Close prior art.",
             "--detected-relevance",
             "close_prior_art",
+            "--reviewed-ref",
+            "source_asset:source-asset-edge-counting",
         ]
     if template.startswith("intent packet record"):
         return [

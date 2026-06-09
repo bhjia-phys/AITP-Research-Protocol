@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 
 from brain.v5.literature_intake import record_literature_candidate, suggest_literature_intake
+from brain.v5.literature_source_review_handoff import build_literature_source_review_handoff
 from brain.v5.public_surfaces import require_valid_public_surface
 
 
@@ -13,6 +14,7 @@ def add_literature_parser(sp: argparse._SubParsersAction) -> None:
     sub = parser.add_subparsers(dest="literature_command", required=True)
     _add_intake_args(sub.add_parser("suggest-intake"))
     _add_intake_args(sub.add_parser("record-candidate"))
+    _add_intake_args(sub.add_parser("source-review-handoff"))
 
 
 def dispatch_literature_command(args: argparse.Namespace, ws) -> dict:
@@ -36,6 +38,11 @@ def dispatch_literature_command(args: argparse.Namespace, ws) -> dict:
             "literature_intake_record_result",
             record_literature_candidate(ws, **kwargs),
         )
+    if args.literature_command == "source-review-handoff":
+        return require_valid_public_surface(
+            "literature_source_review_handoff",
+            build_literature_source_review_handoff(ws, **kwargs, reviewed_refs=args.reviewed_refs),
+        )
     raise SystemExit(f"unsupported literature command: {args.literature_command}")
 
 
@@ -48,3 +55,4 @@ def _add_intake_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--detected-relevance", required=True)
     parser.add_argument("--claim", default="", dest="optional_claim_id")
     parser.add_argument("--scoped-output", default="")
+    parser.add_argument("--reviewed-ref", action="append", default=[], dest="reviewed_refs")
