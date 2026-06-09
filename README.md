@@ -694,6 +694,12 @@ navigation. It may help the model call the normal fresh draft surface with
 reviewed overrides, but it is not an AITP public surface, not write
 authorization, not payload inference, and not evidence, validation,
 source-support, final-gate, or trust state.
+If a host echoes whether a carried-ref repair draft still needs reviewed
+overrides, is ready for readiness inspection, passed readiness inspection, or
+passed explicit-execute precheck, that echo is also downstream status
+rendering. It does not authorize execution, mutate AITP state, replace the
+normal readiness check, or become evidence, validation, final-gate
+satisfaction, source support, or trust state.
 If a host also turns a selected decision-tree option into a prefilled
 `execute_aitp_write_bridge` call draft, that draft is still downstream guidance
 over AITP-owned `payload_draft` / `payload_template` fields. It may expose
