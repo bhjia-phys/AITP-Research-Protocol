@@ -656,6 +656,14 @@ source/reference/evidence refs that AITP says must already exist. That is still
 host-side readiness checking over AITP-owned policy: it does not execute the
 bridge, create records, validate source support, satisfy final gates, or update
 claim trust.
+After a host explicitly executes one of the normal AITP write entrypoints and
+receives a typed write result, it may show that result's canonical ref as a
+carried-ref handoff for later `promotion_write_sequence` steps. That handoff is
+downstream ergonomics over an already returned AITP record id: it may help a
+model copy `source_asset:<id>`, `reference_location:<id>`, or `evidence:<id>`
+into later reviewed payloads, but it does not mutate the next payload, execute
+the next write, validate source support, satisfy final gates, or change claim
+trust.
 If a host also turns a selected decision-tree option into a prefilled
 `execute_aitp_write_bridge` call draft, that draft is still downstream guidance
 over AITP-owned `payload_draft` / `payload_template` fields. It may expose
