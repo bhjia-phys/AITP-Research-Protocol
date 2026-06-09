@@ -680,6 +680,9 @@ If the host renders a diagnostic taxonomy for those parse failures, the taxonomy
 is still host repair guidance only. It may name the malformed field/path, but it
 does not become an AITP validation result, final-gate check, write authority, or
 claim-trust signal.
+If the host exposes that taxonomy in a model-facing action listing, the listing
+is still read-only host metadata. It does not add an AITP public surface or
+permit a model to bypass fresh draft review and explicit write execution.
 If a host also turns a selected decision-tree option into a prefilled
 `execute_aitp_write_bridge` call draft, that draft is still downstream guidance
 over AITP-owned `payload_draft` / `payload_template` fields. It may expose
