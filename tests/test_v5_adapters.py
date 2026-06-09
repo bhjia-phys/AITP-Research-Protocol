@@ -3062,15 +3062,58 @@ def test_adapter_packet_exposes_curated_rag_corpus_as_heuristic_context(tmp_path
 
 
 def test_curated_rag_corpus_is_public_cli_and_mcp(capsys):
-    from brain.v5.curated_rag_corpus import curated_rag_corpus, search_curated_rag_corpus
-    from brain.v5.mcp_tools import aitp_v5_get_curated_rag_corpus, aitp_v5_search_curated_rag_corpus
+    from brain.v5.curated_rag_corpus import curated_rag_corpus, read_curated_rag_chunk, search_curated_rag_corpus
+    from brain.v5.mcp_tools import (
+        aitp_v5_get_curated_rag_chunk,
+        aitp_v5_get_curated_rag_corpus,
+        aitp_v5_search_curated_rag_corpus,
+    )
     from brain.v5.public_surfaces import require_valid_public_surface
 
     corpus = curated_rag_corpus()
+    chunk_id = "curated_rag_chunk:source_backtrace_orientation:0001"
+    chunk = read_curated_rag_chunk(chunk_id)
     search = search_curated_rag_corpus("source claim evidence", limit=2)
 
     assert require_valid_public_surface("curated_rag_corpus", corpus) == corpus
+    assert require_valid_public_surface("curated_rag_chunk", chunk) == chunk
     assert require_valid_public_surface("curated_rag_search_result", search) == search
+    assert chunk["kind"] == "curated_rag_chunk"
+    assert chunk["truth_source"] == "curated_rag_chunk_manifest"
+    assert chunk["state_effect"] == "read_only"
+    assert chunk["retrieval_role"] == "heuristic_context"
+    assert chunk["read_surface_effect"] == "orientation_only"
+    assert chunk["lookup_creates_records"] is False
+    assert chunk["records_validation_result"] is False
+    assert chunk["claim_trust_mutation"] == "none"
+    assert chunk["can_update_claim_trust"] is False
+    assert chunk["requires_promotion_for_claim_support"] is True
+    assert chunk["promotion_required_before_claim_support"] is True
+    assert chunk["chunk_id"] == chunk_id
+    assert chunk["document_id"] == "curated_rag_doc:source_backtrace_orientation"
+    assert chunk["chunk"]["chunk_id"] == chunk_id
+    assert chunk["chunk"]["document_id"] == chunk["document_id"]
+    assert chunk["chunk"]["content_hash"] == "sha256:curated-rag-chunk-source-backtrace-0001"
+    assert chunk["chunk"]["orientation_only"] is True
+    assert chunk["document"]["document_id"] == chunk["document_id"]
+    assert chunk["document"]["content_hash"] == "sha256:curated-rag-source-backtrace-orientation-v1"
+    assert chunk["document"]["intended_use"] == "background_rag"
+    assert chunk["document"]["orientation_only"] is True
+    assert chunk["promotion_path"] == [
+        "source_asset",
+        "reference_location",
+        "evidence",
+        "validation",
+        "trust_preflight",
+    ]
+    assert chunk["promotion_boundary"] == {
+        "retrieval_is_claim_support": False,
+        "lookup_is_evidence": False,
+        "lookup_records_validation_result": False,
+        "lookup_satisfies_final_gate": False,
+        "lookup_can_update_claim_trust": False,
+        "requires_user_or_model_decision_before_write": True,
+    }
     assert search["result_role"] == "heuristic_context"
     assert search["requires_promotion_for_claim_support"] is True
     assert search["records_validation_result"] is False
@@ -3082,6 +3125,10 @@ def test_curated_rag_corpus_is_public_cli_and_mcp(capsys):
         "ok": True,
         "curated_rag_corpus": corpus,
     }
+    assert _invoke(["adapter", "curated-rag-chunk", chunk_id], capsys) == {
+        "ok": True,
+        "curated_rag_chunk": chunk,
+    }
     assert _invoke(["adapter", "curated-rag-search", "source claim evidence", "--limit", "2"], capsys) == {
         "ok": True,
         "curated_rag_search_result": search,
@@ -3089,6 +3136,10 @@ def test_curated_rag_corpus_is_public_cli_and_mcp(capsys):
     assert aitp_v5_get_curated_rag_corpus() == {
         "ok": True,
         "curated_rag_corpus": corpus,
+    }
+    assert aitp_v5_get_curated_rag_chunk(chunk_id) == {
+        "ok": True,
+        "curated_rag_chunk": chunk,
     }
     assert aitp_v5_search_curated_rag_corpus("source claim evidence", limit=2) == {
         "ok": True,
@@ -3502,6 +3553,7 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
         "lookupRecordRefs",
         "readCuratedRagCorpus",
         "searchCuratedRagCorpus",
+        "readCuratedRagChunk",
         "draftCuratedRagPromotion",
     ]
     assert "ingestCuratedRagCorpus" in manifest["target_groups"]["write"]
@@ -3522,6 +3574,11 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
     assert by_operation["searchCuratedRagCorpus"]["mcp_tool"] == "aitp_v5_search_curated_rag_corpus"
     assert by_operation["searchCuratedRagCorpus"]["cli_fallback"] == "aitp-v5 adapter curated-rag-search <query> <args>"
     assert by_operation["searchCuratedRagCorpus"]["surface"] == "curated_rag_search_result"
+    assert by_operation["readCuratedRagChunk"]["mcp_tool"] == "aitp_v5_get_curated_rag_chunk"
+    assert by_operation["readCuratedRagChunk"]["cli_fallback"] == "aitp-v5 adapter curated-rag-chunk <chunk-id>"
+    assert by_operation["readCuratedRagChunk"]["surface"] == "curated_rag_chunk"
+    assert by_operation["readCuratedRagChunk"]["execution_role"] == "read"
+    assert by_operation["readCuratedRagChunk"]["state_effect"] == "read_only"
     assert by_operation["draftCuratedRagPromotion"]["mcp_tool"] == "aitp_v5_draft_curated_rag_promotion"
     assert by_operation["draftCuratedRagPromotion"]["cli_fallback"] == (
         "aitp-v5 adapter curated-rag-promotion-draft <chunk-id> <args>"
@@ -3565,6 +3622,11 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
         "required": ["query"],
         "optional": ["base", "limit"],
         "source": "aitp_v5_search_curated_rag_corpus",
+    }
+    assert by_operation["readCuratedRagChunk"]["mcp_arguments"] == {
+        "required": ["chunk_id"],
+        "optional": ["base"],
+        "source": "aitp_v5_get_curated_rag_chunk",
     }
     assert by_operation["draftCuratedRagPromotion"]["mcp_arguments"] == {
         "required": ["chunk_id"],

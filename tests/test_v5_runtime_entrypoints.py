@@ -78,6 +78,11 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
         "mcp": "aitp_v5_get_runtime_payload_profiles",
         "surface": "runtime_payload_profiles",
     }
+    assert entrypoints["curated_rag_chunk"] == {
+        "cli": "aitp-v5 adapter curated-rag-chunk <chunk-id>",
+        "mcp": "aitp_v5_get_curated_rag_chunk",
+        "surface": "curated_rag_chunk",
+    }
     assert entrypoints["curated_rag_promotion_draft"] == {
         "cli": "aitp-v5 adapter curated-rag-promotion-draft <chunk-id> <args>",
         "mcp": "aitp_v5_draft_curated_rag_promotion",
@@ -212,6 +217,11 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "cli": "aitp-v5 adapter payload-profiles",
             "mcp": "aitp_v5_get_runtime_payload_profiles",
             "surface": "runtime_payload_profiles",
+        },
+        "curated_rag_chunk": {
+            "cli": "aitp-v5 adapter curated-rag-chunk <chunk-id>",
+            "mcp": "aitp_v5_get_curated_rag_chunk",
+            "surface": "curated_rag_chunk",
         },
         "record_evidence": {
             "cli": "aitp-v5 evidence record <args>",
@@ -348,6 +358,17 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
         "required": [],
         "optional": [],
         "source": "aitp_v5_get_runtime_payload_profiles",
+    }
+    assert by_operation["readCuratedRagChunk"]["entrypoint_key"] == "curated_rag_chunk"
+    assert by_operation["readCuratedRagChunk"]["mcp_tool"] == "aitp_v5_get_curated_rag_chunk"
+    assert by_operation["readCuratedRagChunk"]["cli_fallback"] == "aitp-v5 adapter curated-rag-chunk <chunk-id>"
+    assert by_operation["readCuratedRagChunk"]["surface"] == "curated_rag_chunk"
+    assert by_operation["readCuratedRagChunk"]["execution_role"] == "read"
+    assert by_operation["readCuratedRagChunk"]["state_effect"] == "read_only"
+    assert by_operation["readCuratedRagChunk"]["mcp_arguments"] == {
+        "required": ["chunk_id"],
+        "optional": ["base"],
+        "source": "aitp_v5_get_curated_rag_chunk",
     }
     assert by_operation["preflightTrustUpdate"]["mcp_tool"] == "aitp_v5_preflight_trust_update"
     assert by_operation["preflightTrustUpdate"]["state_effect"] == "preflight_only"

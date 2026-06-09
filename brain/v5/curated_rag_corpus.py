@@ -371,6 +371,95 @@ def search_curated_rag_corpus(
     }
 
 
+def read_curated_rag_chunk(
+    chunk_id: str,
+    *,
+    base: str | Path | WorkspacePaths | None = None,
+) -> dict[str, Any]:
+    """Return one curated RAG chunk with canonical manifest identity metadata.
+
+    This is a read-only lookup surface. It exposes chunk/document identity,
+    anchor, hash, and source metadata for host planning, but it does not promote
+    the chunk into source support, evidence, validation, final-gate state, or
+    claim trust.
+    """
+
+    catalog = curated_rag_corpus(base)
+    chunk = _find_by_id(catalog["chunks"], "chunk_id", chunk_id)
+    if chunk is None:
+        raise ValueError(f"curated RAG chunk not found: {chunk_id}")
+    document = _find_by_id(catalog["documents"], "document_id", chunk["document_id"])
+    if document is None:
+        raise ValueError(f"curated RAG document not found for chunk: {chunk_id}")
+    return {
+        "kind": "curated_rag_chunk",
+        "catalog_version": CATALOG_VERSION,
+        "truth_source": "curated_rag_chunk_manifest",
+        "state_effect": "read_only",
+        "retrieval_role": "heuristic_context",
+        "read_surface_effect": "orientation_only",
+        "summary_inputs_trusted": False,
+        "can_update_claim_trust": False,
+        "records_validation_result": False,
+        "claim_trust_mutation": "none",
+        "requires_promotion_for_claim_support": True,
+        "promotion_required_before_claim_support": True,
+        "lookup_creates_records": False,
+        "corpus_id": catalog["corpus_id"],
+        "chunk_id": chunk["chunk_id"],
+        "document_id": document["document_id"],
+        "index_mode": catalog["index_policy"]["active_index_mode"],
+        "index_status": catalog["index_policy"].get("index_status", "fresh"),
+        "stale_index_diagnostics": catalog["index_policy"].get("stale_index_diagnostics", []),
+        "chunk": {
+            "chunk_id": chunk["chunk_id"],
+            "document_id": chunk["document_id"],
+            "anchor": chunk["anchor"],
+            "summary": chunk["summary"],
+            "text": chunk["text"],
+            "tags": chunk["tags"],
+            "token_estimate": chunk["token_estimate"],
+            "content_hash": chunk["content_hash"],
+            "retrieval_role": "heuristic_context",
+            "orientation_only": True,
+            "can_update_claim_trust": False,
+        },
+        "document": {
+            "document_id": document["document_id"],
+            "title": document["title"],
+            "asset_type": document["asset_type"],
+            "source_uri": document["source_uri"],
+            "version_anchor": document["version_anchor"],
+            "content_hash": document["content_hash"],
+            "tags": document["tags"],
+            "domain_hints": document["domain_hints"],
+            "topic_hints": document["topic_hints"],
+            "language": document["language"],
+            "priority": document["priority"],
+            "intended_use": document["intended_use"],
+            "trust_status": "heuristic_context",
+            "orientation_only": True,
+            "can_update_claim_trust": False,
+        },
+        "promotion_path": [
+            "source_asset",
+            "reference_location",
+            "evidence",
+            "validation",
+            "trust_preflight",
+        ],
+        "forbidden_uses": _FORBIDDEN_USES,
+        "promotion_boundary": {
+            "retrieval_is_claim_support": False,
+            "lookup_is_evidence": False,
+            "lookup_records_validation_result": False,
+            "lookup_satisfies_final_gate": False,
+            "lookup_can_update_claim_trust": False,
+            "requires_user_or_model_decision_before_write": True,
+        },
+    }
+
+
 def draft_curated_rag_promotion(
     chunk_id: str,
     *,

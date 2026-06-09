@@ -39,6 +39,11 @@ _MCP_ARGUMENT_SPECS: dict[str, dict[str, Any]] = {
         "optional": ["base", "limit"],
         "source": "aitp_v5_search_curated_rag_corpus",
     },
+    "curated_rag_chunk": {
+        "required": ["chunk_id"],
+        "optional": ["base"],
+        "source": "aitp_v5_get_curated_rag_chunk",
+    },
     "curated_rag_promotion_draft": {
         "required": ["chunk_id"],
         "optional": ["base", "topic_id", "claim_id", "connector_id", "promotion_intent"],
@@ -53,6 +58,7 @@ _BRIDGE_TARGET_SPECS: tuple[tuple[str, str, str, str], ...] = (
     ("lookupRecordRefs", "record_ref_lookup", "read", "read_only"),
     ("readCuratedRagCorpus", "curated_rag_corpus", "read", "read_only"),
     ("searchCuratedRagCorpus", "curated_rag_search", "read", "read_only"),
+    ("readCuratedRagChunk", "curated_rag_chunk", "read", "read_only"),
     ("draftCuratedRagPromotion", "curated_rag_promotion_draft", "read", "read_only"),
     ("ingestCuratedRagCorpus", "ingest_curated_rag_corpus", "write", "curated_rag_manifest_write"),
     ("recordExploratoryRecord", "record_exploratory_record", "write", "typed_record_write"),

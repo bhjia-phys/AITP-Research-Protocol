@@ -51,6 +51,8 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["--topic", "fqhe", "--claim", "claim-fqhe", "--artifact-uri", "results/check.json", "--artifact-summary", "Finite-size result file.", "--supports-output", "finite_size_check", "--scope", "N<=10 only"]
     if template.startswith("curated-rag ingest"):
         return ["--path", "notes/dmft-orientation.md", "--tag", "dmft", "--topic-hint", "gw-dmft"]
+    if template.startswith("adapter curated-rag-chunk"):
+        return ["curated_rag_chunk:source_backtrace_orientation:0001"]
     if template.startswith("adapter curated-rag-promotion-draft"):
         return ["--topic", "fqhe", "--claim", "claim-fqhe"]
     if template.startswith("adapter record-ref-lookup"):

@@ -15,6 +15,7 @@ from brain.v5.cli_progress import compact_final_readiness
 from brain.v5.curated_rag_corpus import (
     curated_rag_corpus,
     draft_curated_rag_promotion,
+    read_curated_rag_chunk,
     search_curated_rag_corpus,
 )
 from brain.v5.final_readiness import audit_final_engineering_readiness
@@ -46,6 +47,7 @@ def add_adapter_parser(sp) -> None:
     aps.add_parser("payload-profiles")
     arr = aps.add_parser("record-ref-lookup"); arr.add_argument("refs", nargs="+")
     aps.add_parser("curated-rag-corpus")
+    arc = aps.add_parser("curated-rag-chunk"); arc.add_argument("chunk_id")
     ars = aps.add_parser("curated-rag-search"); ars.add_argument("query"); ars.add_argument("--limit", type=int, default=5)
     arp = aps.add_parser("curated-rag-promotion-draft"); arp.add_argument("chunk_id")
     arp.add_argument("--topic", default="", dest="topic_id"); arp.add_argument("--claim", default="", dest="claim_id")
@@ -116,6 +118,14 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
             "curated_rag_corpus": require_valid_public_surface(
                 "curated_rag_corpus",
                 curated_rag_corpus(ws),
+            ),
+        }
+    if args.adapter_command == "curated-rag-chunk":
+        return {
+            "ok": True,
+            "curated_rag_chunk": require_valid_public_surface(
+                "curated_rag_chunk",
+                read_curated_rag_chunk(args.chunk_id, base=ws),
             ),
         }
     if args.adapter_command == "curated-rag-search":

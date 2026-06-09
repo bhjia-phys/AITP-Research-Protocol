@@ -110,6 +110,88 @@ def require_valid_curated_rag_search_result(payload: dict[str, Any]) -> dict[str
     return payload
 
 
+def validate_curated_rag_chunk(
+    payload: Any,
+    *,
+    path: str = "curated_rag_chunk",
+) -> ContractResult:
+    result = ContractResult()
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return result
+
+    _validate_common_no_trust(payload, path, result)
+    if payload.get("kind") != "curated_rag_chunk":
+        result.add(f"{path}.kind", "must be 'curated_rag_chunk'")
+    if payload.get("truth_source") != "curated_rag_chunk_manifest":
+        result.add(f"{path}.truth_source", "must be 'curated_rag_chunk_manifest'")
+    if payload.get("state_effect") != "read_only":
+        result.add(f"{path}.state_effect", "must be 'read_only'")
+    if payload.get("retrieval_role") != "heuristic_context":
+        result.add(f"{path}.retrieval_role", "must be 'heuristic_context'")
+    if payload.get("read_surface_effect") != "orientation_only":
+        result.add(f"{path}.read_surface_effect", "must be 'orientation_only'")
+    if payload.get("records_validation_result") is not False:
+        result.add(f"{path}.records_validation_result", "must be false")
+    if payload.get("claim_trust_mutation") != "none":
+        result.add(f"{path}.claim_trust_mutation", "must be 'none'")
+    if payload.get("requires_promotion_for_claim_support") is not True:
+        result.add(f"{path}.requires_promotion_for_claim_support", "must be true")
+    if payload.get("promotion_required_before_claim_support") is not True:
+        result.add(f"{path}.promotion_required_before_claim_support", "must be true")
+    if payload.get("lookup_creates_records") is not False:
+        result.add(f"{path}.lookup_creates_records", "must be false")
+    for key in ("corpus_id", "chunk_id", "document_id", "index_mode"):
+        if not isinstance(payload.get(key), str) or not payload.get(key):
+            result.add(f"{path}.{key}", "must be a non-empty string")
+    if payload.get("index_mode") not in {"lexical_fixture", "lexical_file_backed"}:
+        result.add(f"{path}.index_mode", "must be a supported lexical curated RAG mode")
+    if payload.get("index_status") is not None and not isinstance(payload.get("index_status"), str):
+        result.add(f"{path}.index_status", "must be a string when present")
+    for key in ("stale_index_diagnostics", "promotion_path", "forbidden_uses"):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    if payload.get("forbidden_uses") != [
+        "evidence_support",
+        "validation_result",
+        "claim_trust_update",
+        "trust_apply",
+        "final_gate_satisfaction",
+    ]:
+        result.add(f"{path}.forbidden_uses", "must list evidence/validation/trust exclusions")
+    if payload.get("promotion_path") != [
+        "source_asset",
+        "reference_location",
+        "evidence",
+        "validation",
+        "trust_preflight",
+    ]:
+        result.add(f"{path}.promotion_path", "must describe the normal AITP promotion path")
+
+    _validate_promotion_chunk(payload.get("chunk"), f"{path}.chunk", result)
+    if isinstance(payload.get("chunk"), dict):
+        if payload["chunk"].get("chunk_id") != payload.get("chunk_id"):
+            result.add(f"{path}.chunk.chunk_id", "must match top-level chunk_id")
+        if payload["chunk"].get("document_id") != payload.get("document_id"):
+            result.add(f"{path}.chunk.document_id", "must match top-level document_id")
+        if not isinstance(payload["chunk"].get("token_estimate"), int) or payload["chunk"]["token_estimate"] <= 0:
+            result.add(f"{path}.chunk.token_estimate", "must be a positive integer")
+    _validate_promotion_document(payload.get("document"), f"{path}.document", result)
+    if isinstance(payload.get("document"), dict):
+        if payload["document"].get("document_id") != payload.get("document_id"):
+            result.add(f"{path}.document.document_id", "must match top-level document_id")
+        if not isinstance(payload["document"].get("intended_use"), str) or not payload["document"].get("intended_use"):
+            result.add(f"{path}.document.intended_use", "must be a non-empty string")
+    _validate_lookup_promotion_boundary(payload.get("promotion_boundary"), f"{path}.promotion_boundary", result)
+    return result
+
+
+def require_valid_curated_rag_chunk(payload: dict[str, Any]) -> dict[str, Any]:
+    result = validate_curated_rag_chunk(payload)
+    if not result.ok:
+        raise ContractError(result)
+    return payload
+
+
 def validate_curated_rag_ingest_result(
     payload: Any,
     *,
@@ -482,6 +564,24 @@ def _validate_promotion_boundary(item: Any, path: str, result: ContractResult) -
         "draft_records_validation_result",
         "draft_satisfies_final_gate",
         "draft_can_update_claim_trust",
+    ]
+    for key in false_keys:
+        if item.get(key) is not False:
+            result.add(f"{path}.{key}", "must be false")
+    if item.get("requires_user_or_model_decision_before_write") is not True:
+        result.add(f"{path}.requires_user_or_model_decision_before_write", "must be true")
+
+
+def _validate_lookup_promotion_boundary(item: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(item, path, result)
+    if not isinstance(item, dict):
+        return
+    false_keys = [
+        "retrieval_is_claim_support",
+        "lookup_is_evidence",
+        "lookup_records_validation_result",
+        "lookup_satisfies_final_gate",
+        "lookup_can_update_claim_trust",
     ]
     for key in false_keys:
         if item.get(key) is not False:

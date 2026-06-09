@@ -16,6 +16,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "codex_hook_bridge",
         "codex_hook_installation",
         "code_state_record",
+        "curated_rag_chunk",
         "curated_rag_corpus",
         "curated_rag_ingest_result",
         "evidence_record",

@@ -15,6 +15,7 @@ from brain.v5.curated_rag_corpus import (
     curated_rag_corpus,
     draft_curated_rag_promotion,
     ingest_curated_rag_corpus,
+    read_curated_rag_chunk,
     search_curated_rag_corpus,
 )
 from brain.v5.exploration import exploratory_record_payload, record_exploratory_record
@@ -673,6 +674,18 @@ def aitp_v5_search_curated_rag_corpus(query: str, *, limit: int = 5, base: str =
         "curated_rag_search_result": require_valid_public_surface(
             "curated_rag_search_result",
             search_curated_rag_corpus(query, limit=limit, base=base or None),
+        ),
+    }
+
+
+def aitp_v5_get_curated_rag_chunk(chunk_id: str, *, base: str = "") -> dict:
+    """Return one read-only curated RAG chunk identity/anchor/hash payload."""
+
+    return {
+        "ok": True,
+        "curated_rag_chunk": require_valid_public_surface(
+            "curated_rag_chunk",
+            read_curated_rag_chunk(chunk_id, base=base or None),
         ),
     }
 

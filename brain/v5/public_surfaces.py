@@ -16,6 +16,7 @@ _PUBLIC_SURFACE_NAMES = (
     "codex_hook_bridge",
     "codex_hook_installation",
     "code_state_record",
+    "curated_rag_chunk",
     "curated_rag_corpus",
     "curated_rag_ingest_result",
     "curated_rag_promotion_draft",
@@ -140,6 +141,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "codex_hook_bridge": "contracted Codex hook bridge generated from runtime hook installation metadata",
     "codex_hook_installation": "contracted Codex stdin-runner hook installation fixture generated from runtime metadata",
     "code_state_record": "contracted code-state provenance record for code-dependent physics results",
+    "curated_rag_chunk": "read-only curated RAG chunk lookup exposing canonical chunk/document identity, hash, anchor, and source metadata without evidence, validation, final-gate, or claim-trust authority",
     "curated_rag_corpus": "read-only curated background RAG corpus catalog for heuristic context without evidence, validation, or claim-trust authority",
     "curated_rag_ingest_result": "contracted file-backed curated RAG manifest/index write result for heuristic background corpus updates without evidence, validation, final-gate, or claim-trust authority",
     "curated_rag_promotion_draft": "read-only curated RAG escalation draft that proposes normal source, evidence, validation, and trust-preflight records without creating claim support or trust authority",
@@ -403,6 +405,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.host_lifecycle_contracts import require_valid_runtime_host_lifecycle_audit
     from brain.v5.runtime_payload_profile_contracts import require_valid_runtime_payload_profiles
     from brain.v5.curated_rag_contracts import (
+        require_valid_curated_rag_chunk,
         require_valid_curated_rag_corpus,
         require_valid_curated_rag_ingest_result,
         require_valid_curated_rag_promotion_draft,
@@ -457,6 +460,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "codex_hook_bridge": require_valid_codex_hook_bridge,
         "codex_hook_installation": require_valid_codex_hook_installation,
         "code_state_record": require_valid_code_state_record,
+        "curated_rag_chunk": require_valid_curated_rag_chunk,
         "curated_rag_corpus": require_valid_curated_rag_corpus,
         "curated_rag_ingest_result": require_valid_curated_rag_ingest_result,
         "curated_rag_promotion_draft": require_valid_curated_rag_promotion_draft,
