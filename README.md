@@ -688,6 +688,12 @@ also downstream host navigation. It may point to taxonomy inspection, a fresh
 draft, reviewed overrides, readiness inspection, and explicit execution, but it
 does not authorize writes or become AITP evidence, validation, final-gate, or
 trust state.
+If a host additionally binds a concrete `carried_ref_handoff_failure` code/path
+to a model-facing repair draft action, that binding is still downstream runtime
+navigation. It may help the model call the normal fresh draft surface with
+reviewed overrides, but it is not an AITP public surface, not write
+authorization, not payload inference, and not evidence, validation,
+source-support, final-gate, or trust state.
 If a host also turns a selected decision-tree option into a prefilled
 `execute_aitp_write_bridge` call draft, that draft is still downstream guidance
 over AITP-owned `payload_draft` / `payload_template` fields. It may expose
