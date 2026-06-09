@@ -709,10 +709,13 @@ validation, source-support proof, final-gate satisfaction, or claim-trust
 authority.
 If a host later compiles that summary into a continuation binding, the binding
 is also downstream runtime navigation. It may carry the returned canonical ref
-as candidate reviewed override input for a fresh draft, but it must not infer
-chunk ids, promotion stages, payload values, source support, validation, final
-gate satisfaction, or trust changes; normal AITP lookup/write/validation/
-trust-preflight surfaces still own those facts.
+as candidate reviewed override input for a fresh draft, and it may also ask the
+host runtime to perform a source-context review before choosing extraction,
+validation, a fresh draft, or a blocker. That review candidate is still
+downstream action-selection guidance, not an AITP public surface or source
+support result. It must not infer chunk ids, promotion stages, payload values,
+source support, validation, final gate satisfaction, or trust changes; normal
+AITP lookup/write/validation/trust-preflight surfaces still own those facts.
 If a host also turns a selected decision-tree option into a prefilled
 `execute_aitp_write_bridge` call draft, that draft is still downstream guidance
 over AITP-owned `payload_draft` / `payload_template` fields. It may expose
