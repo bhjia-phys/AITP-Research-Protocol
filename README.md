@@ -625,7 +625,13 @@ hashes, anchor metadata, missing `topic_id`/`claim_id` context, and draft-only
 operations for `registerSourceAsset`, `recordReferenceLocation`,
 `recordEvidence`, `createValidationContract`, and `preflightTrustUpdate`.
 Every operation carries `draft_only=true`, `creates_record_now=false`, and
-`claim_support_created=false`; the surface itself has
+`claim_support_created=false`. The same draft now includes
+`promotion_write_sequence`, an AITP-owned dependency map that names each
+ordered step, its future output ref pattern, the prior refs that must already
+exist, and which later stages consume those refs. Each sequence step carries
+`requires_explicit_execute_call=true`, `executes_write_now=false`,
+`records_validation_result=false`, and `claim_trust_mutation=none`; it is a
+bridge-execution checklist, not a runner. The surface itself has
 `state_effect=read_only`, `draft_creates_records=false`,
 `records_validation_result=false`, `claim_trust_mutation=none`, and
 `can_update_claim_trust=false`. It is a controlled construction sheet, not a

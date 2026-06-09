@@ -3456,6 +3456,22 @@ def test_curated_rag_promotion_draft_is_read_only_cli_and_mcp(capsys):
     assert draft["draft_operations"][2]["operation"] == "recordEvidence"
     assert draft["draft_operations"][3]["operation"] == "createValidationContract"
     assert draft["draft_operations"][4]["operation"] == "preflightTrustUpdate"
+    assert [item["stage"] for item in draft["promotion_write_sequence"]] == draft["promotion_path"]
+    assert [item["order"] for item in draft["promotion_write_sequence"]] == [1, 2, 3, 4, 5]
+    assert all(item["requires_explicit_execute_call"] is True for item in draft["promotion_write_sequence"])
+    assert all(item["executes_write_now"] is False for item in draft["promotion_write_sequence"])
+    assert all(item["records_validation_result"] is False for item in draft["promotion_write_sequence"])
+    assert all(item["claim_trust_mutation"] == "none" for item in draft["promotion_write_sequence"])
+    assert draft["promotion_write_sequence"][0]["output_ref"] == "source_asset:<asset_id>"
+    assert draft["promotion_write_sequence"][1]["requires_prior_refs"] == ["source_asset:<asset_id>"]
+    assert draft["promotion_write_sequence"][2]["requires_prior_refs"] == [
+        "source_asset:<asset_id>",
+        "reference_location:<location_id>",
+    ]
+    assert draft["promotion_write_sequence"][4]["requires_prior_refs"] == [
+        "evidence:<evidence_id>",
+        "validation_result:<result_id>",
+    ]
 
     assert _invoke(
         [

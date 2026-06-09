@@ -301,7 +301,14 @@ def validate_curated_rag_promotion_draft(
         result.add(f"{path}.index_mode", "must be a supported lexical curated RAG mode")
     if payload.get("index_status") is not None and not isinstance(payload.get("index_status"), str):
         result.add(f"{path}.index_status", "must be a string when present")
-    for key in ("required_context_before_write", "stale_index_diagnostics", "draft_operations", "promotion_path", "forbidden_uses"):
+    for key in (
+        "required_context_before_write",
+        "stale_index_diagnostics",
+        "draft_operations",
+        "promotion_write_sequence",
+        "promotion_path",
+        "forbidden_uses",
+    ):
         _require_list(payload.get(key), f"{path}.{key}", result)
     if payload.get("forbidden_uses") != [
         "evidence_support",
@@ -324,6 +331,12 @@ def validate_curated_rag_promotion_draft(
     _validate_promotion_document(payload.get("document"), f"{path}.document", result)
     if isinstance(payload.get("draft_operations"), list):
         _validate_draft_operations(payload["draft_operations"], f"{path}.draft_operations", result)
+    if isinstance(payload.get("promotion_write_sequence"), list):
+        _validate_promotion_write_sequence(
+            payload["promotion_write_sequence"],
+            f"{path}.promotion_write_sequence",
+            result,
+        )
     _validate_promotion_boundary(payload.get("promotion_boundary"), f"{path}.promotion_boundary", result)
     return result
 
@@ -552,6 +565,85 @@ def _validate_draft_operations(items: list[Any], path: str, result: ContractResu
             _require_list(item.get("requires_existing_records"), f"{item_path}.requires_existing_records", result)
     if stages != expected_stages:
         result.add(path, "must list source, reference, evidence, validation, and trust-preflight stages in order")
+
+
+def _validate_promotion_write_sequence(items: list[Any], path: str, result: ContractResult) -> None:
+    expected = [
+        {
+            "order": 1,
+            "stage": "source_asset",
+            "operation": "registerSourceAsset",
+            "surface": "source_asset_record",
+            "output_ref": "source_asset:<asset_id>",
+            "requires_prior_refs": [],
+            "feeds_next_stages": ["reference_location", "evidence"],
+        },
+        {
+            "order": 2,
+            "stage": "reference_location",
+            "operation": "recordReferenceLocation",
+            "surface": "reference_location_record",
+            "output_ref": "reference_location:<location_id>",
+            "requires_prior_refs": ["source_asset:<asset_id>"],
+            "feeds_next_stages": ["evidence"],
+        },
+        {
+            "order": 3,
+            "stage": "evidence",
+            "operation": "recordEvidence",
+            "surface": "evidence_record",
+            "output_ref": "evidence:<evidence_id>",
+            "requires_prior_refs": [
+                "source_asset:<asset_id>",
+                "reference_location:<location_id>",
+            ],
+            "feeds_next_stages": ["validation", "trust_preflight"],
+        },
+        {
+            "order": 4,
+            "stage": "validation",
+            "operation": "createValidationContract",
+            "surface": "validation_contract_record",
+            "output_ref": "validation_contract:<contract_id>",
+            "requires_prior_refs": ["evidence:<evidence_id>"],
+            "feeds_next_stages": ["trust_preflight"],
+        },
+        {
+            "order": 5,
+            "stage": "trust_preflight",
+            "operation": "preflightTrustUpdate",
+            "surface": "trust_update_preflight",
+            "output_ref": "trust_preflight:<preflight_token>",
+            "requires_prior_refs": [
+                "evidence:<evidence_id>",
+                "validation_result:<result_id>",
+            ],
+            "feeds_next_stages": [],
+        },
+    ]
+    if len(items) != len(expected):
+        result.add(path, "must describe exactly five promotion write steps")
+    for index, item in enumerate(items):
+        item_path = f"{path}[{index}]"
+        _require_mapping(item, item_path, result)
+        if not isinstance(item, dict):
+            continue
+        expected_item = expected[index] if index < len(expected) else None
+        if expected_item is not None:
+            for key in ("order", "stage", "operation", "surface", "output_ref"):
+                if item.get(key) != expected_item[key]:
+                    result.add(f"{item_path}.{key}", f"must be {expected_item[key]!r}")
+            for key in ("requires_prior_refs", "feeds_next_stages"):
+                if item.get(key) != expected_item[key]:
+                    result.add(f"{item_path}.{key}", "must follow the AITP promotion dependency sequence")
+        if item.get("requires_explicit_execute_call") is not True:
+            result.add(f"{item_path}.requires_explicit_execute_call", "must be true")
+        if item.get("executes_write_now") is not False:
+            result.add(f"{item_path}.executes_write_now", "must be false")
+        if item.get("records_validation_result") is not False:
+            result.add(f"{item_path}.records_validation_result", "must be false")
+        if item.get("claim_trust_mutation") != "none":
+            result.add(f"{item_path}.claim_trust_mutation", "must be 'none'")
 
 
 def _validate_promotion_boundary(item: Any, path: str, result: ContractResult) -> None:

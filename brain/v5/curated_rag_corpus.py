@@ -691,6 +691,7 @@ def draft_curated_rag_promotion(
                 },
             },
         ],
+        "promotion_write_sequence": _promotion_write_sequence(),
         "promotion_path": [
             "source_asset",
             "reference_location",
@@ -708,6 +709,82 @@ def draft_curated_rag_promotion(
             "requires_user_or_model_decision_before_write": True,
         },
     }
+
+
+def _promotion_write_sequence() -> list[dict[str, Any]]:
+    return [
+        {
+            "order": 1,
+            "stage": "source_asset",
+            "operation": "registerSourceAsset",
+            "surface": "source_asset_record",
+            "output_ref": "source_asset:<asset_id>",
+            "requires_prior_refs": [],
+            "feeds_next_stages": ["reference_location", "evidence"],
+            "requires_explicit_execute_call": True,
+            "executes_write_now": False,
+            "records_validation_result": False,
+            "claim_trust_mutation": "none",
+        },
+        {
+            "order": 2,
+            "stage": "reference_location",
+            "operation": "recordReferenceLocation",
+            "surface": "reference_location_record",
+            "output_ref": "reference_location:<location_id>",
+            "requires_prior_refs": ["source_asset:<asset_id>"],
+            "feeds_next_stages": ["evidence"],
+            "requires_explicit_execute_call": True,
+            "executes_write_now": False,
+            "records_validation_result": False,
+            "claim_trust_mutation": "none",
+        },
+        {
+            "order": 3,
+            "stage": "evidence",
+            "operation": "recordEvidence",
+            "surface": "evidence_record",
+            "output_ref": "evidence:<evidence_id>",
+            "requires_prior_refs": [
+                "source_asset:<asset_id>",
+                "reference_location:<location_id>",
+            ],
+            "feeds_next_stages": ["validation", "trust_preflight"],
+            "requires_explicit_execute_call": True,
+            "executes_write_now": False,
+            "records_validation_result": False,
+            "claim_trust_mutation": "none",
+        },
+        {
+            "order": 4,
+            "stage": "validation",
+            "operation": "createValidationContract",
+            "surface": "validation_contract_record",
+            "output_ref": "validation_contract:<contract_id>",
+            "requires_prior_refs": ["evidence:<evidence_id>"],
+            "feeds_next_stages": ["trust_preflight"],
+            "requires_explicit_execute_call": True,
+            "executes_write_now": False,
+            "records_validation_result": False,
+            "claim_trust_mutation": "none",
+        },
+        {
+            "order": 5,
+            "stage": "trust_preflight",
+            "operation": "preflightTrustUpdate",
+            "surface": "trust_update_preflight",
+            "output_ref": "trust_preflight:<preflight_token>",
+            "requires_prior_refs": [
+                "evidence:<evidence_id>",
+                "validation_result:<result_id>",
+            ],
+            "feeds_next_stages": [],
+            "requires_explicit_execute_call": True,
+            "executes_write_now": False,
+            "records_validation_result": False,
+            "claim_trust_mutation": "none",
+        },
+    ]
 
 
 def _find_by_id(items: list[dict[str, Any]], key: str, value: str) -> dict[str, Any] | None:
