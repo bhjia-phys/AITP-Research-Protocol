@@ -223,6 +223,11 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "mcp": "aitp_v5_get_curated_rag_chunk",
             "surface": "curated_rag_chunk",
         },
+        "literature_source_review_handoff": {
+            "cli": "aitp-v5 literature source-review-handoff <args>",
+            "mcp": "aitp_v5_build_literature_source_review_handoff",
+            "surface": "literature_source_review_handoff",
+        },
         "record_evidence": {
             "cli": "aitp-v5 evidence record <args>",
             "mcp": "aitp_v5_record_evidence",
@@ -369,6 +374,32 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
         "required": ["chunk_id"],
         "optional": ["base"],
         "source": "aitp_v5_get_curated_rag_chunk",
+    }
+    assert by_operation["readLiteratureSourceReviewHandoff"]["entrypoint_key"] == (
+        "literature_source_review_handoff"
+    )
+    assert by_operation["readLiteratureSourceReviewHandoff"]["mcp_tool"] == (
+        "aitp_v5_build_literature_source_review_handoff"
+    )
+    assert by_operation["readLiteratureSourceReviewHandoff"]["cli_fallback"] == (
+        "aitp-v5 literature source-review-handoff <args>"
+    )
+    assert by_operation["readLiteratureSourceReviewHandoff"]["surface"] == (
+        "literature_source_review_handoff"
+    )
+    assert by_operation["readLiteratureSourceReviewHandoff"]["execution_role"] == "read"
+    assert by_operation["readLiteratureSourceReviewHandoff"]["state_effect"] == "read_only"
+    assert by_operation["readLiteratureSourceReviewHandoff"]["mcp_arguments"] == {
+        "required": [
+            "base",
+            "session_id",
+            "uri",
+            "label",
+            "short_summary",
+            "detected_relevance",
+        ],
+        "optional": ["external_id", "optional_claim_id", "scoped_output", "reviewed_refs"],
+        "source": "aitp_v5_build_literature_source_review_handoff",
     }
     assert by_operation["preflightTrustUpdate"]["mcp_tool"] == "aitp_v5_preflight_trust_update"
     assert by_operation["preflightTrustUpdate"]["state_effect"] == "preflight_only"

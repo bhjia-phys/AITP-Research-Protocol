@@ -475,7 +475,10 @@ carry `mcp_arguments` for host runtime calls: `readProcessGraphSlice` and
 `searchCuratedRagCorpus` requires `query` with optional `base` and `limit`,
 `readCuratedRagChunk` requires `chunk_id` with optional `base`,
 `draftCuratedRagPromotion` requires `chunk_id` with optional `base`,
-`topic_id`, `claim_id`, `connector_id`, and `promotion_intent`, and
+`topic_id`, `claim_id`, `connector_id`, and `promotion_intent`,
+`readLiteratureSourceReviewHandoff` requires `base`, `session_id`, `uri`,
+`label`, `short_summary`, and `detected_relevance` with optional
+`external_id`, `optional_claim_id`, `scoped_output`, and `reviewed_refs`, and
 `lookupRecordRefs` requires `base` plus `refs`. The
 manifest is derived from `runtime_entrypoints()`, has
 `preferred_transport=mcp`, keeps `fallback_transport=cli`, and explicitly
