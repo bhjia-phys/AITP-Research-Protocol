@@ -721,6 +721,12 @@ extraction, validation, a fresh draft, or a blocker, that outcome is still
 host-side routing metadata. It may guide the next explicit ResearchAction, but
 it is not an AITP source-support result, validation result, final-gate pass,
 write execution, or trust update.
+If the host adds a source-context review handoff inspection or bound primitive
+plan before following that outcome, that inspection is still downstream runtime
+readiness metadata. It may check that the selected next action and no-trust
+flags are internally consistent, but it is not an AITP public surface,
+source-support result, validation result, final-gate pass, write execution, or
+claim-trust update.
 If a host also turns a selected decision-tree option into a prefilled
 `execute_aitp_write_bridge` call draft, that draft is still downstream guidance
 over AITP-owned `payload_draft` / `payload_template` fields. It may expose
