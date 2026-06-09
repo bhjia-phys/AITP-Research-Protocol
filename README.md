@@ -736,6 +736,12 @@ downstream consistency status: they may say whether the host guard allowed or
 blocked a bridge call, and may echo guard-verified repair-count metadata from
 the handoff hash input. They are still not AITP validation, trust preflight,
 evidence, final-gate state, or missing-ref repair execution.
+If a host execution-precheck summary also echoes the readiness checklist's
+explicit-execute item, that echo is only host path reporting. It may say that a
+separate explicit execute call was observed after the guard passed, or that item
+2 was not followed after a guard failure, but it still does not authorize the
+write, mutate the checklist or handoff, create AITP records, validate source
+support, or change claim trust.
 Host remediation summaries over those diagnostics are also advisory repair
 hints only. They may suggest which handoff field or explicit execute argument
 to fix, but they do not mutate the handoff or perform an AITP write/preflight.
