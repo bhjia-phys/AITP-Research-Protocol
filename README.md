@@ -716,6 +716,11 @@ downstream action-selection guidance, not an AITP public surface or source
 support result. It must not infer chunk ids, promotion stages, payload values,
 source support, validation, final gate satisfaction, or trust changes; normal
 AITP lookup/write/validation/trust-preflight surfaces still own those facts.
+If the host later records a source-context review outcome that chooses
+extraction, validation, a fresh draft, or a blocker, that outcome is still
+host-side routing metadata. It may guide the next explicit ResearchAction, but
+it is not an AITP source-support result, validation result, final-gate pass,
+write execution, or trust update.
 If a host also turns a selected decision-tree option into a prefilled
 `execute_aitp_write_bridge` call draft, that draft is still downstream guidance
 over AITP-owned `payload_draft` / `payload_template` fields. It may expose
