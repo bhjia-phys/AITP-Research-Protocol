@@ -700,6 +700,13 @@ passed explicit-execute precheck, that echo is also downstream status
 rendering. It does not authorize execution, mutate AITP state, replace the
 normal readiness check, or become evidence, validation, final-gate
 satisfaction, source support, or trust state.
+If a host summarizes a successful explicit source asset, reference location, or
+evidence write result back to the carried-ref repair path that prepared it,
+that summary is likewise downstream runtime audit context over an AITP-owned
+returned result. It is not an AITP public surface, not a second canonical
+record, not a next-payload mutation, not a next write, and not evidence
+validation, source-support proof, final-gate satisfaction, or claim-trust
+authority.
 If a host also turns a selected decision-tree option into a prefilled
 `execute_aitp_write_bridge` call draft, that draft is still downstream guidance
 over AITP-owned `payload_draft` / `payload_template` fields. It may expose
