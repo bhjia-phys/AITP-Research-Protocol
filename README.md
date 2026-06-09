@@ -673,6 +673,9 @@ If a host adds a compact next-call pointer next to the suggestion, that pointer
 is only navigation to a fresh draft action. It is not an AITP operation, not a
 write authorization, and not a replacement for reviewed overrides, readiness
 inspection, or explicit write/preflight execution.
+If the host accepts structured carried-ref handoff objects, malformed objects
+should fail closed rather than producing suggestions or pointers; explicit
+canonical refs may still be accepted as user/model-provided reviewed input.
 If a host also turns a selected decision-tree option into a prefilled
 `execute_aitp_write_bridge` call draft, that draft is still downstream guidance
 over AITP-owned `payload_draft` / `payload_template` fields. It may expose
