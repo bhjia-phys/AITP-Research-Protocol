@@ -34,6 +34,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "interaction_recording_preview",
         "interaction_recording_worklist",
         "workspace_interaction_preview_bundle",
+        "literature_comparison_draft",
         "literature_intake_record_result",
         "literature_intake_suggestion",
         "literature_source_review_handoff",

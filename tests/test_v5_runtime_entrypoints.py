@@ -228,6 +228,11 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "mcp": "aitp_v5_build_literature_source_review_handoff",
             "surface": "literature_source_review_handoff",
         },
+        "literature_comparison_draft": {
+            "cli": "aitp-v5 literature comparison-draft <args>",
+            "mcp": "aitp_v5_build_literature_comparison_draft",
+            "surface": "literature_comparison_draft",
+        },
         "record_evidence": {
             "cli": "aitp-v5 evidence record <args>",
             "mcp": "aitp_v5_record_evidence",
@@ -400,6 +405,25 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
         ],
         "optional": ["external_id", "optional_claim_id", "scoped_output", "reviewed_refs"],
         "source": "aitp_v5_build_literature_source_review_handoff",
+    }
+    assert by_operation["readLiteratureComparisonDraft"]["entrypoint_key"] == (
+        "literature_comparison_draft"
+    )
+    assert by_operation["readLiteratureComparisonDraft"]["mcp_tool"] == (
+        "aitp_v5_build_literature_comparison_draft"
+    )
+    assert by_operation["readLiteratureComparisonDraft"]["cli_fallback"] == (
+        "aitp-v5 literature comparison-draft <args>"
+    )
+    assert by_operation["readLiteratureComparisonDraft"]["surface"] == (
+        "literature_comparison_draft"
+    )
+    assert by_operation["readLiteratureComparisonDraft"]["execution_role"] == "read"
+    assert by_operation["readLiteratureComparisonDraft"]["state_effect"] == "read_only"
+    assert by_operation["readLiteratureComparisonDraft"]["mcp_arguments"] == {
+        "required": ["base", "session_id", "comparison_question", "source_refs"],
+        "optional": ["dimensions", "optional_claim_id", "rationale"],
+        "source": "aitp_v5_build_literature_comparison_draft",
     }
     assert by_operation["preflightTrustUpdate"]["mcp_tool"] == "aitp_v5_preflight_trust_update"
     assert by_operation["preflightTrustUpdate"]["state_effect"] == "preflight_only"

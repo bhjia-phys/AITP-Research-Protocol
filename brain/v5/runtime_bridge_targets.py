@@ -54,6 +54,11 @@ _MCP_ARGUMENT_SPECS: dict[str, dict[str, Any]] = {
         "optional": ["external_id", "optional_claim_id", "scoped_output", "reviewed_refs"],
         "source": "aitp_v5_build_literature_source_review_handoff",
     },
+    "literature_comparison_draft": {
+        "required": ["base", "session_id", "comparison_question", "source_refs"],
+        "optional": ["dimensions", "optional_claim_id", "rationale"],
+        "source": "aitp_v5_build_literature_comparison_draft",
+    },
 }
 
 _BRIDGE_TARGET_SPECS: tuple[tuple[str, str, str, str], ...] = (
@@ -66,6 +71,7 @@ _BRIDGE_TARGET_SPECS: tuple[tuple[str, str, str, str], ...] = (
     ("readCuratedRagChunk", "curated_rag_chunk", "read", "read_only"),
     ("draftCuratedRagPromotion", "curated_rag_promotion_draft", "read", "read_only"),
     ("readLiteratureSourceReviewHandoff", "literature_source_review_handoff", "read", "read_only"),
+    ("readLiteratureComparisonDraft", "literature_comparison_draft", "read", "read_only"),
     ("ingestCuratedRagCorpus", "ingest_curated_rag_corpus", "write", "curated_rag_manifest_write"),
     ("recordExploratoryRecord", "record_exploratory_record", "write", "typed_record_write"),
     ("registerSourceAsset", "register_source_asset", "write", "typed_record_write"),

@@ -154,6 +154,7 @@ def _validate_mcp_arguments(target: dict[str, Any], path: str, result: ContractR
         "curated_rag_chunk",
         "curated_rag_promotion_draft",
         "literature_source_review_handoff",
+        "literature_comparison_draft",
     }:
         _require_mapping(arguments, f"{path}.mcp_arguments", result)
         if not isinstance(arguments, dict):
@@ -228,6 +229,26 @@ def _validate_mcp_arguments(target: dict[str, Any], path: str, result: ContractR
                 result.add(
                     f"{path}.mcp_arguments.optional",
                     "must allow external_id, optional_claim_id, scoped_output, and reviewed_refs",
+                )
+        if entrypoint_key == "literature_comparison_draft":
+            if arguments.get("required") != [
+                "base",
+                "session_id",
+                "comparison_question",
+                "source_refs",
+            ]:
+                result.add(
+                    f"{path}.mcp_arguments.required",
+                    "must require base, session_id, comparison_question, and source_refs",
+                )
+            if arguments.get("optional") != [
+                "dimensions",
+                "optional_claim_id",
+                "rationale",
+            ]:
+                result.add(
+                    f"{path}.mcp_arguments.optional",
+                    "must allow dimensions, optional_claim_id, and rationale",
                 )
     elif arguments is not None:
         result.add(f"{path}.mcp_arguments", "must be omitted for non-read target metadata")

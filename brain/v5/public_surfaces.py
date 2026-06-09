@@ -34,6 +34,7 @@ _PUBLIC_SURFACE_NAMES = (
     "interaction_recording_preview",
     "interaction_recording_worklist",
     "workspace_interaction_preview_bundle",
+    "literature_comparison_draft",
     "literature_intake_record_result",
     "literature_intake_suggestion",
     "literature_source_review_handoff",
@@ -160,6 +161,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "interaction_recording_preview": "read-only preview of natural conversation recording boundaries, lightweight mode, and heavier triggers",
     "interaction_recording_worklist": "orientation-only workspace worklist translating natural conversation recording boundaries into conservative kernel entrypoint templates",
     "workspace_interaction_preview_bundle": "orientation-only host startup bundle summarizing per-session natural conversation recording boundaries without updating kernel state",
+    "literature_comparison_draft": "read-only literature comparison draft packet that scaffolds source-set dimensions, agreements, disagreements, missing evidence, and open directions without creating comparison, evidence, validation, final-gate, or trust authority",
     "literature_intake_record_result": "guarded literature intake write result that records only an orientation reference location and returns non-trust-changing evidence/sensemaking candidates",
     "literature_intake_suggestion": "read-only literature intake suggestion that proposes reference, sensemaking, and scoped evidence templates without treating summaries as evidence",
     "literature_source_review_handoff": "read-only handoff packet composing literature intake, record-ref lookup, source-stack coverage, and source reconstruction review without source-support, validation, write, final-gate, or trust authority",
@@ -421,6 +423,9 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_literature_intake_record_result,
         require_valid_literature_intake_suggestion,
     )
+    from brain.v5.literature_comparison_draft_contracts import (
+        require_valid_literature_comparison_draft,
+    )
     from brain.v5.literature_source_review_handoff_contracts import (
         require_valid_literature_source_review_handoff,
     )
@@ -483,6 +488,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "interaction_recording_preview": require_valid_interaction_recording_preview,
         "interaction_recording_worklist": require_valid_interaction_recording_worklist,
         "workspace_interaction_preview_bundle": require_valid_workspace_interaction_preview_bundle,
+        "literature_comparison_draft": require_valid_literature_comparison_draft,
         "literature_intake_record_result": require_valid_literature_intake_record_result,
         "literature_intake_suggestion": require_valid_literature_intake_suggestion,
         "literature_source_review_handoff": require_valid_literature_source_review_handoff,

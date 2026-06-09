@@ -3571,6 +3571,8 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
         "searchCuratedRagCorpus",
         "readCuratedRagChunk",
         "draftCuratedRagPromotion",
+        "readLiteratureSourceReviewHandoff",
+        "readLiteratureComparisonDraft",
     ]
     assert "ingestCuratedRagCorpus" in manifest["target_groups"]["write"]
     assert manifest["target_groups"]["preflight"] == ["preflightTrustUpdate"]
@@ -3584,6 +3586,12 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
     assert by_operation["lookupRecordRefs"]["surface"] == "record_ref_lookup"
     assert by_operation["lookupRecordRefs"]["execution_role"] == "read"
     assert by_operation["lookupRecordRefs"]["state_effect"] == "read_only"
+    assert by_operation["readLiteratureComparisonDraft"]["mcp_tool"] == (
+        "aitp_v5_build_literature_comparison_draft"
+    )
+    assert by_operation["readLiteratureComparisonDraft"]["surface"] == "literature_comparison_draft"
+    assert by_operation["readLiteratureComparisonDraft"]["execution_role"] == "read"
+    assert by_operation["readLiteratureComparisonDraft"]["state_effect"] == "read_only"
     assert by_operation["readCuratedRagCorpus"]["mcp_tool"] == "aitp_v5_get_curated_rag_corpus"
     assert by_operation["readCuratedRagCorpus"]["cli_fallback"] == "aitp-v5 adapter curated-rag-corpus"
     assert by_operation["readCuratedRagCorpus"]["surface"] == "curated_rag_corpus"

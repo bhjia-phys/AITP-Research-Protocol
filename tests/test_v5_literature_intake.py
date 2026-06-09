@@ -339,6 +339,127 @@ def test_literature_source_review_handoff_composes_read_only_surfaces(tmp_path, 
     }
 
 
+def test_literature_comparison_draft_is_read_only_planning_packet(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.literature_comparison_draft import build_literature_comparison_draft
+    from brain.v5.mcp_tools import aitp_v5_build_literature_comparison_draft
+    from brain.v5.models import EvidenceRecord, ReferenceLocationRecord, TrustUpdateRecord, ValidationResultRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.store import list_records
+
+    ws, claim = _setup_topic(tmp_path, active_claim=True)
+
+    before = (
+        list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord),
+        list_records(ws.registry_dir("evidence"), EvidenceRecord),
+        list_records(ws.registry_dir("validation_results"), ValidationResultRecord),
+        list_records(ws.registry_dir("trust_updates"), TrustUpdateRecord),
+    )
+    payload = build_literature_comparison_draft(
+        ws,
+        session_id="chaos-lit",
+        comparison_question="How do the source assumptions compare on the alpha-axis claim?",
+        source_refs=["source_asset:missing-source", "reference_location:missing-location"],
+        dimensions=["method_assumptions", "evidence_basis", "open_directions"],
+        rationale="Compare close prior art before drafting evidence.",
+    )
+    after = (
+        list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord),
+        list_records(ws.registry_dir("evidence"), EvidenceRecord),
+        list_records(ws.registry_dir("validation_results"), ValidationResultRecord),
+        list_records(ws.registry_dir("trust_updates"), TrustUpdateRecord),
+    )
+
+    assert before == after
+    assert require_valid_public_surface("literature_comparison_draft", payload) == payload
+    assert payload["kind"] == "literature_comparison_draft"
+    assert payload["claim_id"] == claim.claim_id
+    assert payload["source_ref_count"] == 2
+    assert payload["comparison_dimension_count"] == 3
+    assert payload["record_ref_lookup"]["kind"] == "record_ref_lookup"
+    assert payload["record_ref_lookup"]["source_support_result"] is False
+    assert payload["draft_record_intent"]["kind"] == "literature_comparison_record_candidate"
+    assert payload["draft_record_intent"]["creates_record_now"] is False
+    assert payload["draft_record_intent"]["records_validation_result"] is False
+    assert payload["draft_record_intent"]["source_support_result"] is False
+    assert payload["draft_record_intent"]["claim_trust_mutation"] == "none"
+    assert payload["draft_policy"]["requires_explicit_next_entrypoint"] is True
+    assert "literature_comparison_record" in payload["draft_policy"]["forbidden_uses"]
+    assert "trust_apply" in payload["draft_policy"]["forbidden_uses"]
+    assert payload["allowed_next_tool_call"] == {
+        "action": "plan_primitive_tools",
+        "action_id": "source.compare_literature",
+        "requires_explicit_next_action": True,
+        "records_validation_result": False,
+        "source_support_result": False,
+        "claim_trust_mutation": "none",
+    }
+    assert payload["read_surface_effect"] == "comparison_draft_only"
+    assert payload["read_only"] is True
+    assert payload["draft_creates_records"] is False
+    assert payload["requires_explicit_next_action"] is True
+    assert payload["bridge_called"] is False
+    assert payload["executes_write_now"] is False
+    assert payload["mutates_next_payload_now"] is False
+    assert payload["infers_payload_values"] is False
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["can_update_claim_trust"] is False
+    assert payload["records_validation_result"] is False
+    assert payload["source_support_result"] is False
+    assert payload["evidence_created"] is False
+    assert payload["validation_created"] is False
+    assert payload["write_executed"] is False
+    assert payload["trust_update_forbidden"] is True
+    assert payload["claim_trust_mutation"] == "none"
+
+    assert main(
+        [
+            "--base",
+            str(ws.base),
+            "literature",
+            "comparison-draft",
+            "--session",
+            "chaos-lit",
+            "--question",
+            "How do the source assumptions compare on the alpha-axis claim?",
+            "--source-ref",
+            "source_asset:missing-source",
+            "--source-ref",
+            "reference_location:missing-location",
+            "--dimension",
+            "method_assumptions",
+            "--dimension",
+            "evidence_basis",
+            "--rationale",
+            "Compare close prior art before drafting evidence.",
+        ]
+    ) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_literature_comparison_draft(
+        str(ws.base),
+        session_id="chaos-lit",
+        comparison_question="How do the source assumptions compare on the alpha-axis claim?",
+        source_refs=["source_asset:missing-source", "reference_location:missing-location"],
+        dimensions=["method_assumptions", "evidence_basis"],
+        rationale="Compare close prior art before drafting evidence.",
+    )
+
+    assert require_valid_public_surface("literature_comparison_draft", cli_payload) == cli_payload
+    assert require_valid_public_surface("literature_comparison_draft", mcp_payload) == mcp_payload
+    assert cli_payload["source_ref_count"] == 2
+    assert mcp_payload["comparison_dimensions"][0]["creates_record_now"] is False
+    assert runtime_entrypoints()["literature_comparison_draft"] == {
+        "cli": "aitp-v5 literature comparison-draft <args>",
+        "mcp": "aitp_v5_build_literature_comparison_draft",
+        "surface": "literature_comparison_draft",
+    }
+
+
 def test_literature_intake_includes_output_profile_context_when_topic_has_profile(tmp_path):
     from brain.v5.literature_intake import suggest_literature_intake
     from brain.v5.output_stability import record_final_output_profile
