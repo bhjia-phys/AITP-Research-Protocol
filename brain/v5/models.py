@@ -440,6 +440,63 @@ class ResearchRouteRecord:
 
 
 @dataclass
+class ResearchRunRecord:
+    run_id: str
+    topic_id: str
+    objective: str
+    research_question: str
+    operator: str
+    status: str
+    phase: str
+    title: str = ""
+    claim_id: str = ""
+    session_id: str = ""
+    hypothesis: str = ""
+    terminal_answer_state: str = ""
+    stop_reason: str = ""
+    aitp_slice_refs: list[str] = field(default_factory=list)
+    action_refs: list[str] = field(default_factory=list)
+    evidence_refs: list[str] = field(default_factory=list)
+    validation_refs: list[str] = field(default_factory=list)
+    source_refs: list[str] = field(default_factory=list)
+    event_ids: list[str] = field(default_factory=list)
+    operator_trail: list[dict] = field(default_factory=list)
+    answer_packet_ref: str = ""
+    metadata: dict = field(default_factory=dict)
+    summary_inputs_trusted: bool = False
+    orientation_only: bool = True
+    can_update_kernel_state: bool = True
+    can_update_claim_trust: bool = False
+    kind: str = "research_run"
+
+
+@dataclass
+class ResearchRunEventRecord:
+    event_id: str
+    run_id: str
+    topic_id: str
+    operator: str
+    event_type: str
+    summary: str
+    status: str = "recorded"
+    phase: str = ""
+    claim_id: str = ""
+    session_id: str = ""
+    action_id: str = ""
+    action_ref: str = ""
+    source_refs: list[str] = field(default_factory=list)
+    evidence_refs: list[str] = field(default_factory=list)
+    validation_refs: list[str] = field(default_factory=list)
+    artifact_refs: list[str] = field(default_factory=list)
+    payload: dict = field(default_factory=dict)
+    summary_inputs_trusted: bool = False
+    orientation_only: bool = True
+    can_update_kernel_state: bool = True
+    can_update_claim_trust: bool = False
+    kind: str = "research_run_event"
+
+
+@dataclass
 class ValidationContractRecord:
     contract_id: str
     topic_id: str

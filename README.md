@@ -442,6 +442,9 @@ The v5 kernel is exposed through several thin surfaces:
 | `aitp-v5 literature comparison-draft` | Read-only source-set comparison draft packet for explicit `source.compare_literature` planning without creating comparison records, evidence, validation, writes, final-gate, or trust authority |
 | `aitp-v5 exploration record` | Orientation-only typed record for brainstorming, backtrace, source-asset, and steering continuity |
 | `aitp-v5 route record` | Orientation-only typed record for live routes, failed routes, branches, pivots, checkpoint links, and nonlinear research continuity |
+| `aitp-v5 run research start` | Canonical research-run ledger record for a user/runtime-started objective and question, with operator attribution and no claim-trust authority |
+| `aitp-v5 run research update` | Update the canonical research-run phase/status, terminal answer state, AITP refs, action refs, and stop reason while appending a process event |
+| `aitp-v5 run event record` | Append a canonical research-run event for context refresh, action selection, checkpoints, answer drafting, blocking, or stop provenance |
 | `aitp-v5 asset register` | Orientation-only canonical identity for raw papers, lectures, notes, code snapshots, datasets, and generated artifacts |
 | `aitp-v5 code state auto` | Auto-capture git HEAD, branch/upstream, dirty status, diff hash, optional patch artifact, and linked topic/claim/session refs |
 | `aitp-v5 research-state attach-artifact` | Attach a benchmark log, validation output, patch, plot, JSON result, or generated file by reference as an artifact record with hash/size metadata when local |
@@ -460,6 +463,7 @@ execution contract.
 Hakimi's current bridge calls the same CLI surface with structured arguments:
 `aitp-v5 --base <base> graph slice <session-id>`, `graph moment-policy`,
 `exploration record`, `route record`, `asset register`, `code state auto`,
+`run research start`, `run research update`, `run event record`,
 `research-state attach-artifact`, `research-state attach-artifact-auto`,
 `checkpoint request`,
 `research-state create-proof-obligation`,
@@ -493,6 +497,9 @@ these names as the stable bridge contract, not infer names from README prose:
 | `record_source_reconstruction_review_result` | `aitp-v5 source reconstruction-review-result <args>` | `aitp_v5_record_source_reconstruction_review_result` | `source_reconstruction_review_result_record` |
 | `record_exploratory_record` | `aitp-v5 exploration record <args>` | `aitp_v5_record_exploratory_record` | `exploratory_record` |
 | `record_research_route` | `aitp-v5 route record <args>` | `aitp_v5_record_research_route` | `research_route_record` |
+| `start_research_run` | `aitp-v5 run research start <args>` | `aitp_v5_start_research_run` | `research_run_record` |
+| `update_research_run` | `aitp-v5 run research update <args>` | `aitp_v5_update_research_run` | `research_run_record` |
+| `record_research_run_event` | `aitp-v5 run event record <args>` | `aitp_v5_record_research_run_event` | `research_run_event_record` |
 | `register_source_asset` | `aitp-v5 asset register <args>` | `aitp_v5_register_source_asset` | `source_asset_record` |
 | `capture_source_asset_auto` | `aitp-v5 asset capture-auto <args>` | `aitp_v5_capture_source_asset_auto` | `source_asset_record` |
 | `capture_code_state_auto` | `aitp-v5 code state auto <args>` | `aitp_v5_capture_code_state_auto` | `code_state_record` |
@@ -509,8 +516,10 @@ Hosts can query `runtime_bridge_target_manifest` directly instead of
 hard-coding the operation-to-entrypoint map. Each target names a Hakimi-facing
 operation such as `recordEvidence`, `captureSourceAssetAuto`,
 `captureCodeStateAuto`, `attachArtifactAuto`, or
-`preflightTrustUpdate`, its canonical AITP entrypoint key, preferred MCP tool,
-CLI fallback template, public surface, and state effect. Read targets also
+`preflightTrustUpdate`, and process-ledger write targets such as
+`startResearchRun`, `updateResearchRun`, and `recordResearchRunEvent`.
+Each target names its canonical AITP entrypoint key, preferred MCP tool, CLI
+fallback template, public surface, and state effect. Read targets also
 carry `mcp_arguments` for host runtime calls: `readProcessGraphSlice` and
 `readMomentPolicy` require `base` plus `session_id` and accept `claim_id` plus
 `limit`, `readRuntimePayloadProfiles` has no required arguments,
@@ -526,6 +535,17 @@ carry `mcp_arguments` for host runtime calls: `readProcessGraphSlice` and
 manifest is derived from `runtime_entrypoints()`, has
 `preferred_transport=mcp`, keeps `fallback_transport=cli`, and explicitly
 excludes `trust_apply`.
+
+Research-run records are the AITP-owned process ledger for bounded runtime
+research modes such as Hakimi `/autoresearch`. `research_run_record` stores the
+objective, research question, operator trail, status, phase, AITP slice refs,
+action/source/evidence/validation refs, stop reason, and terminal answer state.
+`research_run_event_record` stores the ordered process events that explain how
+the runtime reached that state. These records can update the kernel process
+state, but they explicitly keep `summary_inputs_trusted=false`,
+`orientation_only=true`, and `can_update_claim_trust=false`. They do not
+validate evidence, satisfy final gates, or promote claim trust; those remain
+separate AITP source/evidence/validation/trust-preflight surfaces.
 
 Hakimi may request `readLiteratureSourceReviewHandoff` during WorkFrame context
 preparation only from an explicit host cue that repeats the no-trust/no-write

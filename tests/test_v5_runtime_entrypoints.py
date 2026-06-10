@@ -34,6 +34,9 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["record_validation_result"]["surface"] == "validation_result_record"
     assert entrypoints["record_exploratory_record"]["surface"] == "exploratory_record"
     assert entrypoints["record_research_route"]["surface"] == "research_route_record"
+    assert entrypoints["start_research_run"]["surface"] == "research_run_record"
+    assert entrypoints["update_research_run"]["surface"] == "research_run_record"
+    assert entrypoints["record_research_run_event"]["surface"] == "research_run_event_record"
     assert entrypoints["capture_source_asset_auto"]["surface"] == "source_asset_record"
     assert entrypoints["host_agnostic_moment_policy"]["surface"] == "host_agnostic_moment_policy"
     assert entrypoints["runtime_bridge_target_manifest"]["surface"] == "runtime_bridge_target_manifest"
@@ -66,6 +69,9 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["record_validation_result"]["mcp"] == "aitp_v5_record_validation_result"
     assert entrypoints["record_exploratory_record"]["mcp"] == "aitp_v5_record_exploratory_record"
     assert entrypoints["record_research_route"]["mcp"] == "aitp_v5_record_research_route"
+    assert entrypoints["start_research_run"]["mcp"] == "aitp_v5_start_research_run"
+    assert entrypoints["update_research_run"]["mcp"] == "aitp_v5_update_research_run"
+    assert entrypoints["record_research_run_event"]["mcp"] == "aitp_v5_record_research_run_event"
     assert entrypoints["capture_source_asset_auto"]["mcp"] == "aitp_v5_capture_source_asset_auto"
     assert entrypoints["host_agnostic_moment_policy"]["mcp"] == "aitp_v5_get_host_agnostic_moment_policy"
     assert entrypoints["runtime_bridge_target_manifest"] == {
@@ -268,6 +274,21 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "mcp": "aitp_v5_record_research_route",
             "surface": "research_route_record",
         },
+        "start_research_run": {
+            "cli": "aitp-v5 run research start <args>",
+            "mcp": "aitp_v5_start_research_run",
+            "surface": "research_run_record",
+        },
+        "update_research_run": {
+            "cli": "aitp-v5 run research update <args>",
+            "mcp": "aitp_v5_update_research_run",
+            "surface": "research_run_record",
+        },
+        "record_research_run_event": {
+            "cli": "aitp-v5 run event record <args>",
+            "mcp": "aitp_v5_record_research_run_event",
+            "surface": "research_run_event_record",
+        },
         "register_source_asset": {
             "cli": "aitp-v5 asset register <args>",
             "mcp": "aitp_v5_register_source_asset",
@@ -356,6 +377,20 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
     assert by_operation["captureSourceAssetAuto"]["cli_fallback"] == "aitp-v5 asset capture-auto <args>"
     assert by_operation["captureSourceAssetAuto"]["surface"] == "source_asset_record"
     assert by_operation["captureCodeStateAuto"]["mcp_tool"] == "aitp_v5_capture_code_state_auto"
+    assert by_operation["startResearchRun"]["entrypoint_key"] == "start_research_run"
+    assert by_operation["startResearchRun"]["mcp_tool"] == "aitp_v5_start_research_run"
+    assert by_operation["startResearchRun"]["cli_fallback"] == "aitp-v5 run research start <args>"
+    assert by_operation["startResearchRun"]["surface"] == "research_run_record"
+    assert by_operation["startResearchRun"]["execution_role"] == "write"
+    assert by_operation["startResearchRun"]["state_effect"] == "typed_record_write"
+    assert by_operation["startResearchRun"]["claim_trust_mutation"] == "none"
+    assert by_operation["startResearchRun"]["can_update_claim_trust"] is False
+    assert by_operation["updateResearchRun"]["entrypoint_key"] == "update_research_run"
+    assert by_operation["updateResearchRun"]["mcp_tool"] == "aitp_v5_update_research_run"
+    assert by_operation["updateResearchRun"]["surface"] == "research_run_record"
+    assert by_operation["recordResearchRunEvent"]["entrypoint_key"] == "record_research_run_event"
+    assert by_operation["recordResearchRunEvent"]["mcp_tool"] == "aitp_v5_record_research_run_event"
+    assert by_operation["recordResearchRunEvent"]["surface"] == "research_run_event_record"
     assert by_operation["readRuntimePayloadProfiles"]["entrypoint_key"] == "runtime_payload_profiles"
     assert by_operation["readRuntimePayloadProfiles"]["mcp_tool"] == "aitp_v5_get_runtime_payload_profiles"
     assert by_operation["readRuntimePayloadProfiles"]["cli_fallback"] == "aitp-v5 adapter payload-profiles"

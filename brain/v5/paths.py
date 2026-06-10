@@ -27,6 +27,8 @@ _LAYOUT_DIRS = [
     "registry/code_states",
     "registry/code_workspaces",
     "registry/routes",
+    "registry/research_runs",
+    "registry/research_run_events",
     "registry/attempts",
     "registry/tool_recipes",
     "registry/tool_runs",

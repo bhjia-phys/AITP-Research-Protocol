@@ -92,6 +92,8 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "research_event_classification",
         "research_cockpit_bundle",
         "research_intent_packet",
+        "research_run_event_record",
+        "research_run_record",
         "run_iteration_record",
         "runtime_hook_installation_audit",
         "runtime_host_lifecycle_audit",

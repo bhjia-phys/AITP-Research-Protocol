@@ -40,6 +40,17 @@ def test_vnext_readiness_manifest_reports_control_plane_and_lane_backlog(tmp_pat
     }
     assert payload["backlog_workstreams"] == ["lane_exemplars"]
     assert payload["missing_workstreams"] == []
+    process_ledger = next(
+        item for item in payload["workstreams"] if item["name"] == "research_process_ledger"
+    )
+    assert process_ledger["status"] == "implemented"
+    assert process_ledger["runtime_entrypoints"] == [
+        "start_research_run",
+        "update_research_run",
+        "record_research_run_event",
+    ]
+    assert process_ledger["surfaces"] == ["research_run_record", "research_run_event_record"]
+    assert process_ledger["can_update_claim_trust"] is False
     assert payload["lane_exemplar_manifest"]["covered_lanes"] == ["code_backed_algorithm"]
     assert payload["lane_exemplar_manifest"]["missing_lanes"] == ["toy_numeric", "semi_formal_theory"]
     assert payload["stable_output_spine"] == [

@@ -203,6 +203,21 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_record_run_iteration",
         "surface": "run_iteration_record",
     },
+    "start_research_run": {
+        "cli": "aitp-v5 run research start <args>",
+        "mcp": "aitp_v5_start_research_run",
+        "surface": "research_run_record",
+    },
+    "update_research_run": {
+        "cli": "aitp-v5 run research update <args>",
+        "mcp": "aitp_v5_update_research_run",
+        "surface": "research_run_record",
+    },
+    "record_research_run_event": {
+        "cli": "aitp-v5 run event record <args>",
+        "mcp": "aitp_v5_record_research_run_event",
+        "surface": "research_run_event_record",
+    },
     "materialize_steering_redirect": {
         "cli": "aitp-v5 intent steering materialize <args>",
         "mcp": "aitp_v5_materialize_steering_redirect",

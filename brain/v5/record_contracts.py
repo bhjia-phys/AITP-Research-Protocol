@@ -353,6 +353,118 @@ def require_valid_research_route_record(payload: dict[str, Any]) -> dict[str, An
     return _require_valid(validate_research_route_record(payload), payload)
 
 
+def validate_research_run_record(payload: dict[str, Any], *, path: str = "research_run_record") -> ContractResult:
+    result = _validate_base_record(payload, path, kind="research_run")
+    if result.issues:
+        return result
+    for key in ("run_id", "topic_id", "objective", "research_question", "operator", "status", "phase"):
+        _require_nonempty_str(payload, key, path, result)
+    if payload.get("status") not in {"active", "paused", "stopped", "complete", "blocked"}:
+        result.add(f"{path}.status", "must be active, paused, stopped, complete, or blocked")
+    if payload.get("phase") not in {
+        "planning",
+        "context_refresh",
+        "action_selection",
+        "source_review",
+        "validation",
+        "answer_drafting",
+        "awaiting_approval",
+        "blocked",
+        "complete",
+    }:
+        result.add(f"{path}.phase", "must be a known research-run phase")
+    if payload.get("terminal_answer_state") not in {
+        "",
+        "answered_with_validated_support",
+        "answered_with_conditional_support",
+        "blocked_needs_human",
+        "negative_or_inconclusive",
+        "draft_only",
+    }:
+        result.add(f"{path}.terminal_answer_state", "must be a known terminal answer state")
+    for key in (
+        "aitp_slice_refs",
+        "action_refs",
+        "evidence_refs",
+        "validation_refs",
+        "source_refs",
+        "event_ids",
+        "operator_trail",
+    ):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    _require_mapping(payload.get("metadata"), f"{path}.metadata", result)
+    for key, expected in (
+        ("summary_inputs_trusted", False),
+        ("orientation_only", True),
+        ("can_update_kernel_state", True),
+        ("can_update_claim_trust", False),
+    ):
+        if payload.get(key) is not expected:
+            result.add(f"{path}.{key}", f"must be {str(expected).lower()}")
+    return result
+
+
+def require_valid_research_run_record(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_research_run_record(payload), payload)
+
+
+def validate_research_run_event_record(
+    payload: dict[str, Any],
+    *,
+    path: str = "research_run_event_record",
+) -> ContractResult:
+    result = _validate_base_record(payload, path, kind="research_run_event")
+    if result.issues:
+        return result
+    for key in ("event_id", "run_id", "topic_id", "operator", "event_type", "summary", "status"):
+        _require_nonempty_str(payload, key, path, result)
+    if payload.get("event_type") not in {
+        "run_started",
+        "context_refreshed",
+        "action_selected",
+        "action_started",
+        "action_completed",
+        "operator_checkpoint",
+        "status_changed",
+        "answer_drafted",
+        "answer_finalized",
+        "blocked",
+        "run_stopped",
+    }:
+        result.add(f"{path}.event_type", "must be a known research-run event type")
+    if payload.get("status") not in {"recorded", "blocked", "failed", "superseded"}:
+        result.add(f"{path}.status", "must be recorded, blocked, failed, or superseded")
+    phase = payload.get("phase")
+    if phase and phase not in {
+        "planning",
+        "context_refresh",
+        "action_selection",
+        "source_review",
+        "validation",
+        "answer_drafting",
+        "awaiting_approval",
+        "blocked",
+        "complete",
+    }:
+        result.add(f"{path}.phase", "must be empty or a known research-run phase")
+    for key in ("source_refs", "evidence_refs", "validation_refs", "artifact_refs"):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    _require_mapping(payload.get("payload"), f"{path}.payload", result)
+    for key, expected in (
+        ("summary_inputs_trusted", False),
+        ("orientation_only", True),
+        ("can_update_kernel_state", True),
+        ("can_update_claim_trust", False),
+    ):
+        if payload.get(key) is not expected:
+            result.add(f"{path}.{key}", f"must be {str(expected).lower()}")
+    return result
+
+
+def require_valid_research_run_event_record(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_research_run_event_record(payload), payload)
+
+
 def validate_validation_contract_record(payload: dict[str, Any], *, path: str = "validation_contract_record") -> ContractResult:
     result = _validate_base_record(payload, path, kind="validation_contract")
     if result.issues:

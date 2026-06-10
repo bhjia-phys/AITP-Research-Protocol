@@ -3575,6 +3575,9 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
         "readLiteratureComparisonDraft",
     ]
     assert "ingestCuratedRagCorpus" in manifest["target_groups"]["write"]
+    assert "startResearchRun" in manifest["target_groups"]["write"]
+    assert "updateResearchRun" in manifest["target_groups"]["write"]
+    assert "recordResearchRunEvent" in manifest["target_groups"]["write"]
     assert manifest["target_groups"]["preflight"] == ["preflightTrustUpdate"]
     assert by_operation["readRuntimePayloadProfiles"]["mcp_tool"] == "aitp_v5_get_runtime_payload_profiles"
     assert by_operation["readRuntimePayloadProfiles"]["cli_fallback"] == "aitp-v5 adapter payload-profiles"
@@ -3617,6 +3620,21 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
     assert by_operation["ingestCuratedRagCorpus"]["state_effect"] == "curated_rag_manifest_write"
     assert by_operation["ingestCuratedRagCorpus"]["claim_trust_mutation"] == "none"
     assert by_operation["ingestCuratedRagCorpus"]["can_update_claim_trust"] is False
+    assert by_operation["startResearchRun"]["mcp_tool"] == "aitp_v5_start_research_run"
+    assert by_operation["startResearchRun"]["cli_fallback"] == "aitp-v5 run research start <args>"
+    assert by_operation["startResearchRun"]["surface"] == "research_run_record"
+    assert by_operation["startResearchRun"]["execution_role"] == "write"
+    assert by_operation["startResearchRun"]["state_effect"] == "typed_record_write"
+    assert by_operation["startResearchRun"]["claim_trust_mutation"] == "none"
+    assert by_operation["startResearchRun"]["can_update_claim_trust"] is False
+    assert by_operation["updateResearchRun"]["mcp_tool"] == "aitp_v5_update_research_run"
+    assert by_operation["updateResearchRun"]["cli_fallback"] == "aitp-v5 run research update <args>"
+    assert by_operation["updateResearchRun"]["surface"] == "research_run_record"
+    assert by_operation["updateResearchRun"]["execution_role"] == "write"
+    assert by_operation["recordResearchRunEvent"]["mcp_tool"] == "aitp_v5_record_research_run_event"
+    assert by_operation["recordResearchRunEvent"]["cli_fallback"] == "aitp-v5 run event record <args>"
+    assert by_operation["recordResearchRunEvent"]["surface"] == "research_run_event_record"
+    assert by_operation["recordResearchRunEvent"]["execution_role"] == "write"
     assert by_operation["readProcessGraphSlice"]["mcp_arguments"] == {
         "required": ["base", "session_id"],
         "optional": ["claim_id", "limit"],

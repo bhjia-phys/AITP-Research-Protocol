@@ -289,6 +289,51 @@ def sample_args_for_template(template: str) -> list[str]:
             "--status",
             "planned",
         ]
+    if template.startswith("run research start"):
+        return [
+            "--topic",
+            "fqhe",
+            "--objective",
+            "Answer whether the scoped finite-size invariant survives source review.",
+            "--question",
+            "Does the diagnostic invariant have validated support or only finite evidence?",
+            "--operator",
+            "human",
+            "--session",
+            "s1",
+            "--claim",
+            "claim-fqhe",
+        ]
+    if template.startswith("run research update"):
+        return [
+            "--run",
+            "research-run-fqhe",
+            "--topic",
+            "fqhe",
+            "--operator",
+            "hakimi",
+            "--status",
+            "paused",
+            "--phase",
+            "awaiting_approval",
+            "--event-summary",
+            "Paused before trust-changing work.",
+        ]
+    if template.startswith("run event record"):
+        return [
+            "--run",
+            "research-run-fqhe",
+            "--topic",
+            "fqhe",
+            "--operator",
+            "hakimi",
+            "--type",
+            "context_refreshed",
+            "--summary",
+            "Read current AITP process graph slice.",
+            "--phase",
+            "context_refresh",
+        ]
     if template.startswith("exemplar lane record"):
         return [
             "--topic",

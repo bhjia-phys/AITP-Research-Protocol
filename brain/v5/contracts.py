@@ -530,6 +530,42 @@ def require_valid_research_route_record(payload: dict[str, Any]) -> dict[str, An
     return _require(payload)
 
 
+def validate_research_run_record(payload: dict[str, Any], *, path: str = "research_run_record") -> ContractResult:
+    """Validate a public research-run-record write payload."""
+
+    from brain.v5.record_contracts import validate_research_run_record as _validate
+
+    return _validate(payload, path=path)
+
+
+def require_valid_research_run_record(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a research-run-record write payload or raise a contract error."""
+
+    from brain.v5.record_contracts import require_valid_research_run_record as _require
+
+    return _require(payload)
+
+
+def validate_research_run_event_record(
+    payload: dict[str, Any],
+    *,
+    path: str = "research_run_event_record",
+) -> ContractResult:
+    """Validate a public research-run-event-record write payload."""
+
+    from brain.v5.record_contracts import validate_research_run_event_record as _validate
+
+    return _validate(payload, path=path)
+
+
+def require_valid_research_run_event_record(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a research-run-event-record write payload or raise a contract error."""
+
+    from brain.v5.record_contracts import require_valid_research_run_event_record as _require
+
+    return _require(payload)
+
+
 def validate_validation_contract_record(payload: dict[str, Any], *, path: str = "validation_contract_record") -> ContractResult:
     from brain.v5.record_contracts import validate_validation_contract_record as _validate_validation_contract_record
     return _validate_validation_contract_record(payload, path=path)

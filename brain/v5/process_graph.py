@@ -17,6 +17,8 @@ from brain.v5.models import (
     ProofObligationRecord,
     ReferenceLocationRecord,
     ResearchRouteRecord,
+    ResearchRunEventRecord,
+    ResearchRunRecord,
     SessionBinding,
     SourceAssetRecord,
     ToolRunRecord,
@@ -104,6 +106,20 @@ def build_process_graph_slice(
         session_id,
         session.active_route,
     )
+    research_runs = _filter_research_runs(
+        _records(ws, "research_runs", ResearchRunRecord),
+        topic_id,
+        claim_ids,
+        session_id,
+    )
+    research_run_ids = {record.run_id for record in research_runs}
+    research_run_events = _filter_research_run_events(
+        _records(ws, "research_run_events", ResearchRunEventRecord),
+        topic_id,
+        claim_ids,
+        session_id,
+        research_run_ids,
+    )
     route_checkpoint_ids = {checkpoint_id for route in routes for checkpoint_id in route.checkpoint_ids}
     checkpoints = _filter_human_checkpoints(
         _records(ws, "checkpoints", HumanCheckpointRecord),
@@ -154,12 +170,16 @@ def build_process_graph_slice(
         builder.add_node("human_checkpoint", record.checkpoint_id, record, label=record.reason)
     for record in routes:
         builder.add_node("research_route", record.route_id, record, label=record.title)
+    for record in research_runs:
+        builder.add_node("research_run", record.run_id, record, label=record.title or record.objective)
+    for record in research_run_events:
+        builder.add_node("research_run_event", record.event_id, record, label=record.event_type)
 
     for claim in claims:
         builder.add_edge("session", session.session_id, "claim", claim.claim_id, "session_focus")
     _add_edges(builder, session, claims, references, source_assets, evidence, obligations, objects, relations,
                validation_contracts, validation_results, tool_runs, code_states, memory_entries, sensemaking_reports,
-               exploratory_records, checkpoints, routes)
+               exploratory_records, checkpoints, routes, research_runs, research_run_events)
 
     open_obligations = [_obligation_slice(record) for record in obligations if not _closed(record.status)]
     source_backtrace = _source_backtrace(claims, references, source_assets, evidence, obligations, objects, relations, exploratory_records)
@@ -257,6 +277,8 @@ def build_process_graph_slice(
             "exploratory_record": len(exploratory_records),
             "human_checkpoint": len(checkpoints),
             "research_route": len(routes),
+            "research_run": len(research_runs),
+            "research_run_event": len(research_run_events),
             "provenance_gap": len(provenance_gaps),
         },
         "truncation": {
@@ -343,6 +365,8 @@ def _add_edges(
     exploratory_records: list[ExploratoryRecord],
     checkpoints: list[HumanCheckpointRecord],
     routes: list[ResearchRouteRecord],
+    research_runs: list[ResearchRunRecord],
+    research_run_events: list[ResearchRunEventRecord],
 ) -> None:
     reference_lookup = _reference_lookup(references)
     source_asset_lookup = _source_asset_lookup(source_assets)
@@ -354,6 +378,7 @@ def _add_edges(
     checkpoint_ids = {record.checkpoint_id for record in checkpoints}
     route_ids = {record.route_id for record in routes}
     evidence_ids = {record.evidence_id for record in evidence}
+    research_run_ids = {record.run_id for record in research_runs}
 
     for record in references:
         if record.claim_id:
@@ -475,6 +500,46 @@ def _add_edges(
             asset_id = source_asset_lookup.get(ref)
             if asset_id:
                 builder.add_edge("research_route", record.route_id, "source_asset", asset_id, "uses_source_asset")
+    for record in research_runs:
+        if record.claim_id:
+            builder.add_edge("claim", record.claim_id, "research_run", record.run_id, "has_research_run")
+        if record.session_id:
+            builder.add_edge("session", record.session_id, "research_run", record.run_id, "recorded_research_run")
+        for event_id in record.event_ids:
+            builder.add_edge("research_run", record.run_id, "research_run_event", event_id, "has_run_event")
+        for evidence_id in record.evidence_refs:
+            if evidence_id in evidence_ids:
+                builder.add_edge("research_run", record.run_id, "evidence", evidence_id, "uses_evidence")
+        for result_id in record.validation_refs:
+            if result_id in validation_result_ids:
+                builder.add_edge("research_run", record.run_id, "validation_result", result_id, "uses_validation_result")
+        for ref in record.source_refs:
+            location_id = reference_lookup.get(ref)
+            if location_id:
+                builder.add_edge("research_run", record.run_id, "reference_location", location_id, "uses_source")
+            asset_id = source_asset_lookup.get(ref)
+            if asset_id:
+                builder.add_edge("research_run", record.run_id, "source_asset", asset_id, "uses_source_asset")
+    for record in research_run_events:
+        if record.run_id in research_run_ids:
+            builder.add_edge("research_run", record.run_id, "research_run_event", record.event_id, "has_run_event")
+        if record.claim_id:
+            builder.add_edge("claim", record.claim_id, "research_run_event", record.event_id, "has_research_run_event")
+        if record.session_id:
+            builder.add_edge("session", record.session_id, "research_run_event", record.event_id, "recorded_research_run_event")
+        for evidence_id in record.evidence_refs:
+            if evidence_id in evidence_ids:
+                builder.add_edge("research_run_event", record.event_id, "evidence", evidence_id, "mentions_evidence")
+        for result_id in record.validation_refs:
+            if result_id in validation_result_ids:
+                builder.add_edge("research_run_event", record.event_id, "validation_result", result_id, "mentions_validation")
+        for ref in record.source_refs:
+            location_id = reference_lookup.get(ref)
+            if location_id:
+                builder.add_edge("research_run_event", record.event_id, "reference_location", location_id, "mentions_source")
+            asset_id = source_asset_lookup.get(ref)
+            if asset_id:
+                builder.add_edge("research_run_event", record.event_id, "source_asset", asset_id, "mentions_source_asset")
     if session.active_claim:
         for claim in claims:
             if claim.claim_id == session.active_claim:
@@ -563,6 +628,46 @@ def _filter_human_checkpoints(
         for record in records
         if record.topic_id == topic_id
         and (record.checkpoint_id in checkpoint_ids or not claim_ids or record.claim_id in claim_ids)
+    ]
+
+
+def _filter_research_runs(
+    records: list[ResearchRunRecord],
+    topic_id: str,
+    claim_ids: set[str],
+    session_id: str,
+) -> list[ResearchRunRecord]:
+    return [
+        record
+        for record in records
+        if record.topic_id == topic_id
+        and (
+            not claim_ids
+            or record.claim_id in claim_ids
+            or not record.claim_id
+            or record.session_id == session_id
+        )
+    ]
+
+
+def _filter_research_run_events(
+    records: list[ResearchRunEventRecord],
+    topic_id: str,
+    claim_ids: set[str],
+    session_id: str,
+    research_run_ids: set[str],
+) -> list[ResearchRunEventRecord]:
+    return [
+        record
+        for record in records
+        if record.topic_id == topic_id
+        and (
+            record.run_id in research_run_ids
+            or not claim_ids
+            or record.claim_id in claim_ids
+            or not record.claim_id
+            or record.session_id == session_id
+        )
     ]
 
 

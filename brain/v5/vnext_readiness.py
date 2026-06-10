@@ -72,6 +72,15 @@ def build_vnext_readiness_manifest(ws: WorkspacePaths) -> dict[str, Any]:
             surfaces,
         ),
         _workstream(
+            "research_process_ledger",
+            "phase_3_topic_status_explainability",
+            ["start_research_run", "update_research_run", "record_research_run_event"],
+            ["research_run_record", "research_run_event_record"],
+            "bounded runtime research runs preserve objective, operator trail, phase/status, AITP refs, and terminal answer state without claim-trust authority",
+            entrypoints,
+            surfaces,
+        ),
+        _workstream(
             "strategy_memory",
             "phase_4_strategy_memory",
             ["record_strategy_memory"],
@@ -228,7 +237,11 @@ def _phase_statuses(workstreams: list[dict[str, Any]]) -> dict[str, str]:
         ),
         "phase_2_operator_checkpoint": by_name.get("operator_checkpoint_protocol", ""),
         "phase_3_topic_status_explainability": _combined(
-            [by_name.get("topic_status_explainability", ""), by_name.get("run_iteration_continuity", "")]
+            [
+                by_name.get("topic_status_explainability", ""),
+                by_name.get("run_iteration_continuity", ""),
+                by_name.get("research_process_ledger", ""),
+            ]
         ),
         "phase_4_strategy_memory": by_name.get("strategy_memory", ""),
         "phase_5_lane_exemplars": by_name.get("lane_exemplars", ""),
