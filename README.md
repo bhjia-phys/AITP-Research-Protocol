@@ -43,6 +43,47 @@ surfaces.
 | Curated heuristic RAG | Implemented first read/write contract surface, file-backed manifest lane, Hakimi automatic consumption path, read-only chunk lookup, and read-only promotion draft surface: `aitp-v5 adapter curated-rag-corpus` / `aitp_v5_get_curated_rag_corpus` exposes either the default fixture catalog or `.aitp/curated_rag/corpus.json`, `aitp-v5 adapter curated-rag-search <query>` / `aitp_v5_search_curated_rag_corpus` returns deterministic lexical retrieval as `heuristic_context`, `aitp-v5 adapter curated-rag-chunk <chunk-id>` / `aitp_v5_get_curated_rag_chunk` returns the exact chunk/document ids, hashes, source URI, version anchor, promotion path, and forbidden uses, `aitp-v5 curated-rag ingest --path ...` / `aitp_v5_ingest_curated_rag_corpus` creates or refreshes `.aitp/curated_rag/corpus.json` plus `.aitp/curated_rag/indexes/lexical_index.json`, and `aitp-v5 adapter curated-rag-promotion-draft <chunk-id>` / `aitp_v5_draft_curated_rag_promotion` returns a constrained draft for source-asset, reference-location, evidence, validation, and trust-preflight writes. The file-backed lane derives `lexical_file_backed` index metadata, manifest hashes, and stale-index diagnostics from `.aitp/curated_rag/indexes/lexical_index.json` when present. Hakimi now detects conceptual scaffolding, literature orientation, derivation scaffolding, method selection, and source-backtrace turns, calls this AITP-owned retrieval surface with a small limit, injects chunk ids/document ids/hashes into ContextPacks as `heuristic_context` / `orientation_only`, and can inspect one chunk's canonical identity/anchor/hash before asking for a promotion draft. Corpus/chunks/chunk lookups/ingestion results and promotion drafts remain orientation-only background/planning surfaces; they cannot satisfy evidence, validation, claim-trust, `trust_apply`, or final-gate requirements unless a host explicitly executes the normal AITP source/evidence/validation records |
 | QSGW cockpit | Implemented first surface: `aitp-v5 status qsgw-cockpit` writes a topic-local final/diagnostic lane manifest, plot guard, and dashboard dry-run from typed records plus `research/librpa` report/script scans; it also discovers downstream `*_lane_manifest_current.json` and `*_aitp_intake_current.jsonl` files without treating them as trust updates |
 
+## Remaining AITP / Hakimi Integration Roadmap
+
+The current integration already records much of the scientific process as typed
+graph and memory state: routes, exploratory reasoning, source assets, reference
+locations, provenance gaps, tool runs, artifacts, validation contracts/results,
+source reconstruction reviews, checkpoints, and trust-preflight packets. Hakimi
+can consume those records as WorkFrame and ResearchAction context without
+becoming the canonical store.
+
+The next planning frontier is to make AITP a better canonical substrate for a
+bounded Hakimi `/autoresearch` run. In that mode, a user sets a concrete
+research question and Hakimi may drive the research loop automatically, but AITP
+must still own the durable record boundaries and final evidence/trust status.
+The remaining AITP-facing work is:
+
+1. Add explicit operator provenance to new run/action records. The operator may
+   be `human`, `hakimi`, `kimi`, `codex`, `claude`, `mcp:<server>`,
+   `tool:<name>`, or a future subagent id. Operator metadata records who
+   performed or normalized a step; it does not itself increase trust.
+2. Promote the read-only `literature_comparison_draft` lane into reviewed typed
+   literature comparison units or comparison records. These records should
+   preserve source refs, dimensions, agreement/disagreement, missing evidence,
+   limitations, and recommended next actions while remaining
+   orientation/evidence candidates until source support, validation, and trust
+   preflight are satisfied.
+3. Define an AITP-owned `/autoresearch` run packet surface for hosts: objective,
+   research question, status, operator trail, AITP slice cursors, actions
+   attempted, evidence refs, validation refs, open gaps, terminal answer state,
+   and whether supporting records were written into AITP.
+4. Expose final answer audit packets with stable terminal states such as
+   `answered_with_validated_support`, `answered_with_conditional_support`,
+   `blocked_needs_human`, `negative_or_inconclusive`, and `draft_only`.
+5. Harden the graph projection/index layer after those typed surfaces stabilize,
+   so hosts can query neighborhoods, route state, evidence dependencies,
+   provenance gaps, and validation/trust prerequisites without inventing a
+   parallel graph database.
+
+AITP should not add a silent `trust apply` path for Hakimi automation. Any
+trust-changing conclusion must remain a typed AITP trust/preflight/checkpoint
+workflow with explicit evidence and validation status.
+
 The latest real readiness audit reports:
 
 - `completion_status = kernel_ready_content_backlog`
