@@ -113,7 +113,131 @@ def aitp_v5_bind_session(
 
 
 def aitp_v5_get_execution_brief(base: str, *, session_id: str) -> dict:
-    return require_valid_public_surface("execution_brief", build_execution_brief(_ws(base), session_id))
+    try:
+        brief = build_execution_brief(_ws(base), session_id)
+    except TypeError as error:
+        if "SessionBinding.__init__()" not in str(error):
+            raise
+        brief = _unbound_session_execution_brief(session_id)
+    return require_valid_public_surface("execution_brief", brief)
+
+
+def _unbound_session_execution_brief(session_id: str) -> dict:
+    """Return a valid brief for malformed or not-yet-bound session records."""
+
+    return {
+        "ok": False,
+        "status": "needs_bind_session",
+        "session": {
+            "session_id": session_id or "unbound-session",
+            "topic_id": "unbound-session",
+            "context_id": "unbound-session",
+            "runtime": "unknown",
+            "interaction_profile": "collaborator",
+            "interaction_steering": "call aitp_v5_bind_session before requesting an execution brief",
+            "active_cycle": "",
+            "active_claim": "",
+            "active_route": "",
+            "write_scope": "",
+            "created_at": "",
+        },
+        "current_focus": {
+            "active_claim": "",
+            "active_route": "",
+            "active_cycle": "",
+            "claim_statement": "",
+            "confidence_state": "",
+            "evidence_profile": "",
+            "main_uncertainty": "session binding is missing or malformed",
+        },
+        "flow_profile": {
+            "profile": "guided",
+            "reason": "execution brief cannot resolve a bound session yet",
+            "escalation_triggers": [],
+        },
+        "risk_assessment": {
+            "level": "guided",
+            "score": 0,
+            "signals": [],
+            "required_checks": [],
+            "human_checkpoint_needed": False,
+            "rationale": "no active claim is available until the session is bound",
+            "summary": "session binding is missing or malformed",
+            "action_budget": {
+                "level": "guided",
+                "max_tool_calls_before_reflection": 4,
+                "max_questions": 2,
+                "required_outputs": [],
+                "allowed_actions": ["bind_session"],
+                "requires_human_checkpoint": False,
+            },
+        },
+        "action_budget": {
+            "level": "guided",
+            "max_tool_calls_before_reflection": 4,
+            "max_questions": 2,
+            "required_outputs": [],
+            "allowed_actions": ["bind_session"],
+            "requires_human_checkpoint": False,
+        },
+        "evidence_coverage": {
+            "required_outputs": [],
+            "satisfied_outputs": [],
+            "missing_outputs": [],
+            "coverage_by_record": [],
+        },
+        "interaction_profile": {
+            "name": "collaborator",
+            "max_questions": 2,
+            "effective_max_questions": 2,
+            "steering": "bind session before continuing",
+        },
+        "known_context": {
+            "topic_id": "unbound-session",
+            "context_id": "unbound-session",
+            "previous_failed_attempts": [],
+            "recommended_tool_executors": [],
+            "knowledge_connectors": [],
+            "reference_locations": [],
+            "operating_notes": [],
+            "research_intent_gate": {"present": False},
+            "innovation_direction": {"present": False},
+            "final_output_profile": {"present": False},
+            "operator_checkpoint": {"active": False},
+            "strategy_memory": {"present": False},
+            "run_iterations": [],
+            "lane_exemplars": [],
+            "object_relations": [],
+            "memory_entries": [],
+            "proof_obligations": [],
+        },
+        "research_gates": {
+            "record_level_human_gate_required": False,
+            "record_level_human_gate_count": 0,
+            "open_proof_obligation_count": 0,
+            "open_proof_obligation_ids": [],
+            "human_checkpoint_needed": False,
+            "semantics": {
+                "human_gate_required": "not evaluated until the session is bound",
+                "human_checkpoint_needed": "not required for the bind-session repair",
+            },
+        },
+        "mandatory_reflection": [],
+        "next_action_candidates": [
+            {
+                "action": "bind_session",
+                "rank": 1,
+                "why": "the requested execution brief has no valid SessionBinding",
+                "expected_evidence_gain": "establish topic/context/claim focus before further AITP reads",
+            }
+        ],
+        "forbidden_now": ["continue_without_binding_session"],
+        "human_checkpoint": {
+            "needed": False,
+            "reason": None,
+            "semantics": "No human checkpoint is needed for the bind-session repair.",
+        },
+    }
 
 
 def aitp_v5_get_process_graph_slice(base: str, *, session_id: str, claim_id: str = "", limit: int = 80) -> dict:
@@ -844,11 +968,15 @@ def aitp_v5_evaluate_pre_tool_policy(
 def aitp_v5_record_physics_object(
     base: str, *, topic_id: str, object_type: str, name: str, definition: str,
     notation: str = "", assumptions: list[str] | None = None, source_refs: list[str] | None = None,
-    metadata: dict | None = None, linked_records: dict | None = None, status: str = "active",
+    metadata: dict | None = None, linked_records: dict | None = None, claim_id: str = "",
+    status: str = "active",
 ) -> dict:
+    links = dict(linked_records or {})
+    if claim_id:
+        links.setdefault("claim_id", claim_id)
     obj = record_physics_object(_ws(base), topic_id=topic_id, object_type=object_type,
         name=name, definition=definition, notation=notation, assumptions=assumptions,
-        source_refs=source_refs, metadata=metadata, linked_records=linked_records, status=status)
+        source_refs=source_refs, metadata=metadata, linked_records=links, status=status)
     return require_valid_public_surface("physics_object_record", {"ok": True, **asdict(obj)})
 
 

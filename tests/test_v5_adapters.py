@@ -3171,6 +3171,11 @@ def test_curated_rag_fixture_searches_open_theory_lecture_orientation():
     assert ads_search["requires_promotion_for_claim_support"] is True
     assert ads_search["results"][0]["chunk_id"] == "curated_rag_chunk:open_ads_holography_orientation:0001"
     assert "massive-matter" in ads_search["results"][0]["tags"]
+    assert "conformal-boundary" in ads_search["results"][0]["tags"]
+    assert "wavepacket-tail" in ads_search["results"][0]["tags"]
+    assert "kinetic-sink" in ads_search["results"][0]["tags"]
+    assert "finite cutoff-wall" in ads_search["results"][0]["summary"]
+    assert "conformal-boundary reachability" in ads_search["results"][0]["summary"]
     assert lecture_search["results"][0]["document_id"] == "curated_rag_doc:open_theory_lecture_shelf"
     assert lecture_search["results"][0]["can_update_claim_trust"] is False
 

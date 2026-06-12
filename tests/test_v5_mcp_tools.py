@@ -37,6 +37,23 @@ def test_mcp_wrappers_create_session_and_return_contract_valid_brief(tmp_path):
     assert brief["current_focus"]["active_claim"] == claim["claim_id"]
 
 
+def test_mcp_execution_brief_guides_unbound_session_repair(tmp_path):
+    from brain.v5.contracts import validate_execution_brief
+    from brain.v5.mcp_tools import aitp_v5_create_topic, aitp_v5_get_execution_brief, aitp_v5_init_workspace
+
+    aitp_v5_init_workspace(str(tmp_path))
+    aitp_v5_create_topic(str(tmp_path), topic_id="ads", context_id="ads", title="AdS")
+
+    brief = aitp_v5_get_execution_brief(str(tmp_path), session_id="not-yet-bound")
+
+    assert validate_execution_brief(brief).ok is True
+    assert brief["ok"] is False
+    assert brief["status"] == "needs_bind_session"
+    assert brief["session"]["session_id"] == "not-yet-bound"
+    assert brief["next_action_candidates"][0]["action"] == "bind_session"
+    assert "continue_without_binding_session" in brief["forbidden_now"]
+
+
 def test_mcp_record_evidence_updates_execution_brief_coverage(tmp_path):
     from brain.v5.mcp_tools import (
         aitp_v5_bind_session,

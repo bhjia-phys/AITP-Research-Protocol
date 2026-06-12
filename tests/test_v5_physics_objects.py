@@ -102,6 +102,26 @@ def test_mcp_record_physics_object_returns_valid_surface(tmp_path):
     assert require_valid_public_surface("physics_object_record", payload) == payload
 
 
+def test_mcp_record_physics_object_accepts_optional_claim_link(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_record_physics_object
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    payload = aitp_v5_record_physics_object(
+        str(tmp_path),
+        topic_id="qg",
+        claim_id="claim-qg-local-algebra",
+        object_type="algebra",
+        name="A(O)",
+        definition="Local operator algebra.",
+        linked_records={"source": "prompt"},
+    )
+
+    assert payload["ok"] is True
+    assert payload["linked_records"]["claim_id"] == "claim-qg-local-algebra"
+    assert payload["linked_records"]["source"] == "prompt"
+    assert require_valid_public_surface("physics_object_record", payload) == payload
+
+
 def test_record_object_relation_links_two_physics_objects(tmp_path):
     from brain.v5.markdown import read_md
     from brain.v5.physics_objects import record_object_relation, record_physics_object

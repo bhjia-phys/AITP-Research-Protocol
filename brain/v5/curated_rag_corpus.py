@@ -418,9 +418,13 @@ def _fixture_chunks() -> list[dict[str, Any]]:
                 "interpretation. For massive matter, ask first whether the relevant "
                 "description is point-particle/geodesic motion, a field wavepacket, a "
                 "kinetic ensemble, or an effective open-system sink, then choose survival, "
-                "hitting time, current, or energy flux as primary observables."
+                "hitting time, current, or energy flux as primary observables. As an "
+                "orientation check, finite-energy classical massive timelike motion in "
+                "global AdS should not be assumed to hit the conformal boundary; boundary "
+                "loss may instead require a finite cutoff wall, a wavepacket tail or field "
+                "boundary condition, or a kinetic distribution with a sink."
             ),
-            "summary": "AdS boundary problems should separate motion layer, cutoff wall, bath coupling, survival, hitting time, current, and energy flux.",
+            "summary": "AdS massive-matter boundary problems should separate conformal-boundary reachability from finite cutoff-wall, wavepacket-tail, or kinetic-sink models before choosing survival, hitting time, current, and energy flux observables.",
             "tags": [
                 "ads",
                 "holography",
@@ -430,8 +434,13 @@ def _fixture_chunks() -> list[dict[str, Any]]:
                 "hitting-time",
                 "energy-flux",
                 "boundary-condition",
+                "timelike-geodesic",
+                "conformal-boundary",
+                "wavepacket-tail",
+                "kinetic-sink",
+                "model-layer",
             ],
-            "token_estimate": 63,
+            "token_estimate": 104,
             "content_hash": "sha256:curated-rag-chunk-open-ads-holography-orientation-0001",
             "retrieval_role": "heuristic_context",
             "orientation_only": True,
@@ -442,6 +451,10 @@ def _fixture_chunks() -> list[dict[str, Any]]:
                 "cutoff_wall",
                 "boundary_condition",
                 "bath_channel",
+                "conformal_boundary_reachability",
+                "timelike_geodesic",
+                "field_wavepacket_tail",
+                "kinetic_sink",
                 "survival_probability",
                 "hitting_time",
                 "energy_flux",
