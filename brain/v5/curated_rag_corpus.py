@@ -225,6 +225,71 @@ def _fixture_documents() -> list[dict[str, Any]]:
             "orientation_only": True,
             "can_update_claim_trust": False,
         },
+        {
+            "document_id": "curated_rag_doc:open_theory_lecture_shelf",
+            "title": "Open theory lecture shelf",
+            "asset_type": "lecture",
+            "source_uri": "aitp://curated-rag/open-theory-lecture-shelf",
+            "version_anchor": {"catalog_version": CATALOG_VERSION, "revision": "v1"},
+            "content_hash": "sha256:curated-rag-open-theory-lecture-shelf-v1",
+            "tags": [
+                "theoretical-physics",
+                "lecture",
+                "qft",
+                "general-relativity",
+                "holography",
+                "quantum-information",
+                "orientation",
+            ],
+            "domain_hints": ["theoretical-physics/general"],
+            "topic_hints": ["lecture-orientation", "domain-intuition", "source-backtrace"],
+            "language": "en",
+            "priority": "high",
+            "intended_use": "background_rag",
+            "trust_status": "heuristic_context",
+            "orientation_only": True,
+            "can_update_claim_trust": False,
+            "curation_policy": {
+                "quality_filter": "open lecture notes and arXiv-style reviews with stable source anchors",
+                "copyright_policy": "store source identity and short orientation summaries only; do not ingest copyrighted books wholesale",
+                "claim_support_policy": "retrieval is not evidence; promote exact passages through source_asset/reference/evidence/validation",
+            },
+        },
+        {
+            "document_id": "curated_rag_doc:open_ads_holography_orientation",
+            "title": "Open AdS and holography orientation shelf",
+            "asset_type": "lecture",
+            "source_uri": "aitp://curated-rag/open-ads-holography-orientation",
+            "version_anchor": {"catalog_version": CATALOG_VERSION, "revision": "v1"},
+            "content_hash": "sha256:curated-rag-open-ads-holography-orientation-v1",
+            "tags": [
+                "ads-cft",
+                "holography",
+                "bulk-boundary",
+                "general-relativity",
+                "qft",
+                "open-system",
+                "orientation",
+            ],
+            "domain_hints": ["theoretical-physics/gravity", "theoretical-physics/qft"],
+            "topic_hints": [
+                "ads-bulk-boundary",
+                "holographic-methods",
+                "boundary-conditions",
+                "transport",
+            ],
+            "language": "en",
+            "priority": "high",
+            "intended_use": "background_rag",
+            "trust_status": "heuristic_context",
+            "orientation_only": True,
+            "can_update_claim_trust": False,
+            "curation_policy": {
+                "quality_filter": "open lecture notes and review-style sources for AdS/CFT and holographic methods",
+                "copyright_policy": "store source identity and short orientation summaries only",
+                "claim_support_policy": "use retrieved chunks only to choose what to inspect next",
+            },
+        },
     ]
     return documents
 
@@ -264,6 +329,123 @@ def _fixture_chunks() -> list[dict[str, Any]]:
             "retrieval_role": "heuristic_context",
             "orientation_only": True,
             "can_update_claim_trust": False,
+        },
+        {
+            "chunk_id": "curated_rag_chunk:open_theory_lecture_shelf:0001",
+            "document_id": "curated_rag_doc:open_theory_lecture_shelf",
+            "anchor": {
+                "section": "classic-open-lecture-sources",
+                "ordinal": 1,
+                "source_examples": [
+                    "https://www.damtp.cam.ac.uk/user/tong/teaching.html",
+                    "https://www.preposterousuniverse.com/grnotes/",
+                    "https://www.preskill.caltech.edu/ph229/",
+                    "https://arxiv.org/abs/0903.3246",
+                ],
+            },
+            "text": (
+                "For new theory topics, prefer open lecture notes and review-style "
+                "sources as orientation shelves: Tong for field theory, gauge theory, "
+                "statistical physics, solitons and strings; Carroll for graduate GR; "
+                "Preskill for quantum information; Hartnoll-style holographic method "
+                "notes for AdS/CFT transport intuition. Use these sources to choose "
+                "definitions, regimes, and known checks before treating any passage as evidence."
+            ),
+            "summary": "Use vetted open lecture shelves to orient definitions, regimes, and known checks.",
+            "tags": [
+                "lecture-orientation",
+                "qft",
+                "gr",
+                "holography",
+                "quantum-information",
+                "method-selection",
+            ],
+            "token_estimate": 66,
+            "content_hash": "sha256:curated-rag-chunk-open-theory-lecture-shelf-0001",
+            "retrieval_role": "heuristic_context",
+            "orientation_only": True,
+            "can_update_claim_trust": False,
+            "chunk_role": "source_backtrace_suggestion",
+        },
+        {
+            "chunk_id": "curated_rag_chunk:open_theory_lecture_shelf:0002",
+            "document_id": "curated_rag_doc:open_theory_lecture_shelf",
+            "anchor": {"section": "physics-object-discovery", "ordinal": 2},
+            "text": (
+                "Before retrieving details, ask which physical objects carry the problem: "
+                "dynamical degrees of freedom, background geometry or lattice, control "
+                "parameters, boundary/source/sink terms, observables, time scales, "
+                "conserved currents, and known limiting regimes. Normal modes, spectra, "
+                "and poles are diagnostics unless the user makes them the primary object."
+            ),
+            "summary": "Train object discovery before details: degrees of freedom, controls, boundaries, observables, scales, limits.",
+            "tags": [
+                "physics-object-discovery",
+                "conceptual-scaffolding",
+                "observable-selection",
+                "known-limits",
+            ],
+            "token_estimate": 55,
+            "content_hash": "sha256:curated-rag-chunk-open-theory-lecture-shelf-0002",
+            "retrieval_role": "heuristic_context",
+            "orientation_only": True,
+            "can_update_claim_trust": False,
+            "chunk_role": "object_discovery_lens",
+            "physics_object_hints": [
+                "dynamical_degree_of_freedom",
+                "control_parameter",
+                "boundary_or_sink",
+                "observable",
+                "time_scale",
+                "known_limit",
+            ],
+        },
+        {
+            "chunk_id": "curated_rag_chunk:open_ads_holography_orientation:0001",
+            "document_id": "curated_rag_doc:open_ads_holography_orientation",
+            "anchor": {
+                "section": "ads-boundary-motion",
+                "ordinal": 1,
+                "source_examples": [
+                    "https://arxiv.org/abs/0903.3246",
+                    "https://arxiv.org/abs/1612.07324",
+                    "https://www.preposterousuniverse.com/grnotes/",
+                ],
+            },
+            "text": (
+                "For AdS or holographic boundary questions, separate bulk motion, "
+                "boundary conditions, cutoff surfaces, external baths, and CFT/source "
+                "interpretation. For massive matter, ask first whether the relevant "
+                "description is point-particle/geodesic motion, a field wavepacket, a "
+                "kinetic ensemble, or an effective open-system sink, then choose survival, "
+                "hitting time, current, or energy flux as primary observables."
+            ),
+            "summary": "AdS boundary problems should separate motion layer, cutoff wall, bath coupling, survival, hitting time, current, and energy flux.",
+            "tags": [
+                "ads",
+                "holography",
+                "cutoff-wall",
+                "massive-matter",
+                "survival",
+                "hitting-time",
+                "energy-flux",
+                "boundary-condition",
+            ],
+            "token_estimate": 63,
+            "content_hash": "sha256:curated-rag-chunk-open-ads-holography-orientation-0001",
+            "retrieval_role": "heuristic_context",
+            "orientation_only": True,
+            "can_update_claim_trust": False,
+            "chunk_role": "domain_intuition",
+            "physics_object_hints": [
+                "massive_matter",
+                "cutoff_wall",
+                "boundary_condition",
+                "bath_channel",
+                "survival_probability",
+                "hitting_time",
+                "energy_flux",
+            ],
         },
     ]
     return chunks
@@ -322,15 +504,26 @@ def search_curated_rag_corpus(
     """Return deterministic lexical retrieval over the curated corpus."""
 
     catalog = curated_rag_corpus(base)
+    documents_by_id = {
+        document["document_id"]: document
+        for document in catalog["documents"]
+    }
     terms = [term for term in _tokenize(query) if term]
     scored: list[tuple[int, dict[str, Any]]] = []
     for chunk in catalog["chunks"]:
+        document = documents_by_id.get(chunk["document_id"], {})
         haystack = " ".join(
             [
                 chunk["text"],
                 chunk["summary"],
                 " ".join(chunk["tags"]),
                 chunk["document_id"],
+                " ".join(_string_list(document.get("tags"))),
+                " ".join(_string_list(document.get("domain_hints"))),
+                " ".join(_string_list(document.get("topic_hints"))),
+                _string(document.get("title")),
+                _string(document.get("source_uri")),
+                _flatten_anchor_terms(chunk.get("anchor")),
             ]
         ).lower()
         score = sum(1 for term in terms if term in haystack)
@@ -830,9 +1023,22 @@ def _hash_algorithm(content_hash: str) -> str:
 def _tokenize(query: str) -> list[str]:
     return [
         token.strip().lower()
-        for token in query.replace("_", " ").replace("-", " ").split()
+        for token in re.split(r"[^A-Za-z0-9]+", query.replace("_", " ").replace("-", " "))
         if token.strip()
     ]
+
+
+def _flatten_anchor_terms(value: Any) -> str:
+    if isinstance(value, dict):
+        return " ".join(
+            _flatten_anchor_terms(item)
+            for item in value.values()
+        )
+    if isinstance(value, list):
+        return " ".join(_flatten_anchor_terms(item) for item in value)
+    if isinstance(value, str):
+        return value
+    return ""
 
 
 def _load_file_manifest(base: str | Path | WorkspacePaths | None) -> dict[str, Any] | None:

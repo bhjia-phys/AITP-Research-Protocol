@@ -3057,6 +3057,9 @@ def test_adapter_packet_exposes_curated_rag_corpus_as_heuristic_context(tmp_path
     assert corpus["document_count"] == len(corpus["documents"])
     assert corpus["chunk_count"] == len(corpus["chunks"])
     assert corpus["chunk_index"] == [chunk["chunk_id"] for chunk in corpus["chunks"]]
+    assert "curated_rag_doc:open_theory_lecture_shelf" in corpus["document_index"]
+    assert "curated_rag_doc:open_ads_holography_orientation" in corpus["document_index"]
+    assert "curated_rag_chunk:open_ads_holography_orientation:0001" in corpus["chunk_index"]
     assert all(chunk["retrieval_role"] == "heuristic_context" for chunk in corpus["chunks"])
     assert all(chunk["can_update_claim_trust"] is False for chunk in corpus["chunks"])
 
@@ -3145,6 +3148,31 @@ def test_curated_rag_corpus_is_public_cli_and_mcp(capsys):
         "ok": True,
         "curated_rag_search_result": search,
     }
+
+
+def test_curated_rag_fixture_searches_open_theory_lecture_orientation():
+    from brain.v5.curated_rag_corpus import search_curated_rag_corpus
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ads_search = search_curated_rag_corpus(
+        "AdS massive matter cutoff wall survival hitting time energy flux",
+        limit=3,
+    )
+    lecture_search = search_curated_rag_corpus(
+        "open lecture notes QFT GR holography quantum information object discovery",
+        limit=3,
+    )
+
+    assert require_valid_public_surface("curated_rag_search_result", ads_search) == ads_search
+    assert require_valid_public_surface("curated_rag_search_result", lecture_search) == lecture_search
+    assert ads_search["result_role"] == "heuristic_context"
+    assert ads_search["records_validation_result"] is False
+    assert ads_search["claim_trust_mutation"] == "none"
+    assert ads_search["requires_promotion_for_claim_support"] is True
+    assert ads_search["results"][0]["chunk_id"] == "curated_rag_chunk:open_ads_holography_orientation:0001"
+    assert "massive-matter" in ads_search["results"][0]["tags"]
+    assert lecture_search["results"][0]["document_id"] == "curated_rag_doc:open_theory_lecture_shelf"
+    assert lecture_search["results"][0]["can_update_claim_trust"] is False
 
 
 def test_curated_rag_corpus_reads_file_backed_workspace_manifest(tmp_path, capsys):
