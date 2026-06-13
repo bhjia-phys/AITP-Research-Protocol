@@ -50,6 +50,12 @@ from brain.v5.tools import (
 from brain.v5.trace import persist_hook_trace_event
 from brain.v5.trust_audit import audit_claim_trust
 from brain.v5.trust_updates import apply_trust_update, get_trust_update_record, preflight_trust_update
+from brain.v5.workspace_inventory import build_workspace_inventory, write_workspace_inventory_report
+from brain.v5.workspace_migration_plan import build_workspace_migration_plan, write_workspace_migration_plan_report
+from brain.v5.workspace_old_store_manifest import (
+    build_workspace_old_store_manifest,
+    write_workspace_old_store_manifest_report,
+)
 from brain.v5.workspace import (
     bind_session,
     create_claim,
@@ -73,6 +79,18 @@ def _build_parser() -> argparse.ArgumentParser:
     sp = parser.add_subparsers(dest="command", required=True)
 
     sp.add_parser("init").add_argument("base")
+
+    wp = sp.add_parser("workspace"); wps = wp.add_subparsers(dest="workspace_command", required=True)
+    wi = wps.add_parser("inventory")
+    wi.add_argument("--workspace-root", default="")
+    wi.add_argument("--write-report", default="")
+    wmp = wps.add_parser("migration-plan")
+    wmp.add_argument("--workspace-root", default="")
+    wmp.add_argument("--inventory-json", default="")
+    wmp.add_argument("--write-report", default="")
+    wos = wps.add_parser("old-store-manifest")
+    wos.add_argument("--workspace-root", default="")
+    wos.add_argument("--write-report", default="")
 
     tp = sp.add_parser("topic"); ts = tp.add_subparsers(dest="topic_command", required=True)
     tc = ts.add_parser("create"); tc.add_argument("topic_id")
@@ -612,6 +630,43 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         return dispatch_vnext_command(args, ws)
     if args.command == "goal":
         return dispatch_goal_command(args, ws)
+
+    if args.command == "workspace" and args.workspace_command == "inventory":
+        payload = build_workspace_inventory(
+            ws,
+            workspace_root=args.workspace_root or None,
+        )
+        if args.write_report:
+            payload = {
+                **payload,
+                "report_path": str(write_workspace_inventory_report(payload, args.write_report)),
+            }
+        return payload
+
+    if args.command == "workspace" and args.workspace_command == "migration-plan":
+        payload = build_workspace_migration_plan(
+            ws,
+            workspace_root=args.workspace_root or None,
+            inventory_path=args.inventory_json or None,
+        )
+        if args.write_report:
+            payload = {
+                **payload,
+                "report_path": str(write_workspace_migration_plan_report(payload, args.write_report)),
+            }
+        return payload
+
+    if args.command == "workspace" and args.workspace_command == "old-store-manifest":
+        payload = build_workspace_old_store_manifest(
+            ws,
+            workspace_root=args.workspace_root or None,
+        )
+        if args.write_report:
+            payload = {
+                **payload,
+                "report_path": str(write_workspace_old_store_manifest_report(payload, args.write_report)),
+            }
+        return payload
 
     if args.command == "summary":
         return dispatch_summary_command(args, ws)
