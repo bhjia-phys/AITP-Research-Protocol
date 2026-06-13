@@ -11,11 +11,18 @@ For every AITP research iteration, restore the v5 typed execution brief:
 
 ```text
 aitp_v5_get_execution_brief(base="{{TOPICS_ROOT}}", session_id=<session-id>)
+aitp_v5_get_claim_relation_map(base="{{TOPICS_ROOT}}", session_id=<session-id>)
 ```
 
 The brief is the immediate execution contract. Follow `current_focus`,
 `flow_profile`, `risk_assessment`, `evidence_coverage`,
 `next_action_candidates`, `forbidden_now`, and `human_checkpoint`.
+
+The claim relation map is the recovery boundary layer. Read `supported_by`,
+`limited_by`, `not_tested_by`, `contradicted_by`,
+`current_conclusion.can_say`, `current_conclusion.cannot_say`,
+`current_blockers`, and `next_valid_actions` before deciding what the active
+claim means.
 
 Legacy stage briefs from `aitp_get_execution_brief` are compatibility
 orientation only. If you are looking at `stage=L3` or `gate_status=L4`, migrate
@@ -29,6 +36,12 @@ session:
 ```text
 while topic is active:
   brief = aitp_v5_get_execution_brief(base="{{TOPICS_ROOT}}", session_id=<session-id>)
+  relation_map = aitp_v5_get_claim_relation_map(base="{{TOPICS_ROOT}}", session_id=<session-id>)
+
+  if relation_map.not_tested_by is non-empty:
+    do not treat those failures as algorithm or claim evidence
+    report the boundary from relation_map.current_conclusion.cannot_say
+    use relation_map.current_blockers and relation_map.next_valid_actions
 
   if brief.human_checkpoint.needed:
     present the checkpoint plainly and wait for the user's explicit answer
@@ -58,6 +71,9 @@ while topic is active:
 - Numerical or code-dependent work: code state, tool recipe, tool run, evidence.
 - Checks and reviews: validation contract plus validation result when a tool run
   or explicit check exists.
+- Recovery boundaries: read the claim relation map; do not write relation-map
+  conclusions back as evidence unless a typed source, tool run, or validation
+  result already supports that claim.
 - Open theorem or review gaps: `aitp_v5_create_proof_obligation`.
 - Maturity/status observations: `aitp_v5_update_claim_status`.
 - Interpretation: `aitp_v5_record_sensemaking_report`, marked as orientation
@@ -106,5 +122,6 @@ Do not bury a failed check in prose. Record it as typed protocol state.
 ```powershell
 uv run --with pyyaml --with jsonschema --with fastmcp python scripts/aitp-pm.py doctor
 uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" brief <session-id>
+uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" relation-map <session-id>
 uv run --with pyyaml --with jsonschema --with fastmcp python -m py_compile brain/v5/native_mcp.py brain/v5/mcp_tools.py brain/v5/brief.py
 ```

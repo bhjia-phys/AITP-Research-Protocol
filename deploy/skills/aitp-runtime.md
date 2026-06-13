@@ -9,6 +9,7 @@ Every research turn starts by restoring typed state:
 
 ```text
 brief = aitp_v5_get_execution_brief(base="{{TOPICS_ROOT}}", session_id=<session-id>)
+relation_map = aitp_v5_get_claim_relation_map(base="{{TOPICS_ROOT}}", session_id=<session-id>)
 ```
 
 Then decide from the brief:
@@ -20,11 +21,20 @@ Then decide from the brief:
 - `next_action_candidates`: safe next actions
 - `forbidden_now`: actions blocked until evidence, validation, or a human gate
 
+Use the claim relation map as the conclusion-boundary layer. Read
+`supported_by`, `limited_by`, `not_tested_by`, `contradicted_by`,
+`current_conclusion.can_say`, `current_conclusion.cannot_say`,
+`current_blockers`, and `next_valid_actions` before deciding whether a failure
+supports, limits, or does not test the active claim.
+
 If the only available packet is a legacy stage brief, migrate or bind a v5
 session first. Legacy stages are historical orientation, not the runtime loop.
 
 ## Typed Record Boundaries
 
+- `execution_brief` is the working control panel.
+- `claim_relation_map` is a read-only recovery boundary; it is not evidence by
+  itself and cannot update claim trust.
 - Reference locations and summaries are orientation until linked to evidence.
 - A validation result supports only the exact checks and failure modes it covers.
 - Partial validation should be narrow, not a broad pass.

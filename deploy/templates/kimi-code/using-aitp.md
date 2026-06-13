@@ -30,6 +30,8 @@ Do not treat chat summaries, Markdown notes, or generated hook config as scienti
 1. If the request might belong to theoretical physics, call
    `aitp_v5_get_execution_brief` for the active session before doing
    substantive work.
+   Also call `aitp_v5_get_claim_relation_map` for the same session before
+   interpreting failures, blockers, support, limitations, or next actions.
 2. If no active v5 session is known, use `aitp_list_topics` and
    `aitp_get_execution_brief` only to orient legacy topics. Before doing
    substantive research, migrate/bind a v5 session with
@@ -38,6 +40,8 @@ Do not treat chat summaries, Markdown notes, or generated hook config as scienti
    new v5 topic/claim/session with `aitp_v5_create_topic`,
    `aitp_v5_create_claim`, and `aitp_v5_bind_session`.
 3. Read the execution brief and follow its risk, claim, evidence, validation, and next-action fields.
+   Read the claim relation map as the read-only conclusion-boundary layer; it
+   cannot update claim trust.
 4. For every meaningful result, use typed writes:
    - `aitp_v5_record_physics_object`
    - `aitp_v5_record_object_relation`
@@ -80,4 +84,5 @@ Stop and re-enter AITP v5 if you catch yourself saying:
 - "I can answer this research question directly without a brief."
 - "This summary is enough to promote memory."
 - "The hook config says this happened, so the claim is validated."
+- "This runtime/application failure proves the algorithm works or fails."
 - "I'll record the tool run later."

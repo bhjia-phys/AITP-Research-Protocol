@@ -24,6 +24,10 @@ Follow the Charter and SPEC before platform convenience.
   `aitp_get_execution_brief`, `aitp_bootstrap_topic`) may exist only for
   discovery/bootstrap compatibility; do not use a legacy stage brief as the
   execution contract for new work.
+- The claim relation map (`aitp_v5_get_claim_relation_map`, or
+  `aitp-v5 relation-map <session-id>` as CLI fallback) is a read-only recovery
+  surface. Use it to separate support, limitations, non-testing failures,
+  blockers, and next valid actions. It cannot update claim trust.
 - If the AITP MCP tools are unavailable, run the local doctor command and stop
   before mutating topic state.
 - Ask the user through Codex's normal conversation surface unless a structured
@@ -48,6 +52,8 @@ Follow the Charter and SPEC before platform convenience.
    brainstorming, code reading, paper reading, or answer synthesis.
 2. If a v5 session id is already known, call
    `aitp_v5_get_execution_brief(base="{{TOPICS_ROOT}}", session_id=<session-id>)`.
+   Then call `aitp_v5_get_claim_relation_map` for the same session before
+   interpreting failures or deciding the next scientific action.
 3. If only a legacy topic slug is known, use legacy discovery only to find the
    topic, then migrate/bind a v5 session before doing research:
    `aitp_v5_migrate_curated_legacy_topic_to_v5` for known curated topics, or
@@ -60,6 +66,7 @@ Use these logical tool calls, mapped to the actual Codex tool names:
 
 ```text
 aitp_v5_get_execution_brief(base="{{TOPICS_ROOT}}", session_id=<session-id>)
+aitp_v5_get_claim_relation_map(base="{{TOPICS_ROOT}}", session_id=<session-id>)
 aitp_v5_migrate_curated_legacy_topic_to_v5(
   base="{{TOPICS_ROOT}}",
   topic_dir="{{TOPICS_ROOT}}/<legacy-topic-slug>"
@@ -75,6 +82,9 @@ aitp_v5_bind_session(base="{{TOPICS_ROOT}}", session_id=<session-id>, topic_id=<
   AITP for a v5 session brief or use legacy discovery only for migration.
 - Do not manually edit AITP topic-state files. Use AITP tools for topic state.
 - Do not treat old `stage`, `gate_status`, or `L0/L1/L3/L4` fields as v5 truth.
+- Do not turn application/runtime failures into algorithm evidence. Use the
+  claim relation map's `cannot_say`, `not_tested_by`, blockers, and next valid
+  actions before summarizing a restored session.
 - Do not promote to L2 without v5 trust preflight, validation coverage, and the
   explicit promotion/human gate.
 - Preserve uncertainty, anomalies, failed attempts, and unresolved gaps.
@@ -103,6 +113,10 @@ the MCP tool surface shown in Codex does not match the protocol text:
 ```powershell
 uv run --with pyyaml --with jsonschema --with fastmcp python scripts/aitp-pm.py doctor
 uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" brief <session-id>
+uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" relation-map <session-id>
+uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" workspace inventory --workspace-root "{{TARGET_ROOT}}"
+uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" workspace migration-plan --workspace-root "{{TARGET_ROOT}}"
+uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" workspace old-store-manifest --workspace-root "{{TARGET_ROOT}}"
 uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.v5.cli --base "{{TOPICS_ROOT}}" legacy curated-known-topics
 uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.cli state show <topic>
 uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.cli gate check <topic>

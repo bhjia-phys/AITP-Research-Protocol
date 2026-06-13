@@ -11,6 +11,7 @@ Every real research turn starts by restoring the typed state:
 
 ```text
 brief = aitp_v5_get_execution_brief(base=<workspace>, session_id=<session-id>)
+relation_map = aitp_v5_get_claim_relation_map(base=<workspace>, session_id=<session-id>)
 ```
 
 Then decide the next action from the brief:
@@ -20,10 +21,15 @@ Then decide the next action from the brief:
 - Claim needs testing: create or update a validation contract, run the check, then record a validation result.
 - Interpretation needed: record a sensemaking report, clearly marked as orientation-only.
 - Trust change or L2 memory: use preflight, promotion packet, and human checkpoint gates.
+- Failure interpretation: read `relation_map.not_tested_by`,
+  `current_conclusion.cannot_say`, `current_blockers`, and
+  `next_valid_actions` before treating a failure as support or contradiction.
 
 ## Typed Record Boundaries
 
 - `execution_brief` is the working control panel.
+- The claim relation map (`claim_relation_map`) is a read-only
+  conclusion-boundary layer, not evidence.
 - `summary_orientation` is useful for reading but is never a truth source.
 - Hook config and hook traces are runtime metadata, not evidence by themselves.
 - A validation result supports only the exact checks and failure modes it covers.

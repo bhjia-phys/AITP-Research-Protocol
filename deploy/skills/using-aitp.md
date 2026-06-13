@@ -10,8 +10,8 @@ or long-running theoretical-physics work.
 
 AITP v5 truth comes from typed records: topics, sessions, claims, evidence,
 artifacts, validation contracts/results, proof obligations, trust updates, and
-approved L2 memory. Generated summaries, hook configs, old Markdown stages, and
-chat summaries are orientation only.
+approved L2 memory. Generated summaries, claim relation maps, hook configs, old
+Markdown stages, and chat summaries are orientation only.
 
 ## Environment
 
@@ -27,6 +27,10 @@ chat summaries are orientation only.
 
 1. If a v5 session id is known, call
    `aitp_v5_get_execution_brief(base="{{TOPICS_ROOT}}", session_id=<session-id>)`.
+   Then call
+   `aitp_v5_get_claim_relation_map(base="{{TOPICS_ROOT}}", session_id=<session-id>)`
+   before interpreting failures, blockers, support, limitations, or next
+   scientific actions.
 2. If only a legacy topic slug is known, use legacy discovery only to locate the
    topic, then migrate/bind v5 state before doing research. Prefer
    `aitp_v5_migrate_curated_legacy_topic_to_v5`; use
@@ -39,6 +43,9 @@ chat summaries are orientation only.
 
 - Do not use old `stage`, `gate_status`, or `L0/L1/L3/L4` fields as v5 truth.
 - Do not promote to L2 from summaries, reports, or chat.
+- Do not turn application/runtime failures into algorithm evidence. Use the
+  claim relation map's `cannot_say`, `not_tested_by`, blockers, and next valid
+  actions before summarizing a restored session.
 - Preserve uncertainty, negative results, failed attempts, and unresolved gaps.
 - Ask the user normally if no structured question tool is available; never
   self-approve a human gate.
@@ -47,6 +54,10 @@ chat summaries are orientation only.
 
 ```powershell
 python -m brain.v5.cli --base "{{TOPICS_ROOT}}" brief <session-id>
+python -m brain.v5.cli --base "{{TOPICS_ROOT}}" relation-map <session-id>
+python -m brain.v5.cli --base "{{TOPICS_ROOT}}" workspace inventory --workspace-root "{{TARGET_ROOT}}"
+python -m brain.v5.cli --base "{{TOPICS_ROOT}}" workspace migration-plan --workspace-root "{{TARGET_ROOT}}"
+python -m brain.v5.cli --base "{{TOPICS_ROOT}}" workspace old-store-manifest --workspace-root "{{TARGET_ROOT}}"
 python -m brain.v5.cli --base "{{TOPICS_ROOT}}" legacy curated-known-topics
 python scripts/aitp-pm.py doctor
 ```

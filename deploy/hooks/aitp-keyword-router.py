@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-"""UserPromptSubmit hook: detect AITP keywords, list existing topics, inject context.
+"""UserPromptSubmit hook: detect AITP requests and inject v5 routing context.
 
-When AITP keywords are detected in the user's message, this hook:
-1. Scans the legacy AITP topics directory for topic slugs and titles.
-2. Injects a v5-safe orientation list so the agent can match the request.
-3. Reminds the agent to bind or migrate to a v5 session before research.
+The hook is only a router/reminder. It never updates AITP state.
 """
+
+from __future__ import annotations
 
 import json
 import os
@@ -13,80 +12,119 @@ import re
 import sys
 from pathlib import Path
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stdin, "reconfigure"):
+    sys.stdin.reconfigure(encoding="utf-8")
+
 AITP_KEYWORDS = [
     "aitp",
     "topic",
-    "研究",
-    "推导",
-    "文献",
-    "课题",
-    "继续研究",
-    "科研",
     "research",
     "derivation",
-    "继续这个",
+    "claim",
+    "evidence",
+    "validation",
+    "paper",
+    "literature",
+    "proof",
+    "calculation",
+    "theoretical physics",
     "current topic",
     "this topic",
+    "ads",
+    "cft",
+    "boundary",
+    "matter",
+    "qsgw",
+    "gw",
+    "librpa",
+    "green function",
+    "von neumann",
+    "研究",
+    "科研",
+    "推导",
+    "文献",
+    "论文",
+    "课题",
+    "继续研究",
+    "继续这个",
+    "验证",
+    "证据",
+    "理论物理",
+    "量子引力",
+    "全息",
+    "边界",
+    "物质",
     "拓扑",
     "混沌",
-    "量子引力",
-    "von neumann",
     "测量诱导",
     "自能",
-    "green function",
     "格林函数",
 ]
 
 AITP_TOPICS_ROOT = Path(os.environ.get("AITP_TOPICS_ROOT", "{{TOPICS_ROOT}}"))
 
 
-def parse_yaml_frontmatter(text: str) -> dict:
-    m = re.match(r'^---\s*\n(.*?)\n---', text, re.DOTALL)
-    if not m:
+def parse_yaml_frontmatter(text: str) -> dict[str, str]:
+    match = re.match(r"^---\s*\n(.*?)\n---", text, re.DOTALL)
+    if not match:
         return {}
-    fm = {}
-    for line in m.group(1).splitlines():
-        if ':' in line:
-            key, _, val = line.partition(':')
-            val = val.strip().strip('"').strip("'")
-            fm[key.strip()] = val
-    return fm
+    frontmatter: dict[str, str] = {}
+    for line in match.group(1).splitlines():
+        if ":" not in line:
+            continue
+        key, _, value = line.partition(":")
+        frontmatter[key.strip()] = value.strip().strip('"').strip("'")
+    return frontmatter
 
 
-def scan_topics() -> list[dict]:
+def scan_topics() -> list[dict[str, str]]:
     if not AITP_TOPICS_ROOT.is_dir():
         return []
-    topics = []
-    for d in sorted(AITP_TOPICS_ROOT.iterdir()):
-        if not d.is_dir():
+    topics: list[dict[str, str]] = []
+    for directory in sorted(AITP_TOPICS_ROOT.iterdir()):
+        if not directory.is_dir():
             continue
-        state_file = d / "state.md"
-        if not state_file.exists():
+        state_file = directory / "state.md"
+        topic_file = AITP_TOPICS_ROOT / ".aitp" / "topics" / directory.name / "topic.md"
+        if not state_file.exists() and not topic_file.exists():
             continue
         try:
-            text = state_file.read_text(encoding="utf-8")
-            fm = parse_yaml_frontmatter(text)
-            body = re.sub(r'^---.*?---\s*', '', text, flags=re.DOTALL)
-            question_match = re.search(r'## Research Question\s*\n(.*?)(?:\n\n|\n#|$)', body, re.DOTALL)
+            text = state_file.read_text(encoding="utf-8") if state_file.exists() else topic_file.read_text(encoding="utf-8")
+            frontmatter = parse_yaml_frontmatter(text)
+            body = re.sub(r"^---.*?---\s*", "", text, flags=re.DOTALL)
+            question_match = re.search(r"## Research Question\s*\n(.*?)(?:\n\n|\n#|$)", body, re.DOTALL)
             question = question_match.group(1).strip() if question_match else ""
-            memory_file = d / "MEMORY.md"
+            memory_file = directory / "MEMORY.md"
             memory_text = ""
             if memory_file.exists():
                 try:
                     memory_raw = memory_file.read_text(encoding="utf-8")
-                    memory_text = re.sub(r'^---.*?---\s*', '', memory_raw, flags=re.DOTALL).strip()
+                    memory_text = re.sub(r"^---.*?---\s*", "", memory_raw, flags=re.DOTALL).strip()
                 except Exception:
                     pass
-            topics.append({
-                "slug": d.name,
-                "title": fm.get("title", d.name),
-                "legacy_stage": fm.get("stage", "unknown"),
-                "lane": fm.get("lane", ""),
-                "question": question[:120],
-                "memory": memory_text,
-            })
+            topics.append(
+                {
+                    "slug": directory.name,
+                    "title": frontmatter.get("title", directory.name),
+                    "legacy_stage": frontmatter.get("stage", "unknown"),
+                    "lane": frontmatter.get("lane", ""),
+                    "question": question[:120],
+                    "memory": memory_text,
+                }
+            )
         except Exception:
-            topics.append({"slug": d.name, "title": d.name, "legacy_stage": "unknown", "lane": "", "question": "", "memory": ""})
+            topics.append(
+                {
+                    "slug": directory.name,
+                    "title": directory.name,
+                    "legacy_stage": "unknown",
+                    "lane": "",
+                    "question": "",
+                    "memory": "",
+                }
+            )
     return topics
 
 
@@ -99,59 +137,67 @@ def main() -> int:
         data = json.loads(raw)
     except json.JSONDecodeError:
         try:
-            fixed = re.sub(r'\\([^"\\/bfnrtu])', r'\\\\\1', raw)
-            fixed = re.sub(r'\\u(?![0-9a-fA-F]{4})', r'\\\\u', fixed)
+            fixed = re.sub(r'\\([^"\\/bfnrtu])', r"\\\\\1", raw)
+            fixed = re.sub(r"\\u(?![0-9a-fA-F]{4})", r"\\\\u", fixed)
             data = json.loads(fixed)
         except json.JSONDecodeError:
             return 0
 
-    user_message = data.get("user_message", "")
+    user_message = str(data.get("user_message", ""))
     if not user_message:
         return 0
 
     msg_lower = user_message.lower()
-    matched = [kw for kw in AITP_KEYWORDS if kw in msg_lower]
-
+    matched = [keyword for keyword in AITP_KEYWORDS if keyword.lower() in msg_lower]
     if not matched:
         return 0
 
     topics = scan_topics()
-
     topic_lines = []
     topic_memories = []
-    for t in topics:
-        line = f"  - slug: {t['slug']}  |  title: {t['title']}  |  legacy_stage: {t['legacy_stage']}  |  lane: {t['lane']}"
-        if t['question']:
-            line += f"\n    question: {t['question']}"
+    for topic in topics:
+        line = (
+            f"  - slug: {topic['slug']}  |  title: {topic['title']}  |  "
+            f"legacy_stage: {topic['legacy_stage']}  |  lane: {topic['lane']}"
+        )
+        if topic["question"]:
+            line += f"\n    question: {topic['question']}"
         topic_lines.append(line)
-        if t.get('memory'):
-            topic_memories.append(f"### Topic: {t['slug']}\n{t['memory']}")
+        if topic.get("memory"):
+            topic_memories.append(f"### Topic: {topic['slug']}\n{topic['memory']}")
 
     topics_block = "\n".join(topic_lines) if topic_lines else "  (no topics found)"
     memories_block = "\n\n---\n\n".join(topic_memories) if topic_memories else ""
 
     reminder = (
-        "AITP RESEARCH REQUEST DETECTED. Keywords matched: " + ", ".join(matched) + "\n\n"
-        "EXISTING AITP TOPICS:\n" + topics_block + "\n\n"
+        "AITP RESEARCH REQUEST DETECTED. Keywords matched: "
+        + ", ".join(matched)
+        + "\n\n"
+        + "EXISTING AITP TOPICS:\n"
+        + topics_block
+        + "\n\n"
     )
-
     if memories_block:
         reminder += (
             "TOPIC MEMORIES (MUST follow these conventions for the matched topic):\n"
-            + memories_block + "\n\n"
+            + memories_block
+            + "\n\n"
         )
-
     reminder += (
         "AITP V5 INSTRUCTIONS (follow exactly):\n"
-        "1. Match the user's request to ONE of the topics above by comparing title/question.\n"
+        "1. Match the user's request to ONE topic above by comparing title/question.\n"
         "2. Do not treat legacy_stage/gate fields as v5 truth; they are orientation only.\n"
         "3. If a v5 session id is known, call mcp__aitp__aitp_v5_get_execution_brief("
         f"base='{AITP_TOPICS_ROOT.as_posix()}', session_id='<session-id>').\n"
-        "4. If only a legacy slug is known, migrate or bind v5 state before research.\n"
-        "5. If no topic matches, create a v5 topic/claim/session.\n"
-        "6. Do NOT create a duplicate topic if one already matches.\n"
-        "5. Do NOT read AITP topic files directly with Read/Grep/Glob — use MCP tools only.\n"
-        "8. Record durable scientific content through typed v5 records; summaries and hooks are orientation only."
+        "4. If a v5 session id is known, also call mcp__aitp__aitp_v5_get_claim_relation_map("
+        f"base='{AITP_TOPICS_ROOT.as_posix()}', session_id='<session-id>') before interpreting failures.\n"
+        "5. If only a legacy slug is known, migrate or bind v5 state before research.\n"
+        "6. If no topic matches, create a v5 topic/claim/session.\n"
+        "7. Do NOT create a duplicate topic if one already matches.\n"
+        "8. Do NOT read or edit AITP topic-state files directly with Read/Grep/Glob/Edit.\n"
+        "9. Use MCP typed tools for research state; use aitp-v5 only as a CLI diagnostic/fallback.\n"
+        "10. Record durable scientific content through typed v5 records; summaries, relation maps, and hooks are orientation only.\n"
+        "11. Do not confuse root .aitp or Hakimi-local state with the canonical research/aitp-topics/.aitp store."
     )
 
     payload = {
@@ -160,7 +206,6 @@ def main() -> int:
             "additionalContext": reminder,
         }
     }
-
     json.dump(payload, sys.stdout, ensure_ascii=False, indent=2)
     sys.stdout.write("\n")
     return 0
