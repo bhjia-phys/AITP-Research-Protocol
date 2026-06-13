@@ -48,7 +48,7 @@ def _validate_files(payload: Any, path: str, result: ContractResult) -> None:
     _require_mapping(payload, path, result)
     if not isinstance(payload, dict):
         return
-    for key in ("topic_state", "topic_dashboard", "operator_console", "runtime_protocol", "session_start"):
+    for key in ("topic_state", "topic_dashboard", "operator_console", "claim_relation_map", "runtime_protocol", "session_start"):
         _require_nonempty_str(payload, key, path, result)
 
 
@@ -60,8 +60,12 @@ def _validate_topic_state(payload: Any, path: str, result: ContractResult) -> No
         result.add(f"{path}.kind", "must be 'topic_state'")
     for key in ("topic_id", "session_id", "context_id", "current_route_choice"):
         _require_nonempty_str(payload, key, path, result)
-    for key in ("last_evidence_return", "next_bounded_action", "blocker_summary"):
+    for key in ("last_evidence_return", "next_bounded_action", "blocker_summary", "claim_relation_map"):
         _require_mapping(payload.get(key), f"{path}.{key}", result)
+    if isinstance(payload.get("claim_relation_map"), dict):
+        from brain.v5.claim_relation_map_contracts import validate_claim_relation_map
+
+        result.extend(validate_claim_relation_map(payload["claim_relation_map"], path=f"{path}.claim_relation_map"))
     for key in ("summary_inputs_trusted", "can_update_claim_trust"):
         _require_bool_value(payload.get(key), False, f"{path}.{key}", result)
 

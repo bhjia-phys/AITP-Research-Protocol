@@ -27,6 +27,7 @@ from brain.v5.cli_research_state import add_research_state_parser, dispatch_rese
 from brain.v5.cli_validation import add_validation_parser, dispatch_validation_command
 from brain.v5.cli_vnext import VNEXT_COMMANDS, add_vnext_parsers, dispatch_vnext_command
 from brain.v5.cli_goal import add_goal_parser, dispatch_goal_command
+from brain.v5.claim_relation_map import build_claim_relation_map
 from brain.v5.exploration import exploratory_record_payload, record_exploratory_record
 from brain.v5.process_graph import build_process_graph_slice
 from brain.v5.public_surfaces import require_valid_public_surface
@@ -91,6 +92,7 @@ def _build_parser() -> argparse.ArgumentParser:
     sb.add_argument("--interaction-profile", default="collaborator"); sb.add_argument("--interaction-steering", default="")
 
     sp.add_parser("brief").add_argument("session_id")
+    sp.add_parser("relation-map").add_argument("session_id")
 
     ap = sp.add_parser("asset"); aps = ap.add_subparsers(dest="asset_command", required=True)
     ar = aps.add_parser("register")
@@ -425,6 +427,8 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             interaction_profile=args.interaction_profile, interaction_steering=args.interaction_steering))}
     if args.command == "brief":
         return require_valid_public_surface("execution_brief", build_execution_brief(ws, args.session_id))
+    if args.command == "relation-map":
+        return require_valid_public_surface("claim_relation_map", build_claim_relation_map(ws, args.session_id))
     if args.command == "asset" and args.asset_command == "register":
         asset = register_source_asset(
             ws,

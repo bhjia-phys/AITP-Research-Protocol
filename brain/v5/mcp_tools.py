@@ -10,6 +10,7 @@ from brain.v5.adapter_protocols import adapter_protocol_registry, record_gate_co
 from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
 from brain.v5.adapters import build_adapter_packet
 from brain.v5.brief import build_execution_brief
+from brain.v5.claim_relation_map import build_claim_relation_map, empty_claim_relation_map
 from brain.v5.code import capture_code_state_from_git, record_code_state
 from brain.v5.curated_rag_corpus import (
     curated_rag_corpus,
@@ -122,6 +123,15 @@ def aitp_v5_get_execution_brief(base: str, *, session_id: str) -> dict:
     return require_valid_public_surface("execution_brief", brief)
 
 
+def aitp_v5_get_claim_relation_map(base: str, *, session_id: str) -> dict:
+    """Return the derived relation map and conclusion boundary for the active claim."""
+
+    return require_valid_public_surface(
+        "claim_relation_map",
+        build_claim_relation_map(_ws(base), session_id),
+    )
+
+
 def _unbound_session_execution_brief(session_id: str) -> dict:
     """Return a valid brief for malformed or not-yet-bound session records."""
 
@@ -222,6 +232,11 @@ def _unbound_session_execution_brief(session_id: str) -> dict:
                 "human_checkpoint_needed": "not required for the bind-session repair",
             },
         },
+        "claim_relation_map": empty_claim_relation_map(
+            topic_id="unbound-session",
+            session_id=session_id,
+            reason="session binding is missing or malformed",
+        ),
         "mandatory_reflection": [],
         "next_action_candidates": [
             {

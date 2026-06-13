@@ -9,6 +9,8 @@ def sample_args_for_template(template: str) -> list[str]:
         return adapter_args
     if template.startswith("trust update-record"):
         return ["trust-update-sample"]
+    if template.startswith("relation-map"):
+        return ["s1"]
     if template.startswith("trust audit"):
         return ["--claim", "claim-fqhe"]
     if template.startswith("trust "):

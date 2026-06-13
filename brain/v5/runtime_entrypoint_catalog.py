@@ -102,6 +102,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_get_execution_brief",
         "surface": "execution_brief",
     },
+    "claim_relation_map": {
+        "cli": "aitp-v5 relation-map <session-id>",
+        "mcp": "aitp_v5_get_claim_relation_map",
+        "surface": "claim_relation_map",
+    },
     "process_graph_slice": {
         "cli": "aitp-v5 graph slice <session-id>",
         "mcp": "aitp_v5_get_process_graph_slice",

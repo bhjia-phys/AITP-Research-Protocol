@@ -54,6 +54,16 @@ def require_valid_execution_brief(payload: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+def validate_claim_relation_map(payload: dict[str, Any], *, path: str = "claim_relation_map") -> ContractResult:
+    from brain.v5.claim_relation_map_contracts import validate_claim_relation_map as _validate
+    return _validate(payload, path=path)
+
+
+def require_valid_claim_relation_map(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.claim_relation_map_contracts import require_valid_claim_relation_map as _require
+    return _require(payload)
+
+
 def validate_adapter_packet(payload: dict[str, Any], *, path: str = "adapter") -> ContractResult:
     from brain.v5.adapter_contracts import validate_adapter_packet as _validate_adapter_packet
     return _validate_adapter_packet(payload, path=path)

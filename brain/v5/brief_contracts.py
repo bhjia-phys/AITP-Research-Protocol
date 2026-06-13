@@ -23,6 +23,7 @@ _BRIEF_REQUIRED_KEYS = (
     "risk_assessment",
     "action_budget",
     "known_context",
+    "claim_relation_map",
     "mandatory_reflection",
     "next_action_candidates",
     "forbidden_now",
@@ -64,6 +65,11 @@ def validate_execution_brief(payload: dict[str, Any], *, path: str = "brief") ->
 
     if "human_checkpoint" in payload:
         _validate_human_checkpoint(payload["human_checkpoint"], f"{path}.human_checkpoint", result)
+
+    if "claim_relation_map" in payload:
+        from brain.v5.claim_relation_map_contracts import validate_claim_relation_map
+
+        result.extend(validate_claim_relation_map(payload["claim_relation_map"], path=f"{path}.claim_relation_map"))
 
     for key in ("next_action_candidates", "forbidden_now"):
         if key in payload:

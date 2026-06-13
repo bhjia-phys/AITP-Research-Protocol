@@ -83,10 +83,12 @@ def test_write_topic_status_surfaces_materializes_explainability_files(tmp_path)
         "topic_state": str(runtime_dir / "topic_state.json"),
         "topic_dashboard": str(runtime_dir / "topic_dashboard.md"),
         "operator_console": str(runtime_dir / "operator_console.md"),
+        "claim_relation_map": str(runtime_dir / "claim_relation_map.generated.md"),
         "runtime_protocol": str(runtime_dir / "runtime_protocol.generated.md"),
         "session_start": str(runtime_dir / "session_start.generated.md"),
     }
     assert topic_state["active_claim_id"] == claim.claim_id
+    assert topic_state["claim_relation_map"]["claim_id"] == claim.claim_id
     assert topic_state["last_evidence_return"]["evidence_id"] == evidence.evidence_id
     assert topic_state["active_operator_checkpoint"]["question"].startswith("Should the next artifact")
     assert topic_state["final_output_profile"]["output_version"] == "qsgw-headwing-dual-lane-v1"
@@ -210,7 +212,9 @@ def test_topic_status_compact_cli_mcp_and_runtime_surface(tmp_path, capsys):
         assert payload["can_update_claim_trust"] is False
         assert "topic_state" not in payload
         assert payload["files"]["session_start"].endswith("session_start.generated.md")
+        assert payload["files"]["claim_relation_map"].endswith("claim_relation_map.generated.md")
         assert payload["next_action"] == "answer_operator_checkpoint"
+        assert payload["claim_relation_map"]["claim_id"] == claim.claim_id
         assert payload["active_operator_checkpoint"]["required_next_action"] == "answer_operator_checkpoint"
         assert payload["final_output_profile"]["output_version"] == "qsgw-headwing-dual-lane-v1"
         assert payload["strategy_rule_count"] == 1

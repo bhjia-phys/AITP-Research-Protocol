@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from brain.v5.brief import build_execution_brief
+from brain.v5.claim_relation_map import compact_claim_relation_map, render_claim_relation_map_markdown
 from brain.v5.evidence import list_evidence_for_claim
 from brain.v5.paths import WorkspacePaths
 
@@ -25,12 +26,17 @@ def write_topic_status_surfaces(ws: WorkspacePaths, *, session_id: str) -> dict[
         "topic_state": str(runtime_dir / "topic_state.json"),
         "topic_dashboard": str(runtime_dir / "topic_dashboard.md"),
         "operator_console": str(runtime_dir / "operator_console.md"),
+        "claim_relation_map": str(runtime_dir / "claim_relation_map.generated.md"),
         "runtime_protocol": str(runtime_dir / "runtime_protocol.generated.md"),
         "session_start": str(runtime_dir / "session_start.generated.md"),
     }
     _write_json(Path(files["topic_state"]), topic_state)
     Path(files["topic_dashboard"]).write_text(_dashboard(topic_state), encoding="utf-8")
     Path(files["operator_console"]).write_text(_operator_console(topic_state), encoding="utf-8")
+    Path(files["claim_relation_map"]).write_text(
+        render_claim_relation_map_markdown(topic_state["claim_relation_map"]),
+        encoding="utf-8",
+    )
     Path(files["runtime_protocol"]).write_text(_runtime_protocol(topic_state), encoding="utf-8")
     Path(files["session_start"]).write_text(_session_start(topic_state), encoding="utf-8")
     return {
@@ -60,6 +66,7 @@ def compact_topic_status_bundle(payload: dict[str, Any]) -> dict[str, Any]:
     strategy_items = list((topic_state.get("strategy_memory") or {}).get("items") or [])
     lane_items = list((topic_state.get("lane_exemplars") or {}).get("items") or [])
     next_action = topic_state.get("next_bounded_action") or {}
+    relation_map = topic_state.get("claim_relation_map") or {}
     return {
         "kind": "topic_status_bundle_progress",
         "topic_id": str(payload.get("topic_id") or topic_state.get("topic_id") or ""),
@@ -82,6 +89,7 @@ def compact_topic_status_bundle(payload: dict[str, Any]) -> dict[str, Any]:
         "human_checkpoint_needed": bool(blocker.get("human_checkpoint_needed")),
         "human_checkpoint_reason_excerpt": _excerpt(blocker.get("human_checkpoint_reason") or ""),
         "next_action": str(next_action.get("action") or ""),
+        "claim_relation_map": compact_claim_relation_map(relation_map),
         "active_operator_checkpoint": _compact_checkpoint(checkpoint),
         "final_output_profile": {
             "present": bool(output_profile.get("present")),
@@ -125,6 +133,7 @@ def _topic_state(ws: WorkspacePaths, brief: dict[str, Any]) -> dict[str, Any]:
             "human_checkpoint_needed": bool(brief.get("human_checkpoint", {}).get("needed")),
             "human_checkpoint_reason": str(brief.get("human_checkpoint", {}).get("reason") or ""),
         },
+        "claim_relation_map": brief.get("claim_relation_map") or {},
         "active_operator_checkpoint": known_context.get("operator_checkpoint", {}),
         "final_output_profile": known_context.get("final_output_profile", {}),
         "strategy_memory": known_context.get("strategy_memory", {}),
@@ -159,7 +168,7 @@ def _source_records(topic_state: dict[str, Any]) -> dict[str, list[str]]:
         "topics": [str(topic_state["topic_id"])],
         "sessions": [str(topic_state["session_id"])],
         "claims": [claim_id] if claim_id else [],
-        "evidence": [evidence_id] if evidence_id else [],
+        "evidence": _dedupe(([evidence_id] if evidence_id else []) + list((topic_state.get("claim_relation_map") or {}).get("source_records", {}).get("evidence") or [])),
     }
 
 
@@ -173,6 +182,8 @@ def _dashboard(topic_state: dict[str, Any]) -> str:
         f"Current route choice: {topic_state['current_route_choice']}\n\n"
         f"Why here: {topic_state['why_here']}\n\n"
         f"Last meaningful evidence return: {evidence.get('summary', 'None')}\n\n"
+        f"Current relation map: {len((topic_state.get('claim_relation_map') or {}).get('not_tested_by') or [])} non-testing failure(s), "
+        f"{len((topic_state.get('claim_relation_map') or {}).get('limited_by') or [])} limitation(s)\n\n"
         f"Blockers: {', '.join(blocker['missing_outputs'] + blocker['forbidden_now']) or 'None'}\n\n"
         f"Next bounded action: {next_action.get('action', 'None')}\n"
     )
@@ -208,6 +219,7 @@ def _session_start(topic_state: dict[str, Any]) -> str:
         f"Start from topic `{topic_state['topic_id']}` using the current route "
         f"`{topic_state['current_route_choice']}` and the operator console.\n\n",
         _final_output_profile_section(topic_state.get("final_output_profile") or {}),
+        _claim_relation_map_section(topic_state.get("claim_relation_map") or {}),
         _strategy_rules_section(topic_state.get("strategy_memory") or {}),
         _lane_exemplars_section(topic_state.get("lane_exemplars") or {}),
     ]
@@ -234,6 +246,23 @@ def _final_output_profile_section(profile: dict[str, Any]) -> str:
     compatibility_note = str(profile.get("compatibility_note") or "")
     if compatibility_note:
         lines.append(f"\nCompatibility note: {compatibility_note}\n")
+    return "".join(lines) + "\n"
+
+
+def _claim_relation_map_section(relation_map: dict[str, Any]) -> str:
+    if not relation_map:
+        return ""
+    compact = compact_claim_relation_map(relation_map)
+    lines = ["## Current Relation Map\n\n"]
+    lines.append(f"Claim: `{compact.get('claim_id', '')}`\n\n")
+    lines.append("Can say:\n")
+    lines.append(f"{_bullets(compact.get('can_say') or [])}\n\n")
+    lines.append("Cannot say:\n")
+    lines.append(f"{_bullets(compact.get('cannot_say') or [])}\n\n")
+    lines.append("Current blockers:\n")
+    lines.append(f"{_bullets(compact.get('current_blockers') or [])}\n\n")
+    lines.append("Next valid actions:\n")
+    lines.append(f"{_bullets(compact.get('next_valid_actions') or [])}\n")
     return "".join(lines) + "\n"
 
 
@@ -281,6 +310,15 @@ def _checkpoint_section(checkpoint: dict[str, Any]) -> str:
 
 def _bullets(values: list[str]) -> str:
     return "\n".join(f"- {value}" for value in values) if values else "- None"
+
+
+def _dedupe(values: list[str]) -> list[str]:
+    out: list[str] = []
+    for value in values:
+        text = str(value or "")
+        if text and text not in out:
+            out.append(text)
+    return out
 
 
 def _compact_checkpoint(checkpoint: dict[str, Any]) -> dict[str, Any]:

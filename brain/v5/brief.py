@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any
 
+from brain.v5.claim_relation_map import build_claim_relation_map
 from brain.v5.domain_packs import suggest_tool_executors_for_claim
 from brain.v5.evidence import list_evidence_for_claim, required_output_coverage
 from brain.v5.flow import resolve_flow_profile
@@ -231,6 +232,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
             proof_obligations=proof_obligations,
             human_checkpoint_needed=action_budget.requires_human_checkpoint or bool(operator_checkpoint.get("active")),
         ),
+        "claim_relation_map": build_claim_relation_map(ws, session_id),
         "mandatory_reflection": mandatory_reflection,
         "next_action_candidates": next_action_candidates,
         "forbidden_now": _forbidden_actions(flow.profile if flow else "guided") + policy_forbidden + vnext_forbidden,
