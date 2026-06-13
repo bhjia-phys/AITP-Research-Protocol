@@ -1363,12 +1363,13 @@ def _deploy_kimi_code(
     """Install or uninstall AITP for Kimi Code. Auto-discovers skills."""
     if scope == "project":
         base = target_root or Path.cwd()
-        skills_dir = base / ".kimi" / "skills"
-        mcp_base = base / ".kimi"
+        targets = [
+            (base / ".kimi" / "skills", base / ".kimi"),
+            (base / ".kimi-code" / "skills", base / ".kimi-code"),
+        ]
     else:
         # User-scope Kimi Code scans ~/.agents/skills/ for shared skills.
-        skills_dir = Path.home() / ".agents" / "skills"
-        mcp_base = Path.home() / ".kimi"
+        targets = [(Path.home() / ".agents" / "skills", Path.home() / ".kimi")]
 
     # Gateway skills for Kimi Code (only the essential entry + runtime)
     gateway_skills = [
@@ -1379,74 +1380,75 @@ def _deploy_kimi_code(
     deployed: list[str] = []
 
     if remove:
-        for skill_name, dst_rel in gateway_skills:
-            p = skills_dir / dst_rel
-            if p.exists():
-                p.unlink()
-                deployed.append(f"- {p}")
-            parent = p.parent
-            try:
-                if parent.exists() and parent != skills_dir and not list(parent.iterdir()):
-                    parent.rmdir()
-            except OSError:
-                pass
+        for skills_dir, mcp_base in targets:
+            for _skill_name, dst_rel in gateway_skills:
+                p = skills_dir / dst_rel
+                if p.exists():
+                    p.unlink()
+                    deployed.append(f"- {p}")
+                parent = p.parent
+                try:
+                    if parent.exists() and parent != skills_dir and not list(parent.iterdir()):
+                        parent.rmdir()
+                except OSError:
+                    pass
 
-        mcp_path = mcp_base / "mcp.json"
-        _write_mcp_json(mcp_path, variables["REPO_ROOT"], remove=True)
-        deployed.append(f"~ {mcp_path} (aitp entry removed)")
+            mcp_path = mcp_base / "mcp.json"
+            _write_mcp_json(mcp_path, variables["REPO_ROOT"], remove=True)
+            deployed.append(f"~ {mcp_path} (aitp entry removed)")
 
-        config_path = mcp_base / "config.toml"
-        _merge_kimi_config_toml(config_path, variables["REPO_ROOT"], remove=True)
-        deployed.append(f"~ {config_path} ([mcp.servers.aitp] removed)")
+            config_path = mcp_base / "config.toml"
+            _merge_kimi_config_toml(config_path, variables["REPO_ROOT"], remove=True)
+            deployed.append(f"~ {config_path} ([mcp.servers.aitp] removed)")
 
         return deployed
 
     # --- Install ---
-    print(f"  Deploying skills to {skills_dir}/")
-    try:
-        skills_dir.mkdir(parents=True, exist_ok=True)
-    except OSError:
-        pass  # Windows junction/mount point
-    for skill_name, dst_rel in gateway_skills:
-        # Source from deploy/skills/ first, fall back to deploy/templates/
-        src = REPO_ROOT / "deploy" / "skills" / f"{skill_name}.md"
-        if not src.exists():
-            src = TEMPLATES_DIR / "kimi-code" / f"{skill_name}.md"
-        if not src.exists():
-            src = TEMPLATES_DIR / "claude-code" / f"{skill_name}.md"
-        if not src.exists():
-            print(f"    WARNING: skill source not found: {skill_name}")
-            continue
-        content = _fill(src.read_text(encoding="utf-8"), variables)
-        dst = skills_dir / dst_rel
+    for skills_dir, mcp_base in targets:
+        print(f"  Deploying skills to {skills_dir}/")
         try:
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            _atomic_write(dst, content)
-            deployed.append(str(dst))
+            skills_dir.mkdir(parents=True, exist_ok=True)
         except OSError:
-            print(f"    SKIP {dst_rel} (cannot write to {dst.parent} — junction/mount point)")
+            pass  # Windows junction/mount point
+        for skill_name, dst_rel in gateway_skills:
+            # Source from deploy/skills/ first, fall back to deploy/templates/
+            src = REPO_ROOT / "deploy" / "skills" / f"{skill_name}.md"
+            if not src.exists():
+                src = TEMPLATES_DIR / "kimi-code" / f"{skill_name}.md"
+            if not src.exists():
+                src = TEMPLATES_DIR / "claude-code" / f"{skill_name}.md"
+            if not src.exists():
+                print(f"    WARNING: skill source not found: {skill_name}")
+                continue
+            content = _fill(src.read_text(encoding="utf-8"), variables)
+            dst = skills_dir / dst_rel
+            try:
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                _atomic_write(dst, content)
+                deployed.append(str(dst))
+            except OSError:
+                print(f"    SKIP {dst_rel} (cannot write to {dst.parent} directory)")
 
-    mcp_path = mcp_base / "mcp.json"
-    _write_mcp_json(
-        mcp_path,
-        variables["REPO_ROOT"],
-        variables.get("TOPICS_ROOT", ""),
-        prefer_uv=True,
-    )
-    deployed.append(f"{mcp_path} (aitp entry written)")
+        mcp_path = mcp_base / "mcp.json"
+        _write_mcp_json(
+            mcp_path,
+            variables["REPO_ROOT"],
+            variables.get("TOPICS_ROOT", ""),
+            prefer_uv=True,
+        )
+        deployed.append(f"{mcp_path} (aitp entry written)")
 
-    config_path = mcp_base / "config.toml"
-    _merge_kimi_config_toml(
-        config_path,
-        variables["REPO_ROOT"],
-        variables.get("TOPICS_ROOT", ""),
-    )
-    if scope == "project" and _remove_kimi_v5_hook_block(config_path):
-        deployed.append(f"{config_path} (session-specific hooks removed)")
-    deployed.append(f"{config_path} ([mcp.servers.aitp] merged)")
+        config_path = mcp_base / "config.toml"
+        _merge_kimi_config_toml(
+            config_path,
+            variables["REPO_ROOT"],
+            variables.get("TOPICS_ROOT", ""),
+        )
+        if scope == "project" and _remove_kimi_v5_hook_block(config_path):
+            deployed.append(f"{config_path} (session-specific hooks removed)")
+        deployed.append(f"{config_path} ([mcp.servers.aitp] merged)")
 
     return deployed
-
 
 # ---------------------------------------------------------------------------
 # Deploy: Codex App

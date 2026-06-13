@@ -1,4 +1,5 @@
 from pathlib import Path
+import importlib.util
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -6,6 +7,15 @@ REPO = Path(__file__).resolve().parents[1]
 
 def _read(rel: str) -> str:
     return (REPO / rel).read_text(encoding="utf-8")
+
+
+def _load_pm():
+    spec = importlib.util.spec_from_file_location("aitp_pm_for_test", REPO / "scripts" / "aitp-pm.py")
+    assert spec is not None
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_deploy_skills_keep_relation_map_recovery_boundary():
@@ -40,3 +50,34 @@ def test_deploy_hooks_guard_canonical_and_root_stores():
 def test_claude_fallback_hooks_match_deploy_hooks():
     for name in ["aitp-keyword-router.py", "aitp-routing-guard.py"]:
         assert _read(f"deploy/templates/claude-code/{name}") == _read(f"deploy/hooks/{name}")
+
+
+def test_kimi_project_install_writes_kimi_and_kimi_code_surfaces(tmp_path):
+    pm = _load_pm()
+    workspace = tmp_path / "Theoretical-Physics"
+    topics = workspace / "research" / "aitp-topics"
+    topics.mkdir(parents=True)
+    variables = {
+        "REPO_ROOT": str(REPO).replace("\\", "/"),
+        "TOPICS_ROOT": str(topics).replace("\\", "/"),
+        "TARGET_ROOT": str(workspace).replace("\\", "/"),
+        "USER_HOME": str(tmp_path).replace("\\", "/"),
+        "CLAUDE_USER_DIR": str(tmp_path / ".claude").replace("\\", "/"),
+        "KIMI_USER_DIR": str(tmp_path / ".kimi").replace("\\", "/"),
+        "CODEX_USER_DIR": str(tmp_path / ".codex").replace("\\", "/"),
+        "CODEX_HOME_DIR": str(tmp_path / ".codex-home").replace("\\", "/"),
+        "CODEX_SWITCHER_SKILLS_DIR": str(tmp_path / ".codex-switcher" / "skills").replace("\\", "/"),
+        "AGENTS_SKILLS_DIR": str(tmp_path / ".agents" / "skills").replace("\\", "/"),
+    }
+
+    deployed = pm._deploy_kimi_code("project", workspace, variables, remove=False)
+
+    assert any(".kimi-code" in str(item) for item in deployed)
+    for root_name in [".kimi", ".kimi-code"]:
+        base = workspace / root_name
+        using = (base / "skills" / "using-aitp" / "SKILL.md").read_text(encoding="utf-8")
+        runtime = (base / "skills" / "aitp-runtime" / "SKILL.md").read_text(encoding="utf-8")
+        assert "aitp_v5_get_claim_relation_map" in using
+        assert "claim relation map" in runtime.lower()
+        assert "brain/v5/native_mcp.py" in (base / "mcp.json").read_text(encoding="utf-8")
+        assert "brain/v5/native_mcp.py" in (base / "config.toml").read_text(encoding="utf-8")
