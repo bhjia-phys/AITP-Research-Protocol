@@ -164,5 +164,6 @@ def _topic_coverage(topic: dict[str, Any]) -> dict[str, Any]:
         "active_claim_id": str(topic.get("active_claim_id") or ""),
         "written_records": {str(key): int(value or 0) for key, value in written.items()},
         "preserved_source_refs": int(topic.get("preserved_source_refs") or 0),
+        "audit_error": str(topic.get("audit_error") or ""),
         "semantic_review_required": True,
     }

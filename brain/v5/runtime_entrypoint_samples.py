@@ -367,6 +367,8 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["--topic", "fqhe", "--marker", "marker", "--raw-log-file", "D:/aitp/runtime/raw.log"]
     if template.startswith(("legacy migration-audit", "legacy semantic-review-queue")):
         return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run"]
+    if template.startswith("legacy migration-accounting-run"):
+        return ["--legacy-root", "D:/aitp/research/aitp-topics", "--run-id", "legacy-v5-lossless-run"]
     if template.startswith("legacy semantic-review-manifest"):
         return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run"]
     if template.startswith("legacy semantic-review-worklist"):

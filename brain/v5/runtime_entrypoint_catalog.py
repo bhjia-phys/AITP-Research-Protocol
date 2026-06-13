@@ -363,6 +363,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_audit_legacy_migration_coverage",
         "surface": "legacy_migration_coverage_audit",
     },
+    "write_legacy_migration_accounting_run": {
+        "cli": "aitp-v5 legacy migration-accounting-run <args>",
+        "mcp": "aitp_v5_write_legacy_migration_accounting_run",
+        "surface": "legacy_migration_coverage_audit",
+    },
     "legacy_l2_graph_manifest": {
         "cli": "aitp-v5 legacy l2-graph-manifest <args>",
         "mcp": "aitp_v5_build_legacy_l2_graph_manifest",

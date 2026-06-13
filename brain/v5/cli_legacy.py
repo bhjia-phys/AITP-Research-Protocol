@@ -9,6 +9,7 @@ from brain.v5.curated_legacy_migration import known_curated_legacy_topics, migra
 from brain.v5.legacy_executable_evidence import build_legacy_executable_evidence_packet
 from brain.v5.legacy_human_checkpoint_obsidian import write_legacy_human_checkpoint_obsidian_view
 from brain.v5.legacy_human_checkpoint_packet import build_legacy_human_checkpoint_packet
+from brain.v5.legacy_migration_accounting import write_legacy_migration_accounting_run
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
 from brain.v5.legacy_runtime_log_audit import build_legacy_runtime_log_marker_audit
 from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
@@ -78,6 +79,10 @@ def add_legacy_parser(subparsers) -> None:
     audit = legacy_subparsers.add_parser("migration-audit")
     audit.add_argument("--migration-dir", default="")
     audit.add_argument("--compact", "--progress", action="store_true", dest="compact")
+    accounting = legacy_subparsers.add_parser("migration-accounting-run")
+    accounting.add_argument("--legacy-root", default="")
+    accounting.add_argument("--run-id", default="")
+    accounting.add_argument("--compact", "--progress", action="store_true", dest="compact")
     l2_graph = legacy_subparsers.add_parser("l2-graph-manifest")
     l2_graph.add_argument("--legacy-l2-dir", default="")
     l2_graph.add_argument("--compact", "--progress", action="store_true", dest="compact")
@@ -214,6 +219,17 @@ def dispatch_legacy_command(args, ws) -> dict:
         }
     if args.legacy_command == "migration-audit":
         audit = audit_legacy_migration_coverage(ws, migration_dir=args.migration_dir or None)
+        payload = {"ok": True, **require_valid_public_surface("legacy_migration_coverage_audit", audit)}
+        if getattr(args, "compact", False):
+            return compact_legacy_migration_coverage_audit(payload)
+        return payload
+    if args.legacy_command == "migration-accounting-run":
+        run_dir = write_legacy_migration_accounting_run(
+            ws,
+            legacy_root=args.legacy_root or None,
+            run_id=args.run_id,
+        )
+        audit = audit_legacy_migration_coverage(ws, migration_dir=run_dir)
         payload = {"ok": True, **require_valid_public_surface("legacy_migration_coverage_audit", audit)}
         if getattr(args, "compact", False):
             return compact_legacy_migration_coverage_audit(payload)

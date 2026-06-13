@@ -11,6 +11,7 @@ from brain.v5.curated_legacy_migration import known_curated_legacy_topics, migra
 from brain.v5.legacy_executable_evidence import build_legacy_executable_evidence_packet
 from brain.v5.legacy_human_checkpoint_obsidian import write_legacy_human_checkpoint_obsidian_view
 from brain.v5.legacy_human_checkpoint_packet import build_legacy_human_checkpoint_packet
+from brain.v5.legacy_migration_accounting import write_legacy_migration_accounting_run
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
 from brain.v5.legacy_runtime_log_audit import build_legacy_runtime_log_marker_audit
 from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
@@ -86,6 +87,22 @@ def aitp_v5_list_curated_legacy_topics() -> dict:
 
 def aitp_v5_audit_legacy_migration_coverage(base: str, *, migration_dir: str = "") -> dict:
     result = audit_legacy_migration_coverage(_ws(base), migration_dir=migration_dir or None)
+    return {"ok": True, **require_valid_public_surface("legacy_migration_coverage_audit", result)}
+
+
+def aitp_v5_write_legacy_migration_accounting_run(
+    base: str,
+    *,
+    legacy_root: str = "",
+    run_id: str = "",
+) -> dict:
+    ws = _ws(base)
+    run_dir = write_legacy_migration_accounting_run(
+        ws,
+        legacy_root=legacy_root or None,
+        run_id=run_id,
+    )
+    result = audit_legacy_migration_coverage(ws, migration_dir=run_dir)
     return {"ok": True, **require_valid_public_surface("legacy_migration_coverage_audit", result)}
 
 
