@@ -81,3 +81,7 @@ def test_kimi_project_install_writes_kimi_and_kimi_code_surfaces(tmp_path):
         assert "claim relation map" in runtime.lower()
         assert "brain/v5/native_mcp.py" in (base / "mcp.json").read_text(encoding="utf-8")
         assert "brain/v5/native_mcp.py" in (base / "config.toml").read_text(encoding="utf-8")
+
+    issues: list[str] = []
+    pm._check_agent_toml(workspace / ".kimi-code" / "config.toml", issues, "kimi-code (project)")
+    assert issues == []

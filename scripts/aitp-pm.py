@@ -243,7 +243,7 @@ def _check_agent_toml(path: Path, issues: list[str], label: str) -> None:
         print("      config.toml: READ ERROR")
         return
     parent_names = {p.name for p in path.parents}
-    if ".kimi" in parent_names:
+    if ".kimi" in parent_names or ".kimi-code" in parent_names:
         section = "[mcp.servers.aitp]"
     else:
         section = "[mcp_servers.aitp]"
@@ -315,6 +315,7 @@ def _check_project_local_residue(target_root: Path, issues: list[str]) -> None:
         (target_root / ".claude" / "settings.local.json", "Claude settings.local.json"),
         (target_root / ".claude" / "hooks" / "hooks.json", "Claude hooks/hooks.json"),
         (target_root / ".kimi" / "config.toml", "Kimi config.toml"),
+        (target_root / ".kimi-code" / "config.toml", "Kimi Code config.toml"),
         (target_root / ".codex" / "config.toml", "Codex config.toml"),
     ]
     expected_topics = _norm_install_value(str(target_root / "research" / "aitp-topics"))
