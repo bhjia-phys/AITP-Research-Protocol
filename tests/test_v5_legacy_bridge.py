@@ -3796,9 +3796,18 @@ def test_legacy_semantic_review_worklist_cli_mcp_and_runtime_surface(tmp_path, c
     ]) == 0
     cli_payload = json.loads(capsys.readouterr().out)
     mcp_payload = aitp_v5_build_legacy_semantic_review_worklist(str(base), migration_dir=str(run))
+    topic_mcp_payload = aitp_v5_build_legacy_semantic_review_worklist(
+        str(base),
+        migration_dir=str(run),
+        topic="canonical-topic",
+    )
 
     assert cli_payload["kind"] == "legacy_semantic_review_worklist"
     assert mcp_payload["kind"] == "legacy_semantic_review_worklist"
+    assert topic_mcp_payload["kind"] == "legacy_semantic_review_worklist"
+    assert topic_mcp_payload["requested_topic"] == "canonical-topic"
+    assert topic_mcp_payload["requested_topic_found"] is True
+    assert topic_mcp_payload["requested_topic_item"]["topic"] == "canonical-topic"
     assert runtime_entrypoints()["legacy_semantic_review_worklist"] == {
         "cli": "aitp-v5 legacy semantic-review-worklist <args>",
         "mcp": "aitp_v5_build_legacy_semantic_review_worklist",

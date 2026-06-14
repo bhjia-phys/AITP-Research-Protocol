@@ -161,9 +161,20 @@ def aitp_v5_build_legacy_semantic_review_manifest(base: str, *, migration_dir: s
     return {"ok": True, **require_valid_public_surface("legacy_semantic_review_manifest", result)}
 
 
-def aitp_v5_build_legacy_semantic_review_worklist(base: str, *, migration_dir: str) -> dict:
+def aitp_v5_build_legacy_semantic_review_worklist(
+    base: str,
+    *,
+    migration_dir: str,
+    topic: str = "",
+) -> dict:
     result = build_legacy_semantic_review_worklist(_ws(base), migration_dir=migration_dir)
-    return {"ok": True, **require_valid_public_surface("legacy_semantic_review_worklist", result)}
+    payload = {"ok": True, **require_valid_public_surface("legacy_semantic_review_worklist", result)}
+    if topic:
+        topic_item = next((item for item in payload["items"] if item.get("topic") == topic), None)
+        payload["requested_topic"] = topic
+        payload["requested_topic_found"] = topic_item is not None
+        payload["requested_topic_item"] = topic_item
+    return payload
 
 
 def aitp_v5_build_legacy_semantic_needs_revision_basis_queue(base: str, *, migration_dir: str) -> dict:
