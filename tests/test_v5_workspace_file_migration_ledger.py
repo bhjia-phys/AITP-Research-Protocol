@@ -94,6 +94,58 @@ def test_workspace_file_migration_ledger_accounts_old_and_legacy_files(tmp_path)
     assert "No old store deletion is safe" in rendered
 
 
+def test_workspace_file_migration_ledger_flags_root_l2_global_replay_risk(tmp_path):
+    ws, workspace_root, migration_dir = _write_workspace_with_old_and_legacy_files(tmp_path)
+    l2_dir = workspace_root / ".aitp" / "memory" / "l2" / "entries"
+    for topic in ("ads-topic", "h2o-topic"):
+        write_md(
+            l2_dir / f"memory-legacy-l2-{topic}-l2-entries-claim-shared-ridge.md",
+            {
+                "kind": "memory_entry",
+                "topic_id": topic,
+                "entry_id": f"memory-entry-{topic}",
+            },
+            "# Shared legacy L2 entry\n",
+        )
+
+    payload = build_workspace_file_migration_ledger(
+        ws,
+        workspace_root=workspace_root,
+        legacy_accounting_dir=migration_dir,
+    )
+
+    summary = payload["summary"]
+    assert summary["root_l2_global_memory_decision_count"] == 2
+    assert summary["root_l2_global_memory_topic_count"] == 2
+    assert summary["root_l2_global_memory_entries_per_topic"] == 1
+    assert summary["root_l2_global_memory_replay_key_count"] == 1
+    assert summary["root_l2_global_memory_max_topic_repetition"] == 2
+    assert summary["root_l2_global_memory_uniform_topic_copy_pattern"] is True
+    assert summary["root_l2_global_memory_risk"] is True
+    assert summary["root_l2_global_memory_risk_triggers"] == [
+        "replayed_entry_keys",
+        "uniform_entries_per_topic",
+    ]
+    assert "multiple topic prefixes" in summary["root_l2_global_memory_risk_reason"]
+    assert payload["retirement_gate"]["root_l2_global_memory_risk"] is True
+    assert "cross-topic replay" in payload["retirement_gate"]["why_not_safe_now"]
+    assert require_valid_public_surface("workspace_file_migration_ledger", payload) == payload
+
+    compact = compact_workspace_file_migration_ledger(payload)
+    assert compact["root_l2_global_memory_risk"] is True
+    assert compact["root_l2_global_memory_uniform_topic_copy_pattern"] is True
+    assert compact["root_l2_global_memory_risk_triggers"] == [
+        "replayed_entry_keys",
+        "uniform_entries_per_topic",
+    ]
+    assert compact["root_l2_global_memory_replay_key_count"] == 1
+    assert require_valid_public_surface("workspace_file_migration_ledger_progress", compact) == compact
+
+    rendered = render_workspace_file_migration_ledger_markdown(payload)
+    assert "Root L2 Global Memory Risk" in rendered
+    assert "Replayed entry-key count: `1`" in rendered
+
+
 def test_workspace_file_migration_ledger_cli_writes_json_and_report(tmp_path, capsys):
     ws, workspace_root, migration_dir = _write_workspace_with_old_and_legacy_files(tmp_path)
     report = workspace_root / "ledger.md"

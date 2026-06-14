@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -68,6 +68,7 @@ def build_workspace_file_migration_ledger(
     source_counts = Counter(str(item["source_family"]) for item in decisions)
     topic_counts = Counter(str(item.get("topic_id") or "_unassigned") for item in decisions)
     blocking = [item for item in decisions if item["blocks_old_store_retirement"]]
+    root_l2_risk = _root_l2_global_memory_summary(decisions)
 
     expected_old = int((old_manifest.get("summary") or {}).get("file_count") or 0)
     expected_legacy = int((legacy_payload or {}).get("expected_file_count") or 0)
@@ -93,18 +94,34 @@ def build_workspace_file_migration_ledger(
             "topic_file_counts": dict(sorted(topic_counts.items())),
             "old_store_retirement_safe": len(blocking) == 0,
             "semantic_review_required": any(item["review_status"] == "semantic_review_required" for item in decisions),
+            "root_l2_global_memory_decision_count": root_l2_risk["decision_count"],
+            "root_l2_global_memory_topic_count": root_l2_risk["topic_count"],
+            "root_l2_global_memory_entries_per_topic": root_l2_risk["entries_per_topic"],
+            "root_l2_global_memory_review_status_counts": root_l2_risk["review_status_counts"],
+            "root_l2_global_memory_replay_key_count": root_l2_risk["replay_key_count"],
+            "root_l2_global_memory_max_topic_repetition": root_l2_risk["max_topic_repetition"],
+            "root_l2_global_memory_uniform_topic_copy_pattern": root_l2_risk["uniform_topic_copy_pattern"],
+            "root_l2_global_memory_risk": root_l2_risk["risk"],
+            "root_l2_global_memory_risk_triggers": root_l2_risk["risk_triggers"],
+            "root_l2_global_memory_risk_reason": root_l2_risk["risk_reason"],
         },
         "file_decisions": decisions,
         "retirement_gate": {
             "old_store_retirement_safe": len(blocking) == 0,
             "why_not_safe_now": (
-                "Some old-format files still require import review, semantic review, "
+                "Root L2 memory entries show a cross-topic replay/misassignment risk; "
+                "resolve or archive those entries before retiring old stores."
+                if root_l2_risk["risk"]
+                else "Some old-format files still require import review, semantic review, "
                 "or explicit archive decisions."
                 if blocking
                 else "Every manifested old-format file has a non-blocking file decision."
             ),
             "blocking_decision_refs": [item["decision_ref"] for item in blocking[:200]],
             "blocking_decision_ref_count": len(blocking),
+            "root_l2_global_memory_risk": root_l2_risk["risk"],
+            "root_l2_global_memory_risk_summary": root_l2_risk["risk_reason"],
+            "root_l2_global_memory_sample_refs": root_l2_risk["sample_decision_refs"],
         },
         "truth_source": "file_manifest_plus_topic_migration_plan",
         "orientation_only": True,
@@ -136,6 +153,19 @@ def render_workspace_file_migration_ledger_markdown(payload: dict[str, Any], *, 
     lines.extend(["", "## Review Status Counts", ""])
     for key, value in (summary.get("review_status_counts") or {}).items():
         lines.append(f"- {key}: `{value}`")
+    lines.extend(["", "## Root L2 Global Memory Risk", ""])
+    lines.extend(
+        [
+            f"- Risk: `{str(summary.get('root_l2_global_memory_risk', False)).lower()}`",
+            f"- Root L2 decisions: `{summary.get('root_l2_global_memory_decision_count', 0)}`",
+            f"- Topics touched by root L2 entries: `{summary.get('root_l2_global_memory_topic_count', 0)}`",
+            f"- Uniform entries per topic: `{summary.get('root_l2_global_memory_entries_per_topic', 0)}`",
+            f"- Uniform copy pattern: `{str(summary.get('root_l2_global_memory_uniform_topic_copy_pattern', False)).lower()}`",
+            f"- Replayed entry-key count: `{summary.get('root_l2_global_memory_replay_key_count', 0)}`",
+            f"- Risk triggers: `{', '.join(summary.get('root_l2_global_memory_risk_triggers', []) or [])}`",
+            f"- Reason: {summary.get('root_l2_global_memory_risk_reason', '')}",
+        ]
+    )
     lines.extend(
         [
             "",
@@ -214,6 +244,15 @@ def compact_workspace_file_migration_ledger(payload: dict[str, Any]) -> dict[str
         "top_blocking_topics": _top_values(blockers, "topic_id"),
         "old_store_retirement_safe": summary.get("old_store_retirement_safe", False),
         "semantic_review_required": summary.get("semantic_review_required", False),
+        "root_l2_global_memory_decision_count": summary.get("root_l2_global_memory_decision_count", 0),
+        "root_l2_global_memory_topic_count": summary.get("root_l2_global_memory_topic_count", 0),
+        "root_l2_global_memory_entries_per_topic": summary.get("root_l2_global_memory_entries_per_topic", 0),
+        "root_l2_global_memory_replay_key_count": summary.get("root_l2_global_memory_replay_key_count", 0),
+        "root_l2_global_memory_max_topic_repetition": summary.get("root_l2_global_memory_max_topic_repetition", 0),
+        "root_l2_global_memory_uniform_topic_copy_pattern": summary.get("root_l2_global_memory_uniform_topic_copy_pattern", False),
+        "root_l2_global_memory_risk": summary.get("root_l2_global_memory_risk", False),
+        "root_l2_global_memory_risk_triggers": summary.get("root_l2_global_memory_risk_triggers", []),
+        "root_l2_global_memory_risk_reason": summary.get("root_l2_global_memory_risk_reason", ""),
         "orientation_only": True,
         "summary_inputs_trusted": False,
         "can_update_kernel_state": False,
@@ -312,6 +351,80 @@ def _legacy_accounting_decisions(payload: dict[str, Any], topic_actions: dict[st
             }
         )
     return decisions
+
+
+def _root_l2_global_memory_summary(decisions: list[dict[str, Any]]) -> dict[str, Any]:
+    root_l2 = [
+        item
+        for item in decisions
+        if item.get("source_family") == "old_store"
+        and item.get("source_store_label") == "workspace_root_store"
+        and item.get("source_category") == "memory_entry"
+        and str(item.get("source_path") or "").startswith("memory/l2/entries/")
+    ]
+    topic_counts = Counter(str(item.get("topic_id") or "_unassigned") for item in root_l2)
+    status_counts = Counter(str(item.get("review_status") or "") for item in root_l2)
+    replay_topics: dict[str, set[str]] = defaultdict(set)
+    for item in root_l2:
+        replay_key = _root_l2_replay_key(str(item.get("source_path") or ""))
+        if replay_key:
+            replay_topics[replay_key].add(str(item.get("topic_id") or "_unassigned"))
+
+    replayed_keys = {key: topics for key, topics in replay_topics.items() if len(topics) > 1}
+    uniform_counts = set(topic_counts.values())
+    entries_per_topic = next(iter(uniform_counts)) if len(uniform_counts) == 1 and topic_counts else 0
+    uniform_multi_topic = len(topic_counts) > 1 and entries_per_topic > 0
+    max_topic_repetition = max((len(topics) for topics in replay_topics.values()), default=0)
+    risk_triggers = []
+    if replayed_keys:
+        risk_triggers.append("replayed_entry_keys")
+    if uniform_multi_topic:
+        risk_triggers.append("uniform_entries_per_topic")
+    risk = bool(root_l2) and len(topic_counts) > 1 and bool(risk_triggers)
+    if risk:
+        risk_reason = (
+            "root workspace L2 memory entries appear under multiple topic prefixes; "
+            "agents must not treat them as topic-local evidence until each entry is reassigned, "
+            "typed-imported, or archived."
+        )
+    elif root_l2:
+        risk_reason = "root workspace L2 memory entries exist and still require ordinary file-level review."
+    else:
+        risk_reason = "no root workspace L2 memory entries were found in the old-store manifest."
+    top_replayed = sorted(
+        (
+            {
+                "entry_key": key,
+                "topic_count": len(topics),
+                "topics": sorted(topics)[:12],
+            }
+            for key, topics in replayed_keys.items()
+        ),
+        key=lambda row: (-int(row["topic_count"]), str(row["entry_key"])),
+    )
+    return {
+        "decision_count": len(root_l2),
+        "topic_count": len(topic_counts),
+        "entries_per_topic": entries_per_topic,
+        "topic_file_counts": dict(sorted(topic_counts.items())),
+        "review_status_counts": dict(sorted(status_counts.items())),
+        "replay_key_count": len(replayed_keys),
+        "max_topic_repetition": max_topic_repetition,
+        "uniform_topic_copy_pattern": uniform_multi_topic,
+        "top_replayed_entry_keys": top_replayed[:12],
+        "sample_decision_refs": [str(item.get("decision_ref") or "") for item in root_l2[:20]],
+        "risk": risk,
+        "risk_triggers": risk_triggers,
+        "risk_reason": risk_reason,
+    }
+
+
+def _root_l2_replay_key(source_path: str) -> str:
+    name = Path(source_path).name
+    marker = "-l2-entries-"
+    if marker in name:
+        return name.split(marker, 1)[1]
+    return name
 
 
 def _old_store_file_fate(
