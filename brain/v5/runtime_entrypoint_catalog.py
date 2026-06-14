@@ -526,6 +526,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_build_workspace_file_migration_ledger",
         "surface": "workspace_file_migration_ledger",
     },
+    "workspace_migration_health": {
+        "cli": "aitp-v5 workspace migration-health",
+        "mcp": "aitp_v5_get_workspace_migration_health",
+        "surface": "workspace_migration_health",
+    },
     "write_workspace_file_migration_ledger": {
         "cli": "aitp-v5 workspace file-migration-ledger <args>",
         "mcp": "aitp_v5_write_workspace_file_migration_ledger",

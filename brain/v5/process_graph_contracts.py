@@ -10,6 +10,7 @@ from brain.v5.source_reconstruction_contracts import (
     validate_source_reconstruction_review_manifest,
     validate_source_stack_coverage_manifest,
 )
+from brain.v5.workspace_migration_health_contracts import validate_workspace_migration_health
 
 
 def validate_process_graph_slice(payload: dict[str, Any], *, path: str = "process_graph_slice") -> ContractResult:
@@ -57,6 +58,14 @@ def validate_process_graph_slice(payload: dict[str, Any], *, path: str = "proces
             validate_source_reconstruction_review_manifest(
                 payload["source_reconstruction_review"],
                 path=f"{path}.source_reconstruction_review",
+            )
+        )
+    _require_mapping(payload.get("migration_health"), f"{path}.migration_health", result)
+    if isinstance(payload.get("migration_health"), dict):
+        result.extend(
+            validate_workspace_migration_health(
+                payload["migration_health"],
+                path=f"{path}.migration_health",
             )
         )
     moment_policy = payload.get("moment_policy")

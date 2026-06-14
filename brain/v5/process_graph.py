@@ -33,6 +33,7 @@ from brain.v5.recovery_session import recover_session_binding_for_read
 from brain.v5.source_reconstruction_review import build_source_reconstruction_review_slice
 from brain.v5.source_stack_coverage import build_source_stack_coverage_slice
 from brain.v5.store import list_valid_records
+from brain.v5.workspace_migration_health import build_workspace_migration_health
 
 
 _CLOSED_OBLIGATION_STATUSES = {"closed", "complete", "completed", "done", "discharged", "resolved", "passed"}
@@ -48,7 +49,16 @@ def build_process_graph_slice(
     """Build a read-only graph slice from existing typed records."""
 
     limit = max(1, int(limit or 80))
-    recovered = recover_session_binding_for_read(ws, session_id)
+    try:
+        recovered = recover_session_binding_for_read(ws, session_id)
+    except (FileNotFoundError, TypeError, ValueError, OSError) as error:
+        return _unbound_process_graph_slice(
+            ws,
+            requested_session_id=session_id,
+            claim_id=claim_id,
+            limit=limit,
+            reason=str(error) or error.__class__.__name__,
+        )
     session = recovered.session
     requested_session_id = recovered.requested_session_id
     recovery_selection_source = recovered.recovery_selection_source
@@ -211,6 +221,7 @@ def build_process_graph_slice(
         topic_id=topic_id,
         claim_ids=claim_ids,
     )
+    migration_health = build_workspace_migration_health(ws, sample_limit=3)
     trust_boundary_reasons = [
         "process_graph_slice is orientation-only",
         "truth_source is typed_records",
@@ -218,6 +229,14 @@ def build_process_graph_slice(
         "this API cannot update kernel state",
         "this API cannot update claim trust",
     ]
+    if migration_health["status"] != "clear":
+        trust_boundary_reasons.append(
+            "workspace migration health is not clear; legacy migration surfaces are orientation-only and cannot update claim trust",
+        )
+    if migration_health["canonical_legacy_seed_count"] > 0:
+        trust_boundary_reasons.append(
+            "canonical legacy L2 seed memory must not be treated as active claim support until reviewed/reassigned/promoted",
+        )
     moment_policy = build_host_agnostic_moment_policy(
         session_id=session.session_id,
         topic_id=topic_id,
@@ -249,6 +268,7 @@ def build_process_graph_slice(
         "source_asset_index": source_asset_index,
         "source_stack_coverage": source_stack_coverage,
         "source_reconstruction_review": source_reconstruction_review,
+        "migration_health": migration_health,
         "relation_neighborhood": relation_neighborhood,
         "trust_boundary_reasons": trust_boundary_reasons,
         "exploratory_records": exploratory_slices,
@@ -292,6 +312,177 @@ def build_process_graph_slice(
             "node_limit_reached": builder.node_limit_reached,
             "dropped_node_count": builder.dropped_node_count,
         },
+    }
+
+
+def _unbound_process_graph_slice(
+    ws: WorkspacePaths,
+    *,
+    requested_session_id: str,
+    claim_id: str,
+    limit: int,
+    reason: str,
+) -> dict[str, Any]:
+    migration_health = build_workspace_migration_health(ws, sample_limit=3)
+    trust_boundary_reasons = [
+        "process_graph_slice is orientation-only",
+        "requested session binding is missing or malformed",
+        "truth_source is typed_records",
+        "reference_location records are pointers, not evidence",
+        "this API cannot update kernel state",
+        "this API cannot update claim trust",
+    ]
+    if migration_health["status"] != "clear":
+        trust_boundary_reasons.append(
+            "workspace migration health is not clear; legacy migration surfaces are orientation-only and cannot update claim trust",
+        )
+    if migration_health["canonical_legacy_seed_count"] > 0:
+        trust_boundary_reasons.append(
+            "canonical legacy L2 seed memory must not be treated as active claim support until reviewed/reassigned/promoted",
+        )
+    route_state = _empty_route_state()
+    moment_policy = build_host_agnostic_moment_policy(
+        session_id=requested_session_id,
+        topic_id="unbound-session",
+        claim_id=claim_id,
+        open_obligations=[],
+        source_backtrace=[],
+        relation_neighborhood=[],
+        exploratory_records=[],
+        route_state=route_state,
+        trust_boundary_reasons=trust_boundary_reasons,
+    )
+    return {
+        "ok": True,
+        "kind": "process_graph_slice",
+        "session_id": requested_session_id or "unbound-session",
+        "requested_session_id": requested_session_id,
+        "recovery_selection_source": "unbound_session",
+        "topic_id": "unbound-session",
+        "claim_id": claim_id,
+        "truth_source": "typed_records",
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+        "nodes": [],
+        "edges": [],
+        "open_obligations": [],
+        "source_backtrace": [],
+        "source_asset_index": [],
+        "source_stack_coverage": _empty_source_stack_coverage(),
+        "source_reconstruction_review": _empty_source_reconstruction_review(),
+        "migration_health": migration_health,
+        "relation_neighborhood": [],
+        "trust_boundary_reasons": trust_boundary_reasons,
+        "exploratory_records": [],
+        "route_state": route_state,
+        "provenance_gaps": [
+            {
+                "gap_id": "unbound-session",
+                "gap_type": "session_binding_missing",
+                "provenance_kind": "session_binding",
+                "reason": reason or "requested session binding is missing or malformed",
+                "topic_id": "unbound-session",
+                "claim_id": claim_id,
+                "target_type": "session",
+                "target_id": requested_session_id or "unbound-session",
+                "target_refs": [f"session:{requested_session_id or 'unbound-session'}"],
+                "recommended_actions": ["bind_session"],
+                "recommended_entrypoints": ["aitp_v5_bind_session"],
+                "payload_hints": [],
+                "severity": "recommended",
+                "required_now": False,
+                "required_before_trust_change": False,
+                "strict_boundary": "read-only recovery surface",
+                "blocking_when_used_as": ["claim_support", "trust_update", "old_store_retirement"],
+                "orientation_only": True,
+                "can_update_claim_trust": False,
+            }
+        ],
+        "moment_policy": moment_policy,
+        "recommended_moments": [],
+        "record_counts": {
+            "claim": 0,
+            "physics_object": 0,
+            "object_relation": 0,
+            "reference_location": 0,
+            "source_asset": 0,
+            "source_asset_index": 0,
+            "source_stack_coverage": 0,
+            "source_reconstruction_review": 0,
+            "evidence": 0,
+            "proof_obligation": 0,
+            "code_state": 0,
+            "tool_run": 0,
+            "validation_contract": 0,
+            "validation_result": 0,
+            "memory_entry": 0,
+            "sensemaking_report": 0,
+            "exploratory_record": 0,
+            "human_checkpoint": 0,
+            "research_route": 0,
+            "research_run": 0,
+            "research_run_event": 0,
+            "provenance_gap": 1,
+        },
+        "truncation": {
+            "limit": limit,
+            "node_limit_reached": False,
+            "dropped_node_count": 0,
+        },
+    }
+
+
+def _empty_source_stack_coverage() -> dict[str, Any]:
+    return {
+        "kind": "source_stack_coverage_manifest",
+        "claim_count": 0,
+        "coverage_status_counts": {},
+        "missing_required_output_counts": {},
+        "source_component_gap_counts": {},
+        "source_review_status_counts": {},
+        "items": [],
+        "next_actions": [],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def _empty_source_reconstruction_review() -> dict[str, Any]:
+    return {
+        "kind": "source_reconstruction_review_manifest",
+        "claim_count": 0,
+        "review_progress": {
+            "passed": 0,
+            "needs_revision": 0,
+            "inconclusive": 0,
+            "pending": 0,
+        },
+        "items": [],
+        "next_actions": [],
+        "truth_source": "typed_records",
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def _empty_route_state() -> dict[str, Any]:
+    return {
+        "active_route_id": "",
+        "routes": [],
+        "live_routes": [],
+        "blocked_routes": [],
+        "abandoned_routes": [],
+        "pivot_routes": [],
+        "live_route_ids": [],
+        "blocked_route_ids": [],
+        "abandoned_route_ids": [],
+        "pivot_route_ids": [],
     }
 
 

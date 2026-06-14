@@ -130,6 +130,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "vnext_readiness_manifest",
         "workspace_file_migration_ledger",
         "workspace_file_migration_ledger_progress",
+        "workspace_migration_health",
         "workspace_old_store_import_result",
         "workspace_replay_packet",
         "workspace_recovery_audit",

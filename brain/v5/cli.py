@@ -62,6 +62,7 @@ from brain.v5.workspace_file_migration_ledger import (
     compact_workspace_file_migration_ledger,
     write_workspace_file_migration_ledger,
 )
+from brain.v5.workspace_migration_health import build_workspace_migration_health
 from brain.v5.workspace_old_store_import import (
     apply_workspace_old_store_import_plan,
     build_workspace_old_store_import_plan,
@@ -134,6 +135,8 @@ def _build_parser() -> argparse.ArgumentParser:
     wfl.add_argument("--write-json", default="")
     wfl.add_argument("--write-report", default="")
     wfl.add_argument("--compact", action="store_true")
+    wmh = wps.add_parser("migration-health")
+    wmh.add_argument("--sample-limit", type=int, default=5)
     wosi = wps.add_parser("old-store-import")
     wosi.add_argument("--workspace-root", default="")
     wosi.add_argument("--old-store-manifest-json", default="")
@@ -774,6 +777,12 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
                 compact_workspace_file_migration_ledger(payload),
             )
         return require_valid_public_surface("workspace_file_migration_ledger", payload)
+
+    if args.command == "workspace" and args.workspace_command == "migration-health":
+        return require_valid_public_surface(
+            "workspace_migration_health",
+            build_workspace_migration_health(ws, sample_limit=args.sample_limit),
+        )
 
     if args.command == "workspace" and args.workspace_command == "old-store-import":
         workspace_root = args.workspace_root or None

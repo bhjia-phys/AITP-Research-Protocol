@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 
 def test_process_graph_slice_reads_typed_records_and_exposes_edges(tmp_path):
     from brain.v5.code import record_code_state
@@ -620,6 +622,150 @@ def test_process_graph_slice_exposes_source_code_provenance_gaps(tmp_path):
     assert contract_hint["draft"]["validator_role"] == "adversarial_reviewer"
     moments = [item for item in payload["recommended_moments"] if item["moment"] == "capture_source_or_code_provenance"]
     assert moments
+
+
+def test_process_graph_slice_exposes_workspace_migration_health_boundary(tmp_path):
+    from brain.v5.process_graph import build_process_graph_slice
+    from brain.v5.process_graph_contracts import validate_process_graph_slice
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "fqhe", context_id="topological-order", title="FQHE")
+    claim = create_claim(
+        ws,
+        topic_id="fqhe",
+        statement="Legacy migration requires semantic review.",
+        evidence_profile="legacy_migration",
+        confidence_state="hypothesis",
+        active_uncertainty="legacy L2 seed reassignment is incomplete",
+    )
+    bind_session(ws, "s1", topic_id="fqhe", context_id="topological-order", active_claim=claim.claim_id)
+
+    ledger_dir = ws.root / "migrations" / "workspace-inventory"
+    ledger_dir.mkdir(parents=True, exist_ok=True)
+    (ledger_dir / "workspace_file_migration_ledger.json").write_text(
+        json.dumps(
+            {
+                "kind": "aitp_workspace_file_migration_ledger",
+                "workspace_root": str(tmp_path),
+                "canonical_topics_root": str(ws.base),
+                "canonical_store": str(ws.root),
+                "summary": {
+                    "file_decision_count": 1,
+                    "expected_total_file_count": 1,
+                    "no_omission_check": True,
+                    "blocking_file_count": 1,
+                    "decision_counts": {"semantic_review_basis": 1},
+                    "review_status_counts": {"semantic_review_required": 1},
+                    "old_store_retirement_safe": False,
+                    "semantic_review_required": True,
+                    "root_l2_global_memory_decision_count": 1,
+                    "root_l2_global_memory_topic_count": 1,
+                    "root_l2_global_memory_entries_per_topic": 1,
+                    "root_l2_global_memory_replay_key_count": 0,
+                    "root_l2_global_memory_max_topic_repetition": 1,
+                    "root_l2_global_memory_uniform_topic_copy_pattern": True,
+                    "root_l2_global_memory_risk": True,
+                    "root_l2_global_memory_risk_triggers": ["uniform_entries_per_topic"],
+                    "root_l2_global_memory_risk_reason": "root L2 entries require semantic reassignment",
+                },
+                "file_decisions": [
+                    {
+                        "decision_ref": "legacy:fqhe:L2/entries/claim.md",
+                        "topic_id": "fqhe",
+                        "source_family": "legacy_accounting",
+                        "source_path": "L2/entries/claim.md",
+                        "recommended_decision": "semantic_review_basis",
+                        "review_status": "semantic_review_required",
+                        "blocks_old_store_retirement": True,
+                        "summary_inputs_trusted": False,
+                        "can_update_claim_trust": False,
+                    }
+                ],
+                "orientation_only": True,
+                "summary_inputs_trusted": False,
+                "can_update_kernel_state": False,
+                "can_update_claim_trust": False,
+            },
+            sort_keys=True,
+        ),
+        encoding="utf-8",
+    )
+    seed_dir = ws.root / "memory" / "l2" / "entries"
+    seed_dir.mkdir(parents=True, exist_ok=True)
+    (seed_dir / "memory-legacy-l2-fqhe-claim.md").write_text(
+        "\n".join(
+            [
+                "---",
+                "entry_id: memory-legacy-l2-fqhe-claim",
+                "topic_id: fqhe",
+                "source_topic_id: L2",
+                f"source_claim_id: {claim.claim_id}",
+                "status: legacy_seed",
+                "memory_kind: legacy_l2_entry:claim",
+                "source_packet_id: legacy_l2:L2/entries/claim.md",
+                "---",
+                "Legacy seed body.",
+                "",
+            ],
+        ),
+        encoding="utf-8",
+    )
+
+    payload = build_process_graph_slice(ws, "s1", limit=80)
+
+    assert validate_process_graph_slice(payload).ok is True
+    assert require_valid_public_surface(
+        "workspace_migration_health",
+        payload["migration_health"],
+    ) == payload["migration_health"]
+    assert payload["migration_health"]["status"] == "blocked"
+    assert payload["migration_health"]["old_store_retirement_safe"] is False
+    assert payload["migration_health"]["root_l2_global_memory_risk"] is True
+    assert payload["migration_health"]["canonical_legacy_seed_count"] == 1
+    assert payload["migration_health"]["active_legacy_seed_count"] == 0
+    assert "legacy_seed memory is recovery orientation only" in "\n".join(
+        payload["migration_health"]["summary_lines"],
+    )
+    assert "canonical legacy L2 seed memory must not be treated as active claim support" in "\n".join(
+        payload["trust_boundary_reasons"],
+    )
+
+
+def test_process_graph_slice_returns_unbound_orientation_surface_for_missing_topic_session(tmp_path):
+    from brain.v5.process_graph import build_process_graph_slice
+    from brain.v5.process_graph_contracts import validate_process_graph_slice
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+
+    payload = build_process_graph_slice(ws, "topic:l0-l4", limit=20)
+
+    assert validate_process_graph_slice(payload).ok is True
+    assert payload["recovery_selection_source"] == "unbound_session"
+    assert payload["topic_id"] == "unbound-session"
+    assert payload["migration_health"]["kind"] == "aitp_workspace_migration_health"
+    assert payload["provenance_gaps"][0]["gap_type"] == "session_binding_missing"
+    assert "requested session binding is missing or malformed" in "\n".join(
+        payload["trust_boundary_reasons"],
+    )
+
+
+def test_mcp_bind_session_normalizes_topic_token_session_ids(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_bind_session
+
+    payload = aitp_v5_bind_session(
+        str(tmp_path),
+        session_id="topic:l0-l4",
+        topic_id="l0-l4",
+        context_id="frame.aitp.l0-l4",
+    )
+
+    assert payload["ok"] is True
+    assert payload["requested_session_id"] == "topic:l0-l4"
+    assert payload["session_id"] == "session-l0-l4-recovery"
+    assert (tmp_path / ".aitp" / "runtime" / "sessions" / "session-l0-l4-recovery.md").exists()
 
 
 def test_process_graph_slice_is_registered_for_native_mcp_and_runtime_entrypoints():

@@ -133,6 +133,7 @@ _PUBLIC_SURFACE_NAMES = (
     "workspace_refresh_bundle",
     "workspace_file_migration_ledger",
     "workspace_file_migration_ledger_progress",
+    "workspace_migration_health",
     "workspace_old_store_import_result",
     "workspace_recovery_binding_repair",
     "workspace_recovery_audit",
@@ -270,6 +271,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "workspace_refresh_bundle": "orientation-only host refresh bundle; full mode refreshes replay/source/L2 views, while startup_lightweight mode refreshes current-session orientation only",
     "workspace_file_migration_ledger": "file-level import/archive/review ledger for retiring noncanonical AITP stores without mutating claim trust",
     "workspace_file_migration_ledger_progress": "compact file-level migration ledger progress surface for agent startup and migration discipline",
+    "workspace_migration_health": "compact recovery boundary over file-migration progress and canonical legacy L2 seed quarantine status without claim-trust authority",
     "workspace_old_store_import_result": "controlled root/nested old-store typed-file import result with conflict checks and no claim-trust authority",
     "workspace_recovery_binding_repair": "conservative active-claim session binding repair for restart recovery; auto-applies only when a topic has exactly one canonical claim",
     "workspace_recovery_audit": "read-only per-topic audit of restart recovery readiness, active-claim binding, relation-map boundaries, and migration review blockers",
@@ -463,6 +465,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_workspace_file_migration_ledger,
         require_valid_workspace_file_migration_ledger_progress,
     )
+    from brain.v5.workspace_migration_health_contracts import require_valid_workspace_migration_health
     from brain.v5.workspace_old_store_import_contracts import require_valid_workspace_old_store_import_result
     from brain.v5.workspace_recovery_binding_repair_contracts import require_valid_workspace_recovery_binding_repair
     from brain.v5.workspace_recovery_audit_contracts import (
@@ -621,6 +624,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "workspace_refresh_bundle": require_valid_workspace_refresh_bundle,
         "workspace_file_migration_ledger": require_valid_workspace_file_migration_ledger,
         "workspace_file_migration_ledger_progress": require_valid_workspace_file_migration_ledger_progress,
+        "workspace_migration_health": require_valid_workspace_migration_health,
         "workspace_old_store_import_result": require_valid_workspace_old_store_import_result,
         "workspace_recovery_binding_repair": require_valid_workspace_recovery_binding_repair,
         "workspace_recovery_audit": require_valid_workspace_recovery_audit,

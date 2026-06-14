@@ -6,6 +6,7 @@ from dataclasses import asdict
 from importlib import import_module
 import os
 from pathlib import Path
+import re
 
 from brain.v5.adapter_protocols import adapter_protocol_registry, record_gate_coverage_audit
 from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
@@ -84,6 +85,7 @@ from brain.v5.workspace_file_migration_ledger import (
     compact_workspace_file_migration_ledger,
     write_workspace_file_migration_ledger,
 )
+from brain.v5.workspace_migration_health import build_workspace_migration_health
 from brain.v5.workspace_old_store_import import (
     apply_workspace_old_store_import_plan,
     build_workspace_old_store_import_plan,
@@ -141,6 +143,22 @@ def _same_path(left: Path, right: Path) -> bool:
         return left.absolute() == right.absolute()
 
 
+def _safe_bind_session_id(session_id: str, *, topic_id: str) -> str:
+    """Normalize read-only topic tokens before writing a SessionBinding file."""
+
+    raw = str(session_id or "").strip()
+    if raw.startswith("topic:") or raw.startswith("aitp:topic:"):
+        topic = raw.split(":", 1)[-1]
+        return f"session-{_slug(topic_id or topic)}-recovery"
+    safe = _slug(raw)
+    return safe or f"session-{_slug(topic_id or 'unbound')}-recovery"
+
+
+def _slug(value: str) -> str:
+    text = re.sub(r"[^A-Za-z0-9_.-]+", "-", str(value or "").strip()).strip(".-")
+    return text[:160]
+
+
 def aitp_v5_init_workspace(base: str) -> dict:
     return {"ok": True, "workspace_root": str(_ws(base).root)}
 
@@ -165,10 +183,12 @@ def aitp_v5_bind_session(
     base: str, *, session_id: str, topic_id: str, context_id: str,
     active_claim: str = "", interaction_profile: str = "collaborator", interaction_steering: str = "",
 ) -> dict:
-    session = bind_session(_ws(base), session_id, topic_id=topic_id, context_id=context_id,
+    requested_session_id = session_id
+    safe_session_id = _safe_bind_session_id(session_id, topic_id=topic_id)
+    session = bind_session(_ws(base), safe_session_id, topic_id=topic_id, context_id=context_id,
         active_claim=active_claim, interaction_profile=interaction_profile,
         interaction_steering=interaction_steering)
-    return {"ok": True, **asdict(session)}
+    return {"ok": True, "requested_session_id": requested_session_id, **asdict(session)}
 
 
 def aitp_v5_get_execution_brief(base: str, *, session_id: str) -> dict:
@@ -255,6 +275,19 @@ def aitp_v5_write_workspace_file_migration_ledger(
         progress = compact_workspace_file_migration_ledger(payload)
         return {"ok": True, **require_valid_public_surface("workspace_file_migration_ledger_progress", progress)}
     return {"ok": True, **require_valid_public_surface("workspace_file_migration_ledger", payload)}
+
+
+def aitp_v5_get_workspace_migration_health(
+    base: str,
+    *,
+    sample_limit: int = 5,
+) -> dict:
+    """Return compact migration/recovery boundary status for the canonical store."""
+
+    return require_valid_public_surface(
+        "workspace_migration_health",
+        build_workspace_migration_health(_ws(base), sample_limit=sample_limit),
+    )
 
 
 def aitp_v5_build_workspace_old_store_import_plan(

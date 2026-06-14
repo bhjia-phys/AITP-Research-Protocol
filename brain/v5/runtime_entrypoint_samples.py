@@ -416,6 +416,8 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run", "--topic", "fqhe", "--status", "inconclusive", "--legacy-ref", "legacy-topic:state.md", "--summary", "Semantic review sample."]
     if template.startswith("workspace file-migration-ledger"):
         return ["--workspace-root", "D:/aitp", "--compact"]
+    if template.startswith("workspace migration-health"):
+        return ["--sample-limit", "5"]
     if template.startswith("workspace old-store-import"):
         return ["--workspace-root", "D:/aitp", "--topic", "fqhe"]
     if template.startswith("workspace recovery-binding-repair"):

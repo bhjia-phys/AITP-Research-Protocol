@@ -25,6 +25,12 @@ def latest_workspace_recovery_audit(ws: WorkspacePaths) -> Path | None:
     return _latest_file(ws, "workspace_recovery_audit.json")
 
 
+def latest_workspace_file_migration_ledger(ws: WorkspacePaths) -> Path | None:
+    """Return the latest saved file-level migration ledger, if one exists."""
+
+    return _latest_file(ws, "workspace_file_migration_ledger.json")
+
+
 def latest_legacy_accounting_dir(ws: WorkspacePaths) -> Path | None:
     """Return the latest legacy L0-L4 accounting directory, if one exists."""
 
