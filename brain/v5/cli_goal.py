@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from brain.v5.goal_continuation import (
+    empty_goal_continuation_packet,
     list_goal_continuations,
     read_latest_goal_continuation,
     write_goal_continuation,
@@ -106,7 +107,7 @@ def dispatch_goal_command(args, ws) -> dict:
     if args.goal_command == "latest":
         result = read_latest_goal_continuation(ws)
         if result is None:
-            return {"kind": "goal_continuation_packet", "found": False}
+            return require_valid_public_surface("goal_continuation_packet", empty_goal_continuation_packet())
         return require_valid_public_surface("goal_continuation_packet", result)
     if args.goal_command == "list":
         packets = list_goal_continuations(ws)

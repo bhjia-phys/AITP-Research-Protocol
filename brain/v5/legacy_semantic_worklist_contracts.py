@@ -153,6 +153,8 @@ def _validate_worklist_item(payload: Any, path: str, result: ContractResult) -> 
     for index, command in enumerate(payload.get("followup_review_commands") or []):
         _validate_followup_command(command, f"{path}.followup_review_commands[{index}]", result)
     _validate_pass_readiness(payload.get("pass_readiness"), f"{path}.pass_readiness", result)
+    if not isinstance(payload.get("current_recovery_focus"), dict):
+        result.add(f"{path}.current_recovery_focus", "must be a mapping")
     for key in ("priority_score", "repair_candidate_count"):
         if not isinstance(payload.get(key), int) or payload[key] < 0:
             result.add(f"{path}.{key}", "must be a non-negative integer")
@@ -188,6 +190,9 @@ def _validate_pass_readiness(payload: Any, path: str, result: ContractResult) ->
             "no_followup_review_actions",
             "no_open_human_checkpoints",
             "archive_sampled_when_needed",
+            "file_review_scope_available",
+            "required_file_review_refs_recorded",
+            "no_active_claim_divergence",
         ):
             if not isinstance(requirements.get(key), bool):
                 result.add(f"{path}.requirements.{key}", "must be a boolean")
@@ -196,6 +201,13 @@ def _validate_pass_readiness(payload: Any, path: str, result: ContractResult) ->
             isinstance(value, str) for value in payload.get(key, [])
         ):
             result.add(f"{path}.{key}", "must be a list of strings")
+    if not isinstance(payload.get("missing_file_review_refs_sample"), list) or not all(
+        isinstance(value, str) for value in payload.get("missing_file_review_refs_sample", [])
+    ):
+        result.add(f"{path}.missing_file_review_refs_sample", "must be a list of strings")
+    for key in ("required_file_review_ref_count", "missing_file_review_ref_count"):
+        if not isinstance(payload.get(key), int) or payload[key] < 0:
+            result.add(f"{path}.{key}", "must be a non-negative integer")
     if payload.get("can_update_kernel_state") is not False:
         result.add(f"{path}.can_update_kernel_state", "must be false")
     if payload.get("can_update_claim_trust") is not False:

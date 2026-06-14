@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 from importlib import import_module
+import os
 from pathlib import Path
 
 from brain.v5.adapter_protocols import adapter_protocol_registry, record_gate_coverage_audit
@@ -29,6 +30,7 @@ from brain.v5.hook_install_templates import (
     write_codex_hook_bridge,
     write_opencode_plugin_bridge,
 )
+from brain.v5.mcp_base_resolution import resolve_workspace_base
 from brain.v5.mcp_kimi_hooks import aitp_v5_install_kimi_code_hook_config, aitp_v5_write_kimi_code_hook_config
 from brain.v5.mcp_legacy import aitp_v5_apply_legacy_semantic_repair, aitp_v5_apply_legacy_source_reconstruction_repair, aitp_v5_audit_legacy_migration_coverage, aitp_v5_build_legacy_executable_evidence_packet, aitp_v5_build_legacy_human_checkpoint_packet, aitp_v5_build_legacy_l2_graph_manifest, aitp_v5_build_legacy_l2_typed_migration_packet, aitp_v5_build_legacy_runtime_log_marker_audit, aitp_v5_build_legacy_semantic_needs_revision_basis_packet, aitp_v5_build_legacy_semantic_needs_revision_basis_queue, aitp_v5_build_legacy_semantic_repair_manifest, aitp_v5_build_legacy_semantic_repair_plan, aitp_v5_build_legacy_semantic_review_manifest, aitp_v5_build_legacy_semantic_review_packet, aitp_v5_build_legacy_semantic_review_queue, aitp_v5_build_legacy_semantic_review_worklist, aitp_v5_build_legacy_source_metadata_repair_packet, aitp_v5_build_legacy_source_reconstruction_manifest, aitp_v5_build_legacy_source_reconstruction_plan, aitp_v5_build_legacy_source_reconstruction_review_packet, aitp_v5_build_legacy_topic_question_backfill_packet, aitp_v5_list_curated_legacy_topics, aitp_v5_migrate_curated_legacy_topic_to_v5, aitp_v5_migrate_legacy_topic_to_v5, aitp_v5_record_legacy_semantic_review_result, aitp_v5_write_legacy_human_checkpoint_obsidian_view, aitp_v5_write_legacy_l2_obsidian_view, aitp_v5_write_legacy_migration_accounting_run, aitp_v5_write_legacy_semantic_needs_revision_basis_obsidian_view, aitp_v5_write_legacy_semantic_review_obsidian_view, aitp_v5_write_legacy_source_reconstruction_obsidian_view
 from brain.v5.hook_smoke_coverage import runtime_hook_smoke_coverage_report
@@ -77,10 +79,66 @@ from brain.v5.tools import capture_tool_run_from_local_path, record_tool_run, re
 from brain.v5.trace import persist_hook_trace_event
 from brain.v5.trust_updates import apply_trust_update, get_trust_update_record, preflight_trust_update
 from brain.v5.workspace import bind_session, create_claim, create_topic, get_claim, init_workspace
+from brain.v5.workspace_file_migration_ledger import (
+    build_workspace_file_migration_ledger,
+    compact_workspace_file_migration_ledger,
+    write_workspace_file_migration_ledger,
+)
+from brain.v5.workspace_old_store_import import (
+    apply_workspace_old_store_import_plan,
+    build_workspace_old_store_import_plan,
+    write_workspace_old_store_import_result,
+)
+from brain.v5.workspace_recovery_binding_repair import (
+    apply_workspace_recovery_binding_repair,
+    build_workspace_recovery_binding_repair,
+    write_workspace_recovery_binding_repair,
+)
+from brain.v5.workspace_recovery_audit import (
+    build_workspace_recovery_audit,
+    compact_workspace_recovery_audit,
+    write_workspace_recovery_audit,
+)
 
 
 def _ws(base: str):
-    return init_workspace(Path(base))
+    return init_workspace(resolve_workspace_base(base))
+
+
+def _resolve_workspace_base(base: str) -> Path:
+    """Resolve common agent-provided AITP paths to the v5 topics root.
+
+    Agents sometimes pass the workspace-root `.aitp` directory because older
+    AITP layouts used it as a visible control surface.  The v5 canonical store
+    for this workspace lives under `<topics-root>/.aitp`; when
+    AITP_TOPICS_ROOT is configured by the MCP launcher, prefer that canonical
+    root over an ambiguous root-level `.aitp` path.
+    """
+
+    return resolve_workspace_base(base)
+
+
+def _env_topics_root() -> Path | None:
+    value = os.environ.get("AITP_TOPICS_ROOT", "").strip()
+    return Path(value).expanduser() if value else None
+
+
+def _looks_like_v5_base(path: Path) -> bool:
+    store = path / ".aitp"
+    return (store / "workspace.md").exists() or (store / "topics").exists() or (store / "registry").exists()
+
+
+def _looks_like_v5_store(path: Path) -> bool:
+    return path.name == ".aitp" and (
+        (path / "workspace.md").exists() or (path / "topics").exists() or (path / "registry").exists()
+    )
+
+
+def _same_path(left: Path, right: Path) -> bool:
+    try:
+        return left.resolve() == right.resolve()
+    except OSError:
+        return left.absolute() == right.absolute()
 
 
 def aitp_v5_init_workspace(base: str) -> dict:
@@ -130,6 +188,189 @@ def aitp_v5_get_claim_relation_map(base: str, *, session_id: str) -> dict:
         "claim_relation_map",
         build_claim_relation_map(_ws(base), session_id),
     )
+
+
+def aitp_v5_build_workspace_file_migration_ledger(
+    base: str,
+    *,
+    workspace_root: str = "",
+    migration_plan_json: str = "",
+    old_store_manifest_json: str = "",
+    legacy_accounting_dir: str = "",
+    compact: bool = False,
+) -> dict:
+    """Return the file-level import/archive/review ledger for old AITP stores."""
+
+    payload = build_workspace_file_migration_ledger(
+        _ws(base),
+        workspace_root=workspace_root or None,
+        migration_plan_path=migration_plan_json or None,
+        old_store_manifest_path=old_store_manifest_json or None,
+        legacy_accounting_dir=legacy_accounting_dir or None,
+    )
+    if compact:
+        return require_valid_public_surface(
+            "workspace_file_migration_ledger_progress",
+            compact_workspace_file_migration_ledger(payload),
+        )
+    return require_valid_public_surface("workspace_file_migration_ledger", payload)
+
+
+def aitp_v5_write_workspace_file_migration_ledger(
+    base: str,
+    *,
+    workspace_root: str = "",
+    migration_plan_json: str = "",
+    old_store_manifest_json: str = "",
+    legacy_accounting_dir: str = "",
+    write_json: str = "",
+    write_report: str = "",
+    compact: bool = True,
+) -> dict:
+    """Write JSON/Markdown file-level migration ledger views for old AITP stores."""
+
+    payload = build_workspace_file_migration_ledger(
+        _ws(base),
+        workspace_root=workspace_root or None,
+        migration_plan_path=migration_plan_json or None,
+        old_store_manifest_path=old_store_manifest_json or None,
+        legacy_accounting_dir=legacy_accounting_dir or None,
+    )
+    payload = write_workspace_file_migration_ledger(
+        payload,
+        json_path=write_json or None,
+        report_path=write_report or None,
+    )
+    if compact:
+        progress = compact_workspace_file_migration_ledger(payload)
+        return {"ok": True, **require_valid_public_surface("workspace_file_migration_ledger_progress", progress)}
+    return {"ok": True, **require_valid_public_surface("workspace_file_migration_ledger", payload)}
+
+
+def aitp_v5_build_workspace_old_store_import_plan(
+    base: str,
+    *,
+    workspace_root: str = "",
+    old_store_manifest_json: str = "",
+    topics: list[str] | None = None,
+) -> dict:
+    """Return a conflict-checked plan for importing old-store typed files."""
+
+    payload = build_workspace_old_store_import_plan(
+        _ws(base),
+        workspace_root=workspace_root or None,
+        old_store_manifest_path=old_store_manifest_json or None,
+        topics=topics or [],
+    )
+    return require_valid_public_surface("workspace_old_store_import_result", payload)
+
+
+def aitp_v5_apply_workspace_old_store_import(
+    base: str,
+    *,
+    workspace_root: str = "",
+    old_store_manifest_json: str = "",
+    topics: list[str] | None = None,
+    write_json: str = "",
+    write_report: str = "",
+) -> dict:
+    """Apply a conflict-checked import of old-store typed files into canonical AITP."""
+
+    payload = build_workspace_old_store_import_plan(
+        _ws(base),
+        workspace_root=workspace_root or None,
+        old_store_manifest_path=old_store_manifest_json or None,
+        topics=topics or [],
+    )
+    payload = apply_workspace_old_store_import_plan(payload)
+    if write_json or write_report:
+        payload = write_workspace_old_store_import_result(
+            payload,
+            json_path=write_json or None,
+            report_path=write_report or None,
+        )
+    return {"ok": True, **require_valid_public_surface("workspace_old_store_import_result", payload)}
+
+
+def aitp_v5_build_workspace_recovery_binding_repair(
+    base: str,
+    *,
+    topics: list[str] | None = None,
+) -> dict:
+    """Return a conservative active-claim binding repair plan for recovery gaps."""
+
+    payload = build_workspace_recovery_binding_repair(_ws(base), topics=topics or [])
+    return require_valid_public_surface("workspace_recovery_binding_repair", payload)
+
+
+def aitp_v5_apply_workspace_recovery_binding_repair(
+    base: str,
+    *,
+    topics: list[str] | None = None,
+    write_json: str = "",
+    write_report: str = "",
+) -> dict:
+    """Apply safe single-claim active-session binding repairs for recovery gaps."""
+
+    ws = _ws(base)
+    payload = build_workspace_recovery_binding_repair(ws, topics=topics or [])
+    payload = apply_workspace_recovery_binding_repair(payload, ws)
+    if write_json or write_report:
+        payload = write_workspace_recovery_binding_repair(
+            payload,
+            json_path=write_json or None,
+            report_path=write_report or None,
+        )
+    return {"ok": True, **require_valid_public_surface("workspace_recovery_binding_repair", payload)}
+
+
+def aitp_v5_build_workspace_recovery_audit(
+    base: str,
+    *,
+    migration_plan_json: str = "",
+    topics: list[str] | None = None,
+    compact: bool = False,
+) -> dict:
+    """Return a read-only per-topic restart recovery audit."""
+
+    payload = build_workspace_recovery_audit(
+        _ws(base),
+        migration_plan_path=migration_plan_json or None,
+        topics=topics or [],
+    )
+    if compact:
+        return require_valid_public_surface(
+            "workspace_recovery_audit_progress",
+            compact_workspace_recovery_audit(payload),
+        )
+    return require_valid_public_surface("workspace_recovery_audit", payload)
+
+
+def aitp_v5_write_workspace_recovery_audit(
+    base: str,
+    *,
+    migration_plan_json: str = "",
+    topics: list[str] | None = None,
+    write_json: str = "",
+    write_report: str = "",
+    compact: bool = True,
+) -> dict:
+    """Write JSON/Markdown per-topic restart recovery audit views."""
+
+    payload = build_workspace_recovery_audit(
+        _ws(base),
+        migration_plan_path=migration_plan_json or None,
+        topics=topics or [],
+    )
+    payload = write_workspace_recovery_audit(
+        payload,
+        json_path=write_json or None,
+        report_path=write_report or None,
+    )
+    if compact:
+        progress = compact_workspace_recovery_audit(payload)
+        return {"ok": True, **require_valid_public_surface("workspace_recovery_audit_progress", progress)}
+    return {"ok": True, **require_valid_public_surface("workspace_recovery_audit", payload)}
 
 
 def _unbound_session_execution_brief(session_id: str) -> dict:

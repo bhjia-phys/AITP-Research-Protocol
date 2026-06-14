@@ -50,23 +50,37 @@ Follow the Charter and SPEC before platform convenience.
 
 1. Decide whether the request is physics research. If yes, enter AITP before
    brainstorming, code reading, paper reading, or answer synthesis.
-2. If a v5 session id is already known, call
+2. If the host exposes Hakimi/Kimi `ResearchAction`, open a WorkFrame before
+   substantive AITP reads:
+   `ResearchAction(open_work_frame, topic=<topic>, goal=<restore-or-research-goal>)`.
+   After the execution brief and claim relation map are loaded, call
+   `ResearchAction(compile_context_pack, work_frame_id=<frame-id>)` before final
+   synthesis. If `ResearchAction` is not available, continue with the AITP MCP
+   steps below.
+3. If a v5 session id is already known, call
    `aitp_v5_get_execution_brief(base="{{TOPICS_ROOT}}", session_id=<session-id>)`.
    Then call `aitp_v5_get_claim_relation_map` for the same session before
    interpreting failures or deciding the next scientific action.
-3. If only a legacy topic slug is known, use legacy discovery only to find the
-   topic, then migrate/bind a v5 session before doing research:
+4. If only a topic slug is known, first call
+   `aitp_v5_build_workspace_recovery_audit(base="{{TOPICS_ROOT}}", topics=[<topic>])`.
+   If the row is `recovery_ready`, use that row's `session_id` and
+   `active_claim_id`; then call the execution brief and claim relation map for
+   the selected session. Do not migrate, create, bind, or update claim status
+   during recovery when a ready v5 session already exists.
+5. Use legacy discovery or migration only when the recovery audit reports no
+   usable v5 session/active claim:
    `aitp_v5_migrate_curated_legacy_topic_to_v5` for known curated topics, or
    `aitp_v5_migrate_legacy_topic_to_v5` for a generic preservation pass.
-4. If no topic matches, create a v5 topic, create an initial claim, bind a
+6. If no topic matches, create a v5 topic, create an initial claim, bind a
    session, and then get the v5 execution brief.
-5. Follow the v5 brief and load `aitp-runtime` for the typed-record loop.
+7. Follow the v5 brief and load `aitp-runtime` for the typed-record loop.
 
 Use these logical tool calls, mapped to the actual Codex tool names:
 
 ```text
 aitp_v5_get_execution_brief(base="{{TOPICS_ROOT}}", session_id=<session-id>)
 aitp_v5_get_claim_relation_map(base="{{TOPICS_ROOT}}", session_id=<session-id>)
+aitp_v5_build_workspace_recovery_audit(base="{{TOPICS_ROOT}}", topics=[<topic>])
 aitp_v5_migrate_curated_legacy_topic_to_v5(
   base="{{TOPICS_ROOT}}",
   topic_dir="{{TOPICS_ROOT}}/<legacy-topic-slug>"
@@ -78,10 +92,16 @@ aitp_v5_bind_session(base="{{TOPICS_ROOT}}", session_id=<session-id>, topic_id=<
 
 ## Hard Rules
 
+- When `ResearchAction` is available, do not make substantial MCP/file/shell
+  recovery calls before opening a WorkFrame; otherwise those calls are not
+  attached to the research recovery context.
 - Do not manually inspect AITP topic state just to determine what exists. Ask
   AITP for a v5 session brief or use legacy discovery only for migration.
 - Do not manually edit AITP topic-state files. Use AITP tools for topic state.
 - Do not treat old `stage`, `gate_status`, or `L0/L1/L3/L4` fields as v5 truth.
+- Do not call `bind_session`, migration, topic creation, or claim-status writes
+  merely to restore an existing topic. Recovery is read-only until the user asks
+  for a state-changing action or the audit shows no usable v5 binding.
 - Do not turn application/runtime failures into algorithm evidence. Use the
   claim relation map's `cannot_say`, `not_tested_by`, blockers, and next valid
   actions before summarizing a restored session.

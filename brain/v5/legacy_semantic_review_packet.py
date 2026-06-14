@@ -6,6 +6,14 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
+from brain.v5.legacy_file_review_scope import (
+    build_workspace_file_review_scope_index,
+    file_review_scope_for_topic,
+)
+from brain.v5.legacy_recovery_focus import (
+    build_legacy_recovery_focus_index,
+    compact_legacy_recovery_focus,
+)
 from brain.v5.legacy_semantic_review import build_legacy_semantic_review_queue
 from brain.v5.models import (
     ClaimRecord,
@@ -33,6 +41,15 @@ def build_legacy_semantic_review_packet(
     claim = _claim_payload(ws, item["active_claim_id"])
     typed = _typed_records_for_claim(ws, item["topic"], item["active_claim_id"])
     legacy_refs = _legacy_review_refs(item, typed)
+    file_review_scope = file_review_scope_for_topic(
+        build_workspace_file_review_scope_index(ws),
+        item["topic"],
+    )
+    recovery_focus_index = build_legacy_recovery_focus_index(ws, topics=[item["topic"]])
+    current_recovery_focus = compact_legacy_recovery_focus(
+        recovery_focus_index.get(item["topic"]),
+        migration_active_claim_id=item["active_claim_id"],
+    )
     latest_review = _latest_semantic_review(item)
     return {
         "kind": "legacy_semantic_review_packet",
@@ -51,8 +68,10 @@ def build_legacy_semantic_review_packet(
         "active_claim": claim,
         "typed_records": typed,
         "legacy_review_refs": legacy_refs,
+        "file_review_scope": file_review_scope,
+        "current_recovery_focus": current_recovery_focus,
         "review_basis_refs": _review_basis_refs(legacy_refs, latest_review),
-        "review_checklist": _review_checklist(item, typed, legacy_refs),
+        "review_checklist": _review_checklist(item, typed, legacy_refs, file_review_scope, current_recovery_focus),
         "semantic_lossless_proven": False,
         "semantic_review_required": True,
         "truth_source": "migration_manifests_and_typed_records",
@@ -170,12 +189,20 @@ def _review_basis_refs(legacy_refs: list[str], latest_review: dict[str, Any]) ->
     return _unique(refs)
 
 
-def _review_checklist(item: dict[str, Any], typed: dict[str, list[dict[str, Any]]], legacy_refs: list[str]) -> list[str]:
+def _review_checklist(
+    item: dict[str, Any],
+    typed: dict[str, list[dict[str, Any]]],
+    legacy_refs: list[str],
+    file_review_scope: dict[str, Any],
+    current_recovery_focus: dict[str, Any],
+) -> list[str]:
     checklist = [
         "compare_active_claim_statement_against_legacy_state_and_candidate_notes",
         "verify_scope_non_claims_and_failure_modes_are_preserved",
         "sample_archive_only_references_before_any_passed_review",
         "confirm_source_reconstruction_components_or_record_remaining_actions",
+        "review_every_required_file_decision_ref_before_passed_review",
+        "compare_migration_active_claim_against_current_recovery_focus",
     ]
     if not legacy_refs:
         checklist.append("locate_legacy_source_refs_before_review_result")
@@ -183,6 +210,12 @@ def _review_checklist(item: dict[str, Any], typed: dict[str, list[dict[str, Any]
         checklist.append("record_or_link_typed_evidence_before_passed_review")
     if item["source_reconstruction"]["status"] != "complete":
         checklist.append("complete_source_reconstruction_before_trust_promotion")
+    if file_review_scope.get("scope_status") not in {"ready", "empty"}:
+        checklist.append("locate_workspace_file_migration_ledger_before_passed_review")
+    if file_review_scope.get("required_review_refs"):
+        checklist.append("include_required_file_decision_refs_in_reviewed_legacy_refs")
+    if current_recovery_focus.get("active_claim_divergence"):
+        checklist.append("resolve_active_claim_divergence_before_using_review_for_session_recovery")
     return _unique(checklist)
 
 

@@ -83,7 +83,66 @@ def read_latest_goal_continuation(ws: WorkspacePaths) -> dict[str, Any] | None:
     latest_path = ws.root / "surfaces" / "goal_continuation" / "latest.json"
     if not latest_path.exists():
         return None
-    return json.loads(latest_path.read_text(encoding="utf-8"))
+    return normalize_goal_continuation_packet(json.loads(latest_path.read_text(encoding="utf-8")))
+
+
+def empty_goal_continuation_packet() -> dict[str, Any]:
+    return _build_packet(
+        packet_id="goal-continuation-not-found",
+        timestamp="not-found",
+        objective="No goal continuation packet found.",
+        changed_files=[],
+        changed_file_stats=[],
+        tests_run=[],
+        tests_passed=None,
+        smoke_commands=[],
+        smoke_passed=None,
+        readiness_outcome=None,
+        next_actions=[],
+        trust_boundary="",
+        blocking_backlog=[],
+        notes="",
+        session_id="",
+        commit_ref="",
+        commit_range="",
+        commits=[],
+        audit_commands=[],
+        files={},
+    ) | {"found": False}
+
+
+def normalize_goal_continuation_packet(payload: dict[str, Any]) -> dict[str, Any]:
+    """Coerce older continuation packets to the current read-only contract."""
+
+    if not isinstance(payload, dict):
+        payload = {}
+    verification = payload.get("verification") if isinstance(payload.get("verification"), dict) else {}
+    files = payload.get("files") if isinstance(payload.get("files"), dict) else {}
+    readiness = payload.get("readiness_outcome") if isinstance(payload.get("readiness_outcome"), dict) else {}
+    packet = _build_packet(
+        packet_id=str(payload.get("packet_id") or "goal-continuation-legacy"),
+        timestamp=str(payload.get("timestamp") or "unknown"),
+        objective=str(payload.get("objective") or payload.get("goal") or "Legacy goal continuation packet."),
+        changed_files=_as_list(payload.get("changed_files")),
+        changed_file_stats=_as_list(payload.get("changed_file_stats")),
+        tests_run=_as_list(verification.get("tests_run") or payload.get("tests_run")),
+        tests_passed=_as_optional_bool(verification.get("tests_passed", payload.get("tests_passed"))),
+        smoke_commands=_as_list(verification.get("smoke_commands") or payload.get("smoke_commands")),
+        smoke_passed=_as_optional_bool(verification.get("smoke_passed", payload.get("smoke_passed"))),
+        readiness_outcome=readiness,
+        next_actions=_as_list(payload.get("next_actions")),
+        trust_boundary=str(payload.get("trust_boundary") or ""),
+        blocking_backlog=_as_list(payload.get("blocking_backlog")),
+        notes=str(payload.get("notes") or ""),
+        session_id=str(payload.get("session_id") or ""),
+        commit_ref=str(payload.get("commit_ref") or ""),
+        commit_range=str(payload.get("commit_range") or ""),
+        commits=_as_list(payload.get("commits")),
+        audit_commands=_as_list(payload.get("audit_commands")),
+        files={str(k): str(v) for k, v in files.items()},
+    )
+    packet["found"] = bool(payload.get("found", True))
+    return packet
 
 
 def list_goal_continuations(ws: WorkspacePaths) -> list[dict[str, Any]]:
@@ -240,6 +299,20 @@ def _render_md(packet: dict[str, Any]) -> str:
         lines.extend(["## Notes", "", notes, ""])
     lines.extend(["---", "*This is an orientation-only surface. Do not update claim trust or kernel state from it.*", ""])
     return "\n".join(lines)
+
+
+def _as_list(value: Any) -> list[Any]:
+    if isinstance(value, list):
+        return value
+    if value in (None, ""):
+        return []
+    return [value]
+
+
+def _as_optional_bool(value: Any) -> bool | None:
+    if isinstance(value, bool):
+        return value
+    return None
 
 
 def _normalize_commit(commit: dict[str, Any]) -> dict[str, Any]:

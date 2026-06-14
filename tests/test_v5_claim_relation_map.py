@@ -4,7 +4,11 @@ import json
 from pathlib import Path
 
 
-def _setup_h2o_si_runtime_failure_workspace(tmp_path: Path):
+def _setup_h2o_si_runtime_failure_workspace(
+    tmp_path: Path,
+    *,
+    next_action: str = "Reproduce Si thiele baseline with the same executable, then rerun ridge.",
+):
     from brain.v5.evidence import record_evidence
     from brain.v5.research_state import update_claim_status
     from brain.v5.tools import record_tool_run
@@ -76,7 +80,7 @@ def _setup_h2o_si_runtime_failure_workspace(tmp_path: Path):
         claim_status="hypothesis_with_runtime_blocker",
         scope="H2O one-iteration replay supports AC amplification reduction; Si cross-system test has not entered AC.",
         risk="Si runtime failure can be mistaken for algorithm evidence",
-        next_action="Reproduce Si thiele baseline with the same executable, then rerun ridge.",
+        next_action=next_action,
         open_gaps=[
             "Si task target is cross-system gap and AC comparison, but current Si result is a runtime failure before AC.",
             "Strong ridge parameters may alter the gap and need separate audit.",
@@ -115,6 +119,23 @@ def test_claim_relation_map_separates_runtime_failure_from_algorithm_failure(tmp
     ]
     assert relation_map["trust_update_allowed"] is False
     assert relation_map["can_update_claim_trust"] is False
+
+
+def test_claim_relation_map_prioritizes_runtime_blocker_next_action_over_generic_status(tmp_path):
+    from brain.v5.claim_relation_map import build_claim_relation_map
+
+    ws, *_ = _setup_h2o_si_runtime_failure_workspace(
+        tmp_path,
+        next_action="collect_required_evidence_or_provenance",
+    )
+
+    relation_map = build_claim_relation_map(ws, "qsgw-si-recovery")
+
+    assert relation_map["next_valid_actions"][0] == (
+        "resolve the runtime/application blocker, then rerun the same-executable "
+        "Thiele baseline before interpreting ridge evidence"
+    )
+    assert "collect_required_evidence_or_provenance" in relation_map["next_valid_actions"]
 
 
 def test_claim_relation_map_is_forced_into_brief_topic_status_cli_and_mcp(tmp_path, capsys):

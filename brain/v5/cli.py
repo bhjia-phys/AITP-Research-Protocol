@@ -38,6 +38,7 @@ from brain.v5.sensemaking import record_sensemaking_report
 from brain.v5.source_assets import capture_source_asset_from_local_path, register_source_asset, source_asset_payload
 from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
+from brain.v5.markdown import write_text_atomic
 from brain.v5.risk import assess_claim_risk
 from brain.v5.subagents import ingest_subagent_result
 from brain.v5.tool_executors import describe_tool_executors, execute_registered_tool_result
@@ -55,6 +56,26 @@ from brain.v5.workspace_migration_plan import build_workspace_migration_plan, wr
 from brain.v5.workspace_old_store_manifest import (
     build_workspace_old_store_manifest,
     write_workspace_old_store_manifest_report,
+)
+from brain.v5.workspace_file_migration_ledger import (
+    build_workspace_file_migration_ledger,
+    compact_workspace_file_migration_ledger,
+    write_workspace_file_migration_ledger,
+)
+from brain.v5.workspace_old_store_import import (
+    apply_workspace_old_store_import_plan,
+    build_workspace_old_store_import_plan,
+    write_workspace_old_store_import_result,
+)
+from brain.v5.workspace_recovery_binding_repair import (
+    apply_workspace_recovery_binding_repair,
+    build_workspace_recovery_binding_repair,
+    write_workspace_recovery_binding_repair,
+)
+from brain.v5.workspace_recovery_audit import (
+    build_workspace_recovery_audit,
+    compact_workspace_recovery_audit,
+    write_workspace_recovery_audit,
 )
 from brain.v5.workspace import (
     bind_session,
@@ -83,14 +104,43 @@ def _build_parser() -> argparse.ArgumentParser:
     wp = sp.add_parser("workspace"); wps = wp.add_subparsers(dest="workspace_command", required=True)
     wi = wps.add_parser("inventory")
     wi.add_argument("--workspace-root", default="")
+    wi.add_argument("--write-json", default="")
     wi.add_argument("--write-report", default="")
     wmp = wps.add_parser("migration-plan")
     wmp.add_argument("--workspace-root", default="")
     wmp.add_argument("--inventory-json", default="")
+    wmp.add_argument("--write-json", default="")
     wmp.add_argument("--write-report", default="")
     wos = wps.add_parser("old-store-manifest")
     wos.add_argument("--workspace-root", default="")
+    wos.add_argument("--write-json", default="")
     wos.add_argument("--write-report", default="")
+    wfl = wps.add_parser("file-migration-ledger")
+    wfl.add_argument("--workspace-root", default="")
+    wfl.add_argument("--migration-plan-json", default="")
+    wfl.add_argument("--old-store-manifest-json", default="")
+    wfl.add_argument("--legacy-accounting-dir", default="")
+    wfl.add_argument("--write-json", default="")
+    wfl.add_argument("--write-report", default="")
+    wfl.add_argument("--compact", action="store_true")
+    wosi = wps.add_parser("old-store-import")
+    wosi.add_argument("--workspace-root", default="")
+    wosi.add_argument("--old-store-manifest-json", default="")
+    wosi.add_argument("--topic", action="append", default=[], dest="topics")
+    wosi.add_argument("--apply", action="store_true")
+    wosi.add_argument("--write-json", default="")
+    wosi.add_argument("--write-report", default="")
+    wrbr = wps.add_parser("recovery-binding-repair")
+    wrbr.add_argument("--topic", action="append", default=[], dest="topics")
+    wrbr.add_argument("--apply", action="store_true")
+    wrbr.add_argument("--write-json", default="")
+    wrbr.add_argument("--write-report", default="")
+    wra = wps.add_parser("recovery-audit")
+    wra.add_argument("--migration-plan-json", default="")
+    wra.add_argument("--topic", action="append", default=[], dest="topics")
+    wra.add_argument("--write-json", default="")
+    wra.add_argument("--write-report", default="")
+    wra.add_argument("--compact", action="store_true")
 
     tp = sp.add_parser("topic"); ts = tp.add_subparsers(dest="topic_command", required=True)
     tc = ts.add_parser("create"); tc.add_argument("topic_id")
@@ -636,6 +686,9 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             ws,
             workspace_root=args.workspace_root or None,
         )
+        if args.write_json:
+            write_text_atomic(args.write_json, json.dumps(_jsonable(payload), ensure_ascii=False, sort_keys=True, indent=2))
+            payload = {**payload, "json_path": str(args.write_json)}
         if args.write_report:
             payload = {
                 **payload,
@@ -649,6 +702,9 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             workspace_root=args.workspace_root or None,
             inventory_path=args.inventory_json or None,
         )
+        if args.write_json:
+            write_text_atomic(args.write_json, json.dumps(_jsonable(payload), ensure_ascii=False, sort_keys=True, indent=2))
+            payload = {**payload, "json_path": str(args.write_json)}
         if args.write_report:
             payload = {
                 **payload,
@@ -661,12 +717,87 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             ws,
             workspace_root=args.workspace_root or None,
         )
+        if args.write_json:
+            write_text_atomic(args.write_json, json.dumps(_jsonable(payload), ensure_ascii=False, sort_keys=True, indent=2))
+            payload = {**payload, "json_path": str(args.write_json)}
         if args.write_report:
             payload = {
                 **payload,
                 "report_path": str(write_workspace_old_store_manifest_report(payload, args.write_report)),
             }
         return payload
+
+    if args.command == "workspace" and args.workspace_command == "file-migration-ledger":
+        payload = build_workspace_file_migration_ledger(
+            ws,
+            workspace_root=args.workspace_root or None,
+            migration_plan_path=args.migration_plan_json or None,
+            old_store_manifest_path=args.old_store_manifest_json or None,
+            legacy_accounting_dir=args.legacy_accounting_dir or None,
+        )
+        if args.write_json or args.write_report:
+            payload = write_workspace_file_migration_ledger(
+                payload,
+                json_path=args.write_json or None,
+                report_path=args.write_report or None,
+            )
+        if args.compact:
+            return require_valid_public_surface(
+                "workspace_file_migration_ledger_progress",
+                compact_workspace_file_migration_ledger(payload),
+            )
+        return require_valid_public_surface("workspace_file_migration_ledger", payload)
+
+    if args.command == "workspace" and args.workspace_command == "old-store-import":
+        payload = build_workspace_old_store_import_plan(
+            ws,
+            workspace_root=args.workspace_root or None,
+            old_store_manifest_path=args.old_store_manifest_json or None,
+            topics=args.topics,
+        )
+        if args.apply:
+            payload = apply_workspace_old_store_import_plan(payload)
+        if args.write_json or args.write_report:
+            payload = write_workspace_old_store_import_result(
+                payload,
+                json_path=args.write_json or None,
+                report_path=args.write_report or None,
+            )
+        return require_valid_public_surface("workspace_old_store_import_result", payload)
+
+    if args.command == "workspace" and args.workspace_command == "recovery-binding-repair":
+        payload = build_workspace_recovery_binding_repair(
+            ws,
+            topics=args.topics,
+        )
+        if args.apply:
+            payload = apply_workspace_recovery_binding_repair(payload, ws)
+        if args.write_json or args.write_report:
+            payload = write_workspace_recovery_binding_repair(
+                payload,
+                json_path=args.write_json or None,
+                report_path=args.write_report or None,
+            )
+        return require_valid_public_surface("workspace_recovery_binding_repair", payload)
+
+    if args.command == "workspace" and args.workspace_command == "recovery-audit":
+        payload = build_workspace_recovery_audit(
+            ws,
+            migration_plan_path=args.migration_plan_json or None,
+            topics=args.topics,
+        )
+        if args.write_json or args.write_report:
+            payload = write_workspace_recovery_audit(
+                payload,
+                json_path=args.write_json or None,
+                report_path=args.write_report or None,
+            )
+        if args.compact:
+            return require_valid_public_surface(
+                "workspace_recovery_audit_progress",
+                compact_workspace_recovery_audit(payload),
+            )
+        return require_valid_public_surface("workspace_recovery_audit", payload)
 
     if args.command == "summary":
         return dispatch_summary_command(args, ws)

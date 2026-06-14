@@ -103,15 +103,27 @@ def _worklist_body(worklist: dict[str, Any]) -> str:
         "",
         "## Review Worklist",
         "",
-        "| Topic | Claim | Status | Blocking Classes | Blockers | Review Focus | Result Command |",
-        "|---|---|---|---|---|---|---|",
+        "| Topic | Migration Claim | Current Recovery | Status | Blocking Classes | Blockers | Review Focus | Result Command |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     if not items:
         lines.append("| None |  |  |  |  |  |  |")
     for item in items:
         pass_readiness = item.get("pass_readiness") if isinstance(item.get("pass_readiness"), dict) else {}
+        recovery = item.get("current_recovery_focus") if isinstance(item.get("current_recovery_focus"), dict) else {}
+        recovery_text = " / ".join(
+            value
+            for value in (
+                str(recovery.get("session_id") or ""),
+                str(recovery.get("active_claim_id") or ""),
+            )
+            if value
+        )
+        if recovery.get("active_claim_divergence") is True:
+            recovery_text = f"diverges: {recovery_text}"
         lines.append(
             f"| `{_cell(item.get('topic'))}` | `{_cell(item.get('active_claim_id'))}` | "
+            f"`{_cell(recovery_text)}` | "
             f"`{_cell(item.get('review_status'))}` | `{_cell(', '.join(item.get('blocking_classes') or []))}` | "
             f"`{_cell(', '.join(pass_readiness.get('blockers') or []))}` | "
             f"`{_cell(', '.join(item.get('review_focus') or []))}` | "

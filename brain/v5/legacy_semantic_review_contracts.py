@@ -123,6 +123,12 @@ def validate_legacy_semantic_review_packet(
         result.add(f"{path}.active_claim", "must be a mapping")
     if not isinstance(payload.get("latest_semantic_review"), dict):
         result.add(f"{path}.latest_semantic_review", "must be a mapping")
+    _validate_file_review_scope(payload.get("file_review_scope"), f"{path}.file_review_scope", result)
+    _validate_current_recovery_focus(
+        payload.get("current_recovery_focus"),
+        f"{path}.current_recovery_focus",
+        result,
+    )
     typed = payload.get("typed_records")
     if not isinstance(typed, dict):
         result.add(f"{path}.typed_records", "must be a mapping")
@@ -450,6 +456,12 @@ def _validate_manifest_item(payload: Any, path: str, result: ContractResult) -> 
             result.add(f"{path}.{key}", "must be a list")
     if payload.get("can_update_claim_trust") is not False:
         result.add(f"{path}.can_update_claim_trust", "must be false")
+    _validate_file_review_scope(payload.get("file_review_scope"), f"{path}.file_review_scope", result)
+    _validate_current_recovery_focus(
+        payload.get("current_recovery_focus"),
+        f"{path}.current_recovery_focus",
+        result,
+    )
 
 
 def _validate_repair(payload: Any, path: str, result: ContractResult) -> None:
@@ -473,3 +485,67 @@ def _validate_repair(payload: Any, path: str, result: ContractResult) -> None:
         isinstance(value, str) and value for value in payload.get("basis_refs", [])
     ):
         result.add(f"{path}.basis_refs", "must be a non-empty list of strings")
+
+
+def _validate_file_review_scope(payload: Any, path: str, result: ContractResult) -> None:
+    if not isinstance(payload, dict):
+        result.add(path, "must be a mapping")
+        return
+    if payload.get("kind") != "legacy_file_review_scope":
+        result.add(f"{path}.kind", "must be 'legacy_file_review_scope'")
+    if payload.get("scope_status") not in {"ready", "empty", "ledger_unavailable", "invalid_ledger"}:
+        result.add(f"{path}.scope_status", "must be an allowed scope status")
+    for key in ("topic", "ledger_path", "ledger_status", "truth_source"):
+        if not isinstance(payload.get(key), str):
+            result.add(f"{path}.{key}", "must be a string")
+    for key in ("file_decision_count", "blocking_file_count"):
+        if not isinstance(payload.get(key), int) or payload[key] < 0:
+            result.add(f"{path}.{key}", "must be a non-negative integer")
+    for key in ("review_status_counts", "decision_counts", "source_family_counts"):
+        if not isinstance(payload.get(key), dict):
+            result.add(f"{path}.{key}", "must be a mapping")
+    for key in ("all_file_decision_refs", "required_review_refs"):
+        if not isinstance(payload.get(key), list) or not all(isinstance(value, str) for value in payload[key]):
+            result.add(f"{path}.{key}", "must be a list of strings")
+    if not isinstance(payload.get("file_decisions"), list):
+        result.add(f"{path}.file_decisions", "must be a list")
+    for key, expected in (
+        ("summary_inputs_trusted", False),
+        ("orientation_only", True),
+        ("can_update_kernel_state", False),
+        ("can_update_claim_trust", False),
+    ):
+        if payload.get(key) is not expected:
+            result.add(f"{path}.{key}", f"must be {expected}")
+
+
+def _validate_current_recovery_focus(payload: Any, path: str, result: ContractResult) -> None:
+    if not isinstance(payload, dict):
+        result.add(path, "must be a mapping")
+        return
+    if payload.get("kind") != "legacy_current_recovery_focus":
+        result.add(f"{path}.kind", "must be 'legacy_current_recovery_focus'")
+    for key in (
+        "topic",
+        "recovery_status",
+        "session_id",
+        "active_claim_id",
+        "migration_active_claim_id",
+        "recovery_selection_source",
+        "next_valid_action",
+        "recovery_gap",
+        "truth_source",
+    ):
+        if not isinstance(payload.get(key), str):
+            result.add(f"{path}.{key}", "must be a string")
+    for key in ("active_claim_divergence", "has_relation_map"):
+        if not isinstance(payload.get(key), bool):
+            result.add(f"{path}.{key}", "must be a boolean")
+    for key, expected in (
+        ("summary_inputs_trusted", False),
+        ("orientation_only", True),
+        ("can_update_kernel_state", False),
+        ("can_update_claim_trust", False),
+    ):
+        if payload.get(key) is not expected:
+            result.add(f"{path}.{key}", f"must be {expected}")

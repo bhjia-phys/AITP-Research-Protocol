@@ -27,22 +27,35 @@ Do not treat chat summaries, Markdown notes, or generated hook config as scienti
 
 ## Entry Procedure
 
+0. If `ResearchAction` is available, open a WorkFrame before substantive AITP
+   reads:
+   `ResearchAction(open_work_frame, topic=<topic>, goal=<restore-or-research-goal>)`.
+   After the execution brief and claim relation map are loaded, call
+   `ResearchAction(compile_context_pack, work_frame_id=<frame-id>)` before final
+   synthesis. If `ResearchAction` is not available, continue with the AITP MCP
+   steps below.
 1. If the request might belong to theoretical physics, call
    `aitp_v5_get_execution_brief` for the active session before doing
    substantive work.
    Also call `aitp_v5_get_claim_relation_map` for the same session before
    interpreting failures, blockers, support, limitations, or next actions.
-2. If no active v5 session is known, use `aitp_list_topics` and
-   `aitp_get_execution_brief` only to orient legacy topics. Before doing
-   substantive research, migrate/bind a v5 session with
-   `aitp_v5_migrate_curated_legacy_topic_to_v5` for known curated topics,
-   `aitp_v5_migrate_legacy_topic_to_v5` for generic preservation, or create a
-   new v5 topic/claim/session with `aitp_v5_create_topic`,
-   `aitp_v5_create_claim`, and `aitp_v5_bind_session`.
-3. Read the execution brief and follow its risk, claim, evidence, validation, and next-action fields.
+2. If only a topic slug is known, first call
+   `aitp_v5_build_workspace_recovery_audit` for that topic. If the row is
+   `recovery_ready`, use the selected `session_id` and `active_claim_id`; then
+   call `aitp_v5_get_execution_brief` and `aitp_v5_get_claim_relation_map` for
+   that session. Do not migrate, create, bind, or update claim status during
+   recovery when a ready v5 session already exists.
+3. Use `aitp_list_topics` and `aitp_get_execution_brief` only to orient legacy
+   topics after the v5 recovery audit has failed. Before substantive research,
+   migrate/bind a v5 session with `aitp_v5_migrate_curated_legacy_topic_to_v5`
+   for known curated topics, `aitp_v5_migrate_legacy_topic_to_v5` for generic
+   preservation, or create a new v5 topic/claim/session with
+   `aitp_v5_create_topic`, `aitp_v5_create_claim`, and
+   `aitp_v5_bind_session`.
+4. Read the execution brief and follow its risk, claim, evidence, validation, and next-action fields.
    Read the claim relation map as the read-only conclusion-boundary layer; it
    cannot update claim trust.
-4. For every meaningful result, use typed writes:
+5. For every meaningful result, use typed writes:
    - `aitp_v5_record_physics_object`
    - `aitp_v5_record_object_relation`
    - `aitp_v5_record_evidence`
@@ -50,7 +63,7 @@ Do not treat chat summaries, Markdown notes, or generated hook config as scienti
    - `aitp_v5_create_validation_contract`
    - `aitp_v5_record_validation_result`
    - `aitp_v5_record_sensemaking_report`
-5. Before trust changes or L2 memory promotion, use the v5 trust/promotion gate. Never promote from a summary alone.
+6. Before trust changes or L2 memory promotion, use the v5 trust/promotion gate. Never promote from a summary alone.
 
 ## Kimi Hook Installation
 
@@ -81,8 +94,10 @@ The installed hooks are lifecycle guards only. They can block risky pre-tool act
 
 Stop and re-enter AITP v5 if you catch yourself saying:
 
+- "I can make substantial recovery calls before opening the available WorkFrame."
 - "I can answer this research question directly without a brief."
 - "This summary is enough to promote memory."
 - "The hook config says this happened, so the claim is validated."
 - "This runtime/application failure proves the algorithm works or fails."
+- "I need to bind or update claim status just to restore an existing ready topic."
 - "I'll record the tool run later."

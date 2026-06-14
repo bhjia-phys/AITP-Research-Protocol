@@ -113,6 +113,7 @@ def _work_item(
         "review_focus": focus,
         "missing_source_components": missing,
         "source_reconstruction_review_refs": source_review_refs,
+        "current_recovery_focus": dict(item.get("current_recovery_focus") or {}),
         "open_human_checkpoint_refs": open_checkpoint_refs,
         "satisfied_review_actions": satisfied_actions,
         "followup_review_actions": followup_actions,
@@ -208,6 +209,19 @@ def _pass_readiness(
     archive_sampled = (not needs_archive_sampling) or any(
         ref.startswith("legacy_archive:") for ref in reviewed_legacy_refs
     )
+    reviewed_ref_set = set(reviewed_legacy_refs)
+    file_scope = item.get("file_review_scope") if isinstance(item.get("file_review_scope"), dict) else {}
+    required_file_refs = [
+        str(ref) for ref in file_scope.get("required_review_refs", []) if str(ref)
+    ]
+    missing_file_refs = [ref for ref in required_file_refs if ref not in reviewed_ref_set]
+    file_scope_status = str(file_scope.get("scope_status") or "")
+    recovery_focus = (
+        item.get("current_recovery_focus")
+        if isinstance(item.get("current_recovery_focus"), dict)
+        else {}
+    )
+    active_claim_divergence = bool(recovery_focus.get("active_claim_divergence") is True)
     requirements = {
         "active_claim_present": bool(str(item.get("active_claim_id") or "")),
         "active_claim_statement_present": bool(item.get("active_claim_statement_present")),
@@ -219,6 +233,9 @@ def _pass_readiness(
         "no_followup_review_actions": not followup_review_actions,
         "no_open_human_checkpoints": not open_human_checkpoint_refs,
         "archive_sampled_when_needed": archive_sampled,
+        "file_review_scope_available": file_scope_status in {"ready", "empty", "ledger_unavailable"},
+        "required_file_review_refs_recorded": not missing_file_refs,
+        "no_active_claim_divergence": not active_claim_divergence,
     }
     blockers: list[str] = []
     if not requirements["active_claim_present"]:
@@ -239,6 +256,12 @@ def _pass_readiness(
         blockers.append("open_human_checkpoint_pending")
     if not requirements["archive_sampled_when_needed"]:
         blockers.append("archive_reference_sampling_required")
+    if file_scope_status == "invalid_ledger":
+        blockers.append("file_review_scope_unavailable")
+    if not requirements["required_file_review_refs_recorded"]:
+        blockers.append("file_level_review_refs_missing")
+    if not requirements["no_active_claim_divergence"]:
+        blockers.append("active_claim_divergence_requires_review")
     return {
         "status": "candidate" if not blockers else "blocked",
         "pass_candidate": not blockers,
@@ -248,6 +271,9 @@ def _pass_readiness(
         "remaining_actions": remaining_actions,
         "followup_review_actions": list(followup_review_actions),
         "open_human_checkpoint_refs": list(open_human_checkpoint_refs),
+        "required_file_review_ref_count": len(required_file_refs),
+        "missing_file_review_ref_count": len(missing_file_refs),
+        "missing_file_review_refs_sample": missing_file_refs[:20],
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }
@@ -300,6 +326,14 @@ def _review_focus(
     focus.extend(followup_review_actions)
     if missing_components:
         focus.append("complete_source_reconstruction_components")
+    file_scope = item.get("file_review_scope") if isinstance(item.get("file_review_scope"), dict) else {}
+    if file_scope.get("scope_status") == "invalid_ledger":
+        focus.append("locate_file_level_migration_ledger")
+    elif file_scope.get("required_review_refs"):
+        focus.append("review_file_level_migration_decisions")
+    recovery_focus = item.get("current_recovery_focus") if isinstance(item.get("current_recovery_focus"), dict) else {}
+    if recovery_focus.get("active_claim_divergence"):
+        focus.append("resolve_active_claim_divergence")
     if "archive_only_records_require_sampling" in set(item.get("review_reasons", [])):
         focus.append("sample_archive_reference_readback")
     if item["review_status"] == "pending":
@@ -390,6 +424,10 @@ def _blocking_classes(pass_readiness: dict[str, Any], *, review_focus: list[str]
         add("archive_sampling_required")
     if "open_human_checkpoint_pending" in blockers or "human_checkpoint" in action_text:
         add("human_checkpoint_required")
+    if "file_review_scope_unavailable" in blockers or "file_level_review_refs_missing" in blockers:
+        add("file_level_semantic_review_required")
+    if "active_claim_divergence_requires_review" in blockers:
+        add("current_recovery_state_review_required")
     if _mentions_source_metadata_repair(action_text):
         add("source_metadata_repair_required")
     if "executable" in action_text or "benchmark" in action_text:

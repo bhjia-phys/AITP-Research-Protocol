@@ -412,6 +412,14 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run", "--topic", "fqhe", "--repair-type", "reconstruction_path_evidence_backfill", "--review-id", "legacy-semantic-review-sample"]
     if template.startswith("legacy semantic-review-result"):
         return ["--migration-dir", "D:/aitp/.aitp/migrations/legacy-v5-lossless-run", "--topic", "fqhe", "--status", "inconclusive", "--legacy-ref", "legacy-topic:state.md", "--summary", "Semantic review sample."]
+    if template.startswith("workspace file-migration-ledger"):
+        return ["--workspace-root", "D:/aitp", "--compact"]
+    if template.startswith("workspace old-store-import"):
+        return ["--workspace-root", "D:/aitp", "--topic", "fqhe"]
+    if template.startswith("workspace recovery-binding-repair"):
+        return ["--topic", "fqhe"]
+    if template.startswith("workspace recovery-audit"):
+        return ["--compact"]
     if template.startswith("object record"):
         return ["--topic", "fqhe", "--type", "hilbert_sector", "--name", "N=8 sector", "--definition", "Finite-size Hilbert sector."]
     if template.startswith("relation record"):

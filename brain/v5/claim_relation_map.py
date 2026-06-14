@@ -11,7 +11,7 @@ from dataclasses import asdict
 from typing import Any
 
 from brain.v5.evidence import list_evidence_for_claim
-from brain.v5.models import ClaimStatusRecord, ProofObligationRecord, ToolRunRecord
+from brain.v5.models import ClaimStatusRecord, EvidenceRecord, ObjectRelationRecord, ProofObligationRecord, ToolRunRecord
 from brain.v5.physics_objects import list_object_relations_for_claim, object_relation_brief_payload
 from brain.v5.research_state import list_proof_obligations_for_claim
 from brain.v5.store import list_valid_records
@@ -48,7 +48,7 @@ _PRE_DOMAIN_FAILURE_MARKERS = (
 )
 
 
-def build_claim_relation_map(ws, session_id: str) -> dict[str, Any]:
+def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, dict[str, list[Any]]] | None = None) -> dict[str, Any]:
     """Build a read-only relation map for the session's active claim."""
 
     session = get_session_binding(ws, session_id)
@@ -60,13 +60,24 @@ def build_claim_relation_map(ws, session_id: str) -> dict[str, Any]:
         )
 
     claim = get_claim(ws, session.active_claim)
-    evidence_records = list_evidence_for_claim(ws, claim.claim_id)
-    tool_runs = _tool_runs_for_claim(ws, claim.claim_id)
-    claim_statuses = _claim_statuses_for_claim(ws, claim.claim_id)
-    proof_obligations = list_proof_obligations_for_claim(ws, claim.claim_id)
+    evidence_records = _indexed_claim_records(registry_index, "evidence", claim.claim_id)
+    if evidence_records is None:
+        evidence_records = list_evidence_for_claim(ws, claim.claim_id)
+    tool_runs = _indexed_claim_records(registry_index, "tool_runs", claim.claim_id)
+    if tool_runs is None:
+        tool_runs = _tool_runs_for_claim(ws, claim.claim_id)
+    claim_statuses = _indexed_claim_records(registry_index, "claim_statuses", claim.claim_id)
+    if claim_statuses is None:
+        claim_statuses = _claim_statuses_for_claim(ws, claim.claim_id)
+    proof_obligations = _indexed_claim_records(registry_index, "proof_obligations", claim.claim_id)
+    if proof_obligations is None:
+        proof_obligations = list_proof_obligations_for_claim(ws, claim.claim_id)
+    raw_object_relations = _indexed_claim_records(registry_index, "object_relations", claim.claim_id)
+    if raw_object_relations is None:
+        raw_object_relations = list_object_relations_for_claim(ws, claim.claim_id)
     object_relations = [
         object_relation_brief_payload(relation)
-        for relation in list_object_relations_for_claim(ws, claim.claim_id)
+        for relation in raw_object_relations
     ]
 
     supported_by: list[dict[str, Any]] = []
@@ -122,6 +133,7 @@ def build_claim_relation_map(ws, session_id: str) -> dict[str, Any]:
 
     blockers = _dedupe_clean(blockers)
     next_actions = _dedupe_clean(next_actions)
+    next_actions = _prioritized_next_actions(next_actions, not_tested_by, blockers)
     latest_status = _latest_claim_status(claim_statuses)
 
     payload = {
@@ -143,7 +155,7 @@ def build_claim_relation_map(ws, session_id: str) -> dict[str, Any]:
             "cannot_say": _cannot_say(supported_by, limited_by, contradicted_by, not_tested_by),
         },
         "current_blockers": blockers,
-        "next_valid_actions": next_actions or _fallback_next_actions(not_tested_by, blockers),
+        "next_valid_actions": next_actions,
         "source_records": {
             "claims": [claim.claim_id],
             "evidence": [record.evidence_id for record in evidence_records],
@@ -167,6 +179,18 @@ def build_claim_relation_map(ws, session_id: str) -> dict[str, Any]:
         "trust_update_allowed": False,
     }
     return payload
+
+
+def build_claim_relation_registry_index(ws) -> dict[str, dict[str, list[Any]]]:
+    """Preload registry records by claim for workspace-scale recovery audits."""
+
+    return {
+        "evidence": _group_by_claim(list_valid_records(ws.registry_dir("evidence"), EvidenceRecord)),
+        "tool_runs": _group_by_claim(list_valid_records(ws.registry_dir("tool_runs"), ToolRunRecord)),
+        "claim_statuses": _group_by_claim(list_valid_records(ws.registry_dir("claim_statuses"), ClaimStatusRecord)),
+        "proof_obligations": _group_by_claim(list_valid_records(ws.registry_dir("proof_obligations"), ProofObligationRecord)),
+        "object_relations": _group_by_claim(list_valid_records(ws.registry_dir("object_relations"), ObjectRelationRecord)),
+    }
 
 
 def empty_claim_relation_map(*, topic_id: str, session_id: str, reason: str) -> dict[str, Any]:
@@ -270,6 +294,26 @@ def _claim_statuses_for_claim(ws, claim_id: str) -> list[ClaimStatusRecord]:
         for record in list_valid_records(ws.registry_dir("claim_statuses"), ClaimStatusRecord)
         if record.claim_id == claim_id
     ]
+
+
+def _indexed_claim_records(
+    registry_index: dict[str, dict[str, list[Any]]] | None,
+    bucket: str,
+    claim_id: str,
+) -> list[Any] | None:
+    if registry_index is None:
+        return None
+    return list(registry_index.get(bucket, {}).get(claim_id, []))
+
+
+def _group_by_claim(records: list[Any]) -> dict[str, list[Any]]:
+    grouped: dict[str, list[Any]] = {}
+    for record in records:
+        claim_id = str(getattr(record, "claim_id", "") or "")
+        if not claim_id:
+            continue
+        grouped.setdefault(claim_id, []).append(record)
+    return grouped
 
 
 def _latest_claim_status(records: list[ClaimStatusRecord]) -> ClaimStatusRecord | None:
@@ -469,10 +513,41 @@ def _cannot_say(supported_by: list[dict[str, Any]], limited_by: list[dict[str, A
 
 def _fallback_next_actions(not_tested_by: list[dict[str, Any]], blockers: list[str]) -> list[str]:
     if not_tested_by and blockers:
-        return ["resolve the runtime/application blocker, then rerun the baseline before interpreting algorithm evidence"]
+        text = " ".join(str(entry.get("summary") or "") for entry in not_tested_by).lower()
+        if "thiele" in text and "ridge" in text:
+            return [
+                "resolve the runtime/application blocker, then rerun the same-executable Thiele baseline before interpreting ridge evidence"
+            ]
+        return [
+            "resolve the runtime/application blocker, then rerun the same-executable baseline/control before interpreting algorithm evidence"
+        ]
     if blockers:
         return ["resolve the recorded blocker before trust-changing interpretation"]
     return ["record explicit evidence, claim status, or proof obligation before drawing conclusions"]
+
+
+def _prioritized_next_actions(
+    recorded_actions: list[str],
+    not_tested_by: list[dict[str, Any]],
+    blockers: list[str],
+) -> list[str]:
+    fallback = _fallback_next_actions(not_tested_by, blockers)
+    if not not_tested_by or not blockers:
+        return recorded_actions or fallback
+    if any(_is_specific_runtime_resolution_action(action) for action in recorded_actions):
+        return recorded_actions
+    return _dedupe_clean(fallback + recorded_actions)
+
+
+def _is_specific_runtime_resolution_action(action: str) -> bool:
+    lower = action.lower()
+    if "baseline" in lower and ("same executable" in lower or "same-executable" in lower):
+        return True
+    if "thiele" in lower and "ridge" in lower and ("rerun" in lower or "reproduce" in lower or "run" in lower):
+        return True
+    if "control" in lower and ("runtime" in lower or "application" in lower):
+        return True
+    return False
 
 
 def _entry_bullets(entries: list[dict[str, Any]]) -> str:

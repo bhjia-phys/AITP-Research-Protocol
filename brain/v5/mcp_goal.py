@@ -5,6 +5,7 @@ from __future__ import annotations
 import json as _json
 
 from brain.v5.goal_continuation import (
+    empty_goal_continuation_packet,
     list_goal_continuations,
     read_latest_goal_continuation,
     write_goal_continuation,
@@ -74,7 +75,7 @@ def aitp_v5_write_goal_continuation(
 def aitp_v5_read_latest_goal_continuation(base: str) -> dict:
     result = read_latest_goal_continuation(_ws(base))
     if result is None:
-        return {"kind": "goal_continuation_packet", "found": False}
+        return require_valid_public_surface("goal_continuation_packet", empty_goal_continuation_packet())
     return require_valid_public_surface("goal_continuation_packet", result)
 
 

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from brain.v5.legacy_l2_graph import build_legacy_l2_graph_manifest, build_legacy_l2_typed_migration_packet
 from brain.v5.legacy_l2_obsidian import write_legacy_l2_obsidian_view
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
@@ -36,12 +34,13 @@ from brain.v5.legacy_semantic_review import (
     build_legacy_semantic_review_queue,
     record_legacy_semantic_review_result,
 )
+from brain.v5.mcp_base_resolution import resolve_workspace_base
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.workspace import init_workspace
 
 
 def _ws(base: str):
-    return init_workspace(Path(base))
+    return init_workspace(resolve_workspace_base(base))
 
 
 def aitp_v5_migrate_legacy_topic_to_v5(

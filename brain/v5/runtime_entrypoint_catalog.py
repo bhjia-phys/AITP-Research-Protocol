@@ -516,6 +516,46 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
     "workspace_summary": {"cli": "aitp-v5 summary workspace", "mcp": "aitp_v5_write_workspace_summary", "surface": "workspace_summary_bundle"},
     "workspace_replay": {"cli": "aitp-v5 summary replay", "mcp": "aitp_v5_write_workspace_replay_packet", "surface": "workspace_replay_packet"},
     "workspace_refresh": {"cli": "aitp-v5 summary refresh", "mcp": "aitp_v5_refresh_workspace_views", "surface": "workspace_refresh_bundle"},
+    "workspace_file_migration_ledger": {
+        "cli": "aitp-v5 workspace file-migration-ledger <args>",
+        "mcp": "aitp_v5_build_workspace_file_migration_ledger",
+        "surface": "workspace_file_migration_ledger",
+    },
+    "write_workspace_file_migration_ledger": {
+        "cli": "aitp-v5 workspace file-migration-ledger <args>",
+        "mcp": "aitp_v5_write_workspace_file_migration_ledger",
+        "surface": "workspace_file_migration_ledger_progress",
+    },
+    "workspace_old_store_import_plan": {
+        "cli": "aitp-v5 workspace old-store-import <args>",
+        "mcp": "aitp_v5_build_workspace_old_store_import_plan",
+        "surface": "workspace_old_store_import_result",
+    },
+    "apply_workspace_old_store_import": {
+        "cli": "aitp-v5 workspace old-store-import <args> --apply",
+        "mcp": "aitp_v5_apply_workspace_old_store_import",
+        "surface": "workspace_old_store_import_result",
+    },
+    "workspace_recovery_binding_repair": {
+        "cli": "aitp-v5 workspace recovery-binding-repair <args>",
+        "mcp": "aitp_v5_build_workspace_recovery_binding_repair",
+        "surface": "workspace_recovery_binding_repair",
+    },
+    "apply_workspace_recovery_binding_repair": {
+        "cli": "aitp-v5 workspace recovery-binding-repair <args> --apply",
+        "mcp": "aitp_v5_apply_workspace_recovery_binding_repair",
+        "surface": "workspace_recovery_binding_repair",
+    },
+    "workspace_recovery_audit": {
+        "cli": "aitp-v5 workspace recovery-audit <args>",
+        "mcp": "aitp_v5_build_workspace_recovery_audit",
+        "surface": "workspace_recovery_audit",
+    },
+    "write_workspace_recovery_audit": {
+        "cli": "aitp-v5 workspace recovery-audit <args>",
+        "mcp": "aitp_v5_write_workspace_recovery_audit",
+        "surface": "workspace_recovery_audit_progress",
+    },
     "topic_status": {"cli": "aitp-v5 status topic <session-id>", "mcp": "aitp_v5_write_topic_status_surfaces", "surface": "topic_status_bundle"},
     "topic_status_compact": {"cli": "aitp-v5 status topic <session-id> --compact", "mcp": "aitp_v5_write_topic_status_surfaces_compact", "surface": "topic_status_bundle"},
     "qsgw_cockpit": {"cli": "aitp-v5 status qsgw-cockpit", "mcp": "aitp_v5_write_qsgw_cockpit_surfaces", "surface": "qsgw_cockpit_bundle"},

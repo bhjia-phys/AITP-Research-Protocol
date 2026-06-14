@@ -78,18 +78,30 @@ def bind_session(
 ) -> SessionBinding:
     """Bind one execution session to a topic/context focus."""
 
+    existing: SessionBinding | None = None
+    path = ws.session_path(session_id)
+    if path.exists():
+        try:
+            existing = read_record(path, SessionBinding)
+        except (TypeError, ValueError):
+            existing = None
+
     binding = SessionBinding(
         session_id=session_id,
         topic_id=topic_id,
         context_id=context_id,
-        runtime=runtime,
-        interaction_profile=interaction_profile,
-        interaction_steering=interaction_steering,
-        active_cycle=active_cycle,
-        active_claim=active_claim,
-        active_route=active_route,
-        write_scope=write_scope or [],
-        lock_level=lock_level,
+        runtime=_preserve_default(runtime, existing.runtime if existing else "", default="unknown"),
+        interaction_profile=_preserve_default(
+            interaction_profile,
+            existing.interaction_profile if existing else "",
+            default="collaborator",
+        ),
+        interaction_steering=interaction_steering or (existing.interaction_steering if existing else ""),
+        active_cycle=active_cycle or (existing.active_cycle if existing else ""),
+        active_claim=active_claim or (existing.active_claim if existing else ""),
+        active_route=active_route or (existing.active_route if existing else ""),
+        write_scope=write_scope if write_scope is not None else (list(existing.write_scope) if existing else []),
+        lock_level=_preserve_default(lock_level, existing.lock_level if existing else "", default="none"),
     )
     write_record(ws.session_path(session_id), binding, body=f"# Session {session_id}\n")
     return binding
@@ -99,6 +111,12 @@ def get_session_binding(ws: WorkspacePaths, session_id: str) -> SessionBinding:
     """Load a session binding."""
 
     return read_record(ws.session_path(session_id), SessionBinding)
+
+
+def _preserve_default(value: str, existing: str, *, default: str) -> str:
+    if value == default and existing:
+        return existing
+    return value
 
 
 def create_claim(

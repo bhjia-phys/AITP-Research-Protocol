@@ -96,6 +96,36 @@ def test_list_goal_continuations_empty(tmp_path):
     assert list_goal_continuations(ws) == []
 
 
+def test_mcp_latest_goal_continuation_empty_packet_is_valid(tmp_path):
+    from brain.v5.mcp_goal import aitp_v5_read_latest_goal_continuation
+
+    ws = _ws(tmp_path)
+
+    payload = aitp_v5_read_latest_goal_continuation(str(ws.base))
+
+    assert payload["kind"] == "goal_continuation_packet"
+    assert payload["found"] is False
+    assert require_valid_public_surface("goal_continuation_packet", payload) == payload
+
+
+def test_read_latest_goal_continuation_normalizes_legacy_packet(tmp_path):
+    ws = _ws(tmp_path)
+    surface_dir = tmp_path / ".aitp" / "surfaces" / "goal_continuation"
+    surface_dir.mkdir(parents=True)
+    (surface_dir / "latest.json").write_text(
+        json.dumps({"kind": "goal_continuation_packet", "objective": "legacy objective"}),
+        encoding="utf-8",
+    )
+
+    payload = read_latest_goal_continuation(ws)
+
+    assert payload is not None
+    assert payload["objective"] == "legacy objective"
+    assert payload["can_update_claim_trust"] is False
+    assert payload["verification"]["tests_run"] == []
+    assert require_valid_public_surface("goal_continuation_packet", payload) == payload
+
+
 def test_list_goal_continuations_returns_ordered(tmp_path):
     ws = _ws(tmp_path)
     write_goal_continuation(ws, objective="first objective")

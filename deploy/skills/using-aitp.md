@@ -25,23 +25,42 @@ Markdown stages, and chat summaries are orientation only.
 
 ## Entry Procedure
 
+0. If the host exposes Hakimi/Kimi `ResearchAction`, open a WorkFrame before
+   substantive AITP reads:
+   `ResearchAction(open_work_frame, topic=<topic>, goal=<restore-or-research-goal>)`.
+   After the execution brief and claim relation map are loaded, call
+   `ResearchAction(compile_context_pack, work_frame_id=<frame-id>)` before final
+   synthesis. If `ResearchAction` is not available, continue with the AITP MCP
+   steps below.
 1. If a v5 session id is known, call
    `aitp_v5_get_execution_brief(base="{{TOPICS_ROOT}}", session_id=<session-id>)`.
    Then call
    `aitp_v5_get_claim_relation_map(base="{{TOPICS_ROOT}}", session_id=<session-id>)`
    before interpreting failures, blockers, support, limitations, or next
    scientific actions.
-2. If only a legacy topic slug is known, use legacy discovery only to locate the
-   topic, then migrate/bind v5 state before doing research. Prefer
-   `aitp_v5_migrate_curated_legacy_topic_to_v5`; use
+2. If only a topic slug is known, first call
+   `aitp_v5_build_workspace_recovery_audit(base="{{TOPICS_ROOT}}", topics=[<topic>])`.
+   If the row is `recovery_ready`, use that row's `session_id` and
+   `active_claim_id`; then call the execution brief and claim relation map for
+   the selected session. Do not migrate, create, bind, or update claim status
+   during recovery when a ready v5 session already exists.
+3. Use legacy discovery or migration only when the recovery audit reports no
+   usable v5 session/active claim. Prefer
+   `aitp_v5_migrate_curated_legacy_topic_to_v5` for curated legacy topics; use
    `aitp_v5_migrate_legacy_topic_to_v5` for generic preservation.
-3. If no topic exists, create a v5 topic, create the initial claim, bind a
+4. If no topic exists, create a v5 topic, create the initial claim, bind a
    session, and get the v5 brief.
-4. Load `aitp-runtime` and follow typed brief fields, not old stage/gate fields.
+5. Load `aitp-runtime` and follow typed brief fields, not old stage/gate fields.
 
 ## Hard Rules
 
+- When `ResearchAction` is available, do not make substantial MCP/file/shell
+  recovery calls before opening a WorkFrame; otherwise those calls are not
+  attached to the research recovery context.
 - Do not use old `stage`, `gate_status`, or `L0/L1/L3/L4` fields as v5 truth.
+- Do not call `bind_session`, migration, topic creation, or claim-status writes
+  merely to restore an existing topic. Recovery is read-only until the user asks
+  for a state-changing action or the audit shows no usable v5 binding.
 - Do not promote to L2 from summaries, reports, or chat.
 - Do not turn application/runtime failures into algorithm evidence. Use the
   claim relation map's `cannot_say`, `not_tested_by`, blockers, and next valid

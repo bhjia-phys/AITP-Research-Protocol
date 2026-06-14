@@ -78,20 +78,21 @@ def render_workspace_old_store_manifest_markdown(payload: dict[str, Any]) -> str
         "",
         "## Stores",
         "",
-        "| Store | Exists | Files | Bytes | Registry Records | Topic Shell Files | Sessions | Path |",
-        "|---|---:|---:|---:|---:|---:|---:|---|",
+        "| Store | Exists | Files | Bytes | Registry Records | L2 Memory Entries | Topic Shell Files | Sessions | Path |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---|",
     ]
     for store in payload.get("stores", []):
         if not isinstance(store, dict):
             continue
         categories = store.get("category_counts") if isinstance(store.get("category_counts"), dict) else {}
         lines.append(
-            "| {label} | {exists} | {files} | {bytes} | {registry} | {topics} | {sessions} | `{path}` |".format(
+            "| {label} | {exists} | {files} | {bytes} | {registry} | {memory} | {topics} | {sessions} | `{path}` |".format(
                 label=store.get("label", ""),
                 exists=str(store.get("exists", False)).lower(),
                 files=store.get("file_count", 0),
                 bytes=store.get("total_bytes", 0),
                 registry=categories.get("registry_record", 0),
+                memory=categories.get("memory_entry", 0),
                 topics=categories.get("topic_shell", 0),
                 sessions=categories.get("runtime_session", 0),
                 path=store.get("path", ""),
@@ -183,6 +184,8 @@ def _classify_path(rel: str) -> tuple[str, str, str]:
         return "topic_shell", "", parts[1]
     if len(parts) >= 3 and parts[0] == "runtime" and parts[1] == "sessions":
         return "runtime_session", "", ""
+    if len(parts) >= 3 and parts[0] == "memory" and parts[1] == "l2" and parts[2] == "entries":
+        return "memory_entry", "memory_entries", ""
     if parts and parts[0] == "surfaces":
         return "derived_surface", "", ""
     if parts and parts[0] == "migrations":

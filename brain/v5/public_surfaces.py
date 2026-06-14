@@ -130,6 +130,12 @@ _PUBLIC_SURFACE_NAMES = (
     "workspace_summary_bundle",
     "workspace_replay_packet",
     "workspace_refresh_bundle",
+    "workspace_file_migration_ledger",
+    "workspace_file_migration_ledger_progress",
+    "workspace_old_store_import_result",
+    "workspace_recovery_binding_repair",
+    "workspace_recovery_audit",
+    "workspace_recovery_audit_progress",
     "goal_continuation_packet",
     "goal_continuation_list",
 )
@@ -260,6 +266,12 @@ _PUBLIC_SURFACE_PURPOSES = {
     "workspace_summary_bundle": "orientation-only workspace summary regenerated from typed sessions, active claims, memory entries, and validation links",
     "workspace_replay_packet": "orientation-only multi-session replay packet listing resume attention, source reconstruction gaps, evidence gaps, and next actions from typed records",
     "workspace_refresh_bundle": "orientation-only host refresh bundle; full mode refreshes replay/source/L2 views, while startup_lightweight mode refreshes current-session orientation only",
+    "workspace_file_migration_ledger": "file-level import/archive/review ledger for retiring noncanonical AITP stores without mutating claim trust",
+    "workspace_file_migration_ledger_progress": "compact file-level migration ledger progress surface for agent startup and migration discipline",
+    "workspace_old_store_import_result": "controlled root/nested old-store typed-file import result with conflict checks and no claim-trust authority",
+    "workspace_recovery_binding_repair": "conservative active-claim session binding repair for restart recovery; auto-applies only when a topic has exactly one canonical claim",
+    "workspace_recovery_audit": "read-only per-topic audit of restart recovery readiness, active-claim binding, relation-map boundaries, and migration review blockers",
+    "workspace_recovery_audit_progress": "compact per-topic restart recovery progress surface for agent startup and migration discipline",
     "goal_continuation_packet": "orientation-only local audit packet for cross-session goal continuation; records objective, commits, changed files, tests, smoke, readiness, next actions, and blocking backlog without changing kernel state",
     "goal_continuation_list": "orientation-only index of local goal continuation packets for cross-session audit discovery without changing kernel state",
 }
@@ -444,6 +456,16 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     )
     from brain.v5.obsidian_view_contracts import require_valid_l2_obsidian_view_bundle
     from brain.v5.workspace_refresh_contracts import require_valid_workspace_refresh_bundle
+    from brain.v5.workspace_file_migration_ledger_contracts import (
+        require_valid_workspace_file_migration_ledger,
+        require_valid_workspace_file_migration_ledger_progress,
+    )
+    from brain.v5.workspace_old_store_import_contracts import require_valid_workspace_old_store_import_result
+    from brain.v5.workspace_recovery_binding_repair_contracts import require_valid_workspace_recovery_binding_repair
+    from brain.v5.workspace_recovery_audit_contracts import (
+        require_valid_workspace_recovery_audit,
+        require_valid_workspace_recovery_audit_progress,
+    )
     from brain.v5.qsgw_cockpit_contracts import require_valid_qsgw_cockpit_bundle
     from brain.v5.research_cockpit_contracts import require_valid_research_cockpit_bundle
     from brain.v5.moment_policy_contracts import require_valid_host_agnostic_moment_policy
@@ -593,6 +615,12 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "workspace_summary_bundle": require_valid_workspace_summary_bundle,
         "workspace_replay_packet": require_valid_workspace_replay_packet,
         "workspace_refresh_bundle": require_valid_workspace_refresh_bundle,
+        "workspace_file_migration_ledger": require_valid_workspace_file_migration_ledger,
+        "workspace_file_migration_ledger_progress": require_valid_workspace_file_migration_ledger_progress,
+        "workspace_old_store_import_result": require_valid_workspace_old_store_import_result,
+        "workspace_recovery_binding_repair": require_valid_workspace_recovery_binding_repair,
+        "workspace_recovery_audit": require_valid_workspace_recovery_audit,
+        "workspace_recovery_audit_progress": require_valid_workspace_recovery_audit_progress,
         "goal_continuation_packet": require_valid_goal_continuation_packet,
         "goal_continuation_list": require_valid_goal_continuation_list,
     }

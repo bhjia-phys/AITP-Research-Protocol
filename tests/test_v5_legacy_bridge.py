@@ -133,6 +133,57 @@ def _write_migration_run(ws):
     return run
 
 
+def _write_workspace_file_migration_ledger(ws):
+    import json
+
+    run = ws.root / "migrations" / "workspace-inventory-test"
+    run.mkdir(parents=True)
+    payload = {
+        "kind": "aitp_workspace_file_migration_ledger",
+        "file_decisions": [
+            {
+                "decision_ref": "legacy_l0_l4:canonical-topic:state.md",
+                "source_family": "legacy_l0_l4",
+                "source_store_label": "legacy_topics",
+                "source_store_path": str(ws.base / "research" / "aitp-topics"),
+                "source_path": "canonical-topic/state.md",
+                "topic_id": "canonical-topic",
+                "registry_family": "claims",
+                "source_category": "state",
+                "target_surface": "canonical_claim",
+                "recommended_decision": "semantic_review_basis",
+                "review_status": "semantic_review_required",
+                "blocks_old_store_retirement": True,
+                "safe_to_auto_import": False,
+                "sha256": "abc123",
+                "size_bytes": 123,
+                "decision_reason": "state file must be compared against migrated claim",
+            },
+            {
+                "decision_ref": "legacy_l0_l4:canonical-topic:L0/sources/source.md",
+                "source_family": "legacy_l0_l4",
+                "source_store_label": "legacy_topics",
+                "source_store_path": str(ws.base / "research" / "aitp-topics"),
+                "source_path": "canonical-topic/L0/sources/source.md",
+                "topic_id": "canonical-topic",
+                "registry_family": "reference_locations",
+                "source_category": "source",
+                "target_surface": "archive_manifest",
+                "recommended_decision": "archive_reference",
+                "review_status": "archive_accounted",
+                "blocks_old_store_retirement": False,
+                "safe_to_auto_import": False,
+                "sha256": "def456",
+                "size_bytes": 456,
+                "decision_reason": "source file is preserved by hash manifest",
+            },
+        ],
+    }
+    path = run / "workspace_file_migration_ledger.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
+
+
 def test_legacy_bridge_reads_legacy_artifacts_without_rewriting(tmp_path):
     from brain.v5.legacy_bridge import scan_legacy_topic
 
@@ -549,10 +600,11 @@ def test_legacy_semantic_review_queue_operationalizes_per_topic_review(tmp_path)
     from brain.v5.models import ClaimRecord
     from brain.v5.public_surfaces import require_valid_public_surface
     from brain.v5.store import write_record
-    from brain.v5.workspace import create_topic, init_workspace
+    from brain.v5.workspace import bind_session, create_topic, init_workspace
 
     ws = init_workspace(tmp_path / "v5")
     run = _write_migration_run(ws)
+    _write_workspace_file_migration_ledger(ws)
     create_topic(ws, "canonical-topic", context_id="legacy-context", title="Canonical Topic")
     claim = ClaimRecord(
         claim_id="claim-canonical",
@@ -619,10 +671,11 @@ def test_legacy_semantic_review_packet_collects_review_basis_without_writing(tmp
     from brain.v5.models import ClaimRecord
     from brain.v5.public_surfaces import require_valid_public_surface
     from brain.v5.store import write_record
-    from brain.v5.workspace import create_topic, init_workspace
+    from brain.v5.workspace import bind_session, create_topic, init_workspace
 
     ws = init_workspace(tmp_path / "v5")
     run = _write_migration_run(ws)
+    _write_workspace_file_migration_ledger(ws)
     create_topic(ws, "canonical-topic", context_id="legacy-context", title="Canonical Topic")
     claim = ClaimRecord(
         claim_id="claim-canonical",
@@ -633,6 +686,24 @@ def test_legacy_semantic_review_packet_collects_review_basis_without_writing(tmp
         active_uncertainty="Semantic review required.",
     )
     write_record(ws.registry_dir("claims") / "claim-canonical.md", claim)
+    write_record(
+        ws.registry_dir("claims") / "claim-live.md",
+        ClaimRecord(
+            claim_id="claim-live",
+            topic_id="canonical-topic",
+            statement="Live recovery claim selected by current topic state.",
+            evidence_profile="legacy_import",
+            confidence_state="hypothesis",
+            active_uncertainty="Used to test recovery/migration claim divergence.",
+        ),
+    )
+    bind_session(
+        ws,
+        "live-session",
+        topic_id="canonical-topic",
+        context_id="legacy-context",
+        active_claim="claim-live",
+    )
     evidence = record_evidence(
         ws,
         topic_id="canonical-topic",
@@ -674,6 +745,18 @@ def test_legacy_semantic_review_packet_collects_review_basis_without_writing(tmp
     assert packet["active_claim"]["statement"] == "Migrated canonical claim."
     assert packet["queue_item"]["semantic_review_status"] == "reviewed_inconclusive"
     assert packet["typed_records"]["evidence"][0]["evidence_id"] == evidence.evidence_id
+    assert packet["file_review_scope"]["scope_status"] == "ready"
+    assert packet["file_review_scope"]["file_decision_count"] == 2
+    assert packet["file_review_scope"]["blocking_file_count"] == 1
+    assert packet["file_review_scope"]["required_review_refs"] == [
+        "legacy_l0_l4:canonical-topic:state.md"
+    ]
+    assert packet["file_review_scope"]["file_decisions"][0]["sha256"] == "abc123"
+    assert packet["current_recovery_focus"]["active_claim_id"] == "claim-live"
+    assert packet["current_recovery_focus"]["migration_active_claim_id"] == "claim-canonical"
+    assert packet["current_recovery_focus"]["active_claim_divergence"] is True
+    assert "include_required_file_decision_refs_in_reviewed_legacy_refs" in packet["review_checklist"]
+    assert "resolve_active_claim_divergence_before_using_review_for_session_recovery" in packet["review_checklist"]
     assert "legacy_source:canonical-topic/state.md" in packet["legacy_review_refs"]
     assert packet["latest_semantic_review"]["review_id"] == review.review_id
     assert packet["latest_semantic_review"] == packet["queue_item"]["latest_semantic_review"]
@@ -943,6 +1026,7 @@ def test_legacy_semantic_review_manifest_summarizes_repair_candidates(tmp_path):
 
     ws = init_workspace(tmp_path / "v5")
     run = _write_migration_run(ws)
+    _write_workspace_file_migration_ledger(ws)
     legacy_topic = ws.base / "research" / "aitp-topics" / "canonical-topic"
     candidate = legacy_topic / "L3" / "candidates" / "candidate.md"
     candidate.parent.mkdir(parents=True)
@@ -1128,6 +1212,7 @@ def test_legacy_semantic_review_worklist_prioritizes_backlog_without_writing(tmp
 
     ws = init_workspace(tmp_path / "v5")
     run = _write_migration_run(ws)
+    _write_workspace_file_migration_ledger(ws)
     legacy_topic = ws.base / "research" / "aitp-topics" / "canonical-topic"
     state = legacy_topic / "state.md"
     state.parent.mkdir(parents=True)
@@ -1167,6 +1252,8 @@ def test_legacy_semantic_review_worklist_prioritizes_backlog_without_writing(tmp
     assert worklist["status_counts"] == {"needs_revision": 1, "inconclusive": 0, "pending": 1}
     assert worklist["pass_readiness_counts"] == {"blocked": 2, "candidate": 0}
     assert worklist["pass_blocker_counts"]["source_reconstruction_incomplete"] == 2
+    assert worklist["pass_blocker_counts"]["file_level_review_refs_missing"] == 1
+    assert worklist["blocking_class_counts"]["file_level_semantic_review_required"] == 1
     assert worklist["pass_blocker_counts"]["latest_review_needs_revision"] == 1
     assert worklist["items"][0]["topic"] == "canonical-topic"
     assert worklist["items"][0]["review_status"] == "needs_revision"
@@ -1175,6 +1262,10 @@ def test_legacy_semantic_review_worklist_prioritizes_backlog_without_writing(tmp
     assert worklist["items"][0]["review_focus"][:2] == [
         "apply_or_review_typed_repair_candidates",
         "complete_source_reconstruction_components",
+    ]
+    assert "review_file_level_migration_decisions" in worklist["items"][0]["review_focus"]
+    assert worklist["items"][0]["pass_readiness"]["missing_file_review_refs_sample"] == [
+        "legacy_l0_l4:canonical-topic:state.md"
     ]
     assert worklist["items"][0]["missing_source_components"] == [
         "definitions",

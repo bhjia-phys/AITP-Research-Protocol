@@ -6,6 +6,14 @@ from pathlib import Path
 from typing import Any
 
 from brain.v5.legacy_bridge import scan_legacy_topic
+from brain.v5.legacy_file_review_scope import (
+    build_workspace_file_review_scope_index,
+    file_review_scope_for_topic,
+)
+from brain.v5.legacy_recovery_focus import (
+    build_legacy_recovery_focus_index,
+    compact_legacy_recovery_focus,
+)
 from brain.v5.legacy_semantic_review import build_legacy_semantic_review_queue
 from brain.v5.legacy_semantic_repair_candidates import (
     failed_validation_result_ids,
@@ -33,6 +41,11 @@ def build_legacy_semantic_review_manifest(
     source_reviews_by_claim = _group_source_reviews_by_claim(
         list_records(ws.registry_dir("source_reconstruction_reviews"), SourceReconstructionReviewResultRecord)
     )
+    file_scope_index = build_workspace_file_review_scope_index(ws)
+    recovery_focus_index = build_legacy_recovery_focus_index(
+        ws,
+        topics=[str(item.get("topic") or "") for item in queue["items"]],
+    )
     items = [
         _manifest_item(
             ws,
@@ -42,6 +55,11 @@ def build_legacy_semantic_review_manifest(
             claims_by_id=claims_by_id,
             validation_results_by_id=results_by_id,
             source_reviews_by_claim=source_reviews_by_claim,
+            file_review_scope=file_review_scope_for_topic(file_scope_index, str(item.get("topic") or "")),
+            current_recovery_focus=compact_legacy_recovery_focus(
+                recovery_focus_index.get(str(item.get("topic") or "")),
+                migration_active_claim_id=str(item.get("active_claim_id") or ""),
+            ),
         )
         for item in queue["items"]
     ]
@@ -80,6 +98,8 @@ def _manifest_item(
     claims_by_id: dict[str, ClaimRecord],
     validation_results_by_id: dict[str, Any],
     source_reviews_by_claim: dict[str, list[SourceReconstructionReviewResultRecord]],
+    file_review_scope: dict[str, Any],
+    current_recovery_focus: dict[str, Any],
 ) -> dict[str, Any]:
     topic = item["topic"]
     status = item["semantic_review_status"].removeprefix("reviewed_")
@@ -130,6 +150,8 @@ def _manifest_item(
         "source_reconstruction_review_refs": _source_reconstruction_review_refs(
             source_reviews_by_claim.get(str(item.get("active_claim_id") or ""), [])
         ),
+        "file_review_scope": file_review_scope,
+        "current_recovery_focus": current_recovery_focus,
         "followup_review_actions": followup_review_actions,
         "packet_cli": packet_cli,
         "result_cli_template": result_cli,
