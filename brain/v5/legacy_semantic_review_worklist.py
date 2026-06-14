@@ -222,6 +222,11 @@ def _pass_readiness(
         else {}
     )
     active_claim_divergence = bool(recovery_focus.get("active_claim_divergence") is True)
+    active_claim_divergence_reviewed = _active_claim_divergence_reviewed(
+        latest_review,
+        recovery_focus=recovery_focus,
+        remaining_actions=remaining_actions,
+    )
     requirements = {
         "active_claim_present": bool(str(item.get("active_claim_id") or "")),
         "active_claim_statement_present": bool(item.get("active_claim_statement_present")),
@@ -235,7 +240,8 @@ def _pass_readiness(
         "archive_sampled_when_needed": archive_sampled,
         "file_review_scope_available": file_scope_status in {"ready", "empty", "ledger_unavailable"},
         "required_file_review_refs_recorded": not missing_file_refs,
-        "no_active_claim_divergence": not active_claim_divergence,
+        "no_active_claim_divergence": not active_claim_divergence or active_claim_divergence_reviewed,
+        "active_claim_divergence_reviewed": active_claim_divergence_reviewed,
     }
     blockers: list[str] = []
     if not requirements["active_claim_present"]:
@@ -342,6 +348,26 @@ def _review_focus(
         focus.append("resolve_inconclusive_semantic_review")
     focus.append("record_next_legacy_semantic_review_result")
     return _unique(focus)
+
+
+def _active_claim_divergence_reviewed(
+    latest_review: dict[str, Any],
+    *,
+    recovery_focus: dict[str, Any],
+    remaining_actions: list[str],
+) -> bool:
+    """A passed review may explicitly choose the current recovery claim over the migration claim."""
+
+    if not recovery_focus.get("active_claim_divergence"):
+        return False
+    if latest_review.get("status") != "passed":
+        return False
+    reviewed_claim = str(latest_review.get("active_claim_id") or "")
+    recovery_claim = str(recovery_focus.get("active_claim_id") or "")
+    if not reviewed_claim or reviewed_claim != recovery_claim:
+        return False
+    action_text = " ".join(remaining_actions).lower()
+    return "active_claim_divergence" not in action_text and "active claim divergence" not in action_text
 
 
 def _missing_source_components_from_reasons(item: dict[str, Any]) -> list[str]:

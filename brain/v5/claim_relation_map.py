@@ -11,14 +11,30 @@ from dataclasses import asdict
 from typing import Any
 
 from brain.v5.evidence import list_evidence_for_claim
-from brain.v5.models import ClaimStatusRecord, EvidenceRecord, ObjectRelationRecord, ProofObligationRecord, ToolRunRecord
+from brain.v5.models import (
+    ClaimStatusRecord,
+    EvidenceRecord,
+    ObjectRelationRecord,
+    ProofObligationRecord,
+    ToolRunRecord,
+)
 from brain.v5.physics_objects import list_object_relations_for_claim, object_relation_brief_payload
 from brain.v5.research_state import list_proof_obligations_for_claim
+from brain.v5.recovery_session import recover_session_binding_for_read
 from brain.v5.store import list_valid_records
-from brain.v5.workspace import get_claim, get_session_binding
+from brain.v5.workspace import get_claim
 
 _SUPPORT_STATUSES = {"supports", "support", "supported", "passed", "pass", "valid", "positive", "supports_scoped_claim"}
-_LIMIT_STATUSES = {"mixed", "inconclusive", "partial", "limited", "unreviewed", "diagnostic", "supports_with_limitations"}
+_LIMIT_STATUSES = {
+    "mixed",
+    "inconclusive",
+    "partial",
+    "limited",
+    "unreviewed",
+    "diagnostic",
+    "supports_with_limitations",
+    "supports_reconstruction_boundary",
+}
 _CONTRADICT_STATUSES = {"contradicts", "contradict", "refutes", "refute", "failed", "fail", "invalid", "negative"}
 _RUNTIME_FAILURE_STATUSES = {
     "application_failure",
@@ -46,20 +62,65 @@ _PRE_DOMAIN_FAILURE_MARKERS = (
     "slurm",
     "executable path",
 )
+_EXPLICIT_PRE_DOMAIN_FAILURE_CONTEXT_MARKERS = (
+    "all failed",
+    "blocked",
+    "blocker",
+    "crash",
+    "did not enter",
+    "does not test",
+    "does_not_test",
+    "failed before",
+    "failure before",
+    "falsifies_application",
+    "map::at",
+    "out_of_range",
+    "pre_ac",
+    "pre-ac",
+    "before analytic continuation",
+    "before ac",
+    "runtime failed",
+    "runtime failure",
+    "runtime/environment blocker",
+    "application failed",
+    "application failure",
+    "application/runtime blocker",
+)
 
 
 def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, dict[str, list[Any]]] | None = None) -> dict[str, Any]:
     """Build a read-only relation map for the session's active claim."""
 
-    session = get_session_binding(ws, session_id)
+    try:
+        recovered = recover_session_binding_for_read(ws, session_id)
+    except (FileNotFoundError, TypeError, ValueError) as error:
+        return empty_claim_relation_map(
+            topic_id="unbound-session",
+            session_id=session_id,
+            reason=_session_binding_failure_reason(error),
+        )
+    session = recovered.session
+    requested_session_id = recovered.requested_session_id
+    recovery_selection_source = recovered.recovery_selection_source
     if not session.active_claim:
         return empty_claim_relation_map(
             topic_id=session.topic_id,
-            session_id=session.session_id,
+            session_id=requested_session_id,
             reason="session has no active claim",
+            requested_session_id=requested_session_id,
+            recovery_selection_source=recovery_selection_source,
         )
 
-    claim = get_claim(ws, session.active_claim)
+    try:
+        claim = get_claim(ws, session.active_claim)
+    except (FileNotFoundError, TypeError, ValueError):
+        return empty_claim_relation_map(
+            topic_id=session.topic_id,
+            session_id=session.session_id,
+            reason=f"active claim is missing or malformed: {session.active_claim}",
+            requested_session_id=requested_session_id,
+            recovery_selection_source=recovery_selection_source,
+        )
     evidence_records = _indexed_claim_records(registry_index, "evidence", claim.claim_id)
     if evidence_records is None:
         evidence_records = list_evidence_for_claim(ws, claim.claim_id)
@@ -141,6 +202,8 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
         "kind": "claim_relation_map",
         "topic_id": session.topic_id,
         "session_id": session.session_id,
+        "requested_session_id": requested_session_id,
+        "recovery_selection_source": recovery_selection_source,
         "claim_id": claim.claim_id,
         "claim_statement": claim.statement,
         "confidence_state": claim.confidence_state,
@@ -196,11 +259,20 @@ def build_claim_relation_registry_index(ws) -> dict[str, dict[str, list[Any]]]:
     }
 
 
-def empty_claim_relation_map(*, topic_id: str, session_id: str, reason: str) -> dict[str, Any]:
+def empty_claim_relation_map(
+    *,
+    topic_id: str,
+    session_id: str,
+    reason: str,
+    requested_session_id: str = "",
+    recovery_selection_source: str = "",
+) -> dict[str, Any]:
     return {
         "kind": "claim_relation_map",
         "topic_id": topic_id or "unbound-session",
         "session_id": session_id or "unbound-session",
+        "requested_session_id": requested_session_id or session_id or "unbound-session",
+        "recovery_selection_source": recovery_selection_source or "session_binding",
         "claim_id": "",
         "claim_statement": "",
         "confidence_state": "",
@@ -235,6 +307,15 @@ def empty_claim_relation_map(*, topic_id: str, session_id: str, reason: str) -> 
         "can_update_claim_trust": False,
         "trust_update_allowed": False,
     }
+
+
+def _session_binding_failure_reason(error: Exception) -> str:
+    text = str(error)
+    if isinstance(error, FileNotFoundError):
+        return "session binding is missing"
+    if "SessionBinding.__init__()" in text:
+        return "session binding is missing or malformed"
+    return "session binding is malformed"
 
 
 def compact_claim_relation_map(payload: dict[str, Any]) -> dict[str, Any]:
@@ -376,13 +457,23 @@ def _bucket_for_status(status: str, *, text: str) -> str:
         return "supported_by"
     if normalized in _LIMIT_STATUSES:
         return "limited_by"
-    if any(marker in lower for marker in _PRE_DOMAIN_FAILURE_MARKERS) and (
-        normalized in _RUNTIME_FAILURE_STATUSES or normalized not in _SUPPORT_STATUSES
+    if _is_pre_domain_failure_text(lower) and (
+        normalized in _RUNTIME_FAILURE_STATUSES or _has_explicit_pre_domain_failure_context(lower)
     ):
         return "not_tested_by"
     if normalized in _CONTRADICT_STATUSES:
         return "contradicted_by"
     return "limited_by"
+
+
+def _is_pre_domain_failure_text(lower_text: str) -> bool:
+    if not any(marker in lower_text for marker in _PRE_DOMAIN_FAILURE_MARKERS):
+        return False
+    return _has_explicit_pre_domain_failure_context(lower_text)
+
+
+def _has_explicit_pre_domain_failure_context(lower_text: str) -> bool:
+    return any(marker in lower_text for marker in _EXPLICIT_PRE_DOMAIN_FAILURE_CONTEXT_MARKERS)
 
 
 def _evidence_entry(record) -> dict[str, Any]:

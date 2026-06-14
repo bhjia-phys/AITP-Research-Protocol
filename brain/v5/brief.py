@@ -19,6 +19,7 @@ from brain.v5.policy import evaluate_policy
 from brain.v5.question_engine import generate_questions
 from brain.v5.physics_objects import list_object_relations_for_claim, object_relation_brief_payload
 from brain.v5.references import list_reference_locations_for_claim, reference_location_brief_payload
+from brain.v5.recovery_session import recover_session_binding_for_read
 from brain.v5.research_state import list_proof_obligations_for_claim
 from brain.v5.research_intent import load_innovation_direction, load_research_intent_gate
 from brain.v5.output_stability import load_final_output_profile
@@ -26,13 +27,14 @@ from brain.v5.risk import action_budget_for_level, assess_claim_risk
 from brain.v5.run_iterations import load_run_iterations
 from brain.v5.store import list_records, list_valid_records
 from brain.v5.strategy_memory import load_strategy_memory
-from brain.v5.workspace import get_claim, get_session_binding
+from brain.v5.workspace import get_claim
 
 
 def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
     """Build the state packet an agent should see before acting."""
 
-    session = get_session_binding(ws, session_id)
+    recovered = recover_session_binding_for_read(ws, session_id)
+    session = recovered.session
     claim: ClaimRecord | None = None
     flow = None
     risk = None
@@ -191,6 +193,21 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
 
     return {
         "session": asdict(session),
+        "requested_session_id": recovered.requested_session_id,
+        "recovery_selection_source": recovered.recovery_selection_source,
+        "recovered_focus": {
+            "requested_session_id": recovered.requested_session_id,
+            "recovery_selection_source": recovered.recovery_selection_source,
+            "session_id": session.session_id,
+            "topic_id": session.topic_id,
+            "context_id": session.context_id,
+            "active_claim": session.active_claim,
+            "active_route": session.active_route or None,
+            "active_cycle": session.active_cycle or None,
+            "claim_statement": claim.statement if claim else "",
+            "confidence_state": claim.confidence_state if claim else "",
+            "evidence_profile": claim.evidence_profile if claim else "",
+        },
         "current_focus": {
             "active_claim": session.active_claim,
             "active_route": session.active_route,

@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import asdict
-from pathlib import Path
 
+from brain.v5.mcp_base_resolution import resolve_workspace_base
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.source_stack_coverage import build_source_stack_coverage_manifest
 from brain.v5.source_reconstruction_obsidian import write_source_reconstruction_obsidian_view
@@ -21,7 +21,7 @@ from brain.v5.workspace import init_workspace
 
 
 def _ws(base: str):
-    return init_workspace(Path(base))
+    return init_workspace(resolve_workspace_base(base))
 
 
 def aitp_v5_audit_source_reconstruction(base: str, *, claim_id: str) -> dict:

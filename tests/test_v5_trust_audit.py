@@ -148,6 +148,37 @@ def test_claim_trust_audit_reports_typed_support_for_current_confidence(tmp_path
     assert payload["trust_update_record_ids"][0].startswith("trust-update-")
 
 
+def test_claim_trust_audit_counts_scoped_support_as_evidence_only(tmp_path):
+    from brain.v5.evidence import record_evidence
+    from brain.v5.trust_audit import audit_claim_trust
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "qsgw-ac-error-molecules", context_id="librpa", title="QSGW AC")
+    claim = create_claim(
+        ws,
+        topic_id="qsgw-ac-error-molecules",
+        statement="Scoped H2O ridge diagnostics reduce AC amplification.",
+        evidence_profile="code_method",
+        confidence_state="hypothesis",
+        active_uncertainty="Si cross-system test is still blocked.",
+    )
+    evidence = record_evidence(
+        ws,
+        topic_id="qsgw-ac-error-molecules",
+        claim_id=claim.claim_id,
+        evidence_type="bounded_numerical_replay",
+        status="supports_scoped_claim",
+        summary="H2O replay supports the scoped algorithm claim.",
+    )
+
+    payload = audit_claim_trust(ws, claim_id=claim.claim_id)
+
+    assert payload["support_state"] == "evidence_only"
+    assert payload["supporting_evidence_refs"] == [evidence.evidence_id]
+    assert payload["passed_validation_result_ids"] == []
+
+
 def test_claim_trust_audit_cli_mcp_and_runtime_entrypoint(tmp_path, capsys):
     from brain.v5.cli import main
     from brain.v5.mcp_tools import aitp_v5_audit_claim_trust

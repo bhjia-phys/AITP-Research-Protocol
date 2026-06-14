@@ -3,7 +3,17 @@ import json
 
 from brain.v5.claim_relation_map import build_claim_relation_map
 from brain.v5.mcp_legacy import aitp_v5_build_legacy_semantic_review_queue
-from brain.v5.mcp_tools import aitp_v5_bind_session, aitp_v5_build_workspace_recovery_audit, aitp_v5_init_workspace
+from brain.v5.mcp_memory import aitp_v5_audit_failure_mode_coverage
+from brain.v5.mcp_source import aitp_v5_audit_source_reconstruction
+from brain.v5.mcp_tools import (
+    aitp_v5_bind_session,
+    aitp_v5_build_workspace_recovery_audit,
+    aitp_v5_get_claim_relation_map,
+    aitp_v5_get_execution_brief,
+    aitp_v5_get_process_graph_slice,
+    aitp_v5_init_workspace,
+)
+from brain.v5.mcp_trust_audit import aitp_v5_audit_claim_trust
 from brain.v5.workspace import bind_session, create_claim, create_topic, get_session_binding, init_workspace
 
 
@@ -73,6 +83,129 @@ def test_mcp_base_resolution_prefers_nested_topics_root_over_legacy_workspace_ro
     assert payload["selected_topic"]["session_id"] == "codex-qsgw-current"
     assert root_store_payload["canonical_topics_root"] == str(topics_root)
     assert root_store_payload["selected_topic"]["session_id"] == "codex-qsgw-current"
+
+
+def test_mcp_recovery_accepts_root_store_path_and_bare_topic_token(tmp_path, monkeypatch):
+    workspace_root = tmp_path / "Theoretical-Physics"
+    topics_root = workspace_root / "research" / "aitp-topics"
+    ws = _seed_workspace(topics_root)
+    session = get_session_binding(ws, "codex-qsgw-current")
+    topic_state = {
+        "kind": "topic_state",
+        "topic_id": "qsgw-ac-error-molecules",
+        "session_id": "codex-qsgw-current",
+        "context_id": "librpa",
+        "active_claim_id": session.active_claim,
+    }
+    (ws.topic_dir("qsgw-ac-error-molecules") / "runtime" / "topic_state.json").write_text(
+        json.dumps(topic_state),
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("AITP_TOPICS_ROOT", raising=False)
+
+    aitp_v5_init_workspace(str(workspace_root / ".aitp"))
+    brief = aitp_v5_get_execution_brief(
+        str(workspace_root / ".aitp"),
+        session_id="qsgw-ac-error-molecules",
+    )
+    relation = aitp_v5_get_claim_relation_map(
+        str(workspace_root / ".aitp"),
+        session_id="qsgw-ac-error-molecules",
+    )
+    graph = aitp_v5_get_process_graph_slice(
+        str(workspace_root / ".aitp"),
+        session_id="qsgw-ac-error-molecules",
+        limit=20,
+    )
+
+    for payload in (brief, relation, graph):
+        assert payload["requested_session_id"] == "qsgw-ac-error-molecules"
+        assert payload["recovery_selection_source"] == "bare_topic_runtime_topic_state"
+    assert brief["session"]["topic_id"] == "qsgw-ac-error-molecules"
+    assert relation["topic_id"] == "qsgw-ac-error-molecules"
+    assert graph["topic_id"] == "qsgw-ac-error-molecules"
+    assert brief["session"]["session_id"] == "codex-qsgw-current"
+    assert relation["claim_id"] == session.active_claim
+    assert graph["claim_id"] == session.active_claim
+
+
+def test_mcp_recovery_prefers_canonical_topic_state_over_legacy_store_subdir_and_stale_session(tmp_path, monkeypatch):
+    workspace_root = tmp_path / "Theoretical-Physics"
+    topics_root = workspace_root / "research" / "aitp-topics"
+    ws = _seed_workspace(topics_root)
+    current_session = get_session_binding(ws, "codex-qsgw-current")
+    stale_claim = create_claim(
+        ws,
+        topic_id="qsgw-ac-error-molecules",
+        statement="Legacy imported AC question seed before semantic review.",
+        evidence_profile="code_method",
+        confidence_state="legacy_seed",
+        active_uncertainty="stale legacy import",
+    )
+    bind_session(
+        ws,
+        "legacy-import-qsgw-ac-error-molecules",
+        topic_id="qsgw-ac-error-molecules",
+        context_id="legacy-import",
+        active_claim=stale_claim.claim_id,
+    )
+    topic_state = {
+        "kind": "topic_state",
+        "topic_id": "qsgw-ac-error-molecules",
+        "session_id": "codex-qsgw-current",
+        "context_id": "librpa",
+        "active_claim_id": current_session.active_claim,
+    }
+    (ws.topic_dir("qsgw-ac-error-molecules") / "runtime" / "topic_state.json").write_text(
+        json.dumps(topic_state),
+        encoding="utf-8",
+    )
+    monkeypatch.delenv("AITP_TOPICS_ROOT", raising=False)
+
+    aitp_v5_init_workspace(str(workspace_root / ".aitp"))
+    brief = aitp_v5_get_execution_brief(
+        str(workspace_root / ".aitp" / "topics"),
+        session_id="legacy-import-qsgw-ac-error-molecules",
+    )
+    relation = aitp_v5_get_claim_relation_map(
+        str(workspace_root / ".aitp" / "topics"),
+        session_id="legacy-import-qsgw-ac-error-molecules",
+    )
+    graph = aitp_v5_get_process_graph_slice(
+        str(workspace_root / ".aitp" / "topics"),
+        session_id="legacy-import-qsgw-ac-error-molecules",
+        limit=20,
+    )
+
+    for payload in (brief, relation, graph):
+        assert payload["requested_session_id"] == "legacy-import-qsgw-ac-error-molecules"
+        assert payload["recovery_selection_source"] == "runtime_topic_state"
+    assert brief["session"]["session_id"] == "codex-qsgw-current"
+    assert brief["recovered_focus"]["active_claim"] == current_session.active_claim
+    assert relation["claim_id"] == current_session.active_claim
+    assert graph["claim_id"] == current_session.active_claim
+
+
+def test_audit_mcp_wrappers_resolve_workspace_root_to_canonical_topics_root(tmp_path, monkeypatch):
+    workspace_root = tmp_path / "Theoretical-Physics"
+    topics_root = workspace_root / "research" / "aitp-topics"
+    ws = _seed_workspace(topics_root)
+    session = get_session_binding(ws, "codex-qsgw-current")
+    monkeypatch.delenv("AITP_TOPICS_ROOT", raising=False)
+
+    # Simulate a malformed root compatibility store that must not be selected.
+    aitp_v5_init_workspace(str(workspace_root / ".aitp"))
+    root_claim_dir = workspace_root / ".aitp" / "registry" / "claims"
+    root_claim_dir.mkdir(parents=True, exist_ok=True)
+    (root_claim_dir / "malformed.md").write_text("---\nkind: claim\n---\n# malformed\n", encoding="utf-8")
+
+    trust = aitp_v5_audit_claim_trust(str(workspace_root), claim_id=session.active_claim)
+    failure_modes = aitp_v5_audit_failure_mode_coverage(str(workspace_root), claim_id=session.active_claim)
+    source = aitp_v5_audit_source_reconstruction(str(workspace_root), claim_id=session.active_claim)
+
+    assert trust["claim_id"] == session.active_claim
+    assert failure_modes["claim_id"] == session.active_claim
+    assert source["claim_id"] == session.active_claim
 
 
 def test_legacy_mcp_base_resolution_prefers_nested_topics_root(tmp_path, monkeypatch):

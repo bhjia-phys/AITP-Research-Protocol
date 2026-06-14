@@ -10,7 +10,7 @@ from brain.v5.models import (
     ValidationContractRecord,
     ValidationResultRecord,
 )
-from brain.v5.store import list_records
+from brain.v5.store import list_valid_records
 from brain.v5.workspace import WorkspacePaths, get_claim
 
 
@@ -20,22 +20,22 @@ def audit_failure_mode_coverage(ws: WorkspacePaths, *, claim_id: str) -> dict:
     claim = get_claim(ws, claim_id)
     contracts = [
         record
-        for record in list_records(ws.registry_dir("validation_contracts"), ValidationContractRecord)
+        for record in list_valid_records(ws.registry_dir("validation_contracts"), ValidationContractRecord)
         if record.claim_id == claim_id
     ]
     packets = [
         record
-        for record in list_records(ws.registry_dir("promotion_packets"), PromotionPacketRecord)
+        for record in list_valid_records(ws.registry_dir("promotion_packets"), PromotionPacketRecord)
         if record.claim_id == claim_id
     ]
     review_results = [
         record
-        for record in list_records(ws.registry_dir("failure_mode_reviews"), FailureModeReviewResultRecord)
+        for record in list_valid_records(ws.registry_dir("failure_mode_reviews"), FailureModeReviewResultRecord)
         if record.claim_id == claim_id
     ]
     validation_results = [
         record
-        for record in list_records(ws.registry_dir("validation_results"), ValidationResultRecord)
+        for record in list_valid_records(ws.registry_dir("validation_results"), ValidationResultRecord)
         if record.claim_id == claim_id
     ]
     claim_modes = [claim.strongest_failure_mode] if claim.strongest_failure_mode.strip() else []

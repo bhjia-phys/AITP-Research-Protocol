@@ -2049,6 +2049,197 @@ def test_legacy_semantic_review_worklist_exposes_inconclusive_followup_commands(
     assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
 
 
+def test_legacy_semantic_review_worklist_allows_passed_review_to_resolve_active_claim_divergence(tmp_path):
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.legacy_semantic_review_manifest import build_legacy_semantic_review_manifest
+    from brain.v5.legacy_semantic_review_worklist import _work_item, build_legacy_semantic_review_worklist
+    from brain.v5.models import (
+        ClaimRecord,
+        EvidenceRecord,
+        ObjectRelationRecord,
+        PhysicsObjectRecord,
+        ReferenceLocationRecord,
+        ValidationContractRecord,
+    )
+    from brain.v5.source_reconstruction_review import record_source_reconstruction_review_result
+    from brain.v5.store import write_record
+    from brain.v5.workspace import bind_session, init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    _write_workspace_file_migration_ledger(ws)
+    legacy_topic = ws.base / "research" / "aitp-topics" / "canonical-topic"
+    legacy_topic.mkdir(parents=True)
+    (legacy_topic / "state.md").write_text("# Canonical\n", encoding="utf-8")
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="Migrated canonical claim.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Current runtime state may point at a newer claim.",
+            scope="Migration-time source reconstruction.",
+            strongest_failure_mode="Using the migration claim as the recovery claim without review.",
+        ),
+    )
+    write_record(
+        ws.registry_dir("claims") / "claim-live.md",
+        ClaimRecord(
+            claim_id="claim-live",
+            topic_id="canonical-topic",
+            statement="Current runtime claim.",
+            evidence_profile="runtime_recovery",
+            confidence_state="hypothesis",
+            active_uncertainty="Recovery relation map must bound the current claim.",
+        ),
+    )
+    bind_session(
+        ws,
+        "live-session",
+        topic_id="canonical-topic",
+        context_id="live-context",
+        active_claim="claim-live",
+    )
+    write_record(
+        ws.registry_dir("reference_locations") / "reference-canonical.md",
+        ReferenceLocationRecord(
+            location_id="reference-canonical",
+            topic_id="canonical-topic",
+            connector_id="legacy_import",
+            location_type="legacy_archive",
+            uri="legacy_archive:canonical-topic/state.md",
+            label="Canonical legacy archive sample",
+            claim_id="claim-canonical",
+            source_ref="legacy_archive:canonical-topic/state.md",
+        ),
+    )
+    write_record(
+        ws.registry_dir("evidence") / "evidence-canonical-reconstruction.md",
+        EvidenceRecord(
+            evidence_id="evidence-canonical-reconstruction",
+            topic_id="canonical-topic",
+            claim_id="claim-canonical",
+            evidence_type="source_reconstruction",
+            status="supports_reconstruction_boundary",
+            summary="Reviewed the reconstruction path from the canonical legacy archive sample.",
+            supports_outputs=["reconstruction_path"],
+            source_refs=["legacy_archive:canonical-topic/state.md"],
+        ),
+    )
+    write_record(
+        ws.registry_dir("evidence") / "evidence-live-boundary.md",
+        EvidenceRecord(
+            evidence_id="evidence-live-boundary",
+            topic_id="canonical-topic",
+            claim_id="claim-live",
+            evidence_type="recovery_boundary",
+            status="supports_recovery_boundary",
+            summary="The live runtime claim was selected as the current recovery target.",
+            supports_outputs=["session_recovery"],
+            source_refs=["session:live-session"],
+        ),
+    )
+    (ws.registry_dir("evidence") / "evidence-malformed-unrelated.md").write_text(
+        "---\nevidence_id: evidence-malformed-unrelated\ntopic_id: canonical-topic\n---\n# Malformed\n",
+        encoding="utf-8",
+    )
+    write_record(
+        ws.registry_dir("physics_objects") / "object-canonical.md",
+        PhysicsObjectRecord(
+            object_id="object-canonical",
+            topic_id="canonical-topic",
+            object_type="legacy_semantic_unit",
+            name="Canonical migrated semantic unit",
+            definition="The source-grounded semantic unit preserved from the canonical legacy topic.",
+            source_refs=["legacy_archive:canonical-topic/state.md"],
+        ),
+    )
+    write_record(
+        ws.registry_dir("object_relations") / "relation-canonical.md",
+        ObjectRelationRecord(
+            relation_id="relation-canonical",
+            topic_id="canonical-topic",
+            relation_type="reconstructs",
+            subject_id="object-canonical",
+            object_id="claim-canonical",
+            claim_id="claim-canonical",
+            statement="The typed semantic unit reconstructs the canonical migrated claim.",
+            source_refs=["legacy_archive:canonical-topic/state.md"],
+        ),
+    )
+    write_record(
+        ws.registry_dir("validation_contracts") / "contract-canonical.md",
+        ValidationContractRecord(
+            contract_id="contract-canonical",
+            topic_id="canonical-topic",
+            claim_id="claim-canonical",
+            required_checks=["recover the live claim from runtime state"],
+            failure_modes=["confuse migration claim with current recovery claim"],
+            required_evidence_outputs=["source_reconstruction"],
+            status="open",
+        ),
+    )
+    record_source_reconstruction_review_result(
+        ws,
+        claim_id="claim-canonical",
+        status="passed",
+        reviewed_components=[
+            "definitions",
+            "assumptions_or_scope",
+            "source_locations",
+            "dependency_graph",
+            "reconstruction_path",
+            "failure_conditions",
+        ],
+        basis_refs=["legacy_archive:canonical-topic/state.md"],
+        summary="Source reconstruction is complete for the migrated claim.",
+    )
+
+    before = build_legacy_semantic_review_worklist(ws, migration_dir=run)
+    before_item = next(item for item in before["items"] if item["topic"] == "canonical-topic")
+    assert "active_claim_divergence_requires_review" in before_item["pass_readiness"]["blockers"]
+
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="passed",
+        summary=(
+            "Legacy files and source reconstruction are reviewed; session recovery must use the "
+            "runtime active claim claim-live rather than the migration claim."
+        ),
+        active_claim_id="claim-live",
+        reviewed_legacy_refs=[
+            "legacy_l0_l4:canonical-topic:state.md",
+            "legacy_archive:canonical-topic/state.md",
+        ],
+        reviewed_typed_refs=[
+            "claim-canonical",
+            "claim-live",
+            "session:live-session",
+            "evidence-canonical-reconstruction",
+        ],
+        evidence_refs=["evidence-live-boundary"],
+    )
+
+    manifest = build_legacy_semantic_review_manifest(ws, migration_dir=run)
+    item = next(item for item in manifest["items"] if item["topic"] == "canonical-topic")
+    after = build_legacy_semantic_review_worklist(ws, migration_dir=run, manifest=manifest)
+    assert item["review_status"] == "passed"
+    assert item["latest_semantic_review"]["review_id"] == review.review_id
+    passed_item = _work_item(
+        item,
+        workspace=manifest["workspace"],
+        migration_dir=manifest["migration_dir"],
+        open_human_checkpoints=[],
+    )
+    assert passed_item["pass_readiness"]["requirements"]["active_claim_divergence_reviewed"] is True
+    assert "active_claim_divergence_requires_review" not in passed_item["pass_readiness"]["blockers"]
+    assert all(work_item["topic"] != "canonical-topic" for work_item in after["items"])
+
+
 def test_legacy_semantic_review_worklist_exposes_pass_readiness_blockers(tmp_path):
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
     from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist

@@ -11,6 +11,9 @@ def resolve_workspace_base(base: str) -> Path:
 
     env_base = _env_topics_root()
     raw = Path(base).expanduser() if str(base or "").strip() else env_base or Path(".")
+    legacy_subdir_topics = _canonical_topics_root_for_store_subpath(raw)
+    if legacy_subdir_topics is not None:
+        return legacy_subdir_topics
     if raw.name == ".aitp":
         if env_base is not None:
             env_store = env_base / ".aitp"
@@ -48,6 +51,21 @@ def _looks_like_v5_store(path: Path) -> bool:
     return path.name == ".aitp" and (
         (path / "workspace.md").exists() or (path / "topics").exists() or (path / "registry").exists()
     )
+
+
+def _canonical_topics_root_for_store_subpath(path: Path) -> Path | None:
+    if path.name == ".aitp":
+        return None
+    parent = path.parent
+    if parent.name != ".aitp":
+        return None
+    store_base = parent.parent
+    nested_topics = store_base / "research" / "aitp-topics"
+    if _looks_like_v5_base(nested_topics):
+        return nested_topics
+    if _looks_like_v5_base(store_base):
+        return store_base
+    return None
 
 
 def _same_path(left: Path, right: Path) -> bool:

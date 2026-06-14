@@ -19,7 +19,7 @@ from brain.v5.models import (
 )
 from brain.v5.paths import WorkspacePaths
 from brain.v5.source_reconstruction import audit_source_reconstruction_batch
-from brain.v5.store import list_records, write_record
+from brain.v5.store import list_records, list_valid_records, write_record
 
 
 def build_legacy_semantic_review_queue(
@@ -262,7 +262,7 @@ def _validate_basis_refs(
         _require_same_claim_refs(
             "evidence ref",
             evidence_refs,
-            list_records(ws.registry_dir("evidence"), EvidenceRecord),
+            list_valid_records(ws.registry_dir("evidence"), EvidenceRecord),
             "evidence_id",
             claim_id,
         )
@@ -270,7 +270,7 @@ def _validate_basis_refs(
         _require_same_claim_refs(
             "validation result",
             validation_result_ids,
-            list_records(ws.registry_dir("validation_results"), ValidationResultRecord),
+            list_valid_records(ws.registry_dir("validation_results"), ValidationResultRecord),
             "result_id",
             claim_id,
         )

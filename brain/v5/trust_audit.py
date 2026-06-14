@@ -5,7 +5,7 @@ from __future__ import annotations
 from brain.v5.evidence import list_evidence_for_claim
 from brain.v5.memory import list_memory_entries_for_claim
 from brain.v5.models import CodeStateRecord, ToolRunRecord, TrustUpdateRecord, ValidationResultRecord
-from brain.v5.store import list_records
+from brain.v5.store import list_valid_records
 from brain.v5.workspace import WorkspacePaths, get_claim
 
 
@@ -26,7 +26,7 @@ def audit_claim_trust(ws: WorkspacePaths, *, claim_id: str) -> dict:
     ]
     validation_results = [
         record
-        for record in list_records(ws.registry_dir("validation_results"), ValidationResultRecord)
+        for record in list_valid_records(ws.registry_dir("validation_results"), ValidationResultRecord)
         if record.claim_id == claim_id
     ]
     passed_validation_result_ids = [
@@ -81,7 +81,7 @@ def audit_claim_trust(ws: WorkspacePaths, *, claim_id: str) -> dict:
 def _code_state_ids_for_claim(ws: WorkspacePaths, claim_id: str, evidence_records) -> list[str]:
     tool_runs_by_id = {
         record.run_id: record
-        for record in list_records(ws.registry_dir("tool_runs"), ToolRunRecord)
+        for record in list_valid_records(ws.registry_dir("tool_runs"), ToolRunRecord)
         if record.claim_id == claim_id
     }
     result: list[str] = []
@@ -90,7 +90,7 @@ def _code_state_ids_for_claim(ws: WorkspacePaths, claim_id: str, evidence_record
             run = tool_runs_by_id.get(run_id)
             if run is not None:
                 _append_unique(result, run.code_state_ids)
-    for state in list_records(ws.registry_dir("code_states"), CodeStateRecord):
+    for state in list_valid_records(ws.registry_dir("code_states"), CodeStateRecord):
         if _record_links_to_claim(state.linked_records, claim_id):
             _append_unique(result, [state.code_state_id])
     return result
@@ -99,7 +99,7 @@ def _code_state_ids_for_claim(ws: WorkspacePaths, claim_id: str, evidence_record
 def _trust_update_record_ids_for_claim(ws: WorkspacePaths, claim_id: str) -> list[str]:
     records = [
         record
-        for record in list_records(ws.registry_dir("trust_updates"), TrustUpdateRecord)
+        for record in list_valid_records(ws.registry_dir("trust_updates"), TrustUpdateRecord)
         if record.claim_id == claim_id
     ]
     return [record.update_id for record in sorted(records, key=lambda item: item.update_id)]
@@ -142,7 +142,17 @@ def _review_actions(
 
 
 def _is_supporting_evidence(status: str) -> bool:
-    return status.strip().lower() in {"supports", "support", "passed", "valid"}
+    return status.strip().lower() in {
+        "supports",
+        "support",
+        "passed",
+        "valid",
+        "supports_claim_within_scope",
+        "supports_reconstruction_boundary",
+        "supports_scoped_claim",
+        "supports_with_scope_limits",
+        "supports_with_limitations",
+    }
 
 
 def _is_challenging_evidence(status: str) -> bool:

@@ -121,6 +121,134 @@ def test_claim_relation_map_separates_runtime_failure_from_algorithm_failure(tmp
     assert relation_map["can_update_claim_trust"] is False
 
 
+def test_claim_relation_map_recovers_active_claim_from_topic_state_for_fresh_session(tmp_path):
+    from brain.v5.claim_relation_map import build_claim_relation_map
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import bind_session
+
+    ws, claim, h2o_support, gap_limit, si_failure, _ = _setup_h2o_si_runtime_failure_workspace(tmp_path)
+    bind_session(
+        ws,
+        "fresh-qsgw-session",
+        topic_id="qsgw-ac-error-molecules",
+        context_id="librpa",
+    )
+    topic_state = {
+        "kind": "topic_state",
+        "topic_id": "qsgw-ac-error-molecules",
+        "session_id": "qsgw-si-recovery",
+        "context_id": "librpa",
+        "active_claim_id": claim.claim_id,
+    }
+    (ws.topic_dir("qsgw-ac-error-molecules") / "runtime" / "topic_state.json").write_text(
+        json.dumps(topic_state),
+        encoding="utf-8",
+    )
+
+    relation_map = build_claim_relation_map(ws, "fresh-qsgw-session")
+
+    assert require_valid_public_surface("claim_relation_map", relation_map) == relation_map
+    assert relation_map["requested_session_id"] == "fresh-qsgw-session"
+    assert relation_map["session_id"] == "qsgw-si-recovery"
+    assert relation_map["recovery_selection_source"] == "runtime_topic_state"
+    assert relation_map["claim_id"] == claim.claim_id
+    assert [entry["record_id"] for entry in relation_map["supported_by"]] == [h2o_support.evidence_id]
+    assert gap_limit.evidence_id in {entry["record_id"] for entry in relation_map["limited_by"]}
+    assert si_failure.evidence_id in {entry["record_id"] for entry in relation_map["not_tested_by"]}
+    assert any("runtime/application failures" in item for item in relation_map["current_conclusion"]["cannot_say"])
+
+
+def test_topic_token_recovers_brief_relation_map_and_graph_from_topic_state(tmp_path):
+    from brain.v5.brief import build_execution_brief
+    from brain.v5.claim_relation_map import build_claim_relation_map
+    from brain.v5.process_graph import build_process_graph_slice
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ws, claim, h2o_support, _, si_failure, _ = _setup_h2o_si_runtime_failure_workspace(tmp_path)
+    topic_state = {
+        "kind": "topic_state",
+        "topic_id": "qsgw-ac-error-molecules",
+        "session_id": "qsgw-si-recovery",
+        "context_id": "librpa",
+        "active_claim_id": claim.claim_id,
+    }
+    (ws.topic_dir("qsgw-ac-error-molecules") / "runtime" / "topic_state.json").write_text(
+        json.dumps(topic_state),
+        encoding="utf-8",
+    )
+
+    brief = build_execution_brief(ws, "topic:qsgw-ac-error-molecules")
+    relation_map = build_claim_relation_map(ws, "topic:qsgw-ac-error-molecules")
+    graph = build_process_graph_slice(ws, "topic:qsgw-ac-error-molecules", limit=40)
+
+    assert require_valid_public_surface("execution_brief", brief) == brief
+    assert require_valid_public_surface("claim_relation_map", relation_map) == relation_map
+    assert require_valid_public_surface("process_graph_slice", graph) == graph
+    for payload in (brief, relation_map, graph):
+        assert payload["requested_session_id"] == "topic:qsgw-ac-error-molecules"
+        assert payload["recovery_selection_source"] == "topic_token_runtime_topic_state"
+    assert brief["session"]["session_id"] == "qsgw-si-recovery"
+    assert brief["recovered_focus"] == {
+        "requested_session_id": "topic:qsgw-ac-error-molecules",
+        "recovery_selection_source": "topic_token_runtime_topic_state",
+        "session_id": "qsgw-si-recovery",
+        "topic_id": "qsgw-ac-error-molecules",
+        "context_id": "librpa",
+        "active_claim": claim.claim_id,
+        "active_route": None,
+        "active_cycle": None,
+        "claim_statement": claim.statement,
+        "confidence_state": "hypothesis",
+        "evidence_profile": "code_method",
+    }
+    assert brief["current_focus"]["active_claim"] == claim.claim_id
+    assert relation_map["claim_id"] == claim.claim_id
+    assert relation_map["session_id"] == "qsgw-si-recovery"
+    assert h2o_support.evidence_id in {entry["record_id"] for entry in relation_map["supported_by"]}
+    assert si_failure.evidence_id in {entry["record_id"] for entry in relation_map["not_tested_by"]}
+    assert graph["session_id"] == "qsgw-si-recovery"
+    assert graph["topic_id"] == "qsgw-ac-error-molecules"
+    assert graph["claim_id"] == claim.claim_id
+
+
+def test_bare_topic_recovers_brief_relation_map_and_graph_from_topic_state(tmp_path):
+    from brain.v5.brief import build_execution_brief
+    from brain.v5.claim_relation_map import build_claim_relation_map
+    from brain.v5.process_graph import build_process_graph_slice
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ws, claim, h2o_support, _, si_failure, _ = _setup_h2o_si_runtime_failure_workspace(tmp_path)
+    topic_state = {
+        "kind": "topic_state",
+        "topic_id": "qsgw-ac-error-molecules",
+        "session_id": "qsgw-si-recovery",
+        "context_id": "librpa",
+        "active_claim_id": claim.claim_id,
+    }
+    (ws.topic_dir("qsgw-ac-error-molecules") / "runtime" / "topic_state.json").write_text(
+        json.dumps(topic_state),
+        encoding="utf-8",
+    )
+
+    brief = build_execution_brief(ws, "qsgw-ac-error-molecules")
+    relation_map = build_claim_relation_map(ws, "qsgw-ac-error-molecules")
+    graph = build_process_graph_slice(ws, "qsgw-ac-error-molecules", limit=40)
+
+    assert require_valid_public_surface("execution_brief", brief) == brief
+    assert require_valid_public_surface("claim_relation_map", relation_map) == relation_map
+    assert require_valid_public_surface("process_graph_slice", graph) == graph
+    for payload in (brief, relation_map, graph):
+        assert payload["requested_session_id"] == "qsgw-ac-error-molecules"
+        assert payload["recovery_selection_source"] == "bare_topic_runtime_topic_state"
+    assert brief["recovered_focus"]["session_id"] == "qsgw-si-recovery"
+    assert brief["recovered_focus"]["active_claim"] == claim.claim_id
+    assert relation_map["claim_id"] == claim.claim_id
+    assert h2o_support.evidence_id in {entry["record_id"] for entry in relation_map["supported_by"]}
+    assert si_failure.evidence_id in {entry["record_id"] for entry in relation_map["not_tested_by"]}
+    assert graph["session_id"] == "qsgw-si-recovery"
+    assert graph["claim_id"] == claim.claim_id
+
+
 def test_claim_relation_map_prioritizes_runtime_blocker_next_action_over_generic_status(tmp_path):
     from brain.v5.claim_relation_map import build_claim_relation_map
 
@@ -136,6 +264,46 @@ def test_claim_relation_map_prioritizes_runtime_blocker_next_action_over_generic
         "Thiele baseline before interpreting ridge evidence"
     )
     assert "collect_required_evidence_or_provenance" in relation_map["next_valid_actions"]
+
+
+def test_claim_relation_map_does_not_treat_scalapack_parameter_text_as_runtime_failure(tmp_path):
+    from brain.v5.claim_relation_map import build_claim_relation_map
+    from brain.v5.evidence import record_evidence
+    from brain.v5.tools import record_tool_run
+
+    ws, claim, *_ = _setup_h2o_si_runtime_failure_workspace(tmp_path)
+    run = record_tool_run(
+        ws,
+        recipe_id="h2o-gap-audit",
+        tool_family="hpc_slurm_plus_local_analysis",
+        tool_name="compare_ac_regularization",
+        topic_id="qsgw-ac-error-molecules",
+        claim_id=claim.claim_id,
+        inputs={"system": "H2O", "use_scalapack_gw_wc": "f"},
+        outputs={"gap_shift_ev": -0.52, "status": "completed"},
+        evidence_status="new_evidence",
+        source_refs=["source-asset-qsgw-ac-error-molecules-h2o-gap-audit"],
+    )
+    reconstruction = record_evidence(
+        ws,
+        topic_id="qsgw-ac-error-molecules",
+        claim_id=claim.claim_id,
+        evidence_type="source_reconstruction",
+        status="supports_reconstruction_boundary",
+        summary=(
+            "Recovery boundary says the Si runtime failure does not test algorithm trust; "
+            "this is reconstruction context, not a failed run."
+        ),
+        supports_outputs=["reconstruction_path"],
+        source_refs=["legacy_l0_l4:qsgw-ac-error-molecules:L1/question_contract.md"],
+    )
+
+    relation_map = build_claim_relation_map(ws, "qsgw-si-recovery")
+
+    assert run.run_id in {entry["record_id"] for entry in relation_map["limited_by"]}
+    assert run.run_id not in {entry["record_id"] for entry in relation_map["not_tested_by"]}
+    assert reconstruction.evidence_id in {entry["record_id"] for entry in relation_map["limited_by"]}
+    assert reconstruction.evidence_id not in {entry["record_id"] for entry in relation_map["not_tested_by"]}
 
 
 def test_claim_relation_map_surfaces_key_physics_object_relations(tmp_path):
@@ -267,6 +435,25 @@ def test_claim_relation_map_mcp_returns_empty_map_for_malformed_session(tmp_path
     write_md(ws.session_path("malformed-session"), {}, "# Malformed session\n")
 
     payload = aitp_v5_get_claim_relation_map(str(ws.base), session_id="malformed-session")
+
+    assert payload["kind"] == "claim_relation_map"
+    assert payload["session_id"] == "malformed-session"
+    assert payload["topic_id"] == "unbound-session"
+    assert payload["claim_id"] == ""
+    assert payload["current_conclusion"]["can_say"] == ["session binding is missing or malformed"]
+    assert payload["trust_update_allowed"] is False
+
+
+def test_claim_relation_map_cli_returns_empty_map_for_malformed_session(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.markdown import write_md
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    write_md(ws.session_path("malformed-session"), {}, "# Malformed session\n")
+
+    assert main(["--base", str(ws.base), "relation-map", "malformed-session"]) == 0
+    payload = json.loads(capsys.readouterr().out)
 
     assert payload["kind"] == "claim_relation_map"
     assert payload["session_id"] == "malformed-session"

@@ -29,9 +29,10 @@ from brain.v5.models import (
 from brain.v5.moment_policy import build_host_agnostic_moment_policy
 from brain.v5.paths import WorkspacePaths
 from brain.v5.payload_hints import with_draft_schema
+from brain.v5.recovery_session import recover_session_binding_for_read
 from brain.v5.source_reconstruction_review import build_source_reconstruction_review_slice
 from brain.v5.source_stack_coverage import build_source_stack_coverage_slice
-from brain.v5.store import list_valid_records, read_record
+from brain.v5.store import list_valid_records
 
 
 _CLOSED_OBLIGATION_STATUSES = {"closed", "complete", "completed", "done", "discharged", "resolved", "passed"}
@@ -47,7 +48,10 @@ def build_process_graph_slice(
     """Build a read-only graph slice from existing typed records."""
 
     limit = max(1, int(limit or 80))
-    session = read_record(ws.session_path(session_id), SessionBinding)
+    recovered = recover_session_binding_for_read(ws, session_id)
+    session = recovered.session
+    requested_session_id = recovered.requested_session_id
+    recovery_selection_source = recovered.recovery_selection_source
     focus_claim_id = claim_id or session.active_claim
     topic_id = session.topic_id
 
@@ -215,7 +219,7 @@ def build_process_graph_slice(
         "this API cannot update claim trust",
     ]
     moment_policy = build_host_agnostic_moment_policy(
-        session_id=session_id,
+        session_id=session.session_id,
         topic_id=topic_id,
         claim_id=focus_claim_id,
         open_obligations=open_obligations,
@@ -229,7 +233,9 @@ def build_process_graph_slice(
     return {
         "ok": True,
         "kind": "process_graph_slice",
-        "session_id": session_id,
+        "session_id": session.session_id,
+        "requested_session_id": requested_session_id,
+        "recovery_selection_source": recovery_selection_source,
         "topic_id": topic_id,
         "claim_id": focus_claim_id,
         "truth_source": "typed_records",
