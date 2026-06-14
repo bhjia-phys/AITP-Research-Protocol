@@ -126,6 +126,38 @@ def test_workspace_file_migration_ledger_cli_writes_json_and_report(tmp_path, ca
     assert "File Migration Ledger" in report.read_text(encoding="utf-8")
 
 
+def test_workspace_file_migration_ledger_cli_resolves_relative_paths_to_workspace_root(tmp_path, capsys):
+    ws, workspace_root, migration_dir = _write_workspace_with_old_and_legacy_files(tmp_path)
+    report = workspace_root / "reports" / "ledger.md"
+    out_json = workspace_root / "reports" / "ledger.json"
+    relative_migration_dir = migration_dir.relative_to(workspace_root).as_posix()
+
+    exit_code = main(
+        [
+            "--base",
+            str(ws.base),
+            "workspace",
+            "file-migration-ledger",
+            "--workspace-root",
+            str(workspace_root),
+            "--legacy-accounting-dir",
+            relative_migration_dir,
+            "--write-json",
+            "reports/ledger.json",
+            "--write-report",
+            "reports/ledger.md",
+            "--compact",
+        ]
+    )
+
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["kind"] == "aitp_workspace_file_migration_ledger_progress"
+    assert payload["no_omission_check"] is True
+    assert out_json.exists()
+    assert report.exists()
+
+
 def test_workspace_file_migration_ledger_mcp_and_runtime_entrypoint(tmp_path):
     from brain.v5.mcp_tools import aitp_v5_build_workspace_file_migration_ledger
     from brain.v5.runtime_entrypoints import runtime_entrypoints, validate_runtime_entrypoints

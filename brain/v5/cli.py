@@ -86,6 +86,17 @@ from brain.v5.workspace import (
 )
 
 
+def _workspace_path_arg(value: str, workspace_root: str | Path | None) -> str:
+    """Resolve workspace command paths without depending on the process cwd."""
+
+    if not value:
+        return ""
+    path = Path(value)
+    if path.is_absolute() or not workspace_root:
+        return str(path)
+    return str(Path(workspace_root) / path)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
@@ -682,64 +693,80 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         return dispatch_goal_command(args, ws)
 
     if args.command == "workspace" and args.workspace_command == "inventory":
+        workspace_root = args.workspace_root or None
+        write_json = _workspace_path_arg(args.write_json, workspace_root)
+        write_report = _workspace_path_arg(args.write_report, workspace_root)
         payload = build_workspace_inventory(
             ws,
-            workspace_root=args.workspace_root or None,
+            workspace_root=workspace_root,
         )
-        if args.write_json:
-            write_text_atomic(args.write_json, json.dumps(_jsonable(payload), ensure_ascii=False, sort_keys=True, indent=2))
-            payload = {**payload, "json_path": str(args.write_json)}
-        if args.write_report:
+        if write_json:
+            write_text_atomic(write_json, json.dumps(_jsonable(payload), ensure_ascii=False, sort_keys=True, indent=2))
+            payload = {**payload, "json_path": write_json}
+        if write_report:
             payload = {
                 **payload,
-                "report_path": str(write_workspace_inventory_report(payload, args.write_report)),
+                "report_path": str(write_workspace_inventory_report(payload, write_report)),
             }
         return payload
 
     if args.command == "workspace" and args.workspace_command == "migration-plan":
+        workspace_root = args.workspace_root or None
+        inventory_json = _workspace_path_arg(args.inventory_json, workspace_root)
+        write_json = _workspace_path_arg(args.write_json, workspace_root)
+        write_report = _workspace_path_arg(args.write_report, workspace_root)
         payload = build_workspace_migration_plan(
             ws,
-            workspace_root=args.workspace_root or None,
-            inventory_path=args.inventory_json or None,
+            workspace_root=workspace_root,
+            inventory_path=inventory_json or None,
         )
-        if args.write_json:
-            write_text_atomic(args.write_json, json.dumps(_jsonable(payload), ensure_ascii=False, sort_keys=True, indent=2))
-            payload = {**payload, "json_path": str(args.write_json)}
-        if args.write_report:
+        if write_json:
+            write_text_atomic(write_json, json.dumps(_jsonable(payload), ensure_ascii=False, sort_keys=True, indent=2))
+            payload = {**payload, "json_path": write_json}
+        if write_report:
             payload = {
                 **payload,
-                "report_path": str(write_workspace_migration_plan_report(payload, args.write_report)),
+                "report_path": str(write_workspace_migration_plan_report(payload, write_report)),
             }
         return payload
 
     if args.command == "workspace" and args.workspace_command == "old-store-manifest":
+        workspace_root = args.workspace_root or None
+        write_json = _workspace_path_arg(args.write_json, workspace_root)
+        write_report = _workspace_path_arg(args.write_report, workspace_root)
         payload = build_workspace_old_store_manifest(
             ws,
-            workspace_root=args.workspace_root or None,
+            workspace_root=workspace_root,
         )
-        if args.write_json:
-            write_text_atomic(args.write_json, json.dumps(_jsonable(payload), ensure_ascii=False, sort_keys=True, indent=2))
-            payload = {**payload, "json_path": str(args.write_json)}
-        if args.write_report:
+        if write_json:
+            write_text_atomic(write_json, json.dumps(_jsonable(payload), ensure_ascii=False, sort_keys=True, indent=2))
+            payload = {**payload, "json_path": write_json}
+        if write_report:
             payload = {
                 **payload,
-                "report_path": str(write_workspace_old_store_manifest_report(payload, args.write_report)),
+                "report_path": str(write_workspace_old_store_manifest_report(payload, write_report)),
             }
         return payload
 
     if args.command == "workspace" and args.workspace_command == "file-migration-ledger":
+        workspace_root = args.workspace_root or None
+        migration_plan_json = _workspace_path_arg(args.migration_plan_json, workspace_root)
+        old_store_manifest_json = _workspace_path_arg(args.old_store_manifest_json, workspace_root)
+        legacy_accounting_dir = _workspace_path_arg(args.legacy_accounting_dir, workspace_root)
+        write_json = _workspace_path_arg(args.write_json, workspace_root)
+        write_report = _workspace_path_arg(args.write_report, workspace_root)
         payload = build_workspace_file_migration_ledger(
             ws,
-            workspace_root=args.workspace_root or None,
-            migration_plan_path=args.migration_plan_json or None,
-            old_store_manifest_path=args.old_store_manifest_json or None,
-            legacy_accounting_dir=args.legacy_accounting_dir or None,
+            workspace_root=workspace_root,
+            migration_plan_path=migration_plan_json or None,
+            old_store_manifest_path=old_store_manifest_json or None,
+            legacy_accounting_dir=legacy_accounting_dir or None,
         )
-        if args.write_json or args.write_report:
+        if write_json or write_report:
             payload = write_workspace_file_migration_ledger(
                 payload,
-                json_path=args.write_json or None,
-                report_path=args.write_report or None,
+                json_path=write_json or None,
+                report_path=write_report or None,
             )
         if args.compact:
             return require_valid_public_surface(
@@ -749,19 +776,23 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         return require_valid_public_surface("workspace_file_migration_ledger", payload)
 
     if args.command == "workspace" and args.workspace_command == "old-store-import":
+        workspace_root = args.workspace_root or None
+        old_store_manifest_json = _workspace_path_arg(args.old_store_manifest_json, workspace_root)
+        write_json = _workspace_path_arg(args.write_json, workspace_root)
+        write_report = _workspace_path_arg(args.write_report, workspace_root)
         payload = build_workspace_old_store_import_plan(
             ws,
-            workspace_root=args.workspace_root or None,
-            old_store_manifest_path=args.old_store_manifest_json or None,
+            workspace_root=workspace_root,
+            old_store_manifest_path=old_store_manifest_json or None,
             topics=args.topics,
         )
         if args.apply:
             payload = apply_workspace_old_store_import_plan(payload)
-        if args.write_json or args.write_report:
+        if write_json or write_report:
             payload = write_workspace_old_store_import_result(
                 payload,
-                json_path=args.write_json or None,
-                report_path=args.write_report or None,
+                json_path=write_json or None,
+                report_path=write_report or None,
             )
         return require_valid_public_surface("workspace_old_store_import_result", payload)
 

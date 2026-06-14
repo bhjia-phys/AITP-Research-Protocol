@@ -84,3 +84,28 @@ def test_workspace_old_store_manifest_cli_can_write_report(tmp_path, capsys):
     assert payload["can_update_kernel_state"] is False
     assert report.exists()
     assert "read-only file manifest" in report.read_text(encoding="utf-8")
+
+
+def test_workspace_old_store_manifest_cli_resolves_relative_write_path_to_workspace_root(tmp_path, capsys):
+    workspace_root = tmp_path / "Theoretical-Physics"
+    topics_root = workspace_root / "research" / "aitp-topics"
+    init_workspace(topics_root)
+    report = workspace_root / "reports" / "old-store.md"
+
+    exit_code = main(
+        [
+            "--base",
+            str(topics_root),
+            "workspace",
+            "old-store-manifest",
+            "--workspace-root",
+            str(workspace_root),
+            "--write-report",
+            "reports/old-store.md",
+        ]
+    )
+
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["report_path"] == str(report)
+    assert report.exists()
