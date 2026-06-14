@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 from brain.v5.legacy_l2_graph import build_legacy_l2_graph_manifest, build_legacy_l2_typed_migration_packet
 from brain.v5.legacy_l2_obsidian import write_legacy_l2_obsidian_view
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
@@ -185,10 +188,20 @@ def add_legacy_parser(subparsers) -> None:
     result.add_argument("--summary", required=True)
     result.add_argument("--active-claim", default="", dest="active_claim_id")
     result.add_argument("--legacy-ref", action="append", default=[], dest="reviewed_legacy_refs")
+    result.add_argument("--legacy-ref-file", action="append", default=[], dest="reviewed_legacy_ref_files")
     result.add_argument("--typed-ref", action="append", default=[], dest="reviewed_typed_refs")
+    result.add_argument("--typed-ref-file", action="append", default=[], dest="reviewed_typed_ref_files")
     result.add_argument("--evidence-ref", action="append", default=[], dest="evidence_refs")
+    result.add_argument("--evidence-ref-file", action="append", default=[], dest="evidence_ref_files")
     result.add_argument("--validation-result-id", action="append", default=[], dest="validation_result_ids")
+    result.add_argument(
+        "--validation-result-id-file",
+        action="append",
+        default=[],
+        dest="validation_result_id_files",
+    )
     result.add_argument("--remaining-action", action="append", default=[], dest="remaining_actions")
+    result.add_argument("--remaining-action-file", action="append", default=[], dest="remaining_action_files")
     result.add_argument("--checkpoint", default="", dest="checkpoint_id")
     result.add_argument("--reviewer-role", default="human_or_adversarial_reviewer")
 
@@ -440,11 +453,26 @@ def dispatch_legacy_command(args, ws) -> dict:
             status=args.status,
             summary=args.summary,
             active_claim_id=args.active_claim_id,
-            reviewed_legacy_refs=args.reviewed_legacy_refs,
-            reviewed_typed_refs=args.reviewed_typed_refs,
-            evidence_refs=args.evidence_refs,
-            validation_result_ids=args.validation_result_ids,
-            remaining_actions=args.remaining_actions,
+            reviewed_legacy_refs=_merge_inline_and_file_values(
+                args.reviewed_legacy_refs,
+                args.reviewed_legacy_ref_files,
+            ),
+            reviewed_typed_refs=_merge_inline_and_file_values(
+                args.reviewed_typed_refs,
+                args.reviewed_typed_ref_files,
+            ),
+            evidence_refs=_merge_inline_and_file_values(
+                args.evidence_refs,
+                args.evidence_ref_files,
+            ),
+            validation_result_ids=_merge_inline_and_file_values(
+                args.validation_result_ids,
+                args.validation_result_id_files,
+            ),
+            remaining_actions=_merge_inline_and_file_values(
+                args.remaining_actions,
+                args.remaining_action_files,
+            ),
             checkpoint_id=args.checkpoint_id,
             reviewer_role=args.reviewer_role,
         )
@@ -456,3 +484,31 @@ def dispatch_legacy_command(args, ws) -> dict:
             ),
         }
     raise ValueError(f"unsupported legacy command: {args.legacy_command}")
+
+
+def _merge_inline_and_file_values(inline_values: list[str], file_paths: list[str]) -> list[str]:
+    values = [value for value in inline_values if str(value).strip()]
+    for path in file_paths:
+        values.extend(_read_value_file(path))
+    seen: set[str] = set()
+    unique: list[str] = []
+    for value in values:
+        clean = str(value).strip()
+        if clean and clean not in seen:
+            seen.add(clean)
+            unique.append(clean)
+    return unique
+
+
+def _read_value_file(path: str) -> list[str]:
+    target = Path(path)
+    text = target.read_text(encoding="utf-8")
+    stripped = text.strip()
+    if not stripped:
+        return []
+    if stripped.startswith("["):
+        payload = json.loads(stripped)
+        if not isinstance(payload, list) or not all(isinstance(value, str) for value in payload):
+            raise ValueError(f"value file must contain a JSON string array: {path}")
+        return payload
+    return [line.strip() for line in text.splitlines() if line.strip()]

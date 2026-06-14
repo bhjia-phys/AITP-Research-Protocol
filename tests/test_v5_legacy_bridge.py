@@ -4158,6 +4158,32 @@ def test_legacy_semantic_review_result_records_basis_and_updates_queue(tmp_path)
     assert canonical["latest_semantic_review"]["orientation_only"] is True
 
 
+def test_legacy_semantic_review_result_legacy_only_basis_skips_evidence_registry(tmp_path):
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    evidence_dir = ws.registry_dir("evidence")
+    evidence_dir.mkdir(parents=True, exist_ok=True)
+    (evidence_dir / "malformed-evidence.md").write_text(
+        "---\nkind: evidence\nevidence_id: malformed-evidence\n---\n",
+        encoding="utf-8",
+    )
+
+    review = record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="Legacy refs were reviewed; typed evidence refs were not part of this result.",
+        reviewed_legacy_refs=["legacy-topic:canonical-topic/state.md"],
+    )
+
+    assert review.status == "inconclusive"
+    assert review.evidence_refs == []
+
+
 def test_legacy_semantic_review_result_cli_mcp_and_runtime_surface(tmp_path, capsys):
     import json
 
@@ -4169,6 +4195,19 @@ def test_legacy_semantic_review_result_cli_mcp_and_runtime_surface(tmp_path, cap
     base = tmp_path / "v5"
     ws = init_workspace(base)
     run = _write_migration_run(ws)
+    legacy_ref_file = tmp_path / "legacy_refs.json"
+    legacy_ref_file.write_text(
+        json.dumps([
+            "legacy-topic:legacy-l2/state.md",
+            "legacy-topic:legacy-l2/L0/source.md",
+        ]),
+        encoding="utf-8",
+    )
+    remaining_action_file = tmp_path / "remaining_actions.txt"
+    remaining_action_file.write_text(
+        "complete_source_reconstruction\nsample_archive_reference_readback\n",
+        encoding="utf-8",
+    )
 
     assert main([
         "--base",
@@ -4183,6 +4222,10 @@ def test_legacy_semantic_review_result_cli_mcp_and_runtime_surface(tmp_path, cap
         "needs_revision",
         "--legacy-ref",
         "legacy-topic:legacy-l2/state.md",
+        "--legacy-ref-file",
+        str(legacy_ref_file),
+        "--remaining-action-file",
+        str(remaining_action_file),
         "--summary",
         "Claim statement still needs source reconstruction before trust.",
     ]) == 0
@@ -4199,6 +4242,14 @@ def test_legacy_semantic_review_result_cli_mcp_and_runtime_surface(tmp_path, cap
 
     assert cli_payload["kind"] == "legacy_semantic_review_result"
     assert cli_payload["status"] == "needs_revision"
+    assert cli_payload["reviewed_legacy_refs"] == [
+        "legacy-topic:legacy-l2/state.md",
+        "legacy-topic:legacy-l2/L0/source.md",
+    ]
+    assert cli_payload["remaining_actions"] == [
+        "complete_source_reconstruction",
+        "sample_archive_reference_readback",
+    ]
     assert cli_payload["can_update_claim_trust"] is False
     assert mcp_payload["kind"] == "legacy_semantic_review_result"
     assert mcp_payload["topic"] == "legacy-l2"

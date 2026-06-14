@@ -258,20 +258,22 @@ def _validate_basis_refs(
 ) -> None:
     if not claim_id and (evidence_refs or validation_result_ids):
         raise ValueError("typed evidence/validation review refs require active_claim_id")
-    _require_same_claim_refs(
-        "evidence ref",
-        evidence_refs,
-        list_records(ws.registry_dir("evidence"), EvidenceRecord),
-        "evidence_id",
-        claim_id,
-    )
-    _require_same_claim_refs(
-        "validation result",
-        validation_result_ids,
-        list_records(ws.registry_dir("validation_results"), ValidationResultRecord),
-        "result_id",
-        claim_id,
-    )
+    if evidence_refs:
+        _require_same_claim_refs(
+            "evidence ref",
+            evidence_refs,
+            list_records(ws.registry_dir("evidence"), EvidenceRecord),
+            "evidence_id",
+            claim_id,
+        )
+    if validation_result_ids:
+        _require_same_claim_refs(
+            "validation result",
+            validation_result_ids,
+            list_records(ws.registry_dir("validation_results"), ValidationResultRecord),
+            "result_id",
+            claim_id,
+        )
 
 
 def _require_same_claim_refs(
