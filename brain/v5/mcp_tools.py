@@ -184,9 +184,19 @@ def aitp_v5_get_execution_brief(base: str, *, session_id: str) -> dict:
 def aitp_v5_get_claim_relation_map(base: str, *, session_id: str) -> dict:
     """Return the derived relation map and conclusion boundary for the active claim."""
 
+    try:
+        relation_map = build_claim_relation_map(_ws(base), session_id)
+    except TypeError as error:
+        if "SessionBinding.__init__()" not in str(error):
+            raise
+        relation_map = empty_claim_relation_map(
+            topic_id="unbound-session",
+            session_id=session_id,
+            reason="session binding is missing or malformed",
+        )
     return require_valid_public_surface(
         "claim_relation_map",
-        build_claim_relation_map(_ws(base), session_id),
+        relation_map,
     )
 
 

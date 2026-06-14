@@ -3782,7 +3782,10 @@ def test_legacy_semantic_review_worklist_cli_mcp_and_runtime_surface(tmp_path, c
     import json
 
     from brain.v5.cli import main
-    from brain.v5.mcp_tools import aitp_v5_build_legacy_semantic_review_worklist
+    from brain.v5.mcp_tools import (
+        aitp_v5_build_legacy_semantic_review_packet,
+        aitp_v5_build_legacy_semantic_review_worklist,
+    )
     from brain.v5.runtime_entrypoints import runtime_entrypoints
     from brain.v5.workspace import init_workspace
 
@@ -3801,6 +3804,16 @@ def test_legacy_semantic_review_worklist_cli_mcp_and_runtime_surface(tmp_path, c
         migration_dir=str(run),
         topic="canonical-topic",
     )
+    parent_dir_payload = aitp_v5_build_legacy_semantic_review_worklist(
+        str(base),
+        migration_dir="migrations",
+        topic="canonical-topic",
+    )
+    parent_dir_packet = aitp_v5_build_legacy_semantic_review_packet(
+        str(base),
+        migration_dir="migrations",
+        topic="canonical-topic",
+    )
 
     assert cli_payload["kind"] == "legacy_semantic_review_worklist"
     assert mcp_payload["kind"] == "legacy_semantic_review_worklist"
@@ -3808,6 +3821,10 @@ def test_legacy_semantic_review_worklist_cli_mcp_and_runtime_surface(tmp_path, c
     assert topic_mcp_payload["requested_topic"] == "canonical-topic"
     assert topic_mcp_payload["requested_topic_found"] is True
     assert topic_mcp_payload["requested_topic_item"]["topic"] == "canonical-topic"
+    assert parent_dir_payload["migration_dir"] == str(run)
+    assert parent_dir_payload["requested_topic_found"] is True
+    assert parent_dir_packet["migration_dir"] == str(run)
+    assert parent_dir_packet["topic"] == "canonical-topic"
     assert runtime_entrypoints()["legacy_semantic_review_worklist"] == {
         "cli": "aitp-v5 legacy semantic-review-worklist <args>",
         "mcp": "aitp_v5_build_legacy_semantic_review_worklist",

@@ -31,7 +31,7 @@ def build_workspace_recovery_audit(
             if isinstance(payload, dict) and payload.get("kind") == "aitp_workspace_recovery_audit":
                 return {**payload, "recovery_audit_source": str(saved)}
 
-    plan_path = Path(migration_plan_path) if migration_plan_path else latest_workspace_migration_plan(ws)
+    plan_path = _resolve_migration_plan_path(ws, migration_plan_path) if migration_plan_path else latest_workspace_migration_plan(ws)
     plan_topics = _migration_plan_topics(plan_path)
     topic_ids = sorted(selected_topics or (set(_canonical_topic_ids(ws)) | set(plan_topics.keys())))
     sessions_by_topic = _sessions_by_topic(ws)
@@ -189,6 +189,28 @@ def _migration_plan_topics(path: str | Path | None) -> dict[str, dict[str, Any]]
         for row in payload.get("topic_rows", [])
         if isinstance(row, dict) and str(row.get("topic_id") or "")
     }
+
+
+def _resolve_migration_plan_path(ws: WorkspacePaths, path: str | Path) -> Path:
+    candidate = Path(path)
+    if candidate.is_absolute():
+        return candidate
+    for root in _path_resolution_roots(ws):
+        resolved = root / candidate
+        if resolved.exists():
+            return resolved
+    return candidate
+
+
+def _path_resolution_roots(ws: WorkspacePaths) -> list[Path]:
+    roots = [Path.cwd(), ws.base, ws.root]
+    if ws.base.name == "aitp-topics" and ws.base.parent.name == "research":
+        roots.append(ws.base.parent.parent)
+    out: list[Path] = []
+    for root in roots:
+        if root not in out:
+            out.append(root)
+    return out
 
 
 def _load_json(path: str | Path) -> Any:

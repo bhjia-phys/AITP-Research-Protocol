@@ -128,6 +128,16 @@ def test_legacy_mcp_base_resolution_prefers_nested_topics_root(tmp_path, monkeyp
     }
     (migration_dir / "migration_summary.json").write_text(json.dumps(summary), encoding="utf-8")
     (migration_dir / "verification_report.json").write_text(json.dumps(verification), encoding="utf-8")
+    stale_root_run = workspace_root / ".aitp" / "migrations" / "legacy-v5-lossless-stale-root-run"
+    stale_root_run.mkdir(parents=True)
+    (stale_root_run / "migration_summary.json").write_text(
+        json.dumps({**summary, "run_id": "legacy-v5-lossless-stale-root-run", "workspace": str(workspace_root)}),
+        encoding="utf-8",
+    )
+    (stale_root_run / "verification_report.json").write_text(
+        json.dumps({**verification, "run_id": "legacy-v5-lossless-stale-root-run"}),
+        encoding="utf-8",
+    )
     monkeypatch.delenv("AITP_TOPICS_ROOT", raising=False)
 
     relative_payload = aitp_v5_build_legacy_semantic_review_queue(
@@ -138,8 +148,12 @@ def test_legacy_mcp_base_resolution_prefers_nested_topics_root(tmp_path, monkeyp
         str(workspace_root),
         migration_dir="legacy-v5-lossless-stale-root-run",
     )
+    existing_root_payload = aitp_v5_build_legacy_semantic_review_queue(
+        str(workspace_root),
+        migration_dir=str(stale_root_run),
+    )
 
-    for payload in (relative_payload, bare_payload):
+    for payload in (relative_payload, bare_payload, existing_root_payload):
         assert payload["workspace"] == str(topics_root)
         assert payload["migration_dir"] == str(migration_dir)
         assert payload["review_item_count"] == 1

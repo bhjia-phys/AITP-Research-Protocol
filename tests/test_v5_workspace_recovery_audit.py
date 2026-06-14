@@ -292,6 +292,25 @@ def test_workspace_recovery_audit_mcp_and_runtime_entrypoint(tmp_path):
     assert single["selected_topic"]["active_claim_id"]
 
 
+def test_workspace_recovery_audit_mcp_resolves_workspace_relative_plan_paths(tmp_path):
+    from brain.v5.mcp_tools import aitp_v5_build_workspace_recovery_audit
+
+    ws, _ = _workspace_with_ready_topic(tmp_path)
+
+    payload = aitp_v5_build_workspace_recovery_audit(
+        str(ws.root),
+        migration_plan_json="research/aitp-topics/.aitp/migrations/plan.json",
+        topics=["qsgw-ac-error-molecules"],
+        compact=True,
+    )
+
+    assert payload["kind"] == "aitp_workspace_recovery_audit_progress"
+    assert payload["canonical_topics_root"] == str(ws.base)
+    assert payload["topic_count"] == 1
+    assert payload["recovery_ready_count"] == 1
+    assert payload["selected_topic"]["session_id"] == "qsgw-si-recovery"
+
+
 def test_workspace_recovery_audit_discovers_latest_migration_plan_by_default(tmp_path):
     ws, migration_plan = _workspace_with_ready_topic(tmp_path)
     saved_dir = ws.root / "migrations" / "workspace-inventory"

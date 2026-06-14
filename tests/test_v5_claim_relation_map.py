@@ -138,6 +138,99 @@ def test_claim_relation_map_prioritizes_runtime_blocker_next_action_over_generic
     assert "collect_required_evidence_or_provenance" in relation_map["next_valid_actions"]
 
 
+def test_claim_relation_map_surfaces_key_physics_object_relations(tmp_path):
+    from brain.v5.claim_relation_map import (
+        build_claim_relation_map,
+        compact_claim_relation_map,
+        render_claim_relation_map_markdown,
+    )
+    from brain.v5.physics_objects import record_object_relation, record_physics_object
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    create_topic(
+        ws,
+        "generalized-symmetries-first-principles",
+        context_id="formal-theory",
+        title="Generalized symmetries from first-principles methods",
+    )
+    claim = create_claim(
+        ws,
+        topic_id="generalized-symmetries-first-principles",
+        statement=(
+            "Can first-principles GW+DMFT Green functions expose generalized symmetry "
+            "or higher-form symmetry structure in correlated materials?"
+        ),
+        evidence_profile="formal_theory",
+        confidence_state="legacy_seed",
+        active_uncertainty="No validated ab initio extraction workflow has been recorded.",
+    )
+    gw_dmft = record_physics_object(
+        ws,
+        topic_id="generalized-symmetries-first-principles",
+        object_type="computational_input",
+        name="GW+DMFT Green functions",
+        definition="Interacting single-particle Green functions and self-energies from first-principles workflows.",
+    )
+    gf_zero = record_physics_object(
+        ws,
+        topic_id="generalized-symmetries-first-principles",
+        object_type="diagnostic",
+        name="Green-function zero topology diagnostics",
+        definition="Topology diagnostics based on zeros, poles, or singular structures of interacting Green functions.",
+    )
+    generalized_symmetry = record_physics_object(
+        ws,
+        topic_id="generalized-symmetries-first-principles",
+        object_type="interpretation_layer",
+        name="Generalized symmetry interpretation",
+        definition="Higher-form or generalized symmetry language used to interpret interacting topological diagnostics.",
+    )
+    record_object_relation(
+        ws,
+        topic_id="generalized-symmetries-first-principles",
+        claim_id=claim.claim_id,
+        relation_type="computes_diagnostic_inputs_for",
+        subject_id=gw_dmft.object_id,
+        object_id=gf_zero.object_id,
+        statement="GW+DMFT Green functions supply candidate inputs for Green-function zero topology diagnostics.",
+        status="hypothesis",
+    )
+    record_object_relation(
+        ws,
+        topic_id="generalized-symmetries-first-principles",
+        claim_id=claim.claim_id,
+        relation_type="interprets",
+        subject_id=generalized_symmetry.object_id,
+        object_id=gf_zero.object_id,
+        statement=(
+            "Generalized symmetry interpretation is only a proposed layer over Green-function zero topology "
+            "diagnostics until an explicit ab initio extraction workflow is validated."
+        ),
+        failure_modes=["no validated GW+DMFT-to-generalized-symmetry extraction workflow"],
+        status="hypothesis",
+    )
+    bind_session(
+        ws,
+        "generalized-recovery",
+        topic_id="generalized-symmetries-first-principles",
+        context_id="formal-theory",
+        active_claim=claim.claim_id,
+    )
+
+    relation_map = build_claim_relation_map(ws, "generalized-recovery")
+    compact = compact_claim_relation_map(relation_map)
+    markdown = render_claim_relation_map_markdown(relation_map)
+
+    assert require_valid_public_surface("claim_relation_map", relation_map) == relation_map
+    assert relation_map["key_object_relations"]
+    assert any("Green-function zero topology diagnostics" in item for item in relation_map["key_object_relations"])
+    assert any("GW+DMFT Green functions" in item for item in compact["key_object_relations"])
+    assert "Green-function zero topology diagnostics" in markdown
+    assert "no validated GW+DMFT-to-generalized-symmetry extraction workflow" in relation_map["current_blockers"]
+
+
 def test_claim_relation_map_is_forced_into_brief_topic_status_cli_and_mcp(tmp_path, capsys):
     from brain.v5.cli import main
     from brain.v5.mcp_tools import aitp_v5_get_claim_relation_map, aitp_v5_get_execution_brief
@@ -163,3 +256,21 @@ def test_claim_relation_map_is_forced_into_brief_topic_status_cli_and_mcp(tmp_pa
     assert "Current Relation Map" in relation_map_path.read_text(encoding="utf-8")
     assert "Cannot say" in session_start
     assert "runtime/application failures" in session_start
+
+
+def test_claim_relation_map_mcp_returns_empty_map_for_malformed_session(tmp_path):
+    from brain.v5.markdown import write_md
+    from brain.v5.mcp_tools import aitp_v5_get_claim_relation_map
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    write_md(ws.session_path("malformed-session"), {}, "# Malformed session\n")
+
+    payload = aitp_v5_get_claim_relation_map(str(ws.base), session_id="malformed-session")
+
+    assert payload["kind"] == "claim_relation_map"
+    assert payload["session_id"] == "malformed-session"
+    assert payload["topic_id"] == "unbound-session"
+    assert payload["claim_id"] == ""
+    assert payload["current_conclusion"]["can_say"] == ["session binding is missing or malformed"]
+    assert payload["trust_update_allowed"] is False

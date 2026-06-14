@@ -79,6 +79,7 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
         object_relation_brief_payload(relation)
         for relation in raw_object_relations
     ]
+    key_object_relations = _key_object_relation_summaries(object_relations)
 
     supported_by: list[dict[str, Any]] = []
     limited_by: list[dict[str, Any]] = []
@@ -144,6 +145,8 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
         "claim_statement": claim.statement,
         "confidence_state": claim.confidence_state,
         "evidence_profile": claim.evidence_profile,
+        "key_object_relation_count": len(key_object_relations),
+        "key_object_relations": key_object_relations,
         "latest_claim_status": _claim_status_payload(latest_status) if latest_status else {},
         "supported_by": supported_by,
         "limited_by": limited_by,
@@ -202,6 +205,8 @@ def empty_claim_relation_map(*, topic_id: str, session_id: str, reason: str) -> 
         "claim_statement": "",
         "confidence_state": "",
         "evidence_profile": "",
+        "key_object_relation_count": 0,
+        "key_object_relations": [],
         "latest_claim_status": {},
         "supported_by": [],
         "limited_by": [],
@@ -243,6 +248,8 @@ def compact_claim_relation_map(payload: dict[str, Any]) -> dict[str, Any]:
         "limited_count": len(payload.get("limited_by") or []),
         "contradicted_count": len(payload.get("contradicted_by") or []),
         "not_tested_count": len(payload.get("not_tested_by") or []),
+        "object_relation_count": len(payload.get("object_relations") or []),
+        "key_object_relations": list(payload.get("key_object_relations") or [])[:5],
         "can_say": list(conclusion.get("can_say") or [])[:5],
         "cannot_say": list(conclusion.get("cannot_say") or [])[:5],
         "current_blockers": list(payload.get("current_blockers") or [])[:5],
@@ -267,6 +274,8 @@ def render_claim_relation_map_markdown(payload: dict[str, Any]) -> str:
         _entry_bullets(payload.get("not_tested_by") or []),
         "\n## Contradicted By\n\n",
         _entry_bullets(payload.get("contradicted_by") or []),
+        "\n## Key Object Relations\n\n",
+        _bullets(payload.get("key_object_relations") or []),
         "\n## Can Say\n\n",
         _bullets(conclusion.get("can_say") or []),
         "\n## Cannot Say\n\n",
@@ -333,6 +342,31 @@ def _claim_status_payload(record: ClaimStatusRecord) -> dict[str, Any]:
         "human_gate_required": bool(record.human_gate_required),
         "can_update_claim_trust": bool(record.can_update_claim_trust),
     }
+
+
+def _key_object_relation_summaries(object_relations: list[dict[str, Any]]) -> list[str]:
+    summaries: list[str] = []
+    for relation in object_relations:
+        relation_type = str(relation.get("relation_type") or "").strip()
+        statement = str(relation.get("statement") or "").strip()
+        subject_id = str(relation.get("subject_id") or "").strip()
+        object_id = str(relation.get("object_id") or "").strip()
+        status = str(relation.get("status") or "").strip()
+        failure_modes = [
+            str(item).strip()
+            for item in relation.get("failure_modes", [])
+            if str(item).strip()
+        ]
+        if statement:
+            summary = f"{relation_type}: {statement}" if relation_type else statement
+        else:
+            summary = f"{subject_id} --{relation_type or 'relates_to'}-> {object_id}"
+        if status:
+            summary = f"{summary} (status={status})"
+        if failure_modes:
+            summary = f"{summary}; failure modes: {', '.join(failure_modes[:3])}"
+        summaries.append(summary)
+    return _dedupe_clean(summaries)
 
 
 def _bucket_for_status(status: str, *, text: str) -> str:

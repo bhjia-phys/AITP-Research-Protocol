@@ -70,36 +70,49 @@ def audit_legacy_migration_coverage(
 def _resolve_migration_dir(ws: WorkspacePaths, migration_dir: str | Path | None) -> Path:
     if migration_dir:
         return _canonical_migration_dir(ws, Path(migration_dir))
-    candidates = [
-        path
-        for path in (ws.root / "migrations").glob("legacy-v5-lossless-*")
-        if path.is_dir() and (path / "migration_summary.json").exists()
-    ]
-    if not candidates:
+    latest = _latest_canonical_legacy_run(ws)
+    if latest is None:
         raise FileNotFoundError("no legacy-v5-lossless migration run found")
-    return max(candidates, key=lambda path: path.stat().st_mtime_ns)
+    return latest
 
 
 def _canonical_migration_dir(ws: WorkspacePaths, migration_dir: Path) -> Path:
     if migration_dir.is_absolute() and _same_path_or_missing(migration_dir.parent.parent, ws.root):
         return migration_dir
+    if migration_dir.is_absolute() and _looks_like_noncanonical_aitp_migration(migration_dir):
+        latest = _latest_canonical_legacy_run(ws)
+        if latest is not None:
+            return latest
+    if migration_dir.is_absolute() and migration_dir.exists():
+        latest = _latest_legacy_run_under(migration_dir)
+        if latest is not None:
+            return latest
     name = migration_dir.name
     if name:
         canonical = ws.root / "migrations" / name
-        if canonical.exists():
+        if _is_migration_run_dir(canonical):
             return canonical
+        latest = _latest_legacy_run_under(canonical)
+        if latest is not None:
+            return latest
         if not migration_dir.is_absolute() and len(migration_dir.parts) == 1 and name.startswith("legacy-v5-lossless-"):
             latest = _latest_canonical_legacy_run(ws)
             if latest is not None:
                 return latest
     if not migration_dir.is_absolute():
         under_root = ws.root / migration_dir
-        if under_root.exists():
+        if _is_migration_run_dir(under_root):
             return under_root
+        latest = _latest_legacy_run_under(under_root)
+        if latest is not None:
+            return latest
         if migration_dir.parts[:2] == (".aitp", "migrations") and name:
             canonical = ws.root / "migrations" / name
-            if canonical.exists():
+            if _is_migration_run_dir(canonical):
                 return canonical
+            latest = _latest_legacy_run_under(canonical)
+            if latest is not None:
+                return latest
             latest = _latest_canonical_legacy_run(ws)
             if latest is not None:
                 return latest
@@ -111,14 +124,26 @@ def _canonical_migration_dir(ws: WorkspacePaths, migration_dir: Path) -> Path:
 
 
 def _latest_canonical_legacy_run(ws: WorkspacePaths) -> Path | None:
+    return _latest_legacy_run_under(ws.root / "migrations")
+
+
+def _latest_legacy_run_under(root: Path) -> Path | None:
+    if not root.exists() or not root.is_dir():
+        return None
+    if _is_migration_run_dir(root):
+        return root
     candidates = [
         path
-        for path in (ws.root / "migrations").glob("legacy-v5-lossless-*")
-        if path.is_dir() and (path / "migration_summary.json").exists()
+        for path in root.glob("legacy-v5-lossless-*")
+        if _is_migration_run_dir(path)
     ]
     if not candidates:
         return None
     return max(candidates, key=lambda path: path.stat().st_mtime_ns)
+
+
+def _is_migration_run_dir(path: Path) -> bool:
+    return path.is_dir() and (path / "migration_summary.json").exists()
 
 
 def _looks_like_noncanonical_aitp_migration(path: Path) -> bool:

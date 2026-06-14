@@ -23,7 +23,17 @@ def validate_claim_relation_map(payload: dict[str, Any], *, path: str = "claim_r
         result.add(f"{path}.kind", "must be 'claim_relation_map'")
     for key in ("topic_id", "session_id"):
         _require_nonempty_str(payload, key, path, result)
-    for key in ("supported_by", "limited_by", "contradicted_by", "not_tested_by", "object_relations", "current_blockers", "next_valid_actions", "derived_from"):
+    for key in (
+        "supported_by",
+        "limited_by",
+        "contradicted_by",
+        "not_tested_by",
+        "object_relations",
+        "key_object_relations",
+        "current_blockers",
+        "next_valid_actions",
+        "derived_from",
+    ):
         _require_list(payload.get(key), f"{path}.{key}", result)
     _validate_conclusion(payload.get("current_conclusion"), f"{path}.current_conclusion", result)
     _validate_source_records(payload.get("source_records"), f"{path}.source_records", result)
