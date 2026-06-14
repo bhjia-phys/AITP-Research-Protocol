@@ -11,9 +11,11 @@ from dataclasses import asdict
 from typing import Any
 
 from brain.v5.evidence import list_evidence_for_claim
+from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
 from brain.v5.models import (
     ClaimStatusRecord,
     EvidenceRecord,
+    LegacySemanticReviewResultRecord,
     ObjectRelationRecord,
     ProofObligationRecord,
     ToolRunRecord,
@@ -141,6 +143,21 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
         for relation in raw_object_relations
     ]
     key_object_relations = _key_object_relation_summaries(object_relations)
+    legacy_reviews = _indexed_topic_records(registry_index, "legacy_semantic_reviews", session.topic_id)
+    if legacy_reviews is None:
+        legacy_reviews = _legacy_semantic_reviews_for_topic(ws, session.topic_id)
+    legacy_review = _latest_legacy_semantic_review(legacy_reviews)
+    legacy_migration_topics = _indexed_topic_records(registry_index, "legacy_migration_topics", session.topic_id)
+    if legacy_migration_topics is None:
+        legacy_migration_topics = _legacy_migration_topics_for_topic(ws, session.topic_id)
+    legacy_migration_topic = legacy_migration_topics[-1] if legacy_migration_topics else {}
+    legacy_context = _legacy_semantic_review_context(
+        legacy_review,
+        relation_claim_id=claim.claim_id,
+        topic_id=session.topic_id,
+        migration_active_claim_id=str(legacy_migration_topic.get("active_claim_id") or ""),
+        migration_run_id=str(legacy_migration_topic.get("migration_run_id") or ""),
+    )
 
     supported_by: list[dict[str, Any]] = []
     limited_by: list[dict[str, Any]] = []
@@ -193,10 +210,21 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
         if relation.get("failure_modes"):
             blockers.extend(str(item) for item in relation.get("failure_modes", []))
 
-    blockers = _dedupe_clean(blockers)
-    next_actions = _dedupe_clean(next_actions)
+    legacy_entry = _legacy_semantic_review_entry(legacy_context)
+    if legacy_entry:
+        limited_by.append(legacy_entry)
+    blockers = _dedupe_clean(_legacy_semantic_review_blockers(legacy_context) + blockers)
+    next_actions = _dedupe_clean(_legacy_semantic_review_next_actions(legacy_context) + next_actions)
     next_actions = _prioritized_next_actions(next_actions, not_tested_by, blockers)
     latest_status = _latest_claim_status(claim_statuses)
+    can_say = _dedupe_clean(
+        _legacy_semantic_review_can_say(legacy_context)
+        + _can_say(claim, supported_by, limited_by, not_tested_by, blockers)
+    )
+    cannot_say = _dedupe_clean(
+        _legacy_semantic_review_cannot_say(legacy_context)
+        + _cannot_say(supported_by, limited_by, contradicted_by, not_tested_by)
+    )
 
     payload = {
         "kind": "claim_relation_map",
@@ -216,9 +244,10 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
         "contradicted_by": contradicted_by,
         "not_tested_by": not_tested_by,
         "object_relations": object_relations,
+        "legacy_semantic_review": legacy_context,
         "current_conclusion": {
-            "can_say": _can_say(claim, supported_by, limited_by, not_tested_by, blockers),
-            "cannot_say": _cannot_say(supported_by, limited_by, contradicted_by, not_tested_by),
+            "can_say": can_say,
+            "cannot_say": cannot_say,
         },
         "current_blockers": blockers,
         "next_valid_actions": next_actions,
@@ -229,6 +258,12 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
             "claim_statuses": [record.status_id for record in claim_statuses],
             "proof_obligations": [record.obligation_id for record in proof_obligations],
             "object_relations": [str(record.get("relation_id") or "") for record in object_relations if record.get("relation_id")],
+            "legacy_semantic_reviews": [record.review_id for record in legacy_reviews],
+            "legacy_migration_topics": [
+                _legacy_migration_topic_ref(record)
+                for record in legacy_migration_topics
+                if _legacy_migration_topic_ref(record)
+            ],
         },
         "derived_from": [
             "claim_status_records",
@@ -236,6 +271,8 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
             "tool_run_records",
             "object_relation_records",
             "proof_obligation_records",
+            "legacy_semantic_review_records",
+            "legacy_migration_coverage_audit",
         ],
         "truth_source": False,
         "orientation_only": True,
@@ -256,6 +293,10 @@ def build_claim_relation_registry_index(ws) -> dict[str, dict[str, list[Any]]]:
         "claim_statuses": _group_by_claim(list_valid_records(ws.registry_dir("claim_statuses"), ClaimStatusRecord)),
         "proof_obligations": _group_by_claim(list_valid_records(ws.registry_dir("proof_obligations"), ProofObligationRecord)),
         "object_relations": _group_by_claim(list_valid_records(ws.registry_dir("object_relations"), ObjectRelationRecord)),
+        "legacy_semantic_reviews": _group_by_topic(
+            list_valid_records(ws.registry_dir("legacy_semantic_reviews"), LegacySemanticReviewResultRecord)
+        ),
+        "legacy_migration_topics": _legacy_migration_topics_by_topic(ws),
     }
 
 
@@ -298,6 +339,8 @@ def empty_claim_relation_map(
             "claim_statuses": [],
             "proof_obligations": [],
             "object_relations": [],
+            "legacy_semantic_reviews": [],
+            "legacy_migration_topics": [],
         },
         "derived_from": [],
         "truth_source": False,
@@ -320,6 +363,7 @@ def _session_binding_failure_reason(error: Exception) -> str:
 
 def compact_claim_relation_map(payload: dict[str, Any]) -> dict[str, Any]:
     conclusion = payload.get("current_conclusion") or {}
+    legacy = payload.get("legacy_semantic_review") if isinstance(payload.get("legacy_semantic_review"), dict) else {}
     return {
         "kind": "claim_relation_map_progress",
         "claim_id": str(payload.get("claim_id") or ""),
@@ -331,6 +375,8 @@ def compact_claim_relation_map(payload: dict[str, Any]) -> dict[str, Any]:
         "not_tested_count": len(payload.get("not_tested_by") or []),
         "object_relation_count": len(payload.get("object_relations") or []),
         "key_object_relations": list(payload.get("key_object_relations") or [])[:5],
+        "legacy_semantic_review_status": str(legacy.get("status") or ""),
+        "legacy_active_claim_divergence": bool(legacy.get("active_claim_divergence") is True),
         "can_say": list(conclusion.get("can_say") or [])[:5],
         "cannot_say": list(conclusion.get("cannot_say") or [])[:5],
         "current_blockers": list(payload.get("current_blockers") or [])[:5],
@@ -357,6 +403,8 @@ def render_claim_relation_map_markdown(payload: dict[str, Any]) -> str:
         _entry_bullets(payload.get("contradicted_by") or []),
         "\n## Key Object Relations\n\n",
         _bullets(payload.get("key_object_relations") or []),
+        "\n## Legacy Semantic Review\n\n",
+        _legacy_semantic_review_markdown(payload.get("legacy_semantic_review") or {}),
         "\n## Can Say\n\n",
         _bullets(conclusion.get("can_say") or []),
         "\n## Cannot Say\n\n",
@@ -386,6 +434,45 @@ def _claim_statuses_for_claim(ws, claim_id: str) -> list[ClaimStatusRecord]:
     ]
 
 
+def _legacy_semantic_reviews_for_topic(ws, topic_id: str) -> list[LegacySemanticReviewResultRecord]:
+    return [
+        record
+        for record in list_valid_records(ws.registry_dir("legacy_semantic_reviews"), LegacySemanticReviewResultRecord)
+        if record.topic == topic_id
+    ]
+
+
+def _legacy_migration_topics_for_topic(ws, topic_id: str) -> list[dict[str, Any]]:
+    return _legacy_migration_topics_by_topic(ws).get(topic_id, [])
+
+
+def _legacy_migration_topics_by_topic(ws) -> dict[str, list[dict[str, Any]]]:
+    try:
+        coverage = audit_legacy_migration_coverage(ws)
+    except (FileNotFoundError, OSError, TypeError, ValueError, json.JSONDecodeError):
+        return {}
+    run_id = str(coverage.get("run_id") or "")
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for item in coverage.get("topics", []):
+        if not isinstance(item, dict):
+            continue
+        topic = str(item.get("topic") or "")
+        if not topic:
+            continue
+        payload = dict(item)
+        payload["migration_run_id"] = run_id
+        grouped.setdefault(topic, []).append(payload)
+    return grouped
+
+
+def _legacy_migration_topic_ref(record: dict[str, Any]) -> str:
+    run_id = str(record.get("migration_run_id") or "")
+    topic = str(record.get("topic") or "")
+    if run_id and topic:
+        return f"{run_id}:{topic}"
+    return topic
+
+
 def _indexed_claim_records(
     registry_index: dict[str, dict[str, list[Any]]] | None,
     bucket: str,
@@ -394,6 +481,16 @@ def _indexed_claim_records(
     if registry_index is None:
         return None
     return list(registry_index.get(bucket, {}).get(claim_id, []))
+
+
+def _indexed_topic_records(
+    registry_index: dict[str, dict[str, list[Any]]] | None,
+    bucket: str,
+    topic_id: str,
+) -> list[Any] | None:
+    if registry_index is None:
+        return None
+    return list(registry_index.get(bucket, {}).get(topic_id, []))
 
 
 def _group_by_claim(records: list[Any]) -> dict[str, list[Any]]:
@@ -406,8 +503,30 @@ def _group_by_claim(records: list[Any]) -> dict[str, list[Any]]:
     return grouped
 
 
+def _group_by_topic(records: list[Any]) -> dict[str, list[Any]]:
+    grouped: dict[str, list[Any]] = {}
+    for record in records:
+        topic = str(getattr(record, "topic", "") or getattr(record, "topic_id", "") or "")
+        if not topic:
+            continue
+        grouped.setdefault(topic, []).append(record)
+    for values in grouped.values():
+        values.sort(key=_legacy_semantic_review_sort_key)
+    return grouped
+
+
 def _latest_claim_status(records: list[ClaimStatusRecord]) -> ClaimStatusRecord | None:
     return records[-1] if records else None
+
+
+def _latest_legacy_semantic_review(records: list[LegacySemanticReviewResultRecord]) -> LegacySemanticReviewResultRecord | None:
+    if not records:
+        return None
+    return sorted(records, key=_legacy_semantic_review_sort_key)[-1]
+
+
+def _legacy_semantic_review_sort_key(record: LegacySemanticReviewResultRecord) -> tuple[str, str]:
+    return (record.created_at or "", record.review_id)
 
 
 def _claim_status_payload(record: ClaimStatusRecord) -> dict[str, Any]:
@@ -423,6 +542,192 @@ def _claim_status_payload(record: ClaimStatusRecord) -> dict[str, Any]:
         "human_gate_required": bool(record.human_gate_required),
         "can_update_claim_trust": bool(record.can_update_claim_trust),
     }
+
+
+def _legacy_semantic_review_context(
+    record: LegacySemanticReviewResultRecord | None,
+    *,
+    relation_claim_id: str,
+    topic_id: str,
+    migration_active_claim_id: str = "",
+    migration_run_id: str = "",
+) -> dict[str, Any]:
+    if record is None:
+        migration_divergence = bool(
+            migration_active_claim_id and relation_claim_id and migration_active_claim_id != relation_claim_id
+        )
+        return {
+            "kind": "legacy_semantic_review_context",
+            "present": bool(migration_active_claim_id),
+            "has_review_record": False,
+            "status": "pending" if migration_active_claim_id else "",
+            "review_id": "",
+            "migration_run_id": migration_run_id,
+            "topic_id": topic_id,
+            "active_claim_id": "",
+            "migration_active_claim_id": migration_active_claim_id,
+            "relation_claim_id": relation_claim_id,
+            "review_active_claim_divergence": False,
+            "migration_active_claim_divergence": migration_divergence,
+            "active_claim_divergence": migration_divergence,
+            "remaining_actions": [],
+            "summary_excerpt": "",
+            "truth_source": "legacy_semantic_review_records",
+            "orientation_only": True,
+            "summary_inputs_trusted": False,
+            "can_update_claim_trust": False,
+        }
+    active_claim_id = str(record.active_claim_id or "")
+    review_divergence = bool(active_claim_id and relation_claim_id and active_claim_id != relation_claim_id)
+    migration_divergence = bool(
+        migration_active_claim_id and relation_claim_id and migration_active_claim_id != relation_claim_id
+    )
+    return {
+        "kind": "legacy_semantic_review_context",
+        "present": True,
+        "has_review_record": True,
+        "status": record.status,
+        "review_id": record.review_id,
+        "migration_run_id": record.migration_run_id,
+        "topic_id": topic_id,
+        "active_claim_id": active_claim_id,
+        "migration_active_claim_id": migration_active_claim_id,
+        "relation_claim_id": relation_claim_id,
+        "review_active_claim_divergence": review_divergence,
+        "migration_active_claim_divergence": migration_divergence,
+        "active_claim_divergence": review_divergence or migration_divergence,
+        "remaining_actions": list(record.remaining_actions),
+        "summary_excerpt": _excerpt(record.summary, limit=360),
+        "truth_source": "legacy_semantic_review_records",
+        "orientation_only": True,
+        "summary_inputs_trusted": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def _legacy_semantic_review_entry(context: dict[str, Any]) -> dict[str, Any] | None:
+    if not context.get("present"):
+        return None
+    status = str(context.get("status") or "")
+    divergence = bool(context.get("active_claim_divergence") is True)
+    if status == "passed" and not divergence:
+        return None
+    return {
+        "record_kind": "legacy_semantic_review",
+        "record_id": str(context.get("review_id") or _legacy_semantic_review_context_ref(context)),
+        "relation_to_claim": "limits_migration_recovery_trust",
+        "status": status or "pending",
+        "summary": _legacy_semantic_review_limit_summary(context),
+        "reason": "legacy semantic review is a migration recovery boundary, not claim-trust evidence",
+        "source_refs": _legacy_semantic_review_source_refs(context),
+        "evidence_refs": [],
+        "tool_run_ids": [],
+        "artifact_ids": [],
+    }
+
+
+def _legacy_semantic_review_limit_summary(context: dict[str, Any]) -> str:
+    status = str(context.get("status") or "pending")
+    summary = f"Latest legacy semantic review status is {status}."
+    if context.get("active_claim_divergence"):
+        summary += (
+            " Its reviewed or migration active claim differs from the relation-map claim, so recovery must not "
+            "treat the migration as semantically settled."
+        )
+    if not context.get("has_review_record") and context.get("migration_active_claim_id"):
+        summary += " No legacy semantic review result has been recorded for the latest migration coverage item."
+    if context.get("summary_excerpt"):
+        summary += f" Summary: {context['summary_excerpt']}"
+    return summary
+
+
+def _legacy_semantic_review_blockers(context: dict[str, Any]) -> list[str]:
+    if not context.get("present"):
+        return []
+    blockers: list[str] = []
+    if context.get("active_claim_divergence"):
+        blockers.append("active_claim_divergence_requires_semantic_review")
+    status = str(context.get("status") or "")
+    if status == "pending":
+        blockers.append("legacy_semantic_review_pending")
+    if status in {"needs_revision", "inconclusive"}:
+        blockers.append(f"legacy_semantic_review_{status}")
+    for action in context.get("remaining_actions") or []:
+        lower = str(action).lower()
+        if "source_reconstruction" in lower or "source reconstruction" in lower:
+            blockers.append("source_reconstruction_incomplete_for_semantic_lossless_migration")
+        if "active_claim_divergence" in lower or "active claim divergence" in lower:
+            blockers.append("active_claim_divergence_requires_semantic_review")
+    return blockers
+
+
+def _legacy_semantic_review_next_actions(context: dict[str, Any]) -> list[str]:
+    if not context.get("present"):
+        return []
+    actions: list[str] = []
+    if context.get("active_claim_divergence"):
+        actions.append("resolve active-claim divergence before using legacy review for session recovery trust")
+    for action in context.get("remaining_actions") or []:
+        actions.append(str(action))
+    status = str(context.get("status") or "")
+    if status == "pending":
+        actions.append("record legacy semantic review result before treating migration as semantically lossless")
+    if status in {"needs_revision", "inconclusive"}:
+        actions.append("complete legacy semantic review before treating migration as semantically lossless")
+    return actions
+
+
+def _legacy_semantic_review_can_say(context: dict[str, Any]) -> list[str]:
+    if not context.get("present"):
+        return []
+    status = str(context.get("status") or "pending")
+    statements = [f"latest legacy semantic review status is {status}"]
+    if context.get("active_claim_divergence"):
+        statements.append("legacy semantic review or migration active claim diverges from the recovered relation-map claim")
+    return statements
+
+
+def _legacy_semantic_review_cannot_say(context: dict[str, Any]) -> list[str]:
+    if not context.get("present"):
+        return []
+    statements: list[str] = []
+    status = str(context.get("status") or "")
+    if status != "passed":
+        statements.append("cannot treat the legacy migration as semantically lossless until the legacy semantic review passes")
+    if context.get("active_claim_divergence"):
+        statements.append("cannot use divergent legacy semantic review or migration active-claim state as session-recovery trust for this claim")
+    return statements
+
+
+def _legacy_semantic_review_markdown(payload: dict[str, Any]) -> str:
+    if not isinstance(payload, dict) or not payload.get("present"):
+        return "- None\n"
+    lines = [
+        f"- Review: `{payload.get('review_id', '') or '(pending)'}` status={payload.get('status', '')}\n",
+        f"- Active claim divergence: `{bool(payload.get('active_claim_divergence') is True)}`\n",
+    ]
+    if payload.get("summary_excerpt"):
+        lines.append(f"- Summary: {payload.get('summary_excerpt')}\n")
+    if payload.get("remaining_actions"):
+        lines.append("- Remaining actions:\n")
+        for action in payload.get("remaining_actions") or []:
+            lines.append(f"  - {action}\n")
+    return "".join(lines)
+
+
+def _legacy_semantic_review_context_ref(context: dict[str, Any]) -> str:
+    run_id = str(context.get("migration_run_id") or "")
+    topic = str(context.get("topic_id") or "")
+    if run_id and topic:
+        return f"legacy-migration-coverage:{run_id}:{topic}"
+    return f"legacy-semantic-review:{topic or 'pending'}"
+
+
+def _legacy_semantic_review_source_refs(context: dict[str, Any]) -> list[str]:
+    if context.get("review_id"):
+        return [f"legacy_semantic_review:{context.get('review_id')}"]
+    ref = _legacy_semantic_review_context_ref(context)
+    return [ref] if ref else []
 
 
 def _key_object_relation_summaries(object_relations: list[dict[str, Any]]) -> list[str]:

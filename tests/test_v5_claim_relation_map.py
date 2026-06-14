@@ -399,6 +399,209 @@ def test_claim_relation_map_surfaces_key_physics_object_relations(tmp_path):
     assert "no validated GW+DMFT-to-generalized-symmetry extraction workflow" in relation_map["current_blockers"]
 
 
+def test_claim_relation_map_surfaces_legacy_semantic_review_active_claim_divergence(tmp_path):
+    from brain.v5.claim_relation_map import (
+        build_claim_relation_map,
+        compact_claim_relation_map,
+        render_claim_relation_map_markdown,
+    )
+    from brain.v5.models import LegacySemanticReviewResultRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    create_topic(
+        ws,
+        "generalized-symmetries-first-principles",
+        context_id="formal-theory",
+        title="Generalized symmetries from first-principles methods",
+    )
+    current_claim = create_claim(
+        ws,
+        topic_id="generalized-symmetries-first-principles",
+        statement="Current recovered claim from topic_state.",
+        evidence_profile="formal_theory",
+        confidence_state="legacy_seed",
+        active_uncertainty="Legacy migration review has not settled the active claim boundary.",
+    )
+    migration_review_claim = create_claim(
+        ws,
+        topic_id="generalized-symmetries-first-principles",
+        statement="Older claim selected by a legacy migration review.",
+        evidence_profile="formal_theory",
+        confidence_state="legacy_seed",
+        active_uncertainty="This claim should not be used as the recovered active claim.",
+    )
+    review = LegacySemanticReviewResultRecord(
+        review_id="legacy-semantic-review-generalized-divergent-claim",
+        migration_run_id="legacy-v5-lossless-accounting",
+        migration_dir=str(tmp_path / "migration"),
+        topic="generalized-symmetries-first-principles",
+        status="needs_revision",
+        summary="Review found active claim divergence and incomplete source reconstruction.",
+        active_claim_id=migration_review_claim.claim_id,
+        reviewed_legacy_refs=["legacy_l0:source_registry.md"],
+        reviewed_typed_refs=[f"claim:{current_claim.claim_id}", f"claim:{migration_review_claim.claim_id}"],
+        remaining_actions=[
+            "resolve_active_claim_divergence_before_session_recovery_trust",
+            "complete_source_reconstruction",
+        ],
+        created_at="2026-06-14T00:00:00+00:00",
+    )
+    write_record(
+        ws.registry_dir("legacy_semantic_reviews") / f"{review.review_id}.md",
+        review,
+        body="# Legacy Semantic Review\n",
+    )
+    bind_session(
+        ws,
+        "generalized-recovery",
+        topic_id="generalized-symmetries-first-principles",
+        context_id="formal-theory",
+        active_claim=current_claim.claim_id,
+    )
+
+    relation_map = build_claim_relation_map(ws, "generalized-recovery")
+    compact = compact_claim_relation_map(relation_map)
+    markdown = render_claim_relation_map_markdown(relation_map)
+
+    assert require_valid_public_surface("claim_relation_map", relation_map) == relation_map
+    assert relation_map["claim_id"] == current_claim.claim_id
+    assert relation_map["legacy_semantic_review"]["review_id"] == review.review_id
+    assert relation_map["legacy_semantic_review"]["active_claim_divergence"] is True
+    assert relation_map["source_records"]["legacy_semantic_reviews"] == [review.review_id]
+    assert "legacy_semantic_review_records" in relation_map["derived_from"]
+    assert relation_map["current_blockers"][0] == "active_claim_divergence_requires_semantic_review"
+    assert "legacy_semantic_review_needs_revision" in relation_map["current_blockers"]
+    assert any(entry["record_kind"] == "legacy_semantic_review" for entry in relation_map["limited_by"])
+    assert any("divergent legacy semantic review or migration" in item for item in relation_map["current_conclusion"]["cannot_say"])
+    assert relation_map["next_valid_actions"][0] == (
+        "resolve active-claim divergence before using legacy review for session recovery trust"
+    )
+    assert compact["legacy_active_claim_divergence"] is True
+    assert compact["legacy_semantic_review_status"] == "needs_revision"
+    assert "Legacy Semantic Review" in markdown
+    assert "Active claim divergence: `True`" in markdown
+
+
+def test_claim_relation_map_surfaces_pending_migration_active_claim_divergence(tmp_path):
+    from brain.v5.claim_relation_map import build_claim_relation_map, compact_claim_relation_map
+    from brain.v5.models import LegacySemanticReviewResultRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.store import write_record
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    topic = "gw-dmft"
+    create_topic(ws, topic, context_id="formal-theory", title="GW+DMFT")
+    current_claim = create_claim(
+        ws,
+        topic_id=topic,
+        statement="Runtime topic-state claim.",
+        evidence_profile="formal_theory",
+        confidence_state="hypothesis",
+        active_uncertainty="Migration review is pending.",
+    )
+    migration_claim = create_claim(
+        ws,
+        topic_id=topic,
+        statement="Migration coverage selected a different legacy claim.",
+        evidence_profile="formal_theory",
+        confidence_state="legacy_seed",
+        active_uncertainty="This claim still needs semantic review.",
+    )
+    run = ws.root / "migrations" / "legacy-v5-lossless-test"
+    run.mkdir(parents=True)
+    (run / "migration_summary.json").write_text(json.dumps({
+        "run_id": "legacy-v5-lossless-test",
+        "workspace": str(ws.base),
+        "legacy_root": str(ws.base / "research" / "aitp-topics"),
+        "v5_root": str(ws.root),
+        "totals": {
+            "topic_count": 1,
+            "legacy_file_count": 1,
+            "post_legacy_file_count": 1,
+            "legacy_manifest_hash_stable": True,
+            "legacy_manifest_change_count": 0,
+            "archive_reference_count": 0,
+        },
+        "topics": [{
+            "topic": topic,
+            "status": "ok",
+            "file_count": 1,
+            "accounted_file_count": 1,
+            "structured_file_count": 1,
+            "archive_reference_count": 0,
+            "missing_expected_paths": [],
+            "can_write_v5_records": True,
+            "active_claim_id": migration_claim.claim_id,
+            "written_records": {"claims": 1},
+            "preserved_source_refs": 0,
+        }],
+    }), encoding="utf-8")
+    (run / "verification_report.json").write_text(json.dumps({
+        "run_id": "legacy-v5-lossless-test",
+        "file_accounting_ok": True,
+        "manifest_check": {"pre_count": 1, "post_count": 1, "missing": 0, "extra": 0, "changed": 0},
+        "archive_reference_check": {
+            "archive_records_checked": 0,
+            "archive_records_expected": 0,
+            "registry_archive_reference_count": 0,
+            "problem_count": 0,
+        },
+        "markdown_readability_check": {"markdown_files_checked": 1, "problem_count": 0},
+    }), encoding="utf-8")
+    bind_session(ws, "gw-dmft-recovery", topic_id=topic, context_id="formal-theory", active_claim=current_claim.claim_id)
+
+    relation_map = build_claim_relation_map(ws, "gw-dmft-recovery")
+    compact = compact_claim_relation_map(relation_map)
+
+    assert require_valid_public_surface("claim_relation_map", relation_map) == relation_map
+    assert relation_map["claim_id"] == current_claim.claim_id
+    assert relation_map["legacy_semantic_review"]["status"] == "pending"
+    assert relation_map["legacy_semantic_review"]["has_review_record"] is False
+    assert relation_map["legacy_semantic_review"]["migration_active_claim_id"] == migration_claim.claim_id
+    assert relation_map["legacy_semantic_review"]["review_active_claim_divergence"] is False
+    assert relation_map["legacy_semantic_review"]["migration_active_claim_divergence"] is True
+    assert relation_map["legacy_semantic_review"]["active_claim_divergence"] is True
+    assert relation_map["source_records"]["legacy_migration_topics"] == [f"legacy-v5-lossless-test:{topic}"]
+    assert relation_map["current_blockers"][:2] == [
+        "active_claim_divergence_requires_semantic_review",
+        "legacy_semantic_review_pending",
+    ]
+    assert any("record legacy semantic review result" in action for action in relation_map["next_valid_actions"])
+    assert compact["legacy_semantic_review_status"] == "pending"
+    assert compact["legacy_active_claim_divergence"] is True
+
+    review = LegacySemanticReviewResultRecord(
+        review_id="legacy-semantic-review-gw-dmft-runtime-claim-needs-revision",
+        migration_run_id="legacy-v5-lossless-test",
+        migration_dir=str(run),
+        topic=topic,
+        status="needs_revision",
+        summary="Review used the runtime claim, but migration coverage still points at another claim.",
+        active_claim_id=current_claim.claim_id,
+        reviewed_typed_refs=[f"claim:{current_claim.claim_id}"],
+        remaining_actions=["resolve_active_claim_divergence_before_session_recovery_trust"],
+        created_at="2026-06-14T00:00:00+00:00",
+    )
+    write_record(
+        ws.registry_dir("legacy_semantic_reviews") / f"{review.review_id}.md",
+        review,
+        body="# Legacy Semantic Review\n",
+    )
+
+    relation_map = build_claim_relation_map(ws, "gw-dmft-recovery")
+
+    assert relation_map["legacy_semantic_review"]["status"] == "needs_revision"
+    assert relation_map["legacy_semantic_review"]["has_review_record"] is True
+    assert relation_map["legacy_semantic_review"]["review_active_claim_divergence"] is False
+    assert relation_map["legacy_semantic_review"]["migration_active_claim_divergence"] is True
+    assert relation_map["legacy_semantic_review"]["active_claim_divergence"] is True
+    assert relation_map["current_blockers"][0] == "active_claim_divergence_requires_semantic_review"
+
+
 def test_claim_relation_map_is_forced_into_brief_topic_status_cli_and_mcp(tmp_path, capsys):
     from brain.v5.cli import main
     from brain.v5.mcp_tools import aitp_v5_get_claim_relation_map, aitp_v5_get_execution_brief
