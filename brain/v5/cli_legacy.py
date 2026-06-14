@@ -502,8 +502,8 @@ def _merge_inline_and_file_values(inline_values: list[str], file_paths: list[str
 
 def _read_value_file(path: str) -> list[str]:
     target = Path(path)
-    text = target.read_text(encoding="utf-8")
-    stripped = text.strip()
+    text = target.read_text(encoding="utf-8-sig")
+    stripped = text.strip().lstrip("\ufeff")
     if not stripped:
         return []
     if stripped.startswith("["):
@@ -511,4 +511,4 @@ def _read_value_file(path: str) -> list[str]:
         if not isinstance(payload, list) or not all(isinstance(value, str) for value in payload):
             raise ValueError(f"value file must contain a JSON string array: {path}")
         return payload
-    return [line.strip() for line in text.splitlines() if line.strip()]
+    return [line.strip().lstrip("\ufeff") for line in text.splitlines() if line.strip()]

@@ -4201,12 +4201,12 @@ def test_legacy_semantic_review_result_cli_mcp_and_runtime_surface(tmp_path, cap
             "legacy-topic:legacy-l2/state.md",
             "legacy-topic:legacy-l2/L0/source.md",
         ]),
-        encoding="utf-8",
+        encoding="utf-8-sig",
     )
     remaining_action_file = tmp_path / "remaining_actions.txt"
     remaining_action_file.write_text(
         "complete_source_reconstruction\nsample_archive_reference_readback\n",
-        encoding="utf-8",
+        encoding="utf-8-sig",
     )
 
     assert main([
