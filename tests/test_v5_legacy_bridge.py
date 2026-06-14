@@ -2289,6 +2289,49 @@ def test_legacy_semantic_review_worklist_exposes_pass_readiness_blockers(tmp_pat
     assert require_valid_public_surface("legacy_semantic_review_worklist", worklist) == worklist
 
 
+def test_legacy_semantic_review_result_rejects_unknown_strict_typed_refs(tmp_path):
+    import pytest
+
+    from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
+    from brain.v5.models import ClaimRecord
+    from brain.v5.store import write_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "v5")
+    run = _write_migration_run(ws)
+    write_record(
+        ws.registry_dir("claims") / "claim-canonical.md",
+        ClaimRecord(
+            claim_id="claim-canonical",
+            topic_id="canonical-topic",
+            statement="Migrated canonical claim.",
+            evidence_profile="legacy_import",
+            confidence_state="legacy_seed",
+            active_uncertainty="Semantic review still requires typed basis checks.",
+        ),
+    )
+    record_legacy_semantic_review_result(
+        ws,
+        migration_dir=run,
+        topic="canonical-topic",
+        status="inconclusive",
+        summary="A valid prefixed claim ref remains accepted.",
+        active_claim_id="claim-canonical",
+        reviewed_typed_refs=["claim:claim-canonical"],
+    )
+
+    with pytest.raises(ValueError, match="unknown typed ref"):
+        record_legacy_semantic_review_result(
+            ws,
+            migration_dir=run,
+            topic="canonical-topic",
+            status="needs_revision",
+            summary="A truncated object relation ref must not enter the review graph.",
+            active_claim_id="claim-canonical",
+            reviewed_typed_refs=["object-relation:object-relation-canonical-truncated"],
+        )
+
+
 def test_legacy_semantic_review_worklist_classifies_source_metadata_repair(tmp_path):
     from brain.v5.legacy_semantic_review import record_legacy_semantic_review_result
     from brain.v5.legacy_semantic_review_worklist import build_legacy_semantic_review_worklist

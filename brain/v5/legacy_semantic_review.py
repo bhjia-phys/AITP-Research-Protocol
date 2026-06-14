@@ -162,7 +162,13 @@ def record_legacy_semantic_review_result(
         raise ValueError("legacy semantic review summary must not be empty")
     if not any([legacy_refs, typed_refs, evidence, validations]):
         raise ValueError("legacy semantic review basis must cite legacy refs, typed refs, evidence, or validation results")
-    _validate_basis_refs(ws, claim_id=claim_id, evidence_refs=evidence, validation_result_ids=validations)
+    _validate_basis_refs(
+        ws,
+        claim_id=claim_id,
+        reviewed_typed_refs=typed_refs,
+        evidence_refs=evidence,
+        validation_result_ids=validations,
+    )
     if checkpoint_id:
         _require_semantic_review_checkpoint(ws, checkpoint_id, claim_id=claim_id, topic=str(topic_payload["topic"]))
     review_id = prefixed_id(
@@ -253,11 +259,13 @@ def _validate_basis_refs(
     ws: WorkspacePaths,
     *,
     claim_id: str,
+    reviewed_typed_refs: list[str],
     evidence_refs: list[str],
     validation_result_ids: list[str],
 ) -> None:
     if not claim_id and (evidence_refs or validation_result_ids):
         raise ValueError("typed evidence/validation review refs require active_claim_id")
+    _validate_reviewed_typed_refs(ws, reviewed_typed_refs)
     if evidence_refs:
         _require_same_claim_refs(
             "evidence ref",
@@ -274,6 +282,33 @@ def _validate_basis_refs(
             "result_id",
             claim_id,
         )
+
+
+_STRICT_TYPED_REF_REGISTRIES = {
+    "claim": "claims",
+    "evidence": "evidence",
+    "legacy-semantic-review": "legacy_semantic_reviews",
+    "object-relation": "object_relations",
+    "physics-object": "physics_objects",
+    "reference-location": "reference_locations",
+    "source-reconstruction-review": "source_reconstruction_reviews",
+    "tool-run": "tool_runs",
+}
+
+
+def _validate_reviewed_typed_refs(ws: WorkspacePaths, refs: list[str]) -> None:
+    for ref in refs:
+        kind, sep, record_id = ref.partition(":")
+        if not sep:
+            continue
+        registry = _STRICT_TYPED_REF_REGISTRIES.get(kind)
+        if registry is None:
+            continue
+        if not record_id:
+            raise ValueError(f"typed ref must include an id: {ref}")
+        path = ws.registry_dir(registry) / f"{record_id}.md"
+        if not path.exists():
+            raise ValueError(f"unknown typed ref: {ref}")
 
 
 def _require_same_claim_refs(
