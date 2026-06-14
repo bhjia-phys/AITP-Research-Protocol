@@ -3,6 +3,7 @@ from pathlib import Path
 
 from brain.v5.claim_relation_map import build_claim_relation_map
 from brain.v5.cli import main
+from brain.v5.markdown import write_md
 from brain.v5.models import ClaimRecord, SessionBinding, TopicRecord
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.store import write_record
@@ -113,6 +114,49 @@ def test_workspace_old_store_import_apply_preserves_conflicts(tmp_path):
     assert canonical_claim_path.read_text(encoding="utf-8") == original_text
     assert (ws.root / "topics" / topic.topic_id / "topic.md").exists()
     assert (ws.root / "runtime" / "sessions" / f"{session.session_id}.md").exists()
+
+
+def test_workspace_old_store_import_blocks_root_l2_memory_auto_import(tmp_path):
+    ws, workspace_root, topic, _claim, _session = _workspace_with_root_old_store(tmp_path)
+    legacy_l2_path = (
+        workspace_root
+        / ".aitp"
+        / "memory"
+        / "l2"
+        / "entries"
+        / f"memory-legacy-l2-{topic.topic_id}-l2-entries-claim-shared.md"
+    )
+    write_md(
+        legacy_l2_path,
+        {
+            "kind": "memory_entry",
+            "topic_id": topic.topic_id,
+            "entry_id": "memory-entry-shared",
+        },
+        "# Shared legacy L2 memory\n",
+    )
+
+    plan = build_workspace_old_store_import_plan(
+        ws,
+        workspace_root=workspace_root,
+        topics=[topic.topic_id],
+    )
+
+    l2_actions = [action for action in plan["actions"] if action["source_category"] == "memory_entry"]
+    assert len(l2_actions) == 1
+    assert l2_actions[0]["status"] == "requires_semantic_l2_reassignment"
+    assert l2_actions[0]["importable"] is False
+    assert l2_actions[0]["requires_semantic_l2_reassignment"] is True
+    assert plan["summary"]["would_import_count"] == 3
+    assert plan["summary"]["importable_count"] == 3
+    assert plan["summary"]["requires_semantic_l2_reassignment_count"] == 1
+    assert require_valid_public_surface("workspace_old_store_import_result", plan) == plan
+
+    applied = apply_workspace_old_store_import_plan(plan)
+
+    assert applied["summary"]["imported_count"] == 3
+    assert applied["summary"]["requires_semantic_l2_reassignment_count"] == 1
+    assert not (ws.root / "memory" / "l2" / "entries" / legacy_l2_path.name).exists()
 
 
 def test_workspace_old_store_import_cli_writes_manifest(tmp_path, capsys):

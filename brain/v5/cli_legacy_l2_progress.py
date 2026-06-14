@@ -105,7 +105,44 @@ def compact_legacy_l2_obsidian_view_bundle(payload: dict[str, Any]) -> dict[str,
     }
 
 
+def compact_canonical_legacy_l2_seed_audit(payload: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "kind": "canonical_legacy_l2_seed_audit_progress",
+        "source_surface": "canonical_legacy_l2_seed_audit",
+        "canonical_store": str(payload.get("canonical_store") or ""),
+        "total_memory_file_count": int(payload.get("total_memory_file_count") or 0),
+        "legacy_seed_count": int(payload.get("legacy_seed_count") or 0),
+        "active_legacy_seed_count": int(payload.get("active_legacy_seed_count") or 0),
+        "legacy_seed_topic_count": int(payload.get("legacy_seed_topic_count") or 0),
+        "quarantine_status": str(payload.get("quarantine_status") or ""),
+        "status_counts": dict(payload.get("status_counts") or {}),
+        "top_topics": _top_mapping_keys(payload.get("topic_counts")),
+        "memory_kind_counts": dict(payload.get("memory_kind_counts") or {}),
+        "next_action_count": len(payload.get("next_actions") or []),
+        "next_action_refs": _limited_strings(payload.get("next_actions")),
+        "truth_source": str(payload.get("truth_source") or ""),
+        "summary_inputs_trusted": bool(payload.get("summary_inputs_trusted", False)),
+        "orientation_only": bool(payload.get("orientation_only", True)),
+        "can_update_kernel_state": bool(payload.get("can_update_kernel_state", False)),
+        "can_update_claim_trust": bool(payload.get("can_update_claim_trust", False)),
+    }
+
+
 def _limited_strings(value: Any, *, limit: int = 5) -> list[str]:
     if not isinstance(value, list):
         return []
     return [str(item) for item in value[:limit] if str(item)]
+
+
+def _top_mapping_keys(value: Any, *, limit: int = 10) -> list[str]:
+    if not isinstance(value, dict):
+        return []
+    return [
+        str(key)
+        for key, _count in sorted(
+            value.items(),
+            key=lambda item: (-int(item[1] or 0), str(item[0])),
+        )[:limit]
+        if str(key)
+    ]

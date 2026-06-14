@@ -13,6 +13,7 @@ _STATUSES = {
     "archive_only",
     "conflict_existing_different_hash",
     "imported",
+    "requires_semantic_l2_reassignment",
     "would_import",
 }
 
@@ -42,6 +43,7 @@ def validate_workspace_old_store_import_result(
         "already_present_count",
         "conflict_count",
         "archive_only_count",
+        "requires_semantic_l2_reassignment_count",
         "selected_topic_count",
     ):
         if not isinstance(summary.get(key), int) or summary.get(key) < 0:

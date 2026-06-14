@@ -363,6 +363,8 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["--legacy-l2-dir", "D:/aitp/research/aitp-topics/L2"]
     if template.startswith("legacy l2-typed-migration-packet"):
         return ["--legacy-l2-dir", "D:/aitp/research/aitp-topics/L2"]
+    if template.startswith("legacy l2-seed-audit"):
+        return ["--sample-limit", "5"]
     if template.startswith("legacy l2-obsidian-view"):
         return ["--legacy-l2-dir", "D:/aitp/research/aitp-topics/L2"]
     if template.startswith("legacy runtime-log-marker-audit"):

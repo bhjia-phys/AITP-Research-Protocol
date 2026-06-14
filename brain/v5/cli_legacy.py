@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from brain.v5.legacy_l2_graph import build_legacy_l2_graph_manifest, build_legacy_l2_typed_migration_packet
+from brain.v5.legacy_l2_seed_audit import audit_canonical_legacy_l2_seeds
 from brain.v5.legacy_l2_obsidian import write_legacy_l2_obsidian_view
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
 from brain.v5.curated_legacy_migration import known_curated_legacy_topics, migrate_curated_legacy_topic_to_v5
@@ -51,6 +52,7 @@ from brain.v5.cli_legacy_l2_progress import (
     compact_legacy_l2_graph_manifest,
     compact_legacy_l2_obsidian_view_bundle,
     compact_legacy_l2_typed_migration_packet,
+    compact_canonical_legacy_l2_seed_audit,
 )
 from brain.v5.cli_legacy_repair_progress import (
     compact_legacy_semantic_needs_revision_basis_packet,
@@ -92,6 +94,9 @@ def add_legacy_parser(subparsers) -> None:
     l2_typed = legacy_subparsers.add_parser("l2-typed-migration-packet")
     l2_typed.add_argument("--legacy-l2-dir", default="")
     l2_typed.add_argument("--compact", "--progress", action="store_true", dest="compact")
+    l2_seed_audit = legacy_subparsers.add_parser("l2-seed-audit")
+    l2_seed_audit.add_argument("--sample-limit", type=int, default=50)
+    l2_seed_audit.add_argument("--compact", "--progress", action="store_true", dest="compact")
     l2_obsidian = legacy_subparsers.add_parser("l2-obsidian-view")
     l2_obsidian.add_argument("--legacy-l2-dir", default="")
     l2_obsidian.add_argument("--output-dir", default="")
@@ -258,6 +263,12 @@ def dispatch_legacy_command(args, ws) -> dict:
         payload = {"ok": True, **require_valid_public_surface("legacy_l2_typed_migration_packet", packet)}
         if getattr(args, "compact", False):
             return compact_legacy_l2_typed_migration_packet(payload)
+        return payload
+    if args.legacy_command == "l2-seed-audit":
+        audit = audit_canonical_legacy_l2_seeds(ws, sample_limit=args.sample_limit)
+        payload = {"ok": True, **require_valid_public_surface("canonical_legacy_l2_seed_audit", audit)}
+        if getattr(args, "compact", False):
+            return compact_canonical_legacy_l2_seed_audit(payload)
         return payload
     if args.legacy_command == "l2-obsidian-view":
         bundle = write_legacy_l2_obsidian_view(

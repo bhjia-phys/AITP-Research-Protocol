@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from brain.v5.legacy_l2_graph import build_legacy_l2_graph_manifest, build_legacy_l2_typed_migration_packet
+from brain.v5.legacy_l2_seed_audit import audit_canonical_legacy_l2_seeds
 from brain.v5.legacy_l2_obsidian import write_legacy_l2_obsidian_view
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
 from brain.v5.curated_legacy_migration import known_curated_legacy_topics, migrate_curated_legacy_topic_to_v5
@@ -113,6 +114,11 @@ def aitp_v5_build_legacy_l2_graph_manifest(base: str, *, legacy_l2_dir: str = ""
 def aitp_v5_build_legacy_l2_typed_migration_packet(base: str, *, legacy_l2_dir: str = "") -> dict:
     result = build_legacy_l2_typed_migration_packet(_ws(base), legacy_l2_dir=legacy_l2_dir)
     return {"ok": True, **require_valid_public_surface("legacy_l2_typed_migration_packet", result)}
+
+
+def aitp_v5_audit_canonical_legacy_l2_seeds(base: str, *, sample_limit: int = 50) -> dict:
+    result = audit_canonical_legacy_l2_seeds(_ws(base), sample_limit=sample_limit)
+    return {"ok": True, **require_valid_public_surface("canonical_legacy_l2_seed_audit", result)}
 
 
 def aitp_v5_write_legacy_l2_obsidian_view(

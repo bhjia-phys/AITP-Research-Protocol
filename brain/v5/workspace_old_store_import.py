@@ -65,6 +65,7 @@ def build_workspace_old_store_import_plan(
             "already_present_count": status_counts.get("already_present_same_hash", 0),
             "conflict_count": status_counts.get("conflict_existing_different_hash", 0),
             "archive_only_count": status_counts.get("archive_only", 0),
+            "requires_semantic_l2_reassignment_count": status_counts.get("requires_semantic_l2_reassignment", 0),
             "status_counts": dict(sorted(status_counts.items())),
             "selected_topic_count": len(selected_topics),
             "safe_to_apply": status_counts.get("conflict_existing_different_hash", 0) == 0,
@@ -110,6 +111,7 @@ def apply_workspace_old_store_import_plan(payload: dict[str, Any]) -> dict[str, 
             "already_present_count": status_counts.get("already_present_same_hash", 0),
             "conflict_count": status_counts.get("conflict_existing_different_hash", 0),
             "archive_only_count": status_counts.get("archive_only", 0),
+            "requires_semantic_l2_reassignment_count": status_counts.get("requires_semantic_l2_reassignment", 0),
             "status_counts": dict(sorted(status_counts.items())),
             "safe_to_apply": status_counts.get("conflict_existing_different_hash", 0) == 0,
         },
@@ -132,6 +134,7 @@ def render_workspace_old_store_import_markdown(payload: dict[str, Any], *, max_r
         f"- Imported: `{summary.get('imported_count', 0)}`",
         f"- Would import: `{summary.get('would_import_count', 0)}`",
         f"- Conflicts: `{summary.get('conflict_count', 0)}`",
+        f"- Requires semantic L2 reassignment: `{summary.get('requires_semantic_l2_reassignment_count', 0)}`",
         f"- Safe to apply: `{str(summary.get('safe_to_apply', False)).lower()}`",
         f"- Apply policy: `{payload.get('apply_policy', 'copy_would_import_only_never_overwrite_conflicts')}`",
         "",
@@ -200,6 +203,13 @@ def _file_import_action(
     importable = bool(target_rel) and category in _IMPORTABLE_CATEGORIES
     status = "archive_only"
     reason = "source category is preserved by manifest/hash, not imported into typed canonical state"
+    if _requires_semantic_l2_reassignment(store=store, item=item):
+        status = "requires_semantic_l2_reassignment"
+        reason = (
+            "noncanonical L2 memory entries are global/orientation records; "
+            "review, reassign, or archive them before writing typed memory"
+        )
+        importable = False
     if importable and target is not None:
         if target.exists():
             status = "already_present_same_hash" if _sha256(target) == str(item.get("sha256") or "") else "conflict_existing_different_hash"
@@ -223,10 +233,21 @@ def _file_import_action(
         "importable": importable,
         "status": status,
         "reason": reason,
+        "requires_semantic_l2_reassignment": status == "requires_semantic_l2_reassignment",
         "summary_inputs_trusted": False,
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }
+
+
+def _requires_semantic_l2_reassignment(*, store: dict[str, Any], item: dict[str, Any]) -> bool:
+    label = str(store.get("label") or "")
+    source_path = str(item.get("path") or "").replace("\\", "/")
+    return (
+        label in {"workspace_root_store", "workspace_root_nested_store"}
+        and str(item.get("category") or "") == "memory_entry"
+        and source_path.startswith("memory/l2/entries/")
+    )
 
 
 def _target_rel_path(item: dict[str, Any]) -> str:
