@@ -8,13 +8,19 @@ from brain.v5.markdown import write_md
 from brain.v5.ids import prefixed_id
 from brain.v5.models import ClaimRecord, ContextRecord, SessionBinding, TopicRecord
 from brain.v5.paths import WorkspacePaths
+from brain.v5.mcp_base_resolution import resolve_workspace_base
 from brain.v5.store import read_record, write_record
 
 
 def init_workspace(base: str | Path) -> WorkspacePaths:
-    """Create or open a v5 workspace."""
+    """Create or open a v5 workspace.
 
-    ws = WorkspacePaths(Path(base))
+    Resolves agent-provided paths to the canonical topics root so that passing
+    a workspace root or a .aitp store path does not create a stray root store.
+    """
+
+    resolved = resolve_workspace_base(str(base))
+    ws = WorkspacePaths(resolved)
     ws.ensure_layout()
     workspace_path = ws.root / "workspace.md"
     if not workspace_path.exists():
