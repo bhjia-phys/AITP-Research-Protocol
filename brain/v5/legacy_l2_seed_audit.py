@@ -817,15 +817,24 @@ def _attach_review_results(
     payload["semantic_subgroup_open_review_count"] = reviewed_subgroup_count - terminal_subgroup_count
     payload["semantic_subgroup_review_status_counts"] = dict(sorted(status_counts.items()))
     payload["semantic_subgroup_review_decision_counts"] = dict(sorted(decision_counts.items()))
-    if group_result is None:
-        return payload
-    review = asdict(group_result)
-    review["orientation_only"] = True
-    terminal = group_result.status == "passed" and group_result.decision in _TERMINAL_REVIEW_DECISIONS
-    payload["review_status"] = group_result.status
-    payload["review_decision"] = group_result.decision
-    payload["latest_review_result"] = review
-    payload["terminal_review_recorded"] = terminal
+    if group_result is not None:
+        review = asdict(group_result)
+        review["orientation_only"] = True
+        terminal = group_result.status == "passed" and group_result.decision in _TERMINAL_REVIEW_DECISIONS
+        payload["review_status"] = group_result.status
+        payload["review_decision"] = group_result.decision
+        payload["latest_review_result"] = review
+        payload["terminal_review_recorded"] = terminal
+        payload["terminal_review_basis"] = "group_review" if terminal else "none"
+    if (
+        subgroups
+        and reviewed_subgroup_count == len(subgroups)
+        and terminal_subgroup_count == len(subgroups)
+    ):
+        payload["terminal_review_recorded"] = True
+        payload["terminal_review_basis"] = "semantic_subgroups"
+    elif "terminal_review_basis" not in payload:
+        payload["terminal_review_basis"] = "none"
     return payload
 
 

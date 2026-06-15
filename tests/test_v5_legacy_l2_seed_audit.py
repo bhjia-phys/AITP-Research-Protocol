@@ -319,6 +319,85 @@ def test_legacy_l2_seed_group_review_result_records_terminal_group_review(tmp_pa
     assert require_valid_public_surface("canonical_legacy_l2_seed_review_worklist", after) == after
 
 
+def test_legacy_l2_seed_review_treats_all_terminal_subgroups_as_terminal_group(tmp_path):
+    from brain.v5.legacy_l2_seed_audit import (
+        build_canonical_legacy_l2_seed_review_worklist,
+        record_legacy_l2_seed_group_review_result,
+    )
+
+    ws = init_workspace(tmp_path)
+    entries = ws.root / "memory" / "l2" / "entries"
+    entry_ids: dict[str, str] = {}
+    for object_id in ("claim-alpha", "claim-beta"):
+        for suffix in ("entry", "node"):
+            entry_id = f"memory-legacy-l2-l2-{suffix}-{object_id}"
+            entry_ids[f"{object_id}:{suffix}"] = entry_id
+            write_md(
+                entries / f"{entry_id}.md",
+                {
+                    "kind": "memory_entry",
+                    "entry_id": entry_id,
+                    "topic_id": "L2",
+                    "source_topic_id": "L2",
+                    "source_claim_id": "claim-l2",
+                    "memory_kind": f"legacy_l2_{suffix}:claim",
+                    "scope": "topic:qsgw-headwing-update-librpa",
+                    "source_packet_id": f"legacy_l2:D:/aitp/L2/{suffix}s/{object_id}.md",
+                    "status": "legacy_seed",
+                },
+                f"# {object_id}\n",
+            )
+
+    before = build_canonical_legacy_l2_seed_review_worklist(ws, group_limit=10, sample_limit=10)
+    group = before["review_groups"][0]
+    group_id = group["group_id"]
+    all_seed_ids = [entry["entry_id"] for entry in group["sample_entries"]]
+
+    record_legacy_l2_seed_group_review_result(
+        ws,
+        group_id=group_id,
+        status="needs_revision",
+        decision="needs_topic_alignment",
+        summary="Group-level review keeps this mixed legacy L2 group orientation-only until each semantic subgroup is reviewed.",
+        reviewed_seed_entry_ids=all_seed_ids,
+        remaining_actions=["split_semantic_subgroups_before_terminal_review"],
+    )
+    for object_id in ("claim-alpha", "claim-beta"):
+        record_legacy_l2_seed_group_review_result(
+            ws,
+            group_id=group_id,
+            status="passed",
+            decision="already_represented",
+            summary=f"{object_id} is already represented by canonical typed records; this closes only the legacy seed.",
+            source_family="claim",
+            source_object_id=object_id,
+            reviewed_seed_entry_ids=[
+                entry_ids[f"{object_id}:entry"],
+                entry_ids[f"{object_id}:node"],
+            ],
+            reviewed_typed_refs=[f"claim:{object_id}:canonical"],
+            remaining_actions=[f"keep_{object_id}_legacy_seed_orientation_only"],
+        )
+
+    after = build_canonical_legacy_l2_seed_review_worklist(ws, group_limit=10, sample_limit=10)
+    reviewed = after["review_groups"][0]
+
+    assert after["open_review_group_count"] == 0
+    assert after["terminal_review_group_count"] == 1
+    assert after["semantic_subgroup_reviewed_count"] == 2
+    assert after["semantic_subgroup_terminal_review_count"] == 2
+    assert after["semantic_subgroup_open_review_count"] == 0
+    assert after["review_group_blocking_class_counts"] == {}
+    assert after["next_actions"] == ["no_canonical_legacy_l2_seed_review_needed"]
+    assert reviewed["latest_review_result"]["decision"] == "needs_topic_alignment"
+    assert reviewed["review_status"] == "needs_revision"
+    assert reviewed["review_decision"] == "needs_topic_alignment"
+    assert reviewed["terminal_review_recorded"] is True
+    assert reviewed["terminal_review_basis"] == "semantic_subgroups"
+    assert all(subgroup["terminal_review_recorded"] for subgroup in reviewed["semantic_subgroups"])
+    assert require_valid_public_surface("canonical_legacy_l2_seed_review_worklist", after) == after
+
+
 def test_legacy_l2_seed_group_review_result_records_semantic_subgroup_boundary(tmp_path):
     from brain.v5.cli_legacy_l2_progress import compact_canonical_legacy_l2_seed_review_worklist
     from brain.v5.legacy_l2_seed_audit import (
