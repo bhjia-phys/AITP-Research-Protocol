@@ -129,10 +129,56 @@ def compact_canonical_legacy_l2_seed_audit(payload: dict[str, Any]) -> dict[str,
     }
 
 
+def compact_canonical_legacy_l2_seed_review_worklist(payload: dict[str, Any]) -> dict[str, Any]:
+    top_groups = [group for group in payload.get("review_groups", []) if isinstance(group, dict)][:5]
+    return {
+        "ok": bool(payload.get("ok", True)),
+        "kind": "canonical_legacy_l2_seed_review_worklist_progress",
+        "source_surface": "canonical_legacy_l2_seed_review_worklist",
+        "canonical_store": str(payload.get("canonical_store") or ""),
+        "legacy_seed_count": int(payload.get("legacy_seed_count") or 0),
+        "active_legacy_seed_count": int(payload.get("active_legacy_seed_count") or 0),
+        "legacy_seed_topic_count": int(payload.get("legacy_seed_topic_count") or 0),
+        "review_group_count": int(payload.get("review_group_count") or 0),
+        "visible_review_group_count": int(payload.get("visible_review_group_count") or 0),
+        "topic_scope_mismatch_count": int(payload.get("topic_scope_mismatch_count") or 0),
+        "global_l2_seed_count": int(payload.get("global_l2_seed_count") or 0),
+        "review_group_blocking_class_counts": dict(payload.get("review_group_blocking_class_counts") or {}),
+        "top_group_ids": _group_strings(top_groups, "group_id"),
+        "top_group_topics": _group_strings(top_groups, "topic_id"),
+        "top_group_target_topics": _group_strings(top_groups, "target_topic_id"),
+        "top_group_source_claim_ids": _group_strings(top_groups, "source_claim_id"),
+        "top_group_memory_roles": _group_strings(top_groups, "memory_role"),
+        "top_group_blocking_classes": [
+            _limited_strings(group.get("blocking_classes"))
+            for group in top_groups
+        ],
+        "top_group_review_focus": [
+            _limited_strings(group.get("review_focus"))
+            for group in top_groups
+        ],
+        "next_action_count": len(payload.get("next_actions") or []),
+        "next_action_refs": _limited_strings(payload.get("next_actions")),
+        "truth_source": str(payload.get("truth_source") or ""),
+        "summary_inputs_trusted": bool(payload.get("summary_inputs_trusted", False)),
+        "orientation_only": bool(payload.get("orientation_only", True)),
+        "can_update_kernel_state": bool(payload.get("can_update_kernel_state", False)),
+        "can_update_claim_trust": bool(payload.get("can_update_claim_trust", False)),
+    }
+
+
 def _limited_strings(value: Any, *, limit: int = 5) -> list[str]:
     if not isinstance(value, list):
         return []
     return [str(item) for item in value[:limit] if str(item)]
+
+
+def _group_strings(groups: list[dict[str, Any]], key: str) -> list[str]:
+    return [
+        str(group.get(key) or "")
+        for group in groups
+        if str(group.get(key) or "")
+    ]
 
 
 def _top_mapping_keys(value: Any, *, limit: int = 10) -> list[str]:

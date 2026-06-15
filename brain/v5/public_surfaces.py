@@ -53,6 +53,7 @@ _PUBLIC_SURFACE_NAMES = (
     "legacy_l2_graph_manifest",
     "legacy_l2_obsidian_view_bundle",
     "canonical_legacy_l2_seed_audit",
+    "canonical_legacy_l2_seed_review_worklist",
     "legacy_l2_typed_migration_packet",
     "legacy_migration_coverage_audit",
     "legacy_migration_result",
@@ -191,6 +192,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "legacy_l2_graph_manifest": "read-only manifest for planning legacy global L2 graph/index migration into typed L2 memory and Obsidian views",
     "legacy_l2_obsidian_view_bundle": "orientation-only Obsidian Markdown view over legacy global L2 entries and graph counts before typed migration",
     "canonical_legacy_l2_seed_audit": "read-only audit of canonical memory entries imported as legacy L2 seeds, keeping them orientation-only until reviewed or quarantined",
+    "canonical_legacy_l2_seed_review_worklist": "read-only grouped worklist for reviewing canonical legacy L2 seed memory by topic, target scope, source claim, and role before archive or evidence-backed promotion",
     "legacy_l2_typed_migration_packet": "orientation-only grouped review packet for converting legacy L2 graph work items into typed records without trusting archive contents",
     "legacy_migration_coverage_audit": "read-only audit of legacy migration file accounting, archive references, and per-topic coverage without claiming semantic proof",
     "legacy_migration_result": "contracted explicit migration result from legacy topic files into v5 typed records",
@@ -394,6 +396,9 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.legacy_topic_question_backfill_contracts import require_valid_legacy_topic_question_backfill_packet
     from brain.v5.legacy_l2_graph_contracts import require_valid_legacy_l2_graph_manifest
     from brain.v5.legacy_l2_seed_audit_contracts import require_valid_canonical_legacy_l2_seed_audit
+    from brain.v5.legacy_l2_seed_review_worklist_contracts import (
+        require_valid_canonical_legacy_l2_seed_review_worklist,
+    )
     from brain.v5.legacy_l2_obsidian_contracts import require_valid_legacy_l2_obsidian_view_bundle
     from brain.v5.legacy_l2_typed_migration_contracts import require_valid_legacy_l2_typed_migration_packet
     from brain.v5.legacy_migration_audit_contracts import require_valid_legacy_migration_coverage_audit
@@ -543,6 +548,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "legacy_topic_question_backfill_packet": require_valid_legacy_topic_question_backfill_packet,
         "legacy_l2_graph_manifest": require_valid_legacy_l2_graph_manifest,
         "canonical_legacy_l2_seed_audit": require_valid_canonical_legacy_l2_seed_audit,
+        "canonical_legacy_l2_seed_review_worklist": require_valid_canonical_legacy_l2_seed_review_worklist,
         "legacy_l2_obsidian_view_bundle": require_valid_legacy_l2_obsidian_view_bundle,
         "legacy_l2_typed_migration_packet": require_valid_legacy_l2_typed_migration_packet,
         "legacy_migration_coverage_audit": require_valid_legacy_migration_coverage_audit,

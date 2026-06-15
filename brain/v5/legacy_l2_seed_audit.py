@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -58,6 +58,73 @@ def audit_canonical_legacy_l2_seeds(
     }
 
 
+def build_canonical_legacy_l2_seed_review_worklist(
+    ws: WorkspacePaths,
+    *,
+    group_limit: int = 50,
+    sample_limit: int = 5,
+) -> dict[str, Any]:
+    """Group canonical legacy L2 seeds into reviewable, non-trusting batches."""
+
+    audit = audit_canonical_legacy_l2_seeds(ws, sample_limit=0)
+    memory_dir = ws.root / "memory" / "l2" / "entries"
+    seed_entries: list[dict[str, Any]] = []
+    if memory_dir.exists():
+        for path in sorted(memory_dir.glob("*.md")):
+            frontmatter = _read_frontmatter(path)
+            if _is_legacy_l2_seed(path, frontmatter):
+                seed_entries.append(_seed_entry(path, frontmatter, ws=ws))
+    groups = _seed_groups(
+        seed_entries,
+        ws=ws,
+        sample_limit=max(0, int(sample_limit)),
+    )
+    blocking_counts = Counter(
+        blocking_class
+        for group in groups
+        for blocking_class in group.get("blocking_classes", [])
+    )
+    topic_mismatch_count = sum(1 for seed in seed_entries if seed.get("topic_scope_mismatch"))
+    global_l2_count = sum(1 for seed in seed_entries if seed.get("topic_id") == "L2")
+    return {
+        "kind": "canonical_legacy_l2_seed_review_worklist",
+        "canonical_store": str(ws.root),
+        "memory_entries_dir": str(memory_dir),
+        "legacy_seed_count": audit["legacy_seed_count"],
+        "active_legacy_seed_count": audit["active_legacy_seed_count"],
+        "legacy_seed_topic_count": audit["legacy_seed_topic_count"],
+        "review_group_count": len(groups),
+        "visible_review_group_count": min(len(groups), max(0, int(group_limit))),
+        "topic_scope_mismatch_count": topic_mismatch_count,
+        "global_l2_seed_count": global_l2_count,
+        "status_counts": dict(sorted(audit["status_counts"].items())),
+        "memory_kind_counts": dict(sorted(audit["memory_kind_counts"].items())),
+        "review_group_blocking_class_counts": dict(sorted(blocking_counts.items())),
+        "review_groups": groups[: max(0, int(group_limit))],
+        "next_actions": _review_worklist_next_actions(seed_entries, groups),
+        "promotion_policy": {
+            "legacy_seed_status": "orientation_only",
+            "promotion_requires": [
+                "semantic_topic_claim_alignment_review",
+                "evidence_backed_promotion_packet",
+                "passed_failure_mode_review_when_required",
+                "approved_human_checkpoint",
+            ],
+            "forbidden_shortcuts": [
+                "do_not_change_legacy_seed_status_to_active",
+                "do_not_treat_legacy_l2_refs_as_evidence_refs",
+                "do_not_use_topic_level_passed_review_as_per_seed_trust",
+            ],
+            "can_update_claim_trust": False,
+        },
+        "truth_source": "canonical_memory_l2_seed_scan_grouped_for_review",
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
 def _read_frontmatter(path: Path) -> dict[str, Any]:
     try:
         frontmatter, _body = read_md(path)
@@ -81,16 +148,22 @@ def _is_legacy_l2_seed(path: Path, frontmatter: dict[str, Any]) -> bool:
 def _seed_entry(path: Path, frontmatter: dict[str, Any], *, ws: WorkspacePaths) -> dict[str, Any]:
     entry_id = _text(frontmatter.get("entry_id")) or path.stem
     source_path = _source_path(frontmatter)
+    topic_id = _text(frontmatter.get("topic_id"))
+    source_topic_id = _text(frontmatter.get("source_topic_id"))
+    scoped_topic_id = _scoped_topic_id(frontmatter)
     return {
         "entry_id": entry_id,
-        "topic_id": _text(frontmatter.get("topic_id")),
-        "source_topic_id": _text(frontmatter.get("source_topic_id")),
+        "topic_id": topic_id,
+        "source_topic_id": source_topic_id,
+        "scoped_topic_id": scoped_topic_id,
         "source_claim_id": _text(frontmatter.get("source_claim_id")),
         "status": _text(frontmatter.get("status")),
         "memory_kind": _text(frontmatter.get("memory_kind")),
+        "scope": _text(frontmatter.get("scope")),
         "source_packet_id": _text(frontmatter.get("source_packet_id")),
         "source_path": source_path,
         "canonical_rel_path": path.relative_to(ws.root).as_posix(),
+        "topic_scope_mismatch": _topic_scope_mismatch(topic_id, source_topic_id, scoped_topic_id),
         "requires_semantic_l2_reassignment": True,
         "can_update_claim_trust": False,
     }
@@ -107,6 +180,270 @@ def _source_path(frontmatter: dict[str, Any]) -> str:
     if source_packet.startswith("legacy_l2:"):
         return source_packet.removeprefix("legacy_l2:")
     return ""
+
+
+def _scoped_topic_id(frontmatter: dict[str, Any]) -> str:
+    scope = _text(frontmatter.get("scope"))
+    for token in scope.replace(",", " ").split():
+        if token.startswith("topic:"):
+            return token.removeprefix("topic:").strip()
+    return ""
+
+
+def _topic_scope_mismatch(topic_id: str, source_topic_id: str, scoped_topic_id: str) -> bool:
+    visible_topics = {value for value in (topic_id, source_topic_id) if value and value != "L2"}
+    if scoped_topic_id and visible_topics and scoped_topic_id not in visible_topics:
+        return True
+    if topic_id == "L2" and scoped_topic_id:
+        return True
+    return False
+
+
+def _seed_groups(
+    seeds: list[dict[str, Any]],
+    *,
+    ws: WorkspacePaths,
+    sample_limit: int,
+) -> list[dict[str, Any]]:
+    grouped: dict[tuple[str, str, str, str], list[dict[str, Any]]] = defaultdict(list)
+    for seed in seeds:
+        grouped[_group_key(seed)].append(seed)
+    groups = [
+        _seed_group_payload(key, group_seeds, ws=ws, sample_limit=sample_limit)
+        for key, group_seeds in grouped.items()
+    ]
+    groups.sort(
+        key=lambda group: (
+            -group["priority_score"],
+            group["topic_id"],
+            group["target_topic_id"],
+            group["source_claim_id"],
+            group["memory_role"],
+        )
+    )
+    return groups
+
+
+def _group_key(seed: dict[str, Any]) -> tuple[str, str, str, str]:
+    return (
+        str(seed.get("topic_id") or ""),
+        _target_topic_id(seed),
+        str(seed.get("source_claim_id") or ""),
+        _memory_role(str(seed.get("memory_kind") or "")),
+    )
+
+
+def _seed_group_payload(
+    key: tuple[str, str, str, str],
+    seeds: list[dict[str, Any]],
+    *,
+    ws: WorkspacePaths,
+    sample_limit: int,
+) -> dict[str, Any]:
+    topic_id, target_topic_id, source_claim_id, memory_role = key
+    kind_counts = Counter(str(seed.get("memory_kind") or "_missing") for seed in seeds)
+    source_topic_counts = Counter(str(seed.get("source_topic_id") or "_missing") for seed in seeds)
+    scoped_topic_counts = Counter(str(seed.get("scoped_topic_id") or "_missing") for seed in seeds)
+    blocking_classes = _group_blocking_classes(seeds, topic_id=topic_id, target_topic_id=target_topic_id)
+    priority_score = _group_priority_score(memory_role=memory_role, blocking_classes=blocking_classes, count=len(seeds))
+    return {
+        "group_id": _group_id(topic_id, target_topic_id, source_claim_id, memory_role),
+        "topic_id": topic_id,
+        "target_topic_id": target_topic_id,
+        "source_claim_id": source_claim_id,
+        "memory_role": memory_role,
+        "seed_count": len(seeds),
+        "priority_score": priority_score,
+        "blocking_classes": blocking_classes,
+        "review_focus": _group_review_focus(memory_role=memory_role, blocking_classes=blocking_classes),
+        "memory_kind_counts": dict(sorted(kind_counts.items())),
+        "source_topic_counts": dict(sorted(source_topic_counts.items())),
+        "scoped_topic_counts": dict(sorted(scoped_topic_counts.items())),
+        "topic_scope_mismatch_count": sum(1 for seed in seeds if seed.get("topic_scope_mismatch")),
+        "sample_entries": seeds[:sample_limit],
+        "review_actions": _group_review_actions(
+            ws,
+            topic_id=topic_id,
+            target_topic_id=target_topic_id,
+            source_claim_id=source_claim_id,
+            memory_role=memory_role,
+        ),
+        "can_update_claim_trust": False,
+    }
+
+
+def _target_topic_id(seed: dict[str, Any]) -> str:
+    scoped = str(seed.get("scoped_topic_id") or "")
+    source = str(seed.get("source_topic_id") or "")
+    topic = str(seed.get("topic_id") or "")
+    if scoped:
+        return scoped
+    if source and source != "L2":
+        return source
+    return topic
+
+
+def _memory_role(memory_kind: str) -> str:
+    if ":" in memory_kind:
+        return memory_kind.split(":", 1)[1]
+    return memory_kind or "_missing"
+
+
+def _group_blocking_classes(seeds: list[dict[str, Any]], *, topic_id: str, target_topic_id: str) -> list[str]:
+    classes: list[str] = []
+
+    def add(value: str) -> None:
+        if value not in classes:
+            classes.append(value)
+
+    if topic_id == "L2":
+        add("global_l2_topic_reassignment_required")
+    if target_topic_id and topic_id and target_topic_id != topic_id:
+        add("topic_scope_alignment_required")
+    if any(seed.get("topic_scope_mismatch") for seed in seeds):
+        add("source_topic_scope_mismatch")
+    if any(str(seed.get("status") or "") == "active" for seed in seeds):
+        add("active_seed_leak")
+    if any(str(seed.get("memory_kind") or "").startswith("legacy_l2_graph_edge:") for seed in seeds):
+        add("legacy_graph_edge_relation_review_required")
+    if any(str(seed.get("memory_kind") or "").startswith("legacy_l2_graph_node:") for seed in seeds):
+        add("legacy_graph_node_object_review_required")
+    if any(str(seed.get("memory_kind") or "").startswith("legacy_l2_entry:claim") for seed in seeds):
+        add("claim_statement_evidence_review_required")
+    return classes or ["semantic_l2_reassignment_required"]
+
+
+def _group_review_focus(*, memory_role: str, blocking_classes: list[str]) -> list[str]:
+    focus: list[str] = []
+    if "global_l2_topic_reassignment_required" in blocking_classes:
+        focus.append("assign_global_l2_seed_to_target_topic_or_archive")
+    if "topic_scope_alignment_required" in blocking_classes or "source_topic_scope_mismatch" in blocking_classes:
+        focus.append("verify_topic_scope_source_claim_alignment")
+    if "claim" in memory_role:
+        focus.append("verify_claim_statement_scope_and_evidence_basis")
+        focus.append("promote_only_with_evidence_backed_promotion_packet")
+    elif "edge" in memory_role:
+        focus.append("convert_valid_relation_edges_to_object_relation_records_or_archive")
+    elif "node" in memory_role:
+        focus.append("convert_valid_objects_to_physics_object_records_or_archive")
+    else:
+        focus.append("classify_seed_as_background_method_pitfall_question_or_archive")
+    focus.append("keep_legacy_seed_orientation_only_until_review_result")
+    return _unique(focus)
+
+
+def _group_priority_score(*, memory_role: str, blocking_classes: list[str], count: int) -> int:
+    score = min(count, 200)
+    if "active_seed_leak" in blocking_classes:
+        score += 1000
+    if "global_l2_topic_reassignment_required" in blocking_classes:
+        score += 250
+    if "topic_scope_alignment_required" in blocking_classes:
+        score += 200
+    if "claim" in memory_role:
+        score += 120
+    if "edge" in memory_role:
+        score += 80
+    if "node" in memory_role:
+        score += 60
+    return score
+
+
+def _group_id(topic_id: str, target_topic_id: str, source_claim_id: str, memory_role: str) -> str:
+    return "legacy-l2-seed-review:" + ":".join(
+        _slug(part) for part in (topic_id or "missing-topic", target_topic_id or "missing-target", source_claim_id or "missing-claim", memory_role or "missing-role")
+    )
+
+
+def _group_review_actions(
+    ws: WorkspacePaths,
+    *,
+    topic_id: str,
+    target_topic_id: str,
+    source_claim_id: str,
+    memory_role: str,
+) -> list[dict[str, Any]]:
+    audit_cli = f"aitp-v5 --base {ws.base} legacy l2-seed-review-worklist --group-limit 50 --sample-limit 5"
+    memory_audit_cli = (
+        f"aitp-v5 --base {ws.base} memory audit --claim {source_claim_id}"
+        if source_claim_id
+        else ""
+    )
+    promotion_safe = (
+        bool(source_claim_id)
+        and "claim" in memory_role
+        and bool(target_topic_id)
+        and target_topic_id != "L2"
+        and target_topic_id == topic_id
+    )
+    promotion_cli = (
+        f"aitp-v5 --base {ws.base} promotion packet create --topic {target_topic_id or topic_id} "
+        f"--claim {source_claim_id} --proposed-kind scoped_claim --scope <reviewed-scope> "
+        "--evidence-ref <typed-evidence-ref> --failure-mode <failure-mode>"
+        if promotion_safe
+        else ""
+    )
+    actions = [
+        {
+            "action": "review_seed_group",
+            "cli": audit_cli,
+            "mcp": "aitp_v5_build_canonical_legacy_l2_seed_review_worklist",
+            "surface": "canonical_legacy_l2_seed_review_worklist",
+            "effect": "orientation_only",
+            "can_update_kernel_state": False,
+            "can_update_claim_trust": False,
+        }
+    ]
+    if memory_audit_cli:
+        actions.append(
+            {
+                "action": "audit_current_l2_memory_for_source_claim",
+                "cli": memory_audit_cli,
+                "mcp": "aitp_v5_audit_l2_memory_context",
+                "surface": "l2_memory_audit",
+                "effect": "orientation_only",
+                "can_update_kernel_state": False,
+                "can_update_claim_trust": False,
+            }
+        )
+    if promotion_cli:
+        actions.append(
+            {
+                "action": "create_reviewed_promotion_packet_after_typed_evidence_exists",
+                "cli": promotion_cli,
+                "mcp": "aitp_v5_create_promotion_packet",
+                "surface": "promotion_packet_record",
+                "effect": "typed_record_write_requires_evidence_and_human_gate",
+                "can_update_kernel_state": True,
+                "can_update_claim_trust": False,
+            }
+        )
+    elif source_claim_id and "claim" in memory_role:
+        actions.append(
+            {
+                "action": "resolve_target_topic_and_claim_before_promotion",
+                "cli": audit_cli,
+                "mcp": "aitp_v5_build_canonical_legacy_l2_seed_review_worklist",
+                "surface": "canonical_legacy_l2_seed_review_worklist",
+                "effect": "orientation_only",
+                "can_update_kernel_state": False,
+                "can_update_claim_trust": False,
+            }
+        )
+    return actions
+
+
+def _review_worklist_next_actions(seeds: list[dict[str, Any]], groups: list[dict[str, Any]]) -> list[str]:
+    if not seeds:
+        return ["no_canonical_legacy_l2_seed_review_needed"]
+    actions = [
+        "review_high_priority_seed_groups_before_treating_legacy_l2_as_memory",
+        "resolve_global_l2_and_topic_scope_mismatch_groups_first",
+        "archive_or_promote_each_group_with_explicit_review_basis",
+        "keep_all_legacy_seed_entries_orientation_only_until_reviewed",
+    ]
+    actions.extend(f"review_group:{group['group_id']}" for group in groups[:10])
+    return actions
 
 
 def _next_actions(*, seeds: list[dict[str, Any]], active_seed_count: int) -> list[str]:
@@ -132,3 +469,21 @@ def _text(value: Any) -> str:
     if isinstance(value, (list, tuple)):
         return ", ".join(_text(item) for item in value if _text(item))
     return " ".join(str(value).split())
+
+
+def _unique(values: list[str]) -> list[str]:
+    result: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        result.append(value)
+    return result
+
+
+def _slug(value: str) -> str:
+    text = "".join(ch.lower() if ch.isalnum() else "-" for ch in str(value))
+    while "--" in text:
+        text = text.replace("--", "-")
+    return text.strip("-")[:80] or "missing"

@@ -43,9 +43,17 @@ def validate_workspace_migration_health(
         "canonical_legacy_seed_count",
         "active_legacy_seed_count",
         "legacy_seed_topic_count",
+        "legacy_seed_review_group_count",
+        "legacy_seed_topic_scope_mismatch_count",
+        "legacy_seed_global_l2_count",
     ):
         if not isinstance(payload.get(key), int) or payload[key] < 0:
             result.add(f"{path}.{key}", "must be a non-negative integer")
+    _require_mapping(
+        payload.get("legacy_seed_review_blocking_class_counts"),
+        f"{path}.legacy_seed_review_blocking_class_counts",
+        result,
+    )
     for key in (
         "no_omission_check",
         "old_store_retirement_safe",
@@ -54,7 +62,13 @@ def validate_workspace_migration_health(
     ):
         if not isinstance(payload.get(key), bool):
             result.add(f"{path}.{key}", "must be a boolean")
-    for key in ("legacy_seed_next_actions", "legacy_seed_samples", "next_actions", "summary_lines"):
+    for key in (
+        "legacy_seed_next_actions",
+        "legacy_seed_samples",
+        "legacy_seed_review_groups",
+        "next_actions",
+        "summary_lines",
+    ):
         _require_list(payload.get(key), f"{path}.{key}", result)
     _require_bool_value(payload.get("summary_inputs_trusted"), False, f"{path}.summary_inputs_trusted", result)
     _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)

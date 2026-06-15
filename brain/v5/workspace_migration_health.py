@@ -6,7 +6,10 @@ import json
 from pathlib import Path
 from typing import Any
 
-from brain.v5.legacy_l2_seed_audit import audit_canonical_legacy_l2_seeds
+from brain.v5.legacy_l2_seed_audit import (
+    audit_canonical_legacy_l2_seeds,
+    build_canonical_legacy_l2_seed_review_worklist,
+)
 from brain.v5.paths import WorkspacePaths
 from brain.v5.workspace_file_migration_ledger import compact_workspace_file_migration_ledger
 from brain.v5.workspace_migration_discovery import latest_workspace_file_migration_ledger
@@ -18,6 +21,11 @@ def build_workspace_migration_health(ws: WorkspacePaths, *, sample_limit: int = 
     ledger_path = latest_workspace_file_migration_ledger(ws)
     ledger_progress = _ledger_progress(ledger_path)
     seed_audit = audit_canonical_legacy_l2_seeds(ws, sample_limit=sample_limit)
+    seed_worklist = build_canonical_legacy_l2_seed_review_worklist(
+        ws,
+        group_limit=sample_limit,
+        sample_limit=1,
+    )
     status = _migration_status(ledger_progress=ledger_progress, seed_audit=seed_audit)
     return {
         "kind": "aitp_workspace_migration_health",
@@ -55,8 +63,31 @@ def build_workspace_migration_health(ws: WorkspacePaths, *, sample_limit: int = 
         "legacy_seed_quarantine_status": _text(seed_audit.get("quarantine_status")),
         "legacy_seed_next_actions": _string_list(seed_audit.get("next_actions")),
         "legacy_seed_samples": seed_audit.get("sample_entries") if isinstance(seed_audit.get("sample_entries"), list) else [],
-        "next_actions": _next_actions(ledger_progress=ledger_progress, seed_audit=seed_audit, status=status),
-        "summary_lines": _summary_lines(ledger_progress=ledger_progress, seed_audit=seed_audit, status=status),
+        "legacy_seed_review_group_count": _int(seed_worklist.get("review_group_count")),
+        "legacy_seed_topic_scope_mismatch_count": _int(seed_worklist.get("topic_scope_mismatch_count")),
+        "legacy_seed_global_l2_count": _int(seed_worklist.get("global_l2_seed_count")),
+        "legacy_seed_review_blocking_class_counts": (
+            seed_worklist.get("review_group_blocking_class_counts")
+            if isinstance(seed_worklist.get("review_group_blocking_class_counts"), dict)
+            else {}
+        ),
+        "legacy_seed_review_groups": (
+            seed_worklist.get("review_groups")
+            if isinstance(seed_worklist.get("review_groups"), list)
+            else []
+        ),
+        "next_actions": _next_actions(
+            ledger_progress=ledger_progress,
+            seed_audit=seed_audit,
+            seed_worklist=seed_worklist,
+            status=status,
+        ),
+        "summary_lines": _summary_lines(
+            ledger_progress=ledger_progress,
+            seed_audit=seed_audit,
+            seed_worklist=seed_worklist,
+            status=status,
+        ),
         "truth_source": "workspace_migration_ledgers_and_canonical_l2_seed_scan",
         "summary_inputs_trusted": False,
         "orientation_only": True,
@@ -93,7 +124,13 @@ def _migration_status(*, ledger_progress: dict[str, Any], seed_audit: dict[str, 
     return "clear"
 
 
-def _next_actions(*, ledger_progress: dict[str, Any], seed_audit: dict[str, Any], status: str) -> list[str]:
+def _next_actions(
+    *,
+    ledger_progress: dict[str, Any],
+    seed_audit: dict[str, Any],
+    seed_worklist: dict[str, Any],
+    status: str,
+) -> list[str]:
     actions: list[str] = []
     if not ledger_progress:
         actions.append("build_workspace_file_migration_ledger_before_old_store_retirement")
@@ -102,12 +139,20 @@ def _next_actions(*, ledger_progress: dict[str, Any], seed_audit: dict[str, Any]
     if _bool(ledger_progress.get("root_l2_global_memory_risk")):
         actions.append("review_reassign_or_archive_root_l2_global_memory_entries")
     actions.extend(_string_list(seed_audit.get("next_actions")))
+    if _int(seed_worklist.get("review_group_count")) > 0:
+        actions.append("use_legacy_l2_seed_review_worklist_for_grouped_semantic_reassignment")
     if status != "clear":
         actions.append("do_not_treat_legacy_seed_memory_as_active_claim_support")
     return _unique(actions)
 
 
-def _summary_lines(*, ledger_progress: dict[str, Any], seed_audit: dict[str, Any], status: str) -> list[str]:
+def _summary_lines(
+    *,
+    ledger_progress: dict[str, Any],
+    seed_audit: dict[str, Any],
+    seed_worklist: dict[str, Any],
+    status: str,
+) -> list[str]:
     lines = [
         (
             "AITP migration health: "
@@ -132,6 +177,13 @@ def _summary_lines(*, ledger_progress: dict[str, Any], seed_audit: dict[str, Any
             f"active={_int(seed_audit.get('active_legacy_seed_count'))}, "
             f"status={_text(seed_audit.get('quarantine_status'))}; "
             "legacy_seed memory is recovery orientation only until reviewed/reassigned/promoted."
+        )
+        lines.append(
+            "Legacy L2 seed review groups: "
+            f"groups={_int(seed_worklist.get('review_group_count'))}, "
+            f"global_l2_seeds={_int(seed_worklist.get('global_l2_seed_count'))}, "
+            f"topic_scope_mismatches={_int(seed_worklist.get('topic_scope_mismatch_count'))}; "
+            "topic-level semantic review can be complete while per-seed L2 review remains required."
         )
     return lines
 

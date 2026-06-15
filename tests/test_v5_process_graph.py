@@ -725,7 +725,16 @@ def test_process_graph_slice_exposes_workspace_migration_health_boundary(tmp_pat
     assert payload["migration_health"]["root_l2_global_memory_risk"] is True
     assert payload["migration_health"]["canonical_legacy_seed_count"] == 1
     assert payload["migration_health"]["active_legacy_seed_count"] == 0
+    assert payload["migration_health"]["legacy_seed_review_group_count"] == 1
+    assert payload["migration_health"]["legacy_seed_topic_scope_mismatch_count"] == 0
+    assert payload["migration_health"]["legacy_seed_review_groups"][0]["memory_role"] == "claim"
+    assert "use_legacy_l2_seed_review_worklist_for_grouped_semantic_reassignment" in (
+        payload["migration_health"]["next_actions"]
+    )
     assert "legacy_seed memory is recovery orientation only" in "\n".join(
+        payload["migration_health"]["summary_lines"],
+    )
+    assert "topic-level semantic review can be complete while per-seed L2 review remains required" in "\n".join(
         payload["migration_health"]["summary_lines"],
     )
     assert "canonical legacy L2 seed memory must not be treated as active claim support" in "\n".join(
