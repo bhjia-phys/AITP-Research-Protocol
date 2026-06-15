@@ -37,6 +37,7 @@ def validate_claim_relation_map(payload: dict[str, Any], *, path: str = "claim_r
         _require_list(payload.get(key), f"{path}.{key}", result)
     _validate_conclusion(payload.get("current_conclusion"), f"{path}.current_conclusion", result)
     _validate_source_records(payload.get("source_records"), f"{path}.source_records", result)
+    _validate_topic_claim_boundaries(payload.get("topic_claim_boundaries"), f"{path}.topic_claim_boundaries", result)
     for key, expected in (
         ("truth_source", False),
         ("orientation_only", True),
@@ -72,8 +73,34 @@ def _validate_source_records(payload: Any, path: str, result: ContractResult) ->
     _require_mapping(payload, path, result)
     if not isinstance(payload, dict):
         return
-    for key in ("claims", "evidence", "tool_runs", "claim_statuses", "proof_obligations", "object_relations"):
+    for key in (
+        "claims",
+        "evidence",
+        "tool_runs",
+        "claim_statuses",
+        "proof_obligations",
+        "object_relations",
+        "sibling_claims",
+    ):
         _require_list(payload.get(key), f"{path}.{key}", result)
+
+
+def _validate_topic_claim_boundaries(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    if payload.get("kind") != "topic_claim_boundaries":
+        result.add(f"{path}.kind", "must be 'topic_claim_boundaries'")
+    _require_nonempty_str(payload, "boundary_rule", path, result)
+    _require_list(payload.get("sibling_claims"), f"{path}.sibling_claims", result)
+    _validate_conclusion(payload.get("current_conclusion"), f"{path}.current_conclusion", result)
+    _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
+    _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
+    for index, item in enumerate(payload.get("sibling_claims") or []):
+        _require_mapping(item, f"{path}.sibling_claims[{index}]", result)
+        if isinstance(item, dict):
+            _require_nonempty_str(item, "claim_id", f"{path}.sibling_claims[{index}]", result)
+            _require_nonempty_str(item, "statement_excerpt", f"{path}.sibling_claims[{index}]", result)
 
 
 def _validate_relation_entry(payload: Any, path: str, result: ContractResult) -> None:

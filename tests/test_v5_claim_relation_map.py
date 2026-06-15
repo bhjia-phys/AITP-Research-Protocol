@@ -675,6 +675,70 @@ def test_claim_relation_map_prefers_claim_matched_legacy_semantic_review(tmp_pat
     assert "legacy_semantic_review_inconclusive" in relation_map["current_blockers"]
 
 
+def test_claim_relation_map_surfaces_same_topic_sibling_claim_boundaries(tmp_path):
+    from brain.v5.claim_relation_map import (
+        build_claim_relation_map,
+        compact_claim_relation_map,
+        render_claim_relation_map_markdown,
+    )
+    from brain.v5.evidence import record_evidence
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    topic = "quantum-chaos-long-range-spin-chains"
+    create_topic(ws, topic, context_id="quantum-chaos", title="Quantum chaos long-range spin chains")
+    active_claim = create_claim(
+        ws,
+        topic_id=topic,
+        statement="Current A2 Schur-tail theorem claim.",
+        evidence_profile="semi_formal_theory",
+        confidence_state="hypothesis",
+        active_uncertainty="All-n Schur rowspace theorem remains open.",
+    )
+    old_numerical_claim = create_claim(
+        ws,
+        topic_id=topic,
+        statement="Older four-diagnostic finite-size chaos-window claim.",
+        evidence_profile="numerical_diagnostics",
+        confidence_state="legacy_seed",
+        active_uncertainty="Historical numerical line, not the active theorem focus.",
+    )
+    record_evidence(
+        ws,
+        topic_id=topic,
+        claim_id=old_numerical_claim.claim_id,
+        evidence_type="legacy_numerical_diagnostic",
+        status="supports",
+        summary="Legacy OTOC/Krylov finite-size evidence supports the older numerical claim only.",
+    )
+    bind_session(
+        ws,
+        "chaos-current-recovery",
+        topic_id=topic,
+        context_id="quantum-chaos",
+        active_claim=active_claim.claim_id,
+    )
+
+    relation_map = build_claim_relation_map(ws, "chaos-current-recovery")
+    compact = compact_claim_relation_map(relation_map)
+    markdown = render_claim_relation_map_markdown(relation_map)
+
+    assert require_valid_public_surface("claim_relation_map", relation_map) == relation_map
+    assert relation_map["claim_id"] == active_claim.claim_id
+    assert relation_map["supported_by"] == []
+    assert relation_map["topic_claim_boundaries"]["sibling_claim_count"] == 1
+    assert relation_map["topic_claim_boundaries"]["sibling_claims"][0]["claim_id"] == old_numerical_claim.claim_id
+    assert relation_map["source_records"]["sibling_claims"] == [old_numerical_claim.claim_id]
+    assert any(
+        "cannot use sibling-claim evidence" in item
+        for item in relation_map["topic_claim_boundaries"]["current_conclusion"]["cannot_say"]
+    )
+    assert compact["sibling_claim_count"] == 1
+    assert old_numerical_claim.claim_id in markdown
+    assert "Topic Claim Boundaries" in markdown
+
+
 def test_claim_relation_map_is_forced_into_brief_topic_status_cli_and_mcp(tmp_path, capsys):
     from brain.v5.cli import main
     from brain.v5.mcp_tools import aitp_v5_get_claim_relation_map, aitp_v5_get_execution_brief

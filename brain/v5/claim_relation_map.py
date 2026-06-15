@@ -13,6 +13,7 @@ from typing import Any
 from brain.v5.evidence import list_evidence_for_claim
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
 from brain.v5.models import (
+    ClaimRecord,
     ClaimStatusRecord,
     EvidenceRecord,
     LegacySemanticReviewResultRecord,
@@ -151,6 +152,10 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
     if legacy_migration_topics is None:
         legacy_migration_topics = _legacy_migration_topics_for_topic(ws, session.topic_id)
     legacy_migration_topic = legacy_migration_topics[-1] if legacy_migration_topics else {}
+    topic_claims = _indexed_topic_records(registry_index, "claims_by_topic", session.topic_id)
+    if topic_claims is None:
+        topic_claims = _claims_for_topic(ws, session.topic_id)
+    topic_claim_boundaries = _topic_claim_boundaries(topic_claims, active_claim_id=claim.claim_id)
     legacy_context = _legacy_semantic_review_context(
         legacy_review,
         relation_claim_id=claim.claim_id,
@@ -244,6 +249,7 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
         "contradicted_by": contradicted_by,
         "not_tested_by": not_tested_by,
         "object_relations": object_relations,
+        "topic_claim_boundaries": topic_claim_boundaries,
         "legacy_semantic_review": legacy_context,
         "current_conclusion": {
             "can_say": can_say,
@@ -258,6 +264,7 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
             "claim_statuses": [record.status_id for record in claim_statuses],
             "proof_obligations": [record.obligation_id for record in proof_obligations],
             "object_relations": [str(record.get("relation_id") or "") for record in object_relations if record.get("relation_id")],
+            "sibling_claims": [item["claim_id"] for item in topic_claim_boundaries.get("sibling_claims", [])],
             "legacy_semantic_reviews": [record.review_id for record in legacy_reviews],
             "legacy_migration_topics": [
                 _legacy_migration_topic_ref(record)
@@ -271,6 +278,7 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
             "tool_run_records",
             "object_relation_records",
             "proof_obligation_records",
+            "topic_claim_boundary_records",
             "legacy_semantic_review_records",
             "legacy_migration_coverage_audit",
         ],
@@ -293,6 +301,7 @@ def build_claim_relation_registry_index(ws) -> dict[str, dict[str, list[Any]]]:
         "claim_statuses": _group_by_claim(list_valid_records(ws.registry_dir("claim_statuses"), ClaimStatusRecord)),
         "proof_obligations": _group_by_claim(list_valid_records(ws.registry_dir("proof_obligations"), ProofObligationRecord)),
         "object_relations": _group_by_claim(list_valid_records(ws.registry_dir("object_relations"), ObjectRelationRecord)),
+        "claims_by_topic": _group_claims_by_topic(list_valid_records(ws.registry_dir("claims"), ClaimRecord)),
         "legacy_semantic_reviews": _group_by_topic(
             list_valid_records(ws.registry_dir("legacy_semantic_reviews"), LegacySemanticReviewResultRecord)
         ),
@@ -326,6 +335,7 @@ def empty_claim_relation_map(
         "contradicted_by": [],
         "not_tested_by": [],
         "object_relations": [],
+        "topic_claim_boundaries": _empty_topic_claim_boundaries(),
         "current_conclusion": {
             "can_say": [reason],
             "cannot_say": ["cannot infer claim support, failure, or trust state without an active claim"],
@@ -339,6 +349,7 @@ def empty_claim_relation_map(
             "claim_statuses": [],
             "proof_obligations": [],
             "object_relations": [],
+            "sibling_claims": [],
             "legacy_semantic_reviews": [],
             "legacy_migration_topics": [],
         },
@@ -375,6 +386,8 @@ def compact_claim_relation_map(payload: dict[str, Any]) -> dict[str, Any]:
         "not_tested_count": len(payload.get("not_tested_by") or []),
         "object_relation_count": len(payload.get("object_relations") or []),
         "key_object_relations": list(payload.get("key_object_relations") or [])[:5],
+        "sibling_claim_count": int((payload.get("topic_claim_boundaries") or {}).get("sibling_claim_count") or 0),
+        "sibling_claims": list((payload.get("topic_claim_boundaries") or {}).get("sibling_claims") or [])[:5],
         "legacy_semantic_review_status": str(legacy.get("status") or ""),
         "legacy_active_claim_divergence": bool(legacy.get("active_claim_divergence") is True),
         "can_say": list(conclusion.get("can_say") or [])[:5],
@@ -403,6 +416,8 @@ def render_claim_relation_map_markdown(payload: dict[str, Any]) -> str:
         _entry_bullets(payload.get("contradicted_by") or []),
         "\n## Key Object Relations\n\n",
         _bullets(payload.get("key_object_relations") or []),
+        "\n## Topic Claim Boundaries\n\n",
+        _topic_claim_boundaries_markdown(payload.get("topic_claim_boundaries") or {}),
         "\n## Legacy Semantic Review\n\n",
         _legacy_semantic_review_markdown(payload.get("legacy_semantic_review") or {}),
         "\n## Can Say\n\n",
@@ -431,6 +446,14 @@ def _claim_statuses_for_claim(ws, claim_id: str) -> list[ClaimStatusRecord]:
         record
         for record in list_valid_records(ws.registry_dir("claim_statuses"), ClaimStatusRecord)
         if record.claim_id == claim_id
+    ]
+
+
+def _claims_for_topic(ws, topic_id: str) -> list[ClaimRecord]:
+    return [
+        record
+        for record in list_valid_records(ws.registry_dir("claims"), ClaimRecord)
+        if record.topic_id == topic_id
     ]
 
 
@@ -512,6 +535,16 @@ def _group_by_topic(records: list[Any]) -> dict[str, list[Any]]:
         grouped.setdefault(topic, []).append(record)
     for values in grouped.values():
         values.sort(key=_legacy_semantic_review_sort_key)
+    return grouped
+
+
+def _group_claims_by_topic(records: list[ClaimRecord]) -> dict[str, list[ClaimRecord]]:
+    grouped: dict[str, list[ClaimRecord]] = {}
+    for record in records:
+        if record.topic_id:
+            grouped.setdefault(record.topic_id, []).append(record)
+    for values in grouped.values():
+        values.sort(key=lambda item: item.claim_id)
     return grouped
 
 
@@ -728,6 +761,66 @@ def _legacy_semantic_review_markdown(payload: dict[str, Any]) -> str:
         lines.append("- Remaining actions:\n")
         for action in payload.get("remaining_actions") or []:
             lines.append(f"  - {action}\n")
+    return "".join(lines)
+
+
+def _topic_claim_boundaries(records: list[ClaimRecord], *, active_claim_id: str) -> dict[str, Any]:
+    siblings = [
+        {
+            "claim_id": record.claim_id,
+            "confidence_state": record.confidence_state,
+            "evidence_profile": record.evidence_profile,
+            "statement_excerpt": _excerpt(record.statement, limit=180),
+        }
+        for record in sorted(records, key=lambda item: item.claim_id)
+        if record.claim_id != active_claim_id
+    ]
+    has_siblings = bool(siblings)
+    return {
+        "kind": "topic_claim_boundaries",
+        "active_claim_id": active_claim_id,
+        "sibling_claim_count": len(siblings),
+        "sibling_claims": siblings,
+        "boundary_rule": (
+            "Sibling claims are same-topic research lines for orientation only; their records cannot support, "
+            "limit, or refute the active claim unless explicitly linked to this active claim."
+        ),
+        "current_conclusion": {
+            "can_say": (
+                ["same-topic sibling claims exist and may explain topic history"]
+                if has_siblings
+                else ["no same-topic sibling claims were found"]
+            ),
+            "cannot_say": (
+                ["cannot use sibling-claim evidence or legacy reviews as active-claim support without an explicit claim link"]
+                if has_siblings
+                else []
+            ),
+        },
+        "orientation_only": True,
+        "can_update_claim_trust": False,
+    }
+
+
+def _empty_topic_claim_boundaries() -> dict[str, Any]:
+    return _topic_claim_boundaries([], active_claim_id="")
+
+
+def _topic_claim_boundaries_markdown(payload: dict[str, Any]) -> str:
+    if not isinstance(payload, dict):
+        return "- None\n"
+    siblings = payload.get("sibling_claims") or []
+    lines = [
+        f"- Active claim: `{payload.get('active_claim_id', '')}`\n",
+        f"- Sibling claim count: `{payload.get('sibling_claim_count', 0)}`\n",
+        f"- Boundary rule: {payload.get('boundary_rule', '')}\n",
+    ]
+    for item in siblings[:8]:
+        lines.append(
+            f"- Sibling `{item.get('claim_id', '')}` "
+            f"({item.get('confidence_state', '')}, {item.get('evidence_profile', '')}): "
+            f"{item.get('statement_excerpt', '')}\n"
+        )
     return "".join(lines)
 
 
