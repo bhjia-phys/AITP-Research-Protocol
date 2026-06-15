@@ -228,7 +228,11 @@ def _semantic_subgroup_review_progress(group: dict[str, Any], *, limit: int = 5)
     if not isinstance(subgroups, list):
         return []
     values: list[str] = []
-    for item in subgroups[:limit]:
+    sorted_subgroups = sorted(
+        (item for item in subgroups if isinstance(item, dict)),
+        key=_semantic_subgroup_review_sort_key,
+    )
+    for item in sorted_subgroups[:limit]:
         if not isinstance(item, dict):
             continue
         source_family = str(item.get("source_family") or "")
@@ -238,6 +242,19 @@ def _semantic_subgroup_review_progress(group: dict[str, Any], *, limit: int = 5)
         if source_family or source_object_id:
             values.append(f"{source_family}:{source_object_id}:{status}/{decision}")
     return values
+
+
+def _semantic_subgroup_review_sort_key(item: dict[str, Any]) -> tuple[bool, bool, str, str]:
+    status = str(item.get("review_status") or "pending")
+    decision = str(item.get("review_decision") or "pending")
+    reviewed = bool(item.get("latest_review_result")) or status != "pending" or decision != "pending"
+    terminal = bool(item.get("terminal_review_recorded"))
+    return (
+        not reviewed,
+        not terminal,
+        str(item.get("source_family") or ""),
+        str(item.get("source_object_id") or ""),
+    )
 
 
 def _top_mapping_keys(value: Any, *, limit: int = 10) -> list[str]:

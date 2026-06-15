@@ -320,6 +320,7 @@ def test_legacy_l2_seed_group_review_result_records_terminal_group_review(tmp_pa
 
 
 def test_legacy_l2_seed_group_review_result_records_semantic_subgroup_boundary(tmp_path):
+    from brain.v5.cli_legacy_l2_progress import compact_canonical_legacy_l2_seed_review_worklist
     from brain.v5.legacy_l2_seed_audit import (
         build_canonical_legacy_l2_seed_review_worklist,
         record_legacy_l2_seed_group_review_result,
@@ -400,6 +401,12 @@ def test_legacy_l2_seed_group_review_result_records_semantic_subgroup_boundary(t
     assert after["semantic_subgroup_terminal_review_count"] == 0
     assert after["semantic_subgroup_review_status_counts"] == {"needs_revision": 1}
     assert after["semantic_subgroup_review_decision_counts"] == {"needs_source_reconstruction": 1}
+    compact = compact_canonical_legacy_l2_seed_review_worklist(after)
+    assert compact["semantic_subgroup_reviewed_count"] == 1
+    assert compact["semantic_subgroup_open_review_count"] == 1
+    assert compact["top_group_semantic_subgroup_review_progress"][0][0] == (
+        "system:system-h2o-water:needs_revision/needs_source_reconstruction"
+    )
     assert require_valid_public_surface(
         "legacy_l2_seed_group_review_result_record",
         {"ok": True, **result.__dict__},
