@@ -252,6 +252,9 @@ def test_canonical_legacy_l2_seed_review_worklist_surfaces_semantic_subgroups(tm
     assert compact["top_group_semantic_subgroups"] == [
         ["system:system-h2o-water:1", "system:system-si-bulk:1"]
     ]
+    assert compact["top_group_semantic_subgroup_review_progress"] == [
+        ["system:system-h2o-water:pending/pending", "system:system-si-bulk:pending/pending"]
+    ]
 
 
 def test_legacy_l2_seed_group_review_result_records_terminal_group_review(tmp_path):
@@ -371,15 +374,32 @@ def test_legacy_l2_seed_group_review_result_records_semantic_subgroup_boundary(t
         remaining_actions=["decide_h2o_topic_reassignment_or_archive"],
     )
     after = build_canonical_legacy_l2_seed_review_worklist(ws, group_limit=10, sample_limit=10)
-    latest = after["review_groups"][0]["latest_review_result"]
+    reviewed_group = after["review_groups"][0]
+    reviewed_subgroup = next(
+        subgroup
+        for subgroup in reviewed_group["semantic_subgroups"]
+        if subgroup["source_object_id"] == "system-h2o-water"
+    )
 
     assert result.source_family == "system"
     assert result.source_object_id == "system-h2o-water"
-    assert latest["review_id"] == result.review_id
-    assert latest["source_family"] == "system"
-    assert latest["source_object_id"] == "system-h2o-water"
-    assert latest["reviewed_seed_entry_ids"] == [entry_ids["system-h2o-water"]]
-    assert after["review_groups"][0]["terminal_review_recorded"] is False
+    assert reviewed_group["latest_review_result"] == {}
+    assert reviewed_group["review_status"] == "pending"
+    assert reviewed_group["semantic_subgroup_reviewed_count"] == 1
+    assert reviewed_group["semantic_subgroup_open_review_count"] == 1
+    assert reviewed_group["semantic_subgroup_terminal_review_count"] == 0
+    assert reviewed_subgroup["review_status"] == "needs_revision"
+    assert reviewed_subgroup["review_decision"] == "needs_source_reconstruction"
+    assert reviewed_subgroup["latest_review_result"]["review_id"] == result.review_id
+    assert reviewed_subgroup["latest_review_result"]["source_family"] == "system"
+    assert reviewed_subgroup["latest_review_result"]["source_object_id"] == "system-h2o-water"
+    assert reviewed_subgroup["latest_review_result"]["reviewed_seed_entry_ids"] == [entry_ids["system-h2o-water"]]
+    assert reviewed_group["terminal_review_recorded"] is False
+    assert after["semantic_subgroup_reviewed_count"] == 1
+    assert after["semantic_subgroup_open_review_count"] == 1
+    assert after["semantic_subgroup_terminal_review_count"] == 0
+    assert after["semantic_subgroup_review_status_counts"] == {"needs_revision": 1}
+    assert after["semantic_subgroup_review_decision_counts"] == {"needs_source_reconstruction": 1}
     assert require_valid_public_surface(
         "legacy_l2_seed_group_review_result_record",
         {"ok": True, **result.__dict__},

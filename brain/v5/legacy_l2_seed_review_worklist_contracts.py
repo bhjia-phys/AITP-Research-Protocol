@@ -37,6 +37,9 @@ def validate_canonical_legacy_l2_seed_review_worklist(
         "open_review_group_count",
         "reviewed_group_count",
         "terminal_review_group_count",
+        "semantic_subgroup_reviewed_count",
+        "semantic_subgroup_terminal_review_count",
+        "semantic_subgroup_open_review_count",
         "visible_review_group_count",
         "topic_scope_mismatch_count",
         "global_l2_seed_count",
@@ -48,6 +51,8 @@ def validate_canonical_legacy_l2_seed_review_worklist(
         "memory_kind_counts",
         "review_status_counts",
         "review_decision_counts",
+        "semantic_subgroup_review_status_counts",
+        "semantic_subgroup_review_decision_counts",
         "review_group_blocking_class_counts",
         "promotion_policy",
     ):
@@ -100,9 +105,25 @@ def _validate_review_group(payload: Any, path: str, result: ContractResult) -> N
     for key in ("seed_count", "priority_score", "topic_scope_mismatch_count", "semantic_subgroup_count"):
         if not isinstance(payload.get(key), int) or payload[key] < 0:
             result.add(f"{path}.{key}", "must be a non-negative integer")
+    for key in (
+        "semantic_subgroup_reviewed_count",
+        "semantic_subgroup_terminal_review_count",
+        "semantic_subgroup_open_review_count",
+    ):
+        if key in payload and (not isinstance(payload.get(key), int) or payload[key] < 0):
+            result.add(f"{path}.{key}", "must be a non-negative integer")
     for key in ("blocking_classes", "review_focus", "sample_entries", "review_actions", "semantic_subgroups"):
         _require_list(payload.get(key), f"{path}.{key}", result)
-    for key in ("memory_kind_counts", "source_topic_counts", "scoped_topic_counts", "source_family_counts"):
+    for key in (
+        "memory_kind_counts",
+        "source_topic_counts",
+        "scoped_topic_counts",
+        "source_family_counts",
+        "semantic_subgroup_review_status_counts",
+        "semantic_subgroup_review_decision_counts",
+    ):
+        if key not in payload:
+            continue
         _require_mapping(payload.get(key), f"{path}.{key}", result)
     if not isinstance(payload.get("semantic_mix_detected"), bool):
         result.add(f"{path}.semantic_mix_detected", "must be a boolean")
@@ -177,6 +198,23 @@ def _validate_semantic_subgroup(payload: Any, path: str, result: ContractResult)
     for key in ("source_paths", "sample_entry_ids"):
         if not isinstance(payload.get(key), list) or not all(isinstance(item, str) for item in payload.get(key, [])):
             result.add(f"{path}.{key}", "must be a list of strings")
+    if payload.get("review_status", "pending") not in {"pending", "passed", "needs_revision", "inconclusive"}:
+        result.add(f"{path}.review_status", "must be an allowed review status")
+    if payload.get("review_decision", "pending") not in {
+        "pending",
+        "archive",
+        "reassign",
+        "promote_candidate",
+        "already_represented",
+        "irrelevant",
+        "needs_source_reconstruction",
+        "needs_topic_alignment",
+    }:
+        result.add(f"{path}.review_decision", "must be an allowed review decision")
+    if "latest_review_result" in payload:
+        _require_mapping(payload.get("latest_review_result"), f"{path}.latest_review_result", result)
+    if "terminal_review_recorded" in payload and not isinstance(payload.get("terminal_review_recorded"), bool):
+        result.add(f"{path}.terminal_review_recorded", "must be a boolean")
     if payload.get("can_update_claim_trust") is not False:
         result.add(f"{path}.can_update_claim_trust", "must be false")
 

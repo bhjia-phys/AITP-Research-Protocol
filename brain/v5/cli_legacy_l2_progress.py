@@ -143,11 +143,16 @@ def compact_canonical_legacy_l2_seed_review_worklist(payload: dict[str, Any]) ->
         "open_review_group_count": int(payload.get("open_review_group_count") or 0),
         "reviewed_group_count": int(payload.get("reviewed_group_count") or 0),
         "terminal_review_group_count": int(payload.get("terminal_review_group_count") or 0),
+        "semantic_subgroup_reviewed_count": int(payload.get("semantic_subgroup_reviewed_count") or 0),
+        "semantic_subgroup_terminal_review_count": int(payload.get("semantic_subgroup_terminal_review_count") or 0),
+        "semantic_subgroup_open_review_count": int(payload.get("semantic_subgroup_open_review_count") or 0),
         "visible_review_group_count": int(payload.get("visible_review_group_count") or 0),
         "topic_scope_mismatch_count": int(payload.get("topic_scope_mismatch_count") or 0),
         "global_l2_seed_count": int(payload.get("global_l2_seed_count") or 0),
         "review_status_counts": dict(payload.get("review_status_counts") or {}),
         "review_decision_counts": dict(payload.get("review_decision_counts") or {}),
+        "semantic_subgroup_review_status_counts": dict(payload.get("semantic_subgroup_review_status_counts") or {}),
+        "semantic_subgroup_review_decision_counts": dict(payload.get("semantic_subgroup_review_decision_counts") or {}),
         "review_group_blocking_class_counts": dict(payload.get("review_group_blocking_class_counts") or {}),
         "top_group_ids": _group_strings(top_groups, "group_id"),
         "top_group_topics": _group_strings(top_groups, "topic_id"),
@@ -164,6 +169,10 @@ def compact_canonical_legacy_l2_seed_review_worklist(payload: dict[str, Any]) ->
         ],
         "top_group_semantic_subgroups": [
             _semantic_subgroup_strings(group)
+            for group in top_groups
+        ],
+        "top_group_semantic_subgroup_review_progress": [
+            _semantic_subgroup_review_progress(group)
             for group in top_groups
         ],
         "top_group_blocking_classes": [
@@ -211,6 +220,23 @@ def _semantic_subgroup_strings(group: dict[str, Any], *, limit: int = 5) -> list
         seed_count = int(item.get("seed_count") or 0)
         if source_family or source_object_id:
             values.append(f"{source_family}:{source_object_id}:{seed_count}")
+    return values
+
+
+def _semantic_subgroup_review_progress(group: dict[str, Any], *, limit: int = 5) -> list[str]:
+    subgroups = group.get("semantic_subgroups")
+    if not isinstance(subgroups, list):
+        return []
+    values: list[str] = []
+    for item in subgroups[:limit]:
+        if not isinstance(item, dict):
+            continue
+        source_family = str(item.get("source_family") or "")
+        source_object_id = str(item.get("source_object_id") or "")
+        status = str(item.get("review_status") or "pending")
+        decision = str(item.get("review_decision") or "pending")
+        if source_family or source_object_id:
+            values.append(f"{source_family}:{source_object_id}:{status}/{decision}")
     return values
 
 

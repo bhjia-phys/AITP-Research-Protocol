@@ -98,15 +98,19 @@ def build_canonical_legacy_l2_seed_review_worklist(
         ws=ws,
         sample_limit=max(0, int(sample_limit)),
     )
-    review_results = _latest_group_review_results(ws)
+    group_review_results, subgroup_review_results = _latest_review_results(ws)
     groups = [
-        _attach_group_review_result(group, review_results.get(str(group.get("group_id") or "")))
+        _attach_review_results(
+            group,
+            group_result=group_review_results.get(str(group.get("group_id") or "")),
+            subgroup_results=subgroup_review_results,
+        )
         for group in groups
     ]
     groups.sort(
         key=lambda group: (
             bool(group.get("terminal_review_recorded")),
-            not bool(group.get("latest_review_result")),
+            not bool(group.get("latest_review_result") or group.get("semantic_subgroup_reviewed_count")),
             -int(group.get("priority_score") or 0),
             str(group.get("topic_id") or ""),
             str(group.get("target_topic_id") or ""),
@@ -123,6 +127,17 @@ def build_canonical_legacy_l2_seed_review_worklist(
     open_groups = [group for group in groups if not group.get("terminal_review_recorded")]
     reviewed_groups = [group for group in groups if group.get("latest_review_result")]
     terminal_groups = [group for group in groups if group.get("terminal_review_recorded")]
+    reviewed_subgroups = [
+        subgroup
+        for group in groups
+        for subgroup in group.get("semantic_subgroups", [])
+        if isinstance(subgroup, dict) and subgroup.get("latest_review_result")
+    ]
+    terminal_subgroups = [
+        subgroup
+        for subgroup in reviewed_subgroups
+        if subgroup.get("terminal_review_recorded")
+    ]
     open_group_ids = {str(group.get("group_id") or "") for group in open_groups}
     topic_mismatch_count = sum(
         1
@@ -145,6 +160,9 @@ def build_canonical_legacy_l2_seed_review_worklist(
         "open_review_group_count": len(open_groups),
         "reviewed_group_count": len(reviewed_groups),
         "terminal_review_group_count": len(terminal_groups),
+        "semantic_subgroup_reviewed_count": len(reviewed_subgroups),
+        "semantic_subgroup_terminal_review_count": len(terminal_subgroups),
+        "semantic_subgroup_open_review_count": len(reviewed_subgroups) - len(terminal_subgroups),
         "visible_review_group_count": min(len(groups), max(0, int(group_limit))),
         "topic_scope_mismatch_count": topic_mismatch_count,
         "global_l2_seed_count": global_l2_count,
@@ -152,6 +170,8 @@ def build_canonical_legacy_l2_seed_review_worklist(
         "memory_kind_counts": dict(sorted(audit["memory_kind_counts"].items())),
         "review_status_counts": dict(sorted(Counter(str(group.get("review_status") or "pending") for group in groups).items())),
         "review_decision_counts": dict(sorted(Counter(str(group.get("review_decision") or "pending") for group in groups).items())),
+        "semantic_subgroup_review_status_counts": dict(sorted(Counter(str(subgroup.get("review_status") or "pending") for subgroup in reviewed_subgroups).items())),
+        "semantic_subgroup_review_decision_counts": dict(sorted(Counter(str(subgroup.get("review_decision") or "pending") for subgroup in reviewed_subgroups).items())),
         "review_group_blocking_class_counts": dict(sorted(blocking_counts.items())),
         "review_groups": groups[: max(0, int(group_limit))],
         "next_actions": _review_worklist_next_actions(seed_entries, groups),
@@ -544,6 +564,10 @@ def _semantic_subgroups(seeds: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     source_object_id=source_object_id,
                     seeds=group_seeds,
                 ),
+                "review_status": "pending",
+                "review_decision": "pending",
+                "latest_review_result": {},
+                "terminal_review_recorded": False,
                 "can_update_claim_trust": False,
             }
         )
@@ -724,31 +748,82 @@ def _review_worklist_next_actions(seeds: list[dict[str, Any]], groups: list[dict
     return actions
 
 
-def _latest_group_review_results(ws: WorkspacePaths) -> dict[str, LegacyL2SeedGroupReviewResultRecord]:
+def _latest_review_results(
+    ws: WorkspacePaths,
+) -> tuple[
+    dict[str, LegacyL2SeedGroupReviewResultRecord],
+    dict[tuple[str, str, str], LegacyL2SeedGroupReviewResultRecord],
+]:
     records = list_valid_records(
         ws.registry_dir("legacy_l2_seed_group_reviews"),
         LegacyL2SeedGroupReviewResultRecord,
     )
-    latest: dict[str, LegacyL2SeedGroupReviewResultRecord] = {}
+    latest_groups: dict[str, LegacyL2SeedGroupReviewResultRecord] = {}
+    latest_subgroups: dict[tuple[str, str, str], LegacyL2SeedGroupReviewResultRecord] = {}
     for record in records:
-        current = latest.get(record.group_id)
+        if record.source_family or record.source_object_id:
+            key = (record.group_id, record.source_family, record.source_object_id)
+            current = latest_subgroups.get(key)
+            if current is None or _review_sort_key(record) > _review_sort_key(current):
+                latest_subgroups[key] = record
+            continue
+        current = latest_groups.get(record.group_id)
         if current is None or _review_sort_key(record) > _review_sort_key(current):
-            latest[record.group_id] = record
-    return latest
+            latest_groups[record.group_id] = record
+    return latest_groups, latest_subgroups
 
 
-def _attach_group_review_result(
+def _attach_review_results(
     group: dict[str, Any],
-    result: LegacyL2SeedGroupReviewResultRecord | None,
+    *,
+    group_result: LegacyL2SeedGroupReviewResultRecord | None,
+    subgroup_results: dict[tuple[str, str, str], LegacyL2SeedGroupReviewResultRecord],
 ) -> dict[str, Any]:
-    if result is None:
-        return group
     payload = dict(group)
-    review = asdict(result)
+    reviewed_subgroup_count = 0
+    terminal_subgroup_count = 0
+    status_counts: Counter[str] = Counter()
+    decision_counts: Counter[str] = Counter()
+    subgroups: list[dict[str, Any]] = []
+    group_id = str(group.get("group_id") or "")
+    for subgroup in group.get("semantic_subgroups", []):
+        if not isinstance(subgroup, dict):
+            continue
+        next_subgroup = dict(subgroup)
+        result = subgroup_results.get(
+            (
+                group_id,
+                str(subgroup.get("source_family") or ""),
+                str(subgroup.get("source_object_id") or ""),
+            )
+        )
+        if result is not None:
+            review = asdict(result)
+            review["orientation_only"] = True
+            terminal = result.status == "passed" and result.decision in _TERMINAL_REVIEW_DECISIONS
+            next_subgroup["review_status"] = result.status
+            next_subgroup["review_decision"] = result.decision
+            next_subgroup["latest_review_result"] = review
+            next_subgroup["terminal_review_recorded"] = terminal
+            reviewed_subgroup_count += 1
+            if terminal:
+                terminal_subgroup_count += 1
+            status_counts[result.status] += 1
+            decision_counts[result.decision] += 1
+        subgroups.append(next_subgroup)
+    payload["semantic_subgroups"] = subgroups
+    payload["semantic_subgroup_reviewed_count"] = reviewed_subgroup_count
+    payload["semantic_subgroup_terminal_review_count"] = terminal_subgroup_count
+    payload["semantic_subgroup_open_review_count"] = reviewed_subgroup_count - terminal_subgroup_count
+    payload["semantic_subgroup_review_status_counts"] = dict(sorted(status_counts.items()))
+    payload["semantic_subgroup_review_decision_counts"] = dict(sorted(decision_counts.items()))
+    if group_result is None:
+        return payload
+    review = asdict(group_result)
     review["orientation_only"] = True
-    terminal = result.status == "passed" and result.decision in _TERMINAL_REVIEW_DECISIONS
-    payload["review_status"] = result.status
-    payload["review_decision"] = result.decision
+    terminal = group_result.status == "passed" and group_result.decision in _TERMINAL_REVIEW_DECISIONS
+    payload["review_status"] = group_result.status
+    payload["review_decision"] = group_result.decision
     payload["latest_review_result"] = review
     payload["terminal_review_recorded"] = terminal
     return payload
