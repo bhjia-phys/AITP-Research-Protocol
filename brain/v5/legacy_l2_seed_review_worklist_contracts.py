@@ -97,13 +97,15 @@ def _validate_review_group(payload: Any, path: str, result: ContractResult) -> N
     ):
         if not isinstance(payload.get(key), str):
             result.add(f"{path}.{key}", "must be a string")
-    for key in ("seed_count", "priority_score", "topic_scope_mismatch_count"):
+    for key in ("seed_count", "priority_score", "topic_scope_mismatch_count", "semantic_subgroup_count"):
         if not isinstance(payload.get(key), int) or payload[key] < 0:
             result.add(f"{path}.{key}", "must be a non-negative integer")
-    for key in ("blocking_classes", "review_focus", "sample_entries", "review_actions"):
+    for key in ("blocking_classes", "review_focus", "sample_entries", "review_actions", "semantic_subgroups"):
         _require_list(payload.get(key), f"{path}.{key}", result)
-    for key in ("memory_kind_counts", "source_topic_counts", "scoped_topic_counts"):
+    for key in ("memory_kind_counts", "source_topic_counts", "scoped_topic_counts", "source_family_counts"):
         _require_mapping(payload.get(key), f"{path}.{key}", result)
+    if not isinstance(payload.get("semantic_mix_detected"), bool):
+        result.add(f"{path}.semantic_mix_detected", "must be a boolean")
     if payload.get("review_status") not in {"pending", "passed", "needs_revision", "inconclusive"}:
         result.add(f"{path}.review_status", "must be an allowed review status")
     if payload.get("review_decision") not in {
@@ -123,6 +125,9 @@ def _validate_review_group(payload: Any, path: str, result: ContractResult) -> N
     if isinstance(payload.get("sample_entries"), list):
         for index, entry in enumerate(payload["sample_entries"]):
             _validate_seed_entry(entry, f"{path}.sample_entries[{index}]", result)
+    if isinstance(payload.get("semantic_subgroups"), list):
+        for index, subgroup in enumerate(payload["semantic_subgroups"]):
+            _validate_semantic_subgroup(subgroup, f"{path}.semantic_subgroups[{index}]", result)
     if isinstance(payload.get("review_actions"), list):
         for index, action in enumerate(payload["review_actions"]):
             _validate_review_action(action, f"{path}.review_actions[{index}]", result)
@@ -140,6 +145,8 @@ def _validate_seed_entry(payload: Any, path: str, result: ContractResult) -> Non
         "source_topic_id",
         "scoped_topic_id",
         "source_claim_id",
+        "source_object_id",
+        "source_family",
         "status",
         "memory_kind",
         "scope",
@@ -153,6 +160,23 @@ def _validate_seed_entry(payload: Any, path: str, result: ContractResult) -> Non
         result.add(f"{path}.requires_semantic_l2_reassignment", "must be true")
     if not isinstance(payload.get("topic_scope_mismatch"), bool):
         result.add(f"{path}.topic_scope_mismatch", "must be a boolean")
+    if payload.get("can_update_claim_trust") is not False:
+        result.add(f"{path}.can_update_claim_trust", "must be false")
+
+
+def _validate_semantic_subgroup(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    for key in ("source_family", "source_object_id", "review_hint"):
+        if not isinstance(payload.get(key), str):
+            result.add(f"{path}.{key}", "must be a string")
+    if not isinstance(payload.get("seed_count"), int) or payload["seed_count"] < 0:
+        result.add(f"{path}.seed_count", "must be a non-negative integer")
+    _require_mapping(payload.get("memory_kind_counts"), f"{path}.memory_kind_counts", result)
+    for key in ("source_paths", "sample_entry_ids"):
+        if not isinstance(payload.get(key), list) or not all(isinstance(item, str) for item in payload.get(key, [])):
+            result.add(f"{path}.{key}", "must be a list of strings")
     if payload.get("can_update_claim_trust") is not False:
         result.add(f"{path}.can_update_claim_trust", "must be false")
 

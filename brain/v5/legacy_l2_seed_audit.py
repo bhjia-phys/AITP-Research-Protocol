@@ -297,11 +297,15 @@ def _seed_entry(path: Path, frontmatter: dict[str, Any], *, ws: WorkspacePaths) 
     topic_id = _text(frontmatter.get("topic_id"))
     source_topic_id = _text(frontmatter.get("source_topic_id"))
     scoped_topic_id = _scoped_topic_id(frontmatter)
+    source_object_id = _source_object_id(source_path)
+    source_family = _source_family(source_object_id)
     return {
         "entry_id": entry_id,
         "topic_id": topic_id,
         "source_topic_id": source_topic_id,
         "scoped_topic_id": scoped_topic_id,
+        "source_object_id": source_object_id,
+        "source_family": source_family,
         "source_claim_id": _text(frontmatter.get("source_claim_id")),
         "status": _text(frontmatter.get("status")),
         "memory_kind": _text(frontmatter.get("memory_kind")),
@@ -326,6 +330,23 @@ def _source_path(frontmatter: dict[str, Any]) -> str:
     if source_packet.startswith("legacy_l2:"):
         return source_packet.removeprefix("legacy_l2:")
     return ""
+
+
+def _source_object_id(source_path: str) -> str:
+    if not source_path:
+        return ""
+    return Path(source_path.replace("\\", "/")).stem
+
+
+def _source_family(source_object_id: str) -> str:
+    if not source_object_id:
+        return "_missing"
+    for prefix in ("claim-", "system-", "method-", "pitfall-", "question-"):
+        if source_object_id.startswith(prefix):
+            return prefix[:-1]
+    if source_object_id.startswith("e-"):
+        return "relation"
+    return "other"
 
 
 def _scoped_topic_id(frontmatter: dict[str, Any]) -> str:
@@ -390,7 +411,11 @@ def _seed_group_payload(
     kind_counts = Counter(str(seed.get("memory_kind") or "_missing") for seed in seeds)
     source_topic_counts = Counter(str(seed.get("source_topic_id") or "_missing") for seed in seeds)
     scoped_topic_counts = Counter(str(seed.get("scoped_topic_id") or "_missing") for seed in seeds)
+    source_family_counts = Counter(str(seed.get("source_family") or "_missing") for seed in seeds)
+    semantic_subgroups = _semantic_subgroups(seeds)
     blocking_classes = _group_blocking_classes(seeds, topic_id=topic_id, target_topic_id=target_topic_id)
+    if len(semantic_subgroups) > 1 and "semantic_subgroup_split_required" not in blocking_classes:
+        blocking_classes.append("semantic_subgroup_split_required")
     priority_score = _group_priority_score(memory_role=memory_role, blocking_classes=blocking_classes, count=len(seeds))
     return {
         "group_id": _group_id(topic_id, target_topic_id, source_claim_id, memory_role),
@@ -405,6 +430,10 @@ def _seed_group_payload(
         "memory_kind_counts": dict(sorted(kind_counts.items())),
         "source_topic_counts": dict(sorted(source_topic_counts.items())),
         "scoped_topic_counts": dict(sorted(scoped_topic_counts.items())),
+        "source_family_counts": dict(sorted(source_family_counts.items())),
+        "semantic_mix_detected": len(semantic_subgroups) > 1,
+        "semantic_subgroup_count": len(semantic_subgroups),
+        "semantic_subgroups": semantic_subgroups,
         "topic_scope_mismatch_count": sum(1 for seed in seeds if seed.get("topic_scope_mismatch")),
         "sample_entries": seeds[:sample_limit],
         "review_actions": _group_review_actions(
@@ -469,8 +498,65 @@ def _group_blocking_classes(seeds: list[dict[str, Any]], *, topic_id: str, targe
     return classes or ["semantic_l2_reassignment_required"]
 
 
+def _semantic_subgroups(seeds: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+    for seed in seeds:
+        key = (
+            str(seed.get("source_family") or "_missing"),
+            str(seed.get("source_object_id") or "_missing"),
+        )
+        grouped[key].append(seed)
+    subgroups: list[dict[str, Any]] = []
+    for (source_family, source_object_id), group_seeds in grouped.items():
+        memory_kind_counts = Counter(str(seed.get("memory_kind") or "_missing") for seed in group_seeds)
+        source_paths = sorted({str(seed.get("source_path") or "") for seed in group_seeds if str(seed.get("source_path") or "")})
+        subgroups.append(
+            {
+                "source_family": source_family,
+                "source_object_id": source_object_id,
+                "seed_count": len(group_seeds),
+                "memory_kind_counts": dict(sorted(memory_kind_counts.items())),
+                "source_paths": source_paths[:5],
+                "sample_entry_ids": [
+                    str(seed.get("entry_id") or "")
+                    for seed in group_seeds[:5]
+                    if str(seed.get("entry_id") or "")
+                ],
+                "review_hint": _semantic_subgroup_review_hint(
+                    source_family=source_family,
+                    source_object_id=source_object_id,
+                    seeds=group_seeds,
+                ),
+                "can_update_claim_trust": False,
+            }
+        )
+    subgroups.sort(
+        key=lambda item: (
+            str(item.get("source_family") or ""),
+            str(item.get("source_object_id") or ""),
+        )
+    )
+    return subgroups
+
+
+def _semantic_subgroup_review_hint(*, source_family: str, source_object_id: str, seeds: list[dict[str, Any]]) -> str:
+    if source_family == "relation":
+        return "review_relation_edge_for_typed_relation_or_archive"
+    if source_family == "claim":
+        return "review_claim_scope_and_evidence_before_promotion"
+    if source_family in {"system", "method", "pitfall", "question"}:
+        return f"review_{source_family}_object_for_topic_reassignment_or_archive"
+    if source_object_id and source_object_id != "_missing":
+        return "review_source_object_for_topic_reassignment_or_archive"
+    if any(str(seed.get("source_path") or "") for seed in seeds):
+        return "review_source_path_for_missing_object_id"
+    return "reconstruct_missing_source_before_review"
+
+
 def _group_review_focus(*, memory_role: str, blocking_classes: list[str]) -> list[str]:
     focus: list[str] = []
+    if "semantic_subgroup_split_required" in blocking_classes:
+        focus.append("split_mixed_seed_group_by_source_object_before_terminal_review")
     if "global_l2_topic_reassignment_required" in blocking_classes:
         focus.append("assign_global_l2_seed_to_target_topic_or_archive")
     if "topic_scope_alignment_required" in blocking_classes or "source_topic_scope_mismatch" in blocking_classes:
@@ -496,6 +582,8 @@ def _group_priority_score(*, memory_role: str, blocking_classes: list[str], coun
         score += 250
     if "topic_scope_alignment_required" in blocking_classes:
         score += 200
+    if "semantic_subgroup_split_required" in blocking_classes:
+        score += 90
     if "claim" in memory_role:
         score += 120
     if "edge" in memory_role:

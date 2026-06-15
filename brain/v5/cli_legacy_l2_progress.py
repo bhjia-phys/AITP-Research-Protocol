@@ -154,6 +154,18 @@ def compact_canonical_legacy_l2_seed_review_worklist(payload: dict[str, Any]) ->
         "top_group_target_topics": _group_strings(top_groups, "target_topic_id"),
         "top_group_source_claim_ids": _group_strings(top_groups, "source_claim_id"),
         "top_group_memory_roles": _group_strings(top_groups, "memory_role"),
+        "top_group_semantic_mix_detected": [
+            bool(group.get("semantic_mix_detected", False))
+            for group in top_groups
+        ],
+        "top_group_semantic_subgroup_counts": [
+            int(group.get("semantic_subgroup_count") or 0)
+            for group in top_groups
+        ],
+        "top_group_semantic_subgroups": [
+            _semantic_subgroup_strings(group)
+            for group in top_groups
+        ],
         "top_group_blocking_classes": [
             _limited_strings(group.get("blocking_classes"))
             for group in top_groups
@@ -184,6 +196,22 @@ def _group_strings(groups: list[dict[str, Any]], key: str) -> list[str]:
         for group in groups
         if str(group.get(key) or "")
     ]
+
+
+def _semantic_subgroup_strings(group: dict[str, Any], *, limit: int = 5) -> list[str]:
+    subgroups = group.get("semantic_subgroups")
+    if not isinstance(subgroups, list):
+        return []
+    values: list[str] = []
+    for item in subgroups[:limit]:
+        if not isinstance(item, dict):
+            continue
+        source_family = str(item.get("source_family") or "")
+        source_object_id = str(item.get("source_object_id") or "")
+        seed_count = int(item.get("seed_count") or 0)
+        if source_family or source_object_id:
+            values.append(f"{source_family}:{source_object_id}:{seed_count}")
+    return values
 
 
 def _top_mapping_keys(value: Any, *, limit: int = 10) -> list[str]:

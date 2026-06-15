@@ -173,8 +173,14 @@ def test_canonical_legacy_l2_seed_review_worklist_groups_global_and_mismatched_s
     assert "topic_scope_alignment_required" in payload["review_group_blocking_class_counts"]
     top = payload["review_groups"][0]
     assert top["target_topic_id"] == "qsgw-headwing-update-librpa"
+    assert top["semantic_mix_detected"] is False
+    assert top["semantic_subgroup_count"] == 1
+    assert top["semantic_subgroups"][0]["source_family"] == "claim"
+    assert top["semantic_subgroups"][0]["source_object_id"] == "claim-headwing"
     assert top["sample_entries"][0]["requires_semantic_l2_reassignment"] is True
     assert top["sample_entries"][0]["topic_scope_mismatch"] is True
+    assert top["sample_entries"][0]["source_family"] == "claim"
+    assert top["sample_entries"][0]["source_object_id"] == "claim-headwing"
     assert top["review_actions"][0]["mcp"] == "aitp_v5_build_canonical_legacy_l2_seed_review_worklist"
     assert top["review_actions"][1]["mcp"] == "aitp_v5_record_legacy_l2_seed_group_review_result"
     assert top["review_status"] == "pending"
@@ -193,6 +199,57 @@ def test_canonical_legacy_l2_seed_review_worklist_groups_global_and_mismatched_s
         "do_not_use_topic_level_passed_review_as_per_seed_trust",
     ]
     assert require_valid_public_surface("canonical_legacy_l2_seed_review_worklist", payload) == payload
+
+
+def test_canonical_legacy_l2_seed_review_worklist_surfaces_semantic_subgroups(tmp_path):
+    from brain.v5.cli_legacy_l2_progress import compact_canonical_legacy_l2_seed_review_worklist
+    from brain.v5.legacy_l2_seed_audit import build_canonical_legacy_l2_seed_review_worklist
+
+    ws = init_workspace(tmp_path)
+    entries = ws.root / "memory" / "l2" / "entries"
+    for object_id, body in (
+        ("system-h2o-water", "# H2O\n"),
+        ("system-si-bulk", "# Si\n"),
+    ):
+        entry_id = f"memory-legacy-l2-l2-entries-{object_id}"
+        write_md(
+            entries / f"{entry_id}.md",
+            {
+                "kind": "memory_entry",
+                "entry_id": entry_id,
+                "topic_id": "L2",
+                "source_topic_id": "L2",
+                "source_claim_id": "claim-l2",
+                "memory_kind": "legacy_l2_entry:system",
+                "scope": "legacy global L2 system seed",
+                "source_packet_id": f"legacy_l2:D:/aitp/L2/entries/{object_id}.md",
+                "status": "legacy_seed",
+            },
+            body,
+        )
+
+    payload = build_canonical_legacy_l2_seed_review_worklist(ws, group_limit=10, sample_limit=10)
+    group = payload["review_groups"][0]
+
+    assert group["memory_role"] == "system"
+    assert group["semantic_mix_detected"] is True
+    assert group["semantic_subgroup_count"] == 2
+    assert group["source_family_counts"] == {"system": 2}
+    assert "semantic_subgroup_split_required" in group["blocking_classes"]
+    assert group["review_focus"][0] == "split_mixed_seed_group_by_source_object_before_terminal_review"
+    assert [item["source_object_id"] for item in group["semantic_subgroups"]] == [
+        "system-h2o-water",
+        "system-si-bulk",
+    ]
+    assert group["semantic_subgroups"][0]["review_hint"] == "review_system_object_for_topic_reassignment_or_archive"
+    assert require_valid_public_surface("canonical_legacy_l2_seed_review_worklist", payload) == payload
+
+    compact = compact_canonical_legacy_l2_seed_review_worklist(payload)
+    assert compact["top_group_semantic_mix_detected"] == [True]
+    assert compact["top_group_semantic_subgroup_counts"] == [2]
+    assert compact["top_group_semantic_subgroups"] == [
+        ["system:system-h2o-water:1", "system:system-si-bulk:1"]
+    ]
 
 
 def test_legacy_l2_seed_group_review_result_records_terminal_group_review(tmp_path):
