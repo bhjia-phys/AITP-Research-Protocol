@@ -6,6 +6,7 @@ from brain.v5.legacy_l2_graph import build_legacy_l2_graph_manifest, build_legac
 from brain.v5.legacy_l2_seed_audit import (
     audit_canonical_legacy_l2_seeds,
     build_canonical_legacy_l2_seed_review_worklist,
+    record_legacy_l2_seed_group_review_result,
 )
 from brain.v5.legacy_l2_obsidian import write_legacy_l2_obsidian_view
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
@@ -138,6 +139,46 @@ def aitp_v5_build_canonical_legacy_l2_seed_review_worklist(
     return {
         "ok": True,
         **require_valid_public_surface("canonical_legacy_l2_seed_review_worklist", result),
+    }
+
+
+def aitp_v5_record_legacy_l2_seed_group_review_result(
+    base: str,
+    *,
+    group_id: str,
+    status: str,
+    decision: str,
+    summary: str,
+    reviewed_seed_entry_ids: list[str] | None = None,
+    reviewed_seed_refs: list[str] | None = None,
+    reviewed_typed_refs: list[str] | None = None,
+    evidence_refs: list[str] | None = None,
+    validation_result_ids: list[str] | None = None,
+    remaining_actions: list[str] | None = None,
+    checkpoint_id: str = "",
+    reviewer_role: str = "human_or_adversarial_reviewer",
+) -> dict:
+    result = record_legacy_l2_seed_group_review_result(
+        _ws(base),
+        group_id=group_id,
+        status=status,
+        decision=decision,
+        summary=summary,
+        reviewed_seed_entry_ids=reviewed_seed_entry_ids,
+        reviewed_seed_refs=reviewed_seed_refs,
+        reviewed_typed_refs=reviewed_typed_refs,
+        evidence_refs=evidence_refs,
+        validation_result_ids=validation_result_ids,
+        remaining_actions=remaining_actions,
+        checkpoint_id=checkpoint_id,
+        reviewer_role=reviewer_role,
+    )
+    return {
+        "ok": True,
+        **require_valid_public_surface(
+            "legacy_l2_seed_group_review_result_record",
+            {"ok": True, **result.__dict__},
+        ),
     }
 
 

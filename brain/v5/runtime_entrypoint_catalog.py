@@ -393,6 +393,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_build_canonical_legacy_l2_seed_review_worklist",
         "surface": "canonical_legacy_l2_seed_review_worklist",
     },
+    "record_legacy_l2_seed_group_review_result": {
+        "cli": "aitp-v5 legacy l2-seed-review-result <args>",
+        "mcp": "aitp_v5_record_legacy_l2_seed_group_review_result",
+        "surface": "legacy_l2_seed_group_review_result_record",
+    },
     "legacy_l2_obsidian_view": {
         "cli": "aitp-v5 legacy l2-obsidian-view <args>",
         "mcp": "aitp_v5_write_legacy_l2_obsidian_view",

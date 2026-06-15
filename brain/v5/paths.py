@@ -36,6 +36,7 @@ _LAYOUT_DIRS = [
     "registry/checkpoints",
     "registry/promotion_packets",
     "registry/legacy_semantic_reviews",
+    "registry/legacy_l2_seed_group_reviews",
     "registry/legacy_semantic_repairs",
     "registry/legacy_source_reconstruction_repairs",
     "registry/outputs",

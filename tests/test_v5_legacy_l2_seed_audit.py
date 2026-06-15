@@ -162,6 +162,11 @@ def test_canonical_legacy_l2_seed_review_worklist_groups_global_and_mismatched_s
     assert payload["kind"] == "canonical_legacy_l2_seed_review_worklist"
     assert payload["legacy_seed_count"] == 2
     assert payload["review_group_count"] == 2
+    assert payload["open_review_group_count"] == 2
+    assert payload["reviewed_group_count"] == 0
+    assert payload["terminal_review_group_count"] == 0
+    assert payload["review_status_counts"] == {"pending": 2}
+    assert payload["review_decision_counts"] == {"pending": 2}
     assert payload["global_l2_seed_count"] == 1
     assert payload["topic_scope_mismatch_count"] == 2
     assert "global_l2_topic_reassignment_required" in payload["review_group_blocking_class_counts"]
@@ -171,6 +176,11 @@ def test_canonical_legacy_l2_seed_review_worklist_groups_global_and_mismatched_s
     assert top["sample_entries"][0]["requires_semantic_l2_reassignment"] is True
     assert top["sample_entries"][0]["topic_scope_mismatch"] is True
     assert top["review_actions"][0]["mcp"] == "aitp_v5_build_canonical_legacy_l2_seed_review_worklist"
+    assert top["review_actions"][1]["mcp"] == "aitp_v5_record_legacy_l2_seed_group_review_result"
+    assert top["review_status"] == "pending"
+    assert top["review_decision"] == "pending"
+    assert top["latest_review_result"] == {}
+    assert top["terminal_review_recorded"] is False
     assert "create_reviewed_promotion_packet_after_typed_evidence_exists" not in [
         action["action"] for action in top["review_actions"]
     ]
@@ -185,18 +195,136 @@ def test_canonical_legacy_l2_seed_review_worklist_groups_global_and_mismatched_s
     assert require_valid_public_surface("canonical_legacy_l2_seed_review_worklist", payload) == payload
 
 
+def test_legacy_l2_seed_group_review_result_records_terminal_group_review(tmp_path):
+    from brain.v5.legacy_l2_seed_audit import (
+        build_canonical_legacy_l2_seed_review_worklist,
+        record_legacy_l2_seed_group_review_result,
+    )
+
+    ws = init_workspace(tmp_path)
+    entry_id = "memory-legacy-l2-topic-a-l2-entries-claim-headwing"
+    write_md(
+        ws.root / "memory" / "l2" / "entries" / f"{entry_id}.md",
+        {
+            "kind": "memory_entry",
+            "entry_id": entry_id,
+            "topic_id": "topic-a",
+            "source_topic_id": "topic-a",
+            "source_claim_id": "claim-headwing",
+            "memory_kind": "legacy_l2_entry:claim",
+            "scope": "topic:topic-a",
+            "status": "legacy_seed",
+        },
+        "# Legacy seed\n",
+    )
+    before = build_canonical_legacy_l2_seed_review_worklist(ws, group_limit=10, sample_limit=10)
+    group_id = before["review_groups"][0]["group_id"]
+
+    result = record_legacy_l2_seed_group_review_result(
+        ws,
+        group_id=group_id,
+        status="passed",
+        decision="archive",
+        summary="Reviewed as archive-only legacy orientation; do not promote.",
+        reviewed_seed_entry_ids=[entry_id],
+        remaining_actions=["no_promotion_required"],
+    )
+    after = build_canonical_legacy_l2_seed_review_worklist(ws, group_limit=10, sample_limit=10)
+
+    assert result.kind == "legacy_l2_seed_group_review_result"
+    assert result.group_id == group_id
+    assert result.topic_id == "topic-a"
+    assert result.decision == "archive"
+    assert (ws.registry_dir("legacy_l2_seed_group_reviews") / f"{result.review_id}.md").exists()
+    assert after["legacy_seed_count"] == 1
+    assert after["review_group_count"] == 1
+    assert after["open_review_group_count"] == 0
+    assert after["reviewed_group_count"] == 1
+    assert after["terminal_review_group_count"] == 1
+    assert after["review_status_counts"] == {"passed": 1}
+    assert after["review_decision_counts"] == {"archive": 1}
+    assert after["review_group_blocking_class_counts"] == {}
+    assert after["next_actions"] == ["no_canonical_legacy_l2_seed_review_needed"]
+    reviewed = after["review_groups"][0]
+    assert reviewed["review_status"] == "passed"
+    assert reviewed["review_decision"] == "archive"
+    assert reviewed["latest_review_result"]["review_id"] == result.review_id
+    assert reviewed["terminal_review_recorded"] is True
+    assert require_valid_public_surface(
+        "legacy_l2_seed_group_review_result_record",
+        {"ok": True, **result.__dict__},
+    ) == {"ok": True, **result.__dict__}
+    assert require_valid_public_surface("canonical_legacy_l2_seed_review_worklist", after) == after
+
+
+def test_legacy_l2_seed_group_review_result_surfaces_open_reviewed_groups_first(tmp_path):
+    from brain.v5.legacy_l2_seed_audit import (
+        build_canonical_legacy_l2_seed_review_worklist,
+        record_legacy_l2_seed_group_review_result,
+    )
+
+    ws = init_workspace(tmp_path)
+    entries = ws.root / "memory" / "l2" / "entries"
+    for topic, claim, priority_scope in (
+        ("topic-high", "claim-high", "topic:wrong-topic"),
+        ("topic-low", "claim-low", "topic:topic-low"),
+    ):
+        entry_id = f"memory-legacy-l2-{topic}-l2-entries-{claim}"
+        write_md(
+            entries / f"{entry_id}.md",
+            {
+                "kind": "memory_entry",
+                "entry_id": entry_id,
+                "topic_id": topic,
+                "source_topic_id": topic,
+                "source_claim_id": claim,
+                "memory_kind": "legacy_l2_entry:claim",
+                "scope": priority_scope,
+                "status": "legacy_seed",
+            },
+            "# Legacy seed\n",
+        )
+
+    before = build_canonical_legacy_l2_seed_review_worklist(ws, group_limit=10, sample_limit=10)
+    low_group = next(group for group in before["review_groups"] if group["source_claim_id"] == "claim-low")
+    high_group = next(group for group in before["review_groups"] if group["source_claim_id"] == "claim-high")
+
+    record_legacy_l2_seed_group_review_result(
+        ws,
+        group_id=low_group["group_id"],
+        status="needs_revision",
+        decision="needs_topic_alignment",
+        summary="Non-terminal review confirms this group still needs topic alignment before any promotion or archive decision.",
+        reviewed_seed_entry_ids=[low_group["sample_entries"][0]["entry_id"]],
+        remaining_actions=["resolve_target_topic_before_terminal_decision"],
+    )
+    after = build_canonical_legacy_l2_seed_review_worklist(ws, group_limit=10, sample_limit=10)
+
+    assert after["open_review_group_count"] == 2
+    assert after["reviewed_group_count"] == 1
+    assert after["terminal_review_group_count"] == 0
+    assert after["review_groups"][0]["group_id"] == low_group["group_id"]
+    assert after["review_groups"][0]["review_status"] == "needs_revision"
+    assert after["review_groups"][0]["terminal_review_recorded"] is False
+    assert after["review_groups"][1]["group_id"] == high_group["group_id"]
+
+
 def test_canonical_legacy_l2_seed_review_worklist_cli_mcp_runtime_and_compact(tmp_path, capsys):
     from brain.v5.cli import main
     from brain.v5.cli_legacy_l2_progress import compact_canonical_legacy_l2_seed_review_worklist
-    from brain.v5.mcp_tools import aitp_v5_build_canonical_legacy_l2_seed_review_worklist
+    from brain.v5.mcp_tools import (
+        aitp_v5_build_canonical_legacy_l2_seed_review_worklist,
+        aitp_v5_record_legacy_l2_seed_group_review_result,
+    )
     from brain.v5.runtime_entrypoints import runtime_entrypoints, validate_runtime_entrypoints
 
     ws = init_workspace(tmp_path)
+    entry_id = "memory-legacy-l2-topic-a-l2-entries-claim-headwing"
     write_md(
-        ws.root / "memory" / "l2" / "entries" / "memory-legacy-l2-topic-a-l2-entries-claim-headwing.md",
+        ws.root / "memory" / "l2" / "entries" / f"{entry_id}.md",
         {
             "kind": "memory_entry",
-            "entry_id": "memory-legacy-l2-topic-a-l2-entries-claim-headwing",
+            "entry_id": entry_id,
             "topic_id": "topic-a",
             "source_topic_id": "topic-a",
             "source_claim_id": "claim-headwing",
@@ -224,14 +352,51 @@ def test_canonical_legacy_l2_seed_review_worklist_cli_mcp_runtime_and_compact(tm
         sample_limit=1,
     )
     compact = compact_canonical_legacy_l2_seed_review_worklist(cli_payload)
+    group_id = cli_payload["review_groups"][0]["group_id"]
 
     assert cli_payload["kind"] == "canonical_legacy_l2_seed_review_worklist"
     assert mcp_payload["kind"] == "canonical_legacy_l2_seed_review_worklist"
     assert compact["kind"] == "canonical_legacy_l2_seed_review_worklist_progress"
     assert compact["review_group_count"] == 1
+    assert compact["open_review_group_count"] == 1
     assert runtime_entrypoints()["canonical_legacy_l2_seed_review_worklist"] == {
         "cli": "aitp-v5 legacy l2-seed-review-worklist <args>",
         "mcp": "aitp_v5_build_canonical_legacy_l2_seed_review_worklist",
         "surface": "canonical_legacy_l2_seed_review_worklist",
     }
+    assert runtime_entrypoints()["record_legacy_l2_seed_group_review_result"] == {
+        "cli": "aitp-v5 legacy l2-seed-review-result <args>",
+        "mcp": "aitp_v5_record_legacy_l2_seed_group_review_result",
+        "surface": "legacy_l2_seed_group_review_result_record",
+    }
+
+    assert main([
+        "--base",
+        str(tmp_path),
+        "legacy",
+        "l2-seed-review-result",
+        "--group-id",
+        group_id,
+        "--status",
+        "passed",
+        "--decision",
+        "archive",
+        "--summary",
+        "CLI review marks this seed group archive-only.",
+        "--seed-entry-id",
+        entry_id,
+    ]) == 0
+    cli_result = json.loads(capsys.readouterr().out)
+    mcp_result = aitp_v5_record_legacy_l2_seed_group_review_result(
+        str(tmp_path),
+        group_id=group_id,
+        status="needs_revision",
+        decision="needs_source_reconstruction",
+        summary="MCP review records a later non-terminal revision need.",
+        reviewed_seed_entry_ids=[entry_id],
+    )
+    assert cli_result["kind"] == "legacy_l2_seed_group_review_result"
+    assert cli_result["decision"] == "archive"
+    assert mcp_result["kind"] == "legacy_l2_seed_group_review_result"
+    assert mcp_result["decision"] == "needs_source_reconstruction"
     assert validate_runtime_entrypoints() == []

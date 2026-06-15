@@ -52,6 +52,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "legacy_topic_question_backfill_packet",
         "canonical_legacy_l2_seed_audit",
         "canonical_legacy_l2_seed_review_worklist",
+        "legacy_l2_seed_group_review_result_record",
         "legacy_l2_graph_manifest",
         "legacy_l2_obsidian_view_bundle",
         "legacy_l2_typed_migration_packet",

@@ -9,6 +9,7 @@ from brain.v5.legacy_l2_graph import build_legacy_l2_graph_manifest, build_legac
 from brain.v5.legacy_l2_seed_audit import (
     audit_canonical_legacy_l2_seeds,
     build_canonical_legacy_l2_seed_review_worklist,
+    record_legacy_l2_seed_group_review_result,
 )
 from brain.v5.legacy_l2_obsidian import write_legacy_l2_obsidian_view
 from brain.v5.legacy_bridge import migrate_legacy_topic_to_v5
@@ -105,6 +106,30 @@ def add_legacy_parser(subparsers) -> None:
     l2_seed_review.add_argument("--group-limit", type=int, default=50)
     l2_seed_review.add_argument("--sample-limit", type=int, default=5)
     l2_seed_review.add_argument("--compact", "--progress", action="store_true", dest="compact")
+    l2_seed_review_result = legacy_subparsers.add_parser("l2-seed-review-result")
+    l2_seed_review_result.add_argument("--group-id", required=True)
+    l2_seed_review_result.add_argument("--status", required=True)
+    l2_seed_review_result.add_argument("--decision", required=True)
+    l2_seed_review_result.add_argument("--summary", required=True)
+    l2_seed_review_result.add_argument("--seed-entry-id", action="append", default=[], dest="reviewed_seed_entry_ids")
+    l2_seed_review_result.add_argument("--seed-entry-id-file", action="append", default=[], dest="reviewed_seed_entry_id_files")
+    l2_seed_review_result.add_argument("--seed-ref", action="append", default=[], dest="reviewed_seed_refs")
+    l2_seed_review_result.add_argument("--seed-ref-file", action="append", default=[], dest="reviewed_seed_ref_files")
+    l2_seed_review_result.add_argument("--typed-ref", action="append", default=[], dest="reviewed_typed_refs")
+    l2_seed_review_result.add_argument("--typed-ref-file", action="append", default=[], dest="reviewed_typed_ref_files")
+    l2_seed_review_result.add_argument("--evidence-ref", action="append", default=[], dest="evidence_refs")
+    l2_seed_review_result.add_argument("--evidence-ref-file", action="append", default=[], dest="evidence_ref_files")
+    l2_seed_review_result.add_argument("--validation-result-id", action="append", default=[], dest="validation_result_ids")
+    l2_seed_review_result.add_argument(
+        "--validation-result-id-file",
+        action="append",
+        default=[],
+        dest="validation_result_id_files",
+    )
+    l2_seed_review_result.add_argument("--remaining-action", action="append", default=[], dest="remaining_actions")
+    l2_seed_review_result.add_argument("--remaining-action-file", action="append", default=[], dest="remaining_action_files")
+    l2_seed_review_result.add_argument("--checkpoint", default="", dest="checkpoint_id")
+    l2_seed_review_result.add_argument("--reviewer-role", default="human_or_adversarial_reviewer")
     l2_obsidian = legacy_subparsers.add_parser("l2-obsidian-view")
     l2_obsidian.add_argument("--legacy-l2-dir", default="")
     l2_obsidian.add_argument("--output-dir", default="")
@@ -291,6 +316,47 @@ def dispatch_legacy_command(args, ws) -> dict:
         if getattr(args, "compact", False):
             return compact_canonical_legacy_l2_seed_review_worklist(payload)
         return payload
+    if args.legacy_command == "l2-seed-review-result":
+        result = record_legacy_l2_seed_group_review_result(
+            ws,
+            group_id=args.group_id,
+            status=args.status,
+            decision=args.decision,
+            summary=args.summary,
+            reviewed_seed_entry_ids=_merge_inline_and_file_values(
+                args.reviewed_seed_entry_ids,
+                args.reviewed_seed_entry_id_files,
+            ),
+            reviewed_seed_refs=_merge_inline_and_file_values(
+                args.reviewed_seed_refs,
+                args.reviewed_seed_ref_files,
+            ),
+            reviewed_typed_refs=_merge_inline_and_file_values(
+                args.reviewed_typed_refs,
+                args.reviewed_typed_ref_files,
+            ),
+            evidence_refs=_merge_inline_and_file_values(
+                args.evidence_refs,
+                args.evidence_ref_files,
+            ),
+            validation_result_ids=_merge_inline_and_file_values(
+                args.validation_result_ids,
+                args.validation_result_id_files,
+            ),
+            remaining_actions=_merge_inline_and_file_values(
+                args.remaining_actions,
+                args.remaining_action_files,
+            ),
+            checkpoint_id=args.checkpoint_id,
+            reviewer_role=args.reviewer_role,
+        )
+        return {
+            "ok": True,
+            **require_valid_public_surface(
+                "legacy_l2_seed_group_review_result_record",
+                {"ok": True, **result.__dict__},
+            ),
+        }
     if args.legacy_command == "l2-obsidian-view":
         bundle = write_legacy_l2_obsidian_view(
             ws,

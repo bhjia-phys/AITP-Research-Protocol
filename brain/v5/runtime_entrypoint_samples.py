@@ -367,6 +367,19 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["--sample-limit", "5"]
     if template.startswith("legacy l2-seed-review-worklist"):
         return ["--group-limit", "5", "--sample-limit", "2"]
+    if template.startswith("legacy l2-seed-review-result"):
+        return [
+            "--group-id",
+            "legacy-l2-seed-review:fqhe:fqhe:claim-fqhe:claim",
+            "--status",
+            "passed",
+            "--decision",
+            "archive",
+            "--summary",
+            "Seed group reviewed as archive-only sample.",
+            "--seed-entry-id",
+            "memory-legacy-l2-fqhe-claim",
+        ]
     if template.startswith("legacy l2-obsidian-view"):
         return ["--legacy-l2-dir", "D:/aitp/research/aitp-topics/L2"]
     if template.startswith("legacy runtime-log-marker-audit"):

@@ -610,6 +610,31 @@ class LegacySemanticReviewResultRecord:
 
 
 @dataclass
+class LegacyL2SeedGroupReviewResultRecord:
+    review_id: str
+    group_id: str
+    status: str
+    decision: str
+    summary: str
+    topic_id: str = ""
+    target_topic_id: str = ""
+    source_claim_id: str = ""
+    memory_role: str = ""
+    reviewer_role: str = "human_or_adversarial_reviewer"
+    reviewed_seed_entry_ids: list[str] = field(default_factory=list)
+    reviewed_seed_refs: list[str] = field(default_factory=list)
+    reviewed_typed_refs: list[str] = field(default_factory=list)
+    evidence_refs: list[str] = field(default_factory=list)
+    validation_result_ids: list[str] = field(default_factory=list)
+    remaining_actions: list[str] = field(default_factory=list)
+    checkpoint_id: str = ""
+    created_at: str = ""
+    summary_inputs_trusted: bool = False
+    can_update_claim_trust: bool = False
+    kind: str = "legacy_l2_seed_group_review_result"
+
+
+@dataclass
 class LegacySemanticRepairRecord:
     repair_id: str
     migration_run_id: str

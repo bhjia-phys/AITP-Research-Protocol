@@ -26,7 +26,11 @@ def build_workspace_migration_health(ws: WorkspacePaths, *, sample_limit: int = 
         group_limit=sample_limit,
         sample_limit=1,
     )
-    status = _migration_status(ledger_progress=ledger_progress, seed_audit=seed_audit)
+    status = _migration_status(
+        ledger_progress=ledger_progress,
+        seed_audit=seed_audit,
+        seed_worklist=seed_worklist,
+    )
     return {
         "kind": "aitp_workspace_migration_health",
         "status": status,
@@ -64,8 +68,21 @@ def build_workspace_migration_health(ws: WorkspacePaths, *, sample_limit: int = 
         "legacy_seed_next_actions": _string_list(seed_audit.get("next_actions")),
         "legacy_seed_samples": seed_audit.get("sample_entries") if isinstance(seed_audit.get("sample_entries"), list) else [],
         "legacy_seed_review_group_count": _int(seed_worklist.get("review_group_count")),
+        "legacy_seed_open_review_group_count": _int(seed_worklist.get("open_review_group_count")),
+        "legacy_seed_reviewed_group_count": _int(seed_worklist.get("reviewed_group_count")),
+        "legacy_seed_terminal_review_group_count": _int(seed_worklist.get("terminal_review_group_count")),
         "legacy_seed_topic_scope_mismatch_count": _int(seed_worklist.get("topic_scope_mismatch_count")),
         "legacy_seed_global_l2_count": _int(seed_worklist.get("global_l2_seed_count")),
+        "legacy_seed_review_status_counts": (
+            seed_worklist.get("review_status_counts")
+            if isinstance(seed_worklist.get("review_status_counts"), dict)
+            else {}
+        ),
+        "legacy_seed_review_decision_counts": (
+            seed_worklist.get("review_decision_counts")
+            if isinstance(seed_worklist.get("review_decision_counts"), dict)
+            else {}
+        ),
         "legacy_seed_review_blocking_class_counts": (
             seed_worklist.get("review_group_blocking_class_counts")
             if isinstance(seed_worklist.get("review_group_blocking_class_counts"), dict)
@@ -112,14 +129,19 @@ def _ledger_progress(path: Path | None) -> dict[str, Any]:
     return {}
 
 
-def _migration_status(*, ledger_progress: dict[str, Any], seed_audit: dict[str, Any]) -> str:
+def _migration_status(
+    *,
+    ledger_progress: dict[str, Any],
+    seed_audit: dict[str, Any],
+    seed_worklist: dict[str, Any],
+) -> str:
     if not ledger_progress:
         return "unknown"
     if _int(seed_audit.get("active_legacy_seed_count")) > 0:
         return "blocked"
     if not _bool(ledger_progress.get("old_store_retirement_safe")):
         return "blocked"
-    if _int(seed_audit.get("legacy_seed_count")) > 0:
+    if _int(seed_worklist.get("open_review_group_count")) > 0:
         return "review_required"
     return "clear"
 
@@ -138,8 +160,9 @@ def _next_actions(
         actions.append("resolve_blocking_file_decisions_before_old_store_retirement")
     if _bool(ledger_progress.get("root_l2_global_memory_risk")):
         actions.append("review_reassign_or_archive_root_l2_global_memory_entries")
-    actions.extend(_string_list(seed_audit.get("next_actions")))
-    if _int(seed_worklist.get("review_group_count")) > 0:
+    if _int(seed_audit.get("active_legacy_seed_count")) > 0 or _int(seed_worklist.get("open_review_group_count")) > 0:
+        actions.extend(_string_list(seed_audit.get("next_actions")))
+    if _int(seed_worklist.get("open_review_group_count")) > 0:
         actions.append("use_legacy_l2_seed_review_worklist_for_grouped_semantic_reassignment")
     if status != "clear":
         actions.append("do_not_treat_legacy_seed_memory_as_active_claim_support")
@@ -181,9 +204,12 @@ def _summary_lines(
         lines.append(
             "Legacy L2 seed review groups: "
             f"groups={_int(seed_worklist.get('review_group_count'))}, "
+            f"open={_int(seed_worklist.get('open_review_group_count'))}, "
+            f"reviewed={_int(seed_worklist.get('reviewed_group_count'))}, "
+            f"terminal={_int(seed_worklist.get('terminal_review_group_count'))}, "
             f"global_l2_seeds={_int(seed_worklist.get('global_l2_seed_count'))}, "
             f"topic_scope_mismatches={_int(seed_worklist.get('topic_scope_mismatch_count'))}; "
-            "topic-level semantic review can be complete while per-seed L2 review remains required."
+            "topic-level semantic review can be complete while open per-seed L2 review remains required."
         )
     return lines
 

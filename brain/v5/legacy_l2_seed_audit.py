@@ -3,11 +3,30 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
+from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from brain.v5.ids import prefixed_id
 from brain.v5.markdown import read_md
+from brain.v5.models import LegacyL2SeedGroupReviewResultRecord
 from brain.v5.paths import WorkspacePaths
+from brain.v5.store import list_valid_records, write_record
+
+
+_TERMINAL_REVIEW_DECISIONS = {
+    "archive",
+    "reassign",
+    "promote_candidate",
+    "already_represented",
+    "irrelevant",
+}
+_REVIEW_STATUSES = {"passed", "needs_revision", "inconclusive"}
+_REVIEW_DECISIONS = _TERMINAL_REVIEW_DECISIONS | {
+    "needs_source_reconstruction",
+    "needs_topic_alignment",
+}
 
 
 def audit_canonical_legacy_l2_seeds(
@@ -79,13 +98,42 @@ def build_canonical_legacy_l2_seed_review_worklist(
         ws=ws,
         sample_limit=max(0, int(sample_limit)),
     )
+    review_results = _latest_group_review_results(ws)
+    groups = [
+        _attach_group_review_result(group, review_results.get(str(group.get("group_id") or "")))
+        for group in groups
+    ]
+    groups.sort(
+        key=lambda group: (
+            bool(group.get("terminal_review_recorded")),
+            not bool(group.get("latest_review_result")),
+            -int(group.get("priority_score") or 0),
+            str(group.get("topic_id") or ""),
+            str(group.get("target_topic_id") or ""),
+            str(group.get("source_claim_id") or ""),
+            str(group.get("memory_role") or ""),
+        )
+    )
     blocking_counts = Counter(
         blocking_class
         for group in groups
+        if not group.get("terminal_review_recorded")
         for blocking_class in group.get("blocking_classes", [])
     )
-    topic_mismatch_count = sum(1 for seed in seed_entries if seed.get("topic_scope_mismatch"))
-    global_l2_count = sum(1 for seed in seed_entries if seed.get("topic_id") == "L2")
+    open_groups = [group for group in groups if not group.get("terminal_review_recorded")]
+    reviewed_groups = [group for group in groups if group.get("latest_review_result")]
+    terminal_groups = [group for group in groups if group.get("terminal_review_recorded")]
+    open_group_ids = {str(group.get("group_id") or "") for group in open_groups}
+    topic_mismatch_count = sum(
+        1
+        for seed in seed_entries
+        if seed.get("topic_scope_mismatch") and _group_id_for_seed(seed) in open_group_ids
+    )
+    global_l2_count = sum(
+        1
+        for seed in seed_entries
+        if seed.get("topic_id") == "L2" and _group_id_for_seed(seed) in open_group_ids
+    )
     return {
         "kind": "canonical_legacy_l2_seed_review_worklist",
         "canonical_store": str(ws.root),
@@ -94,11 +142,16 @@ def build_canonical_legacy_l2_seed_review_worklist(
         "active_legacy_seed_count": audit["active_legacy_seed_count"],
         "legacy_seed_topic_count": audit["legacy_seed_topic_count"],
         "review_group_count": len(groups),
+        "open_review_group_count": len(open_groups),
+        "reviewed_group_count": len(reviewed_groups),
+        "terminal_review_group_count": len(terminal_groups),
         "visible_review_group_count": min(len(groups), max(0, int(group_limit))),
         "topic_scope_mismatch_count": topic_mismatch_count,
         "global_l2_seed_count": global_l2_count,
         "status_counts": dict(sorted(audit["status_counts"].items())),
         "memory_kind_counts": dict(sorted(audit["memory_kind_counts"].items())),
+        "review_status_counts": dict(sorted(Counter(str(group.get("review_status") or "pending") for group in groups).items())),
+        "review_decision_counts": dict(sorted(Counter(str(group.get("review_decision") or "pending") for group in groups).items())),
         "review_group_blocking_class_counts": dict(sorted(blocking_counts.items())),
         "review_groups": groups[: max(0, int(group_limit))],
         "next_actions": _review_worklist_next_actions(seed_entries, groups),
@@ -123,6 +176,99 @@ def build_canonical_legacy_l2_seed_review_worklist(
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }
+
+
+def record_legacy_l2_seed_group_review_result(
+    ws: WorkspacePaths,
+    *,
+    group_id: str,
+    status: str,
+    decision: str,
+    summary: str,
+    reviewed_seed_entry_ids: list[str] | None = None,
+    reviewed_seed_refs: list[str] | None = None,
+    reviewed_typed_refs: list[str] | None = None,
+    evidence_refs: list[str] | None = None,
+    validation_result_ids: list[str] | None = None,
+    remaining_actions: list[str] | None = None,
+    checkpoint_id: str = "",
+    reviewer_role: str = "human_or_adversarial_reviewer",
+) -> LegacyL2SeedGroupReviewResultRecord:
+    """Persist a typed review result for one canonical legacy L2 seed group."""
+
+    target_group_id = _text(group_id)
+    if not target_group_id:
+        raise ValueError("legacy L2 seed group review requires group_id")
+    status = _text(status)
+    decision = _text(decision)
+    summary = _text(summary)
+    if status not in _REVIEW_STATUSES:
+        raise ValueError("legacy L2 seed group review status must be passed, needs_revision, or inconclusive")
+    if decision not in _REVIEW_DECISIONS:
+        raise ValueError("legacy L2 seed group review decision is not allowed")
+    if not summary:
+        raise ValueError("legacy L2 seed group review summary must not be empty")
+
+    worklist = build_canonical_legacy_l2_seed_review_worklist(
+        ws,
+        group_limit=1000000,
+        sample_limit=1000000,
+    )
+    group = next((item for item in worklist["review_groups"] if item["group_id"] == target_group_id), None)
+    if group is None:
+        raise ValueError(f"unknown legacy L2 seed review group: {target_group_id}")
+
+    seed_ids = _clean_list(reviewed_seed_entry_ids)
+    seed_refs = _clean_list(reviewed_seed_refs)
+    typed_refs = _clean_list(reviewed_typed_refs)
+    evidence = _clean_list(evidence_refs)
+    validations = _clean_list(validation_result_ids)
+    actions = _clean_list(remaining_actions)
+    group_seed_ids = {
+        str(entry.get("entry_id") or "")
+        for entry in group.get("sample_entries", [])
+        if str(entry.get("entry_id") or "")
+    }
+    if seed_ids and group_seed_ids and not set(seed_ids).issubset(group_seed_ids):
+        raise ValueError("reviewed seed entry ids must belong to the reviewed group")
+    if not any([seed_ids, seed_refs, typed_refs, evidence, validations]):
+        raise ValueError("legacy L2 seed group review basis must cite seed ids, seed refs, typed refs, evidence, or validation results")
+    if decision == "promote_candidate" and not any([typed_refs, evidence, validations]):
+        raise ValueError("promote_candidate review requires typed, evidence, or validation basis")
+    if decision in {"archive", "irrelevant", "already_represented"} and not any([seed_ids, seed_refs, typed_refs]):
+        raise ValueError("terminal archive/irrelevant/already_represented reviews require seed or typed basis")
+
+    review_id = prefixed_id(
+        "legacy-l2-seed-group-review",
+        f"{target_group_id}:{status}:{decision}:{seed_ids}:{seed_refs}:{typed_refs}:{evidence}:{validations}:{summary}",
+        max_slug=72,
+    )
+    record = LegacyL2SeedGroupReviewResultRecord(
+        review_id=review_id,
+        group_id=target_group_id,
+        topic_id=str(group.get("topic_id") or ""),
+        target_topic_id=str(group.get("target_topic_id") or ""),
+        source_claim_id=str(group.get("source_claim_id") or ""),
+        memory_role=str(group.get("memory_role") or ""),
+        status=status,
+        decision=decision,
+        summary=summary,
+        reviewer_role=reviewer_role,
+        reviewed_seed_entry_ids=seed_ids,
+        reviewed_seed_refs=seed_refs,
+        reviewed_typed_refs=typed_refs,
+        evidence_refs=evidence,
+        validation_result_ids=validations,
+        remaining_actions=actions,
+        checkpoint_id=_text(checkpoint_id),
+        created_at=_now_utc(),
+    )
+    write_record(
+        ws.registry_dir("legacy_l2_seed_group_reviews") / f"{review_id}.md",
+        record,
+        body=f"# Legacy L2 Seed Group Review: {target_group_id}\n\n**Decision:** {decision}\n\n{summary}\n",
+    )
+    return record
 
 
 def _read_frontmatter(path: Path) -> dict[str, Any]:
@@ -263,13 +409,23 @@ def _seed_group_payload(
         "sample_entries": seeds[:sample_limit],
         "review_actions": _group_review_actions(
             ws,
+            group_id=_group_id(topic_id, target_topic_id, source_claim_id, memory_role),
             topic_id=topic_id,
             target_topic_id=target_topic_id,
             source_claim_id=source_claim_id,
             memory_role=memory_role,
         ),
+        "review_status": "pending",
+        "review_decision": "pending",
+        "latest_review_result": {},
+        "terminal_review_recorded": False,
         "can_update_claim_trust": False,
     }
+
+
+def _group_id_for_seed(seed: dict[str, Any]) -> str:
+    topic_id, target_topic_id, source_claim_id, memory_role = _group_key(seed)
+    return _group_id(topic_id, target_topic_id, source_claim_id, memory_role)
 
 
 def _target_topic_id(seed: dict[str, Any]) -> str:
@@ -358,6 +514,7 @@ def _group_id(topic_id: str, target_topic_id: str, source_claim_id: str, memory_
 def _group_review_actions(
     ws: WorkspacePaths,
     *,
+    group_id: str,
     topic_id: str,
     target_topic_id: str,
     source_claim_id: str,
@@ -391,6 +548,20 @@ def _group_review_actions(
             "surface": "canonical_legacy_l2_seed_review_worklist",
             "effect": "orientation_only",
             "can_update_kernel_state": False,
+            "can_update_claim_trust": False,
+        },
+        {
+            "action": "record_seed_group_review_result",
+            "cli": (
+                f"aitp-v5 --base {ws.base} legacy l2-seed-review-result "
+                f"--group-id {group_id} --status <passed|needs_revision|inconclusive> "
+                "--decision <archive|reassign|promote_candidate|already_represented|irrelevant|needs_source_reconstruction|needs_topic_alignment> "
+                "--summary <review-summary> --seed-entry-id <seed-entry-id-or-ref>"
+            ),
+            "mcp": "aitp_v5_record_legacy_l2_seed_group_review_result",
+            "surface": "legacy_l2_seed_group_review_result_record",
+            "effect": "typed_record_write_without_claim_trust",
+            "can_update_kernel_state": True,
             "can_update_claim_trust": False,
         }
     ]
@@ -434,7 +605,8 @@ def _group_review_actions(
 
 
 def _review_worklist_next_actions(seeds: list[dict[str, Any]], groups: list[dict[str, Any]]) -> list[str]:
-    if not seeds:
+    open_groups = [group for group in groups if not group.get("terminal_review_recorded")]
+    if not seeds or not open_groups:
         return ["no_canonical_legacy_l2_seed_review_needed"]
     actions = [
         "review_high_priority_seed_groups_before_treating_legacy_l2_as_memory",
@@ -442,8 +614,46 @@ def _review_worklist_next_actions(seeds: list[dict[str, Any]], groups: list[dict
         "archive_or_promote_each_group_with_explicit_review_basis",
         "keep_all_legacy_seed_entries_orientation_only_until_reviewed",
     ]
-    actions.extend(f"review_group:{group['group_id']}" for group in groups[:10])
+    actions.extend(f"review_group:{group['group_id']}" for group in open_groups[:10])
     return actions
+
+
+def _latest_group_review_results(ws: WorkspacePaths) -> dict[str, LegacyL2SeedGroupReviewResultRecord]:
+    records = list_valid_records(
+        ws.registry_dir("legacy_l2_seed_group_reviews"),
+        LegacyL2SeedGroupReviewResultRecord,
+    )
+    latest: dict[str, LegacyL2SeedGroupReviewResultRecord] = {}
+    for record in records:
+        current = latest.get(record.group_id)
+        if current is None or _review_sort_key(record) > _review_sort_key(current):
+            latest[record.group_id] = record
+    return latest
+
+
+def _attach_group_review_result(
+    group: dict[str, Any],
+    result: LegacyL2SeedGroupReviewResultRecord | None,
+) -> dict[str, Any]:
+    if result is None:
+        return group
+    payload = dict(group)
+    review = asdict(result)
+    review["orientation_only"] = True
+    terminal = result.status == "passed" and result.decision in _TERMINAL_REVIEW_DECISIONS
+    payload["review_status"] = result.status
+    payload["review_decision"] = result.decision
+    payload["latest_review_result"] = review
+    payload["terminal_review_recorded"] = terminal
+    return payload
+
+
+def _review_sort_key(record: LegacyL2SeedGroupReviewResultRecord) -> tuple[str, str]:
+    return (record.created_at or "", record.review_id)
+
+
+def _now_utc() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _next_actions(*, seeds: list[dict[str, Any]], active_seed_count: int) -> list[str]:
@@ -480,6 +690,10 @@ def _unique(values: list[str]) -> list[str]:
         seen.add(value)
         result.append(value)
     return result
+
+
+def _clean_list(values: list[str] | None) -> list[str]:
+    return [value.strip() for value in values or [] if value.strip()]
 
 
 def _slug(value: str) -> str:

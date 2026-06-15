@@ -44,6 +44,9 @@ def validate_workspace_migration_health(
         "active_legacy_seed_count",
         "legacy_seed_topic_count",
         "legacy_seed_review_group_count",
+        "legacy_seed_open_review_group_count",
+        "legacy_seed_reviewed_group_count",
+        "legacy_seed_terminal_review_group_count",
         "legacy_seed_topic_scope_mismatch_count",
         "legacy_seed_global_l2_count",
     ):
@@ -52,6 +55,16 @@ def validate_workspace_migration_health(
     _require_mapping(
         payload.get("legacy_seed_review_blocking_class_counts"),
         f"{path}.legacy_seed_review_blocking_class_counts",
+        result,
+    )
+    _require_mapping(
+        payload.get("legacy_seed_review_status_counts"),
+        f"{path}.legacy_seed_review_status_counts",
+        result,
+    )
+    _require_mapping(
+        payload.get("legacy_seed_review_decision_counts"),
+        f"{path}.legacy_seed_review_decision_counts",
         result,
     )
     for key in (
