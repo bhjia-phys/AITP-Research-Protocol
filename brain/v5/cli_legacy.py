@@ -316,7 +316,10 @@ def dispatch_legacy_command(args, ws) -> dict:
             **require_valid_public_surface("canonical_legacy_l2_seed_review_worklist", worklist),
         }
         if getattr(args, "compact", False):
-            return compact_canonical_legacy_l2_seed_review_worklist(payload)
+            return compact_canonical_legacy_l2_seed_review_worklist(
+                payload,
+                sample_limit=args.sample_limit,
+            )
         return payload
     if args.legacy_command == "l2-seed-review-result":
         result = record_legacy_l2_seed_group_review_result(

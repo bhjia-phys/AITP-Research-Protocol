@@ -413,6 +413,71 @@ def test_legacy_l2_seed_group_review_result_records_semantic_subgroup_boundary(t
     ) == {"ok": True, **result.__dict__}
 
 
+def test_compact_review_worklist_uses_sample_limit_for_reviewed_semantic_subgroups(tmp_path):
+    from brain.v5.cli_legacy_l2_progress import compact_canonical_legacy_l2_seed_review_worklist
+    from brain.v5.legacy_l2_seed_audit import (
+        build_canonical_legacy_l2_seed_review_worklist,
+        record_legacy_l2_seed_group_review_result,
+    )
+
+    ws = init_workspace(tmp_path)
+    entries = ws.root / "memory" / "l2" / "entries"
+    entry_ids: dict[str, str] = {}
+    object_ids = [
+        "system-a",
+        "system-b",
+        "system-c",
+        "system-d",
+        "system-e",
+        "system-n2-dinitrogen",
+    ]
+    for object_id in object_ids:
+        entry_id = f"memory-legacy-l2-l2-entries-{object_id}"
+        entry_ids[object_id] = entry_id
+        write_md(
+            entries / f"{entry_id}.md",
+            {
+                "kind": "memory_entry",
+                "entry_id": entry_id,
+                "topic_id": "L2",
+                "source_topic_id": "L2",
+                "source_claim_id": "claim-l2",
+                "memory_kind": "legacy_l2_entry:system",
+                "scope": "legacy global L2 system seed",
+                "source_packet_id": f"legacy_l2:D:/aitp/L2/entries/{object_id}.md",
+                "status": "legacy_seed",
+            },
+            f"# {object_id}\n",
+        )
+
+    before = build_canonical_legacy_l2_seed_review_worklist(ws, group_limit=10, sample_limit=10)
+    group = before["review_groups"][0]
+    for object_id in object_ids:
+        record_legacy_l2_seed_group_review_result(
+            ws,
+            group_id=group["group_id"],
+            status="needs_revision",
+            decision="needs_topic_alignment",
+            summary=f"{object_id} subgroup has been reviewed but compact defaults may hide later reviewed subgroups.",
+            source_family="system",
+            source_object_id=object_id,
+            reviewed_seed_entry_ids=[entry_ids[object_id]],
+            remaining_actions=[f"keep_{object_id}_orientation_only_until_typed_import"],
+        )
+    after = build_canonical_legacy_l2_seed_review_worklist(ws, group_limit=10, sample_limit=10)
+
+    compact_default = compact_canonical_legacy_l2_seed_review_worklist(after)
+    compact_expanded = compact_canonical_legacy_l2_seed_review_worklist(after, sample_limit=10)
+
+    assert "system:system-n2-dinitrogen:needs_revision/needs_topic_alignment" not in (
+        compact_default["top_group_semantic_subgroup_review_progress"][0]
+    )
+    assert "system:system-n2-dinitrogen:needs_revision/needs_topic_alignment" in (
+        compact_expanded["top_group_semantic_subgroup_review_progress"][0]
+    )
+    assert "system:system-n2-dinitrogen:1" in compact_expanded["top_group_semantic_subgroups"][0]
+
+
 def test_legacy_l2_seed_group_review_result_surfaces_open_reviewed_groups_first(tmp_path):
     from brain.v5.legacy_l2_seed_audit import (
         build_canonical_legacy_l2_seed_review_worklist,

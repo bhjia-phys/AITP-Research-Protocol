@@ -129,8 +129,13 @@ def compact_canonical_legacy_l2_seed_audit(payload: dict[str, Any]) -> dict[str,
     }
 
 
-def compact_canonical_legacy_l2_seed_review_worklist(payload: dict[str, Any]) -> dict[str, Any]:
+def compact_canonical_legacy_l2_seed_review_worklist(
+    payload: dict[str, Any],
+    *,
+    sample_limit: int = 5,
+) -> dict[str, Any]:
     top_groups = [group for group in payload.get("review_groups", []) if isinstance(group, dict)][:5]
+    subgroup_limit = max(0, int(sample_limit))
     return {
         "ok": bool(payload.get("ok", True)),
         "kind": "canonical_legacy_l2_seed_review_worklist_progress",
@@ -168,11 +173,11 @@ def compact_canonical_legacy_l2_seed_review_worklist(payload: dict[str, Any]) ->
             for group in top_groups
         ],
         "top_group_semantic_subgroups": [
-            _semantic_subgroup_strings(group)
+            _semantic_subgroup_strings(group, limit=subgroup_limit)
             for group in top_groups
         ],
         "top_group_semantic_subgroup_review_progress": [
-            _semantic_subgroup_review_progress(group)
+            _semantic_subgroup_review_progress(group, limit=subgroup_limit)
             for group in top_groups
         ],
         "top_group_blocking_classes": [
