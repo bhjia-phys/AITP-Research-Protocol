@@ -602,6 +602,79 @@ def test_claim_relation_map_surfaces_pending_migration_active_claim_divergence(t
     assert relation_map["current_blockers"][0] == "active_claim_divergence_requires_semantic_review"
 
 
+def test_claim_relation_map_prefers_claim_matched_legacy_semantic_review(tmp_path):
+    from brain.v5.claim_relation_map import build_claim_relation_map
+    from brain.v5.models import LegacySemanticReviewResultRecord
+    from brain.v5.store import write_record
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    topic = "quantum-chaos-long-range-spin-chains"
+    create_topic(ws, topic, context_id="quantum-chaos", title="Quantum chaos long-range spin chains")
+    current_claim = create_claim(
+        ws,
+        topic_id=topic,
+        statement="Current A2 proof claim.",
+        evidence_profile="semi_formal_theory",
+        confidence_state="hypothesis",
+        active_uncertainty="All-n theorem still open.",
+    )
+    old_claim = create_claim(
+        ws,
+        topic_id=topic,
+        statement="Older finite diagnostic claim.",
+        evidence_profile="numerical_diagnostics",
+        confidence_state="legacy_seed",
+        active_uncertainty="Superseded as the active recovery focus.",
+    )
+    matched = LegacySemanticReviewResultRecord(
+        review_id="legacy-semantic-review-current-claim-inconclusive",
+        migration_run_id="legacy-v5-lossless-test",
+        migration_dir=str(tmp_path / "migration"),
+        topic=topic,
+        status="inconclusive",
+        summary="Current claim review exposes the remaining all-n theorem boundary.",
+        active_claim_id=current_claim.claim_id,
+        reviewed_typed_refs=[f"claim:{current_claim.claim_id}"],
+        remaining_actions=["prove_all_n_theorem"],
+        created_at="2026-06-14T00:00:00+00:00",
+    )
+    newer_old_claim_review = LegacySemanticReviewResultRecord(
+        review_id="legacy-semantic-review-old-claim-passed",
+        migration_run_id="legacy-v5-lossless-test",
+        migration_dir=str(tmp_path / "migration"),
+        topic=topic,
+        status="passed",
+        summary="Broad migration accounting review for the older finite diagnostic claim.",
+        active_claim_id=old_claim.claim_id,
+        reviewed_typed_refs=[f"claim:{old_claim.claim_id}"],
+        remaining_actions=["legacy_seeds_orientation_only"],
+        created_at="2026-06-15T00:00:00+00:00",
+    )
+    for review in (matched, newer_old_claim_review):
+        write_record(
+            ws.registry_dir("legacy_semantic_reviews") / f"{review.review_id}.md",
+            review,
+            body="# Legacy Semantic Review\n",
+        )
+    bind_session(
+        ws,
+        "chaos-current-recovery",
+        topic_id=topic,
+        context_id="quantum-chaos",
+        active_claim=current_claim.claim_id,
+    )
+
+    relation_map = build_claim_relation_map(ws, "chaos-current-recovery")
+
+    assert relation_map["legacy_semantic_review"]["review_id"] == matched.review_id
+    assert relation_map["legacy_semantic_review"]["status"] == "inconclusive"
+    assert relation_map["legacy_semantic_review"]["review_active_claim_divergence"] is False
+    assert "legacy-semantic-review-old-claim-passed" in relation_map["source_records"]["legacy_semantic_reviews"]
+    assert "legacy-semantic-review-current-claim-inconclusive" in relation_map["source_records"]["legacy_semantic_reviews"]
+    assert "legacy_semantic_review_inconclusive" in relation_map["current_blockers"]
+
+
 def test_claim_relation_map_is_forced_into_brief_topic_status_cli_and_mcp(tmp_path, capsys):
     from brain.v5.cli import main
     from brain.v5.mcp_tools import aitp_v5_get_claim_relation_map, aitp_v5_get_execution_brief

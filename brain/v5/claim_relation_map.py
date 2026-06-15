@@ -146,7 +146,7 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
     legacy_reviews = _indexed_topic_records(registry_index, "legacy_semantic_reviews", session.topic_id)
     if legacy_reviews is None:
         legacy_reviews = _legacy_semantic_reviews_for_topic(ws, session.topic_id)
-    legacy_review = _latest_legacy_semantic_review(legacy_reviews)
+    legacy_review = _select_legacy_semantic_review(legacy_reviews, claim.claim_id)
     legacy_migration_topics = _indexed_topic_records(registry_index, "legacy_migration_topics", session.topic_id)
     if legacy_migration_topics is None:
         legacy_migration_topics = _legacy_migration_topics_for_topic(ws, session.topic_id)
@@ -523,6 +523,22 @@ def _latest_legacy_semantic_review(records: list[LegacySemanticReviewResultRecor
     if not records:
         return None
     return sorted(records, key=_legacy_semantic_review_sort_key)[-1]
+
+
+def _select_legacy_semantic_review(
+    records: list[LegacySemanticReviewResultRecord],
+    claim_id: str,
+) -> LegacySemanticReviewResultRecord | None:
+    if not records:
+        return None
+    matching = [
+        record
+        for record in records
+        if record.active_claim_id and record.active_claim_id == claim_id
+    ]
+    if matching:
+        return _latest_legacy_semantic_review(matching)
+    return _latest_legacy_semantic_review(records)
 
 
 def _legacy_semantic_review_sort_key(record: LegacySemanticReviewResultRecord) -> tuple[str, str]:
