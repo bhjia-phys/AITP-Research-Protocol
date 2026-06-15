@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
 from brain.v5.markdown import write_md
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.workspace import init_workspace
@@ -314,6 +316,76 @@ def test_legacy_l2_seed_group_review_result_records_terminal_group_review(tmp_pa
     assert require_valid_public_surface("canonical_legacy_l2_seed_review_worklist", after) == after
 
 
+def test_legacy_l2_seed_group_review_result_records_semantic_subgroup_boundary(tmp_path):
+    from brain.v5.legacy_l2_seed_audit import (
+        build_canonical_legacy_l2_seed_review_worklist,
+        record_legacy_l2_seed_group_review_result,
+    )
+
+    ws = init_workspace(tmp_path)
+    entries = ws.root / "memory" / "l2" / "entries"
+    entry_ids: dict[str, str] = {}
+    for object_id in ("system-h2o-water", "system-si-bulk"):
+        entry_id = f"memory-legacy-l2-l2-entries-{object_id}"
+        entry_ids[object_id] = entry_id
+        write_md(
+            entries / f"{entry_id}.md",
+            {
+                "kind": "memory_entry",
+                "entry_id": entry_id,
+                "topic_id": "L2",
+                "source_topic_id": "L2",
+                "source_claim_id": "claim-l2",
+                "memory_kind": "legacy_l2_entry:system",
+                "scope": "legacy global L2 system seed",
+                "source_packet_id": f"legacy_l2:D:/aitp/L2/entries/{object_id}.md",
+                "status": "legacy_seed",
+            },
+            f"# {object_id}\n",
+        )
+
+    before = build_canonical_legacy_l2_seed_review_worklist(ws, group_limit=10, sample_limit=10)
+    group = before["review_groups"][0]
+
+    with pytest.raises(ValueError, match="reviewed semantic subgroup"):
+        record_legacy_l2_seed_group_review_result(
+            ws,
+            group_id=group["group_id"],
+            status="needs_revision",
+            decision="needs_source_reconstruction",
+            summary="This intentionally cites the Si seed while claiming to review H2O.",
+            source_family="system",
+            source_object_id="system-h2o-water",
+            reviewed_seed_entry_ids=[entry_ids["system-si-bulk"]],
+        )
+
+    result = record_legacy_l2_seed_group_review_result(
+        ws,
+        group_id=group["group_id"],
+        status="needs_revision",
+        decision="needs_source_reconstruction",
+        summary="H2O system subgroup needs source reconstruction before terminal archive, reassign, or promotion.",
+        source_family="system",
+        source_object_id="system-h2o-water",
+        reviewed_seed_entry_ids=[entry_ids["system-h2o-water"]],
+        remaining_actions=["decide_h2o_topic_reassignment_or_archive"],
+    )
+    after = build_canonical_legacy_l2_seed_review_worklist(ws, group_limit=10, sample_limit=10)
+    latest = after["review_groups"][0]["latest_review_result"]
+
+    assert result.source_family == "system"
+    assert result.source_object_id == "system-h2o-water"
+    assert latest["review_id"] == result.review_id
+    assert latest["source_family"] == "system"
+    assert latest["source_object_id"] == "system-h2o-water"
+    assert latest["reviewed_seed_entry_ids"] == [entry_ids["system-h2o-water"]]
+    assert after["review_groups"][0]["terminal_review_recorded"] is False
+    assert require_valid_public_surface(
+        "legacy_l2_seed_group_review_result_record",
+        {"ok": True, **result.__dict__},
+    ) == {"ok": True, **result.__dict__}
+
+
 def test_legacy_l2_seed_group_review_result_surfaces_open_reviewed_groups_first(tmp_path):
     from brain.v5.legacy_l2_seed_audit import (
         build_canonical_legacy_l2_seed_review_worklist,
@@ -410,6 +482,7 @@ def test_canonical_legacy_l2_seed_review_worklist_cli_mcp_runtime_and_compact(tm
     )
     compact = compact_canonical_legacy_l2_seed_review_worklist(cli_payload)
     group_id = cli_payload["review_groups"][0]["group_id"]
+    subgroup = cli_payload["review_groups"][0]["semantic_subgroups"][0]
 
     assert cli_payload["kind"] == "canonical_legacy_l2_seed_review_worklist"
     assert mcp_payload["kind"] == "canonical_legacy_l2_seed_review_worklist"
@@ -440,6 +513,10 @@ def test_canonical_legacy_l2_seed_review_worklist_cli_mcp_runtime_and_compact(tm
         "archive",
         "--summary",
         "CLI review marks this seed group archive-only.",
+        "--source-family",
+        subgroup["source_family"],
+        "--source-object-id",
+        subgroup["source_object_id"],
         "--seed-entry-id",
         entry_id,
     ]) == 0
@@ -450,10 +527,16 @@ def test_canonical_legacy_l2_seed_review_worklist_cli_mcp_runtime_and_compact(tm
         status="needs_revision",
         decision="needs_source_reconstruction",
         summary="MCP review records a later non-terminal revision need.",
+        source_family=subgroup["source_family"],
+        source_object_id=subgroup["source_object_id"],
         reviewed_seed_entry_ids=[entry_id],
     )
     assert cli_result["kind"] == "legacy_l2_seed_group_review_result"
     assert cli_result["decision"] == "archive"
+    assert cli_result["source_family"] == subgroup["source_family"]
+    assert cli_result["source_object_id"] == subgroup["source_object_id"]
     assert mcp_result["kind"] == "legacy_l2_seed_group_review_result"
     assert mcp_result["decision"] == "needs_source_reconstruction"
+    assert mcp_result["source_family"] == subgroup["source_family"]
+    assert mcp_result["source_object_id"] == subgroup["source_object_id"]
     assert validate_runtime_entrypoints() == []

@@ -620,6 +620,8 @@ class LegacyL2SeedGroupReviewResultRecord:
     target_topic_id: str = ""
     source_claim_id: str = ""
     memory_role: str = ""
+    source_family: str = ""
+    source_object_id: str = ""
     reviewer_role: str = "human_or_adversarial_reviewer"
     reviewed_seed_entry_ids: list[str] = field(default_factory=list)
     reviewed_seed_refs: list[str] = field(default_factory=list)

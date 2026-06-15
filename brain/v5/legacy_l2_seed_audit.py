@@ -185,6 +185,8 @@ def record_legacy_l2_seed_group_review_result(
     status: str,
     decision: str,
     summary: str,
+    source_family: str = "",
+    source_object_id: str = "",
     reviewed_seed_entry_ids: list[str] | None = None,
     reviewed_seed_refs: list[str] | None = None,
     reviewed_typed_refs: list[str] | None = None,
@@ -202,6 +204,8 @@ def record_legacy_l2_seed_group_review_result(
     status = _text(status)
     decision = _text(decision)
     summary = _text(summary)
+    source_family = _text(source_family)
+    source_object_id = _text(source_object_id)
     if status not in _REVIEW_STATUSES:
         raise ValueError("legacy L2 seed group review status must be passed, needs_revision, or inconclusive")
     if decision not in _REVIEW_DECISIONS:
@@ -229,8 +233,19 @@ def record_legacy_l2_seed_group_review_result(
         for entry in group.get("sample_entries", [])
         if str(entry.get("entry_id") or "")
     }
+    subgroup_seed_ids = {
+        str(entry.get("entry_id") or "")
+        for entry in group.get("sample_entries", [])
+        if str(entry.get("entry_id") or "")
+        and str(entry.get("source_family") or "_missing") == source_family
+        and str(entry.get("source_object_id") or "_missing") == source_object_id
+    }
+    if (source_family or source_object_id) and not subgroup_seed_ids:
+        raise ValueError("legacy L2 seed subgroup review requires a known source_family/source_object_id pair")
     if seed_ids and group_seed_ids and not set(seed_ids).issubset(group_seed_ids):
         raise ValueError("reviewed seed entry ids must belong to the reviewed group")
+    if seed_ids and subgroup_seed_ids and not set(seed_ids).issubset(subgroup_seed_ids):
+        raise ValueError("reviewed seed entry ids must belong to the reviewed semantic subgroup")
     if not any([seed_ids, seed_refs, typed_refs, evidence, validations]):
         raise ValueError("legacy L2 seed group review basis must cite seed ids, seed refs, typed refs, evidence, or validation results")
     if decision == "promote_candidate" and not any([typed_refs, evidence, validations]):
@@ -240,7 +255,7 @@ def record_legacy_l2_seed_group_review_result(
 
     review_id = prefixed_id(
         "legacy-l2-seed-group-review",
-        f"{target_group_id}:{status}:{decision}:{seed_ids}:{seed_refs}:{typed_refs}:{evidence}:{validations}:{summary}",
+        f"{target_group_id}:{source_family}:{source_object_id}:{status}:{decision}:{seed_ids}:{seed_refs}:{typed_refs}:{evidence}:{validations}:{summary}",
         max_slug=72,
     )
     record = LegacyL2SeedGroupReviewResultRecord(
@@ -250,6 +265,8 @@ def record_legacy_l2_seed_group_review_result(
         target_topic_id=str(group.get("target_topic_id") or ""),
         source_claim_id=str(group.get("source_claim_id") or ""),
         memory_role=str(group.get("memory_role") or ""),
+        source_family=source_family,
+        source_object_id=source_object_id,
         status=status,
         decision=decision,
         summary=summary,
@@ -644,7 +661,8 @@ def _group_review_actions(
                 f"aitp-v5 --base {ws.base} legacy l2-seed-review-result "
                 f"--group-id {group_id} --status <passed|needs_revision|inconclusive> "
                 "--decision <archive|reassign|promote_candidate|already_represented|irrelevant|needs_source_reconstruction|needs_topic_alignment> "
-                "--summary <review-summary> --seed-entry-id <seed-entry-id-or-ref>"
+                "--summary <review-summary> --source-family <source-family> "
+                "--source-object-id <source-object-id> --seed-entry-id <seed-entry-id-or-ref>"
             ),
             "mcp": "aitp_v5_record_legacy_l2_seed_group_review_result",
             "surface": "legacy_l2_seed_group_review_result_record",

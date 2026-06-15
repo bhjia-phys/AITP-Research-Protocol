@@ -240,6 +240,8 @@ def validate_legacy_l2_seed_group_review_result_record(
         "target_topic_id",
         "source_claim_id",
         "memory_role",
+        "source_family",
+        "source_object_id",
         "checkpoint_id",
         "created_at",
     ):

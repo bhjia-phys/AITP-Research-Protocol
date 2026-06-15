@@ -111,6 +111,8 @@ def add_legacy_parser(subparsers) -> None:
     l2_seed_review_result.add_argument("--status", required=True)
     l2_seed_review_result.add_argument("--decision", required=True)
     l2_seed_review_result.add_argument("--summary", required=True)
+    l2_seed_review_result.add_argument("--source-family", default="")
+    l2_seed_review_result.add_argument("--source-object-id", default="")
     l2_seed_review_result.add_argument("--seed-entry-id", action="append", default=[], dest="reviewed_seed_entry_ids")
     l2_seed_review_result.add_argument("--seed-entry-id-file", action="append", default=[], dest="reviewed_seed_entry_id_files")
     l2_seed_review_result.add_argument("--seed-ref", action="append", default=[], dest="reviewed_seed_refs")
@@ -323,6 +325,8 @@ def dispatch_legacy_command(args, ws) -> dict:
             status=args.status,
             decision=args.decision,
             summary=args.summary,
+            source_family=args.source_family,
+            source_object_id=args.source_object_id,
             reviewed_seed_entry_ids=_merge_inline_and_file_values(
                 args.reviewed_seed_entry_ids,
                 args.reviewed_seed_entry_id_files,
