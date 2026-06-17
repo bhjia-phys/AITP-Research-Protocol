@@ -126,6 +126,59 @@ def validate_final_engineering_readiness_audit(
                 f"{path}.kernel_capabilities.host_integration.priority_host_lifecycle_smoke_supported",
                 "must be true",
             )
+        if host.get("bridge_acceptance_surface") != "runtime_mcp_bridge_acceptance":
+            result.add(
+                f"{path}.kernel_capabilities.host_integration.bridge_acceptance_surface",
+                "must be runtime_mcp_bridge_acceptance",
+            )
+        if host.get("bridge_acceptance_cli") != "aitp-v5 adapter bridge-acceptance":
+            result.add(
+                f"{path}.kernel_capabilities.host_integration.bridge_acceptance_cli",
+                "must be aitp-v5 adapter bridge-acceptance",
+            )
+        if host.get("bridge_acceptance_mcp") != "aitp_v5_audit_runtime_mcp_bridge_acceptance":
+            result.add(
+                f"{path}.kernel_capabilities.host_integration.bridge_acceptance_mcp",
+                "must be aitp_v5_audit_runtime_mcp_bridge_acceptance",
+            )
+        if host.get("bridge_acceptance_status") not in {
+            "accepted",
+            "expected_contract_only",
+            "stale_or_incomplete",
+        }:
+            result.add(
+                f"{path}.kernel_capabilities.host_integration.bridge_acceptance_status",
+                "must be a bridge acceptance status",
+            )
+        if (
+            not isinstance(host.get("bridge_acceptance_expected_target_count"), int)
+            or host["bridge_acceptance_expected_target_count"] < 0
+        ):
+            result.add(
+                f"{path}.kernel_capabilities.host_integration.bridge_acceptance_expected_target_count",
+                "must be a non-negative integer",
+            )
+        _require_nonempty_str(
+            host,
+            "bridge_acceptance_manifest_tool",
+            f"{path}.kernel_capabilities.host_integration",
+            result,
+        )
+        _require_list(
+            host.get("bridge_acceptance_required_recording_tools"),
+            f"{path}.kernel_capabilities.host_integration.bridge_acceptance_required_recording_tools",
+            result,
+        )
+        _require_list(
+            host.get("bridge_acceptance_next_actions"),
+            f"{path}.kernel_capabilities.host_integration.bridge_acceptance_next_actions",
+            result,
+        )
+        if not isinstance(host.get("fresh_host_bridge_acceptance_required"), bool):
+            result.add(
+                f"{path}.kernel_capabilities.host_integration.fresh_host_bridge_acceptance_required",
+                "must be a bool",
+            )
         _require_list(
             host.get("priority_host_production_loops"),
             f"{path}.kernel_capabilities.host_integration.priority_host_production_loops",

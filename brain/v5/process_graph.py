@@ -943,8 +943,9 @@ def _provenance_gaps(
                     target_record=claim,
                 )
             )
+        hashed_derivatives_by_parent = _hashed_source_asset_derivatives_by_parent(claim_assets)
         for asset in claim_assets:
-            if not asset.content_hash:
+            if not asset.content_hash and asset.asset_id not in hashed_derivatives_by_parent:
                 gaps.append(
                     _provenance_gap(
                         gap_type="source_asset_hash_missing",
@@ -1743,6 +1744,7 @@ def _source_asset_index(
     provenance_gaps: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
     references_by_id = {record.location_id: record for record in references}
+    hashed_derivatives_by_parent = _hashed_source_asset_derivatives_by_parent(source_assets)
     result: list[dict[str, Any]] = []
     for record in source_assets:
         duplicate = record.metadata.get("duplicate_hash_diagnostics", {})
@@ -1772,6 +1774,13 @@ def _source_asset_index(
             if reference is not None
         ]
         hash_status = "present" if record.content_hash else "missing"
+        hash_resolution_refs = []
+        if not record.content_hash and record.asset_id in hashed_derivatives_by_parent:
+            hash_status = "resolved_by_derived_asset"
+            hash_resolution_refs = [
+                f"source_asset:{asset.asset_id}"
+                for asset in hashed_derivatives_by_parent[record.asset_id]
+            ]
         if duplicate.get("duplicate_hash"):
             hash_status = "duplicate"
         result.append(
@@ -1788,6 +1797,7 @@ def _source_asset_index(
                 "content_hash": record.content_hash,
                 "hash_algorithm": record.hash_algorithm,
                 "hash_status": hash_status,
+                "hash_resolution_refs": hash_resolution_refs,
                 "version_anchor": dict(record.version_anchor),
                 "acquired_at": record.acquired_at,
                 "source_refs": list(record.source_refs),
@@ -1807,6 +1817,28 @@ def _source_asset_index(
             }
         )
     return result
+
+
+def _hashed_source_asset_derivatives_by_parent(
+    source_assets: list[SourceAssetRecord],
+) -> dict[str, list[SourceAssetRecord]]:
+    by_parent: dict[str, list[SourceAssetRecord]] = {}
+    asset_ids = {record.asset_id for record in source_assets}
+    for record in source_assets:
+        if not record.content_hash:
+            continue
+        for parent in record.derived_from:
+            parent_id = _normalize_source_asset_ref(parent)
+            if parent_id in asset_ids:
+                by_parent.setdefault(parent_id, []).append(record)
+    return by_parent
+
+
+def _normalize_source_asset_ref(value: str) -> str:
+    text = str(value or "").strip()
+    if text.startswith("source_asset:"):
+        return text.split(":", 1)[1]
+    return text
 
 
 def _relation_neighborhood(

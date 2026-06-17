@@ -17,6 +17,14 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["change_claim_confidence", "--session", "s1", "--topic", "fqhe", "--claim", "claim-fqhe"]
     if template.startswith("policy pre-tool"):
         return ["validate_claim", "--session", "s1", "--claim", "claim-fqhe", "--source-kind", "typed_records"]
+    if template.startswith("recording classify-candidate"):
+        return ["--session", "s1", "--event-type", "tool_run_completed", "--summary", "ED diagnostic run completed.", "--topic", "fqhe", "--claim", "claim-fqhe", "--tool-call-id", "tool-call-1"]
+    if template.startswith("recording navigation-state"):
+        return ["s1", "--claim", "claim-fqhe"]
+    if template.startswith("recording expand-slot"):
+        return ["--slot", "evidence", "--claim", "claim-fqhe"]
+    if template.startswith("recording verify-effect"):
+        return ["--expected-ref", "evidence:evidence-sample", "--claim", "claim-fqhe"]
     if template.startswith("memory failure-mode-review-result"):
         return ["--claim", "claim-fqhe", "--checkpoint", "checkpoint-fqhe", "--status", "passed", "--reviewed-mode", "sector misassignment", "--basis-ref", "literature:fqhe", "--summary", "Review basis."]
     if template.startswith(("memory audit", "memory failure-modes", "memory failure-mode-review", "memory request-failure-mode-review")):
@@ -439,6 +447,8 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["--topic", "fqhe"]
     if template.startswith("workspace recovery-audit"):
         return ["--compact"]
+    if template.startswith("workspace recording-audit"):
+        return ["--topic", "fqhe"]
     if template.startswith("object record"):
         return ["--topic", "fqhe", "--type", "hilbert_sector", "--name", "N=8 sector", "--definition", "Finite-size Hilbert sector."]
     if template.startswith("relation record"):
@@ -463,6 +473,8 @@ def sample_args_for_template(template: str) -> list[str]:
 
 
 def adapter_sample_args(template: str) -> list[str] | None:
+    if template.startswith("adapter bridge-acceptance"):
+        return []
     if template.startswith("adapter final-readiness"):
         return []
     if template.startswith("adapter hook-bridge"):

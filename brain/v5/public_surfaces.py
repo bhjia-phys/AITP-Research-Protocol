@@ -90,6 +90,10 @@ _PUBLIC_SURFACE_NAMES = (
     "proof_obligation_record",
     "qsgw_cockpit_bundle",
     "record_gate_coverage_audit",
+    "recording_candidate_classification",
+    "recording_effect_verification",
+    "recording_navigation_state",
+    "recording_slot_expansion",
     "record_ref_lookup",
     "reference_location_record",
     "research_route_record",
@@ -104,6 +108,7 @@ _PUBLIC_SURFACE_NAMES = (
     "runtime_host_production_loop_audit",
     "runtime_host_readiness_audit",
     "runtime_bridge_target_manifest",
+    "runtime_mcp_bridge_acceptance",
     "runtime_payload_profiles",
     "runtime_hook_installation_paths",
     "runtime_hook_smoke_coverage",
@@ -140,6 +145,7 @@ _PUBLIC_SURFACE_NAMES = (
     "workspace_recovery_binding_repair",
     "workspace_recovery_audit",
     "workspace_recovery_audit_progress",
+    "workspace_recording_audit",
     "goal_continuation_packet",
     "goal_continuation_list",
 )
@@ -230,6 +236,10 @@ _PUBLIC_SURFACE_PURPOSES = {
     "proof_obligation_record": "contracted proof/theorem obligation record for open gaps, finite audits, and theorem-candidate status without trust mutation",
     "qsgw_cockpit_bundle": "orientation-only QSGW/LibRPA research cockpit bundle with final/diagnostic lane manifest, plot guard, and dashboard dry-run that cannot update claim trust",
     "record_gate_coverage_audit": "contracted audit that every runtime record protocol has a conscious runtime gate decision",
+    "recording_candidate_classification": "read-only progressive recording trigger classifier that decides ignore, defer, navigate, or checkpoint before any AITP write",
+    "recording_navigation_state": "read-only lightweight first-level navigator over session, claim, slot counts, relation boundary, and recording slots; it does not replace execution_brief or process_graph_slice",
+    "recording_slot_expansion": "read-only slot expansion that names the existing typed write/preflight tool, required fields, graph edges, and verification step",
+    "recording_effect_verification": "read-only post-write verification surface over typed refs and process-graph deltas without updating claim trust",
     "record_ref_lookup": "read-only typed-store existence lookup for canonical record refs without source support, validation, evidence creation, or claim-trust mutation",
     "reference_location_record": "contracted orientation-only pointer to an external paper, note, or knowledge item",
     "research_route_record": "contracted orientation-only route, branch, failed-attempt, or pivot record for nonlinear research process state",
@@ -244,6 +254,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "runtime_host_production_loop_audit": "dynamic read-only batch audit over priority runtime host production loops without updating kernel truth",
     "runtime_host_readiness_audit": "dynamic read-only audit that launches the local host command and checks installed hook files without updating kernel truth",
     "runtime_bridge_target_manifest": "MCP-first host bridge target manifest derived from canonical runtime entrypoints with CLI fallback templates and no claim-trust mutation authority",
+    "runtime_mcp_bridge_acceptance": "read-only acceptance check comparing live MCP bridge exposure against the canonical runtime bridge target manifest",
     "runtime_payload_profiles": "host-event to typed AITP write payload profiles for provenance capture without validation or claim-trust authority",
     "runtime_hook_installation_paths": "read-only discovery of workspace-local hook install targets for Codex, Claude Code, Kimi Code, and OpenCode",
     "runtime_hook_smoke_coverage": "read-only report of which generated runtime hook paths have test-backed smoke coverage",
@@ -280,6 +291,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "workspace_recovery_binding_repair": "conservative active-claim session binding repair for restart recovery; auto-applies only when a topic has exactly one canonical claim",
     "workspace_recovery_audit": "read-only per-topic audit of restart recovery readiness, active-claim binding, relation-map boundaries, and migration review blockers",
     "workspace_recovery_audit_progress": "compact per-topic restart recovery progress surface for agent startup and migration discipline",
+    "workspace_recording_audit": "read-only workspace-level recording navigation audit that tells agents which topics can enter progressive slot expansion and which require human or recovery review first",
     "goal_continuation_packet": "orientation-only local audit packet for cross-session goal continuation; records objective, commits, changed files, tests, smoke, readiness, next actions, and blocking backlog without changing kernel state",
     "goal_continuation_list": "orientation-only index of local goal continuation packets for cross-session audit discovery without changing kernel state",
 }
@@ -359,6 +371,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_research_run_event_record,
         require_valid_research_run_record,
         require_valid_runtime_bridge_target_manifest,
+        require_valid_runtime_mcp_bridge_acceptance,
         require_valid_runtime_hook_installation_audit,
         require_valid_runtime_hook_installation_paths,
         require_valid_runtime_hook_smoke_coverage,
@@ -480,6 +493,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_workspace_recovery_audit,
         require_valid_workspace_recovery_audit_progress,
     )
+    from brain.v5.workspace_recording_audit_contracts import require_valid_workspace_recording_audit
     from brain.v5.qsgw_cockpit_contracts import require_valid_qsgw_cockpit_bundle
     from brain.v5.research_cockpit_contracts import require_valid_research_cockpit_bundle
     from brain.v5.moment_policy_contracts import require_valid_host_agnostic_moment_policy
@@ -501,6 +515,12 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.hook_install_contracts import (
         require_valid_codex_hook_installation,
         require_valid_opencode_hook_installation,
+    )
+    from brain.v5.recording_navigator_contracts import (
+        require_valid_recording_candidate_classification,
+        require_valid_recording_effect_verification,
+        require_valid_recording_navigation_state,
+        require_valid_recording_slot_expansion,
     )
 
     return {
@@ -589,6 +609,10 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "proof_obligation_record": require_valid_proof_obligation_record,
         "qsgw_cockpit_bundle": require_valid_qsgw_cockpit_bundle,
         "record_gate_coverage_audit": require_valid_record_gate_coverage_audit,
+        "recording_candidate_classification": require_valid_recording_candidate_classification,
+        "recording_effect_verification": require_valid_recording_effect_verification,
+        "recording_navigation_state": require_valid_recording_navigation_state,
+        "recording_slot_expansion": require_valid_recording_slot_expansion,
         "record_ref_lookup": require_valid_record_ref_lookup,
         "reference_location_record": require_valid_reference_location_record,
         "research_route_record": require_valid_research_route_record,
@@ -603,6 +627,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "runtime_host_production_loop_audit": require_valid_runtime_host_production_loop_audit,
         "runtime_host_readiness_audit": require_valid_runtime_host_readiness_audit,
         "runtime_bridge_target_manifest": require_valid_runtime_bridge_target_manifest,
+        "runtime_mcp_bridge_acceptance": require_valid_runtime_mcp_bridge_acceptance,
         "runtime_payload_profiles": require_valid_runtime_payload_profiles,
         "runtime_hook_installation_paths": require_valid_runtime_hook_installation_paths,
         "runtime_hook_smoke_coverage": require_valid_runtime_hook_smoke_coverage,
@@ -639,6 +664,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "workspace_recovery_binding_repair": require_valid_workspace_recovery_binding_repair,
         "workspace_recovery_audit": require_valid_workspace_recovery_audit,
         "workspace_recovery_audit_progress": require_valid_workspace_recovery_audit_progress,
+        "workspace_recording_audit": require_valid_workspace_recording_audit,
         "goal_continuation_packet": require_valid_goal_continuation_packet,
         "goal_continuation_list": require_valid_goal_continuation_list,
     }

@@ -31,6 +31,12 @@ from brain.v5.claim_relation_map import build_claim_relation_map
 from brain.v5.exploration import exploratory_record_payload, record_exploratory_record
 from brain.v5.process_graph import build_process_graph_slice
 from brain.v5.public_surfaces import require_valid_public_surface
+from brain.v5.recording_navigator import (
+    build_recording_navigation_state,
+    classify_recording_candidate,
+    expand_recording_slot,
+    verify_recording_effect,
+)
 from brain.v5.physics_objects import record_object_relation, record_physics_object
 from brain.v5.references import record_reference_location
 from brain.v5.routes import record_research_route, research_route_payload
@@ -77,6 +83,10 @@ from brain.v5.workspace_recovery_audit import (
     build_workspace_recovery_audit,
     compact_workspace_recovery_audit,
     write_workspace_recovery_audit,
+)
+from brain.v5.workspace_recording_audit import (
+    build_workspace_recording_audit,
+    write_workspace_recording_audit,
 )
 from brain.v5.workspace import (
     bind_session,
@@ -155,6 +165,12 @@ def _build_parser() -> argparse.ArgumentParser:
     wra.add_argument("--write-json", default="")
     wra.add_argument("--write-report", default="")
     wra.add_argument("--compact", action="store_true")
+    wrec = wps.add_parser("recording-audit")
+    wrec.add_argument("--migration-plan-json", default="")
+    wrec.add_argument("--topic", action="append", default=[], dest="topics")
+    wrec.add_argument("--write-json", default="")
+    wrec.add_argument("--write-report", default="")
+    wrec.add_argument("--limit", type=int, default=40)
 
     tp = sp.add_parser("topic"); ts = tp.add_subparsers(dest="topic_command", required=True)
     tc = ts.add_parser("create"); tc.add_argument("topic_id")
@@ -221,6 +237,35 @@ def _build_parser() -> argparse.ArgumentParser:
     sl.add_argument("--claim", default="", dest="claim_id"); sl.add_argument("--limit", type=int, default=80)
     mp = gs.add_parser("moment-policy"); mp.add_argument("session_id")
     mp.add_argument("--claim", default="", dest="claim_id"); mp.add_argument("--limit", type=int, default=80)
+
+    recp = sp.add_parser("recording"); recs = recp.add_subparsers(dest="recording_command", required=True)
+    rcc = recs.add_parser("classify-candidate")
+    rcc.add_argument("--session", default="", dest="session_id")
+    rcc.add_argument("--event-type", required=True)
+    rcc.add_argument("--summary", default="")
+    rcc.add_argument("--topic", default="", dest="topic_id")
+    rcc.add_argument("--claim", default="", dest="claim_id")
+    rcc.add_argument("--touched-ref", action="append", default=[], dest="touched_refs")
+    rcc.add_argument("--produced-artifact", action="append", default=[], dest="produced_artifacts")
+    rcc.add_argument("--tool-call-id", default="")
+    rcc.add_argument("--risk-hint", default="")
+    rcc.add_argument("--payload-json", default="{}")
+    rns = recs.add_parser("navigation-state")
+    rns.add_argument("session_id")
+    rns.add_argument("--claim", default="", dest="claim_id")
+    rns.add_argument("--limit", type=int, default=40)
+    res = recs.add_parser("expand-slot")
+    res.add_argument("session_id")
+    res.add_argument("--slot", required=True)
+    res.add_argument("--claim", default="", dest="claim_id")
+    res.add_argument("--candidate-json", default="{}")
+    rev = recs.add_parser("verify-effect")
+    rev.add_argument("session_id")
+    rev.add_argument("--claim", default="", dest="claim_id")
+    rev.add_argument("--expected-ref", action="append", default=[], dest="expected_refs")
+    rev.add_argument("--before-node-id", action="append", default=[], dest="before_node_ids")
+    rev.add_argument("--before-edge-id", action="append", default=[], dest="before_edge_ids")
+    rev.add_argument("--limit", type=int, default=80)
 
     rp = sp.add_parser("risk"); rs = rp.add_subparsers(dest="risk_command", required=True)
     rs.add_parser("assess").add_argument("claim_id")
@@ -486,6 +531,7 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         "registry",
         "public-surfaces",
         "bridge-targets",
+        "bridge-acceptance",
         "payload-profiles",
         "record-gate-audit",
         "smoke-coverage",
@@ -565,6 +611,46 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
     if args.command == "graph" and args.graph_command == "moment-policy":
         graph = build_process_graph_slice(ws, args.session_id, claim_id=args.claim_id, limit=args.limit)
         return require_valid_public_surface("host_agnostic_moment_policy", graph["moment_policy"])
+    if args.command == "recording" and args.recording_command == "classify-candidate":
+        return require_valid_public_surface(
+            "recording_candidate_classification",
+            classify_recording_candidate(
+                ws,
+                session_id=args.session_id,
+                event_type=args.event_type,
+                summary=args.summary,
+                topic_id=args.topic_id,
+                claim_id=args.claim_id,
+                touched_refs=args.touched_refs,
+                produced_artifacts=args.produced_artifacts,
+                tool_call_id=args.tool_call_id,
+                risk_hint=args.risk_hint,
+                payload=_j(args.payload_json),
+            ),
+        )
+    if args.command == "recording" and args.recording_command == "navigation-state":
+        return require_valid_public_surface(
+            "recording_navigation_state",
+            build_recording_navigation_state(ws, args.session_id, claim_id=args.claim_id, limit=args.limit),
+        )
+    if args.command == "recording" and args.recording_command == "expand-slot":
+        return require_valid_public_surface(
+            "recording_slot_expansion",
+            expand_recording_slot(ws, args.session_id, args.slot, claim_id=args.claim_id, candidate=_j(args.candidate_json)),
+        )
+    if args.command == "recording" and args.recording_command == "verify-effect":
+        return require_valid_public_surface(
+            "recording_effect_verification",
+            verify_recording_effect(
+                ws,
+                args.session_id,
+                expected_refs=args.expected_refs,
+                before_node_ids=args.before_node_ids,
+                before_edge_ids=args.before_edge_ids,
+                claim_id=args.claim_id,
+                limit=args.limit,
+            ),
+        )
     if args.command == "risk" and args.risk_command == "assess":
         return {"ok": True, "claim_id": args.claim_id, "risk_assessment": asdict(assess_claim_risk(get_claim(ws, args.claim_id)))}
 
@@ -838,6 +924,21 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
                 compact_workspace_recovery_audit(payload),
             )
         return require_valid_public_surface("workspace_recovery_audit", payload)
+
+    if args.command == "workspace" and args.workspace_command == "recording-audit":
+        payload = build_workspace_recording_audit(
+            ws,
+            migration_plan_path=args.migration_plan_json or None,
+            topics=args.topics,
+            limit=args.limit,
+        )
+        if args.write_json or args.write_report:
+            payload = write_workspace_recording_audit(
+                payload,
+                json_path=args.write_json or None,
+                report_path=args.write_report or None,
+            )
+        return require_valid_public_surface("workspace_recording_audit", payload)
 
     if args.command == "summary":
         return dispatch_summary_command(args, ws)

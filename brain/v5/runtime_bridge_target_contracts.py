@@ -148,6 +148,11 @@ def _validate_mcp_arguments(target: dict[str, Any], path: str, result: ContractR
         "process_graph_slice",
         "host_agnostic_moment_policy",
         "runtime_payload_profiles",
+        "workspace_recording_audit",
+        "recording_candidate_classification",
+        "recording_navigation_state",
+        "recording_slot_expansion",
+        "recording_effect_verification",
         "record_ref_lookup",
         "curated_rag_corpus",
         "curated_rag_search",
@@ -179,6 +184,57 @@ def _validate_mcp_arguments(target: dict[str, Any], path: str, result: ContractR
                 result.add(f"{path}.mcp_arguments.required", "must be empty")
             if arguments.get("optional") != []:
                 result.add(f"{path}.mcp_arguments.optional", "must be empty")
+        if entrypoint_key == "workspace_recording_audit":
+            if arguments.get("required") != ["base"]:
+                result.add(f"{path}.mcp_arguments.required", "must require base")
+            if arguments.get("optional") != ["migration_plan_json", "topics", "limit"]:
+                result.add(
+                    f"{path}.mcp_arguments.optional",
+                    "must allow migration_plan_json, topics, and limit",
+                )
+        if entrypoint_key == "recording_candidate_classification":
+            if arguments.get("required") != ["base", "event_type"]:
+                result.add(f"{path}.mcp_arguments.required", "must require base and event_type")
+            if arguments.get("optional") != [
+                "session_id",
+                "summary",
+                "topic_id",
+                "claim_id",
+                "touched_refs",
+                "produced_artifacts",
+                "tool_call_id",
+                "risk_hint",
+                "payload",
+            ]:
+                result.add(
+                    f"{path}.mcp_arguments.optional",
+                    "must allow session, summary, topic, claim, refs, artifacts, tool call, risk, and payload",
+                )
+        if entrypoint_key == "recording_navigation_state":
+            if arguments.get("required") != ["base", "session_id"]:
+                result.add(f"{path}.mcp_arguments.required", "must require base and session_id")
+            if arguments.get("optional") != ["claim_id", "limit"]:
+                result.add(f"{path}.mcp_arguments.optional", "must allow claim_id and limit")
+            if arguments.get("navigation_mode") != "lightweight_first_level":
+                result.add(f"{path}.mcp_arguments.navigation_mode", "must be lightweight_first_level")
+            if arguments.get("does_not_replace") != ["execution_brief", "process_graph_slice"]:
+                result.add(
+                    f"{path}.mcp_arguments.does_not_replace",
+                    "must preserve execution brief and process graph as separate reads",
+                )
+        if entrypoint_key == "recording_slot_expansion":
+            if arguments.get("required") != ["base", "session_id", "slot"]:
+                result.add(f"{path}.mcp_arguments.required", "must require base, session_id, and slot")
+            if arguments.get("optional") != ["claim_id", "candidate"]:
+                result.add(f"{path}.mcp_arguments.optional", "must allow claim_id and candidate")
+        if entrypoint_key == "recording_effect_verification":
+            if arguments.get("required") != ["base", "session_id"]:
+                result.add(f"{path}.mcp_arguments.required", "must require base and session_id")
+            if arguments.get("optional") != ["expected_refs", "before_node_ids", "before_edge_ids", "claim_id", "limit"]:
+                result.add(
+                    f"{path}.mcp_arguments.optional",
+                    "must allow expected refs, before graph ids, claim_id, and limit",
+                )
         if entrypoint_key == "record_ref_lookup":
             if arguments.get("required") != ["base", "refs"]:
                 result.add(f"{path}.mcp_arguments.required", "must require base and refs")

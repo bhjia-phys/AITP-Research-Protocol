@@ -7,6 +7,18 @@ from io import BytesIO
 import subprocess
 import sys
 
+_MCP_COMPAT_TOOL_NAMES = {
+    "aitp_list_topics",
+    "aitp_get_execution_brief",
+    "aitp_bootstrap_topic",
+}
+_MCP_RECORDING_NAVIGATOR_TOOL_NAMES = {
+    "aitp_v5_classify_recording_candidate",
+    "aitp_v5_get_recording_navigation_state",
+    "aitp_v5_expand_recording_slot",
+    "aitp_v5_verify_recording_effect",
+}
+
 
 def _seed_session(tmp_path):
     from brain.v5.evidence import record_evidence
@@ -83,8 +95,10 @@ def test_v5_native_mcp_content_length_stdio_smoke(tmp_path):
     assert initialized["result"]["serverInfo"]["name"] == "aitp-v5-brain"
     tools = _read_content_length_message(stdout)["result"]["tools"]
     assert tools
-    assert all(tool["name"].startswith("aitp_v5_") for tool in tools)
-    assert not any(tool["name"].startswith("aitp_") and not tool["name"].startswith("aitp_v5_") for tool in tools)
+    tool_names = {tool["name"] for tool in tools}
+    assert _MCP_RECORDING_NAVIGATOR_TOOL_NAMES <= tool_names
+    assert all(name.startswith("aitp_v5_") or name in _MCP_COMPAT_TOOL_NAMES for name in tool_names)
+    assert {name for name in tool_names if name.startswith("aitp_") and not name.startswith("aitp_v5_")} <= _MCP_COMPAT_TOOL_NAMES
 
 
 def test_v5_native_mcp_ndjson_stdio_smoke(tmp_path):
@@ -111,8 +125,10 @@ def test_v5_native_mcp_ndjson_stdio_smoke(tmp_path):
     assert messages[0]["result"]["serverInfo"]["name"] == "aitp-v5-brain"
     tools = messages[1]["result"]["tools"]
     assert tools
-    assert all(tool["name"].startswith("aitp_v5_") for tool in tools)
-    assert not any(tool["name"].startswith("aitp_") and not tool["name"].startswith("aitp_v5_") for tool in tools)
+    tool_names = {tool["name"] for tool in tools}
+    assert _MCP_RECORDING_NAVIGATOR_TOOL_NAMES <= tool_names
+    assert all(name.startswith("aitp_v5_") or name in _MCP_COMPAT_TOOL_NAMES for name in tool_names)
+    assert {name for name in tool_names if name.startswith("aitp_") and not name.startswith("aitp_v5_")} <= _MCP_COMPAT_TOOL_NAMES
 
 
 def _invoke(args, capsys):
@@ -155,6 +171,14 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
     assert "aitp_v5_evaluate_pre_tool_policy" in packet["required_kernel_entrypoints"]
     assert "aitp_v5_preflight_trust_update" in packet["required_kernel_entrypoints"]
     assert "aitp_v5_apply_trust_update" in packet["required_kernel_entrypoints"]
+    for entrypoint in (
+        "aitp_v5_build_workspace_recording_audit",
+        "aitp_v5_classify_recording_candidate",
+        "aitp_v5_get_recording_navigation_state",
+        "aitp_v5_expand_recording_slot",
+        "aitp_v5_verify_recording_effect",
+    ):
+        assert entrypoint in packet["required_kernel_entrypoints"]
     assert packet["trust_mutation_entrypoints"]["change_claim_confidence"] == {
         "preflight": "aitp_v5_preflight_trust_update",
         "apply": "aitp_v5_apply_trust_update",
@@ -301,6 +325,42 @@ def test_adapter_packet_includes_orientation_summaries_and_trusted_brief(tmp_pat
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,
     }
+    recording = packet["runtime_recording_trigger_protocol"]
+    assert recording["kind"] == "runtime_recording_trigger_protocol"
+    assert recording["entrypoints"] == {
+        "read_workspace_recording_audit": "aitp_v5_build_workspace_recording_audit",
+        "classify": "aitp_v5_classify_recording_candidate",
+        "read_navigation_state": "aitp_v5_get_recording_navigation_state",
+        "expand_slot": "aitp_v5_expand_recording_slot",
+        "verify_effect": "aitp_v5_verify_recording_effect",
+    }
+    assert recording["host_operations"]["read_workspace_recording_audit"] == "readWorkspaceRecordingAudit"
+    assert recording["host_operations"]["classify"] == "classifyRecordingCandidate"
+    assert [step["operation"] for step in recording["minimal_sequence"]] == [
+        "readWorkspaceRecordingAudit",
+        "classifyRecordingCandidate",
+        "readRecordingNavigationState",
+        "expandRecordingSlot",
+        "existing_typed_write_or_preflight",
+        "verifyRecordingEffect",
+    ]
+    assert {moment["moment"] for moment in recording["trigger_moments"]} >= {
+        "session_start",
+        "tool_run_completed",
+        "result_observed",
+        "trust_change_requested",
+        "session_end",
+    }
+    assert recording["write_boundary"]["classification_writes"] is False
+    assert recording["write_boundary"]["workspace_recording_audit_writes"] is False
+    assert recording["write_boundary"]["navigation_writes"] is False
+    assert recording["write_boundary"]["slot_expansion_writes"] is False
+    assert recording["write_boundary"]["deepest_layer_write_tools_are_existing_typed_entrypoints"] is True
+    assert recording["write_boundary"]["verification_writes"] is False
+    assert recording["write_boundary"]["trust_apply_exposed_to_host"] is False
+    assert recording["frequency_policy"]["agent_should_not_record_every_step"] is True
+    assert recording["can_update_kernel_state"] is False
+    assert recording["can_update_claim_trust"] is False
     assert "read_for_orientation" in packet["runtime_rules"][0]
 
 
@@ -367,6 +427,8 @@ def test_codex_adapter_packet_builds_hook_installation_from_hook_protocols(tmp_p
     assert installation["installation_mode"] == "explicit_guard_calls"
     assert installation["native_installer_available"] is False
     assert installation["summary_inputs_trusted"] is False
+    assert installation["recording_trigger_protocol"] == packet["runtime_recording_trigger_protocol"]
+    assert installation["recording_trigger_protocol"]["write_boundary"]["trust_apply_exposed_to_host"] is False
 
     protocols = packet["runtime_hook_protocols"]
     hooks = {hook["hook_name"]: hook for hook in installation["hooks"]}
@@ -396,6 +458,8 @@ def test_kimi_code_adapter_packet_builds_native_hook_installation_from_hook_prot
     assert installation["installation_mode"] == "native_lifecycle_hooks"
     assert installation["native_installer_available"] is False
     assert installation["summary_inputs_trusted"] is False
+    assert installation["recording_trigger_protocol"] == packet["runtime_recording_trigger_protocol"]
+    assert installation["recording_trigger_protocol"]["write_boundary"]["trust_apply_exposed_to_host"] is False
     assert {hook["hook_name"] for hook in installation["hooks"]} == {"pre_commit", "pre_tool", "post_tool"}
 
 
@@ -416,6 +480,7 @@ def test_codex_hook_bridge_is_rendered_from_installation_template(tmp_path):
     assert bridge["source_protocol_field"] == "runtime_hook_installation"
     assert bridge["summary_inputs_trusted"] is False
     assert bridge["can_update_kernel_state"] is False
+    assert bridge["recording_trigger_protocol"] == packet["runtime_recording_trigger_protocol"]
     assert bridge["pre_tool_policy_entrypoint"]["cli"] == "aitp-v5 policy pre-tool <args>"
     assert bridge["pre_tool_policy_entrypoint"]["mcp"] == "aitp_v5_evaluate_pre_tool_policy"
     assert bridge["pre_tool_policy_entrypoint"]["surface"] == "pre_tool_policy_decision"
@@ -2843,6 +2908,7 @@ def test_adapter_packet_exposes_protocol_registry_metadata(tmp_path):
             "runtime_record_protocols",
             "runtime_gate_protocols",
             "runtime_hook_protocols",
+            "runtime_recording_trigger_protocol",
         ],
         "protocol_fingerprint_inputs": [
             "trust_changing_actions",
@@ -2853,6 +2919,7 @@ def test_adapter_packet_exposes_protocol_registry_metadata(tmp_path):
             "runtime_record_protocols",
             "runtime_gate_protocols",
             "runtime_hook_protocols",
+            "runtime_recording_trigger_protocol",
         ],
         "protocol_fingerprint": adapter_protocol_fingerprint(),
         "protocol_fingerprint_algorithm": "sha256-canonical-json-v1",
@@ -3260,9 +3327,20 @@ def test_record_ref_lookup_confirms_typed_record_existence_only(tmp_path, capsys
     from brain.v5.public_surfaces import require_valid_public_surface
     from brain.v5.record_refs import lookup_record_refs
     from brain.v5.references import record_reference_location
+    from brain.v5.evidence import record_evidence
     from brain.v5.source_assets import register_source_asset
+    from brain.v5.source_reconstruction_review import record_source_reconstruction_review_result
 
     ws, claim = _seed_session(tmp_path)
+    evidence = record_evidence(
+        ws,
+        topic_id="librpa-gw",
+        claim_id=claim.claim_id,
+        evidence_type="source_reconstruction",
+        status="supports",
+        summary="The claim has a typed basis for a source reconstruction review.",
+        supports_outputs=["source_reconstruction_review_basis"],
+    )
     source = register_source_asset(
         ws,
         topic_id="librpa-gw",
@@ -3281,10 +3359,21 @@ def test_record_ref_lookup_confirms_typed_record_existence_only(tmp_path, capsys
         uri="file:///papers/edge-counting.pdf",
         label="Edge counting PDF",
     )
+    review = record_source_reconstruction_review_result(
+        ws,
+        claim_id=claim.claim_id,
+        status="inconclusive",
+        reviewed_components=["definitions"],
+        evidence_refs=[evidence.evidence_id],
+        remaining_actions=["review_remaining_source_reconstruction_components"],
+        summary="Definitions were reviewed against the typed evidence, but the full source reconstruction is not closed.",
+    )
 
     refs = [
         f"source_asset:{source.asset_id}",
         f"aitp:reference_location:{location.location_id}",
+        f"source_reconstruction_review:{review.result_id}",
+        f"source-reconstruction-review-result:{review.result_id}",
         "source_asset:missing-source",
         "reference_location:missing-location",
         "literature:foo",
@@ -3295,7 +3384,7 @@ def test_record_ref_lookup_confirms_typed_record_existence_only(tmp_path, capsys
     assert require_valid_public_surface("record_ref_lookup", lookup) == lookup
     assert lookup["kind"] == "record_ref_lookup"
     assert lookup["lookup_scope"] == "typed_record_existence_only"
-    assert lookup["found_count"] == 2
+    assert lookup["found_count"] == 4
     assert lookup["missing_count"] == 2
     assert lookup["unsupported_count"] == 1
     assert lookup["malformed_count"] == 1
@@ -3312,6 +3401,10 @@ def test_record_ref_lookup_confirms_typed_record_existence_only(tmp_path, capsys
     assert by_ref[f"source_asset:{source.asset_id}"]["can_update_record_claim_trust"] is False
     assert by_ref[f"aitp:reference_location:{location.location_id}"]["status"] == "found"
     assert by_ref[f"aitp:reference_location:{location.location_id}"]["ref_kind"] == "reference_location"
+    assert by_ref[f"source_reconstruction_review:{review.result_id}"]["status"] == "found"
+    assert by_ref[f"source_reconstruction_review:{review.result_id}"]["record_kind"] == "source_reconstruction_review_result"
+    assert by_ref[f"source-reconstruction-review-result:{review.result_id}"]["status"] == "found"
+    assert by_ref[f"source-reconstruction-review-result:{review.result_id}"]["ref_kind"] == "source_reconstruction_review"
     assert by_ref["source_asset:missing-source"]["status"] == "not_found"
     assert by_ref["source_asset:missing-source"]["record_confirmed"] is False
     assert by_ref["source_asset:missing-source"]["suggested_next_operation"] == "registerSourceAsset"
@@ -3599,6 +3692,11 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
         "readProcessGraphSlice",
         "readMomentPolicy",
         "readRuntimePayloadProfiles",
+        "readWorkspaceRecordingAudit",
+        "classifyRecordingCandidate",
+        "readRecordingNavigationState",
+        "expandRecordingSlot",
+        "verifyRecordingEffect",
         "lookupRecordRefs",
         "readCuratedRagCorpus",
         "searchCuratedRagCorpus",
@@ -3682,6 +3780,68 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
         "required": [],
         "optional": [],
         "source": "aitp_v5_get_runtime_payload_profiles",
+    }
+    assert by_operation["readWorkspaceRecordingAudit"]["mcp_tool"] == "aitp_v5_build_workspace_recording_audit"
+    assert by_operation["readWorkspaceRecordingAudit"]["cli_fallback"] == "aitp-v5 workspace recording-audit <args>"
+    assert by_operation["readWorkspaceRecordingAudit"]["surface"] == "workspace_recording_audit"
+    assert by_operation["readWorkspaceRecordingAudit"]["execution_role"] == "read"
+    assert by_operation["readWorkspaceRecordingAudit"]["state_effect"] == "read_only"
+    assert by_operation["readWorkspaceRecordingAudit"]["mcp_arguments"] == {
+        "required": ["base"],
+        "optional": ["migration_plan_json", "topics", "limit"],
+        "source": "aitp_v5_build_workspace_recording_audit",
+    }
+    assert by_operation["classifyRecordingCandidate"]["mcp_tool"] == "aitp_v5_classify_recording_candidate"
+    assert by_operation["classifyRecordingCandidate"]["cli_fallback"] == "aitp-v5 recording classify-candidate <args>"
+    assert by_operation["classifyRecordingCandidate"]["surface"] == "recording_candidate_classification"
+    assert by_operation["classifyRecordingCandidate"]["execution_role"] == "read"
+    assert by_operation["classifyRecordingCandidate"]["state_effect"] == "read_only"
+    assert by_operation["classifyRecordingCandidate"]["mcp_arguments"] == {
+        "required": ["base", "event_type"],
+        "optional": [
+            "session_id",
+            "summary",
+            "topic_id",
+            "claim_id",
+            "touched_refs",
+            "produced_artifacts",
+            "tool_call_id",
+            "risk_hint",
+            "payload",
+        ],
+        "source": "aitp_v5_classify_recording_candidate",
+    }
+    assert by_operation["readRecordingNavigationState"]["mcp_tool"] == "aitp_v5_get_recording_navigation_state"
+    assert by_operation["readRecordingNavigationState"]["cli_fallback"] == "aitp-v5 recording navigation-state <session-id>"
+    assert by_operation["readRecordingNavigationState"]["surface"] == "recording_navigation_state"
+    assert by_operation["readRecordingNavigationState"]["execution_role"] == "read"
+    assert by_operation["readRecordingNavigationState"]["state_effect"] == "read_only"
+    assert by_operation["readRecordingNavigationState"]["mcp_arguments"] == {
+        "required": ["base", "session_id"],
+        "optional": ["claim_id", "limit"],
+        "source": "aitp_v5_get_recording_navigation_state",
+        "navigation_mode": "lightweight_first_level",
+        "does_not_replace": ["execution_brief", "process_graph_slice"],
+    }
+    assert by_operation["expandRecordingSlot"]["mcp_tool"] == "aitp_v5_expand_recording_slot"
+    assert by_operation["expandRecordingSlot"]["cli_fallback"] == "aitp-v5 recording expand-slot <session-id> <args>"
+    assert by_operation["expandRecordingSlot"]["surface"] == "recording_slot_expansion"
+    assert by_operation["expandRecordingSlot"]["execution_role"] == "read"
+    assert by_operation["expandRecordingSlot"]["state_effect"] == "read_only"
+    assert by_operation["expandRecordingSlot"]["mcp_arguments"] == {
+        "required": ["base", "session_id", "slot"],
+        "optional": ["claim_id", "candidate"],
+        "source": "aitp_v5_expand_recording_slot",
+    }
+    assert by_operation["verifyRecordingEffect"]["mcp_tool"] == "aitp_v5_verify_recording_effect"
+    assert by_operation["verifyRecordingEffect"]["cli_fallback"] == "aitp-v5 recording verify-effect <session-id> <args>"
+    assert by_operation["verifyRecordingEffect"]["surface"] == "recording_effect_verification"
+    assert by_operation["verifyRecordingEffect"]["execution_role"] == "read"
+    assert by_operation["verifyRecordingEffect"]["state_effect"] == "read_only"
+    assert by_operation["verifyRecordingEffect"]["mcp_arguments"] == {
+        "required": ["base", "session_id"],
+        "optional": ["expected_refs", "before_node_ids", "before_edge_ids", "claim_id", "limit"],
+        "source": "aitp_v5_verify_recording_effect",
     }
     assert by_operation["lookupRecordRefs"]["mcp_arguments"] == {
         "required": ["base", "refs"],

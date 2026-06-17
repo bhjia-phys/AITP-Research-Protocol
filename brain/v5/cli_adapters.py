@@ -36,6 +36,7 @@ from brain.v5.host_readiness import audit_priority_host_production_loops, audit_
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
 from brain.v5.record_refs import lookup_record_refs
 from brain.v5.runtime_bridge_targets import runtime_bridge_target_manifest
+from brain.v5.runtime_mcp_bridge_acceptance import audit_runtime_mcp_bridge_acceptance
 from brain.v5.runtime_payload_profiles import runtime_payload_profiles
 
 
@@ -44,6 +45,11 @@ def add_adapter_parser(sp) -> None:
     aps = ap.add_subparsers(dest="adapter_command", required=True)
     aps.add_parser("record-gate-audit")
     aps.add_parser("bridge-targets")
+    baa = aps.add_parser("bridge-acceptance")
+    baa.add_argument("--live-manifest-json", default="")
+    baa.add_argument("--live-manifest-file", default="")
+    baa.add_argument("--live-tools-json", default="")
+    baa.add_argument("--live-tools-file", default="")
     aps.add_parser("payload-profiles")
     arr = aps.add_parser("record-ref-lookup"); arr.add_argument("refs", nargs="+")
     aps.add_parser("curated-rag-corpus")
@@ -102,6 +108,23 @@ def dispatch_adapter_command(args: Namespace, ws: Any | None) -> dict[str, Any]:
             "runtime_bridge_target_manifest": require_valid_public_surface(
                 "runtime_bridge_target_manifest",
                 runtime_bridge_target_manifest(),
+            ),
+        }
+    if args.adapter_command == "bridge-acceptance":
+        return {
+            "ok": True,
+            "runtime_mcp_bridge_acceptance": require_valid_public_surface(
+                "runtime_mcp_bridge_acceptance",
+                audit_runtime_mcp_bridge_acceptance(
+                    live_manifest=_optional_json_payload(
+                        args.live_manifest_json,
+                        args.live_manifest_file,
+                    ),
+                    live_tool_names=_optional_json_payload(
+                        args.live_tools_json,
+                        args.live_tools_file,
+                    ),
+                ),
             ),
         }
     if args.adapter_command == "payload-profiles":
@@ -434,6 +457,21 @@ def _json_object(raw: str) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise SystemExit("expected a JSON object")
     return payload
+
+
+def _optional_json_payload(raw: str, path: str) -> Any | None:
+    if raw:
+        return _json_any(raw)
+    if path:
+        return _json_any(Path(path).read_text(encoding="utf-8"))
+    return None
+
+
+def _json_any(raw: str) -> Any:
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"invalid JSON: {exc}") from exc
 
 
 def _bridge_payload(args: Namespace) -> dict[str, Any]:

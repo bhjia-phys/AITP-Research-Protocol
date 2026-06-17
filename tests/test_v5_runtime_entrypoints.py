@@ -40,6 +40,7 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["capture_source_asset_auto"]["surface"] == "source_asset_record"
     assert entrypoints["host_agnostic_moment_policy"]["surface"] == "host_agnostic_moment_policy"
     assert entrypoints["runtime_bridge_target_manifest"]["surface"] == "runtime_bridge_target_manifest"
+    assert entrypoints["runtime_mcp_bridge_acceptance"]["surface"] == "runtime_mcp_bridge_acceptance"
     assert entrypoints["runtime_payload_profiles"]["surface"] == "runtime_payload_profiles"
     assert entrypoints["record_evidence"]["mcp"] == "aitp_v5_record_evidence"
     assert entrypoints["record_code_state"]["mcp"] == "aitp_v5_record_code_state"
@@ -79,10 +80,35 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
         "mcp": "aitp_v5_get_runtime_bridge_target_manifest",
         "surface": "runtime_bridge_target_manifest",
     }
+    assert entrypoints["runtime_mcp_bridge_acceptance"] == {
+        "cli": "aitp-v5 adapter bridge-acceptance",
+        "mcp": "aitp_v5_audit_runtime_mcp_bridge_acceptance",
+        "surface": "runtime_mcp_bridge_acceptance",
+    }
     assert entrypoints["runtime_payload_profiles"] == {
         "cli": "aitp-v5 adapter payload-profiles",
         "mcp": "aitp_v5_get_runtime_payload_profiles",
         "surface": "runtime_payload_profiles",
+    }
+    assert entrypoints["recording_candidate_classification"] == {
+        "cli": "aitp-v5 recording classify-candidate <args>",
+        "mcp": "aitp_v5_classify_recording_candidate",
+        "surface": "recording_candidate_classification",
+    }
+    assert entrypoints["recording_navigation_state"] == {
+        "cli": "aitp-v5 recording navigation-state <session-id>",
+        "mcp": "aitp_v5_get_recording_navigation_state",
+        "surface": "recording_navigation_state",
+    }
+    assert entrypoints["recording_slot_expansion"] == {
+        "cli": "aitp-v5 recording expand-slot <session-id> <args>",
+        "mcp": "aitp_v5_expand_recording_slot",
+        "surface": "recording_slot_expansion",
+    }
+    assert entrypoints["recording_effect_verification"] == {
+        "cli": "aitp-v5 recording verify-effect <session-id> <args>",
+        "mcp": "aitp_v5_verify_recording_effect",
+        "surface": "recording_effect_verification",
     }
     assert entrypoints["curated_rag_chunk"] == {
         "cli": "aitp-v5 adapter curated-rag-chunk <chunk-id>",
@@ -223,6 +249,36 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "cli": "aitp-v5 adapter payload-profiles",
             "mcp": "aitp_v5_get_runtime_payload_profiles",
             "surface": "runtime_payload_profiles",
+        },
+        "runtime_mcp_bridge_acceptance": {
+            "cli": "aitp-v5 adapter bridge-acceptance",
+            "mcp": "aitp_v5_audit_runtime_mcp_bridge_acceptance",
+            "surface": "runtime_mcp_bridge_acceptance",
+        },
+        "workspace_recording_audit": {
+            "cli": "aitp-v5 workspace recording-audit <args>",
+            "mcp": "aitp_v5_build_workspace_recording_audit",
+            "surface": "workspace_recording_audit",
+        },
+        "recording_candidate_classification": {
+            "cli": "aitp-v5 recording classify-candidate <args>",
+            "mcp": "aitp_v5_classify_recording_candidate",
+            "surface": "recording_candidate_classification",
+        },
+        "recording_navigation_state": {
+            "cli": "aitp-v5 recording navigation-state <session-id>",
+            "mcp": "aitp_v5_get_recording_navigation_state",
+            "surface": "recording_navigation_state",
+        },
+        "recording_slot_expansion": {
+            "cli": "aitp-v5 recording expand-slot <session-id> <args>",
+            "mcp": "aitp_v5_expand_recording_slot",
+            "surface": "recording_slot_expansion",
+        },
+        "recording_effect_verification": {
+            "cli": "aitp-v5 recording verify-effect <session-id> <args>",
+            "mcp": "aitp_v5_verify_recording_effect",
+            "surface": "recording_effect_verification",
         },
         "curated_rag_chunk": {
             "cli": "aitp-v5 adapter curated-rag-chunk <chunk-id>",
@@ -403,6 +459,71 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
         "required": [],
         "optional": [],
         "source": "aitp_v5_get_runtime_payload_profiles",
+    }
+    assert by_operation["readWorkspaceRecordingAudit"]["entrypoint_key"] == "workspace_recording_audit"
+    assert by_operation["readWorkspaceRecordingAudit"]["mcp_tool"] == "aitp_v5_build_workspace_recording_audit"
+    assert by_operation["readWorkspaceRecordingAudit"]["cli_fallback"] == "aitp-v5 workspace recording-audit <args>"
+    assert by_operation["readWorkspaceRecordingAudit"]["surface"] == "workspace_recording_audit"
+    assert by_operation["readWorkspaceRecordingAudit"]["execution_role"] == "read"
+    assert by_operation["readWorkspaceRecordingAudit"]["state_effect"] == "read_only"
+    assert by_operation["readWorkspaceRecordingAudit"]["mcp_arguments"] == {
+        "required": ["base"],
+        "optional": ["migration_plan_json", "topics", "limit"],
+        "source": "aitp_v5_build_workspace_recording_audit",
+    }
+    assert by_operation["classifyRecordingCandidate"]["entrypoint_key"] == "recording_candidate_classification"
+    assert by_operation["classifyRecordingCandidate"]["mcp_tool"] == "aitp_v5_classify_recording_candidate"
+    assert by_operation["classifyRecordingCandidate"]["cli_fallback"] == "aitp-v5 recording classify-candidate <args>"
+    assert by_operation["classifyRecordingCandidate"]["surface"] == "recording_candidate_classification"
+    assert by_operation["classifyRecordingCandidate"]["execution_role"] == "read"
+    assert by_operation["classifyRecordingCandidate"]["state_effect"] == "read_only"
+    assert by_operation["classifyRecordingCandidate"]["mcp_arguments"] == {
+        "required": ["base", "event_type"],
+        "optional": [
+            "session_id",
+            "summary",
+            "topic_id",
+            "claim_id",
+            "touched_refs",
+            "produced_artifacts",
+            "tool_call_id",
+            "risk_hint",
+            "payload",
+        ],
+        "source": "aitp_v5_classify_recording_candidate",
+    }
+    assert by_operation["readRecordingNavigationState"]["entrypoint_key"] == "recording_navigation_state"
+    assert by_operation["readRecordingNavigationState"]["mcp_tool"] == "aitp_v5_get_recording_navigation_state"
+    assert by_operation["readRecordingNavigationState"]["cli_fallback"] == "aitp-v5 recording navigation-state <session-id>"
+    assert by_operation["readRecordingNavigationState"]["surface"] == "recording_navigation_state"
+    assert by_operation["readRecordingNavigationState"]["execution_role"] == "read"
+    assert by_operation["readRecordingNavigationState"]["state_effect"] == "read_only"
+    assert by_operation["readRecordingNavigationState"]["mcp_arguments"] == {
+        "required": ["base", "session_id"],
+        "optional": ["claim_id", "limit"],
+        "source": "aitp_v5_get_recording_navigation_state",
+        "navigation_mode": "lightweight_first_level",
+        "does_not_replace": ["execution_brief", "process_graph_slice"],
+    }
+    assert by_operation["expandRecordingSlot"]["entrypoint_key"] == "recording_slot_expansion"
+    assert by_operation["expandRecordingSlot"]["mcp_tool"] == "aitp_v5_expand_recording_slot"
+    assert by_operation["expandRecordingSlot"]["surface"] == "recording_slot_expansion"
+    assert by_operation["expandRecordingSlot"]["execution_role"] == "read"
+    assert by_operation["expandRecordingSlot"]["state_effect"] == "read_only"
+    assert by_operation["expandRecordingSlot"]["mcp_arguments"] == {
+        "required": ["base", "session_id", "slot"],
+        "optional": ["claim_id", "candidate"],
+        "source": "aitp_v5_expand_recording_slot",
+    }
+    assert by_operation["verifyRecordingEffect"]["entrypoint_key"] == "recording_effect_verification"
+    assert by_operation["verifyRecordingEffect"]["mcp_tool"] == "aitp_v5_verify_recording_effect"
+    assert by_operation["verifyRecordingEffect"]["surface"] == "recording_effect_verification"
+    assert by_operation["verifyRecordingEffect"]["execution_role"] == "read"
+    assert by_operation["verifyRecordingEffect"]["state_effect"] == "read_only"
+    assert by_operation["verifyRecordingEffect"]["mcp_arguments"] == {
+        "required": ["base", "session_id"],
+        "optional": ["expected_refs", "before_node_ids", "before_edge_ids", "claim_id", "limit"],
+        "source": "aitp_v5_verify_recording_effect",
     }
     assert by_operation["readCuratedRagChunk"]["entrypoint_key"] == "curated_rag_chunk"
     assert by_operation["readCuratedRagChunk"]["mcp_tool"] == "aitp_v5_get_curated_rag_chunk"

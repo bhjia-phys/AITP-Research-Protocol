@@ -90,6 +90,10 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "proof_obligation_record",
         "qsgw_cockpit_bundle",
         "record_gate_coverage_audit",
+        "recording_candidate_classification",
+        "recording_effect_verification",
+        "recording_navigation_state",
+        "recording_slot_expansion",
         "record_ref_lookup",
         "reference_location_record",
         "research_route_record",
@@ -104,6 +108,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "runtime_host_production_loop_audit",
         "runtime_host_readiness_audit",
         "runtime_bridge_target_manifest",
+        "runtime_mcp_bridge_acceptance",
         "runtime_payload_profiles",
         "runtime_hook_installation_paths",
         "runtime_hook_smoke_coverage",
@@ -138,6 +143,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "workspace_recovery_audit",
         "workspace_recovery_audit_progress",
         "workspace_recovery_binding_repair",
+        "workspace_recording_audit",
         "workspace_refresh_bundle",
         "workspace_summary_bundle",
         "goal_continuation_packet",
@@ -164,7 +170,7 @@ def test_public_surface_validator_accepts_tool_executor_catalog():
 
 
 def test_public_surface_validator_accepts_codex_hook_bridge():
-    from brain.v5.adapter_protocols import mandatory_gate_protocols
+    from brain.v5.adapter_protocols import mandatory_gate_protocols, mandatory_recording_trigger_protocol
     from brain.v5.hook_entrypoint_schemas import (
         pre_tool_event_platform_schema,
         pre_tool_policy_input_schema,
@@ -180,6 +186,7 @@ def test_public_surface_validator_accepts_codex_hook_bridge():
         "native_installer_available": False,
         "summary_inputs_trusted": False,
         "can_update_kernel_state": False,
+        "recording_trigger_protocol": mandatory_recording_trigger_protocol(),
         "pre_tool_policy_entrypoint": {
             "cli": "aitp-v5 policy pre-tool <args>",
             "mcp": "aitp_v5_evaluate_pre_tool_policy",
@@ -426,7 +433,7 @@ def test_public_surface_validator_accepts_kimi_code_hook_installation():
 
 
 def test_public_surface_validator_accepts_opencode_plugin_bridge():
-    from brain.v5.adapter_protocols import mandatory_gate_protocols
+    from brain.v5.adapter_protocols import mandatory_gate_protocols, mandatory_recording_trigger_protocol
     from brain.v5.hook_entrypoint_schemas import (
         pre_tool_event_platform_schema,
         pre_tool_policy_input_schema,
@@ -468,6 +475,7 @@ def test_public_surface_validator_accepts_opencode_plugin_bridge():
                 "requires_platform_event": True,
                 "platform_event_schema": pre_tool_event_platform_schema(),
             },
+            "recording_trigger_protocol": mandatory_recording_trigger_protocol(),
             "gate_protocols": {
                 "source_protocol_field": "runtime_gate_protocols",
                 **mandatory_gate_protocols(),

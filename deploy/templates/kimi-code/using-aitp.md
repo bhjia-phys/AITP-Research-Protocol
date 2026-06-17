@@ -1,13 +1,16 @@
 ---
 name: using-aitp
-description: HIGHEST PRIORITY - Use for ANY theoretical-physics research, topic continuation, idea steering, paper learning, derivation work, validation planning, or study of physical systems. Enter AITP v5 before any substantial response.
+description: HIGHEST PRIORITY - Use for ANY theoretical-physics research, topic continuation, exploratory physics discussion, old-knowledge Q&A tied to project topics, prior topic progress/status inquiries, idea steering, paper learning, derivation work, validation planning, or study of physical systems. Classify request intensity before deciding read-only or write-capable flow.
 ---
 
 # Using AITP v5 - Kimi Code
 
 ## Hard Gate
 
-Use this skill before brainstorming, literature exploration, derivation, validation planning, or long-running theoretical-physics work.
+Use this skill before substantial theoretical-physics work. This includes
+brainstorming that may become a route, literature exploration, derivation,
+validation planning, prior-topic progress/status inquiries, old-knowledge Q&A
+tied to a project topic, and long-running theoretical-physics work.
 
 Do not treat chat summaries, Markdown notes, or generated hook config as scientific truth. AITP v5 truth comes from typed records, execution briefs, validation results, promotion packets, and approved memory entries.
 
@@ -26,6 +29,41 @@ Do not treat chat summaries, Markdown notes, or generated hook config as scienti
 - On Windows terminals, set `PYTHONIOENCODING=utf-8` and `PYTHONUTF8=1` before `kimi mcp test` if the CLI crashes while printing Unicode status symbols.
 
 ## Entry Procedure
+
+### Request Intensity
+
+Classify the request before deciding how much AITP to load:
+
+- Status or prior-progress inquiry: read-only recovery, execution brief, and
+  claim relation map. Do not write unless the user asks for a handoff or an
+  unresolved human checkpoint must be answered.
+- Old-knowledge/textbook Q&A: answer normally if generic. If tied to a known
+  topic or claim, restore brief plus relation map; write only durable sources,
+  gaps, routes, or corrections.
+- Light exploratory discussion: restore known topic context, but record only
+  when a durable route, question, source, artifact, result, or gap emerges.
+- Continuation, derivation, source reading, code/numerical work, validation,
+  contradiction, final synthesis, trust update, or L2 promotion: restore the v5
+  session and follow typed runtime gates.
+
+### Intent Matrix
+
+Use the lightest AITP path that preserves truth.
+
+| User intent | AITP read depth | Recording default | Escalate to write when |
+|---|---|---|---|
+| Generic textbook or old-knowledge Q&A | None, unless the answer names an existing topic or claim | No write | The answer corrects project memory, finds a durable gap, or introduces a reusable source |
+| Project-linked old-knowledge Q&A | Recovery audit, brief, relation map | No write | The answer changes a claim boundary, source role, route, or proof/validation obligation |
+| Prior progress/status inquiry | Recovery audit, brief, relation map, summaries | No write | User asks for a handoff/status artifact or resolves a human checkpoint |
+| Light exploratory discussion | Topic context if known; classifier only after a durable moment appears | No write | User accepts a route/question, identifies a source, or exposes a reusable gap |
+| Topic continuation or derivation | Brief, relation map, lightweight recording navigation; process graph only when needed | Write at durable moments | Source, artifact, result, proof obligation, route decision, or validation state changes |
+| Code/numerical/literature execution | Brief, relation map, source/code context, recording navigation | Write provenance and outputs | Tool run completes, artifact appears, validation passes/fails, or anomaly is observed |
+| Final claim/trust/L2/memory action | Brief, relation map, trust/promotion preflight | Human-gated write only | Explicit v5 gate and user decision allow it |
+
+When unsure between two rows, choose the read-only row first and let the
+recording classifier decide whether a durable moment exists. Do not create a
+new topic, claim, session, or binding merely because a conversation is
+interesting.
 
 0. If `ResearchAction` is available, open a WorkFrame before substantive AITP
    reads:
@@ -64,6 +102,35 @@ Do not treat chat summaries, Markdown notes, or generated hook config as scienti
    - `aitp_v5_record_validation_result`
    - `aitp_v5_record_sensemaking_report`
 6. Before trust changes or L2 memory promotion, use the v5 trust/promotion gate. Never promote from a summary alone.
+
+## Progressive Recording Navigation
+
+Do not write AITP records at every chat step. Trigger navigation at durable
+moments: known-topic session start, active claim creation/change, durable source
+identity/location, completed tool run, produced artifact, observed result or
+anomaly, negative result, proof or validation gap, route pivot, final answer
+about an active claim, trust/promotion request, or session-end handoff.
+
+Use this sequence, mapped to the available Kimi/Hakimi tool names:
+
+```text
+aitp_v5_build_workspace_recording_audit(base="{{TOPICS_ROOT}}")      # read-only, if placement is unclear
+aitp_v5_classify_recording_candidate(base="{{TOPICS_ROOT}}", ...)    # read-only
+aitp_v5_get_recording_navigation_state(base="{{TOPICS_ROOT}}", session_id=<session-id>, claim_id=<claim-id>)  # read-only
+aitp_v5_expand_recording_slot(base="{{TOPICS_ROOT}}", session_id=<session-id>, slot=<slot>, claim_id=<claim-id>)  # read-only
+<existing typed write or preflight tool named by the slot expansion>
+aitp_v5_verify_recording_effect(base="{{TOPICS_ROOT}}", session_id=<session-id>, expected_refs=[...])  # read-only
+```
+
+Audit, classifier, navigation, slot expansion, and verification surfaces cannot
+update claim trust. Only the deepest typed write or preflight tool may mutate
+kernel state, and trust still requires explicit trust/human gates.
+
+Do not run the progressive navigator for generic explanation, vague
+brainstorming, duplicate status summaries, or source/file scans that do not
+change a claim, route, gap, artifact, or validation state. If a light
+discussion becomes research, first restate the durable moment in one sentence,
+then classify that candidate.
 
 ## Kimi Hook Installation
 

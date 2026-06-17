@@ -10,6 +10,7 @@ from brain.v5.adapter_protocols import (
     adapter_protocol_registry,
     mandatory_gate_protocols,
     mandatory_kernel_entrypoints,
+    mandatory_recording_trigger_protocol,
     mandatory_record_protocols,
     mandatory_trust_mutations,
     mandatory_trust_update_protocol,
@@ -55,6 +56,7 @@ _ADAPTER_REQUIRED_KEYS = (
     "runtime_record_protocols",
     "runtime_gate_protocols",
     "runtime_hook_protocols",
+    "runtime_recording_trigger_protocol",
     "runtime_rules",
 )
 
@@ -181,6 +183,13 @@ def validate_adapter_packet(payload: dict[str, Any], *, path: str = "adapter") -
         validate_runtime_hook_protocols(
             payload["runtime_hook_protocols"],
             f"{path}.runtime_hook_protocols",
+            result,
+        )
+
+    if "runtime_recording_trigger_protocol" in payload:
+        _validate_runtime_recording_trigger_protocol(
+            payload["runtime_recording_trigger_protocol"],
+            f"{path}.runtime_recording_trigger_protocol",
             result,
         )
 
@@ -510,6 +519,27 @@ def _validate_runtime_gate_protocols(
             f"{path}.{action}.summary_inputs_trusted",
             result,
         )
+
+
+def _validate_runtime_recording_trigger_protocol(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    expected = mandatory_recording_trigger_protocol()
+    if payload != expected:
+        result.add(path, "must match mandatory_recording_trigger_protocol()")
+
+    _require_bool_value(payload.get("summary_inputs_trusted"), False, f"{path}.summary_inputs_trusted", result)
+    _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
+    _require_bool_value(payload.get("can_update_kernel_state"), False, f"{path}.can_update_kernel_state", result)
+    _require_bool_value(payload.get("can_update_claim_trust"), False, f"{path}.can_update_claim_trust", result)
+    _require_list(payload.get("trigger_moments"), f"{path}.trigger_moments", result)
+    _require_list(payload.get("minimal_sequence"), f"{path}.minimal_sequence", result)
+    _require_mapping(payload.get("write_boundary"), f"{path}.write_boundary", result)
+    boundary = payload.get("write_boundary")
+    if isinstance(boundary, dict):
+        if boundary.get("trust_apply_exposed_to_host") is not False:
+            result.add(f"{path}.write_boundary.trust_apply_exposed_to_host", "must be false")
 
 
 def _validate_trusted_focus(payload: Any, path: str, result: ContractResult) -> None:

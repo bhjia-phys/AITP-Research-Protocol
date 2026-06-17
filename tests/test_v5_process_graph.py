@@ -624,6 +624,63 @@ def test_process_graph_slice_exposes_source_code_provenance_gaps(tmp_path):
     assert moments
 
 
+def test_source_asset_hash_gap_is_resolved_by_hashed_derived_asset(tmp_path):
+    from brain.v5.process_graph import build_process_graph_slice
+    from brain.v5.process_graph_contracts import validate_process_graph_slice
+    from brain.v5.source_assets import capture_source_asset_from_local_path, register_source_asset
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "paper", context_id="literature", title="Paper")
+    claim = create_claim(
+        ws,
+        topic_id="paper",
+        statement="The literature claim depends on a canonical paper identity.",
+        evidence_profile="literature-summary",
+        confidence_state="hypothesis",
+        active_uncertainty="source identity must stay reconstructable",
+    )
+    bind_session(ws, "s-paper", topic_id="paper", context_id="literature", active_claim=claim.claim_id)
+
+    canonical = register_source_asset(
+        ws,
+        topic_id="paper",
+        claim_id=claim.claim_id,
+        asset_type="paper",
+        uri="doi:10.1234/example",
+        title="Canonical DOI identity",
+        source_kind="literature",
+        summary="DOI identity without a local byte hash.",
+    )
+    local_pdf = tmp_path / "paper.pdf"
+    local_pdf.write_bytes(b"%PDF-1.4\nexample\n")
+    derived = capture_source_asset_from_local_path(
+        ws,
+        path=str(local_pdf),
+        topic_id="paper",
+        claim_id=claim.claim_id,
+        asset_type="paper",
+        title="Canonical paper local PDF",
+        derived_from=[canonical.asset_id],
+        summary="Local PDF copy with stable hash.",
+    )
+
+    payload = build_process_graph_slice(ws, "s-paper", limit=40)
+
+    assert validate_process_graph_slice(payload).ok is True
+    gaps = [
+        item
+        for item in payload["provenance_gaps"]
+        if item["gap_type"] == "source_asset_hash_missing"
+    ]
+    assert gaps == []
+    index = {item["asset_id"]: item for item in payload["source_asset_index"]}
+    assert index[canonical.asset_id]["hash_status"] == "resolved_by_derived_asset"
+    assert index[canonical.asset_id]["hash_resolution_refs"] == [f"source_asset:{derived.asset_id}"]
+    assert index[canonical.asset_id]["provenance_gap_types"] == []
+    assert index[derived.asset_id]["hash_status"] == "present"
+
+
 def test_process_graph_slice_exposes_workspace_migration_health_boundary(tmp_path):
     from brain.v5.process_graph import build_process_graph_slice
     from brain.v5.process_graph_contracts import validate_process_graph_slice

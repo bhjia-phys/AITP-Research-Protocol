@@ -17,6 +17,7 @@ from brain.v5.models import (
     SensemakingReportRecord,
 )
 from brain.v5.paths import WorkspacePaths
+from brain.v5.runtime_mcp_bridge_acceptance import audit_runtime_mcp_bridge_acceptance
 from brain.v5.source_reconstruction import audit_source_reconstruction_batch
 from brain.v5.source_reconstruction_review import build_source_reconstruction_review_manifest
 from brain.v5.store import list_valid_records
@@ -96,6 +97,7 @@ def _host_payload(host_smoke: dict[str, Any]) -> dict[str, Any]:
     by_runtime = {item.get("runtime"): item for item in runtimes}
     priority = {runtime: _runtime_status(by_runtime.get(runtime, {})) for runtime in _PRIORITY_HOSTS}
     deferred = {runtime: _runtime_status(by_runtime.get(runtime, {})) for runtime in _DEFERRED_HOSTS}
+    bridge_acceptance = audit_runtime_mcp_bridge_acceptance()
     return {
         "surface": "runtime_hook_smoke_coverage",
         "priority_hosts": list(_PRIORITY_HOSTS),
@@ -108,6 +110,17 @@ def _host_payload(host_smoke: dict[str, Any]) -> dict[str, Any]:
         "priority_host_lifecycle_smoke_cli": "aitp-v5 adapter host-production-loop --run-lifecycle-smoke",
         "priority_host_lifecycle_smoke_supported": True,
         "priority_host_production_loops": [_host_production_loop(runtime) for runtime in _PRIORITY_HOSTS],
+        "bridge_acceptance_surface": "runtime_mcp_bridge_acceptance",
+        "bridge_acceptance_cli": "aitp-v5 adapter bridge-acceptance",
+        "bridge_acceptance_mcp": "aitp_v5_audit_runtime_mcp_bridge_acceptance",
+        "bridge_acceptance_status": str(bridge_acceptance.get("status") or ""),
+        "bridge_acceptance_expected_target_count": int(bridge_acceptance["expected"]["target_count"]),
+        "bridge_acceptance_manifest_tool": str(bridge_acceptance["expected"]["manifest_tool"]),
+        "bridge_acceptance_required_recording_tools": list(
+            bridge_acceptance["expected"]["recording_navigator_tools"]
+        ),
+        "bridge_acceptance_next_actions": list(bridge_acceptance.get("next_actions") or []),
+        "fresh_host_bridge_acceptance_required": bridge_acceptance.get("status") != "accepted",
         "residual_lifecycle_gap": _unique(
             gap
             for runtime in _PRIORITY_HOSTS
@@ -454,6 +467,8 @@ def _residual_risks(host_smoke: dict[str, Any], legacy_review: dict[str, Any]) -
         risks.append("legacy_semantic_losslessness_not_proven_by_accounting")
     host_payload = _host_payload(host_smoke)
     risks.extend(f"host_gap:{gap}" for gap in host_payload["residual_lifecycle_gap"])
+    if host_payload["fresh_host_bridge_acceptance_required"]:
+        risks.append("fresh_host_mcp_bridge_acceptance_required")
     return _unique(risks)
 
 
@@ -484,6 +499,7 @@ def _backlog_refs(
     refs.append(f"vnext_lane_exemplars:missing={len(lane_manifest.get('missing_lanes') or [])}")
     refs.extend(f"vnext_workstream_backlog:{name}" for name in vnext_readiness.get("backlog_workstreams") or [])
     refs.extend(f"vnext_workstream_missing:{name}" for name in vnext_readiness.get("missing_workstreams") or [])
+    refs.append("runtime_mcp_bridge_acceptance:status=expected_contract_only")
     return refs
 
 

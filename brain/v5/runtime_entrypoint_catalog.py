@@ -19,6 +19,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_get_runtime_bridge_target_manifest",
         "surface": "runtime_bridge_target_manifest",
     },
+    "runtime_mcp_bridge_acceptance": {
+        "cli": "aitp-v5 adapter bridge-acceptance",
+        "mcp": "aitp_v5_audit_runtime_mcp_bridge_acceptance",
+        "surface": "runtime_mcp_bridge_acceptance",
+    },
     "runtime_payload_profiles": {
         "cli": "aitp-v5 adapter payload-profiles",
         "mcp": "aitp_v5_get_runtime_payload_profiles",
@@ -116,6 +121,26 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "cli": "aitp-v5 graph moment-policy <session-id>",
         "mcp": "aitp_v5_get_host_agnostic_moment_policy",
         "surface": "host_agnostic_moment_policy",
+    },
+    "recording_candidate_classification": {
+        "cli": "aitp-v5 recording classify-candidate <args>",
+        "mcp": "aitp_v5_classify_recording_candidate",
+        "surface": "recording_candidate_classification",
+    },
+    "recording_navigation_state": {
+        "cli": "aitp-v5 recording navigation-state <session-id>",
+        "mcp": "aitp_v5_get_recording_navigation_state",
+        "surface": "recording_navigation_state",
+    },
+    "recording_slot_expansion": {
+        "cli": "aitp-v5 recording expand-slot <session-id> <args>",
+        "mcp": "aitp_v5_expand_recording_slot",
+        "surface": "recording_slot_expansion",
+    },
+    "recording_effect_verification": {
+        "cli": "aitp-v5 recording verify-effect <session-id> <args>",
+        "mcp": "aitp_v5_verify_recording_effect",
+        "surface": "recording_effect_verification",
     },
     "record_exploratory_record": {
         "cli": "aitp-v5 exploration record <args>",
@@ -575,6 +600,16 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "cli": "aitp-v5 workspace recovery-audit <args>",
         "mcp": "aitp_v5_write_workspace_recovery_audit",
         "surface": "workspace_recovery_audit_progress",
+    },
+    "workspace_recording_audit": {
+        "cli": "aitp-v5 workspace recording-audit <args>",
+        "mcp": "aitp_v5_build_workspace_recording_audit",
+        "surface": "workspace_recording_audit",
+    },
+    "write_workspace_recording_audit": {
+        "cli": "aitp-v5 workspace recording-audit <args>",
+        "mcp": "aitp_v5_write_workspace_recording_audit",
+        "surface": "workspace_recording_audit",
     },
     "topic_status": {"cli": "aitp-v5 status topic <session-id>", "mcp": "aitp_v5_write_topic_status_surfaces", "surface": "topic_status_bundle"},
     "topic_status_compact": {"cli": "aitp-v5 status topic <session-id> --compact", "mcp": "aitp_v5_write_topic_status_surfaces_compact", "surface": "topic_status_bundle"},

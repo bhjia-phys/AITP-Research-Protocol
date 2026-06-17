@@ -56,6 +56,9 @@ research/adapters/openclaw/state/
 brain/_mcp_boot.log
 brain/_mcp_stdout.log
 
+# Local AITP runtime state for this protocol repository.
+.aitp/
+
 # GSD worktree artifacts
 .sisyphus/
 topics/

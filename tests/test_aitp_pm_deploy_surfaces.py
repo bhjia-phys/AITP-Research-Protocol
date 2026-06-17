@@ -34,6 +34,41 @@ def test_deploy_skills_keep_relation_map_recovery_boundary():
         assert "claim relation map" in text.lower()
 
 
+def test_deploy_runtime_skills_keep_progressive_recording_trigger_policy():
+    for rel in [
+        "deploy/skills/aitp-runtime.md",
+        "deploy/codex/skills/aitp-runtime.md",
+        "deploy/templates/claude-code/aitp-runtime.md",
+        "deploy/templates/kimi-code/aitp-runtime.md",
+    ]:
+        text = _read(rel)
+        assert "AITP runtime is not a transcript logger" in text
+        assert "old-knowledge answers that do not affect a topic" in text
+        assert "research-relevant fact changed or became durable" in text
+        assert "first navigation answer should reveal only topic/session/claim position" in text
+        assert "Expand exactly one slot" in text
+        assert "intentionally lightweight first-level" in text
+        assert "does not replace" in text
+        assert "execution_brief" in text
+        assert "process_graph_slice" in text
+        assert "aitp_v5_verify_recording_effect" in text
+
+
+def test_deploy_using_skills_keep_lightweight_intent_matrix():
+    for rel in [
+        "deploy/skills/using-aitp.md",
+        "deploy/codex/skills/using-aitp.md",
+        "deploy/templates/claude-code/using-aitp.md",
+        "deploy/templates/kimi-code/using-aitp.md",
+    ]:
+        text = _read(rel)
+        assert "Classify request intensity" in text
+        assert "lightweight recording navigation; process graph only when needed" in text
+        assert "choose the read-only row first" in text
+        assert "Do not create a" in text
+        assert "new topic, claim, session, or binding merely because" in text
+
+
 def test_deploy_hooks_guard_canonical_and_root_stores():
     guard = _read("deploy/hooks/aitp-routing-guard.py")
     assert "ROOT_AITP_FULL" in guard

@@ -163,6 +163,16 @@ def compact_final_readiness(payload: dict[str, Any]) -> dict[str, Any]:
                 host.get("priority_host_lifecycle_smoke_supported", False)
             ),
             "priority_host_loop_count": len(host.get("priority_host_production_loops") or []),
+            "bridge_acceptance_surface": str(host.get("bridge_acceptance_surface") or ""),
+            "bridge_acceptance_cli": str(host.get("bridge_acceptance_cli") or ""),
+            "bridge_acceptance_mcp": str(host.get("bridge_acceptance_mcp") or ""),
+            "bridge_acceptance_status": str(host.get("bridge_acceptance_status") or ""),
+            "bridge_acceptance_expected_target_count": int(
+                host.get("bridge_acceptance_expected_target_count") or 0
+            ),
+            "fresh_host_bridge_acceptance_required": bool(
+                host.get("fresh_host_bridge_acceptance_required", False)
+            ),
         },
         "vnext_readiness": {
             "control_plane_status": str(vnext.get("control_plane_status") or ""),

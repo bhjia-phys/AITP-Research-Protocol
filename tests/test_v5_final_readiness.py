@@ -289,6 +289,33 @@ def test_final_readiness_skips_malformed_legacy_evidence_records(tmp_path):
         "aitp-v5 adapter host-production-loop --run-lifecycle-smoke"
     )
     assert payload["kernel_capabilities"]["host_integration"]["priority_host_lifecycle_smoke_supported"] is True
+    assert payload["kernel_capabilities"]["host_integration"]["bridge_acceptance_surface"] == (
+        "runtime_mcp_bridge_acceptance"
+    )
+    assert payload["kernel_capabilities"]["host_integration"]["bridge_acceptance_cli"] == (
+        "aitp-v5 adapter bridge-acceptance"
+    )
+    assert payload["kernel_capabilities"]["host_integration"]["bridge_acceptance_mcp"] == (
+        "aitp_v5_audit_runtime_mcp_bridge_acceptance"
+    )
+    assert payload["kernel_capabilities"]["host_integration"]["bridge_acceptance_status"] == (
+        "expected_contract_only"
+    )
+    assert payload["kernel_capabilities"]["host_integration"]["bridge_acceptance_expected_target_count"] == 35
+    assert payload["kernel_capabilities"]["host_integration"]["bridge_acceptance_manifest_tool"] == (
+        "aitp_v5_get_runtime_bridge_target_manifest"
+    )
+    assert payload["kernel_capabilities"]["host_integration"]["bridge_acceptance_required_recording_tools"] == [
+        "aitp_v5_build_workspace_recording_audit",
+        "aitp_v5_classify_recording_candidate",
+        "aitp_v5_get_recording_navigation_state",
+        "aitp_v5_expand_recording_slot",
+        "aitp_v5_verify_recording_effect",
+    ]
+    assert payload["kernel_capabilities"]["host_integration"]["bridge_acceptance_next_actions"] == [
+        "call_live_mcp_manifest_and_tools_list_then_rerun_acceptance"
+    ]
+    assert payload["kernel_capabilities"]["host_integration"]["fresh_host_bridge_acceptance_required"] is True
     assert payload["kernel_capabilities"]["host_integration"]["priority_host_production_loops"] == [
         {
             "runtime": "codex",
@@ -350,6 +377,38 @@ def test_final_readiness_skips_malformed_legacy_evidence_records(tmp_path):
     assert payload["content_backlog"]["legacy_semantic_review"]["semantic_lossless_proven"] is False
     assert f"source_reconstruction:{claim.claim_id}:complete" in payload["evidence_refs"]
     assert "semantic_review:legacy-v5-lossless-test:pending=2" in payload["backlog_refs"]
+    assert "runtime_mcp_bridge_acceptance:status=expected_contract_only" in payload["backlog_refs"]
+    assert "fresh_host_mcp_bridge_acceptance_required" in payload["residual_risks"]
+    assert require_valid_public_surface("final_engineering_readiness_audit", payload) == payload
+
+
+def test_final_readiness_audit_exposes_runtime_mcp_bridge_acceptance_gate(tmp_path):
+    from brain.v5.final_readiness import audit_final_engineering_readiness
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+    run = _write_migration_run(ws, topic_count=0)
+
+    payload = audit_final_engineering_readiness(ws, migration_dir=run)
+    host = payload["kernel_capabilities"]["host_integration"]
+
+    assert host["bridge_acceptance_surface"] == "runtime_mcp_bridge_acceptance"
+    assert host["bridge_acceptance_cli"] == "aitp-v5 adapter bridge-acceptance"
+    assert host["bridge_acceptance_mcp"] == "aitp_v5_audit_runtime_mcp_bridge_acceptance"
+    assert host["bridge_acceptance_status"] == "expected_contract_only"
+    assert host["bridge_acceptance_expected_target_count"] == 35
+    assert host["bridge_acceptance_manifest_tool"] == "aitp_v5_get_runtime_bridge_target_manifest"
+    assert host["bridge_acceptance_required_recording_tools"] == [
+        "aitp_v5_build_workspace_recording_audit",
+        "aitp_v5_classify_recording_candidate",
+        "aitp_v5_get_recording_navigation_state",
+        "aitp_v5_expand_recording_slot",
+        "aitp_v5_verify_recording_effect",
+    ]
+    assert host["fresh_host_bridge_acceptance_required"] is True
+    assert "runtime_mcp_bridge_acceptance:status=expected_contract_only" in payload["backlog_refs"]
+    assert "fresh_host_mcp_bridge_acceptance_required" in payload["residual_risks"]
     assert require_valid_public_surface("final_engineering_readiness_audit", payload) == payload
 
 
@@ -735,6 +794,12 @@ def test_final_readiness_cli_compact_progress(tmp_path, capsys):
         "priority_host_batch_cli": "aitp-v5 adapter host-production-loop",
         "priority_host_lifecycle_smoke_supported": True,
         "priority_host_loop_count": 3,
+        "bridge_acceptance_surface": "runtime_mcp_bridge_acceptance",
+        "bridge_acceptance_cli": "aitp-v5 adapter bridge-acceptance",
+        "bridge_acceptance_mcp": "aitp_v5_audit_runtime_mcp_bridge_acceptance",
+        "bridge_acceptance_status": "expected_contract_only",
+        "bridge_acceptance_expected_target_count": 35,
+        "fresh_host_bridge_acceptance_required": True,
     }
     assert cli_payload["vnext_readiness"] == {
         "control_plane_status": "ready_with_lane_exemplar_backlog",

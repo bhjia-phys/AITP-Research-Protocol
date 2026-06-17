@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from brain.v5.adapter_protocols import mandatory_gate_protocols, mandatory_hook_protocols
+from brain.v5.adapter_protocols import (
+    mandatory_gate_protocols,
+    mandatory_hook_protocols,
+    mandatory_recording_trigger_protocol,
+)
 from brain.v5.contracts import (
     ContractError,
     ContractResult,
@@ -114,6 +118,11 @@ def validate_codex_hook_bridge(
         f"{path}.pre_tool_event_entrypoint",
         result,
     )
+    _validate_recording_trigger_protocol(
+        payload.get("recording_trigger_protocol"),
+        f"{path}.recording_trigger_protocol",
+        result,
+    )
     _validate_gate_protocols(payload.get("gate_protocols"), f"{path}.gate_protocols", result)
 
     for key in ("installation_mode", "path"):
@@ -179,6 +188,11 @@ def validate_opencode_plugin_bridge(
         _validate_pre_tool_event_entrypoint(
             bridge.get("pre_tool_event_entrypoint"),
             f"{path}.plugin_bridge.pre_tool_event_entrypoint",
+            result,
+        )
+        _validate_recording_trigger_protocol(
+            bridge.get("recording_trigger_protocol"),
+            f"{path}.plugin_bridge.recording_trigger_protocol",
             result,
         )
         _validate_gate_protocols(bridge.get("gate_protocols"), f"{path}.plugin_bridge.gate_protocols", result)
@@ -466,6 +480,15 @@ def _validate_pre_tool_event_entrypoint(payload: Any, path: str, result: Contrac
     for key, value in expected.items():
         if payload.get(key) != value:
             result.add(f"{path}.{key}", f"must be {value!r}")
+
+
+def _validate_recording_trigger_protocol(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    expected = mandatory_recording_trigger_protocol()
+    if payload != expected:
+        result.add(path, "must match mandatory_recording_trigger_protocol()")
 
 
 def _validate_gate_protocols(payload: Any, path: str, result: ContractResult) -> None:

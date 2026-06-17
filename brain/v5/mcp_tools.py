@@ -40,11 +40,18 @@ from brain.v5.models import CodeStateRecord, TrustUpdateRequest
 from brain.v5.pretool_policy import evaluate_context_pre_tool_policy
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
 from brain.v5.record_refs import lookup_record_refs
+from brain.v5.recording_navigator import (
+    build_recording_navigation_state,
+    classify_recording_candidate,
+    expand_recording_slot,
+    verify_recording_effect,
+)
 from brain.v5.physics_objects import record_object_relation, record_physics_object
 from brain.v5.process_graph import build_process_graph_slice
 from brain.v5.references import record_reference_location
 from brain.v5.routes import record_research_route, research_route_payload
 from brain.v5.runtime_bridge_targets import runtime_bridge_target_manifest
+from brain.v5.runtime_mcp_bridge_acceptance import audit_runtime_mcp_bridge_acceptance
 from brain.v5.runtime_payload_profiles import runtime_payload_profiles
 from brain.v5.sensemaking import record_sensemaking_report
 from brain.v5.source_assets import capture_source_asset_from_local_path, register_source_asset, source_asset_payload
@@ -100,6 +107,10 @@ from brain.v5.workspace_recovery_audit import (
     build_workspace_recovery_audit,
     compact_workspace_recovery_audit,
     write_workspace_recovery_audit,
+)
+from brain.v5.workspace_recording_audit import (
+    build_workspace_recording_audit,
+    write_workspace_recording_audit,
 )
 
 
@@ -416,6 +427,49 @@ def aitp_v5_write_workspace_recovery_audit(
     return {"ok": True, **require_valid_public_surface("workspace_recovery_audit", payload)}
 
 
+def aitp_v5_build_workspace_recording_audit(
+    base: str,
+    *,
+    migration_plan_json: str = "",
+    topics: list[str] | None = None,
+    limit: int = 40,
+) -> dict:
+    """Return a read-only workspace-level audit of progressive recording navigation."""
+
+    payload = build_workspace_recording_audit(
+        _ws(base),
+        migration_plan_path=migration_plan_json or None,
+        topics=topics or [],
+        limit=limit,
+    )
+    return require_valid_public_surface("workspace_recording_audit", payload)
+
+
+def aitp_v5_write_workspace_recording_audit(
+    base: str,
+    *,
+    migration_plan_json: str = "",
+    topics: list[str] | None = None,
+    write_json: str = "",
+    write_report: str = "",
+    limit: int = 40,
+) -> dict:
+    """Write JSON/Markdown workspace-level progressive recording navigation audit views."""
+
+    payload = build_workspace_recording_audit(
+        _ws(base),
+        migration_plan_path=migration_plan_json or None,
+        topics=topics or [],
+        limit=limit,
+    )
+    payload = write_workspace_recording_audit(
+        payload,
+        json_path=write_json or None,
+        report_path=write_report or None,
+    )
+    return {"ok": True, **require_valid_public_surface("workspace_recording_audit", payload)}
+
+
 def _unbound_session_execution_brief(session_id: str) -> dict:
     """Return a valid brief for malformed or not-yet-bound session records."""
 
@@ -557,6 +611,97 @@ def aitp_v5_get_host_agnostic_moment_policy(
 
     graph = build_process_graph_slice(_ws(base), session_id, claim_id=claim_id, limit=limit)
     return require_valid_public_surface("host_agnostic_moment_policy", graph["moment_policy"])
+
+
+def aitp_v5_classify_recording_candidate(
+    base: str,
+    *,
+    session_id: str = "",
+    event_type: str,
+    summary: str = "",
+    topic_id: str = "",
+    claim_id: str = "",
+    touched_refs: list[str] | None = None,
+    produced_artifacts: list[str] | None = None,
+    tool_call_id: str = "",
+    risk_hint: str = "",
+    payload: dict | None = None,
+) -> dict:
+    """Classify a durable research event before progressive AITP recording navigation."""
+
+    return require_valid_public_surface(
+        "recording_candidate_classification",
+        classify_recording_candidate(
+            _ws(base),
+            session_id=session_id,
+            event_type=event_type,
+            summary=summary,
+            topic_id=topic_id,
+            claim_id=claim_id,
+            touched_refs=touched_refs or [],
+            produced_artifacts=produced_artifacts or [],
+            tool_call_id=tool_call_id,
+            risk_hint=risk_hint,
+            payload=payload or {},
+        ),
+    )
+
+
+def aitp_v5_get_recording_navigation_state(
+    base: str,
+    *,
+    session_id: str,
+    claim_id: str = "",
+    limit: int = 40,
+) -> dict:
+    """Return the read-only first-level AITP recording navigator for a session."""
+
+    return require_valid_public_surface(
+        "recording_navigation_state",
+        build_recording_navigation_state(_ws(base), session_id, claim_id=claim_id, limit=limit),
+    )
+
+
+def aitp_v5_expand_recording_slot(
+    base: str,
+    *,
+    session_id: str,
+    slot: str,
+    claim_id: str = "",
+    candidate: dict | None = None,
+) -> dict:
+    """Expand one AITP recording slot into required fields and typed write guidance."""
+
+    return require_valid_public_surface(
+        "recording_slot_expansion",
+        expand_recording_slot(_ws(base), session_id, slot, claim_id=claim_id, candidate=candidate or {}),
+    )
+
+
+def aitp_v5_verify_recording_effect(
+    base: str,
+    *,
+    session_id: str,
+    expected_refs: list[str] | None = None,
+    before_node_ids: list[str] | None = None,
+    before_edge_ids: list[str] | None = None,
+    claim_id: str = "",
+    limit: int = 80,
+) -> dict:
+    """Verify typed refs or graph deltas after an AITP recording write."""
+
+    return require_valid_public_surface(
+        "recording_effect_verification",
+        verify_recording_effect(
+            _ws(base),
+            session_id,
+            expected_refs=expected_refs or [],
+            before_node_ids=before_node_ids or [],
+            before_edge_ids=before_edge_ids or [],
+            claim_id=claim_id,
+            limit=limit,
+        ),
+    )
 
 
 def aitp_v5_lookup_record_refs(base: str, *, refs: list[str]) -> dict:
@@ -1062,6 +1207,25 @@ def aitp_v5_get_runtime_bridge_target_manifest() -> dict:
         "runtime_bridge_target_manifest": require_valid_public_surface(
             "runtime_bridge_target_manifest",
             runtime_bridge_target_manifest(),
+        ),
+    }
+
+
+def aitp_v5_audit_runtime_mcp_bridge_acceptance(
+    *,
+    live_manifest: dict | None = None,
+    live_tool_names: list | dict | None = None,
+) -> dict:
+    """Compare live host MCP bridge exposure with the canonical manifest."""
+
+    return {
+        "ok": True,
+        "runtime_mcp_bridge_acceptance": require_valid_public_surface(
+            "runtime_mcp_bridge_acceptance",
+            audit_runtime_mcp_bridge_acceptance(
+                live_manifest=live_manifest,
+                live_tool_names=live_tool_names,
+            ),
         ),
     }
 

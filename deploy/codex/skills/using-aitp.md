@@ -1,6 +1,6 @@
 ---
 name: using-aitp
-description: Highest-priority Codex app entry skill for theoretical-physics research, topic continuation, paper learning, derivation work, validation planning, and research steering. Enter AITP before free-form physics reasoning.
+description: Highest-priority Codex app entry skill for theoretical-physics work: active research, exploratory physics discussion, old-knowledge Q&A tied to project topics, prior topic progress/status inquiries, topic continuation, paper learning, derivation work, validation planning, and research steering. Classify request intensity before deciding read-only or write-capable flow.
 ---
 
 # Using AITP v5 In Codex App
@@ -8,8 +8,10 @@ description: Highest-priority Codex app entry skill for theoretical-physics rese
 ## Role
 
 This is the Codex app adapter entry point for AITP. Use it when the user asks
-for theoretical-physics research work, topic continuation, paper learning,
-derivation planning, validation, or research steering.
+for theoretical-physics research work, exploratory physics discussion,
+old-knowledge Q&A that touches a project topic, prior topic progress/status,
+topic continuation, paper learning, derivation planning, validation, or
+research steering.
 
 AITP is protocol-first. Codex is the executor, not the protocol authority.
 Follow the Charter and SPEC before platform convenience.
@@ -48,32 +50,66 @@ Follow the Charter and SPEC before platform convenience.
 
 ## Entry Procedure
 
-1. Decide whether the request is physics research. If yes, enter AITP before
-   brainstorming, code reading, paper reading, or answer synthesis.
-2. If the host exposes Hakimi/Kimi `ResearchAction`, open a WorkFrame before
+1. Decide whether the request is physics research or project-linked physics
+   context. If yes, enter AITP before brainstorming, code reading, paper
+   reading, or answer synthesis.
+2. Classify request intensity:
+   - Status or prior-progress inquiry: read-only recovery, brief, and relation
+     map. Do not write unless the user asks for a handoff or a returned human
+     checkpoint must be resolved.
+   - Old-knowledge/textbook Q&A: answer normally if generic. If tied to a known
+     topic or claim, restore brief and relation map first; write only durable
+     source, gap, route, or correction records.
+   - Light exploratory discussion: read topic context when known, but only run
+     recording navigation if a durable route, question, source, artifact,
+     result, or gap emerges.
+   - Continuation, derivation, source reading, code/numerical work, validation,
+     contradiction, final synthesis, trust update, or L2 promotion: restore the
+     v5 session, load `aitp-runtime`, and follow typed gates.
+
+### Intent Matrix
+
+Use the lightest AITP path that preserves truth.
+
+| User intent | AITP read depth | Recording default | Escalate to write when |
+|---|---|---|---|
+| Generic textbook or old-knowledge Q&A | None, unless the answer names an existing topic or claim | No write | The answer corrects project memory, finds a durable gap, or introduces a reusable source |
+| Project-linked old-knowledge Q&A | Recovery audit, brief, relation map | No write | The answer changes a claim boundary, source role, route, or proof/validation obligation |
+| Prior progress/status inquiry | Recovery audit, brief, relation map, summaries | No write | User asks for a handoff/status artifact or resolves a human checkpoint |
+| Light exploratory discussion | Topic context if known; classifier only after a durable moment appears | No write | User accepts a route/question, identifies a source, or exposes a reusable gap |
+| Topic continuation or derivation | Brief, relation map, lightweight recording navigation; process graph only when needed | Write at durable moments | Source, artifact, result, proof obligation, route decision, or validation state changes |
+| Code/numerical/literature execution | Brief, relation map, source/code context, recording navigation | Write provenance and outputs | Tool run completes, artifact appears, validation passes/fails, or anomaly is observed |
+| Final claim/trust/L2/memory action | Brief, relation map, trust/promotion preflight | Human-gated write only | Explicit v5 gate and user decision allow it |
+
+When unsure between two rows, choose the read-only row first and let the
+recording classifier decide whether a durable moment exists. Do not create a
+new topic, claim, session, or binding merely because a conversation is
+interesting.
+
+3. If the host exposes Hakimi/Kimi `ResearchAction`, open a WorkFrame before
    substantive AITP reads:
    `ResearchAction(open_work_frame, topic=<topic>, goal=<restore-or-research-goal>)`.
    After the execution brief and claim relation map are loaded, call
    `ResearchAction(compile_context_pack, work_frame_id=<frame-id>)` before final
    synthesis. If `ResearchAction` is not available, continue with the AITP MCP
    steps below.
-3. If a v5 session id is already known, call
+4. If a v5 session id is already known, call
    `aitp_v5_get_execution_brief(base="{{TOPICS_ROOT}}", session_id=<session-id>)`.
    Then call `aitp_v5_get_claim_relation_map` for the same session before
    interpreting failures or deciding the next scientific action.
-4. If only a topic slug is known, first call
+5. If only a topic slug is known, first call
    `aitp_v5_build_workspace_recovery_audit(base="{{TOPICS_ROOT}}", topics=[<topic>])`.
    If the row is `recovery_ready`, use that row's `session_id` and
    `active_claim_id`; then call the execution brief and claim relation map for
    the selected session. Do not migrate, create, bind, or update claim status
    during recovery when a ready v5 session already exists.
-5. Use legacy discovery or migration only when the recovery audit reports no
+6. Use legacy discovery or migration only when the recovery audit reports no
    usable v5 session/active claim:
    `aitp_v5_migrate_curated_legacy_topic_to_v5` for known curated topics, or
    `aitp_v5_migrate_legacy_topic_to_v5` for a generic preservation pass.
-6. If no topic matches, create a v5 topic, create an initial claim, bind a
+7. If no topic matches, create a v5 topic, create an initial claim, bind a
    session, and then get the v5 execution brief.
-7. Follow the v5 brief and load `aitp-runtime` for the typed-record loop.
+8. Follow the v5 brief and load `aitp-runtime` for the typed-record loop.
 
 Use these logical tool calls, mapped to the actual Codex tool names:
 
@@ -89,6 +125,36 @@ aitp_v5_create_topic(base="{{TOPICS_ROOT}}", topic_id=<slug>, context_id=<contex
 aitp_v5_create_claim(base="{{TOPICS_ROOT}}", topic_id=<slug>, statement=<claim>, evidence_profile=<profile>, confidence_state="hypothesis", active_uncertainty=<uncertainty>)
 aitp_v5_bind_session(base="{{TOPICS_ROOT}}", session_id=<session-id>, topic_id=<slug>, context_id=<context>, active_claim=<claim-id>)
 ```
+
+## Progressive Recording Navigation
+
+Do not make AITP write on every chat step. Trigger navigation only at durable
+research moments: known-topic session start, active claim creation/change,
+durable source identity/location, completed tool run, produced artifact,
+observed result/anomaly/negative result, proof or validation gap, route pivot,
+final answer about an active claim, trust/promotion request, or session-end
+handoff.
+
+Use the progressive sequence, mapped to the actual Codex tool names:
+
+```text
+aitp_v5_build_workspace_recording_audit(base="{{TOPICS_ROOT}}")      # read-only, if placement is unclear
+aitp_v5_classify_recording_candidate(base="{{TOPICS_ROOT}}", ...)    # read-only
+aitp_v5_get_recording_navigation_state(base="{{TOPICS_ROOT}}", session_id=<session-id>, claim_id=<claim-id>)  # read-only
+aitp_v5_expand_recording_slot(base="{{TOPICS_ROOT}}", session_id=<session-id>, slot=<slot>, claim_id=<claim-id>)  # read-only
+<existing typed write or preflight tool named by the slot expansion>
+aitp_v5_verify_recording_effect(base="{{TOPICS_ROOT}}", session_id=<session-id>, expected_refs=[...])  # read-only
+```
+
+If the live Codex MCP surface is stale and these navigator tools are not
+exposed, use the CLI fallback for read-only navigation and only mutate through
+available typed v5 write tools. Never manually edit topic-state files.
+
+Do not run the progressive navigator for generic explanation, vague
+brainstorming, duplicate status summaries, or source/file scans that do not
+change a claim, route, gap, artifact, or validation state. If a light
+discussion becomes research, first restate the durable moment in one sentence,
+then classify that candidate.
 
 ## Hard Rules
 

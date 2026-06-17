@@ -47,6 +47,8 @@ def build_runtime_hook_installation(runtime: str, runtime_hook_protocols: dict[s
     """Build runtime-facing hook installation metadata from hook protocols."""
 
     normalized_runtime = _normalize_runtime(runtime)
+    from brain.v5.adapter_protocols import mandatory_recording_trigger_protocol
+
     return {
         "kind": "runtime_hook_installation_template",
         "runtime": normalized_runtime,
@@ -54,11 +56,12 @@ def build_runtime_hook_installation(runtime: str, runtime_hook_protocols: dict[s
         "installation_mode": _INSTALLATION_MODES[normalized_runtime],
         "native_installer_available": False,
         "summary_inputs_trusted": False,
+        "recording_trigger_protocol": mandatory_recording_trigger_protocol(),
         "hooks": [
             _hook_template(hook_name, runtime_hook_protocols[hook_name])
             for hook_name in ("pre_commit", "pre_tool", "post_tool")
         ],
-        "adapter_rule": "derive_commands_from_runtime_hook_protocols",
+        "adapter_rule": "derive_commands_from_runtime_hook_protocols_and_use_recording_trigger_protocol_for_read_only_navigation",
     }
 
 
@@ -94,6 +97,7 @@ def write_codex_hook_bridge(
         "can_update_kernel_state": False,
         "pre_tool_policy_entrypoint": deepcopy(_PRE_TOOL_POLICY_ENTRYPOINT),
         "pre_tool_event_entrypoint": deepcopy(_PRE_TOOL_EVENT_ENTRYPOINT),
+        "recording_trigger_protocol": deepcopy(installation.get("recording_trigger_protocol", {})),
         "gate_protocols": _gate_protocol_payload(runtime_gate_protocols),
         "path": str(bridge_path),
         "payload_path": str(_payload_sidecar_path(bridge_path)),
@@ -149,6 +153,7 @@ def write_opencode_plugin_bridge(
                 session_id,
                 _payload_sidecar_path(bridge_path),
             ),
+            "recording_trigger_protocol": deepcopy(installation.get("recording_trigger_protocol", {})),
             "gate_protocols": _gate_protocol_payload(runtime_gate_protocols),
             "persistence_entrypoint": "aitp_v5_persist_hook_trace_event",
             "truth_rule": "generated bridge is orientation-only; typed records remain authoritative",
