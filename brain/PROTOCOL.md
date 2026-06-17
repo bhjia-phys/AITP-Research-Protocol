@@ -1,12 +1,21 @@
 ---
 name: aitp-protocol
 version: "4.1"
+protocol_scope: "stage/posture/lane operating manual"
+implements: "v5"
+implementation_entrypoint: "brain/v5/native_mcp.py"
+typed_graph_architecture: "brain/L2_ARCHITECTURE_v5.md"
 description: Operating manual for the AITP adversarial-collaborator protocol.
   Python stores and searches, you judge physics. Evidence before claims.
   Derivations before conclusions. Limits before generalizations.
 ---
 
 # AITP Protocol — Brain-Driven Research Operating Manual
+
+> Version note: this document is the stable 4.1 stage/posture/lane operating
+> manual. The current implementation is AITP v5: typed graph records, the
+> `brain/v5/` kernel, and the `brain/v5/native_mcp.py` MCP entrypoint. For the
+> v5 L2 typed graph architecture, see `brain/L2_ARCHITECTURE_v5.md`.
 
 ## Supreme Protocol (至高协议)
 
