@@ -1,16 +1,16 @@
 /**
- * AITP plugin for OpenCode — v4.1 harness adapter
+ * AITP plugin for OpenCode — AITP 0.5.0 v5 adapter
  *
  * Equivalent to the Claude Code hooks/session_start.py + hooks/compact.py harness.
  * Reads the canonical using-aitp.md from the AITP-Research-Protocol repo (same
  * source Claude uses) and injects it with OpenCode tool-name adaptation into
  * every chat session.
  *
- * Layers (mirrors PROJECT_MEMORY.md):
- *   Layer 1 — Gateway Injection (experimental.chat.system.transform)
- *   Layer 2 — Stage Skills (checklist-driven, loaded by the agent via Skill tool)
- *   Layer 3 — Domain Auto-Injection (from brief.domain_prerequisites)
- *   Layer 4 — Structured State Persistence (MCP tools)
+ * Layers:
+ *   Layer 1 — Gateway injection (experimental.chat.system.transform)
+ *   Layer 2 — AITP v5 runtime skills
+ *   Layer 3 — Progressive recording navigation
+ *   Layer 4 — Typed v5 MCP tools and verification
  */
 
 import path from 'path';
@@ -19,9 +19,10 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Canonical AITP repo and topic paths — must match deploy/templates/claude-code
-const AITP_REPO_ROOT = 'D:/BaiduSyncdisk/repos/AITP-Research-Protocol';
-const TOPICS_ROOT = 'D:/BaiduSyncdisk/Theoretical-Physics/research/aitp-topics';
+// Canonical AITP repo and topic paths. These are template-filled by project
+// installs and can be overridden for local plugin experiments.
+const AITP_REPO_ROOT = process.env.AITP_REPO_ROOT || '{{REPO_ROOT}}';
+const TOPICS_ROOT = process.env.AITP_TOPICS_ROOT || '{{TOPICS_ROOT}}';
 const GATEWAY_SKILL = path.join(AITP_REPO_ROOT, 'deploy/templates/claude-code/using-aitp.md');
 const RUNTIME_SKILL = path.join(AITP_REPO_ROOT, 'deploy/templates/claude-code/aitp-runtime.md');
 
@@ -102,9 +103,10 @@ const buildContextInjection = (gatewayContent, runtimeContent) => {
   const opencodeNote = [
     '',
     '**OpenCode Tool Mapping:**',
-    '- AITP MCP tools are available as `aitp_*` (e.g. `aitp_get_execution_brief`, `aitp_list_topics`)',
+    '- AITP MCP tools are v5 typed tools under `aitp_v5_*`.',
+    '- Legacy aliases are disabled by default and are never the execution contract.',
     '- Use OpenCode\'s `question` tool for all user interactions (same JSON schema as AskUserQuestion)',
-    '- Use OpenCode\'s `skill` tool to load stage and domain skills',
+    '- Use OpenCode\'s `skill` tool to load AITP v5 runtime skills',
     '- File operations: use native Read/Write/Edit tools; topic state changes: use MCP tools',
     '- Topics root: ' + TOPICS_ROOT,
     '',
@@ -121,7 +123,7 @@ const buildContextInjection = (gatewayContent, runtimeContent) => {
     opencodeNote,
     '</EXTREMELY_IMPORTANT>',
     '',
-    `AITP Runtime: Call aitp_get_execution_brief(topics_root="${TOPICS_ROOT}", topic_slug=<slug>) for current state.`,
+    `AITP Runtime: use aitp_v5_build_workspace_recovery_audit(base="${TOPICS_ROOT}") when placement is unclear, then aitp_v5_get_execution_brief(base="${TOPICS_ROOT}", session_id=<session-id>).`,
     `Topics root: ${TOPICS_ROOT}`,
     `AITP repo: ${AITP_REPO_ROOT}`,
   ].join('\n');

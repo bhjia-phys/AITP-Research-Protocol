@@ -93,12 +93,13 @@ def test_v5_native_mcp_content_length_stdio_smoke(tmp_path):
     stdout = BytesIO(process.stdout)
     initialized = _read_content_length_message(stdout)
     assert initialized["result"]["serverInfo"]["name"] == "aitp-v5-brain"
+    assert initialized["result"]["serverInfo"]["version"] == "0.5.0"
     tools = _read_content_length_message(stdout)["result"]["tools"]
     assert tools
     tool_names = {tool["name"] for tool in tools}
     assert _MCP_RECORDING_NAVIGATOR_TOOL_NAMES <= tool_names
-    assert all(name.startswith("aitp_v5_") or name in _MCP_COMPAT_TOOL_NAMES for name in tool_names)
-    assert {name for name in tool_names if name.startswith("aitp_") and not name.startswith("aitp_v5_")} <= _MCP_COMPAT_TOOL_NAMES
+    assert all(name.startswith("aitp_v5_") for name in tool_names)
+    assert not ({name for name in tool_names if name.startswith("aitp_") and not name.startswith("aitp_v5_")})
 
 
 def test_v5_native_mcp_ndjson_stdio_smoke(tmp_path):
@@ -123,12 +124,42 @@ def test_v5_native_mcp_ndjson_stdio_smoke(tmp_path):
     assert process.returncode == 0, process.stderr.decode("utf-8", "replace")
     messages = [json.loads(line) for line in process.stdout.decode("utf-8").splitlines() if line.strip()]
     assert messages[0]["result"]["serverInfo"]["name"] == "aitp-v5-brain"
+    assert messages[0]["result"]["serverInfo"]["version"] == "0.5.0"
     tools = messages[1]["result"]["tools"]
     assert tools
     tool_names = {tool["name"] for tool in tools}
     assert _MCP_RECORDING_NAVIGATOR_TOOL_NAMES <= tool_names
-    assert all(name.startswith("aitp_v5_") or name in _MCP_COMPAT_TOOL_NAMES for name in tool_names)
-    assert {name for name in tool_names if name.startswith("aitp_") and not name.startswith("aitp_v5_")} <= _MCP_COMPAT_TOOL_NAMES
+    assert all(name.startswith("aitp_v5_") for name in tool_names)
+    assert not ({name for name in tool_names if name.startswith("aitp_") and not name.startswith("aitp_v5_")})
+
+
+def test_v5_native_mcp_can_expose_compat_aliases_only_when_requested(tmp_path):
+    script = Path(__file__).resolve().parents[1] / "brain" / "v5" / "native_mcp.py"
+    env = {
+        **os.environ,
+        "AITP_V5_MCP_LOG": str(tmp_path / "mcp.log"),
+        "AITP_V5_EXPOSE_COMPAT_ALIASES": "1",
+    }
+    input_bytes = b"\n".join(
+        json.dumps(message).encode("utf-8")
+        for message in [
+            {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-06-18"}},
+            {"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
+            {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
+        ]
+    ) + b"\n"
+    process = subprocess.run(
+        [sys.executable, str(script)],
+        cwd=tmp_path,
+        input=input_bytes,
+        capture_output=True,
+        env=env,
+        timeout=10,
+    )
+    assert process.returncode == 0, process.stderr.decode("utf-8", "replace")
+    messages = [json.loads(line) for line in process.stdout.decode("utf-8").splitlines() if line.strip()]
+    tool_names = {tool["name"] for tool in messages[1]["result"]["tools"]}
+    assert _MCP_COMPAT_TOOL_NAMES <= tool_names
 
 
 def _invoke(args, capsys):

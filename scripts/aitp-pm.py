@@ -34,9 +34,13 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 TEMPLATES_DIR = REPO_ROOT / "deploy" / "templates"
 INSTALL_DIR = Path.home() / ".aitp"
 RECORD_PATH = INSTALL_DIR / "install-record.json"
+EXPECTED_PACKAGE_VERSION = "0.5.0"
+EXPECTED_IMPLEMENTATION = "v5"
 MCP_ENTRYPOINT = "brain/v5/native_mcp.py"
 LEGACY_MCP_ENTRYPOINTS = ("brain/native_mcp.py", "brain/mcp_server.py")
 
@@ -373,6 +377,14 @@ def _doctor_check_recorded_installs(installs: dict, issues: list[str]) -> None:
         for field in ("REPO_ROOT", "TOPICS_ROOT", "TARGET_ROOT"):
             if variables.get(field):
                 print(f"      {field}: {variables[field]}")
+        package_version = str(inst.get("package_version", "unknown"))
+        if package_version != EXPECTED_PACKAGE_VERSION:
+            issues.append(
+                f"{key} package_version is {package_version}, expected {EXPECTED_PACKAGE_VERSION}; reinstall/update project adapters"
+            )
+            print(f"      package_version: {package_version} (EXPECTED {EXPECTED_PACKAGE_VERSION})")
+        else:
+            print(f"      package_version: {package_version}")
 
         files = inst.get("files", [])
         missing = 0
@@ -1847,6 +1859,139 @@ def _read_version() -> str:
         return "unknown"
 
 
+def _read_protocol_metadata() -> dict:
+    path = REPO_ROOT / "brain" / "PROTOCOL.md"
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    match = re.match(r"^---\s*\n(.*?)\n---", text, re.DOTALL)
+    if not match:
+        return {}
+    try:
+        import yaml
+
+        data = yaml.safe_load(match.group(1)) or {}
+    except Exception:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _strict_v5_deploy_surface_issues() -> list[str]:
+    """Catch agent-facing templates that still teach legacy active wiring."""
+    checks = [
+        {
+            "path": "deploy/templates/opencode/aitp-plugin.js",
+            "required": (
+                "AITP 0.5.0 v5 adapter",
+                "aitp_v5_get_execution_brief",
+                "aitp_v5_build_workspace_recovery_audit",
+                "{{REPO_ROOT}}",
+                "{{TOPICS_ROOT}}",
+            ),
+            "forbidden": (
+                "v4.1 harness adapter",
+                "Stage Skills (checklist-driven",
+                "AITP MCP tools are available as `aitp_*`",
+                "aitp_get_execution_brief(topics_root=",
+                "D:/BaiduSyncdisk",
+            ),
+        },
+        {
+            "path": "deploy/templates/claude-code/aitp-mcp-setup.md",
+            "required": (
+                MCP_ENTRYPOINT,
+                "aitp-pm.py doctor",
+                "AITP 0.5.0/v5",
+            ),
+            "forbidden": (
+                "claude mcp add-json",
+                '"args":["{{REPO_ROOT}}/brain/mcp_server.py"]',
+            ),
+        },
+        {
+            "path": "deploy/templates/claude-code/aitp_panel.py",
+            "required": ("aitp_v5_get_execution_brief",),
+            "forbidden": ("Use aitp_get_execution_brief for detailed instructions",),
+        },
+    ]
+    issues: list[str] = []
+    for check in checks:
+        rel = str(check["path"])
+        path = REPO_ROOT / rel
+        try:
+            text = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            issues.append(f"{rel} cannot be read for v5 deploy-surface check: {exc}")
+            continue
+        for token in check["required"]:
+            if token not in text:
+                issues.append(f"{rel} missing required v5 token: {token}")
+        for token in check["forbidden"]:
+            if token in text:
+                issues.append(f"{rel} still contains legacy active token: {token}")
+    return issues
+
+
+def _strict_v5_contract_issues() -> list[str]:
+    issues: list[str] = []
+    package_version = _read_version()
+    if package_version != EXPECTED_PACKAGE_VERSION:
+        issues.append(
+            f"package.json version is {package_version}, expected {EXPECTED_PACKAGE_VERSION}"
+        )
+
+    protocol = _read_protocol_metadata()
+    if protocol.get("version") != EXPECTED_PACKAGE_VERSION:
+        issues.append(
+            f"brain/PROTOCOL.md version is {protocol.get('version')!r}, expected {EXPECTED_PACKAGE_VERSION}"
+        )
+    if protocol.get("implementation_generation") != EXPECTED_IMPLEMENTATION:
+        issues.append(
+            "brain/PROTOCOL.md must declare implementation_generation='v5'"
+        )
+    if protocol.get("implementation_entrypoint") != MCP_ENTRYPOINT:
+        issues.append(
+            f"brain/PROTOCOL.md implementation_entrypoint must be {MCP_ENTRYPOINT}"
+        )
+    if protocol.get("legacy_stage_model") != "orientation-only":
+        issues.append(
+            "brain/PROTOCOL.md must mark legacy_stage_model as orientation-only"
+        )
+
+    try:
+        from brain import v5
+
+        if getattr(v5, "__version__", None) != EXPECTED_PACKAGE_VERSION:
+            issues.append(
+                f"brain.v5.__version__ is {getattr(v5, '__version__', None)!r}, expected {EXPECTED_PACKAGE_VERSION}"
+            )
+        if getattr(v5, "PROTOCOL_IMPLEMENTATION", None) != EXPECTED_IMPLEMENTATION:
+            issues.append("brain.v5.PROTOCOL_IMPLEMENTATION must be 'v5'")
+    except Exception as exc:
+        issues.append(f"cannot import brain.v5 for version contract: {exc}")
+
+    try:
+        from brain.v5 import native_mcp
+
+        server_info = getattr(native_mcp, "_SERVER_INFO", {})
+        if server_info.get("version") != EXPECTED_PACKAGE_VERSION:
+            issues.append(
+                f"native MCP serverInfo.version is {server_info.get('version')!r}, expected {EXPECTED_PACKAGE_VERSION}"
+            )
+        compat_aliases = getattr(native_mcp, "_COMPAT_TOOL_NAMES", set())
+        if compat_aliases:
+            issues.append(
+                "native MCP compatibility aliases are exposed; unset AITP_V5_EXPOSE_COMPAT_ALIASES for strict v5"
+            )
+    except Exception as exc:
+        issues.append(f"cannot import brain.v5.native_mcp for strict contract: {exc}")
+
+    issues.extend(_strict_v5_deploy_surface_issues())
+
+    return issues
+
+
 def cmd_upgrade(args) -> None:
     """Pull latest from remote, then re-deploy all installed agents."""
     print("AITP Upgrade — git pull + re-deploy")
@@ -2026,7 +2171,18 @@ def cmd_doctor(args) -> None:
     else:
         print("    OK")
 
-    # 2. Dependencies
+    # 2. Strict v5/0.5.0 contract
+    print("\n  AITP strict v5 contract:")
+    strict_issues = _strict_v5_contract_issues()
+    if strict_issues:
+        issues.extend(strict_issues)
+        print("    FAIL")
+        for issue in strict_issues:
+            print(f"      - {issue}")
+    else:
+        print(f"    OK (version {EXPECTED_PACKAGE_VERSION}, implementation {EXPECTED_IMPLEMENTATION})")
+
+    # 3. Dependencies
     for dep in ("fastmcp", "yaml", "jsonschema"):
         try:
             __import__(dep)
@@ -2043,7 +2199,7 @@ def cmd_doctor(args) -> None:
             issues.append(f"Missing dependency: {dep}")
             print(f"  {dep}: MISSING (pip install {dep})")
 
-    # 3. Repo files
+    # 4. Repo files
     print(f"\n  Repo root: {REPO_ROOT}")
     critical_files = [
         "brain/v5/native_mcp.py",

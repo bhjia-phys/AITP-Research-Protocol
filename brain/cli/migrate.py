@@ -10,7 +10,7 @@ import os
 
 DEFAULT_TOPICS_ROOT = os.environ.get(
     "AITP_TOPICS_ROOT",
-    "D:/BaiduSyncdisk/Theoretical-Physics/research/aitp-topics"
+    str(Path.cwd() / "research" / "aitp-topics"),
 )
 
 _POSTURE_MAP = {"L0": "discover", "L1": "read", "L3": "derive", "L4": "verify"}

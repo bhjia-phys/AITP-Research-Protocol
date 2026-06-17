@@ -69,6 +69,42 @@ def test_deploy_using_skills_keep_lightweight_intent_matrix():
         assert "new topic, claim, session, or binding merely because" in text
 
 
+def test_protocol_and_runtime_versions_are_strict_v5_050():
+    pm = _load_pm()
+    assert pm._read_version() == "0.5.0"
+    assert pm._strict_v5_contract_issues() == []
+    assert pm._strict_v5_deploy_surface_issues() == []
+
+    protocol = pm._read_protocol_metadata()
+    assert protocol["version"] == "0.5.0"
+    assert protocol["implementation_generation"] == "v5"
+    assert protocol["implementation_entrypoint"] == "brain/v5/native_mcp.py"
+    assert protocol["legacy_stage_model"] == "orientation-only"
+
+    protocol_text = _read("brain/PROTOCOL.md")
+    assert "replaces the old L0-L4 stage machine as the active execution contract" in protocol_text
+    assert "legacy L0-L4 stage files are migration context only" in protocol_text
+
+
+def test_agent_facing_templates_do_not_teach_legacy_active_wiring():
+    opencode = _read("deploy/templates/opencode/aitp-plugin.js")
+    assert "AITP 0.5.0 v5 adapter" in opencode
+    assert "aitp_v5_get_execution_brief" in opencode
+    assert "aitp_v5_build_workspace_recovery_audit" in opencode
+    assert "D:/BaiduSyncdisk" not in opencode
+    assert "v4.1 harness adapter" not in opencode
+    assert "Stage Skills (checklist-driven" not in opencode
+    assert "AITP MCP tools are available as `aitp_*`" not in opencode
+    assert "aitp_get_execution_brief(topics_root=" not in opencode
+
+    setup = _read("deploy/templates/claude-code/aitp-mcp-setup.md")
+    assert "brain/v5/native_mcp.py" in setup
+    assert "aitp-pm.py doctor" in setup
+    assert "AITP 0.5.0/v5" in setup
+    assert "claude mcp add-json" not in setup
+    assert '"args":["{{REPO_ROOT}}/brain/mcp_server.py"]' not in setup
+
+
 def test_deploy_hooks_guard_canonical_and_root_stores():
     guard = _read("deploy/hooks/aitp-routing-guard.py")
     assert "ROOT_AITP_FULL" in guard

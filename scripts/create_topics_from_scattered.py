@@ -7,11 +7,13 @@
 """
 
 import shutil
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-TOPICS_ROOT = Path("D:/BaiduSyncdisk/Theoretical-Physics/research/aitp-topics")
-RESEARCH_ROOT = Path("D:/BaiduSyncdisk/Theoretical-Physics/research")
+DEFAULT_WORKSPACE = Path(os.environ.get("AITP_WORKSPACE_ROOT", str(Path.cwd())))
+TOPICS_ROOT = Path(os.environ.get("AITP_TOPICS_ROOT", str(DEFAULT_WORKSPACE / "research" / "aitp-topics")))
+RESEARCH_ROOT = Path(os.environ.get("AITP_RESEARCH_ROOT", str(DEFAULT_WORKSPACE / "research")))
 
 
 def _now() -> str:

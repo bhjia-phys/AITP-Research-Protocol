@@ -11,7 +11,7 @@ import sys
 
 DEFAULT_TOPICS_ROOT = os.environ.get(
     "AITP_TOPICS_ROOT",
-    "D:/BaiduSyncdisk/Theoretical-Physics/research/aitp-topics"
+    str(Path.cwd() / "research" / "aitp-topics"),
 )
 
 # New retreat fields with defaults

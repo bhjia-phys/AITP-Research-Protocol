@@ -7,6 +7,7 @@ for topics that were already at L3.
 """
 
 import json
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -22,8 +23,14 @@ from brain.mcp_server import (
     _now,
 )
 
-OLD_TOPICS = Path("D:/BaiduSyncdisk/Theoretical-Physics/research/knowledge-hub/runtime/topics")
-NEW_TOPICS = "D:/BaiduSyncdisk/Theoretical-Physics/research/aitp-topics"
+DEFAULT_WORKSPACE = Path(os.environ.get("AITP_WORKSPACE_ROOT", str(Path.cwd())))
+OLD_TOPICS = Path(
+    os.environ.get(
+        "AITP_OLD_TOPICS_ROOT",
+        str(DEFAULT_WORKSPACE / "research" / "knowledge-hub" / "runtime" / "topics"),
+    )
+)
+NEW_TOPICS = os.environ.get("AITP_TOPICS_ROOT", str(DEFAULT_WORKSPACE / "research" / "aitp-topics"))
 
 
 def _fill_l1_artifacts(topic_root: Path, contract: dict):

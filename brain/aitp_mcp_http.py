@@ -113,7 +113,7 @@ for _tname, _tfunc in sorted(_tools.items()):
             "inputSchema": {"type": "object", "properties": {}, "required": []},
         })
 
-SERVER_INFO = {"name": "aitp-brain", "version": "0.6.0"}
+SERVER_INFO = {"name": "aitp-brain-legacy-http", "version": "0.5.0"}
 _sessions: dict[str, str] = {}  # session_id -> created_at
 
 
@@ -189,7 +189,7 @@ class MCPHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({
                 "status": "ok", "server": "aitp-brain",
-                "version": "0.6.0", "tools": len(TOOL_SCHEMAS),
+                "version": SERVER_INFO["version"], "tools": len(TOOL_SCHEMAS),
             }).encode())
         else:
             self.send_response(404)

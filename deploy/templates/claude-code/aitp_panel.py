@@ -445,4 +445,4 @@ def _get_next_action(fm, gate_info=None):
         "promote": "Request promotion gate; human approval for L2 merge",
     }
     key = f"{stage}:{activity}" if activity else stage
-    return hints.get(key, "Use aitp_get_execution_brief for detailed instructions")
+    return hints.get(key, "Use aitp_v5_get_execution_brief for current v5 guidance")

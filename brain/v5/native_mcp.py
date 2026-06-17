@@ -21,13 +21,19 @@ from typing import Any
 _DIAG = Path(os.environ.get("AITP_V5_MCP_LOG", str(Path(tempfile.gettempdir()) / "aitp_v5_mcp_boot.log")))
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _OUTPUT_MODE = "content-length"
-# Compatibility aliases are exposed for legacy discovery/bootstrap only.  New
-# research execution should bind a v5 session and use aitp_v5_* typed tools.
-_COMPAT_TOOL_NAMES = {
-    "aitp_list_topics",
-    "aitp_get_execution_brief",
-    "aitp_bootstrap_topic",
-}
+# Legacy compatibility aliases are disabled by default in 0.5.0.  Set
+# AITP_V5_EXPOSE_COMPAT_ALIASES=1 only for migration/debug sessions that must
+# discover old topic shells; current research should use aitp_v5_* typed tools.
+_EXPOSE_COMPAT_ALIASES = os.environ.get("AITP_V5_EXPOSE_COMPAT_ALIASES") == "1"
+_COMPAT_TOOL_NAMES = (
+    {
+        "aitp_list_topics",
+        "aitp_get_execution_brief",
+        "aitp_bootstrap_topic",
+    }
+    if _EXPOSE_COMPAT_ALIASES
+    else set()
+)
 
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -202,7 +208,9 @@ def _load_tools() -> dict[str, Any]:
 
 _TOOLS = _load_tools()
 _TOOL_SCHEMAS = [_build_tool_schema(name, func) for name, func in sorted(_TOOLS.items())]
-_SERVER_INFO = {"name": "aitp-v5-brain", "version": "0.1.0"}
+from brain.v5 import __version__ as _AITP_VERSION
+
+_SERVER_INFO = {"name": "aitp-v5-brain", "version": _AITP_VERSION}
 
 
 def _handle_request(request: dict[str, Any]) -> dict[str, Any] | None:

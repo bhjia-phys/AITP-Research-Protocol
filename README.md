@@ -36,8 +36,8 @@ development, failed routes, benchmark provenance, and final synthesis.
 
 ## Current Implementation
 
-The current implementation is **AITP v5**. The active code is under
-[`brain/v5/`](brain/v5/).
+The current release is **AITP 0.5.0**. Its implementation generation is
+**v5**. The active code is under [`brain/v5/`](brain/v5/).
 
 AITP v5 has three layers:
 
@@ -341,8 +341,9 @@ uv run --with pyyaml --with jsonschema --with fastmcp \
 ```
 
 `status` reads `~/.aitp/install-record.json` and reports recorded installs.
-`doctor` checks Python dependencies, v5 server files, topics root health,
-MCP entrypoints, project-scope consistency, and common stale-residue problems.
+`doctor` checks Python dependencies, the 0.5.0/v5 version contract, v5 server
+files, topics root health, MCP entrypoints, project-scope consistency, and
+common stale-residue problems.
 
 After installing or changing MCP config, restart the host agent so it reloads
 its MCP servers and skills.
@@ -446,7 +447,7 @@ memory.
 ```text
 AITP-Research-Protocol/
 |-- brain/v5/              current typed kernel, CLI, MCP tools, adapters
-|-- brain/mcp_server.py    legacy L0-L4 MCP server, kept for compatibility
+|-- brain/mcp_server.py    legacy L0-L4 MCP server, migration/rollback only
 |-- deploy/                host templates and agent-facing skill material
 |-- docs/                  protocol docs, install notes, historical designs
 |-- hooks/                 lifecycle hook runners and guards
@@ -457,7 +458,8 @@ AITP-Research-Protocol/
 ```
 
 New integrations should use `brain/v5/native_mcp.py` and `brain/v5/`.
-Legacy L0-L4 files remain for migration and historical interpretation.
+Legacy L0-L4 files remain for migration and historical interpretation only;
+they are not the active 0.5.0 research workflow.
 
 ## Development Checks
 

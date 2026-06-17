@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 # Write PID to file immediately to prove we started
-LOG = Path(r"D:/BaiduSyncdisk/repos/AITP-Research-Protocol/brain/_mcp_diag.log")
+LOG = Path(os.environ.get("AITP_MCP_DIAG_LOG", str(Path(__file__).with_name("_mcp_diag.log"))))
 with open(LOG, "a", encoding="utf-8") as f:
     f.write(f"STARTED pid={os.getpid()} executable={sys.executable} cwd={Path.cwd()}\n")
 
@@ -48,7 +48,7 @@ def main():
                 "result": {
                     "protocolVersion": "2024-11-05",
                     "capabilities": {"tools": {}},
-                    "serverInfo": {"name": "aitp-minimal", "version": "0.1.0"},
+                    "serverInfo": {"name": "aitp-minimal", "version": "0.5.0"},
                 }
             })
         elif method == "notifications/initialized":

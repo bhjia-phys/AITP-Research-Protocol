@@ -2,7 +2,7 @@
 import sys, os, time, json, traceback
 from pathlib import Path
 
-LOG = Path(r"D:/BaiduSyncdisk/repos/AITP-Research-Protocol/brain/_mcp_startup.log")
+LOG = Path(os.environ.get("AITP_MCP_STARTUP_LOG", str(Path(__file__).with_name("_mcp_startup.log"))))
 
 def log(msg):
     with open(LOG, "a", encoding="utf-8") as f:

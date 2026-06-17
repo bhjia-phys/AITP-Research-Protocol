@@ -1,718 +1,233 @@
 ---
 name: aitp-protocol
-version: "4.1"
-protocol_scope: "stage/posture/lane operating manual"
-implements: "v5"
+version: "0.5.0"
+implementation_generation: "v5"
+protocol_scope: "typed research graph, progressive recording, trust-controlled agent workflow"
 implementation_entrypoint: "brain/v5/native_mcp.py"
-typed_graph_architecture: "brain/L2_ARCHITECTURE_v5.md"
-description: Operating manual for the AITP adversarial-collaborator protocol.
-  Python stores and searches, you judge physics. Evidence before claims.
-  Derivations before conclusions. Limits before generalizations.
+cli_entrypoint: "python -m brain.v5.cli"
+legacy_stage_model: "orientation-only"
+description: Current operating manual for AITP v5. Agents work through typed records, progressive navigation, evidence, validation, and human checkpoints; legacy L0-L4 stage files are migration context only.
 ---
 
-# AITP Protocol — Brain-Driven Research Operating Manual
+# AITP Protocol 0.5.0 - Typed Research Graph Operating Manual
 
-> Version note: this document is the stable 4.1 stage/posture/lane operating
-> manual. The current implementation is AITP v5: typed graph records, the
-> `brain/v5/` kernel, and the `brain/v5/native_mcp.py` MCP entrypoint. For the
-> v5 L2 typed graph architecture, see `brain/L2_ARCHITECTURE_v5.md`.
+AITP 0.5.0 is the v5 typed-record protocol for human-in-the-loop theoretical-physics research. It replaces the old L0-L4 stage machine as the active execution contract.
 
-## Supreme Protocol (至高协议)
+The current source of truth is the typed graph under `<topics-root>/.aitp/`, not legacy topic `state.md` frontmatter, not stage gates, not summaries, and not host runtime logs.
 
-**追求真理而非沽名钓誉。Pursue truth, not fame.**
+## Non-Negotiable Boundary
 
-- L2 trust levels reflect physical reliability, not publication count.
-- Negative results and limitations have equal value to positive results.
-- Artifacts exist to serve physical correctness, not bureaucratic completeness.
-- Every claim in L2 must be traceable to its source. No assertion without provenance.
-- The endpoint of each topic is knowledge contributed to L2. The start of each
-  topic is knowledge retrieved from L2. L2 is the memory of the protocol.
-
-## Core Model
-
-The protocol is a **stage machine** with orthogonal posture and lane:
-
-```
-Stage:    L0 (discover) → L1 (read → frame) → L3 (work) ⇄ L4 (validate) → L2 (knowledge)
-Posture:  discover | read | frame | derive | verify
-Lane:     formal_theory | toy_numeric | code_method
+```text
+typed records are truth candidates
+briefs, summaries, dashboards, hooks, and RAG are orientation
+trust changes require evidence, validation, scope, and human gates
+legacy L0-L4 files are migration material only
 ```
 
-- **L1** is the knowledge extraction engine. Section-by-section TOC-parsed reading. Every
-  completed section immediately contributes concepts and obvious edges to L2. L1 can
-  stay active for a long time — the `source_toc_map` tracks which sections have been
-  extracted and which are still pending.
-- **L3** is a flexible workspace with 9 activities. No forced sequence — the agent
-  chooses the right activity at the right time, guided by `entry_profile`:
-  - 🧠 ideate, 📋 plan, ✏️ derive, 📖 trace-derivation, 🔬 diagnose
-  - 🔍 gap-audit, 📊 integrate, 🔗 connect, 💎 distill
-  - diagnose and connect are **sidecar activities** — enter from any activity, return after
-- **L4** validates candidates from L3. Counterargument required.
-- **L2** is the persistent knowledge graph. L1 feeds it concepts. L3 feeds it
-  relationships and derivations. L4 feeds it trust upgrades.
+Agents must not advance research by manually editing topic state files. State-changing work goes through v5 MCP tools or the v5 CLI fallback.
 
-Every agent action must respect the gate model. When `gate_status != "ready"`,
-you must fix missing requirements before advancing.
+## Active Architecture
 
-## Quick Reference: Tool → When to Call
-
-### Lifecycle & State
-| Tool | Stage | When |
-|------|-------|------|
-| `aitp_bootstrap_topic` | — | Create topic directory structure + scaffolds |
-| `aitp_get_execution_brief` | any | **Always call first** — gate status, compute target, next steps |
-| `aitp_get_status` | any | Read topic state |
-| `aitp_session_resume` | any | Resume after session break |
-| `aitp_health_check` | — | Aggregated dashboard of all topics |
-| `aitp_list_topics` | — | List all topics |
-| `aitp_archive_topic` | any | Archive a topic |
-| `aitp_restore_topic` | archived | Restore from archive |
-| `aitp_fork_topic` | any | Fork a side-discovery into a new topic |
-
-### Stage Transitions
-| Tool | Stage | When |
-|------|-------|------|
-| `aitp_advance_to_l1` | L0→L1 | After L0 source_registry.md passes gate |
-| `aitp_advance_to_l3` | L1→L3 | After all L1 artifacts pass gate |
-| `aitp_switch_l3_activity` | L3 | Switch between activities (no forced sequence) |
-| `aitp_retreat_to_l0` | L1/L3 | Return to L0 |
-| `aitp_retreat_to_l1` | L3 | Return to L1 |
-| `aitp_switch_lane` | any | Change lane (formal_theory / toy_numeric / code_method) |
-
-### Sources & Candidates
-| Tool | Stage | When |
-|------|-------|------|
-| `aitp_register_source` | L0 | Register each source |
-| `aitp_list_sources` | any | List registered sources |
-| `aitp_parse_source_toc` | L1 | Parse and record a source's table of contents into source_toc_map |
-| `aitp_update_section_status` | L1 | Mark a section extracted/deferred in source_toc_map |
-| `aitp_write_section_intake` | L1 | Write per-section intake note with concepts/equations/claims |
-| `aitp_submit_candidate` | L3 | Submit a candidate claim |
-| `aitp_list_candidates` | any | List all candidates |
-
-### L4 Adversarial Review
-| Tool | Stage | When |
-|------|-------|------|
-| `aitp_submit_l4_review` | L4 | Submit review with evidence; devil's advocate REQUIRED for pass |
-| `aitp_list_inference_rules` | L3/L4 | List available derivation inference rules |
-| `aitp_verify_derivation_step` | L3/L4 | Verify one derivation step via SymPy |
-| `aitp_verify_derivation_chain` | L3/L4 | Verify entire derivation chain via SymPy |
-
-### Mathematical Verification (SymPy)
-| Tool | Stage | When |
-|------|-------|------|
-| `aitp_verify_dimensions` | L3/L4 | Check dimensional consistency of an equation |
-| `aitp_verify_algebra` | L3/L4 | Verify algebraic identity |
-| `aitp_verify_limit` | L3/L4 | Check limit behavior (correspondence principle) |
-
-### Promotion
-| Tool | Stage | When |
-|------|-------|------|
-| `aitp_request_promotion` | L4→L2 | Request promotion (needs validated candidate) |
-| `aitp_resolve_promotion_gate` | L2 | Human approves/rejects promotion |
-| `aitp_promote_candidate` | L2 | Execute promotion → global L2 |
-
-## L2 Knowledge Graph — The Protocol's Memory
-
-L2 is the persistent, cross-topic knowledge graph. It is one of **two final
-outputs per topic** — the reusable, distilled knowledge. The other is
-`L3/tex/flow_notebook.tex` (auto-generated LaTeX PDF), the **per-topic
-comprehensive research record** that captures the full lifecycle: sources,
-derivations, candidates, validation evidence, and promotion status in a single
-readable document.
-
-L2 is also the **starting point of every new topic**.
-
-### Design Principles
-
-1. **Compiled, not raw.** L2 stores distilled knowledge — concepts, theorems,
-   relations, regime boundaries — not raw source text. Source provenance is
-   stored for auditing but not exposed in default queries to prevent context
-   bloat.
-2. **Source-grounded.** Every node and edge must record its origin (source
-   reference or topic candidate). No assertion without provenance.
-3. **Progressive disclosure.** `aitp_query_l2_index` returns domain summaries.
-   `aitp_query_l2_graph` returns matching nodes. Full details on demand.
-4. **Trust evolves.** source_grounded → multi_source_confirmed → validated →
-   independently_verified.
-
-### Two Paths to L2
-
-**Path A — Lightweight (L0→L2 directly):** For well-understood concepts where
-the relationship is obvious and the source is clear. Create nodes and edges
-immediately without going through L3 derivation.
-
-**Path B — Deep (L0→L1→L3→L4→L2):** For novel or uncertain claims that
-require derivation, adversarial review, and formal validation.
-
-### Tools
-
-| Tool | Stage | When |
-|------|-------|------|
-| `aitp_query_l2_index` | any | Progressive-disclosure domain taxonomy — first call for any topic |
-| `aitp_query_l2_graph` | any | Query L2 graph with filters (type, tower, edges). Source fields hidden by default |
-| `aitp_create_l2_node` | any | Create L2 graph node. source_ref REQUIRED |
-| `aitp_update_l2_node` | any | Update node fields |
-| `aitp_create_l2_edge` | any | Create typed edge. source_ref REQUIRED |
-| `aitp_create_l2_tower` | any | Define EFT tower |
-| `aitp_merge_subgraph_delta` | L3 study | Merge study subgraph into L2 |
-| `aitp_quick_l2_concept` | any | Lightweight: create concept + theorem nodes with edges in one call |
-
-### Source Provenance (hidden from default query output)
-
-Every L2 node and edge records `source_ref` — a traceable reference to the
-evidence. This field is stored in the node/edge frontmatter but is
-**excluded from `aitp_query_l2_index` and `aitp_query_l2_graph` output**
-to keep context lean. To inspect provenance, use `aitp_get_l2_provenance`.
-
-### Domain Taxonomy
-
-L2 nodes are organized by domain. Valid domains are enumerated (not free text):
-
-| Domain | Scope |
-|--------|-------|
-| `electronic-structure` | DFT, GW, BSE, RPA, band structure methods |
-| `quantum-many-body` | Green's functions, Feynman diagrams, RG, tensor networks |
-| `qft` | QED, QCD, EFT, axiomatic QFT, CFT |
-| `condensed-matter` | Superconductivity, topological phases, strongly correlated systems |
-| `quantum-gravity` | String theory, LQG, holography, AdS/CFT |
-| `generalized-symmetries` | Higher-form, non-invertible, categorical symmetries |
-| `quantum-information` | Entanglement, quantum channels, error correction |
-| `statistical-mechanics` | Phase transitions, critical phenomena, transport |
-| `aitp-protocol` | AITP internal — protocol design, skills, workflows |
-
-### Configuration
-| Tool | Stage | When |
-|------|-------|------|
-| `aitp_set_compute_target` | any | Set compute target (local / fisher / lean-remote) |
-
-### Output
-| Tool | Stage | When |
-|------|-------|------|
-| `aitp_visualize_eft_tower` | any | ASCII EFT tower diagram |
-| `aitp_visualize_derivation_chain` | any | ASCII derivation chain |
-| `aitp_visualize_knowledge_graph` | any | ASCII knowledge graph |
-
-## End-to-End Flow
-
-### Phase 0: Bootstrap + Source Discovery (stage = L0, posture = discover)
-
-```
-1. aitp_bootstrap_topic(topics_root, topic_slug, title, question, lane)
-   → Creates directory structure, state.md, L0 and L1 artifact scaffolds
-   → Initial stage is L0
-
-2. aitp_register_source(topics_root, topic_slug, source_id, ...)
-   → One call per source. Creates L0/sources/<id>.md
-   → Source types: paper, preprint, book, dataset, code, experiment, simulation, lecture_notes, reference
-
-3. Fill L0/source_registry.md:
-   - Search Methodology — where you looked, what queries
-   - Source Inventory — grouped by type
-   - Coverage Assessment — what is covered, what is missing
-   - Set source_count (frontmatter) to match registered sources
-   - Set search_status (frontmatter) to: initial | focused | comprehensive | exhausted
-
-4. aitp_advance_to_l1(topics_root, topic_slug)
-   → Transitions from L0 to L1 (reading and framing)
-   → Requires: source_registry.md filled + at least one registered source
+```text
+human / agent / Hakimi
+        |
+        v
+AITP v5 MCP tools: aitp_v5_*
+        |
+        v
+<topics-root>/.aitp/ typed records
+        |
+        v
+execution brief, relation map, process graph, recording navigation, audits
 ```
 
-### Phase 1: Reading and Framing (stage = L1, posture = read → frame)
+The active implementation entrypoint is:
 
-```
-5. Fill L1 artifacts: question_contract.md, source_basis.md,
-   source_toc_map.md, convention_snapshot.md, derivation_anchor_map.md,
-   contradiction_register.md
-
-6. aitp_get_execution_brief(topics_root, topic_slug)
-   → Check gate_status. If "ready", proceed to Phase 2.
-   → If "blocked_missing_field", edit the flagged artifact.
-   → If "blocked_missing_artifact", create the missing file.
+```text
+brain/v5/native_mcp.py
 ```
 
-L1 requires 5 filled artifacts:
-- `question_contract.md` — bounded question, scope, target quantities
-- `source_basis.md` — core and peripheral sources
-- `convention_snapshot.md` — notation, units, sign conventions
-- `derivation_anchor_map.md` — starting points for derivation
-- `contradiction_register.md` — blocking contradictions (even if "none")
+MCP hosts must not use these legacy entrypoints for current research:
 
-#### L1 Source Completeness Workflow
-
-L1 enforces mechanical source coverage via `source_toc_map.md` and per-section intake notes:
-
-1. **Register sources** in L0 (`aitp_register_source`).
-2. **Parse TOC** — for each source, call `aitp_parse_source_toc` with every
-   section/subsection discovered, including `toc_confidence` (high/medium/low).
-   Prefer machine-parsed TOC from `arxiv-latex-mcp` (`toc_confidence="high"`).
-   Spot-check TOC against actual content to validate.
-3. **Skim all sections (Phase A)** — rapid first pass. For each section call
-   `aitp_write_section_intake` with `summary` (1-3 sentences) and
-   `completeness_confidence=""`. Mark as `skimming` via
-   `aitp_update_section_status`. This builds a complete content map.
-4. **Deep-extract priority sections (Phase B)** — for relevant sections, re-read
-   in detail. Call `aitp_write_section_intake` with full fields:
-   `key_concepts`, `equations_found`, `physical_claims`, `prerequisites`,
-   `cross_references`, and honest `completeness_confidence` (high/medium/low).
-   The tool auto-marks `extracted` and links TOC entry -> intake note.
-5. **Defer out-of-scope sections** — `aitp_update_section_status` with
-   `new_status="deferred"` and explicit reason.
-6. **Coverage + quality gate** — L1 cannot advance to L3 until:
-   - `coverage_status` is `"complete"` or `"partial_with_deferrals"`
-   - Every `extracted` section has an intake note
-   - Intake note count >= extracted section count
-   - No intake notes remain at `completeness_confidence="low"` without action
-
-This prevents the common failure mode where L1 reading skips sections or
-creates shallow extractions, leaving gaps that corrupt downstream L3 derivation.
-
-#### L1 → L2 Bridging (per-section concept creation)
-
-After deep-extracting a section (Step 4 above), immediately contribute to L2:
-
-```
-For each significant concept found in this section:
-  → aitp_create_l2_node(source_ref="<source_id>/<section_id>")
-For each obvious relationship between concepts:
-  → aitp_create_l2_edge(source_ref="<source_id>/<section_id>")
-
-Update section status:
-  → aitp_update_section_status(new_status="extracted")
+```text
+brain/native_mcp.py
+brain/mcp_server.py
 ```
 
-This ensures L2 grows incrementally as L1 progresses. Each section's concepts
-are traceable to their exact source location.
+Those files may remain in the repository for rollback, tests, and migration, but they are not the current agent-facing protocol.
 
-### Phase 2: L3 Flexible Workspace (stage = L3, posture = derive)
+## Canonical Store Layout
 
-L3 is a flexible workspace — **no forced mode or subplane sequence**. The agent
-chooses the right activity at the right time. Study and research are not separate
-modes; they are activities you switch between as the work demands.
+A workspace normally uses:
 
-```
-8. aitp_advance_to_l3(topics_root, topic_slug)
-   → Sets stage=L3. Default activity: ideate
-
-9. Work through activities in any order. Switch via:
-   aitp_switch_l3_activity(topics_root, topic_slug, activity, reason=...)
+```text
+<workspace>/research/aitp-topics/.aitp/
 ```
 
-**L3 Activities** (9 activities; diagnose + connect are sidecars with no gate):
+Important areas:
 
-| Activity | What you do | Key output |
-|----------|-------------|------------|
-| **ideate** | Propose new ideas or decompose a source into atomic claims | `active_idea.md` |
-| **plan** | Design derivation route; code_method adds Pre-Derive Setup | `active_plan.md` |
-| **derive** | Execute a derivation or calculation | `active_derivation.md` |
-| **trace-derivation** | Trace a source's derivation step by step | `active_trace.md` |
-| **diagnose** | Abductive hypothesis-test loop for anomalies (sidecar) | `active_diagnosis.md` |
-| **gap-audit** | Find hidden assumptions, regime boundaries, missing correspondence | `active_gaps.md` |
-| **connect** | Create L2 nodes/edges from L3 findings (sidecar) | `active_connect.md` |
-| **integrate** | Combine findings, assess claim readiness; 3 modes | `active_integration.md` |
-| **distill** | Extract claims; route candidate_type by entry_profile | `active_distillation.md` |
-
-Entry profiles guide default starting activity and preferred flow:
-- `learn_paper`: trace-derivation → gap-audit → connect → integrate → distill
-- `explore_idea`: ideate → plan → derive → gap-audit → integrate → distill
-- `continue_work`: resume last activity
-- `l4_return`: integrate → distill (revise from L4 feedback)
-
-Set via: `aitp_set_entry_profile(topics_root, topic_slug, entry_profile)`.
-
-```
-Allowed transitions: any activity ↔ any other activity.
-Sidecars (diagnose, connect): enter from any activity, return after.
+```text
+.aitp/
+|-- registry/      claims, evidence, sources, artifacts, tools, validation, checkpoints, trust
+|-- topics/        topic-local views and runtime dashboards derived from records
+|-- runtime/       sessions, bindings, hook traces, runtime state
+|-- contexts/      reusable research context records
+|-- memory/        evidence-backed promoted memory
+|-- surfaces/      generated read-only views and review packets
+|-- tools/         tool metadata and executor surfaces
+|-- curated_rag/   optional heuristic background corpus
+|-- migrations/    legacy-store accounting and review packets
+`-- schemas/       schemas and public surface contracts
 ```
 
-Submit candidates at any point when a claim is ready:
-```
-10. aitp_submit_candidate(topics_root, topic_slug, candidate_id, claim, evidence, ...)
-    → Creates L3/candidates/<id>.md
-```
+## Current Research Workflow
 
-### Phase 3: L4 Validation (stage = L4, posture = verify)
+AITP 0.5.0 is a read-first, progressive-disclosure workflow.
 
-```
-11. Write validation scripts (L4/scripts/) and execute on target machine.
-    Every data point must have provenance: script path, execution timestamp, method.
+### 1. Classify the User Intent
 
-13. aitp_submit_l4_review(topics_root, topic_slug, candidate_id,
-      outcome, notes, check_results={...}, evidence_scripts=[...],
-      evidence_outputs=[...], data_provenance=[...])
-    → outcome ∈ {pass, partial_pass, fail, contradiction, stuck, timeout}
-    → LANE-SPECIFIC EVIDENCE REQUIREMENTS:
-      - toy_numeric/code_method: evidence_scripts + evidence_outputs REQUIRED for pass
-        data_provenance REQUIRED: every data point traced to a script execution
-      - formal_theory: check_results is primary evidence. Required keys:
-        dimensional_consistency, symmetry_compatibility, limiting_case_check,
-        correspondence_check. Values describe WHAT was verified and outcome.
-        evidence_scripts optional (e.g., SymPy symbolic verification).
-```
+Choose the lightest path that preserves truth:
 
-**L4 pass does NOT auto-advance.** It returns to L3 for post-validation analysis.
-
-**L4 non-pass outcomes** trigger a popup gate with options:
-- `fail` → return to L3 for revision
-- `contradiction` → may require retreat to L1/L0 or flag L2 conflict
-- `stuck`/`timeout` → human decides: retry, switch lane, or archive
-
-### Phase 3b: L4→L3 Return Loop (stage = L3, posture = derive)
-
-```
-14. aitp_return_to_l3_from_l4(topics_root, topic_slug, reason="post_l4_analysis")
-    → Returns to L3 analysis subplane
-
-15. Analyze L4 findings in L3/analysis/active_analysis.md
-    → What passed conclusively? What had caveats? What remains open?
-    → Document L4 results in L3/analysis/active_analysis.md
-
-16. Ask the human (MANDATORY):
-    - "Persist and advance" → proceed to promotion/L2
-    - "Continue iterating" → new L3 cycle (plan → analyze → integrate → distill → L4)
-    - "Revise scope" → narrow/adjust the claim
-    - "Switch lane" → aitp_switch_lane if analytic dead-end or numeric refinement needed
-```
-
-This loop continues until the human confirms the topic is ready to persist.
-
-Physics check fields:
-`dimensional_consistency`, `symmetry_compatibility`,
-`limiting_case_check`, `conservation_check`, `correspondence_check`
-
-### Phase 4: Promotion to Global L2
-
-```
-17. Request → resolve → promote:
-    aitp_request_promotion(topics_root, topic_slug, candidate_id)
-    aitp_resolve_promotion_gate(topics_root, topic_slug, candidate_id, "approve")
-    aitp_promote_candidate(topics_root, topic_slug, candidate_id)
-    → Writes to global L2/ (cross-topic reusable knowledge)
-    → Assigns 2D trust: (basis=validated, scope=bounded_reusable)
-    → Conflict detection and version bumping handled automatically.
-
-    If REJECTED:
-    → Candidate status becomes "rejected_from_promotion"
-    → Agent MUST call aitp_return_to_l3_from_l4 to return to L3/analysis
-    → Address rejection reason, revise candidate, re-distill, re-submit
-```
-
-### Phase 5: Lifecycle Management
-
-**Topic forking** — when a side-discovery emerges:
-```
-aitp_fork_topic(topics_root, parent_slug, child_slug, title, question)
-→ Creates new topic with L1 copies from parent
-→ Links parent/child in both runtime logs
-→ Child inherits parent's lane
-```
-
-**Lane switching** — when the research approach needs to change:
-```
-aitp_switch_lane(topics_root, topic_slug, new_lane, reason)
-→ Records old lane, new lane, reason, timestamp
-→ Common: formal_theory → toy_numeric (analytical dead end)
-→         toy_numeric → code_method (need production computation)
-→         code_method → formal_theory (numerical results suggest clean form)
-→ NOTE: L4 evidence requirements change with lane
-```
-
-**Topic archiving** — when a topic must be paused or abandoned:
-```
-aitp_archive_topic(topics_root, topic_slug, reason, reason_category)
-→ reason_category: abandoned | paused | superseded | merged_into_another
-→ All artifacts preserved
-→ Stage set to "archived"
-
-aitp_restore_topic(topics_root, topic_slug)
-→ Restores archived topic to previous stage
-```
-
-**Session resumption** — when continuing after a break:
-```
-aitp_session_resume(topics_root, topic_slug)
-→ Returns current state, recent log entries, execution brief
-→ Agent reads the indicated skill and continues from last checkpoint
-```
-
-**Global L2 queries** — cross-topic knowledge search:
-```
-aitp_query_l2(topics_root, query)
-→ Searches all promoted claims in global L2
-→ Returns claims with trust basis, scope, version, conflicts
-→ Use when starting a new topic to avoid duplicating work
-```
-
-## Gate Model Summary
-
-Every tool that changes state checks gates.  The pattern is:
-
-1. Call `aitp_get_execution_brief` to see current state.
-2. If `gate_status == "ready"` and `next_allowed_transition` matches your
-   intended action → proceed.
-3. If `gate_status == "blocked_*"` → fix the flagged artifact first.
-4. Never skip stages. Never call a tool for a later stage while blocked.
-
-## Agent Decision Loop
-
-For any agent driving this protocol, the loop is:
-
-```
-while topic is not complete:
-    brief = aitp_get_execution_brief(topics_root, topic_slug)
-
-    if brief.gate_status == "blocked_missing_artifact":
-        Create the missing artifact file.
-        continue
-
-    if brief.gate_status == "blocked_missing_field":
-        Edit the flagged artifact. Fill the missing fields/headings.
-        continue
-
-    if brief.gate_status == "ready":
-        Match on brief.stage:
-            "L0" → Register sources, fill source_registry.md, advance to L1
-            "L1" → Fill remaining L1 artifacts or advance to L3
-            "L3" → Check brief.entry_profile:
-                     "learn_paper" → trace-derivation → gap-audit → connect → integrate → distill
-                     "explore_idea" → ideate → plan → derive → gap-audit → integrate → distill
-                     "continue_work" → resume last activity, follow parent DAG
-                     "l4_return" → integrate → distill (revise from L4 feedback)
-            "L4" → Validate candidate with code/analysis, submit review,
-                    then return to L3 via aitp_return_to_l3_from_l4
-            "L2" → Request promotion from validated L4 candidate
-        continue
-
-    # Lifecycle overrides (can happen at any stage):
-    if human requests lane change:
-        aitp_switch_lane(topics_root, topic_slug, new_lane, reason)
-    # L3 mode switching removed in v4.0 — all activities are available
-    # in a single flexible workspace. Use aitp_switch_l3_activity instead.
-    if human requests fork:
-        aitp_fork_topic(topics_root, topic_slug, child_slug, ...)
-    if human requests archive:
-        aitp_archive_topic(topics_root, topic_slug, reason, category)
-    if human requests retreat to L1 (from L3 only):
-        aitp_retreat_to_l1(topics_root, topic_slug, reason)
-```
-
-## Knowledge Authority Model
-
-Every query returns `basis_layer` and `authority_warning`.  Respect this:
-
-- **L1** answer = source-grounded, no derivation yet
-- **L3** answer = derivation in progress, not validated
-- **L4** answer = validated claim, can be reused
-- **L2** answer = promoted reusable knowledge, highest trust
-
-Never treat a lower-layer answer as having higher-layer authority.
-
-## Directory Layout
-
-```
-topics_root/
-├── L2/                              # Global reusable knowledge
-│   ├── index.md                     # Cross-topic index
-│   ├── log.md                       # Promotion history
-│   ├── <candidate>.md               # Promoted units (2D trust)
-│   └── conflicts/<candidate>.md     # Conflict records
-│
-└── topics/<slug>/
-    ├── state.md                     # Core state machine
-    ├── L0/
-    │   ├── source_registry.md       # Source discovery inventory and coverage
-    │   └── sources/*.md             # Registered sources (papers, datasets, code, etc.)
-    ├── L1/                          # Framing artifacts (5 files)
-    ├── L3/
-    │   ├── <subplane>/active_*.md   # Subplane artifacts
-    │   │   # Research mode: ideate/ plan/ derive/ trace-derivation/ gap-audit/ connect/ integrate/ distill/
-    │   ├── ideate/
-    │   │   ├── active_idea.md       # The ONE active idea
-    │   │   ├── idea_registry.md     # Index of ALL ideas with status
-    │   │   └── ideas/*.md           # Individual idea files (active, parked, merged, discarded)
-    │   ├── candidates/*.md          # Submitted candidates
-    │   └── tex/flow_notebook.tex     # Auto-generated LaTeX PDF — final per-topic output
-    ├── L4/
-    │   ├── validation_contract.md
-    │   ├── scripts/*.py               # Validation scripts (mandatory for numeric lanes)
-    │   ├── outputs/                   # Execution logs, plots, data tables
-    │   └── reviews/*.md
-    └── runtime/
-        ├── index.md                 # Topic index
-        └── log.md                   # Event log
-```
-
-## Multi-Idea Model (L3 Ideation)
-
-Research topics naturally spawn multiple competing or complementary ideas. AITP
-supports tracking all of them within a single topic without premature convergence.
-
-### Directory Layout
-
-```
-L3/ideate/
-├── active_idea.md          # The ONE idea currently being pursued
-├── idea_registry.md        # Index of ALL ideas with status
-└── ideas/                  # Individual idea files
-    ├── phase1-verify.md    # Idea: first-iteration head-wing verification
-    ├── phase2-iterative.md # Idea: iterative pyatb velocity regeneration
-    └── alt-fhi-aims.md     # Idea: use FHI-aims path instead of ABACUS
-```
-
-### Idea States
-
-| Status | Meaning |
-|--------|---------|
-| `active` | Currently being pursued — promoted to `active_idea.md` |
-| `parked` | Deferred for later — valid but lower priority |
-| `merged` | Absorbed into another idea (see `merged_into`) |
-| `discarded` | Proven wrong, infeasible, or superseded (see `discard_reason`) |
-
-### Idea Lifecycle
-
-1. **Diverge**: During ideation, generate ideas freely. Each becomes `ideas/{id}.md`.
-2. **Converge**: Select ONE as active → copy to `active_idea.md`.
-3. **Execute**: Pursue active idea through plan → derive → validate.
-4. **Pivot**: When a route fails or a better one emerges, park the current idea
-   (update its status to `parked`), select another, and update `active_idea.md`.
-5. **Merge**: When two ideas converge on the same approach, merge the newer into
-   the older (set `status: merged`, `merged_into: <target-id>`).
-6. **Discard**: When an idea is proven wrong or infeasible, record the reason
-   and mark `status: discarded`. Failed ideas prevent future sessions from
-   repeating dead ends.
-
-### Idea File Frontmatter
-
-```yaml
-idea_id: phase1-verify
-status: active          # active | parked | merged | discarded
-created_at: "2026-04-29"
-parked_at: ""           # when parked (ISO datetime)
-merged_into: ""         # target idea_id if merged
-discard_reason: ""      # why discarded (required if status=discarded)
-idea_statement: >
-  Re-enable task_qsgw_band_0.cpp and verify first-iteration
-  head-wing correction on Si benchmark.
-motivation: >
-  Before attempting iterative head-wing, verify the basic
-  head-wing mechanism works in the periodic QSGW code path.
-```
-
-### Relationship to Other Topic Artifacts
-
-- **active_idea.md** is still the single source of truth for the L3 plan gate.
-  Only ONE idea is active at a time.
-- **idea_registry.md** provides the full idea history — what was tried, what
-  was rejected, what is deferred.
-- When `aitp_fork_topic` is used, the originating idea records the fork in
-  `forked_to_topic: <slug>`.
-- Failed ideas become **Failure Route** entries in `L3/derive/active_derivation.md`
-  and contribute to the "Negative Results" section of `flow_notebook.tex`.
-
-## Topic Memory — The "L2 Within a Topic"
-
-While **global L2** stores distilled, cross-topic, reusable knowledge, each topic
-also needs a **local shared memory** — a place where ALL ideas within the topic
-accumulate common experience.
-
-### Concept
-
-```
-L2 (global)         ← validated, reusable across ALL topics
-     ↑ promoted from
-MEMORY.md (topic)   ← shared across ALL ideas within ONE topic
-     ↑ feeds from
-ideas/{id}.md       ← per-idea state and learnings
-```
-
-### What Topic Memory Stores
-
-| Category | Example |
-|----------|---------|
-| **Server configs** | "df server: oneAPI 2024.2, module load, abacus_work path" |
-| **Tool paths** | "kouxiang FHI-aims: /mnt/sg001/.../aims.250403.scalapack.mpi.x" |
-| **Discovered conventions** | "ABACUS NSCF: rpa=1 must be COMMENTED OUT" |
-| **Pitfalls** | "exx_pca_threshold=1e-3 over-compresses ABF; use 10" |
-| **Dead ends** | "Internal velocity rotation approach abandoned — AO reconstruction rank-deficient" |
-| **Cross-idea insights** | "Both ABACUS and FHI-aims paths converge on replace_w_head=t, option_dielect_func=3" |
-
-**Provenance rule**: Every parameter, pitfall, and configuration claim in MEMORY.md
-MUST cite its source. Acceptable provenance tags:
-- `[v:<job_id>]` — verified by a passing L4 computation job
-- `[k:<source>]` — copied from a validated external reference
-- `[u]` — unverified (debug attempt, educated guess)
-Unverified `[u]` parameters MUST NOT be used as defaults for new calculations.
-Pitfalls without a specific failure trace (job ID + log line) MUST NOT be promoted to domain-skill defaults.
-
-### Difference from global L2
-
-| | Global L2 | Topic Memory |
+| Intent | Default AITP behavior | Write only when |
 |---|---|---|
-| **Scope** | All topics | Single topic |
-| **Trust** | source_grounded → validated | "worked for us" / "didn't work" |
-| **Format** | Structured nodes + edges | Free-form Markdown sections |
-| **Promotion** | Via L4 adversarial review | Direct write from any idea |
-| **Survival** | Permanent | Survives topic archive |
+| Generic old-knowledge Q&A | No AITP unless tied to an existing topic/claim/source | The answer changes durable project knowledge |
+| Prior-topic status | Read recovery/audit surfaces, brief, relation map | User asks for handoff or resolves a checkpoint |
+| Exploratory discussion | Read topic context if known; otherwise stay conversational | A durable question, route, source, result, or gap emerges |
+| Active continuation | Restore session and claim context | Durable source/artifact/evidence/validation/route/checkpoint appears |
+| Final synthesis or trust action | Run relation map and trust/promotion preflight | Required evidence, validation, and human gate are present |
 
-### Operation
+Do not create a topic, claim, session, or memory entry merely because an idea is interesting.
 
-- Agent reads `MEMORY.md` at session start for the topic.
-- After any significant discovery (working config, dead end, pitfall), agent
-  writes a concise entry to `MEMORY.md`.
-- When switching between ideas, agent consults `MEMORY.md` for cross-idea context.
-- When an idea is discarded, its key lesson is condensed into `MEMORY.md`.
+### 2. Locate The Current Graph Position
 
-## Tool Integration Architecture
+Use read-only tools first:
 
-External tools (MCP servers, skills) integrate into AITP via three patterns:
+```text
+aitp_v5_build_workspace_recording_audit
+aitp_v5_get_execution_brief
+aitp_v5_get_claim_relation_map
+aitp_v5_get_process_graph_slice   # only when the next action needs full context
+```
 
-### Pattern A — Catalog-only (load on demand)
+The agent should know at least:
 
-Tool is listed in the progressive-disclosure catalog for the current stage.
-The agent discovers it from the session-start menu and loads full content
-via `Skill` or `ToolSearch` when needed.
+- topic id,
+- session id,
+- active claim id,
+- current claim status and uncertainty,
+- evidence and validation coverage,
+- blockers and forbidden actions,
+- next valid actions.
 
-**When to use**: Tool is optional reference; missing it doesn't break results.
-**Examples**: `arxiv-latex-mcp`, `paper-search-mcp`, `ssh-mcp`, `mcp-server-chart`
+### 3. Record Only Durable Moments
 
-### Pattern B — Skill reference (invoke at checkpoint)
+AITP is not a transcript logger. Record when a research-relevant fact changed or became durable:
 
-Tool is listed in the catalog AND the AITP skill file explicitly tells the
-agent to invoke it at a specific checkpoint. The session-start hook prints
-a `PATTERN-B` instruction so the agent knows to load it proactively.
+- reusable source identity or source location,
+- source asset, note, artifact, table, figure, raw dump, report, or patch,
+- tool/code run with research-relevant output,
+- evidence, anomaly, contradiction, failed check, or negative result,
+- validation contract or validation result,
+- proof obligation or unresolved theory gap,
+- route selection, pivot, abandonment, or split,
+- human checkpoint request/decision,
+- claim status/scope update,
+- promotion or trust preflight result,
+- session-end handoff that future agents must recover.
 
-**When to use**: Tool has a workflow that should be followed at specific subplane points.
-**Examples**: `scientific-brainstorming` at L3/ideation
+Do not record generic explanations, unaccepted brainstorming, repeated summaries, file inspections with no research information, or setup failures unrelated to the scientific claim.
 
-**How to add a Pattern B tool**:
-1. Add entry to `TOOL_CATALOG` with pattern `"B"`
-2. Add entry to `PATTERN_B_INSTRUCTIONS` with invoke instruction
-3. Add a reference in the AITP skill file (e.g., `skill-l3-ideate.md`)
+### 4. Use Progressive Recording Navigation
 
-### Pattern C — Workflow absorbed (embedded in AITP skill)
+For durable moments, do not guess the write tool. Navigate:
 
-Tool's workflow is already part of the AITP skill's mandatory steps.
-The catalog entry is informational only — the agent already follows the
-workflow by reading the AITP skill.
+```text
+aitp_v5_classify_recording_candidate
+aitp_v5_get_recording_navigation_state
+aitp_v5_expand_recording_slot
+<typed write or preflight tool named by the slot expansion>
+aitp_v5_verify_recording_effect
+```
 
-**When to use**: Tool is critical for correctness; missing it would produce wrong results.
-**Examples**: `jupyter-mcp-server` in L4 validation, `knowledge-hub` in L1/L2
+The first navigation response should be shallow: current topic/session/claim, first-level slots, blockers, and recommended moments. Expand exactly one slot at a time. Deep write tools appear only at the leaf layer.
 
-### Decision matrix
+### 5. Keep Trust Separate From Activity
 
-| Question | A | B | C |
-|----------|---|---|---|
-| Missing this tool breaks results? | No | Might | Yes |
-| Tool has independent use outside AITP? | Yes | Yes | No |
-| Must be used every time? | No | At specific points | Every time |
+A source location is not evidence. A tool run is not validation. A summary is not proof. A failed application run is not automatically a failed algorithmic claim.
 
-### Adding new tools
+Before claim confidence, memory promotion, or final reusable conclusion:
 
-To add a new tool to AITP:
+```text
+aitp_v5_get_claim_relation_map
+aitp_v5_audit_l2_memory_context
+aitp_v5_trust_preflight / corresponding trust preflight surface
+human checkpoint when required
+```
 
-1. **Install** the MCP server or skill
-2. **Classify** using the decision matrix above
-3. **Register** in `TOOL_CATALOG` (in `brain/state_model.py`) with the pattern tag
-4. If Pattern B: also add to `PATTERN_B_INSTRUCTIONS` and update the AITP skill file
-5. If Pattern C: embed the workflow into the AITP skill's mandatory steps
-6. **Test** by starting a new session and verifying the catalog prints correctly
+Trust updates must cite typed evidence, typed validation or explicit bounded justification, known failure modes, and scope.
+
+## Typed Record Families
+
+Common durable write targets include:
+
+| Research moment | Typed record family |
+|---|---|
+| Claim or status | claim, claim_status, trust_update |
+| Source/paper/note location | source_asset, reference_location, registered_source |
+| Artifact/report/table/plot/log | artifact |
+| Physics definition/object | physics_object |
+| Equation/relation/assumption | object_relation |
+| Code version or patch state | code_state |
+| Tool recipe/run/output | tool_recipe, tool_run |
+| Scientific support/negative result | evidence |
+| Required check | validation_contract |
+| Check result | validation_result |
+| Open theorem/review gap | proof_obligation |
+| Route choice or pivot | exploration, route, sensemaking_report |
+| Human decision | checkpoint |
+| Long-term reusable memory | promotion_packet, memory_entry |
+
+## Legacy L0-L4 Handling
+
+Legacy L0/L1/L3/L4 directories, `state.md`, legacy `brain/cli`, and legacy MCP aliases are historical and migration surfaces.
+
+They may be read for orientation, provenance recovery, or migration accounting. They must not be used as the active execution contract for new research.
+
+When old content matters:
+
+1. discover it through v5 legacy/audit tools,
+2. preserve source paths and hashes,
+3. import or reference it as orientation-only unless reviewed,
+4. create typed v5 records for any durable claim, evidence, validation, or memory,
+5. keep legacy L2 seeds quarantined until reviewed and promoted.
+
+## Host Integration Rules
+
+- Codex, Claude Code, Kimi Code, Hakimi, and other hosts should use the same project-scope AITP repo and topics root.
+- MCP config must point to `brain/v5/native_mcp.py`.
+- The `aitp-v5` CLI wrapper is for diagnostics and fallback operations, not the MCP server command.
+- Hooks may refresh orientation or enforce pre-tool policy. Hooks cannot update claim trust or promote memory by themselves.
+- Host summaries and RAG are advisory. They are not accepted evidence unless backed by typed records.
+
+## Strict Version Contract
+
+AITP 0.5.0 expects:
+
+```text
+release version: 0.5.0
+implementation generation: v5
+MCP server: aitp-v5-brain
+MCP server version: 0.5.0
+canonical entrypoint: brain/v5/native_mcp.py
+legacy entrypoints in active configs: forbidden
+normal tool prefix: aitp_v5_*
+legacy alias tools: discovery/bootstrap compatibility only
+```
+
+`aitp-pm doctor` should fail when project installs point at legacy MCP entrypoints, when the protocol metadata does not declare v5 implementation, or when recorded installs are not aligned with the current package version.
+
+## Current Completion Boundary
+
+The v5 infrastructure is usable: typed records, MCP tools, CLI fallback, recording navigator, relation maps, migration audits, and project-scope installs are active.
+
+A migrated workspace may still have `review_required` legacy L2 seed work. That means old imported memory is quarantined as orientation-only; it does not block the v5 runtime, but it does block treating those seeds as trusted claim support.

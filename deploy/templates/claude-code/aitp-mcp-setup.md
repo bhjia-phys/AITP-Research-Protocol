@@ -1,19 +1,32 @@
 # Claude Code MCP setup
 
-Claude Code should expose an `aitp` MCP server so AITP runtime actions are available as native structured tools.
+Claude Code should expose an `aitp` MCP server so AITP v5 runtime actions are
+available as native structured tools.
 
-Expected config path:
+For project installs, the authoritative MCP config is the workspace `.mcp.json`
+written by `aitp-pm.py install` or `aitp-pm.py update`.
 
-- `{{USER_HOME}}/.claude.json`
+Expected project config path:
 
-Equivalent Claude CLI command:
+- `{{TARGET_ROOT}}/.mcp.json`
 
-```bash
-claude mcp add-json -s user aitp '{"command":"python","args":["{{REPO_ROOT}}/brain/mcp_server.py"]}'
+Install or refresh the project adapter with:
+
+```powershell
+uv run --with pyyaml --with jsonschema --with fastmcp python {{REPO_ROOT}}/scripts/aitp-pm.py install --agent claude-code --scope project --target-root {{TARGET_ROOT}} --topics-root {{TOPICS_ROOT}}
+```
+
+The active MCP entrypoint must be:
+
+```text
+{{REPO_ROOT}}/brain/v5/native_mcp.py
 ```
 
 Verify with:
 
-```bash
-claude mcp list
+```powershell
+uv run --with pyyaml --with jsonschema --with fastmcp python {{REPO_ROOT}}/scripts/aitp-pm.py doctor
 ```
+
+The legacy `brain/mcp_server.py` is compatibility-only. Do not install it as
+the active MCP server for AITP 0.5.0/v5 work.
