@@ -1,231 +1,392 @@
 # AITP - AI Theoretical Physicist Protocol
 
-> A typed research graph and agent-facing protocol layer for theoretical physics.
+AITP is a local research graph and agent tool layer for theoretical-physics
+work. It gives human researchers and AI agents a shared, typed record of what
+was claimed, what was actually checked, what remains uncertain, and where the
+next valid research action is.
 
-AITP is not a chatbot, note app, or automatic theorem prover. It is the local
-research substrate that lets human researchers and AI agents work on theory
-problems without losing the scientific trail.
+It is not a chatbot, a generic note app, an automatic theorem prover, or a
+transcript logger. The goal is more specific: preserve the real scientific
+process well enough that another agent or human can continue the work without
+confusing notes, guesses, failed setup, validation, and trusted conclusions.
 
-AITP has three jobs:
+## Protocol Goal
 
-1. **Research graph**: store claims, sources, physics objects, relations,
-   evidence, code/tool provenance, validation results, open obligations, human
-   checkpoints, and memory promotion decisions as typed records.
-2. **Agent tool layer**: expose safe read/write operations through MCP
-   (`aitp_v5_*`) and a CLI fallback (`aitp-v5`) so Codex, Claude Code, Kimi,
-   Hakimi, and other agents can inspect and update the same graph.
-3. **Research workflow guidance**: tell an agent when to read context, when to
-   record provenance, when to ask the human, when to validate, and when not to
-   claim trust.
+AITP is designed around a human-in-the-loop research loop:
 
-The current implementation is **AITP v5** under `brain/v5/`.
+1. A human or agent works on a theoretical-physics problem.
+2. Durable research moments are written into a typed graph.
+3. Agents read that graph through MCP or CLI tools before acting.
+4. Evidence, validation, proof gaps, route changes, and human decisions stay
+   distinguishable.
+5. Trust or long-term memory promotion only happens after explicit checks.
 
-## Mental Model
+The protocol tries to enforce one central distinction:
 
 ```text
-human / agent / Hakimi
-        |
-        v
-MCP tools and CLI commands
-        |
-        v
-typed AITP records in .aitp/
-        |
-        v
-read-only graph, brief, moment policy, audits, summaries
+context and orientation != evidence
+tool execution != validation
+summary != truth
+claim status != proof
 ```
 
-The typed records are the source of truth. Process graph slices, execution
-briefs, summaries, and dashboards are derived views. They help a host agent
-navigate the project, but they do not update claim trust by themselves.
+This makes AITP useful for long-running theory projects where intermediate
+process matters: literature reading, derivations, numerical checks, code-method
+development, failed routes, benchmark provenance, and final synthesis.
 
-## What AITP Records
+## Current Implementation
 
-AITP v5 can record:
+The current implementation is **AITP v5**. The active code is under
+[`brain/v5/`](brain/v5/).
 
-- topics, sessions, active claims, claim status, and uncertainty
-- papers, notes, source assets, artifacts, hashes, and locations
-- physics objects, definitions, notation, relations, equations, and assumptions
-- evidence linked to claims, sources, tools, artifacts, and validation results
-- code state, tool recipes, tool runs, and execution environments
-- validation contracts, validation results, failure modes, and missing checks
-- proof obligations and unresolved theory gaps
-- exploratory reasoning, route choices, pivots, blocked attempts, and lessons
-- human checkpoints and promotion decisions
-- scoped long-term memory entries
+AITP v5 has three layers:
 
-This makes AITP a research graph for the process of doing theory, not just a
-folder of final notes.
+1. **Typed research graph** stored on disk under a workspace-local `.aitp/`
+   directory.
+2. **Agent-facing MCP server** at
+   [`brain/v5/native_mcp.py`](brain/v5/native_mcp.py), exposing `aitp_v5_*`
+   tools for reading and writing graph records.
+3. **CLI and installer utilities** for diagnostics, fallback operations, and
+   project setup.
 
-## Store Layout
-
-A workspace that uses AITP has a topics root, usually something like:
+The normal architecture is:
 
 ```text
-research/aitp-topics/
+human / Codex / Claude Code / Kimi Code / Hakimi / other agent
+        |
+        v
+MCP tools: aitp_v5_*
+        |
+        v
+AITP v5 typed records under <topics-root>/.aitp/
+        |
+        v
+derived briefs, graph slices, audits, relation maps, summaries
+```
+
+The typed records are the source of truth. Briefs, dashboards, process graph
+slices, summaries, and audits are derived views. They are useful for navigation,
+but they do not update trust by themselves.
+
+## What AITP Can Do Today
+
+AITP v5 currently supports:
+
+- project and topic initialization
+- topic, session, claim, and claim-status records
+- source and reference-location records
+- source assets, artifacts, hashes, and output locations
+- physics objects, definitions, notation, relations, equations, and assumptions
+- code state, tool recipes, tool runs, and execution provenance
+- evidence records linked to claims, sources, artifacts, and tool runs
+- validation contracts and validation results
+- proof obligations and unresolved theory gaps
+- route choices, pivots, blocked attempts, and exploratory reasoning
+- human checkpoints and checkpoint decisions
+- trust preflight, trust update records, and memory-promotion packets
+- read-only execution briefs, claim relation maps, graph slices, and audits
+- progressive recording navigation for deciding where a durable moment belongs
+- project-scope adapter installs for Codex, Claude Code, and Kimi Code
+- migration and recovery audits for older AITP topic stores
+
+AITP is strongest when the research question has durable structure:
+
+- formal or derivation-heavy theoretical work,
+- numerical/model claims that require provenance and validation,
+- scientific-code method development,
+- literature-to-claim reconstruction,
+- long projects that need handoff between sessions or agents.
+
+## What AITP Does Not Do
+
+AITP deliberately does not:
+
+- prove physics claims automatically,
+- decide final scientific truth without evidence and validation,
+- record every chat turn or every tool call,
+- promote summaries into trusted memory by default,
+- replace human judgment at theory or trust boundaries,
+- guarantee that every host application fires lifecycle hooks perfectly.
+
+The protocol is a truth-preserving substrate. The host agent still has to do
+the research work and call the right tools at the right moments.
+
+## Research Graph Layout
+
+A workspace normally has a topics root:
+
+```text
+<workspace>/research/aitp-topics/
 ```
 
 The canonical AITP store is:
 
 ```text
-research/aitp-topics/.aitp/
+<workspace>/research/aitp-topics/.aitp/
 ```
 
-The v5 store is organized around stable top-level areas:
+The v5 store is organized like this:
 
 ```text
 .aitp/
 |-- topics/        topic-local runtime views and dashboards
 |-- contexts/      research context records
-|-- registry/      typed records: claims, evidence, sources, tools, validation, etc.
+|-- registry/      typed graph records
 |-- runtime/       sessions and runtime state
 |-- memory/        promoted scoped memory
 |-- surfaces/      generated read-only views and review packets
-|-- tools/         tool metadata
+|-- tools/         tool metadata and tool surfaces
 |-- curated_rag/   optional heuristic background corpus
 |-- migrations/    migration audits and old-store accounting
 `-- schemas/       schema and contract material
 ```
 
-The `registry/` directory is the core graph store. It contains record families
-such as `claims`, `evidence`, `reference_locations`, `source_assets`,
-`physics_objects`, `object_relations`, `tool_runs`, `code_states`,
-`validation_contracts`, `validation_results`, `proof_obligations`,
-`research_runs`, `research_run_events`, `checkpoints`, `promotion_packets`, and
-`trust_updates`.
+The core graph records live under `registry/`. Important record families include
+`claims`, `evidence`, `reference_locations`, `source_assets`,
+`physics_objects`, `object_relations`, `code_states`, `tool_recipes`,
+`tool_runs`, `validation_contracts`, `validation_results`,
+`proof_obligations`, `research_runs`, `research_run_events`, `checkpoints`,
+`promotion_packets`, and `trust_updates`.
 
-## Agent Tool Layer
+## How Agents Should Use AITP
 
-AITP exposes the graph through two equivalent layers:
+AITP should be used as a progressive, read-first protocol.
 
-- **MCP**: `brain/v5/native_mcp.py`, exposing typed tools such as
-  `aitp_v5_get_execution_brief`, `aitp_v5_get_process_graph_slice`,
-  `aitp_v5_record_evidence`, and `aitp_v5_record_validation_result`.
-- **CLI**: `python -m brain.v5.cli` or the installed `aitp-v5` wrapper.
+For status questions or old-topic recovery, agents should usually read only:
 
-Example MCP configuration:
+1. find the topic/session/claim,
+2. read the execution brief,
+3. read the claim relation map,
+4. summarize current support, limits, blockers, and next valid actions.
+
+For active research, agents should write only at durable moments:
+
+- a reusable source or source location was identified,
+- a tool/code run produced research-relevant output,
+- an artifact, report, table, plot, log, or raw dump was produced,
+- a result, anomaly, contradiction, negative result, or failed check appeared,
+- a proof gap, validation gap, missing provenance, or route blocker was found,
+- a route was selected, pivoted, abandoned, or split,
+- claim scope/status changed or needs review,
+- a human checkpoint or promotion decision is needed,
+- a session-end handoff creates durable future context.
+
+The recommended recording flow is:
+
+```text
+classify recording candidate
+        |
+        v
+read first-level recording navigation state
+        |
+        v
+expand exactly one slot
+        |
+        v
+call the named typed write or preflight tool
+        |
+        v
+verify the recording effect
+```
+
+This keeps the graph useful without making the agent write on every internal
+thought step.
+
+## MCP Tool Layer
+
+The MCP server entrypoint is:
+
+```text
+brain/v5/native_mcp.py
+```
+
+MCP hosts should run that file directly. Do not point MCP at `aitp-v5` or at the
+legacy servers.
+
+Generic MCP config shape:
 
 ```json
 {
   "mcpServers": {
     "aitp": {
-      "command": "python",
-      "args": ["/path/to/AITP-Research-Protocol/brain/v5/native_mcp.py"]
+      "command": "uv",
+      "args": [
+        "run",
+        "--with",
+        "pyyaml",
+        "--with",
+        "jsonschema",
+        "--with",
+        "fastmcp",
+        "python",
+        "/absolute/path/to/AITP-Research-Protocol/brain/v5/native_mcp.py"
+      ],
+      "cwd": "/absolute/path/to/AITP-Research-Protocol",
+      "env": {
+        "AITP_TOPICS_ROOT": "/absolute/path/to/workspace/research/aitp-topics"
+      }
     }
   }
 }
 ```
 
-Do not point MCP at the CLI wrapper. MCP hosts should run `native_mcp.py`.
-The CLI is for local diagnostics, scripted operations, and fallback use.
+Different hosts use slightly different config keys. The installer writes the
+correct project-local files for supported hosts.
 
-Useful CLI checks:
+## CLI Layer
 
-```bash
-python -m brain.v5.cli init /path/to/topics-root
-python -m brain.v5.cli --base /path/to/topics-root adapter public-surfaces
-python -m brain.v5.cli --base /path/to/topics-root adapter bridge-targets
-python -m brain.v5.cli --base /path/to/topics-root adapter payload-profiles
-python -m brain.v5.cli --base /path/to/topics-root workspace recording-audit
-python -m brain.v5.cli --base /path/to/topics-root graph slice <session-id>
-python -m brain.v5.cli --base /path/to/topics-root graph moment-policy <session-id>
-```
+The CLI is useful for diagnostics, smoke tests, scripted fallback operations,
+and local inspection.
 
-## Workflow Guidance
-
-AITP gives host agents a conservative research workflow.
-
-For a normal AITP-aware agent:
-
-1. Classify the user request: status/Q&A can be read-only; continuation,
-   derivation, validation, contradiction, final synthesis, and promotion are
-   heavier.
-2. If the topic or current graph position is unclear, call the read-only
-   workspace recording audit (`aitp_v5_build_workspace_recording_audit`) to see
-   which topic rows are navigable, which are blocked by recovery gaps, and which
-   first-level slots should be inspected.
-3. Restore the active session with `aitp_v5_get_execution_brief`.
-4. Read the claim relation map before interpreting failures or support.
-5. At durable moments, use the progressive recording navigator:
-   classify candidate -> read per-topic navigation state -> expand one slot ->
-   call the existing typed write/preflight tool -> verify the effect.
-6. Record durable work through typed tools: source assets, references, tool
-   runs, evidence, validation results, proof obligations, routes, and
-   checkpoints.
-7. Run trust preflight before any confidence or memory-promotion step.
-
-For Hakimi integration:
-
-1. Hakimi owns the runtime work loop and WorkFrame.
-2. AITP owns the durable typed graph and trust boundaries.
-3. Hakimi may read AITP context, compile graph/moment-policy decisions into
-   call obligations, and execute allowed write-bridge operations.
-4. Hakimi should not invent a parallel scientific memory or silently apply
-   trust changes.
-
-For a general harness:
-
-1. Treat AITP as the canonical local kernel.
-2. Use MCP to read graph state and write typed records.
-3. Keep host-side summaries, traces, and prompt injections as orientation only.
-4. Put final gates around evidence, validation, and trust decisions, not every
-   ordinary coding or note-taking step.
-
-## Trust Boundary
-
-AITP is deliberately strict about trust:
-
-- A reference location is a pointer, not evidence.
-- A tool run is provenance, not validation.
-- A summary is orientation, not claim support.
-- Curated RAG is heuristic context, not evidence.
-- A process graph slice is a derived view, not a new truth record.
-- `trust_apply` is not exposed as a normal host write bridge target.
-- Long-term memory promotion requires evidence, validation or scoped
-  justification, and the required human or failure-mode checkpoints.
-
-The weight should sit at scientific boundaries: evidence, validation,
-promotion, contradiction, failure modes, and route changes.
-
-## Quick Start
+Use it from the repository root:
 
 ```bash
-python -m brain.v5.cli init /path/to/topics-root
-
-python -m brain.v5.cli --base /path/to/topics-root topic create fqhe \
-  --context condensed-matter \
-  --title "FQHE edge-sector counting"
-
-python -m brain.v5.cli --base /path/to/topics-root claim create \
-  --topic fqhe \
-  --statement "Finite-size counting identifies the edge sector." \
-  --evidence-profile finite_numeric \
-  --confidence-state hypothesis \
-  --uncertainty "finite-size artifacts may mimic the target counting"
-
-python -m brain.v5.cli --base /path/to/topics-root session bind s1 \
-  --topic fqhe \
-  --context condensed-matter \
-  --claim <claim-id>
-
-python -m brain.v5.cli --base /path/to/topics-root brief s1
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python -m brain.v5.cli --help
 ```
 
-In normal use an agent calls the MCP tools rather than typing each command by
-hand.
+Common commands:
 
-## Project-Scope Install
+```bash
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python -m brain.v5.cli init /path/to/workspace/research/aitp-topics
 
-For a real research workspace, keep Codex, Claude Code, Kimi Code, and other
-host agents pointed at the same AITP repo and topics root.
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python -m brain.v5.cli --base /path/to/workspace/research/aitp-topics brief <session-id>
+
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python -m brain.v5.cli --base /path/to/workspace/research/aitp-topics relation-map <session-id>
+
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python -m brain.v5.cli --base /path/to/workspace/research/aitp-topics workspace recording-audit
+
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python -m brain.v5.cli --base /path/to/workspace/research/aitp-topics recording navigation-state <session-id>
+```
+
+If you have linked the Node wrapper from `package.json`, `aitp-v5` is a shorter
+alias for the same v5 CLI. The repository-local `uv run ... python -m
+brain.v5.cli` form is the most explicit and portable.
+
+## Install
+
+Prerequisites:
+
+- Git
+- Python 3.10 or newer
+- `uv` recommended for dependency isolation
+- at least one supported host agent if you want automatic agent wiring:
+  Codex, Claude Code, or Kimi Code
+
+Clone the repository:
+
+```bash
+git clone git@github.com:bhjia-phys/AITP-Research-Protocol.git
+cd AITP-Research-Protocol
+```
+
+### Recommended: Project-Scope Install
+
+Project-scope install keeps AITP configuration inside one research workspace.
+This is the safest mode for reproducible research and multi-agent use.
 
 ```bash
 uv run --with pyyaml --with jsonschema --with fastmcp \
   python scripts/aitp-pm.py install \
   --agent all \
   --scope project \
-  --target-root /path/to/theory-workspace \
-  --topics-root /path/to/theory-workspace/research/aitp-topics
+  --target-root /absolute/path/to/workspace \
+  --topics-root /absolute/path/to/workspace/research/aitp-topics
+```
+
+This installs workspace-local adapter files such as:
+
+- `.mcp.json`
+- `.codex/skills/...`
+- `.codex/mcp.json`
+- `.codex/config.toml`
+- `.claude/...`
+- `.kimi/...`
+- `.kimi-code/...`
+
+The exact files depend on the selected agent and the host's conventions.
+
+Project-scope install does **not** register a global `aitp` wrapper. It keeps
+host configuration local to the target workspace.
+
+### Optional: User-Scope Install
+
+User-scope install writes into user-level agent config locations. Use it only if
+you intentionally want AITP available globally for that host account.
+
+```bash
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py install \
+  --agent codex \
+  --scope user \
+  --topics-root /absolute/path/to/workspace/research/aitp-topics
+```
+
+User scope may register a global `aitp` package-manager wrapper when possible.
+For shared or sensitive research machines, prefer project scope.
+
+### Verify Install
+
+```bash
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py status
+
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py doctor
+```
+
+`status` reads `~/.aitp/install-record.json` and reports recorded installs.
+`doctor` checks Python dependencies, v5 server files, topics root health,
+MCP entrypoints, project-scope consistency, and common stale-residue problems.
+
+After installing or changing MCP config, restart the host agent so it reloads
+its MCP servers and skills.
+
+## Update
+
+To refresh installed adapters from the current repository checkout:
+
+```bash
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py update
+```
+
+To pull the latest repository changes and redeploy recorded installs:
+
+```bash
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py upgrade
+```
+
+Run `doctor` after update or upgrade.
+
+## Uninstall
+
+Use the package manager whenever possible. It removes only files recorded during
+install.
+
+Project-scope uninstall:
+
+```bash
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py uninstall \
+  --agent all \
+  --scope project \
+  --target-root /absolute/path/to/workspace
+```
+
+User-scope uninstall:
+
+```bash
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py uninstall \
+  --agent all \
+  --scope user
 ```
 
 Then verify:
@@ -235,25 +396,68 @@ uv run --with pyyaml --with jsonschema --with fastmcp \
   python scripts/aitp-pm.py status
 ```
 
-Project installs write host glue into workspace-local surfaces such as
-`.mcp.json`, `.codex/`, `.claude/`, and `.kimi/`. Those files are adapters. The
-scientific authority remains the typed store under `<topics-root>/.aitp/`.
+Manual cleanup notes are in [`docs/UNINSTALL.md`](docs/UNINSTALL.md).
+
+## Hakimi And Other Harnesses
+
+AITP can be used by a specialized research harness or by a general coding
+agent.
+
+For Hakimi-style integration:
+
+- Hakimi owns the live work loop and workframes.
+- AITP owns durable scientific records and trust boundaries.
+- Hakimi should read AITP context through MCP, write durable moments through
+  typed AITP tools, and avoid maintaining a parallel scientific truth layer.
+
+For a generic agent harness:
+
+- expose only a small AITP entry surface at startup,
+- let the agent discover deeper graph structure progressively,
+- use read tools for navigation and context,
+- use typed write tools only at durable research moments,
+- run trust preflight before confidence or memory-promotion changes.
+
+Hooks can help with session start, pre-tool policy, post-tool trace capture, or
+stop-time handoffs, but hooks are runtime metadata. They should not be treated
+as scientific evidence or trusted memory by themselves.
+
+## Optimization Direction
+
+The current v5 implementation is usable, but the main improvement directions
+are clear:
+
+- make progressive recording navigation easier for agents to follow,
+- keep the exposed MCP surface small at startup and reveal detail on demand,
+- strengthen graph schema validation and migration accounting,
+- improve host lifecycle hook reliability across Codex, Claude Code, Kimi Code,
+  Hakimi, and other runtimes,
+- improve source reconstruction from papers, notes, and artifacts,
+- make validation contracts easier to generate and review,
+- improve human review packets for trust updates and memory promotion,
+- add more end-to-end acceptance tests with real project workspaces.
+
+These optimizations should preserve the same boundary: AITP records research
+truth through typed records, not through unverified summaries or hidden agent
+memory.
 
 ## Repository Map
 
 ```text
 AITP-Research-Protocol/
-|-- brain/v5/              typed kernel, CLI, MCP tools, contracts, adapters
-|-- docs/                  specifications, install notes, design plans
-|-- deploy/templates/      host skill and runtime templates
-|-- hooks/                 lifecycle guards and runtime hooks
-|-- tests/                 v5 and legacy tests
-|-- scripts/               install and maintenance helpers
-`-- brain/mcp_server.py    legacy L0-L4 MCP server
+|-- brain/v5/              current typed kernel, CLI, MCP tools, adapters
+|-- brain/mcp_server.py    legacy L0-L4 MCP server, kept for compatibility
+|-- deploy/                host templates and agent-facing skill material
+|-- docs/                  protocol docs, install notes, historical designs
+|-- hooks/                 lifecycle hook runners and guards
+|-- scripts/               installer, maintenance, migration helpers
+|-- tests/                 v5 and compatibility tests
+|-- bin/aitp-v5.mjs        optional Node CLI wrapper
+`-- package.json           optional package metadata for the CLI wrapper
 ```
 
-New research workflows should use `brain/v5/` and `brain/v5/native_mcp.py`.
-Legacy L0-L4 material remains for migration and historical interpretation.
+New integrations should use `brain/v5/native_mcp.py` and `brain/v5/`.
+Legacy L0-L4 files remain for migration and historical interpretation.
 
 ## Development Checks
 
@@ -265,13 +469,15 @@ pytest tests -q
 git diff --check -- .
 ```
 
-Some legacy tests may reflect older protocol surfaces. When changing only v5,
-prefer focused v5 tests and targeted adapter smoke checks.
+For narrow changes, run the focused tests that cover the touched surface first.
+Some legacy tests describe older protocol behavior, so prefer v5-specific tests
+when modifying v5 runtime, MCP, graph, or adapter code.
 
 ## Key Docs
 
 - [`docs/AITP_SPEC.md`](docs/AITP_SPEC.md) - protocol specification
-- [`docs/INSTALL.md`](docs/INSTALL.md) - general install guide
+- [`docs/INSTALL.md`](docs/INSTALL.md) - install guide
+- [`docs/UNINSTALL.md`](docs/UNINSTALL.md) - manual uninstall notes
 - [`docs/INSTALL_CODEX.md`](docs/INSTALL_CODEX.md) - Codex adapter notes
 - [`docs/INSTALL_CLAUDE_CODE.md`](docs/INSTALL_CLAUDE_CODE.md) - Claude Code setup
 - [`docs/INSTALL_KIMI_CODE.md`](docs/INSTALL_KIMI_CODE.md) - Kimi Code setup
