@@ -32,7 +32,7 @@ import sys
 import tempfile
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 # Ensure the parent directory is on sys.path so `brain` is importable
 # regardless of cwd when launched as an MCP stdio server.
@@ -91,6 +91,158 @@ from brain.tools.l4_code_method import analyze_l4_run
 from brain.cli.decorators import require_stage, with_preflight
 
 mcp = FastMCP("aitp-brain")
+
+
+LEGACY_WRITE_ENABLE_ENV = "AITP_LEGACY_ENABLE_WRITES"
+LEGACY_READ_ONLY_ERROR_CODE = "legacy_aitp_writes_disabled"
+LEGACY_READ_ONLY_MESSAGE = (
+    "Legacy AITP L0-L4 Markdown writes are disabled by default in AITP 0.5.0. "
+    "Use the v5 typed graph through aitp_v5_* tools for new research records. "
+    "For migration debugging only, set AITP_LEGACY_ENABLE_WRITES=1 explicitly."
+)
+
+LEGACY_READ_ONLY_TOOL_NAMES = {
+    "aitp_list_topics",
+    "aitp_health_check",
+    "aitp_get_status",
+    "aitp_load_domain_manifest",
+    "aitp_list_sources",
+    "aitp_read_source",
+    "aitp_read_artifact",
+    "aitp_list_ideas",
+    "aitp_list_candidates",
+    "aitp_get_execution_brief",
+    "aitp_estimate_order",
+    "aitp_list_inference_rules",
+    "aitp_verify_dimensions",
+    "aitp_verify_algebra",
+    "aitp_verify_limit",
+    "aitp_verify_derivation_step",
+    "aitp_verify_derivation_chain",
+    "aitp_query_l2",
+    "aitp_query_l2_index",
+    "aitp_query_entries",
+    "aitp_get_l2_provenance",
+    "aitp_query_impact",
+    "aitp_list_diagrams",
+    "aitp_list_steps",
+    "aitp_traverse_derivation",
+    "aitp_query_l2_graph",
+    "aitp_visualize_eft_tower",
+    "aitp_visualize_derivation_chain",
+    "aitp_visualize_knowledge_graph",
+}
+
+LEGACY_WRITE_TOOL_NAMES = {
+    "aitp_update_status",
+    "aitp_bootstrap_topic",
+    "aitp_bind_repo",
+    "aitp_register_source",
+    "aitp_search_and_register",
+    "aitp_parse_source_toc",
+    "aitp_update_section_status",
+    "aitp_batch_extract_section",
+    "aitp_write_section_intake",
+    "aitp_feedback_to_l1",
+    "aitp_submit_candidate",
+    "aitp_submit_idea",
+    "aitp_promote_idea_to_candidate",
+    "aitp_request_promotion",
+    "aitp_resolve_promotion_gate",
+    "aitp_promote_candidate",
+    "aitp_fast_track_claim",
+    "aitp_resolve_conflict",
+    "aitp_record_contradiction",
+    "aitp_l4_background_submit",
+    "aitp_l4_check_results",
+    "aitp_session_resume",
+    "aitp_advance_to_l1",
+    "aitp_retreat_to_l0",
+    "aitp_advance_to_l3",
+    "aitp_switch_l3_activity",
+    "aitp_retreat_to_l1",
+    "aitp_return_to_l3_from_l4",
+    "aitp_gate_override",
+    "aitp_submit_l4_review",
+    "aitp_archive_topic",
+    "aitp_restore_topic",
+    "aitp_switch_lane",
+    "aitp_set_compute_target",
+    "aitp_set_interaction_level",
+    "aitp_fork_topic",
+    "aitp_create_l2_node",
+    "aitp_update_l2_node",
+    "aitp_create_entry",
+    "aitp_create_l2_edge",
+    "aitp_quick_l2_concept",
+    "aitp_record_numerical_result",
+    "aitp_extract_topic_entries",
+    "aitp_create_diagram",
+    "aitp_create_derivation_step",
+    "aitp_merge_subgraph_delta",
+    "aitp_create_l2_tower",
+    "aitp_propose_experiment",
+    "aitp_find_cross_topic_bridges",
+    "aitp_request_source_evidence",
+    "aitp_l4_analyze_run",
+}
+
+
+def _legacy_writes_enabled() -> bool:
+    return os.environ.get(LEGACY_WRITE_ENABLE_ENV) == "1"
+
+
+def is_legacy_write_tool(tool_name: str) -> bool:
+    """Return True when a legacy aitp_* tool can mutate old L0-L4 surfaces."""
+    if not tool_name.startswith("aitp_") or tool_name.startswith("aitp_v5_"):
+        return False
+    if tool_name in LEGACY_READ_ONLY_TOOL_NAMES:
+        return False
+    if tool_name in LEGACY_WRITE_TOOL_NAMES:
+        return True
+    return True
+
+
+def legacy_write_blocked_payload(tool_name: str, *, target: str = "") -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "ok": False,
+        "error": LEGACY_READ_ONLY_ERROR_CODE,
+        "tool_name": tool_name,
+        "message": LEGACY_READ_ONLY_MESSAGE,
+        "active_write_surface": "AITP v5 typed graph under <topics-root>/.aitp/",
+        "preferred_mcp_prefix": "aitp_v5_*",
+        "migration_path": [
+            "discover legacy topic with read-only legacy/audit tools",
+            "migrate or bind it with v5 migration/session tools",
+            "continue by writing typed v5 records only",
+        ],
+        "escape_hatch_env": LEGACY_WRITE_ENABLE_ENV,
+    }
+    if target:
+        payload["target"] = target
+    return payload
+
+
+def _raise_legacy_write_blocked(operation: str, target: Path | str = "") -> NoReturn:
+    payload = legacy_write_blocked_payload(operation, target=str(target) if target else "")
+    raise RuntimeError(payload["message"])
+
+
+def _legacy_write_guard(tool_name: str):
+    def _decorator(func):
+        def _blocked(*args, **kwargs):
+            if not _legacy_writes_enabled():
+                return legacy_write_blocked_payload(tool_name)
+            return func(*args, **kwargs)
+
+        _blocked.__name__ = getattr(func, "__name__", tool_name)
+        _blocked.__qualname__ = getattr(func, "__qualname__", _blocked.__name__)
+        _blocked.__doc__ = getattr(func, "__doc__", None)
+        _blocked.__annotations__ = getattr(func, "__annotations__", {})
+        _blocked.__wrapped__ = func
+        return _blocked
+
+    return _decorator
 
 
 class _GateResult(dict):
@@ -183,6 +335,8 @@ def _parse_md(path: Path) -> tuple[dict[str, Any], str]:
 
 def _atomic_write_text(path: Path, text: str) -> None:
     """Write text to file atomically via temp-file-and-replace."""
+    if not _legacy_writes_enabled():
+        _raise_legacy_write_blocked("_atomic_write_text", path)
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp_name = tempfile.mkstemp(dir=str(path.parent))
     try:
@@ -204,10 +358,14 @@ def _render_md(fm: dict[str, Any], body: str) -> str:
 
 
 def _write_md(path: Path, fm: dict[str, Any], body: str) -> None:
+    if not _legacy_writes_enabled():
+        _raise_legacy_write_blocked("_write_md", path)
     _atomic_write_text(path, _render_md(fm, body))
 
 
 def _append_section(path: Path, section: str) -> None:
+    if not _legacy_writes_enabled():
+        _raise_legacy_write_blocked("_append_section", path)
     path.parent.mkdir(parents=True, exist_ok=True)
     existing = path.read_text(encoding="utf-8") if path.exists() else ""
     if existing and not existing.endswith("\n"):
@@ -8011,6 +8169,30 @@ def aitp_l4_analyze_run(
         run_id=run_id,
         literature_comparison=literature_comparison,
     )
+
+
+def _install_legacy_read_only_guards() -> None:
+    """Replace legacy write tools with read-only guard callables by default."""
+    for tool_name in sorted(LEGACY_WRITE_TOOL_NAMES):
+        func = globals().get(tool_name)
+        if not callable(func):
+            continue
+        if getattr(func, "_legacy_read_only_guard", False):
+            continue
+        guarded = _legacy_write_guard(tool_name)(func)
+        guarded._legacy_read_only_guard = True
+        globals()[tool_name] = guarded
+        try:
+            provider = getattr(mcp, "local_provider", mcp)
+            provider.remove_tool(tool_name)
+            provider.add_tool(guarded)
+        except Exception:
+            # FastMCP internals changed across versions. The public module
+            # surface is still guarded, and low-level writes remain blocked.
+            pass
+
+
+_install_legacy_read_only_guards()
 
 
 if __name__ == "__main__":

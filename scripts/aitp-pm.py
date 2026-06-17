@@ -1987,6 +1987,23 @@ def _strict_v5_contract_issues() -> list[str]:
     except Exception as exc:
         issues.append(f"cannot import brain.v5.native_mcp for strict contract: {exc}")
 
+    if os.environ.get("AITP_LEGACY_ENABLE_WRITES") == "1":
+        issues.append(
+            "AITP_LEGACY_ENABLE_WRITES=1 is set; legacy L0-L4 writes must stay disabled for normal v5 operation"
+        )
+
+    try:
+        from brain import mcp_server as legacy_mcp
+
+        if not callable(getattr(legacy_mcp, "is_legacy_write_tool", None)):
+            issues.append("legacy MCP server is missing the read-only write classifier")
+        elif not legacy_mcp.is_legacy_write_tool("aitp_bootstrap_topic"):
+            issues.append("legacy MCP server does not classify aitp_bootstrap_topic as a blocked write tool")
+        if getattr(legacy_mcp, "_legacy_writes_enabled", lambda: True)():
+            issues.append("legacy MCP writes are enabled; unset AITP_LEGACY_ENABLE_WRITES")
+    except Exception as exc:
+        issues.append(f"cannot import legacy MCP server for read-only guard check: {exc}")
+
     issues.extend(_strict_v5_deploy_surface_issues())
 
     return issues

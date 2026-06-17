@@ -244,6 +244,19 @@ def _handle_request(req: dict) -> dict | None:
                 "jsonrpc": "2.0", "id": rid,
                 "error": {"code": -32601, "message": f"Tool not found: {tool_name}"},
             }
+        if (
+            getattr(_ms, "is_legacy_write_tool", lambda _name: False)(tool_name)
+            and not getattr(_ms, "_legacy_writes_enabled", lambda: False)()
+        ):
+            payload = getattr(_ms, "legacy_write_blocked_payload")(tool_name)
+            return {
+                "jsonrpc": "2.0", "id": rid,
+                "error": {
+                    "code": -32050,
+                    "message": payload["message"],
+                    "data": payload,
+                },
+            }
         try:
             result = func(**arguments)
             if result is None:

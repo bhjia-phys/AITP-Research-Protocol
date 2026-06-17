@@ -23,6 +23,9 @@ Do not treat chat summaries, Markdown notes, or generated hook config as scienti
   `aitp_list_topics`, `aitp_get_execution_brief`, and `aitp_bootstrap_topic`
   from the same v5 native MCP server. Treat these aliases as discovery or
   bootstrap compatibility only; they are not the execution contract for v5 work.
+- Legacy L0-L4 write tools are read-only guards by default. If an old `aitp_*`
+  write call returns `legacy_aitp_writes_disabled`, do not retry it; continue
+  through v5 migration/binding and typed `aitp_v5_*` writes.
 - Current AITP project installs use `.kimi/config.toml` and `.kimi/skills/`.
 - Newer Kimi Code installs may use `.kimi-code/config.toml`, `.kimi-code/mcp.json`, and `.kimi-code/skills/`.
 - If the local Kimi CLI supports explicit paths, load project assets with `--config-file`, `--mcp-config-file`, and `--skills-dir`.
@@ -90,6 +93,7 @@ interesting.
    preservation, or create a new v5 topic/claim/session with
    `aitp_v5_create_topic`, `aitp_v5_create_claim`, and
    `aitp_v5_bind_session`.
+   Do not write new progress back into old L0/L1/L3/L4 files.
 4. Read the execution brief and follow its risk, claim, evidence, validation, and next-action fields.
    Read the claim relation map as the read-only conclusion-boundary layer; it
    cannot update claim trust.
@@ -167,4 +171,5 @@ Stop and re-enter AITP v5 if you catch yourself saying:
 - "The hook config says this happened, so the claim is validated."
 - "This runtime/application failure proves the algorithm works or fails."
 - "I need to bind or update claim status just to restore an existing ready topic."
+- "I can enable AITP_LEGACY_ENABLE_WRITES during normal research."
 - "I'll record the tool run later."

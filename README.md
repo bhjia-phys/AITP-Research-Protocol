@@ -68,6 +68,12 @@ The typed records are the source of truth. Briefs, dashboards, process graph
 slices, summaries, and audits are derived views. They are useful for navigation,
 but they do not update trust by themselves.
 
+Legacy L0-L4 Markdown tools are read-only by default in 0.5.0. Historical files
+and legacy servers remain for audit, migration, rollback, and tests, but normal
+research writes must go through `aitp_v5_*` typed tools. Setting
+`AITP_LEGACY_ENABLE_WRITES=1` is an explicit migration-debug escape hatch, not a
+normal runtime mode.
+
 ## What AITP Can Do Today
 
 AITP v5 currently supports:
@@ -202,6 +208,12 @@ brain/v5/native_mcp.py
 
 MCP hosts should run that file directly. Do not point MCP at `aitp-v5` or at the
 legacy servers.
+
+If a host accidentally calls a legacy write tool such as
+`aitp_bootstrap_topic`, `aitp_submit_candidate`, or `aitp_promote_candidate`,
+the legacy stdio/HTTP wrappers return a JSON-RPC error instead of writing old
+`state.md`, L0, L1, L3, L4, or legacy L2 files. Legacy read tools may still be
+used for orientation and migration discovery.
 
 Generic MCP config shape:
 
@@ -447,7 +459,7 @@ memory.
 ```text
 AITP-Research-Protocol/
 |-- brain/v5/              current typed kernel, CLI, MCP tools, adapters
-|-- brain/mcp_server.py    legacy L0-L4 MCP server, migration/rollback only
+|-- brain/mcp_server.py    legacy L0-L4 MCP server, read-only by default
 |-- deploy/                host templates and agent-facing skill material
 |-- docs/                  protocol docs, install notes, historical designs
 |-- hooks/                 lifecycle hook runners and guards

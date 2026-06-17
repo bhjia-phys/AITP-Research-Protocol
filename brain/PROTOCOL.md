@@ -193,6 +193,14 @@ Legacy L0/L1/L3/L4 directories, `state.md`, legacy `brain/cli`, and legacy MCP a
 
 They may be read for orientation, provenance recovery, or migration accounting. They must not be used as the active execution contract for new research.
 
+Legacy write entrypoints are blocked by default. `brain/mcp_server.py`,
+`brain/native_mcp.py`, and `brain/aitp_mcp_http.py` may still be kept for
+historical rollback and audit, but calls that would mutate old `state.md`,
+L0/L1/L3/L4 directories, or legacy L2 surfaces return
+`legacy_aitp_writes_disabled` unless `AITP_LEGACY_ENABLE_WRITES=1` is set
+explicitly for migration debugging. Normal topic continuation, including old
+topics, must write new durable process records into the v5 typed graph.
+
 When old content matters:
 
 1. discover it through v5 legacy/audit tools,
@@ -200,6 +208,11 @@ When old content matters:
 3. import or reference it as orientation-only unless reviewed,
 4. create typed v5 records for any durable claim, evidence, validation, or memory,
 5. keep legacy L2 seeds quarantined until reviewed and promoted.
+
+This allows gradual migration during real work: an agent can read old topic
+material for context, then record the next durable research moment as v5 claim,
+evidence, artifact, validation, proof-obligation, route, or handoff state.
+No new progress should be written back into the old stage machine.
 
 ## Host Integration Rules
 
@@ -222,6 +235,7 @@ canonical entrypoint: brain/v5/native_mcp.py
 legacy entrypoints in active configs: forbidden
 normal tool prefix: aitp_v5_*
 legacy alias tools: discovery/bootstrap compatibility only
+legacy L0-L4 writes: disabled unless AITP_LEGACY_ENABLE_WRITES=1
 ```
 
 `aitp-pm doctor` should fail when project installs point at legacy MCP entrypoints, when the protocol metadata does not declare v5 implementation, or when recorded installs are not aligned with the current package version.

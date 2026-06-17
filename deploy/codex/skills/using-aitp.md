@@ -26,6 +26,9 @@ Follow the Charter and SPEC before platform convenience.
   `aitp_get_execution_brief`, `aitp_bootstrap_topic`) may exist only for
   discovery/bootstrap compatibility; do not use a legacy stage brief as the
   execution contract for new work.
+- Legacy L0-L4 write tools are read-only guards by default. If an old `aitp_*`
+  write call returns `legacy_aitp_writes_disabled`, do not retry it; continue
+  through v5 migration/binding and typed `aitp_v5_*` writes.
 - The claim relation map (`aitp_v5_get_claim_relation_map`, or
   `aitp-v5 relation-map <session-id>` as CLI fallback) is a read-only recovery
   surface. Use it to separate support, limitations, non-testing failures,
@@ -107,6 +110,7 @@ interesting.
    usable v5 session/active claim:
    `aitp_v5_migrate_curated_legacy_topic_to_v5` for known curated topics, or
    `aitp_v5_migrate_legacy_topic_to_v5` for a generic preservation pass.
+   Do not write new progress back into old L0/L1/L3/L4 files.
 7. If no topic matches, create a v5 topic, create an initial claim, bind a
    session, and then get the v5 execution brief.
 8. Follow the v5 brief and load `aitp-runtime` for the typed-record loop.
@@ -165,6 +169,8 @@ then classify that candidate.
   AITP for a v5 session brief or use legacy discovery only for migration.
 - Do not manually edit AITP topic-state files. Use AITP tools for topic state.
 - Do not treat old `stage`, `gate_status`, or `L0/L1/L3/L4` fields as v5 truth.
+- Do not enable `AITP_LEGACY_ENABLE_WRITES=1` during normal research; it is for
+  migration debugging and historical tests only.
 - Do not call `bind_session`, migration, topic creation, or claim-status writes
   merely to restore an existing topic. Recovery is read-only until the user asks
   for a state-changing action or the audit shows no usable v5 binding.

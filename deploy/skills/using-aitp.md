@@ -24,6 +24,10 @@ Markdown stages, and chat summaries are orientation only.
 - Typed tools are named `aitp_v5_*`.
 - Legacy aliases (`aitp_list_topics`, `aitp_get_execution_brief`,
   `aitp_bootstrap_topic`) are discovery/bootstrap compatibility only.
+- Legacy L0-L4 write entrypoints are read-only guards by default in AITP
+  0.5.0. If an old `aitp_*` write tool returns
+  `legacy_aitp_writes_disabled`, do not retry it; migrate/bind the topic and
+  write the durable process state through the named `aitp_v5_*` tool.
 
 ## Entry Procedure
 
@@ -94,6 +98,9 @@ interesting.
    usable v5 session/active claim. Prefer
    `aitp_v5_migrate_curated_legacy_topic_to_v5` for curated legacy topics; use
    `aitp_v5_migrate_legacy_topic_to_v5` for generic preservation.
+   Do not write new progress back into old L0/L1/L3/L4 files; the legacy write
+   surface is blocked so old topics can be migrated gradually into v5 as work
+   produces new durable moments.
 4. If no topic exists, create a v5 topic, create the initial claim, bind a
    session, and get the v5 brief.
 5. Load `aitp-runtime` and follow typed brief fields, not old stage/gate fields.
@@ -135,6 +142,8 @@ then classify that candidate.
   recovery calls before opening a WorkFrame; otherwise those calls are not
   attached to the research recovery context.
 - Do not use old `stage`, `gate_status`, or `L0/L1/L3/L4` fields as v5 truth.
+- Do not enable `AITP_LEGACY_ENABLE_WRITES=1` during normal research. That
+  escape hatch is for migration debugging and historical tests only.
 - Do not call `bind_session`, migration, topic creation, or claim-status writes
   merely to restore an existing topic. Recovery is read-only until the user asks
   for a state-changing action or the audit shows no usable v5 binding.
