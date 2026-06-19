@@ -64,3 +64,6 @@ brain/_mcp_stdout.log
 topics/
 .gitignore
 _recovery_*.json
+
+# isolated implementation worktrees
+.worktrees/
