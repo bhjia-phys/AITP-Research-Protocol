@@ -502,3 +502,62 @@ def test_supersede_with_replacement_then_relation_map_prefers_replacement(tmp_pa
     # the key assertion is the map builds cleanly and the superseded record does not
     # surface as the current conclusion.
     assert mapping.get("supported_by") is not None
+
+
+def test_si_misroute_end_to_end_rehome_and_supersede(tmp_path):
+    """Reproduces the motivating Si/GW scenario with throwaway fixtures.
+    The real .aitp data is never touched."""
+
+    from brain.v5.claim_relation_map import build_claim_relation_map
+    from brain.v5.lifecycle_events import rehome_record, supersede_record
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path / "si")
+    create_topic(ws, "qsgw-headwing-update-librpa", context_id="librpa", title="QSGW headwing")
+    create_topic(ws, "si-g0w0-8atom-k999-throughput", context_id="librpa", title="Si G0W0 throughput")
+
+    # three misrouted claims in the wrong topic
+    misrouted = []
+    for stmt in ("the correct si g0w0", "si8 perturbation high", "the correct si workflow"):
+        c = create_claim(
+            ws, topic_id="qsgw-headwing-update-librpa", statement=stmt,
+            evidence_profile="code_method", confidence_state="hypothesis",
+            active_uncertainty="u",
+        )
+        misrouted.append(c)
+
+    # the correct active claim in the right topic
+    active = create_claim(
+        ws, topic_id="si-g0w0-8atom-k999-throughput",
+        statement="for the machine learning throughput baseline",
+        evidence_profile="code_method", confidence_state="hypothesis",
+        active_uncertainty="u",
+    )
+
+    # rehome + supersede each misrouted claim
+    for c in misrouted:
+        rehome_record(
+            ws, record_id=c.claim_id, subject_kind="claim",
+            from_topic="qsgw-headwing-update-librpa",
+            to_topic="si-g0w0-8atom-k999-throughput",
+            reason="Si G0W0 dataset misrouted", operator="bohan-jia",
+            timestamp="2026-06-20T10:00:00Z",
+        )
+        supersede_record(
+            ws, record_id=c.claim_id, subject_kind="claim",
+            status="misrouted", reason="replaced by active claim",
+            operator="bohan-jia", timestamp="2026-06-20T10:01:00Z",
+            replacement_ref=active.claim_id,
+        )
+
+    # the wrong topic's relation-map must not surface the misrouted claims as active
+    bind_session(ws, session_id="s-wrong", topic_id="qsgw-headwing-update-librpa",
+                 context_id="librpa", active_claim=misrouted[0].claim_id)
+    mapping = build_claim_relation_map(ws, session_id="s-wrong")
+    misrouted_ids = {m.claim_id for m in misrouted}
+    for bucket in ("supported_by", "limited_by", "contradicted_by"):
+        for entry in mapping.get(bucket, []):
+            # no misrouted claim id should appear as active evidence source
+            serialized = str(entry)
+            for mid in misrouted_ids:
+                assert mid not in serialized, f"{mid} leaked into {bucket}"
