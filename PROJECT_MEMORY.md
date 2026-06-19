@@ -58,6 +58,12 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   modes, records, next actions, and long-term-memory candidates/non-promotable
   content. Add new diagnostics only as optional sections or appendices unless a
   major protocol version and migration note are provided.
+- **Record lifecycle (rehome/supersede/audit-routing)**: typed records are
+  append-only and never hard-deleted. Misrouted, superseded, voided, or duplicate
+  records are marked inactive via `lifecycle_event` provenance + optional
+  frontmatter fields, and the relation-map filters them out of the active
+  conclusion. See `docs/record-lifecycle.md` and
+  `docs/superpowers/specs/2026-06-19-record-lifecycle-design.md`.
 
 ## Development
 
