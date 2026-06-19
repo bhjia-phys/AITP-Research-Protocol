@@ -321,6 +321,23 @@ class EvidenceRecord:
 
 
 @dataclass
+class LifecycleEventRecord:
+    event_id: str
+    event_type: str          # "rehome" | "supersede"
+    subject_record_id: str
+    subject_kind: str        # "claim" | "evidence" | "tool_run" | "session"
+    lifecycle_status: str    # records use active/misrouted/voided/superseded/duplicate; events may use "rehomed"
+    reason: str
+    operator: str
+    timestamp: str
+    from_topic: str = ""
+    to_topic: str = ""
+    replacement_ref: str = ""
+    supersedes_event: str = ""
+    kind: str = "lifecycle_event"
+
+
+@dataclass
 class BenchmarkRecord:
     benchmark_id: str
     topic_id: str
