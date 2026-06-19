@@ -268,6 +268,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_record_evidence",
         "surface": "evidence_record",
     },
+    "supersede_record": {
+        "cli": "aitp-v5 record supersede <args>",
+        "mcp": "aitp_v5_supersede_record",
+        "surface": "lifecycle_event_record",
+    },
     "register_source": {
         "cli": "aitp-v5 research-state register-source <args>",
         "mcp": "aitp_v5_register_source",

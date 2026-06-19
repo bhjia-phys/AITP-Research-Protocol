@@ -327,8 +327,8 @@ def test_cli_record_supersede_then_audit_routing(tmp_path):
 
     parser = _build_parser()
     args = parser.parse_args([
-        "record", "supersede",
         "--base", str(tmp_path / "ws"),
+        "record", "supersede",
         "--record-id", ev.evidence_id,
         "--kind", "evidence",
         "--status", "voided",
@@ -340,8 +340,8 @@ def test_cli_record_supersede_then_audit_routing(tmp_path):
     assert result["ok"] is True
 
     args2 = parser.parse_args([
-        "record", "audit-routing",
         "--base", str(tmp_path / "ws"),
+        "record", "audit-routing",
         "--topic", "wrong-topic",
     ])
     result2 = _dispatch(args2)

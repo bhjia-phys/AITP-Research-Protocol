@@ -531,7 +531,6 @@ def _build_parser() -> argparse.ArgumentParser:
     rps = rp_lifecycle.add_subparsers(dest="record_command", required=True)
 
     rh = rps.add_parser("rehome")
-    rh.add_argument("--base", required=True)
     rh.add_argument("--record-id", required=True)
     rh.add_argument("--kind", required=True, choices=["claim", "evidence", "tool_run", "session"])
     rh.add_argument("--from-topic", required=True)
@@ -541,7 +540,6 @@ def _build_parser() -> argparse.ArgumentParser:
     rh.add_argument("--timestamp", default="")
 
     rs = rps.add_parser("supersede")
-    rs.add_argument("--base", required=True)
     rs.add_argument("--record-id", required=True)
     rs.add_argument("--kind", required=True, choices=["claim", "evidence", "tool_run", "session"])
     rs.add_argument("--status", required=True, choices=["misrouted", "voided", "superseded", "duplicate"])
@@ -551,11 +549,9 @@ def _build_parser() -> argparse.ArgumentParser:
     rs.add_argument("--timestamp", default="")
 
     ra = rps.add_parser("audit-routing")
-    ra.add_argument("--base", required=True)
     ra.add_argument("--topic", required=True)
 
     rl = rps.add_parser("lifecycle")
-    rl.add_argument("--base", required=True)
     rl.add_argument("--record-id", required=True)
 
     return parser

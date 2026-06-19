@@ -43,6 +43,14 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["--worktree-path", ".", "--repo-id", "librpa", "--topic", "gw", "--claim", "claim-gw"]
     if template.startswith("evidence record"):
         return ["--topic", "fqhe", "--claim", "claim-fqhe", "--type", "toy_numeric", "--status", "supports", "--summary", "Finite-size check."]
+    if template.startswith("record rehome"):
+        return ["--record-id", "claim-fqhe", "--kind", "claim", "--from-topic", "wrong-topic", "--to-topic", "right-topic", "--reason", "misrouted"]
+    if template.startswith("record supersede"):
+        return ["--record-id", "claim-fqhe", "--kind", "claim", "--status", "misrouted", "--reason", "replaced"]
+    if template.startswith("record audit-routing"):
+        return ["--topic", "wrong-topic"]
+    if template.startswith("record lifecycle"):
+        return ["--record-id", "claim-fqhe"]
     if template.startswith("research-state register-source"):
         return ["--topic", "fqhe", "--claim", "claim-fqhe", "--uri", "arxiv:2604.14695", "--label", "Close prior art"]
     if template.startswith("research-state attach-artifact-auto"):
