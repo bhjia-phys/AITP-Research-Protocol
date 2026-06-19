@@ -33,6 +33,9 @@ def validate_claim_relation_map(payload: dict[str, Any], *, path: str = "claim_r
         "current_blockers",
         "next_valid_actions",
         "derived_from",
+        "historical",
+        "misrouted",
+        "cross_topic_references",
     ):
         _require_list(payload.get(key), f"{path}.{key}", result)
     _validate_conclusion(payload.get("current_conclusion"), f"{path}.current_conclusion", result)

@@ -266,3 +266,53 @@ def test_lifecycle_event_record_contract_rejects_unknown_event_type():
     }
     with pytest.raises(ContractError):
         require_valid_public_surface("lifecycle_event_record", payload)
+
+
+def test_relation_map_excludes_misrouted_evidence(tmp_path):
+    from brain.v5.lifecycle_events import supersede_record
+    from brain.v5.claim_relation_map import build_claim_relation_map
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    claim, ev = _misroute_fixture(ws)
+
+    supersede_record(
+        ws, record_id=ev.evidence_id, subject_kind="evidence",
+        status="misrouted", reason="wrong topic", operator="o", timestamp="t",
+    )
+
+    mapping = build_claim_relation_map(ws, session_id="s1")
+    # the misrouted evidence must not be in the active support buckets
+    supported_ids = {e.get("record_id") for e in mapping.get("supported_by", [])}
+    limited_ids = {e.get("record_id") for e in mapping.get("limited_by", [])}
+    contradict_ids = {e.get("record_id") for e in mapping.get("contradicted_by", [])}
+    active_ids = supported_ids | limited_ids | contradict_ids
+    assert ev.evidence_id not in active_ids
+    # and it should appear in the misrouted zone (entries use record_id, matching _evidence_entry)
+    misrouted_ids = {e.get("record_id") for e in mapping.get("misrouted", [])}
+    assert ev.evidence_id in misrouted_ids
+
+
+def test_relation_map_lists_cross_topic_references(tmp_path):
+    from brain.v5.claim_relation_map import build_claim_relation_map
+    from brain.v5.lifecycle_events import rehome_record
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    create_topic(ws, "wrong-topic", context_id="ctx", title="Wrong")
+    create_topic(ws, "right-topic", context_id="ctx", title="Right")
+    claim = create_claim(
+        ws, topic_id="wrong-topic", statement="Si throughput",
+        evidence_profile="code_method", confidence_state="hypothesis",
+        active_uncertainty="u",
+    )
+    rehome_record(
+        ws, record_id=claim.claim_id, subject_kind="claim",
+        from_topic="wrong-topic", to_topic="right-topic",
+        reason="misrouted", operator="o", timestamp="t",
+    )
+    bind_session(ws, session_id="s-right", topic_id="right-topic", context_id="ctx",
+                 active_claim=claim.claim_id)
+    mapping = build_claim_relation_map(ws, session_id="s-right")
+    refs = mapping.get("cross_topic_references", [])
+    assert any(r.get("source_record_id") == claim.claim_id for r in refs)

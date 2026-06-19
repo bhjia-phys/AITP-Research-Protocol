@@ -39,6 +39,9 @@ _LIMIT_STATUSES = {
     "supports_reconstruction_boundary",
 }
 _CONTRADICT_STATUSES = {"contradicts", "contradict", "refutes", "refute", "failed", "fail", "invalid", "negative"}
+# Lifecycle status sets: records carrying these are excluded from the active conclusion.
+_INACTIVE_LIFECYCLE_STATUSES = {"misrouted", "voided"}
+_HISTORICAL_LIFECYCLE_STATUSES = {"superseded", "duplicate"}
 _RUNTIME_FAILURE_STATUSES = {
     "application_failure",
     "diagnostic",
@@ -168,11 +171,19 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
     limited_by: list[dict[str, Any]] = []
     contradicted_by: list[dict[str, Any]] = []
     not_tested_by: list[dict[str, Any]] = []
+    historical: list[dict[str, Any]] = []
+    misrouted_zone: list[dict[str, Any]] = []
     blockers: list[str] = []
     next_actions: list[str] = []
 
     for evidence in evidence_records:
         entry = _evidence_entry(evidence)
+        if getattr(evidence, "lifecycle_status", "active") in _INACTIVE_LIFECYCLE_STATUSES:
+            misrouted_zone.append(entry)
+            continue
+        if getattr(evidence, "lifecycle_status", "active") in _HISTORICAL_LIFECYCLE_STATUSES:
+            historical.append(entry)
+            continue
         bucket = _bucket_for_status(evidence.status, text=_evidence_text(evidence))
         if bucket == "not_tested_by":
             not_tested_by.append(entry)
@@ -185,6 +196,8 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
             limited_by.append(entry)
 
     for run in tool_runs:
+        if getattr(run, "lifecycle_status", "active") in _INACTIVE_LIFECYCLE_STATUSES | _HISTORICAL_LIFECYCLE_STATUSES:
+            continue
         entry = _tool_run_entry(run)
         bucket = _bucket_for_status(run.evidence_status, text=_tool_run_text(run))
         if bucket == "not_tested_by":
@@ -220,6 +233,19 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
         limited_by.append(legacy_entry)
     blockers = _dedupe_clean(_legacy_semantic_review_blockers(legacy_context) + blockers)
     next_actions = _dedupe_clean(_legacy_semantic_review_next_actions(legacy_context) + next_actions)
+
+    cross_topic_references: list[dict[str, Any]] = []
+    try:
+        from brain.v5.lifecycle_events import list_cross_topic_pointers
+        for ptr in list_cross_topic_pointers(ws, session.topic_id):
+            cross_topic_references.append({
+                "source_record_id": ptr.get("source_record_id"),
+                "source_topic": ptr.get("source_topic"),
+                "target_topic": ptr.get("target_topic"),
+            })
+    except Exception:
+        cross_topic_references = []
+
     next_actions = _prioritized_next_actions(next_actions, not_tested_by, blockers)
     latest_status = _latest_claim_status(claim_statuses)
     can_say = _dedupe_clean(
@@ -248,6 +274,9 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
         "limited_by": limited_by,
         "contradicted_by": contradicted_by,
         "not_tested_by": not_tested_by,
+        "historical": historical,
+        "misrouted": misrouted_zone,
+        "cross_topic_references": cross_topic_references,
         "object_relations": object_relations,
         "topic_claim_boundaries": topic_claim_boundaries,
         "legacy_semantic_review": legacy_context,
@@ -334,6 +363,9 @@ def empty_claim_relation_map(
         "limited_by": [],
         "contradicted_by": [],
         "not_tested_by": [],
+        "historical": [],
+        "misrouted": [],
+        "cross_topic_references": [],
         "object_relations": [],
         "topic_claim_boundaries": _empty_topic_claim_boundaries(),
         "current_conclusion": {
