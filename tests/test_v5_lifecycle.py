@@ -101,3 +101,65 @@ def test_create_lifecycle_event_supersede_distinct_keys(tmp_path):
     assert len(events) == 2
     assert a.event_id != b.event_id
     assert b.supersedes_event == a.event_id
+
+
+def test_rehome_claim_marks_misrouted_adds_pointer_and_preserves_body(tmp_path):
+    from brain.v5.lifecycle_events import rehome_record
+    from brain.v5.markdown import read_md
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    create_topic(ws, "wrong-topic", context_id="ctx", title="Wrong")
+    create_topic(ws, "right-topic", context_id="ctx", title="Right")
+    claim = create_claim(
+        ws, topic_id="wrong-topic", statement="Si G0W0 throughput claim",
+        evidence_profile="code_method", confidence_state="hypothesis",
+        active_uncertainty="u",
+    )
+
+    event = rehome_record(
+        ws, record_id=claim.claim_id, subject_kind="claim",
+        from_topic="wrong-topic", to_topic="right-topic",
+        reason="misrouted", operator="bohan-jia", timestamp="2026-06-20T10:00:00Z",
+    )
+
+    # registry file still exists at original location, body preserved, new fields set
+    reg_path = ws.registry_dir("claims") / f"{claim.claim_id}.md"
+    fm, body = read_md(reg_path)
+    assert fm["lifecycle_status"] == "misrouted"
+    assert fm["rehome_target_topic"] == "right-topic"
+    assert fm["rehome_event_id"] == event.event_id
+    assert "Si G0W0 throughput claim" in body  # body preserved
+
+    # source topic ledger entry unchanged in location (still there, but now misrouted)
+    src_ledger = ws.topic_dir("wrong-topic") / "claims" / "ledger" / f"{claim.claim_id}.md"
+    src_fm, _ = read_md(src_ledger)
+    assert src_fm["lifecycle_status"] == "misrouted"
+
+    # target topic has a pointer entry referencing the original claim id
+    tgt_ledger_dir = ws.topic_dir("right-topic") / "claims" / "ledger"
+    pointer_files = list(tgt_ledger_dir.glob("*.md"))
+    pointers = [read_md(p) for p in pointer_files]
+    pointer_fms = [fm for (fm, _b) in pointers if fm.get("kind") == "cross_topic_reference"]
+    assert len(pointer_fms) == 1
+    assert pointer_fms[0]["source_record_id"] == claim.claim_id
+    assert pointer_fms[0]["source_topic"] == "wrong-topic"
+
+
+def test_rehome_invalid_record_id_aborts_with_no_change(tmp_path):
+    from brain.v5.lifecycle_events import rehome_record
+    from brain.v5.models import LifecycleEventRecord
+    from brain.v5.store import list_valid_records
+    from brain.v5.workspace import create_topic, init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    create_topic(ws, "right-topic", context_id="ctx", title="Right")
+
+    with pytest.raises(ValueError):
+        rehome_record(
+            ws, record_id="claim-does-not-exist", subject_kind="claim",
+            from_topic="wrong-topic", to_topic="right-topic",
+            reason="r", operator="o", timestamp="t",
+        )
+    events = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    assert events == []
