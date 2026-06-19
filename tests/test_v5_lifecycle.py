@@ -163,3 +163,69 @@ def test_rehome_invalid_record_id_aborts_with_no_change(tmp_path):
         )
     events = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
     assert events == []
+
+
+def _misroute_fixture(ws):
+    from brain.v5.evidence import record_evidence
+    from brain.v5.workspace import bind_session, create_claim, create_topic
+
+    create_topic(ws, "wrong-topic", context_id="ctx", title="Wrong")
+    create_topic(ws, "right-topic", context_id="ctx", title="Right")
+    claim = create_claim(
+        ws, topic_id="wrong-topic", statement="Si G0W0 throughput",
+        evidence_profile="code_method", confidence_state="hypothesis",
+        active_uncertainty="u",
+    )
+    ev = record_evidence(
+        ws, topic_id="wrong-topic", claim_id=claim.claim_id,
+        evidence_type="bounded_numerical_replay", status="supports_scoped_claim",
+        summary="supports", source_refs=[],
+    )
+    bind_session(ws, session_id="s1", topic_id="wrong-topic", context_id="ctx",
+                 active_claim=claim.claim_id)
+    return claim, ev
+
+
+def test_supersede_evidence_marks_voided_and_audits(tmp_path):
+    from brain.v5.lifecycle_events import audit_routing, supersede_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    claim, ev = _misroute_fixture(ws)
+
+    supersede_record(
+        ws, record_id=ev.evidence_id, subject_kind="evidence",
+        status="voided", reason="wrong topic", operator="o", timestamp="t",
+    )
+
+    routing = audit_routing(ws, topic_id="wrong-topic")
+    ids = {r.subject_record_id for r in routing["events"]}
+    assert ev.evidence_id in ids
+
+
+def test_lifecycle_history_for_record(tmp_path):
+    from brain.v5.lifecycle_events import lifecycle_history, rehome_record, supersede_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    claim, ev = _misroute_fixture(ws)
+
+    rehome_record(
+        ws, record_id=claim.claim_id, subject_kind="claim",
+        from_topic="wrong-topic", to_topic="right-topic",
+        reason="misrouted", operator="o", timestamp="2026-06-20T10:00:00Z",
+    )
+    supersede_record(
+        ws, record_id=claim.claim_id, subject_kind="claim",
+        status="misrouted", reason="replaced", operator="o",
+        timestamp="2026-06-20T11:00:00Z",
+        replacement_ref="claim-right-active",
+    )
+    history = lifecycle_history(ws, record_id=claim.claim_id)
+    assert len(history["events"]) == 2
+    # ordered by timestamp ascending
+    assert history["events"][0].event_type == "rehome"
+    assert history["events"][1].event_type == "supersede"
+    # supersedes_event chains only to a prior *supersede* for the same subject; there is
+    # none here (the prior event is a rehome), so it must be empty.
+    assert history["events"][1].supersedes_event == ""

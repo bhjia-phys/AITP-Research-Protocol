@@ -305,3 +305,34 @@ def list_cross_topic_pointers(ws: WorkspacePaths, topic_id: str) -> list[dict]:
         if fm.get("kind") == "cross_topic_reference":
             out.append(dict(fm))
     return out
+
+
+def audit_routing(ws: WorkspacePaths, *, topic_id: str) -> dict:
+    """List every lifecycle_event that mentions ``topic_id`` as from_topic or to_topic,
+    plus events whose subject record was born in ``topic_id`` (record.topic_id matches)."""
+
+    events = list_lifecycle_events(ws)
+    relevant = []
+    for e in events:
+        if e.from_topic == topic_id or e.to_topic == topic_id:
+            relevant.append(e)
+            continue
+        # subject record born in this topic?
+        if e.subject_kind in _KIND_TO_FAMILY:
+            try:
+                path, cls = _load_subject(ws, e.subject_record_id, e.subject_kind)
+                rec = read_record(path, cls)
+                if getattr(rec, "topic_id", "") == topic_id:
+                    relevant.append(e)
+            except LifecycleError:
+                continue
+    relevant.sort(key=lambda e: (e.timestamp, e.event_id))
+    return {"topic_id": topic_id, "events": relevant}
+
+
+def lifecycle_history(ws: WorkspacePaths, *, record_id: str) -> dict:
+    """Return all lifecycle_events for a single record, ordered by timestamp ascending."""
+
+    events = [e for e in list_lifecycle_events(ws) if e.subject_record_id == record_id]
+    events.sort(key=lambda e: (e.timestamp, e.event_id))
+    return {"record_id": record_id, "events": events}
