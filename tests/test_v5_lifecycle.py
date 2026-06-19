@@ -362,3 +362,85 @@ def test_cli_record_rehome_requires_explicit_record_id(tmp_path):
             "--to-topic", "right-topic",
             "--reason", "r",
         ])
+
+
+def test_mcp_build_rehome_plan_is_readonly_and_apply_requires_explicit_ids(tmp_path):
+    from brain.v5.mcp_lifecycle import aitp_v5_apply_rehome_plan, aitp_v5_build_rehome_plan
+    from brain.v5.models import LifecycleEventRecord
+    from brain.v5.store import list_valid_records
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    claim, ev = _misroute_fixture(ws)
+
+    plan = aitp_v5_build_rehome_plan(
+        base=str(tmp_path / "ws"),
+        record_ids=[claim.claim_id],
+        from_topic="wrong-topic",
+        to_topic="right-topic",
+        reason="misrouted",
+        operator="bohan-jia",
+    )
+    assert plan["ok"] is True
+    # build_plan must not write any events
+    events_before = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    assert events_before == []
+
+    # apply requires the explicit record_ids from the plan
+    result = aitp_v5_apply_rehome_plan(
+        base=str(tmp_path / "ws"),
+        record_ids=[claim.claim_id],
+        from_topic="wrong-topic",
+        to_topic="right-topic",
+        reason="misrouted",
+        operator="bohan-jia",
+        timestamp="2026-06-20T10:00:00Z",
+    )
+    assert result["ok"] is True
+    events_after = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    assert len(events_after) == 1
+
+    # re-apply is idempotent — no second event
+    result2 = aitp_v5_apply_rehome_plan(
+        base=str(tmp_path / "ws"),
+        record_ids=[claim.claim_id],
+        from_topic="wrong-topic",
+        to_topic="right-topic",
+        reason="misrouted",
+        operator="bohan-jia",
+        timestamp="2026-06-20T10:00:00Z",
+    )
+    events_final = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    assert len(events_final) == 1
+    assert result["event_ids"] == result2["event_ids"]
+
+
+def test_mcp_apply_rehome_plan_rejects_empty_or_glob_ids(tmp_path):
+    from brain.v5.mcp_lifecycle import aitp_v5_apply_rehome_plan
+
+    with pytest.raises(ValueError):
+        aitp_v5_apply_rehome_plan(
+            base=str(tmp_path / "ws"), record_ids=[],
+            from_topic="a", to_topic="b", reason="r",
+        )
+    with pytest.raises(ValueError):
+        aitp_v5_apply_rehome_plan(
+            base=str(tmp_path / "ws"), record_ids=["claim-*"],
+            from_topic="a", to_topic="b", reason="r",
+        )
+
+
+def test_mcp_supersede_and_audit(tmp_path):
+    from brain.v5.mcp_lifecycle import aitp_v5_audit_record_routing, aitp_v5_supersede_record
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    claim, ev = _misroute_fixture(ws)
+    res = aitp_v5_supersede_record(
+        base=str(tmp_path / "ws"), record_id=ev.evidence_id, subject_kind="evidence",
+        status="voided", reason="wrong topic", operator="o", timestamp="t",
+    )
+    assert res["ok"] is True
+    audit = aitp_v5_audit_record_routing(base=str(tmp_path / "ws"), topic_id="wrong-topic")
+    ids = {e["subject_record_id"] for e in audit["events"]}
+    assert ev.evidence_id in ids

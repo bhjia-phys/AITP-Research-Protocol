@@ -59,6 +59,12 @@ from brain.v5.validation import create_validation_contract, record_validation_re
 from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
 from brain.v5.mcp_evidence import aitp_v5_record_evidence
+from brain.v5.mcp_lifecycle import (
+    aitp_v5_apply_rehome_plan,
+    aitp_v5_audit_record_routing,
+    aitp_v5_build_rehome_plan,
+    aitp_v5_supersede_record,
+)
 from brain.v5.mcp_host_readiness import aitp_v5_audit_priority_host_production_loops, aitp_v5_audit_runtime_host_lifecycle, aitp_v5_audit_runtime_host_readiness
 from brain.v5.mcp_hook_install import aitp_v5_install_codex_hook_fixture, aitp_v5_install_opencode_hook_fixture
 from brain.v5.mcp_interaction import aitp_v5_build_interaction_recording_worklist, aitp_v5_build_workspace_interaction_preview, aitp_v5_preview_interaction_recording
