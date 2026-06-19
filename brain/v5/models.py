@@ -50,6 +50,10 @@ class ClaimRecord:
     scope: str = ""
     non_claims: str = ""
     strongest_failure_mode: str = ""
+    lifecycle_status: str = "active"
+    rehome_event_id: str = ""
+    rehome_target_topic: str = ""
+    replaced_by: str = ""
     kind: str = "claim"
 
 
@@ -309,6 +313,10 @@ class EvidenceRecord:
     tool_run_ids: list[str] = field(default_factory=list)
     validation_result_ids: list[str] = field(default_factory=list)
     artifact_ids: list[str] = field(default_factory=list)
+    lifecycle_status: str = "active"
+    rehome_event_id: str = ""
+    rehome_target_topic: str = ""
+    replaced_by: str = ""
     kind: str = "evidence"
 
 
