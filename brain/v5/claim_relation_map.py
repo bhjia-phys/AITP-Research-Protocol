@@ -243,7 +243,10 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
                 "source_topic": ptr.get("source_topic"),
                 "target_topic": ptr.get("target_topic"),
             })
-    except Exception:
+    except (ImportError, OSError, ValueError, TypeError):
+        # lifecycle_events missing on this host, or a malformed pointer file — degrade
+        # gracefully to an empty zone rather than poisoning the whole relation-map.
+        # Programming errors (AttributeError/KeyError) are deliberately NOT swallowed.
         cross_topic_references = []
 
     next_actions = _prioritized_next_actions(next_actions, not_tested_by, blockers)

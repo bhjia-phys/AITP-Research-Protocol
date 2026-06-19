@@ -19,6 +19,8 @@ from brain.v5.workspace import WorkspacePaths
 
 _VALID_EVENT_TYPES = {"rehome", "supersede"}
 _VALID_RECORD_STATUSES = {"active", "misrouted", "voided", "superseded", "duplicate"}
+# supersede may only move a record OUT of active; "active" is never a valid supersede target
+_SUPERSEDE_STATUSES = {"misrouted", "voided", "superseded", "duplicate"}
 # events may carry "rehomed" to express the action even though records use "misrouted"
 _VALID_EVENT_STATUSES = _VALID_RECORD_STATUSES | {"rehomed"}
 
@@ -152,13 +154,21 @@ class LifecycleError(ValueError):
 
 
 def _load_subject(ws: WorkspacePaths, record_id: str, subject_kind: str):
+    """Return (path, record_cls, loaded_record) for a registry subject.
+
+    Loading the record here lets callers validate from_topic against the record's real
+    topic_id and locate the topic-ledger copy, without a second read.
+    """
+
     if subject_kind not in _KIND_TO_FAMILY:
         raise LifecycleError(f"unsupported subject_kind: {subject_kind!r}")
     family = _KIND_TO_FAMILY[subject_kind]
     path = ws.registry_dir(family) / f"{record_id}.md"
     if not path.exists():
         raise LifecycleError(f"record not found: {record_id}")
-    return path, _KIND_TO_RECORD_CLS[subject_kind]
+    cls = _KIND_TO_RECORD_CLS[subject_kind]
+    record = read_record(path, cls)
+    return path, cls, record
 
 
 def _rewrite_subject_frontmatter(path: Path, cls, **overrides):
@@ -212,14 +222,63 @@ def rehome_record(
 
     The record's file location and body are preserved; only frontmatter lifecycle fields
     are added. A pointer entry is appended in the target topic's claim ledger.
+
+    Ordering: all validation first, then mutate the subject + ledger + pointer, and only
+    write the lifecycle_event last. This way a mid-write failure cannot leave an orphan
+    event that would make the idempotent retry return a no-op and wedge the rehome.
     """
 
     if not to_topic:
         raise LifecycleError("rehome requires to_topic")
-    path, cls = _load_subject(ws, record_id, subject_kind)
+    path, cls, rec = _load_subject(ws, record_id, subject_kind)
+    # Validate from_topic matches the record's real birth topic (spec §5 step 1).
+    rec_topic = getattr(rec, "topic_id", "")
+    if from_topic != rec_topic:
+        raise LifecycleError(
+            f"from_topic {from_topic!r} does not match record topic_id {rec_topic!r}"
+        )
     if not (ws.topic_dir(to_topic) / "topic.md").exists():
         raise LifecycleError(f"target topic not found: {to_topic}")
 
+    # Compute the event id deterministically without writing, so the subject frontmatter
+    # can carry the back-pointer before the event file is committed.
+    event_id = _event_id("rehome", record_id, salt=_idempotency_salt(
+        "rehome", to_topic=to_topic, lifecycle_status="rehomed", replacement_ref=""))
+
+    # If an event for this key already exists, the rehome already landed; return it as a
+    # no-op (do not re-mutate). This keeps re-applying a plan idempotent.
+    existing = find_existing_event(
+        list_lifecycle_events(ws),
+        event_type="rehome", subject_record_id=record_id,
+        salt=_idempotency_salt("rehome", to_topic=to_topic, lifecycle_status="rehomed", replacement_ref=""),
+    )
+    if existing is not None:
+        return existing
+
+    # 1) mutate subject frontmatter (idempotent: setting the same fields is safe)
+    _rewrite_subject_frontmatter(
+        path, cls,
+        lifecycle_status="misrouted",
+        rehome_target_topic=to_topic,
+        rehome_event_id=event_id,
+    )
+
+    # 2) keep the source topic ledger copy consistent (claims have a second copy there)
+    src_ledger_path = ws.topic_dir(from_topic) / "claims" / "ledger" / f"{record_id}.md"
+    if src_ledger_path.exists():
+        _rewrite_subject_frontmatter(
+            src_ledger_path, cls,
+            lifecycle_status="misrouted",
+            rehome_target_topic=to_topic,
+            rehome_event_id=event_id,
+        )
+
+    # 3) append the cross-topic pointer in the target topic ledger (idempotent on exists)
+    _append_cross_topic_pointer(
+        ws, to_topic=to_topic, source_record_id=record_id, source_topic=from_topic
+    )
+
+    # 4) write the lifecycle_event last; everything before this is recoverable on retry
     event = create_lifecycle_event(
         ws,
         event_type="rehome",
@@ -231,28 +290,6 @@ def rehome_record(
         reason=reason,
         operator=operator,
         timestamp=timestamp,
-    )
-
-    # mutate subject frontmatter (idempotent: setting the same fields is safe)
-    _rewrite_subject_frontmatter(
-        path, cls,
-        lifecycle_status="misrouted",
-        rehome_target_topic=to_topic,
-        rehome_event_id=event.event_id,
-    )
-
-    # also update the source topic ledger copy so the two stay consistent
-    src_ledger_path = ws.topic_dir(from_topic) / "claims" / "ledger" / f"{record_id}.md"
-    if src_ledger_path.exists():
-        _rewrite_subject_frontmatter(
-            src_ledger_path, cls,
-            lifecycle_status="misrouted",
-            rehome_target_topic=to_topic,
-            rehome_event_id=event.event_id,
-        )
-
-    _append_cross_topic_pointer(
-        ws, to_topic=to_topic, source_record_id=record_id, source_topic=from_topic
     )
     return event
 
@@ -268,11 +305,27 @@ def supersede_record(
     timestamp: str,
     replacement_ref: str = "",
 ) -> LifecycleEventRecord:
-    """Mark a record misrouted/voided/superseded/duplicate. Optionally set replaced_by."""
+    """Mark a record misrouted/voided/superseded/duplicate. Optionally set replaced_by.
 
-    if status not in _VALID_RECORD_STATUSES:
-        raise LifecycleError(f"unknown status: {status!r}")
-    path, cls = _load_subject(ws, record_id, subject_kind)
+    ``status="active"`` is rejected: supersede only moves a record out of active.
+    Ordering follows rehome_record: mutate subject + ledger first, write the event last.
+    """
+
+    if status not in _SUPERSEDE_STATUSES:
+        raise LifecycleError(f"unknown supersede status: {status!r}")
+    path, cls, rec = _load_subject(ws, record_id, subject_kind)
+
+    overrides = {"lifecycle_status": status}
+    if replacement_ref:
+        overrides["replaced_by"] = replacement_ref
+    _rewrite_subject_frontmatter(path, cls, **overrides)
+
+    # keep the topic ledger copy consistent (claims have a second copy there)
+    rec_topic = getattr(rec, "topic_id", "")
+    if rec_topic:
+        ledger_path = ws.topic_dir(rec_topic) / "claims" / "ledger" / f"{record_id}.md"
+        if ledger_path.exists():
+            _rewrite_subject_frontmatter(ledger_path, cls, **overrides)
 
     event = create_lifecycle_event(
         ws,
@@ -285,11 +338,6 @@ def supersede_record(
         timestamp=timestamp,
         replacement_ref=replacement_ref,
     )
-
-    overrides = {"lifecycle_status": status}
-    if replacement_ref:
-        overrides["replaced_by"] = replacement_ref
-    _rewrite_subject_frontmatter(path, cls, **overrides)
     return event
 
 
@@ -320,8 +368,7 @@ def audit_routing(ws: WorkspacePaths, *, topic_id: str) -> dict:
         # subject record born in this topic?
         if e.subject_kind in _KIND_TO_FAMILY:
             try:
-                path, cls = _load_subject(ws, e.subject_record_id, e.subject_kind)
-                rec = read_record(path, cls)
+                _path, _cls, rec = _load_subject(ws, e.subject_record_id, e.subject_kind)
                 if getattr(rec, "topic_id", "") == topic_id:
                     relevant.append(e)
             except LifecycleError:

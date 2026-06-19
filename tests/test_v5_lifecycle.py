@@ -165,6 +165,142 @@ def test_rehome_invalid_record_id_aborts_with_no_change(tmp_path):
     assert events == []
 
 
+def test_supersede_rejects_active_status(tmp_path):
+    """B1: supersede must not accept status=active (would write a meaningless event
+    and re-include a record that should be inactive). Only the closed supersede vocab
+    is allowed."""
+
+    from brain.v5.lifecycle_events import supersede_record
+    from brain.v5.models import LifecycleEventRecord
+    from brain.v5.store import list_valid_records
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    create_topic(ws, "t", context_id="ctx", title="T")
+    claim = create_claim(
+        ws, topic_id="t", statement="s", evidence_profile="code_method",
+        confidence_state="hypothesis", active_uncertainty="u",
+    )
+    with pytest.raises(ValueError):
+        supersede_record(
+            ws, record_id=claim.claim_id, subject_kind="claim",
+            status="active", reason="r", operator="o", timestamp="t",
+        )
+    # no event written, record still active
+    events = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    assert events == []
+    from brain.v5.workspace import get_claim
+    assert get_claim(ws, claim.claim_id).lifecycle_status == "active"
+
+
+def test_rehome_rejects_mismatched_from_topic(tmp_path):
+    """I3: from_topic must equal the record's real topic_id (spec §5 step 1)."""
+
+    from brain.v5.lifecycle_events import rehome_record
+    from brain.v5.models import LifecycleEventRecord
+    from brain.v5.store import list_valid_records
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    create_topic(ws, "birth-topic", context_id="ctx", title="Birth")
+    create_topic(ws, "right-topic", context_id="ctx", title="Right")
+    claim = create_claim(
+        ws, topic_id="birth-topic", statement="s", evidence_profile="code_method",
+        confidence_state="hypothesis", active_uncertainty="u",
+    )
+    # from_topic does not match the record's topic_id
+    with pytest.raises(ValueError):
+        rehome_record(
+            ws, record_id=claim.claim_id, subject_kind="claim",
+            from_topic="some-other-topic", to_topic="right-topic",
+            reason="r", operator="o", timestamp="t",
+        )
+    events = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    assert events == []
+
+
+def test_supersede_claim_updates_topic_ledger_copy(tmp_path):
+    """I1: superseding a claim must keep the topic-ledger copy consistent with the
+    registry copy (mirrors rehome's behavior)."""
+
+    from brain.v5.lifecycle_events import supersede_record
+    from brain.v5.markdown import read_md
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    create_topic(ws, "t", context_id="ctx", title="T")
+    claim = create_claim(
+        ws, topic_id="t", statement="old", evidence_profile="code_method",
+        confidence_state="hypothesis", active_uncertainty="u",
+    )
+    supersede_record(
+        ws, record_id=claim.claim_id, subject_kind="claim",
+        status="superseded", reason="replaced", operator="o",
+        timestamp="2026-06-20T10:00:00Z", replacement_ref="claim-new",
+    )
+    reg_fm, _ = read_md(ws.registry_dir("claims") / f"{claim.claim_id}.md")
+    ledger_fm, _ = read_md(ws.topic_dir("t") / "claims" / "ledger" / f"{claim.claim_id}.md")
+    assert reg_fm["lifecycle_status"] == "superseded"
+    assert ledger_fm["lifecycle_status"] == "superseded"
+    assert ledger_fm["replaced_by"] == "claim-new"
+
+
+def test_rehome_no_orphan_event_on_missing_target_after_subject_load(tmp_path):
+    """I2 sanity: a rehome that fails validation AFTER loading the subject must not
+    leave any lifecycle_event written. (Catches the orphan-event hazard directly.)"""
+
+    from brain.v5.lifecycle_events import rehome_record
+    from brain.v5.models import LifecycleEventRecord
+    from brain.v5.store import list_valid_records
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    create_topic(ws, "wrong-topic", context_id="ctx", title="Wrong")
+    # NOTE: no "right-topic" created -> target topic check fails after subject load
+    claim = create_claim(
+        ws, topic_id="wrong-topic", statement="s", evidence_profile="code_method",
+        confidence_state="hypothesis", active_uncertainty="u",
+    )
+    with pytest.raises(ValueError):
+        rehome_record(
+            ws, record_id=claim.claim_id, subject_kind="claim",
+            from_topic="wrong-topic", to_topic="right-topic",
+            reason="r", operator="o", timestamp="t",
+        )
+    events = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    assert events == []
+
+
+def test_supersede_same_key_is_idempotent_noop(tmp_path):
+    """Superseding the same record with the same (status, replacement_ref) twice must
+    return the same event and write only one event (idempotency, distinct from chaining)."""
+
+    from brain.v5.lifecycle_events import supersede_record
+    from brain.v5.models import LifecycleEventRecord
+    from brain.v5.store import list_valid_records
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    create_topic(ws, "t", context_id="ctx", title="T")
+    claim = create_claim(
+        ws, topic_id="t", statement="s", evidence_profile="code_method",
+        confidence_state="hypothesis", active_uncertainty="u",
+    )
+    a = supersede_record(
+        ws, record_id=claim.claim_id, subject_kind="claim",
+        status="superseded", reason="r", operator="o", timestamp="t1",
+        replacement_ref="claim-y",
+    )
+    b = supersede_record(
+        ws, record_id=claim.claim_id, subject_kind="claim",
+        status="superseded", reason="r2", operator="o", timestamp="t2",
+        replacement_ref="claim-y",
+    )
+    assert a.event_id == b.event_id
+    events = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    assert len(events) == 1
+
+
 def _misroute_fixture(ws):
     from brain.v5.evidence import record_evidence
     from brain.v5.workspace import bind_session, create_claim, create_topic
@@ -353,15 +489,30 @@ def test_cli_record_rehome_requires_explicit_record_id(tmp_path):
     from brain.v5.cli import _build_parser
 
     parser = _build_parser()
-    # missing --record-id must fail at argparse level
+    # --base goes before the subcommand (it is a top-level flag). With everything else
+    # supplied, the only missing required arg is --record-id, so the SystemExit must be
+    # caused by that — not by a misplaced --base.
     with pytest.raises(SystemExit):
         parser.parse_args([
-            "record", "rehome",
             "--base", str(tmp_path / "ws"),
+            "record", "rehome",
+            "--kind", "claim",
             "--from-topic", "wrong-topic",
             "--to-topic", "right-topic",
             "--reason", "r",
         ])
+
+    # confirm the positive control: with --record-id present it parses cleanly
+    ns = parser.parse_args([
+        "--base", str(tmp_path / "ws"),
+        "record", "rehome",
+        "--record-id", "claim-x",
+        "--kind", "claim",
+        "--from-topic", "wrong-topic",
+        "--to-topic", "right-topic",
+        "--reason", "r",
+    ])
+    assert ns.record_id == "claim-x"
 
 
 def test_mcp_build_rehome_plan_is_readonly_and_apply_requires_explicit_ids(tmp_path):
