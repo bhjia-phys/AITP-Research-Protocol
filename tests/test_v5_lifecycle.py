@@ -52,3 +52,52 @@ def test_lifecycle_event_record_roundtrip(tmp_path):
     assert loaded.lifecycle_status == "rehomed"
     assert loaded.from_topic == "wrong-topic"
     assert loaded.to_topic == "right-topic"
+
+
+def test_create_lifecycle_event_is_idempotent(tmp_path):
+    from brain.v5.lifecycle_events import create_lifecycle_event
+    from brain.v5.models import LifecycleEventRecord
+    from brain.v5.store import list_valid_records
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    args = dict(
+        event_type="rehome",
+        subject_record_id="claim-x",
+        subject_kind="claim",
+        from_topic="wrong-topic",
+        to_topic="right-topic",
+        lifecycle_status="rehomed",
+        reason="misrouted",
+        operator="bohan-jia",
+        timestamp="2026-06-20T10:00:00Z",
+    )
+    first = create_lifecycle_event(ws, **args)
+    second = create_lifecycle_event(ws, **args)
+    assert first.event_id == second.event_id
+    events = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    assert len(events) == 1
+
+
+def test_create_lifecycle_event_supersede_distinct_keys(tmp_path):
+    from brain.v5.lifecycle_events import create_lifecycle_event
+    from brain.v5.models import LifecycleEventRecord
+    from brain.v5.store import list_valid_records
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    a = create_lifecycle_event(
+        ws, event_type="supersede", subject_record_id="claim-x", subject_kind="claim",
+        lifecycle_status="misrouted", reason="r1", operator="o", timestamp="t1",
+        replacement_ref="claim-y",
+    )
+    b = create_lifecycle_event(
+        ws, event_type="supersede", subject_record_id="claim-x", subject_kind="claim",
+        lifecycle_status="superseded", reason="r2", operator="o", timestamp="t2",
+        replacement_ref="claim-y",
+    )
+    events = list_valid_records(ws.registry_dir("lifecycle_events"), LifecycleEventRecord)
+    # same (record, status, replacement) -> one; different status -> two
+    assert len(events) == 2
+    assert a.event_id != b.event_id
+    assert b.supersedes_event == a.event_id
