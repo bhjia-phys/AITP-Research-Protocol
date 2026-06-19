@@ -229,3 +229,40 @@ def test_lifecycle_history_for_record(tmp_path):
     # supersedes_event chains only to a prior *supersede* for the same subject; there is
     # none here (the prior event is a rehome), so it must be empty.
     assert history["events"][1].supersedes_event == ""
+
+
+def test_lifecycle_event_record_contract_accepts_valid_payload():
+    from brain.v5.contracts import ContractError
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    payload = {
+        "ok": True,
+        "kind": "lifecycle_event",
+        "event_id": "ev-rehome-claim-x-abcd1234",
+        "event_type": "rehome",
+        "subject_record_id": "claim-x",
+        "subject_kind": "claim",
+        "lifecycle_status": "rehomed",
+        "reason": "misrouted",
+        "operator": "bohan-jia",
+        "timestamp": "2026-06-20T10:00:00Z",
+        "from_topic": "wrong-topic",
+        "to_topic": "right-topic",
+    }
+    result = require_valid_public_surface("lifecycle_event_record", payload)
+    assert result["ok"] is True
+
+
+def test_lifecycle_event_record_contract_rejects_unknown_event_type():
+    from brain.v5.contracts import ContractError
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    payload = {
+        "ok": True, "kind": "lifecycle_event",
+        "event_id": "ev", "event_type": "bogus",
+        "subject_record_id": "c", "subject_kind": "claim",
+        "lifecycle_status": "rehomed", "reason": "r",
+        "operator": "o", "timestamp": "t",
+    }
+    with pytest.raises(ContractError):
+        require_valid_public_surface("lifecycle_event_record", payload)

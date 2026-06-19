@@ -374,6 +374,22 @@ def require_valid_evidence_record(payload: dict[str, Any]) -> dict[str, Any]:
     return _require_valid_evidence_record(payload)
 
 
+def validate_lifecycle_event_record(payload: dict[str, Any], *, path: str = "lifecycle_event_record") -> ContractResult:
+    """Validate a public lifecycle-event-record payload."""
+
+    from brain.v5.record_contracts import validate_lifecycle_event_record as _validate_lifecycle_event_record
+
+    return _validate_lifecycle_event_record(payload, path=path)
+
+
+def require_valid_lifecycle_event_record(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a lifecycle-event-record payload or raise a contract error."""
+
+    from brain.v5.record_contracts import require_valid_lifecycle_event_record as _require_valid_lifecycle_event_record
+
+    return _require_valid_lifecycle_event_record(payload)
+
+
 def validate_tool_run_record(payload: dict[str, Any], *, path: str = "tool_run_record") -> ContractResult:
     """Validate a public tool-run-record write payload."""
 

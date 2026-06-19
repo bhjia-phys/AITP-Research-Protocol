@@ -626,6 +626,28 @@ def require_valid_memory_entry_record(payload: dict[str, Any]) -> dict[str, Any]
     return _require_valid(validate_memory_entry_record(payload), payload)
 
 
+def validate_lifecycle_event_record(payload: dict[str, Any], *, path: str = "lifecycle_event_record") -> ContractResult:
+    result = _validate_base_record(payload, path, kind="lifecycle_event")
+    if result.issues:
+        return result
+    for key in ("event_id", "event_type", "subject_record_id", "subject_kind", "lifecycle_status", "reason", "operator", "timestamp"):
+        _require_nonempty_str(payload, key, path, result)
+    if payload.get("event_type") not in {"rehome", "supersede"}:
+        result.add(f"{path}.event_type", "must be rehome or supersede")
+    if payload.get("subject_kind") not in {"claim", "evidence", "tool_run", "session"}:
+        result.add(f"{path}.subject_kind", "must be claim, evidence, tool_run, or session")
+    if payload.get("event_type") == "rehome" and not payload.get("to_topic"):
+        result.add(f"{path}.to_topic", "must be non-empty for rehome events")
+    valid_status = {"active", "misrouted", "voided", "superseded", "duplicate", "rehomed"}
+    if payload.get("lifecycle_status") not in valid_status:
+        result.add(f"{path}.lifecycle_status", "must be a known lifecycle status")
+    return result
+
+
+def require_valid_lifecycle_event_record(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_lifecycle_event_record(payload), payload)
+
+
 def validate_trust_update_record(payload: dict[str, Any], *, path: str = "trust_update_record") -> ContractResult:
     result = _validate_base_record(payload, path, kind="trust_update")
     if result.issues:

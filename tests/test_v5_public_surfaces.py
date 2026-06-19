@@ -46,6 +46,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "lane_exemplar_record",
         "l2_obsidian_view_bundle",
         "l2_memory_audit",
+        "lifecycle_event_record",
         "legacy_executable_evidence_packet",
         "legacy_human_checkpoint_obsidian_view_bundle",
         "legacy_human_checkpoint_packet",
