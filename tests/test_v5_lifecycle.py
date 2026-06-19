@@ -316,3 +316,49 @@ def test_relation_map_lists_cross_topic_references(tmp_path):
     mapping = build_claim_relation_map(ws, session_id="s-right")
     refs = mapping.get("cross_topic_references", [])
     assert any(r.get("source_record_id") == claim.claim_id for r in refs)
+
+
+def test_cli_record_supersede_then_audit_routing(tmp_path):
+    from brain.v5.cli import _build_parser, _dispatch
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    claim, ev = _misroute_fixture(ws)
+
+    parser = _build_parser()
+    args = parser.parse_args([
+        "record", "supersede",
+        "--base", str(tmp_path / "ws"),
+        "--record-id", ev.evidence_id,
+        "--kind", "evidence",
+        "--status", "voided",
+        "--reason", "wrong topic",
+        "--operator", "bohan-jia",
+        "--timestamp", "2026-06-20T10:00:00Z",
+    ])
+    result = _dispatch(args)
+    assert result["ok"] is True
+
+    args2 = parser.parse_args([
+        "record", "audit-routing",
+        "--base", str(tmp_path / "ws"),
+        "--topic", "wrong-topic",
+    ])
+    result2 = _dispatch(args2)
+    ids = {r["subject_record_id"] for r in result2["events"]}
+    assert ev.evidence_id in ids
+
+
+def test_cli_record_rehome_requires_explicit_record_id(tmp_path):
+    from brain.v5.cli import _build_parser
+
+    parser = _build_parser()
+    # missing --record-id must fail at argparse level
+    with pytest.raises(SystemExit):
+        parser.parse_args([
+            "record", "rehome",
+            "--base", str(tmp_path / "ws"),
+            "--from-topic", "wrong-topic",
+            "--to-topic", "right-topic",
+            "--reason", "r",
+        ])

@@ -23,6 +23,12 @@ from brain.v5.cli_interaction import add_interaction_parser, dispatch_interactio
 from brain.v5.cli_literature import add_literature_parser, dispatch_literature_command
 from brain.v5.models import TrustUpdateRequest
 from brain.v5.cli_policy import add_policy_parser, dispatch_policy_command
+from brain.v5.cli_record_lifecycle import (
+    cmd_record_audit_routing,
+    cmd_record_lifecycle,
+    cmd_record_rehome,
+    cmd_record_supersede,
+)
 from brain.v5.cli_research_state import add_research_state_parser, dispatch_research_state_command
 from brain.v5.cli_validation import add_validation_parser, dispatch_validation_command
 from brain.v5.cli_vnext import VNEXT_COMMANDS, add_vnext_parsers, dispatch_vnext_command
@@ -521,12 +527,51 @@ def _build_parser() -> argparse.ArgumentParser:
     add_memory_parser(sp)
     add_research_state_parser(sp)
 
+    rp_lifecycle = sp.add_parser("record")
+    rps = rp_lifecycle.add_subparsers(dest="record_command", required=True)
+
+    rh = rps.add_parser("rehome")
+    rh.add_argument("--base", required=True)
+    rh.add_argument("--record-id", required=True)
+    rh.add_argument("--kind", required=True, choices=["claim", "evidence", "tool_run", "session"])
+    rh.add_argument("--from-topic", required=True)
+    rh.add_argument("--to-topic", required=True)
+    rh.add_argument("--reason", required=True)
+    rh.add_argument("--operator", default="")
+    rh.add_argument("--timestamp", default="")
+
+    rs = rps.add_parser("supersede")
+    rs.add_argument("--base", required=True)
+    rs.add_argument("--record-id", required=True)
+    rs.add_argument("--kind", required=True, choices=["claim", "evidence", "tool_run", "session"])
+    rs.add_argument("--status", required=True, choices=["misrouted", "voided", "superseded", "duplicate"])
+    rs.add_argument("--reason", required=True)
+    rs.add_argument("--replacement-ref", default="")
+    rs.add_argument("--operator", default="")
+    rs.add_argument("--timestamp", default="")
+
+    ra = rps.add_parser("audit-routing")
+    ra.add_argument("--base", required=True)
+    ra.add_argument("--topic", required=True)
+
+    rl = rps.add_parser("lifecycle")
+    rl.add_argument("--base", required=True)
+    rl.add_argument("--record-id", required=True)
+
     return parser
 
 
 def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
     if args.command == "init":
         return {"ok": True, "workspace_root": str(init_workspace(Path(args.base)).root)}
+    if args.command == "record" and args.record_command == "rehome":
+        return cmd_record_rehome(args)
+    if args.command == "record" and args.record_command == "supersede":
+        return cmd_record_supersede(args)
+    if args.command == "record" and args.record_command == "audit-routing":
+        return cmd_record_audit_routing(args)
+    if args.command == "record" and args.record_command == "lifecycle":
+        return cmd_record_lifecycle(args)
     if args.command == "adapter" and args.adapter_command in {
         "registry",
         "public-surfaces",
