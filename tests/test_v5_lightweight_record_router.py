@@ -583,3 +583,34 @@ def test_only_existing_artifact_ref_yields_minimal_orientation_plan(tmp_path):
     orient = result["typed_write_plan"][0]
     assert f"artifact:{art.artifact_id}" in orient["verification_refs"]
 
+
+def test_unsupported_ref_kind_is_not_silently_ignored(tmp_path):
+    """Unsupported kind:id input should be diagnosed, not stripped into no_write."""
+
+    from brain.v5.lightweight_record_router import plan_lightweight_record_write
+
+    ws, claim = _make_workspace(tmp_path)
+    result = plan_lightweight_record_write(
+        ws, topic_id="fqhe", current_session_id="s1", active_claim_id=claim.claim_id,
+        event_summary="FQHE energy gap result discussed.",
+        touched_tool_runs_or_evidence_refs=["banana:not-real"],
+    )
+    assert result["decision"] == "unsupported"
+    assert result["typed_write_plan"] == []
+    assert "unsupported ref kind" in result["final_human_readable_summary"]
+
+
+def test_missing_artifact_ref_is_not_silently_ignored(tmp_path):
+    """Known non-evidence refs should also be resolved or rejected explicitly."""
+
+    from brain.v5.lightweight_record_router import plan_lightweight_record_write
+
+    ws, claim = _make_workspace(tmp_path)
+    result = plan_lightweight_record_write(
+        ws, topic_id="fqhe", current_session_id="s1", active_claim_id=claim.claim_id,
+        event_summary="discussed the existing plot in passing.",
+        touched_files_or_artifacts=["artifact:ghost"],
+    )
+    assert result["decision"] == "unsupported"
+    assert result["typed_write_plan"] == []
+    assert "missing typed record ref" in result["final_human_readable_summary"]

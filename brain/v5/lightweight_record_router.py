@@ -206,10 +206,28 @@ def _looks_like_canonical_ref(value: str) -> bool:
     return parsed is not None and parsed[0] in _ACCEPTED_REF_KINDS
 
 
+def _looks_like_windows_path(value: str) -> bool:
+    return bool(re.match(r"^[a-zA-Z]:[\\/]", value or ""))
+
+
+def _looks_like_ref_like_token(value: str) -> bool:
+    """Detect unsupported ``kind:id``-style refs without catching paths/URLs."""
+
+    if not value or _looks_like_windows_path(value) or "://" in value:
+        return False
+    parsed = _split_ref(value)
+    if parsed is None:
+        return False
+    kind, _ = parsed
+    return bool(re.match(r"^[a-z_][a-z0-9_]*$", kind))
+
+
 def _classify_touched(value: str) -> dict[str, str]:
     """Classify one ``touched_files_or_artifacts`` entry.
 
-    Returns a dict with ``kind`` in {canonical_ref, path, other} and the raw value.
+    Returns a dict with ``kind`` in {canonical_ref, ref_like, path, other} and
+    the raw value. ``ref_like`` is for unsupported ``kind:id``-style tokens that
+    should be diagnosed rather than silently treated as ordinary prose.
     """
 
     value = (value or "").strip()
@@ -217,6 +235,8 @@ def _classify_touched(value: str) -> dict[str, str]:
         return {"kind": "other", "value": value}
     if _looks_like_canonical_ref(value):
         return {"kind": "canonical_ref", "value": value}
+    if _looks_like_ref_like_token(value):
+        return {"kind": "ref_like", "value": value}
     # treat anything with a slash or a dot extension as a path
     if "/" in value or "\\" in value or re.search(r"\.[a-z0-9]{1,5}$", value.lower()):
         return {"kind": "path", "value": value}
@@ -766,12 +786,18 @@ def plan_lightweight_record_write(
     touched_refs_raw = [v for v in (touched_tool_runs_or_evidence_refs or []) if (v or "").strip()]
 
     # validate canonical input refs via the existing read-only lookup
+    touched_ref_like = [
+        t["value"] for t in touched_files
+        if t["kind"] in {"canonical_ref", "ref_like"}
+    ]
     canonical_input_refs = [t["value"] for t in touched_files if t["kind"] == "canonical_ref"]
-    all_input_refs = canonical_input_refs + touched_refs_raw
+    all_input_refs = touched_ref_like + touched_refs_raw
     ref_lookup = lookup_record_refs(ws, all_input_refs) if all_input_refs else None
     confirmed_refs: set[str] = set()
     malformed_refs: list[str] = []
     unconfirmed_evidence_refs: list[str] = []  # tool_run/validation_result refs that don't confirm
+    unsupported_refs: list[str] = []
+    missing_non_evidence_refs: list[str] = []
     artifact_claim_map: dict[str, str] = {}  # artifact:<id> -> claim_id (from confirmed records)
     if ref_lookup is not None:
         for item in ref_lookup.get("refs", []):
@@ -789,6 +815,10 @@ def plan_lightweight_record_write(
             elif kind in {"tool_run", "validation_result"}:
                 # not_found / unsupported_kind for an evidence-grade ref: cannot plan evidence
                 unconfirmed_evidence_refs.append(ref)
+            elif status == "unsupported_kind":
+                unsupported_refs.append(ref)
+            elif status == "not_found":
+                missing_non_evidence_refs.append(ref)
 
     if malformed_refs:
         return {
@@ -836,6 +866,36 @@ def plan_lightweight_record_write(
                 "Evidence-grade ref(s) did not resolve to a typed record, so no evidence "
                 f"plan is produced and nothing is recorded: {unconfirmed_evidence_refs}. "
                 "Create the tool_run/validation_result first, or supply a confirmed ref."
+            ),
+            **_TOP_LEVEL_TRUTH,
+        }
+
+    if unsupported_refs or missing_non_evidence_refs:
+        diagnostics = []
+        if unsupported_refs:
+            diagnostics.append(f"unsupported ref kind(s): {unsupported_refs}")
+        if missing_non_evidence_refs:
+            diagnostics.append(f"missing typed record ref(s): {missing_non_evidence_refs}")
+        return {
+            "ok": True,
+            "kind": "lightweight_record_write_plan",
+            "decision": DECISION_UNSUPPORTED,
+            "topic_id": topic_id,
+            "current_session_id": current_session_id,
+            "active_claim_id": active_claim_id,
+            "target_claim": {
+                "target_claim_id": "",
+                "reason_for_target_claim": "unresolved or unsupported input ref",
+                "confidence": "low",
+            },
+            "write_reasons": [],
+            "no_write_reason": "",
+            "selected_record_types": [],
+            "typed_write_plan": [],
+            "trust_boundary": dict(_TRUST_BOUNDARY),
+            "final_human_readable_summary": (
+                "Input ref(s) could not be resolved by the typed-record lookup surface; "
+                f"{'; '.join(diagnostics)}. Nothing recorded."
             ),
             **_TOP_LEVEL_TRUTH,
         }
