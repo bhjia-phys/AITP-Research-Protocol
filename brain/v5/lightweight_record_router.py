@@ -112,11 +112,12 @@ _KW_DURABLE_OUTPUT = [
     "日志",  # multi-char only; single-char 图/表 are too ambiguous as substrings
 ]
 _KW_RUNTIME_FAILURE = [
-    "matplotlib", "importerror", "module not found", "path", "permission",
+    "matplotlib", "importerror", "module not found", "permission",
     "environment", "dependency", "runtime failure", "环境", "依赖",
     "远端环境", "timeout", "out of memory", "oom",
+    # NOTE: bare "path" removed — too generic as a word ("go down this path").
     # NOTE: bare "缺少" removed — too generic ("缺少证明" just means "lacks proof").
-    # Runtime/dependency failures carry "matplotlib"/"environment"/"dependency"/"远端环境".
+    # Runtime/dependency failures carry matplotlib/environment/dependency/远端环境.
 ]
 _KW_TRUST_REQUEST = [
     "trust update", "confidence promotion", "promote confidence",
@@ -134,7 +135,30 @@ def _lower(summary: str) -> str:
 
 
 def _contains_any(text_lower: str, keywords: list[str]) -> bool:
+    """Substring match for multi-char / non-Latin keywords (safe — e.g. 日志, matplotlib, oom)."""
+
     return any(kw in text_lower for kw in keywords)
+
+
+# Short English fragments that embed inside common words (log⊂logic, dat⊂update,
+# table⊂acceptable, path⊂empathy, chart⊂chartreuse, dump⊂dumpling, report⊂reportedly,
+# image⊂...). These MUST be matched on word boundaries, never as substrings.
+_WORD_BOUNDARY_KEYWORDS = {"log", "dat", "table", "path", "chart", "dump", "report", "image"}
+
+
+def _contains_any_word(text_lower: str, keywords: list[str]) -> bool:
+    """Match short/ambiguous English keywords on word boundaries only.
+
+    Multi-char / Chinese / distinctive keywords pass through to plain substring match.
+    """
+
+    for kw in keywords:
+        if kw in _WORD_BOUNDARY_KEYWORDS:
+            if re.search(r"\b" + re.escape(kw) + r"\b", text_lower):
+                return True
+        elif kw in text_lower:
+            return True
+    return False
 
 
 def _tokenize(text: str) -> set[str]:
@@ -333,14 +357,15 @@ def _wants_artifact(
 ) -> bool:
     if any(t["kind"] in {"canonical_ref", "path"} for t in touched):
         return True
-    return _contains_any(event_lower, _KW_DURABLE_OUTPUT)
+    return _contains_any_word(event_lower, _KW_DURABLE_OUTPUT)
 
 
 def _wants_sensemaking(event_lower: str, touched: list[dict[str, str]]) -> bool:
+    # _KW_RUNTIME_FAILURE contains the ambiguous "path" -> use word-boundary matching.
+    # _KW_BOUNDARY / _KW_OLD_NEW_CONFLICT are safe substrings (multi-char or distinctive).
     return any(
-        _contains_any(event_lower, bucket)
-        for bucket in (_KW_BOUNDARY, _KW_OLD_NEW_CONFLICT, _KW_RUNTIME_FAILURE)
-    ) or any(t["kind"] == "path" and _contains_any(event_lower, _KW_OLD_NEW_CONFLICT) for t in touched)
+        _contains_any(event_lower, bucket) for bucket in (_KW_BOUNDARY, _KW_OLD_NEW_CONFLICT)
+    ) or _contains_any_word(event_lower, _KW_RUNTIME_FAILURE)
 
 
 def _wants_proof_obligation(event_lower: str) -> bool:
@@ -359,7 +384,7 @@ def _wants_trust(event_lower: str, risk_lower: str) -> bool:
 
 
 def _has_runtime_failure(event_lower: str) -> bool:
-    return _contains_any(event_lower, _KW_RUNTIME_FAILURE)
+    return _contains_any_word(event_lower, _KW_RUNTIME_FAILURE)
 
 
 def _has_tool_run_or_validation_ref(refs: list[str]) -> list[str]:

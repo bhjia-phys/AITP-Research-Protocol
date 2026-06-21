@@ -311,3 +311,76 @@ def test_malformed_ref_returns_unsupported(tmp_path):
         touched_tool_runs_or_evidence_refs=["not-a-canonical-ref"],
     )
     assert result["decision"] in ("unsupported", "no_write")
+
+
+# --------------------------------------------------------------------------- #
+# 13. I-2: artifact path ALONE -> artifact only, NOT evidence
+# --------------------------------------------------------------------------- #
+
+def test_artifact_path_alone_yields_only_artifact_not_evidence(tmp_path):
+    """spec §10: an artifact path alone must create only an artifact plan, never evidence."""
+
+    from brain.v5.lightweight_record_router import plan_lightweight_record_write
+
+    ws, claim = _make_workspace(tmp_path, statement="FQHE energy gap plot")
+    result = plan_lightweight_record_write(
+        ws, topic_id="fqhe", current_session_id="s1", active_claim_id=claim.claim_id,
+        event_summary="Saved the FQHE energy gap plot.",
+        touched_files_or_artifacts=["reports/fig.png"],
+    )
+    assert result["decision"] == "plan_write"
+    assert result["selected_record_types"] == ["artifact"]
+    assert "evidence" not in result["selected_record_types"]
+    art = result["typed_write_plan"][0]
+    assert art["record_type"] == "artifact"
+    assert art["required_fields"]["artifact_type"] == "plot"
+
+
+# --------------------------------------------------------------------------- #
+# 14. I-3: a plan_write must carry all four forbidden_interpretations
+# --------------------------------------------------------------------------- #
+
+def test_plan_write_carries_all_forbidden_interpretations(tmp_path):
+    """spec §4: trust_boundary.forbidden_interpretations must list all four guardrails."""
+
+    from brain.v5.lightweight_record_router import plan_lightweight_record_write
+
+    ws, claim = _make_workspace(tmp_path, statement="qsgw final report plot")
+    result = plan_lightweight_record_write(
+        ws, topic_id="fqhe", current_session_id="s1", active_claim_id=claim.claim_id,
+        event_summary="old plot cannot mix with new final report.",
+        touched_files_or_artifacts=["reports/old.png"],
+    )
+    assert result["decision"] == "plan_write"
+    forbidden = set(result["trust_boundary"]["forbidden_interpretations"])
+    required = {
+        "relation_map_is_not_evidence",
+        "runtime_failure_is_not_algorithm_failure",
+        "old_plot_is_not_new_report_evidence",
+        "event_summary_does_not_raise_confidence",
+    }
+    assert required <= forbidden
+
+
+# --------------------------------------------------------------------------- #
+# 15. I-1 regression: ordinary English prose with embedded fragments does NOT write
+# --------------------------------------------------------------------------- #
+
+def test_ordinary_prose_with_embedded_fragments_does_not_write(tmp_path):
+    """Catches the I-1 false-positive class: logic/update/validate/acceptable/empathy
+    must NOT route to artifact/runtime-failure plans."""
+
+    from brain.v5.lightweight_record_router import plan_lightweight_record_write
+
+    ws, claim = _make_workspace(tmp_path, statement="FQHE energy gap derivation")
+    for prose in [
+        "the logic of the derivation is clear",
+        "let's update the value and validate the mesh",
+        "an acceptable solution via empathic reasoning",
+        "we catalogued the methodology in dialogue",
+    ]:
+        result = plan_lightweight_record_write(
+            ws, topic_id="fqhe", current_session_id="s1", active_claim_id=claim.claim_id,
+            event_summary=prose,
+        )
+        assert result["decision"] == "no_write", f"false-positive write for: {prose!r}"
