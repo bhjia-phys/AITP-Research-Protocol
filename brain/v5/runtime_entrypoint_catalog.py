@@ -127,6 +127,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_classify_recording_candidate",
         "surface": "recording_candidate_classification",
     },
+    "lightweight_record_write_plan": {
+        "cli": "aitp-v5 recording plan-lightweight-write <args>",
+        "mcp": "aitp_v5_plan_lightweight_record_write",
+        "surface": "lightweight_record_write_plan",
+    },
     "recording_navigation_state": {
         "cli": "aitp-v5 recording navigation-state <session-id>",
         "mcp": "aitp_v5_get_recording_navigation_state",

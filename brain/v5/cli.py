@@ -273,6 +273,16 @@ def _build_parser() -> argparse.ArgumentParser:
     rev.add_argument("--before-edge-id", action="append", default=[], dest="before_edge_ids")
     rev.add_argument("--limit", type=int, default=80)
 
+    rlp = recs.add_parser("plan-lightweight-write")
+    rlp.add_argument("--topic", required=True, dest="topic_id")
+    rlp.add_argument("--session", required=True, dest="current_session_id")
+    rlp.add_argument("--summary", required=True, dest="event_summary")
+    rlp.add_argument("--active-claim", default="", dest="active_claim_id")
+    rlp.add_argument("--target-claim-hint", default="")
+    rlp.add_argument("--touched-file", action="append", default=[], dest="touched_files_or_artifacts")
+    rlp.add_argument("--touched-ref", action="append", default=[], dest="touched_tool_runs_or_evidence_refs")
+    rlp.add_argument("--risk-hint", default="")
+
     rp = sp.add_parser("risk"); rs = rp.add_subparsers(dest="risk_command", required=True)
     rs.add_parser("assess").add_argument("claim_id")
 
@@ -690,6 +700,22 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
                 before_edge_ids=args.before_edge_ids,
                 claim_id=args.claim_id,
                 limit=args.limit,
+            ),
+        )
+    if args.command == "recording" and args.recording_command == "plan-lightweight-write":
+        from brain.v5.lightweight_record_router import plan_lightweight_record_write
+        return require_valid_public_surface(
+            "lightweight_record_write_plan",
+            plan_lightweight_record_write(
+                ws,
+                topic_id=args.topic_id,
+                current_session_id=args.current_session_id,
+                event_summary=args.event_summary,
+                active_claim_id=args.active_claim_id,
+                target_claim_hint=args.target_claim_hint,
+                touched_files_or_artifacts=args.touched_files_or_artifacts,
+                touched_tool_runs_or_evidence_refs=args.touched_tool_runs_or_evidence_refs,
+                risk_hint=args.risk_hint,
             ),
         )
     if args.command == "risk" and args.risk_command == "assess":

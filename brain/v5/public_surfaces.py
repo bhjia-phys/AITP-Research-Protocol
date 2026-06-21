@@ -47,6 +47,7 @@ _PUBLIC_SURFACE_NAMES = (
     "l2_obsidian_view_bundle",
     "l2_memory_audit",
     "lifecycle_event_record",
+    "lightweight_record_write_plan",
     "legacy_executable_evidence_packet",
     "legacy_human_checkpoint_obsidian_view_bundle",
     "legacy_human_checkpoint_packet",
@@ -194,6 +195,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "l2_obsidian_view_bundle": "orientation-only Obsidian Markdown view over typed L2 memory entries",
     "l2_memory_audit": "read-only typed-record audit of L2 memory provenance for one claim",
     "lifecycle_event_record": "append-only provenance log for record rehome/supersede lifecycle changes",
+    "lightweight_record_write_plan": "read-only plan that proposes a minimal typed-record write set for a short research event without writing anything or changing claim trust",
     "legacy_executable_evidence_packet": "read-only packet grouping validation and tool-run evidence actions that block legacy semantic review pass without changing claim trust",
     "legacy_human_checkpoint_obsidian_view_bundle": "orientation-only Obsidian Markdown worklist over open and pending legacy semantic-review human checkpoints",
     "legacy_human_checkpoint_packet": "read-only packet grouping open and pending human checkpoint decisions required by legacy semantic review without changing claim trust",
@@ -525,6 +527,9 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_recording_navigation_state,
         require_valid_recording_slot_expansion,
     )
+    from brain.v5.lightweight_record_router_contracts import (
+        require_valid_lightweight_record_write_plan,
+    )
 
     return {
         "adapter_packet": require_valid_adapter_packet,
@@ -546,6 +551,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "curated_rag_search_result": require_valid_curated_rag_search_result,
         "evidence_record": require_valid_evidence_record,
         "lifecycle_event_record": require_valid_lifecycle_event_record,
+        "lightweight_record_write_plan": require_valid_lightweight_record_write_plan,
         "execution_brief": require_valid_execution_brief,
         "exploratory_record": require_valid_exploratory_record,
         "failure_mode_audit": require_valid_failure_mode_audit,

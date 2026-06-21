@@ -19,6 +19,8 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["validate_claim", "--session", "s1", "--claim", "claim-fqhe", "--source-kind", "typed_records"]
     if template.startswith("recording classify-candidate"):
         return ["--session", "s1", "--event-type", "tool_run_completed", "--summary", "ED diagnostic run completed.", "--topic", "fqhe", "--claim", "claim-fqhe", "--tool-call-id", "tool-call-1"]
+    if template.startswith("recording plan-lightweight-write"):
+        return ["--topic", "fqhe", "--session", "s1", "--summary", "old kconv plot uses diagnostic lane, cannot mix with new final report.", "--active-claim", "claim-fqhe", "--touched-file", "reports/old_kconv.png"]
     if template.startswith("recording navigation-state"):
         return ["s1", "--claim", "claim-fqhe"]
     if template.startswith("recording expand-slot"):

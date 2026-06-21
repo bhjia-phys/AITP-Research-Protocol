@@ -710,6 +710,42 @@ def aitp_v5_verify_recording_effect(
     )
 
 
+def aitp_v5_plan_lightweight_record_write(
+    base: str,
+    *,
+    topic_id: str,
+    current_session_id: str,
+    event_summary: str,
+    active_claim_id: str = "",
+    target_claim_hint: str = "",
+    touched_files_or_artifacts: list[str] | None = None,
+    touched_tool_runs_or_evidence_refs: list[str] | None = None,
+    risk_hint: str = "",
+) -> dict:
+    """Plan-only surface: propose a minimal typed-record write set for a short research event.
+
+    This tool NEVER writes records and NEVER applies trust updates. It returns a plan that
+    an agent or human reviews before invoking the concrete record-write MCP tools.
+    """
+
+    from brain.v5.lightweight_record_router import plan_lightweight_record_write
+
+    return require_valid_public_surface(
+        "lightweight_record_write_plan",
+        plan_lightweight_record_write(
+            _ws(base),
+            topic_id=topic_id,
+            current_session_id=current_session_id,
+            event_summary=event_summary,
+            active_claim_id=active_claim_id,
+            target_claim_hint=target_claim_hint,
+            touched_files_or_artifacts=touched_files_or_artifacts or [],
+            touched_tool_runs_or_evidence_refs=touched_tool_runs_or_evidence_refs or [],
+            risk_hint=risk_hint,
+        ),
+    )
+
+
 def aitp_v5_lookup_record_refs(base: str, *, refs: list[str]) -> dict:
     return {
         "ok": True,
