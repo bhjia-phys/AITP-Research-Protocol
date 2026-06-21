@@ -14,6 +14,14 @@ from brain.v5.contracts import ContractError, ContractResult, _require_list, _re
 
 _DECISIONS = {"no_write", "plan_write", "needs_human_target_claim", "unsupported"}
 
+# The four forbidden_interpretations guardrails the surface must always carry.
+_REQUIRED_FORBIDDEN_INTERPRETATIONS = {
+    "relation_map_is_not_evidence",
+    "runtime_failure_is_not_algorithm_failure",
+    "old_plot_is_not_new_report_evidence",
+    "event_summary_does_not_raise_confidence",
+}
+
 
 def validate_lightweight_record_write_plan(
     payload: dict[str, Any],
@@ -34,11 +42,28 @@ def validate_lightweight_record_write_plan(
     for key in ("typed_write_plan", "selected_record_types", "write_reasons"):
         _require_list(payload.get(key), f"{path}.{key}", result)
 
-    # trust boundary block must forbid claim-trust updates
+    # trust boundary block must forbid claim-trust updates AND carry the full set of
+    # forbidden interpretations + the preflight/requested flags.
     boundary = payload.get("trust_boundary")
     _require_mapping(boundary, f"{path}.trust_boundary", result)
-    if isinstance(boundary, dict) and boundary.get("can_update_claim_trust") is not False:
-        result.add(f"{path}.trust_boundary.can_update_claim_trust", "must be false")
+    if isinstance(boundary, dict):
+        if boundary.get("can_update_claim_trust") is not False:
+            result.add(f"{path}.trust_boundary.can_update_claim_trust", "must be false")
+        if boundary.get("trust_update_requested") is not False:
+            result.add(f"{path}.trust_boundary.trust_update_requested", "must be false")
+        if boundary.get("trust_preflight_required") is not False:
+            result.add(f"{path}.trust_boundary.trust_preflight_required", "must be false")
+        forbidden = boundary.get("forbidden_interpretations")
+        if not isinstance(forbidden, list):
+            result.add(f"{path}.trust_boundary.forbidden_interpretations", "must be a list")
+        else:
+            present = set(forbidden)
+            missing = _REQUIRED_FORBIDDEN_INTERPRETATIONS - present
+            if missing:
+                result.add(
+                    f"{path}.trust_boundary.forbidden_interpretations",
+                    f"must include all four guardrails; missing: {sorted(missing)}",
+                )
 
     _require_read_only(payload, path, result)
 
