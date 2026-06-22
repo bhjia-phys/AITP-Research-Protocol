@@ -32,6 +32,8 @@
       "Check AITP status for a topic.",
       "Record a validated physics result in AITP."
     ],
-    "brandColor": "#2563EB"
+    "brandColor": "#2563EB",
+    "composerIcon": "./assets/icon.svg",
+    "logo": "./assets/logo.svg"
   }
 }
