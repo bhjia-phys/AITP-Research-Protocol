@@ -93,6 +93,7 @@ AITP v5 currently supports:
 - read-only execution briefs, claim relation maps, graph slices, and audits
 - progressive recording navigation for deciding where a durable moment belongs
 - project-scope adapter installs for Codex, Claude Code, and Kimi Code
+- a repository-backed Codex plugin with first-run configuration tools
 - migration and recovery audits for older AITP topic stores
 
 AITP is strongest when the research question has durable structure:
@@ -359,6 +360,29 @@ common stale-residue problems.
 
 After installing or changing MCP config, restart the host agent so it reloads
 its MCP servers and skills.
+
+### Optional: Codex Plugin
+
+The repository also ships a local Codex plugin at
+[`plugins/aitp-research-protocol/`](plugins/aitp-research-protocol/). The plugin
+wraps the v5 MCP server and gateway skills in a Codex plugin package.
+
+Install the repo-local marketplace once:
+
+```bash
+codex plugin marketplace add .agents/plugins
+codex plugin add aitp-research-protocol@aitp-local
+```
+
+On first use, if the plugin cannot find an AITP checkout, it starts in setup
+mode instead of failing. Setup mode exposes `aitp_config_status`,
+`aitp_suggest_config`, and `aitp_configure`, so Codex can ask for:
+
+- the local `AITP-Research-Protocol` checkout path,
+- the topics root where AITP should store records.
+
+The plugin saves this to `~/.aitp/codex-plugin-config.json`. After configuration,
+restart Codex or open a new thread so the full `aitp_v5_*` MCP surface loads.
 
 ## Update
 

@@ -1,0 +1,41 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">AITP Research Protocol icon</title>
+  <desc id="desc">A dark square icon with a bright theoretical physics orbit, evidence nodes, and an A monogram.</desc>
+  <defs>
+    <linearGradient id="bg" x1="64" y1="42" x2="448" y2="470" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#12213D"/>
+      <stop offset="0.52" stop-color="#101820"/>
+      <stop offset="1" stop-color="#0B3138"/>
+    </linearGradient>
+    <linearGradient id="orbit" x1="84" y1="110" x2="428" y2="402" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7DD3FC"/>
+      <stop offset="0.46" stop-color="#2F80ED"/>
+      <stop offset="1" stop-color="#12D7D7"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="174" y1="152" x2="340" y2="358" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F8FBFF"/>
+      <stop offset="1" stop-color="#C7E6FF"/>
+    </linearGradient>
+    <filter id="softShadow" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#020617" flood-opacity="0.36"/>
+    </filter>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.07 0 0 0 0 0.84 0 0 0 0 0.84 0 0 0 0.58 0"/>
+      <feBlend in2="SourceGraphic" mode="screen"/>
+    </filter>
+  </defs>
+  <rect x="32" y="32" width="448" height="448" rx="96" fill="url(#bg)" filter="url(#softShadow)"/>
+  <path d="M102 353C139 397 220 390 283 337C347 283 371 203 334 159C297 115 216 122 153 175C89 229 65 309 102 353Z" stroke="#6EE7F9" stroke-width="10" stroke-linecap="round" opacity="0.34"/>
+  <path d="M94 184C129 135 209 132 280 177C352 222 387 299 352 348C317 397 237 400 166 355C94 310 59 233 94 184Z" stroke="url(#orbit)" stroke-width="12" stroke-linecap="round" filter="url(#glow)"/>
+  <path d="M255 89V423" stroke="#EAF6FF" stroke-width="6" stroke-linecap="round" opacity="0.17"/>
+  <path d="M89 256H423" stroke="#EAF6FF" stroke-width="6" stroke-linecap="round" opacity="0.13"/>
+  <path d="M177 358L246 158C249 149 263 149 266 158L335 358H291L279 321H233L221 358H177ZM243 285H269L256 240L243 285Z" fill="url(#mark)"/>
+  <path d="M210 372H302" stroke="#12D7D7" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="127" cy="196" r="22" fill="#F6C14A"/>
+  <circle cx="127" cy="196" r="9" fill="#FFF7D6"/>
+  <circle cx="366" cy="331" r="18" fill="#12D7D7"/>
+  <circle cx="366" cy="331" r="7" fill="#E6FFFF"/>
+  <circle cx="327" cy="142" r="13" fill="#7DD3FC"/>
+  <circle cx="327" cy="142" r="5" fill="#F8FBFF"/>
+</svg>

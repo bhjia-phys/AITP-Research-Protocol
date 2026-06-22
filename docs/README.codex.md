@@ -1,7 +1,49 @@
 # AITP For Codex App
 
-Codex app uses AITP through native skill discovery plus an AITP MCP server.
-This checkout now provides a repository-local Codex adapter path:
+Codex app can use AITP in two ways:
+
+1. A project/user adapter install through `scripts/aitp-pm.py`.
+2. A repository-backed Codex plugin from `plugins/aitp-research-protocol`.
+
+Use the project-scope adapter when you want one research workspace to carry the
+configuration for all local agents. Use the plugin when you want Codex App to
+install AITP from a local marketplace and guide first-run configuration.
+
+## Codex Plugin
+
+This checkout ships a local marketplace at `.agents/plugins` and a plugin at
+`plugins/aitp-research-protocol`.
+
+From the repository root:
+
+```powershell
+codex plugin marketplace add .agents/plugins
+codex plugin add aitp-research-protocol@aitp-local
+```
+
+Then restart Codex or open a new thread.
+
+### First-Run Configuration
+
+If the plugin cannot find an AITP repo checkout, it starts a setup-mode MCP
+server rather than failing. Setup mode exposes:
+
+- `aitp_config_status`
+- `aitp_suggest_config`
+- `aitp_configure`
+
+Codex should ask for:
+
+1. the local `AITP-Research-Protocol` checkout path,
+2. the topics root where AITP should store typed records.
+
+If the user has no topics-root preference, use `~/.aitp/topics`. The setup tool
+writes `~/.aitp/codex-plugin-config.json`. After successful configuration,
+restart Codex or open a new thread so the full `aitp_v5_*` tools load.
+
+## Project/User Adapter Install
+
+This checkout also provides a repository-local Codex adapter path:
 
 ```powershell
 uv run --with pyyaml --with jsonschema --with fastmcp python scripts/aitp-pm.py install --agent codex --scope user

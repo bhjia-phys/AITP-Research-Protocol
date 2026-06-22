@@ -1,10 +1,38 @@
 # Install Codex App Adapter
 
 Status: repository-local adapter support is available through
-`scripts/aitp-pm.py install --agent codex`. The older public-package commands
+`scripts/aitp-pm.py install --agent codex`, and a local Codex plugin is
+available under `plugins/aitp-research-protocol`. The older public-package commands
 (`aitp-kernel`, `aitp install-agent --agent codex`, and
 `scripts/aitp-local.cmd install-agent`) are not valid for this checkout until
 the missing `research/knowledge-hub/knowledge_hub` package source is restored.
+
+## Install The Codex Plugin
+
+The plugin route is the easiest Codex App entry point. It provides the AITP
+gateway skills, launches the v5 MCP server, and falls back to a first-run setup
+MCP if the local AITP checkout has not been configured yet.
+
+From the repository root:
+
+```powershell
+codex plugin marketplace add .agents/plugins
+codex plugin add aitp-research-protocol@aitp-local
+```
+
+Then restart Codex or open a new thread.
+
+On first use, the setup MCP exposes:
+
+- `aitp_config_status`
+- `aitp_suggest_config`
+- `aitp_configure`
+
+Codex should ask for the local `AITP-Research-Protocol` checkout path and the
+topics root where typed records should live. The default topics root is
+`~/.aitp/topics`. Configuration is saved to
+`~/.aitp/codex-plugin-config.json`; after it is written, restart Codex or open a
+new thread so the full `aitp_v5_*` MCP surface loads.
 
 ## Install From This Checkout
 
