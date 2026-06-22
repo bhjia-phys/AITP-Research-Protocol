@@ -84,7 +84,8 @@ local stale residue that could route an agent back to old paths or legacy MCP.
 
 - [Claude Code](INSTALL_CLAUDE_CODE.md)
 - [Kimi Code](INSTALL_KIMI_CODE.md)
-- [Codex](INSTALL_CODEX.md)
+- [Codex](INSTALL_CODEX.md), including the optional
+  `plugins/aitp-research-protocol` Codex plugin and first-run setup flow
 
 After install verification, continue with:
 - [QUICKSTART.md](QUICKSTART.md)

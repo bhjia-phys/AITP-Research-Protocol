@@ -1,0 +1,37 @@
+{
+  "name": "aitp-research-protocol",
+  "version": "0.1.0+codex.20260622081904",
+  "description": "Codex plugin for the local AITP v5 theoretical-physics research protocol.",
+  "author": {
+    "name": "bhjia-phys"
+  },
+  "repository": "https://github.com/bhjia-phys/AITP-Research-Protocol",
+  "license": "MIT",
+  "keywords": [
+    "aitp",
+    "theoretical-physics",
+    "research-protocol",
+    "mcp",
+    "codex"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "AITP Research Protocol",
+    "shortDescription": "Use the local AITP v5 research kernel from Codex.",
+    "longDescription": "Connects Codex to the repository-backed AITP v5 MCP server and installs skills for typed theoretical-physics research workflows, evidence recording, validation gates, and trust-controlled memory.",
+    "developerName": "bhjia-phys",
+    "category": "Productivity",
+    "capabilities": [
+      "MCP",
+      "Research",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Continue my active AITP physics topic.",
+      "Check AITP status for a topic.",
+      "Record a validated physics result in AITP."
+    ],
+    "brandColor": "#2563EB"
+  }
+}
