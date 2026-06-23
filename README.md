@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="plugins/aitp-research-protocol/assets/icon.svg" alt="AITP icon" width="128" height="128">
+</p>
+
 # AITP - AI Theoretical Physicist Protocol
 
 AITP is a local research graph and agent tool layer for theoretical-physics
