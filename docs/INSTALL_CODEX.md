@@ -18,6 +18,7 @@ From the repository root:
 ```powershell
 codex plugin marketplace add .agents/plugins
 codex plugin add aitp-research-protocol@aitp-local
+codex plugin list --marketplace aitp-local
 ```
 
 Then restart Codex or open a new thread.
@@ -34,19 +35,44 @@ topics root where typed records should live. The default topics root is
 `~/.aitp/codex-plugin-config.json`; after it is written, restart Codex or open a
 new thread so the full `aitp_v5_*` MCP surface loads.
 
+The plugin resolves configuration in this order:
+
+1. `AITP_REPO_ROOT` and `AITP_TOPICS_ROOT` environment variables.
+2. `~/.aitp/codex-plugin-config.json`.
+3. `~/.aitp/install-record.json` from `scripts/aitp-pm.py install`.
+4. `vendor/AITP-Research-Protocol` inside the plugin directory.
+5. The current working directory or one of its parents.
+
+Remove the plugin with:
+
+```powershell
+codex plugin remove aitp-research-protocol@aitp-local
+```
+
+That removes the Codex plugin registration and local plugin cache. It does not
+delete the AITP checkout, topics root, or adapter files installed with
+`scripts/aitp-pm.py`.
+
 ## Install From This Checkout
 
 Use `uv` unless your default `python` already has `pyyaml`, `jsonschema`, and
 `fastmcp` installed:
 
 ```powershell
-uv run --with pyyaml --with jsonschema --with fastmcp python scripts/aitp-pm.py install --agent codex --scope user
+uv run --with pyyaml --with jsonschema --with fastmcp `
+  python scripts/aitp-pm.py install `
+  --agent codex `
+  --scope user
 ```
 
 Project-local install:
 
 ```powershell
-uv run --with pyyaml --with jsonschema --with fastmcp python scripts/aitp-pm.py install --agent codex --scope project --target-root <workspace>
+uv run --with pyyaml --with jsonschema --with fastmcp `
+  python scripts/aitp-pm.py install `
+  --agent codex `
+  --scope project `
+  --target-root <workspace>
 ```
 
 The installer deploys:
@@ -72,8 +98,11 @@ If no Codex-specific root exists, the installer creates
 Run:
 
 ```powershell
-uv run --with pyyaml --with jsonschema --with fastmcp python scripts/aitp-pm.py doctor
-uv run --with pyyaml --with jsonschema --with fastmcp python -m brain.cli --help
+uv run --with pyyaml --with jsonschema --with fastmcp `
+  python scripts/aitp-pm.py doctor
+
+uv run --with pyyaml --with jsonschema --with fastmcp `
+  python -m brain.v5.cli --help
 ```
 
 Inspect deployed skills if needed:
@@ -105,7 +134,9 @@ The `aitp` entry should show:
 Run a real Codex MCP smoke test from a workspace that has AITP topics:
 
 ```powershell
-codex exec --dangerously-bypass-approvals-and-sandbox -C <workspace> "Call the read-only AITP list topics tool with topics_root='<topics-root>' and report the topic count."
+codex exec --dangerously-bypass-approvals-and-sandbox `
+  -C <workspace> `
+  "Call the read-only AITP list topics tool with topics_root='<topics-root>' and report the topic count."
 ```
 
 The startup log should include `mcp: aitp ready`, and the tool call should use
@@ -128,7 +159,10 @@ phrases:
 ## Remove
 
 ```powershell
-uv run --with pyyaml --with jsonschema --with fastmcp python scripts/aitp-pm.py uninstall --agent codex --scope user
+uv run --with pyyaml --with jsonschema --with fastmcp `
+  python scripts/aitp-pm.py uninstall `
+  --agent codex `
+  --scope user
 ```
 
 For full cleanup guidance, see [UNINSTALL.md](UNINSTALL.md).

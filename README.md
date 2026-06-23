@@ -19,16 +19,29 @@ confusing notes, guesses, failed setup, validation, and trusted conclusions.
 | Question | Answer |
 |----------|--------|
 | Current version | AITP 0.5.0, implementation generation v5 |
+| Active implementation | [`brain/v5/`](brain/v5/) |
 | Source of truth | Typed records under `<topics-root>/.aitp/` |
 | Main agent entrypoint | MCP server at [`brain/v5/native_mcp.py`](brain/v5/native_mcp.py) |
 | Best default install | Project-scope install with [`scripts/aitp-pm.py`](scripts/aitp-pm.py) |
 | Codex path | Repository-backed plugin at [`plugins/aitp-research-protocol/`](plugins/aitp-research-protocol/) |
+| Health checks | `scripts/aitp-pm.py status` and `scripts/aitp-pm.py doctor` |
 | Trust rule | Summaries and dashboards orient agents; typed evidence and validation carry trust |
+
+## Choose An Install Path
+
+| If you want... | Use this path | Why |
+|----------------|---------------|-----|
+| One research workspace shared by Codex, Claude Code, and Kimi Code | Project-scope install | Keeps MCP config, skills, hooks, and topics root local to that workspace |
+| Codex App access with a visible local plugin | Codex plugin | Installs a Codex plugin package with first-run setup tools |
+| AITP available across your whole user account | User-scope install | Writes host config under user-level agent directories |
+| A custom or unsupported host | Manual MCP setup | Point the host directly at `brain/v5/native_mcp.py` |
+
+For research work, project scope is the safest default. It avoids surprising
+global config changes and makes every agent point at the same topics root.
 
 ## Quick Start
 
-Use this path when you want AITP available inside one research workspace without
-changing global host configuration.
+### Project-Scope Install
 
 ```bash
 git clone https://github.com/bhjia-phys/AITP-Research-Protocol.git
@@ -42,21 +55,40 @@ uv run --with pyyaml --with jsonschema --with fastmcp \
   --topics-root /absolute/path/to/workspace/research/aitp-topics
 
 uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py status
+
+uv run --with pyyaml --with jsonschema --with fastmcp \
   python scripts/aitp-pm.py doctor
 ```
 
-Then restart the host agent so it reloads project-local MCP and skill files.
+Then restart Codex, Claude Code, Kimi Code, or any other configured host so it
+reloads project-local MCP and skill files.
 
-For Codex plugin users, add the repo-local marketplace and plugin after cloning:
+### Codex Plugin
 
 ```bash
 codex plugin marketplace add .agents/plugins
 codex plugin add aitp-research-protocol@aitp-local
+codex plugin list --marketplace aitp-local
 ```
 
-If the plugin does not yet know where the AITP checkout or topics root lives,
-it starts in setup mode and exposes configuration tools so Codex can ask for
-those paths on first use.
+On first use, the plugin starts in setup mode if it cannot find an AITP
+checkout. Codex can then call:
+
+- `aitp_config_status`
+- `aitp_suggest_config`
+- `aitp_configure(repo_root="...", topics_root="...")`
+
+After `aitp_configure` succeeds, restart Codex or open a new thread so the full
+`aitp_v5_*` MCP tool surface loads.
+
+### Success Signals
+
+- `doctor` reports no blocking install issues.
+- `status` lists the installed agent and scope you expect.
+- The host exposes the `aitp` MCP server or AITP plugin tools after restart.
+- AITP records are written under the configured topics root, not into the plugin
+  cache.
 
 ## Protocol Goal
 
@@ -247,6 +279,30 @@ verify the recording effect
 This keeps the graph useful without making the agent write on every internal
 thought step.
 
+## Using AITP After Install
+
+For Codex plugin users, start a new Codex thread after plugin setup and ask to
+use AITP for the current physics topic. If the plugin is still in setup mode,
+Codex should call `aitp_config_status`, ask for the missing paths, then call
+`aitp_configure`.
+
+For project-scope adapter installs, open the target workspace in the host agent.
+The installed gateway skills tell the agent to read AITP context first and then
+call `aitp_v5_*` MCP tools for durable records.
+
+The normal use pattern is:
+
+1. Find or create the topic/session/claim.
+2. Read the execution brief and relation map.
+3. Do the research work in the host agent.
+4. Record only durable sources, artifacts, evidence, validation results, proof
+   gaps, route changes, and human decisions.
+5. Run status or audit tools before treating a result as trusted context.
+
+When MCP is unavailable, use the CLI layer below as a diagnostic and fallback
+surface. Do not manually edit `.aitp/registry` records as a substitute for typed
+tools.
+
 ## MCP Tool Layer
 
 The MCP server entrypoint is:
@@ -351,6 +407,9 @@ cd AITP-Research-Protocol
 Project-scope install keeps AITP configuration inside one research workspace.
 This is the safest mode for reproducible research and multi-agent use.
 
+Use this when a workspace such as `/absolute/path/to/workspace` owns the actual
+research files and should also own its AITP topics root.
+
 ```bash
 uv run --with pyyaml --with jsonschema --with fastmcp \
   python scripts/aitp-pm.py install \
@@ -375,10 +434,14 @@ The exact files depend on the selected agent and the host's conventions.
 Project-scope install does **not** register a global `aitp` wrapper. It keeps
 host configuration local to the target workspace.
 
+To install only one host, change `--agent all` to `--agent codex`,
+`--agent claude-code`, or `--agent kimi-code`.
+
 ### Optional: User-Scope Install
 
 User-scope install writes into user-level agent config locations. Use it only if
-you intentionally want AITP available globally for that host account.
+you intentionally want AITP available globally for that host account. A bare
+install defaults to user scope.
 
 ```bash
 uv run --with pyyaml --with jsonschema --with fastmcp \
@@ -409,11 +472,20 @@ common stale-residue problems.
 After installing or changing MCP config, restart the host agent so it reloads
 its MCP servers and skills.
 
+For direct host checks:
+
+- Codex: `codex mcp get aitp`
+- Claude Code: inspect the project `.mcp.json` or configured Claude MCP entry.
+- Kimi Code: inspect `.kimi-code/mcp.json` and `.kimi/mcp.json` if both paths
+  exist on the machine.
+
 ### Optional: Codex Plugin
 
 The repository also ships a local Codex plugin at
 [`plugins/aitp-research-protocol/`](plugins/aitp-research-protocol/). The plugin
-wraps the v5 MCP server and gateway skills in a Codex plugin package.
+wraps the v5 MCP server and gateway skills in a Codex plugin package. This is
+the friendliest Codex App route, but it is still local: the plugin needs an
+AITP checkout and writes research records to a configured topics root.
 
 <p>
   <img src="plugins/aitp-research-protocol/assets/icon.svg" alt="AITP Research Protocol plugin icon" width="96" height="96">
@@ -424,6 +496,7 @@ Install the repo-local marketplace once:
 ```bash
 codex plugin marketplace add .agents/plugins
 codex plugin add aitp-research-protocol@aitp-local
+codex plugin list --marketplace aitp-local
 ```
 
 On first use, if the plugin cannot find an AITP checkout, it starts in setup
@@ -436,28 +509,49 @@ mode instead of failing. Setup mode exposes `aitp_config_status`,
 The plugin saves this to `~/.aitp/codex-plugin-config.json`. After configuration,
 restart Codex or open a new thread so the full `aitp_v5_*` MCP surface loads.
 
+The plugin resolves paths in this order:
+
+1. `AITP_REPO_ROOT` and `AITP_TOPICS_ROOT` environment variables.
+2. `~/.aitp/codex-plugin-config.json`.
+3. `~/.aitp/install-record.json` from `scripts/aitp-pm.py install`.
+4. `vendor/AITP-Research-Protocol` inside the plugin directory.
+5. The current working directory or one of its parents.
+
+Remove the plugin with:
+
+```bash
+codex plugin remove aitp-research-protocol@aitp-local
+```
+
+That removes the Codex plugin registration and cache. It does not delete the
+AITP repository checkout, the topics root, or adapter files installed by
+`scripts/aitp-pm.py`; use the uninstall commands below for those.
+
 ## Update
 
-To refresh installed adapters from the current repository checkout:
+Use `update` when the checkout already contains the code you want and you only
+need to redeploy recorded host files:
 
 ```bash
 uv run --with pyyaml --with jsonschema --with fastmcp \
   python scripts/aitp-pm.py update
 ```
 
-To pull the latest repository changes and redeploy recorded installs:
+Use `upgrade` when you want the package manager to pull the latest repository
+changes and redeploy recorded installs:
 
 ```bash
 uv run --with pyyaml --with jsonschema --with fastmcp \
   python scripts/aitp-pm.py upgrade
 ```
 
-Run `doctor` after update or upgrade.
+If the working tree has local changes, `upgrade` stops unless you pass
+`--force`, which stashes before pulling. Run `doctor` after update or upgrade.
 
 ## Uninstall
 
-Use the package manager whenever possible. It removes only files recorded during
-install.
+Use the package manager whenever possible. It removes generated host files that
+AITP recorded during install and updates `~/.aitp/install-record.json`.
 
 Project-scope uninstall:
 
@@ -485,7 +579,10 @@ uv run --with pyyaml --with jsonschema --with fastmcp \
   python scripts/aitp-pm.py status
 ```
 
-Manual cleanup notes are in [`docs/UNINSTALL.md`](docs/UNINSTALL.md).
+Uninstall does not delete the AITP repository checkout or the topics root that
+contains research records. Delete those manually only when you are sure they are
+no longer needed. Manual cleanup notes are in
+[`docs/UNINSTALL.md`](docs/UNINSTALL.md).
 
 ## Hakimi And Other Harnesses
 

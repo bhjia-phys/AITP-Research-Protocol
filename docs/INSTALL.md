@@ -1,6 +1,8 @@
 # Install Guide
 
-This is the single install path for AITP v5.
+This is the install guide for AITP v5. For research workspaces, prefer
+project-scope install so all agents use the same AITP checkout, topics root, and
+MCP entrypoint.
 
 ## Prerequisites
 
@@ -11,35 +13,40 @@ This is the single install path for AITP v5.
 ## Install
 
 ```bash
-git clone git@github.com:bhjia-phys/AITP-Research-Protocol.git
+git clone https://github.com/bhjia-phys/AITP-Research-Protocol.git
 cd AITP-Research-Protocol
-python scripts/aitp-pm.py install
 ```
 
 For research workspaces, prefer a project-scope install so every agent uses the
 same repository, topic store, and MCP entrypoint:
 
 ```bash
-python scripts/aitp-pm.py install --agent all --scope project \
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py install \
+  --agent all \
+  --scope project \
   --target-root /path/to/workspace \
   --topics-root /path/to/workspace/research/aitp-topics
 ```
 
-The installer deploys v5 gateway skills, v5-safe hooks, and MCP configs. User
-scope also registers a global `aitp` wrapper when possible; project scope does
-not.
+The installer deploys v5 gateway skills, v5-safe hooks, and MCP configs. A bare
+`python scripts/aitp-pm.py install` defaults to user scope and may register a
+global `aitp` wrapper when possible; project scope does not.
 
 ## Options
 
 ```bash
 # Install for a specific agent only
-python scripts/aitp-pm.py install --agent claude-code
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py install --agent claude-code
 
 # Project-level install
-python scripts/aitp-pm.py install --scope project --target-root /path/to/workspace
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py install --scope project --target-root /path/to/workspace
 
 # Custom topics directory
-python scripts/aitp-pm.py install --topics-root /path/to/workspace/research/aitp-topics
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py install --topics-root /path/to/workspace/research/aitp-topics
 ```
 
 ## What Gets Installed
@@ -72,8 +79,11 @@ AITP_INSTALL_LEGACY_STAGE_HOOKS=1 python scripts/aitp-pm.py install ...
 ## Verify
 
 ```bash
-python scripts/aitp-pm.py doctor
-python scripts/aitp-pm.py status
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py status
+
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py doctor
 ```
 
 The health check verifies Python dependencies, repository files, topics root,
@@ -86,6 +96,35 @@ local stale residue that could route an agent back to old paths or legacy MCP.
 - [Kimi Code](INSTALL_KIMI_CODE.md)
 - [Codex](INSTALL_CODEX.md), including the optional
   `plugins/aitp-research-protocol` Codex plugin and first-run setup flow
+
+## Update And Uninstall
+
+Refresh installed host files from the current checkout:
+
+```bash
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py update
+```
+
+Pull the latest repository changes and redeploy recorded installs:
+
+```bash
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py upgrade
+```
+
+Remove generated host files from a project workspace:
+
+```bash
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py uninstall \
+  --agent all \
+  --scope project \
+  --target-root /path/to/workspace
+```
+
+Uninstall does not delete the AITP checkout or the topics root containing
+research records. See [UNINSTALL.md](UNINSTALL.md) for cleanup details.
 
 After install verification, continue with:
 - [QUICKSTART.md](QUICKSTART.md)
