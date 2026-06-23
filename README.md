@@ -367,6 +367,10 @@ The repository also ships a local Codex plugin at
 [`plugins/aitp-research-protocol/`](plugins/aitp-research-protocol/). The plugin
 wraps the v5 MCP server and gateway skills in a Codex plugin package.
 
+<p>
+  <img src="plugins/aitp-research-protocol/assets/icon.svg" alt="AITP Research Protocol plugin icon" width="96" height="96">
+</p>
+
 Install the repo-local marketplace once:
 
 ```bash
