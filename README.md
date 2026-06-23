@@ -14,6 +14,50 @@ transcript logger. The goal is more specific: preserve the real scientific
 process well enough that another agent or human can continue the work without
 confusing notes, guesses, failed setup, validation, and trusted conclusions.
 
+## At A Glance
+
+| Question | Answer |
+|----------|--------|
+| Current version | AITP 0.5.0, implementation generation v5 |
+| Source of truth | Typed records under `<topics-root>/.aitp/` |
+| Main agent entrypoint | MCP server at [`brain/v5/native_mcp.py`](brain/v5/native_mcp.py) |
+| Best default install | Project-scope install with [`scripts/aitp-pm.py`](scripts/aitp-pm.py) |
+| Codex path | Repository-backed plugin at [`plugins/aitp-research-protocol/`](plugins/aitp-research-protocol/) |
+| Trust rule | Summaries and dashboards orient agents; typed evidence and validation carry trust |
+
+## Quick Start
+
+Use this path when you want AITP available inside one research workspace without
+changing global host configuration.
+
+```bash
+git clone https://github.com/bhjia-phys/AITP-Research-Protocol.git
+cd AITP-Research-Protocol
+
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py install \
+  --agent all \
+  --scope project \
+  --target-root /absolute/path/to/workspace \
+  --topics-root /absolute/path/to/workspace/research/aitp-topics
+
+uv run --with pyyaml --with jsonschema --with fastmcp \
+  python scripts/aitp-pm.py doctor
+```
+
+Then restart the host agent so it reloads project-local MCP and skill files.
+
+For Codex plugin users, add the repo-local marketplace and plugin after cloning:
+
+```bash
+codex plugin marketplace add .agents/plugins
+codex plugin add aitp-research-protocol@aitp-local
+```
+
+If the plugin does not yet know where the AITP checkout or topics root lives,
+it starts in setup mode and exposes configuration tools so Codex can ask for
+those paths on first use.
+
 ## Protocol Goal
 
 AITP is designed around a human-in-the-loop research loop:
@@ -298,7 +342,7 @@ Prerequisites:
 Clone the repository:
 
 ```bash
-git clone git@github.com:bhjia-phys/AITP-Research-Protocol.git
+git clone https://github.com/bhjia-phys/AITP-Research-Protocol.git
 cd AITP-Research-Protocol
 ```
 
@@ -520,6 +564,13 @@ Some legacy tests describe older protocol behavior, so prefer v5-specific tests
 when modifying v5 runtime, MCP, graph, or adapter code.
 
 ## Key Docs
+
+- New user path: start with this README, then run `doctor`, then read the
+  host-specific install note for the agent you use.
+- Protocol path: read [`docs/AITP_SPEC.md`](docs/AITP_SPEC.md) before changing
+  typed-record behavior, trust rules, or human-facing output contracts.
+- Cleanup path: use [`docs/UNINSTALL.md`](docs/UNINSTALL.md) before manually
+  deleting generated host files.
 
 - [`docs/AITP_SPEC.md`](docs/AITP_SPEC.md) - protocol specification
 - [`docs/INSTALL.md`](docs/INSTALL.md) - install guide
