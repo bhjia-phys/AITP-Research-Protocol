@@ -150,6 +150,8 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "workspace_summary_bundle",
         "goal_continuation_packet",
         "goal_continuation_list",
+        "hpc_cockpit",
+        "lane_contract_record",
     }
 
 

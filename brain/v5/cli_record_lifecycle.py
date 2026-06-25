@@ -8,7 +8,14 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from brain.v5.lifecycle_events import audit_routing, lifecycle_history, rehome_record, supersede_record
+from brain.v5.lifecycle_events import (
+    audit_routing,
+    lifecycle_history,
+    plan_rehome,
+    plan_supersede,
+    rehome_record,
+    supersede_record,
+)
 from brain.v5.workspace import init_workspace
 
 
@@ -18,6 +25,17 @@ def _now() -> str:
 
 def cmd_record_rehome(args) -> dict:
     ws = init_workspace(args.base)
+    if getattr(args, "dry_run", False):
+        return plan_rehome(
+            ws,
+            record_id=args.record_id,
+            subject_kind=args.kind,
+            from_topic=args.from_topic,
+            to_topic=args.to_topic,
+            reason=args.reason,
+            operator=args.operator or "cli",
+            timestamp=args.timestamp or _now(),
+        )
     event = rehome_record(
         ws,
         record_id=args.record_id,
@@ -33,6 +51,17 @@ def cmd_record_rehome(args) -> dict:
 
 def cmd_record_supersede(args) -> dict:
     ws = init_workspace(args.base)
+    if getattr(args, "dry_run", False):
+        return plan_supersede(
+            ws,
+            record_id=args.record_id,
+            subject_kind=args.kind,
+            status=args.status,
+            reason=args.reason,
+            operator=args.operator or "cli",
+            timestamp=args.timestamp or _now(),
+            replacement_ref=args.replacement_ref or "",
+        )
     event = supersede_record(
         ws,
         record_id=args.record_id,

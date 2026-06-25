@@ -238,6 +238,10 @@ class ToolRunRecord:
     code_state_ids: list[str] = field(default_factory=list)
     artifact_ids: list[str] = field(default_factory=list)
     source_refs: list[str] = field(default_factory=list)
+    scientific_run_id: str = ""
+    supersedes: str = ""
+    superseded_by: str = ""
+    lane: str = "diagnostic"
     kind: str = "tool_run"
 
 
@@ -729,3 +733,36 @@ class MemoryEntryRecord:
     @property
     def record_id(self) -> str:
         return self.entry_id
+
+
+@dataclass
+class LaneContractRecord:
+    """A typed lane contract for a compute topic.
+
+    Promotes the cockpit's lane discipline (forbidden/preferred remote roots,
+    final allowlist, final-evidence rules, default lane) from a generated JSON
+    surface into an auditable, rehome-able typed record. It constrains how
+    downstream plotting/reporting treats rows and which roots may feed final
+    evidence, but it cannot update claim trust.
+    """
+
+    contract_id: str
+    topic_id: str
+    campaign: str = ""
+    claim_id: str = ""
+    forbidden_roots: list[str] = field(default_factory=list)
+    preferred_clean_roots: list[str] = field(default_factory=list)
+    final_allowlist: list[str] = field(default_factory=list)
+    final_rules: list[str] = field(default_factory=list)
+    default_lane: str = "diagnostic"
+    trust_update_forbidden: bool = False
+    notes: list[str] = field(default_factory=list)
+    lifecycle_status: str = "active"
+    metadata: dict = field(default_factory=dict)
+    kind: str = "lane_contract"
+
+    @property
+    def record_id(self) -> str:
+        return self.contract_id
+
+

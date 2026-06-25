@@ -542,21 +542,27 @@ def _build_parser() -> argparse.ArgumentParser:
 
     rh = rps.add_parser("rehome")
     rh.add_argument("--record-id", required=True)
-    rh.add_argument("--kind", required=True, choices=["claim", "evidence", "tool_run", "session"])
+    rh.add_argument("--kind", required=True, choices=[
+        "claim", "evidence", "tool_run", "session",
+    ])
     rh.add_argument("--from-topic", required=True)
     rh.add_argument("--to-topic", required=True)
     rh.add_argument("--reason", required=True)
     rh.add_argument("--operator", default="")
     rh.add_argument("--timestamp", default="")
+    rh.add_argument("--dry-run", action="store_true", dest="dry_run")
 
     rs = rps.add_parser("supersede")
     rs.add_argument("--record-id", required=True)
-    rs.add_argument("--kind", required=True, choices=["claim", "evidence", "tool_run", "session"])
+    rs.add_argument("--kind", required=True, choices=[
+        "claim", "evidence", "tool_run", "session",
+    ])
     rs.add_argument("--status", required=True, choices=["misrouted", "voided", "superseded", "duplicate"])
     rs.add_argument("--reason", required=True)
     rs.add_argument("--replacement-ref", default="")
     rs.add_argument("--operator", default="")
     rs.add_argument("--timestamp", default="")
+    rs.add_argument("--dry-run", action="store_true", dest="dry_run")
 
     ra = rps.add_parser("audit-routing")
     ra.add_argument("--topic", required=True)

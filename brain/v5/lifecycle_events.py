@@ -12,7 +12,11 @@ from pathlib import Path
 from typing import Iterable
 
 from brain.v5.ids import prefixed_id, short_hash
-from brain.v5.models import ClaimRecord, EvidenceRecord, LifecycleEventRecord
+from brain.v5.models import (
+    ClaimRecord,
+    EvidenceRecord,
+    LifecycleEventRecord,
+)
 from brain.v5.store import list_valid_records, read_record, write_record
 from brain.v5.workspace import WorkspacePaths
 
@@ -145,8 +149,14 @@ def create_lifecycle_event(
     return event
 
 
-_KIND_TO_FAMILY = {"claim": "claims", "evidence": "evidence"}
-_KIND_TO_RECORD_CLS = {"claim": ClaimRecord, "evidence": EvidenceRecord}
+_KIND_TO_FAMILY = {
+    "claim": "claims",
+    "evidence": "evidence",
+}
+_KIND_TO_RECORD_CLS = {
+    "claim": ClaimRecord,
+    "evidence": EvidenceRecord,
+}
 
 
 class LifecycleError(ValueError):
@@ -183,7 +193,12 @@ def _rewrite_subject_frontmatter(path: Path, cls, **overrides):
     filtered = {k: v for k, v in fm.items() if k in allowed}
     record = cls(**filtered)
     for key, value in overrides.items():
-        setattr(record, key, value)
+        # Only set fields the dataclass actually declares. Kernel claim/evidence
+        # records carry rehome_target_topic/rehome_event_id/replaced_by; HPC
+        # compute records only carry lifecycle_status, which is enough for the
+        # relation-map filter (the lifecycle_event itself keeps full provenance).
+        if key in allowed:
+            setattr(record, key, value)
     write_record(path, record, body=body)
 
 
@@ -383,3 +398,107 @@ def lifecycle_history(ws: WorkspacePaths, *, record_id: str) -> dict:
     events = [e for e in list_lifecycle_events(ws) if e.subject_record_id == record_id]
     events.sort(key=lambda e: (e.timestamp, e.event_id))
     return {"record_id": record_id, "events": events}
+
+
+def plan_rehome(
+    ws: WorkspacePaths,
+    *,
+    record_id: str,
+    subject_kind: str,
+    from_topic: str,
+    to_topic: str,
+    reason: str,
+    operator: str,
+    timestamp: str,
+) -> dict:
+    """Dry-run preview of a rehome: run all validation, write nothing.
+
+    Returns the would-be event id and the subject frontmatter fields that would
+    be mutated, so a CLI/MCP ``--dry-run`` can show the user the plan without
+    touching the registry.
+    """
+
+    from dataclasses import fields as _fields
+
+    if not to_topic:
+        raise LifecycleError("rehome requires to_topic")
+    _path, cls, rec = _load_subject(ws, record_id, subject_kind)
+    rec_topic = getattr(rec, "topic_id", "")
+    if from_topic != rec_topic:
+        raise LifecycleError(
+            f"from_topic {from_topic!r} does not match record topic_id {rec_topic!r}"
+        )
+    if not (ws.topic_dir(to_topic) / "topic.md").exists():
+        raise LifecycleError(f"target topic not found: {to_topic}")
+    salt = _idempotency_salt(
+        "rehome", to_topic=to_topic, lifecycle_status="rehomed", replacement_ref=""
+    )
+    event_id = _event_id("rehome", record_id, salt=salt)
+    declared = {f.name for f in _fields(cls)}
+    would_set = [
+        field
+        for field in ("lifecycle_status", "rehome_target_topic", "rehome_event_id")
+        if field in declared
+    ]
+    return {
+        "ok": True,
+        "dry_run": True,
+        "kind": "lifecycle_rehome_plan",
+        "would_write_event_id": event_id,
+        "event_type": "rehome",
+        "subject_record_id": record_id,
+        "subject_kind": subject_kind,
+        "from_topic": from_topic,
+        "to_topic": to_topic,
+        "reason": reason,
+        "operator": operator,
+        "timestamp": timestamp,
+        "would_mutate_subject_frontmatter": would_set,
+        "writes_nothing": True,
+        "summary_inputs_trusted": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def plan_supersede(
+    ws: WorkspacePaths,
+    *,
+    record_id: str,
+    subject_kind: str,
+    status: str,
+    reason: str,
+    operator: str,
+    timestamp: str,
+    replacement_ref: str = "",
+) -> dict:
+    """Dry-run preview of a supersede: run all validation, write nothing."""
+
+    from dataclasses import fields as _fields
+
+    if status not in _SUPERSEDE_STATUSES:
+        raise LifecycleError(f"unknown supersede status: {status!r}")
+    _path, cls, _rec = _load_subject(ws, record_id, subject_kind)
+    declared = {f.name for f in _fields(cls)}
+    would_set = [field for field in ("lifecycle_status", "replaced_by") if field in declared]
+    salt = _idempotency_salt(
+        "supersede", to_topic="", lifecycle_status=status, replacement_ref=replacement_ref
+    )
+    event_id = _event_id("supersede", record_id, salt=salt)
+    return {
+        "ok": True,
+        "dry_run": True,
+        "kind": "lifecycle_supersede_plan",
+        "would_write_event_id": event_id,
+        "event_type": "supersede",
+        "subject_record_id": record_id,
+        "subject_kind": subject_kind,
+        "status": status,
+        "replacement_ref": replacement_ref,
+        "reason": reason,
+        "operator": operator,
+        "timestamp": timestamp,
+        "would_mutate_subject_frontmatter": would_set,
+        "writes_nothing": True,
+        "summary_inputs_trusted": False,
+        "can_update_claim_trust": False,
+    }

@@ -150,6 +150,8 @@ _PUBLIC_SURFACE_NAMES = (
     "workspace_recording_audit",
     "goal_continuation_packet",
     "goal_continuation_list",
+    "lane_contract_record",
+    "hpc_cockpit",
 )
 _PUBLIC_SURFACE_VALIDATOR_REF = "brain.v5.public_surfaces.require_valid_public_surface"
 _PUBLIC_SURFACE_PURPOSES = {
@@ -298,6 +300,8 @@ _PUBLIC_SURFACE_PURPOSES = {
     "workspace_recording_audit": "read-only workspace-level recording navigation audit that tells agents which topics can enter progressive slot expansion and which require human or recovery review first",
     "goal_continuation_packet": "orientation-only local audit packet for cross-session goal continuation; records objective, commits, changed files, tests, smoke, readiness, next actions, and blocking backlog without changing kernel state",
     "goal_continuation_list": "orientation-only index of local goal continuation packets for cross-session audit discovery without changing kernel state",
+    "lane_contract_record": "contracted typed lane contract promoting forbidden/preferred roots, final allowlist, and final-evidence rules for a compute topic into auditable lane discipline without claim-trust authority",
+    "hpc_cockpit": "orientation-only HPC cockpit aggregating effective attempts, active jobs, failure history, lane distribution, provenance gaps, and lane-contract discipline for a compute topic without claim-trust authority",
 }
 
 
@@ -506,6 +510,8 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_goal_continuation_list,
         require_valid_goal_continuation_packet,
     )
+    from brain.v5.hpc_cockpit_contracts import require_valid_hpc_cockpit
+    from brain.v5.lane_contracts_contracts import require_valid_lane_contract_record
     from brain.v5.hook_protocol_contracts import (
         require_valid_claude_code_hook_installation,
         require_valid_claude_code_hook_settings,
@@ -677,4 +683,6 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "workspace_recording_audit": require_valid_workspace_recording_audit,
         "goal_continuation_packet": require_valid_goal_continuation_packet,
         "goal_continuation_list": require_valid_goal_continuation_list,
+        "lane_contract_record": require_valid_lane_contract_record,
+        "hpc_cockpit": require_valid_hpc_cockpit,
     }

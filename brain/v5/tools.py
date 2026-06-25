@@ -11,9 +11,10 @@ from typing import Any
 from dataclasses import asdict
 
 from brain.v5.ids import prefixed_id, short_hash
+from brain.v5.markdown import read_md
 from brain.v5.models import ToolRecipeRecord, ToolRunRecord
 from brain.v5.paths import WorkspacePaths
-from brain.v5.store import write_record
+from brain.v5.store import read_record, write_record
 
 
 def register_tool_recipe(
@@ -61,8 +62,18 @@ def record_tool_run(
     code_state_ids: list[str] | None = None,
     artifact_ids: list[str] | None = None,
     source_refs: list[str] | None = None,
+    scientific_run_id: str = "",
+    supersedes: str = "",
+    lane: str = "diagnostic",
 ) -> ToolRunRecord:
-    """Record one tool execution as auditable evidence input."""
+    """Record one tool execution as auditable evidence input.
+
+    HPC job attempts reuse this same record. ``scientific_run_id`` groups the
+    attempts of one scientific run; ``supersedes`` points at the prior attempt
+    being replaced and back-fills that record's ``superseded_by``; ``lane``
+    marks the run ``final``/``diagnostic``/``exploratory`` and defaults to
+    ``diagnostic`` so an unmarked run can never be mistaken for final evidence.
+    """
 
     run_basis = ":".join(
         [
@@ -76,6 +87,20 @@ def record_tool_run(
         ]
     )
     run_id = prefixed_id("tool-run", run_basis, max_slug=72)
+
+    inherited_run_id = scientific_run_id
+    backfill: tuple[Path, ToolRunRecord, str] | None = None
+    if supersedes:
+        old_path = ws.registry_dir("tool_runs") / f"{supersedes}.md"
+        if not old_path.exists():
+            raise ValueError(f"superseded tool run not found: {supersedes}")
+        old_record = read_record(old_path, ToolRunRecord)
+        _, old_body = read_md(old_path)
+        old_record.superseded_by = run_id
+        backfill = (old_path, old_record, old_body)
+        if not inherited_run_id and old_record.scientific_run_id:
+            inherited_run_id = old_record.scientific_run_id
+
     record = ToolRunRecord(
         run_id=run_id,
         recipe_id=recipe_id,
@@ -90,12 +115,18 @@ def record_tool_run(
         code_state_ids=code_state_ids or [],
         artifact_ids=artifact_ids or [],
         source_refs=source_refs or [],
+        scientific_run_id=inherited_run_id,
+        supersedes=supersedes,
+        lane=lane,
     )
     write_record(
         ws.registry_dir("tool_runs") / f"{run_id}.md",
         record,
         body=f"# Tool Run\n\nRecipe: `{recipe_id}`\n\nTool: `{tool_family}:{tool_name}`\n",
     )
+    if backfill is not None:
+        old_path, old_record, old_body = backfill
+        write_record(old_path, old_record, body=old_body)
     return record
 
 
@@ -115,6 +146,9 @@ def capture_tool_run_from_local_path(
     code_state_ids: list[str] | None = None,
     artifact_ids: list[str] | None = None,
     source_refs: list[str] | None = None,
+    scientific_run_id: str = "",
+    supersedes: str = "",
+    lane: str = "diagnostic",
     summary: str = "",
     max_preview_chars: int = 1200,
 ) -> ToolRunRecord:
@@ -169,8 +203,50 @@ def capture_tool_run_from_local_path(
         code_state_ids=code_state_ids,
         artifact_ids=artifact_ids,
         source_refs=source_refs,
+        scientific_run_id=scientific_run_id,
+        supersedes=supersedes,
+        lane=lane,
     )
     return run
+
+
+def link_code_state_to_run(
+    ws: WorkspacePaths, *, run_id: str, code_state_id: str
+) -> ToolRunRecord:
+    """Back-link a code_state to an existing tool run (idempotent).
+
+    Fills the ``code_state_ids`` gap left when a run was recorded before its
+    code provenance was resolved (the common case for HPC runs whose commit was
+    only pinned later). Preserves the run body.
+    """
+
+    path = ws.registry_dir("tool_runs") / f"{run_id}.md"
+    if not path.exists():
+        raise ValueError(f"tool run not found: {run_id}")
+    record = read_record(path, ToolRunRecord)
+    if code_state_id in record.code_state_ids:
+        return record
+    _, body = read_md(path)
+    record.code_state_ids = [*record.code_state_ids, code_state_id]
+    write_record(path, record, body=body)
+    return record
+
+
+def link_artifact_to_run(
+    ws: WorkspacePaths, *, run_id: str, artifact_id: str
+) -> ToolRunRecord:
+    """Back-link an artifact/source_asset id to an existing tool run (idempotent)."""
+
+    path = ws.registry_dir("tool_runs") / f"{run_id}.md"
+    if not path.exists():
+        raise ValueError(f"tool run not found: {run_id}")
+    record = read_record(path, ToolRunRecord)
+    if artifact_id in record.artifact_ids:
+        return record
+    _, body = read_md(path)
+    record.artifact_ids = [*record.artifact_ids, artifact_id]
+    write_record(path, record, body=body)
+    return record
 
 
 def tool_run_payload(record: ToolRunRecord) -> dict[str, Any]:

@@ -55,6 +55,7 @@ _OPEN_STATUSES = {"open", "pending", "blocked", "incomplete", "inconclusive", "n
 _PRE_DOMAIN_FAILURE_MARKERS = (
     "application",
     "runtime",
+    "setup",
     "pre_ac",
     "pre-ac",
     "before analytic continuation",
@@ -66,7 +67,25 @@ _PRE_DOMAIN_FAILURE_MARKERS = (
     "scalapack",
     "executable",
     "slurm",
+    "scheduler",
     "executable path",
+    "path error",
+    "modulenotfounderror",
+    "module not found",
+    "no module named",
+    "importerror",
+    "import error",
+    "missing file",
+    "no such file",
+    "file not found",
+    "out of memory",
+    "oom",
+    "exceeded memory",
+    "memory limit",
+    "dependency never satisfied",
+    "dependency unresolved",
+    "dependency not met",
+    "cancelled before start",
 )
 _EXPLICIT_PRE_DOMAIN_FAILURE_CONTEXT_MARKERS = (
     "all failed",
@@ -91,6 +110,30 @@ _EXPLICIT_PRE_DOMAIN_FAILURE_CONTEXT_MARKERS = (
     "application failed",
     "application failure",
     "application/runtime blocker",
+    "setup failure",
+    "setup failed",
+    "setup_failure",
+    "failed_setup",
+    "failed_runtime",
+    "modulenotfounderror",
+    "no module named",
+    "importerror",
+    "import error",
+    "no such file",
+    "no such file or directory",
+    "file not found",
+    "missing file",
+    "out of memory",
+    "oom",
+    "exceeded memory",
+    "exceeded memory limit",
+    "dependency never satisfied",
+    "dependency unresolved",
+    "dependency not met",
+    "cancelled before start",
+    "cancelled_before_start",
+    "path error",
+    "path not found",
 )
 
 
@@ -1048,14 +1091,26 @@ def _blocker_hints(text: str) -> list[str]:
     hints: list[str] = []
     if "scalapack" in lower:
         hints.append("ScaLAPACK/runtime dependency failure")
-    if "executable" in lower or "path" in lower:
+    if "executable" in lower or "path error" in lower or "path not found" in lower:
         hints.append("executable path or executable selection blocker")
     if "slurm" in lower:
         hints.append("Slurm/runtime job failure")
     if "before analytic continuation" in lower or "pre_ac" in lower or "pre-ac" in lower or "before ac" in lower:
         hints.append("failure occurred before analytic continuation")
+    if "modulenotfounderror" in lower or "no module named" in lower or "importerror" in lower or "import error" in lower:
+        hints.append("missing Python module / import error (setup failure)")
+    if "no such file" in lower or "file not found" in lower or "missing file" in lower:
+        hints.append("missing input/output file (setup/path failure)")
+    if "out of memory" in lower or "oom" in lower or "exceeded memory" in lower:
+        hints.append("out-of-memory runtime failure")
+    if "dependency never satisfied" in lower or "dependency unresolved" in lower or "dependency not met" in lower:
+        hints.append("Slurm dependency never satisfied (scheduler failure)")
+    if "cancelled before start" in lower or "cancelled_before_start" in lower:
+        hints.append("job cancelled before it started (scheduler failure)")
+    if "setup failure" in lower or "setup failed" in lower or "failed_setup" in lower:
+        hints.append("setup failure before the physics was produced")
     if not hints and any(marker in lower for marker in _PRE_DOMAIN_FAILURE_MARKERS):
-        hints.append("application/runtime failure before the core claim was tested")
+        hints.append("application/runtime/setup failure before the core claim was tested")
     return hints
 
 

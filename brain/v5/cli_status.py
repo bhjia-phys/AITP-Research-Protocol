@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from brain.v5.public_surfaces import require_valid_public_surface
+from brain.v5.hpc_cockpit import build_hpc_cockpit
+from brain.v5.lane_contracts import lane_contract_payload, record_lane_contract
 from brain.v5.qsgw_cockpit import (
     DEFAULT_QSGW_TOPIC_ID,
     compact_qsgw_cockpit_bundle,
@@ -27,6 +29,15 @@ def add_status_parser(sp) -> None:
     research.add_argument("--compact", "--progress", action="store_true", dest="compact")
     vnext = ss.add_parser("vnext-readiness")
     vnext.add_argument("--compact", "--progress", action="store_true", dest="compact")
+    hpc = ss.add_parser("hpc-cockpit")
+    hpc.add_argument("--topic", default="", dest="topic_id")
+    lane = ss.add_parser("lane-contract")
+    lane.add_argument("--topic", default="", dest="topic_id")
+    lane.add_argument("--campaign", default="")
+    lane.add_argument("--forbidden-root", action="append", default=[], dest="forbidden_roots")
+    lane.add_argument("--preferred-root", action="append", default=[], dest="preferred_clean_roots")
+    lane.add_argument("--final-rule", action="append", default=[], dest="final_rules")
+    lane.add_argument("--trust-update-forbidden", action="store_true", dest="trust_update_forbidden")
 
 
 def dispatch_status_command(args, ws) -> dict:
@@ -64,4 +75,17 @@ def dispatch_status_command(args, ws) -> dict:
         if getattr(args, "compact", False):
             return compact_research_cockpit_bundle(bundle)
         return bundle
+    if args.status_command == "hpc-cockpit":
+        return require_valid_public_surface("hpc_cockpit", build_hpc_cockpit(ws, args.topic_id))
+    if args.status_command == "lane-contract":
+        record = record_lane_contract(
+            ws,
+            topic_id=args.topic_id,
+            campaign=args.campaign,
+            forbidden_roots=args.forbidden_roots,
+            preferred_clean_roots=args.preferred_clean_roots,
+            final_rules=args.final_rules,
+            trust_update_forbidden=args.trust_update_forbidden,
+        )
+        return require_valid_public_surface("lane_contract_record", lane_contract_payload(record))
     raise SystemExit(f"unsupported status command: {args.status_command}")
