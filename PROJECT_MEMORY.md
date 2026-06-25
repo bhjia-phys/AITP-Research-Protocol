@@ -611,6 +611,28 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   and whether intake rows are guarded. Audit/intake JSONL by itself is still
   orientation-only; result-refresh candidates and plot-script fail-closed guards
   remain separate follow-up work unless the compact next-actions say otherwise.
+- HPC / long-running numerical compute is recorded through the existing
+  `tool_run` family, not through parallel job/dataset/environment/sanity
+  families. `record_tool_run` / `capture_tool_run_from_local_path` accept
+  optional `scientific_run_id`, `supersedes`, and `lane` fields; passing
+  `supersedes` back-fills the prior run's `superseded_by` (and inherits its
+  `scientific_run_id` when not given), and `lane` defaults to `diagnostic` so
+  an unmarked run can never be treated as final. `link_code_state_to_run` /
+  `link_artifact_to_run` back-fill `code_state_ids` / `artifact_ids` after the
+  fact (the common gap when a run is recorded before its provenance is pinned).
+  Real HPC runs (Slurm/ABACUS/LibRPA/PyATB, remote Fisherd) already live as
+  `tool_run` records.
+- The generalized HPC cockpit is `aitp_v5_hpc_cockpit` (MCP) /
+  `brain/v5/hpc_cockpit.py::build_hpc_cockpit`. It is orientation-only and
+  aggregates one compute topic's `tool_run` records into effective attempts
+  (runs not superseded), active jobs, failure history, lane distribution,
+  provenance gaps, the topic's lane contract, next valid actions, and
+  allowed/not-allowed conclusions. It depends on no new record family.
+- `lane_contract` records (`aitp_v5_record_lane_contract` /
+  `brain/v5/lane_contracts.py`) promote cockpit lane discipline (forbidden /
+  preferred roots, final allowlist, final-evidence rules, default lane,
+  trust-update-forbidden) from a generated JSON surface into an auditable,
+  rehome-able typed record. They cannot update claim trust.
 - Legacy semantic review packets are read-only audit surfaces and must tolerate
   malformed legacy leftover records in unrelated registry files. They should use
   valid-record reads for packet context so a stale Markdown stub cannot crash
