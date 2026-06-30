@@ -1,6 +1,6 @@
 {
   "name": "aitp-research-protocol",
-  "version": "1.0.0+codex.20260630162916",
+  "version": "1.0.0+codex.20260630171743",
   "description": "Codex plugin for the local AITP 1.0 v5 theoretical-physics research protocol.",
   "author": {
     "name": "bhjia-phys"
