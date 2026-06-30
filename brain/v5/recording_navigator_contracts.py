@@ -54,8 +54,9 @@ def validate_recording_navigation_state(
     if not isinstance(payload, dict):
         return result
     _require_kind(payload, path, result, "recording_navigation_state")
-    for key in ("first_level_slots", "recommended_slots", "trust_boundary_reasons"):
+    for key in ("first_level_slots", "recommended_slots", "trust_boundary_reasons", "warnings"):
         _require_list(payload.get(key), f"{path}.{key}", result)
+    _require_mapping(payload.get("active_claim_focus_reconciliation"), f"{path}.active_claim_focus_reconciliation", result)
     current = payload.get("current_position")
     _require_mapping(current, f"{path}.current_position", result)
     graph = payload.get("graph_context")

@@ -14,6 +14,7 @@ _STATUSES = {
     "planned_bind_existing_session",
     "planned_create_session",
     "review_required_multiple_claims",
+    "review_required_active_claim_focus_drift",
     "review_required_no_claim",
 }
 

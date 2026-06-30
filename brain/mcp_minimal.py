@@ -48,7 +48,7 @@ def main():
                 "result": {
                     "protocolVersion": "2024-11-05",
                     "capabilities": {"tools": {}},
-                    "serverInfo": {"name": "aitp-minimal", "version": "0.5.0"},
+                    "serverInfo": {"name": "aitp-minimal", "version": "1.0.0"},
                 }
             })
         elif method == "notifications/initialized":

@@ -29,4 +29,4 @@ uv run --with pyyaml --with jsonschema --with fastmcp python {{REPO_ROOT}}/scrip
 ```
 
 The legacy `brain/mcp_server.py` is compatibility-only. Do not install it as
-the active MCP server for AITP 0.5.0/v5 work.
+the active MCP server for AITP 1.0.0/v5 work.

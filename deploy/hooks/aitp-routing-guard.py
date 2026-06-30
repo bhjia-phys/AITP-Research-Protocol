@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """PreToolUse guard for AITP v5 routing discipline.
 
-Blocks Write/Edit to canonical AITP topic state and workspace-root runtime
+Blocks Write/Edit/MultiEdit to canonical AITP topic state and workspace-root runtime
 state until routing has been confirmed via a short-lived marker. The hook is a
 guard only; it does not update AITP state.
 """
@@ -25,7 +25,7 @@ AITP_TOPICS_FULL = Path(os.environ.get("AITP_TOPICS_ROOT", "{{TOPICS_ROOT}}"))
 PROJECT_ROOT = Path(os.environ.get("CLAUDE_PROJECT_DIR", "{{TARGET_ROOT}}"))
 ROOT_AITP_FULL = Path(os.environ.get("AITP_WORKSPACE_ROOT", str(PROJECT_ROOT / ".aitp")))
 
-WRITE_TOOLS = {"Write", "Edit"}
+WRITE_TOOLS = {"Write", "Edit", "MultiEdit"}
 ROUTING_MARKER_DIR = Path(os.environ.get("TEMP", "/tmp"))
 
 
@@ -89,6 +89,14 @@ def classify_aitp_target(file_path: str) -> str:
     return ""
 
 
+def extract_file_path(tool_input_data: dict) -> str:
+    for key in ("file_path", "path", "target_path", "filename", "file"):
+        value = tool_input_data.get(key)
+        if isinstance(value, str) and value:
+            return value
+    return ""
+
+
 def main() -> int:
     raw = sys.stdin.read()
     tool_input = safe_json_loads(raw) if raw.strip() else {}
@@ -100,7 +108,7 @@ def main() -> int:
     if tool_name not in WRITE_TOOLS:
         return 0
 
-    file_path = tool_input_data.get("file_path", "")
+    file_path = extract_file_path(tool_input_data)
     if not file_path:
         return 0
 

@@ -11,6 +11,7 @@ from typing import Any
 
 from brain.v5.brief import build_execution_brief
 from brain.v5.cli_adapters import add_adapter_parser, dispatch_adapter_command
+from brain.v5.cli_authorities import add_authority_parser, dispatch_authority_command
 from brain.v5.cli_memory import add_memory_parser, dispatch_memory_command
 from brain.v5.cli_summaries import add_summary_parser, dispatch_summary_command
 from brain.v5.cli_source import add_source_parser, dispatch_source_command
@@ -37,6 +38,7 @@ from brain.v5.claim_relation_map import build_claim_relation_map
 from brain.v5.exploration import exploratory_record_payload, record_exploratory_record
 from brain.v5.process_graph import build_process_graph_slice
 from brain.v5.public_surfaces import require_valid_public_surface
+from brain.v5.quiet_checkpoint import apply_quiet_checkpoint_batch, preview_quiet_checkpoint_batch
 from brain.v5.recording_navigator import (
     build_recording_navigation_state,
     classify_recording_candidate,
@@ -47,7 +49,13 @@ from brain.v5.physics_objects import record_object_relation, record_physics_obje
 from brain.v5.references import record_reference_location
 from brain.v5.routes import record_research_route, research_route_payload
 from brain.v5.sensemaking import record_sensemaking_report
-from brain.v5.source_assets import capture_source_asset_from_local_path, register_source_asset, source_asset_payload
+from brain.v5.source_assets import (
+    acquire_arxiv_source_asset,
+    acquire_pdf_source_asset,
+    capture_source_asset_from_local_path,
+    register_source_asset,
+    source_asset_payload,
+)
 from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
 from brain.v5.markdown import write_text_atomic
@@ -237,6 +245,49 @@ def _build_parser() -> argparse.ArgumentParser:
     aa.add_argument("--derived-from", action="append", default=[], dest="derived_from")
     aa.add_argument("--metadata-json", default="{}")
     aa.add_argument("--linked-records-json", default="{}")
+    aa.add_argument("--copy-to-store", action="store_true")
+    aa.add_argument("--force-refresh", action="store_true")
+    apdf = aps.add_parser("acquire-pdf")
+    apdf.add_argument("--topic", required=True, dest="topic_id")
+    apdf.add_argument("--url", required=True)
+    apdf.add_argument("--title", required=True)
+    apdf.add_argument("--claim", default="", dest="claim_id")
+    apdf.add_argument("--type", default="paper", dest="asset_type")
+    apdf.add_argument("--label", default="")
+    apdf.add_argument("--timeout", type=int, default=120, dest="timeout_seconds")
+    apdf.add_argument("--max-bytes", type=int, default=200 * 1024 * 1024, dest="max_bytes")
+    apdf.add_argument("--force-refresh", action="store_true")
+    apdf.add_argument("--version-anchor-json", default="{}")
+    apdf.add_argument("--acquired-at", default="")
+    apdf.add_argument("--source-kind", default="literature_pdf")
+    apdf.add_argument("--summary", default="")
+    apdf.add_argument("--source-ref", action="append", default=[], dest="source_refs")
+    apdf.add_argument("--artifact-id", action="append", default=[], dest="artifact_ids")
+    apdf.add_argument("--code-state-id", action="append", default=[], dest="code_state_ids")
+    apdf.add_argument("--reference-location-id", action="append", default=[], dest="reference_location_ids")
+    apdf.add_argument("--derived-from", action="append", default=[], dest="derived_from")
+    apdf.add_argument("--metadata-json", default="{}")
+    apdf.add_argument("--linked-records-json", default="{}")
+    aarxiv = aps.add_parser("acquire-arxiv")
+    aarxiv.add_argument("--topic", required=True, dest="topic_id")
+    aarxiv.add_argument("--arxiv-id", required=True)
+    aarxiv.add_argument("--title", default="")
+    aarxiv.add_argument("--claim", default="", dest="claim_id")
+    aarxiv.add_argument("--version", default="")
+    aarxiv.add_argument("--label", default="")
+    aarxiv.add_argument("--timeout", type=int, default=120, dest="timeout_seconds")
+    aarxiv.add_argument("--max-bytes", type=int, default=200 * 1024 * 1024, dest="max_bytes")
+    aarxiv.add_argument("--force-refresh", action="store_true")
+    aarxiv.add_argument("--version-anchor-json", default="{}")
+    aarxiv.add_argument("--source-kind", default="arxiv_pdf")
+    aarxiv.add_argument("--summary", default="")
+    aarxiv.add_argument("--source-ref", action="append", default=[], dest="source_refs")
+    aarxiv.add_argument("--artifact-id", action="append", default=[], dest="artifact_ids")
+    aarxiv.add_argument("--code-state-id", action="append", default=[], dest="code_state_ids")
+    aarxiv.add_argument("--reference-location-id", action="append", default=[], dest="reference_location_ids")
+    aarxiv.add_argument("--derived-from", action="append", default=[], dest="derived_from")
+    aarxiv.add_argument("--metadata-json", default="{}")
+    aarxiv.add_argument("--linked-records-json", default="{}")
 
     gp = sp.add_parser("graph"); gs = gp.add_subparsers(dest="graph_command", required=True)
     sl = gs.add_parser("slice"); sl.add_argument("session_id")
@@ -510,6 +561,10 @@ def _build_parser() -> argparse.ArgumentParser:
     chk_d = chk_s.add_parser("decide")
     chk_d.add_argument("checkpoint_id"); chk_d.add_argument("--decision", required=True)
     chk_d.add_argument("--rationale", required=True); chk_d.add_argument("--decided-by", required=True)
+    chk_preview = chk_s.add_parser("preview-batch")
+    _add_quiet_checkpoint_args(chk_preview)
+    chk_apply = chk_s.add_parser("apply-batch")
+    _add_quiet_checkpoint_args(chk_apply)
 
     pp = sp.add_parser("promotion"); pps = pp.add_subparsers(dest="promotion_command", required=True)
     pkt = pps.add_parser("packet"); pkts = pkt.add_subparsers(dest="promotion_packet_command", required=True)
@@ -536,6 +591,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     add_memory_parser(sp)
     add_research_state_parser(sp)
+    add_authority_parser(sp)
 
     rp_lifecycle = sp.add_parser("record")
     rps = rp_lifecycle.add_subparsers(dest="record_command", required=True)
@@ -638,6 +694,55 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             linked_records=_j(args.linked_records_json),
         )
         return require_valid_public_surface("source_asset_record", source_asset_payload(asset))
+    if args.command == "asset" and args.asset_command == "acquire-pdf":
+        asset = acquire_pdf_source_asset(
+            ws,
+            topic_id=args.topic_id,
+            claim_id=args.claim_id,
+            asset_type=args.asset_type,
+            url=args.url,
+            title=args.title,
+            label=args.label,
+            timeout_seconds=args.timeout_seconds,
+            max_bytes=args.max_bytes,
+            force_refresh=args.force_refresh,
+            version_anchor=_j(args.version_anchor_json),
+            acquired_at=args.acquired_at,
+            source_kind=args.source_kind,
+            summary=args.summary,
+            source_refs=args.source_refs,
+            artifact_ids=args.artifact_ids,
+            code_state_ids=args.code_state_ids,
+            reference_location_ids=args.reference_location_ids,
+            derived_from=args.derived_from,
+            metadata=_j(args.metadata_json),
+            linked_records=_j(args.linked_records_json),
+        )
+        return require_valid_public_surface("source_asset_record", source_asset_payload(asset))
+    if args.command == "asset" and args.asset_command == "acquire-arxiv":
+        asset = acquire_arxiv_source_asset(
+            ws,
+            topic_id=args.topic_id,
+            claim_id=args.claim_id,
+            arxiv_id=args.arxiv_id,
+            title=args.title,
+            version=args.version,
+            label=args.label,
+            timeout_seconds=args.timeout_seconds,
+            max_bytes=args.max_bytes,
+            force_refresh=args.force_refresh,
+            version_anchor=_j(args.version_anchor_json),
+            source_kind=args.source_kind,
+            summary=args.summary,
+            source_refs=args.source_refs,
+            artifact_ids=args.artifact_ids,
+            code_state_ids=args.code_state_ids,
+            reference_location_ids=args.reference_location_ids,
+            derived_from=args.derived_from,
+            metadata=_j(args.metadata_json),
+            linked_records=_j(args.linked_records_json),
+        )
+        return require_valid_public_surface("source_asset_record", source_asset_payload(asset))
     if args.command == "asset" and args.asset_command == "capture-auto":
         asset = capture_source_asset_from_local_path(
             ws,
@@ -658,6 +763,8 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             derived_from=args.derived_from,
             metadata=_j(args.metadata_json),
             linked_records=_j(args.linked_records_json),
+            copy_to_store=args.copy_to_store,
+            force_refresh=args.force_refresh,
         )
         return require_valid_public_surface("source_asset_record", source_asset_payload(asset))
     if args.command == "graph" and args.graph_command == "slice":
@@ -1039,6 +1146,8 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.command == "research-state":
         return dispatch_research_state_command(args, ws)
+    if args.command == "authority":
+        return dispatch_authority_command(args, ws)
 
     if args.command == "object" and args.object_command == "record":
         obj = record_physics_object(ws, topic_id=args.topic_id, object_type=args.object_type,
@@ -1141,6 +1250,12 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             decision=args.decision, rationale=args.rationale, decided_by=args.decided_by)
         return {"ok": True, **require_valid_public_surface("human_checkpoint_record", {"ok": True, **asdict(dec)})}
 
+    if args.command == "checkpoint" and args.checkpoint_command == "preview-batch":
+        return require_valid_public_surface("quiet_checkpoint_preview", _quiet_checkpoint_payload(args, ws, apply=False))
+
+    if args.command == "checkpoint" and args.checkpoint_command == "apply-batch":
+        return require_valid_public_surface("quiet_checkpoint_batch", _quiet_checkpoint_payload(args, ws, apply=True))
+
     if args.command == "promotion" and args.promotion_command == "packet" and args.promotion_packet_command == "create":
         pkt = create_promotion_packet(ws, topic_id=args.topic_id, claim_id=args.claim_id,
             proposed_memory_kind=args.proposed_memory_kind, scope=args.scope,
@@ -1167,6 +1282,50 @@ def _add_trust_request_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--rationale", default=""); p.add_argument("--request-id", default="")
 
 
+def _add_quiet_checkpoint_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument("session_id")
+    p.add_argument("--claim", default="", dest="claim_id")
+    p.add_argument("--run", default="", dest="run_id")
+    p.add_argument("--summary", required=True)
+    p.add_argument("--input", action="append", default=[], dest="inputs")
+    p.add_argument("--output", action="append", default=[], dest="outputs")
+    p.add_argument("--changed-file", action="append", default=[], dest="changed_files")
+    p.add_argument("--generated-artifact-json", action="append", default=[], dest="generated_artifact_json")
+    p.add_argument("--validation-command", action="append", default=[], dest="validation_commands")
+    p.add_argument("--observation", action="append", default=[], dest="durable_observations")
+    p.add_argument("--claim-boundary-json", default="{}")
+    p.add_argument("--next-blocker", action="append", default=[], dest="next_blockers")
+    p.add_argument("--artifact-json", action="append", default=[], dest="artifact_json")
+    p.add_argument("--source-json", action="append", default=[], dest="source_json")
+    p.add_argument("--tool-run-json", action="append", default=[], dest="tool_run_json")
+    p.add_argument("--sensemaking-summary", default="")
+    p.add_argument("--source-ref", action="append", default=[], dest="source_refs")
+
+
+def _quiet_checkpoint_payload(args: argparse.Namespace, ws, *, apply: bool) -> dict[str, Any]:
+    fn = apply_quiet_checkpoint_batch if apply else preview_quiet_checkpoint_batch
+    return fn(
+        ws,
+        args.session_id,
+        claim_id=args.claim_id,
+        run_id=args.run_id,
+        summary=args.summary,
+        inputs=args.inputs,
+        outputs=args.outputs,
+        changed_files=args.changed_files,
+        generated_artifacts=_json_object_list(args.generated_artifact_json),
+        validation_commands=args.validation_commands,
+        durable_observations=args.durable_observations,
+        claim_boundary=_j(args.claim_boundary_json),
+        next_blockers=args.next_blockers,
+        artifact_specs=_json_object_list(args.artifact_json),
+        source_specs=_json_object_list(args.source_json),
+        tool_run_specs=_json_object_list(args.tool_run_json),
+        sensemaking_summary=args.sensemaking_summary,
+        source_refs=args.source_refs,
+    )
+
+
 def _trust_update_request_from_args(args: argparse.Namespace) -> TrustUpdateRequest:
     return TrustUpdateRequest(
         request_id=args.request_id or f"trust-request-{args.session_id}-{args.claim_id}-{args.action}",
@@ -1185,6 +1344,10 @@ def _j(raw: str) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise SystemExit("expected a JSON object")
     return payload
+
+
+def _json_object_list(raw_values: list[str]) -> list[dict[str, Any]]:
+    return [_j(raw) for raw in raw_values]
 
 
 def _subagent_ingestion_payload(result) -> dict[str, Any]:

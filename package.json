@@ -1,6 +1,6 @@
 {
   "name": "aitp",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "type": "module",
   "bin": {
     "aitp-v5": "bin/aitp-v5.mjs"

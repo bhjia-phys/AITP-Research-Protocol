@@ -9,6 +9,8 @@ def sample_args_for_template(template: str) -> list[str]:
         return adapter_args
     if template.startswith("trust update-record"):
         return ["trust-update-sample"]
+    if template.startswith("session bind"):
+        return ["--topic", "fqhe", "--context", "topological-order", "--claim", "claim-fqhe"]
     if template.startswith("relation-map"):
         return ["s1"]
     if template.startswith("trust audit"):
@@ -158,6 +160,32 @@ def sample_args_for_template(template: str) -> list[str]:
             "claim-fqhe",
             "--summary",
             "Auto-captured local source file identity.",
+        ]
+    if template.startswith("asset acquire-pdf"):
+        return [
+            "--topic",
+            "fqhe",
+            "--claim",
+            "claim-fqhe",
+            "--url",
+            "file:///D:/sources/edge-counting.pdf",
+            "--title",
+            "Edge counting source PDF",
+            "--summary",
+            "Acquired local PDF copy for later text extraction.",
+        ]
+    if template.startswith("asset acquire-arxiv"):
+        return [
+            "--topic",
+            "fqhe",
+            "--claim",
+            "claim-fqhe",
+            "--arxiv-id",
+            "2604.14695",
+            "--title",
+            "Long-range spin-chain level statistics",
+            "--summary",
+            "Acquired arXiv PDF source asset for source backtrace.",
         ]
     if template.startswith("asset register"):
         return [

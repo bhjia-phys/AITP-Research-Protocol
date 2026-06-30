@@ -39,6 +39,29 @@ class SessionBinding:
 
 
 @dataclass
+class ActiveClaimRebindAuditRecord:
+    audit_id: str
+    session_id: str
+    topic_id: str
+    old_claim_id: str
+    new_claim_id: str
+    reason: str
+    user_confirmation: str
+    timestamp: str
+    operator: str = "human"
+    status: str = "applied"
+    detection_warning_code: str = "active_claim_focus_drift_detected"
+    candidate_snapshot: dict = field(default_factory=dict)
+    source_records: dict = field(default_factory=dict)
+    summary_inputs_trusted: bool = False
+    orientation_only: bool = False
+    can_update_kernel_state: bool = True
+    can_update_claim_trust: bool = False
+    trust_update_allowed: bool = False
+    kind: str = "active_claim_rebind_audit"
+
+
+@dataclass
 class ClaimRecord:
     claim_id: str
     topic_id: str
@@ -96,6 +119,56 @@ class ProofObligationRecord:
     human_gate_required: bool = True
     can_update_claim_trust: bool = False
     kind: str = "proof_obligation"
+
+
+@dataclass
+class AuthorityRecord:
+    authority_id: str
+    topic_id: str
+    authority_type: str
+    authority_statement: str
+    work_package: str = ""
+    claim_id: str = ""
+    scope: dict = field(default_factory=dict)
+    generator_set: str = ""
+    closure_envelope: str = ""
+    evidence_refs: list[str] = field(default_factory=list)
+    source_refs: list[str] = field(default_factory=list)
+    artifact_ids: list[str] = field(default_factory=list)
+    linked_records: dict = field(default_factory=dict)
+    limitations: list[str] = field(default_factory=list)
+    status: str = "research_authority_not_trust_promotion"
+    summary_inputs_trusted: bool = False
+    orientation_only: bool = True
+    can_update_claim_trust: bool = False
+    kind: str = "authority"
+
+
+@dataclass
+class QuietCheckpointBatchRecord:
+    checkpoint_id: str
+    topic_id: str
+    session_id: str
+    claim_id: str
+    run_id: str
+    summary: str
+    inputs: list[str] = field(default_factory=list)
+    outputs: list[str] = field(default_factory=list)
+    changed_files: list[str] = field(default_factory=list)
+    generated_artifacts: list[dict] = field(default_factory=list)
+    validation_commands: list[str] = field(default_factory=list)
+    durable_observations: list[str] = field(default_factory=list)
+    claim_boundary: dict = field(default_factory=dict)
+    next_blockers: list[str] = field(default_factory=list)
+    planned_typed_writes: list[dict] = field(default_factory=list)
+    written_refs: list[str] = field(default_factory=list)
+    source_refs: list[str] = field(default_factory=list)
+    status: str = "recorded_without_trust_promotion"
+    summary_inputs_trusted: bool = False
+    orientation_only: bool = True
+    can_update_kernel_state: bool = True
+    can_update_claim_trust: bool = False
+    kind: str = "quiet_checkpoint_batch"
 
 
 @dataclass

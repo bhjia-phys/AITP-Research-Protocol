@@ -8,7 +8,7 @@ duplicating protocol logic.
 from brain.v5.paths import WorkspacePaths
 from brain.v5.workspace import init_workspace
 
-__version__ = "0.5.0"
+__version__ = "1.0.0"
 KERNEL_VERSION = __version__
 PROTOCOL_IMPLEMENTATION = "v5"
 IMPLEMENTATION_GENERATION = "v5"

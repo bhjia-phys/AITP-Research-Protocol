@@ -7,6 +7,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+from brain.v5.active_claim_focus import detect_active_claim_focus_drift
 from brain.v5.markdown import write_text_atomic
 from brain.v5.models import ClaimRecord, SessionBinding, TopicRecord
 from brain.v5.paths import WorkspacePaths
@@ -18,6 +19,9 @@ def build_workspace_recovery_binding_repair(
     ws: WorkspacePaths,
     *,
     topics: list[str] | None = None,
+    session_id: str = "",
+    objective_text: str = "",
+    user_goal: str = "",
 ) -> dict[str, Any]:
     """Plan safe active-claim bindings for imported old-store topics."""
 
@@ -30,6 +34,16 @@ def build_workspace_recovery_binding_repair(
         _repair_action(ws, topic, claims_by_topic.get(topic, []), sessions_by_topic.get(topic, []))
         for topic in selected
     ]
+    focus_reconciliation: dict[str, Any] = {}
+    if session_id:
+        focus_reconciliation = detect_active_claim_focus_drift(
+            ws,
+            session_id,
+            objective_text=objective_text,
+            user_goal=user_goal,
+        )
+        if focus_reconciliation.get("not_authoritative_for_current_goal_if_rebind_needed"):
+            actions.append(_focus_drift_repair_action(focus_reconciliation))
     counts = Counter(str(action["status"]) for action in actions)
     return {
         "kind": "aitp_workspace_recovery_binding_repair",
@@ -44,6 +58,7 @@ def build_workspace_recovery_binding_repair(
             "status_counts": dict(sorted(counts.items())),
         },
         "actions": actions,
+        "active_claim_focus_reconciliation": focus_reconciliation,
         "truth_source": "canonical_claims_and_session_bindings",
         "orientation_only": True,
         "summary_inputs_trusted": False,
@@ -203,6 +218,26 @@ def _repair_action(
             "reason": "topic has one canonical claim and no session binding",
         }
     return base
+
+
+def _focus_drift_repair_action(reconciliation: dict[str, Any]) -> dict[str, Any]:
+    active = reconciliation.get("active_claim") if isinstance(reconciliation.get("active_claim"), dict) else {}
+    candidates = list(reconciliation.get("candidate_sibling_claims") or [])
+    return {
+        "topic_id": str(reconciliation.get("topic_id") or ""),
+        "claim_count": 1 + len(candidates),
+        "session_count": 1,
+        "claim_id": str(active.get("claim_id") or ""),
+        "session_id": str(reconciliation.get("session_id") or ""),
+        "context_id": "",
+        "applyable": False,
+        "status": "review_required_active_claim_focus_drift",
+        "reason": "recent typed record focus points to sibling claim(s); explicit active-claim rebind confirmation is required",
+        "candidate_claim_ids": [str(candidate.get("claim_id") or "") for candidate in candidates],
+        "summary_inputs_trusted": False,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
 
 
 def _claims_by_topic(ws: WorkspacePaths) -> dict[str, list[ClaimRecord]]:

@@ -1,10 +1,11 @@
 # Kimi Code AITP v5 Setup
 
-Kimi Code integration has three parts:
+Kimi Code integration has two default parts plus one opt-in hook bridge:
 
 1. Skills: install `using-aitp` and `aitp-runtime` from `deploy/templates/kimi-code/`.
 2. MCP: configure Kimi Code to expose `brain/v5/native_mcp.py` as the `aitp` MCP server.
-3. Hooks: merge AITP v5 lifecycle hooks into the project Kimi TOML config.
+3. Hooks: merge AITP v5 lifecycle hooks into the project Kimi TOML config only
+   when the installed Kimi host supports project `[[hooks]]`.
 
 Kimi's official docs describe configuration, MCP, hooks, and skills:
 <https://www.kimi.com/code/docs/>. Existing AITP workspaces use project-local
@@ -56,6 +57,11 @@ python -m brain.v5.cli --base <workspace> adapter install-audit kimi-code --sett
 python -m brain.v5.cli adapter smoke-coverage
 ```
 
+The package-manager project install writes Kimi/Kimi Code skills and MCP config,
+but does not pretend Kimi hooks are active. Use the commands above only as an
+explicit bridge install for a concrete v5 `session-id`, and prefer absolute
+workspace-local settings paths.
+
 `--settings` is resolved by the current shell. Use an absolute path, or run the
 command from the theory workspace root when passing `.kimi/...` or
 `.kimi-code/...`.
@@ -85,7 +91,9 @@ command = "..."
 
 ## Contract
 
-Kimi hooks are runtime guards. They may block unsafe pre-tool actions and write trace events after tool use, but they do not update claim trust. Scientific state still lives in typed v5 records.
+Kimi hooks are runtime guards. They may block unsafe pre-tool actions and write
+trace events after tool use, but they do not update claim trust and they are not
+an evidence recording channel. Scientific state still lives in typed v5 records.
 
 ## Theory Workspace Checklist
 

@@ -1,7 +1,7 @@
 {
   "name": "aitp-research-protocol",
-  "version": "0.1.0+codex.20260622081904",
-  "description": "Codex plugin for the local AITP v5 theoretical-physics research protocol.",
+  "version": "1.0.0",
+  "description": "Codex plugin for the local AITP 1.0 v5 theoretical-physics research protocol.",
   "author": {
     "name": "bhjia-phys"
   },
@@ -18,8 +18,8 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "AITP Research Protocol",
-    "shortDescription": "Use the local AITP v5 research kernel from Codex.",
-    "longDescription": "Connects Codex to the repository-backed AITP v5 MCP server and installs skills for typed theoretical-physics research workflows, evidence recording, validation gates, and trust-controlled memory.",
+    "shortDescription": "Use the local AITP 1.0 v5 research kernel from Codex.",
+    "longDescription": "Connects Codex to the repository-backed AITP 1.0 v5 MCP server and installs skills for typed theoretical-physics research workflows. Default continuation uses compact AITP context first, with explicit expansion for relation maps, process graph slices, literature/source registration, guided recording, validation gates, writing support, and trust-controlled memory.",
     "developerName": "bhjia-phys",
     "category": "Productivity",
     "capabilities": [
@@ -28,9 +28,9 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Continue my active AITP physics topic.",
-      "Check AITP status for a topic.",
-      "Record a validated physics result in AITP."
+      "Continue my active AITP physics topic with compact context first.",
+      "Discuss a paper and register useful references into AITP.",
+      "Draft a physics note from AITP records with citations."
     ],
     "brandColor": "#2563EB",
     "composerIcon": "./assets/icon.svg",

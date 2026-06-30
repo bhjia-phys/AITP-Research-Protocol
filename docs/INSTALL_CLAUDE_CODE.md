@@ -27,13 +27,14 @@ Project-scope installs write under `<workspace>/.claude/` and register MCP in
 
 Default v5 install:
 - `hooks/aitp-keyword-router.py`: keyword/topic orientation only
-- `hooks/aitp-routing-guard.py`: blocks direct topic-file writes until v5
-  routing is confirmed
+- `hooks/aitp-routing-guard.py`: blocks direct `Write`, `Edit`, and
+  `MultiEdit` topic-file writes until v5 routing is confirmed
 - `hooks/aitp-v5-claude-hook.py` and related `aitp-v5-*` adapter hooks for
-  explicit session-bound lifecycle/pre-tool/post-tool integration
+  explicit session-bound lifecycle/pre-tool/post-tool integration; these files
+  are not wired by the default project install
 - `skills/using-aitp/SKILL.md`
 - `skills/aitp-runtime/SKILL.md`
-- `settings.json` hook wiring for the v5-safe router/guard
+- `settings.json` hook wiring for the v5-safe router/guard only
 - project `.mcp.json` or user MCP config pointing at `brain/v5/native_mcp.py`
 
 The old `session-start.py`, `compact.py`, `stop.py`, `aitp-l4-watchdog.py`, and
@@ -62,6 +63,7 @@ The doctor check requires:
    has been confirmed.
 4. Research execution uses `aitp_v5_get_execution_brief` and typed v5 records.
 5. Summaries, hooks, and old Markdown stage fields are orientation-only.
+6. Hooks must not update claim trust or act as an evidence recording channel.
 
 ## Session-Bound v5 Hook Settings
 

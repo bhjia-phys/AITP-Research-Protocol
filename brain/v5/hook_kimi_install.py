@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 from typing import Any
+
+from brain.v5.hook_python import stable_python_executable
 
 
 _KIMI_BEGIN_MARKER = "# BEGIN AITP V5 KIMI HOOKS"
@@ -73,7 +74,7 @@ def _kimi_config_payload(
     session_id: str,
 ) -> dict[str, Any]:
     hook_script = (Path(__file__).resolve().parents[2] / "hooks" / "aitp_v5_kimi_hook.py").as_posix()
-    python_exe = Path(sys.executable).as_posix()
+    python_exe = stable_python_executable()
     command_base = (
         f'"{python_exe}" "{hook_script}" {{command}} '
         f'--base "{workspace_base}" --session-id {session_id}'

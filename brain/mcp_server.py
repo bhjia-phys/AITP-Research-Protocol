@@ -96,7 +96,7 @@ mcp = FastMCP("aitp-brain")
 LEGACY_WRITE_ENABLE_ENV = "AITP_LEGACY_ENABLE_WRITES"
 LEGACY_READ_ONLY_ERROR_CODE = "legacy_aitp_writes_disabled"
 LEGACY_READ_ONLY_MESSAGE = (
-    "Legacy AITP L0-L4 Markdown writes are disabled by default in AITP 0.5.0. "
+    "Legacy AITP L0-L4 Markdown writes are disabled by default in AITP 1.0.0. "
     "Use the v5 typed graph through aitp_v5_* tools for new research records. "
     "For migration debugging only, set AITP_LEGACY_ENABLE_WRITES=1 explicitly."
 )

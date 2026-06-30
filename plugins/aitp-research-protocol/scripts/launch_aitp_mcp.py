@@ -28,6 +28,7 @@ def main() -> None:
 
     topics_root = _resolve_topics_root(config, install_record)
     os.environ.setdefault("AITP_TOPICS_ROOT", str(topics_root))
+    os.environ.setdefault("AITP_MCP_SURFACE", "codex")
     topics_root.mkdir(parents=True, exist_ok=True)
 
     entrypoint = repo_root / "brain" / "v5" / "native_mcp.py"
@@ -147,7 +148,7 @@ class SetupMcpServer:
                 "Ask the user for the local AITP-Research-Protocol checkout path, "
                 "or ask whether Codex should clone it into a chosen folder."
                 if repo_root is None
-                else "Restart the MCP server or open a new Codex thread to load full AITP tools."
+                else "Restart the MCP server or open a new Codex thread to load compact Codex AITP tools."
             ),
         }
 
@@ -195,7 +196,7 @@ class SetupMcpServer:
             "config_path": str(CONFIG_PATH),
             "repo_root": payload["repo_root"],
             "topics_root": payload["topics_root"],
-            "next_step": "Restart the MCP server or open a new Codex thread so full AITP v5 tools load.",
+            "next_step": "Restart the MCP server or open a new Codex thread so compact Codex AITP v5 tools load.",
         }
 
     def serve(self) -> None:
@@ -219,7 +220,7 @@ class SetupMcpServer:
                 "result": {
                     "protocolVersion": params.get("protocolVersion", "2025-06-18"),
                     "capabilities": {"tools": {}},
-                    "serverInfo": {"name": "aitp-config-setup", "version": "0.1.0"},
+                    "serverInfo": {"name": "aitp-config-setup", "version": "1.0.0"},
                 },
             }
         if method == "ping":

@@ -1,5 +1,9 @@
 from pathlib import Path
 import importlib.util
+import json
+import os
+import subprocess
+import sys
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -16,6 +20,19 @@ def _load_pm():
     assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
+
+
+def _run_hook(rel: str, payload: dict, env: dict[str, str]) -> subprocess.CompletedProcess[str]:
+    hook_env = {**os.environ, **env, "PYTHONIOENCODING": "utf-8", "PYTHONUTF8": "1"}
+    return subprocess.run(
+        [sys.executable, str(REPO / rel)],
+        input=json.dumps(payload, ensure_ascii=False),
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        env=hook_env,
+        timeout=10,
+    )
 
 
 def test_deploy_skills_keep_relation_map_recovery_boundary():
@@ -69,14 +86,14 @@ def test_deploy_using_skills_keep_lightweight_intent_matrix():
         assert "new topic, claim, session, or binding merely because" in text
 
 
-def test_protocol_and_runtime_versions_are_strict_v5_050():
+def test_protocol_and_runtime_versions_are_strict_v5_100():
     pm = _load_pm()
-    assert pm._read_version() == "0.5.0"
+    assert pm._read_version() == "1.0.0"
     assert pm._strict_v5_contract_issues() == []
     assert pm._strict_v5_deploy_surface_issues() == []
 
     protocol = pm._read_protocol_metadata()
-    assert protocol["version"] == "0.5.0"
+    assert protocol["version"] == "1.0.0"
     assert protocol["implementation_generation"] == "v5"
     assert protocol["implementation_entrypoint"] == "brain/v5/native_mcp.py"
     assert protocol["legacy_stage_model"] == "orientation-only"
@@ -88,7 +105,7 @@ def test_protocol_and_runtime_versions_are_strict_v5_050():
 
 def test_agent_facing_templates_do_not_teach_legacy_active_wiring():
     opencode = _read("deploy/templates/opencode/aitp-plugin.js")
-    assert "AITP 0.5.0 v5 adapter" in opencode
+    assert "AITP 1.0.0 v5 adapter" in opencode
     assert "aitp_v5_get_execution_brief" in opencode
     assert "aitp_v5_build_workspace_recovery_audit" in opencode
     assert "D:/BaiduSyncdisk" not in opencode
@@ -100,7 +117,7 @@ def test_agent_facing_templates_do_not_teach_legacy_active_wiring():
     setup = _read("deploy/templates/claude-code/aitp-mcp-setup.md")
     assert "brain/v5/native_mcp.py" in setup
     assert "aitp-pm.py doctor" in setup
-    assert "AITP 0.5.0/v5" in setup
+    assert "AITP 1.0.0/v5" in setup
     assert "claude mcp add-json" not in setup
     assert '"args":["{{REPO_ROOT}}/brain/mcp_server.py"]' not in setup
 
@@ -111,8 +128,12 @@ def test_deploy_hooks_guard_canonical_and_root_stores():
     assert "workspace-root runtime store" in guard
     assert "research/aitp-topics/.aitp records" in guard
     assert "workspace-root .aitp runtime records" in guard
+    assert 'WRITE_TOOLS = {"Write", "Edit", "MultiEdit"}' in guard
 
     keyword_router = _read("deploy/hooks/aitp-keyword-router.py")
+    assert "继续研究" in keyword_router
+    assert "理论物理" in keyword_router
+    assert "格林函数" in keyword_router
     assert "aitp_v5_get_execution_brief" in keyword_router
     assert "aitp_v5_get_claim_relation_map" in keyword_router
     assert "canonical research/aitp-topics/.aitp store" in keyword_router
@@ -121,6 +142,93 @@ def test_deploy_hooks_guard_canonical_and_root_stores():
 def test_claude_fallback_hooks_match_deploy_hooks():
     for name in ["aitp-keyword-router.py", "aitp-routing-guard.py"]:
         assert _read(f"deploy/templates/claude-code/{name}") == _read(f"deploy/hooks/{name}")
+
+
+def test_keyword_router_detects_english_and_chinese_research_requests(tmp_path):
+    env = {"AITP_TOPICS_ROOT": str(tmp_path / "research" / "aitp-topics")}
+    cases = [
+        ("continue research on LibRPA QSGW", "research"),
+        ("继续研究这个课题", "继续研究"),
+    ]
+
+    for message, expected_keyword in cases:
+        result = _run_hook("deploy/hooks/aitp-keyword-router.py", {"user_message": message}, env)
+        assert result.returncode == 0, result.stderr
+        assert result.stdout
+        payload = json.loads(result.stdout)
+        context = payload["hookSpecificOutput"]["additionalContext"]
+        assert "AITP RESEARCH REQUEST DETECTED" in context
+        assert expected_keyword in context
+
+
+def test_routing_guard_blocks_write_edit_and_multiedit_to_aitp_state(tmp_path):
+    topics_root = tmp_path / "research" / "aitp-topics"
+    env = {
+        "AITP_TOPICS_ROOT": str(topics_root),
+        "CLAUDE_PROJECT_DIR": str(tmp_path),
+        "AITP_WORKSPACE_ROOT": str(tmp_path / ".aitp"),
+        "TEMP": str(tmp_path / "tmp"),
+    }
+    target = "research/aitp-topics/.aitp/topics/foo/topic.md"
+
+    for tool_name in ("Write", "Edit", "MultiEdit"):
+        result = _run_hook(
+            "deploy/hooks/aitp-routing-guard.py",
+            {"tool_name": tool_name, "tool_input": {"file_path": target}},
+            env,
+        )
+        assert result.returncode == 0, result.stderr
+        payload = json.loads(result.stdout)
+        output = payload["hookSpecificOutput"]
+        assert output["decision"] == "block"
+        assert "canonical topics store" in output["reason"]
+
+    result = _run_hook(
+        "deploy/hooks/aitp-routing-guard.py",
+        {"tool_name": "Write", "tool_input": {"file_path": "notes/ordinary.md"}},
+        env,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout == ""
+
+
+def test_project_hook_configs_use_stable_python_and_multiedit_matcher():
+    for rel in ["deploy/config/hooks.json", "deploy/config/codex-hooks.json"]:
+        config = json.loads(_read(rel))
+        pre_tool = config["hooks"]["PreToolUse"][0]
+        command = pre_tool["hooks"][0]["command"]
+        assert pre_tool["matcher"] == "Write|Edit|MultiEdit"
+        assert "{{PYTHON_EXE}}" in command
+        assert "uv" not in command.lower()
+
+
+def test_codex_project_install_writes_lightweight_hooks_and_hooks_json(tmp_path):
+    pm = _load_pm()
+    workspace = tmp_path / "Theoretical-Physics"
+    topics = workspace / "research" / "aitp-topics"
+    topics.mkdir(parents=True)
+    variables = pm._build_variables(str(topics), str(workspace))
+
+    deployed = pm._deploy_codex_app("project", workspace, variables, remove=False)
+
+    hooks_dir = workspace / ".codex" / "hooks"
+    hooks_json = workspace / ".codex" / "hooks.json"
+    assert str(hooks_dir / "aitp-keyword-router.py") in deployed
+    assert str(hooks_dir / "aitp-routing-guard.py") in deployed
+    assert hooks_json.exists()
+    config = json.loads(hooks_json.read_text(encoding="utf-8"))
+    pre_tool = config["hooks"]["PreToolUse"][0]
+    commands = [
+        hook["command"]
+        for entries in config["hooks"].values()
+        for entry in entries
+        for hook in entry["hooks"]
+    ]
+    assert pre_tool["matcher"] == "Write|Edit|MultiEdit"
+    assert any("aitp-keyword-router.py" in command for command in commands)
+    assert any("aitp-routing-guard.py" in command for command in commands)
+    assert all(str(workspace).replace("\\", "/") in command for command in commands)
+    assert all(".cache/codex-runtimes" not in command.replace("\\", "/").lower() for command in commands)
 
 
 def test_kimi_project_install_writes_kimi_and_kimi_code_surfaces(tmp_path):

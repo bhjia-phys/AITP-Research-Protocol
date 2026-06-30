@@ -18,12 +18,13 @@ confusing notes, guesses, failed setup, validation, and trusted conclusions.
 
 | Question | Answer |
 |----------|--------|
-| Current version | AITP 0.5.0, implementation generation v5 |
+| Current version | AITP 1.0.0, implementation generation v5 |
 | Active implementation | [`brain/v5/`](brain/v5/) |
 | Source of truth | Typed records under `<topics-root>/.aitp/` |
 | Main agent entrypoint | MCP server at [`brain/v5/native_mcp.py`](brain/v5/native_mcp.py) |
 | Best default install | Project-scope install with [`scripts/aitp-pm.py`](scripts/aitp-pm.py) |
 | Codex path | Repository-backed plugin at [`plugins/aitp-research-protocol/`](plugins/aitp-research-protocol/) |
+| Codex 1.0 plan | [`docs/CODEX_APP_1_0_PLAN.md`](docs/CODEX_APP_1_0_PLAN.md) |
 | Health checks | `scripts/aitp-pm.py status` and `scripts/aitp-pm.py doctor` |
 | Trust rule | Summaries and dashboards orient agents; typed evidence and validation carry trust |
 
@@ -79,8 +80,9 @@ checkout. Codex can then call:
 - `aitp_suggest_config`
 - `aitp_configure(repo_root="...", topics_root="...")`
 
-After `aitp_configure` succeeds, restart Codex or open a new thread so the full
-`aitp_v5_*` MCP tool surface loads.
+After `aitp_configure` succeeds, restart Codex or open a new thread. Codex
+should enter through the plugin skills, read compact AITP context first, and
+expand to deeper `aitp_v5_*` tools only when the research step needs them.
 
 ### Success Signals
 
@@ -116,17 +118,20 @@ development, failed routes, benchmark provenance, and final synthesis.
 
 ## Current Implementation
 
-The current release is **AITP 0.5.0**. Its implementation generation is
+The current release is **AITP 1.0.0**. Its implementation generation is
 **v5**. The active code is under [`brain/v5/`](brain/v5/).
 
-AITP v5 has three layers:
+AITP v5 has four layers:
 
 1. **Typed research graph** stored on disk under a workspace-local `.aitp/`
    directory.
-2. **Agent-facing MCP server** at
+2. **Derived context surfaces** such as context packs, active-claim focus,
+   execution briefs, relation maps, process graph slices, source audits, note
+   outlines, and recording navigation state.
+3. **Agent-facing MCP server** at
    [`brain/v5/native_mcp.py`](brain/v5/native_mcp.py), exposing `aitp_v5_*`
    tools for reading and writing graph records.
-3. **CLI and installer utilities** for diagnostics, fallback operations, and
+4. **CLI, plugin, and installer utilities** for diagnostics, fallback operations, and
    project setup.
 
 The normal architecture is:
@@ -135,7 +140,7 @@ The normal architecture is:
 human / Codex / Claude Code / Kimi Code / Hakimi / other agent
         |
         v
-MCP tools: aitp_v5_*
+Codex skills / MCP tools: compact context -> aitp_v5_* expansion
         |
         v
 AITP v5 typed records under <topics-root>/.aitp/
@@ -148,7 +153,7 @@ The typed records are the source of truth. Briefs, dashboards, process graph
 slices, summaries, and audits are derived views. They are useful for navigation,
 but they do not update trust by themselves.
 
-Legacy L0-L4 Markdown tools are read-only by default in 0.5.0. Historical files
+Legacy L0-L4 Markdown tools are read-only by default in 1.0.0. Historical files
 and legacy servers remain for audit, migration, rollback, and tests, but normal
 research writes must go through `aitp_v5_*` typed tools. Setting
 `AITP_LEGACY_ENABLE_WRITES=1` is an explicit migration-debug escape hatch, not a
@@ -224,6 +229,7 @@ The v5 store is organized like this:
 |-- surfaces/      generated read-only views and review packets
 |-- tools/         tool metadata and tool surfaces
 |-- curated_rag/   optional heuristic background corpus
+|-- source_blobs/  topic-scoped local copies of acquired source files
 |-- migrations/    migration audits and old-store accounting
 `-- schemas/       schema and contract material
 ```
@@ -235,16 +241,48 @@ The core graph records live under `registry/`. Important record families include
 `proof_obligations`, `research_runs`, `research_run_events`, `checkpoints`,
 `promotion_packets`, and `trust_updates`.
 
+### Source PDF acquisition
+
+`aitp-v5 asset register` remains metadata-only for normal URLs and arXiv
+identifiers. To make a paper available for later local reading, use:
+
+```text
+aitp-v5 asset acquire-pdf --topic <topic-id> --url <http/https/file-url> --title <title>
+aitp-v5 asset acquire-arxiv --topic <topic-id> --arxiv-id <arxiv-id> --title <title>
+```
+
+Successful acquisitions copy the PDF into
+`.aitp/source_blobs/<topic_id>/<asset_id>/original.pdf` and write the local
+path, source URL, final URL, SHA-256, MIME type, file size, and acquisition time
+back to the typed `source_asset` record. Failed acquisitions still write an
+honest orientation-only `source_asset` record with `acquisition_status=failed`
+and `failure_reason`; they do not pretend that a local PDF exists.
+
+For existing local files, `aitp-v5 asset capture-auto` still records the
+original path by default. Add `--copy-to-store` when the file should also be
+copied into the v5 blob store.
+
+Source assets are source identities only. They are not evidence records and
+cannot update claim trust; evidence, validation, and promotion remain separate
+typed operations.
+
+More detail: `docs/v5-source-asset-pdf-acquisition.md`.
+
 ## How Agents Should Use AITP
 
-AITP should be used as a progressive, read-first protocol.
+AITP should be used as a progressive, read-first protocol. The agent should
+classify the research process before choosing graph actions: setup, new topic
+exploration, existing topic continuation, literature discussion, derivation,
+code/numerical work, synthesis/writing, or closeout.
 
 For status questions or old-topic recovery, agents should usually read only:
 
 1. find the topic/session/claim,
-2. read the execution brief,
-3. read the claim relation map,
-4. summarize current support, limits, blockers, and next valid actions.
+2. read the compact context pack or active-claim focus when available,
+3. read the execution brief and claim relation map only when support,
+   validation, blockers, or next actions matter,
+4. summarize current support, limits, blockers, and next valid actions without
+   treating summaries as evidence.
 
 For active research, agents should write only at durable moments:
 
@@ -256,7 +294,8 @@ For active research, agents should write only at durable moments:
 - a route was selected, pivoted, abandoned, or split,
 - claim scope/status changed or needs review,
 - a human checkpoint or promotion decision is needed,
-- a session-end handoff creates durable future context.
+- a session-end handoff creates durable future context,
+- a note or paper draft uses a new source that must be registered.
 
 The recommended recording flow is:
 
@@ -279,6 +318,13 @@ verify the recording effect
 This keeps the graph useful without making the agent write on every internal
 thought step.
 
+For literature and note-writing work, AITP separates source layers:
+`source_asset` identifies a source, `reference_location` records exact pages,
+sections, equations, figures, URLs, or local-note locations, artifacts preserve
+reading notes or drafts, and `evidence` is created only when the source is tied
+to a specific AITP claim. Source identity alone must not be promoted into
+claim support.
+
 ## Using AITP After Install
 
 For Codex plugin users, start a new Codex thread after plugin setup and ask to
@@ -292,12 +338,16 @@ call `aitp_v5_*` MCP tools for durable records.
 
 The normal use pattern is:
 
-1. Find or create the topic/session/claim.
-2. Read the execution brief and relation map.
-3. Do the research work in the host agent.
-4. Record only durable sources, artifacts, evidence, validation results, proof
+1. Classify the request intensity and research process.
+2. Find or create the topic/session/claim only when the work has a durable
+   objective.
+3. Read compact context first, then relation maps, process graph, source stack,
+   or trust audits only when needed.
+4. Do the research work in the host agent.
+5. Record only durable sources, artifacts, evidence, validation results, proof
    gaps, route changes, and human decisions.
-5. Run status or audit tools before treating a result as trusted context.
+6. Run status, source reconstruction, relation-map, or trust-audit tools before
+   treating a result as trusted context.
 
 When MCP is unavailable, use the CLI layer below as a diagnostic and fallback
 surface. Do not manually edit `.aitp/registry` records as a substitute for typed
@@ -425,11 +475,28 @@ This installs workspace-local adapter files such as:
 - `.codex/skills/...`
 - `.codex/mcp.json`
 - `.codex/config.toml`
+- `.codex/hooks/...` and `.codex/hooks.json`
 - `.claude/...`
 - `.kimi/...`
 - `.kimi-code/...`
 
 The exact files depend on the selected agent and the host's conventions.
+
+Default project hooks are deliberately lightweight:
+
+- Claude Code and Codex get `aitp-keyword-router.py` and
+  `aitp-routing-guard.py`.
+- The keyword router is only an orientation reminder; it never writes AITP state.
+- The routing guard blocks direct `Write`, `Edit`, and `MultiEdit` writes into
+  AITP state stores until typed v5 routing has been confirmed.
+- `aitp-v5-hook.py`, `aitp-v5-claude-hook.py`, `aitp-v5-kimi-hook.py`, and
+  `aitp-v5-adapter-event-runner.py` are session-bound bridge assets. They are
+  not enabled by the default project install because they require a concrete v5
+  session id and must not update claim trust.
+- Kimi and Kimi Code project installs write skills and MCP config by default.
+  Kimi hook TOML should be generated only when the installed host supports
+  project `[[hooks]]`, using workspace-local `.kimi/config.toml` or
+  `.kimi-code/config.toml`.
 
 Project-scope install does **not** register a global `aitp` wrapper. It keeps
 host configuration local to the target workspace.
@@ -465,7 +532,7 @@ uv run --with pyyaml --with jsonschema --with fastmcp \
 ```
 
 `status` reads `~/.aitp/install-record.json` and reports recorded installs.
-`doctor` checks Python dependencies, the 0.5.0/v5 version contract, v5 server
+`doctor` checks Python dependencies, the 1.0.0/v5 version contract, v5 server
 files, topics root health, MCP entrypoints, project-scope consistency, and
 common stale-residue problems.
 
@@ -506,8 +573,13 @@ mode instead of failing. Setup mode exposes `aitp_config_status`,
 - the local `AITP-Research-Protocol` checkout path,
 - the topics root where AITP should store records.
 
-The plugin saves this to `~/.aitp/codex-plugin-config.json`. After configuration,
-restart Codex or open a new thread so the full `aitp_v5_*` MCP surface loads.
+The plugin saves this to `~/.aitp/codex-plugin-config.json`. After
+configuration, restart Codex or open a new thread. The plugin launcher sets
+`AITP_MCP_SURFACE=codex` by default, so Codex sees a compact facade:
+`aitp_v5_codex_enter`, `aitp_v5_codex_expand`,
+`aitp_v5_codex_recording_step`, `aitp_v5_codex_literature_step`, and
+`aitp_v5_codex_closeout`. Set `AITP_MCP_SURFACE=full` only for kernel
+development or maintenance sessions that need the complete `aitp_v5_*` surface.
 
 The plugin resolves paths in this order:
 
@@ -604,28 +676,53 @@ For a generic agent harness:
 - use typed write tools only at durable research moments,
 - run trust preflight before confidence or memory-promotion changes.
 
-Hooks can help with session start, pre-tool policy, post-tool trace capture, or
-stop-time handoffs, but hooks are runtime metadata. They should not be treated
-as scientific evidence or trusted memory by themselves.
+Hooks can help with routing reminders, direct-write guards, session start,
+pre-tool policy, post-tool trace capture, or stop-time handoffs, but hooks are
+runtime metadata. They should not be treated as scientific evidence or trusted
+memory by themselves, and they must not update claim trust.
 
-## Optimization Direction
+## Codex App 1.0 Direction
 
-The current v5 implementation is usable, but the main improvement directions
-are clear:
+AITP 1.0 specializes the Codex App path around a small default surface and
+progressive expansion. The full plan is
+[`docs/CODEX_APP_1_0_PLAN.md`](docs/CODEX_APP_1_0_PLAN.md).
 
-- make progressive recording navigation easier for agents to follow,
-- keep the exposed MCP surface small at startup and reveal detail on demand,
-- strengthen graph schema validation and migration accounting,
-- improve host lifecycle hook reliability across Codex, Claude Code, Kimi Code,
-  Hakimi, and other runtimes,
-- improve source reconstruction from papers, notes, and artifacts,
-- make validation contracts easier to generate and review,
-- improve human review packets for trust updates and memory promotion,
-- add more end-to-end acceptance tests with real project workspaces.
+The target layers are:
 
-These optimizations should preserve the same boundary: AITP records research
-truth through typed records, not through unverified summaries or hidden agent
-memory.
+- typed research graph and provenance records;
+- compact agent context over that graph;
+- process-mode routing for new topics, continuation, literature reading,
+  derivation, numerical work, writing, synthesis, and closeout;
+- progressive MCP exposure: setup, entry, read expansion, guided recording, and
+  trust/promotion gates;
+- Codex skills as the reliable control plane;
+- hooks as optional reminders, guards, and trace capture;
+- note and paper writing that registers web/literature references into the
+  correct source, location, evidence, physics-object, validation, and trust
+  layers.
+
+This direction preserves the same boundary: AITP records research truth through
+typed records, not through unverified summaries, web snippets, hook traces, or
+hidden agent memory.
+
+### Codex Hooks And Closeout
+
+Codex App hooks are helpers, not the research control plane. The default
+project hooks may detect AITP-looking prompts and block direct writes into AITP
+state stores, but they must not create evidence, validation, memory, trust
+updates, or promotion records.
+
+Use the Codex facade for session lifecycle:
+
+- `aitp_v5_codex_enter` at the start or when a discussion becomes research;
+- `aitp_v5_codex_recording_step` when a durable moment appears;
+- `aitp_v5_codex_literature_step` when a paper, web source, or local note enters
+  reusable context;
+- `aitp_v5_codex_closeout` when the session needs a handoff.
+
+`aitp_v5_codex_closeout` previews by default. It writes a quiet checkpoint only
+when called with `apply=true`, and that checkpoint still cannot update claim
+trust.
 
 ## Repository Map
 
@@ -644,7 +741,7 @@ AITP-Research-Protocol/
 
 New integrations should use `brain/v5/native_mcp.py` and `brain/v5/`.
 Legacy L0-L4 files remain for migration and historical interpretation only;
-they are not the active 0.5.0 research workflow.
+they are not the active 1.0.0 research workflow.
 
 ## Development Checks
 
@@ -670,6 +767,7 @@ when modifying v5 runtime, MCP, graph, or adapter code.
   deleting generated host files.
 
 - [`docs/AITP_SPEC.md`](docs/AITP_SPEC.md) - protocol specification
+- [`docs/CODEX_APP_1_0_PLAN.md`](docs/CODEX_APP_1_0_PLAN.md) - Codex App 1.0 architecture and implementation plan
 - [`docs/INSTALL.md`](docs/INSTALL.md) - install guide
 - [`docs/UNINSTALL.md`](docs/UNINSTALL.md) - manual uninstall notes
 - [`docs/INSTALL_CODEX.md`](docs/INSTALL_CODEX.md) - Codex adapter notes

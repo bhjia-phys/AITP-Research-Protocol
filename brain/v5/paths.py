@@ -13,8 +13,11 @@ _LAYOUT_DIRS = [
     "registry/questions",
     "registry/ideas",
     "registry/claims",
+    "registry/active_claim_rebind_audits",
     "registry/claim_statuses",
     "registry/proof_obligations",
+    "registry/authorities",
+    "registry/quiet_checkpoints",
     "registry/physics_objects",
     "registry/object_relations",
     "registry/evidence",
@@ -40,6 +43,7 @@ _LAYOUT_DIRS = [
     "registry/legacy_semantic_repairs",
     "registry/legacy_source_reconstruction_repairs",
     "registry/outputs",
+    "source_blobs",
     "memory/l2/entries",
     "memory/l2/graph",
     "memory/l2/conflicts",
@@ -85,6 +89,9 @@ class WorkspacePaths:
 
     def registry_dir(self, family: str) -> Path:
         return self.root / "registry" / family
+
+    def source_blob_dir(self, topic_id: str, asset_id: str) -> Path:
+        return self.root / "source_blobs" / topic_id / asset_id
 
     def session_path(self, session_id: str) -> Path:
         return self.root / "runtime" / "sessions" / f"{session_id}.md"

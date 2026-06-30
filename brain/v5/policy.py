@@ -39,7 +39,10 @@ _TRUST_CHANGING_ACTIONS = {
     "promote_to_l2",
 }
 _SUMMARY_SOURCE_KINDS = {
+    "authority_record",
+    "authority_registry",
     "derived_summary",
+    "note_outline",
     "summary_orientation",
     "task_plan",
     "findings",

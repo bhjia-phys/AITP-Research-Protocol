@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import importlib.util
 from argparse import Namespace
 from pathlib import Path
@@ -55,12 +56,31 @@ def test_source_add_records_l3_supplemental_source(tmp_path, monkeypatch):
     assert "[L3] Registered source: new-paper" in (topic_root / "research.md").read_text(encoding="utf-8")
 
 
-def test_v5_native_mcp_exposes_legacy_friendly_discovery_aliases():
-    from brain.v5.native_mcp import _TOOLS
+def test_v5_native_mcp_keeps_legacy_discovery_aliases_disabled_by_default(monkeypatch):
+    monkeypatch.delenv("AITP_V5_EXPOSE_COMPAT_ALIASES", raising=False)
+    import brain.v5.native_mcp as native_mcp
 
-    assert "aitp_list_topics" in _TOOLS
-    assert "aitp_get_execution_brief" in _TOOLS
-    assert "aitp_bootstrap_topic" in _TOOLS
+    native_mcp = importlib.reload(native_mcp)
+
+    assert "aitp_v5_get_execution_brief" in native_mcp._TOOLS
+    assert "aitp_list_topics" not in native_mcp._TOOLS
+    assert "aitp_get_execution_brief" not in native_mcp._TOOLS
+    assert "aitp_bootstrap_topic" not in native_mcp._TOOLS
+
+
+def test_v5_native_mcp_exposes_legacy_discovery_aliases_only_for_compat_mode(monkeypatch):
+    monkeypatch.setenv("AITP_V5_EXPOSE_COMPAT_ALIASES", "1")
+    import brain.v5.native_mcp as native_mcp
+
+    native_mcp = importlib.reload(native_mcp)
+    try:
+        assert "aitp_list_topics" in native_mcp._TOOLS
+        assert "aitp_get_execution_brief" in native_mcp._TOOLS
+        assert "aitp_bootstrap_topic" in native_mcp._TOOLS
+        assert "aitp_v5_get_execution_brief" in native_mcp._TOOLS
+    finally:
+        monkeypatch.delenv("AITP_V5_EXPOSE_COMPAT_ALIASES", raising=False)
+        importlib.reload(native_mcp)
 
 
 def test_package_manager_uses_topic_root_aitp_as_v5_surface(tmp_path):

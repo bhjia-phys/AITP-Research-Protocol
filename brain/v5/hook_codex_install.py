@@ -6,12 +6,12 @@ import json
 import os
 import shlex
 import subprocess
-import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 from brain.v5.hook_install_templates import write_codex_hook_bridge
+from brain.v5.hook_python import stable_python_executable
 
 
 def install_codex_hooks_json(
@@ -106,7 +106,7 @@ def _codex_hooks_payload(
     runner = (_repo_root() / "hooks" / "aitp_v5_adapter_event_runner.py").as_posix()
     pre_tool = _shell_command(
         [
-            sys.executable,
+            stable_python_executable(),
             runner,
             "pre-tool",
             "--base",
@@ -121,7 +121,7 @@ def _codex_hooks_payload(
     )
     post_tool = _shell_command(
         [
-            sys.executable,
+            stable_python_executable(),
             runner,
             "post-tool",
             "--base",

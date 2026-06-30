@@ -93,7 +93,7 @@ def test_v5_native_mcp_content_length_stdio_smoke(tmp_path):
     stdout = BytesIO(process.stdout)
     initialized = _read_content_length_message(stdout)
     assert initialized["result"]["serverInfo"]["name"] == "aitp-v5-brain"
-    assert initialized["result"]["serverInfo"]["version"] == "0.5.0"
+    assert initialized["result"]["serverInfo"]["version"] == "1.0.0"
     tools = _read_content_length_message(stdout)["result"]["tools"]
     assert tools
     tool_names = {tool["name"] for tool in tools}
@@ -124,7 +124,7 @@ def test_v5_native_mcp_ndjson_stdio_smoke(tmp_path):
     assert process.returncode == 0, process.stderr.decode("utf-8", "replace")
     messages = [json.loads(line) for line in process.stdout.decode("utf-8").splitlines() if line.strip()]
     assert messages[0]["result"]["serverInfo"]["name"] == "aitp-v5-brain"
-    assert messages[0]["result"]["serverInfo"]["version"] == "0.5.0"
+    assert messages[0]["result"]["serverInfo"]["version"] == "1.0.0"
     tools = messages[1]["result"]["tools"]
     assert tools
     tool_names = {tool["name"] for tool in tools}

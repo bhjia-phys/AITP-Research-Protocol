@@ -14,7 +14,10 @@ from brain.v5.store import list_records, read_record, write_record
 from brain.v5.workspace import get_claim
 
 _SUMMARY_SOURCE_KINDS = {
+    "authority_record",
+    "authority_registry",
     "derived_summary",
+    "note_outline",
     "summary_orientation",
     "task_plan",
     "findings",

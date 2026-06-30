@@ -11,9 +11,24 @@ import re
 from brain.v5.adapter_protocols import adapter_protocol_registry, record_gate_coverage_audit
 from brain.v5.adapter_runtime import evaluate_platform_pre_tool_event
 from brain.v5.adapters import build_adapter_packet
+from brain.v5.active_claim_focus import (
+    confirm_active_claim_rebind,
+    detect_active_claim_focus_drift,
+    propose_active_claim_rebind,
+)
+from brain.v5.authorities import authority_record_payload, authority_registry_payload, record_authority
 from brain.v5.brief import build_execution_brief
 from brain.v5.claim_relation_map import build_claim_relation_map, empty_claim_relation_map
 from brain.v5.code import capture_code_state_from_git, record_code_state
+from brain.v5.codex_facade import (
+    codex_closeout,
+    codex_enter_context,
+    codex_expand_context,
+    codex_literature_step,
+    codex_recording_step,
+    codex_tool_catalog,
+)
+from brain.v5.context_pack import build_aitp_context_pack
 from brain.v5.curated_rag_corpus import (
     curated_rag_corpus,
     draft_curated_rag_promotion,
@@ -37,8 +52,12 @@ from brain.v5.mcp_legacy import aitp_v5_apply_legacy_semantic_repair, aitp_v5_ap
 from brain.v5.hook_smoke_coverage import runtime_hook_smoke_coverage_report
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
 from brain.v5.models import CodeStateRecord, TrustUpdateRequest
+from brain.v5.note_outline import compile_note_outline
+from brain.v5.objective_graph import build_compact_brief, build_objective_graph
 from brain.v5.pretool_policy import evaluate_context_pre_tool_policy
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
+from brain.v5.quiet_checkpoint import apply_quiet_checkpoint_batch, preview_quiet_checkpoint_batch
+from brain.v5.research_distillation import build_research_distillation_candidates
 from brain.v5.record_refs import lookup_record_refs
 from brain.v5.recording_navigator import (
     build_recording_navigation_state,
@@ -54,7 +73,13 @@ from brain.v5.runtime_bridge_targets import runtime_bridge_target_manifest
 from brain.v5.runtime_mcp_bridge_acceptance import audit_runtime_mcp_bridge_acceptance
 from brain.v5.runtime_payload_profiles import runtime_payload_profiles
 from brain.v5.sensemaking import record_sensemaking_report
-from brain.v5.source_assets import capture_source_asset_from_local_path, register_source_asset, source_asset_payload
+from brain.v5.source_assets import (
+    acquire_arxiv_source_asset,
+    acquire_pdf_source_asset,
+    capture_source_asset_from_local_path,
+    register_source_asset,
+    source_asset_payload,
+)
 from brain.v5.validation import create_validation_contract, record_validation_result
 from brain.v5.checkpoints import decide_human_checkpoint, request_human_checkpoint
 from brain.v5.memory import apply_promotion_packet, create_promotion_packet
@@ -178,6 +203,183 @@ def _slug(value: str) -> str:
     return text[:160]
 
 
+def aitp_v5_codex_tool_catalog(profile: str = "entry") -> dict:
+    """Return the compact Codex App 1.0 MCP surface catalog."""
+
+    return codex_tool_catalog(profile=profile)
+
+
+def aitp_v5_codex_enter(
+    base: str,
+    *,
+    session_id: str = "",
+    topics: list[str] | None = None,
+    request_summary: str = "",
+    process_mode: str = "auto",
+    max_lines: int = 60,
+    candidate_limit: int = 3,
+) -> dict:
+    """Enter AITP from Codex with compact context or recovery hints."""
+
+    return codex_enter_context(
+        _ws(base),
+        session_id=session_id,
+        topics=topics,
+        request_summary=request_summary,
+        process_mode=process_mode,
+        max_lines=max_lines,
+        candidate_limit=candidate_limit,
+    )
+
+
+def aitp_v5_codex_expand(
+    base: str,
+    *,
+    session_id: str,
+    expansion: str,
+    claim_id: str = "",
+    max_lines: int = 60,
+    limit: int = 60,
+    style: str = "jhep",
+    objective_text: str = "",
+    user_goal: str = "",
+) -> dict:
+    """Expand one Codex context family on demand."""
+
+    return codex_expand_context(
+        _ws(base),
+        session_id=session_id,
+        expansion=expansion,
+        claim_id=claim_id,
+        max_lines=max_lines,
+        limit=limit,
+        style=style,
+        objective_text=objective_text,
+        user_goal=user_goal,
+    )
+
+
+def aitp_v5_codex_recording_step(
+    base: str,
+    *,
+    session_id: str,
+    event_type: str,
+    summary: str = "",
+    topic_id: str = "",
+    claim_id: str = "",
+    touched_refs: list[str] | None = None,
+    produced_artifacts: list[str] | None = None,
+    tool_call_id: str = "",
+    risk_hint: str = "",
+    slot: str = "",
+    candidate: dict | None = None,
+    expected_refs: list[str] | None = None,
+) -> dict:
+    """Classify and expand one durable recording moment without doing the write."""
+
+    return codex_recording_step(
+        _ws(base),
+        session_id=session_id,
+        event_type=event_type,
+        summary=summary,
+        topic_id=topic_id,
+        claim_id=claim_id,
+        touched_refs=touched_refs,
+        produced_artifacts=produced_artifacts,
+        tool_call_id=tool_call_id,
+        risk_hint=risk_hint,
+        slot=slot,
+        candidate=candidate,
+        expected_refs=expected_refs,
+    )
+
+
+def aitp_v5_codex_literature_step(
+    base: str,
+    *,
+    session_id: str,
+    uri: str,
+    label: str,
+    action: str = "suggest",
+    external_id: str = "",
+    short_summary: str = "",
+    detected_relevance: str = "",
+    optional_claim_id: str = "",
+    scoped_output: str = "",
+    reviewed_refs: list[str] | None = None,
+    comparison_question: str = "",
+    source_refs: list[str] | None = None,
+    dimensions: list[str] | None = None,
+    rationale: str = "",
+) -> dict:
+    """Run a layered literature/reference workflow step from Codex."""
+
+    return codex_literature_step(
+        _ws(base),
+        session_id=session_id,
+        uri=uri,
+        label=label,
+        action=action,
+        external_id=external_id,
+        short_summary=short_summary,
+        detected_relevance=detected_relevance,
+        optional_claim_id=optional_claim_id,
+        scoped_output=scoped_output,
+        reviewed_refs=reviewed_refs,
+        comparison_question=comparison_question,
+        source_refs=source_refs,
+        dimensions=dimensions,
+        rationale=rationale,
+    )
+
+
+def aitp_v5_codex_closeout(
+    base: str,
+    *,
+    session_id: str,
+    summary: str,
+    apply: bool = False,
+    claim_id: str = "",
+    run_id: str = "",
+    inputs: list[str] | None = None,
+    outputs: list[str] | None = None,
+    changed_files: list[str] | None = None,
+    generated_artifacts: list[dict] | None = None,
+    validation_commands: list[str] | None = None,
+    durable_observations: list[str] | None = None,
+    claim_boundary: dict | None = None,
+    next_blockers: list[str] | None = None,
+    artifact_specs: list[dict] | None = None,
+    source_specs: list[dict] | None = None,
+    tool_run_specs: list[dict] | None = None,
+    sensemaking_summary: str = "",
+    source_refs: list[str] | None = None,
+) -> dict:
+    """Preview or apply a quiet closeout checkpoint without trust mutation."""
+
+    return codex_closeout(
+        _ws(base),
+        session_id=session_id,
+        summary=summary,
+        apply=apply,
+        claim_id=claim_id,
+        run_id=run_id,
+        inputs=inputs,
+        outputs=outputs,
+        changed_files=changed_files,
+        generated_artifacts=generated_artifacts,
+        validation_commands=validation_commands,
+        durable_observations=durable_observations,
+        claim_boundary=claim_boundary,
+        next_blockers=next_blockers,
+        artifact_specs=artifact_specs,
+        source_specs=source_specs,
+        tool_run_specs=tool_run_specs,
+        sensemaking_summary=sensemaking_summary,
+        source_refs=source_refs,
+    )
+
+
 def aitp_v5_init_workspace(base: str) -> dict:
     return {"ok": True, "workspace_root": str(_ws(base).root)}
 
@@ -220,11 +422,22 @@ def aitp_v5_get_execution_brief(base: str, *, session_id: str) -> dict:
     return require_valid_public_surface("execution_brief", brief)
 
 
-def aitp_v5_get_claim_relation_map(base: str, *, session_id: str) -> dict:
+def aitp_v5_get_claim_relation_map(
+    base: str,
+    *,
+    session_id: str,
+    objective_text: str = "",
+    user_goal: str = "",
+) -> dict:
     """Return the derived relation map and conclusion boundary for the active claim."""
 
     try:
-        relation_map = build_claim_relation_map(_ws(base), session_id)
+        relation_map = build_claim_relation_map(
+            _ws(base),
+            session_id,
+            objective_text=objective_text,
+            user_goal=user_goal,
+        )
     except TypeError as error:
         if "SessionBinding.__init__()" not in str(error):
             raise
@@ -236,6 +449,152 @@ def aitp_v5_get_claim_relation_map(base: str, *, session_id: str) -> dict:
     return require_valid_public_surface(
         "claim_relation_map",
         relation_map,
+    )
+
+
+def aitp_v5_get_objective_graph(base: str, *, session_id: str) -> dict:
+    """Return a read-only objective/work-package projection for the session."""
+
+    return require_valid_public_surface("objective_graph", build_objective_graph(_ws(base), session_id))
+
+
+def aitp_v5_get_compact_brief(
+    base: str,
+    *,
+    session_id: str,
+    max_lines: int = 40,
+    objective_text: str = "",
+    user_goal: str = "",
+) -> dict:
+    """Return a short continuation brief; full brief/relation-map remain explicit."""
+
+    return require_valid_public_surface(
+        "compact_execution_brief",
+        build_compact_brief(
+            _ws(base),
+            session_id,
+            max_lines=max_lines,
+            objective_text=objective_text,
+            user_goal=user_goal,
+        ),
+    )
+
+
+def aitp_v5_get_context_pack(
+    base: str,
+    *,
+    session_id: str,
+    max_lines: int = 60,
+    candidate_limit: int = 3,
+    objective_text: str = "",
+    user_goal: str = "",
+) -> dict:
+    """Return a Codex-friendly bounded context pack for turn-input injection."""
+
+    return require_valid_public_surface(
+        "aitp_context_pack",
+        build_aitp_context_pack(
+            _ws(base),
+            session_id,
+            max_lines=max_lines,
+            candidate_limit=candidate_limit,
+            objective_text=objective_text,
+            user_goal=user_goal,
+        ),
+    )
+
+
+def aitp_v5_detect_active_claim_focus_drift(
+    base: str,
+    *,
+    session_id: str,
+    objective_text: str = "",
+    user_goal: str = "",
+    candidate_limit: int = 5,
+) -> dict:
+    """Detect active-claim focus drift without changing any binding or trust state."""
+
+    return require_valid_public_surface(
+        "active_claim_focus_reconciliation",
+        detect_active_claim_focus_drift(
+            _ws(base),
+            session_id,
+            objective_text=objective_text,
+            user_goal=user_goal,
+            candidate_limit=candidate_limit,
+        ),
+    )
+
+
+def aitp_v5_propose_active_claim_rebind(
+    base: str,
+    *,
+    session_id: str,
+    candidate_claim_id: str = "",
+    reason: str = "",
+    objective_text: str = "",
+    user_goal: str = "",
+) -> dict:
+    """Return a read-only active-claim rebind proposal requiring confirmation."""
+
+    return require_valid_public_surface(
+        "active_claim_rebind_proposal",
+        propose_active_claim_rebind(
+            _ws(base),
+            session_id,
+            candidate_claim_id=candidate_claim_id,
+            reason=reason,
+            objective_text=objective_text,
+            user_goal=user_goal,
+        ),
+    )
+
+
+def aitp_v5_confirm_active_claim_rebind(
+    base: str,
+    *,
+    session_id: str,
+    new_claim_id: str,
+    reason: str,
+    user_confirmation: str,
+    operator: str = "human",
+) -> dict:
+    """Explicitly rebind the session active claim and write an audit record."""
+
+    return require_valid_public_surface(
+        "active_claim_rebind_confirmation",
+        confirm_active_claim_rebind(
+            _ws(base),
+            session_id,
+            new_claim_id=new_claim_id,
+            reason=reason,
+            user_confirmation=user_confirmation,
+            operator=operator,
+        ),
+    )
+
+
+def aitp_v5_get_research_distillation_candidates(base: str, *, session_id: str, limit: int = 8) -> dict:
+    """Return read-only reusable-block candidates and missing gates for a session."""
+
+    return require_valid_public_surface(
+        "research_distillation_candidates",
+        build_research_distillation_candidates(_ws(base), session_id, limit=limit),
+    )
+
+
+def aitp_v5_compile_note_outline(
+    base: str,
+    *,
+    session_id: str,
+    style: str = "jhep",
+    candidate_limit: int = 8,
+) -> dict:
+    """Return a read-only research-note outline coverage surface."""
+
+    return require_valid_public_surface(
+        "note_outline",
+        compile_note_outline(_ws(base), session_id, style=style, candidate_limit=candidate_limit),
     )
 
 
@@ -358,10 +717,19 @@ def aitp_v5_build_workspace_recovery_binding_repair(
     base: str,
     *,
     topics: list[str] | None = None,
+    session_id: str = "",
+    objective_text: str = "",
+    user_goal: str = "",
 ) -> dict:
     """Return a conservative active-claim binding repair plan for recovery gaps."""
 
-    payload = build_workspace_recovery_binding_repair(_ws(base), topics=topics or [])
+    payload = build_workspace_recovery_binding_repair(
+        _ws(base),
+        topics=topics or [],
+        session_id=session_id,
+        objective_text=objective_text,
+        user_goal=user_goal,
+    )
     return require_valid_public_surface("workspace_recovery_binding_repair", payload)
 
 
@@ -369,13 +737,22 @@ def aitp_v5_apply_workspace_recovery_binding_repair(
     base: str,
     *,
     topics: list[str] | None = None,
+    session_id: str = "",
+    objective_text: str = "",
+    user_goal: str = "",
     write_json: str = "",
     write_report: str = "",
 ) -> dict:
     """Apply safe single-claim active-session binding repairs for recovery gaps."""
 
     ws = _ws(base)
-    payload = build_workspace_recovery_binding_repair(ws, topics=topics or [])
+    payload = build_workspace_recovery_binding_repair(
+        ws,
+        topics=topics or [],
+        session_id=session_id,
+        objective_text=objective_text,
+        user_goal=user_goal,
+    )
     payload = apply_workspace_recovery_binding_repair(payload, ws)
     if write_json or write_report:
         payload = write_workspace_recovery_binding_repair(
@@ -892,6 +1269,8 @@ def aitp_v5_capture_source_asset_auto(
     derived_from: list[str] | None = None,
     metadata: dict | None = None,
     linked_records: dict | None = None,
+    copy_to_store: bool = False,
+    force_refresh: bool = False,
 ) -> dict:
     """Inspect a local file and register it as an AITP source asset."""
 
@@ -905,6 +1284,110 @@ def aitp_v5_capture_source_asset_auto(
         label=label,
         version_anchor=version_anchor,
         acquired_at=acquired_at,
+        source_kind=source_kind,
+        summary=summary,
+        source_refs=source_refs,
+        artifact_ids=artifact_ids,
+        code_state_ids=code_state_ids,
+        reference_location_ids=reference_location_ids,
+        derived_from=derived_from,
+        metadata=metadata,
+        linked_records=linked_records,
+        copy_to_store=copy_to_store,
+        force_refresh=force_refresh,
+    )
+    return require_valid_public_surface("source_asset_record", source_asset_payload(record))
+
+
+def aitp_v5_acquire_pdf_source_asset(
+    base: str,
+    *,
+    topic_id: str,
+    url: str,
+    title: str,
+    claim_id: str = "",
+    asset_type: str = "paper",
+    label: str = "",
+    timeout_seconds: int = 120,
+    max_bytes: int = 200 * 1024 * 1024,
+    force_refresh: bool = False,
+    version_anchor: dict | None = None,
+    acquired_at: str = "",
+    source_kind: str = "literature_pdf",
+    summary: str = "",
+    source_refs: list[str] | None = None,
+    artifact_ids: list[str] | None = None,
+    code_state_ids: list[str] | None = None,
+    reference_location_ids: list[str] | None = None,
+    derived_from: list[str] | None = None,
+    metadata: dict | None = None,
+    linked_records: dict | None = None,
+) -> dict:
+    """Acquire a PDF into the topic-scoped v5 source blob store."""
+
+    record = acquire_pdf_source_asset(
+        _ws(base),
+        topic_id=topic_id,
+        claim_id=claim_id,
+        asset_type=asset_type,
+        url=url,
+        title=title,
+        label=label,
+        timeout_seconds=timeout_seconds,
+        max_bytes=max_bytes,
+        force_refresh=force_refresh,
+        version_anchor=version_anchor,
+        acquired_at=acquired_at,
+        source_kind=source_kind,
+        summary=summary,
+        source_refs=source_refs,
+        artifact_ids=artifact_ids,
+        code_state_ids=code_state_ids,
+        reference_location_ids=reference_location_ids,
+        derived_from=derived_from,
+        metadata=metadata,
+        linked_records=linked_records,
+    )
+    return require_valid_public_surface("source_asset_record", source_asset_payload(record))
+
+
+def aitp_v5_acquire_arxiv_source_asset(
+    base: str,
+    *,
+    topic_id: str,
+    arxiv_id: str,
+    title: str = "",
+    claim_id: str = "",
+    version: str = "",
+    label: str = "",
+    timeout_seconds: int = 120,
+    max_bytes: int = 200 * 1024 * 1024,
+    force_refresh: bool = False,
+    version_anchor: dict | None = None,
+    source_kind: str = "arxiv_pdf",
+    summary: str = "",
+    source_refs: list[str] | None = None,
+    artifact_ids: list[str] | None = None,
+    code_state_ids: list[str] | None = None,
+    reference_location_ids: list[str] | None = None,
+    derived_from: list[str] | None = None,
+    metadata: dict | None = None,
+    linked_records: dict | None = None,
+) -> dict:
+    """Acquire an arXiv PDF into the topic-scoped v5 source blob store."""
+
+    record = acquire_arxiv_source_asset(
+        _ws(base),
+        topic_id=topic_id,
+        claim_id=claim_id,
+        arxiv_id=arxiv_id,
+        title=title,
+        version=version,
+        label=label,
+        timeout_seconds=timeout_seconds,
+        max_bytes=max_bytes,
+        force_refresh=force_refresh,
+        version_anchor=version_anchor,
         source_kind=source_kind,
         summary=summary,
         source_refs=source_refs,
@@ -1500,6 +1983,68 @@ def aitp_v5_record_object_relation(
     return require_valid_public_surface("object_relation_record", {"ok": True, **asdict(rel)})
 
 
+def aitp_v5_record_authority(
+    base: str,
+    *,
+    topic_id: str,
+    authority_type: str,
+    authority_statement: str,
+    work_package: str = "",
+    claim_id: str = "",
+    scope: dict | None = None,
+    generator_set: str = "",
+    closure_envelope: str = "",
+    evidence_refs: list[str] | None = None,
+    source_refs: list[str] | None = None,
+    artifact_ids: list[str] | None = None,
+    linked_records: dict | None = None,
+    limitations: list[str] | None = None,
+    status: str = "research_authority_not_trust_promotion",
+) -> dict:
+    """Record a convention/sector/dataset/code authority without claim-trust authority."""
+
+    record = record_authority(
+        _ws(base),
+        topic_id=topic_id,
+        authority_type=authority_type,
+        authority_statement=authority_statement,
+        work_package=work_package,
+        claim_id=claim_id,
+        scope=scope,
+        generator_set=generator_set,
+        closure_envelope=closure_envelope,
+        evidence_refs=evidence_refs,
+        source_refs=source_refs,
+        artifact_ids=artifact_ids,
+        linked_records=linked_records,
+        limitations=limitations,
+        status=status,
+    )
+    return require_valid_public_surface("authority_record", authority_record_payload(record))
+
+
+def aitp_v5_list_authorities(
+    base: str,
+    *,
+    topic_id: str,
+    authority_type: str = "",
+    work_package: str = "",
+    include_inactive: bool = False,
+) -> dict:
+    """Return a read-only topic authority registry view."""
+
+    return require_valid_public_surface(
+        "authority_registry",
+        authority_registry_payload(
+            _ws(base),
+            topic_id=topic_id,
+            authority_type=authority_type,
+            work_package=work_package,
+            include_inactive=include_inactive,
+        ),
+    )
+
+
 def aitp_v5_record_sensemaking_report(
     base: str, *, topic_id: str, claim_id: str, title: str, summary: str,
     object_ids: list[str] | None = None, relation_ids: list[str] | None = None,
@@ -1572,6 +2117,102 @@ def aitp_v5_decide_human_checkpoint(
     dec = decide_human_checkpoint(_ws(base), checkpoint_id=checkpoint_id,
         decision=decision, rationale=rationale, decided_by=decided_by)
     return require_valid_public_surface("human_checkpoint_record", {"ok": True, **asdict(dec)})
+
+
+def aitp_v5_preview_quiet_checkpoint_batch(
+    base: str,
+    *,
+    session_id: str,
+    claim_id: str = "",
+    run_id: str = "",
+    summary: str,
+    inputs: list[str] | None = None,
+    outputs: list[str] | None = None,
+    changed_files: list[str] | None = None,
+    generated_artifacts: list[dict] | None = None,
+    validation_commands: list[str] | None = None,
+    durable_observations: list[str] | None = None,
+    claim_boundary: dict | None = None,
+    next_blockers: list[str] | None = None,
+    artifact_specs: list[dict] | None = None,
+    source_specs: list[dict] | None = None,
+    tool_run_specs: list[dict] | None = None,
+    sensemaking_summary: str = "",
+    source_refs: list[str] | None = None,
+) -> dict:
+    """Preview a research-burst checkpoint batch without writing records."""
+
+    return require_valid_public_surface(
+        "quiet_checkpoint_preview",
+        preview_quiet_checkpoint_batch(
+            _ws(base),
+            session_id,
+            claim_id=claim_id,
+            run_id=run_id,
+            summary=summary,
+            inputs=inputs,
+            outputs=outputs,
+            changed_files=changed_files,
+            generated_artifacts=generated_artifacts,
+            validation_commands=validation_commands,
+            durable_observations=durable_observations,
+            claim_boundary=claim_boundary,
+            next_blockers=next_blockers,
+            artifact_specs=artifact_specs,
+            source_specs=source_specs,
+            tool_run_specs=tool_run_specs,
+            sensemaking_summary=sensemaking_summary,
+            source_refs=source_refs,
+        ),
+    )
+
+
+def aitp_v5_apply_quiet_checkpoint_batch(
+    base: str,
+    *,
+    session_id: str,
+    claim_id: str = "",
+    run_id: str = "",
+    summary: str,
+    inputs: list[str] | None = None,
+    outputs: list[str] | None = None,
+    changed_files: list[str] | None = None,
+    generated_artifacts: list[dict] | None = None,
+    validation_commands: list[str] | None = None,
+    durable_observations: list[str] | None = None,
+    claim_boundary: dict | None = None,
+    next_blockers: list[str] | None = None,
+    artifact_specs: list[dict] | None = None,
+    source_specs: list[dict] | None = None,
+    tool_run_specs: list[dict] | None = None,
+    sensemaking_summary: str = "",
+    source_refs: list[str] | None = None,
+) -> dict:
+    """Apply a research-burst checkpoint batch without updating claim trust."""
+
+    return require_valid_public_surface(
+        "quiet_checkpoint_batch",
+        apply_quiet_checkpoint_batch(
+            _ws(base),
+            session_id,
+            claim_id=claim_id,
+            run_id=run_id,
+            summary=summary,
+            inputs=inputs,
+            outputs=outputs,
+            changed_files=changed_files,
+            generated_artifacts=generated_artifacts,
+            validation_commands=validation_commands,
+            durable_observations=durable_observations,
+            claim_boundary=claim_boundary,
+            next_blockers=next_blockers,
+            artifact_specs=artifact_specs,
+            source_specs=source_specs,
+            tool_run_specs=tool_run_specs,
+            sensemaking_summary=sensemaking_summary,
+            source_refs=source_refs,
+        ),
+    )
 
 
 def aitp_v5_create_promotion_packet(

@@ -6,6 +6,7 @@ from dataclasses import asdict, is_dataclass
 from typing import Any
 
 from brain.v5.models import (
+    AuthorityRecord,
     ClaimRecord,
     CodeStateRecord,
     EvidenceRecord,
@@ -15,6 +16,7 @@ from brain.v5.models import (
     ObjectRelationRecord,
     PhysicsObjectRecord,
     ProofObligationRecord,
+    QuietCheckpointBatchRecord,
     ReferenceLocationRecord,
     ResearchRouteRecord,
     ResearchRunEventRecord,
@@ -78,6 +80,8 @@ def build_process_graph_slice(
     source_assets = _filter_source_assets(_records(ws, "source_assets", SourceAssetRecord), topic_id, claim_ids)
     evidence = _filter_by_topic_and_claim(_records(ws, "evidence", EvidenceRecord), topic_id, claim_ids)
     obligations = _filter_by_topic_and_claim(_records(ws, "proof_obligations", ProofObligationRecord), topic_id, claim_ids)
+    authorities = _filter_authorities(_records(ws, "authorities", AuthorityRecord), topic_id, claim_ids)
+    quiet_checkpoints = _filter_by_topic_and_claim(_records(ws, "quiet_checkpoints", QuietCheckpointBatchRecord), topic_id, claim_ids)
     objects = [record for record in _records(ws, "physics_objects", PhysicsObjectRecord) if record.topic_id == topic_id]
     object_ids = {record.object_id for record in objects}
     relations = [
@@ -162,6 +166,10 @@ def build_process_graph_slice(
         builder.add_node("evidence", record.evidence_id, record, label=record.summary)
     for record in obligations:
         builder.add_node("proof_obligation", record.obligation_id, record, label=record.statement)
+    for record in authorities:
+        builder.add_node("authority", record.authority_id, record, label=record.authority_statement)
+    for record in quiet_checkpoints:
+        builder.add_node("quiet_checkpoint", record.checkpoint_id, record, label=record.summary)
     for record in objects:
         builder.add_node("physics_object", record.object_id, record, label=record.name)
     for record in relations:
@@ -191,7 +199,7 @@ def build_process_graph_slice(
 
     for claim in claims:
         builder.add_edge("session", session.session_id, "claim", claim.claim_id, "session_focus")
-    _add_edges(builder, session, claims, references, source_assets, evidence, obligations, objects, relations,
+    _add_edges(builder, session, claims, references, source_assets, evidence, obligations, authorities, quiet_checkpoints, objects, relations,
                validation_contracts, validation_results, tool_runs, code_states, memory_entries, sensemaking_reports,
                exploratory_records, checkpoints, routes, research_runs, research_run_events)
 
@@ -551,6 +559,8 @@ def _add_edges(
     source_assets: list[SourceAssetRecord],
     evidence: list[EvidenceRecord],
     obligations: list[ProofObligationRecord],
+    authorities: list[AuthorityRecord],
+    quiet_checkpoints: list[QuietCheckpointBatchRecord],
     objects: list[PhysicsObjectRecord],
     relations: list[ObjectRelationRecord],
     validation_contracts: list[ValidationContractRecord],
@@ -610,6 +620,14 @@ def _add_edges(
         builder.add_edge("claim", record.claim_id, "proof_obligation", record.obligation_id, "has_proof_obligation")
         for evidence_id in record.evidence_refs:
             builder.add_edge("proof_obligation", record.obligation_id, "evidence", evidence_id, "supported_by_evidence")
+    for record in authorities:
+        if record.claim_id:
+            builder.add_edge("claim", record.claim_id, "authority", record.authority_id, "has_authority")
+    for record in quiet_checkpoints:
+        if record.claim_id:
+            builder.add_edge("claim", record.claim_id, "quiet_checkpoint", record.checkpoint_id, "has_quiet_checkpoint")
+        if record.session_id:
+            builder.add_edge("session", record.session_id, "quiet_checkpoint", record.checkpoint_id, "recorded_quiet_checkpoint")
     for record in relations:
         if record.claim_id:
             builder.add_edge("claim", record.claim_id, "object_relation", record.relation_id, "has_object_relation")
@@ -763,6 +781,14 @@ def _filter_by_topic_and_claim(records: list, topic_id: str, claim_ids: set[str]
         for record in records
         if getattr(record, "topic_id", "") == topic_id
         and (not claim_ids or getattr(record, "claim_id", "") in claim_ids)
+    ]
+
+
+def _filter_authorities(records: list[AuthorityRecord], topic_id: str, claim_ids: set[str]) -> list[AuthorityRecord]:
+    return [
+        record
+        for record in records
+        if record.topic_id == topic_id and (not claim_ids or not record.claim_id or record.claim_id in claim_ids)
     ]
 
 

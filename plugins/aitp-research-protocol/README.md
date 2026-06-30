@@ -1,8 +1,8 @@
 # AITP Research Protocol Codex Plugin
 
 This plugin connects Codex to a local checkout of
-`bhjia-phys/AITP-Research-Protocol` and exposes the AITP v5 MCP tools plus
-three Codex skills:
+`bhjia-phys/AITP-Research-Protocol` and exposes the AITP 1.0 v5 MCP kernel plus
+Codex skills that enter the graph through compact context first:
 
 - `using-aitp`
 - `aitp-runtime`
@@ -75,8 +75,12 @@ $env:AITP_TOPICS_ROOT = "C:/path/to/aitp-topics"
 aitp_configure(repo_root="C:/path/to/AITP-Research-Protocol", topics_root="C:/path/to/aitp-topics")
 ```
 
-After configuration, restart Codex or open a new thread so the full `aitp_v5_*`
-tool surface loads.
+After configuration, restart Codex or open a new thread. The current kernel
+surface still provides `aitp_v5_*` tools, but the plugin launcher defaults to
+`AITP_MCP_SURFACE=codex`. Codex should use the compact facade as the front door:
+setup, `aitp_v5_codex_enter`, explicit `aitp_v5_codex_expand`, guided recording,
+literature/source registration, note writing, closeout, and trust preflight.
+Set `AITP_MCP_SURFACE=full` only for kernel development or maintenance sessions.
 
 The skills should call AITP v5 tools with `base=""` unless the user explicitly
 provides a topics root. The MCP server resolves the empty base to
@@ -89,6 +93,18 @@ In a Codex thread, use the plugin skills for AITP-backed work:
 - Use `using-aitp` to enter a topic, check prior progress, or continue research.
 - Use `aitp-runtime` once full `aitp_v5_*` tools are available.
 - Use `configure-aitp` when the plugin is in setup mode or paths have moved.
+
+Default behavior is read-first. Codex should classify whether the conversation
+is setup, new topic exploration, existing-topic continuation, literature
+discussion, derivation, code/numerical work, synthesis/writing, or closeout.
+It should record only durable sources, artifacts, evidence, validation, route
+changes, checkpoints, and handoffs.
+
+For literature and note writing, register references in layers: source identity,
+exact reference location, reading artifact, claim-linked evidence, physical
+objects/relations, validation basis, and finally trust basis when a preflight or
+checkpoint permits it. A paper or web page is not evidence until it is linked to
+a specific AITP claim.
 
 AITP records are written under the configured topics root, not inside the
 plugin cache.

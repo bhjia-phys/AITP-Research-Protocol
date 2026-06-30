@@ -9,7 +9,10 @@
     "REPO_ROOT",
     "TOPICS_ROOT",
     "USER_HOME",
+    "PYTHON_EXE",
     "CLAUDE_USER_DIR",
+    "AITP_HOOKS_DIR",
+    "CODEX_HOOKS_DIR",
     "KIMI_USER_DIR"
   ],
 
@@ -43,6 +46,18 @@
     "template_skills": [
       {"src": "kimi-code/using-aitp.md", "dst": "using-aitp/SKILL.md"},
       {"src": "kimi-code/aitp-runtime.md", "dst": "aitp-runtime/SKILL.md"}
+    ]
+  },
+
+  "codex": {
+    "template_hooks": [
+      {"src": "deploy/config/codex-hooks.json", "dst": ".codex/hooks.json"},
+      {"src": "deploy/hooks/aitp-keyword-router.py", "dst": ".codex/hooks/aitp-keyword-router.py"},
+      {"src": "deploy/hooks/aitp-routing-guard.py", "dst": ".codex/hooks/aitp-routing-guard.py"}
+    ],
+    "template_skills": [
+      {"src": "deploy/codex/skills/using-aitp.md", "dst": ".codex/skills/using-aitp/SKILL.md"},
+      {"src": "deploy/codex/skills/aitp-runtime.md", "dst": ".codex/skills/aitp-runtime/SKILL.md"}
     ]
   }
 }

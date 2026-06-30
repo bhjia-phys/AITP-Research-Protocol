@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import json
-import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 from brain.v5.hook_bridge_markdown import codex_bridge_markdown, opencode_bridge_markdown
 from brain.v5.hook_entrypoint_schemas import pre_tool_event_platform_schema, pre_tool_policy_input_schema
+from brain.v5.hook_python import stable_python_executable
 from brain.v5.hook_runner_payloads import build_pre_tool_event_runner
 
 
@@ -294,7 +294,7 @@ def _claude_settings_payload(
     session_id: str,
 ) -> dict[str, Any]:
     hook_script = (Path(__file__).resolve().parents[2] / "hooks" / "aitp_v5_claude_hook.py").as_posix()
-    python_exe = Path(sys.executable).as_posix()
+    python_exe = stable_python_executable()
     command_base = f'"{python_exe}" "{hook_script}" {{command}} --base "{workspace_base}" --session-id {session_id}'
     session_start_command = command_base.format(command="session-start")
     pre_tool_command = command_base.format(command="pre-tool")

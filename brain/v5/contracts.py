@@ -458,6 +458,36 @@ def require_valid_proof_obligation_record(payload: dict[str, Any]) -> dict[str, 
     return _require(payload)
 
 
+def validate_authority_record(payload: dict[str, Any], *, path: str = "authority_record") -> ContractResult:
+    from brain.v5.record_contracts import validate_authority_record as _validate
+    return _validate(payload, path=path)
+
+
+def require_valid_authority_record(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.record_contracts import require_valid_authority_record as _require
+    return _require(payload)
+
+
+def validate_authority_registry(payload: dict[str, Any], *, path: str = "authority_registry") -> ContractResult:
+    from brain.v5.record_contracts import validate_authority_registry as _validate
+    return _validate(payload, path=path)
+
+
+def require_valid_authority_registry(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.record_contracts import require_valid_authority_registry as _require
+    return _require(payload)
+
+
+def validate_note_outline(payload: dict[str, Any], *, path: str = "note_outline") -> ContractResult:
+    from brain.v5.note_outline_contracts import validate_note_outline as _validate
+    return _validate(payload, path=path)
+
+
+def require_valid_note_outline(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.note_outline_contracts import require_valid_note_outline as _require
+    return _require(payload)
+
+
 def validate_reference_location_record(
     payload: dict[str, Any],
     *,

@@ -43,12 +43,12 @@ AITP_KEYWORDS = [
     "von neumann",
     "研究",
     "科研",
-    "推导",
-    "文献",
-    "论文",
     "课题",
     "继续研究",
     "继续这个",
+    "推导",
+    "文献",
+    "论文",
     "验证",
     "证据",
     "理论物理",
@@ -58,9 +58,9 @@ AITP_KEYWORDS = [
     "物质",
     "拓扑",
     "混沌",
+    "格林函数",
     "测量诱导",
     "自能",
-    "格林函数",
 ]
 
 AITP_TOPICS_ROOT = Path(os.environ.get("AITP_TOPICS_ROOT", "{{TOPICS_ROOT}}"))
@@ -194,7 +194,7 @@ def main() -> int:
         "5. If only a legacy slug is known, migrate or bind v5 state before research.\n"
         "6. If no topic matches, create a v5 topic/claim/session.\n"
         "7. Do NOT create a duplicate topic if one already matches.\n"
-        "8. Do NOT read or edit AITP topic-state files directly with Read/Grep/Glob/Edit.\n"
+        "8. Do NOT read or edit AITP topic-state files directly with Read/Grep/Glob/Edit/MultiEdit.\n"
         "9. Use MCP typed tools for research state; use aitp-v5 only as a CLI diagnostic/fallback.\n"
         "10. Record durable scientific content through typed v5 records; summaries, relation maps, and hooks are orientation only.\n"
         "11. Do not confuse root .aitp or Hakimi-local state with the canonical research/aitp-topics/.aitp store."

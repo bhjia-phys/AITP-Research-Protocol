@@ -36,8 +36,15 @@ def validate_claim_relation_map(payload: dict[str, Any], *, path: str = "claim_r
         "historical",
         "misrouted",
         "cross_topic_references",
+        "warnings",
     ):
         _require_list(payload.get(key), f"{path}.{key}", result)
+    _require_nonempty_str(payload, "relation_map_scope", path, result)
+    if payload.get("relation_map_scope") != "active_claim_only":
+        result.add(f"{path}.relation_map_scope", "must be active_claim_only")
+    if not isinstance(payload.get("not_authoritative_for_current_goal_if_rebind_needed"), bool):
+        result.add(f"{path}.not_authoritative_for_current_goal_if_rebind_needed", "must be a boolean")
+    _require_mapping(payload.get("active_claim_focus_reconciliation"), f"{path}.active_claim_focus_reconciliation", result)
     _validate_conclusion(payload.get("current_conclusion"), f"{path}.current_conclusion", result)
     _validate_source_records(payload.get("source_records"), f"{path}.source_records", result)
     _validate_topic_claim_boundaries(payload.get("topic_claim_boundaries"), f"{path}.topic_claim_boundaries", result)

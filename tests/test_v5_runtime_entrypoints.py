@@ -38,6 +38,8 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["update_research_run"]["surface"] == "research_run_record"
     assert entrypoints["record_research_run_event"]["surface"] == "research_run_event_record"
     assert entrypoints["capture_source_asset_auto"]["surface"] == "source_asset_record"
+    assert entrypoints["acquire_pdf_source_asset"]["surface"] == "source_asset_record"
+    assert entrypoints["acquire_arxiv_source_asset"]["surface"] == "source_asset_record"
     assert entrypoints["host_agnostic_moment_policy"]["surface"] == "host_agnostic_moment_policy"
     assert entrypoints["runtime_bridge_target_manifest"]["surface"] == "runtime_bridge_target_manifest"
     assert entrypoints["runtime_mcp_bridge_acceptance"]["surface"] == "runtime_mcp_bridge_acceptance"
@@ -74,6 +76,8 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["update_research_run"]["mcp"] == "aitp_v5_update_research_run"
     assert entrypoints["record_research_run_event"]["mcp"] == "aitp_v5_record_research_run_event"
     assert entrypoints["capture_source_asset_auto"]["mcp"] == "aitp_v5_capture_source_asset_auto"
+    assert entrypoints["acquire_pdf_source_asset"]["mcp"] == "aitp_v5_acquire_pdf_source_asset"
+    assert entrypoints["acquire_arxiv_source_asset"]["mcp"] == "aitp_v5_acquire_arxiv_source_asset"
     assert entrypoints["host_agnostic_moment_policy"]["mcp"] == "aitp_v5_get_host_agnostic_moment_policy"
     assert entrypoints["runtime_bridge_target_manifest"] == {
         "cli": "aitp-v5 adapter bridge-targets",
@@ -353,6 +357,16 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
         "capture_source_asset_auto": {
             "cli": "aitp-v5 asset capture-auto <args>",
             "mcp": "aitp_v5_capture_source_asset_auto",
+            "surface": "source_asset_record",
+        },
+        "acquire_pdf_source_asset": {
+            "cli": "aitp-v5 asset acquire-pdf <args>",
+            "mcp": "aitp_v5_acquire_pdf_source_asset",
+            "surface": "source_asset_record",
+        },
+        "acquire_arxiv_source_asset": {
+            "cli": "aitp-v5 asset acquire-arxiv <args>",
+            "mcp": "aitp_v5_acquire_arxiv_source_asset",
             "surface": "source_asset_record",
         },
         "create_proof_obligation": {

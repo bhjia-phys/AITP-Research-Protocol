@@ -5,9 +5,15 @@ from __future__ import annotations
 from typing import Any, Callable
 
 _PUBLIC_SURFACE_NAMES = (
+    "active_claim_focus_reconciliation",
+    "active_claim_rebind_confirmation",
+    "active_claim_rebind_proposal",
     "adapter_packet",
     "adapter_protocol_registry",
+    "aitp_context_pack",
     "artifact_record",
+    "authority_record",
+    "authority_registry",
     "bounded_numerical_evidence_bundle",
     "claim_status_record",
     "claim_relation_map",
@@ -17,6 +23,7 @@ _PUBLIC_SURFACE_NAMES = (
     "codex_hook_bridge",
     "codex_hook_installation",
     "code_state_record",
+    "compact_execution_brief",
     "curated_rag_chunk",
     "curated_rag_corpus",
     "curated_rag_ingest_result",
@@ -80,6 +87,8 @@ _PUBLIC_SURFACE_NAMES = (
     "legacy_semantic_review_result_record",
     "legacy_semantic_review_queue",
     "memory_entry_record",
+    "note_outline",
+    "objective_graph",
     "object_relation_record",
     "operator_checkpoint_record",
     "opencode_hook_installation",
@@ -90,6 +99,8 @@ _PUBLIC_SURFACE_NAMES = (
     "process_graph_slice",
     "promotion_packet_record",
     "proof_obligation_record",
+    "quiet_checkpoint_batch",
+    "quiet_checkpoint_preview",
     "qsgw_cockpit_bundle",
     "record_gate_coverage_audit",
     "recording_candidate_classification",
@@ -101,6 +112,7 @@ _PUBLIC_SURFACE_NAMES = (
     "research_route_record",
     "research_event_classification",
     "research_cockpit_bundle",
+    "research_distillation_candidates",
     "research_intent_packet",
     "research_run_event_record",
     "research_run_record",
@@ -155,9 +167,15 @@ _PUBLIC_SURFACE_NAMES = (
 )
 _PUBLIC_SURFACE_VALIDATOR_REF = "brain.v5.public_surfaces.require_valid_public_surface"
 _PUBLIC_SURFACE_PURPOSES = {
+    "active_claim_focus_reconciliation": "read-only detector for session active-claim drift against recent typed record focus and current-goal signals; it cannot rebind or update claim trust",
+    "active_claim_rebind_confirmation": "explicit typed active-claim rebind result that writes an audit record and updates only the session binding, never claim trust, evidence trust, or L2 memory",
+    "active_claim_rebind_proposal": "read-only proposed active-claim rebind candidate requiring user confirmation before any session binding update",
     "adapter_packet": "runtime adapter packet carrying brief, summary orientation, and trust protocol metadata",
     "adapter_protocol_registry": "auditable registry metadata for adapter protocol fields and validator surfaces",
+    "aitp_context_pack": "Codex-friendly bounded context pack compiled from typed AITP records with fingerprinted injection policy and no trust, evidence, validation, L2, or skill materialization authority",
     "artifact_record": "contracted artifact pointer preserving provenance, hashes, and by-reference result files",
+    "authority_record": "contracted research authority for sector, statistics, formula, dataset, or code-path conventions without claim-trust authority",
+    "authority_registry": "read-only topic authority registry view for research routing and statistics gates without kernel mutation or claim-trust authority",
     "bounded_numerical_evidence_bundle": "guarded composition of artifact, tool-run, evidence, and claim-status records for finite/run-bounded numerical results without trust promotion",
     "claim_status_record": "contracted append-only claim maturity/status observation that never mutates claim trust",
     "claim_relation_map": "derived read-only relation map that explains support, limits, non-testing failures, blockers, and conclusion boundaries for recovery without updating claim trust",
@@ -167,6 +185,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "codex_hook_bridge": "contracted Codex hook bridge generated from runtime hook installation metadata",
     "codex_hook_installation": "contracted Codex stdin-runner hook installation fixture generated from runtime metadata",
     "code_state_record": "contracted code-state provenance record for code-dependent physics results",
+    "compact_execution_brief": "read-only short continuation brief scoped by objective/work-package view; expands to full brief and relation map explicitly without trust authority",
     "curated_rag_chunk": "read-only curated RAG chunk lookup exposing canonical chunk/document identity, hash, anchor, and source metadata without evidence, validation, final-gate, or claim-trust authority",
     "curated_rag_corpus": "read-only curated background RAG corpus catalog for heuristic context without evidence, validation, or claim-trust authority",
     "curated_rag_ingest_result": "contracted file-backed curated RAG manifest/index write result for heuristic background corpus updates without evidence, validation, final-gate, or claim-trust authority",
@@ -230,6 +249,8 @@ _PUBLIC_SURFACE_PURPOSES = {
     "legacy_semantic_review_result_record": "contracted per-topic legacy migration semantic review result with explicit review basis and no claim-trust mutation authority",
     "legacy_semantic_review_queue": "orientation-only per-topic semantic review queue for completed legacy migrations, linking accounting coverage to typed source reconstruction gaps without claiming semantic proof",
     "memory_entry_record": "contracted L2 memory entry created only from evidence-backed promotion packets with human approval",
+    "note_outline": "read-only publication or research-note outline compiler from ObjectiveGraph, AuthorityRegistry, and typed records with explicit missing section gates and no trust authority",
+    "objective_graph": "read-only objective/work-package projection over typed session, claim, route, run, artifact, and blocker records without changing session binding or claim trust",
     "object_relation_record": "contracted object-relation record linking physics objects with typed relations, failure modes, and assumptions",
     "operator_checkpoint_record": "contracted topic-local operator question that survives restarts and cannot update claim trust",
     "opencode_hook_installation": "contracted OpenCode stdin-runner hook installation fixture generated from runtime metadata",
@@ -240,6 +261,8 @@ _PUBLIC_SURFACE_PURPOSES = {
     "process_graph_slice": "read-only host-agnostic process graph slice over typed records; orientation-only and unable to mutate kernel state or claim trust",
     "promotion_packet_record": "contracted promotion packet requiring explicit evidence refs, known failure modes, and scope before L2 memory promotion",
     "proof_obligation_record": "contracted proof/theorem obligation record for open gaps, finite audits, and theorem-candidate status without trust mutation",
+    "quiet_checkpoint_batch": "contracted batch checkpoint for research bursts that writes selected typed records without evidence, validation, L2, or claim-trust authority",
+    "quiet_checkpoint_preview": "read-only preview of a research-burst checkpoint batch and its planned typed writes without mutating kernel state",
     "qsgw_cockpit_bundle": "orientation-only QSGW/LibRPA research cockpit bundle with final/diagnostic lane manifest, plot guard, and dashboard dry-run that cannot update claim trust",
     "record_gate_coverage_audit": "contracted audit that every runtime record protocol has a conscious runtime gate decision",
     "recording_candidate_classification": "read-only progressive recording trigger classifier that decides ignore, defer, navigate, or checkpoint before any AITP write",
@@ -251,6 +274,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "research_route_record": "contracted orientation-only route, branch, failed-attempt, or pivot record for nonlinear research process state",
     "research_event_classification": "orientation-only event classifier that recommends source, evidence, failed-route, open-gap, claim-update, or prior-art handling without writing trust",
     "research_cockpit_bundle": "orientation-only workspace research cockpit that aggregates topic status, learning gaps, reading queue, and operator decisions without becoming a truth source",
+    "research_distillation_candidates": "read-only compiler from typed research records to reusable workflow, method, failure, handoff, or physics-semantic candidates with explicit missing gates and no materialization or trust authority",
     "research_intent_packet": "contracted vNext idea gate packet for vague or materially redefined research topics",
     "research_run_event_record": "contracted process event for a research run, preserving operator/action/status provenance without evidence, validation, final-gate, or claim-trust authority",
     "research_run_record": "contracted canonical research run ledger for objective, question, operator trail, AITP refs, action refs, and terminal answer state without claim-trust authority",
@@ -347,10 +371,17 @@ def require_valid_public_surface(surface_name: str, payload: dict[str, Any]) -> 
 
 
 def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
+    from brain.v5.active_claim_focus_contracts import (
+        require_valid_active_claim_focus_reconciliation,
+        require_valid_active_claim_rebind_confirmation,
+        require_valid_active_claim_rebind_proposal,
+    )
     from brain.v5.contracts import (
         require_valid_adapter_packet,
         require_valid_adapter_protocol_registry,
         require_valid_artifact_record,
+        require_valid_authority_record,
+        require_valid_authority_registry,
         require_valid_claim_status_record,
         require_valid_claim_relation_map,
         require_valid_claim_trust_audit,
@@ -512,6 +543,17 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     )
     from brain.v5.hpc_cockpit_contracts import require_valid_hpc_cockpit
     from brain.v5.lane_contracts_contracts import require_valid_lane_contract_record
+    from brain.v5.context_pack_contracts import require_valid_aitp_context_pack
+    from brain.v5.objective_graph_contracts import (
+        require_valid_compact_execution_brief,
+        require_valid_objective_graph,
+    )
+    from brain.v5.research_distillation_contracts import require_valid_research_distillation_candidates
+    from brain.v5.note_outline_contracts import require_valid_note_outline
+    from brain.v5.quiet_checkpoint_contracts import (
+        require_valid_quiet_checkpoint_batch,
+        require_valid_quiet_checkpoint_preview,
+    )
     from brain.v5.hook_protocol_contracts import (
         require_valid_claude_code_hook_installation,
         require_valid_claude_code_hook_settings,
@@ -538,9 +580,15 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     )
 
     return {
+        "active_claim_focus_reconciliation": require_valid_active_claim_focus_reconciliation,
+        "active_claim_rebind_confirmation": require_valid_active_claim_rebind_confirmation,
+        "active_claim_rebind_proposal": require_valid_active_claim_rebind_proposal,
         "adapter_packet": require_valid_adapter_packet,
         "adapter_protocol_registry": require_valid_adapter_protocol_registry,
+        "aitp_context_pack": require_valid_aitp_context_pack,
         "artifact_record": require_valid_artifact_record,
+        "authority_record": require_valid_authority_record,
+        "authority_registry": require_valid_authority_registry,
         "bounded_numerical_evidence_bundle": require_valid_bounded_numerical_evidence_bundle,
         "claim_status_record": require_valid_claim_status_record,
         "claim_relation_map": require_valid_claim_relation_map,
@@ -550,6 +598,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "codex_hook_bridge": require_valid_codex_hook_bridge,
         "codex_hook_installation": require_valid_codex_hook_installation,
         "code_state_record": require_valid_code_state_record,
+        "compact_execution_brief": require_valid_compact_execution_brief,
         "curated_rag_chunk": require_valid_curated_rag_chunk,
         "curated_rag_corpus": require_valid_curated_rag_corpus,
         "curated_rag_ingest_result": require_valid_curated_rag_ingest_result,
@@ -613,6 +662,8 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "legacy_semantic_review_result_record": require_valid_legacy_semantic_review_result_record,
         "legacy_semantic_review_queue": require_valid_legacy_semantic_review_queue,
         "memory_entry_record": require_valid_memory_entry_record,
+        "note_outline": require_valid_note_outline,
+        "objective_graph": require_valid_objective_graph,
         "object_relation_record": require_valid_object_relation_record,
         "operator_checkpoint_record": require_valid_operator_checkpoint_record,
         "opencode_hook_installation": require_valid_opencode_hook_installation,
@@ -623,6 +674,8 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "process_graph_slice": require_valid_process_graph_slice,
         "promotion_packet_record": require_valid_promotion_packet_record,
         "proof_obligation_record": require_valid_proof_obligation_record,
+        "quiet_checkpoint_batch": require_valid_quiet_checkpoint_batch,
+        "quiet_checkpoint_preview": require_valid_quiet_checkpoint_preview,
         "qsgw_cockpit_bundle": require_valid_qsgw_cockpit_bundle,
         "record_gate_coverage_audit": require_valid_record_gate_coverage_audit,
         "recording_candidate_classification": require_valid_recording_candidate_classification,
@@ -636,6 +689,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "research_run_record": require_valid_research_run_record,
         "research_event_classification": require_valid_research_event_classification,
         "research_cockpit_bundle": require_valid_research_cockpit_bundle,
+        "research_distillation_candidates": require_valid_research_distillation_candidates,
         "research_intent_packet": require_valid_research_intent_packet,
         "run_iteration_record": require_valid_run_iteration_record,
         "runtime_hook_installation_audit": require_valid_runtime_hook_installation_audit,

@@ -25,7 +25,7 @@ Markdown stages, and chat summaries are orientation only.
 - Legacy aliases (`aitp_list_topics`, `aitp_get_execution_brief`,
   `aitp_bootstrap_topic`) are discovery/bootstrap compatibility only.
 - Legacy L0-L4 write entrypoints are read-only guards by default in AITP
-  0.5.0. If an old `aitp_*` write tool returns
+  1.0.0. If an old `aitp_*` write tool returns
   `legacy_aitp_writes_disabled`, do not retry it; migrate/bind the topic and
   write the durable process state through the named `aitp_v5_*` tool.
 

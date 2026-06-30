@@ -1,5 +1,5 @@
 /**
- * AITP plugin for OpenCode — AITP 0.5.0 v5 adapter
+ * AITP plugin for OpenCode — AITP 1.0.0 v5 adapter
  *
  * Equivalent to the Claude Code hooks/session_start.py + hooks/compact.py harness.
  * Reads the canonical using-aitp.md from the AITP-Research-Protocol repo (same

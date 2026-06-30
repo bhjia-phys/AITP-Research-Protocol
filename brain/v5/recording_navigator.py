@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
+from brain.v5.active_claim_focus import detect_active_claim_focus_drift
 from brain.v5.brief import build_execution_brief
 from brain.v5.claim_relation_map import build_claim_relation_map
 from brain.v5.markdown import read_md
@@ -465,6 +466,17 @@ def build_recording_navigation_state(
     focus = _lightweight_focus(ws, session_id, claim_id=claim_id)
     relation_map = _safe_relation_map(ws, session_id)
     relation_conclusion = relation_map.get("current_conclusion", {}) if isinstance(relation_map, dict) else {}
+    focus_reconciliation = (
+        relation_map.get("active_claim_focus_reconciliation", {})
+        if isinstance(relation_map, dict)
+        else detect_active_claim_focus_drift(ws, session_id)
+    )
+    drift_detected = bool(
+        (relation_map or {}).get("not_authoritative_for_current_goal_if_rebind_needed")
+        if isinstance(relation_map, dict)
+        else focus_reconciliation.get("not_authoritative_for_current_goal_if_rebind_needed")
+    )
+    warnings = ["active_claim_focus_drift_detected"] if drift_detected else []
     focus["can_say"] = relation_conclusion.get("can_say", []) if isinstance(relation_conclusion, dict) else []
     focus["cannot_say"] = relation_conclusion.get("cannot_say", []) if isinstance(relation_conclusion, dict) else []
     record_counts = _lightweight_slot_counts(ws, focus["topic_id"], focus["claim_id"])
@@ -482,6 +494,8 @@ def build_recording_navigation_state(
         "recovery_selection_source": focus["recovery_selection_source"],
         "topic_id": focus["topic_id"],
         "claim_id": focus["claim_id"],
+        "warnings": warnings,
+        "active_claim_focus_reconciliation": focus_reconciliation,
         "current_position": focus,
         "first_level_slots": slots,
         "recommended_slots": recommended_slots,
@@ -518,6 +532,8 @@ def build_recording_navigation_state(
         },
         "relation_context": {
             "available": bool(relation_map and relation_map.get("kind") != "recording_navigation_error"),
+            "relation_map_scope": (relation_map or {}).get("relation_map_scope", "active_claim_only"),
+            "not_authoritative_for_current_goal_if_rebind_needed": drift_detected,
             "current_conclusion": (relation_map or {}).get("current_conclusion", {}),
             "current_blockers": (relation_map or {}).get("current_blockers", []),
             "next_valid_actions": (relation_map or {}).get("next_valid_actions", []),
@@ -532,6 +548,7 @@ def build_recording_navigation_state(
             "recording_navigation_state uses lightweight first-level slot counts by default",
             "call process graph or execution brief separately when full graph context is needed",
             "slot expansion can recommend typed writes but cannot perform them",
+            "active-claim focus drift warnings are read-only and cannot rebind without confirmation",
         ],
         "truth_source": "typed_records",
         "summary_inputs_trusted": False,

@@ -10,6 +10,7 @@ import json
 from dataclasses import asdict
 from typing import Any
 
+from brain.v5.active_claim_focus import detect_active_claim_focus_drift, empty_active_claim_focus_reconciliation
 from brain.v5.evidence import list_evidence_for_claim
 from brain.v5.legacy_migration_audit import audit_legacy_migration_coverage
 from brain.v5.models import (
@@ -137,7 +138,14 @@ _EXPLICIT_PRE_DOMAIN_FAILURE_CONTEXT_MARKERS = (
 )
 
 
-def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, dict[str, list[Any]]] | None = None) -> dict[str, Any]:
+def build_claim_relation_map(
+    ws,
+    session_id: str,
+    *,
+    registry_index: dict[str, dict[str, list[Any]]] | None = None,
+    objective_text: str = "",
+    user_goal: str = "",
+) -> dict[str, Any]:
     """Build a read-only relation map for the session's active claim."""
 
     try:
@@ -209,6 +217,13 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
         migration_active_claim_id=str(legacy_migration_topic.get("active_claim_id") or ""),
         migration_run_id=str(legacy_migration_topic.get("migration_run_id") or ""),
     )
+    focus_reconciliation = detect_active_claim_focus_drift(
+        ws,
+        session_id,
+        objective_text=objective_text or claim.statement,
+        user_goal=user_goal,
+    )
+    drift_detected = bool(focus_reconciliation.get("not_authoritative_for_current_goal_if_rebind_needed"))
 
     supported_by: list[dict[str, Any]] = []
     limited_by: list[dict[str, Any]] = []
@@ -311,6 +326,10 @@ def build_claim_relation_map(ws, session_id: str, *, registry_index: dict[str, d
         "recovery_selection_source": recovery_selection_source,
         "claim_id": claim.claim_id,
         "claim_statement": claim.statement,
+        "relation_map_scope": "active_claim_only",
+        "not_authoritative_for_current_goal_if_rebind_needed": drift_detected,
+        "warnings": ["active_claim_focus_drift_detected"] if drift_detected else [],
+        "active_claim_focus_reconciliation": focus_reconciliation,
         "confidence_state": claim.confidence_state,
         "evidence_profile": claim.evidence_profile,
         "key_object_relation_count": len(key_object_relations),
@@ -400,6 +419,14 @@ def empty_claim_relation_map(
         "recovery_selection_source": recovery_selection_source or "session_binding",
         "claim_id": "",
         "claim_statement": "",
+        "relation_map_scope": "active_claim_only",
+        "not_authoritative_for_current_goal_if_rebind_needed": False,
+        "warnings": [],
+        "active_claim_focus_reconciliation": empty_active_claim_focus_reconciliation(
+            session_id=requested_session_id or session_id or "unbound-session",
+            topic_id=topic_id or "unbound-session",
+            reason=reason,
+        ),
         "confidence_state": "",
         "evidence_profile": "",
         "key_object_relation_count": 0,
@@ -457,6 +484,14 @@ def compact_claim_relation_map(payload: dict[str, Any]) -> dict[str, Any]:
         "kind": "claim_relation_map_progress",
         "claim_id": str(payload.get("claim_id") or ""),
         "claim_statement_excerpt": _excerpt(payload.get("claim_statement") or ""),
+        "relation_map_scope": str(payload.get("relation_map_scope") or "active_claim_only"),
+        "not_authoritative_for_current_goal_if_rebind_needed": bool(
+            payload.get("not_authoritative_for_current_goal_if_rebind_needed")
+        ),
+        "warnings": list(payload.get("warnings") or []),
+        "active_claim_focus_candidates": list(
+            ((payload.get("active_claim_focus_reconciliation") or {}).get("candidate_sibling_claims") or [])
+        )[:5],
         "confidence_state": str(payload.get("confidence_state") or ""),
         "supported_count": len(payload.get("supported_by") or []),
         "limited_count": len(payload.get("limited_by") or []),
@@ -484,6 +519,7 @@ def render_claim_relation_map_markdown(payload: dict[str, Any]) -> str:
         "# Current Relation Map\n\n",
         f"Claim: `{payload.get('claim_id', '')}`\n\n",
         f"{payload.get('claim_statement', '')}\n\n",
+        _focus_drift_markdown(payload),
         "## Supported By\n\n",
         _entry_bullets(payload.get("supported_by") or []),
         "\n## Limited By\n\n",
@@ -508,6 +544,31 @@ def render_claim_relation_map_markdown(payload: dict[str, Any]) -> str:
         _bullets(payload.get("next_valid_actions") or []),
         "\nThis surface is orientation-only and cannot update claim trust.\n",
     ]
+    return "".join(lines)
+
+
+def _focus_drift_markdown(payload: dict[str, Any]) -> str:
+    if not payload.get("not_authoritative_for_current_goal_if_rebind_needed"):
+        return ""
+    reconciliation = payload.get("active_claim_focus_reconciliation") or {}
+    candidates = list(reconciliation.get("candidate_sibling_claims") or [])[:5]
+    lines = [
+        "## Active Claim Focus Warning\n\n",
+        "- Warning: `active_claim_focus_drift_detected`.\n",
+        "- Relation map scope: `active_claim_only`.\n",
+        "- This map is not authoritative for the current goal until the active-claim focus is confirmed or rebound.\n",
+        "- Candidate sibling claims:\n",
+    ]
+    if candidates:
+        for candidate in candidates:
+            lines.append(
+                f"  - `{candidate.get('claim_id', '')}`: "
+                f"{candidate.get('statement_excerpt', '')} "
+                f"(recent records: {candidate.get('recent_record_count', 0)})\n"
+            )
+    else:
+        lines.append("  - none\n")
+    lines.append("\n")
     return "".join(lines)
 
 

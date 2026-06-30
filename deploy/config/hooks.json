@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"{{CLAUDE_USER_DIR}}/hooks/aitp-keyword-router.py\"",
+            "command": "\"{{PYTHON_EXE}}\" \"{{AITP_HOOKS_DIR}}/aitp-keyword-router.py\"",
             "async": false
           }
         ]
@@ -14,11 +14,11 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Write|Edit",
+        "matcher": "Write|Edit|MultiEdit",
         "hooks": [
           {
             "type": "command",
-            "command": "python \"{{CLAUDE_USER_DIR}}/hooks/aitp-routing-guard.py\"",
+            "command": "\"{{PYTHON_EXE}}\" \"{{AITP_HOOKS_DIR}}/aitp-routing-guard.py\"",
             "async": false
           }
         ]

@@ -149,6 +149,76 @@ def require_valid_proof_obligation_record(payload: dict[str, Any]) -> dict[str, 
     return _require_valid(validate_proof_obligation_record(payload), payload)
 
 
+def validate_authority_record(payload: dict[str, Any], *, path: str = "authority_record") -> ContractResult:
+    result = _validate_base_record(payload, path, kind="authority")
+    if result.issues:
+        return result
+    for key in ("authority_id", "topic_id", "authority_type", "authority_statement", "status"):
+        _require_nonempty_str(payload, key, path, result)
+    if payload.get("authority_type") not in {
+        "sector_authority",
+        "statistics_convention",
+        "formula_convention",
+        "dataset_authority",
+        "code_path_authority",
+    }:
+        result.add(f"{path}.authority_type", "must be a supported authority type")
+    if payload.get("status") not in {
+        "research_authority_not_trust_promotion",
+        "candidate",
+        "active",
+        "superseded",
+        "rejected",
+    }:
+        result.add(f"{path}.status", "must be a supported authority status")
+    for key in ("scope", "linked_records"):
+        _require_mapping(payload.get(key), f"{path}.{key}", result)
+    for key in ("evidence_refs", "source_refs", "artifact_ids", "limitations"):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    for key, expected in (
+        ("summary_inputs_trusted", False),
+        ("orientation_only", True),
+        ("can_update_claim_trust", False),
+    ):
+        if payload.get(key) is not expected:
+            result.add(f"{path}.{key}", f"must be {str(expected).lower()}")
+    return result
+
+
+def require_valid_authority_record(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_authority_record(payload), payload)
+
+
+def validate_authority_registry(payload: dict[str, Any], *, path: str = "authority_registry") -> ContractResult:
+    result = _validate_base_record(payload, path, kind="authority_registry")
+    if result.issues:
+        return result
+    _require_nonempty_str(payload, "topic_id", path, result)
+    if not isinstance(payload.get("authority_count"), int):
+        result.add(f"{path}.authority_count", "must be an integer")
+    if not isinstance(payload.get("include_inactive"), bool):
+        result.add(f"{path}.include_inactive", "must be a boolean")
+    _require_list(payload.get("authorities"), f"{path}.authorities", result)
+    for index, authority in enumerate(payload.get("authorities") or []):
+        if isinstance(authority, dict):
+            result.extend(validate_authority_record({"ok": True, **authority}, path=f"{path}.authorities[{index}]"))
+        else:
+            result.add(f"{path}.authorities[{index}]", "must be a mapping")
+    for key, expected in (
+        ("summary_inputs_trusted", False),
+        ("orientation_only", True),
+        ("can_update_kernel_state", False),
+        ("can_update_claim_trust", False),
+    ):
+        if payload.get(key) is not expected:
+            result.add(f"{path}.{key}", f"must be {str(expected).lower()}")
+    return result
+
+
+def require_valid_authority_registry(payload: dict[str, Any]) -> dict[str, Any]:
+    return _require_valid(validate_authority_registry(payload), payload)
+
+
 def validate_reference_location_record(payload: dict[str, Any], *, path: str = "reference_location_record") -> ContractResult:
     result = _validate_base_record(payload, path, kind="reference_location")
     if result.issues:

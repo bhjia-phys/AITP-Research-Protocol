@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"{{PYTHON_EXE}}\" \"{{CODEX_HOOKS_DIR}}/aitp-keyword-router.py\""
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"{{PYTHON_EXE}}\" \"{{CODEX_HOOKS_DIR}}/aitp-routing-guard.py\""
+          }
+        ]
+      }
+    ]
+  }
+}

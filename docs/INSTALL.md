@@ -33,6 +33,10 @@ The installer deploys v5 gateway skills, v5-safe hooks, and MCP configs. A bare
 `python scripts/aitp-pm.py install` defaults to user scope and may register a
 global `aitp` wrapper when possible; project scope does not.
 
+Generated hook commands use a stable Python command. Set `AITP_HOOK_PYTHON` if a
+specific interpreter is required; otherwise the installer prefers a durable
+PATH-resolved Python and avoids temporary `uv` or Codex runtime interpreters.
+
 ## Options
 
 ```bash
@@ -53,8 +57,9 @@ uv run --with pyyaml --with jsonschema --with fastmcp \
 
 For Claude Code:
 - v5-safe prompt/router hooks: `aitp-keyword-router.py` and
-  `aitp-routing-guard.py`
-- v5 adapter hooks: `aitp-v5-*.py`
+  `aitp-routing-guard.py`; the guard covers `Write`, `Edit`, and `MultiEdit`
+- v5 adapter hook files: `aitp-v5-*.py`, deployed as explicit session-bound
+  bridge assets but not enabled by the default project install
 - `using-aitp` and `aitp-runtime` gateway skills
 - `.mcp.json` or user MCP config pointing at `brain/v5/native_mcp.py`
 
@@ -62,11 +67,15 @@ For Kimi Code:
 - `using-aitp` and `aitp-runtime` gateway skills
 - `.kimi/mcp.json` and `.kimi/config.toml` pointing at
   `brain/v5/native_mcp.py`
+- Kimi hook TOML is not enabled by the default package-manager install; generate
+  it only when the installed Kimi host supports project `[[hooks]]`
 
 For Codex:
 - `.codex/skills/using-aitp/` and `.codex/skills/aitp-runtime/`
 - `.codex/mcp.json` and `.codex/config.toml` pointing at
   `brain/v5/native_mcp.py`
+- `.codex/hooks/aitp-keyword-router.py`, `.codex/hooks/aitp-routing-guard.py`,
+  and `.codex/hooks.json` for the same lightweight router/guard policy
 
 Legacy L0/L1/L3/L4 stage skills and lifecycle hooks are not deployed by
 default. They are available only for explicit compatibility installs:

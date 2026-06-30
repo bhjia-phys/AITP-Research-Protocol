@@ -21,7 +21,8 @@ from typing import Any
 _DIAG = Path(os.environ.get("AITP_V5_MCP_LOG", str(Path(tempfile.gettempdir()) / "aitp_v5_mcp_boot.log")))
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _OUTPUT_MODE = "content-length"
-# Legacy compatibility aliases are disabled by default in 0.5.0.  Set
+_MCP_SURFACE = os.environ.get("AITP_MCP_SURFACE", "full").strip().lower() or "full"
+# Legacy compatibility aliases are disabled by default in 1.0.0.  Set
 # AITP_V5_EXPOSE_COMPAT_ALIASES=1 only for migration/debug sessions that must
 # discover old topic shells; current research should use aitp_v5_* typed tools.
 _EXPOSE_COMPAT_ALIASES = os.environ.get("AITP_V5_EXPOSE_COMPAT_ALIASES") == "1"
@@ -39,6 +40,8 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 warnings.filterwarnings("ignore")
+
+from brain.v5.codex_facade import CODEX_SURFACE_TOOL_ALLOWLIST
 
 
 def _log(message: str) -> None:
@@ -193,6 +196,7 @@ def _build_tool_schema(name: str, func: Any) -> dict[str, Any]:
 
 def _load_tools() -> dict[str, Any]:
     _log(f"BOOT python={sys.executable} cwd={Path.cwd()}")
+    _log(f"mcp_surface={_MCP_SURFACE}")
     _log("importing brain.v5.mcp_tools ...")
     from brain.v5 import mcp_tools
 
@@ -201,9 +205,20 @@ def _load_tools() -> dict[str, Any]:
         for name in dir(mcp_tools)
         if (name.startswith("aitp_v5_") or name in _COMPAT_TOOL_NAMES)
         and callable(getattr(mcp_tools, name))
+        and _surface_allows_tool(name)
     }
     _log(f"loaded {len(tools)} v5 tools")
     return tools
+
+
+def _surface_allows_tool(name: str) -> bool:
+    if _MCP_SURFACE in {"full", "kernel", "all", "dev"}:
+        return True
+    if _MCP_SURFACE in {"codex", "compact", "entry"}:
+        return name in CODEX_SURFACE_TOOL_ALLOWLIST
+    if _MCP_SURFACE == "none":
+        return False
+    return True
 
 
 _TOOLS = _load_tools()

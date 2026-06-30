@@ -1,6 +1,6 @@
 ---
 name: aitp-protocol
-version: "0.5.0"
+version: "1.0.0"
 implementation_generation: "v5"
 protocol_scope: "typed research graph, progressive recording, trust-controlled agent workflow"
 implementation_entrypoint: "brain/v5/native_mcp.py"
@@ -9,9 +9,9 @@ legacy_stage_model: "orientation-only"
 description: Current operating manual for AITP v5. Agents work through typed records, progressive navigation, evidence, validation, and human checkpoints; legacy L0-L4 stage files are migration context only.
 ---
 
-# AITP Protocol 0.5.0 - Typed Research Graph Operating Manual
+# AITP Protocol 1.0.0 - Typed Research Graph Operating Manual
 
-AITP 0.5.0 is the v5 typed-record protocol for human-in-the-loop theoretical-physics research. It replaces the old L0-L4 stage machine as the active execution contract.
+AITP 1.0.0 is the v5 typed-record protocol for human-in-the-loop theoretical-physics research. It replaces the old L0-L4 stage machine as the active execution contract.
 
 The current source of truth is the typed graph under `<topics-root>/.aitp/`, not legacy topic `state.md` frontmatter, not stage gates, not summaries, and not host runtime logs.
 
@@ -82,7 +82,7 @@ Important areas:
 
 ## Current Research Workflow
 
-AITP 0.5.0 is a read-first, progressive-disclosure workflow.
+AITP 1.0.0 is a read-first, progressive-disclosure workflow.
 
 ### 1. Classify the User Intent
 
@@ -224,13 +224,13 @@ No new progress should be written back into the old stage machine.
 
 ## Strict Version Contract
 
-AITP 0.5.0 expects:
+AITP 1.0.0 expects:
 
 ```text
-release version: 0.5.0
+release version: 1.0.0
 implementation generation: v5
 MCP server: aitp-v5-brain
-MCP server version: 0.5.0
+MCP server version: 1.0.0
 canonical entrypoint: brain/v5/native_mcp.py
 legacy entrypoints in active configs: forbidden
 normal tool prefix: aitp_v5_*

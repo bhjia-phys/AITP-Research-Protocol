@@ -201,7 +201,7 @@ for _tname, _tfunc in sorted(_tools.items()):
 
 SERVER_INFO = {
     "name": "aitp-brain-legacy",
-    "version": "0.5.0",
+    "version": "1.0.0",
 }
 
 

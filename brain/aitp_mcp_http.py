@@ -113,7 +113,7 @@ for _tname, _tfunc in sorted(_tools.items()):
             "inputSchema": {"type": "object", "properties": {}, "required": []},
         })
 
-SERVER_INFO = {"name": "aitp-brain-legacy-http", "version": "0.5.0"}
+SERVER_INFO = {"name": "aitp-brain-legacy-http", "version": "1.0.0"}
 _sessions: dict[str, str] = {}  # session_id -> created_at
 
 

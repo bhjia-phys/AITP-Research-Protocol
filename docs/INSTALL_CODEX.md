@@ -33,7 +33,10 @@ Codex should ask for the local `AITP-Research-Protocol` checkout path and the
 topics root where typed records should live. The default topics root is
 `~/.aitp/topics`. Configuration is saved to
 `~/.aitp/codex-plugin-config.json`; after it is written, restart Codex or open a
-new thread so the full `aitp_v5_*` MCP surface loads.
+new thread so the compact Codex AITP surface loads. The plugin launcher sets
+`AITP_MCP_SURFACE=codex` by default; set `AITP_MCP_SURFACE=full` only for
+kernel development or maintenance sessions that need the complete `aitp_v5_*`
+surface.
 
 The plugin resolves configuration in this order:
 
@@ -83,6 +86,16 @@ The installer deploys:
 - A compatibility `mcp.json` beside each Codex skill root.
 - A `[mcp_servers.aitp]` entry in the adjacent `config.toml`, using `uv` when
   available so the MCP server has its Python dependencies.
+- Lightweight project hooks: `hooks/aitp-keyword-router.py`,
+  `hooks/aitp-routing-guard.py`, and `hooks.json`. The router is an orientation
+  reminder only. The guard blocks direct `Write`, `Edit`, and `MultiEdit` writes
+  into AITP state stores.
+
+Session-bound v5 bridge hooks are not enabled by this default Codex install.
+Use `aitp-v5 adapter install-hooks codex <session-id> --settings
+<workspace>/.codex/hooks.json` only when a concrete v5 session should receive
+native pre-tool/post-tool lifecycle handling. Bridge hooks still cannot update
+claim trust.
 
 User-scope Codex skill roots are detected in this order when present:
 

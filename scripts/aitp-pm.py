@@ -26,6 +26,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
 
@@ -39,7 +40,7 @@ if str(REPO_ROOT) not in sys.path:
 TEMPLATES_DIR = REPO_ROOT / "deploy" / "templates"
 INSTALL_DIR = Path.home() / ".aitp"
 RECORD_PATH = INSTALL_DIR / "install-record.json"
-EXPECTED_PACKAGE_VERSION = "0.5.0"
+EXPECTED_PACKAGE_VERSION = "1.0.0"
 EXPECTED_IMPLEMENTATION = "v5"
 MCP_ENTRYPOINT = "brain/v5/native_mcp.py"
 LEGACY_MCP_ENTRYPOINTS = ("brain/native_mcp.py", "brain/mcp_server.py")
@@ -47,6 +48,8 @@ LEGACY_MCP_ENTRYPOINTS = ("brain/native_mcp.py", "brain/mcp_server.py")
 AGENTS = ("claude-code", "kimi-code", "codex")
 AGENT_CHOICES = (*AGENTS, "all")
 SCOPE_CHOICES = ("user", "project")
+
+from brain.v5.hook_python import stable_python_executable
 
 # ---------------------------------------------------------------------------
 # CLI wrapper registration (avoids pip install -e .)
@@ -473,14 +476,20 @@ def _print_doctor_summary(issues: list[str]) -> None:
 
 
 def _build_variables(topics_root: str | None = None, target_root: str | None = None) -> dict:
+    python_exe = stable_python_executable()
+    claude_user_dir = str(Path.home() / ".claude").replace("\\", "/")
+    codex_user_dir = str(Path.home() / ".codex").replace("\\", "/")
     return {
         "REPO_ROOT": str(REPO_ROOT).replace("\\", "/"),
         "TOPICS_ROOT": (topics_root or "").replace("\\", "/"),
         "TARGET_ROOT": (target_root or "").replace("\\", "/"),
         "USER_HOME": str(Path.home()).replace("\\", "/"),
-        "CLAUDE_USER_DIR": str(Path.home() / ".claude").replace("\\", "/"),
+        "PYTHON_EXE": python_exe.replace("\\", "/"),
+        "CLAUDE_USER_DIR": claude_user_dir,
+        "AITP_HOOKS_DIR": f"{claude_user_dir}/hooks",
         "KIMI_USER_DIR": str(Path.home() / ".kimi").replace("\\", "/"),
-        "CODEX_USER_DIR": str(Path.home() / ".codex").replace("\\", "/"),
+        "CODEX_USER_DIR": codex_user_dir,
+        "CODEX_HOOKS_DIR": f"{codex_user_dir}/hooks",
         "CODEX_HOME_DIR": str(Path.home() / ".codex-home").replace("\\", "/"),
         "CODEX_SWITCHER_SKILLS_DIR": str(Path.home() / ".codex-switcher" / "skills").replace("\\", "/"),
         "AGENTS_SKILLS_DIR": str(Path.home() / ".agents" / "skills").replace("\\", "/"),
@@ -642,21 +651,22 @@ def _merge_claude_settings(settings_path: Path, variables: dict, remove: bool = 
     if not aitp_hooks:
         # Fallback: v5-safe routing guards only. Session-specific lifecycle
         # hooks require an explicit v5 session id and are not installed here.
-        hooks_dir = variables["CLAUDE_USER_DIR"].replace("\\", "/") + "/hooks"
+        hooks_dir = variables.get("AITP_HOOKS_DIR", variables["CLAUDE_USER_DIR"].replace("\\", "/") + "/hooks")
+        python_exe = variables.get("PYTHON_EXE", "python")
         aitp_hooks = {
             "UserPromptSubmit": [{
                 "matcher": "",
                 "hooks": [{
                     "type": "command",
-                    "command": f'python "{hooks_dir}/aitp-keyword-router.py"',
+                    "command": f'"{python_exe}" "{hooks_dir}/aitp-keyword-router.py"',
                     "async": False,
                 }],
             }],
             "PreToolUse": [{
-                "matcher": "Write|Edit",
+                "matcher": "Write|Edit|MultiEdit",
                 "hooks": [{
                     "type": "command",
-                    "command": f'python "{hooks_dir}/aitp-routing-guard.py"',
+                    "command": f'"{python_exe}" "{hooks_dir}/aitp-routing-guard.py"',
                     "async": False,
                 }],
             }],
@@ -666,6 +676,10 @@ def _merge_claude_settings(settings_path: Path, variables: dict, remove: bool = 
 
     def _normalize(cmd: str) -> str:
         return cmd.replace("\\", "/").lower()
+
+    def _is_aitp_lightweight_hook_command(cmd: str) -> bool:
+        normalized = _normalize(cmd)
+        return "aitp-keyword-router.py" in normalized or "aitp-routing-guard.py" in normalized
 
     if remove:
         for event_name in aitp_hooks:
@@ -679,6 +693,7 @@ def _merge_claude_settings(settings_path: Path, variables: dict, remove: bool = 
                     for block in existing_hooks[event_name]
                     if not any(
                         _normalize(h.get("command", "")) in aitp_cmds
+                        or _is_aitp_lightweight_hook_command(h.get("command", ""))
                         for h in block.get("hooks", [])
                     )
                 ]
@@ -695,7 +710,9 @@ def _merge_claude_settings(settings_path: Path, variables: dict, remove: bool = 
                 block
                 for block in existing
                 if not any(
-                    _normalize(h.get("command", "")) in aitp_cmds for h in block.get("hooks", [])
+                    _normalize(h.get("command", "")) in aitp_cmds
+                    or _is_aitp_lightweight_hook_command(h.get("command", ""))
+                    for h in block.get("hooks", [])
                 )
             ]
             filtered.extend(aitp_entries)
@@ -1079,15 +1096,12 @@ def _discover_deploy_runners() -> list[tuple[Path, str]]:
 
 
 def _discover_deploy_config() -> list[tuple[Path, str]]:
-    """Discover config files (.json) from deploy/config/."""
+    """Discover Claude deploy config files from deploy/config/."""
     config_dir = REPO_ROOT / "deploy" / "config"
     if not config_dir.is_dir():
         return []
-    return [
-        (p, p.name)
-        for p in sorted(config_dir.iterdir())
-        if p.suffix == ".json"
-    ]
+    hooks_json = config_dir / "hooks.json"
+    return [(hooks_json, "hooks.json")] if hooks_json.exists() else []
 
 
 def _discover_workspace_skills_root() -> Path | None:
@@ -1225,7 +1239,11 @@ def _deploy_claude_code(
     # 3. Deploy config (.json)
     config_vars = variables
     if scope == "project":
-        config_vars = {**variables, "CLAUDE_USER_DIR": str(base).replace("\\", "/")}
+        config_vars = {
+            **variables,
+            "CLAUDE_USER_DIR": str(base).replace("\\", "/"),
+            "AITP_HOOKS_DIR": str(hooks_dir).replace("\\", "/"),
+        }
     for src, dst_name in all_configs:
         if not src.exists():
             continue
@@ -1292,7 +1310,11 @@ def _deploy_claude_code(
     else:
         settings_path = base / "settings.json"
         hooks_dir_str = str(base / "hooks").replace("\\", "/")
-        project_vars = {**variables, "CLAUDE_USER_DIR": str(base).replace("\\", "/")}
+        project_vars = {
+            **variables,
+            "CLAUDE_USER_DIR": str(base).replace("\\", "/"),
+            "AITP_HOOKS_DIR": hooks_dir_str,
+        }
         # Read hook config from hooks.json (same source as user scope)
         hooks_config_path = REPO_ROOT / "deploy" / "config" / "hooks.json"
         project_hooks: dict = {}
@@ -1303,20 +1325,21 @@ def _deploy_claude_code(
             except (json.JSONDecodeError, OSError):
                 pass
         if not project_hooks:
+            python_exe = project_vars.get("PYTHON_EXE", "python")
             project_hooks = {
                 "UserPromptSubmit": [{
                     "matcher": "",
                     "hooks": [{
                         "type": "command",
-                        "command": f'python "{hooks_dir_str}/aitp-keyword-router.py"',
+                        "command": f'"{python_exe}" "{hooks_dir_str}/aitp-keyword-router.py"',
                         "async": False,
                     }],
                 }],
                 "PreToolUse": [{
-                    "matcher": "Write|Edit",
+                    "matcher": "Write|Edit|MultiEdit",
                     "hooks": [{
                         "type": "command",
-                        "command": f'python "{hooks_dir_str}/aitp-routing-guard.py"',
+                        "command": f'"{python_exe}" "{hooks_dir_str}/aitp-routing-guard.py"',
                         "async": False,
                     }],
                 }],
@@ -1553,15 +1576,137 @@ def _discover_codex_skills() -> list[tuple[Path, str, bool]]:
     return results
 
 
+_LIGHTWEIGHT_HOOK_SCRIPTS = ("aitp-keyword-router.py", "aitp-routing-guard.py")
+
+
+def _is_aitp_lightweight_hook_command(command: str) -> bool:
+    normalized = command.replace("\\", "/").casefold()
+    return "aitp-keyword-router.py" in normalized or "aitp-routing-guard.py" in normalized
+
+
+def _codex_lightweight_hooks_payload(variables: dict) -> dict:
+    config_path = REPO_ROOT / "deploy" / "config" / "codex-hooks.json"
+    if config_path.exists():
+        try:
+            raw = _fill(config_path.read_text(encoding="utf-8"), variables)
+            payload = json.loads(raw)
+            if isinstance(payload.get("hooks"), dict):
+                return payload
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    hooks_dir = variables.get("CODEX_HOOKS_DIR", str(Path.home() / ".codex" / "hooks").replace("\\", "/"))
+    python_exe = variables.get("PYTHON_EXE", stable_python_executable()).replace("\\", "/")
+    return {
+        "hooks": {
+            "UserPromptSubmit": [{
+                "matcher": "",
+                "hooks": [{
+                    "type": "command",
+                    "command": f'"{python_exe}" "{hooks_dir}/aitp-keyword-router.py"',
+                }],
+            }],
+            "PreToolUse": [{
+                "matcher": "Write|Edit|MultiEdit",
+                "hooks": [{
+                    "type": "command",
+                    "command": f'"{python_exe}" "{hooks_dir}/aitp-routing-guard.py"',
+                }],
+            }],
+        }
+    }
+
+
+def _merge_codex_lightweight_hooks(hooks_path: Path, variables: dict, remove: bool = False) -> None:
+    generated_hooks = _codex_lightweight_hooks_payload(variables).get("hooks", {})
+    if hooks_path.exists():
+        try:
+            settings = json.loads(hooks_path.read_text(encoding="utf-8"))
+            if not isinstance(settings, dict):
+                settings = {}
+        except (json.JSONDecodeError, OSError):
+            settings = {}
+    else:
+        settings = {}
+
+    existing_hooks = settings.setdefault("hooks", {})
+    if not isinstance(existing_hooks, dict):
+        existing_hooks = {}
+        settings["hooks"] = existing_hooks
+
+    for event_name, generated_entries in generated_hooks.items():
+        current = existing_hooks.get(event_name, [])
+        if not isinstance(current, list):
+            current = []
+        filtered = []
+        for block in current:
+            if not isinstance(block, dict):
+                filtered.append(block)
+                continue
+            if any(
+                _is_aitp_lightweight_hook_command(str(hook.get("command", "")))
+                for hook in block.get("hooks", [])
+                if isinstance(hook, dict)
+            ):
+                continue
+            filtered.append(block)
+        if remove:
+            if filtered:
+                existing_hooks[event_name] = filtered
+            else:
+                existing_hooks.pop(event_name, None)
+        else:
+            filtered.extend(deepcopy(generated_entries))
+            existing_hooks[event_name] = filtered
+
+    hooks_path.parent.mkdir(parents=True, exist_ok=True)
+    _atomic_write(hooks_path, json.dumps(settings, indent=2, ensure_ascii=False) + "\n")
+
+
+def _deploy_codex_lightweight_hooks(base: Path, variables: dict, remove: bool = False) -> list[str]:
+    hooks_dir = base / "hooks"
+    hooks_path = base / "hooks.json"
+    codex_vars = {
+        **variables,
+        "CODEX_HOOKS_DIR": str(hooks_dir).replace("\\", "/"),
+    }
+    deployed: list[str] = []
+
+    if remove:
+        for name in _LIGHTWEIGHT_HOOK_SCRIPTS:
+            path = hooks_dir / name
+            if path.exists():
+                path.unlink()
+                deployed.append(f"- {path}")
+        if hooks_path.exists():
+            _merge_codex_lightweight_hooks(hooks_path, codex_vars, remove=True)
+            deployed.append(f"~ {hooks_path} (lightweight hooks removed)")
+        return deployed
+
+    hooks_dir.mkdir(parents=True, exist_ok=True)
+    for name in _LIGHTWEIGHT_HOOK_SCRIPTS:
+        src = REPO_ROOT / "deploy" / "hooks" / name
+        if not src.exists():
+            print(f"    WARNING: hook source not found: {src}")
+            continue
+        content = _fill(src.read_text(encoding="utf-8"), codex_vars)
+        dst = hooks_dir / name
+        _atomic_write(dst, content)
+        deployed.append(str(dst))
+
+    _merge_codex_lightweight_hooks(hooks_path, codex_vars, remove=False)
+    deployed.append(f"{hooks_path} (lightweight hooks merged)")
+    return deployed
+
+
 def _deploy_codex_app(
     scope: str, target_root: Path | None, variables: dict, remove: bool = False
 ) -> list[str]:
     """Install or uninstall AITP for Codex app.
 
-    Codex app has native skill discovery but no Claude-style hooks. The adapter
-    therefore deploys Codex-native gateway skills plus wrapped protocol skills,
-    and writes MCP config into both the legacy mcp.json location and Codex's
-    config.toml [mcp_servers.aitp] surface.
+    The adapter deploys Codex-native gateway skills, MCP config, and a
+    lightweight hooks.json router/guard. Session-bound v5 lifecycle hooks remain
+    explicit adapter installs, not default project wiring.
     """
     roots = _discover_codex_skill_roots(scope, target_root)
     skills = _discover_codex_skills()
@@ -1604,6 +1749,7 @@ def _deploy_codex_app(
                 prefer_uv=True,
             )
             deployed.append(f"~ {config_path} ([mcp_servers.aitp] removed)")
+            deployed.extend(_deploy_codex_lightweight_hooks(root.parent, variables, remove=True))
         return deployed
 
     for root in roots:
@@ -1653,6 +1799,7 @@ def _deploy_codex_app(
             prefer_uv=True,
         )
         deployed.append(f"{config_path} ([mcp_servers.aitp] written)")
+        deployed.extend(_deploy_codex_lightweight_hooks(root.parent, variables, remove=False))
 
     return deployed
 
@@ -1883,7 +2030,7 @@ def _strict_v5_deploy_surface_issues() -> list[str]:
         {
             "path": "deploy/templates/opencode/aitp-plugin.js",
             "required": (
-                "AITP 0.5.0 v5 adapter",
+                "AITP 1.0.0 v5 adapter",
                 "aitp_v5_get_execution_brief",
                 "aitp_v5_build_workspace_recovery_audit",
                 "{{REPO_ROOT}}",
@@ -1902,7 +2049,7 @@ def _strict_v5_deploy_surface_issues() -> list[str]:
             "required": (
                 MCP_ENTRYPOINT,
                 "aitp-pm.py doctor",
-                "AITP 0.5.0/v5",
+                "AITP 1.0.0/v5",
             ),
             "forbidden": (
                 "claude mcp add-json",
@@ -2188,7 +2335,7 @@ def cmd_doctor(args) -> None:
     else:
         print("    OK")
 
-    # 2. Strict v5/0.5.0 contract
+    # 2. Strict v5/1.0.0 contract
     print("\n  AITP strict v5 contract:")
     strict_issues = _strict_v5_contract_issues()
     if strict_issues:

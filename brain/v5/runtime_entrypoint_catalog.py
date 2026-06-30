@@ -112,6 +112,21 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_get_claim_relation_map",
         "surface": "claim_relation_map",
     },
+    "active_claim_focus_reconciliation": {
+        "cli": "aitp-v5 relation-map <session-id>",
+        "mcp": "aitp_v5_detect_active_claim_focus_drift",
+        "surface": "active_claim_focus_reconciliation",
+    },
+    "active_claim_rebind_proposal": {
+        "cli": "aitp-v5 relation-map <session-id>",
+        "mcp": "aitp_v5_propose_active_claim_rebind",
+        "surface": "active_claim_rebind_proposal",
+    },
+    "active_claim_rebind_confirmation": {
+        "cli": "aitp-v5 session bind <session-id> <args>",
+        "mcp": "aitp_v5_confirm_active_claim_rebind",
+        "surface": "active_claim_rebind_confirmation",
+    },
     "process_graph_slice": {
         "cli": "aitp-v5 graph slice <session-id>",
         "mcp": "aitp_v5_get_process_graph_slice",
@@ -160,6 +175,16 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
     "capture_source_asset_auto": {
         "cli": "aitp-v5 asset capture-auto <args>",
         "mcp": "aitp_v5_capture_source_asset_auto",
+        "surface": "source_asset_record",
+    },
+    "acquire_pdf_source_asset": {
+        "cli": "aitp-v5 asset acquire-pdf <args>",
+        "mcp": "aitp_v5_acquire_pdf_source_asset",
+        "surface": "source_asset_record",
+    },
+    "acquire_arxiv_source_asset": {
+        "cli": "aitp-v5 asset acquire-arxiv <args>",
+        "mcp": "aitp_v5_acquire_arxiv_source_asset",
         "surface": "source_asset_record",
     },
     "record_research_route": {
@@ -623,6 +648,15 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
     },
     "topic_status": {"cli": "aitp-v5 status topic <session-id>", "mcp": "aitp_v5_write_topic_status_surfaces", "surface": "topic_status_bundle"},
     "topic_status_compact": {"cli": "aitp-v5 status topic <session-id> --compact", "mcp": "aitp_v5_write_topic_status_surfaces_compact", "surface": "topic_status_bundle"},
+    "objective_graph": {"cli": "aitp-v5 status objective-graph <session-id>", "mcp": "aitp_v5_get_objective_graph", "surface": "objective_graph"},
+    "compact_execution_brief": {"cli": "aitp-v5 status compact-brief <session-id>", "mcp": "aitp_v5_get_compact_brief", "surface": "compact_execution_brief"},
+    "aitp_context_pack": {"cli": "aitp-v5 status context-pack <session-id>", "mcp": "aitp_v5_get_context_pack", "surface": "aitp_context_pack"},
+    "research_distillation_candidates": {"cli": "aitp-v5 status distillation-candidates <session-id>", "mcp": "aitp_v5_get_research_distillation_candidates", "surface": "research_distillation_candidates"},
+    "note_outline": {"cli": "aitp-v5 status note-outline <session-id> --style jhep", "mcp": "aitp_v5_compile_note_outline", "surface": "note_outline"},
+    "record_authority": {"cli": "aitp-v5 authority record --topic fqhe --type sector_authority --statement sample-authority", "mcp": "aitp_v5_record_authority", "surface": "authority_record"},
+    "list_authorities": {"cli": "aitp-v5 authority list --topic fqhe", "mcp": "aitp_v5_list_authorities", "surface": "authority_registry"},
+    "quiet_checkpoint_preview": {"cli": "aitp-v5 checkpoint preview-batch <session-id> --summary sample-checkpoint", "mcp": "aitp_v5_preview_quiet_checkpoint_batch", "surface": "quiet_checkpoint_preview"},
+    "quiet_checkpoint_apply": {"cli": "aitp-v5 checkpoint apply-batch <session-id> --summary sample-checkpoint", "mcp": "aitp_v5_apply_quiet_checkpoint_batch", "surface": "quiet_checkpoint_batch"},
     "qsgw_cockpit": {"cli": "aitp-v5 status qsgw-cockpit", "mcp": "aitp_v5_write_qsgw_cockpit_surfaces", "surface": "qsgw_cockpit_bundle"},
     "qsgw_cockpit_compact": {"cli": "aitp-v5 status qsgw-cockpit --compact", "mcp": "aitp_v5_write_qsgw_cockpit_surfaces_compact", "surface": "qsgw_cockpit_bundle"},
     "research_cockpit": {"cli": "aitp-v5 status research-cockpit", "mcp": "aitp_v5_write_research_cockpit_surfaces", "surface": "research_cockpit_bundle"},
