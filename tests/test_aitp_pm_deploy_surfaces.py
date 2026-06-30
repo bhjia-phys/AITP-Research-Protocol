@@ -237,6 +237,10 @@ def test_codex_project_install_writes_lightweight_hooks_and_hooks_json(tmp_path)
     assert any("aitp-routing-guard.py" in command for command in commands)
     assert all(str(workspace).replace("\\", "/") in command for command in commands)
     assert all(".cache/codex-runtimes" not in command.replace("\\", "/").lower() for command in commands)
+    mcp = json.loads((workspace / ".codex" / "mcp.json").read_text(encoding="utf-8"))
+    assert mcp["mcpServers"]["aitp"]["env"]["AITP_MCP_SURFACE"] == "codex"
+    config_toml = (workspace / ".codex" / "config.toml").read_text(encoding="utf-8")
+    assert 'AITP_MCP_SURFACE = "codex"' in config_toml
 
 
 def test_kimi_project_install_writes_kimi_and_kimi_code_surfaces(tmp_path):

@@ -238,6 +238,10 @@ def _check_mcp_json(path: Path, issues: list[str], label: str) -> None:
             issues.append(f"{label} aitp MCP entry does not point to {MCP_ENTRYPOINT}")
         if has_legacy:
             issues.append(f"{label} aitp MCP entry still references a legacy MCP entrypoint")
+        if "codex" in label.lower():
+            env = servers.get("aitp", {}).get("env", {})
+            if env.get("AITP_MCP_SURFACE") != "codex":
+                issues.append(f"{label} aitp MCP entry must set AITP_MCP_SURFACE=codex")
         print(f"      {path.name} v5 MCP entrypoint: {'OK' if has_v5 else 'MISSING'}")
         print(f"      {path.name} legacy MCP entrypoint: {'ABSENT' if not has_legacy else 'PRESENT'}")
 
@@ -261,6 +265,8 @@ def _check_agent_toml(path: Path, issues: list[str], label: str) -> None:
         issues.append(f"{label} config.toml missing v5 aitp MCP config")
     if has_legacy:
         issues.append(f"{label} config.toml still references a legacy MCP entrypoint")
+    if ".codex" in parent_names and 'AITP_MCP_SURFACE = "codex"' not in content:
+        issues.append(f"{label} config.toml must set AITP_MCP_SURFACE=codex")
     status = "OK" if has_section and has_entrypoint else "NOT CONFIGURED"
     print(f"      config.toml {section}: {status}")
     print(f"      config.toml legacy MCP entrypoint: {'ABSENT' if not has_legacy else 'PRESENT'}")
@@ -743,6 +749,7 @@ def _write_mcp_json(
     topics_root: str = "",
     remove: bool = False,
     prefer_uv: bool = False,
+    mcp_surface: str = "",
 ) -> None:
     """Add or remove AITP MCP server entry."""
     if mcp_path.exists():
@@ -779,8 +786,13 @@ def _write_mcp_json(
                 "args": [_mcp_entrypoint(repo_root)],
                 "cwd": repo_root,
             }
+        env = {}
         if topics_root:
-            entry["env"] = {"AITP_TOPICS_ROOT": topics_root}
+            env["AITP_TOPICS_ROOT"] = topics_root
+        if mcp_surface:
+            env["AITP_MCP_SURFACE"] = mcp_surface
+        if env:
+            entry["env"] = env
         servers["aitp"] = entry
 
     if data:
@@ -819,6 +831,7 @@ def _merge_codex_config_toml(
     topics_root: str = "",
     remove: bool = False,
     prefer_uv: bool = False,
+    mcp_surface: str = "",
 ) -> None:
     """Add or remove [mcp_servers.aitp] from Codex config.toml."""
     if config_path.exists():
@@ -862,12 +875,15 @@ def _merge_codex_config_toml(
         f"cwd = {_toml_string(repo_root)}",
         "startup_timeout_sec = 60",
     ]
-    if topics_root:
+    if topics_root or mcp_surface:
         block.extend([
             "",
             "[mcp_servers.aitp.env]",
-            f"AITP_TOPICS_ROOT = {_toml_string(topics_root)}",
         ])
+        if topics_root:
+            block.append(f"AITP_TOPICS_ROOT = {_toml_string(topics_root)}")
+        if mcp_surface:
+            block.append(f"AITP_MCP_SURFACE = {_toml_string(mcp_surface)}")
 
     new_content = (content + "\n\n" if content else "") + "\n".join(block) + "\n"
     _atomic_write(config_path, new_content)
@@ -1788,6 +1804,7 @@ def _deploy_codex_app(
             variables["REPO_ROOT"],
             variables.get("TOPICS_ROOT", ""),
             prefer_uv=True,
+            mcp_surface="codex",
         )
         deployed.append(f"{mcp_path} (aitp entry written)")
 
@@ -1797,6 +1814,7 @@ def _deploy_codex_app(
             variables["REPO_ROOT"],
             variables.get("TOPICS_ROOT", ""),
             prefer_uv=True,
+            mcp_surface="codex",
         )
         deployed.append(f"{config_path} ([mcp_servers.aitp] written)")
         deployed.extend(_deploy_codex_lightweight_hooks(root.parent, variables, remove=False))
