@@ -309,10 +309,10 @@ read first-level recording navigation state
 expand exactly one slot
         |
         v
-call the named typed write or preflight tool
+call the named typed write/preflight tool, or in Codex compact mode call aitp_v5_codex_record_apply
         |
         v
-verify the recording effect
+verify the recording effect, using the apply result in compact Codex mode
 ```
 
 This keeps the graph useful without making the agent write on every internal
@@ -577,8 +577,9 @@ The plugin saves this to `~/.aitp/codex-plugin-config.json`. After
 configuration, restart Codex or open a new thread. The plugin launcher sets
 `AITP_MCP_SURFACE=codex` by default, so Codex sees a compact facade:
 `aitp_v5_codex_enter`, `aitp_v5_codex_expand`,
-`aitp_v5_codex_recording_step`, `aitp_v5_codex_literature_step`, and
-`aitp_v5_codex_closeout`. Set `AITP_MCP_SURFACE=full` only for kernel
+`aitp_v5_codex_recording_step`, `aitp_v5_codex_record_apply`,
+`aitp_v5_codex_literature_step`, and `aitp_v5_codex_closeout`. Set
+`AITP_MCP_SURFACE=full` only for kernel
 development or maintenance sessions that need the complete `aitp_v5_*` surface.
 
 The plugin resolves paths in this order:

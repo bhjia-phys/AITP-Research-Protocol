@@ -87,7 +87,7 @@ def compile_note_outline(
                 "not a trusted physics conclusion."
             ),
         },
-        "truth_source": False,
+        "truth_source": "typed_records_derived_note_outline_not_evidence",
         "orientation_only": True,
         "summary_inputs_trusted": False,
         "can_update_kernel_state": False,

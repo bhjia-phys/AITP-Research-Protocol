@@ -79,7 +79,8 @@ After configuration, restart Codex or open a new thread. The current kernel
 surface still provides `aitp_v5_*` tools, but the plugin launcher defaults to
 `AITP_MCP_SURFACE=codex`. Codex should use the compact facade as the front door:
 setup, `aitp_v5_codex_enter`, explicit `aitp_v5_codex_expand`, guided recording,
-literature/source registration, note writing, closeout, and trust preflight.
+`aitp_v5_codex_record_apply`, literature/source registration, note writing,
+closeout, and trust preflight.
 Set `AITP_MCP_SURFACE=full` only for kernel development or maintenance sessions.
 
 The skills should call AITP v5 tools with `base=""` unless the user explicitly

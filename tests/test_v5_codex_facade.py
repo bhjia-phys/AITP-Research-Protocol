@@ -52,10 +52,11 @@ def test_codex_facade_tools_are_compact_progressive_and_trust_safe(tmp_path):
         aitp_v5_codex_enter,
         aitp_v5_codex_expand,
         aitp_v5_codex_literature_step,
+        aitp_v5_codex_record_apply,
         aitp_v5_codex_recording_step,
         aitp_v5_codex_tool_catalog,
     )
-    from brain.v5.models import ReferenceLocationRecord, TrustUpdateRecord
+    from brain.v5.models import ReferenceLocationRecord, SourceAssetRecord, TrustUpdateRecord
     from brain.v5.store import list_records
 
     ws, claim = _seed_workspace(tmp_path)
@@ -95,6 +96,24 @@ def test_codex_facade_tools_are_compact_progressive_and_trust_safe(tmp_path):
     assert recording["write_executed"] is False
     assert recording["can_update_claim_trust"] is False
 
+    applied = aitp_v5_codex_record_apply(
+        str(ws.base),
+        session_id="codex-session",
+        slot="source_asset",
+        event_type="source_touched",
+        summary="Register source identity through compact Codex facade.",
+        payload={
+            "asset_type": "paper",
+            "uri": "https://arxiv.org/abs/2604.00001",
+            "title": "Compact facade source identity paper",
+            "summary": "Source identity only; no evidence.",
+        },
+    )
+    assert applied["kind"] == "codex_record_apply"
+    assert applied["write_executed"] is True
+    assert applied["record_ref"].startswith("source_asset:")
+    assert applied["can_update_claim_trust"] is False
+
     suggested = aitp_v5_codex_literature_step(
         str(ws.base),
         session_id="codex-session",
@@ -119,10 +138,14 @@ def test_codex_facade_tools_are_compact_progressive_and_trust_safe(tmp_path):
         detected_relevance="related work",
     )
     references = list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord)
+    source_assets = list_records(ws.registry_dir("source_assets"), SourceAssetRecord)
     trust_updates = list_records(ws.registry_dir("trust_updates"), TrustUpdateRecord)
-    assert recorded["kernel_state_change"] == "reference_location_record_only"
+    assert recorded["kernel_state_change"] == "source_asset_and_reference_location_records"
+    assert recorded["recorded_source_asset"]["orientation_only"] is True
+    assert recorded["recorded_reference_location"]["source_ref"].startswith("source_asset:")
     assert recorded["can_update_claim_trust"] is False
     assert len(references) == 1
+    assert len(source_assets) == 2
     assert trust_updates == []
 
     closeout = aitp_v5_codex_closeout(
@@ -169,11 +192,41 @@ def test_native_mcp_codex_surface_exposes_facade_not_full_kernel(tmp_path):
     assert initialized["result"]["serverInfo"]["version"] == "1.0.0"
     assert "aitp_v5_codex_enter" in tool_names
     assert "aitp_v5_codex_expand" in tool_names
+    assert "aitp_v5_codex_record_apply" in tool_names
     assert "aitp_v5_codex_literature_step" in tool_names
     assert "aitp_v5_preflight_trust_update" in tool_names
     assert "aitp_v5_apply_trust_update" not in tool_names
+    assert "aitp_v5_register_source_asset" not in tool_names
     assert "aitp_v5_get_execution_brief" not in tool_names
     assert "aitp_v5_get_context_pack" not in tool_names
+    assert len(tool_names) < 20
+
+
+def test_native_mcp_unknown_surface_fails_closed_to_codex_allowlist(tmp_path):
+    script = Path(__file__).resolve().parents[1] / "brain" / "v5" / "native_mcp.py"
+    env = {
+        **os.environ,
+        "AITP_MCP_SURFACE": "codx",
+        "AITP_V5_MCP_LOG": str(tmp_path / "mcp.log"),
+    }
+    message = {"jsonrpc": "2.0", "id": 1, "method": "tools/list", "params": {}}
+    body = json.dumps(message).encode("utf-8")
+    process = subprocess.run(
+        [sys.executable, str(script)],
+        cwd=tmp_path,
+        input=f"Content-Length: {len(body)}\r\n\r\n".encode("utf-8") + body,
+        capture_output=True,
+        env=env,
+        timeout=10,
+    )
+    assert process.returncode == 0, process.stderr.decode("utf-8", "replace")
+    tools = _read_content_length_message(BytesIO(process.stdout))["result"]["tools"]
+    tool_names = {tool["name"] for tool in tools}
+
+    assert "aitp_v5_codex_enter" in tool_names
+    assert "aitp_v5_codex_record_apply" in tool_names
+    assert "aitp_v5_apply_trust_update" not in tool_names
+    assert "aitp_v5_register_source_asset" not in tool_names
     assert len(tool_names) < 20
 
 
@@ -197,6 +250,7 @@ def test_codex_plugin_skills_and_launcher_route_through_facade():
     assert "AITP_MCP_SURFACE=full" in using
     assert "aitp_v5_codex_expand" in runtime
     assert "aitp_v5_codex_recording_step" in runtime
+    assert "aitp_v5_codex_record_apply" in runtime
     assert "aitp_v5_codex_literature_step" in runtime
     assert "aitp_v5_codex_closeout" in runtime
     assert "A paper, web page, local note, or RAG chunk is not evidence" in runtime

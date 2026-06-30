@@ -142,9 +142,9 @@ def test_literature_intake_for_close_prior_art_suggests_sensemaking_and_mixed_ev
     assert payload["can_update_kernel_state"] is False
 
 
-def test_record_literature_candidate_writes_only_reference_location_and_no_trust_records(tmp_path):
+def test_record_literature_candidate_writes_source_asset_reference_location_and_no_trust_records(tmp_path):
     from brain.v5.literature_intake import record_literature_candidate
-    from brain.v5.models import ReferenceLocationRecord, TrustUpdateRecord
+    from brain.v5.models import ReferenceLocationRecord, SourceAssetRecord, TrustUpdateRecord
     from brain.v5.store import list_records
 
     ws, claim = _setup_topic(tmp_path, active_claim=True)
@@ -164,15 +164,21 @@ def test_record_literature_candidate_writes_only_reference_location_and_no_trust
     )
 
     references = list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord)
+    source_assets = list_records(ws.registry_dir("source_assets"), SourceAssetRecord)
     trust_updates = list_records(ws.registry_dir("trust_updates"), TrustUpdateRecord)
 
     assert payload["kind"] == "literature_intake_record_result"
+    assert payload["recorded_source_asset"]["orientation_only"] is True
+    assert payload["recorded_source_asset"]["asset_type"] == "paper"
     assert payload["recorded_reference_location"]["orientation_only"] is True
     assert payload["recorded_reference_location"]["claim_id"] == claim.claim_id
+    assert payload["recorded_reference_location"]["source_ref"].startswith("source_asset:")
     assert payload["evidence_written"] is False
     assert payload["sensemaking_written"] is False
     assert payload["trust_update_forbidden"] is True
+    assert len(source_assets) == 1
     assert len(references) == 1
+    assert source_assets[0].reference_location_ids == [references[0].location_id]
     assert references[0].external_id == "arXiv:2604.14695"
     assert trust_updates == []
 

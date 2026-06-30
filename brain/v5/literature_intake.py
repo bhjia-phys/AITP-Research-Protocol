@@ -8,6 +8,7 @@ from typing import Any
 from brain.v5.ids import prefixed_id
 from brain.v5.output_stability import load_final_output_profile
 from brain.v5.references import record_reference_location
+from brain.v5.source_assets import register_source_asset
 from brain.v5.workspace import get_session_binding
 
 _REFERENCE_CONNECTOR = "literature_search"
@@ -26,6 +27,7 @@ def suggest_literature_intake(
     detected_relevance: str = "",
     optional_claim_id: str = "",
     scoped_output: str = "",
+    asset_type: str = "",
 ) -> dict[str, Any]:
     """Return guarded intake actions for a discovered literature item without writing records."""
 
@@ -39,6 +41,7 @@ def suggest_literature_intake(
         claim_id=claim_id,
         uri=uri,
         label=label,
+        asset_type=asset_type,
         external_id=external_id,
         short_summary=short_summary,
         detected_relevance=detected_relevance,
@@ -87,8 +90,9 @@ def record_literature_candidate(
     detected_relevance: str = "",
     optional_claim_id: str = "",
     scoped_output: str = "",
+    asset_type: str = "",
 ) -> dict[str, Any]:
-    """Write only the orientation reference location and return guarded follow-up suggestions."""
+    """Write source identity plus orientation reference location and return guarded follow-up suggestions."""
 
     suggestion = suggest_literature_intake(
         ws,
@@ -100,8 +104,27 @@ def record_literature_candidate(
         detected_relevance=detected_relevance,
         optional_claim_id=optional_claim_id,
         scoped_output=scoped_output,
+        asset_type=asset_type,
     )
     ref = suggestion["reference_candidate"]
+    asset = register_source_asset(
+        ws,
+        topic_id=ref["topic_id"],
+        claim_id=ref["claim_id"],
+        asset_type=ref["asset_type"],
+        uri=ref["uri"],
+        title=ref["label"],
+        label=ref["label"],
+        source_kind="literature_intake",
+        summary=ref["summary"],
+        reference_location_ids=[ref["location_id"]],
+        metadata={
+            "external_id": ref["external_id"],
+            "detected_relevance": ref["metadata"].get("detected_relevance", ""),
+            "intake_source": "literature_intake_assistant",
+        },
+        linked_records=ref["linked_records"],
+    )
     location = record_reference_location(
         ws,
         topic_id=ref["topic_id"],
@@ -110,11 +133,12 @@ def record_literature_candidate(
         location_type=ref["location_type"],
         uri=ref["uri"],
         label=ref["label"],
+        source_ref=f"source_asset:{asset.asset_id}",
         external_id=ref["external_id"],
         status="located",
         summary=ref["summary"],
-        metadata=ref["metadata"],
-        linked_records=ref["linked_records"],
+        metadata={**ref["metadata"], "source_asset_id": asset.asset_id},
+        linked_records={**ref["linked_records"], "source_asset_id": asset.asset_id},
     )
     return {
         "ok": True,
@@ -123,6 +147,7 @@ def record_literature_candidate(
         "topic_id": suggestion["topic_id"],
         "active_claim": suggestion["active_claim"],
         "recommended_action": suggestion["recommended_action"],
+        "recorded_source_asset": {"ok": True, **asdict(asset)},
         "recorded_reference_location": {"ok": True, **asdict(location)},
         "guarded_next_steps": suggestion["guarded_next_steps"],
         "sensemaking_candidate": suggestion["sensemaking_candidate"],
@@ -133,9 +158,9 @@ def record_literature_candidate(
         "summary_inputs_trusted": False,
         "orientation_only": False,
         "can_update_kernel_state": True,
-        "kernel_state_change": "reference_location_record_only",
+        "kernel_state_change": "source_asset_and_reference_location_records",
         "can_update_claim_trust": False,
-        "truth_source": "written_reference_location_record",
+        "truth_source": "written_source_asset_and_reference_location_records",
     }
 
 
@@ -145,6 +170,7 @@ def _reference_candidate(
     claim_id: str,
     uri: str,
     label: str,
+    asset_type: str,
     external_id: str,
     short_summary: str,
     detected_relevance: str,
@@ -160,6 +186,7 @@ def _reference_candidate(
         "claim_id": claim_id,
         "connector_id": _REFERENCE_CONNECTOR,
         "location_type": _REFERENCE_LOCATION_TYPE,
+        "asset_type": _asset_type_for_uri(uri, asset_type),
         "uri": uri,
         "label": label,
         "external_id": external_id,
@@ -252,6 +279,24 @@ def _mcp_templates(
     scoped_output: str,
 ) -> dict[str, Any]:
     templates: dict[str, Any] = {
+        "register_source_asset": {
+            "entrypoint": "aitp_v5_register_source_asset",
+            "topic_id": reference["topic_id"],
+            "claim_id": reference["claim_id"],
+            "asset_type": reference["asset_type"],
+            "uri": reference["uri"],
+            "title": reference["label"],
+            "label": reference["label"],
+            "source_kind": "literature_intake",
+            "summary": reference["summary"],
+            "reference_location_ids": [reference["location_id"]],
+            "metadata": {
+                "external_id": reference["external_id"],
+                "detected_relevance": reference["metadata"].get("detected_relevance", ""),
+                "intake_source": "literature_intake_assistant",
+            },
+            "linked_records": reference["linked_records"],
+        },
         "record_reference_location": {
             "entrypoint": "aitp_v5_record_reference_location",
             **{key: reference[key] for key in ("topic_id", "claim_id", "connector_id", "location_type", "uri", "label", "external_id")},
@@ -280,6 +325,11 @@ def _cli_templates(
     scoped_output: str,
 ) -> list[str]:
     templates = [
+        (
+            "aitp-v5 --base <workspace> asset register "
+            f"--topic {reference['topic_id']} --claim {reference['claim_id']} "
+            f"--type {reference['asset_type']} --uri {reference['uri']} --title <title>"
+        ),
         (
             "aitp-v5 --base <workspace> reference location record "
             f"--topic {reference['topic_id']} --claim {reference['claim_id']} "
@@ -319,6 +369,22 @@ def _risk_notes(claim_id: str, clear_relation: bool, scoped_output: str) -> list
     if claim_id and clear_relation:
         notes.append("not_a_supports_claim_by_default")
     return notes
+
+
+def _asset_type_for_uri(uri: str, requested: str) -> str:
+    clean = requested.strip().lower().replace("-", "_")
+    if clean:
+        return clean
+    lowered = uri.lower()
+    if "arxiv.org" in lowered or lowered.endswith(".pdf") or "doi.org/" in lowered:
+        return "paper"
+    if lowered.startswith("file:") and any(lowered.endswith(ext) for ext in (".md", ".txt", ".tex", ".org")):
+        return "note"
+    if "github.com" in lowered or lowered.endswith(".git"):
+        return "code_repo"
+    if lowered.startswith(("http://", "https://")):
+        return "web_page"
+    return "paper"
 
 
 def _has_clear_claim_relation(detected_relevance: str, scoped_output: str) -> bool:

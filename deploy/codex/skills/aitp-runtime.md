@@ -7,11 +7,12 @@ description: Codex app runtime skill for continuing an AITP v5 theoretical-physi
 
 ## Mandatory First Step
 
-For every AITP research iteration, restore the v5 typed execution brief:
+For every AITP research iteration, restore the bounded Codex entry context first:
 
 ```text
-aitp_v5_get_execution_brief(base="{{TOPICS_ROOT}}", session_id=<session-id>)
-aitp_v5_get_claim_relation_map(base="{{TOPICS_ROOT}}", session_id=<session-id>)
+aitp_v5_codex_enter(base="{{TOPICS_ROOT}}", session_id=<session-id>, request_summary=<current user request>)
+aitp_v5_codex_expand(base="{{TOPICS_ROOT}}", session_id=<session-id>, expansion="brief")
+aitp_v5_codex_expand(base="{{TOPICS_ROOT}}", session_id=<session-id>, expansion="relation_map")
 ```
 
 The brief is the immediate execution contract. Follow `current_focus`,
@@ -64,8 +65,9 @@ session:
 
 ```text
 while topic is active:
-  brief = aitp_v5_get_execution_brief(base="{{TOPICS_ROOT}}", session_id=<session-id>)
-  relation_map = aitp_v5_get_claim_relation_map(base="{{TOPICS_ROOT}}", session_id=<session-id>)
+  entry = aitp_v5_codex_enter(base="{{TOPICS_ROOT}}", session_id=<session-id>, request_summary=<current user request>)
+  brief = aitp_v5_codex_expand(base="{{TOPICS_ROOT}}", session_id=<session-id>, expansion="brief")
+  relation_map = aitp_v5_codex_expand(base="{{TOPICS_ROOT}}", session_id=<session-id>, expansion="relation_map")
 
   if relation_map.not_tested_by is non-empty:
     do not treat those failures as algorithm or claim evidence
@@ -120,11 +122,9 @@ only the agent's local reasoning changed -> do not write
 For those moments, use progressive navigation:
 
 ```text
-aitp_v5_classify_recording_candidate(...)
-aitp_v5_get_recording_navigation_state(base="{{TOPICS_ROOT}}", session_id=<session-id>, claim_id=<claim-id>)
-aitp_v5_expand_recording_slot(base="{{TOPICS_ROOT}}", session_id=<session-id>, slot=<slot>, claim_id=<claim-id>)
-call the named typed write or preflight tool
-aitp_v5_verify_recording_effect(base="{{TOPICS_ROOT}}", session_id=<session-id>, expected_refs=[...])
+aitp_v5_codex_recording_step(base="{{TOPICS_ROOT}}", session_id=<session-id>, event_type=<event>, summary=<durable moment>)
+aitp_v5_codex_recording_step(base="{{TOPICS_ROOT}}", session_id=<session-id>, event_type=<event>, summary=<durable moment>, slot=<slot>)
+aitp_v5_codex_record_apply(base="{{TOPICS_ROOT}}", session_id=<session-id>, slot=<slot>, payload=<typed slot payload>)
 ```
 
 If the classifier says `ignore` or `defer`, do not write. If the live Codex MCP

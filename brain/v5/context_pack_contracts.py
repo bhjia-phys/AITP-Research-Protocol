@@ -21,7 +21,7 @@ def validate_aitp_context_pack(payload: dict[str, Any], *, path: str = "aitp_con
         return result
     if payload.get("kind") != "aitp_context_pack":
         result.add(f"{path}.kind", "must be 'aitp_context_pack'")
-    for key in ("context_pack_version", "designed_for_host", "session_id", "topic_id", "fingerprint", "pack_id"):
+    for key in ("context_pack_version", "designed_for_host", "session_id", "topic_id", "fingerprint", "pack_id", "truth_source"):
         _require_nonempty_str(payload, key, path, result)
     if payload.get("designed_for_host") != "codex":
         result.add(f"{path}.designed_for_host", "must be 'codex'")

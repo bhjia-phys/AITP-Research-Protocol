@@ -124,7 +124,7 @@ def build_aitp_context_pack(
         },
         "source_records": source_records,
         "read_errors": list(distillation.get("read_errors") or []),
-        "truth_source": False,
+        "truth_source": "typed_records_derived_context_pack_not_evidence",
         "orientation_only": True,
         "summary_inputs_trusted": False,
         "can_update_kernel_state": False,

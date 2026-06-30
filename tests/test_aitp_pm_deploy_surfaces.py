@@ -39,8 +39,6 @@ def test_deploy_skills_keep_relation_map_recovery_boundary():
     for rel in [
         "deploy/skills/using-aitp.md",
         "deploy/skills/aitp-runtime.md",
-        "deploy/codex/skills/using-aitp.md",
-        "deploy/codex/skills/aitp-runtime.md",
         "deploy/templates/claude-code/using-aitp.md",
         "deploy/templates/claude-code/aitp-runtime.md",
         "deploy/templates/kimi-code/using-aitp.md",
@@ -49,6 +47,13 @@ def test_deploy_skills_keep_relation_map_recovery_boundary():
         text = _read(rel)
         assert "aitp_v5_get_claim_relation_map" in text
         assert "claim relation map" in text.lower()
+    for rel in [
+        "deploy/codex/skills/using-aitp.md",
+        "deploy/codex/skills/aitp-runtime.md",
+    ]:
+        text = _read(rel)
+        assert "aitp_v5_codex_expand" in text
+        assert "relation_map" in text
 
 
 def test_deploy_runtime_skills_keep_progressive_recording_trigger_policy():
@@ -131,11 +136,14 @@ def test_deploy_hooks_guard_canonical_and_root_stores():
     assert 'WRITE_TOOLS = {"Write", "Edit", "MultiEdit"}' in guard
 
     keyword_router = _read("deploy/hooks/aitp-keyword-router.py")
+    assert "继续科研" in keyword_router
     assert "继续研究" in keyword_router
     assert "理论物理" in keyword_router
     assert "格林函数" in keyword_router
-    assert "aitp_v5_get_execution_brief" in keyword_router
-    assert "aitp_v5_get_claim_relation_map" in keyword_router
+    assert "aitp_v5_codex_enter" in keyword_router
+    assert "aitp_v5_codex_expand" in keyword_router
+    assert "aitp_v5_get_execution_brief" not in keyword_router
+    assert "aitp_v5_get_claim_relation_map" not in keyword_router
     assert "canonical research/aitp-topics/.aitp store" in keyword_router
 
 
@@ -148,7 +156,7 @@ def test_keyword_router_detects_english_and_chinese_research_requests(tmp_path):
     env = {"AITP_TOPICS_ROOT": str(tmp_path / "research" / "aitp-topics")}
     cases = [
         ("continue research on LibRPA QSGW", "research"),
-        ("继续研究这个课题", "继续研究"),
+        ("继续科研这个课题", "继续科研"),
     ]
 
     for message, expected_keyword in cases:

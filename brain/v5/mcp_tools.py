@@ -25,6 +25,7 @@ from brain.v5.codex_facade import (
     codex_enter_context,
     codex_expand_context,
     codex_literature_step,
+    codex_record_apply,
     codex_recording_step,
     codex_tool_catalog,
 )
@@ -294,6 +295,31 @@ def aitp_v5_codex_recording_step(
     )
 
 
+def aitp_v5_codex_record_apply(
+    base: str,
+    *,
+    session_id: str,
+    slot: str,
+    payload: dict | None = None,
+    event_type: str = "",
+    summary: str = "",
+    claim_id: str = "",
+    expected_refs: list[str] | None = None,
+) -> dict:
+    """Apply one constrained typed record selected through the Codex facade."""
+
+    return codex_record_apply(
+        _ws(base),
+        session_id=session_id,
+        slot=slot,
+        payload=payload,
+        event_type=event_type,
+        summary=summary,
+        claim_id=claim_id,
+        expected_refs=expected_refs,
+    )
+
+
 def aitp_v5_codex_literature_step(
     base: str,
     *,
@@ -311,6 +337,7 @@ def aitp_v5_codex_literature_step(
     source_refs: list[str] | None = None,
     dimensions: list[str] | None = None,
     rationale: str = "",
+    asset_type: str = "",
 ) -> dict:
     """Run a layered literature/reference workflow step from Codex."""
 
@@ -330,6 +357,7 @@ def aitp_v5_codex_literature_step(
         source_refs=source_refs,
         dimensions=dimensions,
         rationale=rationale,
+        asset_type=asset_type,
     )
 
 

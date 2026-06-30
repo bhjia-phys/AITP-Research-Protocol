@@ -52,13 +52,17 @@ def validate_literature_intake_record_result(
     if not isinstance(payload, dict):
         return result
     _require_nonempty_str(payload, "recommended_action", path, result)
+    _require_mapping(payload.get("recorded_source_asset"), f"{path}.recorded_source_asset", result)
     _require_mapping(payload.get("recorded_reference_location"), f"{path}.recorded_reference_location", result)
     _require_list(payload.get("guarded_next_steps"), f"{path}.guarded_next_steps", result)
     _require_bool_value(payload.get("evidence_written"), False, f"{path}.evidence_written", result)
     _require_bool_value(payload.get("sensemaking_written"), False, f"{path}.sensemaking_written", result)
     _require_bool_value(payload.get("can_update_kernel_state"), True, f"{path}.can_update_kernel_state", result)
-    if payload.get("kernel_state_change") != "reference_location_record_only":
-        result.add(f"{path}.kernel_state_change", "must be reference_location_record_only")
+    if payload.get("kernel_state_change") != "source_asset_and_reference_location_records":
+        result.add(f"{path}.kernel_state_change", "must be source_asset_and_reference_location_records")
+    asset = payload.get("recorded_source_asset")
+    if isinstance(asset, dict) and asset.get("orientation_only") is not True:
+        result.add(f"{path}.recorded_source_asset.orientation_only", "must be true")
     ref = payload.get("recorded_reference_location")
     if isinstance(ref, dict) and ref.get("orientation_only") is not True:
         result.add(f"{path}.recorded_reference_location.orientation_only", "must be true")
@@ -91,7 +95,7 @@ def _validate_reference_candidate(value: Any, path: str, result: ContractResult)
     _require_mapping(value, path, result)
     if not isinstance(value, dict):
         return
-    for key in ("topic_id", "connector_id", "location_type", "uri", "label", "status"):
+    for key in ("topic_id", "connector_id", "location_type", "asset_type", "uri", "label", "status"):
         _require_nonempty_str(value, key, path, result)
     if value.get("orientation_only") is not True:
         result.add(f"{path}.orientation_only", "must be true")

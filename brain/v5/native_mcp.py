@@ -218,7 +218,7 @@ def _surface_allows_tool(name: str) -> bool:
         return name in CODEX_SURFACE_TOOL_ALLOWLIST
     if _MCP_SURFACE == "none":
         return False
-    return True
+    return name in CODEX_SURFACE_TOOL_ALLOWLIST
 
 
 _TOOLS = _load_tools()

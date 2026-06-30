@@ -61,17 +61,16 @@ Use the lightest recording route:
 ```text
 aitp_v5_codex_recording_step(base="", session_id=<session-id>, event_type=<event>, summary=<durable moment>)
 aitp_v5_codex_recording_step(base="", session_id=<session-id>, event_type=<event>, summary=<durable moment>, slot=<one slot>)
-<call the named typed write or preflight tool>
-aitp_v5_verify_recording_effect(base="", session_id=<session-id>, expected_refs=[...])
+aitp_v5_codex_record_apply(base="", session_id=<session-id>, slot=<one slot>, payload=<typed slot payload>)
 ```
 
-If the classifier says `ignore` or `defer`, do not write. Expand one slot at a time.
+If the classifier says `ignore` or `defer`, do not write. Expand one slot at a time. `aitp_v5_codex_record_apply` returns a verification block; use the separate `aitp_v5_verify_recording_effect` only in full-kernel maintenance mode.
 
 ## Record Boundaries
 
 - Definitions and systems: `aitp_v5_record_physics_object`.
 - Relations and equations: `aitp_v5_record_object_relation`.
-- Papers, notes, and source locations: `aitp_v5_record_reference_location` or `aitp_v5_register_source`.
+- Papers, notes, and source locations: `aitp_v5_codex_literature_step` or `aitp_v5_codex_record_apply` with `slot="source_asset"` / `slot="reference_location"`.
 - Files and reports: `aitp_v5_attach_artifact`.
 - Numerical or code-dependent work: code state, tool recipe, tool run, evidence, validation result.
 - Open theorem or review gaps: `aitp_v5_create_proof_obligation`.

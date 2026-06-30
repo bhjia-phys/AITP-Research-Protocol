@@ -22,6 +22,7 @@ def aitp_v5_suggest_literature_intake(
     detected_relevance: str = "",
     optional_claim_id: str = "",
     scoped_output: str = "",
+    asset_type: str = "",
 ) -> dict:
     return require_valid_public_surface(
         "literature_intake_suggestion",
@@ -35,6 +36,7 @@ def aitp_v5_suggest_literature_intake(
             detected_relevance=detected_relevance,
             optional_claim_id=optional_claim_id,
             scoped_output=scoped_output,
+            asset_type=asset_type,
         ),
     )
 
@@ -50,6 +52,7 @@ def aitp_v5_record_literature_candidate(
     detected_relevance: str = "",
     optional_claim_id: str = "",
     scoped_output: str = "",
+    asset_type: str = "",
 ) -> dict:
     return require_valid_public_surface(
         "literature_intake_record_result",
@@ -63,6 +66,7 @@ def aitp_v5_record_literature_candidate(
             detected_relevance=detected_relevance,
             optional_claim_id=optional_claim_id,
             scoped_output=scoped_output,
+            asset_type=asset_type,
         ),
     )
 

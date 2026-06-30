@@ -25,7 +25,7 @@ def validate_note_outline(
         return result
     if payload.get("kind") != "note_outline":
         result.add(f"{path}.kind", "must be 'note_outline'")
-    for key in ("outline_id", "topic_id", "session_id", "style"):
+    for key in ("outline_id", "topic_id", "session_id", "style", "truth_source"):
         _require_nonempty_str(payload, key, path, result)
     if not isinstance(payload.get("active_claim_id", ""), str):
         result.add(f"{path}.active_claim_id", "must be a string")

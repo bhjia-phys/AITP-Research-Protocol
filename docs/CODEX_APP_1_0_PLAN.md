@@ -186,7 +186,8 @@ Exposed only after a candidate durable moment exists:
 - read recording navigation state;
 - expand exactly one recording slot;
 - lookup required refs;
-- call the named typed write/preflight;
+- in full-kernel mode, call the named typed write/preflight;
+- in Codex compact mode, call `aitp_v5_codex_record_apply` for the selected slot;
 - verify recording effect.
 
 The write tool itself is not chosen by prose guessing. It is selected by the
@@ -267,7 +268,7 @@ candidate durable moment
   -> classify
   -> read recording navigation state
   -> expand one slot
-  -> perform the named typed write/preflight
+  -> perform the named typed write/preflight, or in compact Codex call aitp_v5_codex_record_apply
   -> verify effect
 ```
 

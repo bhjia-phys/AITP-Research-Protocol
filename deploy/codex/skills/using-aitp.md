@@ -21,18 +21,22 @@ Follow the Charter and SPEC before platform convenience.
 - Do not use Claude-only tool names such as `AskUserQuestion` or `ToolSearch`.
 - If Codex exposes AITP MCP tools, call the AITP tool under the actual Codex
   tool namespace shown in the session.
-- Current project installs expose v5 typed tools (`aitp_v5_*`) through the v5
-  native MCP entrypoint. Legacy-friendly aliases (`aitp_list_topics`,
-  `aitp_get_execution_brief`, `aitp_bootstrap_topic`) may exist only for
-  discovery/bootstrap compatibility; do not use a legacy stage brief as the
-  execution contract for new work.
+- Current Codex project installs should enter through the compact facade:
+  `aitp_v5_codex_tool_catalog`, `aitp_v5_codex_enter`,
+  `aitp_v5_codex_expand`, `aitp_v5_codex_recording_step`,
+  `aitp_v5_codex_record_apply`, `aitp_v5_codex_literature_step`, and
+  `aitp_v5_codex_closeout`.
+- Legacy-friendly aliases (`aitp_list_topics`, `aitp_get_execution_brief`,
+  `aitp_bootstrap_topic`) may exist only for discovery/bootstrap compatibility;
+  do not use a legacy stage brief as the execution contract for new work.
 - Legacy L0-L4 write tools are read-only guards by default. If an old `aitp_*`
   write call returns `legacy_aitp_writes_disabled`, do not retry it; continue
   through v5 migration/binding and typed `aitp_v5_*` writes.
-- The claim relation map (`aitp_v5_get_claim_relation_map`, or
-  `aitp-v5 relation-map <session-id>` as CLI fallback) is a read-only recovery
-  surface. Use it to separate support, limitations, non-testing failures,
-  blockers, and next valid actions. It cannot update claim trust.
+- The claim relation map is reached through
+  `aitp_v5_codex_expand(expansion="relation_map")` in compact Codex mode, or
+  `aitp-v5 relation-map <session-id>` as CLI fallback. It is a read-only
+  recovery surface for support, limitations, non-testing failures, blockers,
+  and next valid actions. It cannot update claim trust.
 - If the AITP MCP tools are unavailable, run the local doctor command and stop
   before mutating topic state.
 - Ask the user through Codex's normal conversation surface unless a structured
@@ -97,13 +101,14 @@ interesting.
    synthesis. If `ResearchAction` is not available, continue with the AITP MCP
    steps below.
 4. If a v5 session id is already known, call
-   `aitp_v5_get_execution_brief(base="{{TOPICS_ROOT}}", session_id=<session-id>)`.
-   Then call `aitp_v5_get_claim_relation_map` for the same session before
-   interpreting failures or deciding the next scientific action.
+   `aitp_v5_codex_enter(base="{{TOPICS_ROOT}}", session_id=<session-id>, request_summary=<user request>)`.
+   Then call `aitp_v5_codex_expand` with `expansion="brief"` or
+   `expansion="relation_map"` only when the next scientific action needs that
+   detail.
 5. If only a topic slug is known, first call
-   `aitp_v5_build_workspace_recovery_audit(base="{{TOPICS_ROOT}}", topics=[<topic>])`.
-   If the row is `recovery_ready`, use that row's `session_id` and
-   `active_claim_id`; then call the execution brief and claim relation map for
+   `aitp_v5_codex_enter(base="{{TOPICS_ROOT}}", topics=[<topic>], request_summary=<user request>)`.
+   If the returned recovery audit has a `recovery_ready` row, use that row's
+   `session_id` and `active_claim_id`; then expand brief or relation map for
    the selected session. Do not migrate, create, bind, or update claim status
    during recovery when a ready v5 session already exists.
 6. Use legacy discovery or migration only when the recovery audit reports no
@@ -111,16 +116,20 @@ interesting.
    `aitp_v5_migrate_curated_legacy_topic_to_v5` for known curated topics, or
    `aitp_v5_migrate_legacy_topic_to_v5` for a generic preservation pass.
    Do not write new progress back into old L0/L1/L3/L4 files.
-7. If no topic matches, create a v5 topic, create an initial claim, bind a
-   session, and then get the v5 execution brief.
-8. Follow the v5 brief and load `aitp-runtime` for the typed-record loop.
+7. If no topic matches, ask before switching to a full-kernel maintenance
+   surface to create a v5 topic, initial claim, and session binding.
+8. Follow the compact Codex brief/relation-map expansions and load
+   `aitp-runtime` for the typed-record loop.
 
 Use these logical tool calls, mapped to the actual Codex tool names:
 
 ```text
-aitp_v5_get_execution_brief(base="{{TOPICS_ROOT}}", session_id=<session-id>)
-aitp_v5_get_claim_relation_map(base="{{TOPICS_ROOT}}", session_id=<session-id>)
-aitp_v5_build_workspace_recovery_audit(base="{{TOPICS_ROOT}}", topics=[<topic>])
+aitp_v5_codex_enter(base="{{TOPICS_ROOT}}", session_id=<session-id>, request_summary=<user request>)
+aitp_v5_codex_expand(base="{{TOPICS_ROOT}}", session_id=<session-id>, expansion="brief")
+aitp_v5_codex_expand(base="{{TOPICS_ROOT}}", session_id=<session-id>, expansion="relation_map")
+aitp_v5_codex_enter(base="{{TOPICS_ROOT}}", topics=[<topic>], request_summary=<user request>)
+
+Full-kernel maintenance only after user confirmation:
 aitp_v5_migrate_curated_legacy_topic_to_v5(
   base="{{TOPICS_ROOT}}",
   topic_dir="{{TOPICS_ROOT}}/<legacy-topic-slug>"

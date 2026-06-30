@@ -44,6 +44,7 @@ AITP_KEYWORDS = [
     "研究",
     "科研",
     "课题",
+    "继续科研",
     "继续研究",
     "继续这个",
     "推导",
@@ -187,12 +188,13 @@ def main() -> int:
         "AITP V5 INSTRUCTIONS (follow exactly):\n"
         "1. Match the user's request to ONE topic above by comparing title/question.\n"
         "2. Do not treat legacy_stage/gate fields as v5 truth; they are orientation only.\n"
-        "3. If a v5 session id is known, call mcp__aitp__aitp_v5_get_execution_brief("
-        f"base='{AITP_TOPICS_ROOT.as_posix()}', session_id='<session-id>').\n"
-        "4. If a v5 session id is known, also call mcp__aitp__aitp_v5_get_claim_relation_map("
-        f"base='{AITP_TOPICS_ROOT.as_posix()}', session_id='<session-id>') before interpreting failures.\n"
-        "5. If only a legacy slug is known, migrate or bind v5 state before research.\n"
-        "6. If no topic matches, create a v5 topic/claim/session.\n"
+        "3. If a v5 session id is known, call mcp__aitp__aitp_v5_codex_enter("
+        f"base='{AITP_TOPICS_ROOT.as_posix()}', session_id='<session-id>', request_summary='<user request>').\n"
+        "4. Expand through mcp__aitp__aitp_v5_codex_expand("
+        f"base='{AITP_TOPICS_ROOT.as_posix()}', session_id='<session-id>', expansion='brief' or 'relation_map') only when needed.\n"
+        "5. If only a legacy slug is known, call mcp__aitp__aitp_v5_codex_enter("
+        f"base='{AITP_TOPICS_ROOT.as_posix()}', topics=['<topic-slug>'], request_summary='<user request>') and choose a recovery_ready session before research.\n"
+        "6. If no topic matches, ask before switching to a full-kernel maintenance surface to create or migrate topic/claim/session state.\n"
         "7. Do NOT create a duplicate topic if one already matches.\n"
         "8. Do NOT read or edit AITP topic-state files directly with Read/Grep/Glob/Edit/MultiEdit.\n"
         "9. Use MCP typed tools for research state; use aitp-v5 only as a CLI diagnostic/fallback.\n"
