@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any
 
+from brain.v5.closeout_completeness import build_record_completeness_audit
 from brain.v5.ids import prefixed_id
 from brain.v5.models import QuietCheckpointBatchRecord
 from brain.v5.paths import WorkspacePaths
@@ -54,6 +55,39 @@ def preview_quiet_checkpoint_batch(
         tool_run_specs=tool_run_specs,
         sensemaking_summary=sensemaking_summary,
     )
+    inputs_list = _str_list(inputs)
+    outputs_list = _str_list(outputs)
+    changed_files_list = _str_list(changed_files)
+    generated_artifacts_list = artifact_specs or _dict_list(generated_artifacts)
+    audit_generated_artifacts_list = _dict_list(generated_artifacts)
+    if artifact_specs:
+        audit_generated_artifacts_list = artifact_specs + audit_generated_artifacts_list
+    else:
+        audit_generated_artifacts_list = generated_artifacts_list
+    validation_commands_list = _str_list(validation_commands)
+    durable_observations_list = _str_list(durable_observations)
+    claim_boundary_map = claim_boundary or {}
+    next_blockers_list = _str_list(next_blockers)
+    source_refs_list = _str_list(source_refs)
+    audit = build_record_completeness_audit(
+        topic_id=focus["topic_id"],
+        claim_id=focus["claim_id"],
+        run_id=run_id,
+        summary=summary,
+        inputs=inputs_list,
+        outputs=outputs_list,
+        changed_files=changed_files_list,
+        generated_artifacts=audit_generated_artifacts_list,
+        validation_commands=validation_commands_list,
+        claim_boundary=claim_boundary_map,
+        next_blockers=next_blockers_list,
+        artifact_specs=artifact_specs,
+        source_specs=source_specs,
+        tool_run_specs=tool_run_specs,
+        planned_typed_writes=planned,
+        closeout_surface="quiet_checkpoint",
+        write_executed=False,
+    )
     return {
         "ok": True,
         "kind": "quiet_checkpoint_preview",
@@ -64,16 +98,17 @@ def preview_quiet_checkpoint_batch(
         "claim_id": focus["claim_id"],
         "run_id": run_id,
         "summary": summary,
-        "inputs": _str_list(inputs),
-        "outputs": _str_list(outputs),
-        "changed_files": _str_list(changed_files),
-        "generated_artifacts": artifact_specs or _dict_list(generated_artifacts),
-        "validation_commands": _str_list(validation_commands),
-        "durable_observations": _str_list(durable_observations),
-        "claim_boundary": claim_boundary or {},
-        "next_blockers": _str_list(next_blockers),
+        "inputs": inputs_list,
+        "outputs": outputs_list,
+        "changed_files": changed_files_list,
+        "generated_artifacts": generated_artifacts_list,
+        "validation_commands": validation_commands_list,
+        "durable_observations": durable_observations_list,
+        "claim_boundary": claim_boundary_map,
+        "next_blockers": next_blockers_list,
         "planned_typed_writes": planned,
-        "source_refs": _str_list(source_refs),
+        "source_refs": source_refs_list,
+        "record_completeness_audit": audit,
         "status": "preview_only",
         "summary_inputs_trusted": False,
         "orientation_only": True,
@@ -215,6 +250,30 @@ def apply_quiet_checkpoint_batch(
         written_refs.append(f"sensemaking_report:{report.report_id}")
 
     written_refs.append(f"quiet_checkpoint:{checkpoint_id}")
+    audit_generated_artifacts = list(preview["generated_artifacts"])
+    for item in _dict_list(generated_artifacts):
+        if item not in audit_generated_artifacts:
+            audit_generated_artifacts.append(item)
+    audit = build_record_completeness_audit(
+        topic_id=topic_id,
+        claim_id=focus_claim_id,
+        run_id=run_id,
+        summary=summary,
+        inputs=preview["inputs"],
+        outputs=preview["outputs"],
+        changed_files=preview["changed_files"],
+        generated_artifacts=audit_generated_artifacts,
+        validation_commands=preview["validation_commands"],
+        claim_boundary=preview["claim_boundary"],
+        next_blockers=preview["next_blockers"],
+        artifact_specs=_dict_list(artifact_specs),
+        source_specs=_dict_list(source_specs),
+        tool_run_specs=_dict_list(tool_run_specs),
+        written_refs=written_refs,
+        planned_typed_writes=preview["planned_typed_writes"],
+        closeout_surface="quiet_checkpoint",
+        write_executed=True,
+    )
     record = QuietCheckpointBatchRecord(
         checkpoint_id=checkpoint_id,
         topic_id=topic_id,
@@ -233,6 +292,7 @@ def apply_quiet_checkpoint_batch(
         planned_typed_writes=preview["planned_typed_writes"],
         written_refs=written_refs,
         source_refs=all_source_refs,
+        record_completeness_audit=audit,
     )
     write_record(
         ws.registry_dir("quiet_checkpoints") / f"{checkpoint_id}.md",
@@ -329,6 +389,9 @@ def _checkpoint_body(record: QuietCheckpointBatchRecord) -> str:
     observations = "\n".join(f"- {item}" for item in record.durable_observations) or "- None"
     blockers = "\n".join(f"- {item}" for item in record.next_blockers) or "- None"
     refs = "\n".join(f"- {item}" for item in record.written_refs) or "- None"
+    audit = record.record_completeness_audit or {}
+    missing = "\n".join(f"- {item}" for item in audit.get("missing_recommended_slots", [])) or "- None"
+    audit_summary = str(audit.get("summary") or "No completeness audit recorded.")
     return (
         f"# Quiet Checkpoint {record.checkpoint_id}\n\n"
         f"{record.summary}\n\n"
@@ -337,7 +400,11 @@ def _checkpoint_body(record: QuietCheckpointBatchRecord) -> str:
         "## Next Blockers\n\n"
         f"{blockers}\n\n"
         "## Written Refs\n\n"
-        f"{refs}\n"
+        f"{refs}\n\n"
+        "## Record Completeness Audit\n\n"
+        f"{audit_summary}\n\n"
+        "### Missing Recommended Slots\n\n"
+        f"{missing}\n"
     )
 
 

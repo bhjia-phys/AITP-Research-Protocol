@@ -71,6 +71,7 @@ When unsure, choose the read-only path first.
 - Do not create or bind a session merely to restore an existing topic if recovery already finds a usable session.
 - Do not turn runtime/setup failures into algorithm or physics evidence.
 - Do not treat an AITP context pack as evidence, validation, L2 memory, or claim-trust support.
+- Do not treat `ok=true` from closeout or quiet checkpoint as complete AITP recording. Inspect `record_completeness_audit`; for numerical work, missing `artifact`, `code_state`, or `validation_result` means the durable package is incomplete and must be reported or filled through typed tools after confirmation.
 - Do not promote to L2 without v5 trust preflight, validation coverage, and the explicit human gate.
 - Preserve uncertainty, failed attempts, anomalies, and open gaps.
 

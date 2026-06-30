@@ -163,6 +163,7 @@ class QuietCheckpointBatchRecord:
     planned_typed_writes: list[dict] = field(default_factory=list)
     written_refs: list[str] = field(default_factory=list)
     source_refs: list[str] = field(default_factory=list)
+    record_completeness_audit: dict = field(default_factory=dict)
     status: str = "recorded_without_trust_promotion"
     summary_inputs_trusted: bool = False
     orientation_only: bool = True

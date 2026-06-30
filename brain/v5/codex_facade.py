@@ -484,12 +484,16 @@ def codex_closeout(
         if apply
         else preview_quiet_checkpoint_batch(ws, session_id, **kwargs)
     )
+    record_completeness_audit = surface.get("record_completeness_audit", {})
     return {
         "ok": True,
         "kind": "codex_closeout",
         "mode": "apply" if apply else "preview",
         "session_id": session_id,
         "surface": surface,
+        "record_completeness_audit": record_completeness_audit,
+        "missing_recommended_slots": record_completeness_audit.get("missing_recommended_slots", []),
+        "recommended_next_records": record_completeness_audit.get("recommended_next_records", []),
         "write_executed": bool(apply),
         "kernel_state_change": "quiet_checkpoint_batch" if apply else "none",
         "trust_update_forbidden": True,

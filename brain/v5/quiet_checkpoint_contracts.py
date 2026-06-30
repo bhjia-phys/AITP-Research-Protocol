@@ -94,4 +94,36 @@ def _validate_common(payload: Any, *, path: str, kind: str) -> ContractResult:
     ):
         _require_list(payload.get(key), f"{path}.{key}", result)
     _require_mapping(payload.get("claim_boundary"), f"{path}.claim_boundary", result)
+    _validate_record_completeness_audit(payload.get("record_completeness_audit"), f"{path}.record_completeness_audit", result)
     return result
+
+
+def _validate_record_completeness_audit(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    if payload.get("kind") != "record_completeness_audit":
+        result.add(f"{path}.kind", "must be 'record_completeness_audit'")
+    for key in (
+        "recorded_slots",
+        "planned_slots",
+        "missing_recommended_slots",
+        "recommended_next_records",
+    ):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    _require_mapping(payload.get("trust_boundary"), f"{path}.trust_boundary", result)
+    for key in (
+        "recording_complete",
+        "requires_user_confirmation",
+        "orientation_only",
+        "summary_inputs_trusted",
+        "can_update_claim_trust",
+    ):
+        if not isinstance(payload.get(key), bool):
+            result.add(f"{path}.{key}", "must be boolean")
+    if payload.get("orientation_only") is not True:
+        result.add(f"{path}.orientation_only", "must be true")
+    if payload.get("summary_inputs_trusted") is not False:
+        result.add(f"{path}.summary_inputs_trusted", "must be false")
+    if payload.get("can_update_claim_trust") is not False:
+        result.add(f"{path}.can_update_claim_trust", "must be false")

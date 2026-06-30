@@ -37,6 +37,8 @@ The claim relation map is the boundary layer. Read `supported_by`, `limited_by`,
 7. Record durable outputs before summarizing them as research state.
 8. Verify expected records with `aitp_v5_verify_recording_effect` when recording navigation is used.
 
+Closeout and quiet checkpoint returns include `record_completeness_audit`. Inspect it before saying that AITP recording is complete. `ok=true` only means the preview/apply call succeeded. If `missing_recommended_slots` is non-empty, report those slots or continue through existing typed tools after the needed user confirmation.
+
 ## Moment Policy
 
 AITP is not a transcript logger. Record only durable research moments:
@@ -73,11 +75,13 @@ If the classifier says `ignore` or `defer`, do not write. Expand one slot at a t
 - Papers, notes, and source locations: `aitp_v5_codex_literature_step` or `aitp_v5_codex_record_apply` with `slot="source_asset"` / `slot="reference_location"`.
 - Files and reports: `aitp_v5_attach_artifact`.
 - Numerical or code-dependent work: code state, tool recipe, tool run, evidence, validation result.
+- Numerical closeout completeness: durable PDF/report/note/plot/data/log output should have an artifact; changed files, scripts, repo paths, or worktree-dependent results should have code_state; validation commands or explicit validation boundaries should have validation_result or a validation-gap record.
 - Open theorem or review gaps: `aitp_v5_create_proof_obligation`.
 - Claim maturity/status observations: `aitp_v5_update_claim_status`.
 - Interpretation: `aitp_v5_record_sensemaking_report`, marked orientation-only unless backed by typed evidence or validation.
 
 Source references and artifacts are provenance/context by themselves. Do not treat them as claim support until typed evidence or validation links them to the claim.
+Unresolved artifact refs from quiet checkpoint or closeout are not verified evidence. Quiet checkpoints and sensemaking remain orientation-only and must not promote trust.
 
 ## Literature And Writing
 
@@ -98,6 +102,7 @@ aitp_v5_codex_closeout(base="", session_id=<session-id>, summary=<handoff summar
 ```
 
 The closeout tool previews by default. Set `apply=true` only when there is a durable handoff or quiet checkpoint worth writing. It cannot update claim trust.
+After closeout, read `record_completeness_audit.recording_complete`, `recorded_slots`, `missing_recommended_slots`, `recommended_next_records`, `trust_boundary`, and `requires_user_confirmation`. Missing slots are plan-only recommendations; actual writes still use the typed tools above. Trust promotion still requires separate preflight and the explicit human gate.
 
 ## Physics Validation Obligations
 

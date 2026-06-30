@@ -58,6 +58,13 @@ should name the active claim, typed refs just created or relied on, open proof
 or validation gaps, human gates, and the next valid action. Verify the handoff
 or typed refs with `aitp_v5_verify_recording_effect`.
 
+Closeout and quiet checkpoint returns include `record_completeness_audit`.
+Inspect it before saying that AITP recording is complete. `ok=true` means the
+preview/apply call succeeded; it does not mean every reusable research package
+slot was filled. If `missing_recommended_slots` is non-empty, report those
+slots or continue through existing typed tools after the needed user
+confirmation.
+
 ## Typed Runtime Loop
 
 Use this loop conceptually, with the actual Codex tool names exposed in the
@@ -152,9 +159,12 @@ next action really needs full context.
 - Source assets and reference locations are provenance/context, not claim
   support by themselves.
 - Files and reports: `aitp_v5_attach_artifact`.
-- Numerical or code-dependent work: code state, tool recipe, tool run, evidence.
+- Numerical or code-dependent work: code state, tool recipe, tool run,
+  evidence, and validation result when applicable.
 - Checks and reviews: validation contract plus validation result when a tool run
-  or explicit check exists.
+  or explicit check exists. If the result is open or only partially checked,
+  record a validation result/gap with the narrow boundary instead of promoting
+  trust.
 - Recovery boundaries: read the claim relation map; do not write relation-map
   conclusions back as evidence unless a typed source, tool run, or validation
   result already supports that claim.
@@ -162,6 +172,17 @@ next action really needs full context.
 - Maturity/status observations: `aitp_v5_update_claim_status`.
 - Interpretation: `aitp_v5_record_sensemaking_report`, marked as orientation
   unless backed by evidence/validation.
+
+For numerical closeout, treat "record AITP" as a completeness check:
+
+- durable PDF/report/note/plot/data/log output -> attach artifact;
+- changed files, scripts, repo path, or worktree-dependent result -> capture
+  code_state;
+- validation commands or explicit validation boundary -> record
+  validation_result or validation gap.
+
+These are recommendations, not automatic promotions. Unresolved artifact refs
+are not evidence. Quiet checkpoints and sensemaking remain orientation-only.
 
 ## Legacy Topics
 

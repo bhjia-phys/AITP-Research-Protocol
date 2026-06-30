@@ -163,6 +163,13 @@ If the live Codex MCP surface is stale and these navigator tools are not
 exposed, use the CLI fallback for read-only navigation and only mutate through
 available typed v5 write tools. Never manually edit topic-state files.
 
+At closeout, inspect `record_completeness_audit` from
+`aitp_v5_codex_closeout` or quiet checkpoint results. `ok=true` is not enough:
+for numerical work, missing `artifact`, `code_state`, or `validation_result`
+means the durable research package is incomplete and must be reported or filled
+through typed tools after confirmation. Quiet checkpoints remain
+orientation-only and unresolved artifact refs are not evidence.
+
 Do not run the progressive navigator for generic explanation, vague
 brainstorming, duplicate status summaries, or source/file scans that do not
 change a claim, route, gap, artifact, or validation state. If a light

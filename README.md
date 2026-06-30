@@ -725,6 +725,28 @@ Use the Codex facade for session lifecycle:
 when called with `apply=true`, and that checkpoint still cannot update claim
 trust.
 
+Quiet checkpoint is a process record, not a complete research package. Every
+quiet checkpoint preview/apply and Codex closeout now returns
+`record_completeness_audit`. Agents must inspect it before telling the user that
+"AITP was recorded." The audit reports `recorded_slots`,
+`missing_recommended_slots`, `recommended_next_records`, `trust_boundary`, and
+`requires_user_confirmation`.
+
+For code or numerical work, "record AITP" means at least checking whether the
+closeout needs:
+
+- `artifact` for durable PDF/report/note/plot/data/log outputs;
+- `code_state` for changed files, scripts, worktree-dependent results, or repo
+  paths;
+- `validation_result` or a validation-gap record when commands were run or the
+  closeout states a validation boundary.
+
+Missing slots are plan-only recommendations. They do not auto-create evidence,
+validation, or trust promotion. If the audit says a durable package is
+incomplete, the agent should report the missing slots or fill them through the
+existing typed write tools and user-confirmed gates. Trust promotion still
+requires separate preflight and the explicit human gate.
+
 ## Repository Map
 
 ```text

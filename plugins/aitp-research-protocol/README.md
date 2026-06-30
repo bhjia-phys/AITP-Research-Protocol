@@ -101,6 +101,13 @@ discussion, derivation, code/numerical work, synthesis/writing, or closeout.
 It should record only durable sources, artifacts, evidence, validation, route
 changes, checkpoints, and handoffs.
 
+Closeout and quiet checkpoint calls return `record_completeness_audit`. Agents
+must inspect it before treating "record AITP" as complete. For numerical work,
+the audit checks whether durable outputs need `artifact`, repo-dependent work
+needs `code_state`, and validation commands or explicit boundaries need
+`validation_result` or a validation-gap record. Missing slots are plan-only
+recommendations and do not promote trust.
+
 For literature and note writing, register references in layers: source identity,
 exact reference location, reading artifact, claim-linked evidence, physical
 objects/relations, validation basis, and finally trust basis when a preflight or
