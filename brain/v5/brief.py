@@ -11,6 +11,7 @@ from brain.v5.domain_packs import domain_pack_brief_payload, suggest_domain_pack
 from brain.v5.evidence import list_evidence_for_claim, required_output_coverage
 from brain.v5.flow import resolve_flow_profile
 from brain.v5.interaction import prioritize_questions, resolve_interaction_profile
+from brain.v5.knowledge_connector_bindings import attach_configured_bindings
 from brain.v5.knowledge_connectors import suggest_knowledge_connectors_for_claim
 from brain.v5.lane_exemplars import load_lane_exemplars
 from brain.v5.models import ClaimRecord, ClaimStatusRecord, CodeStateRecord, ProofObligationRecord, ToolRunRecord
@@ -79,7 +80,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
             domain_pack_refs=[pack.pack_id for pack in suggested_domain_packs],
         )
         recommended_tool_executors = suggest_tool_executors_for_claim(claim)
-        knowledge_connectors = suggest_knowledge_connectors_for_claim(claim)
+        knowledge_connectors = attach_configured_bindings(ws, suggest_knowledge_connectors_for_claim(claim))
         raw_reference_locations = list_reference_locations_for_claim(ws, claim.claim_id)
         reference_locations = [
             reference_location_brief_payload(location)
@@ -340,6 +341,8 @@ def _knowledge_connector_action(
         "why": f"{why}; literature or note context is needed before treating retrieved context as evidence",
         "expected_evidence_gain": "retrieve orientation context while recording source_refs and reference_location_records in typed kernel records",
         "connector_ids": [connector["connector_id"] for connector in connectors],
+        "configured_binding_count": sum(int(connector.get("configured_binding_count") or 0) for connector in connectors),
+        "binding_status": "configured" if any(connector.get("configured_binding_count") for connector in connectors) else "unconfigured",
         "backend_required": any(connector.get("is_required", False) for connector in connectors),
         "retrieval_targets": _dedupe(_flatten(connector.get("expected_retrieval_targets", []) for connector in connectors)),
         "location_ref_targets": _dedupe(_flatten(connector.get("location_ref_targets", []) for connector in connectors)),

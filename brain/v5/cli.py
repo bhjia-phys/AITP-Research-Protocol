@@ -26,6 +26,7 @@ from brain.v5.curated_rag_corpus import (
 )
 from brain.v5.evidence import record_evidence
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
+from brain.v5.knowledge_connector_bindings import bind_knowledge_connector, list_knowledge_connector_bindings
 from brain.v5.cli_legacy import add_legacy_parser, dispatch_legacy_command
 from brain.v5.cli_interaction import add_interaction_parser, dispatch_interaction_command
 from brain.v5.cli_literature import add_literature_parser, dispatch_literature_command
@@ -427,6 +428,20 @@ def _build_parser() -> argparse.ArgumentParser:
 
     kp = sp.add_parser("knowledge"); ks = kp.add_subparsers(dest="knowledge_command", required=True)
     ks.add_parser("connectors")
+    kb = ks.add_parser("bindings")
+    kb.add_argument("--connector", default="", dest="connector_id")
+    kb.add_argument("--include-connectors", action="store_true")
+    kbind = ks.add_parser("bind")
+    kbind.add_argument("--connector", required=True, dest="connector_id")
+    kbind.add_argument("--root", required=True, dest="root_uri")
+    kbind.add_argument("--corpus-id", default="")
+    kbind.add_argument("--label", default="")
+    kbind.add_argument("--glob", action="append", default=[], dest="file_globs")
+    kbind.add_argument("--domain-hint", action="append", default=[], dest="domain_hints")
+    kbind.add_argument("--topic-hint", action="append", default=[], dest="topic_hints")
+    kbind.add_argument("--priority", default="medium")
+    kbind.add_argument("--status", default="active")
+    kbind.add_argument("--notes", default="")
     add_domain_pack_parser(sp)
 
     crp = sp.add_parser("curated-rag"); crs = crp.add_subparsers(dest="curated_rag_command", required=True)
@@ -940,6 +955,32 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.command == "knowledge" and args.knowledge_command == "connectors":
         return require_valid_public_surface("knowledge_connector_catalog", describe_knowledge_connectors())
+    if args.command == "knowledge" and args.knowledge_command == "bindings":
+        return require_valid_public_surface(
+            "knowledge_connector_binding_registry",
+            list_knowledge_connector_bindings(
+                ws,
+                connector_id=args.connector_id,
+                include_connector_catalog=args.include_connectors,
+            ),
+        )
+    if args.command == "knowledge" and args.knowledge_command == "bind":
+        return require_valid_public_surface(
+            "knowledge_connector_binding_registry",
+            bind_knowledge_connector(
+                ws,
+                connector_id=args.connector_id,
+                root_uri=args.root_uri,
+                corpus_id=args.corpus_id,
+                label=args.label,
+                file_globs=args.file_globs,
+                domain_hints=args.domain_hints,
+                topic_hints=args.topic_hints,
+                priority=args.priority,
+                status=args.status,
+                notes=args.notes,
+            ),
+        )
     if args.command == "domain-pack":
         return dispatch_domain_pack_command(args, ws)
 

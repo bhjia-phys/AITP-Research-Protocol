@@ -20,6 +20,14 @@ def test_builtin_formal_theory_pack_suggests_derivation_and_counterexample_work(
     assert "limit_symmetry_dimension_check" in pack.suggested_question_intents
     assert "derivation_trace" in pack.tool_recipes
     assert "counterexample_search" in pack.tool_recipes
+    assert pack.workflow_graph["default_routes"][0]["route_id"] == "definition_assumption_audit"
+    assert pack.workflow_graph["orientation_only"] is True
+    assert any(item["failure_id"] == "derivation_gap" for item in pack.failure_taxonomy)
+    assert pack.lane_policy["default_lane"] == "derivation_review"
+    assert "heuristic derivation" in pack.lane_policy["forbidden_promotions"]
+    assert "derivation_trace" in pack.artifact_schema["required_artifact_roles"]
+    assert pack.hpc_interpretation["missing_expected_output_means"] == "formal_gap_still_open"
+    assert "derivation_check" in pack.context_profile_refs
     assert any(
         recommendation["executor_id"] == "checklist_consistency_check"
         and recommendation["recipe_id"] == "recipe-formal-theory-checklist"
@@ -141,6 +149,9 @@ def test_domain_pack_catalog_is_public_orientation_surface():
     assert catalog["pack_count"] == catalog["known_pack_count"]
     assert {pack["pack_id"] for pack in catalog["packs"]} >= {"formal_theory", "gw_librpa"}
     assert all(pack["orientation_only"] is True for pack in catalog["packs"])
+    formal = next(pack for pack in catalog["packs"] if pack["pack_id"] == "formal_theory")
+    assert formal["workflow_graph"]["orientation_only"] is True
+    assert formal["failure_taxonomy"][0]["failure_id"] == "implicit_definition_shift"
 
 
 def test_domain_pack_cli_and_mcp_suggest_librpa_pack(tmp_path, capsys):

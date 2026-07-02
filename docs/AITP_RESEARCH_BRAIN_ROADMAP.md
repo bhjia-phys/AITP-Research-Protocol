@@ -69,15 +69,16 @@ Required surfaces:
 First implemented target:
 
 - `gw_librpa` becomes the reference Domain Pack v2 example.
+- `formal_theory` now carries a derivation-focused workflow graph, failure
+  taxonomy, lane policy, artifact schema, and context profile refs.
 - `domain_pack_catalog` now exposes built-in packs and claim-text suggestions
   through `aitp-v5 domain-pack catalog/suggest` and MCP wrappers.
 
 Next implementation slices:
 
-1. Add `formal_theory` failure taxonomy and derivation-check workflow.
-2. Add QFT/QG domain packs once literature connectors and source
+1. Add QFT/QG domain packs once literature connectors and source
    reconstruction examples are in place.
-3. Add project-scope external skill shim generation so hosts can discover
+2. Add project-scope external skill shim generation so hosts can discover
    domain skill bundles without copying their contents into AITP core.
 
 ## Workstream B: Literature Knowledge Substrate v1
@@ -101,16 +102,17 @@ First implemented targets:
   alongside the existing adapter commands.
 - Built-in connector descriptors for generic IMA notes, QFT literature,
   quantum-gravity literature, and LibRPA research notes.
+- Workspace-local connector bindings now let a project attach QFT/QG/LibRPA
+  corpora or note roots through `aitp-v5 knowledge bind/bindings` and MCP
+  wrappers without reading content or creating evidence.
 
 Next implementation slices:
 
-1. Add file-backed connector configuration so each workspace can bind QFT/QG
-   corpora to local folders.
-2. Add paper-learning context profiles that request source assets and exact
+1. Add paper-learning context profiles that request source assets and exact
    reference locations before synthesis.
-3. Add source extraction helpers for concept, notation, equation, and object
+2. Add source extraction helpers for concept, notation, equation, and object
    relation candidates.
-4. Add paired-paper and multi-paper reading route surfaces that preserve
+3. Add paired-paper and multi-paper reading route surfaces that preserve
    conflict, dependency, and scope boundaries.
 
 ## Workstream C: Context Compiler v2

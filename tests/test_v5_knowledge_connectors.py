@@ -114,7 +114,88 @@ def test_execution_brief_recommends_domain_specific_literature_connectors(tmp_pa
     connector_ids = [connector["connector_id"] for connector in connectors]
     assert connector_ids == ["quantum_gravity_literature"]
     assert connectors[0]["truth_policy"]["retrieved_notes_are_truth_source"] is False
+    assert connectors[0]["binding_status"] == "unconfigured"
+    assert connectors[0]["configured_binding_count"] == 0
     assert brief["known_context"]["context_compilation_profiles"][0]["orientation_only"] is True
+
+
+def test_workspace_connector_binding_is_file_backed_configuration_surface(tmp_path):
+    from brain.v5.knowledge_connector_bindings import bind_knowledge_connector, list_knowledge_connector_bindings
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path)
+
+    empty = require_valid_public_surface(
+        "knowledge_connector_binding_registry",
+        list_knowledge_connector_bindings(ws),
+    )
+    bound = require_valid_public_surface(
+        "knowledge_connector_binding_registry",
+        bind_knowledge_connector(
+            ws,
+            connector_id="qft_literature",
+            root_uri="file:///D:/theory/qft",
+            corpus_id="qft-local",
+            label="Local QFT notes",
+            file_globs=["**/*.pdf", "**/*.md"],
+            domain_hints=["qft"],
+            topic_hints=["renormalization"],
+        ),
+    )
+    listed = require_valid_public_surface(
+        "knowledge_connector_binding_registry",
+        list_knowledge_connector_bindings(ws, connector_id="qft_literature", include_connector_catalog=True),
+    )
+
+    assert empty["binding_count"] == 0
+    assert bound["state_effect"] == "knowledge_connector_binding_config_write"
+    assert bound["binding_count"] == 1
+    assert bound["bindings"][0]["connector_id"] == "qft_literature"
+    assert bound["bindings"][0]["root_uri"] == "file:///D:/theory/qft"
+    assert bound["bindings"][0]["orientation_only"] is True
+    assert bound["can_create_evidence"] is False
+    assert listed["bindings"][0]["file_globs"] == ["**/*.pdf", "**/*.md"]
+    connector_counts = {connector["connector_id"]: connector["configured_binding_count"] for connector in listed["connectors"]}
+    assert connector_counts["qft_literature"] == 1
+    assert (tmp_path / ".aitp" / "knowledge_connectors" / "bindings.json").exists()
+
+
+def test_execution_brief_exposes_configured_connector_binding(tmp_path):
+    from brain.v5.brief import build_execution_brief
+    from brain.v5.knowledge_connector_bindings import bind_knowledge_connector
+    from brain.v5.workspace import bind_session, create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    bind_knowledge_connector(
+        ws,
+        connector_id="quantum_gravity_literature",
+        root_uri="file:///D:/theory/quantum-gravity",
+        corpus_id="qg-local",
+        file_globs=["**/*.pdf"],
+    )
+    create_topic(ws, "quantum-gravity", context_id="qg-literature", title="Quantum Gravity")
+    claim = create_claim(
+        ws,
+        topic_id="quantum-gravity",
+        statement="Compare holography papers with my quantum gravity notes before making a claim.",
+        evidence_profile="literature_synthesis",
+        confidence_state="learning",
+        active_uncertainty="source scope and speculative boundaries are unclear",
+    )
+    bind_session(ws, "s1", topic_id="quantum-gravity", context_id="qg-literature", active_claim=claim.claim_id)
+
+    brief = build_execution_brief(ws, "s1")
+
+    connector = brief["known_context"]["knowledge_connectors"][0]
+    action = brief["next_action_candidates"][0]
+    assert connector["connector_id"] == "quantum_gravity_literature"
+    assert connector["binding_status"] == "configured"
+    assert connector["configured_binding_count"] == 1
+    assert connector["configured_bindings"][0]["root_uri"] == "file:///D:/theory/quantum-gravity"
+    assert action["action"] == "consult_knowledge_connector"
+    assert action["binding_status"] == "configured"
+    assert action["configured_binding_count"] == 1
 
 
 def test_execution_brief_recommends_librpa_notes_connector_for_method_claim(tmp_path):
@@ -156,6 +237,36 @@ def test_cli_knowledge_connectors_returns_catalog(tmp_path, capsys):
     }
 
 
+def test_cli_knowledge_connector_bindings_bind_and_list(tmp_path, capsys):
+    from brain.v5.cli import main
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    assert main(
+        [
+            "--base",
+            str(tmp_path),
+            "knowledge",
+            "bind",
+            "--connector",
+            "qft_literature",
+            "--root",
+            "file:///D:/theory/qft",
+            "--corpus-id",
+            "qft-local",
+            "--glob",
+            "**/*.pdf",
+        ]
+    ) == 0
+    bound = json.loads(capsys.readouterr().out)
+    assert main(["--base", str(tmp_path), "knowledge", "bindings", "--connector", "qft_literature"]) == 0
+    listed = json.loads(capsys.readouterr().out)
+
+    assert require_valid_public_surface("knowledge_connector_binding_registry", bound) == bound
+    assert require_valid_public_surface("knowledge_connector_binding_registry", listed) == listed
+    assert listed["binding_count"] == 1
+    assert listed["bindings"][0]["corpus_id"] == "qft-local"
+
+
 def test_mcp_knowledge_connector_catalog_returns_valid_surface():
     from brain.v5.mcp_tools import aitp_v5_list_knowledge_connectors
     from brain.v5.public_surfaces import require_valid_public_surface
@@ -164,3 +275,24 @@ def test_mcp_knowledge_connector_catalog_returns_valid_surface():
 
     assert payload["ok"] is True
     assert require_valid_public_surface("knowledge_connector_catalog", payload) == payload
+
+
+def test_mcp_knowledge_connector_binding_returns_valid_surface(tmp_path):
+    from brain.v5.mcp_knowledge_bindings import (
+        aitp_v5_bind_knowledge_connector,
+        aitp_v5_list_knowledge_connector_bindings,
+    )
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    bound = aitp_v5_bind_knowledge_connector(
+        str(tmp_path),
+        connector_id="quantum_gravity_literature",
+        root_uri="file:///D:/theory/qg",
+        corpus_id="qg-local",
+        file_globs=["**/*.pdf"],
+    )
+    listed = aitp_v5_list_knowledge_connector_bindings(str(tmp_path), connector_id="quantum_gravity_literature")
+
+    assert require_valid_public_surface("knowledge_connector_binding_registry", bound) == bound
+    assert require_valid_public_surface("knowledge_connector_binding_registry", listed) == listed
+    assert listed["bindings"][0]["connector_id"] == "quantum_gravity_literature"

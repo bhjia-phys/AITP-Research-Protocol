@@ -751,6 +751,30 @@ def require_valid_knowledge_connector_catalog(payload: dict[str, Any]) -> dict[s
     return _require_valid_knowledge_connector_catalog(payload)
 
 
+def validate_knowledge_connector_binding_registry(
+    payload: dict[str, Any],
+    *,
+    path: str = "knowledge_connector_binding_registry",
+) -> ContractResult:
+    """Validate a public knowledge-connector binding registry payload."""
+
+    from brain.v5.knowledge_connector_binding_contracts import (
+        validate_knowledge_connector_binding_registry as _validate,
+    )
+
+    return _validate(payload, path=path)
+
+
+def require_valid_knowledge_connector_binding_registry(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a knowledge-connector binding registry payload or raise a contract error."""
+
+    from brain.v5.knowledge_connector_binding_contracts import (
+        require_valid_knowledge_connector_binding_registry as _require,
+    )
+
+    return _require(payload)
+
+
 def validate_domain_pack_catalog(
     payload: dict[str, Any],
     *,
