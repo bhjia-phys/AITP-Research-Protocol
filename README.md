@@ -14,6 +14,12 @@ can retrieve the right slice of prior knowledge, methods, literature, and
 experience through explicit context interfaces instead of relying on chat
 history, hidden model memory, or ungrounded retrieval snippets.
 
+At its heart, AITP asks a simple question: what is the most efficient and
+natural way to use AI in the search for truth? The project aims to make
+AI-assisted theoretical physics more precise, cumulative, and evidence-aware,
+helping researchers move faster toward a reliable understanding of the
+universe.
+
 AITP is not a chatbot, a generic note app, an automatic theorem prover, or a
 plain RAG index. It is a truth-preserving substrate for scientific work: context
 can orient an agent, but only typed evidence, validation, and promotion records
