@@ -1,8 +1,10 @@
 # AITP Research Protocol Codex Plugin
 
 This plugin connects Codex to a local checkout of
-`bhjia-phys/AITP-Research-Protocol` and exposes the AITP 1.0 v5 MCP kernel plus
-Codex skills that enter the graph through compact context first:
+`bhjia-phys/AITP-Research-Protocol` and exposes the AITP 1.0 v5 research graph
+kernel. Codex enters through compact context first, then expands into typed
+records, domain experience, literature/source registration, validation, and
+trust-controlled memory only when the research step needs it:
 
 - `using-aitp`
 - `aitp-runtime`
@@ -95,11 +97,12 @@ In a Codex thread, use the plugin skills for AITP-backed work:
 - Use `aitp-runtime` once full `aitp_v5_*` tools are available.
 - Use `configure-aitp` when the plugin is in setup mode or paths have moved.
 
-Default behavior is read-first. Codex should classify whether the conversation
-is setup, new topic exploration, existing-topic continuation, literature
-discussion, derivation, code/numerical work, synthesis/writing, or closeout.
-It should record only durable sources, artifacts, evidence, validation, route
-changes, checkpoints, and handoffs.
+Default behavior is read-first. Codex should treat AITP as the shared research
+memory layer, not as a transcript logger. It should classify whether the
+conversation is setup, new topic exploration, existing-topic continuation,
+literature discussion, derivation, code/numerical work, synthesis/writing, or
+closeout. It should record only durable sources, artifacts, evidence,
+validation, route changes, checkpoints, and handoffs.
 
 Closeout and quiet checkpoint calls return `record_completeness_audit`. Agents
 must inspect it before treating "record AITP" as complete. For numerical work,
@@ -113,6 +116,10 @@ exact reference location, reading artifact, claim-linked evidence, physical
 objects/relations, validation basis, and finally trust basis when a preflight or
 checkpoint permits it. A paper or web page is not evidence until it is linked to
 a specific AITP claim.
+
+Domain experience packs and curated RAG context are steering surfaces. They can
+recommend workflows, failure modes, and source routes, but they cannot update
+claim trust or promoted memory without the typed evidence and validation path.
 
 AITP records are written under the configured topics root, not inside the
 plugin cache.

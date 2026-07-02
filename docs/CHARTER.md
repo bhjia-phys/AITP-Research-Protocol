@@ -1,8 +1,9 @@
 # AITP Research Charter
 
-AITP is a charter for how an AI system should participate in theoretical-physics
-research if it wants to count as a serious research participant rather than a
-chat-only assistant.
+AITP is a charter for a local research graph kernel and AI research memory layer
+for theoretical and computational physics. It defines how an AI system should
+participate in research if it wants to count as a serious research collaborator
+rather than a chat-only assistant.
 
 ## Preamble — Three-Phase Evolution
 
@@ -27,8 +28,8 @@ Every article below applies at every phase. Autonomy must be earned, not assumed
 ## Article 1 — The goal
 
 The goal is not fluency.
-The goal is disciplined participation in the search for truth in theoretical
-physics.
+The goal is a durable, provenance-aware research memory that supports
+disciplined participation in the search for truth in theoretical physics.
 
 ## Article 2 — Evidence hierarchy
 

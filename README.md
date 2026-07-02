@@ -2,31 +2,39 @@
   <img src="plugins/aitp-research-protocol/assets/icon.svg" alt="AITP icon" width="128" height="128">
 </p>
 
-# AITP - AI Theoretical Physicist Protocol
+# AITP - AI Research Graph Kernel For Physics
 
-AITP is a local research graph and agent tool layer for theoretical-physics
-work. It gives human researchers and AI agents a shared, typed record of what
-was claimed, what was actually checked, what remains uncertain, and where the
-next valid research action is.
+AITP is a local research graph kernel for theoretical and computational
+physics. It gives AI agents and human researchers a shared, typed memory of
+claims, sources, derivations, code runs, validation results, failed routes,
+domain experience, and trust boundaries.
 
-It is not a chatbot, a generic note app, an automatic theorem prover, or a
-transcript logger. The goal is more specific: preserve the real scientific
-process well enough that another agent or human can continue the work without
-confusing notes, guesses, failed setup, validation, and trusted conclusions.
+The long-term goal is to make AITP the AI-facing research memory layer: agents
+can retrieve the right slice of prior knowledge, methods, literature, and
+experience through explicit context interfaces instead of relying on chat
+history, hidden model memory, or ungrounded retrieval snippets.
+
+AITP is not a chatbot, a generic note app, an automatic theorem prover, or a
+plain RAG index. It is a truth-preserving substrate for scientific work: context
+can orient an agent, but only typed evidence, validation, and promotion records
+can support trusted research memory.
 
 ## At A Glance
 
 | Question | Answer |
 |----------|--------|
 | Current version | AITP 1.0.0, implementation generation v5 |
+| Primary identity | Local research graph kernel and AI research memory layer |
 | Active implementation | [`brain/v5/`](brain/v5/) |
 | Source of truth | Typed records under `<topics-root>/.aitp/` |
+| Context model | Compile bounded context packs from the graph for each task |
+| Experience model | Domain experience packs and curated literature context sit above the memory kernel |
 | Main agent entrypoint | MCP server at [`brain/v5/native_mcp.py`](brain/v5/native_mcp.py) |
 | Best default install | Project-scope install with [`scripts/aitp-pm.py`](scripts/aitp-pm.py) |
 | Codex path | Repository-backed plugin at [`plugins/aitp-research-protocol/`](plugins/aitp-research-protocol/) |
 | Codex 1.0 plan | [`docs/CODEX_APP_1_0_PLAN.md`](docs/CODEX_APP_1_0_PLAN.md) |
 | Health checks | `scripts/aitp-pm.py status` and `scripts/aitp-pm.py doctor` |
-| Trust rule | Summaries and dashboards orient agents; typed evidence and validation carry trust |
+| Trust rule | Summaries, RAG, dashboards, and domain packs orient agents; typed evidence and validation carry trust |
 
 ## Choose An Install Path
 
@@ -92,13 +100,34 @@ expand to deeper `aitp_v5_*` tools only when the research step needs them.
 - AITP records are written under the configured topics root, not into the plugin
   cache.
 
-## Protocol Goal
+## Positioning And Goal
 
-AITP is designed around a human-in-the-loop research loop:
+AITP is designed around a human-in-the-loop research loop, but its core
+positioning is broader than workflow control. It is the persistent research
+graph that lets AI agents reuse prior scientific work without confusing memory,
+retrieval, evidence, validation, and trust.
+
+The target architecture has four layers:
+
+1. **Research graph kernel.** The canonical `.aitp` store preserves typed
+   records for sources, claims, formulas, objects, evidence, code state, tool
+   runs, validations, checkpoints, and trust updates.
+2. **Context compiler.** Agent-facing tools expose bounded context packs,
+   execution briefs, relation maps, source stacks, dashboards, and review
+   packets derived from the graph.
+3. **Domain experience packs.** Specialized packs, such as LibRPA/GW and
+   first-principles workflows, encode proven workflows, common failure modes,
+   validation recipes, provenance checks, and tool conventions.
+4. **Literature and note knowledge layer.** Local PDFs, papers, notebooks, and
+   curated corpora provide source-backed orientation for quantum field theory,
+   quantum gravity, topological order, computational physics, and other domains.
+
+The basic research loop remains:
 
 1. A human or agent works on a theoretical-physics problem.
 2. Durable research moments are written into a typed graph.
-3. Agents read that graph through MCP or CLI tools before acting.
+3. Agents read compiled context from that graph through MCP or CLI tools before
+   acting.
 4. Evidence, validation, proof gaps, route changes, and human decisions stay
    distinguishable.
 5. Trust or long-term memory promotion only happens after explicit checks.
@@ -112,8 +141,8 @@ summary != truth
 claim status != proof
 ```
 
-This makes AITP useful for long-running theory projects where intermediate
-process matters: literature reading, derivations, numerical checks, code-method
+This makes AITP useful for long-running research where intermediate process
+matters: literature reading, derivations, numerical checks, code-method
 development, failed routes, benchmark provenance, and final synthesis.
 
 ## Current Implementation
@@ -121,13 +150,13 @@ development, failed routes, benchmark provenance, and final synthesis.
 The current release is **AITP 1.0.0**. Its implementation generation is
 **v5**. The active code is under [`brain/v5/`](brain/v5/).
 
-AITP v5 has four layers:
+AITP v5 implements this positioning through four implementation layers:
 
 1. **Typed research graph** stored on disk under a workspace-local `.aitp/`
    directory.
 2. **Derived context surfaces** such as context packs, active-claim focus,
    execution briefs, relation maps, process graph slices, source audits, note
-   outlines, and recording navigation state.
+   outlines, domain recommendations, and recording navigation state.
 3. **Agent-facing MCP server** at
    [`brain/v5/native_mcp.py`](brain/v5/native_mcp.py), exposing `aitp_v5_*`
    tools for reading and writing graph records.
@@ -150,8 +179,9 @@ derived briefs, graph slices, audits, relation maps, summaries
 ```
 
 The typed records are the source of truth. Briefs, dashboards, process graph
-slices, summaries, and audits are derived views. They are useful for navigation,
-but they do not update trust by themselves.
+slices, summaries, domain packs, curated RAG views, and audits are derived or
+orientation surfaces. They are useful for navigation and domain steering, but
+they do not update trust by themselves.
 
 Legacy L0-L4 Markdown tools are read-only by default in 1.0.0. Historical files
 and legacy servers remain for audit, migration, rollback, and tests, but normal
@@ -177,6 +207,8 @@ AITP v5 currently supports:
 - trust preflight, trust update records, and memory-promotion packets
 - read-only execution briefs, claim relation maps, graph slices, and audits
 - progressive recording navigation for deciding where a durable moment belongs
+- domain-conditioned tool and validation recommendations
+- curated RAG manifests for heuristic literature and note orientation
 - project-scope adapter installs for Codex, Claude Code, and Kimi Code
 - a repository-backed Codex plugin with first-run configuration tools
 - migration and recovery audits for older AITP topic stores
@@ -197,11 +229,13 @@ AITP deliberately does not:
 - decide final scientific truth without evidence and validation,
 - record every chat turn or every tool call,
 - promote summaries into trusted memory by default,
+- treat RAG chunks or retrieved PDFs as evidence without source-linked records,
+- let a domain experience pack bypass validation or human checkpoints,
 - replace human judgment at theory or trust boundaries,
 - guarantee that every host application fires lifecycle hooks perfectly.
 
-The protocol is a truth-preserving substrate. The host agent still has to do
-the research work and call the right tools at the right moments.
+The kernel is a truth-preserving substrate. The host agent still has to do the
+research work and call the right tools at the right moments.
 
 ## Research Graph Layout
 
@@ -225,10 +259,10 @@ The v5 store is organized like this:
 |-- contexts/      research context records
 |-- registry/      typed graph records
 |-- runtime/       sessions and runtime state
-|-- memory/        promoted scoped memory
+|-- memory/        promoted scoped research memory
 |-- surfaces/      generated read-only views and review packets
 |-- tools/         tool metadata and tool surfaces
-|-- curated_rag/   optional heuristic background corpus
+|-- curated_rag/   optional heuristic literature and note context
 |-- source_blobs/  topic-scoped local copies of acquired source files
 |-- migrations/    migration audits and old-store accounting
 `-- schemas/       schema and contract material
@@ -784,11 +818,15 @@ when modifying v5 runtime, MCP, graph, or adapter code.
 
 - New user path: start with this README, then run `doctor`, then read the
   host-specific install note for the agent you use.
+- Positioning path: read [`docs/AITP_POSITIONING.md`](docs/AITP_POSITIONING.md)
+  to understand AITP as a research graph kernel, context compiler, and domain
+  experience substrate.
 - Protocol path: read [`docs/AITP_SPEC.md`](docs/AITP_SPEC.md) before changing
   typed-record behavior, trust rules, or human-facing output contracts.
 - Cleanup path: use [`docs/UNINSTALL.md`](docs/UNINSTALL.md) before manually
   deleting generated host files.
 
+- [`docs/AITP_POSITIONING.md`](docs/AITP_POSITIONING.md) - product and architecture positioning
 - [`docs/AITP_SPEC.md`](docs/AITP_SPEC.md) - protocol specification
 - [`docs/CODEX_APP_1_0_PLAN.md`](docs/CODEX_APP_1_0_PLAN.md) - Codex App 1.0 architecture and implementation plan
 - [`docs/INSTALL.md`](docs/INSTALL.md) - install guide

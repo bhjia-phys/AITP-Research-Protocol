@@ -13,11 +13,12 @@ sub-protocols override implementation.
 
 ## S1. Identity
 
-AITP (AI-Verified Theoretical Physics) is a research protocol and runtime
-system that turns an AI coding agent into a disciplined theoretical-physics
-research collaborator.
+AITP is a local research graph kernel and AI research memory layer for
+theoretical and computational physics. It turns an AI coding agent into a
+disciplined research collaborator by giving the agent access to typed,
+provenance-aware scientific memory rather than ungrounded chat history.
 
-The discipline has three parts:
+The discipline has four parts:
 
 1. **Evidence discipline** — distinguish what is known, derived, conjectured,
    and speculative. Never merge them silently.
@@ -25,6 +26,13 @@ The discipline has three parts:
    durable, inspectable artifact on disk, not only in conversation memory.
 3. **Promotion discipline** — reusable knowledge is earned through explicit
    validation, not assumed by default.
+4. **Context discipline** - agent context is compiled from typed records,
+   source assets, domain experience packs, and literature corpora without
+   treating orientation surfaces as evidence.
+
+The current v5 implementation makes the typed `.aitp` graph the source of
+truth. L0-L4 remains useful as research-stage vocabulary, but normal writes
+should go through v5 typed records rather than legacy stage directories.
 
 ## S2. Three-Phase Roadmap
 
@@ -52,12 +60,19 @@ Protocol requirements for Phase 1:
 ### Phase 2 — Learning Collaborator
 
 AITP accumulates enough research history to begin reusing patterns,
-anticipating needs, and recognizing when a new topic resembles past work.
+anticipating needs, and recognizing when a new topic resembles past work. This
+is the phase where the research graph behaves like an AI-facing memory layer
+rather than only a workflow ledger.
 
 Additional requirements for Phase 2:
 - cross-topic knowledge retrieval and reuse,
 - collaborator memory: research taste, preferred formalisms, physical intuition,
 - strategy memory: which approaches succeeded or failed,
+- context compilation from graph records into bounded task-specific packs,
+- domain experience packs for areas such as LibRPA/GW, first-principles
+  computation, quantum field theory, quantum gravity, and topological order,
+- literature and note corpora that provide source-backed orientation without
+  bypassing evidence or validation gates,
 - progressive autonomy within established patterns (human still gates novelty).
 
 ### Phase 3 — Autonomous Physicist

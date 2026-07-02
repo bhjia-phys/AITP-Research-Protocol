@@ -1,7 +1,7 @@
 {
   "name": "aitp-research-protocol",
   "version": "1.0.0+codex.20260630171743",
-  "description": "Codex plugin for the local AITP 1.0 v5 theoretical-physics research protocol.",
+  "description": "Codex plugin for the local AITP 1.0 v5 physics research graph kernel.",
   "author": {
     "name": "bhjia-phys"
   },
@@ -18,8 +18,8 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "AITP Research Protocol",
-    "shortDescription": "Use the local AITP 1.0 v5 research kernel from Codex.",
-    "longDescription": "Connects Codex to the repository-backed AITP 1.0 v5 MCP server and installs skills for typed theoretical-physics research workflows. Default continuation uses compact AITP context first, with explicit expansion for relation maps, process graph slices, literature/source registration, guided recording, validation gates, writing support, and trust-controlled memory.",
+    "shortDescription": "Use the local AITP research graph memory from Codex.",
+    "longDescription": "Connects Codex to the repository-backed AITP 1.0 v5 MCP server and installs skills for typed physics research memory workflows. Default continuation uses compact AITP context first, with explicit expansion for relation maps, process graph slices, domain experience recommendations, literature/source registration, guided recording, validation gates, writing support, and trust-controlled memory.",
     "developerName": "bhjia-phys",
     "category": "Productivity",
     "capabilities": [
