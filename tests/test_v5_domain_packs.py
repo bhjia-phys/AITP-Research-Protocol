@@ -57,6 +57,63 @@ def test_formal_theory_domain_pack_recommends_checklist_executor_for_claim():
     assert recommendations[0]["supports_outputs"] == ["evidence_or_provenance", "minimal_check"]
 
 
+def test_builtin_qft_and_quantum_gravity_packs_are_literature_experience_packs():
+    from brain.v5.domain_packs import builtin_domain_packs
+
+    packs = builtin_domain_packs()
+    qft = packs["qft_literature"]
+    qg = packs["quantum_gravity_literature"]
+
+    assert qft.workflow_graph["default_routes"][0]["route_id"] == "qft_source_grounded_reading"
+    assert qft.workflow_graph["orientation_only"] is True
+    assert qft.lane_policy["default_lane"] == "literature_orientation"
+    assert "reference_location_table" in qft.artifact_schema["required_artifact_roles"]
+    assert any(item["failure_id"] == "renormalization_scheme_mismatch" for item in qft.failure_taxonomy)
+    assert qft.skill_refs[0]["connector_id"] == "qft_literature"
+    assert qft.skill_refs[0]["orientation_only"] is True
+    assert qft.manifest_refs[0]["manifest_id"] == "connector.qft_literature"
+    assert "source_reconstruction" in qft.context_profile_refs
+
+    assert qg.workflow_graph["default_routes"][0]["route_id"] == "qg_source_grounded_learning"
+    assert qg.lane_policy["default_lane"] == "literature_orientation"
+    assert "human checkpoint before promotion" in qg.lane_policy["final_evidence_requires"][3]
+    assert any(item["failure_id"] == "speculation_promoted_as_source_result" for item in qg.failure_taxonomy)
+    assert qg.skill_refs[0]["connector_id"] == "quantum_gravity_literature"
+    assert qg.skill_refs[0]["orientation_only"] is True
+    assert qg.manifest_refs[0]["manifest_id"] == "connector.quantum_gravity_literature"
+    assert "group_meeting_report" in qg.context_profile_refs
+
+
+def test_qft_and_qg_domain_pack_suggestions_compose_with_formal_baseline():
+    from brain.v5.domain_packs import suggest_domain_packs
+    from brain.v5.models import ClaimRecord
+
+    qft_claim = ClaimRecord(
+        claim_id="claim-qft",
+        topic_id="qft-renormalization",
+        statement="The QFT Wilsonian renormalization argument follows from the cited path integral source.",
+        evidence_profile="formal_theory",
+        confidence_state="hypothesis",
+        active_uncertainty="scheme convention and source anchors need review",
+    )
+    qg_claim = ClaimRecord(
+        claim_id="claim-qg",
+        topic_id="quantum-gravity",
+        statement="The quantum gravity wormhole source comparison supports the proposed scope boundary.",
+        evidence_profile="literature_synthesis",
+        confidence_state="learning",
+        active_uncertainty="speculation boundary is unclear",
+    )
+
+    assert [pack.pack_id for pack in suggest_domain_packs(qft_claim)] == [
+        "qft_literature",
+        "formal_theory",
+    ]
+    assert [pack.pack_id for pack in suggest_domain_packs(qg_claim)] == [
+        "quantum_gravity_literature",
+    ]
+
+
 def test_builtin_gw_librpa_pack_suggests_code_provenance_and_benchmarks():
     from brain.v5.domain_packs import builtin_domain_packs
 

@@ -106,6 +106,21 @@ def sample_args_for_template(template: str) -> list[str]:
             "--dimension",
             "method_assumptions",
         ]
+    if template.startswith("literature source-extraction"):
+        return [
+            "--session",
+            "s1",
+            "--source-ref",
+            "source_asset:source-asset-edge-counting",
+            "--source-ref",
+            "reference_location:reference-location-edge-counting",
+            "--focus",
+            "edge CFT",
+            "--mode",
+            "concept",
+            "--mode",
+            "relation",
+        ]
     if template.startswith("adapter curated-rag-chunk"):
         return ["curated_rag_chunk:source_backtrace_orientation:0001"]
     if template.startswith("adapter curated-rag-promotion-draft"):

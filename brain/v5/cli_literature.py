@@ -6,6 +6,7 @@ import argparse
 
 from brain.v5.literature_comparison_draft import build_literature_comparison_draft
 from brain.v5.literature_intake import record_literature_candidate, suggest_literature_intake
+from brain.v5.literature_source_extraction import build_literature_source_extraction_candidates
 from brain.v5.literature_source_review_handoff import build_literature_source_review_handoff
 from brain.v5.public_surfaces import require_valid_public_surface
 
@@ -17,6 +18,7 @@ def add_literature_parser(sp: argparse._SubParsersAction) -> None:
     _add_intake_args(sub.add_parser("record-candidate"))
     _add_intake_args(sub.add_parser("source-review-handoff"))
     _add_comparison_draft_args(sub.add_parser("comparison-draft"))
+    _add_source_extraction_args(sub.add_parser("source-extraction"))
 
 
 def dispatch_literature_command(args: argparse.Namespace, ws) -> dict:
@@ -29,6 +31,19 @@ def dispatch_literature_command(args: argparse.Namespace, ws) -> dict:
                 comparison_question=args.comparison_question,
                 source_refs=args.source_refs,
                 dimensions=args.dimensions,
+                optional_claim_id=args.optional_claim_id,
+                rationale=args.rationale,
+            ),
+        )
+    if args.literature_command == "source-extraction":
+        return require_valid_public_surface(
+            "literature_source_extraction_candidates",
+            build_literature_source_extraction_candidates(
+                ws,
+                session_id=args.session_id,
+                source_refs=args.source_refs,
+                focus_terms=args.focus_terms,
+                extraction_modes=args.extraction_modes,
                 optional_claim_id=args.optional_claim_id,
                 rationale=args.rationale,
             ),
@@ -78,5 +93,14 @@ def _add_comparison_draft_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--question", required=True, dest="comparison_question")
     parser.add_argument("--source-ref", action="append", required=True, dest="source_refs")
     parser.add_argument("--dimension", action="append", default=[], dest="dimensions")
+    parser.add_argument("--claim", default="", dest="optional_claim_id")
+    parser.add_argument("--rationale", default="")
+
+
+def _add_source_extraction_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--session", required=True, dest="session_id")
+    parser.add_argument("--source-ref", action="append", required=True, dest="source_refs")
+    parser.add_argument("--focus", action="append", default=[], dest="focus_terms")
+    parser.add_argument("--mode", action="append", default=[], dest="extraction_modes")
     parser.add_argument("--claim", default="", dest="optional_claim_id")
     parser.add_argument("--rationale", default="")

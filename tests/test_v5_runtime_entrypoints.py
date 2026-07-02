@@ -303,6 +303,11 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "mcp": "aitp_v5_build_literature_comparison_draft",
             "surface": "literature_comparison_draft",
         },
+        "literature_source_extraction_candidates": {
+            "cli": "aitp-v5 literature source-extraction <args>",
+            "mcp": "aitp_v5_build_literature_source_extraction_candidates",
+            "surface": "literature_source_extraction_candidates",
+        },
         "record_evidence": {
             "cli": "aitp-v5 evidence record <args>",
             "mcp": "aitp_v5_record_evidence",
@@ -598,6 +603,25 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
         "required": ["base", "session_id", "comparison_question", "source_refs"],
         "optional": ["dimensions", "optional_claim_id", "rationale"],
         "source": "aitp_v5_build_literature_comparison_draft",
+    }
+    assert by_operation["readLiteratureSourceExtractionCandidates"]["entrypoint_key"] == (
+        "literature_source_extraction_candidates"
+    )
+    assert by_operation["readLiteratureSourceExtractionCandidates"]["mcp_tool"] == (
+        "aitp_v5_build_literature_source_extraction_candidates"
+    )
+    assert by_operation["readLiteratureSourceExtractionCandidates"]["cli_fallback"] == (
+        "aitp-v5 literature source-extraction <args>"
+    )
+    assert by_operation["readLiteratureSourceExtractionCandidates"]["surface"] == (
+        "literature_source_extraction_candidates"
+    )
+    assert by_operation["readLiteratureSourceExtractionCandidates"]["execution_role"] == "read"
+    assert by_operation["readLiteratureSourceExtractionCandidates"]["state_effect"] == "read_only"
+    assert by_operation["readLiteratureSourceExtractionCandidates"]["mcp_arguments"] == {
+        "required": ["base", "session_id", "source_refs"],
+        "optional": ["focus_terms", "extraction_modes", "optional_claim_id", "rationale"],
+        "source": "aitp_v5_build_literature_source_extraction_candidates",
     }
     assert by_operation["preflightTrustUpdate"]["mcp_tool"] == "aitp_v5_preflight_trust_update"
     assert by_operation["preflightTrustUpdate"]["state_effect"] == "preflight_only"

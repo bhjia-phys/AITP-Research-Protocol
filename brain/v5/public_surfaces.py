@@ -46,6 +46,7 @@ _PUBLIC_SURFACE_NAMES = (
     "literature_comparison_draft",
     "literature_intake_record_result",
     "literature_intake_suggestion",
+    "literature_source_extraction_candidates",
     "literature_source_review_handoff",
     "kimi_code_hook_config",
     "kimi_code_hook_installation",
@@ -210,6 +211,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "literature_comparison_draft": "read-only literature comparison draft packet that scaffolds source-set dimensions, agreements, disagreements, missing evidence, and open directions without creating comparison, evidence, validation, final-gate, or trust authority",
     "literature_intake_record_result": "guarded literature intake write result that records only an orientation reference location and returns non-trust-changing evidence/sensemaking candidates",
     "literature_intake_suggestion": "read-only literature intake suggestion that proposes reference, sensemaking, and scoped evidence templates without treating summaries as evidence",
+    "literature_source_extraction_candidates": "read-only literature source extraction planning packet for concept, notation, equation-anchor, relation, and proof-gap candidates without source support, evidence, validation, write, final-gate, or trust authority",
     "literature_source_review_handoff": "read-only handoff packet composing literature intake, record-ref lookup, source-stack coverage, and source reconstruction review without source-support, validation, write, final-gate, or trust authority",
     "kimi_code_hook_config": "contracted Kimi Code TOML hook config generated from runtime hook installation metadata",
     "kimi_code_hook_installation": "contracted safe merge of AITP hooks into Kimi Code TOML config without treating config as truth",
@@ -519,6 +521,9 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.literature_comparison_draft_contracts import (
         require_valid_literature_comparison_draft,
     )
+    from brain.v5.literature_source_extraction_contracts import (
+        require_valid_literature_source_extraction_candidates,
+    )
     from brain.v5.literature_source_review_handoff_contracts import (
         require_valid_literature_source_review_handoff,
     )
@@ -629,6 +634,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "literature_comparison_draft": require_valid_literature_comparison_draft,
         "literature_intake_record_result": require_valid_literature_intake_record_result,
         "literature_intake_suggestion": require_valid_literature_intake_suggestion,
+        "literature_source_extraction_candidates": require_valid_literature_source_extraction_candidates,
         "literature_source_review_handoff": require_valid_literature_source_review_handoff,
         "kimi_code_hook_config": require_valid_kimi_code_hook_config,
         "kimi_code_hook_installation": require_valid_kimi_code_hook_installation,

@@ -466,6 +466,133 @@ def test_literature_comparison_draft_is_read_only_planning_packet(tmp_path, caps
     }
 
 
+def test_literature_source_extraction_candidates_are_read_only_planning_packet(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.literature_source_extraction import build_literature_source_extraction_candidates
+    from brain.v5.mcp_tools import aitp_v5_build_literature_source_extraction_candidates
+    from brain.v5.models import (
+        EvidenceRecord,
+        ObjectRelationRecord,
+        PhysicsObjectRecord,
+        ProofObligationRecord,
+        TrustUpdateRecord,
+        ValidationResultRecord,
+    )
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.store import list_records
+
+    ws, claim = _setup_topic(tmp_path, active_claim=True)
+
+    before = (
+        list_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord),
+        list_records(ws.registry_dir("object_relations"), ObjectRelationRecord),
+        list_records(ws.registry_dir("proof_obligations"), ProofObligationRecord),
+        list_records(ws.registry_dir("evidence"), EvidenceRecord),
+        list_records(ws.registry_dir("validation_results"), ValidationResultRecord),
+        list_records(ws.registry_dir("trust_updates"), TrustUpdateRecord),
+    )
+    payload = build_literature_source_extraction_candidates(
+        ws,
+        session_id="chaos-lit",
+        source_refs=["source_asset:missing-source", "reference_location:missing-location"],
+        focus_terms=["Yangian", "alpha=2"],
+        rationale="Extract source-backed objects before source synthesis.",
+    )
+    after = (
+        list_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord),
+        list_records(ws.registry_dir("object_relations"), ObjectRelationRecord),
+        list_records(ws.registry_dir("proof_obligations"), ProofObligationRecord),
+        list_records(ws.registry_dir("evidence"), EvidenceRecord),
+        list_records(ws.registry_dir("validation_results"), ValidationResultRecord),
+        list_records(ws.registry_dir("trust_updates"), TrustUpdateRecord),
+    )
+
+    assert before == after
+    assert require_valid_public_surface("literature_source_extraction_candidates", payload) == payload
+    assert payload["kind"] == "literature_source_extraction_candidates"
+    assert payload["claim_id"] == claim.claim_id
+    assert payload["source_ref_count"] == 2
+    assert payload["focus_term_count"] == 2
+    assert payload["candidate_group_count"] == 5
+    assert payload["record_ref_lookup"]["source_support_result"] is False
+    candidate_kinds = {group["candidate_kind"] for group in payload["candidate_groups"]}
+    assert {"physics_object", "reference_location", "object_relation", "proof_obligation"} <= candidate_kinds
+    assert all(group["creates_record_now"] is False for group in payload["candidate_groups"])
+    assert all(group["source_support_result"] is False for group in payload["candidate_groups"])
+    assert payload["draft_record_intent"]["creates_record_now"] is False
+    assert payload["extraction_policy"]["requires_explicit_next_entrypoint"] is True
+    assert "extracted_source_fact" in payload["extraction_policy"]["forbidden_uses"]
+    assert "trust_apply" in payload["extraction_policy"]["forbidden_uses"]
+    assert payload["allowed_next_tool_call"] == {
+        "action": "plan_primitive_tools",
+        "action_id": "source.extract_candidates",
+        "requires_explicit_next_action": True,
+        "records_validation_result": False,
+        "source_support_result": False,
+        "claim_trust_mutation": "none",
+    }
+    assert payload["read_surface_effect"] == "extraction_candidates_only"
+    assert payload["read_only"] is True
+    assert payload["draft_creates_records"] is False
+    assert payload["requires_explicit_next_action"] is True
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["can_update_claim_trust"] is False
+    assert payload["records_validation_result"] is False
+    assert payload["source_support_result"] is False
+    assert payload["evidence_created"] is False
+    assert payload["validation_created"] is False
+    assert payload["write_executed"] is False
+    assert payload["trust_update_forbidden"] is True
+    assert payload["claim_trust_mutation"] == "none"
+
+    assert main(
+        [
+            "--base",
+            str(ws.base),
+            "literature",
+            "source-extraction",
+            "--session",
+            "chaos-lit",
+            "--source-ref",
+            "source_asset:missing-source",
+            "--source-ref",
+            "reference_location:missing-location",
+            "--focus",
+            "Yangian",
+            "--mode",
+            "concept",
+            "--mode",
+            "relation",
+            "--rationale",
+            "Extract source-backed objects before source synthesis.",
+        ]
+    ) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_literature_source_extraction_candidates(
+        str(ws.base),
+        session_id="chaos-lit",
+        source_refs=["source_asset:missing-source", "reference_location:missing-location"],
+        focus_terms=["Yangian"],
+        extraction_modes=["concept", "relation"],
+        rationale="Extract source-backed objects before source synthesis.",
+    )
+
+    assert require_valid_public_surface("literature_source_extraction_candidates", cli_payload) == cli_payload
+    assert require_valid_public_surface("literature_source_extraction_candidates", mcp_payload) == mcp_payload
+    assert cli_payload["candidate_group_count"] == 2
+    assert mcp_payload["candidate_groups"][0]["target_record"] == "physics_object_record"
+    assert runtime_entrypoints()["literature_source_extraction_candidates"] == {
+        "cli": "aitp-v5 literature source-extraction <args>",
+        "mcp": "aitp_v5_build_literature_source_extraction_candidates",
+        "surface": "literature_source_extraction_candidates",
+    }
+
+
 def test_literature_intake_includes_output_profile_context_when_topic_has_profile(tmp_path):
     from brain.v5.literature_intake import suggest_literature_intake
     from brain.v5.output_stability import record_final_output_profile

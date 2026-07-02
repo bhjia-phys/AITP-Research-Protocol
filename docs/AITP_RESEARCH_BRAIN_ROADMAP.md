@@ -71,15 +71,19 @@ First implemented target:
 - `gw_librpa` becomes the reference Domain Pack v2 example.
 - `formal_theory` now carries a derivation-focused workflow graph, failure
   taxonomy, lane policy, artifact schema, and context profile refs.
+- `qft_literature` and `quantum_gravity_literature` now carry source-grounded
+  reading workflows, convention/scope failure taxonomies, literature lane
+  policies, extraction artifact schemas, connector/skill refs, and context
+  profile refs.
 - `domain_pack_catalog` now exposes built-in packs and claim-text suggestions
   through `aitp-v5 domain-pack catalog/suggest` and MCP wrappers.
 
 Next implementation slices:
 
-1. Add QFT/QG domain packs once literature connectors and source
-   reconstruction examples are in place.
-2. Add project-scope external skill shim generation so hosts can discover
+1. Add project-scope external skill shim generation so hosts can discover
    domain skill bundles without copying their contents into AITP core.
+2. Add a domain-pack authoring path for user-defined skills and connector
+   bindings once the project-scope shim is stable.
 
 ## Workstream B: Literature Knowledge Substrate v1
 
@@ -105,15 +109,19 @@ First implemented targets:
 - Workspace-local connector bindings now let a project attach QFT/QG/LibRPA
   corpora or note roots through `aitp-v5 knowledge bind/bindings` and MCP
   wrappers without reading content or creating evidence.
+- `literature_source_extraction_candidates` now exposes a read-only
+  concept/notation/equation-anchor/object-relation/proof-gap extraction
+  planning surface through `aitp-v5 literature source-extraction`, MCP, public
+  surface contracts, and the runtime bridge manifest.
 
 Next implementation slices:
 
 1. Add paper-learning context profiles that request source assets and exact
    reference locations before synthesis.
-2. Add source extraction helpers for concept, notation, equation, and object
-   relation candidates.
-3. Add paired-paper and multi-paper reading route surfaces that preserve
+2. Add paired-paper and multi-paper reading route surfaces that preserve
    conflict, dependency, and scope boundaries.
+3. Add profile-specific extraction reports that summarize candidate objects and
+   relations after explicit typed writes exist.
 
 ## Workstream C: Context Compiler v2
 
