@@ -78,6 +78,15 @@ def test_builtin_gw_librpa_pack_suggests_code_provenance_and_benchmarks():
     assert review_recommendation["executor_id"] == "failure_mode_basis_check"
     assert review_recommendation["supports_outputs"] == ["failure_mode_review_basis", "minimal_check"]
     assert review_recommendation["required_context_refs"] == ["code_state_ids", "validation_result_ids"]
+    skill_ids = {ref["skill_id"] for ref in pack.skill_refs}
+    assert "oh-my-librpa" in skill_ids
+    assert "oh-my-librpa-abacus-librpa" in skill_ids
+    assert "oh-my-librpa-fhi-aims-qsgw" in skill_ids
+    entrypoint = next(ref for ref in pack.skill_refs if ref["skill_id"] == "oh-my-librpa")
+    assert entrypoint["entrypoint"] == "skills/oh-my-librpa/SKILL.md"
+    assert entrypoint["orientation_only"] is True
+    assert "tool_run" in entrypoint["required_followup_records"]
+    assert any(ref["path"] == "registry/domain-manifest.abacus-librpa.json" for ref in pack.manifest_refs)
     assert "clean_code_state_trust_card" in pack.trust_card_templates
     assert pack.truth_standard_policy == "global_only"
 
@@ -143,6 +152,16 @@ def test_execution_brief_exposes_domain_tool_executor_recommendations(tmp_path):
 
     brief = build_execution_brief(ws, "s1")
 
+    domain_packs = brief["known_context"]["domain_packs"]
+    assert domain_packs[0]["pack_id"] == "gw_librpa"
+    assert domain_packs[0]["orientation_only"] is True
+    assert domain_packs[0]["truth_standard_policy"] == "global_only"
+    assert domain_packs[0]["skill_refs"][0]["skill_id"] == "oh-my-librpa"
+    assert domain_packs[0]["skill_refs"][0]["orientation_only"] is True
+    assert any(
+        ref["path"] == "docs/aitp-integration.md"
+        for ref in domain_packs[0]["manifest_refs"]
+    )
     recommendations = brief["known_context"]["recommended_tool_executors"]
     assert recommendations[0]["pack_id"] == "gw_librpa"
     assert recommendations[0]["executor_id"] == "metric_table_check"

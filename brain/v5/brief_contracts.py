@@ -107,6 +107,11 @@ def _validate_known_context(payload: Any, path: str, result: ContractResult) -> 
         if isinstance(payload["memory_entries"], list):
             for index, entry in enumerate(payload["memory_entries"]):
                 _validate_memory_entry(entry, f"{path}.memory_entries[{index}]", result)
+    if "domain_packs" in payload:
+        _require_list(payload["domain_packs"], f"{path}.domain_packs", result)
+        if isinstance(payload["domain_packs"], list):
+            for index, pack in enumerate(payload["domain_packs"]):
+                _validate_domain_pack(pack, f"{path}.domain_packs[{index}]", result)
     if "operating_notes" in payload:
         _require_list(payload["operating_notes"], f"{path}.operating_notes", result)
         if isinstance(payload["operating_notes"], list):
@@ -125,6 +130,23 @@ def _validate_memory_entry(payload: Any, path: str, result: ContractResult) -> N
         _require_list(payload.get("validation_result_ids"), f"{path}.validation_result_ids", result)
     if "code_state_ids" in payload:
         _require_list(payload.get("code_state_ids"), f"{path}.code_state_ids", result)
+    _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
+
+
+def _validate_domain_pack(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    for key in ("pack_id", "domain", "description", "integration_boundary", "truth_standard_policy"):
+        _require_nonempty_str(payload, key, path, result)
+    for key in (
+        "suggested_question_intents",
+        "risk_signals",
+        "tool_recipes",
+        "skill_refs",
+        "manifest_refs",
+    ):
+        _require_list(payload.get(key), f"{path}.{key}", result)
     _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
 
 

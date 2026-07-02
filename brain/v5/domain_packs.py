@@ -19,6 +19,12 @@ class DomainPackRecord:
     risk_signals: list[str] = field(default_factory=list)
     tool_recipes: list[str] = field(default_factory=list)
     tool_executor_recommendations: list[dict] = field(default_factory=list)
+    skill_refs: list[dict] = field(default_factory=list)
+    manifest_refs: list[dict] = field(default_factory=list)
+    integration_boundary: str = (
+        "Domain packs and external skills are orientation and execution guidance only; "
+        "typed kernel records remain the authority for evidence, validation, memory, and trust."
+    )
     trust_card_templates: list[str] = field(default_factory=list)
     truth_standard_policy: str = "global_only"
     kind: str = "domain_pack"
@@ -102,6 +108,62 @@ def builtin_domain_packs() -> dict[str, DomainPackRecord]:
             ],
             risk_signals=["formula_to_code_risk", "reproducibility_risk", "compute_cost"],
             tool_recipes=["librpa_gw_benchmark_recipe", "code_state_capture", "abacus_librpa_input_audit"],
+            skill_refs=[
+                {
+                    "skill_id": "oh-my-librpa",
+                    "kind": "external_skill_bundle",
+                    "repo": "https://github.com/AroundPeking/oh-my-LibRPA",
+                    "entrypoint": "skills/oh-my-librpa/SKILL.md",
+                    "role": "chat-first front router for ABACUS/FHI-aims + LibRPA workflows",
+                    "load_when": [
+                        "LibRPA GW or RPA computation is requested",
+                        "ABACUS or FHI-aims source bundles, logs, or run artifacts need intake",
+                        "a first-principles workflow needs route selection, preflight, execution, or debug guidance",
+                    ],
+                    "required_followup_records": [
+                        "code_state",
+                        "tool_recipe",
+                        "tool_run",
+                        "artifact",
+                        "evidence",
+                        "validation_contract",
+                        "validation_result",
+                    ],
+                    "orientation_only": True,
+                },
+                {
+                    "skill_id": "oh-my-librpa-abacus-librpa",
+                    "kind": "external_stack_skill",
+                    "repo": "https://github.com/AroundPeking/oh-my-LibRPA",
+                    "entrypoint": "skills/oh-my-librpa-abacus-librpa/SKILL.md",
+                    "role": "ABACUS -> LibRPA stack router",
+                    "orientation_only": True,
+                },
+                {
+                    "skill_id": "oh-my-librpa-fhi-aims-qsgw",
+                    "kind": "external_stack_skill",
+                    "repo": "https://github.com/AroundPeking/oh-my-LibRPA",
+                    "entrypoint": "skills/oh-my-librpa-fhi-aims-qsgw/SKILL.md",
+                    "role": "FHI-aims -> LibRPA QSGW/G0W0 stack router",
+                    "orientation_only": True,
+                },
+            ],
+            manifest_refs=[
+                {
+                    "manifest_id": "domain-manifest.abacus-librpa",
+                    "repo": "https://github.com/AroundPeking/oh-my-LibRPA",
+                    "path": "registry/domain-manifest.abacus-librpa.json",
+                    "role": "domain operations, invariants, routing, contracts, and reproducibility metadata",
+                    "orientation_only": True,
+                },
+                {
+                    "manifest_id": "aitp-integration",
+                    "repo": "https://github.com/AroundPeking/oh-my-LibRPA",
+                    "path": "docs/aitp-integration.md",
+                    "role": "external integration guide for AITP and oh-my-LibRPA contract boundaries",
+                    "orientation_only": True,
+                },
+            ],
             tool_executor_recommendations=[
                 {
                     "executor_id": "metric_table_check",
@@ -193,6 +255,24 @@ def suggest_domain_packs(claim: ClaimRecord) -> list[DomainPackRecord]:
     if claim.evidence_profile == "formal_theory":
         return [packs["formal_theory"]]
     return []
+
+
+def domain_pack_brief_payload(pack: DomainPackRecord) -> dict:
+    """Return orientation-only pack metadata for execution briefs."""
+
+    return {
+        "pack_id": pack.pack_id,
+        "domain": pack.domain,
+        "description": pack.description,
+        "suggested_question_intents": list(pack.suggested_question_intents),
+        "risk_signals": list(pack.risk_signals),
+        "tool_recipes": list(pack.tool_recipes),
+        "skill_refs": list(pack.skill_refs),
+        "manifest_refs": list(pack.manifest_refs),
+        "integration_boundary": pack.integration_boundary,
+        "truth_standard_policy": pack.truth_standard_policy,
+        "orientation_only": True,
+    }
 
 
 def suggest_tool_executors_for_claim(claim: ClaimRecord) -> list[dict]:

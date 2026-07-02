@@ -6,7 +6,7 @@ from dataclasses import asdict
 from typing import Any
 
 from brain.v5.claim_relation_map import build_claim_relation_map
-from brain.v5.domain_packs import suggest_tool_executors_for_claim
+from brain.v5.domain_packs import domain_pack_brief_payload, suggest_domain_packs, suggest_tool_executors_for_claim
 from brain.v5.evidence import list_evidence_for_claim, required_output_coverage
 from brain.v5.flow import resolve_flow_profile
 from brain.v5.interaction import prioritize_questions, resolve_interaction_profile
@@ -40,6 +40,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
     risk = None
     questions = []
     evidence_records = []
+    domain_packs = []
     recommended_tool_executors = []
     knowledge_connectors = []
     reference_locations = []
@@ -69,6 +70,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
         evidence_records = list_evidence_for_claim(ws, claim.claim_id)
         proof_obligations = list_proof_obligations_for_claim(ws, claim.claim_id)
         claim_status_records = _claim_statuses_for_claim(ws, claim.claim_id)
+        domain_packs = [domain_pack_brief_payload(pack) for pack in suggest_domain_packs(claim)]
         recommended_tool_executors = suggest_tool_executors_for_claim(claim)
         knowledge_connectors = suggest_knowledge_connectors_for_claim(claim)
         raw_reference_locations = list_reference_locations_for_claim(ws, claim.claim_id)
@@ -226,6 +228,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
             "topic_id": session.topic_id,
             "context_id": session.context_id,
             "previous_failed_attempts": [],
+            "domain_packs": domain_packs,
             "recommended_tool_executors": recommended_tool_executors,
             "knowledge_connectors": knowledge_connectors,
             "reference_locations": reference_locations,

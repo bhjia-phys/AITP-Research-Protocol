@@ -35,6 +35,7 @@ can support trusted research memory.
 | Source of truth | Typed records under `<topics-root>/.aitp/` |
 | Context model | Compile bounded context packs from the graph for each task |
 | Experience model | Domain experience packs and curated literature context sit above the memory kernel |
+| Skill linkage | Domain packs can expose external skill bundles such as `oh-my-LibRPA` as orientation-only execution guidance |
 | Main agent entrypoint | MCP server at [`brain/v5/native_mcp.py`](brain/v5/native_mcp.py) |
 | Best default install | Project-scope install with [`scripts/aitp-pm.py`](scripts/aitp-pm.py) |
 | Codex path | Repository-backed plugin at [`plugins/aitp-research-protocol/`](plugins/aitp-research-protocol/) |
@@ -124,6 +125,9 @@ The target architecture has four layers:
 3. **Domain experience packs.** Specialized packs, such as LibRPA/GW and
    first-principles workflows, encode proven workflows, common failure modes,
    validation recipes, provenance checks, and tool conventions.
+   Mature domain projects can be linked as external skill bundles instead of
+   being copied into the kernel; for example, the LibRPA/GW pack can point an
+   agent to `oh-my-LibRPA` while AITP keeps typed records and trust gates.
 4. **Literature and note knowledge layer.** Local PDFs, papers, notebooks, and
    curated corpora provide source-backed orientation for quantum field theory,
    quantum gravity, topological order, computational physics, and other domains.
@@ -827,12 +831,16 @@ when modifying v5 runtime, MCP, graph, or adapter code.
 - Positioning path: read [`docs/AITP_POSITIONING.md`](docs/AITP_POSITIONING.md)
   to understand AITP as a research graph kernel, context compiler, and domain
   experience substrate.
+- Skill-linkage path: read [`docs/AITP_SKILL_LINKAGE.md`](docs/AITP_SKILL_LINKAGE.md)
+  to understand how external domain skills such as `oh-my-LibRPA` connect to
+  AITP without becoming a second truth layer.
 - Protocol path: read [`docs/AITP_SPEC.md`](docs/AITP_SPEC.md) before changing
   typed-record behavior, trust rules, or human-facing output contracts.
 - Cleanup path: use [`docs/UNINSTALL.md`](docs/UNINSTALL.md) before manually
   deleting generated host files.
 
 - [`docs/AITP_POSITIONING.md`](docs/AITP_POSITIONING.md) - product and architecture positioning
+- [`docs/AITP_SKILL_LINKAGE.md`](docs/AITP_SKILL_LINKAGE.md) - external skill and domain-pack linkage architecture
 - [`docs/AITP_SPEC.md`](docs/AITP_SPEC.md) - protocol specification
 - [`docs/CODEX_APP_1_0_PLAN.md`](docs/CODEX_APP_1_0_PLAN.md) - Codex App 1.0 architecture and implementation plan
 - [`docs/INSTALL.md`](docs/INSTALL.md) - install guide

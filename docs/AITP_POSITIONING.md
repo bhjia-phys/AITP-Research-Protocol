@@ -108,7 +108,17 @@ cutoffs, frequency grids, Coulomb singularity handling, code-state provenance,
 Slurm/HPC run status, benchmark recipes, formula-code invariants, and rules
 that prevent diagnostic or nonconverged data from becoming final evidence.
 
+AITP should not vendor every domain workflow into the kernel. Mature domain
+projects can live as external skill bundles linked from a domain pack. The first
+concrete model is `oh-my-LibRPA`: AITP exposes the relevant skill and manifest
+references in the execution brief, while the external skill owns ABACUS/LibRPA
+file intake, route selection, static preflight, run discipline, rule cards, and
+reports. Durable outcomes are recorded back into AITP as typed code-state,
+tool-run, artifact, evidence, validation, checkpoint, and promotion records.
+
 Domain packs guide the agent. They do not promote trust by themselves.
+
+See `docs/AITP_SKILL_LINKAGE.md` for the general skill-linkage contract.
 
 ## Layer 4: Literature And Knowledge Substrate
 

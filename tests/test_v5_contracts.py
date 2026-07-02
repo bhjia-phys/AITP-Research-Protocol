@@ -151,6 +151,35 @@ def test_execution_brief_contract_requires_memory_entry_lists():
     assert "brief.known_context.memory_entries[0].code_state_ids" in paths
 
 
+def test_execution_brief_contract_requires_domain_packs_to_stay_orientation_only():
+    from brain.v5.contracts import validate_execution_brief
+
+    payload = _minimal_execution_brief_payload()
+    payload["known_context"]["domain_packs"] = [
+        {
+            "pack_id": "gw_librpa",
+            "domain": "gw_librpa",
+            "description": "LibRPA/GW guidance.",
+            "suggested_question_intents": ["provenance_check"],
+            "risk_signals": ["reproducibility_risk"],
+            "tool_recipes": ["abacus_librpa_input_audit"],
+            "skill_refs": [{"skill_id": "oh-my-librpa"}],
+            "manifest_refs": [{"path": "registry/domain-manifest.abacus-librpa.json"}],
+            "integration_boundary": "skills guide execution; typed records carry trust",
+            "truth_standard_policy": "global_only",
+            "orientation_only": False,
+        }
+    ]
+
+    result = validate_execution_brief(payload)
+
+    assert result.ok is False
+    assert any(
+        issue.path == "brief.known_context.domain_packs[0].orientation_only"
+        for issue in result.issues
+    )
+
+
 def test_execution_brief_contract_requires_operating_notes_to_stay_orientation_only():
     from brain.v5.contracts import validate_execution_brief
 
