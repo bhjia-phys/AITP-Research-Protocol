@@ -194,6 +194,12 @@ def suggest_context_profiles_for_claim(claim: ClaimRecord, *, domain_pack_refs: 
     return [_profile_payload(profile) for profile in _dedupe_profiles(suggested)]
 
 
+def context_profile_payload(profile: ContextCompilationProfile) -> dict:
+    """Return public orientation-only metadata for one context profile."""
+
+    return _profile_payload(profile)
+
+
 def _profile_payload(profile: ContextCompilationProfile) -> dict:
     return {
         "kind": profile.kind,

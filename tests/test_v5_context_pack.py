@@ -47,6 +47,8 @@ def test_context_pack_is_bounded_codex_context_not_memory_or_trust(tmp_path):
 
     assert pack["kind"] == "aitp_context_pack"
     assert pack["designed_for_host"] == "codex"
+    assert pack["requested_task_profile"] == ""
+    assert pack["task_profile"] == {}
     assert pack["fingerprint"] == same_pack["fingerprint"]
     assert pack["pack_id"].startswith("aitp-context-pack-s-hs-")
     assert pack["line_count"] <= 50
@@ -65,6 +67,31 @@ def test_context_pack_is_bounded_codex_context_not_memory_or_trust(tmp_path):
     assert pack["distillation_status"]["top_candidates"][0]["missing_requirements"]
 
 
+def test_context_pack_can_compile_explicit_task_profile(tmp_path):
+    from brain.v5.context_pack import build_aitp_context_pack
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ws, _claim = _seed_workspace(tmp_path)
+
+    pack = require_valid_public_surface(
+        "aitp_context_pack",
+        build_aitp_context_pack(
+            ws,
+            "s-hs",
+            max_lines=55,
+            candidate_limit=2,
+            task_profile="librpa_run_continuation",
+        ),
+    )
+
+    assert pack["requested_task_profile"] == "librpa_run_continuation"
+    assert pack["task_profile"]["profile_id"] == "librpa_run_continuation"
+    assert pack["task_profile"]["truth_policy"]["can_update_claim_trust"] is False
+    assert "task-profile must-verify checks" in pack["injection_policy"]["requires_explicit_expand_for"]
+    assert "--task-profile librpa_run_continuation" in pack["expand"]["context_pack_cli"]
+    assert any(line.startswith("Task profile: librpa_run_continuation") for line in pack["context_lines"])
+
+
 def test_context_pack_cli_and_mcp_return_valid_public_surface(tmp_path, capsys):
     from brain.v5.mcp_tools import aitp_v5_get_context_pack
 
@@ -81,13 +108,22 @@ def test_context_pack_cli_and_mcp_return_valid_public_surface(tmp_path, capsys):
             "45",
             "--candidate-limit",
             "1",
+            "--task-profile",
+            "paper_learning",
         ],
         capsys,
     )
-    mcp_pack = aitp_v5_get_context_pack(str(tmp_path), session_id="s-cli", max_lines=45, candidate_limit=1)
+    mcp_pack = aitp_v5_get_context_pack(
+        str(tmp_path),
+        session_id="s-cli",
+        max_lines=45,
+        candidate_limit=1,
+        task_profile="paper_learning",
+    )
 
     assert cli_pack["kind"] == "aitp_context_pack"
     assert mcp_pack["kind"] == "aitp_context_pack"
     assert cli_pack["fingerprint"] == mcp_pack["fingerprint"]
+    assert cli_pack["task_profile"]["profile_id"] == "paper_learning"
     assert cli_pack["line_count"] <= 45
     assert mcp_pack["injection_policy"]["host"] == "codex"

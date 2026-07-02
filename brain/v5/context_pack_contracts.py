@@ -44,6 +44,9 @@ def validate_aitp_context_pack(payload: dict[str, Any], *, path: str = "aitp_con
         result.add(f"{path}.relation_map_scope", "must be active_claim_only")
     if not isinstance(payload.get("not_authoritative_for_current_goal_if_rebind_needed"), bool):
         result.add(f"{path}.not_authoritative_for_current_goal_if_rebind_needed", "must be a boolean")
+    if not isinstance(payload.get("requested_task_profile"), str):
+        result.add(f"{path}.requested_task_profile", "must be a string")
+    _require_mapping(payload.get("task_profile"), f"{path}.task_profile", result)
     _require_mapping(payload.get("active_claim_focus_reconciliation"), f"{path}.active_claim_focus_reconciliation", result)
     if isinstance(payload.get("context_lines"), list) and len(payload["context_lines"]) > 80:
         result.add(f"{path}.context_lines", "must be at most 80 lines")
@@ -53,6 +56,7 @@ def validate_aitp_context_pack(payload: dict[str, Any], *, path: str = "aitp_con
     _require_mapping(payload.get("expand"), f"{path}.expand", result)
     _require_mapping(payload.get("source_records"), f"{path}.source_records", result)
     _validate_distillation_status(payload.get("distillation_status"), f"{path}.distillation_status", result)
+    _validate_task_profile(payload.get("task_profile"), f"{path}.task_profile", result)
     _validate_injection_policy(payload.get("injection_policy"), f"{path}.injection_policy", result)
     for key, expected in (
         ("orientation_only", True),
@@ -104,6 +108,35 @@ def _validate_distillation_status(payload: Any, path: str, result: ContractResul
             result.add(f"{path}.top_candidates[{index}].can_draft_reusable_block", "must be a boolean")
         _require_list(candidate.get("missing_requirements"), f"{path}.top_candidates[{index}].missing_requirements", result)
         _require_mapping(candidate.get("source_records"), f"{path}.top_candidates[{index}].source_records", result)
+
+
+def _validate_task_profile(payload: Any, path: str, result: ContractResult) -> None:
+    if not isinstance(payload, dict) or not payload:
+        return
+    for key in ("kind", "profile_id", "task_type", "purpose"):
+        _require_nonempty_str(payload, key, path, result)
+    if payload.get("kind") != "context_compilation_profile":
+        result.add(f"{path}.kind", "must be 'context_compilation_profile'")
+    for key in (
+        "include_sections",
+        "can_say",
+        "cannot_say",
+        "must_verify",
+        "reusable_experience",
+        "recommended_surfaces",
+    ):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    _require_mapping(payload.get("truth_policy"), f"{path}.truth_policy", result)
+    if isinstance(payload.get("truth_policy"), dict):
+        for key, expected in (
+            ("orientation_only", True),
+            ("summary_inputs_trusted", False),
+            ("can_update_kernel_state", False),
+            ("can_update_claim_trust", False),
+            ("requires_typed_followup_for_claim_support", True),
+        ):
+            _require_bool_value(payload["truth_policy"].get(key), expected, f"{path}.truth_policy.{key}", result)
+    _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
 
 
 def _validate_injection_policy(payload: Any, path: str, result: ContractResult) -> None:

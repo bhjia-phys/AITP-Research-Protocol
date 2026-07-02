@@ -69,14 +69,15 @@ Required surfaces:
 First implemented target:
 
 - `gw_librpa` becomes the reference Domain Pack v2 example.
+- `domain_pack_catalog` now exposes built-in packs and claim-text suggestions
+  through `aitp-v5 domain-pack catalog/suggest` and MCP wrappers.
 
 Next implementation slices:
 
-1. Add Domain Pack v2 contract tests for all structured fields.
-2. Add `formal_theory` failure taxonomy and derivation-check workflow.
-3. Add QFT/QG domain packs once literature connectors and source
+1. Add `formal_theory` failure taxonomy and derivation-check workflow.
+2. Add QFT/QG domain packs once literature connectors and source
    reconstruction examples are in place.
-4. Add project-scope external skill shim generation so hosts can discover
+3. Add project-scope external skill shim generation so hosts can discover
    domain skill bundles without copying their contents into AITP core.
 
 ## Workstream B: Literature Knowledge Substrate v1
@@ -137,13 +138,14 @@ Each profile must expose:
 First implemented target:
 
 - Execution briefs now expose `known_context.context_compilation_profiles`.
+- `aitp-v5 status context-pack` and `aitp_v5_get_context_pack` accept an
+  explicit task profile and render profile-specific can-say/cannot-say/must
+  verify boundaries.
 
 Next implementation slices:
 
-1. Let `aitp-v5 status context-pack` accept an explicit task profile.
-2. Make compact context packs render profile-specific sections.
-3. Add profile-specific closeout and report templates.
-4. Add tests that verify every profile preserves orientation-only and trust
+1. Add profile-specific closeout and report templates.
+2. Add tests that verify every profile preserves orientation-only and trust
    boundaries.
 
 ## Workstream D: Lane Exemplars And Scientific Examples

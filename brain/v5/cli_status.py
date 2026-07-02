@@ -33,6 +33,7 @@ def add_status_parser(sp) -> None:
     context_pack.add_argument("session_id")
     context_pack.add_argument("--max-lines", type=int, default=60)
     context_pack.add_argument("--candidate-limit", type=int, default=3)
+    context_pack.add_argument("--task-profile", default="")
     distillation = ss.add_parser("distillation-candidates")
     distillation.add_argument("session_id")
     distillation.add_argument("--limit", type=int, default=8)
@@ -84,6 +85,7 @@ def dispatch_status_command(args, ws) -> dict:
                 args.session_id,
                 max_lines=args.max_lines,
                 candidate_limit=args.candidate_limit,
+                task_profile=args.task_profile,
             ),
         )
     if args.status_command == "distillation-candidates":

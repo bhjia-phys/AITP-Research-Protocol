@@ -751,6 +751,26 @@ def require_valid_knowledge_connector_catalog(payload: dict[str, Any]) -> dict[s
     return _require_valid_knowledge_connector_catalog(payload)
 
 
+def validate_domain_pack_catalog(
+    payload: dict[str, Any],
+    *,
+    path: str = "domain_pack_catalog",
+) -> ContractResult:
+    """Validate a public domain-pack catalog payload."""
+
+    from brain.v5.domain_pack_contracts import validate_domain_pack_catalog as _validate_domain_pack_catalog
+
+    return _validate_domain_pack_catalog(payload, path=path)
+
+
+def require_valid_domain_pack_catalog(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a domain-pack catalog payload or raise a contract error."""
+
+    from brain.v5.domain_pack_contracts import require_valid_domain_pack_catalog as _require_valid_domain_pack_catalog
+
+    return _require_valid_domain_pack_catalog(payload)
+
+
 def validate_risk_assessment(payload: dict[str, Any], *, path: str = "risk_assessment") -> ContractResult:
     """Validate a risk assessment payload."""
 

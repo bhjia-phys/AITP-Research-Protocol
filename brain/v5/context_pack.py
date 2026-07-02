@@ -6,6 +6,7 @@ import hashlib
 import json
 from typing import Any
 
+from brain.v5.context_profiles import builtin_context_profiles, context_profile_payload
 from brain.v5.objective_graph import build_compact_brief
 from brain.v5.paths import WorkspacePaths
 from brain.v5.research_distillation import build_research_distillation_candidates
@@ -22,6 +23,7 @@ def build_aitp_context_pack(
     candidate_limit: int = _DEFAULT_CANDIDATE_LIMIT,
     objective_text: str = "",
     user_goal: str = "",
+    task_profile: str = "",
 ) -> dict[str, Any]:
     """Build the bounded research-state slice intended for Codex turn input.
 
@@ -32,6 +34,10 @@ def build_aitp_context_pack(
 
     line_limit = max(12, min(int(max_lines), 80))
     candidate_limit = max(1, min(int(candidate_limit), 8))
+    selected_profile = _selected_context_profile(task_profile)
+    profile_warning = []
+    if task_profile and not selected_profile:
+        profile_warning.append(f"unknown_task_profile:{task_profile}")
     compact = build_compact_brief(
         ws,
         session_id,
@@ -70,6 +76,8 @@ def build_aitp_context_pack(
         "can_say": list(compact.get("can_say") or []),
         "cannot_say": list(compact.get("cannot_say") or []),
         "blockers": list(compact.get("blockers") or []),
+        "requested_task_profile": str(task_profile or ""),
+        "task_profile": selected_profile,
         "next_valid_actions": list(compact.get("next_valid_actions") or []),
         "recent_relevant_artifacts": list(compact.get("recent_relevant_artifacts") or []),
         "relation_map_scope": str(compact.get("relation_map_scope") or "active_claim_only"),
@@ -111,11 +119,12 @@ def build_aitp_context_pack(
                 "full relation-map audit",
                 "active claim rebind or claim split",
                 "workflow or skill materialization",
+                "task-profile must-verify checks",
             ],
         },
         "expand": {
             **(compact.get("expand") or {}),
-            "context_pack_cli": f"aitp-v5 status context-pack {session_id}",
+            "context_pack_cli": _context_pack_cli(session_id, task_profile=task_profile),
             "distillation_candidates_cli": f"aitp-v5 status distillation-candidates {session_id}",
             "mcp_context_pack": "aitp_v5_get_context_pack",
             "mcp_research_distillation_candidates": "aitp_v5_get_research_distillation_candidates",
@@ -131,6 +140,8 @@ def build_aitp_context_pack(
         "can_update_claim_trust": False,
         "can_materialize_without_human_review": False,
     }
+    if profile_warning:
+        payload["warnings"].extend(profile_warning)
     payload["context_lines"] = _context_lines(payload, compact)[:line_limit]
     payload["line_count"] = len(payload["context_lines"])
     payload["markdown"] = "\n".join(payload["context_lines"]) + "\n"
@@ -158,6 +169,7 @@ def _candidate_summary(candidate: dict[str, Any]) -> dict[str, Any]:
 def _context_lines(payload: dict[str, Any], compact: dict[str, Any]) -> list[str]:
     objective = payload.get("current_objective") or {}
     package = payload.get("active_work_package") or {}
+    profile = payload.get("task_profile") if isinstance(payload.get("task_profile"), dict) else {}
     distillation = payload.get("distillation_status") or {}
     summary = distillation.get("summary") if isinstance(distillation.get("summary"), dict) else {}
     lines = [
@@ -168,6 +180,17 @@ def _context_lines(payload: dict[str, Any], compact: dict[str, Any]) -> list[str
         "Boundary: orientation-only; cannot update claim trust, evidence, validation, L2 memory, or skills.",
         "",
     ]
+    if profile:
+        lines.extend(
+            [
+                f"Task profile: {profile.get('profile_id')} ({profile.get('task_type')})",
+                f"Profile purpose: {_excerpt(profile.get('purpose') or '', limit=130)}",
+                f"Profile can say: {_join_items(profile.get('can_say') or [])}",
+                f"Profile cannot say: {_join_items(profile.get('cannot_say') or [])}",
+                f"Profile must verify: {_join_items(profile.get('must_verify') or [])}",
+                "",
+            ]
+        )
     if payload.get("not_authoritative_for_current_goal_if_rebind_needed"):
         reconciliation = payload.get("active_claim_focus_reconciliation") or {}
         lines.extend(
@@ -225,6 +248,28 @@ def _fingerprint(payload: dict[str, Any]) -> str:
     }
     encoded = json.dumps(fingerprint_payload, sort_keys=True, ensure_ascii=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _selected_context_profile(profile_id: str) -> dict[str, Any]:
+    requested = str(profile_id or "").strip()
+    if not requested:
+        return {}
+    profile = builtin_context_profiles().get(requested)
+    if profile is None:
+        return {}
+    return context_profile_payload(profile)
+
+
+def _context_pack_cli(session_id: str, *, task_profile: str = "") -> str:
+    command = f"aitp-v5 status context-pack {session_id}"
+    if task_profile:
+        command += f" --task-profile {task_profile}"
+    return command
+
+
+def _join_items(values: list[Any], *, limit: int = 2) -> str:
+    items = [str(value).strip() for value in values if str(value).strip()]
+    return "; ".join(items[:limit]) if items else "none"
 
 
 def _excerpt(value: str, *, limit: int) -> str:

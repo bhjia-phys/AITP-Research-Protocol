@@ -73,6 +73,15 @@ def sample_args_for_template(template: str) -> list[str]:
         return ["--topic", "fqhe", "--claim", "claim-fqhe", "--artifact-uri", "results/check.json", "--artifact-summary", "Finite-size result file.", "--supports-output", "finite_size_check", "--scope", "N<=10 only"]
     if template.startswith("curated-rag ingest"):
         return ["--path", "notes/dmft-orientation.md", "--tag", "dmft", "--topic-hint", "gw-dmft"]
+    if template.startswith("domain-pack suggest"):
+        return [
+            "--topic",
+            "librpa-gw",
+            "--statement",
+            "The LibRPA GW benchmark table is reproduced after a QSGW self-energy change.",
+            "--evidence-profile",
+            "code_method",
+        ]
     if template.startswith("literature comparison-draft"):
         return [
             "--session",

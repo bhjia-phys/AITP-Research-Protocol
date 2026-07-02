@@ -373,6 +373,16 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_list_knowledge_connectors",
         "surface": "knowledge_connector_catalog",
     },
+    "list_domain_packs": {
+        "cli": "aitp-v5 domain-pack catalog",
+        "mcp": "aitp_v5_list_domain_packs",
+        "surface": "domain_pack_catalog",
+    },
+    "suggest_domain_packs": {
+        "cli": "aitp-v5 domain-pack suggest <args>",
+        "mcp": "aitp_v5_suggest_domain_packs_for_claim",
+        "surface": "domain_pack_catalog",
+    },
     "source_reconstruction_audit": {
         "cli": "aitp-v5 source reconstruction-audit <args>",
         "mcp": "aitp_v5_audit_source_reconstruction",

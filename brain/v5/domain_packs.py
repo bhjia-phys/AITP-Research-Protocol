@@ -366,6 +366,7 @@ def domain_pack_brief_payload(pack: DomainPackRecord) -> dict:
     """Return orientation-only pack metadata for execution briefs."""
 
     return {
+        "kind": pack.kind,
         "pack_id": pack.pack_id,
         "domain": pack.domain,
         "description": pack.description,
@@ -383,6 +384,46 @@ def domain_pack_brief_payload(pack: DomainPackRecord) -> dict:
         "integration_boundary": pack.integration_boundary,
         "truth_standard_policy": pack.truth_standard_policy,
         "orientation_only": True,
+    }
+
+
+def describe_domain_packs(*, claim: ClaimRecord | None = None, selection_scope: str = "all") -> dict:
+    """Describe or suggest domain packs as a read-only research-experience catalog."""
+
+    all_packs = builtin_domain_packs()
+    if claim is None:
+        packs = list(all_packs.values())
+        scope = selection_scope or "all"
+        claim_context: dict = {}
+    else:
+        packs = suggest_domain_packs(claim)
+        scope = selection_scope or "suggested_for_claim"
+        claim_context = {
+            "claim_id": claim.claim_id,
+            "topic_id": claim.topic_id,
+            "evidence_profile": claim.evidence_profile,
+            "confidence_state": claim.confidence_state,
+            "scope": claim.scope,
+        }
+    return {
+        "ok": True,
+        "kind": "domain_pack_catalog",
+        "truth_source": "builtin_domain_pack_registry",
+        "selection_scope": scope,
+        "known_pack_count": len(all_packs),
+        "pack_count": len(packs),
+        "claim_context": claim_context,
+        "packs": [domain_pack_brief_payload(pack) for pack in packs],
+        "required_followup_for_use": [
+            "create or locate typed source/reference records before claim support",
+            "record tool_recipe, tool_run, artifact, evidence, and validation_result before trust promotion",
+            "treat external skills and domain manifests as orientation unless backed by typed records",
+        ],
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+        "can_materialize_skills": False,
     }
 
 

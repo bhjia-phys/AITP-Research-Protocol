@@ -12,6 +12,7 @@ from typing import Any
 from brain.v5.brief import build_execution_brief
 from brain.v5.cli_adapters import add_adapter_parser, dispatch_adapter_command
 from brain.v5.cli_authorities import add_authority_parser, dispatch_authority_command
+from brain.v5.cli_domain_packs import add_domain_pack_parser, dispatch_domain_pack_command
 from brain.v5.cli_memory import add_memory_parser, dispatch_memory_command
 from brain.v5.cli_summaries import add_summary_parser, dispatch_summary_command
 from brain.v5.cli_source import add_source_parser, dispatch_source_command
@@ -426,6 +427,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     kp = sp.add_parser("knowledge"); ks = kp.add_subparsers(dest="knowledge_command", required=True)
     ks.add_parser("connectors")
+    add_domain_pack_parser(sp)
 
     crp = sp.add_parser("curated-rag"); crs = crp.add_subparsers(dest="curated_rag_command", required=True)
     crs.add_parser("catalog")
@@ -938,6 +940,8 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.command == "knowledge" and args.knowledge_command == "connectors":
         return require_valid_public_surface("knowledge_connector_catalog", describe_knowledge_connectors())
+    if args.command == "domain-pack":
+        return dispatch_domain_pack_command(args, ws)
 
     if args.command == "curated-rag" and args.curated_rag_command == "catalog":
         return {

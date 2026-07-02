@@ -1,5 +1,14 @@
 from __future__ import annotations
 
+import json
+
+
+def _invoke(args, capsys):
+    from brain.v5.cli import main
+
+    assert main(args) == 0
+    return json.loads(capsys.readouterr().out)
+
 
 def test_builtin_formal_theory_pack_suggests_derivation_and_counterexample_work():
     from brain.v5.domain_packs import builtin_domain_packs
@@ -115,6 +124,60 @@ def test_suggest_domain_packs_matches_claim_without_overriding_global_policy():
 
     assert [pack.pack_id for pack in packs] == ["gw_librpa"]
     assert all(pack.truth_standard_policy == "global_only" for pack in packs)
+
+
+def test_domain_pack_catalog_is_public_orientation_surface():
+    from brain.v5.domain_packs import describe_domain_packs
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    catalog = require_valid_public_surface("domain_pack_catalog", describe_domain_packs())
+
+    assert catalog["kind"] == "domain_pack_catalog"
+    assert catalog["truth_source"] == "builtin_domain_pack_registry"
+    assert catalog["summary_inputs_trusted"] is False
+    assert catalog["can_update_kernel_state"] is False
+    assert catalog["can_update_claim_trust"] is False
+    assert catalog["can_materialize_skills"] is False
+    assert catalog["pack_count"] == catalog["known_pack_count"]
+    assert {pack["pack_id"] for pack in catalog["packs"]} >= {"formal_theory", "gw_librpa"}
+    assert all(pack["orientation_only"] is True for pack in catalog["packs"])
+
+
+def test_domain_pack_cli_and_mcp_suggest_librpa_pack(tmp_path, capsys):
+    from brain.v5.mcp_domain_packs import aitp_v5_list_domain_packs, aitp_v5_suggest_domain_packs_for_claim
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    catalog = _invoke(["--base", str(tmp_path), "domain-pack", "catalog"], capsys)
+    suggested = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "domain-pack",
+            "suggest",
+            "--topic",
+            "librpa-gw",
+            "--statement",
+            "The LibRPA QSGW self-energy benchmark is reproducible from ABACUS inputs.",
+            "--evidence-profile",
+            "code_method",
+        ],
+        capsys,
+    )
+    mcp_catalog = aitp_v5_list_domain_packs()
+    mcp_suggested = aitp_v5_suggest_domain_packs_for_claim(
+        topic_id="librpa-gw",
+        statement="The LibRPA QSGW self-energy benchmark is reproducible from ABACUS inputs.",
+        evidence_profile="code_method",
+    )
+
+    assert require_valid_public_surface("domain_pack_catalog", catalog) == catalog
+    assert require_valid_public_surface("domain_pack_catalog", suggested) == suggested
+    assert require_valid_public_surface("domain_pack_catalog", mcp_catalog) == mcp_catalog
+    assert require_valid_public_surface("domain_pack_catalog", mcp_suggested) == mcp_suggested
+    assert [pack["pack_id"] for pack in suggested["packs"]] == ["gw_librpa"]
+    assert suggested["claim_context"]["evidence_profile"] == "code_method"
+    assert mcp_suggested["packs"][0]["skill_refs"][0]["skill_id"] == "oh-my-librpa"
+    assert mcp_suggested["packs"][0]["skill_refs"][0]["orientation_only"] is True
 
 
 def test_suggest_tool_executors_for_claim_joins_domain_pack_and_catalog():
