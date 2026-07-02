@@ -78,6 +78,13 @@ def test_builtin_gw_librpa_pack_suggests_code_provenance_and_benchmarks():
     assert review_recommendation["executor_id"] == "failure_mode_basis_check"
     assert review_recommendation["supports_outputs"] == ["failure_mode_review_basis", "minimal_check"]
     assert review_recommendation["required_context_refs"] == ["code_state_ids", "validation_result_ids"]
+    assert pack.workflow_graph["default_routes"][0]["route_id"] == "abacus_librpa_molecule_gw"
+    assert pack.lane_policy["default_lane"] == "diagnostic"
+    assert "passed validation_result" in pack.lane_policy["final_evidence_requires"]
+    assert any(item["failure_id"] == "nonfinal_or_diagnostic_data" for item in pack.failure_taxonomy)
+    assert "run_report" in pack.artifact_schema["required_artifact_roles"]
+    assert pack.hpc_interpretation["runtime_failure_not_algorithmic_evidence"] is True
+    assert "librpa_run_continuation" in pack.context_profile_refs
     skill_ids = {ref["skill_id"] for ref in pack.skill_refs}
     assert "oh-my-librpa" in skill_ids
     assert "oh-my-librpa-abacus-librpa" in skill_ids
@@ -156,12 +163,22 @@ def test_execution_brief_exposes_domain_tool_executor_recommendations(tmp_path):
     assert domain_packs[0]["pack_id"] == "gw_librpa"
     assert domain_packs[0]["orientation_only"] is True
     assert domain_packs[0]["truth_standard_policy"] == "global_only"
+    assert domain_packs[0]["lane_policy"]["default_lane"] == "diagnostic"
+    assert domain_packs[0]["workflow_graph"]["orientation_only"] is True
+    assert any(item["failure_id"] == "hpc_runtime_not_science" for item in domain_packs[0]["failure_taxonomy"])
     assert domain_packs[0]["skill_refs"][0]["skill_id"] == "oh-my-librpa"
     assert domain_packs[0]["skill_refs"][0]["orientation_only"] is True
     assert any(
         ref["path"] == "docs/aitp-integration.md"
         for ref in domain_packs[0]["manifest_refs"]
     )
+    profiles = brief["known_context"]["context_compilation_profiles"]
+    profile_ids = {profile["profile_id"] for profile in profiles}
+    assert "librpa_run_continuation" in profile_ids
+    assert "source_reconstruction" in profile_ids
+    librpa_profile = next(profile for profile in profiles if profile["profile_id"] == "librpa_run_continuation")
+    assert "scheduler success proves scientific correctness" in librpa_profile["cannot_say"][1]
+    assert librpa_profile["truth_policy"]["can_update_claim_trust"] is False
     recommendations = brief["known_context"]["recommended_tool_executors"]
     assert recommendations[0]["pack_id"] == "gw_librpa"
     assert recommendations[0]["executor_id"] == "metric_table_check"

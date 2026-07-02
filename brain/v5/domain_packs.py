@@ -17,6 +17,12 @@ class DomainPackRecord:
     description: str
     suggested_question_intents: list[str] = field(default_factory=list)
     risk_signals: list[str] = field(default_factory=list)
+    workflow_graph: dict = field(default_factory=dict)
+    failure_taxonomy: list[dict] = field(default_factory=list)
+    lane_policy: dict = field(default_factory=dict)
+    artifact_schema: dict = field(default_factory=dict)
+    hpc_interpretation: dict = field(default_factory=dict)
+    context_profile_refs: list[str] = field(default_factory=list)
     tool_recipes: list[str] = field(default_factory=list)
     tool_executor_recommendations: list[dict] = field(default_factory=list)
     skill_refs: list[dict] = field(default_factory=list)
@@ -107,6 +113,105 @@ def builtin_domain_packs() -> dict[str, DomainPackRecord]:
                 "finite_size_or_cutoff_check",
             ],
             risk_signals=["formula_to_code_risk", "reproducibility_risk", "compute_cost"],
+            workflow_graph={
+                "default_routes": [
+                    {
+                        "route_id": "abacus_librpa_molecule_gw",
+                        "system_type": "molecule",
+                        "stages": ["scf", "librpa_gw", "postprocess"],
+                        "required_records": ["code_state", "tool_recipe", "tool_run", "artifact"],
+                    },
+                    {
+                        "route_id": "abacus_pyatb_librpa_periodic_gw",
+                        "system_type": "solid_or_2d",
+                        "stages": ["scf", "pyatb", "nscf", "preprocess", "librpa_gw", "postprocess"],
+                        "required_records": ["code_state", "tool_recipe", "tool_run", "artifact"],
+                    },
+                    {
+                        "route_id": "abacus_librpa_rpa_energy",
+                        "system_type": "molecule_or_solid",
+                        "stages": ["scf", "librpa_rpa", "convergence_report"],
+                        "required_records": ["code_state", "tool_recipe", "tool_run", "artifact"],
+                    },
+                ],
+                "stage_gate": "each expensive stage should have an explicit preflight or validation contract before trust-relevant use",
+                "orientation_only": True,
+            },
+            failure_taxonomy=[
+                {
+                    "failure_id": "basis_or_shrink_mismatch",
+                    "signals": ["ABFS_ORBITAL mismatch", "use_shrink_abfs inconsistency", "basis cutoff drift"],
+                    "review_basis": ["input bundle", "generated basis artifacts", "librpa.in"],
+                    "required_followup_records": ["artifact", "validation_result"],
+                },
+                {
+                    "failure_id": "formula_code_mismatch",
+                    "signals": ["self-energy formula path changed", "head-wing convention changed"],
+                    "review_basis": ["formula_refs", "code_state", "formula_code_invariant"],
+                    "required_followup_records": ["code_state", "tool_run", "evidence"],
+                },
+                {
+                    "failure_id": "nonfinal_or_diagnostic_data",
+                    "signals": ["nonconverged", "negative gap", "noiter", "contaminated root", "assumption-only plot"],
+                    "review_basis": ["lane manifest", "run report", "validation result"],
+                    "required_followup_records": ["tool_run", "artifact", "validation_result"],
+                },
+                {
+                    "failure_id": "hpc_runtime_not_science",
+                    "signals": ["OOM", "TIME LIMIT", "node failure", "dependency pending", "missing final artifact"],
+                    "review_basis": ["scheduler state", "stderr/stdout", "run status manifest"],
+                    "required_followup_records": ["tool_run", "artifact"],
+                },
+            ],
+            lane_policy={
+                "default_lane": "diagnostic",
+                "final_evidence_requires": [
+                    "explicit final lane label",
+                    "clean code_state",
+                    "passed validation_result",
+                    "artifact allowlist or final output manifest",
+                ],
+                "diagnostic_labels": ["smoke", "debug", "pilot", "nonconverged", "assumption_plot"],
+                "forbidden_promotions": [
+                    "diagnostic run",
+                    "unfinished run",
+                    "scheduler failure",
+                    "missing final artifact",
+                    "summary-only observation",
+                ],
+                "orientation_only": True,
+            },
+            artifact_schema={
+                "required_artifact_roles": [
+                    "input_bundle",
+                    "run_report",
+                    "stdout_stderr",
+                    "final_or_diagnostic_output_manifest",
+                ],
+                "recommended_artifact_roles": [
+                    "plot",
+                    "benchmark_table",
+                    "lane_manifest",
+                    "preflight_report",
+                    "archive",
+                ],
+                "hash_required_for": ["input_bundle", "final_or_diagnostic_output_manifest", "archive"],
+                "orientation_only": True,
+            },
+            hpc_interpretation={
+                "scheduler_states_are_process_evidence_only": True,
+                "runtime_failure_not_algorithmic_evidence": True,
+                "missing_expected_output_means": "not_ready",
+                "record_as": "tool_run",
+                "trust_update_allowed": False,
+                "orientation_only": True,
+            },
+            context_profile_refs=[
+                "librpa_run_continuation",
+                "source_reconstruction",
+                "group_meeting_report",
+                "closeout",
+            ],
             tool_recipes=["librpa_gw_benchmark_recipe", "code_state_capture", "abacus_librpa_input_audit"],
             skill_refs=[
                 {
@@ -266,6 +371,12 @@ def domain_pack_brief_payload(pack: DomainPackRecord) -> dict:
         "description": pack.description,
         "suggested_question_intents": list(pack.suggested_question_intents),
         "risk_signals": list(pack.risk_signals),
+        "workflow_graph": dict(pack.workflow_graph),
+        "failure_taxonomy": list(pack.failure_taxonomy),
+        "lane_policy": dict(pack.lane_policy),
+        "artifact_schema": dict(pack.artifact_schema),
+        "hpc_interpretation": dict(pack.hpc_interpretation),
+        "context_profile_refs": list(pack.context_profile_refs),
         "tool_recipes": list(pack.tool_recipes),
         "skill_refs": list(pack.skill_refs),
         "manifest_refs": list(pack.manifest_refs),

@@ -16,7 +16,13 @@ from brain.v5.cli_memory import add_memory_parser, dispatch_memory_command
 from brain.v5.cli_summaries import add_summary_parser, dispatch_summary_command
 from brain.v5.cli_source import add_source_parser, dispatch_source_command
 from brain.v5.code import capture_code_state_from_git, record_code_state
-from brain.v5.curated_rag_corpus import ingest_curated_rag_corpus
+from brain.v5.curated_rag_corpus import (
+    curated_rag_corpus,
+    draft_curated_rag_promotion,
+    ingest_curated_rag_corpus,
+    read_curated_rag_chunk,
+    search_curated_rag_corpus,
+)
 from brain.v5.evidence import record_evidence
 from brain.v5.knowledge_connectors import describe_knowledge_connectors
 from brain.v5.cli_legacy import add_legacy_parser, dispatch_legacy_command
@@ -422,6 +428,18 @@ def _build_parser() -> argparse.ArgumentParser:
     ks.add_parser("connectors")
 
     crp = sp.add_parser("curated-rag"); crs = crp.add_subparsers(dest="curated_rag_command", required=True)
+    crs.add_parser("catalog")
+    crs_search = crs.add_parser("search")
+    crs_search.add_argument("query")
+    crs_search.add_argument("--limit", type=int, default=5)
+    crs_chunk = crs.add_parser("chunk")
+    crs_chunk.add_argument("chunk_id")
+    crs_promo = crs.add_parser("promotion-draft")
+    crs_promo.add_argument("chunk_id")
+    crs_promo.add_argument("--topic", default="", dest="topic_id")
+    crs_promo.add_argument("--claim", default="", dest="claim_id")
+    crs_promo.add_argument("--connector", default="curated_rag", dest="connector_id")
+    crs_promo.add_argument("--intent", default="claim_support_review", dest="promotion_intent")
     cri = crs.add_parser("ingest")
     cri.add_argument("--path", action="append", required=True, dest="paths")
     cri.add_argument("--corpus-id", default="")
@@ -920,6 +938,46 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.command == "knowledge" and args.knowledge_command == "connectors":
         return require_valid_public_surface("knowledge_connector_catalog", describe_knowledge_connectors())
+
+    if args.command == "curated-rag" and args.curated_rag_command == "catalog":
+        return {
+            "ok": True,
+            "curated_rag_corpus": require_valid_public_surface("curated_rag_corpus", curated_rag_corpus(ws)),
+        }
+
+    if args.command == "curated-rag" and args.curated_rag_command == "search":
+        return {
+            "ok": True,
+            "curated_rag_search_result": require_valid_public_surface(
+                "curated_rag_search_result",
+                search_curated_rag_corpus(args.query, limit=args.limit, base=ws),
+            ),
+        }
+
+    if args.command == "curated-rag" and args.curated_rag_command == "chunk":
+        return {
+            "ok": True,
+            "curated_rag_chunk": require_valid_public_surface(
+                "curated_rag_chunk",
+                read_curated_rag_chunk(args.chunk_id, base=ws),
+            ),
+        }
+
+    if args.command == "curated-rag" and args.curated_rag_command == "promotion-draft":
+        return {
+            "ok": True,
+            "curated_rag_promotion_draft": require_valid_public_surface(
+                "curated_rag_promotion_draft",
+                draft_curated_rag_promotion(
+                    args.chunk_id,
+                    base=ws,
+                    topic_id=args.topic_id,
+                    claim_id=args.claim_id,
+                    connector_id=args.connector_id,
+                    promotion_intent=args.promotion_intent,
+                ),
+            ),
+        }
 
     if args.command == "curated-rag" and args.curated_rag_command == "ingest":
         return require_valid_public_surface(

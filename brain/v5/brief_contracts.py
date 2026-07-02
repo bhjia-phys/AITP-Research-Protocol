@@ -112,6 +112,15 @@ def _validate_known_context(payload: Any, path: str, result: ContractResult) -> 
         if isinstance(payload["domain_packs"], list):
             for index, pack in enumerate(payload["domain_packs"]):
                 _validate_domain_pack(pack, f"{path}.domain_packs[{index}]", result)
+    if "context_compilation_profiles" in payload:
+        _require_list(payload["context_compilation_profiles"], f"{path}.context_compilation_profiles", result)
+        if isinstance(payload["context_compilation_profiles"], list):
+            for index, profile in enumerate(payload["context_compilation_profiles"]):
+                _validate_context_compilation_profile(
+                    profile,
+                    f"{path}.context_compilation_profiles[{index}]",
+                    result,
+                )
     if "operating_notes" in payload:
         _require_list(payload["operating_notes"], f"{path}.operating_notes", result)
         if isinstance(payload["operating_notes"], list):
@@ -142,11 +151,49 @@ def _validate_domain_pack(payload: Any, path: str, result: ContractResult) -> No
     for key in (
         "suggested_question_intents",
         "risk_signals",
+        "failure_taxonomy",
+        "context_profile_refs",
         "tool_recipes",
         "skill_refs",
         "manifest_refs",
     ):
         _require_list(payload.get(key), f"{path}.{key}", result)
+    for key in ("workflow_graph", "lane_policy", "artifact_schema", "hpc_interpretation"):
+        _require_mapping(payload.get(key), f"{path}.{key}", result)
+    _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
+
+
+def _validate_context_compilation_profile(payload: Any, path: str, result: ContractResult) -> None:
+    _require_mapping(payload, path, result)
+    if not isinstance(payload, dict):
+        return
+    for key in ("kind", "profile_id", "task_type", "purpose"):
+        _require_nonempty_str(payload, key, path, result)
+    if payload.get("kind") != "context_compilation_profile":
+        result.add(f"{path}.kind", "must be 'context_compilation_profile'")
+    for key in (
+        "include_sections",
+        "can_say",
+        "cannot_say",
+        "must_verify",
+        "reusable_experience",
+        "recommended_surfaces",
+    ):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    _require_mapping(payload.get("truth_policy"), f"{path}.truth_policy", result)
+    if isinstance(payload.get("truth_policy"), dict):
+        _require_bool_value(
+            payload["truth_policy"].get("orientation_only"),
+            True,
+            f"{path}.truth_policy.orientation_only",
+            result,
+        )
+        _require_bool_value(
+            payload["truth_policy"].get("can_update_claim_trust"),
+            False,
+            f"{path}.truth_policy.can_update_claim_trust",
+            result,
+        )
     _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
 
 

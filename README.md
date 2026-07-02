@@ -831,6 +831,9 @@ when modifying v5 runtime, MCP, graph, or adapter code.
 - Positioning path: read [`docs/AITP_POSITIONING.md`](docs/AITP_POSITIONING.md)
   to understand AITP as a research graph kernel, context compiler, and domain
   experience substrate.
+- Roadmap path: read [`docs/AITP_RESEARCH_BRAIN_ROADMAP.md`](docs/AITP_RESEARCH_BRAIN_ROADMAP.md)
+  for the implementation plan that moves AITP from safe research records toward
+  a callable research memory and experience layer.
 - Skill-linkage path: read [`docs/AITP_SKILL_LINKAGE.md`](docs/AITP_SKILL_LINKAGE.md)
   to understand how external domain skills such as `oh-my-LibRPA` connect to
   AITP without becoming a second truth layer.
@@ -840,6 +843,7 @@ when modifying v5 runtime, MCP, graph, or adapter code.
   deleting generated host files.
 
 - [`docs/AITP_POSITIONING.md`](docs/AITP_POSITIONING.md) - product and architecture positioning
+- [`docs/AITP_RESEARCH_BRAIN_ROADMAP.md`](docs/AITP_RESEARCH_BRAIN_ROADMAP.md) - research-brain implementation roadmap
 - [`docs/AITP_SKILL_LINKAGE.md`](docs/AITP_SKILL_LINKAGE.md) - external skill and domain-pack linkage architecture
 - [`docs/AITP_SPEC.md`](docs/AITP_SPEC.md) - protocol specification
 - [`docs/CODEX_APP_1_0_PLAN.md`](docs/CODEX_APP_1_0_PLAN.md) - Codex App 1.0 architecture and implementation plan

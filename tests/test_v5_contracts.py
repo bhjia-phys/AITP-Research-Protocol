@@ -162,6 +162,12 @@ def test_execution_brief_contract_requires_domain_packs_to_stay_orientation_only
             "description": "LibRPA/GW guidance.",
             "suggested_question_intents": ["provenance_check"],
             "risk_signals": ["reproducibility_risk"],
+            "workflow_graph": {},
+            "failure_taxonomy": [],
+            "lane_policy": {},
+            "artifact_schema": {},
+            "hpc_interpretation": {},
+            "context_profile_refs": [],
             "tool_recipes": ["abacus_librpa_input_audit"],
             "skill_refs": [{"skill_id": "oh-my-librpa"}],
             "manifest_refs": [{"path": "registry/domain-manifest.abacus-librpa.json"}],
@@ -176,6 +182,39 @@ def test_execution_brief_contract_requires_domain_packs_to_stay_orientation_only
     assert result.ok is False
     assert any(
         issue.path == "brief.known_context.domain_packs[0].orientation_only"
+        for issue in result.issues
+    )
+
+
+def test_execution_brief_contract_requires_context_profiles_to_stay_orientation_only():
+    from brain.v5.contracts import validate_execution_brief
+
+    payload = _minimal_execution_brief_payload()
+    payload["known_context"]["context_compilation_profiles"] = [
+        {
+            "kind": "context_compilation_profile",
+            "profile_id": "paper_learning",
+            "task_type": "literature_learning",
+            "purpose": "Read paper context.",
+            "include_sections": ["source_assets"],
+            "can_say": ["source exists"],
+            "cannot_say": ["source proves claim"],
+            "must_verify": ["reference location"],
+            "reusable_experience": ["source_backtrace"],
+            "recommended_surfaces": ["curated_rag_search_result"],
+            "truth_policy": {
+                "orientation_only": True,
+                "can_update_claim_trust": False,
+            },
+            "orientation_only": False,
+        }
+    ]
+
+    result = validate_execution_brief(payload)
+
+    assert result.ok is False
+    assert any(
+        issue.path == "brief.known_context.context_compilation_profiles[0].orientation_only"
         for issue in result.issues
     )
 
