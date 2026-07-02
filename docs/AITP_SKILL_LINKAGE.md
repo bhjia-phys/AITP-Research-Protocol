@@ -110,6 +110,31 @@ AITP uses lightweight references instead of vendoring the skill into the kernel:
 The host decides how to load the referenced skill. AITP only records the fact
 that this is the right domain experience to consult.
 
+## Project-Scope Shim Generation
+
+AITP can generate project-local skill shims from built-in domain pack skill
+references. The preview form is read-only:
+
+```text
+aitp-v5 domain-pack skill-shims --pack gw_librpa
+```
+
+The write form requires an explicit flag:
+
+```text
+aitp-v5 domain-pack skill-shims --pack gw_librpa --apply
+```
+
+The matching MCP surface is `aitp_v5_build_domain_skill_shim_manifest`. The
+returned `domain_skill_shim_manifest` lists every target
+`.agents/skills/<skill-id>/SKILL.md`, whether it would be created, updated,
+blocked, or already up to date.
+
+Generated shims are discovery and routing aids only. They copy no external skill
+content, cannot create evidence, cannot create validation results, cannot update
+claim trust, and cannot promote memory. Any durable output from the loaded
+external skill must still return through typed AITP records.
+
 ## oh-my-LibRPA Mapping
 
 `oh-my-LibRPA` is the first concrete domain skill bundle for this architecture.
@@ -190,9 +215,9 @@ claim support rather than hidden prompt state.
    briefs.
 2. Add host-adapter support for loading referenced skill bundles when the host
    supports explicit skill loading.
-3. Add project-scope shim generation for external domain skills so Codex,
-   Claude Code, Kimi Code, and other hosts can discover the same bundle without
-   duplicating it.
+3. Implemented: add project-scope shim generation for external domain skills so
+   Codex, Claude Code, Kimi Code, and other hosts can discover the same bundle
+   without duplicating it.
 4. Add recording-navigation recipes that map common external skill outputs into
    the correct typed AITP write surface.
 5. Add domain pack manifests for QFT, quantum gravity, and other literature

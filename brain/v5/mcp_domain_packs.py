@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from brain.v5.domain_packs import describe_domain_packs
+from brain.v5.domain_skill_shims import build_domain_skill_shim_manifest
+from brain.v5.mcp_base_resolution import resolve_workspace_base
 from brain.v5.models import ClaimRecord
 from brain.v5.public_surfaces import require_valid_public_surface
+from brain.v5.workspace import init_workspace
 
 
 def aitp_v5_list_domain_packs() -> dict:
@@ -38,4 +41,26 @@ def aitp_v5_suggest_domain_packs_for_claim(
     return require_valid_public_surface(
         "domain_pack_catalog",
         describe_domain_packs(claim=claim, selection_scope="suggested_for_claim"),
+    )
+
+
+def aitp_v5_build_domain_skill_shim_manifest(
+    base: str,
+    *,
+    pack_ids: list[str] | None = None,
+    output_root: str = ".agents/skills",
+    apply: bool = False,
+    overwrite: bool = False,
+) -> dict:
+    """Preview or write project-local external domain skill shims."""
+
+    return require_valid_public_surface(
+        "domain_skill_shim_manifest",
+        build_domain_skill_shim_manifest(
+            init_workspace(resolve_workspace_base(base)),
+            pack_ids=pack_ids or [],
+            output_root=output_root,
+            apply=apply,
+            overwrite=overwrite,
+        ),
     )

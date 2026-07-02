@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from brain.v5.domain_packs import describe_domain_packs
+from brain.v5.domain_skill_shims import build_domain_skill_shim_manifest
 from brain.v5.models import ClaimRecord
 from brain.v5.public_surfaces import require_valid_public_surface
 
@@ -19,6 +20,11 @@ def add_domain_pack_parser(sp) -> None:
     suggest.add_argument("--uncertainty", default="ad_hoc_domain_pack_suggestion")
     suggest.add_argument("--scope", default="")
     suggest.add_argument("--failure-mode", default="", dest="strongest_failure_mode")
+    shims = ds.add_parser("skill-shims")
+    shims.add_argument("--pack", action="append", default=[], dest="pack_ids")
+    shims.add_argument("--output-root", default=".agents/skills")
+    shims.add_argument("--apply", action="store_true")
+    shims.add_argument("--overwrite", action="store_true")
 
 
 def dispatch_domain_pack_command(args, _ws) -> dict:
@@ -38,5 +44,16 @@ def dispatch_domain_pack_command(args, _ws) -> dict:
         return require_valid_public_surface(
             "domain_pack_catalog",
             describe_domain_packs(claim=claim, selection_scope="suggested_for_claim"),
+        )
+    if args.domain_pack_command == "skill-shims":
+        return require_valid_public_surface(
+            "domain_skill_shim_manifest",
+            build_domain_skill_shim_manifest(
+                _ws,
+                pack_ids=args.pack_ids,
+                output_root=args.output_root,
+                apply=args.apply,
+                overwrite=args.overwrite,
+            ),
         )
     raise SystemExit(f"unsupported domain-pack command: {args.domain_pack_command}")

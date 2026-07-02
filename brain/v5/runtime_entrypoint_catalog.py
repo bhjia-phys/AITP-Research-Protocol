@@ -398,6 +398,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_suggest_domain_packs_for_claim",
         "surface": "domain_pack_catalog",
     },
+    "domain_skill_shims": {
+        "cli": "aitp-v5 domain-pack skill-shims <args>",
+        "mcp": "aitp_v5_build_domain_skill_shim_manifest",
+        "surface": "domain_skill_shim_manifest",
+    },
     "source_reconstruction_audit": {
         "cli": "aitp-v5 source reconstruction-audit <args>",
         "mcp": "aitp_v5_audit_source_reconstruction",

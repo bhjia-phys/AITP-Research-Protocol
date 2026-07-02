@@ -46,6 +46,7 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["runtime_bridge_target_manifest"]["surface"] == "runtime_bridge_target_manifest"
     assert entrypoints["runtime_mcp_bridge_acceptance"]["surface"] == "runtime_mcp_bridge_acceptance"
     assert entrypoints["runtime_payload_profiles"]["surface"] == "runtime_payload_profiles"
+    assert entrypoints["domain_skill_shims"]["surface"] == "domain_skill_shim_manifest"
     assert entrypoints["record_evidence"]["mcp"] == "aitp_v5_record_evidence"
     assert entrypoints["record_code_state"]["mcp"] == "aitp_v5_record_code_state"
     assert entrypoints["register_tool_recipe"]["mcp"] == "aitp_v5_register_tool_recipe"
@@ -97,6 +98,11 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
         "cli": "aitp-v5 adapter payload-profiles",
         "mcp": "aitp_v5_get_runtime_payload_profiles",
         "surface": "runtime_payload_profiles",
+    }
+    assert entrypoints["domain_skill_shims"] == {
+        "cli": "aitp-v5 domain-pack skill-shims <args>",
+        "mcp": "aitp_v5_build_domain_skill_shim_manifest",
+        "surface": "domain_skill_shim_manifest",
     }
     assert entrypoints["recording_candidate_classification"] == {
         "cli": "aitp-v5 recording classify-candidate <args>",
@@ -307,6 +313,11 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "cli": "aitp-v5 literature source-extraction <args>",
             "mcp": "aitp_v5_build_literature_source_extraction_candidates",
             "surface": "literature_source_extraction_candidates",
+        },
+        "domain_skill_shims": {
+            "cli": "aitp-v5 domain-pack skill-shims <args>",
+            "mcp": "aitp_v5_build_domain_skill_shim_manifest",
+            "surface": "domain_skill_shim_manifest",
         },
         "record_evidence": {
             "cli": "aitp-v5 evidence record <args>",
@@ -622,6 +633,23 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
         "required": ["base", "session_id", "source_refs"],
         "optional": ["focus_terms", "extraction_modes", "optional_claim_id", "rationale"],
         "source": "aitp_v5_build_literature_source_extraction_candidates",
+    }
+    assert by_operation["materializeDomainSkillShims"]["entrypoint_key"] == "domain_skill_shims"
+    assert by_operation["materializeDomainSkillShims"]["mcp_tool"] == (
+        "aitp_v5_build_domain_skill_shim_manifest"
+    )
+    assert by_operation["materializeDomainSkillShims"]["cli_fallback"] == (
+        "aitp-v5 domain-pack skill-shims <args>"
+    )
+    assert by_operation["materializeDomainSkillShims"]["surface"] == "domain_skill_shim_manifest"
+    assert by_operation["materializeDomainSkillShims"]["execution_role"] == "write"
+    assert by_operation["materializeDomainSkillShims"]["state_effect"] == "project_skill_shim_write"
+    assert by_operation["materializeDomainSkillShims"]["claim_trust_mutation"] == "none"
+    assert by_operation["materializeDomainSkillShims"]["can_update_claim_trust"] is False
+    assert by_operation["materializeDomainSkillShims"]["mcp_arguments"] == {
+        "required": ["base"],
+        "optional": ["pack_ids", "output_root", "apply", "overwrite"],
+        "source": "aitp_v5_build_domain_skill_shim_manifest",
     }
     assert by_operation["preflightTrustUpdate"]["mcp_tool"] == "aitp_v5_preflight_trust_update"
     assert by_operation["preflightTrustUpdate"]["state_effect"] == "preflight_only"

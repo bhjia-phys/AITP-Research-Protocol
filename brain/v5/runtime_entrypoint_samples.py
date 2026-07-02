@@ -93,6 +93,8 @@ def sample_args_for_template(template: str) -> list[str]:
             "--evidence-profile",
             "code_method",
         ]
+    if template.startswith("domain-pack skill-shims"):
+        return ["--pack", "gw_librpa", "--output-root", "D:/aitp/.agents/skills"]
     if template.startswith("literature comparison-draft"):
         return [
             "--session",

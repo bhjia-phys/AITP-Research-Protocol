@@ -211,6 +211,66 @@ def test_domain_pack_catalog_is_public_orientation_surface():
     assert formal["failure_taxonomy"][0]["failure_id"] == "implicit_definition_shift"
 
 
+def test_domain_skill_shim_manifest_previews_and_writes_project_skill_shims(tmp_path):
+    from brain.v5.domain_skill_shims import build_domain_skill_shim_manifest
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.workspace import init_workspace
+
+    ws = init_workspace(tmp_path / "ws")
+    output_root = tmp_path / "skills"
+
+    preview = require_valid_public_surface(
+        "domain_skill_shim_manifest",
+        build_domain_skill_shim_manifest(
+            ws,
+            pack_ids=["gw_librpa"],
+            output_root=str(output_root),
+        ),
+    )
+
+    assert preview["state_effect"] == "read_only_preview"
+    assert preview["writes_project_files"] is False
+    assert preview["shim_count"] == 3
+    assert preview["write_count"] == 0
+    assert not (output_root / "oh-my-librpa" / "SKILL.md").exists()
+    router_shim = next(shim for shim in preview["shims"] if shim["shim_name"] == "oh-my-librpa")
+    assert router_shim["status"] == "would_create"
+    assert router_shim["copies_external_skill_content"] is False
+    assert "orientation-only" in router_shim["content_preview"]
+
+    applied = require_valid_public_surface(
+        "domain_skill_shim_manifest",
+        build_domain_skill_shim_manifest(
+            ws,
+            pack_ids=["gw_librpa"],
+            output_root=str(output_root),
+            apply=True,
+        ),
+    )
+
+    assert applied["state_effect"] == "project_skill_shim_write"
+    assert applied["writes_project_files"] is True
+    assert applied["write_count"] == 3
+    content = (output_root / "oh-my-librpa" / "SKILL.md").read_text(encoding="utf-8")
+    assert "name: oh-my-librpa" in content
+    assert "AITP Boundary" in content
+    assert "External skill content copied: `false`" in content
+    assert "tool_run" in content
+
+    repeated = require_valid_public_surface(
+        "domain_skill_shim_manifest",
+        build_domain_skill_shim_manifest(
+            ws,
+            pack_ids=["gw_librpa"],
+            output_root=str(output_root),
+            apply=True,
+        ),
+    )
+
+    assert repeated["write_count"] == 0
+    assert {shim["status"] for shim in repeated["shims"]} == {"up_to_date"}
+
+
 def test_domain_pack_cli_and_mcp_suggest_librpa_pack(tmp_path, capsys):
     from brain.v5.mcp_domain_packs import aitp_v5_list_domain_packs, aitp_v5_suggest_domain_packs_for_claim
     from brain.v5.public_surfaces import require_valid_public_surface
@@ -246,6 +306,38 @@ def test_domain_pack_cli_and_mcp_suggest_librpa_pack(tmp_path, capsys):
     assert suggested["claim_context"]["evidence_profile"] == "code_method"
     assert mcp_suggested["packs"][0]["skill_refs"][0]["skill_id"] == "oh-my-librpa"
     assert mcp_suggested["packs"][0]["skill_refs"][0]["orientation_only"] is True
+
+
+def test_domain_skill_shim_cli_and_mcp_return_valid_manifest(tmp_path, capsys):
+    from brain.v5.mcp_domain_packs import aitp_v5_build_domain_skill_shim_manifest
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    cli_manifest = _invoke(
+        [
+            "--base",
+            str(tmp_path / "cli-ws"),
+            "domain-pack",
+            "skill-shims",
+            "--pack",
+            "qft_literature",
+            "--output-root",
+            str(tmp_path / "cli-skills"),
+        ],
+        capsys,
+    )
+    mcp_manifest = aitp_v5_build_domain_skill_shim_manifest(
+        str(tmp_path / "mcp-ws"),
+        pack_ids=["quantum_gravity_literature"],
+        output_root=str(tmp_path / "mcp-skills"),
+    )
+
+    assert require_valid_public_surface("domain_skill_shim_manifest", cli_manifest) == cli_manifest
+    assert require_valid_public_surface("domain_skill_shim_manifest", mcp_manifest) == mcp_manifest
+    assert cli_manifest["shims"][0]["shim_name"] == "qft-literature-skill"
+    assert cli_manifest["writes_project_files"] is False
+    assert not (tmp_path / "cli-skills" / "qft-literature-skill" / "SKILL.md").exists()
+    assert mcp_manifest["shims"][0]["shim_name"] == "quantum-gravity-literature-skill"
+    assert mcp_manifest["writes_project_files"] is False
 
 
 def test_suggest_tool_executors_for_claim_joins_domain_pack_and_catalog():

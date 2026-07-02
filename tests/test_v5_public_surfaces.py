@@ -31,6 +31,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "curated_rag_promotion_draft",
         "curated_rag_search_result",
         "domain_pack_catalog",
+        "domain_skill_shim_manifest",
         "execution_brief",
         "exploratory_record",
         "failure_mode_audit",

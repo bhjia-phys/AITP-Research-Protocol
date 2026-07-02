@@ -813,6 +813,26 @@ def require_valid_domain_pack_catalog(payload: dict[str, Any]) -> dict[str, Any]
     return _require_valid_domain_pack_catalog(payload)
 
 
+def validate_domain_skill_shim_manifest(
+    payload: dict[str, Any],
+    *,
+    path: str = "domain_skill_shim_manifest",
+) -> ContractResult:
+    """Validate a project-scope domain-skill shim manifest."""
+
+    from brain.v5.domain_skill_shim_contracts import validate_domain_skill_shim_manifest as _validate
+
+    return _validate(payload, path=path)
+
+
+def require_valid_domain_skill_shim_manifest(payload: dict[str, Any]) -> dict[str, Any]:
+    """Return a domain-skill shim manifest or raise a contract error."""
+
+    from brain.v5.domain_skill_shim_contracts import require_valid_domain_skill_shim_manifest as _require
+
+    return _require(payload)
+
+
 def validate_risk_assessment(payload: dict[str, Any], *, path: str = "risk_assessment") -> ContractResult:
     """Validate a risk assessment payload."""
 

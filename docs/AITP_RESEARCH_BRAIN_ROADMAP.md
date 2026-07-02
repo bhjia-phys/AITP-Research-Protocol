@@ -77,13 +77,18 @@ First implemented target:
   profile refs.
 - `domain_pack_catalog` now exposes built-in packs and claim-text suggestions
   through `aitp-v5 domain-pack catalog/suggest` and MCP wrappers.
+- `domain_skill_shim_manifest` now previews or explicitly writes
+  project-local external skill `SKILL.md` shims through
+  `aitp-v5 domain-pack skill-shims` and
+  `aitp_v5_build_domain_skill_shim_manifest`. These shims copy no external
+  skill content and remain orientation-only.
 
 Next implementation slices:
 
-1. Add project-scope external skill shim generation so hosts can discover
-   domain skill bundles without copying their contents into AITP core.
-2. Add a domain-pack authoring path for user-defined skills and connector
+1. Add a domain-pack authoring path for user-defined skills and connector
    bindings once the project-scope shim is stable.
+2. Add recording-navigation recipes that map common skill outputs into typed
+   AITP write surfaces.
 
 ## Workstream B: Literature Knowledge Substrate v1
 
