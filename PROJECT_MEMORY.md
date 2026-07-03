@@ -589,6 +589,16 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   trust-audit surfaces into an accepted workflow exemplar. It is workflow memory
   only: it cannot validate a physics claim, update claim trust, or promote L2
   memory without typed evidence and passed validation results.
+- The built-in QFT/QG semi-formal source-reconstruction exemplar can be written
+  with `aitp-v5 exemplar lane record-qft-qg-source` or
+  `aitp_v5_record_qft_qg_source_reconstruction_exemplar`. The record binds
+  `formal_theory`, `qft_literature`, and `quantum_gravity_literature` domain
+  packs to source assets, exact reference anchors, physics objects/relations,
+  proof obligations, literature extraction/comparison, source-reconstruction
+  review, failure-mode, validation, checkpoint, and trust-audit surfaces. It is
+  source-grounding workflow memory only: retrieved chunks, PDF summaries, and
+  interpretive synthesis cannot become claim evidence without typed anchors,
+  review results, validation, and required checkpoint decisions.
 - `aitp-v5 status topic <session-id> --compact` and
   `aitp_v5_write_topic_status_surfaces_compact` should be preferred when a host
   needs only a small continuation payload; they still write the full status

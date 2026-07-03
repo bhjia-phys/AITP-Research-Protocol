@@ -290,6 +290,208 @@ def record_librpa_code_backed_algorithm_exemplar(
     )
 
 
+def record_qft_qg_source_reconstruction_exemplar(
+    ws: WorkspacePaths,
+    *,
+    topic_id: str,
+    claim_id: str = "",
+    run_id: str = "",
+    status: str = "accepted",
+) -> LaneExemplarRecord:
+    """Record the built-in QFT/QG semi-formal source-reconstruction exemplar."""
+
+    return record_lane_exemplar(
+        ws,
+        topic_id=topic_id,
+        lane="semi_formal_theory",
+        title="QFT/QG source-reconstruction workflow",
+        summary=(
+            "Turn QFT or quantum-gravity papers, notes, and PDF-derived chunks into source-anchored "
+            "concepts, equations, assumptions, and review results before any claim-supporting evidence "
+            "or long-term memory promotion is allowed."
+        ),
+        claim_id=claim_id,
+        run_id=run_id,
+        gates_demonstrated=[
+            "source_asset_intake",
+            "reference_location_anchoring",
+            "physics_object_extraction",
+            "cross_source_comparison",
+            "source_reconstruction_review",
+            "checkpointed_promotion_boundary",
+        ],
+        artifact_refs=[
+            "surface:literature_source_extraction_candidates",
+            "surface:literature_corpus_extraction_artifact",
+            "surface:literature_source_set_readiness",
+            "surface:source_reconstruction_audit",
+            "surface:source_reconstruction_review_packet",
+            "surface:source_reconstruction_review_result_record",
+        ],
+        domain_pack_refs=["formal_theory", "qft_literature", "quantum_gravity_literature"],
+        context_profile_refs=[
+            "paper_learning",
+            "paired_paper_learning",
+            "multi_paper_learning_route",
+            "source_reconstruction",
+            "derivation_check",
+            "group_meeting_report",
+            "closeout",
+        ],
+        skill_refs=[
+            "qft-literature-skill",
+            "quantum-gravity-literature-skill",
+        ],
+        surface_refs=[
+            "source_asset_record",
+            "reference_location_record",
+            "physics_object_record",
+            "object_relation_record",
+            "proof_obligation_record",
+            "curated_rag_search_result",
+            "curated_rag_chunk",
+            "literature_reading_route",
+            "literature_source_extraction_candidates",
+            "literature_corpus_extraction_artifact",
+            "literature_source_set_readiness",
+            "literature_comparison_draft",
+            "source_reconstruction_audit",
+            "source_reconstruction_manifest",
+            "source_reconstruction_review_packet",
+            "source_reconstruction_review_result_record",
+            "failure_mode_audit",
+            "claim_trust_audit",
+            "human_checkpoint_record",
+        ],
+        validation_surface_refs=[
+            "source_reconstruction_review_result_record",
+            "validation_contract_record",
+            "validation_result_record",
+            "failure_mode_review_result_record",
+            "human_checkpoint_record",
+            "claim_trust_audit",
+        ],
+        workflow_steps=[
+            {
+                "step_id": "register_or_bind_sources",
+                "entrypoint": "aitp-v5 literature record-candidate <args>",
+                "purpose": "Register PDFs, notes, or corpus roots as source candidates before using their content.",
+            },
+            {
+                "step_id": "record_exact_anchors",
+                "entrypoint": "aitp-v5 reference location record <args>",
+                "purpose": "Create page, section, equation, or theorem anchors for every source-dependent claim component.",
+            },
+            {
+                "step_id": "extract_objects_and_relations",
+                "entrypoint": "aitp-v5 literature source-extraction <args>",
+                "purpose": "Draft definitions, concepts, equations, assumptions, and dependency candidates as orientation only.",
+            },
+            {
+                "step_id": "audit_source_set_readiness",
+                "entrypoint": "aitp-v5 literature source-set-readiness <args>",
+                "purpose": "Check whether the source set is broad, anchored, and scoped enough for synthesis.",
+            },
+            {
+                "step_id": "compare_and_reconstruct",
+                "entrypoint": "aitp-v5 literature comparison-draft <args>",
+                "purpose": "Separate source results, conventions, framework assumptions, interpretations, and open directions.",
+            },
+            {
+                "step_id": "review_source_reconstruction",
+                "entrypoint": "aitp-v5 source reconstruction-review --claim <claim-id>",
+                "purpose": "Build the review packet and record a review result before source-derived evidence is trusted.",
+            },
+            {
+                "step_id": "audit_before_promotion",
+                "entrypoint": "aitp-v5 trust audit --claim <claim-id>",
+                "purpose": "Require validation, failure-mode coverage, and human checkpoint where broad QG claims are promoted.",
+            },
+        ],
+        failure_modes=[
+            {
+                "failure_id": "notation_or_normalization_collision",
+                "signals": ["field normalization differs", "metric signature differs", "operator symbol reused"],
+                "required_basis": ["reference_location_record", "physics_object_record", "notation_map"],
+            },
+            {
+                "failure_id": "renormalization_scheme_mismatch",
+                "signals": ["scheme not named", "scale dependence hidden", "regularization convention omitted"],
+                "required_basis": ["source equations", "proof_obligation_record", "validation_result_record"],
+            },
+            {
+                "failure_id": "speculation_promoted_as_source_result",
+                "signals": ["proposal language treated as established", "interpretation treated as theorem"],
+                "required_basis": ["reference_location_record", "claim scope", "human_checkpoint_record"],
+            },
+            {
+                "failure_id": "framework_mismatch",
+                "signals": ["AdS argument applied to de Sitter", "large-N assumption hidden", "semiclassical limit omitted"],
+                "required_basis": ["object_relation_record", "assumption table", "literature_comparison_draft"],
+            },
+            {
+                "failure_id": "cross_paper_dependency_gap",
+                "signals": ["definition lineage unclear", "paper B assumes paper A without a source anchor"],
+                "required_basis": ["dependency map", "source_reconstruction_review_result_record"],
+            },
+            {
+                "failure_id": "summary_only_understanding",
+                "signals": ["no page or equation anchors", "concept map has no source refs"],
+                "required_basis": ["source_asset_record", "reference_location_record", "record_ref_lookup"],
+            },
+        ],
+        forbidden_uses=[
+            "Treating retrieved chunks, PDF summaries, or literature notes as evidence without exact anchors.",
+            "Promoting an interpretive quantum-gravity synthesis as a source result.",
+            "Calling a derivation proved while proof obligations, assumptions, or convention mismatches remain open.",
+            "Updating claim trust from source-reconstruction packets without review, validation, and required checkpoint links.",
+        ],
+        can_say=[
+            "Which QFT/QG source anchors, concepts, relations, and proof obligations still need review.",
+            "Whether a source set is ready for bounded synthesis or only orientation.",
+            "Which parts are source results, interpretations, open directions, or unresolved framework assumptions.",
+        ],
+        cannot_say=[
+            "That the AI understands the physics in the proof-level sense.",
+            "That a literature summary or RAG chunk is claim evidence.",
+            "That a broad quantum-gravity interpretation is promotable without a checkpointed review path.",
+        ],
+        required_next_records=[
+            "source_asset_record",
+            "reference_location_record",
+            "physics_object_record",
+            "object_relation_record",
+            "proof_obligation_record",
+            "source_reconstruction_review_result_record",
+            "validation_result_record",
+            "evidence_record",
+            "human_checkpoint_record",
+        ],
+        promotion_blockers=[
+            "missing exact reference_location_ids for key source claims",
+            "source_reconstruction_review_status not passed",
+            "uncovered convention, framework, or speculation-boundary failure mode",
+            "missing human checkpoint for broad QG interpretation or L2 promotion",
+            "summary-only or RAG-only support path",
+        ],
+        trust_boundary=(
+            "Accepted semi-formal workflow exemplar only; it helps reconstruct QFT/QG source stacks but "
+            "cannot prove a derivation, validate an interpretation, update claim trust, or promote memory "
+            "without typed anchors, review results, validation, and required checkpoint decisions."
+        ),
+        source_refs=[
+            "domain_pack:formal_theory",
+            "domain_pack:qft_literature",
+            "domain_pack:quantum_gravity_literature",
+            "connector:qft_literature",
+            "connector:quantum_gravity_literature",
+            "docs:AITP_RESEARCH_BRAIN_ROADMAP.md#workstream-d",
+            "surface:source_reconstruction_review_packet",
+        ],
+        status=status,
+    )
+
+
 def load_lane_exemplars(ws: WorkspacePaths, topic_id: str, *, limit: int = 6) -> dict[str, Any]:
     """Load topic-local lane exemplars for briefs and status surfaces."""
 

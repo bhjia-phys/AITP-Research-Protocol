@@ -131,3 +131,42 @@ def test_vnext_readiness_cli_compact_progress(tmp_path, capsys):
     assert compact_payload["can_update_claim_trust"] is False
     assert "workstreams" not in compact_payload
     assert "lane_exemplar_manifest" not in compact_payload
+
+
+def test_vnext_readiness_reports_ready_when_all_lane_exemplars_are_accepted(tmp_path):
+    from brain.v5.lane_exemplars import (
+        record_lane_exemplar,
+        record_librpa_code_backed_algorithm_exemplar,
+        record_qft_qg_source_reconstruction_exemplar,
+    )
+    from brain.v5.vnext_readiness import build_vnext_readiness_manifest
+    from brain.v5.workspace import create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "lane-exemplar-topic", context_id="workflow", title="Lane Exemplars")
+    record_lane_exemplar(
+        ws,
+        topic_id="lane-exemplar-topic",
+        lane="toy_numeric",
+        title="Toy numeric finite-size lane",
+        summary="Toy numeric exemplar with finite-size and negative-control boundaries.",
+        gates_demonstrated=["G3_verification"],
+        artifact_refs=["artifact:toy-finite-size-table"],
+        trust_boundary="Toy exemplar only; not a theorem.",
+        status="accepted",
+    )
+    record_librpa_code_backed_algorithm_exemplar(ws, topic_id="lane-exemplar-topic")
+    record_qft_qg_source_reconstruction_exemplar(ws, topic_id="lane-exemplar-topic")
+
+    payload = build_vnext_readiness_manifest(ws)
+
+    assert payload["control_plane_status"] == "ready"
+    assert payload["phase_statuses"]["phase_5_lane_exemplars"] == "implemented"
+    assert payload["backlog_workstreams"] == []
+    assert payload["lane_exemplar_manifest"]["covered_lanes"] == [
+        "toy_numeric",
+        "semi_formal_theory",
+        "code_backed_algorithm",
+    ]
+    assert payload["lane_exemplar_manifest"]["missing_lanes"] == []
+    assert payload["can_update_claim_trust"] is False

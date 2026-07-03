@@ -138,6 +138,7 @@ def test_lane_exemplar_cli_mcp_and_runtime_surfaces(tmp_path, capsys):
         aitp_v5_build_lane_exemplar_manifest,
         aitp_v5_record_lane_exemplar,
         aitp_v5_record_librpa_code_backed_algorithm_exemplar,
+        aitp_v5_record_qft_qg_source_reconstruction_exemplar,
     )
     from brain.v5.runtime_entrypoints import runtime_entrypoints
 
@@ -226,6 +227,17 @@ def test_lane_exemplar_cli_mcp_and_runtime_surfaces(tmp_path, capsys):
     assert "hpc_cockpit" in librpa_payload["surface_refs"]
     assert any(item["failure_id"] == "hpc_runtime_not_science" for item in librpa_payload["failure_modes"])
     assert "scheduler success" in librpa_payload["forbidden_uses"][0]
+    qft_qg_payload = aitp_v5_record_qft_qg_source_reconstruction_exemplar(
+        str(ws.base),
+        topic_id="qsgw-headwing-update-librpa",
+        claim_id=claim.claim_id,
+        run_id="run-qft-qg-source",
+    )
+    assert qft_qg_payload["lane"] == "semi_formal_theory"
+    assert "qft_literature" in qft_qg_payload["domain_pack_refs"]
+    assert "quantum_gravity_literature" in qft_qg_payload["domain_pack_refs"]
+    assert "source_reconstruction_review_packet" in qft_qg_payload["surface_refs"]
+    assert "PDF summaries" in qft_qg_payload["forbidden_uses"][0]
     assert manifest_payload["covered_lanes"] == ["toy_numeric", "code_backed_algorithm"]
     assert manifest_payload["can_update_claim_trust"] is False
     assert runtime_entrypoints()["record_lane_exemplar"] == {
@@ -236,6 +248,11 @@ def test_lane_exemplar_cli_mcp_and_runtime_surfaces(tmp_path, capsys):
     assert runtime_entrypoints()["record_librpa_code_backed_algorithm_exemplar"] == {
         "cli": "aitp-v5 exemplar lane record-librpa-code <args>",
         "mcp": "aitp_v5_record_librpa_code_backed_algorithm_exemplar",
+        "surface": "lane_exemplar_record",
+    }
+    assert runtime_entrypoints()["record_qft_qg_source_reconstruction_exemplar"] == {
+        "cli": "aitp-v5 exemplar lane record-qft-qg-source <args>",
+        "mcp": "aitp_v5_record_qft_qg_source_reconstruction_exemplar",
         "surface": "lane_exemplar_record",
     }
     assert runtime_entrypoints()["lane_exemplar_manifest"] == {
@@ -306,3 +323,74 @@ def test_builtin_librpa_code_backed_exemplar_links_context_domain_and_validation
     assert manifest["covered_lanes"] == ["code_backed_algorithm"]
     assert manifest["items"][0]["domain_pack_refs"] == ["gw_librpa"]
     assert "hpc_cockpit" in manifest["items"][0]["surface_refs"]
+
+
+def test_builtin_qft_qg_source_reconstruction_exemplar_links_literature_surfaces(tmp_path):
+    from brain.v5.lane_exemplars import (
+        build_lane_exemplar_manifest,
+        record_qft_qg_source_reconstruction_exemplar,
+    )
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ws, claim = _seed_workspace(tmp_path)
+
+    record = record_qft_qg_source_reconstruction_exemplar(
+        ws,
+        topic_id="qsgw-headwing-update-librpa",
+        claim_id=claim.claim_id,
+        run_id="run-qft-qg-source",
+    )
+
+    assert record.lane == "semi_formal_theory"
+    assert record.status == "accepted"
+    assert record.domain_pack_refs == ["formal_theory", "qft_literature", "quantum_gravity_literature"]
+    assert {
+        "paper_learning",
+        "paired_paper_learning",
+        "multi_paper_learning_route",
+        "source_reconstruction",
+        "derivation_check",
+        "group_meeting_report",
+        "closeout",
+    } <= set(record.context_profile_refs)
+    assert record.skill_refs == ["qft-literature-skill", "quantum-gravity-literature-skill"]
+    assert {
+        "source_asset_record",
+        "reference_location_record",
+        "physics_object_record",
+        "object_relation_record",
+        "proof_obligation_record",
+        "literature_source_extraction_candidates",
+        "literature_source_set_readiness",
+        "literature_comparison_draft",
+        "source_reconstruction_audit",
+        "source_reconstruction_review_packet",
+        "source_reconstruction_review_result_record",
+        "human_checkpoint_record",
+    } <= set(record.surface_refs)
+    assert record.workflow_steps[0]["step_id"] == "register_or_bind_sources"
+    assert record.workflow_steps[-1]["entrypoint"] == "aitp-v5 trust audit --claim <claim-id>"
+    failure_ids = {item["failure_id"] for item in record.failure_modes}
+    assert {
+        "notation_or_normalization_collision",
+        "renormalization_scheme_mismatch",
+        "speculation_promoted_as_source_result",
+        "framework_mismatch",
+        "cross_paper_dependency_gap",
+        "summary_only_understanding",
+    } <= failure_ids
+    assert "reference_location_record" in record.required_next_records
+    assert "source_reconstruction_review_result_record" in record.required_next_records
+    assert "human_checkpoint_record" in record.required_next_records
+    assert "RAG chunk" in record.cannot_say[1]
+    assert record.can_update_claim_trust is False
+    assert require_valid_public_surface("lane_exemplar_record", {"ok": True, **record.__dict__})
+
+    manifest = build_lane_exemplar_manifest(ws)
+    assert manifest["covered_lanes"] == ["semi_formal_theory"]
+    assert manifest["items"][0]["domain_pack_refs"] == [
+        "formal_theory",
+        "qft_literature",
+        "quantum_gravity_literature",
+    ]
+    assert "source_reconstruction_review_result_record" in manifest["items"][0]["surface_refs"]

@@ -480,6 +480,17 @@ def sample_args_for_template(template: str) -> list[str]:
             "--status",
             "accepted",
         ]
+    if template.startswith("exemplar lane record-qft-qg-source"):
+        return [
+            "--topic",
+            "qft-qg-source-reconstruction",
+            "--claim",
+            "claim-qft-qg",
+            "--run",
+            "run-qft-qg-source",
+            "--status",
+            "accepted",
+        ]
     if template.startswith("exemplar lane record"):
         return [
             "--topic",

@@ -198,8 +198,14 @@ Next implementation slices:
    `gw_librpa` domain pack, oh-my-librpa skill refs, lane contract, tool-run,
    validation, failure-mode, and trust-audit surfaces into one accepted
    workflow record without creating scientific evidence.
-2. Add a QFT/QG source-reconstruction exemplar that uses literature source
-   assets, exact anchors, extraction drafts, and reconstruction review surfaces.
+2. Use `aitp-v5 exemplar lane record-qft-qg-source` to write the built-in
+   QFT/QG source-reconstruction exemplar. It binds QFT and quantum-gravity
+   literature packs, source assets, exact anchors, extraction drafts,
+   comparison/source-reconstruction review surfaces, failure modes, validation,
+   and checkpoint boundaries into a semi-formal workflow record without
+   treating retrieved chunks or PDF summaries as evidence.
+3. Add a toy-numeric exemplar helper for finite-size and negative-control
+   workflows.
 
 ## Workstream D: Lane Exemplars And Scientific Examples
 
@@ -217,6 +223,10 @@ The code-backed algorithm lane now has a built-in LibRPA/GW write path through
 `record_librpa_code_backed_algorithm_exemplar` /
 `aitp_v5_record_librpa_code_backed_algorithm_exemplar`; a workspace becomes
 covered only after the accepted exemplar record is written into that workspace.
+The semi-formal theory lane now has a built-in QFT/QG source-reconstruction
+write path through `record_qft_qg_source_reconstruction_exemplar` /
+`aitp_v5_record_qft_qg_source_reconstruction_exemplar`, with the same
+workspace-local accepted-record coverage rule.
 
 Each exemplar should include:
 
