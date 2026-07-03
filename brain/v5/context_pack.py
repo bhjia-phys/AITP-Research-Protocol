@@ -6,6 +6,7 @@ import hashlib
 import json
 from typing import Any
 
+from brain.v5.context_profile_templates import build_context_profile_template_catalog
 from brain.v5.context_profiles import builtin_context_profiles, context_profile_payload
 from brain.v5.objective_graph import build_compact_brief
 from brain.v5.paths import WorkspacePaths
@@ -35,6 +36,7 @@ def build_aitp_context_pack(
     line_limit = max(12, min(int(max_lines), 80))
     candidate_limit = max(1, min(int(candidate_limit), 8))
     selected_profile = _selected_context_profile(task_profile)
+    profile_template_hint = _selected_profile_template_hint(task_profile)
     profile_warning = []
     if task_profile and not selected_profile:
         profile_warning.append(f"unknown_task_profile:{task_profile}")
@@ -51,16 +53,17 @@ def build_aitp_context_pack(
         for candidate in list(distillation.get("candidates") or [])[:candidate_limit]
         if isinstance(candidate, dict)
     ]
+    derived_surfaces = [
+        "compact_execution_brief",
+        "objective_graph",
+        "research_distillation_candidates",
+    ]
+    if profile_template_hint:
+        derived_surfaces.append("context_profile_template_catalog")
     source_records = _merge_source_records(
         compact.get("source_records") if isinstance(compact.get("source_records"), dict) else {},
         distillation.get("source_records") if isinstance(distillation.get("source_records"), dict) else {},
-        {
-            "derived_surfaces": [
-                "compact_execution_brief",
-                "objective_graph",
-                "research_distillation_candidates",
-            ]
-        },
+        {"derived_surfaces": derived_surfaces},
     )
 
     payload: dict[str, Any] = {
@@ -78,6 +81,7 @@ def build_aitp_context_pack(
         "blockers": list(compact.get("blockers") or []),
         "requested_task_profile": str(task_profile or ""),
         "task_profile": selected_profile,
+        "profile_template_hint": profile_template_hint,
         "next_valid_actions": list(compact.get("next_valid_actions") or []),
         "recent_relevant_artifacts": list(compact.get("recent_relevant_artifacts") or []),
         "relation_map_scope": str(compact.get("relation_map_scope") or "active_claim_only"),
@@ -125,8 +129,10 @@ def build_aitp_context_pack(
         "expand": {
             **(compact.get("expand") or {}),
             "context_pack_cli": _context_pack_cli(session_id, task_profile=task_profile),
+            "context_profile_templates_cli": _context_profile_templates_cli(task_profile=task_profile),
             "distillation_candidates_cli": f"aitp-v5 status distillation-candidates {session_id}",
             "mcp_context_pack": "aitp_v5_get_context_pack",
+            "mcp_context_profile_templates": "aitp_v5_get_context_profile_templates",
             "mcp_research_distillation_candidates": "aitp_v5_get_research_distillation_candidates",
             "mcp_detect_active_claim_focus_drift": "aitp_v5_detect_active_claim_focus_drift",
             "mcp_confirm_active_claim_rebind": "aitp_v5_confirm_active_claim_rebind",
@@ -188,6 +194,21 @@ def _context_lines(payload: dict[str, Any], compact: dict[str, Any]) -> list[str
                 f"Profile can say: {_join_items(profile.get('can_say') or [])}",
                 f"Profile cannot say: {_join_items(profile.get('cannot_say') or [])}",
                 f"Profile must verify: {_join_items(profile.get('must_verify') or [])}",
+                "",
+            ]
+        )
+    template_hint = (
+        payload.get("profile_template_hint")
+        if isinstance(payload.get("profile_template_hint"), dict)
+        else {}
+    )
+    if template_hint:
+        lines.extend(
+            [
+                f"Template output shape: {template_hint.get('output_shape')}",
+                f"Template sections: {_join_items(template_hint.get('required_section_ids') or [], limit=5)}",
+                f"Template expand surfaces: {_join_items(template_hint.get('read_only_surfaces_to_expand') or [], limit=4)}",
+                "Template boundary: read-only scaffold; cannot create evidence, validation, final gates, or trust updates.",
                 "",
             ]
         )
@@ -260,10 +281,74 @@ def _selected_context_profile(profile_id: str) -> dict[str, Any]:
     return context_profile_payload(profile)
 
 
+def _selected_profile_template_hint(profile_id: str) -> dict[str, Any]:
+    requested = str(profile_id or "").strip()
+    if not requested:
+        return {}
+    catalog = build_context_profile_template_catalog(profile_ids=[requested])
+    templates = list(catalog.get("templates") or [])
+    if not templates:
+        return {}
+    template = templates[0]
+    report_template = template.get("report_template") if isinstance(template.get("report_template"), dict) else {}
+    closeout_template = template.get("closeout_template") if isinstance(template.get("closeout_template"), dict) else {}
+    trust_boundary = template.get("trust_boundary") if isinstance(template.get("trust_boundary"), dict) else {}
+    required_sections = [
+        str(section.get("section_id") or "")
+        for section in template.get("required_sections") or []
+        if isinstance(section, dict) and str(section.get("section_id") or "").strip()
+    ]
+    return {
+        "kind": "context_profile_template_hint",
+        "profile_id": str(template.get("profile_id") or ""),
+        "template_id": str(template.get("template_id") or ""),
+        "template_family": str(template.get("template_family") or ""),
+        "output_shape": str(template.get("output_shape") or ""),
+        "required_section_ids": required_sections,
+        "report_section_order": list(report_template.get("section_order") or []),
+        "closeout_section_order": list(closeout_template.get("section_order") or []),
+        "must_verify_before_trust_or_promotion": list(
+            template.get("must_verify_before_trust_or_promotion") or []
+        ),
+        "read_only_surfaces_to_expand": list(template.get("read_only_surfaces_to_expand") or []),
+        "recommended_next_entrypoints": list(template.get("recommended_next_entrypoints") or []),
+        "forbidden_uses": list(template.get("forbidden_uses") or []),
+        "trust_boundary": {
+            "summary_inputs_trusted": bool(trust_boundary.get("summary_inputs_trusted")),
+            "claim_trust_mutation": str(trust_boundary.get("claim_trust_mutation") or ""),
+            "requires_typed_followup_for_claim_support": bool(
+                trust_boundary.get("requires_typed_followup_for_claim_support")
+            ),
+            "requires_passed_validation_for_tool_derived_support": bool(
+                trust_boundary.get("requires_passed_validation_for_tool_derived_support")
+            ),
+            "requires_exact_source_anchors_for_literature_support": bool(
+                trust_boundary.get("requires_exact_source_anchors_for_literature_support")
+            ),
+        },
+        "template_catalog_entrypoint": "aitp-v5 status context-profile-templates",
+        "read_only": True,
+        "orientation_only": True,
+        "summary_inputs_trusted": False,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+        "records_validation_result": False,
+        "source_support_result": False,
+        "claim_trust_mutation": "none",
+    }
+
+
 def _context_pack_cli(session_id: str, *, task_profile: str = "") -> str:
     command = f"aitp-v5 status context-pack {session_id}"
     if task_profile:
         command += f" --task-profile {task_profile}"
+    return command
+
+
+def _context_profile_templates_cli(*, task_profile: str = "") -> str:
+    command = "aitp-v5 status context-profile-templates"
+    if task_profile:
+        command += f" --profile {task_profile}"
     return command
 
 

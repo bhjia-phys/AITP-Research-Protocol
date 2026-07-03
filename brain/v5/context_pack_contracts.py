@@ -47,6 +47,7 @@ def validate_aitp_context_pack(payload: dict[str, Any], *, path: str = "aitp_con
     if not isinstance(payload.get("requested_task_profile"), str):
         result.add(f"{path}.requested_task_profile", "must be a string")
     _require_mapping(payload.get("task_profile"), f"{path}.task_profile", result)
+    _require_mapping(payload.get("profile_template_hint"), f"{path}.profile_template_hint", result)
     _require_mapping(payload.get("active_claim_focus_reconciliation"), f"{path}.active_claim_focus_reconciliation", result)
     if isinstance(payload.get("context_lines"), list) and len(payload["context_lines"]) > 80:
         result.add(f"{path}.context_lines", "must be at most 80 lines")
@@ -57,6 +58,7 @@ def validate_aitp_context_pack(payload: dict[str, Any], *, path: str = "aitp_con
     _require_mapping(payload.get("source_records"), f"{path}.source_records", result)
     _validate_distillation_status(payload.get("distillation_status"), f"{path}.distillation_status", result)
     _validate_task_profile(payload.get("task_profile"), f"{path}.task_profile", result)
+    _validate_profile_template_hint(payload.get("profile_template_hint"), f"{path}.profile_template_hint", result)
     _validate_injection_policy(payload.get("injection_policy"), f"{path}.injection_policy", result)
     for key, expected in (
         ("orientation_only", True),
@@ -137,6 +139,73 @@ def _validate_task_profile(payload: Any, path: str, result: ContractResult) -> N
         ):
             _require_bool_value(payload["truth_policy"].get(key), expected, f"{path}.truth_policy.{key}", result)
     _require_bool_value(payload.get("orientation_only"), True, f"{path}.orientation_only", result)
+
+
+def _validate_profile_template_hint(payload: Any, path: str, result: ContractResult) -> None:
+    if not isinstance(payload, dict) or not payload:
+        return
+    if payload.get("kind") != "context_profile_template_hint":
+        result.add(f"{path}.kind", "must be 'context_profile_template_hint'")
+    for key in ("profile_id", "template_id", "template_family", "output_shape", "template_catalog_entrypoint"):
+        _require_nonempty_str(payload, key, path, result)
+    for key in (
+        "required_section_ids",
+        "report_section_order",
+        "closeout_section_order",
+        "must_verify_before_trust_or_promotion",
+        "read_only_surfaces_to_expand",
+        "recommended_next_entrypoints",
+        "forbidden_uses",
+    ):
+        _require_list(payload.get(key), f"{path}.{key}", result)
+    for key in (
+        "required_section_ids",
+        "must_verify_before_trust_or_promotion",
+        "read_only_surfaces_to_expand",
+        "recommended_next_entrypoints",
+        "forbidden_uses",
+    ):
+        if isinstance(payload.get(key), list) and not payload[key]:
+            result.add(f"{path}.{key}", "must not be empty")
+    _require_mapping(payload.get("trust_boundary"), f"{path}.trust_boundary", result)
+    if isinstance(payload.get("trust_boundary"), dict):
+        boundary = payload["trust_boundary"]
+        for key, expected in (
+            ("summary_inputs_trusted", False),
+            ("requires_typed_followup_for_claim_support", True),
+            ("requires_passed_validation_for_tool_derived_support", True),
+        ):
+            _require_bool_value(boundary.get(key), expected, f"{path}.trust_boundary.{key}", result)
+        if not isinstance(boundary.get("requires_exact_source_anchors_for_literature_support"), bool):
+            result.add(
+                f"{path}.trust_boundary.requires_exact_source_anchors_for_literature_support",
+                "must be a boolean",
+            )
+        if boundary.get("claim_trust_mutation") != "none":
+            result.add(f"{path}.trust_boundary.claim_trust_mutation", "must be 'none'")
+    for key, expected in (
+        ("read_only", True),
+        ("orientation_only", True),
+        ("summary_inputs_trusted", False),
+        ("can_update_kernel_state", False),
+        ("can_update_claim_trust", False),
+        ("records_validation_result", False),
+        ("source_support_result", False),
+    ):
+        _require_bool_value(payload.get(key), expected, f"{path}.{key}", result)
+    if payload.get("claim_trust_mutation") != "none":
+        result.add(f"{path}.claim_trust_mutation", "must be 'none'")
+    forbidden_uses = payload.get("forbidden_uses") if isinstance(payload.get("forbidden_uses"), list) else []
+    for forbidden in (
+        "profile_report_as_evidence",
+        "profile_closeout_as_evidence",
+        "validation_result",
+        "final_gate_satisfaction",
+        "claim_trust_update",
+        "trust_apply",
+    ):
+        if forbidden not in forbidden_uses:
+            result.add(f"{path}.forbidden_uses", f"must include {forbidden!r}")
 
 
 def _validate_injection_policy(payload: Any, path: str, result: ContractResult) -> None:

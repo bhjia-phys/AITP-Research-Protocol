@@ -49,6 +49,7 @@ def test_context_pack_is_bounded_codex_context_not_memory_or_trust(tmp_path):
     assert pack["designed_for_host"] == "codex"
     assert pack["requested_task_profile"] == ""
     assert pack["task_profile"] == {}
+    assert pack["profile_template_hint"] == {}
     assert pack["fingerprint"] == same_pack["fingerprint"]
     assert pack["pack_id"].startswith("aitp-context-pack-s-hs-")
     assert pack["line_count"] <= 50
@@ -87,9 +88,23 @@ def test_context_pack_can_compile_explicit_task_profile(tmp_path):
     assert pack["requested_task_profile"] == "librpa_run_continuation"
     assert pack["task_profile"]["profile_id"] == "librpa_run_continuation"
     assert pack["task_profile"]["truth_policy"]["can_update_claim_trust"] is False
+    assert pack["profile_template_hint"]["profile_id"] == "librpa_run_continuation"
+    assert pack["profile_template_hint"]["output_shape"] == "continuation_report_template"
+    assert "lane_policy" in pack["profile_template_hint"]["required_section_ids"]
+    assert "hpc_cockpit" in pack["profile_template_hint"]["read_only_surfaces_to_expand"]
+    assert "claim_trust_update" in pack["profile_template_hint"]["forbidden_uses"]
+    assert pack["profile_template_hint"]["trust_boundary"]["claim_trust_mutation"] == "none"
+    assert pack["profile_template_hint"]["read_only"] is True
+    assert pack["profile_template_hint"]["orientation_only"] is True
+    assert pack["profile_template_hint"]["can_update_claim_trust"] is False
     assert "task-profile must-verify checks" in pack["injection_policy"]["requires_explicit_expand_for"]
     assert "--task-profile librpa_run_continuation" in pack["expand"]["context_pack_cli"]
+    assert "--profile librpa_run_continuation" in pack["expand"]["context_profile_templates_cli"]
+    assert pack["expand"]["mcp_context_profile_templates"] == "aitp_v5_get_context_profile_templates"
+    assert "context_profile_template_catalog" in pack["source_records"]["derived_surfaces"]
     assert any(line.startswith("Task profile: librpa_run_continuation") for line in pack["context_lines"])
+    assert any(line.startswith("Template output shape: continuation_report_template") for line in pack["context_lines"])
+    assert any(line.startswith("Template sections:") and "lane_policy" in line for line in pack["context_lines"])
 
 
 def test_context_pack_cli_and_mcp_return_valid_public_surface(tmp_path, capsys):
@@ -125,6 +140,10 @@ def test_context_pack_cli_and_mcp_return_valid_public_surface(tmp_path, capsys):
     assert mcp_pack["kind"] == "aitp_context_pack"
     assert cli_pack["fingerprint"] == mcp_pack["fingerprint"]
     assert cli_pack["task_profile"]["profile_id"] == "paper_learning"
+    assert cli_pack["profile_template_hint"]["profile_id"] == "paper_learning"
+    assert cli_pack["profile_template_hint"]["trust_boundary"][
+        "requires_exact_source_anchors_for_literature_support"
+    ] is True
     assert cli_pack["line_count"] <= 45
     assert mcp_pack["injection_policy"]["host"] == "codex"
 

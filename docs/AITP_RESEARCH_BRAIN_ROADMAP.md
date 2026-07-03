@@ -179,16 +179,21 @@ First implemented target:
 - `context_profile_template_catalog` now exposes profile-specific report and
   closeout templates for all required task profiles through CLI, MCP, public
   surface contracts, and the runtime bridge manifest.
+- `aitp_context_pack` now includes compact `profile_template_hint` metadata
+  when a task profile is selected, so turn-input context carries output shape,
+  section ids, must-verify checks, read-only expansion surfaces, and forbidden
+  uses without embedding the full template or creating evidence.
 - Tests verify that every context profile template remains read-only,
   orientation-only, cannot create evidence/validation/source-support results,
   and cannot update claim trust.
 
 Next implementation slices:
 
-1. Have `aitp_context_pack` include compact template hints from
-   `context_profile_template_catalog` when a task profile is selected.
-2. Add read-only materializers for group-meeting and closeout drafts that fill
+1. Add read-only materializers for group-meeting and closeout drafts that fill
    those templates from typed records without turning drafts into evidence.
+2. Add a LibRPA/GW code-backed algorithm exemplar that uses the context
+   compiler, domain pack, lane contract, tool-run, and validation surfaces
+   together.
 
 ## Workstream D: Lane Exemplars And Scientific Examples
 
