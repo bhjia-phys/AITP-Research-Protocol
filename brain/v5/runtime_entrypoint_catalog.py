@@ -702,6 +702,7 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
     "compact_execution_brief": {"cli": "aitp-v5 status compact-brief <session-id>", "mcp": "aitp_v5_get_compact_brief", "surface": "compact_execution_brief"},
     "aitp_context_pack": {"cli": "aitp-v5 status context-pack <session-id>", "mcp": "aitp_v5_get_context_pack", "surface": "aitp_context_pack"},
     "context_profile_templates": {"cli": "aitp-v5 status context-profile-templates", "mcp": "aitp_v5_get_context_profile_templates", "surface": "context_profile_template_catalog"},
+    "context_profile_draft": {"cli": "aitp-v5 status context-profile-draft <session-id> --profile closeout", "mcp": "aitp_v5_build_context_profile_draft", "surface": "context_profile_draft"},
     "research_distillation_candidates": {"cli": "aitp-v5 status distillation-candidates <session-id>", "mcp": "aitp_v5_get_research_distillation_candidates", "surface": "research_distillation_candidates"},
     "note_outline": {"cli": "aitp-v5 status note-outline <session-id> --style jhep", "mcp": "aitp_v5_compile_note_outline", "surface": "note_outline"},
     "record_authority": {"cli": "aitp-v5 authority record --topic fqhe --type sector_authority --statement sample-authority", "mcp": "aitp_v5_record_authority", "surface": "authority_record"},

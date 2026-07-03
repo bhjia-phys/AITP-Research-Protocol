@@ -126,6 +126,11 @@ _MCP_ARGUMENT_SPECS: dict[str, dict[str, Any]] = {
         "optional": ["base", "profile_ids"],
         "source": "aitp_v5_get_context_profile_templates",
     },
+    "context_profile_draft": {
+        "required": ["base", "session_id"],
+        "optional": ["profile_id", "max_lines", "candidate_limit"],
+        "source": "aitp_v5_build_context_profile_draft",
+    },
     "domain_skill_shims": {
         "required": ["base"],
         "optional": ["pack_ids", "output_root", "apply", "overwrite"],
@@ -160,6 +165,7 @@ _BRIDGE_TARGET_SPECS: tuple[tuple[str, str, str, str], ...] = (
     ("readLiteratureCorpusExtractionArtifact", "literature_corpus_extraction_artifact", "read", "read_only"),
     ("readLiteratureSourceSetReadiness", "literature_source_set_readiness", "read", "read_only"),
     ("readContextProfileTemplates", "context_profile_templates", "read", "read_only"),
+    ("readContextProfileDraft", "context_profile_draft", "read", "read_only"),
     ("materializeDomainSkillShims", "domain_skill_shims", "write", "project_skill_shim_write"),
     ("ingestCuratedRagCorpus", "ingest_curated_rag_corpus", "write", "curated_rag_manifest_write"),
     ("startResearchRun", "start_research_run", "write", "typed_record_write"),

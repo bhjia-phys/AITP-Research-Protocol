@@ -166,6 +166,7 @@ def _validate_mcp_arguments(target: dict[str, Any], path: str, result: ContractR
         "literature_corpus_extraction_artifact",
         "literature_source_set_readiness",
         "context_profile_templates",
+        "context_profile_draft",
         "domain_skill_shims",
     }:
         _require_mapping(arguments, f"{path}.mcp_arguments", result)
@@ -393,6 +394,14 @@ def _validate_mcp_arguments(target: dict[str, Any], path: str, result: ContractR
                 result.add(f"{path}.mcp_arguments.required", "must be empty")
             if arguments.get("optional") != ["base", "profile_ids"]:
                 result.add(f"{path}.mcp_arguments.optional", "must allow base and profile_ids")
+        if entrypoint_key == "context_profile_draft":
+            if arguments.get("required") != ["base", "session_id"]:
+                result.add(f"{path}.mcp_arguments.required", "must require base and session_id")
+            if arguments.get("optional") != ["profile_id", "max_lines", "candidate_limit"]:
+                result.add(
+                    f"{path}.mcp_arguments.optional",
+                    "must allow profile_id, max_lines, and candidate_limit",
+                )
         if entrypoint_key == "domain_skill_shims":
             if arguments.get("required") != ["base"]:
                 result.add(f"{path}.mcp_arguments.required", "must require base")

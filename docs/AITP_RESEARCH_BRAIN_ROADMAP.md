@@ -183,17 +183,21 @@ First implemented target:
   when a task profile is selected, so turn-input context carries output shape,
   section ids, must-verify checks, read-only expansion surfaces, and forbidden
   uses without embedding the full template or creating evidence.
+- `context_profile_draft` now materializes read-only group-meeting and closeout
+  drafts from `aitp_context_pack` plus `context_profile_template_catalog`
+  templates. Drafts expose filled sections and Markdown, but cannot create
+  records, evidence, validation, final gates, or trust updates.
 - Tests verify that every context profile template remains read-only,
   orientation-only, cannot create evidence/validation/source-support results,
   and cannot update claim trust.
 
 Next implementation slices:
 
-1. Add read-only materializers for group-meeting and closeout drafts that fill
-   those templates from typed records without turning drafts into evidence.
-2. Add a LibRPA/GW code-backed algorithm exemplar that uses the context
+1. Add a LibRPA/GW code-backed algorithm exemplar that uses the context
    compiler, domain pack, lane contract, tool-run, and validation surfaces
    together.
+2. Add a QFT/QG source-reconstruction exemplar that uses literature source
+   assets, exact anchors, extraction drafts, and reconstruction review surfaces.
 
 ## Workstream D: Lane Exemplars And Scientific Examples
 

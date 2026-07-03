@@ -30,6 +30,7 @@ from brain.v5.codex_facade import (
     codex_tool_catalog,
 )
 from brain.v5.context_pack import build_aitp_context_pack
+from brain.v5.context_profile_drafts import build_context_profile_draft
 from brain.v5.context_profile_templates import build_context_profile_template_catalog
 from brain.v5.curated_rag_corpus import (
     curated_rag_corpus,
@@ -548,6 +549,28 @@ def aitp_v5_get_context_profile_templates(
     return require_valid_public_surface(
         "context_profile_template_catalog",
         build_context_profile_template_catalog(profile_ids=profile_ids),
+    )
+
+
+def aitp_v5_build_context_profile_draft(
+    base: str,
+    *,
+    session_id: str,
+    profile_id: str = "closeout",
+    max_lines: int = 60,
+    candidate_limit: int = 3,
+) -> dict:
+    """Return a read-only group-meeting or closeout draft from context profile templates."""
+
+    return require_valid_public_surface(
+        "context_profile_draft",
+        build_context_profile_draft(
+            _ws(base),
+            session_id,
+            profile_id=profile_id,
+            max_lines=max_lines,
+            candidate_limit=candidate_limit,
+        ),
     )
 
 

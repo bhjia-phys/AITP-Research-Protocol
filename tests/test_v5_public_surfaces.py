@@ -24,6 +24,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "codex_hook_installation",
         "code_state_record",
         "compact_execution_brief",
+        "context_profile_draft",
         "context_profile_template_catalog",
         "curated_rag_chunk",
         "curated_rag_corpus",
