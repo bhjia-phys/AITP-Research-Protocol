@@ -3737,6 +3737,7 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
         "readLiteratureComparisonDraft",
         "readLiteratureReadingRoute",
         "readLiteratureSourceExtractionCandidates",
+        "readLiteratureSourceSetReadiness",
     ]
     assert "ingestCuratedRagCorpus" in manifest["target_groups"]["write"]
     assert "startResearchRun" in manifest["target_groups"]["write"]
@@ -3773,6 +3774,14 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
     )
     assert by_operation["readLiteratureSourceExtractionCandidates"]["execution_role"] == "read"
     assert by_operation["readLiteratureSourceExtractionCandidates"]["state_effect"] == "read_only"
+    assert by_operation["readLiteratureSourceSetReadiness"]["mcp_tool"] == (
+        "aitp_v5_build_literature_source_set_readiness"
+    )
+    assert by_operation["readLiteratureSourceSetReadiness"]["surface"] == (
+        "literature_source_set_readiness"
+    )
+    assert by_operation["readLiteratureSourceSetReadiness"]["execution_role"] == "read"
+    assert by_operation["readLiteratureSourceSetReadiness"]["state_effect"] == "read_only"
     assert by_operation["readCuratedRagCorpus"]["mcp_tool"] == "aitp_v5_get_curated_rag_corpus"
     assert by_operation["readCuratedRagCorpus"]["cli_fallback"] == "aitp-v5 adapter curated-rag-corpus"
     assert by_operation["readCuratedRagCorpus"]["surface"] == "curated_rag_corpus"

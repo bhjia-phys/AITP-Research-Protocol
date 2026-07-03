@@ -106,6 +106,11 @@ _MCP_ARGUMENT_SPECS: dict[str, dict[str, Any]] = {
         "optional": ["focus_terms", "extraction_modes", "optional_claim_id", "rationale"],
         "source": "aitp_v5_build_literature_source_extraction_candidates",
     },
+    "literature_source_set_readiness": {
+        "required": ["base", "session_id", "source_refs"],
+        "optional": ["optional_claim_id", "readiness_scope"],
+        "source": "aitp_v5_build_literature_source_set_readiness",
+    },
     "domain_skill_shims": {
         "required": ["base"],
         "optional": ["pack_ids", "output_root", "apply", "overwrite"],
@@ -136,6 +141,7 @@ _BRIDGE_TARGET_SPECS: tuple[tuple[str, str, str, str], ...] = (
         "read",
         "read_only",
     ),
+    ("readLiteratureSourceSetReadiness", "literature_source_set_readiness", "read", "read_only"),
     ("materializeDomainSkillShims", "domain_skill_shims", "write", "project_skill_shim_write"),
     ("ingestCuratedRagCorpus", "ingest_curated_rag_corpus", "write", "curated_rag_manifest_write"),
     ("startResearchRun", "start_research_run", "write", "typed_record_write"),

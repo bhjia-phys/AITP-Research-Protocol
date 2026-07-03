@@ -123,14 +123,17 @@ First implemented targets:
   the runtime bridge manifest. It requires source assets, exact reference
   locations, per-source extraction reports, reconstruction review, and
   comparison boundaries before synthesis, evidence, validation, or trust work.
+- `literature_source_set_readiness` now audits source sets before synthesis,
+  showing which papers still lack canonical source identity, exact anchors,
+  typed extraction traces, or source reconstruction review through CLI, MCP,
+  public surface contracts, and the runtime bridge manifest.
 
 Next implementation slices:
 
 1. Add profile-specific extraction reports that summarize candidate objects and
    relations after explicit typed writes exist.
-2. Add source-set readiness/audit surfaces that show which papers still lack
-   canonical source identity, anchors, extraction reports, or reconstruction
-   review.
+2. Add corpus-backed extraction report artifacts that connect curated RAG chunks
+   and exact reference locations without promoting retrieval to evidence.
 
 ## Workstream C: Context Compiler v2
 

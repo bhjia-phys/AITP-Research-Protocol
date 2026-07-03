@@ -704,6 +704,199 @@ def test_literature_source_extraction_candidates_are_read_only_planning_packet(t
     }
 
 
+def test_literature_source_set_readiness_audits_source_stack_before_synthesis(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.literature_source_set_readiness import build_literature_source_set_readiness
+    from brain.v5.mcp_tools import aitp_v5_build_literature_source_set_readiness
+    from brain.v5.models import (
+        EvidenceRecord,
+        ObjectRelationRecord,
+        PhysicsObjectRecord,
+        ReferenceLocationRecord,
+        SensemakingReportRecord,
+        SourceAssetRecord,
+        SourceReconstructionReviewResultRecord,
+        TrustUpdateRecord,
+        ValidationResultRecord,
+    )
+    from brain.v5.physics_objects import record_physics_object
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.references import record_reference_location
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.sensemaking import record_sensemaking_report
+    from brain.v5.source_assets import register_source_asset
+    from brain.v5.source_reconstruction_review import record_source_reconstruction_review_result
+    from brain.v5.store import list_records
+
+    ws, claim = _setup_topic(tmp_path, active_claim=True)
+    topic_id = "quantum-chaos-long-range-spin-chains"
+    asset = register_source_asset(
+        ws,
+        topic_id=topic_id,
+        claim_id=claim.claim_id,
+        asset_type="paper",
+        uri="https://arxiv.org/abs/2604.14695",
+        title="Level statistics in long-range spin chains",
+    )
+    source_ref = f"source_asset:{asset.asset_id}"
+    location = record_reference_location(
+        ws,
+        topic_id=topic_id,
+        claim_id=claim.claim_id,
+        connector_id="arxiv",
+        location_type="paper_section",
+        uri="https://arxiv.org/pdf/2604.14695#page=3",
+        label="Alpha-axis level-statistics section",
+        source_ref=source_ref,
+        external_id="arXiv:2604.14695",
+        summary="Exact section anchor for alpha-axis definitions.",
+    )
+    location_ref = f"reference_location:{location.location_id}"
+    obj = record_physics_object(
+        ws,
+        topic_id=topic_id,
+        object_type="model",
+        name="alpha-axis long-range spin chain",
+        definition="A 1/r^alpha periodic spin-chain family used for alpha-axis comparison.",
+        notation="H_alpha",
+        source_refs=[source_ref, location_ref],
+    )
+    record_sensemaking_report(
+        ws,
+        topic_id=topic_id,
+        claim_id=claim.claim_id,
+        title="Alpha-axis source extraction trace",
+        summary="Orientation-only extraction trace tying the paper anchor to the physics object.",
+        object_ids=[obj.object_id],
+    )
+    review = record_source_reconstruction_review_result(
+        ws,
+        claim_id=claim.claim_id,
+        status="passed",
+        reviewed_components=["definitions", "source_locations"],
+        basis_refs=[source_ref, location_ref, f"physics_object:{obj.object_id}"],
+        reference_location_ids=[location.location_id],
+        object_ids=[obj.object_id],
+        summary="Definitions and exact source locations are sufficient for synthesis review.",
+    )
+
+    registry_counts_before = {
+        "source_assets": len(list_records(ws.registry_dir("source_assets"), SourceAssetRecord)),
+        "reference_locations": len(list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord)),
+        "physics_objects": len(list_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord)),
+        "object_relations": len(list_records(ws.registry_dir("object_relations"), ObjectRelationRecord)),
+        "sensemaking_reports": len(list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord)),
+        "source_reviews": len(list_records(ws.registry_dir("source_reconstruction_reviews"), SourceReconstructionReviewResultRecord)),
+        "evidence": len(list_records(ws.registry_dir("evidence"), EvidenceRecord)),
+        "validation_results": len(list_records(ws.registry_dir("validation_results"), ValidationResultRecord)),
+        "trust_updates": len(list_records(ws.registry_dir("trust_updates"), TrustUpdateRecord)),
+    }
+    payload = build_literature_source_set_readiness(
+        ws,
+        session_id="chaos-lit",
+        source_refs=[source_ref, "source_asset:missing-source"],
+        readiness_scope="paired_paper_learning",
+    )
+    registry_counts_after = {
+        "source_assets": len(list_records(ws.registry_dir("source_assets"), SourceAssetRecord)),
+        "reference_locations": len(list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord)),
+        "physics_objects": len(list_records(ws.registry_dir("physics_objects"), PhysicsObjectRecord)),
+        "object_relations": len(list_records(ws.registry_dir("object_relations"), ObjectRelationRecord)),
+        "sensemaking_reports": len(list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord)),
+        "source_reviews": len(list_records(ws.registry_dir("source_reconstruction_reviews"), SourceReconstructionReviewResultRecord)),
+        "evidence": len(list_records(ws.registry_dir("evidence"), EvidenceRecord)),
+        "validation_results": len(list_records(ws.registry_dir("validation_results"), ValidationResultRecord)),
+        "trust_updates": len(list_records(ws.registry_dir("trust_updates"), TrustUpdateRecord)),
+    }
+
+    assert registry_counts_before == registry_counts_after
+    assert require_valid_public_surface("literature_source_set_readiness", payload) == payload
+    assert payload["kind"] == "literature_source_set_readiness"
+    assert payload["claim_id"] == claim.claim_id
+    assert payload["ready_source_count"] == 1
+    assert payload["blocked_source_count"] == 1
+    assert payload["source_ref_count"] == 2
+    assert set(payload["missing_components"]) == {
+        "source_asset",
+        "reference_location",
+        "extraction_trace",
+        "source_reconstruction_review",
+    }
+    ready_item = {item["source_ref"]: item for item in payload["source_items"]}[source_ref]
+    missing_item = {item["source_ref"]: item for item in payload["source_items"]}["source_asset:missing-source"]
+    assert ready_item["readiness_status"] == "ready_for_synthesis_review"
+    assert ready_item["missing_components"] == []
+    assert ready_item["components"]["source_asset"]["present"] is True
+    assert ready_item["components"]["reference_location"]["refs"] == [location_ref]
+    assert ready_item["components"]["extraction_trace"]["present"] is True
+    assert ready_item["components"]["source_reconstruction_review"]["status"] == "ready_review_present"
+    assert ready_item["components"]["source_reconstruction_review"]["refs"] == [
+        f"source_reconstruction_review:{review.result_id}"
+    ]
+    assert missing_item["readiness_status"] == "blocked_missing_components"
+    assert set(missing_item["missing_components"]) == {
+        "source_asset",
+        "reference_location",
+        "extraction_trace",
+        "source_reconstruction_review",
+    }
+    assert missing_item["components"]["source_asset"]["recommended_next_entrypoint"] == "register_source_asset"
+    assert payload["record_ref_lookup"]["source_support_result"] is False
+    assert payload["readiness_policy"]["requires_all_sources_ready_before_synthesis"] is True
+    assert "source_set_synthesis_as_evidence" in payload["readiness_policy"]["forbidden_uses"]
+    assert payload["read_surface_effect"] == "literature_source_set_readiness_only"
+    assert payload["read_only"] is True
+    assert payload["draft_creates_records"] is False
+    assert payload["requires_explicit_next_action"] is True
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["can_update_claim_trust"] is False
+    assert payload["records_validation_result"] is False
+    assert payload["source_support_result"] is False
+    assert payload["evidence_created"] is False
+    assert payload["validation_created"] is False
+    assert payload["write_executed"] is False
+    assert payload["trust_update_forbidden"] is True
+    assert payload["claim_trust_mutation"] == "none"
+
+    assert main(
+        [
+            "--base",
+            str(ws.base),
+            "literature",
+            "source-set-readiness",
+            "--session",
+            "chaos-lit",
+            "--source-ref",
+            source_ref,
+            "--source-ref",
+            "source_asset:missing-source",
+            "--readiness-scope",
+            "paired_paper_learning",
+        ]
+    ) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_literature_source_set_readiness(
+        str(ws.base),
+        session_id="chaos-lit",
+        source_refs=[source_ref, "source_asset:missing-source"],
+        readiness_scope="paired_paper_learning",
+    )
+
+    assert require_valid_public_surface("literature_source_set_readiness", cli_payload) == cli_payload
+    assert require_valid_public_surface("literature_source_set_readiness", mcp_payload) == mcp_payload
+    assert cli_payload["ready_source_count"] == 1
+    assert mcp_payload["blocked_source_count"] == 1
+    assert runtime_entrypoints()["literature_source_set_readiness"] == {
+        "cli": "aitp-v5 literature source-set-readiness <args>",
+        "mcp": "aitp_v5_build_literature_source_set_readiness",
+        "surface": "literature_source_set_readiness",
+    }
+
+
 def test_literature_intake_includes_output_profile_context_when_topic_has_profile(tmp_path):
     from brain.v5.literature_intake import suggest_literature_intake
     from brain.v5.output_stability import record_final_output_profile

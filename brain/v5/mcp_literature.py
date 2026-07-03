@@ -8,6 +8,7 @@ from brain.v5.literature_comparison_draft import build_literature_comparison_dra
 from brain.v5.literature_intake import record_literature_candidate, suggest_literature_intake
 from brain.v5.literature_reading_route import build_literature_reading_route
 from brain.v5.literature_source_extraction import build_literature_source_extraction_candidates
+from brain.v5.literature_source_set_readiness import build_literature_source_set_readiness
 from brain.v5.literature_source_review_handoff import build_literature_source_review_handoff
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.workspace import init_workspace
@@ -173,5 +174,25 @@ def aitp_v5_build_literature_source_extraction_candidates(
             extraction_modes=extraction_modes or [],
             optional_claim_id=optional_claim_id,
             rationale=rationale,
+        ),
+    )
+
+
+def aitp_v5_build_literature_source_set_readiness(
+    base: str,
+    *,
+    session_id: str,
+    source_refs: list[str],
+    optional_claim_id: str = "",
+    readiness_scope: str = "source_set_learning",
+) -> dict:
+    return require_valid_public_surface(
+        "literature_source_set_readiness",
+        build_literature_source_set_readiness(
+            init_workspace(Path(base)),
+            session_id=session_id,
+            source_refs=source_refs,
+            optional_claim_id=optional_claim_id,
+            readiness_scope=readiness_scope,
         ),
     )

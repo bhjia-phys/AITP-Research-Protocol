@@ -319,6 +319,11 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "mcp": "aitp_v5_build_literature_source_extraction_candidates",
             "surface": "literature_source_extraction_candidates",
         },
+        "literature_source_set_readiness": {
+            "cli": "aitp-v5 literature source-set-readiness <args>",
+            "mcp": "aitp_v5_build_literature_source_set_readiness",
+            "surface": "literature_source_set_readiness",
+        },
         "domain_skill_shims": {
             "cli": "aitp-v5 domain-pack skill-shims <args>",
             "mcp": "aitp_v5_build_domain_skill_shim_manifest",
@@ -653,6 +658,25 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
         "required": ["base", "session_id", "source_refs"],
         "optional": ["focus_terms", "extraction_modes", "optional_claim_id", "rationale"],
         "source": "aitp_v5_build_literature_source_extraction_candidates",
+    }
+    assert by_operation["readLiteratureSourceSetReadiness"]["entrypoint_key"] == (
+        "literature_source_set_readiness"
+    )
+    assert by_operation["readLiteratureSourceSetReadiness"]["mcp_tool"] == (
+        "aitp_v5_build_literature_source_set_readiness"
+    )
+    assert by_operation["readLiteratureSourceSetReadiness"]["cli_fallback"] == (
+        "aitp-v5 literature source-set-readiness <args>"
+    )
+    assert by_operation["readLiteratureSourceSetReadiness"]["surface"] == (
+        "literature_source_set_readiness"
+    )
+    assert by_operation["readLiteratureSourceSetReadiness"]["execution_role"] == "read"
+    assert by_operation["readLiteratureSourceSetReadiness"]["state_effect"] == "read_only"
+    assert by_operation["readLiteratureSourceSetReadiness"]["mcp_arguments"] == {
+        "required": ["base", "session_id", "source_refs"],
+        "optional": ["optional_claim_id", "readiness_scope"],
+        "source": "aitp_v5_build_literature_source_set_readiness",
     }
     assert by_operation["materializeDomainSkillShims"]["entrypoint_key"] == "domain_skill_shims"
     assert by_operation["materializeDomainSkillShims"]["mcp_tool"] == (

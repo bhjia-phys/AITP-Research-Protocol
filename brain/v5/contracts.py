@@ -244,6 +244,24 @@ def require_valid_literature_reading_route(payload: dict[str, Any]) -> dict[str,
     return _require(payload)
 
 
+def validate_literature_source_set_readiness(
+    payload: dict[str, Any],
+    *,
+    path: str = "literature_source_set_readiness",
+) -> ContractResult:
+    from brain.v5.literature_source_set_readiness_contracts import (
+        validate_literature_source_set_readiness as _validate,
+    )
+    return _validate(payload, path=path)
+
+
+def require_valid_literature_source_set_readiness(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.literature_source_set_readiness_contracts import (
+        require_valid_literature_source_set_readiness as _require,
+    )
+    return _require(payload)
+
+
 def validate_record_gate_coverage_audit(payload: dict[str, Any], *, path: str = "record_gate_coverage_audit") -> ContractResult:
     from brain.v5.record_gate_audit_contracts import validate_record_gate_coverage_audit as _validate
     return _validate(payload, path=path)

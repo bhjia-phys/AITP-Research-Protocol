@@ -49,6 +49,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "literature_intake_suggestion",
         "literature_reading_route",
         "literature_source_extraction_candidates",
+        "literature_source_set_readiness",
         "literature_source_review_handoff",
             "kimi_code_hook_config",
             "kimi_code_hook_installation",

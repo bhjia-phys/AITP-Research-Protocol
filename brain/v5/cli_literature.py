@@ -8,6 +8,7 @@ from brain.v5.literature_comparison_draft import build_literature_comparison_dra
 from brain.v5.literature_intake import record_literature_candidate, suggest_literature_intake
 from brain.v5.literature_reading_route import build_literature_reading_route
 from brain.v5.literature_source_extraction import build_literature_source_extraction_candidates
+from brain.v5.literature_source_set_readiness import build_literature_source_set_readiness
 from brain.v5.literature_source_review_handoff import build_literature_source_review_handoff
 from brain.v5.public_surfaces import require_valid_public_surface
 
@@ -21,6 +22,7 @@ def add_literature_parser(sp: argparse._SubParsersAction) -> None:
     _add_reading_route_args(sub.add_parser("reading-route"))
     _add_comparison_draft_args(sub.add_parser("comparison-draft"))
     _add_source_extraction_args(sub.add_parser("source-extraction"))
+    _add_source_set_readiness_args(sub.add_parser("source-set-readiness"))
 
 
 def dispatch_literature_command(args: argparse.Namespace, ws) -> dict:
@@ -62,6 +64,17 @@ def dispatch_literature_command(args: argparse.Namespace, ws) -> dict:
                 focus_terms=args.focus_terms,
                 optional_claim_id=args.optional_claim_id,
                 rationale=args.rationale,
+            ),
+        )
+    if args.literature_command == "source-set-readiness":
+        return require_valid_public_surface(
+            "literature_source_set_readiness",
+            build_literature_source_set_readiness(
+                ws,
+                session_id=args.session_id,
+                source_refs=args.source_refs,
+                optional_claim_id=args.optional_claim_id,
+                readiness_scope=args.readiness_scope,
             ),
         )
     kwargs = {
@@ -130,3 +143,10 @@ def _add_source_extraction_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--mode", action="append", default=[], dest="extraction_modes")
     parser.add_argument("--claim", default="", dest="optional_claim_id")
     parser.add_argument("--rationale", default="")
+
+
+def _add_source_set_readiness_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--session", required=True, dest="session_id")
+    parser.add_argument("--source-ref", action="append", required=True, dest="source_refs")
+    parser.add_argument("--claim", default="", dest="optional_claim_id")
+    parser.add_argument("--readiness-scope", default="source_set_learning")
