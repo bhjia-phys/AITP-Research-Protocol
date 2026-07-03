@@ -108,6 +108,21 @@ def sample_args_for_template(template: str) -> list[str]:
             "--dimension",
             "method_assumptions",
         ]
+    if template.startswith("literature reading-route"):
+        return [
+            "--session",
+            "s1",
+            "--question",
+            "How should these two sources be read before synthesis?",
+            "--source-ref",
+            "source_asset:source-a",
+            "--source-ref",
+            "reference_location:source-b",
+            "--route-type",
+            "paired",
+            "--focus",
+            "source assumptions",
+        ]
     if template.startswith("literature source-extraction"):
         return [
             "--session",

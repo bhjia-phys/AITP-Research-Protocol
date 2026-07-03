@@ -309,6 +309,11 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "mcp": "aitp_v5_build_literature_comparison_draft",
             "surface": "literature_comparison_draft",
         },
+        "literature_reading_route": {
+            "cli": "aitp-v5 literature reading-route <args>",
+            "mcp": "aitp_v5_build_literature_reading_route",
+            "surface": "literature_reading_route",
+        },
         "literature_source_extraction_candidates": {
             "cli": "aitp-v5 literature source-extraction <args>",
             "mcp": "aitp_v5_build_literature_source_extraction_candidates",
@@ -614,6 +619,21 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
         "required": ["base", "session_id", "comparison_question", "source_refs"],
         "optional": ["dimensions", "optional_claim_id", "rationale"],
         "source": "aitp_v5_build_literature_comparison_draft",
+    }
+    assert by_operation["readLiteratureReadingRoute"]["entrypoint_key"] == "literature_reading_route"
+    assert by_operation["readLiteratureReadingRoute"]["mcp_tool"] == (
+        "aitp_v5_build_literature_reading_route"
+    )
+    assert by_operation["readLiteratureReadingRoute"]["cli_fallback"] == (
+        "aitp-v5 literature reading-route <args>"
+    )
+    assert by_operation["readLiteratureReadingRoute"]["surface"] == "literature_reading_route"
+    assert by_operation["readLiteratureReadingRoute"]["execution_role"] == "read"
+    assert by_operation["readLiteratureReadingRoute"]["state_effect"] == "read_only"
+    assert by_operation["readLiteratureReadingRoute"]["mcp_arguments"] == {
+        "required": ["base", "session_id", "reading_question", "source_refs"],
+        "optional": ["route_type", "focus_terms", "optional_claim_id", "rationale"],
+        "source": "aitp_v5_build_literature_reading_route",
     }
     assert by_operation["readLiteratureSourceExtractionCandidates"]["entrypoint_key"] == (
         "literature_source_extraction_candidates"

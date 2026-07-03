@@ -466,6 +466,117 @@ def test_literature_comparison_draft_is_read_only_planning_packet(tmp_path, caps
     }
 
 
+def test_literature_reading_route_compiles_paired_source_route_without_writes(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.literature_reading_route import build_literature_reading_route
+    from brain.v5.mcp_tools import aitp_v5_build_literature_reading_route
+    from brain.v5.models import EvidenceRecord, ReferenceLocationRecord, SensemakingReportRecord, TrustUpdateRecord, ValidationResultRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.store import list_records
+
+    ws, claim = _setup_topic(tmp_path, active_claim=True)
+
+    before = (
+        list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord),
+        list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord),
+        list_records(ws.registry_dir("evidence"), EvidenceRecord),
+        list_records(ws.registry_dir("validation_results"), ValidationResultRecord),
+        list_records(ws.registry_dir("trust_updates"), TrustUpdateRecord),
+    )
+    payload = build_literature_reading_route(
+        ws,
+        session_id="chaos-lit",
+        reading_question="How should these two papers be read before alpha-axis synthesis?",
+        source_refs=["source_asset:paper-a", "reference_location:paper-b"],
+        focus_terms=["Yangian", "alpha=2"],
+        rationale="Plan paired source reading before any source synthesis.",
+    )
+    after = (
+        list_records(ws.registry_dir("reference_locations"), ReferenceLocationRecord),
+        list_records(ws.registry_dir("sensemaking_reports"), SensemakingReportRecord),
+        list_records(ws.registry_dir("evidence"), EvidenceRecord),
+        list_records(ws.registry_dir("validation_results"), ValidationResultRecord),
+        list_records(ws.registry_dir("trust_updates"), TrustUpdateRecord),
+    )
+
+    assert before == after
+    assert require_valid_public_surface("literature_reading_route", payload) == payload
+    assert payload["kind"] == "literature_reading_route"
+    assert payload["claim_id"] == claim.claim_id
+    assert payload["route_type"] == "paired_paper"
+    assert payload["context_profile_id"] == "paired_paper_learning"
+    assert payload["source_ref_count"] == 2
+    assert payload["source_requirement_count"] == 2
+    assert payload["focus_term_count"] == 2
+    assert payload["comparison_dimensions"]
+    assert any(step["step_id"] == "comparison_matrix" for step in payload["route_steps"])
+    assert payload["extraction_report_template_count"] == 3
+    assert payload["route_policy"]["requires_exact_reference_locations_before_synthesis"] is True
+    assert "paper_summary_as_evidence" in payload["route_policy"]["forbidden_uses"]
+    assert "trust_apply" in payload["route_policy"]["forbidden_uses"]
+    assert all(call["source_support_result"] is False for call in payload["allowed_next_tool_calls"])
+    assert payload["read_surface_effect"] == "literature_reading_route_only"
+    assert payload["read_only"] is True
+    assert payload["draft_creates_records"] is False
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["can_update_claim_trust"] is False
+    assert payload["records_validation_result"] is False
+    assert payload["source_support_result"] is False
+    assert payload["evidence_created"] is False
+    assert payload["validation_created"] is False
+    assert payload["write_executed"] is False
+    assert payload["trust_update_forbidden"] is True
+    assert payload["claim_trust_mutation"] == "none"
+
+    assert main(
+        [
+            "--base",
+            str(ws.base),
+            "literature",
+            "reading-route",
+            "--session",
+            "chaos-lit",
+            "--question",
+            "How should these two papers be read before alpha-axis synthesis?",
+            "--source-ref",
+            "source_asset:paper-a",
+            "--source-ref",
+            "reference_location:paper-b",
+            "--route-type",
+            "paired",
+            "--focus",
+            "Yangian",
+            "--rationale",
+            "Plan paired source reading before any source synthesis.",
+        ]
+    ) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_literature_reading_route(
+        str(ws.base),
+        session_id="chaos-lit",
+        reading_question="How should these two papers be read before alpha-axis synthesis?",
+        source_refs=["source_asset:paper-a", "reference_location:paper-b"],
+        route_type="paired",
+        focus_terms=["Yangian"],
+        rationale="Plan paired source reading before any source synthesis.",
+    )
+
+    assert require_valid_public_surface("literature_reading_route", cli_payload) == cli_payload
+    assert require_valid_public_surface("literature_reading_route", mcp_payload) == mcp_payload
+    assert cli_payload["route_type"] == "paired_paper"
+    assert mcp_payload["source_requirements"][0]["exact_anchor_required"] is True
+    assert runtime_entrypoints()["literature_reading_route"] == {
+        "cli": "aitp-v5 literature reading-route <args>",
+        "mcp": "aitp_v5_build_literature_reading_route",
+        "surface": "literature_reading_route",
+    }
+
+
 def test_literature_source_extraction_candidates_are_read_only_planning_packet(tmp_path, capsys):
     import json
 

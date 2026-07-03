@@ -127,3 +127,31 @@ def test_context_pack_cli_and_mcp_return_valid_public_surface(tmp_path, capsys):
     assert cli_pack["task_profile"]["profile_id"] == "paper_learning"
     assert cli_pack["line_count"] <= 45
     assert mcp_pack["injection_policy"]["host"] == "codex"
+
+
+def test_context_profiles_recommend_paired_and_multi_paper_learning_routes():
+    from brain.v5.context_profiles import suggest_context_profiles_for_claim
+    from brain.v5.models import ClaimRecord
+
+    paired_claim = ClaimRecord(
+        claim_id="claim-paired",
+        topic_id="qg-two-paper-reading",
+        statement="Compare both papers before synthesizing the wormhole and baby-universe assumptions.",
+        evidence_profile="literature_synthesis",
+        confidence_state="learning",
+        active_uncertainty="paired paper source anchors are missing",
+    )
+    multi_claim = ClaimRecord(
+        claim_id="claim-multi",
+        topic_id="qft-source-set",
+        statement="Build a cross-paper source set before claiming the renormalization convention is shared.",
+        evidence_profile="literature_synthesis",
+        confidence_state="learning",
+        active_uncertainty="multi-paper convention conflicts are unresolved",
+    )
+
+    paired_profiles = {profile["profile_id"] for profile in suggest_context_profiles_for_claim(paired_claim)}
+    multi_profiles = {profile["profile_id"] for profile in suggest_context_profiles_for_claim(multi_claim)}
+
+    assert {"paper_learning", "paired_paper_learning", "closeout"} <= paired_profiles
+    assert {"paper_learning", "multi_paper_learning_route", "closeout"} <= multi_profiles

@@ -160,6 +160,9 @@ def _validate_mcp_arguments(target: dict[str, Any], path: str, result: ContractR
         "curated_rag_promotion_draft",
         "literature_source_review_handoff",
         "literature_comparison_draft",
+        "literature_reading_route",
+        "literature_source_extraction_candidates",
+        "domain_skill_shims",
     }:
         _require_mapping(arguments, f"{path}.mcp_arguments", result)
         if not isinstance(arguments, dict):
@@ -305,6 +308,51 @@ def _validate_mcp_arguments(target: dict[str, Any], path: str, result: ContractR
                 result.add(
                     f"{path}.mcp_arguments.optional",
                     "must allow dimensions, optional_claim_id, and rationale",
+                )
+        if entrypoint_key == "literature_reading_route":
+            if arguments.get("required") != [
+                "base",
+                "session_id",
+                "reading_question",
+                "source_refs",
+            ]:
+                result.add(
+                    f"{path}.mcp_arguments.required",
+                    "must require base, session_id, reading_question, and source_refs",
+                )
+            if arguments.get("optional") != [
+                "route_type",
+                "focus_terms",
+                "optional_claim_id",
+                "rationale",
+            ]:
+                result.add(
+                    f"{path}.mcp_arguments.optional",
+                    "must allow route_type, focus_terms, optional_claim_id, and rationale",
+                )
+        if entrypoint_key == "literature_source_extraction_candidates":
+            if arguments.get("required") != ["base", "session_id", "source_refs"]:
+                result.add(
+                    f"{path}.mcp_arguments.required",
+                    "must require base, session_id, and source_refs",
+                )
+            if arguments.get("optional") != [
+                "focus_terms",
+                "extraction_modes",
+                "optional_claim_id",
+                "rationale",
+            ]:
+                result.add(
+                    f"{path}.mcp_arguments.optional",
+                    "must allow focus_terms, extraction_modes, optional_claim_id, and rationale",
+                )
+        if entrypoint_key == "domain_skill_shims":
+            if arguments.get("required") != ["base"]:
+                result.add(f"{path}.mcp_arguments.required", "must require base")
+            if arguments.get("optional") != ["pack_ids", "output_root", "apply", "overwrite"]:
+                result.add(
+                    f"{path}.mcp_arguments.optional",
+                    "must allow pack_ids, output_root, apply, and overwrite",
                 )
     elif arguments is not None:
         result.add(f"{path}.mcp_arguments", "must be omitted for non-read target metadata")

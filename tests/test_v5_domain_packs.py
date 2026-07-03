@@ -73,6 +73,7 @@ def test_builtin_qft_and_quantum_gravity_packs_are_literature_experience_packs()
     assert qft.skill_refs[0]["orientation_only"] is True
     assert qft.manifest_refs[0]["manifest_id"] == "connector.qft_literature"
     assert "source_reconstruction" in qft.context_profile_refs
+    assert "paired_paper_learning" in qft.context_profile_refs
 
     assert qg.workflow_graph["default_routes"][0]["route_id"] == "qg_source_grounded_learning"
     assert qg.lane_policy["default_lane"] == "literature_orientation"
@@ -82,6 +83,7 @@ def test_builtin_qft_and_quantum_gravity_packs_are_literature_experience_packs()
     assert qg.skill_refs[0]["orientation_only"] is True
     assert qg.manifest_refs[0]["manifest_id"] == "connector.quantum_gravity_literature"
     assert "group_meeting_report" in qg.context_profile_refs
+    assert "multi_paper_learning_route" in qg.context_profile_refs
 
 
 def test_qft_and_qg_domain_pack_suggestions_compose_with_formal_baseline():

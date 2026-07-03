@@ -96,6 +96,11 @@ _MCP_ARGUMENT_SPECS: dict[str, dict[str, Any]] = {
         "optional": ["dimensions", "optional_claim_id", "rationale"],
         "source": "aitp_v5_build_literature_comparison_draft",
     },
+    "literature_reading_route": {
+        "required": ["base", "session_id", "reading_question", "source_refs"],
+        "optional": ["route_type", "focus_terms", "optional_claim_id", "rationale"],
+        "source": "aitp_v5_build_literature_reading_route",
+    },
     "literature_source_extraction_candidates": {
         "required": ["base", "session_id", "source_refs"],
         "optional": ["focus_terms", "extraction_modes", "optional_claim_id", "rationale"],
@@ -124,6 +129,7 @@ _BRIDGE_TARGET_SPECS: tuple[tuple[str, str, str, str], ...] = (
     ("draftCuratedRagPromotion", "curated_rag_promotion_draft", "read", "read_only"),
     ("readLiteratureSourceReviewHandoff", "literature_source_review_handoff", "read", "read_only"),
     ("readLiteratureComparisonDraft", "literature_comparison_draft", "read", "read_only"),
+    ("readLiteratureReadingRoute", "literature_reading_route", "read", "read_only"),
     (
         "readLiteratureSourceExtractionCandidates",
         "literature_source_extraction_candidates",

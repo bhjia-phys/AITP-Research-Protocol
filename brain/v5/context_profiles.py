@@ -73,6 +73,7 @@ def builtin_context_profiles() -> dict[str, ContextCompilationProfile]:
                 "reference_locations",
                 "knowledge_connectors",
                 "curated_rag_search",
+                "literature_reading_route",
                 "object_relations",
                 "proof_obligations",
             ),
@@ -87,10 +88,85 @@ def builtin_context_profiles() -> dict[str, ContextCompilationProfile]:
             must_verify=(
                 "source_asset exists or acquisition status is explicit",
                 "reference_location points to exact source anchors",
+                "reading synthesis waits for exact source anchors",
                 "evidence is created only for a specific claim",
             ),
             reusable_experience=("source_backtrace", "notation_dependency_map"),
-            recommended_surfaces=("knowledge_connector_catalog", "curated_rag_search_result", "source_reconstruction_audit"),
+            recommended_surfaces=(
+                "literature_reading_route",
+                "knowledge_connector_catalog",
+                "curated_rag_search_result",
+                "source_reconstruction_audit",
+            ),
+            truth_policy=dict(no_trust_policy),
+        ),
+        "paired_paper_learning": ContextCompilationProfile(
+            profile_id="paired_paper_learning",
+            task_type="paired_literature_learning",
+            purpose="Read two papers through one conceptual route while keeping each source's anchors separate before comparison.",
+            include_sections=(
+                "source_assets",
+                "reference_locations",
+                "literature_reading_route",
+                "literature_source_extraction_candidates",
+                "literature_comparison_draft",
+                "source_reconstruction_audit",
+                "non_supported_claims",
+            ),
+            can_say=(
+                "which exact source anchors define each paper's concepts, notation, and scope",
+                "which agreements and disagreements are ready for comparison review",
+            ),
+            cannot_say=(
+                "that an agent-written paired summary is evidence",
+                "that two papers support a claim before per-source reconstruction and validation",
+            ),
+            must_verify=(
+                "both sources have source_asset records or explicit acquisition status",
+                "both sources have exact reference_location anchors for compared claims",
+                "comparison dimensions preserve source-by-source provenance",
+            ),
+            reusable_experience=("paired_source_route", "comparison_before_synthesis_boundary"),
+            recommended_surfaces=(
+                "literature_reading_route",
+                "literature_source_extraction_candidates",
+                "literature_comparison_draft",
+                "source_reconstruction_audit",
+            ),
+            truth_policy=dict(no_trust_policy),
+        ),
+        "multi_paper_learning_route": ContextCompilationProfile(
+            profile_id="multi_paper_learning_route",
+            task_type="multi_literature_learning",
+            purpose="Route a multi-paper source set into per-source extraction reports before any cross-paper synthesis.",
+            include_sections=(
+                "source_assets",
+                "reference_locations",
+                "literature_reading_route",
+                "source_set_comparison_matrix",
+                "source_reconstruction_audit",
+                "open_gaps",
+            ),
+            can_say=(
+                "which source-set dimensions are ready for comparison",
+                "which papers still lack anchors, extraction reports, or reconstruction review",
+            ),
+            cannot_say=(
+                "that a source-set narrative is complete without per-source anchors",
+                "that majority agreement across papers is claim support without typed evidence",
+            ),
+            must_verify=(
+                "every source has canonical identity or acquisition status",
+                "every synthesis point cites exact source locations",
+                "comparison matrix distinguishes agreement, convention mismatch, and open gaps",
+            ),
+            reusable_experience=("multi_source_anchor_table", "synthesis_boundary_before_evidence"),
+            recommended_surfaces=(
+                "literature_reading_route",
+                "literature_source_extraction_candidates",
+                "literature_comparison_draft",
+                "source_reconstruction_audit",
+            ),
             truth_policy=dict(no_trust_policy),
         ),
         "derivation_check": ContextCompilationProfile(
@@ -188,6 +264,10 @@ def suggest_context_profiles_for_claim(claim: ClaimRecord, *, domain_pack_refs: 
         term in text for term in ("paper", "literature", "arxiv", "reading", "qft", "quantum field", "quantum gravity")
     ):
         suggested.append(profiles["paper_learning"])
+    if any(term in text for term in ("paired paper", "two paper", "two-paper", "both papers", "compare paper", "versus")):
+        suggested.append(profiles["paired_paper_learning"])
+    if any(term in text for term in ("multi-paper", "multiple papers", "source set", "literature set", "cross-paper")):
+        suggested.append(profiles["multi_paper_learning_route"])
     if claim.evidence_profile == "formal_theory":
         suggested.append(profiles["derivation_check"])
     suggested.append(profiles["closeout"])

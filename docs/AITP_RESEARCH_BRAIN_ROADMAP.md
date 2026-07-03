@@ -118,15 +118,19 @@ First implemented targets:
   concept/notation/equation-anchor/object-relation/proof-gap extraction
   planning surface through `aitp-v5 literature source-extraction`, MCP, public
   surface contracts, and the runtime bridge manifest.
+- `literature_reading_route` now compiles single-paper, paired-paper, and
+  multi-paper reading routes through CLI, MCP, public surface contracts, and
+  the runtime bridge manifest. It requires source assets, exact reference
+  locations, per-source extraction reports, reconstruction review, and
+  comparison boundaries before synthesis, evidence, validation, or trust work.
 
 Next implementation slices:
 
-1. Add paper-learning context profiles that request source assets and exact
-   reference locations before synthesis.
-2. Add paired-paper and multi-paper reading route surfaces that preserve
-   conflict, dependency, and scope boundaries.
-3. Add profile-specific extraction reports that summarize candidate objects and
+1. Add profile-specific extraction reports that summarize candidate objects and
    relations after explicit typed writes exist.
+2. Add source-set readiness/audit surfaces that show which papers still lack
+   canonical source identity, anchors, extraction reports, or reconstruction
+   review.
 
 ## Workstream C: Context Compiler v2
 
@@ -136,6 +140,8 @@ Required task profiles:
 
 - `librpa_run_continuation`
 - `paper_learning`
+- `paired_paper_learning`
+- `multi_paper_learning_route`
 - `derivation_check`
 - `source_reconstruction`
 - `group_meeting_report`

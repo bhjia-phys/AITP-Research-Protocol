@@ -293,7 +293,13 @@ def builtin_domain_packs() -> dict[str, DomainPackRecord]:
                 "trust_update_allowed": False,
                 "orientation_only": True,
             },
-            context_profile_refs=["paper_learning", "derivation_check", "source_reconstruction", "closeout"],
+            context_profile_refs=[
+                "paper_learning",
+                "paired_paper_learning",
+                "derivation_check",
+                "source_reconstruction",
+                "closeout",
+            ],
             tool_recipes=[
                 "qft_source_anchor_extraction",
                 "qft_notation_map",
@@ -471,7 +477,14 @@ def builtin_domain_packs() -> dict[str, DomainPackRecord]:
                 "trust_update_allowed": False,
                 "orientation_only": True,
             },
-            context_profile_refs=["paper_learning", "source_reconstruction", "group_meeting_report", "closeout"],
+            context_profile_refs=[
+                "paper_learning",
+                "paired_paper_learning",
+                "multi_paper_learning_route",
+                "source_reconstruction",
+                "group_meeting_report",
+                "closeout",
+            ],
             tool_recipes=[
                 "qg_source_anchor_extraction",
                 "qg_concept_dependency_map",
