@@ -280,6 +280,24 @@ def require_valid_literature_reading_route(payload: dict[str, Any]) -> dict[str,
     return _require(payload)
 
 
+def validate_context_profile_template_catalog(
+    payload: dict[str, Any],
+    *,
+    path: str = "context_profile_template_catalog",
+) -> ContractResult:
+    from brain.v5.context_profile_template_contracts import (
+        validate_context_profile_template_catalog as _validate,
+    )
+    return _validate(payload, path=path)
+
+
+def require_valid_context_profile_template_catalog(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.context_profile_template_contracts import (
+        require_valid_context_profile_template_catalog as _require,
+    )
+    return _require(payload)
+
+
 def validate_literature_source_set_readiness(
     payload: dict[str, Any],
     *,

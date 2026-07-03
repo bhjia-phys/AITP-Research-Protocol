@@ -30,6 +30,7 @@ from brain.v5.codex_facade import (
     codex_tool_catalog,
 )
 from brain.v5.context_pack import build_aitp_context_pack
+from brain.v5.context_profile_templates import build_context_profile_template_catalog
 from brain.v5.curated_rag_corpus import (
     curated_rag_corpus,
     draft_curated_rag_promotion,
@@ -533,6 +534,20 @@ def aitp_v5_get_context_pack(
             user_goal=user_goal,
             task_profile=task_profile,
         ),
+    )
+
+
+def aitp_v5_get_context_profile_templates(
+    base: str = "",
+    *,
+    profile_ids: list[str] | None = None,
+) -> dict:
+    """Return read-only report and closeout templates for task context profiles."""
+
+    _ = base
+    return require_valid_public_surface(
+        "context_profile_template_catalog",
+        build_context_profile_template_catalog(profile_ids=profile_ids),
     )
 
 

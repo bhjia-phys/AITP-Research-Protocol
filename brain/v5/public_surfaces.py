@@ -24,6 +24,7 @@ _PUBLIC_SURFACE_NAMES = (
     "codex_hook_installation",
     "code_state_record",
     "compact_execution_brief",
+    "context_profile_template_catalog",
     "curated_rag_chunk",
     "curated_rag_corpus",
     "curated_rag_ingest_result",
@@ -194,6 +195,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "codex_hook_installation": "contracted Codex stdin-runner hook installation fixture generated from runtime metadata",
     "code_state_record": "contracted code-state provenance record for code-dependent physics results",
     "compact_execution_brief": "read-only short continuation brief scoped by objective/work-package view; expands to full brief and relation map explicitly without trust authority",
+    "context_profile_template_catalog": "read-only Context Compiler v2 catalog of task-profile report and closeout templates, can-say/cannot-say boundaries, must-verify gates, reusable experience patterns, and read-only expansion surfaces without evidence, validation, write, final-gate, or claim-trust authority",
     "curated_rag_chunk": "read-only curated RAG chunk lookup exposing canonical chunk/document identity, hash, anchor, and source metadata without evidence, validation, final-gate, or claim-trust authority",
     "curated_rag_corpus": "read-only curated background RAG corpus catalog for heuristic context without evidence, validation, or claim-trust authority",
     "curated_rag_ingest_result": "contracted file-backed curated RAG manifest/index write result for heuristic background corpus updates without evidence, validation, final-gate, or claim-trust authority",
@@ -550,6 +552,9 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.literature_source_review_handoff_contracts import (
         require_valid_literature_source_review_handoff,
     )
+    from brain.v5.context_profile_template_contracts import (
+        require_valid_context_profile_template_catalog,
+    )
     from brain.v5.lane_exemplar_contracts import (
         require_valid_lane_exemplar_manifest,
         require_valid_lane_exemplar_record,
@@ -633,6 +638,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "codex_hook_installation": require_valid_codex_hook_installation,
         "code_state_record": require_valid_code_state_record,
         "compact_execution_brief": require_valid_compact_execution_brief,
+        "context_profile_template_catalog": require_valid_context_profile_template_catalog,
         "curated_rag_chunk": require_valid_curated_rag_chunk,
         "curated_rag_corpus": require_valid_curated_rag_corpus,
         "curated_rag_ingest_result": require_valid_curated_rag_ingest_result,

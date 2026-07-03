@@ -141,10 +141,10 @@ First implemented targets:
 
 Next implementation slices:
 
-1. Move to Workstream C by adding profile-specific closeout and report
-   templates for the task-aware context compiler.
-2. Add tests that verify every context profile preserves orientation-only and
-   trust boundaries.
+1. Use Workstream C task-profile templates to render concrete context packs,
+   group-meeting drafts, and closeout drafts from live typed records.
+2. Start Workstream D lane exemplars with a LibRPA/GW code-backed algorithm
+   example and a QFT/QG source-reconstruction example.
 
 ## Workstream C: Context Compiler v2
 
@@ -176,12 +176,19 @@ First implemented target:
 - `aitp-v5 status context-pack` and `aitp_v5_get_context_pack` accept an
   explicit task profile and render profile-specific can-say/cannot-say/must
   verify boundaries.
+- `context_profile_template_catalog` now exposes profile-specific report and
+  closeout templates for all required task profiles through CLI, MCP, public
+  surface contracts, and the runtime bridge manifest.
+- Tests verify that every context profile template remains read-only,
+  orientation-only, cannot create evidence/validation/source-support results,
+  and cannot update claim trust.
 
 Next implementation slices:
 
-1. Add profile-specific closeout and report templates.
-2. Add tests that verify every profile preserves orientation-only and trust
-   boundaries.
+1. Have `aitp_context_pack` include compact template hints from
+   `context_profile_template_catalog` when a task profile is selected.
+2. Add read-only materializers for group-meeting and closeout drafts that fill
+   those templates from typed records without turning drafts into evidence.
 
 ## Workstream D: Lane Exemplars And Scientific Examples
 

@@ -47,6 +47,7 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
     assert entrypoints["runtime_mcp_bridge_acceptance"]["surface"] == "runtime_mcp_bridge_acceptance"
     assert entrypoints["runtime_payload_profiles"]["surface"] == "runtime_payload_profiles"
     assert entrypoints["domain_skill_shims"]["surface"] == "domain_skill_shim_manifest"
+    assert entrypoints["context_profile_templates"]["surface"] == "context_profile_template_catalog"
     assert entrypoints["record_evidence"]["mcp"] == "aitp_v5_record_evidence"
     assert entrypoints["record_code_state"]["mcp"] == "aitp_v5_record_code_state"
     assert entrypoints["register_tool_recipe"]["mcp"] == "aitp_v5_register_tool_recipe"
@@ -98,6 +99,11 @@ def test_runtime_entrypoints_advertise_typed_write_surfaces():
         "cli": "aitp-v5 adapter payload-profiles",
         "mcp": "aitp_v5_get_runtime_payload_profiles",
         "surface": "runtime_payload_profiles",
+    }
+    assert entrypoints["context_profile_templates"] == {
+        "cli": "aitp-v5 status context-profile-templates",
+        "mcp": "aitp_v5_get_context_profile_templates",
+        "surface": "context_profile_template_catalog",
     }
     assert entrypoints["domain_skill_shims"] == {
         "cli": "aitp-v5 domain-pack skill-shims <args>",
@@ -333,6 +339,11 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "cli": "aitp-v5 literature source-set-readiness <args>",
             "mcp": "aitp_v5_build_literature_source_set_readiness",
             "surface": "literature_source_set_readiness",
+        },
+        "context_profile_templates": {
+            "cli": "aitp-v5 status context-profile-templates",
+            "mcp": "aitp_v5_get_context_profile_templates",
+            "surface": "context_profile_template_catalog",
         },
         "domain_skill_shims": {
             "cli": "aitp-v5 domain-pack skill-shims <args>",
@@ -725,6 +736,23 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
         "required": ["base", "session_id", "source_refs"],
         "optional": ["optional_claim_id", "readiness_scope"],
         "source": "aitp_v5_build_literature_source_set_readiness",
+    }
+    assert by_operation["readContextProfileTemplates"]["entrypoint_key"] == "context_profile_templates"
+    assert by_operation["readContextProfileTemplates"]["mcp_tool"] == (
+        "aitp_v5_get_context_profile_templates"
+    )
+    assert by_operation["readContextProfileTemplates"]["cli_fallback"] == (
+        "aitp-v5 status context-profile-templates"
+    )
+    assert by_operation["readContextProfileTemplates"]["surface"] == (
+        "context_profile_template_catalog"
+    )
+    assert by_operation["readContextProfileTemplates"]["execution_role"] == "read"
+    assert by_operation["readContextProfileTemplates"]["state_effect"] == "read_only"
+    assert by_operation["readContextProfileTemplates"]["mcp_arguments"] == {
+        "required": [],
+        "optional": ["base", "profile_ids"],
+        "source": "aitp_v5_get_context_profile_templates",
     }
     assert by_operation["materializeDomainSkillShims"]["entrypoint_key"] == "domain_skill_shims"
     assert by_operation["materializeDomainSkillShims"]["mcp_tool"] == (

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from brain.v5.context_pack import build_aitp_context_pack
+from brain.v5.context_profile_templates import build_context_profile_template_catalog
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.hpc_cockpit import build_hpc_cockpit
 from brain.v5.lane_contracts import lane_contract_payload, record_lane_contract
@@ -34,6 +35,8 @@ def add_status_parser(sp) -> None:
     context_pack.add_argument("--max-lines", type=int, default=60)
     context_pack.add_argument("--candidate-limit", type=int, default=3)
     context_pack.add_argument("--task-profile", default="")
+    profile_templates = ss.add_parser("context-profile-templates")
+    profile_templates.add_argument("--profile", action="append", default=[], dest="profile_ids")
     distillation = ss.add_parser("distillation-candidates")
     distillation.add_argument("session_id")
     distillation.add_argument("--limit", type=int, default=8)
@@ -87,6 +90,11 @@ def dispatch_status_command(args, ws) -> dict:
                 candidate_limit=args.candidate_limit,
                 task_profile=args.task_profile,
             ),
+        )
+    if args.status_command == "context-profile-templates":
+        return require_valid_public_surface(
+            "context_profile_template_catalog",
+            build_context_profile_template_catalog(profile_ids=args.profile_ids),
         )
     if args.status_command == "distillation-candidates":
         return require_valid_public_surface(

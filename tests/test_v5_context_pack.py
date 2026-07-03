@@ -155,3 +155,78 @@ def test_context_profiles_recommend_paired_and_multi_paper_learning_routes():
 
     assert {"paper_learning", "paired_paper_learning", "closeout"} <= paired_profiles
     assert {"paper_learning", "multi_paper_learning_route", "closeout"} <= multi_profiles
+
+
+def test_context_profile_template_catalog_covers_all_task_profiles_and_boundaries():
+    from brain.v5.context_profile_templates import build_context_profile_template_catalog
+    from brain.v5.context_profiles import builtin_context_profiles
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    catalog = require_valid_public_surface(
+        "context_profile_template_catalog",
+        build_context_profile_template_catalog(),
+    )
+
+    assert catalog["kind"] == "context_profile_template_catalog"
+    assert catalog["profile_ids"] == list(builtin_context_profiles())
+    assert catalog["profile_count"] == 8
+    assert catalog["template_count"] == 8
+    assert catalog["read_only"] is True
+    assert catalog["orientation_only"] is True
+    assert catalog["can_update_claim_trust"] is False
+    assert catalog["claim_trust_mutation"] == "none"
+    assert "claim_trust_update" in catalog["template_policy"]["forbidden_uses"]
+    assert "trust_apply" in catalog["template_policy"]["forbidden_uses"]
+
+    for template in catalog["templates"]:
+        assert template["kind"] == "context_profile_template"
+        assert template["profile_id"] in builtin_context_profiles()
+        assert template["required_sections"]
+        assert template["can_say"]
+        assert template["cannot_say_yet"]
+        assert template["must_verify_before_trust_or_promotion"]
+        assert template["read_only_surfaces_to_expand"]
+        assert template["recommended_next_entrypoints"][0].endswith(
+            f"--task-profile {template['profile_id']}"
+        )
+        assert template["report_template"]["orientation_only"] is True
+        assert template["closeout_template"]["orientation_only"] is True
+        assert template["read_only"] is True
+        assert template["orientation_only"] is True
+        assert template["records_validation_result"] is False
+        assert template["source_support_result"] is False
+        assert template["can_update_kernel_state"] is False
+        assert template["can_update_claim_trust"] is False
+        assert template["claim_trust_mutation"] == "none"
+        assert "validation_result" in template["forbidden_uses"]
+        assert "final_gate_satisfaction" in template["forbidden_uses"]
+
+
+def test_context_profile_template_catalog_cli_and_mcp_can_filter_profiles(tmp_path, capsys):
+    from brain.v5.mcp_tools import aitp_v5_get_context_profile_templates
+
+    cli_payload = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "status",
+            "context-profile-templates",
+            "--profile",
+            "closeout",
+            "--profile",
+            "group_meeting_report",
+        ],
+        capsys,
+    )
+    mcp_payload = aitp_v5_get_context_profile_templates(
+        str(tmp_path),
+        profile_ids=["closeout", "group_meeting_report"],
+    )
+
+    assert cli_payload == mcp_payload
+    assert cli_payload["profile_ids"] == ["closeout", "group_meeting_report"]
+    assert [template["profile_id"] for template in cli_payload["templates"]] == [
+        "closeout",
+        "group_meeting_report",
+    ]
+    assert cli_payload["unknown_profile_ids"] == []
