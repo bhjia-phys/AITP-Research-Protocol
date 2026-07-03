@@ -127,12 +127,16 @@ First implemented targets:
   showing which papers still lack canonical source identity, exact anchors,
   typed extraction traces, or source reconstruction review through CLI, MCP,
   public surface contracts, and the runtime bridge manifest.
+- `literature_extraction_report` now summarizes existing typed extraction
+  records by profile (`paper_learning`, `paired_paper_learning`,
+  `multi_paper_learning_route`, QFT/QG/LibRPA literature profiles) through CLI,
+  MCP, public surface contracts, and the runtime bridge manifest. It only reads
+  typed records and cannot promote extraction reports into evidence,
+  validation, final gates, or trust updates.
 
 Next implementation slices:
 
-1. Add profile-specific extraction reports that summarize candidate objects and
-   relations after explicit typed writes exist.
-2. Add corpus-backed extraction report artifacts that connect curated RAG chunks
+1. Add corpus-backed extraction report artifacts that connect curated RAG chunks
    and exact reference locations without promoting retrieval to evidence.
 
 ## Workstream C: Context Compiler v2

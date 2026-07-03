@@ -319,6 +319,11 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "mcp": "aitp_v5_build_literature_source_extraction_candidates",
             "surface": "literature_source_extraction_candidates",
         },
+        "literature_extraction_report": {
+            "cli": "aitp-v5 literature extraction-report <args>",
+            "mcp": "aitp_v5_build_literature_extraction_report",
+            "surface": "literature_extraction_report",
+        },
         "literature_source_set_readiness": {
             "cli": "aitp-v5 literature source-set-readiness <args>",
             "mcp": "aitp_v5_build_literature_source_set_readiness",
@@ -658,6 +663,25 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
         "required": ["base", "session_id", "source_refs"],
         "optional": ["focus_terms", "extraction_modes", "optional_claim_id", "rationale"],
         "source": "aitp_v5_build_literature_source_extraction_candidates",
+    }
+    assert by_operation["readLiteratureExtractionReport"]["entrypoint_key"] == (
+        "literature_extraction_report"
+    )
+    assert by_operation["readLiteratureExtractionReport"]["mcp_tool"] == (
+        "aitp_v5_build_literature_extraction_report"
+    )
+    assert by_operation["readLiteratureExtractionReport"]["cli_fallback"] == (
+        "aitp-v5 literature extraction-report <args>"
+    )
+    assert by_operation["readLiteratureExtractionReport"]["surface"] == (
+        "literature_extraction_report"
+    )
+    assert by_operation["readLiteratureExtractionReport"]["execution_role"] == "read"
+    assert by_operation["readLiteratureExtractionReport"]["state_effect"] == "read_only"
+    assert by_operation["readLiteratureExtractionReport"]["mcp_arguments"] == {
+        "required": ["base", "session_id", "source_refs"],
+        "optional": ["report_profile", "focus_terms", "optional_claim_id"],
+        "source": "aitp_v5_build_literature_extraction_report",
     }
     assert by_operation["readLiteratureSourceSetReadiness"]["entrypoint_key"] == (
         "literature_source_set_readiness"

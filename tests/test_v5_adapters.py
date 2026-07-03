@@ -3737,6 +3737,7 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
         "readLiteratureComparisonDraft",
         "readLiteratureReadingRoute",
         "readLiteratureSourceExtractionCandidates",
+        "readLiteratureExtractionReport",
         "readLiteratureSourceSetReadiness",
     ]
     assert "ingestCuratedRagCorpus" in manifest["target_groups"]["write"]
@@ -3774,6 +3775,12 @@ def test_runtime_bridge_target_manifest_is_public_and_mcp_first(capsys):
     )
     assert by_operation["readLiteratureSourceExtractionCandidates"]["execution_role"] == "read"
     assert by_operation["readLiteratureSourceExtractionCandidates"]["state_effect"] == "read_only"
+    assert by_operation["readLiteratureExtractionReport"]["mcp_tool"] == (
+        "aitp_v5_build_literature_extraction_report"
+    )
+    assert by_operation["readLiteratureExtractionReport"]["surface"] == "literature_extraction_report"
+    assert by_operation["readLiteratureExtractionReport"]["execution_role"] == "read"
+    assert by_operation["readLiteratureExtractionReport"]["state_effect"] == "read_only"
     assert by_operation["readLiteratureSourceSetReadiness"]["mcp_tool"] == (
         "aitp_v5_build_literature_source_set_readiness"
     )

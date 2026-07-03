@@ -208,6 +208,24 @@ def require_valid_literature_comparison_draft(payload: dict[str, Any]) -> dict[s
     return _require(payload)
 
 
+def validate_literature_extraction_report(
+    payload: dict[str, Any],
+    *,
+    path: str = "literature_extraction_report",
+) -> ContractResult:
+    from brain.v5.literature_extraction_report_contracts import (
+        validate_literature_extraction_report as _validate,
+    )
+    return _validate(payload, path=path)
+
+
+def require_valid_literature_extraction_report(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.literature_extraction_report_contracts import (
+        require_valid_literature_extraction_report as _require,
+    )
+    return _require(payload)
+
+
 def validate_literature_source_extraction_candidates(
     payload: dict[str, Any],
     *,

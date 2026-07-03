@@ -138,6 +138,19 @@ def sample_args_for_template(template: str) -> list[str]:
             "--mode",
             "relation",
         ]
+    if template.startswith("literature extraction-report"):
+        return [
+            "--session",
+            "s1",
+            "--source-ref",
+            "source_asset:source-asset-edge-counting",
+            "--source-ref",
+            "reference_location:reference-location-edge-counting",
+            "--profile",
+            "paired_paper_learning",
+            "--focus",
+            "edge CFT",
+        ]
     if template.startswith("literature source-set-readiness"):
         return [
             "--session",

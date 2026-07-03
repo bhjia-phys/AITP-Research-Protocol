@@ -704,6 +704,201 @@ def test_literature_source_extraction_candidates_are_read_only_planning_packet(t
     }
 
 
+def test_literature_extraction_report_summarizes_existing_typed_extraction_records(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.literature_extraction_report import build_literature_extraction_report
+    from brain.v5.mcp_tools import aitp_v5_build_literature_extraction_report
+    from brain.v5.models import EvidenceRecord, TrustUpdateRecord, ValidationResultRecord
+    from brain.v5.physics_objects import record_object_relation, record_physics_object
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.references import record_reference_location
+    from brain.v5.research_state import create_proof_obligation
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.sensemaking import record_sensemaking_report
+    from brain.v5.source_assets import register_source_asset
+    from brain.v5.store import list_records
+
+    ws, claim = _setup_topic(tmp_path, active_claim=True)
+    topic_id = "quantum-chaos-long-range-spin-chains"
+    asset = register_source_asset(
+        ws,
+        topic_id=topic_id,
+        claim_id=claim.claim_id,
+        asset_type="paper",
+        uri="https://arxiv.org/abs/2604.14695",
+        title="Level statistics in long-range spin chains",
+    )
+    source_ref = f"source_asset:{asset.asset_id}"
+    location = record_reference_location(
+        ws,
+        topic_id=topic_id,
+        claim_id=claim.claim_id,
+        connector_id="arxiv",
+        location_type="paper_section",
+        uri="https://arxiv.org/pdf/2604.14695#page=4",
+        label="Alpha-axis convention section",
+        source_ref=source_ref,
+        external_id="arXiv:2604.14695",
+        summary="Exact section anchor for alpha-axis conventions.",
+    )
+    object_a = record_physics_object(
+        ws,
+        topic_id=topic_id,
+        object_type="model",
+        name="alpha-axis long-range spin chain",
+        definition="A 1/r^alpha periodic spin-chain family used for comparison.",
+        notation="H_alpha",
+        source_refs=[source_ref, f"reference_location:{location.location_id}"],
+    )
+    object_b = record_physics_object(
+        ws,
+        topic_id=topic_id,
+        object_type="regime",
+        name="alpha equals two point",
+        definition="The alpha=2 point singled out for Yangian-style comparison.",
+        notation="alpha=2",
+        source_refs=[source_ref],
+    )
+    relation = record_object_relation(
+        ws,
+        topic_id=topic_id,
+        claim_id=claim.claim_id,
+        relation_type="special_point",
+        subject_id=object_b.object_id,
+        object_id=object_a.object_id,
+        statement="The alpha=2 point is treated as a special point in the alpha-axis comparison.",
+        source_refs=[source_ref],
+        status="source_reported",
+    )
+    obligation = create_proof_obligation(
+        ws,
+        topic_id=topic_id,
+        claim_id=claim.claim_id,
+        statement="Check whether the source's alpha=2 anomaly is algebraic or only spectral.",
+        obligation_type="source_scope_gap",
+        status="open",
+        maturity_level="theorem-candidate",
+        next_action="Compare exact source anchors before synthesis.",
+        source_refs=[source_ref],
+    )
+    report = record_sensemaking_report(
+        ws,
+        topic_id=topic_id,
+        claim_id=claim.claim_id,
+        title="Alpha-axis extraction report",
+        summary="Orientation-only extraction report for the alpha-axis source.",
+        object_ids=[object_a.object_id, object_b.object_id],
+        relation_ids=[relation.relation_id],
+        open_questions=["Does the anomaly depend on convention choices?"],
+    )
+
+    before = (
+        list_records(ws.registry_dir("evidence"), EvidenceRecord),
+        list_records(ws.registry_dir("validation_results"), ValidationResultRecord),
+        list_records(ws.registry_dir("trust_updates"), TrustUpdateRecord),
+    )
+    payload = build_literature_extraction_report(
+        ws,
+        session_id="chaos-lit",
+        source_refs=[source_ref],
+        report_profile="paired_paper_learning",
+        focus_terms=["alpha=2", "Yangian"],
+    )
+    after = (
+        list_records(ws.registry_dir("evidence"), EvidenceRecord),
+        list_records(ws.registry_dir("validation_results"), ValidationResultRecord),
+        list_records(ws.registry_dir("trust_updates"), TrustUpdateRecord),
+    )
+
+    assert before == after
+    assert require_valid_public_surface("literature_extraction_report", payload) == payload
+    assert payload["kind"] == "literature_extraction_report"
+    assert payload["claim_id"] == claim.claim_id
+    assert payload["report_profile"] == "paired_paper_learning"
+    assert payload["source_ref_count"] == 1
+    assert payload["focus_term_count"] == 2
+    assert payload["covered_source_count"] == 1
+    assert payload["blocked_source_count"] == 0
+    assert payload["aggregate_counts"] == {
+        "source_asset_count": 1,
+        "reference_location_count": 1,
+        "physics_object_count": 2,
+        "object_relation_count": 1,
+        "proof_obligation_count": 1,
+        "sensemaking_report_count": 1,
+    }
+    source_report = payload["source_reports"][0]
+    assert source_report["coverage_status"] == "profile_ready"
+    assert source_report["missing_section_ids"] == []
+    assert source_report["source_identity_refs"] == [source_ref]
+    assert source_report["reference_location_refs"] == [f"reference_location:{location.location_id}"]
+    assert source_report["extracted_object_refs"] == [
+        f"physics_object:{object_a.object_id}",
+        f"physics_object:{object_b.object_id}",
+    ]
+    assert source_report["extracted_relation_refs"] == [f"object_relation:{relation.relation_id}"]
+    assert source_report["proof_obligation_refs"] == [f"proof_obligation:{obligation.obligation_id}"]
+    assert source_report["sensemaking_report_refs"] == [f"sensemaking_report:{report.report_id}"]
+    assert source_report["extracted_objects"][0]["source_support_result"] is False
+    assert source_report["extracted_relations"][0]["claim_trust_mutation"] == "none"
+    assert all(section["coverage_status"] == "covered" for section in source_report["sections"])
+    assert payload["record_ref_lookup"]["source_support_result"] is False
+    assert payload["report_policy"]["requires_existing_typed_records"] is True
+    assert "extraction_report_as_evidence" in payload["report_policy"]["forbidden_uses"]
+    assert payload["read_surface_effect"] == "literature_extraction_report_only"
+    assert payload["read_only"] is True
+    assert payload["draft_creates_records"] is False
+    assert payload["requires_explicit_next_action"] is True
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["can_update_claim_trust"] is False
+    assert payload["records_validation_result"] is False
+    assert payload["source_support_result"] is False
+    assert payload["evidence_created"] is False
+    assert payload["validation_created"] is False
+    assert payload["write_executed"] is False
+    assert payload["trust_update_forbidden"] is True
+    assert payload["claim_trust_mutation"] == "none"
+
+    assert main(
+        [
+            "--base",
+            str(ws.base),
+            "literature",
+            "extraction-report",
+            "--session",
+            "chaos-lit",
+            "--source-ref",
+            source_ref,
+            "--profile",
+            "paired_paper_learning",
+            "--focus",
+            "alpha=2",
+        ]
+    ) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_literature_extraction_report(
+        str(ws.base),
+        session_id="chaos-lit",
+        source_refs=[source_ref],
+        report_profile="paired_paper_learning",
+        focus_terms=["alpha=2"],
+    )
+
+    assert require_valid_public_surface("literature_extraction_report", cli_payload) == cli_payload
+    assert require_valid_public_surface("literature_extraction_report", mcp_payload) == mcp_payload
+    assert cli_payload["aggregate_counts"]["physics_object_count"] == 2
+    assert mcp_payload["source_reports"][0]["coverage_status"] == "profile_ready"
+    assert runtime_entrypoints()["literature_extraction_report"] == {
+        "cli": "aitp-v5 literature extraction-report <args>",
+        "mcp": "aitp_v5_build_literature_extraction_report",
+        "surface": "literature_extraction_report",
+    }
+
+
 def test_literature_source_set_readiness_audits_source_stack_before_synthesis(tmp_path, capsys):
     import json
 

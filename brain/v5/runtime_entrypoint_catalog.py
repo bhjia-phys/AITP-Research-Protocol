@@ -233,6 +233,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_build_literature_source_extraction_candidates",
         "surface": "literature_source_extraction_candidates",
     },
+    "literature_extraction_report": {
+        "cli": "aitp-v5 literature extraction-report <args>",
+        "mcp": "aitp_v5_build_literature_extraction_report",
+        "surface": "literature_extraction_report",
+    },
     "literature_source_set_readiness": {
         "cli": "aitp-v5 literature source-set-readiness <args>",
         "mcp": "aitp_v5_build_literature_source_set_readiness",

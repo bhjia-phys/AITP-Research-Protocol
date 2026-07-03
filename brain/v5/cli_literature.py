@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 
 from brain.v5.literature_comparison_draft import build_literature_comparison_draft
+from brain.v5.literature_extraction_report import build_literature_extraction_report
 from brain.v5.literature_intake import record_literature_candidate, suggest_literature_intake
 from brain.v5.literature_reading_route import build_literature_reading_route
 from brain.v5.literature_source_extraction import build_literature_source_extraction_candidates
@@ -22,6 +23,7 @@ def add_literature_parser(sp: argparse._SubParsersAction) -> None:
     _add_reading_route_args(sub.add_parser("reading-route"))
     _add_comparison_draft_args(sub.add_parser("comparison-draft"))
     _add_source_extraction_args(sub.add_parser("source-extraction"))
+    _add_extraction_report_args(sub.add_parser("extraction-report"))
     _add_source_set_readiness_args(sub.add_parser("source-set-readiness"))
 
 
@@ -50,6 +52,18 @@ def dispatch_literature_command(args: argparse.Namespace, ws) -> dict:
                 extraction_modes=args.extraction_modes,
                 optional_claim_id=args.optional_claim_id,
                 rationale=args.rationale,
+            ),
+        )
+    if args.literature_command == "extraction-report":
+        return require_valid_public_surface(
+            "literature_extraction_report",
+            build_literature_extraction_report(
+                ws,
+                session_id=args.session_id,
+                source_refs=args.source_refs,
+                report_profile=args.report_profile,
+                focus_terms=args.focus_terms,
+                optional_claim_id=args.optional_claim_id,
             ),
         )
     if args.literature_command == "reading-route":
@@ -143,6 +157,14 @@ def _add_source_extraction_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--mode", action="append", default=[], dest="extraction_modes")
     parser.add_argument("--claim", default="", dest="optional_claim_id")
     parser.add_argument("--rationale", default="")
+
+
+def _add_extraction_report_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--session", required=True, dest="session_id")
+    parser.add_argument("--source-ref", action="append", required=True, dest="source_refs")
+    parser.add_argument("--profile", default="paper_learning", dest="report_profile")
+    parser.add_argument("--focus", action="append", default=[], dest="focus_terms")
+    parser.add_argument("--claim", default="", dest="optional_claim_id")
 
 
 def _add_source_set_readiness_args(parser: argparse.ArgumentParser) -> None:
