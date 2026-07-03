@@ -226,6 +226,24 @@ def require_valid_literature_extraction_report(payload: dict[str, Any]) -> dict[
     return _require(payload)
 
 
+def validate_literature_corpus_extraction_artifact(
+    payload: dict[str, Any],
+    *,
+    path: str = "literature_corpus_extraction_artifact",
+) -> ContractResult:
+    from brain.v5.literature_corpus_extraction_artifact_contracts import (
+        validate_literature_corpus_extraction_artifact as _validate,
+    )
+    return _validate(payload, path=path)
+
+
+def require_valid_literature_corpus_extraction_artifact(payload: dict[str, Any]) -> dict[str, Any]:
+    from brain.v5.literature_corpus_extraction_artifact_contracts import (
+        require_valid_literature_corpus_extraction_artifact as _require,
+    )
+    return _require(payload)
+
+
 def validate_literature_source_extraction_candidates(
     payload: dict[str, Any],
     *,

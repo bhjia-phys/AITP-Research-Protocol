@@ -899,6 +899,146 @@ def test_literature_extraction_report_summarizes_existing_typed_extraction_recor
     }
 
 
+def test_literature_corpus_extraction_artifact_aligns_curated_chunks_to_exact_anchors(tmp_path, capsys):
+    import json
+
+    from brain.v5.cli import main
+    from brain.v5.literature_corpus_extraction_artifact import build_literature_corpus_extraction_artifact
+    from brain.v5.mcp_tools import aitp_v5_build_literature_corpus_extraction_artifact
+    from brain.v5.models import ArtifactRecord, EvidenceRecord, TrustUpdateRecord, ValidationResultRecord
+    from brain.v5.public_surfaces import require_valid_public_surface
+    from brain.v5.references import record_reference_location
+    from brain.v5.runtime_entrypoints import runtime_entrypoints
+    from brain.v5.store import list_records
+
+    ws, claim = _setup_topic(tmp_path, active_claim=True)
+    topic_id = "quantum-chaos-long-range-spin-chains"
+    chunk_id = "curated_rag_chunk:source_backtrace_orientation:0001"
+    document_id = "curated_rag_doc:source_backtrace_orientation"
+    location = record_reference_location(
+        ws,
+        topic_id=topic_id,
+        claim_id=claim.claim_id,
+        connector_id="curated_rag",
+        location_type="curated_rag_chunk_anchor",
+        uri="aitp://curated-rag/source-backtrace-orientation#source-backtrace",
+        label="Source backtrace orientation chunk",
+        source_ref=chunk_id,
+        external_id=document_id,
+        summary="Exact typed anchor for reviewing the source-backtrace curated chunk.",
+        metadata={
+            "curated_rag_chunk_id": chunk_id,
+            "curated_rag_document_id": document_id,
+            "anchor": {"section": "source-backtrace", "ordinal": 1},
+        },
+    )
+
+    before = (
+        list_records(ws.registry_dir("artifacts"), ArtifactRecord),
+        list_records(ws.registry_dir("evidence"), EvidenceRecord),
+        list_records(ws.registry_dir("validation_results"), ValidationResultRecord),
+        list_records(ws.registry_dir("trust_updates"), TrustUpdateRecord),
+    )
+    payload = build_literature_corpus_extraction_artifact(
+        ws,
+        session_id="chaos-lit",
+        chunk_ids=[chunk_id],
+        reference_location_ids=[location.location_id],
+        report_profile="paper_learning",
+        focus_terms=["source backtrace"],
+    )
+    after = (
+        list_records(ws.registry_dir("artifacts"), ArtifactRecord),
+        list_records(ws.registry_dir("evidence"), EvidenceRecord),
+        list_records(ws.registry_dir("validation_results"), ValidationResultRecord),
+        list_records(ws.registry_dir("trust_updates"), TrustUpdateRecord),
+    )
+
+    assert before == after
+    assert require_valid_public_surface("literature_corpus_extraction_artifact", payload) == payload
+    assert payload["kind"] == "literature_corpus_extraction_artifact"
+    assert payload["claim_id"] == claim.claim_id
+    assert payload["chunk_ids"] == [chunk_id]
+    assert payload["reference_location_ids"] == [location.location_id]
+    assert payload["found_reference_location_count"] == 1
+    assert payload["missing_reference_location_count"] == 0
+    assert payload["chunk_items"][0]["chunk_id"] == chunk_id
+    assert payload["chunk_items"][0]["retrieval_role"] == "heuristic_context"
+    assert payload["chunk_items"][0]["promotion_required_before_claim_support"] is True
+    assert payload["reference_location_items"][0]["record_ref"] == f"reference_location:{location.location_id}"
+    assert payload["reference_location_items"][0]["exact_anchor_available"] is True
+    alignment = payload["alignment_items"][0]
+    assert alignment["alignment_status"] == "has_typed_anchor_candidate"
+    assert alignment["requires_human_or_agent_review"] is True
+    assert alignment["candidate_reference_locations"][0]["alignment_basis"] == (
+        "reference_source_ref_matches_chunk"
+    )
+    assert alignment["candidate_reference_locations"][0]["retrieval_is_claim_support"] is False
+    assert payload["artifact_draft"]["artifact_record_created_now"] is False
+    assert payload["artifact_draft"]["records_validation_result"] is False
+    assert payload["downstream_extraction_report_call"]["source_refs"] == [
+        f"reference_location:{location.location_id}"
+    ]
+    assert payload["downstream_extraction_report_call"]["source_support_result"] is False
+    assert payload["artifact_policy"]["retrieval_role"] == "heuristic_context"
+    assert payload["artifact_policy"]["retrieval_requires_promotion_for_claim_support"] is True
+    assert "curated_rag_chunk_as_evidence" in payload["artifact_policy"]["forbidden_uses"]
+    assert payload["record_ref_lookup"]["source_support_result"] is False
+    assert payload["read_surface_effect"] == "literature_corpus_extraction_artifact_only"
+    assert payload["read_only"] is True
+    assert payload["draft_creates_records"] is False
+    assert payload["artifact_record_created"] is False
+    assert payload["summary_inputs_trusted"] is False
+    assert payload["orientation_only"] is True
+    assert payload["can_update_kernel_state"] is False
+    assert payload["can_update_claim_trust"] is False
+    assert payload["records_validation_result"] is False
+    assert payload["source_support_result"] is False
+    assert payload["evidence_created"] is False
+    assert payload["validation_created"] is False
+    assert payload["write_executed"] is False
+    assert payload["trust_update_forbidden"] is True
+    assert payload["claim_trust_mutation"] == "none"
+
+    assert main(
+        [
+            "--base",
+            str(ws.base),
+            "literature",
+            "corpus-extraction-artifact",
+            "--session",
+            "chaos-lit",
+            "--chunk-id",
+            chunk_id,
+            "--reference-location-id",
+            location.location_id,
+            "--profile",
+            "paper_learning",
+            "--focus",
+            "source backtrace",
+        ]
+    ) == 0
+    cli_payload = json.loads(capsys.readouterr().out)
+    mcp_payload = aitp_v5_build_literature_corpus_extraction_artifact(
+        str(ws.base),
+        session_id="chaos-lit",
+        chunk_ids=[chunk_id],
+        reference_location_ids=[location.location_id],
+        report_profile="paper_learning",
+        focus_terms=["source backtrace"],
+    )
+
+    assert require_valid_public_surface("literature_corpus_extraction_artifact", cli_payload) == cli_payload
+    assert require_valid_public_surface("literature_corpus_extraction_artifact", mcp_payload) == mcp_payload
+    assert cli_payload["alignment_items"][0]["direct_alignment_count"] == 1
+    assert mcp_payload["downstream_extraction_report_call"]["surface"] == "literature_extraction_report"
+    assert runtime_entrypoints()["literature_corpus_extraction_artifact"] == {
+        "cli": "aitp-v5 literature corpus-extraction-artifact <args>",
+        "mcp": "aitp_v5_build_literature_corpus_extraction_artifact",
+        "surface": "literature_corpus_extraction_artifact",
+    }
+
+
 def test_literature_source_set_readiness_audits_source_stack_before_synthesis(tmp_path, capsys):
     import json
 

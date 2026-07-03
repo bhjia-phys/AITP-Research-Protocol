@@ -163,6 +163,7 @@ def _validate_mcp_arguments(target: dict[str, Any], path: str, result: ContractR
         "literature_reading_route",
         "literature_source_extraction_candidates",
         "literature_extraction_report",
+        "literature_corpus_extraction_artifact",
         "literature_source_set_readiness",
         "domain_skill_shims",
     }:
@@ -358,6 +359,22 @@ def _validate_mcp_arguments(target: dict[str, Any], path: str, result: ContractR
                 result.add(
                     f"{path}.mcp_arguments.optional",
                     "must allow report_profile, focus_terms, and optional_claim_id",
+                )
+        if entrypoint_key == "literature_corpus_extraction_artifact":
+            if arguments.get("required") != ["base", "session_id", "chunk_ids", "reference_location_ids"]:
+                result.add(
+                    f"{path}.mcp_arguments.required",
+                    "must require base, session_id, chunk_ids, and reference_location_ids",
+                )
+            if arguments.get("optional") != [
+                "report_profile",
+                "focus_terms",
+                "optional_claim_id",
+                "artifact_intent",
+            ]:
+                result.add(
+                    f"{path}.mcp_arguments.optional",
+                    "must allow report_profile, focus_terms, optional_claim_id, and artifact_intent",
                 )
         if entrypoint_key == "literature_source_set_readiness":
             if arguments.get("required") != ["base", "session_id", "source_refs"]:

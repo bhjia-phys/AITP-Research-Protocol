@@ -151,6 +151,19 @@ def sample_args_for_template(template: str) -> list[str]:
             "--focus",
             "edge CFT",
         ]
+    if template.startswith("literature corpus-extraction-artifact"):
+        return [
+            "--session",
+            "s1",
+            "--chunk-id",
+            "curated_rag_chunk:source_backtrace_orientation:0001",
+            "--reference-location-id",
+            "reference-location-source-backtrace",
+            "--profile",
+            "paper_learning",
+            "--focus",
+            "source backtrace",
+        ]
     if template.startswith("literature source-set-readiness"):
         return [
             "--session",

@@ -324,6 +324,11 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
             "mcp": "aitp_v5_build_literature_extraction_report",
             "surface": "literature_extraction_report",
         },
+        "literature_corpus_extraction_artifact": {
+            "cli": "aitp-v5 literature corpus-extraction-artifact <args>",
+            "mcp": "aitp_v5_build_literature_corpus_extraction_artifact",
+            "surface": "literature_corpus_extraction_artifact",
+        },
         "literature_source_set_readiness": {
             "cli": "aitp-v5 literature source-set-readiness <args>",
             "mcp": "aitp_v5_build_literature_source_set_readiness",
@@ -682,6 +687,25 @@ def test_hakimi_runtime_bridge_entrypoint_contract_is_stable():
         "required": ["base", "session_id", "source_refs"],
         "optional": ["report_profile", "focus_terms", "optional_claim_id"],
         "source": "aitp_v5_build_literature_extraction_report",
+    }
+    assert by_operation["readLiteratureCorpusExtractionArtifact"]["entrypoint_key"] == (
+        "literature_corpus_extraction_artifact"
+    )
+    assert by_operation["readLiteratureCorpusExtractionArtifact"]["mcp_tool"] == (
+        "aitp_v5_build_literature_corpus_extraction_artifact"
+    )
+    assert by_operation["readLiteratureCorpusExtractionArtifact"]["cli_fallback"] == (
+        "aitp-v5 literature corpus-extraction-artifact <args>"
+    )
+    assert by_operation["readLiteratureCorpusExtractionArtifact"]["surface"] == (
+        "literature_corpus_extraction_artifact"
+    )
+    assert by_operation["readLiteratureCorpusExtractionArtifact"]["execution_role"] == "read"
+    assert by_operation["readLiteratureCorpusExtractionArtifact"]["state_effect"] == "read_only"
+    assert by_operation["readLiteratureCorpusExtractionArtifact"]["mcp_arguments"] == {
+        "required": ["base", "session_id", "chunk_ids", "reference_location_ids"],
+        "optional": ["report_profile", "focus_terms", "optional_claim_id", "artifact_intent"],
+        "source": "aitp_v5_build_literature_corpus_extraction_artifact",
     }
     assert by_operation["readLiteratureSourceSetReadiness"]["entrypoint_key"] == (
         "literature_source_set_readiness"

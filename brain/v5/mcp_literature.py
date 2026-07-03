@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from brain.v5.literature_comparison_draft import build_literature_comparison_draft
+from brain.v5.literature_corpus_extraction_artifact import build_literature_corpus_extraction_artifact
 from brain.v5.literature_extraction_report import build_literature_extraction_report
 from brain.v5.literature_intake import record_literature_candidate, suggest_literature_intake
 from brain.v5.literature_reading_route import build_literature_reading_route
@@ -197,6 +198,32 @@ def aitp_v5_build_literature_extraction_report(
             report_profile=report_profile,
             focus_terms=focus_terms or [],
             optional_claim_id=optional_claim_id,
+        ),
+    )
+
+
+def aitp_v5_build_literature_corpus_extraction_artifact(
+    base: str,
+    *,
+    session_id: str,
+    chunk_ids: list[str],
+    reference_location_ids: list[str],
+    report_profile: str = "paper_learning",
+    focus_terms: list[str] | None = None,
+    optional_claim_id: str = "",
+    artifact_intent: str = "corpus_backed_extraction_report",
+) -> dict:
+    return require_valid_public_surface(
+        "literature_corpus_extraction_artifact",
+        build_literature_corpus_extraction_artifact(
+            init_workspace(Path(base)),
+            session_id=session_id,
+            chunk_ids=chunk_ids,
+            reference_location_ids=reference_location_ids,
+            report_profile=report_profile,
+            focus_terms=focus_terms or [],
+            optional_claim_id=optional_claim_id,
+            artifact_intent=artifact_intent,
         ),
     )
 

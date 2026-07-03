@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 
 from brain.v5.literature_comparison_draft import build_literature_comparison_draft
+from brain.v5.literature_corpus_extraction_artifact import build_literature_corpus_extraction_artifact
 from brain.v5.literature_extraction_report import build_literature_extraction_report
 from brain.v5.literature_intake import record_literature_candidate, suggest_literature_intake
 from brain.v5.literature_reading_route import build_literature_reading_route
@@ -24,6 +25,7 @@ def add_literature_parser(sp: argparse._SubParsersAction) -> None:
     _add_comparison_draft_args(sub.add_parser("comparison-draft"))
     _add_source_extraction_args(sub.add_parser("source-extraction"))
     _add_extraction_report_args(sub.add_parser("extraction-report"))
+    _add_corpus_extraction_artifact_args(sub.add_parser("corpus-extraction-artifact"))
     _add_source_set_readiness_args(sub.add_parser("source-set-readiness"))
 
 
@@ -64,6 +66,20 @@ def dispatch_literature_command(args: argparse.Namespace, ws) -> dict:
                 report_profile=args.report_profile,
                 focus_terms=args.focus_terms,
                 optional_claim_id=args.optional_claim_id,
+            ),
+        )
+    if args.literature_command == "corpus-extraction-artifact":
+        return require_valid_public_surface(
+            "literature_corpus_extraction_artifact",
+            build_literature_corpus_extraction_artifact(
+                ws,
+                session_id=args.session_id,
+                chunk_ids=args.chunk_ids,
+                reference_location_ids=args.reference_location_ids,
+                report_profile=args.report_profile,
+                focus_terms=args.focus_terms,
+                optional_claim_id=args.optional_claim_id,
+                artifact_intent=args.artifact_intent,
             ),
         )
     if args.literature_command == "reading-route":
@@ -165,6 +181,16 @@ def _add_extraction_report_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--profile", default="paper_learning", dest="report_profile")
     parser.add_argument("--focus", action="append", default=[], dest="focus_terms")
     parser.add_argument("--claim", default="", dest="optional_claim_id")
+
+
+def _add_corpus_extraction_artifact_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--session", required=True, dest="session_id")
+    parser.add_argument("--chunk-id", action="append", required=True, dest="chunk_ids")
+    parser.add_argument("--reference-location-id", action="append", required=True, dest="reference_location_ids")
+    parser.add_argument("--profile", default="paper_learning", dest="report_profile")
+    parser.add_argument("--focus", action="append", default=[], dest="focus_terms")
+    parser.add_argument("--claim", default="", dest="optional_claim_id")
+    parser.add_argument("--artifact-intent", default="corpus_backed_extraction_report")
 
 
 def _add_source_set_readiness_args(parser: argparse.ArgumentParser) -> None:

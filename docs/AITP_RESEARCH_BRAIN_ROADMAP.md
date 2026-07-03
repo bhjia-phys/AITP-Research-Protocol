@@ -133,11 +133,18 @@ First implemented targets:
   MCP, public surface contracts, and the runtime bridge manifest. It only reads
   typed records and cannot promote extraction reports into evidence,
   validation, final gates, or trust updates.
+- `literature_corpus_extraction_artifact` now drafts corpus-backed extraction
+  artifacts by aligning curated RAG chunks to typed exact reference locations.
+  The artifact draft is read-only, creates no artifact/evidence/validation
+  records, and keeps retrieval as heuristic context until ordinary source,
+  evidence, validation, and trust-preflight records exist.
 
 Next implementation slices:
 
-1. Add corpus-backed extraction report artifacts that connect curated RAG chunks
-   and exact reference locations without promoting retrieval to evidence.
+1. Move to Workstream C by adding profile-specific closeout and report
+   templates for the task-aware context compiler.
+2. Add tests that verify every context profile preserves orientation-only and
+   trust boundaries.
 
 ## Workstream C: Context Compiler v2
 

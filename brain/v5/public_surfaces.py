@@ -45,6 +45,7 @@ _PUBLIC_SURFACE_NAMES = (
     "interaction_recording_worklist",
     "workspace_interaction_preview_bundle",
     "literature_comparison_draft",
+    "literature_corpus_extraction_artifact",
     "literature_extraction_report",
     "literature_intake_record_result",
     "literature_intake_suggestion",
@@ -214,6 +215,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "interaction_recording_worklist": "orientation-only workspace worklist translating natural conversation recording boundaries into conservative kernel entrypoint templates",
     "workspace_interaction_preview_bundle": "orientation-only host startup bundle summarizing per-session natural conversation recording boundaries without updating kernel state",
     "literature_comparison_draft": "read-only literature comparison draft packet that scaffolds source-set dimensions, agreements, disagreements, missing evidence, and open directions without creating comparison, evidence, validation, final-gate, or trust authority",
+    "literature_corpus_extraction_artifact": "read-only corpus-backed extraction artifact draft that aligns curated RAG chunks to typed exact reference locations without creating artifact, evidence, validation, final-gate, or trust authority",
     "literature_extraction_report": "read-only profile-specific literature extraction report summarizing existing typed source assets, anchors, physics objects, relations, proof obligations, and sensemaking reports without evidence, validation, write, final-gate, or trust authority",
     "literature_intake_record_result": "guarded literature intake write result that records only an orientation reference location and returns non-trust-changing evidence/sensemaking candidates",
     "literature_intake_suggestion": "read-only literature intake suggestion that proposes reference, sensemaking, and scoped evidence templates without treating summaries as evidence",
@@ -530,6 +532,9 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
     from brain.v5.literature_comparison_draft_contracts import (
         require_valid_literature_comparison_draft,
     )
+    from brain.v5.literature_corpus_extraction_artifact_contracts import (
+        require_valid_literature_corpus_extraction_artifact,
+    )
     from brain.v5.literature_extraction_report_contracts import (
         require_valid_literature_extraction_report,
     )
@@ -651,6 +656,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "interaction_recording_worklist": require_valid_interaction_recording_worklist,
         "workspace_interaction_preview_bundle": require_valid_workspace_interaction_preview_bundle,
         "literature_comparison_draft": require_valid_literature_comparison_draft,
+        "literature_corpus_extraction_artifact": require_valid_literature_corpus_extraction_artifact,
         "literature_extraction_report": require_valid_literature_extraction_report,
         "literature_intake_record_result": require_valid_literature_intake_record_result,
         "literature_intake_suggestion": require_valid_literature_intake_suggestion,

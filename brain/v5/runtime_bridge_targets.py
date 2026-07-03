@@ -111,6 +111,11 @@ _MCP_ARGUMENT_SPECS: dict[str, dict[str, Any]] = {
         "optional": ["report_profile", "focus_terms", "optional_claim_id"],
         "source": "aitp_v5_build_literature_extraction_report",
     },
+    "literature_corpus_extraction_artifact": {
+        "required": ["base", "session_id", "chunk_ids", "reference_location_ids"],
+        "optional": ["report_profile", "focus_terms", "optional_claim_id", "artifact_intent"],
+        "source": "aitp_v5_build_literature_corpus_extraction_artifact",
+    },
     "literature_source_set_readiness": {
         "required": ["base", "session_id", "source_refs"],
         "optional": ["optional_claim_id", "readiness_scope"],
@@ -147,6 +152,7 @@ _BRIDGE_TARGET_SPECS: tuple[tuple[str, str, str, str], ...] = (
         "read_only",
     ),
     ("readLiteratureExtractionReport", "literature_extraction_report", "read", "read_only"),
+    ("readLiteratureCorpusExtractionArtifact", "literature_corpus_extraction_artifact", "read", "read_only"),
     ("readLiteratureSourceSetReadiness", "literature_source_set_readiness", "read", "read_only"),
     ("materializeDomainSkillShims", "domain_skill_shims", "write", "project_skill_shim_write"),
     ("ingestCuratedRagCorpus", "ingest_curated_rag_corpus", "write", "curated_rag_manifest_write"),
