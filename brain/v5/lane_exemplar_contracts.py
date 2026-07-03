@@ -23,7 +23,23 @@ def validate_lane_exemplar_record(payload: dict[str, Any], *, path: str = "lane_
         result.add(f"{path}.kind", "must be 'lane_exemplar'")
     for key in ("exemplar_id", "topic_id", "lane", "title", "summary", "status"):
         _require_nonempty_str(payload, key, path, result)
-    for key in ("gates_demonstrated", "artifact_refs", "source_refs"):
+    for key in (
+        "gates_demonstrated",
+        "artifact_refs",
+        "domain_pack_refs",
+        "context_profile_refs",
+        "skill_refs",
+        "surface_refs",
+        "validation_surface_refs",
+        "workflow_steps",
+        "failure_modes",
+        "forbidden_uses",
+        "can_say",
+        "cannot_say",
+        "required_next_records",
+        "promotion_blockers",
+        "source_refs",
+    ):
         _require_list(payload.get(key), f"{path}.{key}", result)
     for key, expected in (
         ("summary_inputs_trusted", False),

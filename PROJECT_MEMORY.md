@@ -581,6 +581,14 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   `final_output_profile`, strategy-memory `next_time_rule` items, lane exemplar
   trust boundaries, and any required operator checkpoint. It remains
   orientation-only and cannot update kernel state or claim trust.
+- The built-in LibRPA/GW code-backed algorithm exemplar can be written with
+  `aitp-v5 exemplar lane record-librpa-code` or
+  `aitp_v5_record_librpa_code_backed_algorithm_exemplar`. The record binds the
+  `gw_librpa` domain pack, oh-my-librpa skill refs, context compiler profiles,
+  lane contract/HPC cockpit, tool-run, validation-result, failure-mode, and
+  trust-audit surfaces into an accepted workflow exemplar. It is workflow memory
+  only: it cannot validate a physics claim, update claim trust, or promote L2
+  memory without typed evidence and passed validation results.
 - `aitp-v5 status topic <session-id> --compact` and
   `aitp_v5_write_topic_status_surfaces_compact` should be preferred when a host
   needs only a small continuation payload; they still write the full status

@@ -273,6 +273,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_record_lane_exemplar",
         "surface": "lane_exemplar_record",
     },
+    "record_librpa_code_backed_algorithm_exemplar": {
+        "cli": "aitp-v5 exemplar lane record-librpa-code <args>",
+        "mcp": "aitp_v5_record_librpa_code_backed_algorithm_exemplar",
+        "surface": "lane_exemplar_record",
+    },
     "lane_exemplar_manifest": {
         "cli": "aitp-v5 exemplar lane manifest",
         "mcp": "aitp_v5_build_lane_exemplar_manifest",

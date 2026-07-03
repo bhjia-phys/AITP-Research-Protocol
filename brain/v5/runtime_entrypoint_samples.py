@@ -469,6 +469,17 @@ def sample_args_for_template(template: str) -> list[str]:
             "--phase",
             "context_refresh",
         ]
+    if template.startswith("exemplar lane record-librpa-code"):
+        return [
+            "--topic",
+            "librpa-gw",
+            "--claim",
+            "claim-librpa-gw",
+            "--run",
+            "run-librpa-gw",
+            "--status",
+            "accepted",
+        ]
     if template.startswith("exemplar lane record"):
         return [
             "--topic",

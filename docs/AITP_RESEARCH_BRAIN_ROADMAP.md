@@ -193,9 +193,11 @@ First implemented target:
 
 Next implementation slices:
 
-1. Add a LibRPA/GW code-backed algorithm exemplar that uses the context
-   compiler, domain pack, lane contract, tool-run, and validation surfaces
-   together.
+1. Use `aitp-v5 exemplar lane record-librpa-code` to write the built-in
+   LibRPA/GW code-backed algorithm exemplar. It binds the context compiler,
+   `gw_librpa` domain pack, oh-my-librpa skill refs, lane contract, tool-run,
+   validation, failure-mode, and trust-audit surfaces into one accepted
+   workflow record without creating scientific evidence.
 2. Add a QFT/QG source-reconstruction exemplar that uses literature source
    assets, exact anchors, extraction drafts, and reconstruction review surfaces.
 
@@ -210,6 +212,11 @@ Priority examples:
 - `semi_formal_theory`: QFT/QG derivation or source reconstruction.
 - `toy_numeric`: small numerical model with finite-size/negative-control
   evidence.
+
+The code-backed algorithm lane now has a built-in LibRPA/GW write path through
+`record_librpa_code_backed_algorithm_exemplar` /
+`aitp_v5_record_librpa_code_backed_algorithm_exemplar`; a workspace becomes
+covered only after the accepted exemplar record is written into that workspace.
 
 Each exemplar should include:
 

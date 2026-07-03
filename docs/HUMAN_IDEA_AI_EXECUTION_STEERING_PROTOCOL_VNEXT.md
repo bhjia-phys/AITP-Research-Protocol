@@ -3,8 +3,9 @@
 Status: **control plane implemented** on branch `codex/aitp-v5-kernel-mvp`;
 content migration is not complete until the legacy semantic review backlog is
 human-reviewed.
-Control-plane status: `ready`. Covered exemplar lanes: `toy_numeric`,
-`semi_formal_theory`, `code_backed_algorithm`.
+Control-plane status: `ready_with_lane_exemplar_backlog` until the workspace has
+accepted exemplar records for `toy_numeric`, `semi_formal_theory`, and
+`code_backed_algorithm`.
 Blocking content backlog: `legacy_semantic_review_backlog`. Trust update
 forbidden from orientation surfaces: true. Human output stability: implemented.
 
@@ -415,9 +416,9 @@ Acceptance:
 
 ### Phase 5: Lane-Specific Closure Exemplars
 
-Status: **implemented.** Covered lanes: `toy_numeric`, `semi_formal_theory`,
-`code_backed_algorithm`. `aitp_v5_record_lane_exemplar` and
-`aitp_v5_build_lane_exemplar_manifest` are production surfaces.
+Status: **control plane implemented; content exemplars are workspace records.**
+`aitp_v5_record_lane_exemplar`, `aitp_v5_record_librpa_code_backed_algorithm_exemplar`,
+and `aitp_v5_build_lane_exemplar_manifest` are production surfaces.
 `session_start.generated.md` renders lane exemplars with trust boundaries.
 
 Deliverables:

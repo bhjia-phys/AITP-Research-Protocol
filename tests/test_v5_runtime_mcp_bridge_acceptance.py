@@ -21,7 +21,7 @@ def test_runtime_mcp_bridge_acceptance_expected_contract_only():
     validated = require_valid_public_surface("runtime_mcp_bridge_acceptance", payload)
 
     assert validated["status"] == "expected_contract_only"
-    assert validated["expected"]["target_count"] == 35
+    assert validated["expected"]["target_count"] == 43
     assert validated["live"]["manifest_provided"] is False
     assert validated["live"]["tools_provided"] is False
     assert validated["comparison"]["manifest_checked"] is False
@@ -93,7 +93,7 @@ def test_runtime_mcp_bridge_acceptance_flags_stale_recording_navigator_exposure(
     )
 
     assert payload["status"] == "stale_or_incomplete"
-    assert payload["live"]["target_count"] == 30
+    assert payload["live"]["target_count"] == 38
     assert payload["comparison"]["target_count_matches"] is False
     assert payload["comparison"]["missing_operations"] == [
         "classifyRecordingCandidate",

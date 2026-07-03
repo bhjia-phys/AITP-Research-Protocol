@@ -301,7 +301,7 @@ def test_final_readiness_skips_malformed_legacy_evidence_records(tmp_path):
     assert payload["kernel_capabilities"]["host_integration"]["bridge_acceptance_status"] == (
         "expected_contract_only"
     )
-    assert payload["kernel_capabilities"]["host_integration"]["bridge_acceptance_expected_target_count"] == 35
+    assert payload["kernel_capabilities"]["host_integration"]["bridge_acceptance_expected_target_count"] == 43
     assert payload["kernel_capabilities"]["host_integration"]["bridge_acceptance_manifest_tool"] == (
         "aitp_v5_get_runtime_bridge_target_manifest"
     )
@@ -397,7 +397,7 @@ def test_final_readiness_audit_exposes_runtime_mcp_bridge_acceptance_gate(tmp_pa
     assert host["bridge_acceptance_cli"] == "aitp-v5 adapter bridge-acceptance"
     assert host["bridge_acceptance_mcp"] == "aitp_v5_audit_runtime_mcp_bridge_acceptance"
     assert host["bridge_acceptance_status"] == "expected_contract_only"
-    assert host["bridge_acceptance_expected_target_count"] == 35
+    assert host["bridge_acceptance_expected_target_count"] == 43
     assert host["bridge_acceptance_manifest_tool"] == "aitp_v5_get_runtime_bridge_target_manifest"
     assert host["bridge_acceptance_required_recording_tools"] == [
         "aitp_v5_build_workspace_recording_audit",
@@ -798,7 +798,7 @@ def test_final_readiness_cli_compact_progress(tmp_path, capsys):
         "bridge_acceptance_cli": "aitp-v5 adapter bridge-acceptance",
         "bridge_acceptance_mcp": "aitp_v5_audit_runtime_mcp_bridge_acceptance",
         "bridge_acceptance_status": "expected_contract_only",
-        "bridge_acceptance_expected_target_count": 35,
+        "bridge_acceptance_expected_target_count": 43,
         "fresh_host_bridge_acceptance_required": True,
     }
     assert cli_payload["vnext_readiness"] == {
