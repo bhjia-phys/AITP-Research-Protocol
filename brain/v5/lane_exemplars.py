@@ -492,6 +492,177 @@ def record_qft_qg_source_reconstruction_exemplar(
     )
 
 
+def record_toy_numeric_finite_size_exemplar(
+    ws: WorkspacePaths,
+    *,
+    topic_id: str,
+    claim_id: str = "",
+    run_id: str = "",
+    status: str = "accepted",
+) -> LaneExemplarRecord:
+    """Record the built-in toy-numeric finite-size and negative-control exemplar."""
+
+    return record_lane_exemplar(
+        ws,
+        topic_id=topic_id,
+        lane="toy_numeric",
+        title="Toy numeric finite-size and negative-control workflow",
+        summary=(
+            "Use a fully specified toy model, finite-size or cutoff scan, explicit negative controls, "
+            "versioned artifacts, and validation results to support only bounded numerical claims."
+        ),
+        claim_id=claim_id,
+        run_id=run_id,
+        gates_demonstrated=[
+            "model_definition_scope",
+            "finite_size_scan",
+            "negative_control_check",
+            "artifact_and_seed_provenance",
+            "validation_result_gate",
+            "bounded_claim_status",
+        ],
+        artifact_refs=[
+            "surface:bounded_numerical_evidence_bundle",
+            "surface:artifact_record",
+            "surface:tool_run_record",
+            "surface:validation_result_record",
+            "surface:claim_status_record",
+        ],
+        domain_pack_refs=["toy_numerics"],
+        context_profile_refs=[
+            "derivation_check",
+            "group_meeting_report",
+            "closeout",
+        ],
+        skill_refs=[],
+        surface_refs=[
+            "bounded_numerical_evidence_bundle",
+            "artifact_record",
+            "tool_recipe_record",
+            "tool_run_record",
+            "tool_executor_catalog",
+            "validation_contract_record",
+            "validation_result_record",
+            "failure_mode_audit",
+            "claim_trust_audit",
+            "claim_status_record",
+            "proof_obligation_record",
+        ],
+        validation_surface_refs=[
+            "pre_tool_policy_decision",
+            "validation_contract_record",
+            "validation_result_record",
+            "failure_mode_audit",
+            "claim_trust_audit",
+        ],
+        workflow_steps=[
+            {
+                "step_id": "define_model_and_scope",
+                "entrypoint": "aitp-v5 research-state create-proof-obligation <args>",
+                "purpose": "Fix Hamiltonian, parameters, symmetry sector, boundary conditions, and bounded claim scope.",
+            },
+            {
+                "step_id": "record_recipe_and_artifacts",
+                "entrypoint": "aitp-v5 tool recipe register <args>",
+                "purpose": "Version the toy-model recipe, inputs, seeds, and output artifact contract before comparison.",
+            },
+            {
+                "step_id": "run_metric_or_scalar_check",
+                "entrypoint": "aitp-v5 tool execute metric_table_check <args>",
+                "purpose": "Check finite-size tables or single observables with explicit expected values and tolerances.",
+            },
+            {
+                "step_id": "record_bounded_evidence_bundle",
+                "entrypoint": "aitp-v5 research-state bounded-evidence <args>",
+                "purpose": "Compose artifact, tool-run, evidence, and claim-status records for the bounded result.",
+            },
+            {
+                "step_id": "record_validation_result",
+                "entrypoint": "aitp-v5 validation result record <args>",
+                "purpose": "Persist passed, partial, or failed validation before the result can support a claim.",
+            },
+            {
+                "step_id": "audit_before_promotion",
+                "entrypoint": "aitp-v5 trust audit --claim <claim-id>",
+                "purpose": "Confirm finite-size, sector, tolerance, and negative-control failure modes before promotion.",
+            },
+        ],
+        failure_modes=[
+            {
+                "failure_id": "finite_size_overclaim",
+                "signals": ["N<=k result stated as all-N theorem", "cutoff trend extrapolated without proof"],
+                "required_basis": ["claim_status_record", "proof_obligation_record", "validation_result_record"],
+            },
+            {
+                "failure_id": "sector_or_symmetry_mismatch",
+                "signals": ["wrong particle number", "wrong momentum sector", "symmetry block omitted"],
+                "required_basis": ["model definition", "input manifest", "metric_table_check"],
+            },
+            {
+                "failure_id": "negative_control_missing",
+                "signals": ["no trivial case", "no perturbed control", "no known-failure benchmark"],
+                "required_basis": ["tool_run_record", "artifact_record", "validation_contract_record"],
+            },
+            {
+                "failure_id": "tolerance_cherry_pick",
+                "signals": ["tolerance chosen after seeing result", "single point replaces table trend"],
+                "required_basis": ["tool_recipe_record", "validation_contract_record", "tool_executor_catalog"],
+            },
+            {
+                "failure_id": "artifact_or_seed_gap",
+                "signals": ["missing seed", "missing input hash", "plot without data table"],
+                "required_basis": ["artifact_record", "tool_run_record", "bounded_numerical_evidence_bundle"],
+            },
+        ],
+        forbidden_uses=[
+            "Treating finite-size or cutoff evidence as a theorem without a scoped proof obligation.",
+            "Promoting a plot-only result without the underlying data artifact and validation result.",
+            "Using a passing scalar tolerance check as broad evidence when the failure mode requires a table scan.",
+            "Updating claim trust from a toy exemplar without passed validation and explicit bounded scope.",
+        ],
+        can_say=[
+            "Which bounded numerical result, finite-size scope, and artifacts were recorded.",
+            "Which negative controls and tolerance checks remain missing.",
+            "Whether the result supports a scoped claim or only motivates a proof obligation.",
+        ],
+        cannot_say=[
+            "That a finite-size pattern proves the infinite-size theorem.",
+            "That a plotted trend is evidence without artifact and validation records.",
+            "That a toy model result transfers to the full physical system without a scoped bridge claim.",
+        ],
+        required_next_records=[
+            "tool_recipe_record",
+            "tool_run_record",
+            "artifact_record",
+            "bounded_numerical_evidence_bundle",
+            "validation_contract_record",
+            "validation_result_record",
+            "claim_status_record",
+            "proof_obligation_record",
+        ],
+        promotion_blockers=[
+            "missing finite-size or cutoff scope",
+            "missing negative-control check",
+            "missing passed validation_result_ids for cited tool_run_ids",
+            "plot-only artifact path",
+            "theorem-like claim without proof_obligation_record",
+        ],
+        trust_boundary=(
+            "Accepted toy-numeric workflow exemplar only; it supports bounded numerical workflow reuse but "
+            "cannot prove a theorem, update claim trust, or promote memory without scoped evidence, artifacts, "
+            "passed validation, and open proof-obligation handling."
+        ),
+        source_refs=[
+            "domain_pack:toy_numerics",
+            "executor:metric_table_check",
+            "executor:scalar_tolerance_check",
+            "surface:bounded_numerical_evidence_bundle",
+            "docs:AITP_RESEARCH_BRAIN_ROADMAP.md#workstream-d",
+        ],
+        status=status,
+    )
+
+
 def load_lane_exemplars(ws: WorkspacePaths, topic_id: str, *, limit: int = 6) -> dict[str, Any]:
     """Load topic-local lane exemplars for briefs and status surfaces."""
 

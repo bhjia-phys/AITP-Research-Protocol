@@ -283,6 +283,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_record_qft_qg_source_reconstruction_exemplar",
         "surface": "lane_exemplar_record",
     },
+    "record_toy_numeric_finite_size_exemplar": {
+        "cli": "aitp-v5 exemplar lane record-toy-numeric <args>",
+        "mcp": "aitp_v5_record_toy_numeric_finite_size_exemplar",
+        "surface": "lane_exemplar_record",
+    },
     "lane_exemplar_manifest": {
         "cli": "aitp-v5 exemplar lane manifest",
         "mcp": "aitp_v5_build_lane_exemplar_manifest",

@@ -135,26 +135,16 @@ def test_vnext_readiness_cli_compact_progress(tmp_path, capsys):
 
 def test_vnext_readiness_reports_ready_when_all_lane_exemplars_are_accepted(tmp_path):
     from brain.v5.lane_exemplars import (
-        record_lane_exemplar,
         record_librpa_code_backed_algorithm_exemplar,
         record_qft_qg_source_reconstruction_exemplar,
+        record_toy_numeric_finite_size_exemplar,
     )
     from brain.v5.vnext_readiness import build_vnext_readiness_manifest
     from brain.v5.workspace import create_topic, init_workspace
 
     ws = init_workspace(tmp_path)
     create_topic(ws, "lane-exemplar-topic", context_id="workflow", title="Lane Exemplars")
-    record_lane_exemplar(
-        ws,
-        topic_id="lane-exemplar-topic",
-        lane="toy_numeric",
-        title="Toy numeric finite-size lane",
-        summary="Toy numeric exemplar with finite-size and negative-control boundaries.",
-        gates_demonstrated=["G3_verification"],
-        artifact_refs=["artifact:toy-finite-size-table"],
-        trust_boundary="Toy exemplar only; not a theorem.",
-        status="accepted",
-    )
+    record_toy_numeric_finite_size_exemplar(ws, topic_id="lane-exemplar-topic")
     record_librpa_code_backed_algorithm_exemplar(ws, topic_id="lane-exemplar-topic")
     record_qft_qg_source_reconstruction_exemplar(ws, topic_id="lane-exemplar-topic")
 

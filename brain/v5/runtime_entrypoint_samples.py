@@ -491,6 +491,17 @@ def sample_args_for_template(template: str) -> list[str]:
             "--status",
             "accepted",
         ]
+    if template.startswith("exemplar lane record-toy-numeric"):
+        return [
+            "--topic",
+            "toy-finite-size",
+            "--claim",
+            "claim-toy",
+            "--run",
+            "run-toy-finite-size",
+            "--status",
+            "accepted",
+        ]
     if template.startswith("exemplar lane record"):
         return [
             "--topic",

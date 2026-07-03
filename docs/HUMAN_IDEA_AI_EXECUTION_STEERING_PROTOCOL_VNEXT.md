@@ -418,7 +418,8 @@ Acceptance:
 
 Status: **control plane implemented; content exemplars are workspace records.**
 `aitp_v5_record_lane_exemplar`, `aitp_v5_record_librpa_code_backed_algorithm_exemplar`,
-`aitp_v5_record_qft_qg_source_reconstruction_exemplar`, and
+`aitp_v5_record_qft_qg_source_reconstruction_exemplar`,
+`aitp_v5_record_toy_numeric_finite_size_exemplar`, and
 `aitp_v5_build_lane_exemplar_manifest` are production surfaces.
 `session_start.generated.md` renders lane exemplars with trust boundaries.
 

@@ -10,6 +10,7 @@ from brain.v5.lane_exemplars import (
     record_lane_exemplar,
     record_librpa_code_backed_algorithm_exemplar,
     record_qft_qg_source_reconstruction_exemplar,
+    record_toy_numeric_finite_size_exemplar,
 )
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.workspace import init_workspace
@@ -94,6 +95,24 @@ def aitp_v5_record_qft_qg_source_reconstruction_exemplar(
     status: str = "accepted",
 ) -> dict:
     record = record_qft_qg_source_reconstruction_exemplar(
+        _ws(base),
+        topic_id=topic_id,
+        claim_id=claim_id,
+        run_id=run_id,
+        status=status,
+    )
+    return require_valid_public_surface("lane_exemplar_record", {"ok": True, **asdict(record)})
+
+
+def aitp_v5_record_toy_numeric_finite_size_exemplar(
+    base: str,
+    *,
+    topic_id: str,
+    claim_id: str = "",
+    run_id: str = "",
+    status: str = "accepted",
+) -> dict:
+    record = record_toy_numeric_finite_size_exemplar(
         _ws(base),
         topic_id=topic_id,
         claim_id=claim_id,

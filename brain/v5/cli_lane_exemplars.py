@@ -9,6 +9,7 @@ from brain.v5.lane_exemplars import (
     record_lane_exemplar,
     record_librpa_code_backed_algorithm_exemplar,
     record_qft_qg_source_reconstruction_exemplar,
+    record_toy_numeric_finite_size_exemplar,
 )
 from brain.v5.public_surfaces import require_valid_public_surface
 
@@ -50,6 +51,11 @@ def add_exemplar_parser(sp) -> None:
     qft_qg.add_argument("--claim", default="", dest="claim_id")
     qft_qg.add_argument("--run", default="", dest="run_id")
     qft_qg.add_argument("--status", default="accepted")
+    toy = lanes.add_parser("record-toy-numeric")
+    toy.add_argument("--topic", required=True, dest="topic_id")
+    toy.add_argument("--claim", default="", dest="claim_id")
+    toy.add_argument("--run", default="", dest="run_id")
+    toy.add_argument("--status", default="accepted")
     lanes.add_parser("manifest")
 
 
@@ -93,6 +99,15 @@ def dispatch_exemplar_command(args, ws) -> dict:
         return require_valid_public_surface("lane_exemplar_record", {"ok": True, **asdict(record)})
     if args.exemplar_command == "lane" and args.lane_exemplar_command == "record-qft-qg-source":
         record = record_qft_qg_source_reconstruction_exemplar(
+            ws,
+            topic_id=args.topic_id,
+            claim_id=args.claim_id,
+            run_id=args.run_id,
+            status=args.status,
+        )
+        return require_valid_public_surface("lane_exemplar_record", {"ok": True, **asdict(record)})
+    if args.exemplar_command == "lane" and args.lane_exemplar_command == "record-toy-numeric":
+        record = record_toy_numeric_finite_size_exemplar(
             ws,
             topic_id=args.topic_id,
             claim_id=args.claim_id,

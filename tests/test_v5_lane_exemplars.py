@@ -139,6 +139,7 @@ def test_lane_exemplar_cli_mcp_and_runtime_surfaces(tmp_path, capsys):
         aitp_v5_record_lane_exemplar,
         aitp_v5_record_librpa_code_backed_algorithm_exemplar,
         aitp_v5_record_qft_qg_source_reconstruction_exemplar,
+        aitp_v5_record_toy_numeric_finite_size_exemplar,
     )
     from brain.v5.runtime_entrypoints import runtime_entrypoints
 
@@ -238,6 +239,16 @@ def test_lane_exemplar_cli_mcp_and_runtime_surfaces(tmp_path, capsys):
     assert "quantum_gravity_literature" in qft_qg_payload["domain_pack_refs"]
     assert "source_reconstruction_review_packet" in qft_qg_payload["surface_refs"]
     assert "PDF summaries" in qft_qg_payload["forbidden_uses"][0]
+    toy_payload = aitp_v5_record_toy_numeric_finite_size_exemplar(
+        str(ws.base),
+        topic_id="qsgw-headwing-update-librpa",
+        claim_id=claim.claim_id,
+        run_id="run-toy-finite-size",
+    )
+    assert toy_payload["lane"] == "toy_numeric"
+    assert toy_payload["domain_pack_refs"] == ["toy_numerics"]
+    assert "bounded_numerical_evidence_bundle" in toy_payload["surface_refs"]
+    assert any(item["failure_id"] == "negative_control_missing" for item in toy_payload["failure_modes"])
     assert manifest_payload["covered_lanes"] == ["toy_numeric", "code_backed_algorithm"]
     assert manifest_payload["can_update_claim_trust"] is False
     assert runtime_entrypoints()["record_lane_exemplar"] == {
@@ -253,6 +264,11 @@ def test_lane_exemplar_cli_mcp_and_runtime_surfaces(tmp_path, capsys):
     assert runtime_entrypoints()["record_qft_qg_source_reconstruction_exemplar"] == {
         "cli": "aitp-v5 exemplar lane record-qft-qg-source <args>",
         "mcp": "aitp_v5_record_qft_qg_source_reconstruction_exemplar",
+        "surface": "lane_exemplar_record",
+    }
+    assert runtime_entrypoints()["record_toy_numeric_finite_size_exemplar"] == {
+        "cli": "aitp-v5 exemplar lane record-toy-numeric <args>",
+        "mcp": "aitp_v5_record_toy_numeric_finite_size_exemplar",
         "surface": "lane_exemplar_record",
     }
     assert runtime_entrypoints()["lane_exemplar_manifest"] == {
@@ -394,3 +410,58 @@ def test_builtin_qft_qg_source_reconstruction_exemplar_links_literature_surfaces
         "quantum_gravity_literature",
     ]
     assert "source_reconstruction_review_result_record" in manifest["items"][0]["surface_refs"]
+
+
+def test_builtin_toy_numeric_exemplar_links_bounded_evidence_and_validation(tmp_path):
+    from brain.v5.lane_exemplars import (
+        build_lane_exemplar_manifest,
+        record_toy_numeric_finite_size_exemplar,
+    )
+    from brain.v5.public_surfaces import require_valid_public_surface
+
+    ws, claim = _seed_workspace(tmp_path)
+
+    record = record_toy_numeric_finite_size_exemplar(
+        ws,
+        topic_id="qsgw-headwing-update-librpa",
+        claim_id=claim.claim_id,
+        run_id="run-toy-finite-size",
+    )
+
+    assert record.lane == "toy_numeric"
+    assert record.status == "accepted"
+    assert record.domain_pack_refs == ["toy_numerics"]
+    assert record.context_profile_refs == ["derivation_check", "group_meeting_report", "closeout"]
+    assert {
+        "bounded_numerical_evidence_bundle",
+        "artifact_record",
+        "tool_recipe_record",
+        "tool_run_record",
+        "tool_executor_catalog",
+        "validation_contract_record",
+        "validation_result_record",
+        "failure_mode_audit",
+        "claim_trust_audit",
+        "claim_status_record",
+        "proof_obligation_record",
+    } <= set(record.surface_refs)
+    assert record.workflow_steps[0]["step_id"] == "define_model_and_scope"
+    assert record.workflow_steps[2]["entrypoint"] == "aitp-v5 tool execute metric_table_check <args>"
+    failure_ids = {item["failure_id"] for item in record.failure_modes}
+    assert {
+        "finite_size_overclaim",
+        "sector_or_symmetry_mismatch",
+        "negative_control_missing",
+        "tolerance_cherry_pick",
+        "artifact_or_seed_gap",
+    } <= failure_ids
+    assert "bounded_numerical_evidence_bundle" in record.required_next_records
+    assert "proof_obligation_record" in record.required_next_records
+    assert "infinite-size theorem" in record.cannot_say[0]
+    assert record.can_update_claim_trust is False
+    assert require_valid_public_surface("lane_exemplar_record", {"ok": True, **record.__dict__})
+
+    manifest = build_lane_exemplar_manifest(ws)
+    assert manifest["covered_lanes"] == ["toy_numeric"]
+    assert manifest["items"][0]["domain_pack_refs"] == ["toy_numerics"]
+    assert "bounded_numerical_evidence_bundle" in manifest["items"][0]["surface_refs"]

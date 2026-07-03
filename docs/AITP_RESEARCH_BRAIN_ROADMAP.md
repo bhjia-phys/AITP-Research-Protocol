@@ -204,8 +204,11 @@ Next implementation slices:
    comparison/source-reconstruction review surfaces, failure modes, validation,
    and checkpoint boundaries into a semi-formal workflow record without
    treating retrieved chunks or PDF summaries as evidence.
-3. Add a toy-numeric exemplar helper for finite-size and negative-control
-   workflows.
+3. Use `aitp-v5 exemplar lane record-toy-numeric` to write the built-in
+   toy-numeric finite-size / negative-control exemplar. It binds toy-model
+   scope, tool recipes, artifact provenance, bounded numerical evidence,
+   validation, claim-status, proof-obligation, and trust-audit surfaces without
+   treating finite-size checks as theorems.
 
 ## Workstream D: Lane Exemplars And Scientific Examples
 
@@ -227,6 +230,10 @@ The semi-formal theory lane now has a built-in QFT/QG source-reconstruction
 write path through `record_qft_qg_source_reconstruction_exemplar` /
 `aitp_v5_record_qft_qg_source_reconstruction_exemplar`, with the same
 workspace-local accepted-record coverage rule.
+The toy-numeric lane now has a built-in finite-size / negative-control write
+path through `record_toy_numeric_finite_size_exemplar` /
+`aitp_v5_record_toy_numeric_finite_size_exemplar`, completing dedicated helper
+coverage for all required vNext exemplar lanes.
 
 Each exemplar should include:
 

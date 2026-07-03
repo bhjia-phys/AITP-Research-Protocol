@@ -599,6 +599,15 @@ a domain: copy the domain manifest into the topic's `contracts/` or add
   source-grounding workflow memory only: retrieved chunks, PDF summaries, and
   interpretive synthesis cannot become claim evidence without typed anchors,
   review results, validation, and required checkpoint decisions.
+- The built-in toy-numeric exemplar can be written with
+  `aitp-v5 exemplar lane record-toy-numeric` or
+  `aitp_v5_record_toy_numeric_finite_size_exemplar`. The record binds the
+  `toy_numerics` domain pack to bounded numerical evidence, artifact
+  provenance, tool recipe/run records, metric/scalar executor checks, validation,
+  claim-status, proof-obligation, failure-mode, and trust-audit surfaces. It is
+  finite-scope workflow memory only: finite-size/cutoff checks, plots, and
+  scalar tolerance passes cannot be promoted as theorems without scoped evidence,
+  passed validation, and explicit proof-obligation handling.
 - `aitp-v5 status topic <session-id> --compact` and
   `aitp_v5_write_topic_status_surfaces_compact` should be preferred when a host
   needs only a small continuation payload; they still write the full status
