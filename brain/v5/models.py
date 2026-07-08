@@ -320,6 +320,47 @@ class ToolRunRecord:
 
 
 @dataclass
+class MonitorSnapshotRecord:
+    snapshot_id: str
+    topic_id: str
+    claim_id: str
+    tool_run_id: str
+    run_dir: str
+    job_id: str
+    scheduler_state: dict = field(default_factory=dict)
+    elapsed: str = ""
+    output_file_sizes: dict = field(default_factory=dict)
+    latest_log_markers: list[str] = field(default_factory=list)
+    memory_status: dict = field(default_factory=dict)
+    failure_markers: list[str] = field(default_factory=list)
+    interpretation_boundary: str = ""
+    claim_trust_mutation: str = "none"
+    summary_inputs_trusted: bool = False
+    orientation_only: bool = True
+    can_update_claim_trust: bool = False
+    kind: str = "monitor_snapshot"
+
+
+@dataclass
+class SkillPatchProposalRecord:
+    proposal_id: str
+    skill_name: str
+    current_version: str
+    proposed_version: str
+    patch_summary: str
+    patch_body: str
+    supporting_records: list[str] = field(default_factory=list)
+    trust_level: str = "open"
+    review_status: str = "draft"
+    application_status: str = "not_applied"
+    requires_human_review: bool = True
+    can_update_claim_trust: bool = False
+    summary_inputs_trusted: bool = False
+    orientation_only: bool = True
+    kind: str = "skill_patch_proposal"
+
+
+@dataclass
 class ArtifactRecord:
     artifact_id: str
     topic_id: str

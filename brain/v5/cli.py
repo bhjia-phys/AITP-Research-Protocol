@@ -42,6 +42,7 @@ from brain.v5.cli_research_state import add_research_state_parser, dispatch_rese
 from brain.v5.cli_validation import add_validation_parser, dispatch_validation_command
 from brain.v5.cli_vnext import VNEXT_COMMANDS, add_vnext_parsers, dispatch_vnext_command
 from brain.v5.cli_goal import add_goal_parser, dispatch_goal_command
+from brain.v5.cli_harness_feedback import add_harness_feedback_parser, dispatch_harness_feedback_command
 from brain.v5.claim_relation_map import build_claim_relation_map
 from brain.v5.exploration import exploratory_record_payload, record_exploratory_record
 from brain.v5.process_graph import build_process_graph_slice
@@ -502,6 +503,7 @@ def _build_parser() -> argparse.ArgumentParser:
     add_literature_parser(sp)
     add_vnext_parsers(sp)
     add_goal_parser(sp)
+    add_harness_feedback_parser(sp)
 
     add_summary_parser(sp)
     add_source_parser(sp)
@@ -1082,6 +1084,8 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         return dispatch_vnext_command(args, ws)
     if args.command == "goal":
         return dispatch_goal_command(args, ws)
+    if args.command == "harness-feedback":
+        return dispatch_harness_feedback_command(args, ws)
 
     if args.command == "workspace" and args.workspace_command == "inventory":
         workspace_root = args.workspace_root or None
