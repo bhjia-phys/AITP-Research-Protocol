@@ -124,6 +124,7 @@ def test_public_surface_registry_names_all_runtime_facing_payloads():
         "research_cockpit_bundle",
         "research_distillation_candidates",
         "research_intent_packet",
+        "research_timeline",
         "research_run_event_record",
         "research_run_record",
         "run_iteration_record",

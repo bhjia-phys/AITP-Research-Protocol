@@ -257,6 +257,9 @@ def build_claim_relation_map(
         if getattr(run, "lifecycle_status", "active") in _INACTIVE_LIFECYCLE_STATUSES | _HISTORICAL_LIFECYCLE_STATUSES:
             continue
         entry = _tool_run_entry(run)
+        if getattr(run, "superseded_by", ""):
+            historical.append(entry)
+            continue
         bucket = _bucket_for_status(run.evidence_status, text=_tool_run_text(run))
         if bucket == "not_tested_by":
             not_tested_by.append(entry)

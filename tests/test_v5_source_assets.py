@@ -78,6 +78,31 @@ def test_source_asset_record_is_canonical_orientation_asset(tmp_path):
     assert record.asset_id in diagnostics["duplicate_asset_ids"]
 
 
+def test_source_asset_normalizes_derived_dataset_alias(tmp_path):
+    from brain.v5.source_assets import register_source_asset
+    from brain.v5.workspace import create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "hs", context_id="spectral-statistics", title="HS spectral statistics")
+
+    record = register_source_asset(
+        ws,
+        topic_id="hs",
+        claim_id="claim-level-spacing",
+        asset_type="derived_dataset",
+        uri="file:///results/level_spacing_L13.json",
+        title="Level-spacing finite-size dataset",
+        source_kind="local_result",
+        summary="Finite-size diagnostic dataset, not theorem evidence.",
+    )
+
+    assert record.asset_type == "dataset"
+    assert record.metadata["requested_asset_type"] == "derived_dataset"
+    assert record.metadata["asset_type_normalized_from"] == "derived_dataset"
+    assert record.orientation_only is True
+    assert record.can_update_claim_trust is False
+
+
 def test_cli_and_mcp_capture_source_asset_auto_from_local_file(tmp_path, capsys):
     import hashlib
     from pathlib import Path

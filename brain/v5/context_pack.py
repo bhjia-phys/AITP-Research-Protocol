@@ -79,6 +79,7 @@ def build_aitp_context_pack(
         "can_say": list(compact.get("can_say") or []),
         "cannot_say": list(compact.get("cannot_say") or []),
         "blockers": list(compact.get("blockers") or []),
+        "previous_failed_attempts": list(compact.get("previous_failed_attempts") or []),
         "requested_task_profile": str(task_profile or ""),
         "task_profile": selected_profile,
         "profile_template_hint": profile_template_hint,
@@ -120,6 +121,7 @@ def build_aitp_context_pack(
                 "claim trust updates",
                 "evidence support decisions",
                 "validation status decisions",
+                "full research timeline and previous failed route audit",
                 "full relation-map audit",
                 "active claim rebind or claim split",
                 "workflow or skill materialization",
@@ -229,6 +231,15 @@ def _context_lines(payload: dict[str, Any], compact: dict[str, Any]) -> list[str
             )
         else:
             lines.append("- none")
+        lines.append("")
+    failed_attempts = list(payload.get("previous_failed_attempts") or [])[:4]
+    if failed_attempts:
+        lines.append("Previous failed or superseded routes:")
+        for attempt in failed_attempts:
+            lines.append(
+                f"- {attempt.get('record_ref')}: {attempt.get('classification')}; "
+                f"{_excerpt(attempt.get('summary') or '', limit=120)}"
+            )
         lines.append("")
     lines.extend(list(compact.get("lines") or []))
     lines.append("")

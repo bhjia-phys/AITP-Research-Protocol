@@ -310,6 +310,11 @@ Source assets are source identities only. They are not evidence records and
 cannot update claim trust; evidence, validation, and promotion remain separate
 typed operations.
 
+For source asset type names, prefer the contracted enum values such as
+`paper`, `dataset`, `generated_artifact`, and `note`. Common dataset aliases
+such as `derived_dataset` are normalized to `dataset` and preserved in record
+metadata as the requested type.
+
 More detail: `docs/v5-source-asset-pdf-acquisition.md`.
 
 ## How Agents Should Use AITP
@@ -479,6 +484,12 @@ If you have linked the Node wrapper from `package.json`, `aitp-v5` is a shorter
 alias for the same v5 CLI. The repository-local `uv run ... python -m
 brain.v5.cli` form is the most explicit and portable.
 
+On Windows shells, avoid passing nested JSON inline when recording tool runs.
+`tool run record`, `tool run capture-auto`, and `tool execute` accept JSON file
+arguments such as `--inputs-json-file`, `--outputs-json-file`, and
+`--environment-json-file`; these read UTF-8 or UTF-8-BOM JSON objects and avoid
+PowerShell argument escaping failures.
+
 ## Install
 
 Prerequisites:
@@ -620,9 +631,10 @@ mode instead of failing. Setup mode exposes `aitp_config_status`,
 The plugin saves this to `~/.aitp/codex-plugin-config.json`. After
 configuration, restart Codex or open a new thread. The plugin launcher sets
 `AITP_MCP_SURFACE=codex` by default, so Codex sees a compact facade:
-`aitp_v5_codex_enter`, `aitp_v5_codex_expand`,
-`aitp_v5_codex_recording_step`, `aitp_v5_codex_record_apply`,
-`aitp_v5_codex_literature_step`, and `aitp_v5_codex_closeout`. Set
+`aitp_v5_codex_autoroute`, `aitp_v5_codex_enter`,
+`aitp_v5_codex_expand`, `aitp_v5_codex_recording_step`,
+`aitp_v5_codex_record_apply`, `aitp_v5_codex_literature_step`, and
+`aitp_v5_codex_closeout`. Set
 `AITP_MCP_SURFACE=full` only for kernel
 development or maintenance sessions that need the complete `aitp_v5_*` surface.
 
@@ -759,7 +771,12 @@ updates, or promotion records.
 
 Use the Codex facade for session lifecycle:
 
-- `aitp_v5_codex_enter` at the start or when a discussion becomes research;
+- `aitp_v5_codex_autoroute` when a request may need AITP-backed research state;
+- `aitp_v5_codex_enter(..., payload_profile="minimal")` when autoroute says to
+  enter or recover a session/topic; this returns a small entry card, not a full
+  context dump;
+- `aitp_v5_codex_expand(..., expansion="context_pack")` only when the next step
+  needs the richer turn-input fragment;
 - `aitp_v5_codex_recording_step` when a durable moment appears;
 - `aitp_v5_codex_literature_step` when a paper, web source, or local note enters
   reusable context;

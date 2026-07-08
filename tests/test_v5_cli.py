@@ -184,6 +184,63 @@ def test_cli_tool_recipe_and_run_record_provenance(tmp_path, capsys):
     assert run["source_refs"] == ["benchmark:si-reference"]
 
 
+def test_cli_tool_run_record_accepts_json_file_arguments(tmp_path, capsys):
+    from brain.v5.workspace import create_claim, create_topic, init_workspace
+
+    ws = init_workspace(tmp_path)
+    create_topic(ws, "hs-alpha", context_id="spin-chain", title="HS alpha-axis")
+    claim = create_claim(
+        ws,
+        topic_id="hs-alpha",
+        statement="Level-spacing diagnostics are finite-size orientation only.",
+        evidence_profile="bounded_numerical",
+        confidence_state="hypothesis",
+        active_uncertainty="hidden symmetry sectors may remain unresolved",
+    )
+    inputs_path = tmp_path / "inputs.json"
+    outputs_path = tmp_path / "outputs.json"
+    environment_path = tmp_path / "environment.json"
+    inputs_path.write_text(json.dumps({"L": 13, "sector": {"charge": "hidden"}}), encoding="utf-8")
+    outputs_path.write_text(json.dumps({"residual_excess": 0, "orientation_only": True}), encoding="utf-8-sig")
+    environment_path.write_text(json.dumps({"shell": "powershell", "json_mode": "file"}), encoding="utf-8")
+
+    run = _invoke(
+        [
+            "--base",
+            str(tmp_path),
+            "tool",
+            "run",
+            "record",
+            "--recipe",
+            "recipe-hs-level-spacing",
+            "--family",
+            "local_python",
+            "--name",
+            "level_spacing_audit",
+            "--topic",
+            "hs-alpha",
+            "--claim",
+            claim.claim_id,
+            "--inputs-json-file",
+            str(inputs_path),
+            "--outputs-json-file",
+            str(outputs_path),
+            "--environment-json-file",
+            str(environment_path),
+            "--evidence-status",
+            "diagnostic",
+        ],
+        capsys,
+    )
+
+    assert run["ok"] is True
+    assert run["inputs"]["sector"]["charge"] == "hidden"
+    assert run["outputs"]["residual_excess"] == 0
+    assert run["outputs"]["orientation_only"] is True
+    assert run["environment"]["json_mode"] == "file"
+    assert run["evidence_status"] == "diagnostic"
+
+
 def test_cli_evidence_and_code_state_record_provenance(tmp_path, capsys):
     from brain.v5.workspace import create_claim, create_topic, init_workspace
 

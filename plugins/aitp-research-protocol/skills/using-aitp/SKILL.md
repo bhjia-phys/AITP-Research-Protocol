@@ -47,12 +47,13 @@ When the exact topics root is unknown, pass `base=""` to AITP v5 tools. The MCP 
 
 1. If the request is generic textbook knowledge and does not touch a project topic, answer normally.
 2. If only setup tools are exposed, complete first-run setup before any AITP research operation.
-3. If the request touches an existing topic, claim, source, route, artifact, or gap, restore AITP context before answering.
-4. First call `aitp_v5_codex_tool_catalog(profile="entry")` if the available surface is unclear.
-5. For known sessions, call `aitp_v5_codex_enter(base="", session_id=<session-id>, request_summary=<user request>)` first. Expand through `aitp_v5_codex_expand`, not by dumping the full graph.
-6. If only a topic slug is known, call `aitp_v5_codex_enter(base="", topics=[<topic>], request_summary=<user request>)`. Use a `recovery_ready` row's session and claim before creating or migrating anything.
-7. If no usable v5 session exists, use v5 migration or topic/claim/session creation tools through a full-kernel maintenance surface only after user confirmation. Do not write progress into old L0/L1/L3/L4 files.
-8. Load `aitp-runtime` before active continuation, derivation, validation, numerical work, final synthesis, trust updates, L2 promotion, literature registration, writing, or closeout.
+3. First call `aitp_v5_codex_tool_catalog(profile="entry")` if the available surface is unclear.
+4. For any request that may involve a research topic, project-linked physics result, source, route, artifact, validation, failed path, latest prior result, or durable research memory, first make a semantic assessment, then call `aitp_v5_codex_autoroute(base="", request_summary=<user request>, session_id=<if known>, topics=<if known>, visible_files=<if relevant>, semantic_assessment=<assessment>)` before answering. The assessment should set fields such as `task_kind`, `needs_prior_research_state`, `needs_latest_topic_state`, `concerns_existing_topic_or_claim`, `creates_or_updates_durable_research_output`, `needs_validation_or_evidence_boundary`, `mentions_failed_or_superseded_route`, `trust_or_claim_status_sensitive`, `is_generic_textbook_question`, `should_use_aitp`, `confidence`, and `rationale`.
+5. If autoroute returns `decision="answer_without_aitp"`, answer normally. Do not write AITP records.
+6. If autoroute returns `enter_existing_session`, `recover_topic`, or `recover_workspace`, call the returned `recommended_next_tool` with `recommended_args`; this is normally `aitp_v5_codex_enter(..., payload_profile="minimal")`. Treat the returned `entry_card` as the model-facing default. Then expand through `aitp_v5_codex_expand` as recommended. Do not dump the full graph or request `payload_profile="context_pack"` unless the next step needs it.
+7. If only a topic slug is known, use the autoroute recommendation and then use a `recovery_ready` row's session and claim before creating or migrating anything.
+8. If no usable v5 session exists, use v5 migration or topic/claim/session creation tools through a full-kernel maintenance surface only after user confirmation. Do not write progress into old L0/L1/L3/L4 files.
+9. Load `aitp-runtime` before active continuation, derivation, validation, numerical work, final synthesis, trust updates, L2 promotion, literature registration, writing, or closeout.
 
 ## Intensity Policy
 

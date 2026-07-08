@@ -112,6 +112,11 @@ RUNTIME_ENTRYPOINTS: dict[str, dict[str, Any]] = {
         "mcp": "aitp_v5_get_claim_relation_map",
         "surface": "claim_relation_map",
     },
+    "research_timeline": {
+        "cli": "aitp-v5 timeline <session-id>",
+        "mcp": "aitp_v5_get_research_timeline",
+        "surface": "research_timeline",
+    },
     "active_claim_focus_reconciliation": {
         "cli": "aitp-v5 relation-map <session-id>",
         "mcp": "aitp_v5_detect_active_claim_focus_drift",

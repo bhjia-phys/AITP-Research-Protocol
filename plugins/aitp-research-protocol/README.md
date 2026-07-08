@@ -80,9 +80,12 @@ aitp_configure(repo_root="C:/path/to/AITP-Research-Protocol", topics_root="C:/pa
 After configuration, restart Codex or open a new thread. The current kernel
 surface still provides `aitp_v5_*` tools, but the plugin launcher defaults to
 `AITP_MCP_SURFACE=codex`. Codex should use the compact facade as the front door:
-setup, `aitp_v5_codex_enter`, explicit `aitp_v5_codex_expand`, guided recording,
-`aitp_v5_codex_record_apply`, literature/source registration, note writing,
-closeout, and trust preflight.
+setup, `aitp_v5_codex_autoroute`, `aitp_v5_codex_enter`, explicit
+`aitp_v5_codex_expand`, guided recording, `aitp_v5_codex_record_apply`,
+literature/source registration, note writing, closeout, and trust preflight.
+The normal entry call should use `payload_profile="minimal"` and return an
+entry card; request `payload_profile="context_pack"` or expand
+`context_pack` only when the next step needs the richer context.
 Set `AITP_MCP_SURFACE=full` only for kernel development or maintenance sessions.
 
 The skills should call AITP v5 tools with `base=""` unless the user explicitly

@@ -22,6 +22,7 @@ from brain.v5.question_engine import generate_questions
 from brain.v5.physics_objects import list_object_relations_for_claim, object_relation_brief_payload
 from brain.v5.references import list_reference_locations_for_claim, reference_location_brief_payload
 from brain.v5.recovery_session import recover_session_binding_for_read
+from brain.v5.research_timeline import previous_failed_attempts_from_relation_map
 from brain.v5.research_state import list_proof_obligations_for_claim
 from brain.v5.research_intent import load_innovation_direction, load_research_intent_gate
 from brain.v5.output_stability import load_final_output_profile
@@ -200,6 +201,8 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
                 "options": operator_checkpoint.get("options", []),
             },
         )
+    relation_map = build_claim_relation_map(ws, session_id)
+    previous_failed_attempts = previous_failed_attempts_from_relation_map(relation_map, limit=8)
 
     return {
         "session": asdict(session),
@@ -235,7 +238,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
         "known_context": {
             "topic_id": session.topic_id,
             "context_id": session.context_id,
-            "previous_failed_attempts": [],
+            "previous_failed_attempts": previous_failed_attempts,
             "domain_packs": domain_packs,
             "context_compilation_profiles": context_profiles,
             "recommended_tool_executors": recommended_tool_executors,
@@ -261,7 +264,7 @@ def build_execution_brief(ws, session_id: str) -> dict[str, Any]:
             proof_obligations=proof_obligations,
             human_checkpoint_needed=action_budget.requires_human_checkpoint or bool(operator_checkpoint.get("active")),
         ),
-        "claim_relation_map": build_claim_relation_map(ws, session_id),
+        "claim_relation_map": relation_map,
         "mandatory_reflection": mandatory_reflection,
         "next_action_candidates": next_action_candidates,
         "forbidden_now": _forbidden_actions(flow.profile if flow else "guided") + policy_forbidden + vnext_forbidden,

@@ -124,6 +124,7 @@ _PUBLIC_SURFACE_NAMES = (
     "research_cockpit_bundle",
     "research_distillation_candidates",
     "research_intent_packet",
+    "research_timeline",
     "research_run_event_record",
     "research_run_record",
     "run_iteration_record",
@@ -296,6 +297,7 @@ _PUBLIC_SURFACE_PURPOSES = {
     "research_cockpit_bundle": "orientation-only workspace research cockpit that aggregates topic status, learning gaps, reading queue, and operator decisions without becoming a truth source",
     "research_distillation_candidates": "read-only compiler from typed research records to reusable workflow, method, failure, handoff, or physics-semantic candidates with explicit missing gates and no materialization or trust authority",
     "research_intent_packet": "contracted vNext idea gate packet for vague or materially redefined research topics",
+    "research_timeline": "read-only continuation timeline over typed records that summarizes latest results, non-testing failures, wrong or superseded routes, and next actions without creating evidence or updating claim trust",
     "research_run_event_record": "contracted process event for a research run, preserving operator/action/status provenance without evidence, validation, final-gate, or claim-trust authority",
     "research_run_record": "contracted canonical research run ledger for objective, question, operator trail, AITP refs, action refs, and terminal answer state without claim-trust authority",
     "run_iteration_record": "contracted run-local L3/L4/L3 iteration continuity record with Markdown-first review and no claim-trust authority",
@@ -458,6 +460,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         require_valid_bounded_numerical_evidence_bundle,
         require_valid_research_event_classification,
     )
+    from brain.v5.research_timeline_contracts import require_valid_research_timeline
     from brain.v5.research_intent_contracts import (
         require_valid_research_intent_packet,
         require_valid_steering_decision_record,
@@ -745,6 +748,7 @@ def _validators() -> dict[str, Callable[[dict[str, Any]], dict[str, Any]]]:
         "research_cockpit_bundle": require_valid_research_cockpit_bundle,
         "research_distillation_candidates": require_valid_research_distillation_candidates,
         "research_intent_packet": require_valid_research_intent_packet,
+        "research_timeline": require_valid_research_timeline,
         "run_iteration_record": require_valid_run_iteration_record,
         "runtime_hook_installation_audit": require_valid_runtime_hook_installation_audit,
         "runtime_host_lifecycle_audit": require_valid_runtime_host_lifecycle_audit,

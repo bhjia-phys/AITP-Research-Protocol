@@ -210,10 +210,32 @@ def _looks_like_windows_path(value: str) -> bool:
     return bool(re.match(r"^[a-zA-Z]:[\\/]", value or ""))
 
 
+def _looks_like_local_file_reference(value: str) -> bool:
+    lowered = (value or "").strip().lower()
+    if lowered.startswith("file://"):
+        return True
+    for prefix in ("local:file:", "file:", "path:"):
+        if lowered.startswith(prefix):
+            rest = value[len(prefix) :].strip()
+            return bool(rest.startswith(("/", "\\")) or _looks_like_windows_path(rest))
+    return False
+
+
+def _normalize_local_file_reference(value: str) -> str:
+    text = (value or "").strip()
+    lowered = text.lower()
+    for prefix in ("local:file:", "file:", "path:"):
+        if lowered.startswith(prefix) and not lowered.startswith("file://"):
+            rest = text[len(prefix) :].strip()
+            if _looks_like_windows_path(rest) or rest.startswith(("/", "\\")):
+                return rest.replace("\\", "/")
+    return text
+
+
 def _looks_like_ref_like_token(value: str) -> bool:
     """Detect unsupported ``kind:id``-style refs without catching paths/URLs."""
 
-    if not value or _looks_like_windows_path(value) or "://" in value:
+    if not value or _looks_like_windows_path(value) or _looks_like_local_file_reference(value) or "://" in value:
         return False
     parsed = _split_ref(value)
     if parsed is None:
@@ -233,6 +255,8 @@ def _classify_touched(value: str) -> dict[str, str]:
     value = (value or "").strip()
     if not value:
         return {"kind": "other", "value": value}
+    if _looks_like_local_file_reference(value):
+        return {"kind": "path", "value": _normalize_local_file_reference(value)}
     if _looks_like_canonical_ref(value):
         return {"kind": "canonical_ref", "value": value}
     if _looks_like_ref_like_token(value):

@@ -17,6 +17,7 @@ from brain.v5.models import (
 )
 from brain.v5.paths import WorkspacePaths
 from brain.v5.recovery_session import recover_session_binding_for_read
+from brain.v5.research_timeline import previous_failed_attempts_from_relation_map
 from brain.v5.store import list_valid_records, read_record
 
 
@@ -132,6 +133,7 @@ def build_compact_brief(
     blockers = _limit_strings(list(relation_map.get("current_blockers") or []), limit=6)
     can_say = _limit_strings(list(conclusion.get("can_say") or []), limit=6)
     cannot_say = _limit_strings(list(conclusion.get("cannot_say") or []), limit=6)
+    previous_failed_attempts = previous_failed_attempts_from_relation_map(relation_map, limit=6)
     if drift_detected:
         drift_warning = "active_claim_focus_drift_detected: active claim relation map is scoped to the old active claim and may be stale for the current goal"
         blockers = _limit_strings([drift_warning] + blockers, limit=6)
@@ -159,6 +161,7 @@ def build_compact_brief(
         "can_say": can_say,
         "cannot_say": cannot_say,
         "blockers": blockers,
+        "previous_failed_attempts": previous_failed_attempts,
         "next_valid_actions": next_actions,
         "recent_relevant_artifacts": artifacts,
         "relation_map_scope": str(relation_map.get("relation_map_scope") or "active_claim_only"),
@@ -168,9 +171,11 @@ def build_compact_brief(
         "expand": {
             "full_execution_brief_cli": f"aitp-v5 brief {session_id}",
             "full_relation_map_cli": f"aitp-v5 relation-map {session_id}",
+            "research_timeline_cli": f"aitp-v5 timeline {session_id}",
             "objective_graph_cli": f"aitp-v5 status objective-graph {session_id}",
             "mcp_full_execution_brief": "aitp_v5_get_execution_brief",
             "mcp_full_relation_map": "aitp_v5_get_claim_relation_map",
+            "mcp_research_timeline": "aitp_v5_get_research_timeline",
             "mcp_objective_graph": "aitp_v5_get_objective_graph",
         },
         "source_records": {
@@ -430,6 +435,16 @@ def _compact_lines(payload: dict[str, Any]) -> list[str]:
     lines.extend(f"- {item}" for item in payload.get("cannot_say", []))
     lines.append("Blockers:")
     lines.extend(f"- {item}" for item in payload.get("blockers", []))
+    lines.append("Previous failed or superseded routes:")
+    failed_attempts = list(payload.get("previous_failed_attempts") or [])
+    if failed_attempts:
+        lines.extend(
+            f"- {item.get('record_ref')}: {item.get('classification')}; "
+            f"{_excerpt(item.get('summary') or '', limit=110)}"
+            for item in failed_attempts
+        )
+    else:
+        lines.append("- none recorded")
     lines.append("Next valid actions:")
     lines.extend(f"- {item}" for item in payload.get("next_valid_actions", []))
     lines.append("Recent relevant artifacts:")
@@ -437,7 +452,7 @@ def _compact_lines(payload: dict[str, Any]) -> list[str]:
         f"- {artifact.get('artifact_id')}: {_excerpt(artifact.get('summary') or artifact.get('uri') or '', limit=100)}"
         for artifact in payload.get("recent_relevant_artifacts", [])
     )
-    lines.append("Expand: use full execution brief or full relation map explicitly.")
+    lines.append("Expand: use full execution brief, research timeline, or full relation map explicitly.")
     return lines
 
 

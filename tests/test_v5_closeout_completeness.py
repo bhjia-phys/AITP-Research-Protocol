@@ -124,6 +124,52 @@ def test_validation_commands_recommend_validation_result_without_trust_promotion
     assert audit["trust_boundary"]["do_not_promote_trust"] is True
 
 
+def test_numeric_closeout_recommends_full_recording_chain(tmp_path):
+    from brain.v5.quiet_checkpoint import preview_quiet_checkpoint_batch
+
+    ws, _claim = _seed_workspace(tmp_path)
+    preview = preview_quiet_checkpoint_batch(
+        ws,
+        "s-bi2se3",
+        summary="Captured finite-size spectral statistics diagnostics.",
+        inputs=["L=13", "sector=hidden"],
+        outputs=["research/hs/results/level_spacing_L13.json"],
+        generated_artifacts=[
+            {"path": "research/hs/results/level_spacing_L13.json", "summary": "Finite-size diagnostic dataset."}
+        ],
+        source_specs=[
+            {
+                "asset_type": "derived_dataset",
+                "uri": "file:///research/hs/results/level_spacing_L13.json",
+                "title": "Finite-size level-spacing dataset",
+            }
+        ],
+        validation_commands=["python research/hs/code/check_level_spacing.py --L 13"],
+        claim_boundary={
+            "cannot_say": ["residual excess zero is not a complete hidden-symmetry proof"],
+            "open_gaps": ["all-L proof and physical charge identification remain open"],
+        },
+    )
+
+    audit = preview["record_completeness_audit"]
+    assert {
+        "artifact",
+        "tool_recipe",
+        "tool_run",
+        "source_asset",
+        "code_state",
+        "validation_result",
+        "sensemaking_report",
+    }.issubset(set(audit["missing_recommended_slots"]))
+    assert "tool_run" in audit["expected_record_slots"]
+    assert audit["trust_boundary"]["finite_numeric_outputs_do_not_prove_theorem"] is True
+    assert audit["trust_boundary"]["sibling_claim_records_do_not_support_active_claim_by_default"] is True
+    source_plan = next(item for item in audit["recommended_next_records"] if item["slot"] == "source_asset")
+    assert source_plan["asset_type_policy"]["common_aliases"]["derived_dataset"] == "dataset"
+    run_plan = next(item for item in audit["recommended_next_records"] if item["slot"] == "tool_run")
+    assert "json_file" in run_plan["json_argument_policy"]
+
+
 def test_open_gap_validation_boundary_recommends_validation_gap_and_no_trust_promotion(tmp_path):
     from brain.v5.quiet_checkpoint import preview_quiet_checkpoint_batch
 

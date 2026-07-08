@@ -21,6 +21,7 @@ from brain.v5.brief import build_execution_brief
 from brain.v5.claim_relation_map import build_claim_relation_map, empty_claim_relation_map
 from brain.v5.code import capture_code_state_from_git, record_code_state
 from brain.v5.codex_facade import (
+    codex_autoroute,
     codex_closeout,
     codex_enter_context,
     codex_expand_context,
@@ -62,6 +63,7 @@ from brain.v5.pretool_policy import evaluate_context_pre_tool_policy
 from brain.v5.public_surfaces import describe_public_surfaces, require_valid_public_surface
 from brain.v5.quiet_checkpoint import apply_quiet_checkpoint_batch, preview_quiet_checkpoint_batch
 from brain.v5.research_distillation import build_research_distillation_candidates
+from brain.v5.research_timeline import build_research_timeline
 from brain.v5.record_refs import lookup_record_refs
 from brain.v5.recording_navigator import (
     build_recording_navigation_state,
@@ -220,6 +222,29 @@ def aitp_v5_codex_tool_catalog(profile: str = "entry") -> dict:
     return codex_tool_catalog(profile=profile)
 
 
+def aitp_v5_codex_autoroute(
+    base: str,
+    *,
+    request_summary: str,
+    session_id: str = "",
+    topics: list[str] | None = None,
+    visible_files: list[str] | None = None,
+    recent_tool_summary: str = "",
+    semantic_assessment: dict | None = None,
+) -> dict:
+    """Decide whether Codex should enter AITP before answering."""
+
+    return codex_autoroute(
+        None,
+        request_summary=request_summary,
+        session_id=session_id,
+        topics=topics,
+        visible_files=visible_files,
+        recent_tool_summary=recent_tool_summary,
+        semantic_assessment=semantic_assessment,
+    )
+
+
 def aitp_v5_codex_enter(
     base: str,
     *,
@@ -227,6 +252,7 @@ def aitp_v5_codex_enter(
     topics: list[str] | None = None,
     request_summary: str = "",
     process_mode: str = "auto",
+    payload_profile: str = "minimal",
     max_lines: int = 60,
     candidate_limit: int = 3,
 ) -> dict:
@@ -238,6 +264,7 @@ def aitp_v5_codex_enter(
         topics=topics,
         request_summary=request_summary,
         process_mode=process_mode,
+        payload_profile=payload_profile,
         max_lines=max_lines,
         candidate_limit=candidate_limit,
     )
@@ -487,6 +514,21 @@ def aitp_v5_get_claim_relation_map(
     return require_valid_public_surface(
         "claim_relation_map",
         relation_map,
+    )
+
+
+def aitp_v5_get_research_timeline(
+    base: str,
+    *,
+    session_id: str,
+    claim_id: str = "",
+    limit: int = 80,
+) -> dict:
+    """Return a read-only continuation timeline with failed and superseded routes."""
+
+    return require_valid_public_surface(
+        "research_timeline",
+        build_research_timeline(_ws(base), session_id, claim_id=claim_id, limit=limit),
     )
 
 

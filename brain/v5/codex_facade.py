@@ -2,20 +2,27 @@
 
 from __future__ import annotations
 
+import re
+import subprocess
 from dataclasses import asdict
+from pathlib import Path
 from typing import Any
 
 from brain.v5.brief import build_execution_brief
 from brain.v5.claim_relation_map import build_claim_relation_map
+from brain.v5.code import capture_code_state_from_git
 from brain.v5.context_pack import build_aitp_context_pack
 from brain.v5.evidence import record_evidence
 from brain.v5.literature_comparison_draft import build_literature_comparison_draft
 from brain.v5.literature_intake import record_literature_candidate, suggest_literature_intake
 from brain.v5.literature_source_review_handoff import build_literature_source_review_handoff
+from brain.v5.lightweight_record_router import plan_lightweight_record_write
 from brain.v5.note_outline import compile_note_outline
+from brain.v5.objective_graph import build_compact_brief
 from brain.v5.paths import WorkspacePaths
 from brain.v5.physics_objects import record_object_relation, record_physics_object
 from brain.v5.process_graph import build_process_graph_slice
+from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.quiet_checkpoint import apply_quiet_checkpoint_batch, preview_quiet_checkpoint_batch
 from brain.v5.recovery_session import recover_session_binding_for_read
 from brain.v5.references import record_reference_location
@@ -25,11 +32,12 @@ from brain.v5.recording_navigator import (
     expand_recording_slot,
     verify_recording_effect,
 )
+from brain.v5.research_timeline import build_research_timeline
 from brain.v5.research_state import attach_artifact, create_proof_obligation
 from brain.v5.sensemaking import record_sensemaking_report
 from brain.v5.source_assets import register_source_asset
 from brain.v5.source_reconstruction import audit_source_reconstruction
-from brain.v5.tools import record_tool_run
+from brain.v5.tools import record_tool_run, register_tool_recipe
 from brain.v5.trust_audit import audit_claim_trust
 from brain.v5.validation import create_validation_contract, record_validation_result
 from brain.v5.workspace_recovery_audit import build_workspace_recovery_audit, compact_workspace_recovery_audit
@@ -38,6 +46,7 @@ from brain.v5.workspace_recording_audit import build_workspace_recording_audit
 
 CODEX_FACADE_TOOLS: tuple[str, ...] = (
     "aitp_v5_codex_tool_catalog",
+    "aitp_v5_codex_autoroute",
     "aitp_v5_codex_enter",
     "aitp_v5_codex_expand",
     "aitp_v5_codex_recording_step",
@@ -71,8 +80,8 @@ def codex_tool_catalog(profile: str = "entry") -> dict[str, Any]:
             "state_effect": "configuration_write_only",
         },
         "entry": {
-            "purpose": "Restore a topic/session with compact context and expansion hints.",
-            "tools": ["aitp_v5_codex_tool_catalog", "aitp_v5_codex_enter"],
+            "purpose": "Decide whether AITP is needed, then restore a topic/session with compact context and expansion hints.",
+            "tools": ["aitp_v5_codex_tool_catalog", "aitp_v5_codex_autoroute", "aitp_v5_codex_enter"],
             "state_effect": "read_only",
         },
         "read_expansion": {
@@ -81,6 +90,7 @@ def codex_tool_catalog(profile: str = "entry") -> dict[str, Any]:
             "expansions": [
                 "context_pack",
                 "brief",
+                "timeline",
                 "relation_map",
                 "process_graph",
                 "recording_navigation",
@@ -127,13 +137,168 @@ def codex_tool_catalog(profile: str = "entry") -> dict[str, Any]:
             "legacy write aliases",
         ],
         "progressive_policy": {
-            "start_with": "aitp_v5_codex_enter",
+            "start_with": "aitp_v5_codex_autoroute",
+            "enter_with": "aitp_v5_codex_enter",
+            "enter_payload_profile": "minimal",
             "expand_with": "aitp_v5_codex_expand",
             "record_with": "aitp_v5_codex_recording_step_then_aitp_v5_codex_record_apply",
             "literature_with": "aitp_v5_codex_literature_step",
             "closeout_with": "aitp_v5_codex_closeout",
         },
+        "autoroute_semantic_contract": {
+            "purpose": "Let the model make the semantic judgment, while the tool validates the safe read-only route.",
+            "assessment_fields": [
+                "task_kind",
+                "needs_prior_research_state",
+                "needs_latest_topic_state",
+                "concerns_existing_topic_or_claim",
+                "creates_or_updates_durable_research_output",
+                "needs_validation_or_evidence_boundary",
+                "mentions_failed_or_superseded_route",
+                "trust_or_claim_status_sensitive",
+                "is_generic_textbook_question",
+                "should_use_aitp",
+                "confidence",
+                "rationale",
+            ],
+            "conservative_rule": "If a possible research request is semantically uncertain, enter AITP read-only before answering.",
+            "non_goal": "This contract is not evidence, validation, or claim support.",
+        },
         "truth_source": "codex_facade_catalog",
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+
+
+def codex_autoroute(
+    ws: WorkspacePaths | None,
+    *,
+    request_summary: str,
+    session_id: str = "",
+    topics: list[str] | None = None,
+    visible_files: list[str] | None = None,
+    recent_tool_summary: str = "",
+    semantic_assessment: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Classify whether Codex should enter AITP before answering.
+
+    This is a read-only routing decision. It never writes records, creates
+    sessions, rebinds claims, or updates trust.
+    """
+
+    del ws
+    clean_session = str(session_id or "").strip()
+    clean_topics = [str(topic).strip() for topic in (topics or []) if str(topic).strip()]
+    clean_files = [str(item).strip() for item in (visible_files or []) if str(item).strip()]
+    text = " ".join(
+        [str(request_summary or ""), str(recent_tool_summary or ""), " ".join(clean_topics), " ".join(clean_files)]
+    )
+    signals = _aitp_route_signals(text, session_id=clean_session, topics=clean_topics, visible_files=clean_files)
+    semantic_signals = _semantic_route_signals(semantic_assessment)
+    if semantic_signals["provided"]:
+        signals = _merge_route_signals(signals, semantic_signals)
+    process_mode = _process_mode("auto", text)
+    required = bool(signals["required"])
+    decision = "answer_without_aitp"
+    recommended_tool = "none"
+    recommended_args: dict[str, Any] = {}
+    recommended_sequence: list[dict[str, Any]] = []
+
+    if required and clean_session:
+        decision = "enter_existing_session"
+        recommended_tool = "aitp_v5_codex_enter"
+        recommended_args = {
+            "base": "",
+            "session_id": clean_session,
+            "request_summary": str(request_summary or ""),
+            "process_mode": process_mode,
+            "payload_profile": "minimal",
+        }
+    elif required and clean_topics:
+        decision = "recover_topic"
+        recommended_tool = "aitp_v5_codex_enter"
+        recommended_args = {
+            "base": "",
+            "topics": clean_topics,
+            "request_summary": str(request_summary or ""),
+            "process_mode": process_mode,
+            "payload_profile": "minimal",
+        }
+    elif required:
+        decision = "recover_workspace"
+        recommended_tool = "aitp_v5_codex_enter"
+        recommended_args = {
+            "base": "",
+            "request_summary": str(request_summary or ""),
+            "process_mode": process_mode,
+            "payload_profile": "minimal",
+        }
+
+    if required:
+        recommended_sequence.append({"tool": recommended_tool, "arguments": recommended_args, "state_effect": "read_only"})
+        recommended_sequence.append(
+            {
+                "tool": "aitp_v5_codex_expand",
+                "arguments": {
+                    "base": "",
+                    "session_id": "<session-id from enter/recovery_ready row>",
+                    "expansion": "timeline",
+                },
+                "state_effect": "read_only",
+                "condition": "after a session is selected",
+            }
+        )
+        if process_mode in {"synthesis", "derivation", "code_numerical", "writing", "closeout"}:
+            recommended_sequence.append(
+                {
+                    "tool": "aitp_v5_codex_expand",
+                    "arguments": {
+                        "base": "",
+                        "session_id": "<session-id from enter/recovery_ready row>",
+                        "expansion": "relation_map",
+                    },
+                    "state_effect": "read_only",
+                    "condition": "before interpreting claim truth, support, contradiction, or validation",
+                }
+            )
+
+    return {
+        "ok": True,
+        "kind": "codex_auto_route_decision",
+        "request_summary": str(request_summary or ""),
+        "decision": decision,
+        "aitp_required_before_answer": required,
+        "safe_to_answer_without_aitp": not required,
+        "confidence": signals["confidence"],
+        "process_mode": process_mode,
+        "reason_codes": signals["reason_codes"],
+        "matched_triggers": signals["matched_triggers"],
+        "semantic_assessment": semantic_signals["normalized"],
+        "semantic_assessment_used": semantic_signals["provided"],
+        "semantic_assessment_issues": semantic_signals["issues"],
+        "session_id": clean_session,
+        "topics": clean_topics,
+        "visible_files": clean_files,
+        "recommended_next_tool": recommended_tool,
+        "recommended_args": recommended_args,
+        "recommended_sequence": recommended_sequence,
+        "automatic_use_policy": {
+            "read_only_first": True,
+            "write_on_route": False,
+            "call_enter_before_answer_when_required": True,
+            "do_not_create_topic_without_user_confirmation": True,
+            "do_not_rebind_claim_without_user_confirmation": True,
+        },
+        "trust_policy": {
+            "summary_inputs_trusted": False,
+            "orientation_only": True,
+            "can_update_kernel_state": False,
+            "can_update_claim_trust": False,
+            "trust_promotion_requires_preflight_and_human_gate": True,
+        },
+        "truth_source": "codex_autoroute_semantic_guarded" if semantic_signals["provided"] else "codex_autoroute_heuristic_fallback",
         "summary_inputs_trusted": False,
         "orientation_only": True,
         "can_update_kernel_state": False,
@@ -148,6 +313,7 @@ def codex_enter_context(
     topics: list[str] | None = None,
     request_summary: str = "",
     process_mode: str = "auto",
+    payload_profile: str = "minimal",
     max_lines: int = 60,
     candidate_limit: int = 3,
 ) -> dict[str, Any]:
@@ -156,19 +322,22 @@ def codex_enter_context(
     clean_session = str(session_id or "").strip()
     clean_topics = [str(topic).strip() for topic in (topics or []) if str(topic).strip()]
     mode = _process_mode(process_mode, request_summary)
+    profile = _entry_payload_profile(payload_profile)
     payload: dict[str, Any] = {
         "ok": True,
         "kind": "codex_entry_context",
         "process_mode": mode,
+        "payload_profile": profile,
         "session_id": clean_session,
         "topics": clean_topics,
         "request_summary": str(request_summary or ""),
         "entry_policy": {
             "read_first": True,
-            "default_context": "context_pack_when_session_is_known",
+            "default_context": "entry_card" if profile == "minimal" else "context_pack_when_session_is_known",
             "write_on_entry": False,
             "create_topic_only_after_durable_objective": True,
             "expand_full_graph_only_when_needed": True,
+            "context_pack_requires_explicit_profile_or_expand": True,
         },
         "next_profiles": ["read_expansion", "guided_recording", "literature", "closeout"],
         "truth_source": "typed_records_or_recovery_audit",
@@ -179,16 +348,29 @@ def codex_enter_context(
     }
     if clean_session:
         try:
-            payload["context_pack"] = build_aitp_context_pack(
-                ws,
-                clean_session,
-                max_lines=max_lines,
-                candidate_limit=candidate_limit,
-                user_goal=request_summary,
-            )
+            if profile == "context_pack":
+                payload["context_pack"] = build_aitp_context_pack(
+                    ws,
+                    clean_session,
+                    max_lines=max_lines,
+                    candidate_limit=candidate_limit,
+                    user_goal=request_summary,
+                )
+            else:
+                payload["entry_card"] = _build_codex_entry_card(
+                    ws,
+                    clean_session,
+                    request_summary=request_summary,
+                    process_mode=mode,
+                    max_lines=max_lines,
+                )
             payload["active_session_ready"] = True
             payload["recommended_next_tool"] = "aitp_v5_codex_expand"
             payload["recommended_next_expansions"] = _expansions_for_mode(mode)
+            payload["expand_context_pack_when_needed"] = {
+                "tool": "aitp_v5_codex_expand",
+                "arguments": {"base": "", "session_id": clean_session, "expansion": "context_pack"},
+            }
         except Exception as exc:
             payload["active_session_ready"] = False
             payload["entry_error"] = f"{type(exc).__name__}: {exc}"
@@ -252,6 +434,8 @@ def codex_expand_context(
             objective_text=objective_text,
             user_goal=user_goal,
         )
+    elif selected == "timeline":
+        payload["surface"] = build_research_timeline(ws, session_id, claim_id=claim_id, limit=limit)
     elif selected == "process_graph":
         payload["surface"] = build_process_graph_slice(ws, session_id, claim_id=claim_id, limit=limit)
     elif selected == "recording_navigation":
@@ -323,6 +507,26 @@ def codex_recording_step(
         "can_update_kernel_state": False,
         "can_update_claim_trust": False,
     }
+    try:
+        focus = recover_session_binding_for_read(ws, session_id)
+        session = focus.session
+        plan_topic_id = topic_id or session.topic_id
+        payload["lightweight_record_write_plan"] = require_valid_public_surface(
+            "lightweight_record_write_plan",
+            plan_lightweight_record_write(
+                ws,
+                topic_id=plan_topic_id,
+                current_session_id=session.session_id,
+                event_summary=summary,
+                active_claim_id=session.active_claim,
+                target_claim_hint=claim_id,
+                touched_files_or_artifacts=_recording_artifact_inputs(touched_refs, produced_artifacts),
+                touched_tool_runs_or_evidence_refs=_recording_evidence_ref_inputs(touched_refs),
+                risk_hint=risk_hint,
+            ),
+        )
+    except Exception as exc:
+        payload["lightweight_record_write_plan_error"] = f"{type(exc).__name__}: {exc}"
     decision = classification.get("decision")
     if decision in {"navigate", "checkpoint"}:
         payload["navigation_state"] = build_recording_navigation_state(
@@ -353,6 +557,157 @@ def codex_recording_step(
             claim_id=claim_id,
         )
     return payload
+
+
+def _entry_payload_profile(payload_profile: str) -> str:
+    clean = str(payload_profile or "minimal").strip().lower().replace("-", "_")
+    aliases = {
+        "": "minimal",
+        "light": "minimal",
+        "lite": "minimal",
+        "card": "minimal",
+        "entry_card": "minimal",
+        "minimal_card": "minimal",
+        "compact": "minimal",
+        "full": "context_pack",
+        "legacy": "context_pack",
+        "context": "context_pack",
+    }
+    return aliases.get(clean, clean if clean in {"minimal", "context_pack"} else "minimal")
+
+
+def _build_codex_entry_card(
+    ws: WorkspacePaths,
+    session_id: str,
+    *,
+    request_summary: str,
+    process_mode: str,
+    max_lines: int,
+) -> dict[str, Any]:
+    compact = build_compact_brief(
+        ws,
+        session_id,
+        max_lines=min(max(8, int(max_lines or 12)), 14),
+        user_goal=request_summary,
+    )
+    objective = compact.get("current_objective") if isinstance(compact.get("current_objective"), dict) else {}
+    package = compact.get("active_work_package") if isinstance(compact.get("active_work_package"), dict) else {}
+    relevant_claims = [
+        {
+            "claim_id": str(claim.get("claim_id") or ""),
+            "statement": _excerpt(str(claim.get("statement") or ""), limit=140),
+        }
+        for claim in list(compact.get("relevant_claims") or [])[:3]
+        if isinstance(claim, dict)
+    ]
+    previous_failed = [
+        {
+            "record_ref": str(item.get("record_ref") or ""),
+            "classification": str(item.get("classification") or ""),
+            "summary": _excerpt(str(item.get("summary") or ""), limit=120),
+        }
+        for item in list(compact.get("previous_failed_attempts") or [])[:2]
+        if isinstance(item, dict)
+    ]
+    card = {
+        "ok": True,
+        "kind": "codex_entry_card",
+        "session_id": str(compact.get("session_id") or session_id),
+        "topic_id": str(compact.get("topic_id") or ""),
+        "process_mode": process_mode,
+        "current_objective": {
+            "title": _excerpt(str(objective.get("title") or compact.get("topic_id") or ""), limit=140),
+            "objective_id": str(objective.get("objective_id") or ""),
+        },
+        "active_work_package": {
+            "title": _excerpt(str(package.get("title") or ""), limit=140),
+            "work_package_id": str(package.get("work_package_id") or ""),
+        },
+        "relevant_claims": relevant_claims,
+        "boundary": {
+            "can_say": [_excerpt(str(item), limit=160) for item in list(compact.get("can_say") or [])[:3]],
+            "cannot_say": [_excerpt(str(item), limit=160) for item in list(compact.get("cannot_say") or [])[:3]],
+            "relation_map_scope": str(compact.get("relation_map_scope") or "active_claim_only"),
+        },
+        "blockers": [_excerpt(str(item), limit=160) for item in list(compact.get("blockers") or [])[:3]],
+        "previous_failed_attempts": previous_failed,
+        "next_valid_actions": [_excerpt(str(item), limit=160) for item in list(compact.get("next_valid_actions") or [])[:4]],
+        "warnings": [_excerpt(str(item), limit=160) for item in list(compact.get("warnings") or [])[:3]],
+        "model_policy": {
+            "orientation_only": True,
+            "answer_within_card_boundary": True,
+            "expand_before_claim_truth_or_validation": True,
+            "do_not_record_from_entry_card": True,
+            "do_not_update_claim_trust": True,
+        },
+        "recommended_expansions": _expansions_for_mode(process_mode),
+        "expand": {
+            "context_pack": {"tool": "aitp_v5_codex_expand", "arguments": {"expansion": "context_pack"}},
+            "timeline": {"tool": "aitp_v5_codex_expand", "arguments": {"expansion": "timeline"}},
+            "relation_map": {"tool": "aitp_v5_codex_expand", "arguments": {"expansion": "relation_map"}},
+            "brief": {"tool": "aitp_v5_codex_expand", "arguments": {"expansion": "brief"}},
+        },
+        "source_records": compact.get("source_records") or {},
+        "truth_source": "typed_records_derived_entry_card_not_evidence",
+        "summary_inputs_trusted": False,
+        "orientation_only": True,
+        "can_update_kernel_state": False,
+        "can_update_claim_trust": False,
+    }
+    card["line_count"] = len(_entry_card_lines(card))
+    card["lines"] = _entry_card_lines(card)
+    return card
+
+
+def _entry_card_lines(card: dict[str, Any]) -> list[str]:
+    objective = card.get("current_objective") or {}
+    package = card.get("active_work_package") or {}
+    lines = [
+        f"Session: {card.get('session_id')} | Topic: {card.get('topic_id')}",
+        f"Objective: {objective.get('title') or 'unknown'}",
+        f"Work package: {package.get('title') or 'none'}",
+        "Boundary: orientation-only; expand before claim truth, evidence, validation, or trust-sensitive decisions.",
+    ]
+    blockers = list(card.get("blockers") or [])
+    if blockers:
+        lines.append(f"Blockers: {'; '.join(blockers[:2])}")
+    next_actions = list(card.get("next_valid_actions") or [])
+    if next_actions:
+        lines.append(f"Next: {'; '.join(next_actions[:2])}")
+    failed = list(card.get("previous_failed_attempts") or [])
+    if failed:
+        lines.append(
+            "Prior failed/superseded: "
+            + "; ".join(_excerpt(str(item.get("summary") or item.get("record_ref") or ""), limit=90) for item in failed[:2])
+        )
+    return lines
+
+
+def _excerpt(value: str, *, limit: int) -> str:
+    text = " ".join(str(value or "").split())
+    return text if len(text) <= limit else text[: limit - 3].rstrip() + "..."
+
+
+def _recording_artifact_inputs(touched_refs: list[str] | None, produced_artifacts: list[str] | None) -> list[str]:
+    values = [_normalize_artifact_uri(str(value).strip()) for value in (produced_artifacts or []) if str(value).strip()]
+    for ref in touched_refs or []:
+        text = str(ref).strip()
+        if text.startswith("artifact:"):
+            values.append(text)
+        else:
+            normalized = _normalize_artifact_uri(text)
+            if normalized != text:
+                values.append(normalized)
+    return values
+
+
+def _recording_evidence_ref_inputs(touched_refs: list[str] | None) -> list[str]:
+    evidence_prefixes = ("tool_run:", "validation_result:", "evidence:")
+    return [
+        str(ref).strip()
+        for ref in (touched_refs or [])
+        if str(ref).strip().startswith(evidence_prefixes)
+    ]
 
 
 def codex_literature_step(
@@ -562,22 +917,398 @@ def _process_mode(process_mode: str, request_summary: str) -> str:
     return "continuation"
 
 
+def _aitp_route_signals(
+    text: str,
+    *,
+    session_id: str,
+    topics: list[str],
+    visible_files: list[str],
+) -> dict[str, Any]:
+    lowered = str(text or "").lower()
+    reason_codes: list[str] = []
+    matched: list[str] = []
+
+    def add(code: str, token: str) -> None:
+        if code not in reason_codes:
+            reason_codes.append(code)
+        if token and token not in matched:
+            matched.append(token)
+
+    explicit_tokens = [
+        "aitp",
+        "typed record",
+        "claim trust",
+        "trust preflight",
+        "record_completeness",
+        "quiet_checkpoint",
+        "sensemaking_report",
+        "evidence",
+        "validation_result",
+        "tool_run",
+        "code_state",
+        "claim boundary",
+        "l2 memory",
+    ]
+    topic_tokens = [
+        "topic",
+        "session",
+        "claim",
+        "checkpoint",
+        "open gap",
+        "failed route",
+        "wrong route",
+        "superseded",
+        "continue research",
+        "continue this topic",
+        "current topic",
+        "prior result",
+        "latest result",
+        "research note",
+        "latex",
+        "pdf",
+        "report",
+    ]
+    research_tokens = [
+        "theoretical physics",
+        "derivation",
+        "proof",
+        "theorem",
+        "paper",
+        "literature",
+        "arxiv",
+        "numerical",
+        "simulation",
+        "benchmark",
+        "validation",
+        "qsgw",
+        "librpa",
+        "dmft",
+        "syk",
+        "green function",
+        "topology",
+    ]
+    durable_tokens = [
+        "compile",
+        "build",
+        "artifact",
+        "plot",
+        "dataset",
+        "log",
+        "source",
+        "record",
+        "closeout",
+        "handoff",
+    ]
+    chinese_tokens = [
+        "\u7814\u7a76",
+        "\u79d1\u7814",
+        "\u8bfe\u9898",
+        "\u7ee7\u7eed",
+        "\u8bb0\u5f55",
+        "\u8bba\u70b9",
+        "\u8bc1\u636e",
+        "\u9a8c\u8bc1",
+        "\u4fe1\u4efb",
+        "\u63a8\u5bfc",
+        "\u8bc1\u660e",
+        "\u8bba\u6587",
+        "\u6587\u732e",
+        "\u7b14\u8bb0",
+        "\u62a5\u544a",
+        "\u7f16\u8bd1",
+        "\u9519\u8bef\u8def\u7ebf",
+        "\u6700\u65b0\u7ed3\u679c",
+        "\u7406\u8bba\u7269\u7406",
+        "研究",
+        "科研",
+        "课题",
+        "继续",
+        "记录",
+        "论点",
+        "证据",
+        "验证",
+        "信任",
+        "推导",
+        "证明",
+        "论文",
+        "文献",
+        "笔记",
+        "报告",
+        "编译",
+        "错误路线",
+        "最新结果",
+        "理论物理",
+    ]
+    generic_question_markers = [
+        "what is ",
+        "explain ",
+        "define ",
+        "\u6982\u5ff5",
+        "\u89e3\u91ca\u4e00\u4e0b",
+        "\u662f\u4ec0\u4e48",
+        "概念",
+        "解释一下",
+        "是什么",
+    ]
+
+    for token in explicit_tokens:
+        if token in lowered:
+            add("explicit_aitp_protocol_reference", token)
+    for token in topic_tokens:
+        if token in lowered:
+            add("topic_or_continuation_reference", token)
+    for token in research_tokens:
+        if token in lowered:
+            add("research_domain_reference", token)
+    for token in durable_tokens:
+        if token in lowered:
+            add("durable_research_output_or_recording", token)
+    for token in chinese_tokens:
+        if token in text:
+            add("chinese_research_or_protocol_reference", token)
+    for path in visible_files:
+        suffix = Path(path).suffix.lower()
+        if suffix in {".tex", ".pdf", ".bib", ".ipynb", ".py", ".log", ".md"}:
+            add("research_file_context_present", suffix)
+            break
+    if session_id:
+        add("session_hint_present", "session_id")
+    if topics:
+        add("topic_hint_present", "topics")
+
+    has_project_signal = any(
+        code in reason_codes
+        for code in (
+            "explicit_aitp_protocol_reference",
+            "topic_or_continuation_reference",
+            "durable_research_output_or_recording",
+            "chinese_research_or_protocol_reference",
+            "research_file_context_present",
+            "session_hint_present",
+            "topic_hint_present",
+        )
+    )
+    has_research_signal = "research_domain_reference" in reason_codes
+    generic_only = (
+        has_research_signal
+        and not has_project_signal
+        and any(marker in lowered or marker in text for marker in generic_question_markers)
+    )
+    required = False
+    if "explicit_aitp_protocol_reference" in reason_codes:
+        required = True
+    elif session_id or topics:
+        required = has_project_signal or has_research_signal
+    elif has_project_signal and not generic_only:
+        required = True
+    elif has_research_signal and "durable_research_output_or_recording" in reason_codes:
+        required = True
+
+    confidence = "none"
+    if required:
+        if "explicit_aitp_protocol_reference" in reason_codes or session_id or topics:
+            confidence = "high"
+        elif len(reason_codes) >= 2:
+            confidence = "medium"
+        else:
+            confidence = "low"
+    elif generic_only:
+        confidence = "medium"
+
+    if not reason_codes:
+        reason_codes.append("no_aitp_research_trigger_detected")
+    if generic_only:
+        reason_codes.append("generic_knowledge_question_without_project_context")
+
+    return {
+        "required": required,
+        "confidence": confidence,
+        "reason_codes": reason_codes,
+        "matched_triggers": matched,
+    }
+
+
+def _semantic_route_signals(assessment: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(assessment, dict) or not assessment:
+        return {
+            "provided": False,
+            "required": None,
+            "confidence": "none",
+            "reason_codes": [],
+            "matched_triggers": [],
+            "normalized": {},
+            "issues": [],
+        }
+
+    def clean_text(key: str) -> str:
+        return str(assessment.get(key, "") or "").strip()
+
+    def truthy(key: str) -> bool:
+        value = assessment.get(key)
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return bool(value)
+        return str(value or "").strip().lower() in {"1", "true", "yes", "y", "required", "needed"}
+
+    task_kind = clean_text("task_kind").lower().replace("-", "_")
+    confidence = clean_text("confidence").lower() or clean_text("route_confidence").lower()
+    if confidence not in {"high", "medium", "low", "none"}:
+        confidence = "medium"
+    should_use = clean_text("should_use_aitp").lower().replace("-", "_")
+    if should_use not in {"true", "false", "yes", "no", "required", "not_required", "uncertain", "unknown", ""}:
+        should_use = ""
+
+    research_fields = {
+        "needs_prior_research_state": "semantic_needs_prior_research_state",
+        "needs_latest_topic_state": "semantic_needs_latest_topic_state",
+        "concerns_existing_topic_or_claim": "semantic_existing_topic_or_claim",
+        "creates_or_updates_durable_research_output": "semantic_durable_research_output",
+        "needs_validation_or_evidence_boundary": "semantic_validation_or_evidence_boundary",
+        "mentions_failed_or_superseded_route": "semantic_failed_or_superseded_route",
+        "trust_or_claim_status_sensitive": "semantic_trust_or_claim_status_sensitive",
+    }
+    true_fields = [field for field in research_fields if truthy(field)]
+    generic_textbook = truthy("is_generic_textbook_question")
+    uncertain = truthy("uncertain") or should_use in {"uncertain", "unknown"} or task_kind in {"uncertain", "ambiguous"}
+    task_requires_aitp = task_kind in {
+        "project_research",
+        "topic_continuation",
+        "prior_status",
+        "literature_reading",
+        "derivation",
+        "validation",
+        "note_writing",
+        "report_writing",
+        "closeout",
+        "numerical_work",
+        "artifact_production",
+        "claim_boundary",
+    }
+
+    reason_codes: list[str] = []
+    matched: list[str] = []
+
+    def add(code: str, token: str) -> None:
+        if code not in reason_codes:
+            reason_codes.append(code)
+        if token and token not in matched:
+            matched.append(token)
+
+    for field in true_fields:
+        add(research_fields[field], field)
+    if task_requires_aitp:
+        add("semantic_task_kind_requires_aitp", task_kind)
+    if generic_textbook:
+        add("semantic_generic_textbook_question", "is_generic_textbook_question")
+    if uncertain:
+        add("semantic_route_uncertain", "uncertain")
+    if should_use in {"true", "yes", "required"}:
+        add("semantic_should_use_aitp", "should_use_aitp")
+    elif should_use in {"false", "no", "not_required"}:
+        add("semantic_should_not_use_aitp", "should_use_aitp")
+
+    project_semantic = bool(true_fields) or task_requires_aitp
+    if project_semantic:
+        required: bool | None = True
+    elif generic_textbook and should_use not in {"true", "yes", "required"}:
+        required = False
+    elif should_use in {"true", "yes", "required"}:
+        required = True
+    elif should_use in {"false", "no", "not_required"}:
+        required = False
+    elif uncertain:
+        required = True
+    else:
+        required = None
+
+    issues: list[str] = []
+    if generic_textbook and project_semantic:
+        issues.append("generic_textbook_question_conflicts_with_project_research_flags")
+    if should_use in {"false", "no", "not_required"} and project_semantic:
+        issues.append("should_use_aitp_false_conflicts_with_project_research_flags")
+
+    normalized = {
+        "task_kind": task_kind,
+        "should_use_aitp": should_use,
+        "confidence": confidence,
+        "rationale": clean_text("rationale"),
+        "is_generic_textbook_question": generic_textbook,
+        "uncertain": uncertain,
+        "true_research_fields": true_fields,
+    }
+    normalized.update({field: truthy(field) for field in research_fields})
+
+    return {
+        "provided": True,
+        "required": required,
+        "confidence": confidence,
+        "reason_codes": reason_codes,
+        "matched_triggers": matched,
+        "normalized": normalized,
+        "issues": issues,
+    }
+
+
+def _merge_route_signals(heuristic: dict[str, Any], semantic: dict[str, Any]) -> dict[str, Any]:
+    reason_codes = list(heuristic.get("reason_codes", []))
+    matched = list(heuristic.get("matched_triggers", []))
+    for code in semantic.get("reason_codes", []):
+        if code not in reason_codes:
+            reason_codes.append(code)
+    for token in semantic.get("matched_triggers", []):
+        if token and token not in matched:
+            matched.append(token)
+
+    semantic_required = semantic.get("required")
+    required = bool(heuristic.get("required"))
+    hard_heuristic = any(
+        code in reason_codes
+        for code in (
+            "explicit_aitp_protocol_reference",
+            "session_hint_present",
+            "topic_hint_present",
+            "research_file_context_present",
+        )
+    )
+    if semantic_required is True:
+        required = True
+    elif semantic_required is False and not hard_heuristic:
+        required = False
+
+    confidence_rank = {"none": 0, "low": 1, "medium": 2, "high": 3}
+    confidence = str(heuristic.get("confidence", "none"))
+    semantic_confidence = str(semantic.get("confidence", "none"))
+    if semantic_required is not None and confidence_rank.get(semantic_confidence, 0) >= confidence_rank.get(confidence, 0):
+        confidence = semantic_confidence
+    if required and confidence == "none":
+        confidence = "low"
+
+    return {
+        "required": required,
+        "confidence": confidence,
+        "reason_codes": reason_codes,
+        "matched_triggers": matched,
+    }
+
+
 def _expansions_for_mode(mode: str) -> list[str]:
     by_mode = {
-        "literature": ["context_pack", "relation_map", "note_outline"],
-        "writing": ["note_outline", "source_reconstruction", "trust_audit"],
-        "synthesis": ["relation_map", "source_reconstruction", "trust_audit"],
-        "closeout": ["recording_navigation", "context_pack"],
-        "code_numerical": ["relation_map", "process_graph", "recording_navigation"],
-        "derivation": ["relation_map", "note_outline", "recording_navigation"],
+        "literature": ["context_pack", "timeline", "relation_map", "note_outline"],
+        "writing": ["timeline", "note_outline", "source_reconstruction", "trust_audit"],
+        "synthesis": ["timeline", "relation_map", "source_reconstruction", "trust_audit"],
+        "closeout": ["timeline", "recording_navigation", "context_pack"],
+        "code_numerical": ["timeline", "relation_map", "process_graph", "recording_navigation"],
+        "derivation": ["timeline", "relation_map", "note_outline", "recording_navigation"],
     }
-    return by_mode.get(mode, ["context_pack", "relation_map", "recording_navigation"])
+    return by_mode.get(mode, ["context_pack", "timeline", "relation_map", "recording_navigation"])
 
 
 def _allowed_expansions() -> list[str]:
     return [
         "context_pack",
         "brief",
+        "timeline",
         "relation_map",
         "process_graph",
         "recording_navigation",
@@ -591,6 +1322,8 @@ def _expansion_name(expansion: str) -> str:
     aliases = {
         "context": "context_pack",
         "execution_brief": "brief",
+        "continuation": "timeline",
+        "research_timeline": "timeline",
         "claim_relation_map": "relation_map",
         "recording": "recording_navigation",
         "source": "source_reconstruction",
@@ -692,6 +1425,7 @@ def codex_record_apply(
             selected,
             topic_id=topic_id,
             claim_id=active_claim,
+            session_id=session.session_id,
             data=data,
             fallback_summary=summary,
         )
@@ -753,6 +1487,11 @@ def _record_apply_slot(slot: str) -> str:
         "reference": "reference_location",
         "ref": "reference_location",
         "artifact_ref": "artifact",
+        "recipe": "tool_recipe",
+        "tool": "tool_recipe",
+        "code": "code_state",
+        "code_state_auto": "code_state",
+        "capture_code_state": "code_state",
         "physics": "physics_object",
         "object": "physics_object",
         "relation": "object_relation",
@@ -776,6 +1515,8 @@ def _record_apply_slots() -> list[str]:
         "object_relation",
         "sensemaking_report",
         "proof_obligation",
+        "tool_recipe",
+        "code_state",
         "tool_run",
         "validation_contract",
         "validation_result",
@@ -788,6 +1529,7 @@ def _apply_record_slot(
     *,
     topic_id: str,
     claim_id: str,
+    session_id: str,
     data: dict[str, Any],
     fallback_summary: str,
 ) -> Any:
@@ -833,12 +1575,13 @@ def _apply_record_slot(
             linked_records=_pop_dict(data, "linked_records"),
         )
     if slot == "artifact":
+        uri = _normalize_artifact_uri(_pop_required(data, "uri"))
         return attach_artifact(
             ws,
             topic_id=topic_id,
             claim_id=claim_id,
             artifact_type=_pop_required(data, "artifact_type"),
-            uri=_pop_required(data, "uri"),
+            uri=uri,
             summary=_pop_str(data, "summary", fallback_summary),
             size_bytes=data.pop("size_bytes", 0),
             metadata=_pop_dict(data, "metadata"),
@@ -923,6 +1666,51 @@ def _apply_record_slot(
             artifact_ids=_pop_list(data, "artifact_ids"),
             human_gate_required=bool(data.pop("human_gate_required", True)),
         )
+    if slot == "tool_recipe":
+        return register_tool_recipe(
+            ws,
+            recipe_id=_pop_required(data, "recipe_id"),
+            tool_family=_pop_required(data, "tool_family"),
+            tool_name=_pop_required(data, "tool_name"),
+            purpose=_pop_str(data, "purpose", fallback_summary),
+            required_inputs=_pop_list(data, "required_inputs"),
+            expected_outputs=_pop_list(data, "expected_outputs"),
+            invariants=_pop_list(data, "invariants"),
+        )
+    if slot == "code_state":
+        worktree_path = _pop_required(data, "worktree_path")
+        changed_files = [str(item) for item in _pop_list(data, "changed_files")]
+        runtime_environment = _pop_dict(data, "runtime_environment")
+        runtime_environment = _enrich_code_state_runtime(
+            worktree_path=worktree_path,
+            changed_files=changed_files,
+            runtime_environment=runtime_environment,
+        )
+        linked_records = _pop_dict(data, "linked_records")
+        if topic_id:
+            linked_records.setdefault("topic_id", topic_id)
+        if claim_id:
+            linked_records.setdefault("claim_id", claim_id)
+        if session_id:
+            linked_records.setdefault("session_id", session_id)
+        known_divergence = _pop_str(data, "known_divergence", "")
+        if runtime_environment.get("dirty_status_summary"):
+            known_divergence = known_divergence or (
+                "source tree is dirty; this code_state is not a clean reproducibility anchor"
+            )
+        return capture_code_state_from_git(
+            ws,
+            worktree_path=worktree_path,
+            repo_id=_pop_str(data, "repo_id", ""),
+            topic_id=topic_id,
+            claim_id=claim_id,
+            session_id=session_id,
+            build_config=_pop_dict(data, "build_config"),
+            runtime_environment=runtime_environment,
+            linked_records=linked_records,
+            known_divergence=known_divergence,
+            write_patch_artifact=bool(data.pop("write_patch_artifact", False)),
+        )
     if slot == "tool_run":
         return record_tool_run(
             ws,
@@ -982,6 +1770,8 @@ def _record_ref_for_slot(slot: str, record: Any) -> str:
         "object_relation": ("object_relation", "relation_id"),
         "sensemaking_report": ("sensemaking_report", "report_id"),
         "proof_obligation": ("proof_obligation", "obligation_id"),
+        "tool_recipe": ("tool_recipe", "recipe_id"),
+        "code_state": ("code_state", "code_state_id"),
         "tool_run": ("tool_run", "run_id"),
         "validation_contract": ("validation_contract", "contract_id"),
         "validation_result": ("validation_result", "result_id"),
@@ -1019,3 +1809,138 @@ def _require_claim(claim_id: str, slot: str) -> str:
     if not claim_id:
         raise ValueError(f"{slot} requires an active claim_id")
     return claim_id
+
+
+def _normalize_artifact_uri(value: str) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    lowered = text.lower()
+    for prefix in ("local:file:", "path:", "file:"):
+        if lowered.startswith(prefix) and not lowered.startswith("file://"):
+            rest = text[len(prefix) :].strip()
+            if _looks_like_windows_drive_path(rest):
+                return "file:///" + rest.replace("\\", "/")
+            if rest.startswith(("/", "\\")):
+                return "file://" + rest.replace("\\", "/")
+            return rest or text
+    return text
+
+
+def _looks_like_windows_drive_path(value: str) -> bool:
+    return bool(re.match(r"^[A-Za-z]:[\\/]", str(value or "")))
+
+
+def _enrich_code_state_runtime(
+    *,
+    worktree_path: str,
+    changed_files: list[str],
+    runtime_environment: dict[str, Any],
+) -> dict[str, Any]:
+    runtime = dict(runtime_environment or {})
+    runtime.setdefault("changed_files_relevant", changed_files)
+    status_lines = _git_status_lines(worktree_path)
+    runtime.setdefault("dirty_status_summary", status_lines)
+    runtime.setdefault("changed_files_tracking", _changed_file_tracking(worktree_path, changed_files, status_lines))
+    runtime.setdefault("clean_reproducibility_anchor", not status_lines)
+    if status_lines:
+        runtime.setdefault(
+            "dirty_reproducibility_note",
+            "source tree is dirty; this code_state is not a clean reproducibility anchor",
+        )
+    return runtime
+
+
+def _git_status_lines(worktree_path: str) -> list[str]:
+    root = _git_root(worktree_path)
+    if root is None:
+        return []
+    result = _run_git(root, ["status", "--porcelain=v1"])
+    return [line for line in result.splitlines() if line.strip()]
+
+
+def _changed_file_tracking(worktree_path: str, changed_files: list[str], status_lines: list[str]) -> list[dict[str, Any]]:
+    if not changed_files:
+        return []
+    root = _git_root(worktree_path)
+    status_by_path = _status_by_path(status_lines)
+    rows: list[dict[str, Any]] = []
+    for value in changed_files:
+        rel_path = _relative_git_path(root, value)
+        status = status_by_path.get(rel_path, "")
+        rows.append(
+            {
+                "path": value,
+                "git_path": rel_path,
+                "tracked": _is_tracked(root, rel_path) if root is not None else False,
+                "status": status or "clean_or_not_reported_by_git_status",
+                "untracked": status.startswith("??"),
+            }
+        )
+    return rows
+
+
+def _git_root(worktree_path: str) -> Path | None:
+    worktree = Path(worktree_path).expanduser()
+    result = _run_git(worktree, ["rev-parse", "--show-toplevel"])
+    return Path(result) if result else None
+
+
+def _run_git(cwd: Path, args: list[str]) -> str:
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            cwd=str(cwd),
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return ""
+    return result.stdout.strip()
+
+
+def _status_by_path(status_lines: list[str]) -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    for line in status_lines:
+        if len(line) < 4:
+            continue
+        status = line[:2]
+        path = line[3:].strip()
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1].strip()
+        mapping[path.replace("\\", "/")] = status
+    return mapping
+
+
+def _relative_git_path(root: Path | None, value: str) -> str:
+    text = _normalize_artifact_uri(str(value or "").strip())
+    if text.startswith("file:///"):
+        text = text[len("file:///") :]
+    elif text.startswith("file://"):
+        text = text[len("file://") :]
+    path = Path(text)
+    if root is not None:
+        try:
+            return path.resolve().relative_to(root.resolve()).as_posix()
+        except (OSError, ValueError):
+            pass
+    return text.replace("\\", "/")
+
+
+def _is_tracked(root: Path | None, git_path: str) -> bool:
+    if root is None or not git_path:
+        return False
+    try:
+        subprocess.run(
+            ["git", "ls-files", "--error-unmatch", "--", git_path],
+            cwd=str(root),
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=20,
+        )
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        return False
+    return True

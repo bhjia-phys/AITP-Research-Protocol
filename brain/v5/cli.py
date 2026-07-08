@@ -47,6 +47,7 @@ from brain.v5.exploration import exploratory_record_payload, record_exploratory_
 from brain.v5.process_graph import build_process_graph_slice
 from brain.v5.public_surfaces import require_valid_public_surface
 from brain.v5.quiet_checkpoint import apply_quiet_checkpoint_batch, preview_quiet_checkpoint_batch
+from brain.v5.research_timeline import build_research_timeline
 from brain.v5.recording_navigator import (
     build_recording_navigation_state,
     classify_recording_candidate,
@@ -213,6 +214,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
     sp.add_parser("brief").add_argument("session_id")
     sp.add_parser("relation-map").add_argument("session_id")
+    timeline_p = sp.add_parser("timeline")
+    timeline_p.add_argument("session_id")
+    timeline_p.add_argument("--claim", default="", dest="claim_id")
+    timeline_p.add_argument("--limit", type=int, default=80)
 
     ap = sp.add_parser("asset"); aps = ap.add_subparsers(dest="asset_command", required=True)
     ar = aps.add_parser("register")
@@ -395,6 +400,9 @@ def _build_parser() -> argparse.ArgumentParser:
     trr.add_argument("--topic", required=True, dest="topic_id"); trr.add_argument("--claim", required=True, dest="claim_id")
     trr.add_argument("--inputs-json", default="{}"); trr.add_argument("--outputs-json", default="{}")
     trr.add_argument("--environment-json", default="{}"); trr.add_argument("--evidence-status", default="unreviewed")
+    trr.add_argument("--inputs-json-file", default="")
+    trr.add_argument("--outputs-json-file", default="")
+    trr.add_argument("--environment-json-file", default="")
     trr.add_argument("--code-state-id", action="append", default=[], dest="code_state_ids")
     trr.add_argument("--artifact-id", action="append", default=[], dest="artifact_ids")
     trr.add_argument("--source-ref", action="append", default=[], dest="source_refs")
@@ -408,6 +416,9 @@ def _build_parser() -> argparse.ArgumentParser:
     tra.add_argument("--inputs-json", default="{}")
     tra.add_argument("--outputs-json", default="{}")
     tra.add_argument("--environment-json", default="{}")
+    tra.add_argument("--inputs-json-file", default="")
+    tra.add_argument("--outputs-json-file", default="")
+    tra.add_argument("--environment-json-file", default="")
     tra.add_argument("--evidence-status", default="unreviewed")
     tra.add_argument("--code-state-id", action="append", default=[], dest="code_state_ids")
     tra.add_argument("--artifact-id", action="append", default=[], dest="artifact_ids")
@@ -418,7 +429,8 @@ def _build_parser() -> argparse.ArgumentParser:
     te = tls.add_parser("execute"); te.add_argument("executor_id")
     te.add_argument("--recipe", required=True, dest="recipe_id")
     te.add_argument("--topic", required=True, dest="topic_id"); te.add_argument("--claim", required=True, dest="claim_id")
-    te.add_argument("--inputs-json", required=True)
+    te.add_argument("--inputs-json", default="{}")
+    te.add_argument("--inputs-json-file", default="")
     te.add_argument("--evidence-status", default=""); te.add_argument("--evidence-type", default="tool_run")
     te.add_argument("--evidence-summary", default="")
     te.add_argument("--code-state-id", action="append", default=[], dest="code_state_ids")
@@ -705,6 +717,11 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
         return require_valid_public_surface("execution_brief", build_execution_brief(ws, args.session_id))
     if args.command == "relation-map":
         return require_valid_public_surface("claim_relation_map", build_claim_relation_map(ws, args.session_id))
+    if args.command == "timeline":
+        return require_valid_public_surface(
+            "research_timeline",
+            build_research_timeline(ws, args.session_id, claim_id=args.claim_id, limit=args.limit),
+        )
     if args.command == "asset" and args.asset_command == "register":
         asset = register_source_asset(
             ws,
@@ -911,8 +928,10 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
     if args.command == "tool" and args.tool_command == "run" and args.tool_run_command == "record":
         rn = record_tool_run(ws, recipe_id=args.recipe_id, tool_family=args.tool_family,
             tool_name=args.tool_name, topic_id=args.topic_id, claim_id=args.claim_id,
-            inputs=_j(args.inputs_json), outputs=_j(args.outputs_json),
-            environment=_j(args.environment_json), evidence_status=args.evidence_status,
+            inputs=_j_arg(args.inputs_json, args.inputs_json_file),
+            outputs=_j_arg(args.outputs_json, args.outputs_json_file),
+            environment=_j_arg(args.environment_json, args.environment_json_file),
+            evidence_status=args.evidence_status,
             code_state_ids=args.code_state_ids, artifact_ids=args.artifact_ids, source_refs=args.source_refs)
         return {"ok": True, **require_valid_public_surface("tool_run_record", {"ok": True, **asdict(rn)})}
 
@@ -925,9 +944,9 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
             tool_name=args.tool_name,
             topic_id=args.topic_id,
             claim_id=args.claim_id,
-            inputs=_j(args.inputs_json),
-            outputs=_j(args.outputs_json),
-            environment=_j(args.environment_json),
+            inputs=_j_arg(args.inputs_json, args.inputs_json_file),
+            outputs=_j_arg(args.outputs_json, args.outputs_json_file),
+            environment=_j_arg(args.environment_json, args.environment_json_file),
             evidence_status=args.evidence_status,
             code_state_ids=args.code_state_ids,
             artifact_ids=args.artifact_ids,
@@ -942,7 +961,7 @@ def _dispatch(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.command == "tool" and args.tool_command == "execute":
         r = execute_registered_tool_result(ws, executor_id=args.executor_id, recipe_id=args.recipe_id,
-            topic_id=args.topic_id, claim_id=args.claim_id, inputs=_j(args.inputs_json),
+            topic_id=args.topic_id, claim_id=args.claim_id, inputs=_j_arg(args.inputs_json, args.inputs_json_file),
             evidence_status=args.evidence_status, code_state_ids=args.code_state_ids,
             artifact_ids=args.artifact_ids, source_refs=args.source_refs,
             supports_outputs=args.supports_outputs, evidence_type=args.evidence_type,
@@ -1447,6 +1466,16 @@ def _j(raw: str) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise SystemExit("expected a JSON object")
     return payload
+
+
+def _j_arg(raw: str, json_file: str = "") -> dict[str, Any]:
+    if str(json_file or "").strip():
+        path = Path(json_file).expanduser()
+        try:
+            raw = path.read_text(encoding="utf-8-sig")
+        except OSError as exc:
+            raise SystemExit(f"could not read JSON file {path}: {exc}") from exc
+    return _j(raw)
 
 
 def _json_object_list(raw_values: list[str]) -> list[dict[str, Any]]:

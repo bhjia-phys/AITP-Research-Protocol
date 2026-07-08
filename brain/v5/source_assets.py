@@ -36,6 +36,14 @@ ASSET_TYPES = {
     "other",
 }
 
+ASSET_TYPE_ALIASES = {
+    "derived_dataset": "dataset",
+    "generated_dataset": "dataset",
+    "result_dataset": "dataset",
+    "numeric_dataset": "dataset",
+    "data_product": "dataset",
+}
+
 
 DEFAULT_PDF_TIMEOUT_SECONDS = 120
 DEFAULT_PDF_MAX_BYTES = 200 * 1024 * 1024
@@ -76,6 +84,8 @@ def register_source_asset(
 ) -> SourceAssetRecord:
     """Record a raw paper, lecture, note, repo, dataset, or generated artifact identity."""
 
+    requested_asset_type = str(asset_type or "").strip()
+    asset_type = normalize_asset_type(requested_asset_type)
     if asset_type not in ASSET_TYPES:
         allowed = ", ".join(sorted(ASSET_TYPES))
         raise ValueError(f"asset_type must be one of: {allowed}")
@@ -87,6 +97,9 @@ def register_source_asset(
         raise ValueError("title is required")
 
     enriched_metadata = dict(metadata or {})
+    if requested_asset_type and requested_asset_type != asset_type:
+        enriched_metadata.setdefault("requested_asset_type", requested_asset_type)
+        enriched_metadata.setdefault("asset_type_normalized_from", requested_asset_type)
     local_path = _local_path_from_uri(uri)
     if (
         enriched_metadata.get("acquisition_status") != "failed"
@@ -174,6 +187,7 @@ def acquire_pdf_source_asset(
         raise ValueError("url is required")
     if not title:
         raise ValueError("title is required")
+    asset_type = normalize_asset_type(asset_type)
     if asset_type not in ASSET_TYPES:
         allowed = ", ".join(sorted(ASSET_TYPES))
         raise ValueError(f"asset_type must be one of: {allowed}")
@@ -385,7 +399,8 @@ def capture_source_asset_from_local_path(
     stat = resolved.stat()
     content_hash = _sha256(resolved)
     mime_type, _ = mimetypes.guess_type(str(resolved))
-    inferred_type = asset_type or _asset_type_for_path(resolved)
+    raw_inferred_type = asset_type or _asset_type_for_path(resolved)
+    inferred_type = normalize_asset_type(raw_inferred_type)
     inferred_title = title or _title_for_path(resolved)
     captured_at = datetime.now(UTC).isoformat()
 
@@ -399,6 +414,8 @@ def capture_source_asset_from_local_path(
     enriched_metadata.setdefault("size_bytes", stat.st_size)
     enriched_metadata.setdefault("mtime_utc", datetime.fromtimestamp(stat.st_mtime, UTC).isoformat())
     enriched_metadata.setdefault("auto_asset_type", inferred_type)
+    if raw_inferred_type != inferred_type:
+        enriched_metadata.setdefault("auto_asset_type_raw", raw_inferred_type)
     enriched_metadata.setdefault("content_hash_basis", "local file bytes")
 
     anchors = dict(version_anchor or {})
@@ -470,6 +487,13 @@ def list_source_assets_for_topic(ws: WorkspacePaths, topic_id: str) -> list[Sour
 
 def source_asset_payload(record: SourceAssetRecord) -> dict[str, Any]:
     return {"ok": True, **asdict(record)}
+
+
+def normalize_asset_type(asset_type: str) -> str:
+    """Normalize common source-asset aliases before contract validation."""
+
+    clean = str(asset_type or "").strip().lower().replace("-", "_")
+    return ASSET_TYPE_ALIASES.get(clean, clean)
 
 
 def _source_asset_id(

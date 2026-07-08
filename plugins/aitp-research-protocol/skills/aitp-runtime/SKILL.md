@@ -5,15 +5,23 @@ description: Continue an AITP v5 theoretical-physics topic through typed claims,
 
 # AITP Runtime v5
 
-For every active AITP research iteration, restore the bounded Codex entry context first:
+For every active AITP research iteration, decide whether the current request needs AITP before answering:
 
 ```text
-aitp_v5_codex_enter(base="", session_id=<session-id>, request_summary=<current user request>)
+aitp_v5_codex_autoroute(base="", request_summary=<current user request>, session_id=<session-id if known>, topics=<topics if known>, semantic_assessment=<model semantic assessment>)
+```
+
+If autoroute says `answer_without_aitp`, answer normally and do not write AITP records. If it returns `enter_existing_session`, `recover_topic`, or `recover_workspace`, call the returned `recommended_next_tool` with `recommended_args`, then restore the bounded Codex entry card:
+
+The semantic assessment is the model's research-intent judgment, not evidence. Use it to declare whether the request needs prior research state, latest topic state, an existing claim/topic, durable output recording, validation/evidence boundaries, failed-route memory, or trust/claim-status handling. If a possible research request is uncertain, route into AITP read-only.
+
+```text
+aitp_v5_codex_enter(base="", session_id=<session-id>, request_summary=<current user request>, payload_profile="minimal")
 ```
 
 Use `base=""` unless the user explicitly provides a topics root. The MCP server resolves the empty base through `AITP_TOPICS_ROOT`, which the plugin launcher sets from environment, AITP install records, or the default `~/.aitp/topics`.
 
-The entry context includes the low-interruption continuation view. It is orientation-only and cannot update claim trust, evidence, validation, L2 memory, or skills. It should name the current objective, active work package, can-say/cannot-say boundaries, blockers, next actions, distillation gates, and expansion commands.
+The entry card includes the low-interruption continuation view. It is orientation-only and cannot update claim trust, evidence, validation, L2 memory, or skills. It should name the current objective, active work package, can-say/cannot-say boundaries, blockers, next actions, prior failed/superseded route hints, and expansion commands. Request `payload_profile="context_pack"` only when a richer turn-input fragment is needed.
 
 Expand explicitly before any trust-sensitive interpretation:
 
@@ -28,14 +36,15 @@ The claim relation map is the boundary layer. Read `supported_by`, `limited_by`,
 
 ## Typed Runtime Loop
 
-1. Restore the Codex entry context.
-2. Expand to the full brief and relation map only when the task needs audit, trust, validation, evidence, or final synthesis.
-3. If a human checkpoint is needed, present it plainly and wait.
-4. If policy forbids trust-changing actions, collect missing source, evidence, or validation first.
-5. If evidence coverage is missing, record only the durable typed object needed: source, artifact, code state, tool recipe, tool run, evidence, validation contract, validation result, proof obligation, or sensemaking report.
-6. Do the physics, code, or literature work.
-7. Record durable outputs before summarizing them as research state.
-8. Verify expected records with `aitp_v5_verify_recording_effect` when recording navigation is used.
+1. Autoroute the request.
+2. Restore the Codex entry card when autoroute requires AITP.
+3. Expand to the full brief and relation map only when the task needs audit, trust, validation, evidence, or final synthesis.
+4. If a human checkpoint is needed, present it plainly and wait.
+5. If policy forbids trust-changing actions, collect missing source, evidence, or validation first.
+6. If evidence coverage is missing, record only the durable typed object needed: source, artifact, code state, tool recipe, tool run, evidence, validation contract, validation result, proof obligation, or sensemaking report.
+7. Do the physics, code, or literature work.
+8. Record durable outputs before summarizing them as research state.
+9. Verify expected records with `aitp_v5_verify_recording_effect` when recording navigation is used.
 
 Closeout and quiet checkpoint returns include `record_completeness_audit`. Inspect it before saying that AITP recording is complete. `ok=true` only means the preview/apply call succeeded. If `missing_recommended_slots` is non-empty, report those slots or continue through existing typed tools after the needed user confirmation.
 
