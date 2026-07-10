@@ -5,44 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from brain.v5.record_family_registry import registry_family_specs
 
-_LAYOUT_DIRS = [
+
+_NON_REGISTRY_LAYOUT_DIRS = [
     "contexts",
     "topics",
-    "registry/intents",
-    "registry/questions",
-    "registry/ideas",
-    "registry/claims",
-    "registry/active_claim_rebind_audits",
-    "registry/claim_statuses",
-    "registry/proof_obligations",
-    "registry/authorities",
-    "registry/quiet_checkpoints",
-    "registry/physics_objects",
-    "registry/object_relations",
-    "registry/evidence",
-    "registry/artifacts",
-    "registry/benchmarks",
-    "registry/reference_locations",
-    "registry/sensemaking_reports",
-    "registry/validation_contracts",
-    "registry/validation_results",
-    "registry/code_states",
-    "registry/code_workspaces",
-    "registry/routes",
-    "registry/research_runs",
-    "registry/research_run_events",
-    "registry/attempts",
-    "registry/tool_recipes",
-    "registry/tool_runs",
-    "registry/trust_updates",
-    "registry/checkpoints",
-    "registry/promotion_packets",
-    "registry/legacy_semantic_reviews",
-    "registry/legacy_l2_seed_group_reviews",
-    "registry/legacy_semantic_repairs",
-    "registry/legacy_source_reconstruction_repairs",
-    "registry/outputs",
     "source_blobs",
     "memory/l2/entries",
     "memory/l2/graph",
@@ -66,6 +34,18 @@ _LAYOUT_DIRS = [
     "schemas",
     "migrations",
 ]
+_LAYOUT_DIRS = [
+    "contexts",
+    "topics",
+    *(spec.relative_dir for spec in registry_family_specs().values()),
+    *[path for path in _NON_REGISTRY_LAYOUT_DIRS if path not in {"contexts", "topics"}],
+]
+
+
+def registry_layout_families() -> tuple[str, ...]:
+    """Return the canonical registry families materialized by ``ensure_layout``."""
+
+    return tuple(registry_family_specs())
 
 
 @dataclass(frozen=True)

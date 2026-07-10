@@ -8,33 +8,11 @@ from typing import Any
 
 from brain.v5.markdown import read_md, write_text_atomic
 from brain.v5.paths import WorkspacePaths
+from brain.v5.record_family_registry import registry_family_specs
 
 
 LEGACY_STAGE_DIRS = ("L0", "L1", "L2", "L3", "L4", "L5")
-REGISTRY_FAMILIES = (
-    "claims",
-    "claim_statuses",
-    "evidence",
-    "artifacts",
-    "source_assets",
-    "reference_locations",
-    "tool_runs",
-    "code_states",
-    "physics_objects",
-    "object_relations",
-    "proof_obligations",
-    "validation_contracts",
-    "validation_results",
-    "research_runs",
-    "research_run_events",
-    "sensemaking_reports",
-    "checkpoints",
-    "promotion_packets",
-    "routes",
-    "legacy_semantic_reviews",
-    "legacy_semantic_repairs",
-    "legacy_source_reconstruction_repairs",
-)
+REGISTRY_FAMILIES = tuple(registry_family_specs())
 
 
 def build_workspace_inventory(

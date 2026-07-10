@@ -4,7 +4,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 
 - repo_root: `F:\AI_Workspace\repos\AITP-Research-Protocol`
 - workspace_base: `F:\AI_Workspace\Theoretical-Physics\research\aitp-topics`
-- file_count: `528`
+- file_count: `531`
 - actual_registry_record_count: `7235`
 - truth_source: `static_source_and_filesystem_inventory`
 - summary_inputs_trusted: false
@@ -14,7 +14,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 
 ## File Classification Summary
 
-- directly_touched_by_plan: `49`
+- directly_touched_by_plan: `52`
 - covered_by_integration_choke_point: `0`
 - adjacent_but_no_change_expected: `415`
 - requires_task_update: `0`
@@ -36,11 +36,11 @@ This report is read-only structural evidence. It cannot update canonical researc
 
 ## Registry Family Drift
 
-- layout: `active_claim_rebind_audits, artifacts, attempts, authorities, benchmarks, checkpoints, claim_statuses, claims, code_states, code_workspaces, evidence, ideas, intents, legacy_l2_seed_group_reviews, legacy_semantic_repairs, legacy_semantic_reviews, legacy_source_reconstruction_repairs, object_relations, outputs, physics_objects, promotion_packets, proof_obligations, questions, quiet_checkpoints, reference_locations, research_run_events, research_runs, routes, sensemaking_reports, tool_recipes, tool_runs, trust_updates, validation_contracts, validation_results`
+- layout: `active_claim_rebind_audits, artifacts, attempts, authorities, benchmarks, checkpoints, claim_statuses, claims, code_states, code_workspaces, evidence, exploratory_records, failure_mode_reviews, ideas, intents, lane_contracts, legacy_l2_seed_group_reviews, legacy_semantic_repairs, legacy_semantic_reviews, legacy_source_reconstruction_repairs, lifecycle_events, monitor_snapshots, object_relations, outputs, physics_objects, promotion_packets, proof_obligations, questions, quiet_checkpoints, reference_locations, research_run_events, research_runs, routes, sensemaking_reports, skill_patch_proposals, source_assets, source_reconstruction_reviews, tool_recipes, tool_runs, trust_updates, validation_contracts, validation_results`
 - literal_uses: `active_claim_rebind_audits, artifacts, authorities, checkpoints, claim_statuses, claims, code_states, code_workspaces, evidence, exploratory_records, failure_mode_reviews, lane_contracts, legacy_l2_seed_group_reviews, legacy_semantic_repairs, legacy_semantic_reviews, legacy_source_reconstruction_repairs, lifecycle_events, monitor_snapshots, object_relations, physics_objects, promotion_packets, proof_obligations, quiet_checkpoints, reference_locations, research_run_events, research_runs, routes, sensemaking_reports, skill_patch_proposals, source_assets, source_reconstruction_reviews, tool_recipes, tool_runs, trust_updates, validation_contracts, validation_results`
 - actual_workspace: `active_claim_rebind_audits, artifacts, attempts, authorities, benchmarks, checkpoints, claim_statuses, claims, code_states, code_workspaces, evidence, exploratory_records, ideas, intents, lane_contracts, legacy_l2_seed_group_reviews, legacy_semantic_repairs, legacy_semantic_reviews, legacy_source_reconstruction_repairs, lifecycle_events, object_relations, outputs, physics_objects, promotion_packets, proof_obligations, questions, quiet_checkpoints, reference_locations, research_run_events, research_runs, routes, sensemaking_reports, source_assets, source_reconstruction_reviews, tool_recipes, tool_runs, trust_updates, validation_contracts, validation_results`
-- used_not_layout: `exploratory_records, failure_mode_reviews, lane_contracts, lifecycle_events, monitor_snapshots, skill_patch_proposals, source_assets, source_reconstruction_reviews`
-- actual_not_layout: `exploratory_records, lane_contracts, lifecycle_events, source_assets, source_reconstruction_reviews`
+- used_not_layout: `none`
+- actual_not_layout: `none`
 - layout_not_used: `attempts, benchmarks, ideas, intents, outputs, questions`
 
 ### Actual Family Counts
@@ -514,6 +514,8 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `brain/v5/quiet_checkpoint.py` | directly_touched_by_plan | none |
 | `brain/v5/quiet_checkpoint_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/record_contracts.py` | adjacent_but_no_change_expected | none |
+| `brain/v5/record_family_contracts.py` | directly_touched_by_plan | none |
+| `brain/v5/record_family_registry.py` | directly_touched_by_plan | none |
 | `brain/v5/record_gate_audit_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/record_ref_contracts.py` | adjacent_but_no_change_expected | none |
 | `brain/v5/record_refs.py` | directly_touched_by_plan | none |
@@ -694,6 +696,7 @@ This report is read-only structural evidence. It cannot update canonical researc
 | `tests/test_v5_question_intents.py` | adjacent_but_no_change_expected | none |
 | `tests/test_v5_quiet_checkpoint.py` | adjacent_but_no_change_expected | none |
 | `tests/test_v5_real_workflows.py` | adjacent_but_no_change_expected | none |
+| `tests/test_v5_record_family_registry.py` | directly_touched_by_plan | none |
 | `tests/test_v5_recording_navigator.py` | adjacent_but_no_change_expected | none |
 | `tests/test_v5_reference_locations.py` | adjacent_but_no_change_expected | none |
 | `tests/test_v5_replay.py` | adjacent_but_no_change_expected | none |

@@ -319,6 +319,7 @@ git commit -m "v5: add runtime capability audit"
 - Create: `brain/v5/record_family_registry.py`
 - Create: `brain/v5/record_family_contracts.py`
 - Create: `tests/test_v5_record_family_registry.py`
+- Create: `docs/superpowers/progress/2026-07-10-aitp-record-family-registry.md`
 - Modify: `brain/v5/paths.py`
 - Modify: `brain/v5/record_refs.py`
 - Modify: `brain/v5/workspace_inventory.py`
@@ -330,7 +331,7 @@ git commit -m "v5: add runtime capability audit"
 - Produces: `validate_record_family_registry() -> dict[str, Any]`
 - Consumes: the live Task 1 drift report.
 
-- [ ] **Step 1: Write failing registry completeness tests**
+- [x] **Step 1: Write failing registry completeness tests**
 
 ```python
 from brain.v5.record_family_registry import record_family_specs
@@ -360,7 +361,7 @@ The test module imports `Path`, `build_runtime_capability_audit`, and defines:
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ```
 
-- [ ] **Step 2: Verify RED**
+- [x] **Step 2: Verify RED**
 
 Run:
 
@@ -370,7 +371,7 @@ python -m pytest tests\test_v5_record_family_registry.py -q -p no:cacheprovider 
 
 Expected: import failure for `record_family_registry`.
 
-- [ ] **Step 3: Implement the immutable spec and current-family catalog**
+- [x] **Step 3: Implement the immutable spec and current-family catalog**
 
 ```python
 @dataclass(frozen=True)
@@ -391,24 +392,24 @@ Populate the catalog from actual writers and the live report. Include special
 paths for sessions, topics, and `memory/l2/entries` without pretending they are
 normal `registry/` families.
 
-- [ ] **Step 4: Run registry tests and verify GREEN**
+- [x] **Step 4: Run registry tests and verify GREEN**
 
 Run the Step 2 command.
 
 Expected: all registry tests pass.
 
-- [ ] **Step 5: Write failing consumer-convergence tests**
+- [x] **Step 5: Write failing consumer-convergence tests**
 
 Assert `paths`, `record_refs`, and workspace inventory expose the same normal
 registry families as `record_family_specs()`, excluding only documented special
 locations.
 
-- [ ] **Step 6: Verify RED, then migrate consumers one at a time**
+- [x] **Step 6: Verify RED, then migrate consumers one at a time**
 
 Replace duplicated family lists with registry-derived helpers. Preserve current
 public constants as compatibility projections where tests import them.
 
-- [ ] **Step 7: Run focused consumers and architecture tests**
+- [x] **Step 7: Run focused consumers and architecture tests**
 
 ```powershell
 python -m pytest tests\test_v5_record_family_registry.py tests\test_v5_workspace_inventory.py tests\test_v5_recording_navigator.py tests\test_v5_architecture_boundaries.py -q -p no:cacheprovider --basetemp tmp\pytest-g0-family-green
@@ -417,10 +418,10 @@ python -m pytest tests\test_v5_record_family_registry.py tests\test_v5_workspace
 Expected: family/consumer tests pass; pre-existing unrelated oversized-module
 failures may remain until Task 9 and must be reported exactly.
 
-- [ ] **Step 8: Commit Task 2**
+- [x] **Step 8: Commit Task 2**
 
 ```powershell
-git add brain/v5/record_family_registry.py brain/v5/record_family_contracts.py brain/v5/paths.py brain/v5/record_refs.py brain/v5/workspace_inventory.py brain/v5/lifecycle_events.py tests/test_v5_record_family_registry.py
+git add brain/v5/record_family_registry.py brain/v5/record_family_contracts.py brain/v5/paths.py brain/v5/record_refs.py brain/v5/workspace_inventory.py brain/v5/lifecycle_events.py brain/v5/runtime_audit.py tests/test_v5_record_family_registry.py tests/test_v5_runtime_audit.py docs/superpowers/progress/2026-07-10-aitp-record-family-registry.md docs/superpowers/progress/2026-07-10-aitp-runtime-capability-audit.md docs/superpowers/plans/2026-07-10-aitp-gate-0-foundation.md
 git commit -m "v5: centralize record family registry"
 ```
 

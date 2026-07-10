@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import re
+import warnings
 from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable
@@ -39,7 +40,10 @@ def build_runtime_capability_audit(
     root = Path(repo_root).resolve()
     planned = _planned_paths(Path(plan_path)) if plan_path else set()
     files = _source_rows(root, planned)
-    layout = _layout_families(root / "brain" / "v5" / "paths.py")
+    layout = _layout_families(
+        root / "brain" / "v5" / "paths.py",
+        registry_path=root / "brain" / "v5" / "record_family_registry.py",
+    )
     used, users = _literal_registry_families(root / "brain" / "v5")
     actual_counts = _actual_registry_counts(Path(workspace_base)) if workspace_base else {}
     actual = sorted(actual_counts)
@@ -96,7 +100,7 @@ def _source_rows(root: Path, planned: set[str]) -> list[dict[str, Any]]:
         relative = _normalize_relative_path(path.relative_to(root).as_posix())
         parse_error = ""
         try:
-            ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            _parse_python(path)
         except (SyntaxError, UnicodeDecodeError) as exc:
             parse_error = str(exc)
         rows.append(
@@ -139,23 +143,35 @@ def _is_legacy_or_domain_surface(relative: str) -> bool:
     return name.startswith("legacy_") or "/domain_" in f"/{relative.lower()}"
 
 
-def _layout_families(path: Path) -> list[str]:
+def _layout_families(path: Path, *, registry_path: Path | None = None) -> list[str]:
     if not path.exists():
         return []
-    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    tree = _parse_python(path)
     for node in tree.body:
         if not isinstance(node, (ast.Assign, ast.AnnAssign)):
             continue
         targets = node.targets if isinstance(node, ast.Assign) else [node.target]
         if not any(isinstance(target, ast.Name) and target.id == "_LAYOUT_DIRS" for target in targets):
             continue
-        value = ast.literal_eval(node.value)
+        try:
+            value = ast.literal_eval(node.value)
+        except (ValueError, TypeError):
+            break
         return sorted(
             item.removeprefix("registry/")
             for item in value
             if isinstance(item, str) and item.startswith("registry/")
         )
-    return []
+    if registry_path is None:
+        return []
+    rows = _literal_named_assignment(registry_path, "_REGISTRY_ROWS", default=())
+    if not isinstance(rows, (list, tuple)):
+        return []
+    return sorted(
+        row[0]
+        for row in rows
+        if isinstance(row, (list, tuple)) and row and isinstance(row[0], str)
+    )
 
 
 def _literal_registry_families(directory: Path) -> tuple[list[str], dict[str, list[str]]]:
@@ -164,7 +180,7 @@ def _literal_registry_families(directory: Path) -> tuple[list[str], dict[str, li
         return [], users
     for path in sorted(directory.glob("*.py")):
         try:
-            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            tree = _parse_python(path)
         except (SyntaxError, UnicodeDecodeError):
             continue
         for family in _registry_dir_literals(tree):
@@ -249,7 +265,7 @@ def _writer_rows(root: Path) -> list[dict[str, Any]]:
         if not relative.startswith(("brain/", "hooks/", "deploy/hooks/")):
             continue
         try:
-            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            tree = _parse_python(path)
         except (SyntaxError, UnicodeDecodeError):
             continue
         visitor = _WriterCallVisitor(relative)
@@ -319,7 +335,7 @@ def _literal_named_assignment(path: Path, name: str, *, default: Any) -> Any:
     if not path.exists():
         return default
     try:
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        tree = _parse_python(path)
     except (SyntaxError, UnicodeDecodeError):
         return default
     for node in tree.body:
@@ -354,7 +370,7 @@ def _function_names(path: Path, *, prefix: str = "") -> list[str]:
     if not path.exists():
         return []
     try:
-        tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+        tree = _parse_python(path)
     except (SyntaxError, UnicodeDecodeError):
         return []
     names = {
@@ -374,3 +390,9 @@ def _function_names(path: Path, *, prefix: str = "") -> list[str]:
 
 def _normalize_relative_path(value: str) -> str:
     return value.replace("\\", "/").removeprefix("./")
+
+
+def _parse_python(path: Path) -> ast.Module:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SyntaxWarning)
+        return ast.parse(path.read_text(encoding="utf-8"), filename=str(path))

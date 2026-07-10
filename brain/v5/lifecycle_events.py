@@ -12,11 +12,8 @@ from pathlib import Path
 from typing import Iterable
 
 from brain.v5.ids import prefixed_id, short_hash
-from brain.v5.models import (
-    ClaimRecord,
-    EvidenceRecord,
-    LifecycleEventRecord,
-)
+from brain.v5.models import LifecycleEventRecord
+from brain.v5.record_family_registry import registry_family_specs
 from brain.v5.store import list_valid_records, read_record, write_record
 from brain.v5.workspace import WorkspacePaths
 
@@ -149,14 +146,23 @@ def create_lifecycle_event(
     return event
 
 
-_KIND_TO_FAMILY = {
-    "claim": "claims",
-    "evidence": "evidence",
+_LIFECYCLE_SPECS = {
+    spec.record_kind: spec
+    for spec in registry_family_specs().values()
+    if "lifecycle" in spec.participates_in
 }
+_KIND_TO_FAMILY = {kind: spec.family for kind, spec in _LIFECYCLE_SPECS.items()}
 _KIND_TO_RECORD_CLS = {
-    "claim": ClaimRecord,
-    "evidence": EvidenceRecord,
+    kind: spec.record_class
+    for kind, spec in _LIFECYCLE_SPECS.items()
+    if spec.record_class is not None
 }
+
+
+def lifecycle_subject_families() -> dict[str, str]:
+    """Return lifecycle-enabled subject kinds as a registry projection."""
+
+    return dict(_KIND_TO_FAMILY)
 
 
 class LifecycleError(ValueError):

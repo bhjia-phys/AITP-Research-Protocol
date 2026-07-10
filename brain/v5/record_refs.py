@@ -6,251 +6,45 @@ from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Any
 
-from brain.v5.models import (
-    ArtifactRecord,
-    AuthorityRecord,
-    ClaimRecord,
-    CodeStateRecord,
-    EvidenceRecord,
-    ExploratoryRecord,
-    HumanCheckpointRecord,
-    MemoryEntryRecord,
-    PhysicsObjectRecord,
-    ProofObligationRecord,
-    QuietCheckpointBatchRecord,
-    ReferenceLocationRecord,
-    ResearchRouteRecord,
-    ResearchRunEventRecord,
-    ResearchRunRecord,
-    SessionBinding,
-    SensemakingReportRecord,
-    SourceReconstructionReviewResultRecord,
-    SourceAssetRecord,
-    ToolRecipeRecord,
-    ToolRunRecord,
-    TopicRecord,
-    ValidationContractRecord,
-    ValidationResultRecord,
-)
+from brain.v5.markdown import read_md
 from brain.v5.paths import WorkspacePaths
+from brain.v5.record_family_registry import record_family_specs
 from brain.v5.store import read_record
 
 
-_RecordSpec = tuple[str, str, str, type[Any], str, str, bool]
+_RecordSpec = tuple[str, str, str, type[Any] | None, str, str, bool]
 
-_RECORD_SPECS: dict[str, _RecordSpec] = {
-    "artifact": ("artifacts", "artifact_id", "artifact_record", ArtifactRecord, "typed_record", "registry/artifacts", False),
-    "authority": ("authorities", "authority_id", "authority_record", AuthorityRecord, "orientation_only_record", "registry/authorities", False),
-    "claim": ("claims", "claim_id", "claim_record", ClaimRecord, "typed_record", "registry/claims", False),
-    "code_state": ("code_states", "code_state_id", "code_state_record", CodeStateRecord, "typed_record", "registry/code_states", False),
-    "evidence": ("evidence", "evidence_id", "evidence_record", EvidenceRecord, "typed_record", "registry/evidence", False),
-    "exploratory_record": (
-        "exploratory_records",
-        "record_id",
-        "exploratory_record",
-        ExploratoryRecord,
-        "typed_record",
-        "registry/exploratory_records",
-        False,
-    ),
-    "human_checkpoint": (
-        "checkpoints",
-        "checkpoint_id",
-        "human_checkpoint_record",
-        HumanCheckpointRecord,
-        "typed_record",
-        "registry/checkpoints",
-        False,
-    ),
-    "memory_entry": (
-        "memory_entries",
-        "entry_id",
-        "memory_entry_record",
-        MemoryEntryRecord,
-        "typed_record",
-        "memory/l2/entries",
-        False,
-    ),
-    "physics_object": (
-        "physics_objects",
-        "object_id",
-        "physics_object_record",
-        PhysicsObjectRecord,
-        "typed_record",
-        "registry/physics_objects",
-        False,
-    ),
-    "proof_obligation": (
-        "proof_obligations",
-        "obligation_id",
-        "proof_obligation_record",
-        ProofObligationRecord,
-        "typed_record",
-        "registry/proof_obligations",
-        False,
-    ),
-    "quiet_checkpoint": (
-        "quiet_checkpoints",
-        "checkpoint_id",
-        "quiet_checkpoint_batch",
-        QuietCheckpointBatchRecord,
-        "process_record",
-        "registry/quiet_checkpoints",
-        False,
-    ),
-    "reference_location": (
-        "reference_locations",
-        "location_id",
-        "reference_location_record",
-        ReferenceLocationRecord,
-        "orientation_only_record",
-        "registry/reference_locations",
-        False,
-    ),
-    "research_route": (
-        "routes",
-        "route_id",
-        "research_route_record",
-        ResearchRouteRecord,
-        "orientation_only_record",
-        "registry/routes",
-        False,
-    ),
-    "research_run": (
-        "research_runs",
-        "run_id",
-        "research_run_record",
-        ResearchRunRecord,
-        "process_record",
-        "registry/research_runs",
-        False,
-    ),
-    "research_run_event": (
-        "research_run_events",
-        "event_id",
-        "research_run_event_record",
-        ResearchRunEventRecord,
-        "process_event_record",
-        "registry/research_run_events",
-        False,
-    ),
-    "session": (
-        "",
-        "session_id",
-        "session_binding",
-        SessionBinding,
-        "runtime_binding",
-        "runtime/sessions",
-        True,
-    ),
-    "sensemaking_report": (
-        "sensemaking_reports",
-        "report_id",
-        "sensemaking_report_record",
-        SensemakingReportRecord,
-        "orientation_only_record",
-        "registry/sensemaking_reports",
-        False,
-    ),
-    "source_asset": (
-        "source_assets",
-        "asset_id",
-        "source_asset_record",
-        SourceAssetRecord,
-        "orientation_only_record",
-        "registry/source_assets",
-        False,
-    ),
-    "source_reconstruction_review": (
-        "source_reconstruction_reviews",
-        "result_id",
-        "source_reconstruction_review_result_record",
-        SourceReconstructionReviewResultRecord,
-        "typed_record",
-        "registry/source_reconstruction_reviews",
-        False,
-    ),
-    "tool_recipe": (
-        "tool_recipes",
-        "recipe_id",
-        "tool_recipe_record",
-        ToolRecipeRecord,
-        "typed_record",
-        "registry/tool_recipes",
-        False,
-    ),
-    "tool_run": ("tool_runs", "run_id", "tool_run_record", ToolRunRecord, "typed_record", "registry/tool_runs", False),
-    "topic": ("", "topic_id", "topic_record", TopicRecord, "typed_record", "topics/<topic_id>/topic.md", True),
-    "validation_contract": (
-        "validation_contracts",
-        "contract_id",
-        "validation_contract_record",
-        ValidationContractRecord,
-        "typed_record",
-        "registry/validation_contracts",
-        False,
-    ),
-    "validation_result": (
-        "validation_results",
-        "result_id",
-        "validation_result_record",
-        ValidationResultRecord,
-        "typed_record",
-        "registry/validation_results",
-        False,
-    ),
-}
 
-_ALIASES = {
-    "aitp": "",
-    "asset": "source_asset",
-    "source-asset": "source_asset",
-    "source_asset_record": "source_asset",
-    "source-reconstruction-review": "source_reconstruction_review",
-    "source_reconstruction_review_result": "source_reconstruction_review",
-    "source-reconstruction-review-result": "source_reconstruction_review",
-    "source_reconstruction_review_result_record": "source_reconstruction_review",
-    "reference-location": "reference_location",
-    "reference_location_record": "reference_location",
-    "ref_location": "reference_location",
-    "evidence_record": "evidence",
-    "artifact_record": "artifact",
-    "authority_record": "authority",
-    "sector_authority": "authority",
-    "quiet-checkpoint": "quiet_checkpoint",
-    "quiet_checkpoint_batch": "quiet_checkpoint",
-    "tool-run": "tool_run",
-    "tool_run_record": "tool_run",
-    "validation-contract": "validation_contract",
-    "validation_contract_record": "validation_contract",
-    "validation-result": "validation_result",
-    "validation_result_record": "validation_result",
-    "code-state": "code_state",
-    "code_state_record": "code_state",
-    "route": "research_route",
-    "research-route": "research_route",
-    "research_route_record": "research_route",
-    "research-run": "research_run",
-    "research_run_record": "research_run",
-    "research-event": "research_run_event",
-    "research-run-event": "research_run_event",
-    "research_run_event_record": "research_run_event",
-    "checkpoint": "human_checkpoint",
-    "human_checkpoint_record": "human_checkpoint",
-    "proof-obligation": "proof_obligation",
-    "proof_obligation_record": "proof_obligation",
-    "object": "physics_object",
-    "physics-object": "physics_object",
-    "physics_object_record": "physics_object",
-    "sensemaking": "sensemaking_report",
-    "sensemaking-report": "sensemaking_report",
-    "sensemaking_report_record": "sensemaking_report",
-    "memory": "memory_entry",
-    "memory-entry": "memory_entry",
-    "memory_entry_record": "memory_entry",
-    "claim_record": "claim",
-    "topic_record": "topic",
-}
+def _build_record_specs() -> dict[str, _RecordSpec]:
+    specs: dict[str, _RecordSpec] = {}
+    for family_spec in record_family_specs().values():
+        if "exact_ref" not in family_spec.participates_in:
+            continue
+        specs[family_spec.ref_kind] = (
+            family_spec.family,
+            family_spec.id_field,
+            family_spec.surface,
+            family_spec.record_class,
+            family_spec.record_role,
+            family_spec.relative_dir,
+            not family_spec.is_registry_family,
+        )
+    return dict(sorted(specs.items()))
+
+
+def _build_aliases() -> dict[str, str]:
+    aliases = {"aitp": ""}
+    for spec in record_family_specs().values():
+        if "exact_ref" not in spec.participates_in:
+            continue
+        aliases[spec.ref_kind] = spec.ref_kind
+        for alias in spec.exact_ref_aliases:
+            aliases[alias] = spec.ref_kind
+    return aliases
+
+
+_RECORD_SPECS = _build_record_specs()
+_ALIASES = _build_aliases()
 
 _MISSING_REF_SUGGESTIONS: dict[str, tuple[str, str, str, str]] = {
     "reference_location": (
@@ -266,6 +60,20 @@ _MISSING_REF_SUGGESTIONS: dict[str, tuple[str, str, str, str]] = {
         "register or auto-capture a normal AITP source asset before using this ref as source context",
     ),
 }
+
+
+def record_ref_registry_families() -> tuple[str, ...]:
+    """Return normal registry families addressable through exact refs."""
+
+    return tuple(
+        sorted(
+            {
+                family
+                for family, _id, _surface, _cls, _role, _scope, custom in _RECORD_SPECS.values()
+                if not custom
+            }
+        )
+    )
 
 
 def lookup_record_refs(ws: WorkspacePaths, refs: list[str]) -> dict[str, Any]:
@@ -299,17 +107,26 @@ def lookup_record_refs(ws: WorkspacePaths, refs: list[str]) -> dict[str, Any]:
 def _lookup_record_ref(ws: WorkspacePaths, ref: str) -> dict[str, Any]:
     parsed = _parse_ref(ref)
     if parsed is None:
-        return _base_result(ref, status="malformed_ref", diagnostic="expected '<kind>:<record_id>' or 'aitp:<kind>:<record_id>'")
+        return _base_result(
+            ref,
+            status="malformed_ref",
+            diagnostic="expected '<kind>:<record_id>' or 'aitp:<kind>:<record_id>'",
+        )
 
     ref_kind, record_id = parsed
     spec = _RECORD_SPECS.get(ref_kind)
     if spec is None:
-        result = _base_result(ref, ref_kind=ref_kind, record_id=record_id, status="unsupported_kind")
+        result = _base_result(
+            ref,
+            ref_kind=ref_kind,
+            record_id=record_id,
+            status="unsupported_kind",
+        )
         result["diagnostic"] = "ref kind is not supported by this read-only lookup surface"
         return result
 
-    family, id_field, surface, cls, record_role, store_scope, _custom_path = spec
-    path = _record_path(ws, ref_kind, family, record_id)
+    family, id_field, surface, cls, record_role, store_scope, custom_path = spec
+    path = _record_path(ws, family, record_id, custom_path=custom_path)
     result = _base_result(
         ref,
         ref_kind=ref_kind,
@@ -325,17 +142,14 @@ def _lookup_record_ref(ws: WorkspacePaths, ref: str) -> dict[str, Any]:
         return result
 
     try:
-        record = read_record(path, cls)
+        record_payload, actual_id = _read_record_payload(path, cls, id_field)
     except (TypeError, ValueError):
         result["diagnostic"] = "record file exists but does not satisfy its typed record shape"
         return result
-
-    actual_id = getattr(record, id_field, "")
     if actual_id != record_id:
         result["diagnostic"] = "record file exists but record id field does not match requested ref"
         return result
 
-    record_payload = asdict(record) if is_dataclass(record) else dict(record)
     result.update(
         {
             "status": "found",
@@ -349,6 +163,20 @@ def _lookup_record_ref(ws: WorkspacePaths, ref: str) -> dict[str, Any]:
         }
     )
     return result
+
+
+def _read_record_payload(
+    path: Path,
+    cls: type[Any] | None,
+    id_field: str,
+) -> tuple[dict[str, Any], str]:
+    if cls is None:
+        frontmatter, _body = read_md(path)
+        payload = dict(frontmatter)
+        return payload, str(payload.get(id_field) or "")
+    record = read_record(path, cls)
+    payload = asdict(record) if is_dataclass(record) else dict(record)
+    return payload, str(getattr(record, id_field, ""))
 
 
 def _add_missing_ref_suggestion(result: dict[str, Any], ref_kind: str) -> None:
@@ -380,14 +208,24 @@ def _parse_ref(ref: str) -> tuple[str, str] | None:
     return kind, record_id
 
 
-def _record_path(ws: WorkspacePaths, ref_kind: str, family: str, record_id: str) -> Path:
-    if ref_kind == "session":
+def _record_path(
+    ws: WorkspacePaths,
+    family: str,
+    record_id: str,
+    *,
+    custom_path: bool,
+) -> Path:
+    if not custom_path:
+        return ws.registry_dir(family) / f"{record_id}.md"
+    if family == "sessions":
         return ws.session_path(record_id)
-    if ref_kind == "topic":
+    if family == "topics":
         return ws.topic_dir(record_id) / "topic.md"
-    if ref_kind == "memory_entry":
+    if family == "contexts":
+        return ws.context_dir(record_id) / "context.md"
+    if family == "memory_entries":
         return ws.root / "memory" / "l2" / "entries" / f"{record_id}.md"
-    return ws.registry_dir(family) / f"{record_id}.md"
+    raise ValueError(f"unsupported special record family: {family}")
 
 
 def _base_result(

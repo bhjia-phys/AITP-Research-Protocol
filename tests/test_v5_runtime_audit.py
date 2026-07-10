@@ -1,3 +1,5 @@
+import warnings
+
 from brain.v5.runtime_audit import (
     build_runtime_capability_audit,
     render_runtime_capability_audit_markdown,
@@ -202,3 +204,16 @@ def test_runtime_audit_lists_static_and_dynamic_record_writer_calls(tmp_path):
     assert claim_writer["dynamic_registry_family"] is False
     assert dynamic_writer["registry_families"] == []
     assert dynamic_writer["dynamic_registry_family"] is True
+
+
+def test_runtime_audit_does_not_emit_syntax_warnings_for_audited_sources(tmp_path):
+    repo = _minimal_repo(tmp_path)
+    (repo / "brain" / "warning_source.py").write_text(
+        'value = "\\$"\n', encoding="utf-8"
+    )
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        build_runtime_capability_audit(repo)
+
+    assert not [item for item in caught if issubclass(item.category, SyntaxWarning)]
